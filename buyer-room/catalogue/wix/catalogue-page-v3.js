@@ -243,6 +243,10 @@ function setupNav() {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSearch') {
             await applySearch(message.query);
+        } else if (message.type === 'catalogueAll') {
+            await hideMenu();
+            nativeSearch.value = '';
+            await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await authentication.logout();
             wixLocationFrontend.to('/');
