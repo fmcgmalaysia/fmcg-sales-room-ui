@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--navy:#0a239a;--navy2:#17368c;--ink:#172b4a;--muted:#64738a;--line:#e4e9f2;--orange:#f36a3d;--burnt:#b94623;--soft:#fff1eb}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:'Wix Madefor Text',Arial,sans-serif;color:var(--ink);background:#fff}
+    button,input,a{font:inherit}.header{height:145px;background:#fff;border-bottom:1px solid var(--line)}
+    .brand-fallback{font-family:'Wix Madefor Display','Wix Madefor Text',Arial,sans-serif}
+    .top{height:78px;display:grid;grid-template-columns:280px minmax(300px,560px) 1fr;align-items:center;gap:28px;padding:0 28px;background:var(--navy)}
+    .brand{display:flex;align-items:center;min-width:0}.brand img{display:block;width:246px;max-height:50px;object-fit:contain;object-position:left center}.brand-fallback{display:none;color:#fff;font-size:27px;font-weight:800;letter-spacing:-1.2px;white-space:nowrap}.brand-fallback b{color:var(--orange)}
+    .search{height:44px;display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid rgba(255,255,255,.34);border-radius:8px;background:#fff}.search svg{width:19px;height:19px;stroke:#49627d;flex:none}.search input{width:100%;height:40px;border:0;outline:0;background:transparent;color:var(--ink);font-size:14px}.search input::placeholder{color:#7b8795}
+    .utilities{display:flex;align-items:center;justify-content:flex-end;gap:10px;color:#fff;min-width:0}.utility{height:42px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;white-space:nowrap}.utility:hover{background:rgba(255,255,255,.09)}.utility svg{width:19px;height:19px;stroke:currentColor}.utility.usd{color:#ff7a50;font-weight:800}.identity{min-width:96px;padding-left:12px;border-left:1px solid rgba(255,255,255,.22);line-height:1.15}.identity .hello{font-size:11px;color:#cbd7e2}.identity .name{margin-top:3px;font-size:13px;font-weight:750;color:#fff;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nav{height:67px;display:flex;align-items:stretch;justify-content:flex-start;gap:8px;padding:0 28px;background:#fff}.navbtn{position:relative;border:0;background:#fff;color:#172b4a;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 15px;font-size:14px;font-weight:750;cursor:pointer;white-space:nowrap}.navbtn svg{width:22px;height:22px;stroke:currentColor}.navbtn:after{content:"";position:absolute;left:15px;right:15px;bottom:0;height:3px;background:var(--orange);transform:scaleX(0);transition:transform .16s ease}.navbtn:hover,.navbtn.active{color:var(--navy);background:#f9faff}.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
+    @media(max-width:1050px){.top{grid-template-columns:220px minmax(260px,1fr) auto;gap:16px;padding:0 18px}.brand img{width:205px}.utility span{display:none}.identity{display:none}.nav{padding:0 12px;gap:2px}.navbtn{font-size:12px;padding:0 8px;gap:6px}.navbtn svg{width:20px;height:20px}}
+    @media(max-width:750px){
+      body{overflow-x:hidden}
+      .top{height:96px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:46px 42px;gap:2px 8px;padding:4px 10px}
+      .brand{grid-column:1;grid-row:1}.brand img{width:min(172px,100%);max-height:42px}.brand-fallback{font-size:20px}
+      .search{grid-column:1/-1;grid-row:2;height:38px;padding:0 11px;border-radius:7px}.search input{height:36px;font-size:13px}.search svg{width:17px;height:17px}
+      .utilities{grid-column:2;grid-row:1;gap:2px}.utility{width:34px;height:34px;padding:0;justify-content:center}.utility span{display:none}.utility svg{width:18px;height:18px}.utility.usd{height:34px;padding:0 8px;font-size:12px}.identity{display:none}
+      .nav{height:49px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0 4px}.navbtn{min-width:0;padding:0 4px;gap:0}.navbtn span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.navbtn svg{width:22px;height:22px}.navbtn:after{left:24%;right:24%;height:2px}
+    }
+    @media(max-width:390px){.brand img{width:min(150px,100%)}.utility.usd{padding:0 6px}.utilities{gap:0}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="top">
+      <div class="brand">
+        <img id="brandLogo" src="https://raw.githubusercontent.com/fmcgmalaysia/fmcg-sales-room-ui/catalogue-zus-blue-refresh/assets/logo-orange-white-no-slogan.png" alt="fmcgMalaysia.com">
+        <div id="brandFallback" class="brand-fallback">fmcg<b>Malaysia</b>.com</div>
+      </div>
+      <label class="search" aria-label="Search catalogue">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.2 4.2"/></svg>
+        <input id="catalogueSearch" type="search" autocomplete="off" placeholder="Search products, brands or categories…">
+      </label>
+      <div class="utilities">
+        <button class="utility" id="buyerRoom" type="button" aria-label="Open Buyer Room">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M5 3.5h14v17H5zM8 7h8M8 11h8M8 15h5"/></svg><span>Buyer Room</span>
+        </button>
+        <button class="utility" id="account" type="button" aria-label="Account">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4.1 3.3-6.2 7.5-6.2s6.7 2.1 7.5 6.2"/></svg><span>Account</span>
+        </button>
+        <button class="utility usd" type="button" aria-label="Currency USD">USD</button>
+        <div class="identity"><div class="hello" id="hello">Signed in</div><div class="name" id="identityName">Buyer</div></div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Catalogue categories">
+      <button class="navbtn" data-key="FOOD" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M7 3v8M4.5 3v5.5A2.5 2.5 0 0 0 7 11v10M9.5 3v5.5A2.5 2.5 0 0 1 7 11M16 3v18M16 3c3 2 4 5.5 4 8h-4"/></svg><span>Food &amp; Beverages</span>
+      </button>
+      <button class="navbtn" data-key="HOUSEHOLDS" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M9 4h6M10 4V2h4v2M8 8h8l1.5 3v10h-11V11zM10 12h4"/></svg><span>Household &amp; Cleaning</span>
+      </button>
+      <button class="navbtn" data-key="PERSONAL CARE" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M9 3h6M10 3v4l-2 2v12h8V9l-2-2V3M10 13h4"/></svg><span>Personal Care &amp; Health</span>
+      </button>
+      <button class="navbtn" data-key="OTHERS" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="m4 7 8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/></svg><span>General Merchandise</span>
+      </button>
+    </nav>
+  </header>
+  <script>
+    const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
+    const buttons=[...document.querySelectorAll('.navbtn')];let active='',hoverTimer,searchTimer;
+    function paint(){buttons.forEach(b=>b.classList.toggle('active',b.dataset.key===active))}
+    function openMenu(key){active=key;paint();post('catalogueMain',{main:key,open:true})}
+    buttons.forEach(btn=>{
+      btn.addEventListener('mouseenter',()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openMenu(btn.dataset.key),320)});
+      btn.addEventListener('mouseleave',()=>clearTimeout(hoverTimer));
+      btn.addEventListener('click',()=>{clearTimeout(hoverTimer);const same=active===btn.dataset.key;active=same?'':btn.dataset.key;paint();post('catalogueMain',{main:btn.dataset.key,open:!same})});
+    });
+    document.querySelector('.nav').addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
+    document.getElementById('catalogueSearch').addEventListener('input',e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>post('catalogueSearch',{query:e.target.value.trim()}),300)});
+    document.getElementById('catalogueSearch').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';post('catalogueSearch',{query:''});e.target.blur()}});
+    document.getElementById('account').onclick=()=>post('catalogueAccount');
+    document.getElementById('buyerRoom').onclick=()=>post('catalogueBuyerRoom');
+    document.getElementById('brandLogo').onerror=()=>{document.getElementById('brandLogo').style.display='none';document.getElementById('brandFallback').style.display='block'};
+    window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer'}});
+    post('catalogueHeaderReady');
+  </script>
+</body>
+</html>
+
