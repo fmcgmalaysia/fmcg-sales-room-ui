@@ -5,65 +5,75 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--blue:#0a239a;--ink:#172b4a;--muted:#64738a;--line:#e4e9f2;--canvas:#f4f6fb;--orange:#f36a3d}
-    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:'Wix Madefor Text',sans-serif;color:var(--ink);background:transparent}button{font:inherit}
-    .panel{display:none;width:100%;height:100%;background:#fff;border-top:1px solid var(--line);box-shadow:0 18px 32px rgba(10,35,154,.12);overflow:hidden}.panel.show{display:grid;grid-template-columns:390px minmax(0,1fr)}
-    .left{display:flex;flex-direction:column;min-height:0;padding:20px 17px 13px 24px;background:var(--canvas);border-right:1px solid var(--line)}
-    .eyebrow{margin:0 0 5px;color:#b94623;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.left h2,.right h3{margin:0;font-family:'Wix Madefor Text',sans-serif}.left h2{font-size:21px;line-height:1.15}.sublist{min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:3px 8px;margin:12px -5px 8px 0;padding:0 5px 0 0}
-    .sub{width:100%;min-height:30px;display:flex;align-items:center;border:0;border-radius:5px;padding:5px 9px;background:transparent;color:#263952;text-align:left;font-size:12px;line-height:1.2;cursor:pointer}.sub:hover,.sub.active{background:#fff;color:var(--blue)}.sub.active{box-shadow:inset 3px 0 var(--orange);font-weight:700}
-    .view-all{flex:none;align-self:flex-start;border:0;padding:5px 0;background:transparent;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer}.view-all:hover{text-decoration:underline}
-    .right{position:relative;display:flex;flex-direction:column;min-width:0;padding:20px 30px 12px}.right-head{display:flex;align-items:start;justify-content:space-between;gap:18px;padding-right:33px;padding-bottom:10px;border-bottom:1px solid var(--line)}.right-kicker{margin:0 0 4px;color:var(--muted);font-size:12px}.right h3{font-size:21px}.close{position:absolute;right:17px;top:13px;width:32px;height:32px;border:0;border-radius:50%;background:#fff;color:#718098;font-size:23px;cursor:pointer}.close:hover{background:var(--canvas);color:var(--blue)}
-    .brands{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4px 8px;margin-top:7px}.brand{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:transparent;padding:2px;color:#263952;text-align:center;cursor:pointer}.brand-mark{width:66px;height:66px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #dce4f0;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(20,48,100,.05);padding:8px;color:#19346d;font-size:10px;font-weight:800;line-height:1.05;overflow-wrap:anywhere}.brand:hover .brand-mark,.brand:focus-visible .brand-mark{border-color:#7995df;box-shadow:0 0 0 2px #e7ecfb}.brand-mark img{display:block;width:100%;height:100%;object-fit:contain}.brand-name{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:600;color:#53637d}
-    .empty{grid-column:1/-1;display:grid;place-items:center;align-self:stretch;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:14px;text-align:center;padding:24px}.pager{height:31px;display:flex;align-items:center;justify-content:center;gap:15px}.pager button{width:25px;height:25px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--blue);cursor:pointer}.pager button:disabled{color:#a8b2c1;cursor:default}.pager span{min-width:55px;text-align:center;color:var(--muted);font-size:12px}
-    @media(max-width:1100px){.panel.show{grid-template-columns:340px minmax(0,1fr)}.left{padding-left:16px}.right{padding:19px 17px 11px}.brands{gap:3px 5px}.brand-mark{width:58px;height:58px;font-size:9px}.brand-name{font-size:9px}}
+    :root{--blue:#0a239a;--ink:#172b4a;--muted:#64738a;--line:#e4e9f2;--orange:#f36a3d}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;font-family:'Wix Madefor Text',Arial,sans-serif;color:var(--ink);background:transparent}
+    button{font-family:'Wix Madefor Text',Arial,sans-serif}
+    .panel{display:none;width:100%;height:100%;min-height:380px;background:#fff;border-top:1px solid var(--line);box-shadow:0 18px 32px rgba(10,35,154,.12);overflow:hidden}
+    .panel.show{display:grid;grid-template-columns:minmax(0,64fr) minmax(0,36fr)}
+    .left{min-width:0;padding:19px 25px 17px;border-right:1px solid var(--line)}
+    .sublist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-template-rows:repeat(var(--rows,9),38px);column-gap:23px;align-content:start}
+    .sub{width:100%;min-width:0;display:flex;align-items:center;gap:11px;border:0;border-bottom:1px solid #edf0f4;padding:0 2px;background:transparent;color:#203454;text-align:left;font-size:16px;font-weight:400;line-height:1.18;cursor:pointer}
+    .sub-symbol{width:7px;height:7px;flex:none;border-top:1px solid #8797b1;border-right:1px solid #8797b1;transform:rotate(45deg);transition:transform .18s ease,border-color .18s ease}
+    .sub:hover,.sub:focus-visible,.sub.active{color:var(--blue)}
+    .sub:hover .sub-symbol,.sub:focus-visible .sub-symbol{border-color:var(--orange);transform:translateX(3px) rotate(45deg)}
+    .sub.active{border-bottom-color:var(--orange);font-weight:600}
+    .sub.active .sub-symbol{border-color:var(--orange)}
+    .right{min-width:0;display:flex;flex-direction:column;padding:17px 16px 13px}
+    .brands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,106px);gap:0 3px;align-content:start}
+    .brand{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:0;background:transparent;padding:0 2px;color:var(--ink);text-align:center;cursor:pointer}
+    .brand-mark{width:50px;height:50px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;background:#fff;padding:5px;color:#19346d;font-size:8px;font-weight:600;line-height:1.05;overflow-wrap:anywhere}
+    .brand:hover .brand-mark,.brand:focus-visible .brand-mark{border-color:#8ca2dd}
+    .brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+    .brand-name{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:400;color:#2a3954}
+    .empty{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:24px}
+    .pager{height:30px;margin-top:auto;display:flex;align-items:center;justify-content:center;gap:20px}
+    .pager button{width:28px;height:28px;border:0;background:transparent;color:var(--blue);font-size:21px;line-height:1;cursor:pointer}
+    .pager button:disabled{color:#b8c2d0;cursor:default}
+    .pager span{min-width:34px;text-align:center;color:var(--muted);font-size:12px}
+    @media(max-width:900px){.left{padding-left:17px;padding-right:17px}.sublist{column-gap:12px}.sub{gap:8px;font-size:14px}.brand-name{font-size:12px}}
+    @media(prefers-reduced-motion:reduce){.sub-symbol{transition:none}}
   </style>
 </head>
 <body>
   <section id="panel" class="panel" aria-label="Catalogue mega menu" aria-hidden="true">
-    <aside class="left">
-      <p class="eyebrow">Explore catalogue</p>
-      <h2 id="mainTitle">Food &amp; Beverages</h2>
-      <div id="sublist" class="sublist" role="group" aria-label="Sub categories"></div>
-      <button id="viewAll" class="view-all" type="button">View all products →</button>
-    </aside>
+    <div class="left"><div id="sublist" class="sublist" role="group" aria-label="Subcategories"></div></div>
     <div class="right">
-      <div class="right-head"><div><p class="right-kicker">Principals in</p><h3 id="subTitle">Select a category</h3></div><button id="viewSub" class="view-all" type="button">View category →</button></div>
-      <button id="close" class="close" type="button" aria-label="Close menu">×</button>
       <div id="brands" class="brands" aria-live="polite"></div>
       <div class="pager"><button id="prev" type="button" aria-label="Previous brands">‹</button><span id="pageLabel">1 / 1</span><button id="next" type="button" aria-label="Next brands">›</button></div>
     </div>
   </section>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-    const labels={FOOD:'Food & Beverages',HOUSEHOLDS:'Household & Cleaning','PERSONAL CARE':'Personal Care & Health',OTHERS:'General Merchandise'};
     const panel=document.getElementById('panel'),sublist=document.getElementById('sublist'),brandsBox=document.getElementById('brands');
-    const pageSize=15;let cmsItems=[],currentMain='FOOD',currentSub=null,principals=[],page=0,requestId=0;
-    function setSub(item){if(item?.id===currentSub?.id)return;currentSub=item;page=0;principals=[];document.getElementById('subTitle').textContent=item?.title||'Select a category';
-      [...sublist.children].forEach(b=>b.classList.toggle('active',b.dataset.id===item?.id));renderBrands();
-      if(item)post('catalogueRequestPrinciples',{id:item.id,sub:item.title,requestId:++requestId});}
-    function renderBrands(){brandsBox.replaceChildren();const pages=Math.max(1,Math.ceil(principals.length/pageSize));page=Math.min(page,pages-1);
+    const pageSize=9;let cmsItems=[],currentMain='FOOD',currentSub=null,principals=[],page=0,requestId=0;
+    function setSub(item){if(item?.id===currentSub?.id)return;currentSub=item;page=0;principals=[];
+      [...sublist.children].forEach(b=>{const selected=b.dataset.id===item?.id;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
+      renderBrands();if(item)post('catalogueRequestPrinciples',{id:item.id,sub:item.title,requestId:++requestId});}
+    function renderBrands(){brandsBox.replaceChildren();const pages=Math.max(1,Math.ceil(principals.length/pageSize));page=Math.max(0,Math.min(page,pages-1));
       const visible=principals.slice(page*pageSize,(page+1)*pageSize);
-      if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent=currentSub?'Loading principals for this category…':'Select a sub category to explore principals.';brandsBox.appendChild(empty)}
+      if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent=currentSub?'Loading brands…':'Select a subcategory';brandsBox.appendChild(empty)}
       for(const entry of visible){const b=document.createElement('button');b.type='button';b.className='brand';b.setAttribute('aria-label',`View ${entry.name} products`);
         const mark=document.createElement('span');mark.className='brand-mark';
         if(entry.logo&&/^https:\/\//i.test(entry.logo)){const img=document.createElement('img');img.src=entry.logo;img.alt='';img.onerror=()=>{img.remove();mark.textContent=entry.name};mark.appendChild(img)}else{mark.textContent=entry.name}
         const name=document.createElement('span');name.className='brand-name';name.textContent=entry.name;b.append(mark,name);b.onclick=()=>post('cataloguePrinciple',{principle:entry.name,subId:currentSub?.id});brandsBox.appendChild(b)}
       document.getElementById('pageLabel').textContent=`${page+1} / ${pages}`;document.getElementById('prev').disabled=page===0;document.getElementById('next').disabled=page>=pages-1;}
-    function renderMain(main){currentMain=labels[main]?main:'FOOD';currentSub=null;document.getElementById('mainTitle').textContent=labels[currentMain];sublist.replaceChildren();
+    function renderMain(main){currentMain=String(main||'FOOD');currentSub=null;sublist.replaceChildren();
       const items=cmsItems.filter(x=>x.mainCategory===currentMain).sort((a,b)=>a.title.localeCompare(b.title));
-      for(const item of items){const b=document.createElement('button');b.type='button';b.className='sub';b.dataset.id=item.id;b.textContent=item.title;b.onmouseenter=()=>setSub(item);b.onfocus=()=>setSub(item);b.onclick=()=>setSub(item);sublist.appendChild(b)}
+      sublist.style.setProperty('--rows',String(Math.max(1,Math.ceil(items.length/2))));
+      for(const item of items){const b=document.createElement('button');b.type='button';b.className='sub';b.dataset.id=item.id;b.setAttribute('aria-pressed','false');
+        const symbol=document.createElement('span');symbol.className='sub-symbol';symbol.setAttribute('aria-hidden','true');
+        const label=document.createElement('span');label.textContent=item.title;b.append(symbol,label);
+        b.onmouseenter=()=>setSub(item);b.onfocus=()=>setSub(item);b.onclick=()=>{setSub(item);post('catalogueSub',{id:item.id,sub:item.title})};sublist.appendChild(b)}
       setSub(items[0]||null);panel.classList.add('show');panel.setAttribute('aria-hidden','false')}
-    function hide(){panel.classList.remove('show');panel.setAttribute('aria-hidden','true');post('catalogueMegaLeave')}
-    document.getElementById('close').onclick=hide;document.getElementById('viewAll').onclick=()=>post('catalogueGroup',{main:currentMain,ids:cmsItems.filter(x=>x.mainCategory===currentMain).map(x=>x.id)});
-    document.getElementById('viewSub').onclick=()=>currentSub&&post('catalogueSub',{id:currentSub.id,sub:currentSub.title});
     document.getElementById('prev').onclick=()=>{page--;renderBrands()};document.getElementById('next').onclick=()=>{page++;renderBrands()};
     panel.addEventListener('mouseenter',()=>post('catalogueMegaEnter'));panel.addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
     window.addEventListener('message',e=>{const d=e.data||{};
       if(d.type==='catalogueMenuData'){cmsItems=Array.isArray(d.items)?d.items:[];if(panel.classList.contains('show'))renderMain(currentMain)}
       if(d.type==='showMain')renderMain(String(d.main||'FOOD'));
-      if(d.type==='cataloguePrinciples'&&d.id===currentSub?.id&&d.requestId===requestId){principals=Array.isArray(d.items)?d.items.filter(x=>x&&x.name):[];renderBrands();if(!principals.length)brandsBox.firstChild.textContent='No principals are linked to this sub category yet.'}
+      if(d.type==='cataloguePrinciples'&&d.id===currentSub?.id&&d.requestId===requestId){principals=Array.isArray(d.items)?d.items.filter(x=>x&&x.name):[];renderBrands();if(!principals.length)brandsBox.firstChild.textContent='No brands linked to this subcategory yet.'}
     });
   </script>
 </body>

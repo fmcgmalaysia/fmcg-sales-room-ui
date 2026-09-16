@@ -15,15 +15,15 @@
     .brand{display:flex;align-items:center;min-width:0}.brand img{display:block;width:246px;max-height:50px;object-fit:contain;object-position:left center}.brand-fallback{display:none;color:#fff;font-size:27px;font-weight:800;letter-spacing:-1.2px;white-space:nowrap}.brand-fallback b{color:var(--orange)}
     .search{height:44px;min-width:0;display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid rgba(255,255,255,.34);border-radius:8px;background:#fff}.search svg{width:19px;height:19px;stroke:#49627d;flex:none}.search input{width:100%;min-width:0;height:40px;border:0;outline:0;background:transparent;color:var(--ink);font-size:14px}.search input::placeholder{color:#7b8795}
     .utilities{display:flex;align-items:center;justify-content:flex-end;gap:4px;color:#fff;min-width:0}.utility{height:42px;padding:0 6px;border:0;border-radius:7px;background:transparent;color:#fff;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap}.utility:hover{background:rgba(255,255,255,.09)}.utility svg{width:19px;height:19px;stroke:currentColor}.utility.usd{color:#ff7a50;font-weight:800}.identity{min-width:82px;padding-left:8px;border-left:1px solid rgba(255,255,255,.22);line-height:1.15}.identity .hello{font-size:11px;color:#cbd7e2}.identity .name{margin-top:3px;font-size:13px;font-weight:750;color:#fff;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .nav{height:67px;display:flex;align-items:stretch;justify-content:flex-start;gap:2px;padding:0 18px;background:#fff}.navbtn{position:relative;border:0;background:#fff;color:#172b4a;display:flex;align-items:center;justify-content:center;padding:0 13px;font-size:14px;font-weight:750;cursor:pointer;white-space:nowrap}.navbtn:after{content:"";position:absolute;left:15px;right:15px;bottom:0;height:3px;background:var(--orange);transform:scaleX(0);transition:transform .16s ease}.navbtn:hover,.navbtn.active{color:var(--navy);background:#f9faff}.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
-    @media(max-width:1050px){.top{grid-template-columns:220px minmax(0,1fr) auto;gap:16px;padding:0 18px}.brand img{width:205px}.utility span{display:none}.identity{display:none}.nav{padding:0 12px;gap:2px}.navbtn{font-size:12px;padding:0 8px}}
+    .nav{height:67px;display:flex;align-items:stretch;justify-content:flex-start;gap:3px;padding:0 18px;background:#fff}.catalogue-entry{position:relative;align-self:stretch;min-width:126px;margin-right:16px;padding:0 18px 0 8px;border:0;background:#fff;color:var(--navy);text-align:left;font-size:15px;font-weight:700;letter-spacing:.025em;cursor:pointer}.catalogue-entry:before{content:"";position:absolute;right:-8px;top:22px;width:1px;height:23px;background:var(--line)}.catalogue-entry:after{content:"";position:absolute;left:8px;right:18px;bottom:0;height:3px;background:var(--orange)}.catalogue-entry:hover,.catalogue-entry:focus-visible{background:#f9faff}.navbtn{position:relative;border:0;background:#fff;color:#172b4a;display:flex;align-items:center;justify-content:center;padding:0 11px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}.navbtn:after{content:"";position:absolute;left:11px;right:11px;bottom:0;height:3px;background:var(--orange);transform:scaleX(0);transition:transform .16s ease}.navbtn:hover,.navbtn.active{color:var(--navy);background:#f9faff}.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
+    @media(max-width:1050px){.top{grid-template-columns:220px minmax(0,1fr) auto;gap:16px;padding:0 18px}.brand img{width:205px}.utility span{display:none}.identity{display:none}.nav{padding:0 12px;gap:2px}.catalogue-entry{min-width:108px;margin-right:9px;padding-left:6px;font-size:12px}.catalogue-entry:after{left:6px}.navbtn{font-size:12px;padding:0 8px}}
     @media(max-width:750px){
       body{overflow-x:hidden}
       .top{height:96px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:46px 42px;gap:2px 8px;padding:4px 10px}
       .brand{grid-column:1;grid-row:1}.brand img{width:min(172px,100%);max-height:42px}.brand-fallback{font-size:20px}
       .search{grid-column:1/-1;grid-row:2;height:38px;padding:0 11px;border-radius:7px}.search input{height:36px;font-size:13px}.search svg{width:17px;height:17px}
       .utilities{grid-column:2;grid-row:1;gap:2px}.utility{width:34px;height:34px;padding:0;justify-content:center}.utility span{display:none}.utility svg{width:18px;height:18px}.utility.usd{height:34px;padding:0 8px;font-size:12px}.identity{display:none}
-      .nav{height:49px;display:flex;gap:2px;padding:0 7px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;padding:0 10px;font-size:11px}.navbtn:after{left:10px;right:10px;height:2px}
+      .nav{height:49px;display:flex;gap:2px;padding:0 7px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.catalogue-entry{flex:0 0 auto;min-width:96px;margin-right:7px;padding-left:6px;font-size:11px}.catalogue-entry:before{top:15px;height:18px}.catalogue-entry:after{left:6px;right:16px;height:2px}.navbtn{flex:0 0 auto;padding:0 10px;font-size:11px}.navbtn:after{left:10px;right:10px;height:2px}
     }
     @media(max-width:390px){.brand img{width:min(150px,100%)}.utility.usd{padding:0 6px}.utilities{gap:0}}
   </style>
@@ -51,6 +51,7 @@
       </div>
     </div>
     <nav class="nav" aria-label="Catalogue categories">
+      <button class="catalogue-entry" id="catalogueAll" type="button" aria-label="Show all catalogue products">CATALOGUE</button>
       <button class="navbtn" data-key="FOOD" type="button"><span>Food &amp; Beverages</span></button>
       <button class="navbtn" data-key="HOUSEHOLDS" type="button"><span>Household &amp; Cleaning</span></button>
       <button class="navbtn" data-key="PERSONAL CARE" type="button"><span>Personal Care &amp; Health</span></button>
@@ -72,6 +73,7 @@
     document.getElementById('catalogueSearch').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';post('catalogueSearch',{query:''});e.target.blur()}});
     document.getElementById('account').onclick=()=>post('catalogueAccount');
     document.getElementById('buyerRoom').onclick=()=>post('catalogueBuyerRoom');
+    document.getElementById('catalogueAll').onclick=()=>{active='';paint();post('catalogueAll')};
     document.getElementById('brandLogo').onerror=()=>{document.getElementById('brandLogo').style.display='none';document.getElementById('brandFallback').style.display='block'};
     window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer'}});
   </script>
