@@ -27,7 +27,7 @@
     .metrics{display:grid;gap:11px}.metric{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px}.metric i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--surface);font-style:normal}.metric span{font-size:13px;color:#3e4c65}.metric b{color:var(--navy);font-size:14px}.selection-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px}
     .buyer{padding:21px;background:#fff;border-color:var(--line)}.buyer h2{font-size:21px}.buyer p{margin:8px 0 15px}.buyer ul{display:grid;gap:9px;margin:0 0 18px;padding:0;list-style:none;color:#3e4c65;font-size:13px}.buyer li:before{content:"✓";display:inline-grid;place-items:center;width:20px;height:20px;margin-right:8px;border-radius:50%;background:#eef3ff;color:var(--navy);font-weight:900}
     .cta{width:100%;height:46px;border:0;border-radius:9px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}.cta:hover{background:var(--navy2)}
-    @media(max-width:767px){.rail{padding:0}.brands,.promo{display:none}.card.summary{border-radius:12px}.buyer{display:none}}
+    @media(max-width:767px){.rail{padding:0}.featured,.promo{display:none}.card.summary{border-radius:12px}.buyer{display:none}}
   </style>
 </head>
 <body>
@@ -54,7 +54,7 @@
       <button class="cta" id="buyerCta">Enter Buyer Room →</button>
     </section>
 
-    <section class="card pad" aria-labelledby="brandsTitle">
+    <section class="card pad featured" aria-labelledby="brandsTitle">
       <div class="brands-head"><div><p class="eyebrow">Trusted selection</p><h2 id="brandsTitle">Featured Brands</h2></div><span>View all</span></div>
       <div class="brands" id="brands"></div>
     </section>
