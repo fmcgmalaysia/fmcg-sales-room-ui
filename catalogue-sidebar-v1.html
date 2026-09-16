@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{--navy:#0b2f4f;--navy2:#123f66;--orange:#f4512a;--ink:#172334;--muted:#697789;--line:#e5ebf1;--surface:#f6f8fb;--white:#fff;--radius:16px}
+    *{box-sizing:border-box}body{margin:0;background:transparent;color:var(--ink);font-family:Inter,Arial,sans-serif}
+    .rail{display:grid;gap:16px;padding:20px 14px 28px}
+    .card{overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--white);box-shadow:0 10px 28px rgba(11,47,79,.07)}
+    .pad{padding:18px}.eyebrow{margin:0 0 5px;color:var(--orange);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+    h2{margin:0;color:var(--navy);font-size:18px;line-height:1.15}p{margin:0;color:var(--muted);font-size:12px;line-height:1.55}
+    .brands-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:14px}.brands-head span{color:var(--muted);font-size:10px}
+    .brands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.brand{display:grid;place-items:center;min-height:56px;padding:7px;border:1px solid #edf1f5;border-radius:11px;background:#fff;color:#33445a;font-size:10px;font-weight:800;text-align:center}
+    .brand img{width:100%;height:35px;object-fit:contain}.brand.is-empty{background:linear-gradient(135deg,#f8fafc,#eef3f7);color:#8b98a7}
+    .promo{position:relative;min-height:202px;background:linear-gradient(145deg,#0a2b49,#174d77);color:#fff}.slides{display:grid}.slide{display:none;min-height:202px;padding:20px}.slide.active{display:flex;flex-direction:column;justify-content:flex-end}
+    .slide:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 82% 18%,rgba(244,81,42,.34),transparent 34%);pointer-events:none}
+    .promo-icon{position:relative;width:38px;height:38px;margin-bottom:auto;border:1px solid rgba(255,255,255,.25);border-radius:12px;display:grid;place-items:center;font-size:19px;background:rgba(255,255,255,.08)}
+    .slide h3{position:relative;margin:0 0 7px;font-size:18px;line-height:1.16}.slide p{position:relative;color:#dbe8f3}.dots{position:absolute;top:18px;right:18px;display:flex;gap:5px}.dot{width:5px;height:5px;border:0;border-radius:50%;padding:0;background:rgba(255,255,255,.35)}.dot.active{width:16px;border-radius:9px;background:var(--orange)}
+    .summary-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}.count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border-radius:10px;background:#fff0eb;color:var(--orange);font-weight:850}
+    .metrics{display:grid;gap:9px}.metric{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:9px}.metric i{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--surface);font-style:normal}.metric span{font-size:11px;color:#4d5b6d}.metric b{color:var(--navy);font-size:13px}
+    .buyer{padding:19px;background:linear-gradient(150deg,#fff7f3,#fff);border-color:#ffd8ca}.buyer h2{font-size:19px}.buyer p{margin:8px 0 15px}.buyer ul{display:grid;gap:7px;margin:0 0 16px;padding:0;list-style:none;color:#425268;font-size:11px}.buyer li:before{content:"✓";display:inline-grid;place-items:center;width:18px;height:18px;margin-right:7px;border-radius:50%;background:#e8f5ee;color:#16804a;font-weight:900}
+    .cta{width:100%;height:44px;border:0;border-radius:11px;background:var(--orange);color:#fff;font-weight:850;letter-spacing:.01em;cursor:pointer;box-shadow:0 9px 20px rgba(244,81,42,.25)}.cta:hover{background:#dc411e}
+    @media(max-width:767px){.rail{padding:0}.brands,.promo{display:none}.card.summary{border-radius:12px}.buyer{display:none}}
+  </style>
+</head>
+<body>
+  <aside class="rail" aria-label="Catalogue tools">
+    <section class="card pad" aria-labelledby="brandsTitle">
+      <div class="brands-head"><div><p class="eyebrow">Trusted selection</p><h2 id="brandsTitle">Featured Brands</h2></div><span>View all</span></div>
+      <div class="brands" id="brands"></div>
+    </section>
+
+    <section class="card promo" aria-label="Export advantages">
+      <div class="dots" id="dots"></div>
+      <div class="slides" id="slides">
+        <article class="slide active"><div class="promo-icon">🌍</div><h3>From Malaysia to Markets Worldwide</h3><p>Export-ready FMCG sourcing with reliable consolidation and global shipment support.</p></article>
+        <article class="slide"><div class="promo-icon">📦</div><h3>Build a Container Around Your Market</h3><p>Mix up to 200 different products in one container—tailored to local demand.</p></article>
+        <article class="slide"><div class="promo-icon">📈</div><h3>Wholesale Pricing Built to Compete</h3><p>Commercially sharp pricing designed to protect your margin and grow repeat sales.</p></article>
+      </div>
+    </section>
+
+    <section class="card pad summary" aria-labelledby="summaryTitle">
+      <div class="summary-title"><div><p class="eyebrow">My selection</p><h2 id="summaryTitle">Order Snapshot</h2></div><div class="count" id="total">0</div></div>
+      <div class="metrics" id="metrics"></div>
+    </section>
+
+    <section class="card buyer" aria-labelledby="buyerTitle">
+      <p class="eyebrow">Private workspace</p><h2 id="buyerTitle">Your Buyer Room</h2>
+      <p>Move from browsing to procurement in one secure workspace.</p>
+      <ul><li>View VIP buyer pricing</li><li>Edit and consolidate orders</li><li>Track sourcing progress</li></ul>
+      <button class="cta" id="buyerCta">Enter Buyer Room →</button>
+    </section>
+  </aside>
+  <script>
+    const fallbackBrands=['Mentos','Chupa Chups','Systema','Kodomo','Zact','Julie’s','Mamee','Beryl’s','Kopiko','Vochelle','BOH','Spritzer'];
+    let state={brands:fallbackBrands.map(name=>({name})),counts:{food:0,household:0,personalCare:0,general:0}};
+    const metricDefs=[['🍴','Food & Beverages','food'],['🧴','Household & Cleaning','household'],['✦','Personal Care & Health','personalCare'],['◇','General Merchandise','general']];
+    function render(){
+      document.querySelector('#brands').innerHTML=state.brands.slice(0,12).map(b=>`<div class="brand ${b.logo?'':'is-empty'}">${b.logo?`<img src="${b.logo}" alt="${b.name||'Featured brand'}">`:(b.name||'Brand')}</div>`).join('');
+      document.querySelector('#metrics').innerHTML=metricDefs.map(([icon,label,key])=>`<div class="metric"><i>${icon}</i><span>${label}</span><b>${Number(state.counts[key]||0)}</b></div>`).join('');
+      document.querySelector('#total').textContent=Object.values(state.counts).reduce((a,b)=>a+Number(b||0),0);
+    }
+    const slides=[...document.querySelectorAll('.slide')],dots=document.querySelector('#dots');let active=0;
+    slides.forEach((_,i)=>{const b=document.createElement('button');b.className='dot'+(i===0?' active':'');b.setAttribute('aria-label',`Show export advantage ${i+1}`);b.onclick=()=>show(i);dots.appendChild(b)});
+    function show(i){active=i;slides.forEach((s,n)=>s.classList.toggle('active',n===i));[...dots.children].forEach((d,n)=>d.classList.toggle('active',n===i))}
+    setInterval(()=>show((active+1)%slides.length),5200);
+    window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='SIDEBAR_DATA'){state={...state,...m.payload,counts:{...state.counts,...(m.payload?.counts||{})}};render()}});
+    document.querySelector('#buyerCta').onclick=()=>parent.postMessage({type:'OPEN_BUYER_ROOM'},'*');
+    render();
+  </script>
+</body>
+</html>
