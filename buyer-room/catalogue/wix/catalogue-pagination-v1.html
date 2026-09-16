@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;background:transparent;font-family:'Wix Madefor Text',sans-serif}
+    body{display:flex;align-items:center;justify-content:center}
+    .pager{display:flex;align-items:center;justify-content:center;gap:6px}
+    .pager button{width:36px;height:36px;border:1px solid #dce2ed;border-radius:6px;padding:0;background:#fff;color:#18325c;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease}
+    .pager button:hover:not(:disabled),.pager button:focus-visible{border-color:#0a239a;color:#0a239a;background:#f6f8ff}
+    .pager button.active{border-color:#0a239a;background:#0a239a;color:#fff}
+    .pager button.nav{font-size:21px;font-weight:400;line-height:1}
+    .pager button:disabled{opacity:.38;cursor:default}
+    @media(prefers-reduced-motion:reduce){.pager button{transition:none}}
+  </style>
+</head>
+<body>
+  <nav id="pager" class="pager" aria-label="Catalogue pages"></nav>
+  <script>
+    let current=1,total=1;
+    const root=document.getElementById('pager');
+    const send=(action,page)=>parent.postMessage({type:'catalogue:page',action,page},'*');
+    function make(label,{action='page',page=0,disabled=false,aria=String(label),nav=false}={}){
+      const button=document.createElement('button');
+      button.type='button';button.textContent=label;button.disabled=disabled;
+      if(nav)button.classList.add('nav');
+      if(page===current&&!nav)button.classList.add('active');
+      button.setAttribute('aria-label',aria);
+      button.onclick=()=>send(action,page);
+      return button;
+    }
+    function render(){
+      root.replaceChildren();
+      root.appendChild(make('‹',{action:'prev',disabled:current<=1,aria:'Previous page',nav:true}));
+      const start=Math.max(1,Math.min(current-2,total-4));
+      const end=Math.min(total,start+4);
+      for(let page=start;page<=end;page++)root.appendChild(make(String(page),{page,aria:`Page ${page}`}));
+      root.appendChild(make('›',{action:'next',disabled:current>=total,aria:'Next page',nav:true}));
+    }
+    window.addEventListener('message',event=>{
+      const data=event.data||{};
+      if(data.type!=='catalogue:update')return;
+      total=Math.max(1,Number(data.totalPages)||1);
+      current=Math.max(1,Math.min(Number(data.currentPage)||1,total));
+      render();
+    });
+    render();
+    parent.postMessage({type:'catalogue:ready'},'*');
+  </script>
+</body>
+</html>
