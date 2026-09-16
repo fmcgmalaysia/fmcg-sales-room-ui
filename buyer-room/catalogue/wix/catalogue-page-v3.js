@@ -243,10 +243,6 @@ function setupNav() {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSearch') {
             await applySearch(message.query);
-        } else if (message.type === 'catalogueAll') {
-            await hideMenu();
-            nativeSearch.value = '';
-            await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await authentication.logout();
             wixLocationFrontend.to('/');
@@ -293,7 +289,7 @@ function setupNav() {
     });
 
     mega.collapse();
-    dataset.onReady(() => dataset.setPageSize(48));
+    dataset.onReady(() => dataset.setPageSize(30));
     loadMenuData();
     logoLoadPromise = loadPrincipleLogos();
     setInterval(async () => {
