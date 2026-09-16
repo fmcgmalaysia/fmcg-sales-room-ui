@@ -1,13 +1,14 @@
 # FMCG Malaysia web interfaces
 
-This repository contains two separate workspaces. Its historical name, `fmcg-sales-room-ui`, does **not** mean that Buyer Room or Catalogue belongs to Sales Room.
+This repository contains two separate workspaces. Its historical GitHub name, `fmcg-sales-room-ui`, does **not** mean that Buyer Room or Catalogue changes belong to Sales Room.
 
-| Area | Audience | Current GitHub files |
+| Area | Audience and purpose | Source / existing entry point |
 | --- | --- | --- |
-| Sales Room | Internal sales team | [`index.html`](index.html) |
-| Buyer Room | Approved buyers | [`buyer-room.html`](buyer-room.html), [`buyer-login.html`](buyer-login.html) |
-| Buyer Room / Catalogue | Buyer-facing product discovery | Draft Wix sources in [`wix/`](wix/), Catalogue banner and logo files in [`assets/`](assets/) |
+| [Sales Room](sales-room/README.md) | Internal sales and customer operations | Root `index.html` (existing public URL preserved) |
+| [Buyer Room](buyer-room/README.md) | Approved buyers' private procurement workspace | Root `buyer-room.html` and `buyer-login.html` (existing public URLs preserved) |
+| [Buyer Room / Catalogue](buyer-room/catalogue/README.md) | Buyer-facing product discovery and selection | `buyer-room/catalogue/wix/` for Wix Studio source; root `catalogue-sidebar-v1.html` remains a legacy compatibility file |
 
-The root HTML pages and `assets/` paths are kept in place because Wix/GitHub Pages already reference those URLs. The Catalogue work in [draft PR #1](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/1) does not modify the Sales Room page. Wix owns authentication, CMS, and publication; GitHub source alone is not a published Catalogue.
+The root `assets/` directory remains at its existing URL because both workspaces already reference files there. Each asset's ownership is listed in the area README. Do not move a root HTML page or a referenced asset merely to make the folders look tidy: that would change GitHub Pages URLs used by Wix.
 
-The local working copy has additionally grouped the Catalogue Wix sources under `buyer-room/catalogue/wix/`. That source-folder move has **not yet been synchronized to this GitHub branch**; use the current links above when browsing GitHub. Do not merge or publish the draft as a finished Catalogue.
+Wix owns authentication, product CMS, access controls, and publication. Source files here are **not** the live Catalogue until explicitly applied and published in Wix Studio. No Catalogue change should be treated as a Sales Room change.
+
