@@ -171,6 +171,7 @@ function setupNav() {
     const header = $w('#html3');
     const mega = $w('#html4');
     const dataset = $w('#dataset1');
+    const nativeSearch = $w('#input1');
     let activeMain = 'FOOD';
     let isOpen = false;
     let lastScrollY = 0;
@@ -198,12 +199,21 @@ function setupNav() {
         try {
             if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
             const subResult = await wixData.query('subCategories').contains('title', query).limit(100).find();
-            let filter = wixData.filter().contains('name', query);
+            let filter = wixData.filter().contains('name', query)
+                .or(wixData.filter().contains('principle', query));
             const ids = subResult.items.map(item => item._id).filter(Boolean);
             if (ids.length) filter = filter.or(wixData.filter().hasSome('subCategories', ids));
             await dataset.setFilter(filter);
         } catch (error) { console.error('Catalogue search failed', error); }
     };
+
+    // The search control is a Wix element in the same section as the header.
+    // It filters the existing CMS-backed catalogue without relying on iframe sizing.
+    let searchTimer;
+    nativeSearch.onInput(() => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => applySearch(nativeSearch.value), 240);
+    });
 
     const applyMainCategory = async (main) => {
         const items = catalogueMenuMessage && Array.isArray(catalogueMenuMessage.items)
