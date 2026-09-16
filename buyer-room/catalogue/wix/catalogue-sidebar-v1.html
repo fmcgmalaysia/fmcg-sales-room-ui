@@ -9,23 +9,23 @@
   <style>
     :root{--navy:#0a239a;--navy2:#17368c;--orange:#f36a3d;--ink:#172b4a;--muted:#64738a;--line:#e4e9f2;--surface:#f4f6fb;--white:#fff;--radius:15px}
     *{box-sizing:border-box}body{margin:0;background:transparent;color:var(--ink);font-family:'Wix Madefor Text',Arial,sans-serif}
-    button{font:inherit}h2,h3{font-family:'Wix Madefor Display','Wix Madefor Text',Arial,sans-serif}
+    button{font:inherit}h2,h3{font-family:'Wix Madefor Text',Arial,sans-serif}
     .rail{display:grid;gap:16px;padding:20px 14px 28px;background:var(--surface)}
     .card{overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--white);box-shadow:0 7px 22px rgba(10,35,154,.045)}
-    .pad{padding:20px}.eyebrow{margin:0 0 6px;color:#b94623;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-    h2{margin:0;color:var(--ink);font-size:20px;line-height:1.18}p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+    .pad{padding:20px}.eyebrow{margin:0 0 6px;color:#b94623;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    h2{margin:0;color:var(--ink);font-size:21px;line-height:1.25}p{margin:0;color:var(--muted);font-size:15px;line-height:1.5}
     .brands-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:15px}.brands-head span{color:var(--muted);font-size:12px}
-    .brands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.brand{display:grid;place-items:center;min-height:62px;padding:7px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#33445a;font-size:12px;font-weight:700;text-align:center}
+    .brands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.brand{display:grid;place-items:center;min-height:62px;padding:7px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#33445a;font-size:13px;font-weight:700;text-align:center}
     .brand img{width:100%;height:40px;object-fit:contain}.brand.is-empty{background:#fafbfe;color:#52627b}
     .promo{position:relative;height:312px;border:0;background:var(--navy);color:#fff}.slides,.slide{height:100%}.slide{position:relative;display:none;flex-direction:column;justify-content:flex-end;padding:23px;background-size:cover;background-position:center}
     .slide.active{display:flex}.slide:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,59,.06) 5%,rgba(4,16,59,.42) 48%,rgba(3,14,48,.94) 100%);pointer-events:none}
     .slide.shipping{background-image:url('https://raw.githubusercontent.com/fmcgmalaysia/fmcg-sales-room-ui/catalogue-zus-blue-refresh/assets/banner-global-shipping.webp')}.slide.container{background-image:url('https://raw.githubusercontent.com/fmcgmalaysia/fmcg-sales-room-ui/catalogue-zus-blue-refresh/assets/banner-mixed-container.webp')}.slide.pricing{background-image:url('https://raw.githubusercontent.com/fmcgmalaysia/fmcg-sales-room-ui/catalogue-zus-blue-refresh/assets/banner-wholesale-value.webp')}
     .slide-kicker,.slide h3,.slide p{position:relative;z-index:1}.slide-kicker{margin-bottom:7px;color:#ffd8c9;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    .slide h3{margin:0 0 8px;color:#fff;font-size:21px;line-height:1.16}.slide p{max-width:32ch;color:#f3f6ff;font-size:13px;line-height:1.42}
+    .slide h3{margin:0 0 8px;color:#fff;font-size:21px;line-height:1.2}.slide p{max-width:32ch;color:#f3f6ff;font-size:14px;line-height:1.42}
     .dots{position:absolute;z-index:2;top:17px;right:17px;display:flex;gap:7px}.dot{width:7px;height:7px;border:0;border-radius:50%;padding:0;background:rgba(255,255,255,.55);cursor:pointer}.dot.active{width:19px;border-radius:9px;background:var(--orange)}
     .summary-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.count{display:grid;place-items:center;min-width:35px;height:35px;padding:0 8px;border-radius:9px;background:#fff0e9;color:#a63b1c;font-weight:800}
-    .metrics{display:grid;gap:11px}.metric{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px}.metric i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--surface);font-style:normal}.metric span{font-size:13px;color:#3e4c65}.metric b{color:var(--navy);font-size:14px}.selection-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px}
-    .buyer{padding:21px;background:#fff;border-color:var(--line)}.buyer h2{font-size:21px}.buyer p{margin:8px 0 15px}.buyer ul{display:grid;gap:9px;margin:0 0 18px;padding:0;list-style:none;color:#3e4c65;font-size:13px}.buyer li:before{content:"✓";display:inline-grid;place-items:center;width:20px;height:20px;margin-right:8px;border-radius:50%;background:#eef3ff;color:var(--navy);font-weight:900}
+    .metrics{display:grid;gap:11px}.metric{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px}.metric i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--surface);color:var(--navy);font-style:normal}.metric i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.metric span{font-size:14px;color:#3e4c65}.metric b{color:var(--navy);font-size:15px}.selection-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}
+    .buyer{padding:21px;background:#fff;border-color:var(--line)}.buyer h2{font-size:21px}.buyer p{margin:8px 0 15px}.buyer ul{display:grid;gap:9px;margin:0 0 18px;padding:0;list-style:none;color:#3e4c65;font-size:14px}.buyer li:before{content:"✓";display:inline-grid;place-items:center;width:20px;height:20px;margin-right:8px;border-radius:50%;background:#eef3ff;color:var(--navy);font-weight:900}
     .cta{width:100%;height:46px;border:0;border-radius:9px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}.cta:hover{background:var(--navy2)}
   </style>
 </head>
@@ -61,7 +61,12 @@
   <script>
     const fallbackBrands=['Mentos','Chupa Chups','Systema','Kodomo','Zact','Julie’s','Mamee','Beryl’s','Kopiko','Vochelle','BOH','Spritzer'];
     let state={brands:fallbackBrands.map(name=>({name})),counts:null};
-    const metricDefs=[['🍴','Food & Beverages','food'],['🧴','Household & Cleaning','household'],['✦','Personal Care & Health','personalCare'],['◇','General Merchandise','general']];
+    const metricDefs=[
+      ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v8M7 3v8M10 3v8M4 11h6M7 11v10M17 21V3c2 2 3 5 3 8v4h-3"/></svg>','Food & Beverages','food'],
+      ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v4l-3 3v11h10V10l-3-3V3M7 13h10"/></svg>','Household & Cleaning','household'],
+      ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18"/></svg>','Personal Care & Health','personalCare'],
+      ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 8v9l9 5 9-5V8M12 13v9"/></svg>','General Merchandise','general']
+    ];
     function render(){
       document.querySelector('#brands').innerHTML=state.brands.slice(0,12).map(b=>`<div class="brand ${b.logo?'':'is-empty'}">${b.logo?`<img src="${b.logo}" alt="${b.name||'Featured brand'}">`:(b.name||'Brand')}</div>`).join('');
       document.querySelector('#metrics').innerHTML=metricDefs.map(([icon,label,key])=>`<div class="metric"><i>${icon}</i><span>${label}</span><b>${state.counts ? Number(state.counts[key]||0) : '—'}</b></div>`).join('');
