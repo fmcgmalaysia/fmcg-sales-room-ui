@@ -55,7 +55,7 @@ Data starts: row 6
 
 ## Working row formulas
 
-The exact formula-row implementation will be frozen after confirming whether hybrid `LP /CTN` values remain required.
+The hybrid `LP /CTN` rule is confirmed and must be identical in `WIX QUOTATION` and `DRAFT 草稿区`.
 
 ### H — LP /CTN
 
@@ -65,7 +65,7 @@ Normal case:
 =IF(OR(F6="",G6=""),"",ROUND(F6*G6,2))
 ```
 
-The legacy workflow allowed this column to contain either a formula or a static PointBase carton cost. The new CATCH COST script must preserve that distinction if it is still required.
+When Point Base `COST /PC` has a value, CATCH COST writes `LP /PC` and writes the row formula `EA × LP /PC` into `LP /CTN`. When `COST /PC` is blank, CATCH COST leaves `LP /PC` blank and writes Point Base `COST /CTN` directly into `LP /CTN`. Both QD sheets use this same rule; only `WIX QUOTATION` performs the additional COST HEALTH check.
 
 ### L — NET COST /CTN
 

@@ -279,7 +279,7 @@ function ccClassify_(matches) {
 function ccWriteCostInputs_(sheet, columns, targets, outcomes) {
   const firstRow = targets[0].row;
   if (!columns.health) {
-    const productRange = sheet.getRange(firstRow, columns.itemName, targets.length, columns.lpPc - columns.itemName + 1);
+    const productRange = sheet.getRange(firstRow, columns.itemName, targets.length, columns.lpCtn - columns.itemName + 1);
     const productValues = productRange.getValues();
     const discountRange = sheet.getRange(firstRow, columns.disc1, targets.length, columns.disc3 - columns.disc1 + 1);
     const discountValues = discountRange.getValues();
@@ -288,7 +288,10 @@ function ccWriteCostInputs_(sheet, columns, targets, outcomes) {
       if (outcome.kind !== "success") return;
       const source = outcome.source;
       productValues[index] = [source.itemName, source.packingSize, source.ea,
-        ccNumber_(source.costPc) ? source.costPc : ""];
+        ccNumber_(source.costPc) ? source.costPc : "",
+        ccNumber_(source.costPc) && ccNumber_(source.ea)
+          ? "=" + ccColumnLetter_(columns.lpPc) + target.row + "*" + ccColumnLetter_(columns.ea) + target.row
+          : source.costCtn];
       discountValues[index] = [source.disc1, source.disc2, source.disc3];
     });
     productRange.setValues(productValues);
