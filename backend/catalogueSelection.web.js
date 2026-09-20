@@ -1,8 +1,8 @@
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
-import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
+import https from 'https';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwGTMTCkdVL8voDSZ5PcD-JtFeqzvRjqbmVKAMPV43YqY1rPZcxKzE4UconsoV8gks-/exec';
 const SECRET_NAME = 'NCT_ONBOARDING_SHARED_SECRET';
@@ -302,22 +302,48 @@ function hash_(value) {
 }
 
 async function postJson_(url, payload) {
-  const first = await fetch(url, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    redirect: 'manual'
-  });
+  const json = JSON.stringify(payload);
+  const first = await nodeHttpsRequest_(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(json)
+    }
+  }, json);
   let response = first;
   if ([301, 302, 303, 307, 308].includes(first.status)) {
-    const location = first.headers.get('location');
+    const location = Array.isArray(first.headers.location)
+      ? first.headers.location[0]
+      : first.headers.location;
     if (!location) throw new Error('QD redirect location is missing.');
-    response = await fetch(location, { method: 'get' });
+    response = await nodeHttpsRequest_(new URL(location, url).toString(), {
+      method: 'GET',
+      headers: { Accept: 'application/json' }
+    });
   }
-  const text = await response.text();
+  const text = response.text;
   let body;
   try { body = JSON.parse(text || '{}'); } catch (_) { body = {}; }
-  return { ok: response.ok, status: response.status, body, text };
+  return { ok: response.status >= 200 && response.status < 300, status: response.status, body, text };
+}
+
+function nodeHttpsRequest_(url, options, body = '') {
+  return new Promise((resolve, reject) => {
+    const request = https.request(url, options, (response) => {
+      let text = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { text += chunk; });
+      response.on('end', () => resolve({
+        status: Number(response.statusCode || 0),
+        headers: response.headers || {},
+        text
+      }));
+    });
+    request.on('error', reject);
+    request.setTimeout(30000, () => request.destroy(new Error('QD service request timed out.')));
+    if (body) request.write(body);
+    request.end();
+  });
 }
 
 function memberEmail_(member) {
