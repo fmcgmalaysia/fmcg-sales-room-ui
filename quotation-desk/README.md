@@ -75,6 +75,8 @@ The Wix backend must accept the documented JSON payload and return either a succ
 
 `SpreadsheetApp.openById()` removes the `IMPORTRANGE` Allow Access step from cost refresh. The user running the menu still needs Apps Script authorization and permission to read WIX POINT BASE. A central deployment that executes as the system owner is the later production option if salespeople must not receive Point Base access.
 
+`WixSelectionService.gs` is that central production path for Catalogue selection. It validates the customer/QD relationship, performs an idempotent lookup by `WIX MY LIST ID`, reads the selected barcode from WIX POINT BASE as the deployment owner, and writes one `RFQ` row into the independent customer QD without exposing cost fields to Wix or the browser.
+
 ## Deferred high-risk quote control
 
 This is a frozen design rule for the later Wix–Google coordination phase. It is documented now but must not be added to the current QD build until the main quotation workflow is substantially complete.

@@ -59,3 +59,15 @@ Customer management uses the existing `WixCustomers` and `WixCustomerUsers` coll
 The three status dimensions are intentionally separate. Archiving never deletes the customer, QD, confirmed orders or audit history. Suspending blocks Catalogue access immediately while Buyer Room can remain available in restricted account mode. Only Admin and Super Admin can suspend, archive, restore, approve or reject reactivation.
 
 Sales Room provides four compact customer views: **Active**, **Suspended**, **Reactivation** and **Archived**. The last two views and all account-state actions are Admin-only. Every account action is written to `CustomerProfileAudit`.
+
+## Catalogue ownership boundary
+
+Buyer Room and Catalogue work is tracked under [`../buyer-room/`](../buyer-room/), not here. A Sales Room link that opens the Catalogue does not make the Catalogue part of the Sales Room UI.
+
+## Shared Catalogue selection and QD signals
+
+- `../backend/catalogueSelection.web.js` is the Wix backend boundary for both buyer selections and Sales Room-assisted selections.
+- Every company shares one selection identity per Unit Barcode, so separate authorized users cannot add the same SKU twice.
+- A successful selection is written immediately to that customer's independent QD through `../quotation-desk/WixSelectionService.gs`.
+- `../index.html` displays the aggregate My Customers notification bubble and a per-customer **Open QD** action when RFQ items are waiting.
+- The Wix Sales Room page enriches `SALES_ROOM_CUSTOMERS` with `getSalesRoomQuoteSignals()` before posting data to the embedded Sales Room UI.

@@ -6,12 +6,16 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web';
 import { getSalesRoomCustomerDetail } from 'backend/onboarding.web';
+import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
 let principleLogoMap = new Map();
 const principleCache = new Map();
 let logoLoadPromise;
+let selectionContext = null;
+let selectedProductIds = new Set();
+let selectionBusyIds = new Set();
 
 function imageUrl(value) {
     const raw = String(value || '').trim();
@@ -52,12 +56,14 @@ function sendCatalogueMenu(message) {
     try { $w('#html4').postMessage(message); } catch (error) {}
 }
 
-function setStaffProductActions(enabled) {
+function setProductActions(enabled) {
     const repeater = $w('#repeater3');
-    const updateAction = ($item) => {
+    const updateAction = ($item, itemData) => {
         try {
             if (enabled) {
-                $item('#button3').label = 'ADD TO MY LIST';
+                const selected = selectedProductIds.has(String(itemData?._id || ''));
+                $item('#button3').label = selected ? 'IN MY SELECTION' : 'ADD TO MY LIST';
+                if (selected) $item('#button3').disable(); else $item('#button3').enable();
                 $item('#button3').expand();
                 $item('#button3').show();
             } else {
@@ -67,6 +73,49 @@ function setStaffProductActions(enabled) {
     };
     repeater.onItemReady(updateAction);
     repeater.forEachItem(updateAction);
+}
+
+function sidebarSelectionState(state) {
+    try { $w('#html5').postMessage({ type: 'SIDEBAR_DATA', payload: { counts: state?.counts || { food: 0, household: 0, personalCare: 0, general: 0 } } }); } catch (error) {}
+}
+
+async function loadSelectionState(assistCustomerId = '') {
+    const state = await getCatalogueSelectionState(assistCustomerId);
+    selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+    sidebarSelectionState(state);
+    setProductActions(true);
+    return state;
+}
+
+function setupSelectionActions() {
+    const repeater = $w('#repeater3');
+    const configure = ($item, itemData) => {
+        const button = $item('#button3');
+        button.onClick(async () => {
+            const productId = String(itemData?._id || '');
+            if (!selectionContext || !productId || selectedProductIds.has(productId) || selectionBusyIds.has(productId)) return;
+            selectionBusyIds.add(productId);
+            button.label = 'ADDING…';
+            button.disable();
+            try {
+                const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
+                if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
+                if (result?.ok) selectedProductIds.add(productId);
+                button.label = 'IN MY SELECTION';
+                const state = await getCatalogueSelectionState(selectionContext.assistCustomerId || '');
+                selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+                sidebarSelectionState(state);
+            } catch (error) {
+                console.error('Catalogue selection failed', error);
+                button.label = 'TRY AGAIN';
+                button.enable();
+            } finally {
+                selectionBusyIds.delete(productId);
+            }
+        });
+    };
+    repeater.onItemReady(configure);
+    repeater.forEachItem(configure);
 }
 
 $w.onReady(async () => {
@@ -81,7 +130,8 @@ $w.onReady(async () => {
                 const response = await getSalesRoomCustomerDetail(assistCustomerId);
                 const customer = response?.customer || {};
                 session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
-                setStaffProductActions(true);
+                selectionContext = { mode: 'assist', assistCustomerId: customer.customerId || assistCustomerId };
+                await loadSelectionState(selectionContext.assistCustomerId);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: 'assist',
                     sheetName: String(customer.qdSheetName || '').trim(),
@@ -94,13 +144,25 @@ $w.onReady(async () => {
             }
         } else {
             session.removeItem('catalogueAssistCustomerId');
-            setStaffProductActions(false);
+            selectionContext = null;
+            setProductActions(false);
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
     }
 
-    if (!hasBuyerAccess) wixLocationFrontend.to('/');
+    if (!hasBuyerAccess && wixWindowFrontend.viewMode === 'Site') { wixLocationFrontend.to('/'); return; }
+    if (hasBuyerAccess) {
+        try {
+            selectionContext = { mode: 'buyer', assistCustomerId: '' };
+            await loadSelectionState('');
+            sendCatalogueContext({ type: 'catalogueContext', mode: 'buyer', signedInName: 'Buyer' });
+        } catch (error) {
+            selectionContext = null;
+            setProductActions(false);
+            if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to('/buyer-room');
+        }
+    }
 });
 
 const DEFAULT_PLACEHOLDER_MEDIA_ID = '55d98a_3287270d83ef4efabfdd1f52d0dc6ec2';
@@ -171,7 +233,8 @@ function setupNav() {
     const header = $w('#html3');
     const mega = $w('#html4');
     const dataset = $w('#dataset1');
-    const nativeSearch = $w('#input1');
+    let nativeSearch;
+    try { nativeSearch = $w('#input1'); } catch (error) { nativeSearch = null; }
     let activeMain = 'FOOD';
     let isOpen = false;
     let lastScrollY = 0;
@@ -180,9 +243,14 @@ function setupNav() {
     const showMenu = async (main = activeMain) => {
         clearTimeout(leaveTimer);
         activeMain = main;
-        mega.postMessage({ type: 'showMain', main: activeMain });
         if (!isOpen) await mega.expand();
         isOpen = true;
+        mega.postMessage({ type: 'showMain', main: activeMain });
+        setTimeout(() => {
+            if (!isOpen) return;
+            if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
+            mega.postMessage({ type: 'showMain', main: activeMain });
+        }, 250);
         header.postMessage({ type: 'megaState', open: true, main: activeMain });
     };
 
@@ -210,7 +278,7 @@ function setupNav() {
     // The search control is a Wix element in the same section as the header.
     // It filters the existing CMS-backed catalogue without relying on iframe sizing.
     let searchTimer;
-    nativeSearch.onInput(() => {
+    if (nativeSearch) nativeSearch.onInput(() => {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => applySearch(nativeSearch.value), 240);
     });
@@ -243,6 +311,10 @@ function setupNav() {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSearch') {
             await applySearch(message.query);
+        } else if (message.type === 'catalogueAll') {
+            await hideMenu();
+            if (nativeSearch) nativeSearch.value = '';
+            await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await authentication.logout();
             wixLocationFrontend.to('/');
@@ -255,6 +327,7 @@ function setupNav() {
         const message = event.data || {};
         if (message.type === 'catalogueMegaReady') {
             if (catalogueMenuMessage) mega.postMessage(catalogueMenuMessage);
+            if (isOpen) mega.postMessage({ type: 'showMain', main: activeMain });
         } else if (message.type === 'catalogueRequestPrinciples') {
             try {
                 const items = await getPrinciplesForSub(message.id);
@@ -307,6 +380,7 @@ function setupSidebar() {
 }
 
 $w.onReady(() => {
+    setupSelectionActions();
     connectCardToLightbox('#repeater3', '#box17', '#button3', '#text16', '#imageX3');
     setupCataloguePagination();
     setupNav();
