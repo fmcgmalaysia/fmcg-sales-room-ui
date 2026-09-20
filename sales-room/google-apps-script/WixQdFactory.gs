@@ -230,9 +230,12 @@ function WIX_spreadsheetMetadataValue_(spreadsheet, key) {
 }
 
 function WIX_qdFileName_(companyName, customerId) {
-  return ('QD - ' + companyName + ' - ' + customerId)
-    .replace(/[\\:*?"<>|]/g, ' ')
-    .replace(/\//g, ' ')
+  const rawName = 'QD - ' + companyName + ' - ' + customerId;
+  const forbidden = '\\/:*?"<>|';
+  return rawName
+    .split('')
+    .map(function (ch) { return forbidden.indexOf(ch) >= 0 ? ' ' : ch; })
+    .join('')
     .replace(/\s+/g, ' ')
     .trim();
 }

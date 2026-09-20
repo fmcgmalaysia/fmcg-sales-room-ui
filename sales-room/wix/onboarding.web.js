@@ -4,7 +4,7 @@ import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
 
-const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxv2gchSDxbWxMdycz04XOKH8ONhhET0UPGgHM_buD-4wqaXbcboi6hnj1tMbu3wihc/exec';
+const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwGTMTCkdVL8voDSZ5PcD-JtFeqzvRjqbmVKAMPV43YqY1rPZcxKzE4UconsoV8gks-/exec';
 const SECRET_NAME = 'NCT_ONBOARDING_SHARED_SECRET';
 
 const STAFF_COLLECTION = 'StaffMaster';
@@ -1309,5 +1309,4 @@ export const getSalesRoomActivityForAdmin = webMethod(
     return Object.freeze({ ok: true, window, summaries, events });
   }
 );
-
 
