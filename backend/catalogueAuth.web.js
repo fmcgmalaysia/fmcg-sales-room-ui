@@ -141,8 +141,13 @@ async function workspaceItems(customerId) {
   const resolvedBarcodes = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
   const barcodeProducts = await productsByBarcodes(barcodes.filter(barcode => !resolvedBarcodes.has(barcode)));
   products.push(...barcodeProducts);
-  const byProductId = new Map(products.map(product => [normalize(product._id), product]));
-  const byBarcode = new Map(products.map(product => [normalize(product.barcode), product]).filter(([barcode]) => barcode));
+  const byProductId = new Map();
+  const byBarcode = new Map();
+  products.forEach(product => {
+    byProductId.set(normalize(product._id), product);
+    const barcode = normalize(product.barcode);
+    if (barcode) byBarcode.set(barcode, product);
+  });
   return rows.map(({ record, data }) => {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
