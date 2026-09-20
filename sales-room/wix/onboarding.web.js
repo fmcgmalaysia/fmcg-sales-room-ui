@@ -352,7 +352,9 @@ export const getSalesRoomCustomersOperational = webMethod(
       if (item.removed) continue;
       const customerId = normalize(item.customerId);
       if (!customerId) continue;
-      const status = upper(item.quoteStatus || (money(item.vipPriceCtn || item.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ'));
+      // Quote counts represent formally released QD rows, never merely a
+      // non-zero price left in storage.
+      const status = upper(item.quoteStatus || 'RFQ');
       const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0 };
       if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
       if (status === 'RFQ' || status === 'FAILED') current.awaiting += 1;

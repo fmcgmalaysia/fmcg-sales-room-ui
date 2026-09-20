@@ -158,8 +158,10 @@ async function workspaceItems(customerId) {
       ea: money(data.ea || product.ea), cbmPerCtn: money(data.cbmPerCtn || product.cbmPerCtn || product.cbm),
       normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
-      quoteStatus: upper(data.quoteStatus || (money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ')),
-      quoteActive: upper(data.quoteStatus || (money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ')) === 'VIEW QUOTE',
+      // A stored price is not a released quotation. Only the QD sync endpoint is
+      // allowed to promote an item to VIEW QUOTE.
+      quoteStatus: upper(data.quoteStatus || 'RFQ'),
+      quoteActive: upper(data.quoteStatus || 'RFQ') === 'VIEW QUOTE',
       addedTime: data.addedTime || data.selectedAt || record._createdDate || '', lastEditedBy: normalize(data.lastEditedBy || data.selectedByName)
     };
   });

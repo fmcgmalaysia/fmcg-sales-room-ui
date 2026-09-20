@@ -110,9 +110,9 @@ function onOpen() {
 
 
 /**
- * Protects the three-state workflow at edit time.
- * VIEW QUOTE is only a salesperson's sync selection. It is not proof that Wix
- * already received the quote. The sync command makes that distinction explicit.
+ * Protects the three-state workflow without overwriting the salesperson's
+ * dropdown choice. VIEW QUOTE is a deliberate sync selection; validation is
+ * enforced by the sync command, not by silently changing the cell back to RFQ.
  */
 function onEdit(e) {
   if (!e || !e.range) return;
@@ -137,8 +137,8 @@ function onEdit(e) {
 
   const statusCol = getHeaderCol_(headers, QD_CFG.HEADERS.QUOTE_STATUS);
   const barcodeCol = getHeaderCol_(headers, QD_CFG.HEADERS.BARCODE);
-  const touchesStatus = rangeTouchesColumn_(e.range, statusCol);
   const touchesBarcode = rangeTouchesColumn_(e.range, barcodeCol);
+  const touchesStatus = rangeTouchesColumn_(e.range, statusCol);
   if (!touchesStatus && !touchesBarcode) return;
 
   const rowCount = lastRow - firstRow + 1;
@@ -177,8 +177,8 @@ function onEdit(e) {
         notes.push([""]);
       } else {
         blockedCount++;
-        output.push([QD_CFG.STATUS.RFQ]);
-        notes.push(["VIEW QUOTE blocked: " + validation.errors.join("; ")]);
+        output.push([QD_CFG.STATUS.VIEW]);
+        notes.push(["VIEW QUOTE is selected but not ready to sync: " + validation.errors.join("; ")]);
       }
       continue;
     }
@@ -193,8 +193,8 @@ function onEdit(e) {
 
   if (blockedCount) {
     SpreadsheetApp.getActive().toast(
-      blockedCount + " row(s) were reset to RFQ. Check the note in QUOTE STATUS.",
-      "VIEW QUOTE BLOCKED",
+      blockedCount + " row(s) remain VIEW QUOTE but are not ready to sync. Check the cell note.",
+      "VIEW QUOTE NEEDS ATTENTION",
       8
     );
   }

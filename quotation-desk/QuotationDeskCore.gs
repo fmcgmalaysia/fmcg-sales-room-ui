@@ -12,7 +12,10 @@ const QD_TOOLS_CFG = Object.freeze({
   DATA_END_ROW: 3003
 });
 
-function onOpen() {
+// Kept as an explicit helper for older installations. The only live onOpen
+// trigger is in QuotationDeskToolsV3.gs so the SYNC command cannot be hidden by
+// a duplicate global function name.
+function qdCoreInstallLegacyMenu_() {
   SpreadsheetApp.getUi()
     .createMenu("必用工具")
     .addItem("SORT CURRENT SHEET BY SORT NO.", "sortCurrentQuotationDeskBySortId")
@@ -20,7 +23,9 @@ function onOpen() {
     .addToUi();
 }
 
-function onEdit(e) {
+// QuotationDeskToolsV3.gs owns the live onEdit trigger and delegates cost
+// recalculation to ccHandleCostEdit_.
+function qdCoreHandleCostEdit_(e) {
   ccHandleCostEdit_(e);
 }
 
