@@ -1,7 +1,8 @@
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
-import { fetch } from 'wix-fetch';import { request as httpsRequest } from 'https';
+import { fetch } from 'wix-fetch';
+import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwGTMTCkdVL8voDSZ5PcD-JtFeqzvRjqbmVKAMPV43YqY1rPZcxKzE4UconsoV8gks-/exec';
@@ -14,6 +15,10 @@ const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const PROFILE_AUDIT_COLLECTION = 'CustomerProfileAudit';
 const USER_AUDIT_COLLECTION = 'CustomerUserAudit';
 const ASSIGNMENT_AUDIT_COLLECTION = 'CustomerAssignmentAudit';
+const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
+const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
+const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
+const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 
 const BUSINESS_TYPES = Object.freeze([
   'WHOLESALE',
@@ -308,6 +313,187 @@ export const getSalesRoomCustomers = webMethod(
       },
       customers
     });
+  }
+);
+
+export const getSalesRoomCustomersOperational = webMethod(
+  Permissions.SiteMember,
+  async () => {
+    const base = await getSalesRoomCustomers();
+    const [listRows, orderRows] = await Promise.all([
+      readPayloadRows(BUYER_LIST_COLLECTION),
+      readPayloadRows(BUYER_ORDER_COLLECTION)
+    ]);
+
+    const quoteByCustomer = new Map();
+    for (const row of listRows) {
+      const item = row.data;
+      if (item.removed) continue;
+      const customerId = normalize(item.customerId);
+      if (!customerId) continue;
+      const status = upper(item.quoteStatus || (money(item.vipPriceCtn || item.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ'));
+      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0 };
+      if (status === 'VIEW QUOTE') current.quoted += 1;
+      if (status === 'RFQ' || status === 'FAILED') current.awaiting += 1;
+      quoteByCustomer.set(customerId, current);
+    }
+
+    const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
+    const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
+    const customers = (base.customers || []).map((customer) => {
+      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0 };
+      return {
+        ...customer,
+        quotedItemCount: quote.quoted,
+        awaitingQuoteItemCount: quote.awaiting,
+        confirmedOrderCount: incomingOrders.filter((row) => normalize(row.data.customerId) === customer.customerId).length
+      };
+    });
+
+    return Object.freeze({
+      ok: true,
+      customers,
+      summary: {
+        ...(base.summary || {}),
+        customerCount: customers.length,
+        quoteCustomerCount: customers.filter((item) => item.awaitingQuoteItemCount > 0).length,
+        unquotedItemCount: customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0),
+        confirmedOrderCount: incomingOrders.length
+      }
+    });
+  }
+);
+
+export const getSalesRoomConfirmedOrders = webMethod(
+  Permissions.SiteMember,
+  async () => {
+    const staff = await requireAuthorizedStaffContext();
+    const customerIds = await authorizedCustomerIdSet(staff);
+    const [orders, lines] = await Promise.all([
+      readPayloadRows(BUYER_ORDER_COLLECTION),
+      readPayloadRows(BUYER_LINE_COLLECTION)
+    ]);
+    const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
+    const rows = orders
+      .map((entry) => entry.data)
+      .filter((order) => customerIds.has(normalize(order.customerId)) && incomingStatuses.has(upper(order.status)))
+      .map((order) => ({
+        ...order,
+        status: upper(order.status || 'CONFIRMED'),
+        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId)).length
+      }))
+      .sort((a, b) => String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')));
+    return Object.freeze({ ok: true, orders: rows });
+  }
+);
+
+export const getSalesRoomOrderDetail = webMethod(
+  Permissions.SiteMember,
+  async (orderId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
+    if (!orderEntry) throw new Error('Order was not found.');
+    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
+      .map((entry) => entry.data)
+      .filter((line) => normalize(line.orderId) === normalize(orderId))
+      .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
+    return Object.freeze({ ok: true, order: { ...orderEntry.data, lines } });
+  }
+);
+
+export const getSalesRoomOrderForm = webMethod(
+  Permissions.SiteMember,
+  async (customerId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const lines = (await readPayloadRows(BUYER_LIST_COLLECTION))
+      .map((entry) => entry.data)
+      .filter((item) => normalize(item.customerId) === normalize(customer.customerId) && !item.removed)
+      .map((item) => ({
+        ...item,
+        id: normalize(item.id || item.itemId),
+        vipPrice: money(item.vipPriceCtn || item.vipPrice),
+        orderQtyCtn: quantity(item.orderQtyCtn)
+      }));
+    return Object.freeze({
+      ok: true,
+      customer: {
+        customerId: normalize(customer.customerId),
+        companyName: normalize(customer.title),
+        currency: upper(customer.preferredCurrency || 'USD')
+      },
+      lines
+    });
+  }
+);
+
+export const confirmSalesRoomOrderForm = webMethod(
+  Permissions.SiteMember,
+  async (customerId, requestedLines) => {
+    const staff = await requireAuthorizedStaffContext();
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const requests = Array.isArray(requestedLines) ? requestedLines : [];
+    if (!requests.length) throw new Error('Enter at least one order quantity.');
+    const listRows = (await readPayloadRows(BUYER_LIST_COLLECTION))
+      .filter((entry) => normalize(entry.data.customerId) === normalize(customer.customerId) && !entry.data.removed);
+    const byId = new Map(listRows.map((entry) => [normalize(entry.data.id || entry.data.itemId), entry.data]));
+    const lines = requests.map((request, index) => orderLineFromListItem(byId.get(normalize(request.itemId)), request, index));
+    return createConfirmedOrder(customer, staff, lines, 'SALES ASSISTED');
+  }
+);
+
+export const saveSalesRoomOrderQty = webMethod(
+  Permissions.SiteMember,
+  async (orderId, lineId, quantityCtn) => {
+    const staff = await requireAuthorizedStaffContext();
+    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
+    if (!orderEntry) throw new Error('Order was not found.');
+    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    if (upper(orderEntry.data.status).startsWith('SUBMITTED')) throw new Error('Submitted order quantities are locked.');
+    const lineEntry = (await readPayloadRows(BUYER_LINE_COLLECTION))
+      .find((entry) => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.lineId) === normalize(lineId));
+    if (!lineEntry) throw new Error('Order line was not found.');
+    const qty = quantity(quantityCtn);
+    const line = { ...lineEntry.data, quantityCtn: qty, lineAmount: roundMoney(money(lineEntry.data.lockedUnitPrice) * qty), editedAt: new Date().toISOString(), editedBy: normalizeEmail(staff.loginEmail) };
+    await putPayload(BUYER_LINE_COLLECTION, lineEntry.record.title, line);
+    await recalculateOrder(orderEntry);
+    await writeOrderAudit('SALES_QTY_UPDATED', orderId, orderEntry.data.customerId, staff, { lineId: normalize(lineId), quantityCtn: qty });
+    return Object.freeze({ ok: true, orderId: normalize(orderId), lineId: normalize(lineId), quantityCtn: qty });
+  }
+);
+
+export const submitSalesRoomOrder = webMethod(
+  Permissions.SiteMember,
+  async (orderId, destination) => {
+    const staff = await requireAuthorizedStaffContext();
+    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
+    if (!orderEntry) throw new Error('Order was not found.');
+    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    const target = upper(destination);
+    if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
+    const next = { ...orderEntry.data, status: 'SUBMITTED TO ' + target, destination: target, submittedAt: new Date().toISOString(), submittedBy: normalizeEmail(staff.loginEmail) };
+    await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+    await writeOrderAudit('ORDER_SUBMITTED', orderId, next.customerId, staff, { destination: target });
+    return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status, destination: target });
+  }
+);
+
+export const createSalesRoomProforma = webMethod(
+  Permissions.SiteMember,
+  async (orderId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
+    if (!orderEntry) throw new Error('Order was not found.');
+    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    const next = { ...orderEntry.data, status: 'PROFORMA REQUESTED', proformaRequestedAt: new Date().toISOString(), proformaRequestedBy: normalizeEmail(staff.loginEmail) };
+    await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+    await writeOrderAudit('PROFORMA_REQUESTED', orderId, next.customerId, staff, {});
+    return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status });
   }
 );
 
@@ -692,6 +878,123 @@ export const getSalesRoomCustomerAudit = webMethod(
     });
   }
 );
+
+function payloadData(record) {
+  return record?.payload && typeof record.payload === 'object' ? record.payload : {};
+}
+
+async function readPayloadRows(collectionId) {
+  const result = await wixData
+    .query(collectionId)
+    .limit(1000)
+    .find({ suppressAuth: true, consistentRead: true });
+  return result.items.map((record) => ({ record, data: payloadData(record) }));
+}
+
+async function putPayload(collectionId, title, payload) {
+  const result = await wixData
+    .query(collectionId)
+    .eq('title', normalize(title))
+    .limit(2)
+    .find({ suppressAuth: true, consistentRead: true });
+  if (result.items.length > 1) throw new Error('Duplicate operational record. Admin review is required.');
+  const next = { ...(result.items[0] || {}), title: normalize(title), payload };
+  return result.items.length
+    ? wixData.update(collectionId, next, { suppressAuth: true })
+    : wixData.insert(collectionId, next, { suppressAuth: true });
+}
+
+async function authorizedCustomerIdSet(staff) {
+  let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
+  if (!staff.canViewAllCustomers) query = query.eq('assignedStaffId', upper(staff.staffId));
+  const result = await query.find({ suppressAuth: true });
+  return new Set(result.items.map((item) => normalize(item.customerId)));
+}
+
+function quantity(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+}
+
+function money(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function roundMoney(value) {
+  return Number(money(value).toFixed(2));
+}
+
+function orderLineFromListItem(item, request, index) {
+  const qty = quantity(request?.quantityCtn);
+  if (!item || qty < 1) throw new Error('Invalid order line.');
+  const lockedUnitPrice = money(item.vipPriceCtn || item.vipPrice);
+  if (!(lockedUnitPrice > 0)) throw new Error('All ordered products must have a V.I.P price.');
+  return {
+    lineId: 'L' + String(index + 1).padStart(3, '0'),
+    itemId: normalize(item.id || item.itemId),
+    barcode: normalize(item.barcode),
+    itemName: normalize(item.itemName),
+    packingSize: normalize(item.packingSize),
+    cbmPerCtn: money(item.cbmPerCtn),
+    currency: upper(item.vipCurrency || item.currency || 'USD'),
+    lockedUnitPrice,
+    quantityCtn: qty,
+    lineAmount: roundMoney(lockedUnitPrice * qty)
+  };
+}
+
+async function createConfirmedOrder(customer, staff, lines, source) {
+  const customerId = normalize(customer.customerId);
+  const orderId = 'ORD-' + customerId.replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+  const confirmedAt = new Date().toISOString();
+  const order = {
+    orderId,
+    customerId,
+    companyName: normalize(customer.title),
+    currency: lines[0]?.currency || upper(customer.preferredCurrency || 'USD'),
+    status: 'CONFIRMED',
+    source,
+    confirmedAt,
+    confirmedBy: normalizeEmail(staff.loginEmail),
+    totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0),
+    estimatedTotal: roundMoney(lines.reduce((sum, line) => sum + line.lineAmount, 0))
+  };
+  await putPayload(BUYER_ORDER_COLLECTION, orderId, order);
+  for (const line of lines) {
+    await putPayload(BUYER_LINE_COLLECTION, orderId + '|' + line.lineId, { ...line, orderId, customerId, priceLockedAt: confirmedAt });
+  }
+  await writeOrderAudit('SALES_CONFIRMED_ORDER', orderId, customerId, staff, { source });
+  return Object.freeze({ ok: true, orderId, status: order.status });
+}
+
+async function recalculateOrder(orderEntry) {
+  const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
+    .map((entry) => entry.data)
+    .filter((line) => normalize(line.orderId) === normalize(orderEntry.data.orderId));
+  const next = {
+    ...orderEntry.data,
+    totalCartons: lines.reduce((sum, line) => sum + quantity(line.quantityCtn), 0),
+    estimatedTotal: roundMoney(lines.reduce((sum, line) => sum + money(line.lineAmount), 0)),
+    updatedAt: new Date().toISOString()
+  };
+  await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+  return next;
+}
+
+async function writeOrderAudit(action, orderId, customerId, staff, detail) {
+  const auditId = 'OA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+  await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, {
+    auditId,
+    action,
+    orderId: normalize(orderId),
+    customerId: normalize(customerId),
+    at: new Date().toISOString(),
+    actorStaffId: upper(staff.staffId),
+    actorEmail: normalizeEmail(staff.loginEmail),
+    detail: detail || {}
+  });
+}
 
 function normalizeEditableCustomerValue(key, value) {
   if (key === 'natureOfBusiness') {
