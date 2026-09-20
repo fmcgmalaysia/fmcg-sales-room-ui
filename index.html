@@ -144,6 +144,7 @@ let staff={staffId:'',staffName:'',loginEmail:'',role:''};let submitting=false;l
 let customerRecords=[];let filteredCustomerRecords=[];let customerPage=1;let customerAccessView='ACTIVE';const customerPageSize=15;
 let assignableStaff=[];let currentCustomerId='';let salesActivityData={summaries:[],events:[]};let confirmedOrders=[];let pendingOrderSubmission=null;let pendingReactivation=null;let staffDirectoryData=[];let selectedStaffId='';let staffDirectoryTab='ACTIVE';
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function titleCase(v){return String(v||'').toLowerCase().replace(/(^|[\s-])\S/g,m=>m.toUpperCase())}
 function tag(v){const s=String(v||'PENDING').toUpperCase();const c=/READY|ACTIVE|REGISTERED/.test(s)?'green':/WAIT|PENDING|NOT/.test(s)?'amber':'gray';const label=s.toLowerCase().replace(/(^|[\s_-])\S/g,m=>m.toUpperCase()).replaceAll('_',' ');return '<span class="tag '+c+'">'+esc(label)+'</span>'}
 function customerTable(rows,recent){
   if(!rows.length)return '<div class="empty">No Customers Match The Current Filters.</div>';
