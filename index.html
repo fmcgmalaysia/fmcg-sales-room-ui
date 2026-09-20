@@ -269,6 +269,105 @@ function derivedStaffDirectory(){const rows=new Map();const ensure=(id,name)=>{c
 function normalizeStaffDirectory(){const source=staffDirectoryData.length?staffDirectoryData:derivedStaffDirectory();return source.map(item=>{const staffId=String(item.staffId||'').toUpperCase();const owned=customerRecords.filter(c=>String(c.assignedStaffId||'').toUpperCase()===staffId);const summary=salesActivityData.summaries.find(s=>String(s.staffId||'').toUpperCase()===staffId)||{};return {...item,staffId,staffName:item.staffName||item.name||staffId,email:item.email||item.staffEmail||'',role:String(item.role||'SALES').toUpperCase(),status:String(item.status||'ACTIVE').toUpperCase(),customerCount:item.customerCount??owned.length,pendingQuotes:item.pendingQuotes??owned.reduce((n,c)=>n+(Number(c.awaitingQuoteItemCount)||0),0),lastActivityAt:item.lastActivityAt||summary.lastActivityAt||'',activityCount:item.activityCount??summary.activityCount??0,requiresReview:Boolean(item.requiresReview)}}).sort((a,b)=>String(a.staffName).localeCompare(String(b.staffName)))}
 function renderStaffProfile(row){const area=document.getElementById('staffProfileArea');if(!area)return;if(!row){area.innerHTML='<div class="staff-empty">Select A Staff Member To Review.</div>';return}const events=salesActivityData.events.filter(e=>String(e.staffId||'').toUpperCase()===row.staffId).slice(0,4);area.innerHTML='<div class="staff-profile-lead"><div class="staff-avatar">'+esc(staffInitials(row.staffName))+'</div><div><h3>'+esc(row.staffName)+'</h3><p>'+esc(row.staffId)+' · '+esc(staffRoleLabel(row.role))+'</p></div></div><div class="staff-profile-grid"><div class="staff-profile-fact"><span>Account Status</span><b>'+esc(titleCase(row.status))+'</b></div><div class="staff-profile-fact"><span>Assigned Customers</span><b>'+esc(row.customerCount)+'</b></div><div class="staff-profile-fact"><span>Pending Quotes</span><b>'+esc(row.pendingQuotes)+'</b></div><div class="staff-profile-fact"><span>Last Activity</span><b>'+esc(row.lastActivityAt?formatActivityTime(row.lastActivityAt):'No Activity')+'</b></div></div><div class="staff-recent"><h4>Recent Operational Activity</h4>'+(events.length?events.map(e=>'<div class="staff-event"><b>'+esc(titleCase(activityActionLabel(e.action)))+'</b><small>'+esc(formatActivityTime(e.changedAt))+(e.customerName?' · '+esc(e.customerName):'')+'</small></div>').join(''):'<div class="staff-empty">No Recent Operational Activity.</div>')+'</div><div class="staff-profile-actions"><button class="admin-secondary" id="transferStaffCustomers" type="button">Transfer Customers</button><button class="admin-danger" id="suspendStaffAccess" type="button" '+(row.staffId===String(staff.staffId||'').toUpperCase()?'disabled':'')+'>Suspend Access</button></div><div class="admin-audit-note">Every Role, Status And Customer Assignment Change Is Permanently Recorded. · <span class="cn">所有权限及客户转移操作都会保留审计记录。</span></div>';document.getElementById('transferStaffCustomers').onclick=()=>window.parent.postMessage({type:'SALES_ROOM_STAFF_TRANSFER_OPEN',staffId:row.staffId},'*');document.getElementById('suspendStaffAccess').onclick=()=>window.parent.postMessage({type:'SALES_ROOM_STAFF_SUSPEND_OPEN',staffId:row.staffId,staffName:row.staffName},'*')}
 function renderStaffManagement(){const block=document.getElementById('adminNavBlock');if(!block)return;const allowed=Boolean(staff.canViewAllCustomers);block.hidden=!allowed;if(!allowed){if(document.getElementById('staff-management').classList.contains('active'))showView('dashboard');return}const all=normalizeStaffDirectory();const active=all.filter(s=>s.status==='ACTIVE'),suspended=all.filter(s=>s.status==='SUSPENDED'),former=all.filter(s=>s.status==='FORMER');document.getElementById('staffActiveMetric').textContent=active.length;document.getElementById('staffRoleMetric').textContent=active.filter(s=>/ADMIN/.test(s.role)).length+' Admin · '+active.filter(s=>s.role==='SALES').length+' Sales';document.getElementById('staffCustomerMetric').textContent=customerRecords.filter(c=>String(c.assignedStaffId||'').trim()).length;document.getElementById('staffReviewMetric').textContent=all.filter(s=>s.requiresReview).length;document.getElementById('staffActiveCount').textContent=active.length;document.getElementById('staffSuspendedCount').textContent=suspended.length;document.getElementById('staffFormerCount').textContent=former.length;document.querySelectorAll('.staff-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.staffTab===staffDirectoryTab));const q=document.getElementById('staffSearch').value.trim().toUpperCase(),role=document.getElementById('staffRoleFilter').value,status=document.getElementById('staffStatusFilter').value||staffDirectoryTab;const rows=all.filter(s=>(!q||[s.staffId,s.staffName,s.email].some(v=>String(v||'').toUpperCase().includes(q)))&&(!role||s.role===role)&&(!status||s.status===status));if(!selectedStaffId||!all.some(s=>s.staffId===selectedStaffId))selectedStaffId=(all.find(s=>s.staffId===String(staff.staffId||'').toUpperCase())||rows[0]||all[0]||{}).staffId||'';const area=document.getElementById('staffDirectoryArea');area.innerHTML=rows.length?'<table class="staff-table"><thead><tr><th>Staff</th><th>Role</th><th>Customers</th><th>Pending Quotes</th><th>Last Active</th><th>Status</th><th>Action</th></tr></thead><tbody>'+rows.map(s=>'<tr class="staff-row '+(s.staffId===selectedStaffId?'selected':'')+'" data-staff-id="'+esc(s.staffId)+'"><td><div class="staff-person"><span class="staff-avatar">'+esc(staffInitials(s.staffName))+'</span><span><b>'+esc(s.staffName)+'</b><small>'+esc(s.staffId)+'</small></span></div></td><td>'+esc(staffRoleLabel(s.role))+'</td><td>'+esc(s.customerCount)+'</td><td>'+esc(s.pendingQuotes)+'</td><td>'+esc(s.lastActivityAt?formatActivityTime(s.lastActivityAt):'No Activity')+'</td><td><span class="staff-state '+(s.requiresReview?'review':'')+'"><i></i>'+esc(s.requiresReview?'Review':titleCase(s.status))+'</span></td><td><button class="staff-manage" data-manage-staff="'+esc(s.staffId)+'">'+(s.staffId===String(staff.staffId||'').toUpperCase()?'Review':'Manage')+'</button></td></tr>').join('')+'</tbody></table>':'<div class="staff-empty">No Staff Records Match The Current Filters.</div>';area.querySelectorAll('[data-staff-id]').forEach(row=>row.onclick=()=>{selectedStaffId=row.dataset.staffId;renderStaffManagement()});area.querySelectorAll('[data-manage-staff]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();selectedStaffId=btn.dataset.manageStaff;renderStaffManagement()});renderStaffProfile(all.find(s=>s.staffId===selectedStaffId)||rows[0]||null)}
+// Core Wix-to-iframe messages. Keep this listener separate from the
+// Staff Management enhancement below so adding admin features cannot remove
+// the Sales Room's identity, customer and result handling again.
+window.addEventListener('message',e=>{
+  const m=e.data||{};
+  if(m.type==='SALES_ROOM_STAFF'){
+    salesRoomHandshakeComplete=true;
+    staff=m.staff||staff;
+    document.getElementById('staffTop').textContent=staff.loginEmail||staff.staffName||'Authorized Staff';
+    document.getElementById('greeting').textContent='Good Day, '+(staff.staffName||'Team');
+    document.getElementById('staffRole').textContent=staff.role||'Staff';
+    document.getElementById('roleNote').textContent=staff.canViewAllCustomers?'All Assigned Staff And Customer Records Are Visible.':'Only Assigned Customers Are Visible.';
+    const activityPanel=document.getElementById('staffActivityPanel');
+    if(activityPanel)activityPanel.hidden=!staff.canViewAllCustomers;
+    applyAssignmentAccess();
+    updateAccessTabs();
+  }
+  if(m.type==='SALES_ROOM_ACTIVITY')renderSalesActivity(m);
+  if(m.type==='SALES_ROOM_ASSIGNABLE_STAFF'){
+    if(m.ok)renderAssignableStaff(m);
+    else{
+      assignableStaff=[];
+      assignedSelect.innerHTML='<option value="">No Active Salesperson Available</option>';
+      assignedSelect.disabled=true;
+      assignedQdHint.textContent=m.error||'Assignable Staff Could Not Be Loaded.';
+    }
+  }
+  if(m.type==='SALES_ROOM_CUSTOMERS'){
+    if(m.ok)renderCustomers(m);
+    else customerLoadError(m.error);
+  }
+  if(m.type==='SALES_ROOM_CUSTOMER_DETAIL'){
+    if(m.ok)renderCustomerDetail({...m,...(m.result||{}),...(m.customer||{}),users:m.users||m.result?.users||m.customer?.users||[]});
+    else customerLoadError(m.error);
+  }
+  if(m.type==='SALES_ROOM_CUSTOMER_AUDIT'){
+    if(m.ok)renderCustomerAudit(m.items||[]);
+    else{
+      const area=document.getElementById('customerAuditArea');
+      if(area)area.innerHTML='<div class="empty">'+esc(m.error||'History Could Not Be Loaded.')+'</div>';
+    }
+  }
+  if(m.type==='SALES_ROOM_CUSTOMER_PROFILE_RESULT'){
+    const box=document.getElementById('profileSaveStatus');
+    if(m.ok){
+      if(box){box.textContent='Profile Saved. Change History Recorded.';box.className='detail-status show ok'}
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:m.customerId||currentCustomerId},'*');
+    }else if(box){box.textContent=m.error||'Profile Could Not Be Saved.';box.className='detail-status show err'}
+  }
+  if(m.type==='SALES_ROOM_CUSTOMER_USER_RESULT'){
+    const box=document.querySelector('.user-card[data-slot="'+m.slotNumber+'"] .user-card-status')||document.getElementById('userSaveStatus');
+    if(m.ok){
+      if(box){box.textContent='User '+m.slotNumber+' Saved · 用户 '+m.slotNumber+' 已保存';box.className='user-card-status show ok'}
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:m.customerId||currentCustomerId},'*');
+    }else if(box){box.textContent=(m.error||'Customer User Could Not Be Saved.')+' · 用户资料无法保存';box.className='user-card-status show err'}
+  }
+  if(m.type==='SALES_ROOM_CUSTOMER_LIFECYCLE_RESULT'){
+    const box=document.getElementById('accountActionStatus');
+    if(m.ok){
+      if(box){box.textContent='Customer Account Updated. History Preserved.';box.className='detail-status show ok'}
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:m.customerId||currentCustomerId},'*');
+    }else if(box){
+      box.textContent=m.error||'Customer Account Could Not Be Updated.';
+      box.className='detail-status show err';
+      document.querySelectorAll('.account-action').forEach(button=>button.disabled=false);
+    }
+    renderReactivationResult(m);
+  }
+  if(m.type==='SALES_ROOM_CREATE_RESULT'){
+    submitting=false;
+    createBtn.disabled=false;
+    createBtn.textContent='Create Customer & QD';
+    if(m.ok){
+      const ready=String(m.result.qdStatus||'').toUpperCase()==='READY';
+      status('Success · '+m.result.customerId+' · '+(ready?'QD Ready':'Open QD Setup To Allow Access'),'ok');
+      pendingCreatePayload=null;
+      form.reset();
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');
+    }else{
+      const error=String(m.error||'Please Retry');
+      if(error.includes('504')||error.toLowerCase().includes('timeout'))status('Still Processing. Do Not Submit Again; Check Customer Accounts Shortly.','wait');
+      else status('Failed · '+error,'err');
+    }
+  }
+  if(m.type==='SALES_ROOM_QD_VERIFY_RESULT'){
+    const box=document.getElementById('qdActivationStatus');
+    const button=document.getElementById('verifyCurrentQd');
+    if(m.ok&&String(m.qdStatus||'').toUpperCase()==='READY'){
+      if(box){box.textContent='Quotation Desk Activated. Customer Access Is Now Active.';box.className='detail-status show ok'}
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMER_DETAIL_REQUEST',customerId:m.customerId||currentCustomerId},'*');
+      window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');
+    }else{
+      if(button){button.disabled=false;button.textContent='Verify & Activate'}
+      if(box){box.textContent=m.error||'Access Is Not Active Yet. Open QD Setup, Click Allow Access, Then Verify Again.';box.className='detail-status show err'}
+    }
+  }
+});
+
 window.addEventListener('message',e=>{const m=e.data||{};if(m.type==='SALES_ROOM_STAFF_DIRECTORY'){staffDirectoryData=Array.isArray(m.staff)?m.staff:[];renderStaffManagement()}if(['SALES_ROOM_STAFF','SALES_ROOM_ACTIVITY','SALES_ROOM_ASSIGNABLE_STAFF','SALES_ROOM_CUSTOMERS'].includes(m.type))setTimeout(renderStaffManagement,0)});
 function renderSalesOrderForm(payload){const c=payload.customer||{},lines=Array.isArray(payload.lines)?payload.lines:[];currentCustomerId=String(c.customerId||'');document.getElementById('orderDetailArea').innerHTML='<div class="detail-card"><div class="detail-head"><div><div class="crumb">Assisted Order Form</div><h2>'+esc(c.companyName||c.customerId||'Customer')+'</h2><p>Salesperson-Assisted Quantity Entry · V.I.P Prices Required</p></div><button class="secondary" id="closeOrderDetail">Close</button></div><section class="detail-section"><h3>My List Products</h3><div class="detail-body">'+(lines.length?'<table><thead><tr><th>Item Name</th><th>V.I.P Price</th><th>Qty (CTN)</th></tr></thead><tbody>'+lines.map(line=>{const price=Number(line.vipPrice)||0;return '<tr><td>'+esc(line.itemName||line.barcode||line.id)+'</td><td class="locked-price">'+(price?esc(line.vipCurrency||line.currency||c.currency||'USD')+' '+esc(price):'<span class="quote-count waiting">Awaiting Quote</span>')+'</td><td><input class="order-qty" type="number" min="0" step="1" value="'+esc(line.orderQtyCtn||'')+'" data-assisted-qty="'+esc(line.id||line.itemId)+'" '+(price?'':'disabled')+'></td></tr>'}).join('')+'</tbody></table>':'<div class="empty">This Customer Has No Products In My List Yet.</div>')+'</div></section>'+(lines.length?'<div class="order-action-row" style="margin-top:12px"><button class="primary" id="confirmAssistedOrder">Confirm Order</button></div>':'')+'</div>';document.getElementById('closeOrderDetail').onclick=()=>document.getElementById('orderDetailArea').innerHTML='';const confirm=document.getElementById('confirmAssistedOrder');if(confirm)confirm.onclick=()=>{const selected=[...document.querySelectorAll('[data-assisted-qty]')].map(input=>({itemId:input.dataset.assistedQty,quantityCtn:Math.max(0,Math.floor(Number(input.value)||0))})).filter(line=>line.quantityCtn>0);if(!selected.length){confirm.textContent='Enter At Least One Qty';return}confirm.disabled=true;confirm.textContent='Confirming…';window.parent.postMessage({type:'SALES_ROOM_ORDER_FORM_CONFIRM',customerId:currentCustomerId,lines:selected},'*')}}
 function renderConfirmedOrders(payload){confirmedOrders=Array.isArray(payload.orders)?payload.orders:[];const count=confirmedOrders.length,alert=document.getElementById('newOrderAlert');document.getElementById('confirmedOrderCount').textContent=count;alert.textContent=count;alert.classList.toggle('show',count>0);const area=document.getElementById('newOrderArea');if(!count){area.innerHTML='<div class="empty">No Confirmed Buyer Orders Require Action.</div>';return}area.innerHTML='<table class="orders-table"><thead><tr><th>Customer</th><th>Confirmed At</th><th>Products</th><th>Total CTN</th><th>Estimated Total</th><th>Status</th></tr></thead><tbody>'+confirmedOrders.map(o=>'<tr><td><button class="customer-link" data-order-detail="'+esc(o.orderId)+'">'+esc(o.companyName||o.customerId)+'</button><span class="sr-id">'+esc(o.orderId||'')+'</span></td><td>'+esc(o.confirmedAt||'—')+'</td><td>'+esc(o.productCount??'—')+'</td><td>'+esc(o.totalCartons??'—')+'</td><td>'+esc(o.currency||'')+' '+esc(o.estimatedTotal??'—')+'</td><td>'+tag(o.status||'CONFIRMED')+'</td></tr>').join('')+'</tbody></table>';document.querySelectorAll('[data-order-detail]').forEach(b=>b.onclick=()=>window.parent.postMessage({type:'SALES_ROOM_ORDER_DETAIL_REQUEST',orderId:b.dataset.orderDetail},'*'))}
