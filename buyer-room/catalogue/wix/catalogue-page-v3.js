@@ -62,7 +62,7 @@ function setProductActions(enabled) {
         try {
             if (enabled) {
                 const selected = selectedProductIds.has(String(itemData?._id || ''));
-                $item('#button3').label = selected ? 'IN MY SELECTION' : 'ADD TO MY LIST';
+                $item('#button3').label = selected ? 'Added To Selection' : 'Add To Selection';
                 if (selected) $item('#button3').disable(); else $item('#button3').enable();
                 $item('#button3').expand();
                 $item('#button3').show();
@@ -101,7 +101,7 @@ function setupSelectionActions() {
                 const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
                 if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
                 if (result?.ok) selectedProductIds.add(productId);
-                button.label = 'IN MY SELECTION';
+                button.label = 'Added To Selection';
                 const state = await getCatalogueSelectionState(selectionContext.assistCustomerId || '');
                 selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
                 sidebarSelectionState(state);
