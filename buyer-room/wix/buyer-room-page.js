@@ -4,6 +4,7 @@ import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
 
 let assistCustomerId = '';
+const BUYER_ROOM_UI_URL = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=d8fc93d';
 function getAssistCustomerId() {
   return String(wixLocationFrontend.query?.assist || session.getItem('catalogueAssistCustomerId') || '').trim();
 }
@@ -11,6 +12,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
+  frame.src = BUYER_ROOM_UI_URL;
   assistCustomerId = getAssistCustomerId();
 
   async function loadWorkspace() {
