@@ -562,16 +562,29 @@ export const getSalesRoomCustomerDetail = webMethod(
 export const updateSalesRoomCustomerLifecycle = webMethod(
   Permissions.SiteMember,
   async (customerId, action, payload = {}) => {
-    const staff = await requireAdminStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
     const normalizedAction = upper(action);
+    const staff = await requireAuthorizedStaffContext();
+    if (normalizedAction !== 'REQUEST_REACTIVATION' && !staff.canViewAllCustomers) {
+      throw new Error('Admin access is required for this customer account action.');
+    }
+    const customer = await findAuthorizedCustomer(customerId, staff);
     const reason = normalize(payload?.reason);
     const beforeLifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
     const beforeAccess = upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE'));
     const beforeReactivation = upper(customer.reactivationStatus || 'NONE');
     const patch = {};
 
-    if (normalizedAction === 'SUSPEND') {
+    if (normalizedAction === 'REQUEST_REACTIVATION') {
+      if (beforeLifecycle === 'ARCHIVED') {
+        throw new Error('Archived customers must be restored by an admin.');
+      }
+      if (beforeAccess !== 'SUSPENDED') {
+        throw new Error('Only suspended customers can request reactivation.');
+      }
+      patch.lifecycleStatus = 'ACTIVE';
+      patch.accessStatus = 'SUSPENDED';
+      patch.reactivationStatus = 'REQUESTED';
+    } else if (normalizedAction === 'SUSPEND') {
       patch.lifecycleStatus = 'ACTIVE';
       patch.accessStatus = 'SUSPENDED';
       patch.reactivationStatus = 'NONE';
