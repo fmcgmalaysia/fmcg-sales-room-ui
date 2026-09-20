@@ -19,7 +19,7 @@ function money(value) { const n = Number(value); return Number.isFinite(n) ? n :
 function imageUrl(value, depth = 0) {
   if (depth > 5 || value == null) return '';
   if (typeof value === 'object') {
-    const candidates = [value.url, value.id, value.src, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id];
+    const candidates = [value.url, value.id, value.src, value.fileName, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id];
     for (const candidate of candidates) {
       const resolved = imageUrl(candidate, depth + 1);
       if (resolved) return resolved;
@@ -59,6 +59,27 @@ async function productsByIds(ids) {
       try { return await wixData.get(PRODUCT_COLLECTION, id, { suppressAuth: true }); } catch (_) { return null; }
     }));
     products.push(...batch.filter(Boolean));
+  }
+  return products;
+}
+async function productsByBarcodes(barcodes) {
+  const products = [];
+  for (const barcode of barcodes) {
+    let item = null;
+    try {
+      const textMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true });
+      item = textMatch.items[0] || null;
+    } catch (_) { /* Retry numeric barcode below. */ }
+    if (!item) {
+      const numericBarcode = Number(barcode);
+      if (Number.isFinite(numericBarcode)) {
+        try {
+          const numberMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', numericBarcode).limit(1).find({ suppressAuth: true, consistentRead: true });
+          item = numberMatch.items[0] || null;
+        } catch (_) { /* Leave this barcode unresolved. */ }
+      }
+    }
+    if (item) products.push(item);
   }
   return products;
 }
@@ -121,10 +142,16 @@ async function resolveBuyerContext(assistCustomerId = '') {
 async function workspaceItems(customerId) {
   const rows = (await readPayloadRows(BUYER_LIST_COLLECTION)).filter(entry => normalize(entry.data.customerId) === normalize(customerId));
   const productIds = [...new Set(rows.map(entry => normalize(entry.data.productId)).filter(Boolean))];
+  const barcodes = [...new Set(rows.map(entry => normalize(entry.data.barcode || entry.data.unitBarcode)).filter(Boolean))];
   const products = await productsByIds(productIds);
+  const resolvedBarcodes = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
+  const barcodeProducts = await productsByBarcodes(barcodes.filter(barcode => !resolvedBarcodes.has(barcode)));
+  products.push(...barcodeProducts);
   const byProductId = new Map(products.map(product => [normalize(product._id), product]));
+  const byBarcode = new Map(products.map(product => [normalize(product.barcode), product]).filter(([barcode]) => barcode));
   return rows.map(({ record, data }) => {
-    const product = byProductId.get(normalize(data.productId)) || {};
+    const storedBarcode = normalize(data.barcode || data.unitBarcode);
+    const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
     return {
       ...data, id, itemId: id,
@@ -133,7 +160,7 @@ async function workspaceItems(customerId) {
       packingSize: normalize(data.packingSize || product.description),
       brand: normalize(data.brand || product.brandName || product.principle),
       category: normalize(data.category || data.mainCategory || product.mainCategory),
-      imageUrl: imageUrl(data.imageUrl || data.image || product.image),
+      imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
       ea: money(data.ea || product.ea), cbmPerCtn: money(data.cbmPerCtn || product.cbmPerCtn || product.cbm),
       normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
