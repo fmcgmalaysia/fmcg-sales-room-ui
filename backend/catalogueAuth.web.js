@@ -114,13 +114,34 @@ async function workspaceItems(customerId) {
   });
 }
 
+async function buyerOrderHistory(customerId) {
+  const [orderRows, lineRows] = await Promise.all([
+    readPayloadRows(BUYER_ORDER_COLLECTION),
+    readPayloadRows(BUYER_LINE_COLLECTION)
+  ]);
+  const customerKey = normalize(customerId);
+  const linesByOrder = new Map();
+  lineRows.forEach(({ data }) => {
+    if (normalize(data.customerId) !== customerKey) return;
+    const orderId = normalize(data.orderId);
+    if (!orderId) return;
+    if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, []);
+    linesByOrder.get(orderId).push(data);
+  });
+  return orderRows
+    .map(({ data }) => data)
+    .filter(order => normalize(order.customerId) === customerKey)
+    .map(order => ({ ...order, lines: linesByOrder.get(normalize(order.orderId)) || [] }))
+    .sort((a, b) => new Date(b.confirmedAt || 0).getTime() - new Date(a.confirmedAt || 0).getTime());
+}
+
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const items = await workspaceItems(buyer.customerId);
-  return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed: items.filter(item => item.removed) };
+  const [items, orders] = await Promise.all([workspaceItems(buyer.customerId), buyerOrderHistory(buyer.customerId)]);
+  return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed: items.filter(item => item.removed), orders };
 });
 async function findOwnedItem(buyer, itemId) {
   const row = (await readPayloadRows(BUYER_LIST_COLLECTION)).find(entry => normalize(entry.data.customerId) === buyer.customerId && normalize(entry.record._id || entry.data.id || entry.data.itemId) === normalize(itemId));
@@ -173,5 +194,20 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
   for (const line of lines) await putPayload(BUYER_LINE_COLLECTION, id + '|' + line.lineId, { ...line, orderId: id, customerId: buyer.customerId, priceLockedAt: confirmedAt });
   const auditId = 'OA-' + Date.now().toString(36).toUpperCase();
   await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'BUYER_CONFIRMED_ORDER', orderId: id, customerId: buyer.customerId, at: confirmedAt, actorEmail: buyer.email, actorType: buyer.actorType });
+  for (const request of requests) {
+    try {
+      const row = await findOwnedItem(buyer, request.itemId);
+      await putPayload(BUYER_LIST_COLLECTION, row.record.title, {
+        ...row.data,
+        orderQtyCtn: 0,
+        lastOrderId: id,
+        lastOrderedAt: confirmedAt,
+        updatedAt: confirmedAt,
+        lastEditedBy: buyer.actorName || buyer.email
+      });
+    } catch (error) {
+      console.warn('Confirmed order quantity reset failed', { orderId: id, itemId: normalize(request.itemId), error: normalize(error?.message || error) });
+    }
+  }
   return { ok: true, orderId: id, status: 'CONFIRMED' };
 });

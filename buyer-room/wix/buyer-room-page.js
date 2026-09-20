@@ -36,7 +36,8 @@ $w.onReady(async function () {
       currency: result.context.currency || 'USD',
       assisted: result.context.actorType === 'STAFF',
       myList: result.myList || [],
-      removed: result.removed || []
+      removed: result.removed || [],
+      orders: result.orders || []
     }});
   }
 
