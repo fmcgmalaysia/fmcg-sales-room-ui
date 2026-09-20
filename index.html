@@ -66,6 +66,33 @@ table{font-size:13px}th{font-size:10px;padding:10px 11px;white-space:nowrap}td{p
 #new .head{margin-bottom:18px}.formwrap.application-layout{grid-template-columns:minmax(0,1.75fr) minmax(300px,.72fr);gap:18px;align-items:start}.application-panel{overflow:hidden;border:1px solid #d7e0eb;box-shadow:0 8px 24px rgba(16,39,68,.05)}.application-panel>.ptitle,.application-flow-panel>.ptitle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;background:#0c2340;border:0;color:#fff;font-size:13px;letter-spacing:.1px;text-transform:none!important}.application-required{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:5px 9px;color:#cbd8e7;font-size:9px;font-weight:650;white-space:nowrap}.application-required:before{content:"*";color:#7db5ff;font-size:13px;font-weight:900}.application-body{padding:0!important;background:#f6f8fb}.application-sections{display:grid;gap:14px;padding:16px}.application-section{border:1px solid #dce4ee;border-radius:10px;background:#fff;overflow:hidden}.application-section-head{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;background:#f3f6fa;border-bottom:1px solid #e1e7ef}.application-section-no{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:7px;background:#1769e0;color:#fff;font-size:11px;font-weight:800}.application-section-head h3{margin:0;color:#142e4c;font-size:13px;line-height:1.25;text-transform:none}.application-section-head p{margin:3px 0 0;color:#718096;font-size:10px;line-height:1.35}.application-section .formgrid{padding:15px;gap:13px 14px}.application-section .field label{margin-bottom:7px;color:#415875;font-size:10px;letter-spacing:.25px;text-transform:none!important}.application-section .field input,.application-section .field select,.application-section .yn button{height:44px;border-color:#c8d4e2;border-radius:7px;background:#fff;font-size:12px;color:#193450}.application-section .field input::placeholder{color:#8a98aa}.application-section .field input:focus,.application-section .field select:focus{border-color:#1769e0;box-shadow:0 0 0 3px rgba(23,105,224,.12)}.application-section .yn button.on{background:#eaf2ff;border-color:#1769e0;color:#115fc8}.application-section .fieldhint{font-size:10px;color:#73839a;word-break:normal}.application-actions{align-items:center;padding:14px 16px;margin:0;border-top:1px solid #dce4ee;background:#fff}.application-actions:before{content:"Review All Required Fields Before Creating The Customer And QD.";margin-right:auto;color:#75849a;font-size:10px}.application-actions .primary{min-width:178px;height:42px}.application-flow-panel{position:sticky;top:0;overflow:hidden;border:1px solid #d7e0eb;box-shadow:0 8px 24px rgba(16,39,68,.05)}.application-flow-panel>.body{padding:16px}.application-flow-intro{margin:0 0 15px;color:#5e7188;font-size:11px;line-height:1.5}.application-flow-panel .flow{gap:10px}.application-flow-panel .step{position:relative;grid-template-columns:34px 1fr;gap:11px;padding:11px 12px;border:1px solid #e0e6ee;border-radius:9px;background:#fff}.application-flow-panel .step i{width:28px;height:28px;background:#e7f0fd;color:#1769e0;font-size:11px}.application-flow-panel .step b{display:block;color:#17314f;font-size:11px}.application-flow-panel .step p{margin-top:4px;color:#708096;font-size:10px;line-height:1.45;text-transform:none!important}.application-flow-panel .notice{margin-top:14px;padding:13px 14px;border:1px solid #c9dcf7;border-left:4px solid #1769e0;border-radius:7px;background:#eef5ff;color:#31557d;font-size:10px;line-height:1.5}.application-flow-panel .notice b{display:block;margin-bottom:3px;color:#123e72;font-size:11px}.application-output{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.application-output span{padding:9px;border-radius:7px;background:#f3f6fa;color:#6b7b90;font-size:9px}.application-output strong{display:block;margin-top:2px;color:#18304f;font-size:10px}.customer-drawer .key-information .info-row:nth-child(n+9){padding-top:7px;border-top:1px solid #edf1f5}.customer-drawer .key-information .info-value{overflow-wrap:anywhere}
 @media(max-width:1050px){.formwrap.application-layout{grid-template-columns:1fr}.application-flow-panel{position:static}.application-output{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:700px){.application-panel>.ptitle,.application-flow-panel>.ptitle{align-items:flex-start;flex-direction:column}.application-sections{padding:10px}.application-section .formgrid{grid-template-columns:1fr}.application-section .field.full{grid-column:auto}.application-actions{align-items:stretch;flex-direction:column}.application-actions:before{margin:0}.application-actions button{width:100%}.application-output{grid-template-columns:1fr 1fr}}
+/* Clear interaction feedback for white operational buttons. */
+:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)){
+  border-color:#aebed2;
+  background:linear-gradient(180deg,#fff 0%,#f8faff 100%);
+  color:#244767;
+  box-shadow:0 1px 2px rgba(10,35,67,.08);
+  cursor:pointer;
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):hover{
+  border-color:#4f8fdf;
+  background:#edf5ff;
+  color:#0d57c7;
+  box-shadow:0 5px 14px rgba(23,105,224,.16);
+  transform:translateY(-1px);
+}
+:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):active{
+  background:#e2eeff;
+  box-shadow:0 1px 3px rgba(23,105,224,.18);
+  transform:translateY(0);
+}
+:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):focus-visible{
+  outline:3px solid rgba(23,105,224,.22);
+  outline-offset:2px;
+  border-color:#1769e0;
+}
+:where(button,a)[disabled],button:disabled{transform:none!important;box-shadow:none!important;cursor:not-allowed}
 </style>
 </head>
 <body>
