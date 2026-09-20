@@ -11,9 +11,11 @@ function doPost(e) {
     }
 
     const action = String(body.action || 'CREATE_QD').trim().toUpperCase();
-    const result = action === 'VERIFY_QD'
-      ? WIX_verifyCustomerQuotationDesk(body)
-      : WIX_createCustomerQuotationDesk(body);
+    const result = action === 'ADD_SELECTION'
+      ? WIX_addCatalogueSelection(body)
+      : action === 'VERIFY_QD'
+        ? WIX_verifyCustomerQuotationDesk(body)
+        : WIX_createCustomerQuotationDesk(body);
     return WIX_json_({ ok: true, result: result });
   } catch (error) {
     return WIX_json_({ ok: false, error: String(error && error.message || error || 'Unknown QD service error.') });

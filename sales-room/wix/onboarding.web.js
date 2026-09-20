@@ -915,7 +915,9 @@ export const getSalesRoomCustomerAudit = webMethod(
 );
 
 function payloadData(record) {
-  return record?.payload && typeof record.payload === 'object' ? record.payload : {};
+  const raw = record?.payload;
+  if (raw && typeof raw === 'object') return raw;
+  try { return JSON.parse(String(raw || '{}')); } catch (_) { return {}; }
 }
 
 async function readPayloadRows(collectionId) {
@@ -933,7 +935,7 @@ async function putPayload(collectionId, title, payload) {
     .limit(2)
     .find({ suppressAuth: true, consistentRead: true });
   if (result.items.length > 1) throw new Error('Duplicate operational record. Admin review is required.');
-  const next = { ...(result.items[0] || {}), title: normalize(title), payload };
+  const next = { ...(result.items[0] || {}), title: normalize(title), payload: JSON.stringify(payload) };
   return result.items.length
     ? wixData.update(collectionId, next, { suppressAuth: true })
     : wixData.insert(collectionId, next, { suppressAuth: true });
