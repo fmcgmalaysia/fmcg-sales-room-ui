@@ -131,7 +131,7 @@ export async function post_quotationSync(request) {
         const quotePerCtn = quoteNumber(quotation.quotePerCtn);
         if (!(quotePerPc > 0) || !(quotePerCtn > 0)) throw new Error('Both quotation prices must be greater than zero.');
         const now = new Date().toISOString();
-        const next = { ...item, quoteStatus: 'VIEW QUOTE', quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, quoteSyncedAt: now, quoteRequestId: normalize(body.requestId), quoteActorEmail: normalizeEmail(body.actorEmail), lastEditedBy: normalizeEmail(body.actorEmail) || 'FMCG Malaysia' };
+        const next = { ...item, quoteStatus: 'VIEW QUOTE', quoteActive: true, quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, quoteSyncedAt: now, quoteRequestId: normalize(body.requestId), quoteActorEmail: normalizeEmail(body.actorEmail), lastEditedBy: normalizeEmail(body.actorEmail) || 'FMCG Malaysia' };
         await wixData.update(QUOTE_LIST_COLLECTION, { ...record, payload: JSON.stringify(next) }, { suppressAuth: true });
         results.push({ ok: true, wixMyListId, quoteStatus: 'VIEW QUOTE' });
       } catch (error) {

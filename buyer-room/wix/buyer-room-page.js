@@ -14,9 +14,19 @@ $w.onReady(async function () {
   assistCustomerId = getAssistCustomerId();
 
   async function loadWorkspace() {
-    const result = await getBuyerWorkspace(assistCustomerId);
+    let result;
+    try { result = await getBuyerWorkspace(assistCustomerId); }
+    catch (error) {
+      if (assistCustomerId) {
+        frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Error: ' + (error?.message || String(error)) });
+        throw error;
+      }
+      throw error;
+    }
     if (!result?.ok || !result?.context?.customerId || result.context.status !== 'ACTIVE') {
-      wixLocationFrontend.to(assistCustomerId ? '/blank-1' : '/buyer-room-login');
+      if (assistCustomerId) {
+        frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Could Not Be Verified.' });
+      } else wixLocationFrontend.to('/buyer-room-login');
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
@@ -44,7 +54,7 @@ $w.onReady(async function () {
     const message = event.data || {};
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
       try { await loadWorkspace(); }
-      catch (error) { console.error('Buyer Room data failed', error); wixLocationFrontend.to(assistCustomerId ? '/blank-1' : '/buyer-room-login'); }
+      catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
       return;
     }
     if (message.type === 'BUYER_ROOM_BROWSE_CATALOGUE') {
@@ -75,5 +85,5 @@ $w.onReady(async function () {
   });
 
   try { await loadWorkspace(); }
-  catch (error) { console.error('Buyer Room authorization failed', error); wixLocationFrontend.to(assistCustomerId ? '/blank-1' : '/buyer-room-login'); }
+  catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
 });

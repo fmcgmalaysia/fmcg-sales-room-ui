@@ -319,7 +319,7 @@ function setupNav() {
             await authentication.logout();
             wixLocationFrontend.to('/');
         } else if (message.type === 'catalogueBuyerRoom') {
-            wixLocationFrontend.to('/buyer-room');
+            openBuyerRoom();
         }
     });
 
@@ -375,8 +375,13 @@ function setupNav() {
 function setupSidebar() {
     const sidebar = $w('#html5');
     sidebar.onMessage((event) => {
-        if (event.data?.type === 'OPEN_BUYER_ROOM') wixLocationFrontend.to('/buyer-room');
+        if (event.data?.type === 'OPEN_BUYER_ROOM') openBuyerRoom();
     });
+}
+
+function openBuyerRoom() {
+    const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
+    wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
 }
 
 $w.onReady(() => {

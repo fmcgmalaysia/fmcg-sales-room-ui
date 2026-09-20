@@ -108,6 +108,7 @@ async function workspaceItems(customerId) {
       normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
       quoteStatus: upper(data.quoteStatus || (money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ')),
+      quoteActive: upper(data.quoteStatus || (money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ')) === 'VIEW QUOTE',
       addedTime: data.addedTime || data.selectedAt || record._createdDate || '', lastEditedBy: normalize(data.lastEditedBy || data.selectedByName)
     };
   });
