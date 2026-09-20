@@ -249,9 +249,7 @@ export const verifySalesRoomCustomerQd = webMethod(
 );
 
 
-export const getSalesRoomCustomers = webMethod(
-  Permissions.SiteMember,
-  async () => {
+async function loadSalesRoomCustomers() {
     const staff = await requireAuthorizedStaffContext();
     let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
 
@@ -313,13 +311,17 @@ export const getSalesRoomCustomers = webMethod(
       },
       customers
     });
-  }
+}
+
+export const getSalesRoomCustomers = webMethod(
+  Permissions.SiteMember,
+  loadSalesRoomCustomers
 );
 
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
   async () => {
-    const base = await getSalesRoomCustomers();
+    const base = await loadSalesRoomCustomers();
     const [listRows, orderRows] = await Promise.all([
       readPayloadRows(BUYER_LIST_COLLECTION),
       readPayloadRows(BUYER_ORDER_COLLECTION)
