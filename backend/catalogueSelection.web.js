@@ -67,6 +67,7 @@ export const addCatalogueSelection = webMethod(
         itemName: normalize(product.name),
         packingSize: normalize(product.description),
         mainCategory: normalize(product.mainCategory),
+        imageUrl: imageUrl_(product.image),
         quoteStatus: 'RFQ',
         selectedAt: now,
         selectedByType: context.actorType,
@@ -325,6 +326,30 @@ async function postJson_(url, payload) {
   let body;
   try { body = JSON.parse(text || '{}'); } catch (_) { body = {}; }
   return { ok: response.status >= 200 && response.status < 300, status: response.status, body, text };
+}
+
+function imageUrl_(value, depth = 0) {
+  if (depth > 5 || value == null) return '';
+  if (typeof value === 'object') {
+    const candidates = [value.url, value.id, value.src, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id];
+    for (const candidate of candidates) {
+      const resolved = imageUrl_(candidate, depth + 1);
+      if (resolved) return resolved;
+    }
+    return '';
+  }
+  const raw = normalize(value);
+  if (!raw) return '';
+  if (raw.startsWith('{')) {
+    try { return imageUrl_(JSON.parse(raw), depth + 1); } catch (_) { /* Continue with string parsing. */ }
+  }
+  const wixImage = /^(?:wix:)?image:\/\/v1\/([^/#?]+)/i.exec(raw);
+  if (wixImage) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixImage[1]))}`;
+  const wixCdn = /^https?:\/\/static\.wixstatic\.com\/media\/([^/#?]+)/i.exec(raw);
+  if (wixCdn) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixCdn[1]))}`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[A-Za-z0-9_.~-]+\.(?:avif|bmp|gif|heic|jpeg|jpg|png|svg|tif|tiff|webp)$/i.test(raw)) return `https://static.wixstatic.com/media/${encodeURIComponent(raw)}`;
+  return '';
 }
 
 function nodeHttpsRequest_(url, options, body = '') {

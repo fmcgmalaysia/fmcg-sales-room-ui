@@ -16,6 +16,29 @@ function upper(value) { return normalize(value).toUpperCase(); }
 function normalizeEmail(value) { return normalize(value).toLowerCase(); }
 function quantity(value) { const n = Number(value); return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; }
 function money(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
+function imageUrl(value, depth = 0) {
+  if (depth > 5 || value == null) return '';
+  if (typeof value === 'object') {
+    const candidates = [value.url, value.id, value.src, value.image, value.imageInfo?.url, value.imageInfo?.id, value.media?.url, value.media?.id];
+    for (const candidate of candidates) {
+      const resolved = imageUrl(candidate, depth + 1);
+      if (resolved) return resolved;
+    }
+    return '';
+  }
+  const raw = normalize(value);
+  if (!raw) return '';
+  if (raw.startsWith('{')) {
+    try { return imageUrl(JSON.parse(raw), depth + 1); } catch (_) { /* Continue with string parsing. */ }
+  }
+  const wixImage = /^(?:wix:)?image:\/\/v1\/([^/#?]+)/i.exec(raw);
+  if (wixImage) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixImage[1]))}`;
+  const wixCdn = /^https?:\/\/static\.wixstatic\.com\/media\/([^/#?]+)/i.exec(raw);
+  if (wixCdn) return `https://static.wixstatic.com/media/${encodeURIComponent(decodeURIComponent(wixCdn[1]))}`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[A-Za-z0-9_.~-]+\.(?:avif|bmp|gif|heic|jpeg|jpg|png|svg|tif|tiff|webp)$/i.test(raw)) return `https://static.wixstatic.com/media/${encodeURIComponent(raw)}`;
+  return '';
+}
 function memberEmail(member) {
   const candidate = member?.loginEmail || member?.contactDetails?.email || member?.contactDetails?.emails?.[0];
   return normalizeEmail(typeof candidate === 'string' ? candidate : candidate?.email);
@@ -28,6 +51,16 @@ function payloadData(record) {
 async function readPayloadRows(collectionId) {
   const result = await wixData.query(collectionId).limit(1000).find({ suppressAuth: true, consistentRead: true });
   return result.items.map(record => ({ record, data: payloadData(record) }));
+}
+async function productsByIds(ids) {
+  const products = [];
+  for (let index = 0; index < ids.length; index += 50) {
+    const batch = await Promise.all(ids.slice(index, index + 50).map(async id => {
+      try { return await wixData.get(PRODUCT_COLLECTION, id, { suppressAuth: true }); } catch (_) { return null; }
+    }));
+    products.push(...batch.filter(Boolean));
+  }
+  return products;
 }
 async function putPayload(collectionId, title, payload) {
   const result = await wixData.query(collectionId).eq('title', normalize(title)).limit(2).find({ suppressAuth: true, consistentRead: true });
@@ -88,10 +121,7 @@ async function resolveBuyerContext(assistCustomerId = '') {
 async function workspaceItems(customerId) {
   const rows = (await readPayloadRows(BUYER_LIST_COLLECTION)).filter(entry => normalize(entry.data.customerId) === normalize(customerId));
   const productIds = [...new Set(rows.map(entry => normalize(entry.data.productId)).filter(Boolean))];
-  let products = [];
-  if (productIds.length) {
-    try { products = (await wixData.query(PRODUCT_COLLECTION).hasSome('_id', productIds).limit(1000).find({ suppressAuth: true })).items; } catch (_) { products = []; }
-  }
+  const products = await productsByIds(productIds);
   const byProductId = new Map(products.map(product => [normalize(product._id), product]));
   return rows.map(({ record, data }) => {
     const product = byProductId.get(normalize(data.productId)) || {};
@@ -103,7 +133,7 @@ async function workspaceItems(customerId) {
       packingSize: normalize(data.packingSize || product.description),
       brand: normalize(data.brand || product.brandName || product.principle),
       category: normalize(data.category || data.mainCategory || product.mainCategory),
-      image: data.image || data.imageUrl || product.image || '',
+      imageUrl: imageUrl(data.imageUrl || data.image || product.image),
       ea: money(data.ea || product.ea), cbmPerCtn: money(data.cbmPerCtn || product.cbmPerCtn || product.cbm),
       normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
