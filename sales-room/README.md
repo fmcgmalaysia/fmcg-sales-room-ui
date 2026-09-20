@@ -44,3 +44,18 @@
 - `wix/onboarding.web.js` — Wix CMS orchestration and access-state rules.
 
 The Apps Script deployment keeps the existing `NCT_ONBOARDING_SHARED_SECRET`. The Wix backend secret name remains unchanged.
+
+## Customer lifecycle and access
+
+Customer management uses the existing `WixCustomers` and `WixCustomerUsers` collections. No separate archive or suspension collection is required.
+
+`WixCustomers` adds these operational fields:
+
+- `lifecycleStatus`: `ACTIVE` or `ARCHIVED`.
+- `accessStatus`: `PENDING`, `ACTIVE`, `SUSPENDED` or `BLOCKED`.
+- `reactivationStatus`: `NONE`, `REQUESTED`, `APPROVED` or `REJECTED`.
+- Reasons, staff identity and timestamps are stored in the existing `CustomerProfileAudit` collection instead of being duplicated in the customer record.
+
+The three status dimensions are intentionally separate. Archiving never deletes the customer, QD, confirmed orders or audit history. Suspending blocks Catalogue access immediately while Buyer Room can remain available in restricted account mode. Only Admin and Super Admin can suspend, archive, restore, approve or reject reactivation.
+
+Sales Room provides four compact customer views: **Active**, **Suspended**, **Reactivation** and **Archived**. The last two views and all account-state actions are Admin-only. Every account action is written to `CustomerProfileAudit`.

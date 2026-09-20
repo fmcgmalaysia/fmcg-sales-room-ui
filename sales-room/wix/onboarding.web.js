@@ -97,6 +97,9 @@ export const createSalesRoomCustomer = webMethod(
         qdTemplateVersion: '',
         qdStatus: 'PENDING',
         customerStatus: 'REGISTERING',
+        lifecycleStatus: 'ACTIVE',
+        accessStatus: 'PENDING',
+        reactivationStatus: 'NONE',
         primaryEmail: customer.picEmail
       },
       { suppressAuth: true }
@@ -204,12 +207,22 @@ export const verifySalesRoomCustomerQd = webMethod(
     );
 
     if (qdStatus === 'READY') {
+      const lifecycleStatus = upper(customerRecord.lifecycleStatus || 'ACTIVE');
+      const accessStatus = upper(customerRecord.accessStatus || 'PENDING');
+      const mayActivate = lifecycleStatus !== 'ARCHIVED' && accessStatus !== 'SUSPENDED' && accessStatus !== 'BLOCKED';
+      if (mayActivate) {
+        customerRecord = await wixData.update(
+          CUSTOMER_COLLECTION,
+          { ...customerRecord, lifecycleStatus: 'ACTIVE', accessStatus: 'ACTIVE' },
+          { suppressAuth: true }
+        );
+      }
       const users = await wixData.query(CUSTOMER_USER_COLLECTION)
         .eq('customerId', normalize(customerRecord.customerId))
         .limit(5)
         .find({ suppressAuth: true });
       for (const user of users.items) {
-        if (upper(user.status) === 'PENDING') {
+        if (mayActivate && upper(user.status) === 'PENDING') {
           await wixData.update(
             CUSTOMER_USER_COLLECTION,
             { ...user, status: 'ACTIVE', authorizedTime: user.authorizedTime || new Date() },
@@ -270,6 +283,9 @@ export const getSalesRoomCustomers = webMethod(
         country: normalize(item.country),
         qdStatus: upper(item.qdStatus),
         customerStatus: upper(item.customerStatus),
+        lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
+        accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
+        reactivationStatus: upper(item.reactivationStatus || 'NONE'),
         assignedStaffId: upper(item.assignedStaffId),
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
@@ -334,7 +350,11 @@ export const getSalesRoomCustomerDetail = webMethod(
         qdTemplateVersion: normalize(customer.qdTemplateVersion),
         qdLastVerifiedAt: customer.qdLastVerifiedAt || null,
         qdStatus: upper(customer.qdStatus),
-        customerStatus: upper(customer.customerStatus)
+        customerStatus: upper(customer.customerStatus),
+        lifecycleStatus: upper(customer.lifecycleStatus || 'ACTIVE'),
+        accessStatus: upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
+        reactivationStatus: upper(customer.reactivationStatus || 'NONE'),
+        accountUpdatedAt: customer._updatedDate || customer._createdDate || null
       },
       users: userResult.items
         .map((user) => ({
@@ -347,6 +367,83 @@ export const getSalesRoomCustomerDetail = webMethod(
           wixMemberId: normalize(user.wixMemberId)
         }))
         .sort((a, b) => a.userId.localeCompare(b.userId))
+    });
+  }
+);
+
+export const updateSalesRoomCustomerLifecycle = webMethod(
+  Permissions.SiteMember,
+  async (customerId, action, payload = {}) => {
+    const staff = await requireAdminStaffContext();
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const normalizedAction = upper(action);
+    const reason = normalize(payload?.reason);
+    const beforeLifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
+    const beforeAccess = upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE'));
+    const beforeReactivation = upper(customer.reactivationStatus || 'NONE');
+    const patch = {};
+
+    if (normalizedAction === 'SUSPEND') {
+      patch.lifecycleStatus = 'ACTIVE';
+      patch.accessStatus = 'SUSPENDED';
+      patch.reactivationStatus = 'NONE';
+    } else if (normalizedAction === 'ARCHIVE') {
+      patch.lifecycleStatus = 'ARCHIVED';
+      patch.accessStatus = 'SUSPENDED';
+      patch.reactivationStatus = 'NONE';
+    } else if (normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
+      patch.lifecycleStatus = 'ACTIVE';
+      patch.accessStatus = upper(customer.qdStatus) === 'READY' ? 'ACTIVE' : 'PENDING';
+      patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' ? 'APPROVED' : 'NONE';
+    } else if (normalizedAction === 'REJECT_REACTIVATION') {
+      patch.lifecycleStatus = beforeLifecycle;
+      patch.accessStatus = 'SUSPENDED';
+      patch.reactivationStatus = 'REJECTED';
+    } else {
+      throw new Error('Unsupported customer account action.');
+    }
+
+    const updated = await wixData.update(
+      CUSTOMER_COLLECTION,
+      { ...customer, ...patch },
+      { suppressAuth: true }
+    );
+
+    const users = await wixData
+      .query(CUSTOMER_USER_COLLECTION)
+      .eq('customerId', normalize(customer.customerId))
+      .limit(5)
+      .find({ suppressAuth: true });
+    const userStatus = patch.accessStatus === 'ACTIVE' ? 'ACTIVE' : patch.accessStatus === 'PENDING' ? 'PENDING' : 'SUSPENDED';
+    for (const user of users.items) {
+      await wixData.update(
+        CUSTOMER_USER_COLLECTION,
+        { ...user, status: userStatus },
+        { suppressAuth: true }
+      );
+    }
+
+    await writeAuditChanges(
+      PROFILE_AUDIT_COLLECTION,
+      'CUSTOMER_ACCOUNT_UPDATED',
+      normalize(customer.customerId),
+      normalize(customer.customerId),
+      [
+        { fieldId: 'lifecycleStatus', fieldLabel: 'Lifecycle Status', beforeValue: beforeLifecycle, afterValue: patch.lifecycleStatus },
+        { fieldId: 'accessStatus', fieldLabel: 'Access Status', beforeValue: beforeAccess, afterValue: patch.accessStatus },
+        { fieldId: 'reactivationStatus', fieldLabel: 'Reactivation Status', beforeValue: beforeReactivation, afterValue: patch.reactivationStatus },
+        { fieldId: 'reason', fieldLabel: 'Reason', beforeValue: '', afterValue: reason }
+      ],
+      staff
+    );
+
+    return Object.freeze({
+      ok: true,
+      customerId: normalize(updated.customerId),
+      action: normalizedAction,
+      lifecycleStatus: upper(updated.lifecycleStatus),
+      accessStatus: upper(updated.accessStatus),
+      reactivationStatus: upper(updated.reactivationStatus)
     });
   }
 );
@@ -365,7 +462,11 @@ const LOCKED_CUSTOMER_FIELDS = Object.freeze([
   'qdSheetName',
   'qdTemplateVersion',
   'qdStatus',
-  'customerStatus'
+  'customerStatus',
+  'lifecycleStatus',
+  'accessStatus',
+  'reactivationStatus',
+  'accountUpdatedAt'
 ]);
 
 const EDITABLE_CUSTOMER_FIELDS = Object.freeze({
@@ -488,6 +589,13 @@ export const saveSalesRoomCustomerUser = webMethod(
     }
 
     const before = existing || {};
+    const customerAccessStatus = upper(customer.accessStatus || 'PENDING');
+    const customerLifecycleStatus = upper(customer.lifecycleStatus || 'ACTIVE');
+    const permittedUserStatus = customerLifecycleStatus === 'ARCHIVED' || customerAccessStatus === 'SUSPENDED' || customerAccessStatus === 'BLOCKED'
+      ? 'SUSPENDED'
+      : customerAccessStatus === 'ACTIVE'
+        ? 'ACTIVE'
+        : 'PENDING';
     const nextUser = {
       ...(existing || {}),
       title: userName,
@@ -496,7 +604,7 @@ export const saveSalesRoomCustomerUser = webMethod(
       email,
       mobileNo,
       primaryUser: slot === 1,
-      status: existing ? upper(existing.status) || 'PENDING' : 'PENDING',
+      status: permittedUserStatus,
       authorizedTime: existing?.authorizedTime || new Date(),
       failedLoginCount: Number(existing?.failedLoginCount || 0)
     };
@@ -787,6 +895,14 @@ async function requireAuthorizedStaffContext() {
   const context = await resolveCurrentStaffContext();
   if (!context?.authorized) {
     throw new Error('This member is not authorized in STAFF MASTER.');
+  }
+  return context;
+}
+
+async function requireAdminStaffContext() {
+  const context = await requireAuthorizedStaffContext();
+  if (!context.canViewAllCustomers) {
+    throw new Error('Only Admin can change customer account status.');
   }
   return context;
 }
@@ -1247,8 +1363,8 @@ export const recordSalesRoomActivity = webMethod(
         afterValue: customerName,
         changedAt,
         changedByStaffId: upper(staff.staffId),
-        changedByStaffName: normalize(staff.staffName || staff.name || staff.staffId),
-        changedByEmail: normalizeEmail(staff.loginEmail || staff.email),
+        changedByStaffName: normalize(staff.staffName || staff.staffId),
+        changedByEmail: normalizeEmail(staff.loginEmail),
         changedByRole: upper(staff.role)
       },
       { suppressAuth: true }
@@ -1309,4 +1425,3 @@ export const getSalesRoomActivityForAdmin = webMethod(
     return Object.freeze({ ok: true, window, summaries, events });
   }
 );
-
