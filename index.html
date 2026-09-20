@@ -67,7 +67,7 @@ table{font-size:13px}th{font-size:10px;padding:10px 11px;white-space:nowrap}td{p
 @media(max-width:1050px){.formwrap.application-layout{grid-template-columns:1fr}.application-flow-panel{position:static}.application-output{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:700px){.application-panel>.ptitle,.application-flow-panel>.ptitle{align-items:flex-start;flex-direction:column}.application-sections{padding:10px}.application-section .formgrid{grid-template-columns:1fr}.application-section .field.full{grid-column:auto}.application-actions{align-items:stretch;flex-direction:column}.application-actions:before{margin:0}.application-actions button{width:100%}.application-output{grid-template-columns:1fr 1fr}}
 /* Clear interaction feedback for white operational buttons. */
-:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)){
+.secondary,.page-btn:not(:disabled):not(.active),.edit-profile-btn,.yn button:not(.on){
   border-color:#aebed2;
   background:linear-gradient(180deg,#fff 0%,#f8faff 100%);
   color:#244767;
@@ -75,19 +75,19 @@ table{font-size:13px}th{font-size:10px;padding:10px 11px;white-space:nowrap}td{p
   cursor:pointer;
   transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
 }
-:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):hover{
+.secondary:hover,.page-btn:not(:disabled):not(.active):hover,.edit-profile-btn:hover,.yn button:not(.on):hover{
   border-color:#4f8fdf;
   background:#edf5ff;
   color:#0d57c7;
   box-shadow:0 5px 14px rgba(23,105,224,.16);
   transform:translateY(-1px);
 }
-:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):active{
+.secondary:active,.page-btn:not(:disabled):not(.active):active,.edit-profile-btn:active,.yn button:not(.on):active{
   background:#e2eeff;
   box-shadow:0 1px 3px rgba(23,105,224,.18);
   transform:translateY(0);
 }
-:where(.secondary,.page-btn:not(:disabled),.edit-profile-btn,.yn button:not(.on)):focus-visible{
+.secondary:focus-visible,.page-btn:not(:disabled):not(.active):focus-visible,.edit-profile-btn:focus-visible,.yn button:not(.on):focus-visible{
   outline:3px solid rgba(23,105,224,.22);
   outline-offset:2px;
   border-color:#1769e0;
