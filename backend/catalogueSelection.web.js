@@ -2,7 +2,7 @@ import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
-import https from 'https';
+import { request as httpsRequest } from 'https';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwGTMTCkdVL8voDSZ5PcD-JtFeqzvRjqbmVKAMPV43YqY1rPZcxKzE4UconsoV8gks-/exec';
 const SECRET_NAME = 'NCT_ONBOARDING_SHARED_SECRET';
@@ -329,7 +329,7 @@ async function postJson_(url, payload) {
 
 function nodeHttpsRequest_(url, options, body = '') {
   return new Promise((resolve, reject) => {
-    const request = https.request(url, options, (response) => {
+    const request = httpsRequest(url, options, (response) => {
       let text = '';
       response.setEncoding('utf8');
       response.on('data', (chunk) => { text += chunk; });
