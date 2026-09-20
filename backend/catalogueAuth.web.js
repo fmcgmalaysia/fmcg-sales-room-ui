@@ -63,25 +63,19 @@ async function productsByIds(ids) {
   return products;
 }
 async function productsByBarcodes(barcodes) {
-  const products = [];
-  for (const barcode of barcodes) {
-    let item = null;
+  const matches = await Promise.all(barcodes.map(async barcode => {
     try {
       const textMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true });
-      item = textMatch.items[0] || null;
+      if (textMatch.items[0]) return textMatch.items[0];
     } catch (_) { /* Retry numeric barcode below. */ }
-    if (!item) {
-      const numericBarcode = Number(barcode);
-      if (Number.isFinite(numericBarcode)) {
-        try {
-          const numberMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', numericBarcode).limit(1).find({ suppressAuth: true, consistentRead: true });
-          item = numberMatch.items[0] || null;
-        } catch (_) { /* Leave this barcode unresolved. */ }
-      }
-    }
-    if (item) products.push(item);
-  }
-  return products;
+    const numericBarcode = Number(barcode);
+    if (!Number.isFinite(numericBarcode)) return null;
+    try {
+      const numberMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', numericBarcode).limit(1).find({ suppressAuth: true, consistentRead: true });
+      return numberMatch.items[0] || null;
+    } catch (_) { return null; }
+  }));
+  return matches.filter(Boolean);
 }
 async function putPayload(collectionId, title, payload) {
   const result = await wixData.query(collectionId).eq('title', normalize(title)).limit(2).find({ suppressAuth: true, consistentRead: true });
