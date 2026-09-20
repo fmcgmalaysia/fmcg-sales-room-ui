@@ -257,17 +257,25 @@ async function loadSalesRoomCustomers() {
       query = query.eq('assignedStaffId', upper(staff.staffId));
     }
 
-    const customerResult = await query.find({ suppressAuth: true });
+    const [customerResult, userResult, memberResult] = await Promise.all([
+      query.find({ suppressAuth: true }),
+      wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true }),
+      wixData.query('Members/FullData').limit(1000).find({ suppressAuth: true }).catch(() => ({ items: [] }))
+    ]);
     const customerIds = new Set(
       customerResult.items.map((item) => normalize(item.customerId))
     );
 
-    const userResult = await wixData
-      .query(CUSTOMER_USER_COLLECTION)
-      .limit(1000)
-      .find({ suppressAuth: true });
-
     const activeUserCounts = new Map();
+    const lastLoginByCustomer = new Map();
+    const membersById = new Map();
+    const membersByEmail = new Map();
+    for (const member of memberResult.items || []) {
+      const memberId = normalize(member._id);
+      const email = normalizeEmail(member.loginEmail);
+      if (memberId) membersById.set(memberId, member);
+      if (email) membersByEmail.set(email, member);
+    }
     for (const user of userResult.items) {
       const customerId = normalize(user.customerId);
       if (!customerIds.has(customerId) || upper(user.status) !== 'ACTIVE') {
@@ -277,6 +285,16 @@ async function loadSalesRoomCustomers() {
         customerId,
         Number(activeUserCounts.get(customerId) || 0) + 1
       );
+      const member =
+        membersById.get(normalize(user.wixMemberId || user.memberId)) ||
+        membersByEmail.get(normalizeEmail(user.email));
+      const lastLoginAt = member?.lastLoginDate || member?.lastLogin || null;
+      if (lastLoginAt) {
+        const current = lastLoginByCustomer.get(customerId);
+        if (!current || new Date(lastLoginAt).getTime() > new Date(current).getTime()) {
+          lastLoginByCustomer.set(customerId, lastLoginAt);
+        }
+      }
     }
 
     const customers = customerResult.items
@@ -293,6 +311,7 @@ async function loadSalesRoomCustomers() {
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
+        lastLoginAt: lastLoginByCustomer.get(normalize(item.customerId)) || null,
         updatedAt: item._updatedDate || item._createdDate || null
       }))
       .sort((a, b) => {
@@ -335,7 +354,7 @@ export const getSalesRoomCustomersOperational = webMethod(
       if (!customerId) continue;
       const status = upper(item.quoteStatus || (money(item.vipPriceCtn || item.vipPrice) > 0 ? 'VIEW QUOTE' : 'RFQ'));
       const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0 };
-      if (status === 'VIEW QUOTE') current.quoted += 1;
+      if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
       if (status === 'RFQ' || status === 'FAILED') current.awaiting += 1;
       quoteByCustomer.set(customerId, current);
     }
@@ -359,6 +378,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         ...(base.summary || {}),
         customerCount: customers.length,
         quoteCustomerCount: customers.filter((item) => item.awaitingQuoteItemCount > 0).length,
+        quotedItemCount: customers.reduce((sum, item) => sum + item.quotedItemCount, 0),
         unquotedItemCount: customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0),
         confirmedOrderCount: incomingOrders.length
       }
