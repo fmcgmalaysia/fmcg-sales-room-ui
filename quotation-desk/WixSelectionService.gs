@@ -42,7 +42,6 @@ function WIX_addCatalogueSelection(payload) {
 
     const row = WIX_firstEmptyQdRow_(sheet, headers['UNIT BARCODE'], idColumn);
     const values = {
-      'COST HEALTH': '🔴',
       'QUOTE STATUS': 'RFQ',
       'UNIT BARCODE': source.unitBarcode,
       'ITEM NAME': source.itemName,
@@ -50,11 +49,11 @@ function WIX_addCatalogueSelection(payload) {
       'EA': source.ea,
       'WIX MY LIST ID': p.wixMyListId
     };
+    sheet.getRange(row, headers['COST HEALTH']).clearContent().clearNote();
     ['LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3'].forEach(function (name) {
       sheet.getRange(row, headers[name]).clearContent();
     });
     Object.keys(values).forEach(function (name) { sheet.getRange(row, headers[name]).setValue(values[name]); });
-    sheet.getRange(row, headers['COST HEALTH']).setNote('Run CATCH COST to establish the current POINT BASE reference.');
     sheet.getRange(row, headers['UNIT BARCODE']).setNumberFormat('@');
     SpreadsheetApp.flush();
     return { customerId: p.customerId, wixMyListId: p.wixMyListId, qdRow: row, idempotent: false };
