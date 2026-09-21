@@ -107,9 +107,12 @@ function setupSelectionActions() {
                 if (result?.ok) selectedProductIds.add(productId);
                 button.label = 'Selected · View';
                 button.enable();
-                const state = await getCatalogueSelectionState(selectionContext.assistCustomerId || '');
-                selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
-                sidebarSelectionState(state);
+                getCatalogueSelectionState(selectionContext.assistCustomerId || '')
+                    .then((state) => {
+                        selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+                        sidebarSelectionState(state);
+                    })
+                    .catch((error) => console.error('Selection sidebar refresh failed', error));
                 // QD routing is deliberately independent from the buyer's
                 // selection confirmation. Failure is retried by Sales Room.
                 routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
