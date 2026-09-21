@@ -23,7 +23,7 @@ function WIX_addCatalogueSelection(payload) {
     const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
     if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
     const headers = WIX_selectionHeaderMap_(sheet);
-    const required = ['COST HEALTH', 'QUOTE STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3', 'WIX MY LIST ID'];
+    const required = ['QUOTE STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3', 'WIX MY LIST ID'];
     required.forEach(function (name) { if (!headers[name]) throw new Error('QD header is missing: ' + name); });
 
     const idColumn = headers['WIX MY LIST ID'];
@@ -49,7 +49,6 @@ function WIX_addCatalogueSelection(payload) {
       'EA': source.ea,
       'WIX MY LIST ID': p.wixMyListId
     };
-    sheet.getRange(row, headers['COST HEALTH']).clearContent().clearNote();
     ['LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3'].forEach(function (name) {
       sheet.getRange(row, headers[name]).clearContent();
     });
