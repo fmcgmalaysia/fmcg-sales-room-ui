@@ -24,6 +24,26 @@ const WIX_QD_FACTORY_CFG = Object.freeze({
   TEMPLATE_VERSION_METADATA: 'WIX_QD_TEMPLATE_VERSION'
 });
 
+/**
+ * One-time authorization check for the QD factory.
+ *
+ * The same-name write is intentionally a no-op. It makes Apps Script request
+ * the full Drive scope required by template.makeCopy(), while leaving the
+ * private template's name and contents unchanged.
+ */
+function WIX_authorizeDriveAndSheets() {
+  const folder = DriveApp.getFolderById(WIX_QD_FACTORY_CFG.DESTINATION_FOLDER_ID);
+  const template = DriveApp.getFileById(WIX_QD_FACTORY_CFG.TEMPLATE_FILE_ID);
+  template.setName(template.getName());
+  const spreadsheet = SpreadsheetApp.openById(template.getId());
+  const result = {
+    folderName: folder.getName(),
+    templateName: spreadsheet.getName()
+  };
+  console.log(JSON.stringify(result));
+  return result;
+}
+
 function WIX_createCustomerQuotationDesk(payload) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
