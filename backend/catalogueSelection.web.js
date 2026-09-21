@@ -246,7 +246,11 @@ export const routeSalesRoomCustomerSelections = webMethod(
         && (Date.parse(payload.qdLastAttemptAt || '') || 0) >= Date.now() - 60000;
     }).length;
     const results = [];
-    for (const item of queue) results.push(await routeOneSelection_(item, customer));
+    for (const item of queue) {
+      const result = await routeOneSelection_(item, customer);
+      results.push(result);
+      if (!result.ok) break;
+    }
     if (results.length) await notifySalesRoomSelectionChanged_();
     return Object.freeze({
       ok: results.every((result) => result.ok),
@@ -278,7 +282,9 @@ async function routeQueuedSelections_(items, customers, allowedCustomerIds) {
     const payload = selectionPayload_(item);
     const customer = customerById.get(normalize(payload.customerId));
     if (!customer || !normalize(customer.qdFileId)) continue;
-    results.push(await routeOneSelection_(item, customer));
+    const result = await routeOneSelection_(item, customer);
+    results.push(result);
+    if (!result.ok) break;
   }
   if (results.length) await notifySalesRoomSelectionChanged_();
   return Object.freeze({ ok: true, processed: results.length, results });
@@ -548,7 +554,7 @@ function nodeHttpsRequest_(url, options, body = '') {
       }));
     });
     request.on('error', reject);
-    request.setTimeout(30000, () => request.destroy(new Error('QD service request timed out.')));
+    request.setTimeout(15000, () => request.destroy(new Error('QD service request timed out.')));
     if (body) request.write(body);
     request.end();
   });

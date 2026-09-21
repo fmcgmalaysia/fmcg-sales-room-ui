@@ -1,7 +1,5 @@
 /** Central Wix My Selection -> independent customer QD writer. */
 const WIX_SELECTION_CFG = Object.freeze({
-  POINT_BASE_FILE_ID: '12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg',
-  POINT_BASE_SHEETS: ['FOOD', 'NONFOOD', 'OTHERS'],
   QD_SHEET: 'WIX QUOTATION',
   QD_HEADER_ROW: 5,
   QD_DATA_START_ROW: 7,
@@ -23,7 +21,7 @@ function WIX_addCatalogueSelection(payload) {
     const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
     if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
     const headers = WIX_selectionHeaderMap_(sheet);
-    const required = ['QUOTE STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3', 'WIX MY LIST ID'];
+    const required = ['QUOTE STATUS', 'UNIT BARCODE', 'WIX MY LIST ID'];
     required.forEach(function (name) { if (!headers[name]) throw new Error('QD header is missing: ' + name); });
 
     const idColumn = headers['WIX MY LIST ID'];
@@ -35,23 +33,12 @@ function WIX_addCatalogueSelection(payload) {
       }
     }
 
-    const source = WIX_findPointBaseProduct_(p.unitBarcode);
-    if (!source) throw new Error('Unit Barcode was not found in WIX POINT BASE.');
-    if (source.duplicate) throw new Error('Duplicate Unit Barcode exists in WIX POINT BASE.');
-    if (source.status !== 'ACTIVE') throw new Error('Product is not ACTIVE in WIX POINT BASE.');
-
     const row = WIX_firstEmptyQdRow_(sheet, headers['UNIT BARCODE'], idColumn);
     const values = {
       'QUOTE STATUS': 'RFQ',
-      'UNIT BARCODE': source.unitBarcode,
-      'ITEM NAME': source.itemName,
-      'PACKING SIZE': source.packingSize,
-      'EA': source.ea,
+      'UNIT BARCODE': p.unitBarcode,
       'WIX MY LIST ID': p.wixMyListId
     };
-    ['LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3'].forEach(function (name) {
-      sheet.getRange(row, headers[name]).clearContent();
-    });
     Object.keys(values).forEach(function (name) { sheet.getRange(row, headers[name]).setValue(values[name]); });
     sheet.getRange(row, headers['UNIT BARCODE']).setNumberFormat('@');
     SpreadsheetApp.flush();
@@ -89,50 +76,8 @@ function WIX_removeCatalogueSelection(payload) {
   }
 }
 
-function WIX_findPointBaseProduct_(barcode) {
-  const book = SpreadsheetApp.openById(WIX_SELECTION_CFG.POINT_BASE_FILE_ID);
-  let found = null;
-  WIX_SELECTION_CFG.POINT_BASE_SHEETS.forEach(function (sheetName) {
-    const sheet = book.getSheetByName(sheetName);
-    if (!sheet) throw new Error('WIX POINT BASE is missing tab: ' + sheetName);
-    const headers = WIX_pointBaseHeaderMap_(sheet);
-    const required = ['STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'COST /PC', 'COST /CTN', 'DISC. 1', 'DISC. 2', 'DISC. 3'];
-    required.forEach(function (name) { if (!headers[name]) throw new Error('WIX POINT BASE ' + sheetName + ' is missing header: ' + name); });
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 3) return;
-    const display = sheet.getRange(3, headers['UNIT BARCODE'], lastRow - 2, 1).getDisplayValues();
-    display.forEach(function (cell, index) {
-      if (WIX_normalizeBarcode_(cell[0]) !== barcode) return;
-      const row = index + 3;
-      const record = {
-        sourceSheet: sheetName,
-        sourceRow: row,
-        status: String(sheet.getRange(row, headers['STATUS']).getDisplayValue() || '').trim().toUpperCase(),
-        unitBarcode: barcode,
-        itemName: sheet.getRange(row, headers['ITEM NAME']).getValue(),
-        packingSize: sheet.getRange(row, headers['PACKING SIZE']).getValue(),
-        ea: sheet.getRange(row, headers['EA']).getValue(),
-        costPc: sheet.getRange(row, headers['COST /PC']).getValue(),
-        costCtn: sheet.getRange(row, headers['COST /CTN']).getValue(),
-        disc1: sheet.getRange(row, headers['DISC. 1']).getValue(),
-        disc2: sheet.getRange(row, headers['DISC. 2']).getValue(),
-        disc3: sheet.getRange(row, headers['DISC. 3']).getValue()
-      };
-      if (found) found = { duplicate: true }; else found = record;
-    });
-  });
-  return found;
-}
-
 function WIX_selectionHeaderMap_(sheet) {
   const values = sheet.getRange(WIX_SELECTION_CFG.QD_HEADER_ROW, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
-  const map = {};
-  values.forEach(function (value, index) { const key = String(value || '').trim().toUpperCase(); if (key) map[key] = index + 1; });
-  return map;
-}
-
-function WIX_pointBaseHeaderMap_(sheet) {
-  const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
   const map = {};
   values.forEach(function (value, index) { const key = String(value || '').trim().toUpperCase(); if (key) map[key] = index + 1; });
   return map;
