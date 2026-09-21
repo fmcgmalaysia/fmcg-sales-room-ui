@@ -10,6 +10,7 @@ Buyer-facing product discovery, brand browsing, and selection before any order i
 | [`wix/catalogue-mega-menu-v3.html`](wix/catalogue-mega-menu-v3.html) | Mega menu `#html4` in the unpublished Wix draft; interaction testing pending |
 | [`wix/catalogue-sidebar-v1.html`](wix/catalogue-sidebar-v1.html) | Left sidebar `#html5` |
 | [`wix/catalogue-page-v3.js`](wix/catalogue-page-v3.js) | Catalogue page logic synced from Wix IDE to the unpublished editor draft |
+| [`wix/product-details.js`](wix/product-details.js) | Product Details lightbox renderer; CBM displays at four decimal places |
 
 The design, incomplete CMS work, and publishing checks are in [`design-handoff.md`](design-handoff.md).
 

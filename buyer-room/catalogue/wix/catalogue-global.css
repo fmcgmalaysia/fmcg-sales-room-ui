@@ -1,0 +1,10 @@
+.catalogue-results-stage {
+  min-height: 100vh !important;
+}
+
+.catalogue-results-shell {
+  height: auto !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+  align-self: start !important;
+}

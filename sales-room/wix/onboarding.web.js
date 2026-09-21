@@ -6,7 +6,7 @@ import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const SECRET_NAME = 'WIX_QD_ROUTER_TOKEN';
+const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
 
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -308,6 +308,7 @@ async function loadSalesRoomCustomers() {
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
         reactivationStatus: upper(item.reactivationStatus || 'NONE'),
         assignedStaffId: upper(item.assignedStaffId),
+        primaryEmail: normalizeEmail(item.primaryEmail),
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
