@@ -17,6 +17,23 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
 
+const SELECTION_BUTTON_THEME = {
+    idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
+    busy: { label: 'Adding…', background: '#D9E2EA', color: '#536575', border: '#D9E2EA' },
+    selected: { label: '✓ In My Selection', background: '#EDF4F1', color: '#214C3D', border: '#739B8B' },
+    error: { label: 'Try Again', background: '#FFF7ED', color: '#9A4B14', border: '#D9A66E' }
+};
+
+function paintSelectionButton(button, state = 'idle') {
+    const theme = SELECTION_BUTTON_THEME[state] || SELECTION_BUTTON_THEME.idle;
+    button.label = theme.label;
+    button.style.backgroundColor = theme.background;
+    button.style.color = theme.color;
+    button.style.borderColor = theme.border;
+    button.style.borderWidth = '1px';
+    button.style.borderRadius = '8px';
+}
+
 function imageUrl(value) {
     const raw = String(value || '').trim();
     if (/^https:\/\//i.test(raw)) return raw;
@@ -62,7 +79,7 @@ function setProductActions(enabled) {
         try {
             if (enabled) {
                 const selected = selectedProductIds.has(String(itemData?._id || ''));
-                $item('#button3').label = selected ? 'Selected · View' : 'Add To Selection';
+                paintSelectionButton($item('#button3'), selected ? 'selected' : 'idle');
                 $item('#button3').enable();
                 $item('#button3').expand();
                 $item('#button3').show();
@@ -99,13 +116,13 @@ function setupSelectionActions() {
                 return;
             }
             selectionBusyIds.add(productId);
-            button.label = 'ADDING…';
+            paintSelectionButton(button, 'busy');
             button.disable();
             try {
                 const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
                 if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
                 if (result?.ok) selectedProductIds.add(productId);
-                button.label = 'Selected · View';
+                paintSelectionButton(button, 'selected');
                 button.enable();
                 getCatalogueSelectionState(selectionContext.assistCustomerId || '')
                     .then((state) => {
@@ -122,7 +139,7 @@ function setupSelectionActions() {
                     .catch((error) => console.error('Background QD routing failed', error));
             } catch (error) {
                 console.error('Catalogue selection failed', error);
-                button.label = 'TRY AGAIN';
+                paintSelectionButton(button, 'error');
                 button.enable();
             } finally {
                 selectionBusyIds.delete(productId);
@@ -334,7 +351,7 @@ function setupNav() {
             await authentication.logout();
             wixLocationFrontend.to('/');
         } else if (message.type === 'catalogueBuyerRoom') {
-            openBuyerRoom();
+            openBuyerRoomWindow();
         }
     });
 
@@ -390,7 +407,7 @@ function setupNav() {
 function setupSidebar() {
     const sidebar = $w('#html5');
     sidebar.onMessage((event) => {
-        if (event.data?.type === 'OPEN_BUYER_ROOM') openBuyerRoom();
+        if (event.data?.type === 'OPEN_BUYER_ROOM') openBuyerRoomWindow();
     });
 }
 
