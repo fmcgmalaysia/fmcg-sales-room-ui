@@ -239,7 +239,7 @@ export const routeSalesRoomCustomerSelections = webMethod(
       const routingStartedAt = Date.parse(payload.qdLastAttemptAt || '') || 0;
       return !payload.removed
         && (['PENDING', 'FAILED'].includes(status) || (status === 'ROUTING' && routingStartedAt < Date.now() - 60000));
-    }).slice(0, 10);
+    }).slice(0, 5);
     const routing = rows.items.filter((item) => {
       const payload = selectionPayload_(item);
       return !payload.removed && upper(payload.qdSyncStatus) === 'ROUTING'
@@ -247,6 +247,7 @@ export const routeSalesRoomCustomerSelections = webMethod(
     }).length;
     const results = [];
     for (const item of queue) results.push(await routeOneSelection_(item, customer));
+    if (results.length) await notifySalesRoomSelectionChanged_();
     return Object.freeze({
       ok: results.every((result) => result.ok),
       processed: results.length,
@@ -279,6 +280,7 @@ async function routeQueuedSelections_(items, customers, allowedCustomerIds) {
     if (!customer || !normalize(customer.qdFileId)) continue;
     results.push(await routeOneSelection_(item, customer));
   }
+  if (results.length) await notifySalesRoomSelectionChanged_();
   return Object.freeze({ ok: true, processed: results.length, results });
 }
 
@@ -301,7 +303,6 @@ async function routeOneSelection_(item, customer) {
     { ...item, payload: JSON.stringify(routing) },
     { suppressAuth: true }
   );
-  await notifySalesRoomSelectionChanged_();
   try {
     const sharedSecret = await getSecret(SECRET_NAME);
     const response = await postJson_(APPS_SCRIPT_ENDPOINT, {
@@ -330,7 +331,6 @@ async function routeOneSelection_(item, customer) {
       { ...current, payload: JSON.stringify(ready) },
       { suppressAuth: true }
     );
-    await notifySalesRoomSelectionChanged_();
     return Object.freeze({ ok: true, idempotent: Boolean(result.idempotent), selectionId: normalize(item._id), qdRow: ready.qdRow });
   } catch (error) {
     const failed = {
@@ -344,7 +344,6 @@ async function routeOneSelection_(item, customer) {
       { ...current, payload: JSON.stringify(failed) },
       { suppressAuth: true }
     );
-    await notifySalesRoomSelectionChanged_();
     return Object.freeze({ ok: false, selectionId: normalize(item._id), error: failed.lastError });
   }
 }
