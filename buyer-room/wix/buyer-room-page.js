@@ -11,6 +11,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260922-5fdf989';
   assistCustomerId = getAssistCustomerId();
 
   async function loadWorkspace() {
