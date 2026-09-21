@@ -300,6 +300,13 @@ renderCustomerDetail=function(d){
       '<section class="detail-section"><div class="detail-section-head"><h3>Recent change history</h3></div><div id="customerAuditArea"><div class="empty">Loading history…</div></div></section>'+
     '</div>';
   const area=document.getElementById('customerDetailArea');
+  const primaryUserRow=area.querySelector('.user-table-row[data-slot="1"]');
+  if(primaryUserRow){
+    const primaryEmailInput=primaryUserRow.querySelector('input[data-k="email"]');
+    const primaryMobileInput=primaryUserRow.querySelector('input[data-k="mobileNo"]');
+    if(primaryEmailInput&&!primaryEmailInput.value.trim())primaryEmailInput.value=String(d.primaryEmail||'').trim();
+    if(primaryMobileInput&&!primaryMobileInput.value.trim())primaryMobileInput.value=String(d.mobileNo||'').trim();
+  }
   document.getElementById('closeCustomerDetail').onclick=()=>{currentCustomerId='';area.innerHTML=''};
   document.getElementById('editCustomerProfile').onclick=()=>{const section=document.getElementById('editableProfileSection');section.hidden=false;section.scrollIntoView({behavior:'smooth',block:'start'})};
   document.querySelectorAll('.user-edit').forEach(btn=>btn.onclick=()=>{const row=btn.closest('.user-table-row');row.querySelectorAll('input[data-k]').forEach(input=>input.disabled=false);row.querySelector('.user-save').disabled=false;btn.disabled=true;row.querySelector('input[data-k]')?.focus()});
