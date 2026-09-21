@@ -116,6 +116,9 @@ function setupSelectionActions() {
                 // QD routing is deliberately independent from the buyer's
                 // selection confirmation. Failure is retried by Sales Room.
                 routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
+                    .then((routeResult) => {
+                        if (!routeResult?.ok) console.error('Background QD routing failed', routeResult?.error || routeResult);
+                    })
                     .catch((error) => console.error('Background QD routing failed', error));
             } catch (error) {
                 console.error('Catalogue selection failed', error);

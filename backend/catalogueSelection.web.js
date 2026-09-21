@@ -122,9 +122,9 @@ export const getSalesRoomQuoteSignals = webMethod(
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
     if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customerResult = await customerQuery.find({ suppressAuth: true });
+    const customerResult = await customerQuery.find({ suppressAuth: true, consistentRead: true });
     const allowed = new Set(customerResult.items.map((item) => normalize(item.customerId)));
-    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true });
+    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
     const byCustomer = Object.create(null);
     customerResult.items.forEach((customer) => {
       const customerId = normalize(customer.customerId);
@@ -132,6 +132,12 @@ export const getSalesRoomQuoteSignals = webMethod(
         awaitingQuoteItemCount: 0,
         quotedItemCount: 0,
         failedQuoteItemCount: 0,
+        failedRouteItemCount: 0,
+        pendingRouteItemCount: 0,
+        routingItemCount: 0,
+        readyRouteItemCount: 0,
+        routeStatus: 'READY',
+        routeError: '',
         qdFileId: normalize(customer.qdFileId)
       };
     });
@@ -139,7 +145,11 @@ export const getSalesRoomQuoteSignals = webMethod(
       const payload = selectionPayload_(item);
       if (!allowed.has(normalize(payload.customerId))) return;
       const customerId = normalize(payload.customerId);
-      if (!byCustomer[customerId]) byCustomer[customerId] = { awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0, qdFileId: '' };
+      if (!byCustomer[customerId]) byCustomer[customerId] = {
+        awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0, failedRouteItemCount: 0,
+        pendingRouteItemCount: 0, routingItemCount: 0, readyRouteItemCount: 0,
+        routeStatus: 'READY', routeError: '', qdFileId: ''
+      };
       const status = upper(payload.quoteStatus || payload.status);
       const syncStatus = upper(payload.qdSyncStatus);
       const cleanupStatus = upper(payload.qdCleanupStatus);
@@ -149,7 +159,19 @@ export const getSalesRoomQuoteSignals = webMethod(
       }
       if (syncStatus === 'READY' && status === 'VIEW QUOTE') byCustomer[customerId].quotedItemCount += 1;
       else if (['PENDING', 'ROUTING', 'READY', 'FAILED'].includes(syncStatus) && status === 'RFQ') byCustomer[customerId].awaitingQuoteItemCount += 1;
-      if (syncStatus === 'FAILED') byCustomer[customerId].failedQuoteItemCount += 1;
+      if (syncStatus === 'FAILED') {
+        byCustomer[customerId].failedQuoteItemCount += 1;
+        byCustomer[customerId].failedRouteItemCount += 1;
+      }
+      if (syncStatus === 'PENDING') byCustomer[customerId].pendingRouteItemCount += 1;
+      if (syncStatus === 'ROUTING') byCustomer[customerId].routingItemCount += 1;
+      if (syncStatus === 'READY') byCustomer[customerId].readyRouteItemCount += 1;
+      if (syncStatus === 'FAILED' && !byCustomer[customerId].routeError) byCustomer[customerId].routeError = normalize(payload.lastError);
+    });
+    Object.values(byCustomer).forEach((item) => {
+      item.routeStatus = item.failedRouteItemCount > 0 ? 'FAILED'
+        : item.routingItemCount > 0 ? 'ROUTING'
+          : item.pendingRouteItemCount > 0 ? 'PENDING' : 'READY';
     });
     const summary = Object.values(byCustomer).reduce((total, item) => {
       total.awaitingQuoteItemCount += item.awaitingQuoteItemCount;
@@ -183,10 +205,56 @@ export const processSalesRoomSelectionQueue = webMethod(
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
     if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customerResult = await customerQuery.find({ suppressAuth: true });
+    const customerResult = await customerQuery.find({ suppressAuth: true, consistentRead: true });
     const allowed = new Set(customerResult.items.map((item) => normalize(item.customerId)));
-    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true });
+    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
     return routeQueuedSelections_(rows.items, customerResult.items, allowed);
+  }
+);
+
+// The red Sales Room bubble is also a manual "route now" control. This keeps
+// automatic routing, while giving staff an immediate, customer-specific retry.
+export const routeSalesRoomCustomerSelections = webMethod(
+  Permissions.SiteMember,
+  async (customerId) => {
+    const staff = await requireStaff_();
+    const normalizedCustomerId = normalize(customerId);
+    if (!normalizedCustomerId) throw new Error('Customer ID is required.');
+    const customerResult = await wixData.query(CUSTOMER_COLLECTION)
+      .eq('customerId', normalizedCustomerId)
+      .limit(2)
+      .find({ suppressAuth: true, consistentRead: true });
+    if (customerResult.items.length !== 1) throw new Error('Customer was not found.');
+    const customer = customerResult.items[0];
+    if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) {
+      throw new Error('This customer is not assigned to you.');
+    }
+    const rows = await wixData.query(SELECTION_COLLECTION)
+      .startsWith('title', normalizedCustomerId + '|')
+      .limit(1000)
+      .find({ suppressAuth: true, consistentRead: true });
+    const queue = rows.items.filter((item) => {
+      const payload = selectionPayload_(item);
+      const status = upper(payload.qdSyncStatus);
+      const routingStartedAt = Date.parse(payload.qdLastAttemptAt || '') || 0;
+      return !payload.removed
+        && (['PENDING', 'FAILED'].includes(status) || (status === 'ROUTING' && routingStartedAt < Date.now() - 60000));
+    }).slice(0, 10);
+    const routing = rows.items.filter((item) => {
+      const payload = selectionPayload_(item);
+      return !payload.removed && upper(payload.qdSyncStatus) === 'ROUTING'
+        && (Date.parse(payload.qdLastAttemptAt || '') || 0) >= Date.now() - 60000;
+    }).length;
+    const results = [];
+    for (const item of queue) results.push(await routeOneSelection_(item, customer));
+    return Object.freeze({
+      ok: results.every((result) => result.ok),
+      processed: results.length,
+      ready: results.filter((result) => result.ok && !result.routing).length,
+      failed: results.filter((result) => !result.ok).length,
+      routing,
+      results
+    });
   }
 );
 
@@ -233,6 +301,7 @@ async function routeOneSelection_(item, customer) {
     { ...item, payload: JSON.stringify(routing) },
     { suppressAuth: true }
   );
+  await notifySalesRoomSelectionChanged_();
   try {
     const sharedSecret = await getSecret(SECRET_NAME);
     const response = await postJson_(APPS_SCRIPT_ENDPOINT, {
@@ -261,6 +330,7 @@ async function routeOneSelection_(item, customer) {
       { ...current, payload: JSON.stringify(ready) },
       { suppressAuth: true }
     );
+    await notifySalesRoomSelectionChanged_();
     return Object.freeze({ ok: true, idempotent: Boolean(result.idempotent), selectionId: normalize(item._id), qdRow: ready.qdRow });
   } catch (error) {
     const failed = {
@@ -274,6 +344,7 @@ async function routeOneSelection_(item, customer) {
       { ...current, payload: JSON.stringify(failed) },
       { suppressAuth: true }
     );
+    await notifySalesRoomSelectionChanged_();
     return Object.freeze({ ok: false, selectionId: normalize(item._id), error: failed.lastError });
   }
 }
@@ -374,12 +445,12 @@ async function requireStaff_(knownMember) {
 }
 
 async function selectionItemsForCustomer_(customerId) {
-  const result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true });
+  const result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
   return result.items;
 }
 
 async function getSelectionById_(id) {
-  try { return await wixData.get(SELECTION_COLLECTION, id, { suppressAuth: true }); } catch (_) { return null; }
+  try { return await wixData.get(SELECTION_COLLECTION, id, { suppressAuth: true, consistentRead: true }); } catch (_) { return null; }
 }
 
 function publicSelection_(item) {
