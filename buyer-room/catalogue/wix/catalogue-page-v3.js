@@ -395,7 +395,22 @@ function openBuyerRoomWindow() {
     catch (_) { openBuyerRoom(); }
 }
 
+function setupFluidCatalogueLayout() {
+    const classMap = [
+        ['#section6', 'catalogue-results-section'],
+        ['#box19', 'catalogue-results-shell'],
+        ['#box20', 'catalogue-pagination-shell']
+    ];
+
+    classMap.forEach(([selector, className]) => {
+        // @ts-ignore - selectors are validated by the fixed map above.
+        try { $w(selector).customClassList.add(className); }
+        catch (error) { console.warn(`Catalogue layout class failed for ${selector}`, error); }
+    });
+}
+
 $w.onReady(() => {
+    setupFluidCatalogueLayout();
     setupSelectionActions();
     connectCardToLightbox('#repeater3', '#box17', '#button3', '#text16', '#imageX3');
     setupCataloguePagination();
