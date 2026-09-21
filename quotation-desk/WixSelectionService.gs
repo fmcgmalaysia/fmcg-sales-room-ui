@@ -23,7 +23,7 @@ function WIX_addCatalogueSelection(payload) {
     const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
     if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
     const headers = WIX_selectionHeaderMap_(sheet);
-    const required = ['QUOTE STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3', 'WIX MY LIST ID'];
+    const required = ['COST HEALTH', 'QUOTE STATUS', 'UNIT BARCODE', 'ITEM NAME', 'PACKING SIZE', 'EA', 'LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3', 'WIX MY LIST ID'];
     required.forEach(function (name) { if (!headers[name]) throw new Error('QD header is missing: ' + name); });
 
     const idColumn = headers['WIX MY LIST ID'];
@@ -42,21 +42,20 @@ function WIX_addCatalogueSelection(payload) {
 
     const row = WIX_firstEmptyQdRow_(sheet, headers['UNIT BARCODE'], idColumn);
     const values = {
+      'COST HEALTH': '🔴',
       'QUOTE STATUS': 'RFQ',
       'UNIT BARCODE': source.unitBarcode,
       'ITEM NAME': source.itemName,
       'PACKING SIZE': source.packingSize,
       'EA': source.ea,
-      'LP /PC': source.costPc,
-      'LP /CTN': source.costCtn,
-      'DISC 1': source.disc1,
-      'DISC 2': source.disc2,
-      'DISC 3': source.disc3,
       'WIX MY LIST ID': p.wixMyListId
     };
+    ['LP /PC', 'LP /CTN', 'DISC 1', 'DISC 2', 'DISC 3'].forEach(function (name) {
+      sheet.getRange(row, headers[name]).clearContent();
+    });
     Object.keys(values).forEach(function (name) { sheet.getRange(row, headers[name]).setValue(values[name]); });
+    sheet.getRange(row, headers['COST HEALTH']).setNote('Run CATCH COST to establish the current POINT BASE reference.');
     sheet.getRange(row, headers['UNIT BARCODE']).setNumberFormat('@');
-    ['DISC 1', 'DISC 2'].forEach(function (name) { sheet.getRange(row, headers[name]).setNumberFormat('0.00%'); });
     SpreadsheetApp.flush();
     return { customerId: p.customerId, wixMyListId: p.wixMyListId, qdRow: row, idempotent: false };
   } finally {
