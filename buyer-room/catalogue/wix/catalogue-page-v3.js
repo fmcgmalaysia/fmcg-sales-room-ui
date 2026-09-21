@@ -6,7 +6,7 @@ import wixData from 'wix-data';
 
 import { getCurrentStaffContext } from 'backend/staffAuth.web';
 import { getSalesRoomCustomerDetail } from 'backend/onboarding.web';
-import { addCatalogueSelection, getCatalogueSelectionState } from 'backend/catalogueSelection.web';
+import { addCatalogueSelection, getCatalogueSelectionState, routeCatalogueSelection } from 'backend/catalogueSelection.web';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
@@ -106,9 +106,14 @@ function setupSelectionActions() {
                 if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
                 if (result?.ok) selectedProductIds.add(productId);
                 button.label = 'Selected · View';
+                button.enable();
                 const state = await getCatalogueSelectionState(selectionContext.assistCustomerId || '');
                 selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
                 sidebarSelectionState(state);
+                // QD routing is deliberately independent from the buyer's
+                // selection confirmation. Failure is retried by Sales Room.
+                routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
+                    .catch((error) => console.error('Background QD routing failed', error));
             } catch (error) {
                 console.error('Catalogue selection failed', error);
                 button.label = 'TRY AGAIN';
