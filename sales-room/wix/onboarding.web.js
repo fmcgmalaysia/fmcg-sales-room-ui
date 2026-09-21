@@ -308,6 +308,7 @@ async function loadSalesRoomCustomers() {
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
         reactivationStatus: upper(item.reactivationStatus || 'NONE'),
         assignedStaffId: upper(item.assignedStaffId),
+        primaryEmail: normalizeEmail(item.primaryEmail),
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
