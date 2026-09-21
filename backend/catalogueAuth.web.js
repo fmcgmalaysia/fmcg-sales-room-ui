@@ -13,7 +13,7 @@ const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
-const QD_ROUTER_SECRET = 'WIX_QD_ROUTER_TOKEN';
+const QD_ROUTER_SECRET = 'FMCG_QD_ROUTER_TOKEN';
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
