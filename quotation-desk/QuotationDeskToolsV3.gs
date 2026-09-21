@@ -97,14 +97,17 @@ const QD_CFG = Object.freeze({
 
 
 function onOpen() {
-  SpreadsheetApp.getUi()
+  const ui = SpreadsheetApp.getUi();
+  ui
     .createMenu("QUOTATION DESK")
     .addItem("CATCH COST", "catchCostCurrentQuotationDesk")
     .addItem("SORT BY CATALOGUE ORDER", "sortQuotationByCatalogueOrder")
     .addSeparator()
-    .addItem("SYNC QUOTATION TO WIX", "syncQuotationToWix")
-    .addSeparator()
     .addItem("CHECK QD SETUP", "checkQuotationDeskSetup")
+    .addToUi();
+  ui
+    .createMenu("SYNC TO WIX")
+    .addItem("SYNC VIEW QUOTE ROWS", "syncQuotationToWix")
     .addToUi();
 }
 

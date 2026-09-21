@@ -66,6 +66,8 @@ This folder contains the Google Apps Script for the new one-customer-per-file Qu
 
 The script sends only rows deliberately marked `VIEW QUOTE`. A successful row remains `VIEW QUOTE`; a rejected or failed row becomes `FAILED`; `RFQ` rows are untouched.
 
+`SYNC TO WIX` is a separate top-level spreadsheet menu. The `QUOTATION DESK` menu contains only cost capture, catalogue-order sorting and setup checks, so publishing a quote is always a distinct deliberate action.
+
 Before live sync, add these Apps Script Properties to the template project:
 
 - `WIX_QUOTE_SYNC_URL`
