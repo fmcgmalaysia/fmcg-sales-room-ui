@@ -527,11 +527,17 @@ export const getSalesRoomCustomerDetail = webMethod(
     const staff = await requireAuthorizedStaffContext();
     const customer = await findAuthorizedCustomer(customerId, staff);
 
+    // CUSTOMER ID is a business key maintained by Sales Room.  Read the
+    // small user directory first and match it in code instead of relying on
+    // a CMS equality filter.  This also works while a newly added CMS field
+    // is still being indexed after a site publish.
     const userResult = await wixData
       .query(CUSTOMER_USER_COLLECTION)
-      .eq('customerId', normalize(customer.customerId))
-      .limit(5)
+      .limit(1000)
       .find({ suppressAuth: true });
+    const customerUsers = userResult.items
+      .filter((user) => normalize(user.customerId) === normalize(customer.customerId))
+      .slice(0, 5);
 
     return Object.freeze({
       ok: true,
@@ -566,7 +572,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         reactivationStatus: upper(customer.reactivationStatus || 'NONE'),
         accountUpdatedAt: customer._updatedDate || customer._createdDate || null
       },
-      users: userResult.items
+      users: customerUsers
         .map((user) => ({
           userId: normalize(user.userId),
           userName: normalize(user.title),
@@ -1255,21 +1261,30 @@ async function findAuthorizedCustomer(customerId, staff) {
     throw new Error('CUSTOMER ID is required.');
   }
 
-  const result = await wixData
-    .query(CUSTOMER_COLLECTION)
-    .eq('customerId', normalizedCustomerId)
-    .limit(2)
-    .find({ suppressAuth: true });
+  // Use the same proven read path as the customer list.  In production the
+  // direct .eq('customerId', ...) query intermittently failed for freshly
+  // published CMS schemas, which broke Manage Account, Order Form and the
+  // assisted Catalogue together.  Filtering the bounded customer directory
+  // in code keeps authorization deterministic and removes that shared point
+  // of failure.
+  let query = wixData.query(CUSTOMER_COLLECTION).limit(1000);
+  if (!staff.canViewAllCustomers) {
+    query = query.eq('assignedStaffId', upper(staff.staffId));
+  }
+  const result = await query.find({ suppressAuth: true });
+  const matches = result.items.filter(
+    (item) => normalize(item.customerId) === normalizedCustomerId
+  );
 
-  if (result.items.length !== 1) {
+  if (matches.length !== 1) {
     throw new Error(
-      result.items.length > 1
+      matches.length > 1
         ? 'Duplicate CUSTOMER ID. Admin review is required.'
         : 'Customer was not found.'
     );
   }
 
-  const customer = result.items[0];
+  const customer = matches[0];
   if (
     !staff.canViewAllCustomers &&
     upper(customer.assignedStaffId) !== upper(staff.staffId)
