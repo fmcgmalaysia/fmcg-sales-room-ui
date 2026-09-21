@@ -261,13 +261,16 @@ renderCustomerDetail=function(d){
   const userRows=[1,2,3,4,5].map(slot=>{
     const suffix='-'+String(slot).padStart(2,'0');
     const u=users.find(item=>String(item.userId||'').endsWith(suffix))||{};
-    const exists=Boolean(u.userId||u.email||u.userName||u.mobileNo);
+    const userName=u.userName||(slot===1?d.picName:'')||'';
+    const email=u.email||(slot===1?d.primaryEmail:'')||'';
+    const mobileNo=u.mobileNo||(slot===1?d.mobileNo:'')||'';
+    const exists=Boolean(u.userId||email||userName||mobileNo);
     const locked=exists?' disabled':'';
     return '<div class="user-table-row '+(slot===1?'primary-user':'')+'" data-slot="'+slot+'">'+
       '<div class="user-identity"><strong>User '+slot+'</strong><small>'+(slot===1?'Primary Account':'Account Slot')+'</small>'+tag(u.status||'NOT CREATED')+'</div>'+
-      '<input data-k="userName" aria-label="User '+slot+' Name" placeholder="Name" value="'+esc(u.userName||'')+'"'+locked+'>'+
-      '<input data-k="email" aria-label="User '+slot+' Email" type="email" placeholder="user@company.com" value="'+esc(u.email||'')+'"'+locked+'>'+
-      '<input data-k="mobileNo" aria-label="User '+slot+' Mobile Number" placeholder="+60" value="'+esc(u.mobileNo||'')+'"'+locked+'>'+
+      '<input data-k="userName" aria-label="User '+slot+' Name" placeholder="Name" value="'+esc(userName)+'"'+locked+'>'+
+      '<input data-k="email" aria-label="User '+slot+' Email" type="email" placeholder="user@company.com" value="'+esc(email)+'"'+locked+'>'+
+      '<input data-k="mobileNo" aria-label="User '+slot+' Mobile Number" placeholder="+60" value="'+esc(mobileNo)+'"'+locked+'>'+
       '<div class="user-actions"><button class="secondary user-edit" type="button" '+(exists?'':'disabled')+'>Edit</button><button class="primary user-save" data-slot="'+slot+'" type="button" '+(exists?'disabled':'')+'>Save</button></div>'+
       '<div class="user-row-status"></div></div>';
   }).join('');
