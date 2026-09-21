@@ -7,7 +7,10 @@ import wixData from 'wix-data';
 const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
 const LOGIN_URL = SITE_BASE + '/sales-room-login';
+const BUYER_LOGIN_URL = SITE_BASE + '/buyer-room-login';
 const STAFF_COLLECTION = 'StaffMaster';
+const CUSTOMER_COLLECTION = 'WixCustomers';
+const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const ACTIVE_STATUS = 'ACTIVE';
 
 function redirectTo(url) {
@@ -17,6 +20,14 @@ function loginRedirect(status, state = '') {
   const query = new URLSearchParams({ oauth: status });
   if (state) query.set('state', state);
   return redirectTo(LOGIN_URL + '?' + query.toString());
+}
+function buyerLoginRedirect(status, state = '') {
+  const query = new URLSearchParams({ oauth: status });
+  if (state) query.set('state', state);
+  return redirectTo(BUYER_LOGIN_URL + '?' + query.toString());
+}
+function oauthRedirect(status, state = '') {
+  return normalize(state).startsWith('B_') ? buyerLoginRedirect(status, state) : loginRedirect(status, state);
 }
 function normalize(value) { return String(value || '').trim(); }
 function normalizeEmail(value) { return normalize(value).toLowerCase(); }
@@ -34,6 +45,25 @@ async function findAuthorizedStaff(email) {
   if (normalize(staff.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'STAFF_INACTIVE' };
   return { authorized: true, staff };
 }
+async function findAuthorizedBuyer(email) {
+  const userResult = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const users = userResult.items.filter(item => normalizeEmail(item.email) === email);
+  if (users.length !== 1) return { authorized: false, reason: users.length > 1 ? 'DUPLICATE_BUYER_EMAIL' : 'BUYER_NOT_REGISTERED' };
+  const user = users[0];
+  if (normalize(user.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'BUYER_USER_INACTIVE' };
+
+  const customerId = normalize(user.customerId);
+  const customerResult = await wixData.query(CUSTOMER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const customers = customerResult.items.filter(item => normalize(item.customerId) === customerId);
+  if (customers.length !== 1) return { authorized: false, reason: customers.length > 1 ? 'DUPLICATE_CUSTOMER_ID' : 'CUSTOMER_NOT_FOUND' };
+  const customer = customers[0];
+  const lifecycle = normalize(customer.lifecycleStatus || customer.customerStatus).toUpperCase();
+  const access = normalize(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus).toUpperCase();
+  if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) {
+    return { authorized: false, reason: 'CUSTOMER_INACTIVE' };
+  }
+  return { authorized: true, user, customer };
+}
 
 export async function get_googleStaffAuthStart(request) {
   const state = normalize(request.query && request.query.state);
@@ -48,13 +78,26 @@ export async function get_googleStaffAuthStart(request) {
   }
 }
 
+export async function get_googleBuyerAuthStart(request) {
+  const state = normalize(request.query && request.query.state);
+  if (!validState(state) || !state.startsWith('B_')) return buyerLoginRedirect('invalid_state');
+  try {
+    const { clientId } = await oauthSecrets();
+    const params = new URLSearchParams({ client_id: clientId, redirect_uri: CALLBACK_URL, response_type: 'code', scope: 'openid email', state, prompt: 'select_account', include_granted_scopes: 'true' });
+    return redirectTo('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
+  } catch (error) {
+    console.error('Buyer Google OAuth start failed', error);
+    return buyerLoginRedirect('configuration_error', state);
+  }
+}
+
 export async function get_googleStaffAuth(request) {
   const state = normalize(request.query && request.query.state);
   const code = normalize(request.query && request.query.code);
   const oauthError = normalize(request.query && request.query.error);
   if (!validState(state)) return loginRedirect('invalid_state');
-  if (oauthError) return loginRedirect(oauthError === 'access_denied' ? 'cancelled' : 'google_error', state);
-  if (!code) return loginRedirect('missing_code', state);
+  if (oauthError) return oauthRedirect(oauthError === 'access_denied' ? 'cancelled' : 'google_error', state);
+  if (!code) return oauthRedirect('missing_code', state);
   try {
     const { clientId, clientSecret } = await oauthSecrets();
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -69,18 +112,19 @@ export async function get_googleStaffAuth(request) {
     if (!userResponse.ok) throw new Error('USERINFO_FAILED');
     const user = await userResponse.json();
     const email = normalizeEmail(user.email);
-    if (!email || user.email_verified !== true) return loginRedirect('unverified_email', state);
-    const access = await findAuthorizedStaff(email);
+    if (!email || user.email_verified !== true) return oauthRedirect('unverified_email', state);
+    const isBuyer = state.startsWith('B_');
+    const access = isBuyer ? await findAuthorizedBuyer(email) : await findAuthorizedStaff(email);
     if (!access.authorized) {
-      console.warn('Sales Room access denied', { reason: access.reason });
-      return loginRedirect('not_authorized', state);
+      console.warn(isBuyer ? 'Buyer Room access denied' : 'Sales Room access denied', { reason: access.reason });
+      return oauthRedirect('not_authorized', state);
     }
     const sessionToken = await authentication.generateSessionToken(email);
     const query = new URLSearchParams({ oauth: 'success', state, token: sessionToken });
-    return redirectTo(LOGIN_URL + '?' + query.toString());
+    return redirectTo((isBuyer ? BUYER_LOGIN_URL : LOGIN_URL) + '?' + query.toString());
   } catch (error) {
     console.error('Google OAuth callback failed', error);
-    return loginRedirect('server_error', state);
+    return oauthRedirect('server_error', state);
   }
 }
 
