@@ -138,7 +138,7 @@ $w.onReady(async () => {
                 await loadSelectionState(selectionContext.assistCustomerId);
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: 'assist',
-                    sheetName: String(customer.qdSheetName || '').trim(),
+                    sheetName: String(customer.companyName || customer.customerId || '').trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });
             } catch (error) {
