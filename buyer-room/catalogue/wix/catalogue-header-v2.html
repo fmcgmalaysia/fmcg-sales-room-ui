@@ -76,7 +76,7 @@
     document.getElementById('account').onclick=()=>post('catalogueAccount');
     document.getElementById('buyerRoom').onclick=()=>post('catalogueBuyerRoom');
     document.getElementById('brandLogo').onerror=()=>{document.getElementById('brandLogo').style.display='none';document.getElementById('brandFallback').style.display='block'};
-    window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer'}});
+    window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer'}if(d.type==='OPEN_BUYER_ROOM_WINDOW'){const url=new URL(String(d.path||'/buyer-room'),location.origin).href;const target=window.open(url,'FMCG_BUYER_ROOM');if(target)target.focus()}});
   </script>
 </body>
 </html>

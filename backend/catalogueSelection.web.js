@@ -4,8 +4,8 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
 
-const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwGTMTCkdVL8voDSZ5PcD-JtFeqzvRjqbmVKAMPV43YqY1rPZcxKzE4UconsoV8gks-/exec';
-const SECRET_NAME = 'NCT_ONBOARDING_SHARED_SECRET';
+const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
+const SECRET_NAME = 'WIX_QD_ROUTER_TOKEN';
 const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -17,9 +17,14 @@ export const getCatalogueSelectionState = webMethod(
   async (assistCustomerId = '') => {
     const context = await resolveSelectionContext_(assistCustomerId);
     const items = await selectionItemsForCustomer_(context.customerId);
-    // Only a confirmed QD write counts as selected. A PENDING/FAILED CMS row is
-    // deliberately left retryable so the catalogue can heal an interrupted sync.
-    const readyItems = items.filter((item) => upper(selectionPayload_(item).qdSyncStatus) === 'READY');
+    // A removed item stays visually Selected in Catalogue so the buyer always
+    // returns to the same Buyer Room record instead of creating a duplicate.
+    // Only active, confirmed QD rows contribute to the live selection counters.
+    const selectedItems = items.filter((item) => {
+      const payload = selectionPayload_(item);
+      return Boolean(payload.removed) || upper(payload.qdSyncStatus) === 'READY';
+    });
+    const readyItems = selectedItems.filter((item) => !selectionPayload_(item).removed && upper(selectionPayload_(item).qdSyncStatus) === 'READY');
     const counts = { food: 0, household: 0, personalCare: 0, general: 0 };
     readyItems.forEach((item) => {
       const payload = selectionPayload_(item);
@@ -28,8 +33,8 @@ export const getCatalogueSelectionState = webMethod(
     return Object.freeze({
       ok: true,
       customerId: context.customerId,
-      selectedProductIds: readyItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
-      selectedBarcodes: readyItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
+      selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
+      selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
       counts,
       total: readyItems.length
     });
@@ -164,6 +169,11 @@ export const getSalesRoomQuoteSignals = webMethod(
       if (!byCustomer[customerId]) byCustomer[customerId] = { awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0, qdFileId: '' };
       const status = upper(payload.quoteStatus || payload.status);
       const syncStatus = upper(payload.qdSyncStatus);
+      const cleanupStatus = upper(payload.qdCleanupStatus);
+      if (payload.removed) {
+        if (cleanupStatus === 'FAILED') byCustomer[customerId].failedQuoteItemCount += 1;
+        return;
+      }
       if (syncStatus === 'READY' && status === 'VIEW QUOTE') byCustomer[customerId].quotedItemCount += 1;
       else if (syncStatus === 'READY' && status === 'RFQ') byCustomer[customerId].awaitingQuoteItemCount += 1;
       if (syncStatus === 'FAILED') byCustomer[customerId].failedQuoteItemCount += 1;

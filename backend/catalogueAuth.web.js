@@ -1,6 +1,8 @@
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
+import { getSecret } from 'wix-secrets-backend';
+import { request as httpsRequest } from 'https';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -10,6 +12,8 @@ const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
 const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
+const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
+const QD_ROUTER_SECRET = 'WIX_QD_ROUTER_TOKEN';
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -107,7 +111,44 @@ function ensureActive(customer) {
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), status: 'ACTIVE' };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
+}
+
+function httpsCall(url, options, body = '') {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest(url, options, response => {
+      let text = '';
+      response.setEncoding('utf8');
+      response.on('data', chunk => { text += chunk; });
+      response.on('end', () => resolve({ status: Number(response.statusCode || 0), headers: response.headers || {}, text }));
+    });
+    req.on('error', reject);
+    req.setTimeout(30000, () => req.destroy(new Error('Quotation Desk service timed out.')));
+    if (body) req.write(body);
+    req.end();
+  });
+}
+async function routeQdAction(action, buyer, row) {
+  if (!buyer.qdFileId) throw new Error('Quotation Desk file is not configured.');
+  const payload = JSON.stringify({
+    action,
+    sharedSecret: await getSecret(QD_ROUTER_SECRET),
+    customerId: buyer.customerId,
+    assignedStaffId: buyer.assignedStaffId,
+    qdFileId: buyer.qdFileId,
+    wixMyListId: normalize(row.record._id || row.data.id || row.data.itemId),
+    unitBarcode: normalize(row.data.unitBarcode || row.data.barcode)
+  });
+  let response = await httpsCall(QD_ROUTER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, payload);
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    const location = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
+    if (!location) throw new Error('Quotation Desk redirect is missing.');
+    response = await httpsCall(new URL(location, QD_ROUTER_ENDPOINT).toString(), { method: 'GET', headers: { Accept: 'application/json' } });
+  }
+  let body = {};
+  try { body = JSON.parse(response.text || '{}'); } catch (_) { /* handled below */ }
+  if (response.status < 200 || response.status >= 300 || !body.ok) throw new Error(body.error || 'Quotation Desk update failed.');
+  return body.result || {};
 }
 async function resolveBuyerContext(assistCustomerId = '') {
   const member = await signedInMember();
@@ -218,17 +259,38 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);
   const now = new Date().toISOString();
-  const next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  const previousQuote = upper(row.data.quoteStatus) === 'VIEW QUOTE' ? {
+    status: 'VIEW QUOTE', quotePerPc: money(row.data.quotePerPc || row.data.vipPriceEa), quotePerCtn: money(row.data.quotePerCtn || row.data.vipPriceCtn), syncedAt: row.data.quoteSyncedAt || ''
+  } : row.data.previousQuote || null;
+  let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false, previousQuote, qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  return { ok: true, itemId: normalize(itemId), removed: true };
+  try {
+    await routeQdAction('REMOVE_SELECTION', buyer, row);
+    next = { ...next, qdSyncStatus: 'REMOVED', qdCleanupStatus: 'READY', qdRow: 0, qdCleanedAt: new Date().toISOString() };
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
+    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'READY' };
+  } catch (error) {
+    next = { ...next, qdCleanupStatus: 'FAILED', qdCleanupError: normalize(error?.message || error) };
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
+    return { ok: true, itemId: normalize(itemId), removed: true, qdCleanupStatus: 'FAILED', warning: 'The item was removed, but Sales Room must review QD cleanup.' };
+  }
 });
 export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);
   const now = new Date().toISOString();
-  const next = { ...row.data, removed: false, recoveredAt: now, updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  return { ok: true, itemId: normalize(itemId), removed: false };
+  try {
+    const result = await routeQdAction('ADD_SELECTION', buyer, row);
+    next = { ...next, qdSyncStatus: 'READY', qdSyncedAt: new Date().toISOString(), qdRow: Number(result.qdRow || 0), lastError: '' };
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
+    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ' };
+  } catch (error) {
+    next = { ...next, qdSyncStatus: 'FAILED', lastError: normalize(error?.message || error) };
+    await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
+    return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ', warning: 'Re-quote requested, but Sales Room must review QD routing.' };
+  }
 });
 function nextOrderId(customerId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + Date.now().toString(36).toUpperCase(); }
 export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '') => {

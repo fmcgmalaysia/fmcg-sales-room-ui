@@ -71,7 +71,7 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_RECOVER') {
-      await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Product recovered to My Selection.', 'recover');
+      await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Re-quote requested. The product is back in My Selection as RFQ.', 'recover');
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {

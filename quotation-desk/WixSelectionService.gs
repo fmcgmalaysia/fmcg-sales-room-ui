@@ -64,6 +64,34 @@ function WIX_addCatalogueSelection(payload) {
   }
 }
 
+function WIX_removeCatalogueSelection(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const p = WIX_validateSelectionPayload_(payload || {});
+    const qd = SpreadsheetApp.openById(p.qdFileId);
+    const storedCustomerId = WIX_spreadsheetMetadataValue_(qd, WIX_SELECTION_CFG.CUSTOMER_ID_METADATA);
+    if (storedCustomerId !== p.customerId) throw new Error('QD Customer ID does not match the Wix customer record.');
+    if (WIX_spreadsheetMetadataValue_(qd, WIX_SELECTION_CFG.BUILD_STATUS_METADATA) !== 'READY') throw new Error('Quotation Desk is not ready.');
+    const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
+    if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
+    const headers = WIX_selectionHeaderMap_(sheet);
+    if (!headers['WIX MY LIST ID']) throw new Error('QD header is missing: WIX MY LIST ID');
+    const lastRow = Math.max(sheet.getLastRow(), WIX_SELECTION_CFG.QD_DATA_START_ROW);
+    const ids = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, headers['WIX MY LIST ID'], lastRow - WIX_SELECTION_CFG.QD_DATA_START_ROW + 1, 1).getDisplayValues();
+    for (let index = 0; index < ids.length; index++) {
+      if (String(ids[index][0] || '').trim() !== p.wixMyListId) continue;
+      const row = WIX_SELECTION_CFG.QD_DATA_START_ROW + index;
+      sheet.getRange(row, 1, 1, sheet.getLastColumn()).clearContent();
+      SpreadsheetApp.flush();
+      return { customerId: p.customerId, wixMyListId: p.wixMyListId, removedRow: row, idempotent: false };
+    }
+    return { customerId: p.customerId, wixMyListId: p.wixMyListId, removedRow: 0, idempotent: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function WIX_findPointBaseProduct_(barcode) {
   const book = SpreadsheetApp.openById(WIX_SELECTION_CFG.POINT_BASE_FILE_ID);
   let found = null;

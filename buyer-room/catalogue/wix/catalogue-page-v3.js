@@ -62,8 +62,8 @@ function setProductActions(enabled) {
         try {
             if (enabled) {
                 const selected = selectedProductIds.has(String(itemData?._id || ''));
-                $item('#button3').label = selected ? 'Added To Selection' : 'Add To Selection';
-                if (selected) $item('#button3').disable(); else $item('#button3').enable();
+                $item('#button3').label = selected ? 'Selected · View' : 'Add To Selection';
+                $item('#button3').enable();
                 $item('#button3').expand();
                 $item('#button3').show();
             } else {
@@ -93,7 +93,11 @@ function setupSelectionActions() {
         const button = $item('#button3');
         button.onClick(async () => {
             const productId = String(itemData?._id || '');
-            if (!selectionContext || !productId || selectedProductIds.has(productId) || selectionBusyIds.has(productId)) return;
+            if (!selectionContext || !productId || selectionBusyIds.has(productId)) return;
+            if (selectedProductIds.has(productId)) {
+                openBuyerRoomWindow();
+                return;
+            }
             selectionBusyIds.add(productId);
             button.label = 'ADDING…';
             button.disable();
@@ -101,7 +105,7 @@ function setupSelectionActions() {
                 const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
                 if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
                 if (result?.ok) selectedProductIds.add(productId);
-                button.label = 'Added To Selection';
+                button.label = 'Selected · View';
                 const state = await getCatalogueSelectionState(selectionContext.assistCustomerId || '');
                 selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
                 sidebarSelectionState(state);
@@ -382,6 +386,13 @@ function setupSidebar() {
 function openBuyerRoom() {
     const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
     wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
+}
+
+function openBuyerRoomWindow() {
+    const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
+    const path = assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room';
+    try { $w('#html3').postMessage({ type: 'OPEN_BUYER_ROOM_WINDOW', path }); }
+    catch (_) { openBuyerRoom(); }
 }
 
 $w.onReady(() => {
