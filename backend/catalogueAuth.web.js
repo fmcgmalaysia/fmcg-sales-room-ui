@@ -247,11 +247,17 @@ async function findOwnedItem(buyer, itemId) {
   if (!row) throw new Error('Buyer list item was not found.');
   return row;
 }
+function releasedOrderPrice(data) {
+  if (upper(data.quoteStatus) !== 'VIEW QUOTE') return 0;
+  return money(data.vipPriceCtn || data.quotePerCtn) || (money(data.vipPriceEa || data.quotePerPc) * money(data.ea));
+}
 export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId, quantityCtn, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
-  const next = { ...row.data, orderQtyCtn: quantity(quantityCtn), updatedAt: new Date().toISOString(), lastEditedBy: buyer.actorName || buyer.email };
+  const requestedQuantity = quantity(quantityCtn);
+  if (requestedQuantity > 0 && !(releasedOrderPrice(row.data) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
+  const next = { ...row.data, orderQtyCtn: requestedQuantity, updatedAt: new Date().toISOString(), lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn };
 });
@@ -303,7 +309,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     const item = byId.get(normalize(request.itemId));
     const qty = quantity(request.quantityCtn);
     if (!item || qty < 1) throw new Error('Invalid order line.');
-    const lockedUnitPrice = money(item.vipPriceCtn || item.vipPrice);
+    const lockedUnitPrice = money(item.vipPriceCtn || item.vipPrice) || (money(item.vipPriceEa) * money(item.ea));
     if (!(lockedUnitPrice > 0) || upper(item.quoteStatus) !== 'VIEW QUOTE') throw new Error('All ordered products must have a released V.I.P price.');
     return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)) };
   });
