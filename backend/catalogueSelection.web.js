@@ -58,6 +58,11 @@ export const addCatalogueSelection = webMethod(
     const selectionId = selectionId_(context.customerId, unitBarcode);
     const now = new Date().toISOString();
     let item = await getSelectionById_(selectionId);
+    if (!item) {
+      const legacy = await wixData.query(SELECTION_COLLECTION).eq('title', title).limit(2).find({ suppressAuth: true, consistentRead: true });
+      if (legacy.items.length > 1) throw new Error('Duplicate selection records require admin review.');
+      item = legacy.items[0] || null;
+    }
 
     if (item && normalize(item.title) !== title) {
       throw new Error('Selection identity collision. Admin review is required.');
@@ -68,18 +73,23 @@ export const addCatalogueSelection = webMethod(
       if (existing.removed && (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
         throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before restoring this one.`);
       }
-      if (upper(existing.qdSyncStatus) === 'READY') {
+      if (upper(existing.qdSyncStatus) === 'READY' && normalize(item.customerId) === context.customerId && item.removed === false) {
         return Object.freeze({ ok: true, duplicate: true, selection: publicSelection_(item) });
       }
       const queued = {
         ...existing,
         removed: false,
         quoteStatus: 'RFQ',
-        qdSyncStatus: upper(existing.qdSyncStatus) || 'PENDING'
+        quoteActive: false,
+        quotePerPc: 0,
+        quotePerCtn: 0,
+        vipPriceEa: 0,
+        vipPriceCtn: 0,
+        qdSyncStatus: 'PENDING'
       };
       item = await wixData.update(
         SELECTION_COLLECTION,
-        { ...item, payload: JSON.stringify(queued) },
+        { ...item, customerId: context.customerId, removed: false, qdSyncStatus: upper(queued.qdSyncStatus), payload: JSON.stringify(queued) },
         { suppressAuth: true }
       );
     } else {
@@ -109,7 +119,7 @@ export const addCatalogueSelection = webMethod(
       try {
         item = await wixData.insert(
           SELECTION_COLLECTION,
-          { _id: selectionId, title, payload: JSON.stringify(payload) },
+          { _id: selectionId, title, customerId: context.customerId, removed: false, qdSyncStatus: 'PENDING', payload: JSON.stringify(payload) },
           { suppressAuth: true }
         );
       } catch (error) {
@@ -131,11 +141,11 @@ export const getSalesRoomQuoteSignals = webMethod(
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
     if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customerResult = await customerQuery.find({ suppressAuth: true, consistentRead: true });
-    const allowed = new Set(customerResult.items.map((item) => normalize(item.customerId)));
-    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+    const customers = await allQueryItems_(customerQuery);
+    const allowed = new Set(customers.map((item) => normalize(item.customerId)));
+    const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('removed', false).limit(1000));
     const byCustomer = Object.create(null);
-    customerResult.items.forEach((customer) => {
+    customers.forEach((customer) => {
       const customerId = normalize(customer.customerId);
       if (customerId) byCustomer[customerId] = {
         awaitingQuoteItemCount: 0,
@@ -150,7 +160,7 @@ export const getSalesRoomQuoteSignals = webMethod(
         qdFileId: normalize(customer.qdFileId)
       };
     });
-    rows.items.forEach((item) => {
+    rows.forEach((item) => {
       const payload = selectionPayload_(item);
       if (!allowed.has(normalize(payload.customerId))) return;
       const customerId = normalize(payload.customerId);
@@ -214,10 +224,10 @@ export const processSalesRoomSelectionQueue = webMethod(
     const staff = await requireStaff_();
     let customerQuery = wixData.query(CUSTOMER_COLLECTION).limit(1000);
     if (!staff.canViewAllCustomers) customerQuery = customerQuery.eq('assignedStaffId', staff.staffId);
-    const customerResult = await customerQuery.find({ suppressAuth: true, consistentRead: true });
-    const allowed = new Set(customerResult.items.map((item) => normalize(item.customerId)));
-    const rows = await wixData.query(SELECTION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-    return routeQueuedSelections_(rows.items, customerResult.items, allowed);
+    const customers = await allQueryItems_(customerQuery);
+    const allowed = new Set(customers.map((item) => normalize(item.customerId)));
+    const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('removed', false).hasSome('qdSyncStatus', ['PENDING', 'FAILED', 'ROUTING']).limit(1000));
+    return routeQueuedSelections_(rows, customers, allowed);
   }
 );
 
@@ -238,18 +248,15 @@ export const routeSalesRoomCustomerSelections = webMethod(
     if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) {
       throw new Error('This customer is not assigned to you.');
     }
-    const rows = await wixData.query(SELECTION_COLLECTION)
-      .startsWith('title', normalizedCustomerId + '|')
-      .limit(1000)
-      .find({ suppressAuth: true, consistentRead: true });
-    const queue = rows.items.filter((item) => {
+    const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('customerId', normalizedCustomerId).limit(1000));
+    const queue = rows.filter((item) => {
       const payload = selectionPayload_(item);
       const status = upper(payload.qdSyncStatus);
       const routingStartedAt = Date.parse(payload.qdLastAttemptAt || '') || 0;
       return !payload.removed
         && (['PENDING', 'FAILED'].includes(status) || (status === 'ROUTING' && routingStartedAt < Date.now() - 60000));
     }).slice(0, 5);
-    const routing = rows.items.filter((item) => {
+    const routing = rows.filter((item) => {
       const payload = selectionPayload_(item);
       return !payload.removed && upper(payload.qdSyncStatus) === 'ROUTING'
         && (Date.parse(payload.qdLastAttemptAt || '') || 0) >= Date.now() - 60000;
@@ -315,7 +322,7 @@ async function routeOneSelection_(item, customer) {
   };
   let current = await wixData.update(
     SELECTION_COLLECTION,
-    { ...item, payload: JSON.stringify(routing) },
+    { ...item, qdSyncStatus: 'ROUTING', payload: JSON.stringify(routing) },
     { suppressAuth: true }
   );
   try {
@@ -343,7 +350,7 @@ async function routeOneSelection_(item, customer) {
     };
     current = await wixData.update(
       SELECTION_COLLECTION,
-      { ...current, payload: JSON.stringify(ready) },
+      { ...current, qdSyncStatus: 'READY', payload: JSON.stringify(ready) },
       { suppressAuth: true }
     );
     return Object.freeze({ ok: true, idempotent: Boolean(result.idempotent), selectionId: normalize(item._id), qdRow: ready.qdRow });
@@ -356,7 +363,7 @@ async function routeOneSelection_(item, customer) {
     };
     await wixData.update(
       SELECTION_COLLECTION,
-      { ...current, payload: JSON.stringify(failed) },
+      { ...current, qdSyncStatus: 'FAILED', payload: JSON.stringify(failed) },
       { suppressAuth: true }
     );
     return Object.freeze({ ok: false, selectionId: normalize(item._id), error: failed.lastError });
@@ -399,9 +406,8 @@ async function resolveSelectionContext_(assistCustomerId) {
     actorId = staff.staffId;
     actorName = staff.staffName;
   } else {
-    const users = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true });
-    let matches = users.items.filter((item) => normalize(item.wixMemberId) === memberId);
-    if (!matches.length && email) matches = users.items.filter((item) => normalizeEmail_(item.email) === email);
+    let matches = memberId ? (await wixData.query(CUSTOMER_USER_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
+    if (!matches.length && email) matches = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true })).items;
     if (matches.length !== 1) throw new Error(matches.length > 1 ? 'Duplicate customer login records require admin review.' : 'This member is not linked to a customer account.');
     let user = matches[0];
     if (upper(user.status) !== 'ACTIVE') throw new Error('This customer user is not active.');
@@ -447,9 +453,8 @@ async function requireStaff_(knownMember) {
   if (!member) throw new Error('Staff sign-in is required.');
   const memberId = normalize(member._id);
   const email = memberEmail_(member);
-  const result = await wixData.query(STAFF_COLLECTION).limit(1000).find({ suppressAuth: true });
-  let matches = result.items.filter((item) => normalize(item.wixMemberId) === memberId);
-  if (!matches.length && email) matches = result.items.filter((item) => normalizeEmail_(item.staffEmail) === email);
+  let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
+  if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
   if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('This member is not authorized in STAFF MASTER.');
   const staff = matches[0];
   return {
@@ -460,7 +465,14 @@ async function requireStaff_(knownMember) {
 }
 
 async function selectionItemsForCustomer_(customerId) {
-  let result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  let result = await wixData.query(SELECTION_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const items = [...result.items];
+  while (result.hasNext()) { result = await result.next(); items.push(...result.items); }
+  return items;
+}
+
+async function allQueryItems_(query) {
+  let result = await query.find({ suppressAuth: true, consistentRead: true });
   const items = [...result.items];
   while (result.hasNext()) { result = await result.next(); items.push(...result.items); }
   return items;

@@ -38,23 +38,20 @@ async function oauthSecrets() {
   return { clientId, clientSecret };
 }
 async function findAuthorizedStaff(email) {
-  const result = await wixData.query(STAFF_COLLECTION).limit(1000).find({ suppressAuth: true });
-  const matches = result.items.filter(item => normalizeEmail(item.staffEmail) === email);
+  const matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
   if (matches.length !== 1) return { authorized: false, reason: matches.length > 1 ? 'DUPLICATE_STAFF_EMAIL' : 'STAFF_NOT_REGISTERED' };
   const staff = matches[0];
   if (normalize(staff.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'STAFF_INACTIVE' };
   return { authorized: true, staff };
 }
 async function findAuthorizedBuyer(email) {
-  const userResult = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  const users = userResult.items.filter(item => normalizeEmail(item.email) === email);
+  const users = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
   if (users.length !== 1) return { authorized: false, reason: users.length > 1 ? 'DUPLICATE_BUYER_EMAIL' : 'BUYER_NOT_REGISTERED' };
   const user = users[0];
   if (normalize(user.status).toUpperCase() !== ACTIVE_STATUS) return { authorized: false, reason: 'BUYER_USER_INACTIVE' };
 
   const customerId = normalize(user.customerId);
-  const customerResult = await wixData.query(CUSTOMER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  const customers = customerResult.items.filter(item => normalize(item.customerId) === customerId);
+  const customers = (await wixData.query(CUSTOMER_COLLECTION).eq('customerId', customerId).limit(2).find({ suppressAuth: true, consistentRead: true })).items;
   if (customers.length !== 1) return { authorized: false, reason: customers.length > 1 ? 'DUPLICATE_CUSTOMER_ID' : 'CUSTOMER_NOT_FOUND' };
   const customer = customers[0];
   const lifecycle = normalize(customer.lifecycleStatus || customer.customerStatus).toUpperCase();

@@ -15,6 +15,7 @@ function selectionLimit(customer) { const value = Number(customer?.selectionLimi
 const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
+const ORDER_PAGE_SIZE = 20;
 const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const QD_ROUTER_SECRET = 'FMCG_QD_ROUTER_TOKEN';
 
@@ -56,22 +57,18 @@ function payloadData(record) {
   if (raw && typeof raw === 'object') return raw;
   try { return JSON.parse(String(raw || '{}')); } catch (_) { return {}; }
 }
-async function readPayloadRows(collectionId) {
-  const result = await wixData.query(collectionId).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  return result.items.map(record => ({ record, data: payloadData(record) }));
-}
 async function productsByIds(ids) {
   const products = [];
-  for (let index = 0; index < ids.length; index += 50) {
-    const batch = await Promise.all(ids.slice(index, index + 50).map(async id => {
-      try { return await wixData.get(PRODUCT_COLLECTION, id, { suppressAuth: true }); } catch (_) { return null; }
-    }));
-    products.push(...batch.filter(Boolean));
+  for (let index = 0; index < ids.length; index += 100) {
+    const result = await wixData.query(PRODUCT_COLLECTION).hasSome('_id', ids.slice(index, index + 100)).limit(100).find({ suppressAuth: true });
+    products.push(...result.items);
   }
   return products;
 }
 async function productsByBarcodes(barcodes) {
-  const matches = await Promise.all(barcodes.map(async barcode => {
+  const matches = [];
+  for (let index = 0; index < barcodes.length; index += 20) {
+    const batch = await Promise.all(barcodes.slice(index, index + 20).map(async barcode => {
     try {
       const textMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true });
       if (textMatch.items[0]) return textMatch.items[0];
@@ -82,14 +79,40 @@ async function productsByBarcodes(barcodes) {
       const numberMatch = await wixData.query(PRODUCT_COLLECTION).eq('barcode', numericBarcode).limit(1).find({ suppressAuth: true, consistentRead: true });
       return numberMatch.items[0] || null;
     } catch (_) { return null; }
-  }));
+    }));
+    matches.push(...batch);
+  }
   return matches.filter(Boolean);
 }
 async function putPayload(collectionId, title, payload) {
   const result = await wixData.query(collectionId).eq('title', normalize(title)).limit(2).find({ suppressAuth: true, consistentRead: true });
   if (result.items.length > 1) throw new Error('Duplicate operational record. Admin review is required.');
   const next = { ...(result.items[0] || {}), title: normalize(title), payload: JSON.stringify(payload) };
-  return result.items.length ? wixData.update(collectionId, next, { suppressAuth: true }) : wixData.insert(collectionId, next, { suppressAuth: true });
+  if ([BUYER_LIST_COLLECTION, BUYER_ORDER_COLLECTION, BUYER_LINE_COLLECTION].includes(collectionId)) next.customerId = normalize(payload.customerId);
+  if (collectionId === BUYER_LIST_COLLECTION) {
+    next.removed = Boolean(payload.removed);
+    next.qdSyncStatus = upper(payload.qdSyncStatus);
+  }
+  if (collectionId === BUYER_ORDER_COLLECTION) {
+    next.orderId = normalize(payload.orderId);
+    next.orderSortKey = normalize(payload.confirmedAt) + '|' + normalize(payload.orderId);
+    next.status = upper(payload.status);
+    next.isComplete = Boolean(payload.isComplete);
+    if (!result.items.length && payload.requestId) next._id = normalize(payload.requestId);
+  }
+  if (collectionId === BUYER_LINE_COLLECTION) next.orderId = normalize(payload.orderId);
+  if (collectionId === BUYER_LINE_COLLECTION && !result.items.length && payload.requestId) next._id = normalize(payload.requestId) + ':' + normalize(payload.lineId);
+  if (collectionId === BUYER_ORDER_AUDIT_COLLECTION && !result.items.length && payload.requestId) next._id = 'A-' + normalize(payload.requestId);
+  if (result.items.length) return wixData.update(collectionId, next, { suppressAuth: true });
+  try { return await wixData.insert(collectionId, next, { suppressAuth: true }); }
+  catch (error) {
+    if (!next._id) throw error;
+    let existing;
+    try { existing = await wixData.get(collectionId, next._id, { suppressAuth: true, consistentRead: true }); }
+    catch (_) { throw error; }
+    if (normalize(existing.title) !== normalize(title)) throw error;
+    return existing;
+  }
 }
 async function signedInMember() {
   try { return await currentMember.getMember({ fieldsets: ['FULL'] }); } catch (_) { return null; }
@@ -97,9 +120,8 @@ async function signedInMember() {
 async function requireStaff(member) {
   const memberId = normalize(member?._id);
   const email = memberEmail(member);
-  const result = await wixData.query(STAFF_COLLECTION).limit(1000).find({ suppressAuth: true });
-  let matches = result.items.filter(item => normalize(item.wixMemberId) === memberId);
-  if (!matches.length && email) matches = result.items.filter(item => normalizeEmail(item.staffEmail) === email);
+  let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
+  if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
   if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('Active staff authorization is required.');
   const staff = matches[0];
   return { staffId: upper(staff.staffId), staffName: normalize(staff.title || staff.staffName || staff.staffId), email, canViewAllCustomers: ['ADMIN', 'SUPER ADMIN'].includes(upper(staff.role)) };
@@ -167,9 +189,8 @@ async function resolveBuyerContext(assistCustomerId = '') {
   }
   const memberId = normalize(member._id);
   const email = memberEmail(member);
-  const users = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true });
-  let matches = users.items.filter(item => normalize(item.wixMemberId) === memberId);
-  if (!matches.length && email) matches = users.items.filter(item => normalizeEmail(item.email) === email);
+  let matches = memberId ? (await wixData.query(CUSTOMER_USER_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];
+  if (!matches.length && email) matches = (await wixData.query(CUSTOMER_USER_COLLECTION).eq('email', email).limit(2).find({ suppressAuth: true })).items;
   if (matches.length !== 1) throw new Error(matches.length > 1 ? 'Duplicate customer login records require admin review.' : 'This member is not linked to a customer account.');
   const user = matches[0];
   if (upper(user.status) !== 'ACTIVE') throw new Error('This customer user is not active.');
@@ -179,7 +200,7 @@ async function resolveBuyerContext(assistCustomerId = '') {
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER' });
 }
 async function workspaceItems(customerId) {
-  let result = await wixData.query(BUYER_LIST_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
   while (result.hasNext()) { result = await result.next(); records.push(...result.items); }
   const rows = records.map(record => ({ record, data: payloadData(record) })).filter(entry => normalize(entry.data.customerId) === normalize(customerId));
@@ -228,25 +249,15 @@ async function workspaceItems(customerId) {
   });
 }
 
-async function buyerOrderHistory(customerId) {
-  const [orderRows, lineRows] = await Promise.all([
-    readPayloadRows(BUYER_ORDER_COLLECTION),
-    readPayloadRows(BUYER_LINE_COLLECTION)
-  ]);
-  const customerKey = normalize(customerId);
-  const linesByOrder = new Map();
-  lineRows.forEach(({ data }) => {
-    if (normalize(data.customerId) !== customerKey) return;
-    const orderId = normalize(data.orderId);
-    if (!orderId) return;
-    if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, []);
-    linesByOrder.get(orderId).push(data);
-  });
-  return orderRows
-    .map(({ data }) => data)
-    .filter(order => normalize(order.customerId) === customerKey)
-    .map(order => ({ ...order, lines: linesByOrder.get(normalize(order.orderId)) || [] }))
-    .sort((a, b) => new Date(b.confirmedAt || 0).getTime() - new Date(a.confirmedAt || 0).getTime());
+async function buyerOrderHistory(customerId, cursor = '') {
+  let query = wixData.query(BUYER_ORDER_COLLECTION).eq('customerId', normalize(customerId)).eq('isComplete', true);
+  if (cursor) query = query.lt('orderSortKey', normalize(cursor));
+  const result = await query.descending('orderSortKey').limit(ORDER_PAGE_SIZE + 1).find({ suppressAuth: true, consistentRead: true });
+  const page = result.items.slice(0, ORDER_PAGE_SIZE);
+  return {
+    orders: page.map(record => payloadData(record)),
+    nextCursor: result.items.length > ORDER_PAGE_SIZE ? normalize(page[page.length - 1].orderSortKey) : ''
+  };
 }
 
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
@@ -254,15 +265,13 @@ export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (a
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const [items, orders, customer, userResult] = await Promise.all([
+  const [items, orderPage, customer, userResult] = await Promise.all([
     workspaceItems(buyer.customerId),
     buyerOrderHistory(buyer.customerId),
     customerById(buyer.customerId),
-    wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true })
+    wixData.query(CUSTOMER_USER_COLLECTION).eq('customerId', buyer.customerId).limit(100).find({ suppressAuth: true })
   ]);
-  const users = userResult.items
-    .filter(user => normalize(user.customerId) === buyer.customerId)
-    .map(user => ({
+  const users = userResult.items.map(user => ({
       userId: normalize(user.userId),
       name: normalize(user.title),
       email: normalizeEmail(user.email),
@@ -294,7 +303,20 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyer, account, myList: items.filter(item => !item.removed), removed, orders };
+  return { ok: true, context: buyer, account, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+});
+export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  return { ok: true, customerId: buyer.customerId, ...(await buyerOrderHistory(buyer.customerId, cursor)) };
+});
+export const getBuyerOrderDetail = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  const result = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', normalize(orderId)).eq('customerId', buyer.customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (result.items.length !== 1 || !result.items[0].isComplete) throw new Error('Order was not found.');
+  let linesResult = await wixData.query(BUYER_LINE_COLLECTION).eq('customerId', buyer.customerId).eq('orderId', normalize(orderId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const lines = [...linesResult.items];
+  while (linesResult.hasNext()) { linesResult = await linesResult.next(); lines.push(...linesResult.items); }
+  return { ok: true, customerId: buyer.customerId, order: { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) } };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;
@@ -303,7 +325,7 @@ async function findOwnedItem(buyer, itemId) {
   return { record, data: payloadData(record) };
 }
 async function activeBuyerSelectionCount(customerId, limit) {
-  let result = await wixData.query(BUYER_LIST_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).eq('removed', false).limit(1000).find({ suppressAuth: true, consistentRead: true });
   let count = 0;
   do {
     count += result.items.filter(record => !payloadData(record).removed).length;
@@ -368,11 +390,24 @@ export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId,
     return { ok: true, itemId: normalize(itemId), removed: false, quoteStatus: 'RFQ', warning: 'Re-quote requested, but Sales Room must review QD routing.' };
   }
 });
-function nextOrderId(customerId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + Date.now().toString(36).toUpperCase(); }
-export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '') => {
+function nextOrderId(customerId, requestId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + requestId.replace(/-/g, '').toUpperCase(); }
+export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
+  const submissionId = normalize(requestId);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) throw new Error('Please refresh the order form and try again.');
   const requests = Array.isArray(requestedLines) ? requestedLines : [];
   if (!requests.length) throw new Error('Enter at least one order quantity.');
+  if (requests.length > buyer.selectionLimit || new Set(requests.map(line => normalize(line.itemId))).size !== requests.length) throw new Error('Order lines are invalid. Please refresh the order form.');
+  const id = nextOrderId(buyer.customerId, submissionId);
+  let orderRecord = null;
+  try { orderRecord = await wixData.get(BUYER_ORDER_COLLECTION, submissionId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New submission. */ }
+  if (orderRecord) {
+    const stored = payloadData(orderRecord);
+    if (normalize(stored.customerId) !== buyer.customerId || normalize(stored.orderId) !== id) throw new Error('Order request conflict. Please contact Sales Room.');
+    if (stored.isComplete) return { ok: true, orderId: id, status: stored.status };
+    if (!Array.isArray(stored.pendingLines) || stored.pendingLines.length !== stored.lineCount) throw new Error('Incomplete order requires Sales Room review.');
+    return finishBuyerOrder(stored, buyer);
+  }
   const list = (await workspaceItems(buyer.customerId)).filter(item => !item.removed);
   const byId = new Map(list.map(item => [normalize(item.id), item]));
   const lines = requests.map((request, index) => {
@@ -383,29 +418,37 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     if (!(lockedUnitPrice > 0) || upper(item.quoteStatus) !== 'VIEW QUOTE') throw new Error('All ordered products must have a released V.I.P price.');
     return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)) };
   });
-  const id = nextOrderId(buyer.customerId);
   const confirmedAt = new Date().toISOString();
-  const order = { orderId: id, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CONFIRMED', source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
-  await putPayload(BUYER_ORDER_COLLECTION, id, order);
-  for (const line of lines) await putPayload(BUYER_LINE_COLLECTION, id + '|' + line.lineId, { ...line, orderId: id, customerId: buyer.customerId, priceLockedAt: confirmedAt });
-  const auditId = 'OA-' + Date.now().toString(36).toUpperCase();
-  await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'BUYER_CONFIRMED_ORDER', orderId: id, customerId: buyer.customerId, at: confirmedAt, actorEmail: buyer.email, actorType: buyer.actorType });
-  for (const request of requests) {
+  const order = { orderId: id, requestId: submissionId, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
+  const savedOrder = await putPayload(BUYER_ORDER_COLLECTION, id, order);
+  return finishBuyerOrder(payloadData(savedOrder), buyer);
+});
+async function finishBuyerOrder(order, buyer) {
+  const id = order.orderId;
+  for (const line of order.pendingLines) await putPayload(BUYER_LINE_COLLECTION, id + '|' + line.lineId, { ...line, requestId: order.requestId, orderId: id, customerId: buyer.customerId, priceLockedAt: order.confirmedAt });
+  const lineResult = await wixData.query(BUYER_LINE_COLLECTION).eq('orderId', id).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  if (lineResult.items.length !== order.lineCount) throw new Error('Order is still being saved. Please retry this same submission.');
+  const auditId = 'OA-' + order.requestId;
+  await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, requestId: order.requestId, action: 'BUYER_CONFIRMED_ORDER', orderId: id, customerId: buyer.customerId, at: order.confirmedAt, actorEmail: buyer.email, actorType: buyer.actorType });
+  await putPayload(BUYER_ORDER_COLLECTION, id, { ...order, pendingLines: [], isComplete: true, status: 'CONFIRMED' });
+  let resetFailures = 0;
+  for (const line of order.pendingLines) {
     try {
-      const row = await findOwnedItem(buyer, request.itemId);
+      const row = await findOwnedItem(buyer, line.itemId);
       await putPayload(BUYER_LIST_COLLECTION, row.record.title, {
         ...row.data,
         orderQtyCtn: 0,
         qtyEditedAt: '',
         qtyEditedBy: '',
         lastOrderId: id,
-        lastOrderedAt: confirmedAt,
-        updatedAt: confirmedAt,
+        lastOrderedAt: order.confirmedAt,
+        updatedAt: order.confirmedAt,
         lastEditedBy: buyer.actorName || buyer.email
       });
     } catch (error) {
-      console.warn('Confirmed order quantity reset failed', { orderId: id, itemId: normalize(request.itemId), error: normalize(error?.message || error) });
+      resetFailures++;
+      console.warn('Confirmed order quantity reset failed', { orderId: id, itemId: normalize(line.itemId), error: normalize(error?.message || error) });
     }
   }
-  return { ok: true, orderId: id, status: 'CONFIRMED' };
-});
+  return { ok: true, orderId: id, status: 'CONFIRMED', warning: resetFailures ? 'Order confirmed, but some quantities could not be cleared. Please check Order Form before submitting another order.' : '' };
+}

@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -42,7 +42,8 @@ $w.onReady(async function () {
       assisted: result.context.actorType === 'STAFF',
       myList: result.myList || [],
       removed: result.removed || [],
-      orders: result.orders || []
+      orders: result.orders || [],
+      ordersNextCursor: result.ordersNextCursor || ''
     }});
   }
 
@@ -79,10 +80,24 @@ $w.onReady(async function () {
       await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
       return;
     }
+    if (message.type === 'BUYER_ROOM_ORDER_PAGE') {
+      try {
+        const result = await getBuyerOrderPage(message.cursor || '', assistCustomerId);
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_PAGE_RESULT', ...result });
+      } catch (error) { frame.postMessage({ type: 'BUYER_ROOM_ORDER_PAGE_RESULT', ok: false, message: error?.message || 'Order history could not be loaded.' }); }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_ORDER_DETAIL') {
+      try {
+        const result = await getBuyerOrderDetail(message.orderId || '', assistCustomerId);
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_DETAIL_RESULT', ...result });
+      } catch (error) { frame.postMessage({ type: 'BUYER_ROOM_ORDER_DETAIL_RESULT', ok: false, orderId: message.orderId || '', message: error?.message || 'Order detail could not be loaded.' }); }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
       try {
-        const result = await submitBuyerOrder(message.lines || [], assistCustomerId);
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: 'Order confirmed and sent to Sales Room.' });
+        const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '');
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order confirmed and sent to Sales Room.' });
         await loadWorkspace();
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
