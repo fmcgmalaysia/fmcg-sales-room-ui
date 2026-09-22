@@ -96,7 +96,7 @@
   }
 
   async function prepareSelectionExcel(data) {
-    const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-a4');
+    const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-export-fix');
     if (!response.ok) throw new Error('Excel watermark could not be loaded.');
     const bytes = buildSelectionExcel(data, new Uint8Array(await response.arrayBuffer()));
     const safeName = String(data.companyName || 'Buyer').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50) || 'Buyer';

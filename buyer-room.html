@@ -104,6 +104,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 /* Removed products carry no price columns or quote values in the buyer view. */
 .removed-grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 100px 150px 110px 90px}
 .selection-toolbar #exportSelection{min-width:167px;height:34px;border-color:#0d7653;background:#0d7653;color:#fff;font-weight:500}.selection-toolbar #exportSelection:hover{border-color:#075a3e;background:#075a3e}.selection-toolbar #exportSelection svg{stroke:#fff;color:#fff}.selection-toolbar #exportSelection:disabled{opacity:.6;cursor:wait}
+#exportSelection,#exportSelection:hover,#exportSelection:focus-visible{min-width:167px;border-color:#0d7653;background:#0d7653;color:#fff}#exportSelection .action-icon svg{stroke:#fff;color:#fff}#exportSelection:hover{border-color:#075a3e;background:#075a3e}#exportSelection:disabled,#exportSelection:disabled:hover{border-color:#0d7653;background:#0d7653;color:#fff;opacity:.64}
 </style>
 </head>
 <body>
@@ -163,7 +164,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="toast" class="toast"></div>
 <div id="imagePreview" class="image-preview" aria-hidden="true"><img id="imagePreviewImg" alt="Product preview"></div>
 <div id="submitModalBg" class="modal-bg"><div class="modal"><h3>Review and Submit Order</h3><p>Please confirm the order summary before sending it to your assigned salesperson.</p><div class="review-grid"><div class="review-row"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="review-row"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="review-row"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="review-row"><span>Estimated Order Total</span><strong id="reviewAmount">—</strong></div></div><p class="review-note">Your order will be submitted to FMCG Malaysia for review. It will not be sent directly to NCT at this stage.</p><div class="modal-actions"><button class="btn" id="cancelSubmit">Back to Edit</button><button class="btn primary" id="confirmSubmit">Submit Order</button></div></div></div>
-<script src="./buyer-room-excel.js?v=20260923-wix-download"></script>
+<script src="./buyer-room-excel.js?v=20260923-export-fix"></script>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
 const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,account:null,my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,exporting:false,listMode:'current',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
@@ -289,7 +290,7 @@ $('accountAddUser').onclick=()=>{const form=$('accountUserForm'),opening=form.hi
 $('quoteBell').onclick=()=>{const panel=$('quoteNotifications'),opening=panel.hidden;panel.hidden=!opening;$('quoteBell').setAttribute('aria-expanded',String(opening));if(opening){const items=state.newQuoteItems.slice();$('quoteNotificationText').textContent=items.length?`${items.length} new quotation${items.length===1?'':'s'} available. Open Order Form to review prices.`:'You are up to date.';$('quoteNotificationList').hidden=!items.length;$('quoteNotificationList').innerHTML=items.slice(0,5).map(item=>`<li>${esc(item.itemName)}</li>`).join('');markQuotesSeen();state.newQuoteItems=[]}};
 $('mySearch').oninput=()=>state.listMode==='current'?renderMy():renderRemoved();$('orderSearch').oninput=renderOrder;
 document.querySelectorAll('[data-action="sheet"]').forEach(b=>b.onclick=()=>post('BUYER_ROOM_VIEW_SHEET'));function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=>{w.querySelector('.export-menu').classList.remove('show');w.querySelector('[data-export-toggle]').setAttribute('aria-expanded','false')})}document.querySelectorAll('[data-export-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=b.closest('.export-wrap').querySelector('.export-menu'),open=!menu.classList.contains('show');closeExportMenus();menu.classList.toggle('show',open);b.setAttribute('aria-expanded',String(open))});document.querySelectorAll('[data-export-mode]').forEach(b=>b.onclick=()=>{post('BUYER_ROOM_EXPORT',{mode:b.dataset.exportMode});closeExportMenus()});document.addEventListener('click',e=>{if(!e.target.closest('.export-wrap'))closeExportMenus()});$('submitOrder').onclick=()=>{const lines=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0).map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));if(!lines.length)return toast('Enter a quantity for at least one quoted product.');state.pendingOrder=lines;$('reviewProducts').textContent=$('sumProducts').textContent;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('submitModalBg').classList.add('show')};
-$('exportSelection').onclick=()=>{if(state.exporting)return;state.exporting=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT_SELECTION')};
+$('exportSelection').onclick=()=>{if(state.exporting)return;state.exporting=true;const b=$('exportSelection');b.disabled=true;b.dataset.label=b.innerHTML;b.innerHTML='Preparing…';post('BUYER_ROOM_EXPORT_SELECTION')};
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
@@ -303,14 +304,15 @@ $('historyMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)r
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');closeExportMenus();state.pendingOrder=null}});
 window.addEventListener('message',e=>{
   const m=e.data||{};
+  const finishExport=()=>{state.exporting=false;const b=$('exportSelection');b.disabled=false;if(b.dataset.label){b.innerHTML=b.dataset.label;delete b.dataset.label}};
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){
-    if(!m.ok){state.exporting=false;$('exportSelection').disabled=false;toast(m.message||'Excel export could not be created.');return}
-    if(m.customerId!==state.customerId){state.exporting=false;$('exportSelection').disabled=false;toast('Buyer account changed. Please try again.');return}
-    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>{state.exporting=false;$('exportSelection').disabled=false;toast(error?.message||'Excel download could not be started.')});
+    if(!m.ok){finishExport();toast(m.message||'Excel export could not be created.');return}
+    if(m.customerId!==state.customerId){finishExport();toast('Buyer account changed. Please try again.');return}
+    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>{finishExport();toast(error?.message||'Excel download could not be started.')});
     return;
   }
   if(m.type==='BUYER_ROOM_EXPORT_FILE_RESULT'){
-    state.exporting=false;$('exportSelection').disabled=false;
+    finishExport();
     if(!m.ok)toast(m.message||'Excel download could not be started.');
     return;
   }
