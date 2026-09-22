@@ -40,6 +40,7 @@ $w.onReady(async function () {
       currency: result.context.currency || 'USD',
       selectionLimit: result.context.selectionLimit,
       assisted: result.context.actorType === 'STAFF',
+      account: result.account || null,
       myList: result.myList || [],
       removed: result.removed || [],
       orders: result.orders || [],
