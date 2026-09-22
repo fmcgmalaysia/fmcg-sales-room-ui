@@ -1,6 +1,6 @@
 # Buyer Room data rollout
 
-The code in this checkout is a local draft pending coordinated publication. On 22 September 2026, the required CMS fields and indexes below were created on the Wix test site, and the 2 existing test orders and their 2 lines were updated. The 50 existing test selections remain in CMS without a top-level `customerId` and are hidden by the new customer-scoped query.
+Published to GitHub Pages and the Wix test site on 23 September 2026. The required CMS fields and indexes were created on the Wix test site on 22 September, and the 2 existing test orders and their 2 lines were updated. The 50 existing test selections remain in CMS without a top-level `customerId` and are hidden by the new customer-scoped query.
 
 ## Minimal CMS fields
 
@@ -21,12 +21,13 @@ The user authorized clearing the 50 test selections, but deletion is not require
 
 Keep the 2 existing test orders visible until their purpose is settled. Before publishing, fill their new header fields from each payload: `customerId`, `orderId`, `status`, `isComplete=true`, and `orderSortKey=<confirmedAt>|<orderId>`. For each of their 2 order lines, fill `customerId` and `orderId`. The header `lineCount` is also needed in the JSON payload for the count shown in Sales Room and Order History. Verify the 2 orders and their lines from the customer account after publication.
 
-## Publish checks
+## Release verification
 
-1. Confirm the 3 customer/order indexes are active in Wix CMS. Their definitions were saved on 22 September 2026.
-2. Confirm the 2 old order headers and lines still have their new fields. Their changes were saved on 22 September 2026. The 50 test selections can remain dormant for this rollout.
-3. Publish the coordinated backend, Wix page, and embedded Buyer Room HTML changes together. Explain the planned changes to the user before this step.
-4. Test customer Catalogue to Buyer Room identity, an empty My Selection, Catalogue Add to Selection, 100 item limit, a confirmed order, Order History pages/details, and Sales Room incoming order detail.
-5. Check that retrying a failed Buyer Room order with the same request ID creates one header and the expected number of lines.
+- Published GitHub `main` at `17dff36feb0b8b1544394ccd16ae2f9bad69deab` and Wix test site. The live Buyer Room embeds `buyer-room.html?v=20260922-buyer-scale`.
+- OPOPO customer identity and Account display loaded correctly. My Selection showed 0 initially. A Catalogue `I NEED QUOTE` test added one product, which appeared in My Selection; Order Form showed it as unavailable for quantity entry until quoted.
+- OPOPO Order History correctly showed 0. The 2 migrated test orders belong to customer `CUS-260920-025922` (TESTING 88), and their Wix CMS headers visibly contain `customerId`, `orderId`, `orderSortKey`, `status=CONFIRMED`, and `isComplete=true`.
+- Removed History hid prices and export controls. It still says 90 days; changing the retention period to 30 days remains a separate task.
+- Local test passed for a 1,025-row paginated history and repeated order submission with the same request ID. A live confirmed order and Sales Room incoming-order detail were not exercised because there is no quoted test product ready to order.
 
 The only data migration needed for this test site is the 2 old order headers and 2 lines. There is no reason to copy millions of historical rows into a new collection now. The remaining global Sales Room dashboard aggregation should be measured separately before customer volume grows; the current change does not claim that dashboard is ready for millions of active records.
+
