@@ -344,8 +344,8 @@ export const getSalesRoomCustomersOperational = webMethod(
   async () => {
     const base = await loadSalesRoomCustomers();
     const [listRows, orderRows] = await Promise.all([
-      readPayloadRows(BUYER_LIST_COLLECTION),
-      readPayloadRows(BUYER_ORDER_COLLECTION)
+      queryPayloadRows(wixData.query(BUYER_LIST_COLLECTION).eq('removed', false)),
+      queryPayloadRows(wixData.query(BUYER_ORDER_COLLECTION).eq('isComplete', true).hasSome('status', ['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']))
     ]);
 
     const quoteByCustomer = new Map();
@@ -395,18 +395,17 @@ export const getSalesRoomConfirmedOrders = webMethod(
   async () => {
     const staff = await requireAuthorizedStaffContext();
     const customerIds = await authorizedCustomerIdSet(staff);
-    const [orders, lines] = await Promise.all([
-      readPayloadRows(BUYER_ORDER_COLLECTION),
-      readPayloadRows(BUYER_LINE_COLLECTION)
-    ]);
+    let result = await wixData.query(BUYER_ORDER_COLLECTION).eq('isComplete', true).hasSome('status', ['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']).limit(1000).find({ suppressAuth: true, consistentRead: true });
+    const orders = [...result.items];
+    while (result.hasNext()) { result = await result.next(); orders.push(...result.items); }
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const rows = orders
-      .map((entry) => entry.data)
+      .map(payloadData)
       .filter((order) => customerIds.has(normalize(order.customerId)) && incomingStatuses.has(upper(order.status)))
       .map((order) => ({
         ...order,
         status: upper(order.status || 'CONFIRMED'),
-        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId)).length
+        productCount: Number(order.lineCount || 0)
       }))
       .sort((a, b) => String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')));
     return Object.freeze({ ok: true, orders: rows });
@@ -417,13 +416,10 @@ export const getSalesRoomOrderDetail = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
+    const orderEntry = await orderById(orderId);
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
-    const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
+    const lines = (await orderLines(orderId))
       .map((entry) => entry.data)
-      .filter((line) => normalize(line.orderId) === normalize(orderId))
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
     return Object.freeze({ ok: true, order: { ...orderEntry.data, lines } });
   }
@@ -434,8 +430,8 @@ export const getSalesRoomOrderForm = webMethod(
   async (customerId) => {
     const staff = await requireAuthorizedStaffContext();
     const customer = await findAuthorizedCustomer(customerId, staff);
-    const lines = (await readPayloadRows(BUYER_LIST_COLLECTION))
-      .map((entry) => entry.data)
+    const selectionResult = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customer.customerId)).eq('removed', false).limit(1000).find({ suppressAuth: true, consistentRead: true });
+    const lines = selectionResult.items.map(record => ({ ...payloadData(record), id: record._id }))
       .filter((item) => normalize(item.customerId) === normalize(customer.customerId) && !item.removed)
       .map((item) => ({
         ...item,
@@ -462,9 +458,8 @@ export const confirmSalesRoomOrderForm = webMethod(
     const customer = await findAuthorizedCustomer(customerId, staff);
     const requests = Array.isArray(requestedLines) ? requestedLines : [];
     if (!requests.length) throw new Error('Enter at least one order quantity.');
-    const listRows = (await readPayloadRows(BUYER_LIST_COLLECTION))
-      .filter((entry) => normalize(entry.data.customerId) === normalize(customer.customerId) && !entry.data.removed);
-    const byId = new Map(listRows.map((entry) => [normalize(entry.data.id || entry.data.itemId), entry.data]));
+    const selectionResult = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customer.customerId)).eq('removed', false).limit(1000).find({ suppressAuth: true, consistentRead: true });
+    const byId = new Map(selectionResult.items.map(record => [normalize(record._id), { ...payloadData(record), id: record._id }]));
     const lines = requests.map((request, index) => orderLineFromListItem(byId.get(normalize(request.itemId)), request, index));
     return createConfirmedOrder(customer, staff, lines, 'SALES ASSISTED');
   }
@@ -474,12 +469,10 @@ export const saveSalesRoomOrderQty = webMethod(
   Permissions.SiteMember,
   async (orderId, lineId, quantityCtn) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
+    const orderEntry = await orderById(orderId);
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     if (upper(orderEntry.data.status).startsWith('SUBMITTED')) throw new Error('Submitted order quantities are locked.');
-    const lineEntry = (await readPayloadRows(BUYER_LINE_COLLECTION))
+    const lineEntry = (await orderLines(orderId))
       .find((entry) => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.lineId) === normalize(lineId));
     if (!lineEntry) throw new Error('Order line was not found.');
     const qty = quantity(quantityCtn);
@@ -495,9 +488,7 @@ export const submitSalesRoomOrder = webMethod(
   Permissions.SiteMember,
   async (orderId, destination) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
+    const orderEntry = await orderById(orderId);
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     const target = upper(destination);
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
@@ -512,9 +503,7 @@ export const createSalesRoomProforma = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
+    const orderEntry = await orderById(orderId);
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     const next = { ...orderEntry.data, status: 'PROFORMA REQUESTED', proformaRequestedAt: new Date().toISOString(), proformaRequestedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
@@ -951,12 +940,11 @@ function payloadData(record) {
   try { return JSON.parse(String(raw || '{}')); } catch (_) { return {}; }
 }
 
-async function readPayloadRows(collectionId) {
-  const result = await wixData
-    .query(collectionId)
-    .limit(1000)
-    .find({ suppressAuth: true, consistentRead: true });
-  return result.items.map((record) => ({ record, data: payloadData(record) }));
+async function queryPayloadRows(query) {
+  let result = await query.limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const rows = [...result.items];
+  while (result.hasNext()) { result = await result.next(); rows.push(...result.items); }
+  return rows.map((record) => ({ record, data: payloadData(record) }));
 }
 
 async function putPayload(collectionId, title, payload) {
@@ -967,9 +955,29 @@ async function putPayload(collectionId, title, payload) {
     .find({ suppressAuth: true, consistentRead: true });
   if (result.items.length > 1) throw new Error('Duplicate operational record. Admin review is required.');
   const next = { ...(result.items[0] || {}), title: normalize(title), payload: JSON.stringify(payload) };
+  if ([BUYER_LIST_COLLECTION, BUYER_ORDER_COLLECTION, BUYER_LINE_COLLECTION].includes(collectionId)) next.customerId = normalize(payload.customerId);
+  if (collectionId === BUYER_ORDER_COLLECTION) {
+    next.orderId = normalize(payload.orderId);
+    next.orderSortKey = normalize(payload.confirmedAt) + '|' + normalize(payload.orderId);
+    next.status = upper(payload.status);
+    next.isComplete = Boolean(payload.isComplete);
+  }
+  if (collectionId === BUYER_LINE_COLLECTION) next.orderId = normalize(payload.orderId);
   return result.items.length
     ? wixData.update(collectionId, next, { suppressAuth: true })
     : wixData.insert(collectionId, next, { suppressAuth: true });
+}
+
+async function orderById(orderId) {
+  const result = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', normalize(orderId)).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (result.items.length !== 1 || !result.items[0].isComplete) throw new Error('Order was not found.');
+  return { record: result.items[0], data: payloadData(result.items[0]) };
+}
+async function orderLines(orderId) {
+  let result = await wixData.query(BUYER_LINE_COLLECTION).eq('orderId', normalize(orderId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const rows = [...result.items];
+  while (result.hasNext()) { result = await result.next(); rows.push(...result.items); }
+  return rows.map(record => ({ record, data: payloadData(record) }));
 }
 
 async function authorizedCustomerIdSet(staff) {
@@ -1021,7 +1029,9 @@ async function createConfirmedOrder(customer, staff, lines, source) {
     customerId,
     companyName: normalize(customer.title),
     currency: lines[0]?.currency || upper(customer.preferredCurrency || 'USD'),
-    status: 'CONFIRMED',
+    status: 'CREATING',
+    isComplete: false,
+    lineCount: lines.length,
     source,
     confirmedAt,
     confirmedBy: normalizeEmail(staff.loginEmail),
@@ -1032,12 +1042,14 @@ async function createConfirmedOrder(customer, staff, lines, source) {
   for (const line of lines) {
     await putPayload(BUYER_LINE_COLLECTION, orderId + '|' + line.lineId, { ...line, orderId, customerId, priceLockedAt: confirmedAt });
   }
+  if ((await orderLines(orderId)).length !== lines.length) throw new Error('Order is still being saved. Please contact Sales Room.');
   await writeOrderAudit('SALES_CONFIRMED_ORDER', orderId, customerId, staff, { source });
-  return Object.freeze({ ok: true, orderId, status: order.status });
+  await putPayload(BUYER_ORDER_COLLECTION, orderId, { ...order, status: 'CONFIRMED', isComplete: true });
+  return Object.freeze({ ok: true, orderId, status: 'CONFIRMED' });
 }
 
 async function recalculateOrder(orderEntry) {
-  const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
+  const lines = (await orderLines(orderEntry.data.orderId))
     .map((entry) => entry.data)
     .filter((line) => normalize(line.orderId) === normalize(orderEntry.data.orderId));
   const next = {
@@ -1179,11 +1191,7 @@ async function resolveCurrentStaffContext() {
 
   let items;
   try {
-    const result = await wixData
-      .query(STAFF_COLLECTION)
-      .limit(1000)
-      .find({ suppressAuth: true });
-    items = result.items;
+    items = (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items;
   } catch (error) {
     return deniedStaffContext('STAFF_CMS_QUERY_ERROR');
   }
@@ -1203,9 +1211,9 @@ async function resolveCurrentStaffContext() {
       return deniedStaffContext('MEMBER_EMAIL_MISSING');
     }
 
-    const emailMatches = items.filter(
-      (item) => normalizeEmail(item.staffEmail) === email
-    );
+    let emailMatches;
+    try { emailMatches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items; }
+    catch (_) { return deniedStaffContext('STAFF_CMS_QUERY_ERROR'); }
     if (emailMatches.length !== 1) {
       return deniedStaffContext(
         emailMatches.length > 1
