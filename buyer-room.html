@@ -307,7 +307,11 @@ window.addEventListener('message',e=>{
     state.exporting=false;$('exportSelection').disabled=false;
     if(!m.ok){toast(m.message||'Excel export could not be created.');return}
     if(m.customerId!==state.customerId){toast('Buyer account changed. Please try again.');return}
-    BuyerRoomExcel.downloadSelectionExcel(m).catch(error=>toast(error?.message||'Excel download could not be started.'));
+    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>toast(error?.message||'Excel download could not be started.'));
+    return;
+  }
+  if(m.type==='BUYER_ROOM_EXPORT_FILE_RESULT'){
+    if(!m.ok)toast(m.message||'Excel download could not be started.');
     return;
   }
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
@@ -338,3 +342,4 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 
 
 </body></html>
+

@@ -95,18 +95,19 @@
     return zip(files);
   }
 
-  async function downloadSelectionExcel(data) {
+  async function prepareSelectionExcel(data) {
     const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-a4');
     if (!response.ok) throw new Error('Excel watermark could not be loaded.');
     const bytes = buildSelectionExcel(data, new Uint8Array(await response.arrayBuffer()));
     const safeName = String(data.companyName || 'Buyer').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50) || 'Buyer';
     const date = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement('a'); anchor.href = objectUrl; anchor.download = `${safeName}-My-Selection-${date}.xlsx`;
-    document.body.appendChild(anchor); anchor.click(); anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    let binary = '';
+    for (let offset = 0; offset < bytes.length; offset += 32768) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    }
+    return { customerId: data.customerId, fileName: `${safeName}-My-Selection-${date}.xlsx`, base64: btoa(binary) };
   }
-  root.BuyerRoomExcel = { buildSelectionExcel, downloadSelectionExcel };
+  root.BuyerRoomExcel = { buildSelectionExcel, prepareSelectionExcel };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.BuyerRoomExcel;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
