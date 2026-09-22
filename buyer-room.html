@@ -304,13 +304,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').
 window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){
-    state.exporting=false;$('exportSelection').disabled=false;
-    if(!m.ok){toast(m.message||'Excel export could not be created.');return}
-    if(m.customerId!==state.customerId){toast('Buyer account changed. Please try again.');return}
-    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>toast(error?.message||'Excel download could not be started.'));
+    if(!m.ok){state.exporting=false;$('exportSelection').disabled=false;toast(m.message||'Excel export could not be created.');return}
+    if(m.customerId!==state.customerId){state.exporting=false;$('exportSelection').disabled=false;toast('Buyer account changed. Please try again.');return}
+    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>{state.exporting=false;$('exportSelection').disabled=false;toast(error?.message||'Excel download could not be started.')});
     return;
   }
   if(m.type==='BUYER_ROOM_EXPORT_FILE_RESULT'){
+    state.exporting=false;$('exportSelection').disabled=false;
     if(!m.ok)toast(m.message||'Excel download could not be started.');
     return;
   }
