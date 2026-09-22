@@ -254,14 +254,47 @@ export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (a
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const [items, orders] = await Promise.all([workspaceItems(buyer.customerId), buyerOrderHistory(buyer.customerId)]);
+  const [items, orders, customer, userResult] = await Promise.all([
+    workspaceItems(buyer.customerId),
+    buyerOrderHistory(buyer.customerId),
+    customerById(buyer.customerId),
+    wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true })
+  ]);
+  const users = userResult.items
+    .filter(user => normalize(user.customerId) === buyer.customerId)
+    .map(user => ({
+      userId: normalize(user.userId),
+      name: normalize(user.title),
+      email: normalizeEmail(user.email),
+      mobile: normalize(user.mobileNo),
+      status: upper(user.status),
+      primary: Boolean(user.primaryUser)
+    }));
+  const primary = users.find(user => user.primary) || null;
+  const account = {
+    customerId: buyer.customerId,
+    companyName: normalize(customer.title),
+    country: normalize(customer.country),
+    natureOfBusiness: normalize(customer.natureOfBusiness),
+    address: [customer.address1, customer.address2, customer.address3].map(normalize).filter(Boolean).join(', '),
+    website: normalize(customer.companyWebsite),
+    currency: buyer.currency,
+    destinationPorts: [customer.destinationPortName, customer.destinationPortName2, customer.destinationPortName3].map(normalize),
+    primary: {
+      name: primary?.name || normalize(customer.picName),
+      email: primary?.email || normalizeEmail(customer.primaryEmail),
+      mobile: primary?.mobile || normalize(customer.mobileNo),
+      title: normalize(customer.picTitle)
+    },
+    users: users.filter(user => !user.primary)
+  };
   const removed = items.filter(item => item.removed).map(item => {
     const { normalPriceEa, normalPriceCtn, vipPriceEa, vipPriceCtn, vipPrice,
       quotePerPc, quotePerCtn, pricePerPc, pricePerCtn, previousQuote,
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed, orders };
+  return { ok: true, context: buyer, account, myList: items.filter(item => !item.removed), removed, orders };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;
