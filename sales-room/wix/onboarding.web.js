@@ -92,6 +92,7 @@ export const createSalesRoomCustomer = webMethod(
         mobileNo: customer.picMobile,
         whatsapp: customer.whatsapp,
         preferredCurrency: customer.preferredCurrency,
+        selectionLimit: 100,
         destinationPortName: customer.destinationPort,
         assignedStaffId: staff.staffId,
         qdOwnerStaffId: staff.staffId,
@@ -552,6 +553,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         mobileNo: normalize(customer.mobileNo),
         whatsapp: upper(customer.whatsapp),
         preferredCurrency: upper(customer.preferredCurrency),
+        selectionLimit: [100, 300, 500, 700].includes(Number(customer.selectionLimit)) ? Number(customer.selectionLimit) : 100,
         destinationPortName: normalize(customer.destinationPortName),
         address1: normalize(customer.address1),
         address2: normalize(customer.address2),
@@ -713,6 +715,26 @@ const EDITABLE_CUSTOMER_FIELDS = Object.freeze({
   primaryEmail: 'PRIMARY EMAIL',
   companyWebsite: 'COMPANY WEBSITE'
 });
+
+export const updateSalesRoomSelectionLimit = webMethod(
+  Permissions.SiteMember,
+  async (customerId, requestedLimit) => {
+    const staff = await requireAuthorizedStaffContext();
+    if (!staff.canViewAllCustomers) throw new Error('Only Admin can change a customer selection allowance.');
+    const limit = Number(requestedLimit);
+    if (![100, 300, 500, 700].includes(limit) || String(requestedLimit).trim() !== String(limit)) {
+      throw new Error('Choose an allowance of 100, 300, 500 or 700 products.');
+    }
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const before = [100, 300, 500, 700].includes(Number(customer.selectionLimit)) ? Number(customer.selectionLimit) : 100;
+    if (before === limit) return Object.freeze({ ok: true, customerId: normalize(customer.customerId), selectionLimit: limit, changed: false });
+    await wixData.update(CUSTOMER_COLLECTION, { ...customer, selectionLimit: limit }, { suppressAuth: true });
+    await writeAuditChanges(PROFILE_AUDIT_COLLECTION, 'SELECTION_LIMIT_UPDATED', normalize(customer.customerId), normalize(customer.customerId), [{
+      fieldId: 'selectionLimit', fieldLabel: 'MY SELECTION ALLOWANCE', beforeValue: before, afterValue: limit
+    }], staff);
+    return Object.freeze({ ok: true, customerId: normalize(customer.customerId), selectionLimit: limit, changed: true });
+  }
+);
 
 export const updateSalesRoomCustomerProfile = webMethod(
   Permissions.SiteMember,

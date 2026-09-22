@@ -12,6 +12,9 @@ const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const SELECTION_COLLECTION = 'WixBuyerListItems';
+const DEFAULT_SELECTION_LIMIT = 100;
+const SELECTION_LIMITS = new Set([100, 300, 500, 700]);
+function selectionLimit_(customer) { const value = Number(customer?.selectionLimit); return SELECTION_LIMITS.has(value) ? value : DEFAULT_SELECTION_LIMIT; }
 
 export const getCatalogueSelectionState = webMethod(
   Permissions.SiteMember,
@@ -37,7 +40,8 @@ export const getCatalogueSelectionState = webMethod(
       selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
       counts,
-      total: activeItems.length
+      total: activeItems.length,
+      selectionLimit: context.selectionLimit
     });
   }
 );
@@ -61,6 +65,9 @@ export const addCatalogueSelection = webMethod(
 
     if (item) {
       const existing = selectionPayload_(item);
+      if (existing.removed && (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
+        throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before restoring this one.`);
+      }
       if (upper(existing.qdSyncStatus) === 'READY') {
         return Object.freeze({ ok: true, duplicate: true, selection: publicSelection_(item) });
       }
@@ -76,6 +83,8 @@ export const addCatalogueSelection = webMethod(
         { suppressAuth: true }
       );
     } else {
+      const activeCount = (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length;
+      if (activeCount >= context.selectionLimit) throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before adding another.`);
       const payload = {
         version: 1,
         customerId: context.customerId,
@@ -419,7 +428,8 @@ async function resolveSelectionContext_(assistCustomerId) {
     assignedStaffId: upper(customer.assignedStaffId),
     actorType,
     actorId,
-    actorName
+    actorName,
+    selectionLimit: selectionLimit_(customer)
   };
 }
 
@@ -450,8 +460,10 @@ async function requireStaff_(knownMember) {
 }
 
 async function selectionItemsForCustomer_(customerId) {
-  const result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
-  return result.items;
+  let result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const items = [...result.items];
+  while (result.hasNext()) { result = await result.next(); items.push(...result.items); }
+  return items;
 }
 
 async function getSelectionById_(id) {

@@ -306,11 +306,11 @@ renderCustomerDetail=function(d){
       '<section class="detail-section"><div class="detail-section-head"><h3>Recent change history</h3></div><div id="customerAuditArea"><div class="empty">Loading history…</div></div></section>'+
     '</div>';
   const area=document.getElementById('customerDetailArea');
-  const currentLimit=[300,500,700].includes(Number(d.selectionLimit))?Number(d.selectionLimit):300;
+  const currentLimit=[100,300,500,700].includes(Number(d.selectionLimit))?Number(d.selectionLimit):100;
   area.querySelector('.key-information .info-list')?.insertAdjacentHTML('beforeend',info('Selection allowance',currentLimit+' products'));
   if(staff.canViewAllCustomers){
     const section=document.createElement('section');section.className='detail-section selection-allowance';
-    section.innerHTML='<div class="detail-section-head"><h3>My Selection allowance</h3></div><p>Set how many active products this customer may keep for quotation. Removed products do not count.</p><div class="allowance-controls"><select id="customerSelectionLimit" aria-label="Customer selection allowance">'+[300,500,700].map(limit=>'<option value="'+limit+'"'+(limit===currentLimit?' selected':'')+'>'+limit+' products</option>').join('')+'</select><button class="primary" id="saveSelectionLimit" type="button" disabled>Save limit</button></div><small class="allowance-note">Changing to a lower limit keeps existing selections; new additions are paused until the count is below the new limit.</small><div id="selectionLimitStatus" class="detail-status" aria-live="polite"></div>';
+    section.innerHTML='<div class="detail-section-head"><h3>My Selection allowance</h3></div><p>Set how many active products this customer may keep for quotation. Removed products do not count.</p><div class="allowance-controls"><select id="customerSelectionLimit" aria-label="Customer selection allowance">'+[100,300,500,700].map(limit=>'<option value="'+limit+'"'+(limit===currentLimit?' selected':'')+'>'+limit+' products</option>').join('')+'</select><button class="primary" id="saveSelectionLimit" type="button" disabled>Save limit</button></div><small class="allowance-note">Changing to a lower limit keeps existing selections; new additions are paused until the count is below the new limit.</small><div id="selectionLimitStatus" class="detail-status" aria-live="polite"></div>';
     area.querySelector('.account-admin')?.before(section);
     const select=section.querySelector('#customerSelectionLimit'),save=section.querySelector('#saveSelectionLimit'),status=section.querySelector('#selectionLimitStatus');
     select.onchange=()=>{save.disabled=Number(select.value)===currentLimit;status.textContent='';status.className='detail-status'};

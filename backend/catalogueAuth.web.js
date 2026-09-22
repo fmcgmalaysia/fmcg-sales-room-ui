@@ -9,6 +9,9 @@ const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const STAFF_COLLECTION = 'StaffMaster';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
+const DEFAULT_SELECTION_LIMIT = 100;
+const SELECTION_LIMITS = new Set([100, 300, 500, 700]);
+function selectionLimit(customer) { const value = Number(customer?.selectionLimit); return SELECTION_LIMITS.has(value) ? value : DEFAULT_SELECTION_LIMIT; }
 const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
@@ -20,6 +23,7 @@ function upper(value) { return normalize(value).toUpperCase(); }
 function normalizeEmail(value) { return normalize(value).toLowerCase(); }
 function quantity(value) { const n = Number(value); return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; }
 function money(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
+function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
 function imageUrl(value, depth = 0) {
   if (depth > 5 || value == null) return '';
   if (typeof value === 'object') {
@@ -111,7 +115,7 @@ function ensureActive(customer) {
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
 }
 
 function httpsCall(url, options, body = '') {
@@ -175,7 +179,10 @@ async function resolveBuyerContext(assistCustomerId = '') {
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER' });
 }
 async function workspaceItems(customerId) {
-  const rows = (await readPayloadRows(BUYER_LIST_COLLECTION)).filter(entry => normalize(entry.data.customerId) === normalize(customerId));
+  let result = await wixData.query(BUYER_LIST_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const records = [...result.items];
+  while (result.hasNext()) { result = await result.next(); records.push(...result.items); }
+  const rows = records.map(record => ({ record, data: payloadData(record) })).filter(entry => normalize(entry.data.customerId) === normalize(customerId));
   const productIds = [...new Set(rows.map(entry => normalize(entry.data.productId)).filter(Boolean))];
   const barcodes = [...new Set(rows.map(entry => normalize(entry.data.barcode || entry.data.unitBarcode)).filter(Boolean))];
   const products = await productsByIds(productIds);
@@ -197,18 +204,26 @@ async function workspaceItems(customerId) {
       ...data, id, itemId: id,
       barcode: normalize(data.barcode || data.unitBarcode || product.barcode),
       itemName: normalize(data.itemName || product.name || product.title),
-      packingSize: normalize(data.packingSize || product.description),
+      // Current selections follow the latest Catalogue packing size. Keep the
+      // stored value only when the product is unavailable in Catalogue CMS.
+      packingSize: normalize(product.description || data.packingSize),
       brand: normalize(data.brand || product.brandName || product.principle),
       category: normalize(data.category || data.mainCategory || product.mainCategory),
       imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
-      ea: money(data.ea || product.ea), cbmPerCtn: money(data.cbmPerCtn || product.cbmPerCtn || product.cbm),
+      ea: money(data.ea || product.ea),
+      // Point Base sync writes CBM /CTN to FMCGMALAYSIA.m3Ctn. An older
+      // selection payload must not mask a newer CMS value, including zero.
+      cbmPerCtn: money(hasValue(product.m3Ctn) ? product.m3Ctn : hasValue(product.cbmPerCtn) ? product.cbmPerCtn : hasValue(product.cbm) ? product.cbm : data.cbmPerCtn),
       normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
       // A stored price is not a released quotation. Only the QD sync endpoint is
       // allowed to promote an item to VIEW QUOTE.
       quoteStatus: upper(data.quoteStatus || 'RFQ'),
       quoteActive: upper(data.quoteStatus || 'RFQ') === 'VIEW QUOTE',
-      addedTime: data.addedTime || data.selectedAt || record._createdDate || '', lastEditedBy: normalize(data.lastEditedBy || data.selectedByName)
+      addedTime: data.addedTime || data.selectedAt || record._createdDate || '',
+      selectedByName: normalize(data.selectedByName || data.selectedById),
+      lastEditedBy: normalize(data.lastEditedBy || data.selectedByName),
+      qtyEditedAt: normalize(data.qtyEditedAt), qtyEditedBy: normalize(data.qtyEditedBy)
     };
   });
 }
@@ -243,9 +258,21 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
   return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed: items.filter(item => item.removed), orders };
 });
 async function findOwnedItem(buyer, itemId) {
-  const row = (await readPayloadRows(BUYER_LIST_COLLECTION)).find(entry => normalize(entry.data.customerId) === buyer.customerId && normalize(entry.record._id || entry.data.id || entry.data.itemId) === normalize(itemId));
-  if (!row) throw new Error('Buyer list item was not found.');
-  return row;
+  let record = null;
+  try { record = await wixData.get(BUYER_LIST_COLLECTION, normalize(itemId), { suppressAuth: true, consistentRead: true }); } catch (_) { /* Not found. */ }
+  if (!record || normalize(payloadData(record).customerId) !== buyer.customerId) throw new Error('Buyer list item was not found.');
+  return { record, data: payloadData(record) };
+}
+async function activeBuyerSelectionCount(customerId, limit) {
+  let result = await wixData.query(BUYER_LIST_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  let count = 0;
+  do {
+    count += result.items.filter(record => !payloadData(record).removed).length;
+    if (count >= limit) return count;
+    if (!result.hasNext()) break;
+    result = await result.next();
+  } while (true);
+  return count;
 }
 function releasedOrderPrice(data) {
   if (upper(data.quoteStatus) !== 'VIEW QUOTE') return 0;
@@ -257,9 +284,12 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
   const requestedQuantity = quantity(quantityCtn);
   if (requestedQuantity > 0 && !(releasedOrderPrice(row.data) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
-  const next = { ...row.data, orderQtyCtn: requestedQuantity, updatedAt: new Date().toISOString(), lastEditedBy: buyer.actorName || buyer.email };
+  if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: normalize(row.data.qtyEditedAt), qtyEditedBy: normalize(row.data.qtyEditedBy) };
+  const now = new Date().toISOString();
+  const actor = buyer.actorName || buyer.email;
+  const next = { ...row.data, orderQtyCtn: requestedQuantity, qtyEditedAt: now, qtyEditedBy: actor, updatedAt: now, lastEditedBy: actor };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn };
+  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: now, qtyEditedBy: actor };
 });
 export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
@@ -284,8 +314,9 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
 export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);
+  if (row.data.removed && (await activeBuyerSelectionCount(buyer.customerId, buyer.selectionLimit)) >= buyer.selectionLimit) throw new Error(`My Selection is at its ${buyer.selectionLimit}-product limit. Remove an item before restoring this one.`);
   const now = new Date().toISOString();
-  let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  let next = { ...row.data, removed: false, recoveredAt: now, requoteRequestedAt: now, quoteStatus: 'RFQ', quoteActive: false, quotePerPc: 0, quotePerCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, orderQtyCtn: 0, qtyEditedAt: '', qtyEditedBy: '', qdSyncStatus: 'PENDING', qdCleanupStatus: '', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   try {
     const result = await routeQdAction('ADD_SELECTION', buyer, row);
@@ -311,7 +342,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     if (!item || qty < 1) throw new Error('Invalid order line.');
     const lockedUnitPrice = money(item.vipPriceCtn || item.vipPrice) || (money(item.vipPriceEa) * money(item.ea));
     if (!(lockedUnitPrice > 0) || upper(item.quoteStatus) !== 'VIEW QUOTE') throw new Error('All ordered products must have a released V.I.P price.');
-    return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)) };
+    return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)) };
   });
   const id = nextOrderId(buyer.customerId);
   const confirmedAt = new Date().toISOString();
@@ -326,6 +357,8 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
       await putPayload(BUYER_LIST_COLLECTION, row.record.title, {
         ...row.data,
         orderQtyCtn: 0,
+        qtyEditedAt: '',
+        qtyEditedBy: '',
         lastOrderId: id,
         lastOrderedAt: confirmedAt,
         updatedAt: confirmedAt,
