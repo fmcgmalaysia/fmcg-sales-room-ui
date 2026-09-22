@@ -255,7 +255,13 @@ export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (a
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const [items, orders] = await Promise.all([workspaceItems(buyer.customerId), buyerOrderHistory(buyer.customerId)]);
-  return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed: items.filter(item => item.removed), orders };
+  const removed = items.filter(item => item.removed).map(item => {
+    const { normalPriceEa, normalPriceCtn, vipPriceEa, vipPriceCtn, vipPrice,
+      quotePerPc, quotePerCtn, pricePerPc, pricePerCtn, previousQuote,
+      targetGp, ...withoutPrices } = item;
+    return withoutPrices;
+  });
+  return { ok: true, context: buyer, myList: items.filter(item => !item.removed), removed, orders };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;
@@ -295,10 +301,10 @@ export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, 
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);
   const now = new Date().toISOString();
-  const previousQuote = upper(row.data.quoteStatus) === 'VIEW QUOTE' ? {
-    status: 'VIEW QUOTE', quotePerPc: money(row.data.quotePerPc || row.data.vipPriceEa), quotePerCtn: money(row.data.quotePerCtn || row.data.vipPriceCtn), syncedAt: row.data.quoteSyncedAt || ''
-  } : row.data.previousQuote || null;
-  let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false, previousQuote, qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
+  let next = { ...row.data, removed: true, removedTime: now, orderQtyCtn: 0, quoteStatus: 'REMOVED', quoteActive: false,
+    normalPriceEa: 0, normalPriceCtn: 0, vipPriceEa: 0, vipPriceCtn: 0, vipPrice: 0,
+    quotePerPc: 0, quotePerCtn: 0, pricePerPc: 0, pricePerCtn: 0, previousQuote: null, targetGp: null,
+    qdCleanupStatus: 'PENDING', qdCleanupError: '', updatedAt: now, lastEditedBy: buyer.actorName || buyer.email };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   try {
     await routeQdAction('REMOVE_SELECTION', buyer, row);
