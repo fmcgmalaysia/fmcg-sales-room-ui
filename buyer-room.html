@@ -167,7 +167,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <script src="./buyer-room-excel.js?v=20260923-export-fix"></script>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,account:null,my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,exporting:false,exportWindow:null,listMode:'current',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,account:null,my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,exporting:false,listMode:'current',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -290,7 +290,7 @@ $('accountAddUser').onclick=()=>{const form=$('accountUserForm'),opening=form.hi
 $('quoteBell').onclick=()=>{const panel=$('quoteNotifications'),opening=panel.hidden;panel.hidden=!opening;$('quoteBell').setAttribute('aria-expanded',String(opening));if(opening){const items=state.newQuoteItems.slice();$('quoteNotificationText').textContent=items.length?`${items.length} new quotation${items.length===1?'':'s'} available. Open Order Form to review prices.`:'You are up to date.';$('quoteNotificationList').hidden=!items.length;$('quoteNotificationList').innerHTML=items.slice(0,5).map(item=>`<li>${esc(item.itemName)}</li>`).join('');markQuotesSeen();state.newQuoteItems=[]}};
 $('mySearch').oninput=()=>state.listMode==='current'?renderMy():renderRemoved();$('orderSearch').oninput=renderOrder;
 document.querySelectorAll('[data-action="sheet"]').forEach(b=>b.onclick=()=>post('BUYER_ROOM_VIEW_SHEET'));function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=>{w.querySelector('.export-menu').classList.remove('show');w.querySelector('[data-export-toggle]').setAttribute('aria-expanded','false')})}document.querySelectorAll('[data-export-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=b.closest('.export-wrap').querySelector('.export-menu'),open=!menu.classList.contains('show');closeExportMenus();menu.classList.toggle('show',open);b.setAttribute('aria-expanded',String(open))});document.querySelectorAll('[data-export-mode]').forEach(b=>b.onclick=()=>{post('BUYER_ROOM_EXPORT',{mode:b.dataset.exportMode});closeExportMenus()});document.addEventListener('click',e=>{if(!e.target.closest('.export-wrap'))closeExportMenus()});$('submitOrder').onclick=()=>{const lines=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0).map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));if(!lines.length)return toast('Enter a quantity for at least one quoted product.');state.pendingOrder=lines;$('reviewProducts').textContent=$('sumProducts').textContent;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('submitModalBg').classList.add('show')};
-$('exportSelection').onclick=()=>{if(state.exporting)return;const downloadWindow=window.open('about:blank','buyerRoomExcelDownload');if(!downloadWindow){toast('Please allow pop-ups for Buyer Room, then try Export Excel again.');return}downloadWindow.document.title='FMCG Malaysia Excel Export';downloadWindow.document.body.innerHTML='<main style="font:15px Segoe UI,Arial,sans-serif;padding:28px;color:#26384a"><strong>FMCG Malaysia</strong><p>Your Excel download is starting.</p><a id="downloadLink" hidden style="display:inline-block;margin-top:10px;color:#0d7653;font-weight:700" href="#">Click here if the download does not start</a></main>';state.exportWindow=downloadWindow;state.exporting=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT_SELECTION')};
+$('exportSelection').onclick=()=>{if(state.exporting)return;state.exporting=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT_SELECTION')};
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
@@ -305,17 +305,15 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').
 window.addEventListener('message',e=>{
   const m=e.data||{};
   const finishExport=()=>{state.exporting=false;$('exportSelection').disabled=false};
-  const closeExportWindow=()=>{if(state.exportWindow&&!state.exportWindow.closed)state.exportWindow.close();state.exportWindow=null};
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){
-    if(!m.ok){finishExport();closeExportWindow();toast(m.message||'Excel export could not be created.');return}
-    if(m.customerId!==state.customerId){finishExport();closeExportWindow();toast('Buyer account changed. Please try again.');return}
-    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>{finishExport();closeExportWindow();toast(error?.message||'Excel download could not be started.')});
+    if(!m.ok){finishExport();toast(m.message||'Excel export could not be created.');return}
+    if(m.customerId!==state.customerId){finishExport();toast('Buyer account changed. Please try again.');return}
+    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',file)).catch(error=>{finishExport();toast(error?.message||'Excel download could not be started.')});
     return;
   }
   if(m.type==='BUYER_ROOM_EXPORT_FILE_RESULT'){
     finishExport();
-    if(m.ok&&/^https:\/\//i.test(m.downloadUrl||'')&&state.exportWindow&&!state.exportWindow.closed){const link=state.exportWindow.document.getElementById('downloadLink');if(link){link.href=m.downloadUrl;link.hidden=false;link.click()}else state.exportWindow.location.href=m.downloadUrl}
-    else{closeExportWindow();toast(m.message||'Excel download could not be started.');}
+    if(!m.ok)toast(m.message||'Excel download could not be started.');
     return;
   }
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
