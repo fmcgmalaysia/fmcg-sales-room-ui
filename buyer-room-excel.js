@@ -68,14 +68,14 @@
       + `<row r="2" ht="26" customHeight="1">${headers.map((value, index) => cellText(`${String.fromCharCode(65 + index)}2`, value, 2)).join('')}</row>`;
     const body = rows.map((item, index) => {
       const r = index + 3;
-      return `<row r="${r}">${cellText(`A${r}`, item.unitBarcode)}${cellText(`B${r}`, item.itemName)}${cellText(`C${r}`, item.packingSize)}`
+      return `<row r="${r}">${cellText(`A${r}`, item.unitBarcode, 7)}${cellText(`B${r}`, item.itemName)}${cellText(`C${r}`, item.packingSize)}`
         + `${cellNumber(`D${r}`, item.ea, 4)}${cellNumber(`E${r}`, item.pricePerPc, 5)}${cellNumber(`F${r}`, item.pricePerCtn, 5)}`
         + `${cellNumber(`G${r}`, item.cbmPerCtn, 6)}</row>`;
     }).join('');
     const endRow = Math.max(2, rows.length + 2);
     const hasWatermark = watermarkBytes instanceof Uint8Array && watermarkBytes.length > 0;
     const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:G${endRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A3" sqref="A3"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols><col min="1" max="1" width="19" customWidth="1"/><col min="2" max="2" width="52" customWidth="1"/><col min="3" max="3" width="27" customWidth="1"/><col min="4" max="4" width="10" customWidth="1"/><col min="5" max="6" width="16" customWidth="1"/><col min="7" max="7" width="15" customWidth="1"/></cols><sheetData>${header}${body}</sheetData><autoFilter ref="A2:G${endRow}"/><hyperlinks><hyperlink ref="A1" r:id="rId1" tooltip="Open your Buyer Room"/></hyperlinks><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" fitToHeight="0" orientation="portrait"/>${hasWatermark ? '<headerFooter><oddHeader>&amp;C&amp;G</oddHeader></headerFooter><legacyDrawingHF r:id="rId2"/><picture r:id="rId3"/>' : ''}</worksheet>`;
-    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.0000"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Aptos"/></font><font><b/><color rgb="FF1264A3"/><u/><sz val="11"/><name val="Aptos"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Aptos"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0D7653"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.0000"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Aptos"/></font><font><b/><color rgb="FF1264A3"/><u/><sz val="11"/><name val="Aptos"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Aptos"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0D7653"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
     const alignedStyles = styles.replace('formatCode="#,##0.00"', 'formatCode="0.00"')
       .replace(/(<xf numFmtId="(?:164|165)"[^>]*)(\/>)/g, '$1 applyAlignment="1"><alignment horizontal="right"/></xf>');
     const files = [
@@ -96,16 +96,13 @@
   }
 
   async function prepareSelectionExcel(data) {
-    const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-export-fix');
-    if (!response.ok) throw new Error('Excel watermark could not be loaded.');
-    const bytes = buildSelectionExcel(data, new Uint8Array(await response.arrayBuffer()));
-    const safeName = String(data.companyName || 'Buyer').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50) || 'Buyer';
+    const bytes = buildSelectionExcel(data);
     const date = new Date().toISOString().slice(0, 10);
     let binary = '';
     for (let offset = 0; offset < bytes.length; offset += 32768) {
       binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
     }
-    return { customerId: data.customerId, fileName: `${safeName}-My-Selection-${date}.xlsx`, base64: btoa(binary) };
+    return { customerId: data.customerId, fileName: `fmcgmalaysia.com-My-Selection-${date}.xlsx`, base64: btoa(binary) };
   }
   root.BuyerRoomExcel = { buildSelectionExcel, prepareSelectionExcel };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.BuyerRoomExcel;
