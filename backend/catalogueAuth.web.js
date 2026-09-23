@@ -357,7 +357,7 @@ export const uploadBuyerSelectionExcel = webMethod(Permissions.SiteMember, async
     for (let attempt = 1; attempt <= 6; attempt += 1) {
       try {
         downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
-        if (/^https:\/\//i.test(downloadUrl || '')) break;
+        if (String(downloadUrl || '').startsWith('https://')) break;
         throw new Error('Wix Media returned an invalid download URL.');
       } catch (error) {
         lastDownloadError = error;

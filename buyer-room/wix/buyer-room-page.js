@@ -131,7 +131,7 @@ $w.onReady(async function () {
           const code = result?.code ? ` (${result.code})` : '';
           throw new Error(`${stage}${result?.message || 'Excel upload failed.'}${code}`);
         }
-        if (!/^https:\/\//i.test(result.downloadUrl || '')) throw new Error('[DOWNLOAD_URL] Excel download link is unavailable.');
+        if (!String(result.downloadUrl || '').startsWith('https://')) throw new Error('[DOWNLOAD_URL] Excel download link is unavailable.');
         if (message.requestId !== activeExportRequestId) return;
         activeDownloadUrl = result.downloadUrl;
         frame.postMessage({ type: 'BUYER_ROOM_EXPORT_READY', ok: true, requestId: message.requestId, fileName: result.fileName || '' });
