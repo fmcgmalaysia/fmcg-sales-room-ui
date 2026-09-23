@@ -21,6 +21,7 @@ $w.onReady(async function () {
   exportButton.link = '';
   exportButton.target = '_self';
   exportButton.disable();
+  exportButton.hide();
 
   function resetExportButton() {
     exportButton.link = '';
@@ -99,6 +100,7 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_SHOW_EXPORT') {
+      exportButton.show();
       await exportButton.scrollTo();
       return;
     }
