@@ -304,7 +304,7 @@ export const routeSalesRoomCustomerSelections = webMethod(
     return Object.freeze({
       ok: results.every((result) => result.ok),
       processed: results.length,
-      ready: results.filter((result) => result.ok && !result.routing).length,
+      ready: results.filter((result) => result.ok && !('routing' in result && result.routing)).length,
       failed: results.filter((result) => !result.ok).length,
       routing,
       results

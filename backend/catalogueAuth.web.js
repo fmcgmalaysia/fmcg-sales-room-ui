@@ -4,7 +4,7 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
 import { mediaManager } from 'wix-media-backend';
-import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel';
+import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
