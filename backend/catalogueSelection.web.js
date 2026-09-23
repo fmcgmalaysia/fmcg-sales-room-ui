@@ -12,19 +12,28 @@ const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const SELECTION_COLLECTION = 'WixBuyerListItems';
+const DEFAULT_SELECTION_LIMIT = 100;
+const REMOVED_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
+const SELECTION_LIMITS = new Set([100, 300, 500, 700]);
+function selectionLimit_(customer) { const value = Number(customer?.selectionLimit); return SELECTION_LIMITS.has(value) ? value : DEFAULT_SELECTION_LIMIT; }
+function removedHistoryExpired_(payload, now = Date.now()) {
+  if (!payload?.removed) return false;
+  const removedAt = Date.parse(payload.removedTime || '');
+  return Number.isFinite(removedAt) && now - removedAt >= REMOVED_HISTORY_MS;
+}
 
 export const getCatalogueSelectionState = webMethod(
   Permissions.SiteMember,
   async (assistCustomerId = '') => {
     const context = await resolveSelectionContext_(assistCustomerId);
     const items = await selectionItemsForCustomer_(context.customerId);
-    // A removed item stays visually Selected in Catalogue so the buyer always
-    // returns to the same Buyer Room record instead of creating a duplicate.
+    // A removed item stays visually Selected during its 30-day restore window.
+    // After that window, Catalogue offers Add to Selection again.
     // CMS persistence defines selection; QD routing is a downstream state.
     // Selection is durable as soon as it reaches Wix CMS. QD routing is a
     // downstream Sales Room task and must never make the Catalogue button
     // revert to "TRY AGAIN" or let the buyer create duplicate selections.
-    const selectedItems = items;
+    const selectedItems = items.filter((item) => !removedHistoryExpired_(selectionPayload_(item)));
     const activeItems = selectedItems.filter((item) => !selectionPayload_(item).removed);
     const counts = { food: 0, household: 0, personalCare: 0, general: 0 };
     activeItems.forEach((item) => {
@@ -37,7 +46,8 @@ export const getCatalogueSelectionState = webMethod(
       selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
       counts,
-      total: activeItems.length
+      total: activeItems.length,
+      selectionLimit: context.selectionLimit
     });
   }
 );
@@ -49,6 +59,9 @@ export const addCatalogueSelection = webMethod(
     const product = await getActiveProduct_(productId);
     const unitBarcode = normalizeBarcode_(product.barcode);
     if (!unitBarcode) throw new Error('This product is missing its Unit Barcode.');
+    const ea = positiveInteger_(product.ea);
+    if (!ea) throw new Error('This product is missing its EA value.');
+    const cbmPerCtn = finiteNumber_(product.m3Ctn ?? product.cbmPerCtn ?? product.cbm);
 
     const title = context.customerId + '|' + unitBarcode;
     const selectionId = selectionId_(context.customerId, unitBarcode);
@@ -61,21 +74,55 @@ export const addCatalogueSelection = webMethod(
 
     if (item) {
       const existing = selectionPayload_(item);
-      if (upper(existing.qdSyncStatus) === 'READY') {
+      if (existing.removed && !removedHistoryExpired_(existing)) {
         return Object.freeze({ ok: true, duplicate: true, selection: publicSelection_(item) });
       }
-      const queued = {
-        ...existing,
+      if (existing.removed) {
+        const activeCount = (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length;
+        if (activeCount >= context.selectionLimit) throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before adding another.`);
+      } else if (upper(existing.qdSyncStatus) === 'READY') {
+        return Object.freeze({ ok: true, duplicate: true, selection: publicSelection_(item) });
+      }
+      const queued = existing.removed ? {
+        version: 1,
+        customerId: context.customerId,
+        productId: normalize(product._id),
+        unitBarcode,
+        itemName: normalize(product.name),
+        packingSize: normalize(product.description),
+        ea,
+        cbmPerCtn,
+        mainCategory: normalize(product.mainCategory),
+        imageUrl: imageUrl_(product.image),
         removed: false,
+        removedTime: '',
         quoteStatus: 'RFQ',
-        qdSyncStatus: upper(existing.qdSyncStatus) || 'PENDING'
-      };
+        selectedAt: now,
+        selectedByType: context.actorType,
+        selectedById: context.actorId,
+        selectedByName: context.actorName,
+        source: context.actorType === 'STAFF' ? 'SALES_ROOM_ASSIST' : 'BUYER_CATALOGUE',
+        qdFileId: context.qdFileId,
+        qdSyncStatus: 'PENDING',
+        qdSyncedAt: '',
+        qdRow: 0,
+        lastError: '',
+        updatedAt: now,
+        lastEditedBy: context.actorName,
+        previousRemoval: {
+          removedTime: normalize(existing.removedTime),
+          qdCleanupStatus: upper(existing.qdCleanupStatus),
+          qdCleanupError: normalize(existing.qdCleanupError)
+        }
+      } : { ...existing, quoteStatus: 'RFQ', qdSyncStatus: upper(existing.qdSyncStatus) || 'PENDING' };
       item = await wixData.update(
         SELECTION_COLLECTION,
-        { ...item, payload: JSON.stringify(queued) },
+        { ...item, customerId: context.customerId, removed: false, ea, payload: JSON.stringify(queued) },
         { suppressAuth: true }
       );
     } else {
+      const activeCount = (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length;
+      if (activeCount >= context.selectionLimit) throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before adding another.`);
       const payload = {
         version: 1,
         customerId: context.customerId,
@@ -83,6 +130,8 @@ export const addCatalogueSelection = webMethod(
         unitBarcode,
         itemName: normalize(product.name),
         packingSize: normalize(product.description),
+        ea,
+        cbmPerCtn,
         mainCategory: normalize(product.mainCategory),
         imageUrl: imageUrl_(product.image),
         quoteStatus: 'RFQ',
@@ -100,7 +149,7 @@ export const addCatalogueSelection = webMethod(
       try {
         item = await wixData.insert(
           SELECTION_COLLECTION,
-          { _id: selectionId, title, payload: JSON.stringify(payload) },
+          { _id: selectionId, title, customerId: context.customerId, removed: false, ea, payload: JSON.stringify(payload) },
           { suppressAuth: true }
         );
       } catch (error) {
@@ -419,7 +468,8 @@ async function resolveSelectionContext_(assistCustomerId) {
     assignedStaffId: upper(customer.assignedStaffId),
     actorType,
     actorId,
-    actorName
+    actorName,
+    selectionLimit: selectionLimit_(customer)
   };
 }
 
@@ -450,8 +500,10 @@ async function requireStaff_(knownMember) {
 }
 
 async function selectionItemsForCustomer_(customerId) {
-  const result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
-  return result.items;
+  let result = await wixData.query(SELECTION_COLLECTION).startsWith('title', normalize(customerId) + '|').limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const items = [...result.items];
+  while (result.hasNext()) { result = await result.next(); items.push(...result.items); }
+  return items;
 }
 
 async function getSelectionById_(id) {
@@ -565,6 +617,8 @@ function memberEmail_(member) {
   return normalizeEmail_(typeof loginEmail === 'string' ? loginEmail : loginEmail?.email);
 }
 function normalizeBarcode_(value) { return String(value || '').replace(/\.0$/, '').trim(); }
+function positiveInteger_(value) { const number = Number(value); return Number.isInteger(number) && number > 0 ? number : 0; }
+function finiteNumber_(value) { const number = Number(value); return Number.isFinite(number) ? number : 0; }
 function normalizeEmail_(value) { return String(value || '').trim().toLowerCase(); }
 function normalize(value) { return String(value || '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }

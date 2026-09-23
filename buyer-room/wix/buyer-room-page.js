@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, exportBuyerSelectionExcel, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -11,7 +11,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260922-order-price-guard';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260923-cms-direct-excel';
   assistCustomerId = getAssistCustomerId();
 
   async function loadWorkspace() {
@@ -31,24 +31,29 @@ $w.onReady(async function () {
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
+    const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
+      customerId: result.context.customerId,
+      catalogueUrl: siteBaseUrl ? siteBaseUrl + '/catalogue' + (assistCustomerId ? '?assist=' + encodeURIComponent(assistCustomerId) : '') : '',
       companyName: result.context.companyName,
       memberName: result.context.actorName || result.context.email,
       currency: result.context.currency || 'USD',
+      selectionLimit: result.context.selectionLimit,
       assisted: result.context.actorType === 'STAFF',
+      account: result.account || null,
       myList: result.myList || [],
       removed: result.removed || [],
       orders: result.orders || []
     }});
   }
 
-  async function runAction(action, successMessage, actionName) {
+  async function runAction(action, successMessage, actionName, itemId = '') {
     try {
       const result = await action();
-      frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, action: actionName, ok: true, message: successMessage });
+      frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, itemId: result?.itemId || itemId, action: actionName, ok: true, message: successMessage });
       await loadWorkspace();
     } catch (error) {
-      frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: error?.message || 'The action could not be completed.' });
+      frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
     }
   }
 
@@ -63,16 +68,30 @@ $w.onReady(async function () {
       wixLocationFrontend.to(assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) : '/catalogue');
       return;
     }
+    if (message.type === 'BUYER_ROOM_EXPORT') {
+      try {
+        const result = await exportBuyerSelectionExcel(assistCustomerId);
+        if (!result?.ok || !/^https:\/\//i.test(result.downloadUrl || '')) {
+          throw new Error(result?.message || 'Excel download could not be started.');
+        }
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
+        wixLocationFrontend.to(result.downloadUrl);
+      } catch (error) {
+        console.error('Buyer Room Excel export failed', error);
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
+      }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
-      await runAction(() => saveBuyerQuantity(message.itemId || '', message.quantityCtn, assistCustomerId), 'Quantity saved.', 'quantity');
+      await runAction(() => saveBuyerQuantity(message.itemId || '', message.quantityCtn, assistCustomerId), 'Quantity saved.', 'quantity', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_REMOVE') {
-      await runAction(() => removeBuyerItem(message.itemId || '', assistCustomerId), 'Product moved to Removed History.', 'remove');
+      await runAction(() => removeBuyerItem(message.itemId || '', assistCustomerId), 'Product moved to Removed History.', 'remove', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_RECOVER') {
-      await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Re-quote requested. The product is back in My Selection as RFQ.', 'recover');
+      await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
