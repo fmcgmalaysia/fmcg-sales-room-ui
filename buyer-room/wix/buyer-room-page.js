@@ -12,12 +12,12 @@ $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
   const exportButton = $w('#exportExcelButton');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260923-selection-excel-native-wix';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260923-selection-excel-native-bottom';
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let exportRequestNumber = 0;
   let activeExportRequestId = '';
-  exportButton.label = 'Export Excel';
+  exportButton.label = 'Download Excel';
   exportButton.link = '';
   exportButton.target = '_self';
   exportButton.disable();
@@ -96,6 +96,10 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_BROWSE_CATALOGUE') {
       wixLocationFrontend.to(assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) : '/catalogue');
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_SHOW_EXPORT') {
+      await exportButton.scrollTo();
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
