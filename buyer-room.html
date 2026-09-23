@@ -169,6 +169,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
 const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,account:null,my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
+let exportBusy=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const formatTime=v=>{const raw=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}T/.test(raw)){const date=new Date(raw);if(!Number.isNaN(date.getTime()))return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'}).format(date)}return raw.replace(/\b(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\b/g,(_,d,m,y)=>`${d.padStart(2,'0')} ${m} ${y}`).replace(/\b(\d{1,2}):(\d{1,2})\b/g,(_,h,m)=>`${h.padStart(2,'0')}:${m.padStart(2,'0')}`)};
@@ -290,7 +291,7 @@ $('accountAddUser').onclick=()=>{const form=$('accountUserForm'),opening=form.hi
 $('quoteBell').onclick=()=>{const panel=$('quoteNotifications'),opening=panel.hidden;panel.hidden=!opening;$('quoteBell').setAttribute('aria-expanded',String(opening));if(opening){const items=state.newQuoteItems.slice();$('quoteNotificationText').textContent=items.length?`${items.length} new quotation${items.length===1?'':'s'} available. Open Order Form to review prices.`:'You are up to date.';$('quoteNotificationList').hidden=!items.length;$('quoteNotificationList').innerHTML=items.slice(0,5).map(item=>`<li>${esc(item.itemName)}</li>`).join('');markQuotesSeen();state.newQuoteItems=[]}};
 $('mySearch').oninput=()=>state.listMode==='current'?renderMy():renderRemoved();$('orderSearch').oninput=renderOrder;
 document.querySelectorAll('[data-action="sheet"]').forEach(b=>b.onclick=()=>post('BUYER_ROOM_VIEW_SHEET'));function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=>{w.querySelector('.export-menu').classList.remove('show');w.querySelector('[data-export-toggle]').setAttribute('aria-expanded','false')})}document.querySelectorAll('[data-export-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=b.closest('.export-wrap').querySelector('.export-menu'),open=!menu.classList.contains('show');closeExportMenus();menu.classList.toggle('show',open);b.setAttribute('aria-expanded',String(open))});document.querySelectorAll('[data-export-mode]').forEach(b=>b.onclick=()=>{post('BUYER_ROOM_EXPORT',{mode:b.dataset.exportMode});closeExportMenus()});document.addEventListener('click',e=>{if(!e.target.closest('.export-wrap'))closeExportMenus()});$('submitOrder').onclick=()=>{const lines=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0).map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));if(!lines.length)return toast('Enter a quantity for at least one quoted product.');state.pendingOrder=lines;$('reviewProducts').textContent=$('sumProducts').textContent;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('submitModalBg').classList.add('show')};
-$('exportSelection').onclick=()=>post('BUYER_ROOM_SHOW_EXPORT');
+$('exportSelection').onclick=()=>{if(exportBusy)return;exportBusy=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT_REQUEST')};
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
@@ -306,7 +307,12 @@ window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_EXPORT_PREPARE'){
     if(!m.ok||m.customerId!==state.customerId)return;
-    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',{...file,requestId:m.requestId||'',preload:true})).catch(error=>post('BUYER_ROOM_EXPORT_FILE_ERROR',{requestId:m.requestId||'',message:error?.message||'Excel export could not be prepared.'}));
+    BuyerRoomExcel.prepareSelectionExcel(m).then(file=>post('BUYER_ROOM_EXPORT_FILE',{...file,requestId:m.requestId||''})).catch(error=>post('BUYER_ROOM_EXPORT_FILE_ERROR',{requestId:m.requestId||'',message:error?.message||'Excel export could not be prepared.'}));
+    return;
+  }
+  if(m.type==='BUYER_ROOM_EXPORT_RESULT'){
+    exportBusy=false;$('exportSelection').disabled=false;
+    if(!m.ok)toast(m.message||'Excel download could not be started.');
     return;
   }
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
@@ -337,4 +343,5 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 
 
 </body></html>
+
 
