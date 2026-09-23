@@ -140,6 +140,7 @@ function ensureActive(customer) {
 function contextFromCustomer(customer, actor) {
   return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
 }
+
 function httpsCall(url, options, body = '') {
   return new Promise((resolve, reject) => {
     const req = httpsRequest(url, options, response => {
@@ -332,19 +333,49 @@ export const getBuyerSelectionExport = webMethod(Permissions.SiteMember, async (
   return { ok: true, customerId: buyer.customerId, companyName: buyer.companyName, currency: buyer.currency, rows };
 });
 export const uploadBuyerSelectionExcel = webMethod(Permissions.SiteMember, async (customerId, base64, assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
-  if (normalize(customerId) !== buyer.customerId) throw new Error('Buyer account changed. Please try again.');
-  const encoded = normalize(base64);
-  if (!encoded || encoded.length > 3000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Excel file is too large or invalid.');
-  const file = Buffer.from(encoded, 'base64');
-  if (file.length < 1000 || file.length > 2250000 || file.subarray(0, 4).toString('hex') !== '504b0304') throw new Error('Excel file is invalid.');
-  const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  const uploaded = await mediaManager.upload('/buyer-room-exports', file, fileName, {
-    mediaOptions: { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', mediaType: 'document' },
-    metadataOptions: { isPrivate: true, isVisitorUpload: false }
-  });
-  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
-  return { ok: true, customerId: buyer.customerId, downloadUrl, fileName };
+  let stage = 'BUYER_CONTEXT';
+  try {
+    const buyer = await resolveBuyerContext(assistCustomerId);
+    stage = 'VALIDATE_FILE';
+    if (normalize(customerId) !== buyer.customerId) throw new Error('Buyer account changed. Please try again.');
+    const encoded = normalize(base64);
+    if (!encoded || encoded.length > 3000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Excel file is too large or invalid.');
+    const file = Buffer.from(encoded, 'base64');
+    if (file.length < 1000 || file.length > 2250000 || file.subarray(0, 4).toString('hex') !== '504b0304') throw new Error('Excel file is invalid.');
+    const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    stage = 'MEDIA_UPLOAD';
+    const uploaded = await mediaManager.upload('/buyer-room-exports', file, fileName, {
+      mediaOptions: { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', mediaType: 'document' },
+      metadataOptions: { isPrivate: true, isVisitorUpload: false }
+    });
+    if (!uploaded?.fileUrl) throw new Error('Wix Media did not return a file URL.');
+
+    stage = 'DOWNLOAD_URL';
+    let downloadUrl = '';
+    let lastDownloadError;
+    for (let attempt = 1; attempt <= 6; attempt += 1) {
+      try {
+        downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
+        if (/^https:\/\//i.test(downloadUrl || '')) break;
+        throw new Error('Wix Media returned an invalid download URL.');
+      } catch (error) {
+        lastDownloadError = error;
+        if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      }
+    }
+    if (!downloadUrl) throw lastDownloadError || new Error('Wix Media download URL is unavailable.');
+    return { ok: true, customerId: buyer.customerId, downloadUrl, fileName, fileUrl: uploaded.fileUrl };
+  } catch (error) {
+    const diagnostic = {
+      stage,
+      name: normalize(error?.name) || 'Error',
+      code: normalize(error?.code || error?.details?.applicationError?.code),
+      message: normalize(error?.message) || 'Unknown Wix Media error.'
+    };
+    console.error('Buyer Room Excel export failed', diagnostic);
+    return { ok: false, ...diagnostic };
+  }
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
@@ -493,3 +524,4 @@ async function finishBuyerOrder(order, buyer) {
   }
   return { ok: true, orderId: id, status: 'CONFIRMED', warning: resetFailures ? 'Order confirmed, but some quantities could not be cleared. Please check Order Form before submitting another order.' : '' };
 }
+

@@ -126,7 +126,12 @@ $w.onReady(async function () {
       try {
         if (!message.requestId || message.requestId !== activeExportRequestId) return;
         const result = await uploadBuyerSelectionExcel(message.customerId || '', message.base64 || '', assistCustomerId);
-        if (!result?.ok || !/^https:\/\//i.test(result.downloadUrl || '')) throw new Error('Excel download link is unavailable.');
+        if (!result?.ok) {
+          const stage = result?.stage ? `[${result.stage}] ` : '';
+          const code = result?.code ? ` (${result.code})` : '';
+          throw new Error(`${stage}${result?.message || 'Excel upload failed.'}${code}`);
+        }
+        if (!/^https:\/\//i.test(result.downloadUrl || '')) throw new Error('[DOWNLOAD_URL] Excel download link is unavailable.');
         if (message.requestId !== activeExportRequestId) return;
         activeDownloadUrl = result.downloadUrl;
         frame.postMessage({ type: 'BUYER_ROOM_EXPORT_READY', ok: true, requestId: message.requestId, fileName: result.fileName || '' });
