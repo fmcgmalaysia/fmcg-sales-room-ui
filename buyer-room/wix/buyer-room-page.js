@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, getBuyerSelectionExport, uploadBuyerSelectionExcel, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -11,8 +11,34 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260922-buyer-scale';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260923-selection-excel-direct-download';
   assistCustomerId = getAssistCustomerId();
+  let frameReady = false;
+  let exportRequestNumber = 0;
+  let activeExportRequestId = '';
+  let activeCustomerId = '';
+
+  async function prepareSelectionDownload() {
+    if (!activeCustomerId) {
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: 'Buyer account is still loading.' });
+      return;
+    }
+    const requestId = `${activeCustomerId}-${++exportRequestNumber}`;
+    activeExportRequestId = requestId;
+    try {
+      const result = await getBuyerSelectionExport(assistCustomerId);
+      if (requestId !== activeExportRequestId) return;
+      if (!result?.rows?.length) {
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: 'There are no products to export.' });
+        return;
+      }
+      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_PREPARE', ...result, buyerRoomUrl: siteBaseUrl + '/buyer-room', requestId });
+    } catch (error) {
+      console.error('Buyer Room Excel preparation failed', error);
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel export could not be prepared.' });
+    }
+  }
 
   async function loadWorkspace() {
     let result;
@@ -31,6 +57,7 @@ $w.onReady(async function () {
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
+    activeCustomerId = result.context.customerId;
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
@@ -61,12 +88,17 @@ $w.onReady(async function () {
   frame.onMessage(async (event) => {
     const message = event.data || {};
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
+      frameReady = true;
       try { await loadWorkspace(); }
       catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
       return;
     }
     if (message.type === 'BUYER_ROOM_BROWSE_CATALOGUE') {
       wixLocationFrontend.to(assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) : '/catalogue');
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
+      await prepareSelectionDownload();
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
@@ -79,6 +111,25 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_RECOVER') {
       await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_EXPORT_FILE') {
+      try {
+        if (!message.requestId || message.requestId !== activeExportRequestId) return;
+        const result = await uploadBuyerSelectionExcel(message.customerId || '', message.base64 || '', assistCustomerId);
+        if (!result?.ok || !/^https:\/\//i.test(result.downloadUrl || '')) throw new Error('Excel download link is unavailable.');
+        if (message.requestId !== activeExportRequestId) return;
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true, fileName: result.fileName || '' });
+        wixLocationFrontend.to(result.downloadUrl);
+      } catch (error) {
+        console.error('Buyer Room Excel upload failed', error);
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
+      }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_EXPORT_FILE_ERROR') {
+      console.error('Buyer Room Excel file generation failed', message.message || 'Unknown error');
+      if (message.requestId === activeExportRequestId) frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: message.message || 'Excel export could not be prepared.' });
       return;
     }
     if (message.type === 'BUYER_ROOM_ORDER_PAGE') {
@@ -109,3 +160,5 @@ $w.onReady(async function () {
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
 });
+
+
