@@ -96,9 +96,12 @@
   }
 
   async function prepareSelectionExcel(data) {
-    const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-export-fix');
-    if (!response.ok) throw new Error('Excel watermark could not be loaded.');
-    const bytes = buildSelectionExcel(data, new Uint8Array(await response.arrayBuffer()));
+    let watermarkBytes;
+    try {
+      const response = await fetch('./assets/logo-watermark-a4.png?v=20260923-export-fix');
+      if (response.ok) watermarkBytes = new Uint8Array(await response.arrayBuffer());
+    } catch (_) {}
+    const bytes = buildSelectionExcel(data, watermarkBytes);
     const date = new Date().toISOString().slice(0, 10);
     let binary = '';
     for (let offset = 0; offset < bytes.length; offset += 32768) {
