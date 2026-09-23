@@ -59,7 +59,8 @@ export const addCatalogueSelection = webMethod(
     const product = await getActiveProduct_(productId);
     const unitBarcode = normalizeBarcode_(product.barcode);
     if (!unitBarcode) throw new Error('This product is missing its Unit Barcode.');
-    const ea = positiveInteger_(product.ea);
+    // Wix Catalog displays this field as "EA", but its collection field ID is "price".
+    const ea = positiveInteger_(product.price);
     if (!ea) throw new Error('This product is missing its EA value.');
     const cbmPerCtn = finiteNumber_(product.m3Ctn ?? product.cbmPerCtn ?? product.cbm);
 
