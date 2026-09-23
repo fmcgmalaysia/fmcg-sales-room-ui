@@ -3,6 +3,8 @@ import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
 import { authentication } from 'wix-members-backend';
 import wixData from 'wix-data';
+import { mediaManager } from 'wix-media-backend';
+import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
 
 const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
@@ -12,6 +14,7 @@ const STAFF_COLLECTION = 'StaffMaster';
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const ACTIVE_STATUS = 'ACTIVE';
+const EXCEL_PIPELINE_PROBE_TOKEN = '9fbc76c9c8504dd688af7631f5b70ce4';
 
 function redirectTo(url) {
   return response({ status: 302, headers: { Location: url, 'Cache-Control': 'no-store, max-age=0', Pragma: 'no-cache' } });
@@ -30,6 +33,81 @@ function oauthRedirect(status, state = '') {
   return normalize(state).startsWith('B_') ? buyerLoginRedirect(status, state) : loginRedirect(status, state);
 }
 function normalize(value) { return String(value || '').trim(); }
+
+function probeJson(status, payload) {
+  return response({
+    status,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    body: JSON.stringify(payload)
+  });
+}
+
+// Temporary isolated probe for the XLSX -> Wix Media -> download URL pipeline.
+// It deliberately does not read or write CMS data.
+export async function get_excelPipelineProbe(request) {
+  if (normalize(request?.query?.token) !== EXCEL_PIPELINE_PROBE_TOKEN) {
+    return probeJson(404, { ok: false, stage: 'AUTH' });
+  }
+
+  let stage = 'WORKBOOK_BUILD';
+  try {
+    const bytes = buildBuyerSelectionExcel({
+      buyerRoomUrl: 'https://www.fmcgmalaysia.com/buyer-room',
+      currency: 'USD',
+      rows: [
+        {
+          unitBarcode: '0123456789012',
+          itemName: 'PIPELINE TEST ITEM A',
+          packingSize: '100G x 12',
+          ea: 12,
+          pricePerPc: 1.25,
+          pricePerCtn: 15,
+          cbmPerCtn: 0.0123
+        },
+        {
+          unitBarcode: '0987654321098',
+          itemName: 'PIPELINE TEST ITEM B',
+          packingSize: '250ML x 24',
+          ea: 24,
+          pricePerPc: 2.5,
+          pricePerCtn: 60,
+          cbmPerCtn: 0.0456
+        }
+      ]
+    });
+    const file = Buffer.from(bytes);
+    if (file.length < 1000 || file.subarray(0, 4).toString('hex') !== '504b0304') {
+      throw new Error('Generated workbook is not a valid XLSX container.');
+    }
+
+    const fileName = `fmcgmalaysia.com-Excel-Pipeline-Probe-${Date.now()}.xlsx`;
+    stage = 'MEDIA_UPLOAD';
+    const uploaded = await mediaManager.upload('/buyer-room-exports', file, fileName, {
+      mediaOptions: {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mediaType: 'document'
+      },
+      metadataOptions: { isPrivate: true, isVisitorUpload: false }
+    });
+    if (!uploaded?.fileUrl) throw new Error('Wix Media did not return fileUrl.');
+
+    stage = 'DOWNLOAD_URL';
+    const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
+    if (!/^https:\/\//i.test(downloadUrl || '')) throw new Error('Wix Media did not return a valid download URL.');
+
+    return probeJson(200, {
+      ok: true,
+      stage: 'READY',
+      fileName,
+      fileUrl: uploaded.fileUrl,
+      downloadUrl,
+      size: file.length
+    });
+  } catch (error) {
+    console.error('Excel pipeline probe failed', { stage, message: normalize(error?.message || error) });
+    return probeJson(500, { ok: false, stage, message: normalize(error?.message || error) });
+  }
+}
 function normalizeEmail(value) { return normalize(value).toLowerCase(); }
 function validState(value) { return /^[A-Za-z0-9_-]{32,128}$/.test(normalize(value)); }
 async function oauthSecrets() {
