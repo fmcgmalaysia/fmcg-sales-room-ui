@@ -3,6 +3,7 @@ import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
+import { mediaManager } from 'wix-media-backend';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -139,7 +140,6 @@ function ensureActive(customer) {
 function contextFromCustomer(customer, actor) {
   return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
 }
-
 function httpsCall(url, options, body = '') {
   return new Promise((resolve, reject) => {
     const req = httpsRequest(url, options, response => {
@@ -232,6 +232,9 @@ async function workspaceItems(customerId) {
       category: normalize(data.category || data.mainCategory || product.mainCategory),
       imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
       ea: money(data.ea || product.ea),
+      // Read EA (pieces per carton) from the dedicated Catalogue CMS field.
+      // Read it afresh for exports instead of trusting an older selection payload.
+      catalogueEa: hasValue(product.ea) ? money(product.ea) : null,
       // Point Base sync writes CBM /CTN to FMCGMALAYSIA.m3Ctn. An older
       // selection payload must not mask a newer CMS value, including zero.
       cbmPerCtn: money(hasValue(product.m3Ctn) ? product.m3Ctn : hasValue(product.cbmPerCtn) ? product.cbmPerCtn : hasValue(product.cbm) ? product.cbm : data.cbmPerCtn),
@@ -304,6 +307,44 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
     return withoutPrices;
   });
   return { ok: true, context: buyer, account, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+});
+export const getBuyerSelectionExport = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  const items = (await workspaceItems(buyer.customerId)).filter(item => !item.removed);
+  const rows = items.map(item => {
+    if (!Number.isInteger(item.catalogueEa) || item.catalogueEa <= 0) {
+      throw new Error(`Catalogue EA is missing for ${item.barcode || item.itemName}.`);
+    }
+    const quoted = item.quoteStatus === 'VIEW QUOTE' && item.quoteActive;
+    if (quoted && item.vipCurrency && upper(item.vipCurrency) !== buyer.currency) {
+      throw new Error(`Quotation currency needs review for ${item.barcode || item.itemName}.`);
+    }
+    return {
+      unitBarcode: item.barcode,
+      itemName: item.itemName,
+      packingSize: item.packingSize,
+      ea: item.catalogueEa,
+      pricePerPc: quoted && money(item.vipPriceEa) > 0 ? money(item.vipPriceEa) : null,
+      pricePerCtn: quoted && money(item.vipPriceCtn) > 0 ? money(item.vipPriceCtn) : null,
+      cbmPerCtn: money(item.cbmPerCtn)
+    };
+  });
+  return { ok: true, customerId: buyer.customerId, companyName: buyer.companyName, currency: buyer.currency, rows };
+});
+export const uploadBuyerSelectionExcel = webMethod(Permissions.SiteMember, async (customerId, base64, assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  if (normalize(customerId) !== buyer.customerId) throw new Error('Buyer account changed. Please try again.');
+  const encoded = normalize(base64);
+  if (!encoded || encoded.length > 3000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Excel file is too large or invalid.');
+  const file = Buffer.from(encoded, 'base64');
+  if (file.length < 1000 || file.length > 2250000 || file.subarray(0, 4).toString('hex') !== '504b0304') throw new Error('Excel file is invalid.');
+  const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const uploaded = await mediaManager.upload('/buyer-room-exports', file, fileName, {
+    mediaOptions: { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', mediaType: 'document' },
+    metadataOptions: { isPrivate: true, isVisitorUpload: false }
+  });
+  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
+  return { ok: true, customerId: buyer.customerId, downloadUrl, fileName };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

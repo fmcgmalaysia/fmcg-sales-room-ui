@@ -17,6 +17,7 @@ $w.onReady(async function () {
   let exportRequestNumber = 0;
   let activeExportRequestId = '';
   let activeCustomerId = '';
+  let activeDownloadUrl = '';
 
   async function prepareSelectionDownload() {
     if (!activeCustomerId) {
@@ -25,6 +26,7 @@ $w.onReady(async function () {
     }
     const requestId = `${activeCustomerId}-${++exportRequestNumber}`;
     activeExportRequestId = requestId;
+    activeDownloadUrl = '';
     try {
       const result = await getBuyerSelectionExport(assistCustomerId);
       if (requestId !== activeExportRequestId) return;
@@ -40,7 +42,7 @@ $w.onReady(async function () {
     }
   }
 
-  async function loadWorkspace() {
+  async function loadWorkspace(refreshExport = true) {
     let result;
     try { result = await getBuyerWorkspace(assistCustomerId); }
     catch (error) {
@@ -73,13 +75,14 @@ $w.onReady(async function () {
       orders: result.orders || [],
       ordersNextCursor: result.ordersNextCursor || ''
     }});
+    if (frameReady && refreshExport) await prepareSelectionDownload();
   }
 
   async function runAction(action, successMessage, actionName, itemId = '') {
     try {
       const result = await action();
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, itemId: result?.itemId || itemId, action: actionName, ok: true, message: successMessage });
-      await loadWorkspace();
+      await loadWorkspace(actionName !== 'quantity');
     } catch (error) {
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
     }
@@ -101,6 +104,12 @@ $w.onReady(async function () {
       await prepareSelectionDownload();
       return;
     }
+    if (message.type === 'BUYER_ROOM_EXPORT_DOWNLOAD') {
+      if (message.requestId && message.requestId === activeExportRequestId && /^https:\/\//i.test(activeDownloadUrl)) {
+        wixLocationFrontend.to(activeDownloadUrl);
+      }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
       await runAction(() => saveBuyerQuantity(message.itemId || '', message.quantityCtn, assistCustomerId), 'Quantity saved.', 'quantity', message.itemId || '');
       return;
@@ -119,8 +128,8 @@ $w.onReady(async function () {
         const result = await uploadBuyerSelectionExcel(message.customerId || '', message.base64 || '', assistCustomerId);
         if (!result?.ok || !/^https:\/\//i.test(result.downloadUrl || '')) throw new Error('Excel download link is unavailable.');
         if (message.requestId !== activeExportRequestId) return;
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true, fileName: result.fileName || '' });
-        wixLocationFrontend.to(result.downloadUrl);
+        activeDownloadUrl = result.downloadUrl;
+        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_READY', ok: true, requestId: message.requestId, fileName: result.fileName || '' });
       } catch (error) {
         console.error('Buyer Room Excel upload failed', error);
         frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
@@ -160,5 +169,4 @@ $w.onReady(async function () {
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
 });
-
 
