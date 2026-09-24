@@ -312,6 +312,14 @@ table th{padding-top:8px;padding-bottom:8px}table td{padding-top:9px;padding-bot
 .admin-menu-copy small{margin-top:3px;font-size:9px;line-height:1.1}
 .admin-menu-arrow{justify-self:end;font-size:18px}
 .admin-caption{padding:10px 10px 0}
+
+/* Fixed application frame: keep global navigation visible while workspace content scrolls. */
+html,body{height:100%;overflow:hidden}
+.app{height:100vh;min-height:0;overflow:hidden}
+.top{position:sticky;top:0;z-index:100}
+.shell{height:calc(100vh - 72px);min-height:0;overflow:hidden}
+.side{position:sticky;top:0;height:calc(100vh - 72px);min-height:0;overflow-y:auto;overscroll-behavior:contain;align-self:start}
+.main{height:calc(100vh - 72px);max-height:none;overflow:auto;overscroll-behavior:contain}
 </style>
 </head>
 <body class="dashboard-view">
