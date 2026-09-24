@@ -259,7 +259,7 @@ async function loadSalesRoomCustomers() {
     }
 
     const [customerResult, userResult, memberResult] = await Promise.all([
-      query.find({ suppressAuth: true }),
+      query.find({ suppressAuth: true, consistentRead: true }),
       wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true }),
       wixData.query('Members/FullData').limit(1000).find({ suppressAuth: true }).catch(() => ({ items: [] }))
     ]);
@@ -311,6 +311,7 @@ async function loadSalesRoomCustomers() {
         assignedStaffId: upper(item.assignedStaffId),
         primaryEmail: normalizeEmail(item.primaryEmail),
         preferredCurrency: upper(item.preferredCurrency || 'USD'),
+        selectionLimit: [100, 300, 500, 700].includes(Number(item.selectionLimit)) ? Number(item.selectionLimit) : 100,
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
