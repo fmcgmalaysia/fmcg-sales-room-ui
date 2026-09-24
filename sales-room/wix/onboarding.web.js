@@ -622,6 +622,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
     }
     const customer = await findAuthorizedCustomer(customerId, staff);
     const reason = normalize(payload?.reason);
+    if (!reason) throw new Error('A reason is required for every customer account action.');
     const beforeLifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
     const beforeAccess = upper(customer.accessStatus || (upper(customer.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE'));
     const beforeReactivation = upper(customer.reactivationStatus || 'NONE');
@@ -645,10 +646,10 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
       patch.lifecycleStatus = 'ARCHIVED';
       patch.accessStatus = 'SUSPENDED';
       patch.reactivationStatus = 'NONE';
-    } else if (normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
+    } else if (normalizedAction === 'ACTIVATE' || normalizedAction === 'RESTORE' || normalizedAction === 'APPROVE_REACTIVATION') {
       patch.lifecycleStatus = 'ACTIVE';
       patch.accessStatus = upper(customer.qdStatus) === 'READY' ? 'ACTIVE' : 'PENDING';
-      patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' ? 'APPROVED' : 'NONE';
+      patch.reactivationStatus = normalizedAction === 'APPROVE_REACTIVATION' || (normalizedAction === 'ACTIVATE' && beforeReactivation === 'REQUESTED') ? 'APPROVED' : 'NONE';
     } else if (normalizedAction === 'REJECT_REACTIVATION') {
       patch.lifecycleStatus = beforeLifecycle;
       patch.accessStatus = 'SUSPENDED';
