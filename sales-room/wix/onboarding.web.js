@@ -310,6 +310,7 @@ async function loadSalesRoomCustomers() {
         reactivationStatus: upper(item.reactivationStatus || 'NONE'),
         assignedStaffId: upper(item.assignedStaffId),
         primaryEmail: normalizeEmail(item.primaryEmail),
+        preferredCurrency: upper(item.preferredCurrency || 'USD'),
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
@@ -357,21 +358,42 @@ export const getSalesRoomCustomersOperational = webMethod(
       // Quote counts represent formally released QD rows, never merely a
       // non-zero price left in storage.
       const status = upper(item.quoteStatus || 'RFQ');
-      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0 };
+      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '' };
       if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
-      if (status === 'RFQ' || status === 'FAILED') current.awaiting += 1;
+      if (status === 'RFQ' || status === 'FAILED') {
+        current.awaiting += 1;
+        const receivedAt = item.selectedAt || row.record?._createdDate || '';
+        if (receivedAt && (!current.pendingQuoteReceivedAt || new Date(receivedAt).getTime() < new Date(current.pendingQuoteReceivedAt).getTime())) {
+          current.pendingQuoteReceivedAt = receivedAt;
+        }
+      }
       quoteByCustomer.set(customerId, current);
     }
 
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
+    const incomingByCustomer = new Map();
+    for (const row of incomingOrders) {
+      const customerId = normalize(row.data.customerId);
+      if (!customerId) continue;
+      const current = incomingByCustomer.get(customerId) || { count: 0, incomingOrderReceivedAt: '' };
+      current.count += 1;
+      const receivedAt = row.data.confirmedAt || row.record?._createdDate || '';
+      if (receivedAt && (!current.incomingOrderReceivedAt || new Date(receivedAt).getTime() < new Date(current.incomingOrderReceivedAt).getTime())) {
+        current.incomingOrderReceivedAt = receivedAt;
+      }
+      incomingByCustomer.set(customerId, current);
+    }
     const customers = (base.customers || []).map((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0 };
+      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '' };
+      const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
       return {
         ...customer,
         quotedItemCount: quote.quoted,
         awaitingQuoteItemCount: quote.awaiting,
-        confirmedOrderCount: incomingOrders.filter((row) => normalize(row.data.customerId) === customer.customerId).length
+        pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
+        confirmedOrderCount: incoming.count,
+        incomingOrderReceivedAt: incoming.incomingOrderReceivedAt
       };
     });
 
