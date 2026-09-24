@@ -735,6 +735,18 @@ const archivedCustomerEntry=document.getElementById('archivedCustomerEntry');
 if(archivedCustomerEntry)archivedCustomerEntry.onclick=()=>{if(!staff.canViewAllCustomers)return;customerAccessView='ARCHIVED';customerPage=1;updateAccessTabs();applyCustomerFilters()};
 document.querySelectorAll('.access-tab').forEach(btn=>btn.onclick=()=>{customerAccessView=btn.dataset.accessView;customerPage=1;updateAccessTabs();applyCustomerFilters()});
 
+
+
+/* Dashboard is a read-only information board. Work starts from Workspace or Order Management. */
+renderDashboardTasks=function(rows){
+  const area=document.getElementById('dashboardTaskArea');if(!area)return;
+  const tasks=[];
+  rows.filter(c=>customerAccessState(c)==='ACTIVE').forEach(c=>{const quotes=Number(c.awaitingQuoteItemCount)||0,orders=Number(c.confirmedOrderCount)||0,currency=String(c.preferredCurrency||'USD').toUpperCase();if(quotes>0)tasks.push({kind:'quote',customer:c,count:quotes,currency,receivedAt:c.pendingQuoteReceivedAt||''});if(orders>0)tasks.push({kind:'order',customer:c,count:orders,currency,receivedAt:c.incomingOrderReceivedAt||''})});
+  tasks.sort((a,b)=>{const at=a.receivedAt?new Date(a.receivedAt).getTime():Number.MAX_SAFE_INTEGER,bt=b.receivedAt?new Date(b.receivedAt).getTime():Number.MAX_SAFE_INTEGER;return at-bt});
+  if(!tasks.length){area.innerHTML='<div class="dashboard-task-empty">No waiting tasks</div>';return}
+  area.innerHTML='<table class="dashboard-task-table" aria-label="Read-only action queue"><thead><tr><th>CUSTOMER</th><th>COUNTRY</th><th>CURRENCY</th><th>TASK</th><th>RECEIVED</th></tr></thead><tbody>'+tasks.map(task=>{const customer=task.customer,time=dashboardTime(task.receivedAt),mission=task.kind==='quote'?'PENDING QUOTATION · '+task.count:'NEW INCOMING ORDER · '+task.count;return '<tr><td class="dashboard-task-customer"><strong>'+esc(customer.companyName||customer.customerId)+'</strong><small>'+esc(customer.customerId||'')+'</small></td><td>'+esc(customer.country||'—')+'</td><td class="dashboard-currency">'+esc(task.currency)+'</td><td><span class="dashboard-mission '+task.kind+'">'+esc(mission)+'</span></td><td class="dashboard-task-time">'+esc(time.primary)+'</td></tr>'}).join('')+'</tbody></table>';
+};
+
 </script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->
