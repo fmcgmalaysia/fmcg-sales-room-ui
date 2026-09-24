@@ -109,18 +109,45 @@ table{font-size:13px}th{font-size:10px;padding:10px 11px;white-space:nowrap}td{p
 .dashboard-tasks{margin-top:12px;border-color:var(--word-line);overflow:hidden}.dashboard-tasks .ptitle{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px 15px;color:var(--word-blue-dark);font-size:12px;text-transform:none!important}.dashboard-task-area{min-height:190px}.dashboard-task-table th{padding:11px 14px;background:#f1f6fc;color:#53677f;font-size:9px;vertical-align:bottom}.dashboard-task-table th span{display:block;margin-top:3px;color:#7a8ba0;font-size:8px;font-weight:550;letter-spacing:0;text-transform:none}.dashboard-task-table td{padding:13px 14px;color:#263b54;font-size:10px;vertical-align:middle}.dashboard-task-table tbody tr{transition:background .15s ease}.dashboard-task-table tbody tr[data-task-action]{cursor:pointer}.dashboard-task-table tbody tr[data-task-action]:hover{background:#f3f7fd}.dashboard-task-customer strong{display:block;color:var(--word-blue-dark);font-size:11px}.dashboard-task-customer small,.dashboard-task-time small{display:block;margin-top:3px;color:#77879a;font-size:8px}.dashboard-currency{font-weight:800;color:#27496d}.dashboard-mission{display:inline-flex;align-items:center;justify-content:center;min-width:210px;padding:7px 11px;border-radius:18px;font-size:9px;font-weight:800;white-space:nowrap}.dashboard-mission.quote{background:#fff0bd;color:#855900}.dashboard-mission.order{background:#fde4e1;color:#bb291c}.dashboard-task-time{font-weight:700;color:#263d59;white-space:nowrap}.dashboard-task-empty{padding:42px 20px;text-align:center;color:#74859a;font-size:11px}
 @media(max-width:980px){.dashboard-task-table th:nth-child(2),.dashboard-task-table td:nth-child(2){display:none}.dashboard-mission{min-width:170px}.login-stream-label{display:none}}
 @media(max-width:700px){#dashboard .cards{grid-template-columns:1fr 1fr}.dashboard-tasks .overview-note{display:none}.dashboard-task-table th,.dashboard-task-table td{padding-left:9px;padding-right:9px}.dashboard-task-table th:nth-child(3),.dashboard-task-table td:nth-child(3){display:none}.dashboard-mission{min-width:0;white-space:normal}.login-stream{padding:0 10px}}
+
+/* Sales Room shell aligned with Buyer Room: calm Word-blue workspace. */
+:root{--word-blue:#185abd;--word-blue-hover:#124a9c;--word-navy:#17365d;--word-ink:#172b4d;--word-muted:#66758a;--word-line:#d9e2ec;--word-side:#f5f8fc;--word-soft:#e8f0fb}
+html,body{background:#fff;color:var(--word-ink)}
+.top{height:62px;padding:0 22px;background:#fff;color:var(--word-ink);border-bottom:1px solid var(--word-line);gap:18px}
+.brand-lockup{width:274px;height:48px}.brand-lockup img{width:266px}
+.room-title{height:38px;padding-left:19px;border-left:1px solid var(--word-line)}
+.room-title b{color:var(--word-ink);font-size:18px;letter-spacing:.6px}.room-title span{margin-top:4px;color:var(--word-muted);font-size:9px}
+.staff{color:#7a889a;font-size:8px}.staff b{color:var(--word-ink);font-size:11px}
+.logout{height:34px;padding:0 13px;border:1px solid #b8c7d9;background:#fff;color:#27496d;border-radius:6px}.logout:hover{background:#eef4fb}
+.shell{grid-template-columns:236px minmax(0,1fr);min-height:calc(100vh - 62px)}
+.side{position:relative;min-height:calc(100vh - 62px);padding:14px 0;background:var(--word-side);color:var(--word-ink);border-right:1px solid var(--word-line)}
+.kicker{padding:0 20px 9px;color:#7889a0;font-size:9px;letter-spacing:1.4px}
+.nav{gap:0}.nav button{display:flex;align-items:center;min-height:48px;padding:0 20px;border-radius:0;color:#51627a;font-size:11px;font-weight:650;white-space:nowrap}
+.nav button:hover{background:#edf3fa;color:var(--word-ink)}.nav button.active{background:#e3edf9;color:var(--word-ink)}
+.nav button.active:before{left:0;top:0;bottom:0;width:4px;border-radius:0;background:var(--word-blue)}
+.dot{width:15px;height:15px;margin-right:10px;border:1.5px solid #71839a;border-radius:3px}.active .dot{border-color:var(--word-blue);background:var(--word-blue);box-shadow:inset 0 0 0 4px #e3edf9}
+.nav-alert{float:none;margin-left:auto;vertical-align:middle}.session{left:14px;right:14px;bottom:14px;margin:0;padding:12px;border:1px solid var(--word-line);background:#fff;color:#78879a;border-radius:7px}.session b{color:var(--word-ink)}
+.main{max-height:calc(100vh - 62px);padding:22px 24px;background:#fff}
+.admin-zone{margin:18px 14px 0;padding-top:16px;border-top:1px solid var(--word-line)}.admin-zone-head{padding:0 6px 10px;color:#677993}.admin-only-badge{border-color:#b6c7dc;background:#e7eef8;color:#315b83}
+.admin-zone .admin-nav button{min-height:54px;border:1px solid #ccd8e6;background:#fff;color:#29496c;box-shadow:none}.admin-zone .admin-nav button:hover{background:#eef4fb;color:#17365d;border-color:#99b4d3;transform:none;box-shadow:none}.admin-zone .admin-nav button.active{background:#dfeafb;color:#17365d;border-color:#8cadd3;box-shadow:none}
+.staff-menu-icon{background:#e7eef8;border-color:#cad7e7}.staff-menu-icon:before,.staff-menu-icon:after{background:#315b83}.admin-menu-copy small,.admin-zone .admin-nav button:hover .admin-menu-copy small,.admin-zone .admin-nav button.active .admin-menu-copy small{color:#74859a}.admin-menu-arrow,.admin-zone .admin-nav button.active .admin-menu-arrow{color:#315b83}.admin-caption,.admin-caption .cn{color:#7b8ba0}.admin-caption:before{color:#708198}
+#dashboard .head{margin:6px 0 18px}#dashboard .head h1{font-size:30px}#dashboard .head p{font-size:12px}
+#dashboard .cards{gap:12px}#dashboard .card{min-height:116px;padding:16px;border-radius:8px;background:#fff}
+#dashboard .card .label{font-size:9px}#dashboard .card .num{font-size:27px}#dashboard .card .sub{font-size:9px;line-height:1.45}
+.login-stream{background:#f2f6fb;color:var(--word-ink);border:1px solid var(--word-line)}.login-stream-label{color:#315b83}.login-stream-track{color:#51657e}.login-stream-label i{background:#185abd;box-shadow:0 0 0 4px rgba(24,90,189,.1)}
+.dashboard-tasks{border-radius:8px}.dashboard-task-table th{background:#f2f6fb}
+@media(max-width:1180px){.shell{grid-template-columns:205px minmax(0,1fr)}.nav button{padding:0 13px;font-size:10px}.main{padding:18px}.brand-lockup{width:230px}.brand-lockup img{width:224px}}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="top"><div class="brand-lockup"><img src="assets/logo-blue-white.png" alt="fmcgMalaysia.com"></div><div class="room-title"><b>Sales Room</b><span>Professional Customer Workspace</span></div><div class="spacer"></div><div class="staff">Signed In As<b id="staffTop">Loading Account…</b></div><button id="logoutBtn" class="logout">Log Out</button></header>
+<header class="top"><div class="brand-lockup"><img src="assets/logo-blue-black.png" alt="fmcgMalaysia.com"></div><div class="room-title"><b>Sales Room</b><span>Sales Workspace · 销售工作间</span></div><div class="spacer"></div><div class="staff">Signed In As · 当前用户<b id="staffTop">Loading Account…</b></div><button id="logoutBtn" class="logout">Log Out · 登出</button></header>
 <div class="shell"><aside class="side"><div class="kicker">WORKSPACE</div><nav class="nav">
-<button data-view="dashboard" class="active"><span class="dot"></span>Dashboard</button>
-<button data-view="customers"><span class="dot"></span>My Customers <span class="nav-alert" id="quoteAlert">0</span></button>
-<button data-view="orders"><span class="dot"></span>Incoming Orders <span class="nav-alert" id="newOrderAlert">0</span></button>
-<button data-view="tasks"><span class="dot"></span>Pending Tasks</button>
-<button data-view="activity"><span class="dot"></span>Buyer Activity</button>
-<button data-view="history"><span class="dot"></span>Transaction History</button>
+<button data-view="dashboard" class="active"><span class="dot"></span>Dashboard · 工作台</button>
+<button data-view="customers"><span class="dot"></span>Workspace · 客户工作区 <span class="nav-alert" id="quoteAlert">0</span></button>
+<button data-view="orders"><span class="dot"></span>Order Management · 订单管理 <span class="nav-alert" id="newOrderAlert">0</span></button>
+<button data-view="activity"><span class="dot"></span>Buyer Activity · 客户动态</button>
+<button data-view="history"><span class="dot"></span>Transaction History · 交易记录</button>
 </nav><div class="admin-zone" id="adminNavBlock" hidden><div class="admin-zone-head"><span>Administration</span><span class="admin-only-badge">Admin Only</span></div><nav class="nav admin-nav"><button data-view="staff-management"><span class="staff-menu-icon" aria-hidden="true"></span><span class="admin-menu-copy"><b>Staff Management</b><small>Employees &amp; Access</small></span><span class="admin-menu-arrow" aria-hidden="true">›</span></button></nav><div class="admin-caption"><span class="cn">员工权限与客户分配管理</span></div></div><div class="session">Current Role<b id="staffRole">Loading…</b><br><br><span id="roleNote">Access Is Determined By StaffMaster.</span></div></aside>
 <main class="main">
 <section id="dashboard" class="view active"><div class="crumb">Sales Room / Dashboard · 工作提醒</div><div class="head"><div><h1 id="greeting">Good Day</h1><p>Tasks Requiring Your Attention Today · 今天需要优先处理的销售任务</p></div><a id="dashboardCatalogueLink" class="catalogue-action" href="#" target="_blank">Browse Catalogue · 浏览目录</a></div>
@@ -491,4 +518,3 @@ document.addEventListener('visibilitychange',()=>{if(salesRoomHandshakeComplete&
 </script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->
-
