@@ -16,6 +16,8 @@ function selectionLimit(customer) { const value = Number(customer?.selectionLimi
 const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
+const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
+const USER_AUDIT_COLLECTION = 'CustomerUserAudit';
 const ORDER_PAGE_SIZE = 20;
 const QD_ROUTER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const QD_ROUTER_SECRET = 'FMCG_QD_ROUTER_TOKEN';
@@ -138,7 +140,7 @@ function ensureActive(customer) {
   if (lifecycle === 'ARCHIVED' || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(access)) throw new Error('This customer account is suspended.');
 }
 function contextFromCustomer(customer, actor) {
-  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
+  return { customerId: normalize(customer.customerId || customer._id), companyName: normalize(customer.title), email: normalizeEmail(actor.email), actorName: normalize(actor.name || actor.email), actorType: actor.type, actorUserId: normalize(actor.userId), primaryUser: Boolean(actor.primaryUser), currency: upper(customer.preferredCurrency || customer.tradingCurrency || 'USD'), selectionLimit: selectionLimit(customer), status: 'ACTIVE', qdFileId: normalize(customer.qdFileId), assignedStaffId: upper(customer.assignedStaffId) };
 }
 
 function httpsCall(url, options, body = '') {
@@ -198,7 +200,9 @@ async function resolveBuyerContext(assistCustomerId = '') {
   if (!normalize(user.wixMemberId)) await wixData.update(CUSTOMER_USER_COLLECTION, { ...user, wixMemberId: memberId }, { suppressAuth: true });
   const customer = await customerById(user.customerId);
   ensureActive(customer);
-  return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER' });
+  const resolvedUserId = normalize(user.userId || user._id);
+  const isPrimary = normalize(customer.primaryUserId) ? normalize(customer.primaryUserId) === resolvedUserId : Boolean(user.primaryUser);
+  return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER', userId: resolvedUserId, primaryUser: isPrimary });
 }
 async function workspaceItems(customerId) {
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', normalize(customerId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
@@ -264,25 +268,85 @@ async function buyerOrderHistory(customerId, cursor = '') {
   };
 }
 
+async function customerUserDirectory(customerId = '') {
+  const result = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  return result.items.filter(user => !customerId || normalize(user.customerId) === normalize(customerId));
+}
+
+function userCountsTowardLimit(user) {
+  return ['ACTIVE', 'PENDING'].includes(upper(user?.status));
+}
+
+function publicUser(user, primaryUserId = '') {
+  const id = normalize(user.userId || user._id);
+  return {
+    userId: id,
+    name: normalize(user.title),
+    email: normalizeEmail(user.email),
+    mobile: normalize(user.mobileNo),
+    status: upper(user.status),
+    primary: primaryUserId ? id === primaryUserId : Boolean(user.primaryUser),
+    inviteStatus: upper(user.inviteStatus || (normalize(user.wixMemberId) ? 'JOINED' : 'NOT SENT')),
+    requestedAt: user.requestedAt || user._createdDate || null,
+    requestSource: upper(user.requestSource)
+  };
+}
+
+async function putAccountNotification({ eventId, customerId, recipientUserId = '', type, heading, message, targetUserId = '' }) {
+  const id = normalize(eventId);
+  if (!id) return;
+  await putPayload(ACCOUNT_NOTIFICATION_COLLECTION, id, {
+    eventId: id,
+    customerId: normalize(customerId),
+    recipientUserId: normalize(recipientUserId),
+    type: upper(type),
+    heading: normalize(heading),
+    message: normalize(message),
+    targetUserId: normalize(targetUserId),
+    createdAt: new Date().toISOString(),
+    readByUserIds: []
+  });
+}
+
+async function buyerNotifications(customerId, actorUserId) {
+  let result;
+  try { result = await wixData.query(ACCOUNT_NOTIFICATION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true }); }
+  catch (_) { return []; }
+  return result.items
+    .map(record => ({ record, data: payloadData(record) }))
+    .filter(({ data }) => normalize(data.customerId) === normalize(customerId) && (!normalize(data.recipientUserId) || normalize(data.recipientUserId) === normalize(actorUserId)))
+    .map(({ data }) => ({
+      eventId: normalize(data.eventId), type: upper(data.type), heading: normalize(data.heading), message: normalize(data.message),
+      targetUserId: normalize(data.targetUserId), createdAt: data.createdAt || null,
+      read: Array.isArray(data.readByUserIds) && data.readByUserIds.map(normalize).includes(normalize(actorUserId))
+    }))
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 50);
+}
+
+async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, afterStatus, buyer) {
+  await wixData.insert(USER_AUDIT_COLLECTION, {
+    action: upper(action), customerId: normalize(customerId), entityId: normalize(userId),
+    fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: normalize(beforeStatus), afterValue: normalize(afterStatus),
+    changedAt: new Date(), changedByStaffId: '', changedByStaffName: normalize(buyer.actorName),
+    changedByEmail: normalizeEmail(buyer.email), changedByRole: 'CUSTOMER PRIMARY'
+  }, { suppressAuth: true });
+}
+
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const [items, orderPage, customer, userResult] = await Promise.all([
+  const [items, orderPage, customer, userResult, notifications] = await Promise.all([
     workspaceItems(buyer.customerId),
     buyerOrderHistory(buyer.customerId),
     customerById(buyer.customerId),
-    wixData.query(CUSTOMER_USER_COLLECTION).eq('customerId', buyer.customerId).limit(100).find({ suppressAuth: true })
+    wixData.query(CUSTOMER_USER_COLLECTION).eq('customerId', buyer.customerId).limit(100).find({ suppressAuth: true }),
+    buyerNotifications(buyer.customerId, buyer.actorUserId)
   ]);
-  const users = userResult.items.map(user => ({
-      userId: normalize(user.userId),
-      name: normalize(user.title),
-      email: normalizeEmail(user.email),
-      mobile: normalize(user.mobileNo),
-      status: upper(user.status),
-      primary: Boolean(user.primaryUser)
-    }));
+  const configuredPrimaryId = normalize(customer.primaryUserId);
+  const users = userResult.items.map(user => publicUser(user, configuredPrimaryId));
   const primary = users.find(user => user.primary) || null;
   const account = {
     customerId: buyer.customerId,
@@ -299,7 +363,9 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       mobile: primary?.mobile || normalize(customer.mobileNo),
       title: normalize(customer.picTitle)
     },
-    users: users.filter(user => !user.primary)
+    users: users.filter(user => !user.primary && !['REJECTED', 'REVOKED'].includes(user.status)),
+    canManageUsers: buyer.actorType === 'CUSTOMER_USER' && Boolean(buyer.primaryUser),
+    userCount: users.filter(user => ['ACTIVE', 'PENDING'].includes(user.status)).length
   };
   const removed = items.filter(item => item.removed).map(item => {
     const { normalPriceEa, normalPriceCtn, vipPriceEa, vipPriceCtn, vipPrice,
@@ -307,7 +373,90 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       targetGp, ...withoutPrices } = item;
     return withoutPrices;
   });
-  return { ok: true, context: buyer, account, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+  return { ok: true, context: buyer, account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
+});
+
+export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '') => {
+  const buyer = await resolveBuyerContext('');
+  if (buyer.actorType !== 'CUSTOMER_USER' || !buyer.primaryUser) throw new Error('Only the current Primary User can request another user.');
+  const input = payload && typeof payload === 'object' ? payload : {};
+  const name = normalize(input.name);
+  const email = normalizeEmail(input.email);
+  const mobile = normalize(input.mobile);
+  const requestKey = normalize(requestId);
+  if (!name || name.length > 120) throw new Error('Enter the user full name.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid work email.');
+  if (!/^\+?[0-9 ()-]{7,24}$/.test(mobile)) throw new Error('Enter a valid international mobile number.');
+  if (!requestKey || requestKey.length > 100) throw new Error('A valid request reference is required.');
+
+  const allUsers = await customerUserDirectory();
+  const repeated = allUsers.find(user => normalize(user.requestId) === requestKey && normalize(user.customerId) === buyer.customerId);
+  if (repeated) return { ok: true, user: publicUser(repeated), duplicateRequest: true };
+  const customerUsers = allUsers.filter(user => normalize(user.customerId) === buyer.customerId);
+  const emailMatch = allUsers.find(user => normalizeEmail(user.email) === email);
+  if (emailMatch && normalize(emailMatch.customerId) !== buyer.customerId) throw new Error('This email is assigned to another customer account. Admin review is required.');
+  if (emailMatch && ['ACTIVE', 'PENDING'].includes(upper(emailMatch.status))) throw new Error('This email is already listed for this customer.');
+  if (customerUsers.filter(userCountsTowardLimit).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
+
+  const now = new Date();
+  const userId = normalize(emailMatch?.userId) || `USR-${buyer.customerId}-${now.getTime().toString(36).toUpperCase()}`;
+  const next = {
+    ...(emailMatch || {}), title: name, userId, customerId: buyer.customerId, email, mobileNo: mobile,
+    primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: 'BUYER ROOM',
+    requestedAt: now, requestedByUserId: buyer.actorUserId, reviewedAt: null, reviewedByStaffId: '',
+    inviteStatus: normalize(emailMatch?.wixMemberId) ? 'JOINED' : 'NOT SENT', failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
+  };
+  const saved = emailMatch
+    ? await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true })
+    : await wixData.insert(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true });
+  await writeBuyerUserAudit('CUSTOMER_USER_REQUESTED', buyer.customerId, userId, upper(emailMatch?.status), 'PENDING', buyer);
+  await putAccountNotification({ eventId: `USER-REQUESTED-${requestKey}`, customerId: buyer.customerId, recipientUserId: buyer.actorUserId, type: 'USER REQUEST', heading: 'User request submitted', message: `${name} is pending salesperson approval.`, targetUserId: userId });
+  return { ok: true, user: publicUser(saved), message: 'User request submitted for salesperson approval.' };
+});
+
+export const setBuyerPrimaryUser = webMethod(Permissions.SiteMember, async (targetUserId, requestId = '') => {
+  const buyer = await resolveBuyerContext('');
+  if (buyer.actorType !== 'CUSTOMER_USER' || !buyer.primaryUser) throw new Error('Only the current Primary User can transfer Primary access.');
+  const targetId = normalize(targetUserId);
+  const requestKey = normalize(requestId);
+  if (!targetId || !requestKey) throw new Error('Select an active user and try again.');
+  const customer = await customerById(buyer.customerId);
+  const users = await customerUserDirectory(buyer.customerId);
+  const target = users.find(user => normalize(user.userId || user._id) === targetId);
+  if (!target || upper(target.status) !== 'ACTIVE') throw new Error('Primary access can only be transferred to an active user.');
+  const oldPrimaryId = normalize(customer.primaryUserId) || buyer.actorUserId;
+  if (oldPrimaryId === targetId) return { ok: true, unchanged: true };
+
+  await wixData.update(CUSTOMER_COLLECTION, { ...customer, primaryUserId: targetId }, { suppressAuth: true });
+  for (const user of users) {
+    const id = normalize(user.userId || user._id);
+    if (Boolean(user.primaryUser) !== (id === targetId)) await wixData.update(CUSTOMER_USER_COLLECTION, { ...user, primaryUser: id === targetId }, { suppressAuth: true });
+  }
+  await writeBuyerUserAudit('PRIMARY_USER_CHANGED', buyer.customerId, targetId, oldPrimaryId, targetId, buyer);
+  await Promise.all([
+    putAccountNotification({ eventId: `PRIMARY-OLD-${requestKey}`, customerId: buyer.customerId, recipientUserId: oldPrimaryId, type: 'PRIMARY USER', heading: 'Primary User changed', message: `${normalize(target.title) || target.email} is now the Primary User.`, targetUserId: targetId }),
+    putAccountNotification({ eventId: `PRIMARY-NEW-${requestKey}`, customerId: buyer.customerId, recipientUserId: targetId, type: 'PRIMARY USER', heading: 'You are now the Primary User', message: 'You can manage customer user requests from Account.', targetUserId: targetId })
+  ]);
+  return { ok: true, customerId: buyer.customerId, primaryUserId: targetId };
+});
+
+export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMember, async (eventIds = []) => {
+  const buyer = await resolveBuyerContext('');
+  const wanted = new Set((Array.isArray(eventIds) ? eventIds : []).map(normalize).filter(Boolean).slice(0, 50));
+  if (!wanted.size) return { ok: true, changed: 0 };
+  const result = await wixData.query(ACCOUNT_NOTIFICATION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  let changed = 0;
+  for (const record of result.items) {
+    const data = payloadData(record);
+    if (!wanted.has(normalize(data.eventId)) || normalize(data.customerId) !== buyer.customerId) continue;
+    if (normalize(data.recipientUserId) && normalize(data.recipientUserId) !== buyer.actorUserId) continue;
+    const readBy = new Set(Array.isArray(data.readByUserIds) ? data.readByUserIds.map(normalize) : []);
+    if (readBy.has(buyer.actorUserId)) continue;
+    readBy.add(buyer.actorUserId);
+    await putPayload(ACCOUNT_NOTIFICATION_COLLECTION, data.eventId, { ...data, readByUserIds: [...readBy] });
+    changed += 1;
+  }
+  return { ok: true, changed };
 });
 export const getBuyerSelectionExport = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

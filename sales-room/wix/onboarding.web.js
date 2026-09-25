@@ -19,6 +19,7 @@ const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
 const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
+const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
 
 const BUSINESS_TYPES = Object.freeze([
   'WHOLESALE',
@@ -268,6 +269,8 @@ async function loadSalesRoomCustomers() {
     );
 
     const activeUserCounts = new Map();
+    const pendingUserCounts = new Map();
+    const pendingUserReceivedAt = new Map();
     const lastLoginByCustomer = new Map();
     const membersById = new Map();
     const membersByEmail = new Map();
@@ -279,9 +282,16 @@ async function loadSalesRoomCustomers() {
     }
     for (const user of userResult.items) {
       const customerId = normalize(user.customerId);
-      if (!customerIds.has(customerId) || upper(user.status) !== 'ACTIVE') {
+      if (!customerIds.has(customerId)) {
         continue;
       }
+      if (upper(user.status) === 'PENDING' && upper(user.requestSource) === 'BUYER ROOM') {
+        pendingUserCounts.set(customerId, Number(pendingUserCounts.get(customerId) || 0) + 1);
+        const receivedAt = user.requestedAt || user._createdDate || null;
+        const current = pendingUserReceivedAt.get(customerId);
+        if (receivedAt && (!current || new Date(receivedAt).getTime() < new Date(current).getTime())) pendingUserReceivedAt.set(customerId, receivedAt);
+      }
+      if (upper(user.status) !== 'ACTIVE') continue;
       activeUserCounts.set(
         customerId,
         Number(activeUserCounts.get(customerId) || 0) + 1
@@ -315,6 +325,8 @@ async function loadSalesRoomCustomers() {
         accessUserCount: Number(
           activeUserCounts.get(normalize(item.customerId)) || 0
         ),
+        pendingUserRequestCount: Number(pendingUserCounts.get(normalize(item.customerId)) || 0),
+        pendingUserRequestReceivedAt: pendingUserReceivedAt.get(normalize(item.customerId)) || null,
         lastLoginAt: lastLoginByCustomer.get(normalize(item.customerId)) || null,
         updatedAt: item._updatedDate || item._createdDate || null
       }))
@@ -582,6 +594,7 @@ export const getSalesRoomCustomerDetail = webMethod(
         address2: normalize(customer.address2),
         address3: normalize(customer.address3),
         primaryEmail: normalizeEmail(customer.primaryEmail),
+        primaryUserId: normalize(customer.primaryUserId),
         companyWebsite: normalize(customer.companyWebsite),
         assignedStaffId: upper(customer.assignedStaffId),
         qdOwnerStaffId: upper(customer.qdOwnerStaffId),
@@ -605,8 +618,11 @@ export const getSalesRoomCustomerDetail = webMethod(
           email: normalizeEmail(user.email),
           mobileNo: normalize(user.mobileNo),
           status: upper(user.status),
-          primaryUser: Boolean(user.primaryUser),
-          wixMemberId: normalize(user.wixMemberId)
+          primaryUser: normalize(customer.primaryUserId) ? normalize(user.userId || user._id) === normalize(customer.primaryUserId) : Boolean(user.primaryUser),
+          wixMemberId: normalize(user.wixMemberId),
+          inviteStatus: upper(user.inviteStatus || (normalize(user.wixMemberId) ? 'JOINED' : 'NOT SENT')),
+          requestSource: upper(user.requestSource),
+          requestedAt: user.requestedAt || user._createdDate || null
         }))
         .sort((a, b) => a.userId.localeCompare(b.userId))
     });
@@ -659,24 +675,42 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
       throw new Error('Unsupported customer account action.');
     }
 
+    const users = await wixData
+      .query(CUSTOMER_USER_COLLECTION)
+      .eq('customerId', normalize(customer.customerId))
+      .limit(100)
+      .find({ suppressAuth: true });
+    const performsReactivationCleanup = ['RESTORE', 'APPROVE_REACTIVATION'].includes(normalizedAction) || (normalizedAction === 'ACTIVATE' && beforeAccess === 'SUSPENDED');
+    let selectedPrimary = null;
+    if (performsReactivationCleanup) {
+      const requestedPrimaryId = normalize(payload?.primaryUserId);
+      selectedPrimary = users.items.find(user => normalize(user.userId || user._id) === requestedPrimaryId) || null;
+      if (!selectedPrimary || ['REJECTED', 'REVOKED'].includes(upper(selectedPrimary.status))) {
+        throw new Error('Select one existing eligible user as the Primary User before reactivating this account.');
+      }
+      patch.primaryUserId = normalize(selectedPrimary.userId || selectedPrimary._id);
+    }
+
     const updated = await wixData.update(
       CUSTOMER_COLLECTION,
       { ...customer, ...patch },
       { suppressAuth: true }
     );
 
-    const users = await wixData
-      .query(CUSTOMER_USER_COLLECTION)
-      .eq('customerId', normalize(customer.customerId))
-      .limit(5)
-      .find({ suppressAuth: true });
-    const userStatus = patch.accessStatus === 'ACTIVE' ? 'ACTIVE' : patch.accessStatus === 'PENDING' ? 'PENDING' : 'SUSPENDED';
-    for (const user of users.items) {
-      await wixData.update(
-        CUSTOMER_USER_COLLECTION,
-        { ...user, status: userStatus },
-        { suppressAuth: true }
-      );
+    if (performsReactivationCleanup) {
+      const primaryId = normalize(selectedPrimary.userId || selectedPrimary._id);
+      for (const user of users.items) {
+        const userId = normalize(user.userId || user._id);
+        const keep = userId === primaryId;
+        await wixData.update(CUSTOMER_USER_COLLECTION, {
+          ...user,
+          primaryUser: keep,
+          status: keep ? 'ACTIVE' : upper(user.status) === 'PENDING' ? 'REJECTED' : 'REVOKED',
+          revokedAt: keep ? null : new Date(),
+          revokedByStaffId: keep ? '' : upper(staff.staffId),
+          reviewReason: keep ? '' : 'Removed during customer account reactivation.'
+        }, { suppressAuth: true });
+      }
     }
 
     await writeAuditChanges(
@@ -923,6 +957,130 @@ export const saveSalesRoomCustomerUser = webMethod(
   }
 );
 
+async function allCustomerUsers(customerId = '') {
+  const result = await wixData.query(CUSTOMER_USER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  return result.items.filter(user => !customerId || normalize(user.customerId) === normalize(customerId));
+}
+
+function countsTowardUserLimit(user) {
+  return ['ACTIVE', 'PENDING'].includes(upper(user?.status));
+}
+
+function validateCustomerUserInput(payload = {}) {
+  const userName = normalize(payload.userName || payload.name);
+  const email = normalizeEmail(payload.email);
+  const mobileNo = normalize(payload.mobileNo || payload.mobile);
+  if (!userName || userName.length > 120) throw new Error('Enter the user full name.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid work email.');
+  if (!/^\+?[0-9 ()-]{7,24}$/.test(mobileNo)) throw new Error('Enter a valid international mobile number.');
+  return { userName, email, mobileNo };
+}
+
+function primaryUserFrom(customer, users) {
+  const configured = normalize(customer.primaryUserId);
+  return users.find(user => configured ? normalize(user.userId || user._id) === configured : Boolean(user.primaryUser)) || null;
+}
+
+export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, payload = {}, requestId = '') => {
+  const staff = await requireAuthorizedStaffContext();
+  const customer = await findAuthorizedCustomer(customerId, staff);
+  const lifecycle = upper(customer.lifecycleStatus || 'ACTIVE');
+  const access = upper(customer.accessStatus || customer.customerStatus);
+  if (lifecycle === 'ARCHIVED' || access !== 'ACTIVE') throw new Error('Users can only be added to an active customer account.');
+  const input = validateCustomerUserInput(payload);
+  const requestKey = normalize(requestId);
+  if (!requestKey || requestKey.length > 100) throw new Error('A valid request reference is required.');
+  const directory = await allCustomerUsers();
+  const repeated = directory.find(user => normalize(user.requestId) === requestKey && normalize(user.customerId) === normalize(customer.customerId));
+  if (repeated) return { ok: true, customerId: normalize(customer.customerId), userId: normalize(repeated.userId), duplicateRequest: true };
+  const customerUsers = directory.filter(user => normalize(user.customerId) === normalize(customer.customerId));
+  const emailMatch = directory.find(user => normalizeEmail(user.email) === input.email);
+  if (emailMatch && normalize(emailMatch.customerId) !== normalize(customer.customerId)) throw new Error('This email is assigned to another customer account. Admin review is required.');
+  if (emailMatch && ['ACTIVE', 'PENDING'].includes(upper(emailMatch.status))) throw new Error('This email is already listed for this customer.');
+  if (customerUsers.filter(countsTowardUserLimit).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
+  const now = new Date();
+  const userId = normalize(emailMatch?.userId) || `USR-${normalize(customer.customerId)}-${now.getTime().toString(36).toUpperCase()}`;
+  const next = {
+    ...(emailMatch || {}), title: input.userName, userId, customerId: normalize(customer.customerId), email: input.email,
+    mobileNo: input.mobileNo, status: 'ACTIVE', primaryUser: false, requestId: requestKey, requestSource: 'SALES ROOM',
+    requestedAt: now, requestedByStaffId: upper(staff.staffId), reviewedAt: now, reviewedByStaffId: upper(staff.staffId),
+    inviteStatus: normalize(emailMatch?.wixMemberId) ? 'JOINED' : 'NOT SENT', failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
+  };
+  const saved = emailMatch
+    ? await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true })
+    : await wixData.insert(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true });
+  await writeAuditChanges(USER_AUDIT_COLLECTION, 'CUSTOMER_USER_CREATED', normalize(customer.customerId), userId, [
+    { fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: upper(emailMatch?.status), afterValue: 'ACTIVE' },
+    { fieldId: 'email', fieldLabel: 'USER EMAIL', beforeValue: normalizeEmail(emailMatch?.email), afterValue: input.email }
+  ], staff);
+  const primary = primaryUserFrom(customer, customerUsers);
+  await Promise.all([
+    primary ? putAccountNotification({ eventId: `SALES-USER-PRIMARY-${requestKey}`, customerId: customer.customerId, recipientUserId: primary.userId, type: 'USER ACCESS', heading: 'User added', message: `${input.userName} was added by your salesperson.`, targetUserId: userId }) : Promise.resolve(),
+    putAccountNotification({ eventId: `SALES-USER-TARGET-${requestKey}`, customerId: customer.customerId, recipientUserId: userId, type: 'USER ACCESS', heading: 'Buyer Room access granted', message: 'Your salesperson has granted access to this company Buyer Room.', targetUserId: userId })
+  ]);
+  return { ok: true, customerId: normalize(customer.customerId), userId: normalize(saved.userId), status: 'ACTIVE' };
+});
+
+export const reviewSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async (customerId, userId, action, payload = {}) => {
+  const staff = await requireAuthorizedStaffContext();
+  const customer = await findAuthorizedCustomer(customerId, staff);
+  const normalizedAction = upper(action);
+  const users = await allCustomerUsers(customer.customerId);
+  const target = users.find(user => normalize(user.userId || user._id) === normalize(userId));
+  if (!target) throw new Error('Customer user was not found.');
+  const targetId = normalize(target.userId || target._id);
+  const primary = primaryUserFrom(customer, users);
+  const primaryId = normalize(primary?.userId || primary?._id);
+  const now = new Date();
+  let next = { ...target };
+  let actionName = '';
+  let notificationHeading = '';
+  let notificationMessage = '';
+
+  if (normalizedAction === 'APPROVE') {
+    if (upper(customer.accessStatus) !== 'ACTIVE' || upper(customer.lifecycleStatus || 'ACTIVE') === 'ARCHIVED') throw new Error('Activate the customer account before approving users.');
+    if (upper(target.status) !== 'PENDING') throw new Error('Only pending user requests can be approved.');
+    if (users.filter(user => countsTowardUserLimit(user) && normalize(user.userId || user._id) !== targetId).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
+    next = { ...next, status: 'ACTIVE', reviewedAt: now, reviewedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), inviteStatus: normalize(target.wixMemberId) ? 'JOINED' : 'NOT SENT' };
+    actionName = 'CUSTOMER_USER_APPROVED'; notificationHeading = 'User request approved'; notificationMessage = `${normalize(target.title) || target.email} can now access Buyer Room.`;
+  } else if (normalizedAction === 'REJECT') {
+    if (upper(target.status) !== 'PENDING') throw new Error('Only pending user requests can be rejected.');
+    if (!normalize(payload.reason)) throw new Error('Enter a rejection reason.');
+    next = { ...next, status: 'REJECTED', reviewedAt: now, reviewedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), primaryUser: false };
+    actionName = 'CUSTOMER_USER_REJECTED'; notificationHeading = 'User request rejected'; notificationMessage = normalize(payload.reason);
+  } else if (normalizedAction === 'REVOKE') {
+    if (targetId === primaryId) throw new Error('Transfer Primary User access before removing this user.');
+    if (!normalize(payload.reason)) throw new Error('Enter a removal reason.');
+    next = { ...next, status: 'REVOKED', revokedAt: now, revokedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), primaryUser: false };
+    actionName = 'CUSTOMER_USER_REVOKED'; notificationHeading = 'User access removed'; notificationMessage = normalize(payload.reason);
+  } else if (normalizedAction === 'SET_PRIMARY') {
+    if (upper(target.status) !== 'ACTIVE') throw new Error('Primary access can only be assigned to an active user.');
+    if (targetId === primaryId) return { ok: true, unchanged: true, customerId: normalize(customer.customerId), userId: targetId };
+    await wixData.update(CUSTOMER_COLLECTION, { ...customer, primaryUserId: targetId }, { suppressAuth: true });
+    for (const user of users) {
+      const id = normalize(user.userId || user._id);
+      if (Boolean(user.primaryUser) !== (id === targetId)) await wixData.update(CUSTOMER_USER_COLLECTION, { ...user, primaryUser: id === targetId }, { suppressAuth: true });
+    }
+    await writeAuditChanges(USER_AUDIT_COLLECTION, 'PRIMARY_USER_CHANGED', normalize(customer.customerId), targetId, [{ fieldId: 'primaryUserId', fieldLabel: 'PRIMARY USER', beforeValue: primaryId, afterValue: targetId }], staff);
+    await Promise.all([
+      primaryId ? putAccountNotification({ eventId: `PRIMARY-OLD-${normalize(payload.requestId) || now.getTime()}`, customerId: customer.customerId, recipientUserId: primaryId, type: 'PRIMARY USER', heading: 'Primary User changed', message: `${normalize(target.title) || target.email} is now the Primary User.`, targetUserId: targetId }) : Promise.resolve(),
+      putAccountNotification({ eventId: `PRIMARY-NEW-${normalize(payload.requestId) || now.getTime()}`, customerId: customer.customerId, recipientUserId: targetId, type: 'PRIMARY USER', heading: 'You are now the Primary User', message: 'Your salesperson changed the Primary User for this company.', targetUserId: targetId })
+    ]);
+    return { ok: true, customerId: normalize(customer.customerId), userId: targetId, action: normalizedAction };
+  } else {
+    throw new Error('Unsupported customer user action.');
+  }
+
+  const saved = await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true });
+  await writeAuditChanges(USER_AUDIT_COLLECTION, actionName, normalize(customer.customerId), targetId, [{ fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: upper(target.status), afterValue: upper(saved.status) }], staff);
+  const recipient = normalize(target.requestedByUserId) || primaryId;
+  await Promise.all([
+    recipient ? putAccountNotification({ eventId: `${actionName}-${targetId}-${now.getTime()}`, customerId: customer.customerId, recipientUserId: recipient, type: 'USER ACCESS', heading: notificationHeading, message: notificationMessage, targetUserId: targetId }) : Promise.resolve(),
+    recipient !== targetId ? putAccountNotification({ eventId: `${actionName}-TARGET-${targetId}-${now.getTime()}`, customerId: customer.customerId, recipientUserId: targetId, type: 'USER ACCESS', heading: notificationHeading, message: notificationMessage, targetUserId: targetId }) : Promise.resolve()
+  ]);
+  return { ok: true, customerId: normalize(customer.customerId), userId: targetId, action: normalizedAction, status: upper(saved.status) };
+});
+
 export const getSalesRoomCustomerAudit = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
@@ -1006,6 +1164,22 @@ async function putPayload(collectionId, title, payload) {
   return result.items.length
     ? wixData.update(collectionId, next, { suppressAuth: true })
     : wixData.insert(collectionId, next, { suppressAuth: true });
+}
+
+async function putAccountNotification({ eventId, customerId, recipientUserId = '', type, heading, message, targetUserId = '' }) {
+  const id = normalize(eventId);
+  if (!id) return;
+  await putPayload(ACCOUNT_NOTIFICATION_COLLECTION, id, {
+    eventId: id,
+    customerId: normalize(customerId),
+    recipientUserId: normalize(recipientUserId),
+    type: upper(type),
+    heading: normalize(heading),
+    message: normalize(message),
+    targetUserId: normalize(targetUserId),
+    createdAt: new Date().toISOString(),
+    readByUserIds: []
+  });
 }
 
 async function authorizedCustomerIdSet(staff) {

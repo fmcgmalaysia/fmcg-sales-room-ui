@@ -151,6 +151,7 @@ function setupSelectionActions() {
 }
 
 $w.onReady(async () => {
+    try { $w('#repeater3').hide(); } catch (error) {}
     const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -164,6 +165,7 @@ $w.onReady(async () => {
                 session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
                 selectionContext = { mode: 'assist', assistCustomerId: customer.customerId || assistCustomerId };
                 await loadSelectionState(selectionContext.assistCustomerId);
+                try { $w('#repeater3').show(); } catch (error) {}
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: 'assist',
                     sheetName: String(customer.companyName || customer.customerId || '').trim(),
@@ -178,6 +180,7 @@ $w.onReady(async () => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             setProductActions(false);
+            try { $w('#repeater3').show(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
@@ -188,13 +191,30 @@ $w.onReady(async () => {
         try {
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
             await loadSelectionState('');
+            try { $w('#repeater3').show(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'buyer', signedInName: 'Buyer' });
         } catch (error) {
             selectionContext = null;
             setProductActions(false);
+            local.removeItem('catalogueAccess');
+            session.removeItem('catalogueAccess');
+            try { $w('#repeater3').hide(); } catch (hideError) {}
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to('/buyer-room');
         }
     }
+    setInterval(async () => {
+        if (!selectionContext) return;
+        try { await loadSelectionState(selectionContext.assistCustomerId || ''); }
+        catch (error) {
+            selectionContext = null;
+            selectedProductIds = new Set();
+            setProductActions(false);
+            local.removeItem('catalogueAccess');
+            session.removeItem('catalogueAccess');
+            try { $w('#repeater3').hide(); } catch (hideError) {}
+            if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(assistCustomerId ? '/sales-room' : '/buyer-room');
+        }
+    }, 15000);
 });
 
 const DEFAULT_PLACEHOLDER_MEDIA_ID = '55d98a_3287270d83ef4efabfdd1f52d0dc6ec2';

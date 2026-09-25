@@ -53,7 +53,7 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'backend', 'catalogueA
   .replace(/^import .*;\r?\n/gm, '')
   .replace(/^export const /gm, 'const ');
 const api = new Function('webMethod', 'Permissions', 'currentMember', 'wixData', 'getSecret', 'httpsRequest',
-  `${source}\nreturn { getBuyerWorkspace, getBuyerOrderPage, submitBuyerOrder, recoverBuyerItem };`)(
+  `${source}\nreturn { getBuyerWorkspace, getBuyerOrderPage, submitBuyerOrder, recoverBuyerItem, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead };`)(
   (_permission, handler) => handler,
   { SiteMember: 'SiteMember' },
   { getMember: async () => ({ _id: 'member-1', loginEmail: 'buyer@example.com' }) },
@@ -107,4 +107,21 @@ test('history passes 1000 records and repeated submissions create one order', as
   for (let index = 0; index < 99; index++) rows('WixBuyerListItems').push({ _id: `active-${index}`, title: `CUS-1|active-${index}`, customerId: 'CUS-1', removed: false, payload: JSON.stringify({ customerId: 'CUS-1', removed: false }) });
   rows('WixBuyerListItems').push({ _id: 'removed-1', title: 'CUS-1|removed', customerId: 'CUS-1', removed: true, payload: JSON.stringify({ customerId: 'CUS-1', removed: true }) });
   await assert.rejects(api.recoverBuyerItem('removed-1'), /100-product limit/);
+
+  const request = await api.requestBuyerCustomerUser({ name: 'Second Buyer', email: 'second@example.com', mobile: '+60123456789' }, '33333333-3333-4333-8333-333333333333');
+  assert.equal(request.ok, true);
+  const requestedUser = rows('WixCustomerUsers').find(user => user.email === 'second@example.com');
+  assert.equal(requestedUser.status, 'PENDING');
+  assert.equal(requestedUser.primaryUser, false);
+  const repeatedRequest = await api.requestBuyerCustomerUser({ name: 'Second Buyer', email: 'second@example.com', mobile: '+60123456789' }, '33333333-3333-4333-8333-333333333333');
+  assert.equal(repeatedRequest.duplicateRequest, true);
+  requestedUser.status = 'ACTIVE';
+  const primaryTransfer = await api.setBuyerPrimaryUser(requestedUser.userId, '44444444-4444-4444-8444-444444444444');
+  assert.equal(primaryTransfer.primaryUserId, requestedUser.userId);
+  assert.equal(rows('WixCustomers')[0].primaryUserId, requestedUser.userId);
+  assert.equal(rows('WixCustomerUsers').find(user => user._id === 'user-1').primaryUser, false);
+  assert.equal(rows('WixCustomerUsers').find(user => user.userId === requestedUser.userId).primaryUser, true);
+
+  rows('WixCustomers')[0].accessStatus = 'SUSPENDED';
+  await assert.rejects(api.getBuyerWorkspace(), /suspended/i);
 });

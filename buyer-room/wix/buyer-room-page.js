@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, getBuyerSelectionExport, uploadBuyerSelectionExcel, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, getBuyerSelectionExport, uploadBuyerSelectionExcel, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -100,6 +100,31 @@ $w.onReady(async function () {
       wixLocationFrontend.to(assistCustomerId ? '/catalogue?assist=' + encodeURIComponent(assistCustomerId) : '/catalogue');
       return;
     }
+    if (message.type === 'BUYER_ROOM_USER_REQUEST') {
+      try {
+        const result = await requestBuyerCustomerUser(message.payload || {}, message.requestId || '');
+        frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'request' });
+        await loadWorkspace();
+      } catch (error) {
+        frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ok: false, action: 'request', message: error?.message || 'The user request could not be submitted.' });
+      }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_SET_PRIMARY') {
+      try {
+        const result = await setBuyerPrimaryUser(message.userId || '', message.requestId || '');
+        frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'primary' });
+        await loadWorkspace();
+      } catch (error) {
+        frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ok: false, action: 'primary', message: error?.message || 'Primary User could not be changed.' });
+      }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
+      try { await markBuyerAccountNotificationsRead(message.eventIds || []); await loadWorkspace(false); }
+      catch (error) { console.error('Buyer Room notification update failed', error); }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
       await prepareSelectionDownload();
       return;
@@ -173,5 +198,6 @@ $w.onReady(async function () {
 
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
+  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace(false).catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
 });
 
