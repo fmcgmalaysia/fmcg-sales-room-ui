@@ -11,7 +11,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260923-selection-excel-direct-download';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260925-account-users-v25';
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let exportRequestNumber = 0;
