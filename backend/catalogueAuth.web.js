@@ -363,7 +363,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       mobile: primary?.mobile || normalize(customer.mobileNo),
       title: normalize(customer.picTitle)
     },
-    users: users.filter(user => !user.primary && !['REJECTED', 'REVOKED'].includes(user.status)),
+    users: users.filter(user => !['REJECTED', 'REVOKED'].includes(user.status)),
     canManageUsers: buyer.actorType === 'CUSTOMER_USER' && Boolean(buyer.primaryUser),
     userCount: users.filter(user => ['ACTIVE', 'PENDING'].includes(user.status)).length
   };

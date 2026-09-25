@@ -121,6 +121,9 @@ test('history passes 1000 records and repeated submissions create one order', as
   assert.equal(rows('WixCustomers')[0].primaryUserId, requestedUser.userId);
   assert.equal(rows('WixCustomerUsers').find(user => user._id === 'user-1').primaryUser, false);
   assert.equal(rows('WixCustomerUsers').find(user => user.userId === requestedUser.userId).primaryUser, true);
+  const refreshedWorkspace = await api.getBuyerWorkspace();
+  assert.equal(refreshedWorkspace.account.users.length, 2);
+  assert.equal(refreshedWorkspace.account.users.find(user => user.userId === requestedUser.userId).primary, true);
 
   rows('WixCustomers')[0].accessStatus = 'SUSPENDED';
   await assert.rejects(api.getBuyerWorkspace(), /suspended/i);
