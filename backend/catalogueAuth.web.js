@@ -403,8 +403,7 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   const next = {
     ...(emailMatch || {}), title: name, userId, customerId: buyer.customerId, email, mobileNo: mobile,
     primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: 'BUYER ROOM',
-    requestedAt: now, requestedByUserId: buyer.actorUserId, reviewedAt: null, reviewedByStaffId: '',
-    inviteStatus: normalize(emailMatch?.wixMemberId) ? 'JOINED' : 'NOT SENT', failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
+    failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
   };
   const saved = emailMatch
     ? await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true })

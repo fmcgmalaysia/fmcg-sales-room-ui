@@ -705,10 +705,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
         await wixData.update(CUSTOMER_USER_COLLECTION, {
           ...user,
           primaryUser: keep,
-          status: keep ? 'ACTIVE' : upper(user.status) === 'PENDING' ? 'REJECTED' : 'REVOKED',
-          revokedAt: keep ? null : new Date(),
-          revokedByStaffId: keep ? '' : upper(staff.staffId),
-          reviewReason: keep ? '' : 'Removed during customer account reactivation.'
+          status: keep ? 'ACTIVE' : upper(user.status) === 'PENDING' ? 'REJECTED' : 'REVOKED'
         }, { suppressAuth: true });
       }
     }
@@ -1003,8 +1000,7 @@ export const addSalesRoomCustomerUser = webMethod(Permissions.SiteMember, async 
   const next = {
     ...(emailMatch || {}), title: input.userName, userId, customerId: normalize(customer.customerId), email: input.email,
     mobileNo: input.mobileNo, status: 'ACTIVE', primaryUser: false, requestId: requestKey, requestSource: 'SALES ROOM',
-    requestedAt: now, requestedByStaffId: upper(staff.staffId), reviewedAt: now, reviewedByStaffId: upper(staff.staffId),
-    inviteStatus: normalize(emailMatch?.wixMemberId) ? 'JOINED' : 'NOT SENT', failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
+    failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
   };
   const saved = emailMatch
     ? await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true })
@@ -1041,17 +1037,17 @@ export const reviewSalesRoomCustomerUser = webMethod(Permissions.SiteMember, asy
     if (upper(customer.accessStatus) !== 'ACTIVE' || upper(customer.lifecycleStatus || 'ACTIVE') === 'ARCHIVED') throw new Error('Activate the customer account before approving users.');
     if (upper(target.status) !== 'PENDING') throw new Error('Only pending user requests can be approved.');
     if (users.filter(user => countsTowardUserLimit(user) && normalize(user.userId || user._id) !== targetId).length >= 5) throw new Error('This customer already has the maximum of 5 users.');
-    next = { ...next, status: 'ACTIVE', reviewedAt: now, reviewedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), inviteStatus: normalize(target.wixMemberId) ? 'JOINED' : 'NOT SENT' };
+    next = { ...next, status: 'ACTIVE' };
     actionName = 'CUSTOMER_USER_APPROVED'; notificationHeading = 'User request approved'; notificationMessage = `${normalize(target.title) || target.email} can now access Buyer Room.`;
   } else if (normalizedAction === 'REJECT') {
     if (upper(target.status) !== 'PENDING') throw new Error('Only pending user requests can be rejected.');
     if (!normalize(payload.reason)) throw new Error('Enter a rejection reason.');
-    next = { ...next, status: 'REJECTED', reviewedAt: now, reviewedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), primaryUser: false };
+    next = { ...next, status: 'REJECTED', primaryUser: false };
     actionName = 'CUSTOMER_USER_REJECTED'; notificationHeading = 'User request rejected'; notificationMessage = normalize(payload.reason);
   } else if (normalizedAction === 'REVOKE') {
     if (targetId === primaryId) throw new Error('Transfer Primary User access before removing this user.');
     if (!normalize(payload.reason)) throw new Error('Enter a removal reason.');
-    next = { ...next, status: 'REVOKED', revokedAt: now, revokedByStaffId: upper(staff.staffId), reviewReason: normalize(payload.reason), primaryUser: false };
+    next = { ...next, status: 'REVOKED', primaryUser: false };
     actionName = 'CUSTOMER_USER_REVOKED'; notificationHeading = 'User access removed'; notificationMessage = normalize(payload.reason);
   } else if (normalizedAction === 'SET_PRIMARY') {
     if (upper(target.status) !== 'ACTIVE') throw new Error('Primary access can only be assigned to an active user.');
