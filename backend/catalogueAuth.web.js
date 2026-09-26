@@ -412,7 +412,8 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   const userId = normalize(emailMatch?.userId) || `USR-${buyer.customerId}-${now.getTime().toString(36).toUpperCase()}`;
   const next = {
     ...(emailMatch || {}), title: name, userId, customerId: buyer.customerId, email, mobileNo: mobile,
-    primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: buyer.actorType === 'ADMIN_TEST' ? 'ADMIN TEST' : 'BUYER ROOM',
+    primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: 'BUYER ROOM',
+    requestActorType: buyer.actorType,
     requestedAt: now, requestedByUserId: buyer.actorUserId,
     failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
   };
