@@ -127,7 +127,8 @@ async function requireStaff(member) {
   if (!matches.length && email) matches = (await wixData.query(STAFF_COLLECTION).eq('staffEmail', email).limit(2).find({ suppressAuth: true })).items;
   if (matches.length !== 1 || upper(matches[0].status) !== 'ACTIVE') throw new Error('Active staff authorization is required.');
   const staff = matches[0];
-  return { staffId: upper(staff.staffId), staffName: normalize(staff.title || staff.staffName || staff.staffId), email, canViewAllCustomers: ['ADMIN', 'SUPER ADMIN'].includes(upper(staff.role)) };
+  const role = upper(staff.role);
+  return { staffId: upper(staff.staffId), staffName: normalize(staff.title || staff.staffName || staff.staffId), email, role, canViewAllCustomers: ['ADMIN', 'SUPER ADMIN'].includes(role) };
 }
 async function customerById(customerId) {
   const result = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', normalize(customerId)).limit(2).find({ suppressAuth: true });
@@ -179,7 +180,7 @@ async function routeQdAction(action, buyer, row) {
   if (response.status < 200 || response.status >= 300 || !body.ok) throw new Error(body.error || 'Quotation Desk update failed.');
   return body.result || {};
 }
-async function resolveBuyerContext(assistCustomerId = '') {
+async function resolveBuyerContext(assistCustomerId = '', accessMode = '') {
   const member = await signedInMember();
   if (!member?._id) throw new Error('Sign in is required.');
   const requestedId = normalize(assistCustomerId);
@@ -188,7 +189,14 @@ async function resolveBuyerContext(assistCustomerId = '') {
     const customer = await customerById(requestedId);
     if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) throw new Error('This customer is assigned to another salesperson.');
     ensureActive(customer);
-    return contextFromCustomer(customer, { email: staff.email, name: staff.staffName, type: 'STAFF' });
+    const adminTest = upper(accessMode) === 'ADMIN_TEST';
+    if (adminTest && !staff.canViewAllCustomers) throw new Error('Admin Test Mode requires an active Admin account.');
+    return {
+      ...contextFromCustomer(customer, { email: staff.email, name: staff.staffName, type: adminTest ? 'ADMIN_TEST' : 'STAFF' }),
+      actorStaffId: staff.staffId,
+      actorRole: staff.role,
+      adminTest
+    };
   }
   const memberId = normalize(member._id);
   const email = memberEmail(member);
@@ -330,16 +338,16 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
   await wixData.insert(USER_AUDIT_COLLECTION, {
     title: auditId, auditId, action: upper(action), customerId: normalize(customerId), entityId: normalize(userId),
     fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: normalize(beforeStatus), afterValue: normalize(afterStatus),
-    changedAt, changedByStaffId: '', changedByStaffName: normalize(buyer.actorName),
-    changedByEmail: normalizeEmail(buyer.email), changedByRole: 'CUSTOMER PRIMARY'
+    changedAt, changedByStaffId: normalize(buyer.actorStaffId), changedByStaffName: normalize(buyer.actorName),
+    changedByEmail: normalizeEmail(buyer.email), changedByRole: buyer.actorType === 'ADMIN_TEST' ? `${normalize(buyer.actorRole) || 'ADMIN'} TEST` : 'CUSTOMER PRIMARY'
   }, { suppressAuth: true });
 }
 
-export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
-  try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '', accessMode = '') => {
+  try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId, accessMode) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
 });
-export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
-  const buyer = await resolveBuyerContext(assistCustomerId);
+export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '', accessMode = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId, accessMode);
   const [items, orderPage, customer, userResult, notifications] = await Promise.all([
     workspaceItems(buyer.customerId),
     buyerOrderHistory(buyer.customerId),
@@ -366,7 +374,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       title: normalize(customer.picTitle)
     },
     users: users.filter(user => !['REJECTED', 'REVOKED'].includes(user.status)),
-    canManageUsers: buyer.actorType === 'CUSTOMER_USER',
+    canManageUsers: ['CUSTOMER_USER', 'ADMIN_TEST'].includes(buyer.actorType),
     userCount: users.filter(user => ['ACTIVE', 'PENDING'].includes(user.status)).length
   };
   const removed = items.filter(item => item.removed).map(item => {
@@ -378,9 +386,9 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
   return { ok: true, context: buyer, account, notifications, myList: items.filter(item => !item.removed), removed, orders: orderPage.orders, ordersNextCursor: orderPage.nextCursor };
 });
 
-export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '') => {
-  const buyer = await resolveBuyerContext('');
-  if (buyer.actorType !== 'CUSTOMER_USER') throw new Error('Only an active customer user can request another user.');
+export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '', assistCustomerId = '', accessMode = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId, accessMode);
+  if (!['CUSTOMER_USER', 'ADMIN_TEST'].includes(buyer.actorType)) throw new Error('Only an active customer user or Admin Test Mode can request another user.');
   const input = payload && typeof payload === 'object' ? payload : {};
   const name = normalize(input.name);
   const email = normalizeEmail(input.email);
@@ -404,7 +412,7 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   const userId = normalize(emailMatch?.userId) || `USR-${buyer.customerId}-${now.getTime().toString(36).toUpperCase()}`;
   const next = {
     ...(emailMatch || {}), title: name, userId, customerId: buyer.customerId, email, mobileNo: mobile,
-    primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: 'BUYER ROOM',
+    primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: buyer.actorType === 'ADMIN_TEST' ? 'ADMIN TEST' : 'BUYER ROOM',
     requestedAt: now, requestedByUserId: buyer.actorUserId,
     failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
   };
@@ -418,9 +426,9 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   return { ok: true, user: publicUser(saved), message: 'User request submitted for salesperson approval.' };
 });
 
-export const setBuyerPrimaryUser = webMethod(Permissions.SiteMember, async (targetUserId, requestId = '') => {
-  const buyer = await resolveBuyerContext('');
-  if (buyer.actorType !== 'CUSTOMER_USER') throw new Error('Only an active customer user can transfer Primary access.');
+export const setBuyerPrimaryUser = webMethod(Permissions.SiteMember, async (targetUserId, requestId = '', assistCustomerId = '', accessMode = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId, accessMode);
+  if (!['CUSTOMER_USER', 'ADMIN_TEST'].includes(buyer.actorType)) throw new Error('Only an active customer user or Admin Test Mode can transfer Primary access.');
   const targetId = normalize(targetUserId);
   const requestKey = normalize(requestId);
   if (!targetId || !requestKey) throw new Error('Select an active user and try again.');
@@ -444,8 +452,9 @@ export const setBuyerPrimaryUser = webMethod(Permissions.SiteMember, async (targ
   return { ok: true, customerId: buyer.customerId, primaryUserId: targetId };
 });
 
-export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMember, async (eventIds = []) => {
-  const buyer = await resolveBuyerContext('');
+export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMember, async (eventIds = [], assistCustomerId = '', accessMode = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId, accessMode);
+  if (!buyer.actorUserId) return { ok: true, changed: 0 };
   const wanted = new Set((Array.isArray(eventIds) ? eventIds : []).map(normalize).filter(Boolean).slice(0, 50));
   if (!wanted.size) return { ok: true, changed: 0 };
   const result = await wixData.query(ACCOUNT_NOTIFICATION_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });

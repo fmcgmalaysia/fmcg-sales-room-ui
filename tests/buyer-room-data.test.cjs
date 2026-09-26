@@ -5,6 +5,7 @@ const test = require('node:test');
 
 const collections = new Map();
 let failNextLineInsert = false;
+let currentMemberRecord = { _id: 'member-1', loginEmail: 'buyer@example.com' };
 function rows(name) { if (!collections.has(name)) collections.set(name, []); return collections.get(name); }
 function result(items, pageSize, offset = 0) {
   const page = items.slice(offset, offset + pageSize);
@@ -56,7 +57,7 @@ const api = new Function('webMethod', 'Permissions', 'currentMember', 'wixData',
   `${source}\nreturn { getBuyerWorkspace, getBuyerOrderPage, submitBuyerOrder, recoverBuyerItem, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead };`)(
   (_permission, handler) => handler,
   { SiteMember: 'SiteMember' },
-  { getMember: async () => ({ _id: 'member-1', loginEmail: 'buyer@example.com' }) },
+  { getMember: async () => currentMemberRecord },
   wixData,
   async () => '',
   () => { throw new Error('Unexpected network request'); }
@@ -135,4 +136,21 @@ test('history passes 1000 records and repeated submissions create one order', as
 
   rows('WixCustomers')[0].accessStatus = 'SUSPENDED';
   await assert.rejects(api.getBuyerWorkspace(), /suspended/i);
+});
+
+test('Admin Test Mode exposes customer user controls only to Admin staff', async () => {
+  currentMemberRecord = { _id: 'admin-member', loginEmail: 'admin@example.com' };
+  rows('StaffMaster').push({ _id: 'staff-admin', wixMemberId: 'admin-member', staffEmail: 'admin@example.com', staffId: 'LAW', title: 'LAW', role: 'SUPER ADMIN', status: 'ACTIVE' });
+  rows('WixCustomers').push({ _id: 'customer-admin-test', customerId: 'CUS-ADMIN-TEST', title: 'Admin Test Buyer', assignedStaffId: 'S001', preferredCurrency: 'USD' });
+  const workspace = await api.getBuyerWorkspace('CUS-ADMIN-TEST', 'ADMIN_TEST');
+  assert.equal(workspace.context.actorType, 'ADMIN_TEST');
+  assert.equal(workspace.context.actorRole, 'SUPER ADMIN');
+  assert.equal(workspace.account.canManageUsers, true);
+
+  currentMemberRecord = { _id: 'sales-member', loginEmail: 'sales@example.com' };
+  rows('StaffMaster').push({ _id: 'staff-sales', wixMemberId: 'sales-member', staffEmail: 'sales@example.com', staffId: 'S001', title: 'Sales One', role: 'SALES', status: 'ACTIVE' });
+  await assert.rejects(api.getBuyerWorkspace('CUS-ADMIN-TEST', 'ADMIN_TEST'), /requires an active Admin account/);
+  const assisted = await api.getBuyerWorkspace('CUS-ADMIN-TEST');
+  assert.equal(assisted.context.actorType, 'STAFF');
+  assert.equal(assisted.account.canManageUsers, false);
 });
