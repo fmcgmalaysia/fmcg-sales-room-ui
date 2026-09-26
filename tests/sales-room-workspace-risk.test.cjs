@@ -36,3 +36,12 @@ test('workspace scans risk only for customers that have quotation rows', () => {
   assert.match(source, /loadQuoteRiskCounts\(riskCustomers\)/);
   assert.match(source, /setTimeout\(\(\) => resolve\(new Map\(\)\), 3500\)/);
 });
+
+test('order and staff pages inherit the compact blue customer workspace style', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /Order and Staff pages follow the My Customers visual system/);
+  assert.match(html, /#orders #newOrderArea\{padding:0\}/);
+  assert.match(html, /\.staff-row\.selected\{background:#eaf3ff;box-shadow:inset 3px 0 #1769e0\}/);
+  assert.match(html, /\.staff-tab\.active:after\{background:#1769e0\}/);
+  assert.match(html, /function formatActivityTime[\s\S]*year:'numeric'/);
+});
