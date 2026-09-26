@@ -26,3 +26,10 @@ test('quote risk rules detect red signals and GP below six percent', () => {
   assert.equal(helpers.redSignal('', '#d9363e', '#000000'), true);
   assert.equal(helpers.redSignal('', '#ffffff', '#286c4d'), false);
 });
+
+test('workspace scans risk only for customers that have quotation rows', () => {
+  const source = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
+  assert.match(source, /const riskCustomers = \(base\.customers \|\| \[\]\)\.filter/);
+  assert.match(source, /quote\.quoted > 0 \|\| quote\.awaiting > 0/);
+  assert.match(source, /loadQuoteRiskCounts\(riskCustomers\)/);
+});

@@ -385,10 +385,9 @@ export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
   async () => {
     const base = await loadSalesRoomCustomers();
-    const [listRows, orderRows, quoteRiskCounts] = await Promise.all([
+    const [listRows, orderRows] = await Promise.all([
       readPayloadRows(BUYER_LIST_COLLECTION),
-      readPayloadRows(BUYER_ORDER_COLLECTION),
-      loadQuoteRiskCounts(base.customers)
+      readPayloadRows(BUYER_ORDER_COLLECTION)
     ]);
 
     const quoteByCustomer = new Map();
@@ -411,6 +410,15 @@ export const getSalesRoomCustomersOperational = webMethod(
       }
       quoteByCustomer.set(customerId, current);
     }
+
+    // Only customers with quotation rows can carry quotation risk. Opening
+    // every customer's Google Sheet made the whole customer list wait for
+    // unrelated QDs and could exceed Wix's request deadline on a cold start.
+    const riskCustomers = (base.customers || []).filter((customer) => {
+      const quote = quoteByCustomer.get(customer.customerId);
+      return Boolean(quote && (quote.quoted > 0 || quote.awaiting > 0));
+    });
+    const quoteRiskCounts = await loadQuoteRiskCounts(riskCustomers);
 
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
