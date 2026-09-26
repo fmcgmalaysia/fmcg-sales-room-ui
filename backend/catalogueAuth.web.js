@@ -201,7 +201,7 @@ async function resolveBuyerContext(assistCustomerId = '') {
   const customer = await customerById(user.customerId);
   ensureActive(customer);
   const resolvedUserId = normalize(user.userId || user._id);
-  const isPrimary = normalize(customer.primaryUserId) ? normalize(customer.primaryUserId) === resolvedUserId : Boolean(user.primaryUser);
+  const isPrimary = normalize(customer.primaryUserId) === resolvedUserId || Boolean(user.primaryUser);
   return contextFromCustomer(customer, { email, name: user.title || email, type: 'CUSTOMER_USER', userId: resolvedUserId, primaryUser: isPrimary });
 }
 async function workspaceItems(customerId) {
