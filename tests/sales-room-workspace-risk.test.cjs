@@ -45,3 +45,22 @@ test('order and staff pages inherit the compact blue customer workspace style', 
   assert.match(html, /\.staff-tab\.active:after\{background:#1769e0\}/);
   assert.match(html, /function formatActivityTime[\s\S]*year:'numeric'/);
 });
+
+test('dashboard presents five premium metrics in the requested order', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const dashboard = html.slice(html.indexOf('<section id="dashboard"'), html.indexOf('<section id="new"'));
+  const headings = [
+    'ACTIVE CUSTOMERS',
+    'NEW ORDERS',
+    'CUSTOMERS AWAITING QUOTES',
+    'PENDING QUOTATION',
+    'AT-RISK QUOTATIONS'
+  ];
+  const positions = headings.map((heading) => dashboard.indexOf(heading));
+  assert.ok(positions.every((position) => position >= 0));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  assert.equal((dashboard.match(/dashboard-metric-card/g) || []).length, 5);
+  assert.match(dashboard, /id="atRiskQuotationCount"/);
+  assert.match(html, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+  assert.match(html, /riskCount=customerRecords\.reduce\(\(sum,item\)=>sum\+\(Number\(item\.quoteRiskCount\)\|\|0\),0\)/);
+});
