@@ -138,19 +138,18 @@ test('history passes 1000 records and repeated submissions create one order', as
   await assert.rejects(api.getBuyerWorkspace(), /suspended/i);
 });
 
-test('Admin Test Mode exposes customer user controls only to Admin staff', async () => {
+test('Admin access exposes all customer controls while salesperson assist remains limited', async () => {
   currentMemberRecord = { _id: 'admin-member', loginEmail: 'admin@example.com' };
   rows('StaffMaster').push({ _id: 'staff-admin', wixMemberId: 'admin-member', staffEmail: 'admin@example.com', staffId: 'LAW', title: 'LAW', role: 'SUPER ADMIN', status: 'ACTIVE' });
-  rows('WixCustomers').push({ _id: 'customer-admin-test', customerId: 'CUS-ADMIN-TEST', title: 'Admin Test Buyer', assignedStaffId: 'S001', preferredCurrency: 'USD' });
-  const workspace = await api.getBuyerWorkspace('CUS-ADMIN-TEST', 'ADMIN_TEST');
-  assert.equal(workspace.context.actorType, 'ADMIN_TEST');
+  rows('WixCustomers').push({ _id: 'customer-admin-access', customerId: 'CUS-ADMIN-ACCESS', title: 'Admin Access Buyer', assignedStaffId: 'S001', preferredCurrency: 'USD' });
+  const workspace = await api.getBuyerWorkspace('CUS-ADMIN-ACCESS');
+  assert.equal(workspace.context.actorType, 'ADMIN');
   assert.equal(workspace.context.actorRole, 'SUPER ADMIN');
   assert.equal(workspace.account.canManageUsers, true);
 
   currentMemberRecord = { _id: 'sales-member', loginEmail: 'sales@example.com' };
   rows('StaffMaster').push({ _id: 'staff-sales', wixMemberId: 'sales-member', staffEmail: 'sales@example.com', staffId: 'S001', title: 'Sales One', role: 'SALES', status: 'ACTIVE' });
-  await assert.rejects(api.getBuyerWorkspace('CUS-ADMIN-TEST', 'ADMIN_TEST'), /requires an active Admin account/);
-  const assisted = await api.getBuyerWorkspace('CUS-ADMIN-TEST');
+  const assisted = await api.getBuyerWorkspace('CUS-ADMIN-ACCESS');
   assert.equal(assisted.context.actorType, 'STAFF');
   assert.equal(assisted.account.canManageUsers, false);
 });

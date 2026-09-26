@@ -109,7 +109,7 @@ export const addCatalogueSelection = webMethod(
         selectedByType: context.actorType,
         selectedById: context.actorId,
         selectedByName: context.actorName,
-        source: context.actorType === 'STAFF' ? 'SALES_ROOM_ASSIST' : 'BUYER_CATALOGUE',
+        source: context.actorType === 'STAFF' ? 'SALES_ROOM_ASSIST' : context.actorType === 'ADMIN' ? 'ADMIN_CATALOGUE' : 'BUYER_CATALOGUE',
         qdFileId: context.qdFileId,
         qdSyncStatus: 'PENDING',
         qdSyncedAt: '',
@@ -402,7 +402,7 @@ async function resolveSelectionContext_(assistCustomerId) {
     if (!staff.canViewAllCustomers && upper(customer.assignedStaffId) !== staff.staffId) {
       throw new Error('This customer is assigned to another salesperson.');
     }
-    actorType = 'STAFF';
+    actorType = staff.canViewAllCustomers ? 'ADMIN' : 'STAFF';
     actorId = staff.staffId;
     actorName = staff.staffName;
   } else {

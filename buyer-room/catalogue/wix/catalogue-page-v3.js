@@ -163,11 +163,11 @@ $w.onReady(async () => {
                 const response = await getSalesRoomCustomerDetail(assistCustomerId);
                 const customer = response?.customer || {};
                 session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
-                selectionContext = { mode: 'assist', assistCustomerId: customer.customerId || assistCustomerId };
+                selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId || assistCustomerId };
                 await loadSelectionState(selectionContext.assistCustomerId);
                 try { $w('#repeater3').show(); } catch (error) {}
                 sendCatalogueContext({
-                    type: 'catalogueContext', mode: 'assist',
+                    type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(customer.companyName || customer.customerId || '').trim(),
                     signedInName: String(staff.staffName || staff.staffId || '').trim()
                 });

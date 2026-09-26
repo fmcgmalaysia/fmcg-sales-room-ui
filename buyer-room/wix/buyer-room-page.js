@@ -4,23 +4,17 @@ import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
 
 let assistCustomerId = '';
-let accessMode = '';
 function getAssistCustomerId() {
   // Assisted access must be explicit in the URL. Catalogue already preserves
   // the `assist` query when staff return to Buyer Room, while ignoring an old
   // session value prevents a later customer login from inheriting staff mode.
   return String(wixLocationFrontend.query?.assist || '').trim();
 }
-function getAccessMode() {
-  return String(wixLocationFrontend.query?.adminTest || '').trim() === '1' ? 'ADMIN_TEST' : '';
-}
-
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-admin-test-v26';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-admin-access-v27';
   assistCustomerId = getAssistCustomerId();
-  accessMode = getAccessMode();
   let frameReady = false;
   let exportRequestNumber = 0;
   let activeExportRequestId = '';
@@ -52,7 +46,7 @@ $w.onReady(async function () {
 
   async function loadWorkspace(refreshExport = true) {
     let result;
-    try { result = await getBuyerWorkspace(assistCustomerId, accessMode); }
+    try { result = await getBuyerWorkspace(assistCustomerId); }
     catch (error) {
       if (assistCustomerId) {
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Error: ' + (error?.message || String(error)) });
@@ -77,7 +71,7 @@ $w.onReady(async function () {
       currency: result.context.currency || 'USD',
       selectionLimit: result.context.selectionLimit,
       assisted: result.context.actorType === 'STAFF',
-      adminTest: result.context.actorType === 'ADMIN_TEST',
+      adminAccess: result.context.actorType === 'ADMIN',
       account: result.account || null,
       myList: result.myList || [],
       removed: result.removed || [],
@@ -111,7 +105,7 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_USER_REQUEST') {
       try {
-        const result = await requestBuyerCustomerUser(message.payload || {}, message.requestId || '', assistCustomerId, accessMode);
+        const result = await requestBuyerCustomerUser(message.payload || {}, message.requestId || '', assistCustomerId);
         frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'request' });
         await loadWorkspace();
       } catch (error) {
@@ -121,7 +115,7 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_SET_PRIMARY') {
       try {
-        const result = await setBuyerPrimaryUser(message.userId || '', message.requestId || '', assistCustomerId, accessMode);
+        const result = await setBuyerPrimaryUser(message.userId || '', message.requestId || '', assistCustomerId);
         frame.postMessage({ type: 'BUYER_ROOM_USER_RESULT', ...result, action: 'primary' });
         await loadWorkspace();
       } catch (error) {
@@ -130,7 +124,7 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
-      try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId, accessMode); await loadWorkspace(false); }
+      try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(false); }
       catch (error) { console.error('Buyer Room notification update failed', error); }
       return;
     }
