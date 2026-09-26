@@ -113,6 +113,14 @@ test('history passes 1000 records and repeated submissions create one order', as
   const requestedUser = rows('WixCustomerUsers').find(user => user.email === 'second@example.com');
   assert.equal(requestedUser.status, 'PENDING');
   assert.equal(requestedUser.primaryUser, false);
+  assert.equal(requestedUser.requestSource, 'BUYER ROOM');
+  assert.equal(requestedUser.requestedByUserId, 'user-1');
+  assert.ok(requestedUser.requestedAt instanceof Date);
+  const requestAudit = rows('CustomerUserAudit').find(row => row.entityId === requestedUser.userId);
+  assert.match(requestAudit.title, /^AUD-/);
+  assert.equal(requestAudit.auditId, requestAudit.title);
+  assert.match(requestAudit.changedAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.equal(requestAudit.action, 'CUSTOMER_USER_REQUESTED');
   const repeatedRequest = await api.requestBuyerCustomerUser({ name: 'Second Buyer', email: 'second@example.com', mobile: '+60123456789' }, '33333333-3333-4333-8333-333333333333');
   assert.equal(repeatedRequest.duplicateRequest, true);
   requestedUser.status = 'ACTIVE';

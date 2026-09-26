@@ -967,7 +967,7 @@ function validateCustomerUserInput(payload = {}) {
   const userName = normalize(payload.userName || payload.name);
   const email = normalizeEmail(payload.email);
   const mobileNo = normalize(payload.mobileNo || payload.mobile);
-  if (!userName || userName.length > 120) throw new Error('Enter the user full name.');
+  if (!userName || userName.length > 120) throw new Error('Enter the user name.');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid work email.');
   if (!/^\+?[0-9 ()-]{7,24}$/.test(mobileNo)) throw new Error('Enter a valid international mobile number.');
   return { userName, email, mobileNo };

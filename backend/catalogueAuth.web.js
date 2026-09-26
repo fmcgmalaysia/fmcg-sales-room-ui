@@ -325,10 +325,12 @@ async function buyerNotifications(customerId, actorUserId) {
 }
 
 async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, afterStatus, buyer) {
+  const changedAt = new Date().toISOString();
+  const auditId = `AUD-${changedAt.replace(/\D/g, '').slice(0, 17)}-01-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   await wixData.insert(USER_AUDIT_COLLECTION, {
-    action: upper(action), customerId: normalize(customerId), entityId: normalize(userId),
+    title: auditId, auditId, action: upper(action), customerId: normalize(customerId), entityId: normalize(userId),
     fieldId: 'status', fieldLabel: 'USER ACCESS', beforeValue: normalize(beforeStatus), afterValue: normalize(afterStatus),
-    changedAt: new Date(), changedByStaffId: '', changedByStaffName: normalize(buyer.actorName),
+    changedAt, changedByStaffId: '', changedByStaffName: normalize(buyer.actorName),
     changedByEmail: normalizeEmail(buyer.email), changedByRole: 'CUSTOMER PRIMARY'
   }, { suppressAuth: true });
 }
@@ -384,7 +386,7 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   const email = normalizeEmail(input.email);
   const mobile = normalize(input.mobile);
   const requestKey = normalize(requestId);
-  if (!name || name.length > 120) throw new Error('Enter the user full name.');
+  if (!name || name.length > 120) throw new Error('Enter the user name.');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid work email.');
   if (!/^\+?[0-9 ()-]{7,24}$/.test(mobile)) throw new Error('Enter a valid international mobile number.');
   if (!requestKey || requestKey.length > 100) throw new Error('A valid request reference is required.');
@@ -403,13 +405,16 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
   const next = {
     ...(emailMatch || {}), title: name, userId, customerId: buyer.customerId, email, mobileNo: mobile,
     primaryUser: false, status: 'PENDING', requestId: requestKey, requestSource: 'BUYER ROOM',
+    requestedAt: now, requestedByUserId: buyer.actorUserId,
     failedLoginCount: Number(emailMatch?.failedLoginCount || 0)
   };
   const saved = emailMatch
     ? await wixData.update(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true })
     : await wixData.insert(CUSTOMER_USER_COLLECTION, next, { suppressAuth: true });
-  await writeBuyerUserAudit('CUSTOMER_USER_REQUESTED', buyer.customerId, userId, upper(emailMatch?.status), 'PENDING', buyer);
-  await putAccountNotification({ eventId: `USER-REQUESTED-${requestKey}`, customerId: buyer.customerId, recipientUserId: buyer.actorUserId, type: 'USER REQUEST', heading: 'User request submitted', message: `${name} is pending salesperson approval.`, targetUserId: userId });
+  await Promise.allSettled([
+    writeBuyerUserAudit('CUSTOMER_USER_REQUESTED', buyer.customerId, userId, upper(emailMatch?.status), 'PENDING', buyer),
+    putAccountNotification({ eventId: `USER-REQUESTED-${requestKey}`, customerId: buyer.customerId, recipientUserId: buyer.actorUserId, type: 'USER REQUEST', heading: 'User request submitted', message: `${name} is pending salesperson approval.`, targetUserId: userId })
+  ]);
   return { ok: true, user: publicUser(saved), message: 'User request submitted for salesperson approval.' };
 });
 
