@@ -366,7 +366,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
       title: normalize(customer.picTitle)
     },
     users: users.filter(user => !['REJECTED', 'REVOKED'].includes(user.status)),
-    canManageUsers: buyer.actorType === 'CUSTOMER_USER' && Boolean(buyer.primaryUser),
+    canManageUsers: buyer.actorType === 'CUSTOMER_USER',
     userCount: users.filter(user => ['ACTIVE', 'PENDING'].includes(user.status)).length
   };
   const removed = items.filter(item => item.removed).map(item => {
@@ -380,7 +380,7 @@ export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assist
 
 export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async (payload = {}, requestId = '') => {
   const buyer = await resolveBuyerContext('');
-  if (buyer.actorType !== 'CUSTOMER_USER' || !buyer.primaryUser) throw new Error('Only the current Primary User can request another user.');
+  if (buyer.actorType !== 'CUSTOMER_USER') throw new Error('Only an active customer user can request another user.');
   const input = payload && typeof payload === 'object' ? payload : {};
   const name = normalize(input.name);
   const email = normalizeEmail(input.email);
@@ -420,7 +420,7 @@ export const requestBuyerCustomerUser = webMethod(Permissions.SiteMember, async 
 
 export const setBuyerPrimaryUser = webMethod(Permissions.SiteMember, async (targetUserId, requestId = '') => {
   const buyer = await resolveBuyerContext('');
-  if (buyer.actorType !== 'CUSTOMER_USER' || !buyer.primaryUser) throw new Error('Only the current Primary User can transfer Primary access.');
+  if (buyer.actorType !== 'CUSTOMER_USER') throw new Error('Only an active customer user can transfer Primary access.');
   const targetId = normalize(targetUserId);
   const requestKey = normalize(requestId);
   if (!targetId || !requestKey) throw new Error('Select an active user and try again.');
