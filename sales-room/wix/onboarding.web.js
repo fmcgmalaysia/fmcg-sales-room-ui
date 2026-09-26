@@ -314,6 +314,7 @@ async function loadSalesRoomCustomers() {
         companyName: normalize(item.title),
         country: normalize(item.country),
         qdStatus: upper(item.qdStatus),
+        qdFileId: normalize(item.qdFileId),
         customerStatus: upper(item.customerStatus),
         lifecycleStatus: upper(item.lifecycleStatus || 'ACTIVE'),
         accessStatus: upper(item.accessStatus || (upper(item.customerStatus) === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE')),
@@ -353,13 +354,41 @@ export const getSalesRoomCustomers = webMethod(
   loadSalesRoomCustomers
 );
 
+async function loadQuoteRiskCounts(customers) {
+  const requested = (customers || [])
+    .map((customer) => ({
+      customerId: normalize(customer.customerId),
+      qdFileId: normalize(customer.qdFileId)
+    }))
+    .filter((customer) => customer.customerId && /^[A-Za-z0-9_-]{20,}$/.test(customer.qdFileId));
+  if (!requested.length) return new Map();
+  try {
+    const sharedSecret = await getSecret(SECRET_NAME);
+    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'GET_QUOTE_RISK_COUNTS', sharedSecret, customers: requested })
+    });
+    const body = parseAppsScriptResponse(await response.text());
+    if (!response.ok || !body.ok) throw new Error(body.error || 'Quote risk scan failed.');
+    return new Map((body.result?.counts || []).map((item) => [
+      normalize(item.customerId),
+      Math.max(0, Number(item.quoteRiskCount) || 0)
+    ]));
+  } catch (error) {
+    console.warn('Sales Room quote risk scan unavailable:', error?.message || error);
+    return new Map();
+  }
+}
+
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
   async () => {
     const base = await loadSalesRoomCustomers();
-    const [listRows, orderRows] = await Promise.all([
+    const [listRows, orderRows, quoteRiskCounts] = await Promise.all([
       readPayloadRows(BUYER_LIST_COLLECTION),
-      readPayloadRows(BUYER_ORDER_COLLECTION)
+      readPayloadRows(BUYER_ORDER_COLLECTION),
+      loadQuoteRiskCounts(base.customers)
     ]);
 
     const quoteByCustomer = new Map();
@@ -404,6 +433,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         ...customer,
         quotedItemCount: quote.quoted,
         awaitingQuoteItemCount: quote.awaiting,
+        quoteRiskCount: Number(quoteRiskCounts.get(customer.customerId) || 0),
         pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
         confirmedOrderCount: incoming.count,
         incomingOrderReceivedAt: incoming.incomingOrderReceivedAt

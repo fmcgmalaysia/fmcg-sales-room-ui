@@ -76,6 +76,93 @@ function WIX_removeCatalogueSelection(payload) {
   }
 }
 
+/** Returns one compact risk count per customer for the Sales Room workspace. */
+function WIX_getQuoteRiskCounts(payload) {
+  const customers = Array.isArray(payload && payload.customers) ? payload.customers : [];
+  const counts = customers.slice(0, 100).map(function (raw) {
+    const customerId = String(raw && raw.customerId || '').trim().toUpperCase();
+    const qdFileId = String(raw && raw.qdFileId || '').trim();
+    if (!/^CUS-\d{6}-[A-Z0-9]{6}$/.test(customerId) || !/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) {
+      return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0, error: 'Invalid QD reference.' };
+    }
+    try {
+      const cache = CacheService.getScriptCache();
+      const cacheKey = 'QD_RISK_' + qdFileId;
+      const cached = cache.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+      const qd = SpreadsheetApp.openById(qdFileId);
+      if (WIX_spreadsheetMetadataValue_(qd, WIX_SELECTION_CFG.CUSTOMER_ID_METADATA) !== customerId) {
+        throw new Error('QD Customer ID mismatch.');
+      }
+      const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
+      if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
+      const lastRow = sheet.getLastRow();
+      if (lastRow < WIX_SELECTION_CFG.QD_DATA_START_ROW) {
+        return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0 };
+      }
+      const headers = WIX_selectionHeaderMap_(sheet);
+      const barcodeColumn = headers['UNIT BARCODE'] || 2;
+      const idColumn = headers['WIX MY LIST ID'] || 0;
+      const rowCount = lastRow - WIX_SELECTION_CFG.QD_DATA_START_ROW + 1;
+      const signals = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, 1, rowCount, 1);
+      const gp = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, 16, rowCount, 1);
+      const barcodes = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, barcodeColumn, rowCount, 1).getDisplayValues();
+      const ids = idColumn ? sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, idColumn, rowCount, 1).getDisplayValues() : [];
+      const signalText = signals.getDisplayValues();
+      const signalBackgrounds = signals.getBackgrounds();
+      const signalFonts = signals.getFontColors();
+      const gpValues = gp.getValues();
+      const gpDisplay = gp.getDisplayValues();
+      let quoteRiskCount = 0;
+      let redSignalCount = 0;
+      let lowGpCount = 0;
+      for (let index = 0; index < rowCount; index++) {
+        const activeRow = String(barcodes[index] && barcodes[index][0] || '').trim() || String(ids[index] && ids[index][0] || '').trim();
+        if (!activeRow) continue;
+        const redSignal = WIX_hasRedQuoteSignal_(signalText[index][0], signalBackgrounds[index][0], signalFonts[index][0]);
+        const lowGp = WIX_isLowGp_(gpValues[index][0], gpDisplay[index][0]);
+        if (redSignal) redSignalCount += 1;
+        if (lowGp) lowGpCount += 1;
+        if (redSignal || lowGp) quoteRiskCount += 1;
+      }
+      const result = { customerId: customerId, quoteRiskCount: quoteRiskCount, redSignalCount: redSignalCount, lowGpCount: lowGpCount };
+      cache.put(cacheKey, JSON.stringify(result), 45);
+      return result;
+    } catch (error) {
+      return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0, error: String(error && error.message || error) };
+    }
+  });
+  return { counts: counts };
+}
+
+function WIX_hasRedQuoteSignal_(value, background, fontColor) {
+  const text = String(value || '').trim().toUpperCase();
+  return text.indexOf('🔴') >= 0 || text.indexOf('RED') >= 0 || text.indexOf('RISK') >= 0 || text.indexOf('DANGER') >= 0 || text.indexOf('WARNING') >= 0 || WIX_isRedColor_(background) || WIX_isRedColor_(fontColor);
+}
+
+function WIX_isRedColor_(value) {
+  const color = String(value || '').trim().toLowerCase();
+  const match = /^#([0-9a-f]{6})$/.exec(color);
+  if (!match) return false;
+  const red = parseInt(match[1].slice(0, 2), 16);
+  const green = parseInt(match[1].slice(2, 4), 16);
+  const blue = parseInt(match[1].slice(4, 6), 16);
+  return red >= 150 && red > green * 1.25 && red > blue * 1.25;
+}
+
+function WIX_isLowGp_(rawValue, displayValue) {
+  if (rawValue === '' || rawValue === null || typeof rawValue === 'undefined') return false;
+  let value = Number(rawValue);
+  if (!isFinite(value)) {
+    const display = String(displayValue || '').replace(/,/g, '').trim();
+    value = Number(display.replace('%', ''));
+    if (!isFinite(value)) return false;
+    if (display.indexOf('%') >= 0) value /= 100;
+  }
+  if (value > 1) value /= 100;
+  return value < 0.06;
+}
+
 function WIX_selectionHeaderMap_(sheet) {
   const values = sheet.getRange(WIX_SELECTION_CFG.QD_HEADER_ROW, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
   const map = {};

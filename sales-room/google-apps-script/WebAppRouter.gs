@@ -17,6 +17,8 @@ function doPost(e) {
         ? WIX_removeCatalogueSelection(body)
       : action === 'VERIFY_QD'
         ? WIX_verifyCustomerQuotationDesk(body)
+      : action === 'GET_QUOTE_RISK_COUNTS'
+        ? WIX_getQuoteRiskCounts(body)
         : WIX_createCustomerQuotationDesk(body);
     return WIX_json_({ ok: true, result: result });
   } catch (error) {
