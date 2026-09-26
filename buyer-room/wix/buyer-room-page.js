@@ -5,7 +5,10 @@ import { session } from 'wix-storage-frontend';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
-  return String(wixLocationFrontend.query?.assist || session.getItem('catalogueAssistCustomerId') || '').trim();
+  // Assisted access must be explicit in the URL. Catalogue already preserves
+  // the `assist` query when staff return to Buyer Room, while ignoring an old
+  // session value prevents a later customer login from inheriting staff mode.
+  return String(wixLocationFrontend.query?.assist || '').trim();
 }
 
 $w.onReady(async function () {
