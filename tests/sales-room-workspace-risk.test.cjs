@@ -14,6 +14,8 @@ test('workspace uses the compact customer, sku, user icon and risk layout', () =
   assert.match(workspaceOverride, /workspace-user-count/);
   assert.match(workspaceOverride, /RISK<span>报价风险<\/span>/);
   assert.match(workspaceOverride, /quoteRiskCount/);
+  assert.match(html, /\.workspace-table \.work-alert,\.workspace-table \.risk-alert/);
+  assert.match(html, /month:'short',year:'numeric'/);
 });
 
 test('quote risk rules detect red signals and GP below six percent', () => {
