@@ -32,4 +32,5 @@ test('workspace scans risk only for customers that have quotation rows', () => {
   assert.match(source, /const riskCustomers = \(base\.customers \|\| \[\]\)\.filter/);
   assert.match(source, /quote\.quoted > 0 \|\| quote\.awaiting > 0/);
   assert.match(source, /loadQuoteRiskCounts\(riskCustomers\)/);
+  assert.match(source, /setTimeout\(\(\) => resolve\(new Map\(\)\), 3500\)/);
 });

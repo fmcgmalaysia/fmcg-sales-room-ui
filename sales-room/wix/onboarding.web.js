@@ -418,7 +418,10 @@ export const getSalesRoomCustomersOperational = webMethod(
       const quote = quoteByCustomer.get(customer.customerId);
       return Boolean(quote && (quote.quoted > 0 || quote.awaiting > 0));
     });
-    const quoteRiskCounts = await loadQuoteRiskCounts(riskCustomers);
+    const quoteRiskCounts = await Promise.race([
+      loadQuoteRiskCounts(riskCustomers),
+      new Promise((resolve) => setTimeout(() => resolve(new Map()), 3500))
+    ]);
 
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
