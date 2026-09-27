@@ -276,13 +276,14 @@ $w.onReady(async () => {
         if (!selectionContext) return;
         try { await loadSelectionState(selectionContext.assistCustomerId || ''); }
         catch (error) {
+            const expiredAssistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
             selectionContext = null;
             selectedProductIds = new Set();
             setProductActions(false);
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
             try { $w('#repeater3').hide(); } catch (hideError) {}
-            if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(assistCustomerId ? '/sales-room' : '/buyer-room');
+            if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(expiredAssistCustomerId ? '/sales-room' : '/buyer-room');
         }
     }, 15000);
 });
@@ -583,4 +584,3 @@ $w.onReady(() => {
     setupNav();
     setupCatalogueWorkspace();
 });
-
