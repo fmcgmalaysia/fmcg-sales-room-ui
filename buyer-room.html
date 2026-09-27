@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-order-item-columns-v38">
+<meta name="build-version" content="2026-09-27-order-column-spacing-v39">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -134,10 +134,11 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .order-grid .row>div{min-width:0;padding:6px 9px;text-align:left}
 .order-grid .row.head>div{display:flex;align-items:center;height:100%;font-size:11px;white-space:nowrap}
 .order-grid .order-product{gap:10px}.order-grid .qty{width:76px}
-/* Order Form mirrors My Selection's first three columns without changing My Selection. */
+/* Order Form reuses My Selection's first three column widths and spacing. */
 .order-grid{min-width:1050px}
-.order-grid .row{grid-template-columns:86px 40px minmax(300px,1fr) 118px 86px 115px 88px 145px 72px}
-.order-grid .row>div:nth-child(2){display:flex;align-items:center;justify-content:center;padding-left:4px;padding-right:4px}
+.order-grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 118px 86px 115px 88px 145px 72px}
+.order-grid .row>div:nth-child(-n+3){padding:4px 7px}
+.order-grid .row>div:nth-child(2){display:flex;align-items:center;justify-content:flex-start;text-align:left}
 </style>
 </head>
 <body>
