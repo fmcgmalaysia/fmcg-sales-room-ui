@@ -24,6 +24,7 @@ const QD_CFG = Object.freeze({
   DATA_START_ROW: 7,
   DATA_END_ROW: 3003,
   MAX_COST_ROWS_PER_RUN: 100,
+  FORMAL_SHEET_NAME: "WIX QUOTATION",
 
   STATUS: Object.freeze({
     RFQ: "RFQ",
@@ -76,6 +77,7 @@ const QD_CFG = Object.freeze({
 
   // Only these user/system values move when sorting. Formula columns remain in place.
   SORT_MOVABLE_HEADERS: Object.freeze([
+    "COST HEALTH",
     "QUOTE STATUS",
     "UNIT BARCODE",
     "ITEM NAME",
@@ -109,6 +111,22 @@ function onOpen() {
     .createMenu("SYNC TO WIX")
     .addItem("SYNC VIEW QUOTE ROWS", "syncQuotationToWix")
     .addToUi();
+
+  // Keep the salesperson's work queue actionable as soon as the QD opens.
+  // This is silent because onOpen must never block the sheet with a dialog.
+  const formalSheet = SpreadsheetApp.getActive().getSheetByName(QD_CFG.FORMAL_SHEET_NAME);
+  if (formalSheet) {
+    try {
+      sortQuotationSheet_(formalSheet, false);
+    } catch (error) {
+      console.error("Automatic QD sort failed: " + error.message);
+      SpreadsheetApp.getActive().toast(
+        "Automatic risk sorting could not finish. Use QUOTATION DESK > SORT BY CATALOGUE ORDER.",
+        "QD SORT NEEDS ATTENTION",
+        8
+      );
+    }
+  }
 }
 
 
@@ -207,10 +225,36 @@ function onEdit(e) {
 function sortQuotationByCatalogueOrder() {
   const ui = SpreadsheetApp.getUi();
   const sheet = SpreadsheetApp.getActiveSheet();
+  try {
+    const result = sortQuotationSheet_(sheet, true);
+    if (!result.sorted) {
+      ui.alert("SORT", "There are no product rows to sort.", ui.ButtonSet.OK);
+      return;
+    }
+    ui.alert(
+      "SORT DONE",
+      result.rowCount + " product row(s) sorted.\n" +
+      result.riskCount + " high-risk row(s) moved to the top.",
+      ui.ButtonSet.OK
+    );
+  } catch (error) {
+    ui.alert("SORT ERROR", error.message, ui.ButtonSet.OK);
+    throw error;
+  }
+}
+
+
+/**
+ * Sorts only the columns owned by the row. Formula columns stay in place and
+ * recalculate for the moved product. High risk means COST HEALTH is red OR GP
+ * is below 6%. Within each risk group, catalogue SORT NO. remains authoritative.
+ */
+function sortQuotationSheet_(sheet, waitForLock) {
   const lock = LockService.getDocumentLock();
-  if (!lock.tryLock(30000)) {
-    ui.alert("SORT", "Another QD task is running. Please try again.", ui.ButtonSet.OK);
-    return;
+  const lockWaitMs = waitForLock ? 30000 : 5000;
+  if (!lock.tryLock(lockWaitMs)) {
+    if (waitForLock) throw new Error("Another QD task is running. Please try again.");
+    return { sorted: false, rowCount: 0, riskCount: 0, skipped: true };
   }
 
   try {
@@ -219,29 +263,43 @@ function sortQuotationByCatalogueOrder() {
 
     const barcodeCol = getHeaderCol_(headers, QD_CFG.HEADERS.BARCODE);
     const sortCol = getHeaderCol_(headers, QD_CFG.HEADERS.SORT_ID);
+    const healthCol = hasHeader_(headers, QD_CFG.HEADERS.COST_HEALTH)
+      ? getHeaderCol_(headers, QD_CFG.HEADERS.COST_HEALTH) : null;
+    const gpCol = hasHeader_(headers, QD_CFG.HEADERS.GP)
+      ? getHeaderCol_(headers, QD_CFG.HEADERS.GP) : null;
     const lastRow = findLastDataRow_(sheet, barcodeCol);
     if (lastRow < QD_CFG.DATA_START_ROW) {
-      ui.alert("SORT", "There are no product rows to sort.", ui.ButtonSet.OK);
-      return;
+      return { sorted: false, rowCount: 0, riskCount: 0 };
     }
 
     const rowCount = lastRow - QD_CFG.DATA_START_ROW + 1;
     const lastCol = sheet.getLastColumn();
-    const values = sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol).getValues();
+    const dataRange = sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol);
+    const values = dataRange.getValues();
+    const notes = dataRange.getNotes();
     const barcodeIndex = barcodeCol - 1;
     const sortIndex = sortCol - 1;
+    const healthIndex = healthCol ? healthCol - 1 : -1;
+    const gpIndex = gpCol ? gpCol - 1 : -1;
 
     const rows = values
-      .map(row => ({
+      .map((row, originalIndex) => ({
         row: row,
+        notes: notes[originalIndex],
+        originalIndex: originalIndex,
         barcode: normalizeBarcode_(row[barcodeIndex]),
-        sort: normalizeSortId_(row[sortIndex])
+        sort: normalizeSortId_(row[sortIndex]),
+        risk: qdRiskPriority_(
+          healthIndex >= 0 ? row[healthIndex] : "",
+          gpIndex >= 0 ? row[gpIndex] : ""
+        )
       }))
       .filter(item => item.barcode)
       .sort((a, b) => {
+        if (a.risk !== b.risk) return a.risk - b.risk;
         if (a.sort.rank !== b.sort.rank) return a.sort.rank - b.sort.rank;
         const bySort = a.sort.value.localeCompare(b.sort.value, undefined, { numeric: true });
-        return bySort || a.barcode.localeCompare(b.barcode);
+        return bySort || a.originalIndex - b.originalIndex;
       });
 
     QD_CFG.SORT_MOVABLE_HEADERS.forEach(header => {
@@ -250,17 +308,43 @@ function sortQuotationByCatalogueOrder() {
       const targetCol = sourceIndex + 1;
       const destination = sheet.getRange(QD_CFG.DATA_START_ROW, targetCol, rowCount, 1);
       destination.clearContent().clearNote();
-      if (rows.length) destination.offset(0, 0, rows.length, 1)
-        .setValues(rows.map(item => [item.row[sourceIndex]]));
+      if (rows.length) {
+        destination.offset(0, 0, rows.length, 1)
+          .setValues(rows.map(item => [item.row[sourceIndex]]))
+          .setNotes(rows.map(item => [item.notes[sourceIndex] || null]));
+      }
     });
 
-    ui.alert("SORT DONE", rows.length + " product row(s) sorted by SORT NO.", ui.ButtonSet.OK);
-  } catch (error) {
-    ui.alert("SORT ERROR", error.message, ui.ButtonSet.OK);
-    throw error;
+    SpreadsheetApp.flush();
+    return {
+      sorted: true,
+      rowCount: rows.length,
+      riskCount: rows.filter(item => item.risk < 3).length
+    };
   } finally {
     lock.releaseLock();
   }
+}
+
+
+function qdRiskPriority_(costHealth, gpValue) {
+  const costRed = String(costHealth || "").trim() === "🔴";
+  const lowGp = qdIsLowGp_(gpValue);
+  if (costRed && lowGp) return 0;
+  if (costRed) return 1;
+  if (lowGp) return 2;
+  return 3;
+}
+
+
+function qdIsLowGp_(value) {
+  if (value === "" || value === null || typeof value === "undefined") return false;
+  if (typeof value === "number") return Number.isFinite(value) && value < 0.06;
+  const text = String(value).trim();
+  if (!text) return false;
+  const number = Number(text.replace(/%/g, "").replace(/,/g, ""));
+  if (!Number.isFinite(number)) return false;
+  return text.indexOf("%") >= 0 ? number < 6 : number < 0.06;
 }
 
 

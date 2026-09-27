@@ -52,6 +52,8 @@ This folder contains the Google Apps Script for the new one-customer-per-file Qu
 - Hidden row 6 owns the spill formula that looks up Point Base `SORT NO.` by `UNIT BARCODE` across `FOOD`, `NONFOOD` and `OTHERS`.
 - CATCH COST never reads, copies or writes `SORT NO.`. The formula remains the only QD source for this column.
 - The QD sort action reads the projected `SORT NO.` result while keeping the formula-owned column out of row writes.
+- In `WIX QUOTATION`, sorting moves every row with a red `COST HEALTH` light or `GP < 6%` above normal rows. Rows with both conditions come first, followed by red-cost rows and then low-GP rows. Catalogue `SORT NO.` remains the secondary order inside each group.
+- Opening a QD silently sorts `WIX QUOTATION` once. The document lock prevents simultaneous opens from running overlapping sorts; the manual sort command remains available if an automatic run is skipped or fails.
 - Each newly copied QD file needs a one-time Google Sheets `Allow access` connection for the `IMPORTRANGE` formula. This permission cannot be granted automatically by the formula.
 
 ## Profit model
