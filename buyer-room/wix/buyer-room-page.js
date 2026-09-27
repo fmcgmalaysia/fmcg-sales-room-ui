@@ -44,7 +44,7 @@ $w.onReady(async function () {
     }
   }
 
-  async function loadWorkspace(refreshExport = true) {
+  async function loadWorkspace() {
     let result;
     try { result = await getBuyerWorkspace(assistCustomerId); }
     catch (error) {
@@ -78,7 +78,6 @@ $w.onReady(async function () {
       orders: result.orders || [],
       ordersNextCursor: result.ordersNextCursor || ''
     }});
-    if (frameReady && refreshExport) await prepareSelectionDownload();
   }
 
   async function runAction(action, successMessage, actionName, itemId = '') {
@@ -124,7 +123,7 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
-      try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(false); }
+      try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(); }
       catch (error) { console.error('Buyer Room notification update failed', error); }
       return;
     }
@@ -201,6 +200,6 @@ $w.onReady(async function () {
 
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
-  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace(false).catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
+  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
 });
 
