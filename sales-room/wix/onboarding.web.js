@@ -435,7 +435,9 @@ async function requireFxAdmin() {
 async function readFxRegistry() {
   const result = await wixData.query(FX_RATE_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const active = result.items.filter((item) => item.active !== false && /^[A-Z]{3}$/.test(upper(item.currency || item.title)));
-  const rates = normalizeFxRates(active.map((item) => ({ currency: upper(item.currency || item.title), rateToMyr: Number(item.rateToMyr) })));
+  const rates = normalizeFxRates(active.length
+    ? active.map((item) => ({ currency: upper(item.currency || item.title), rateToMyr: Number(item.rateToMyr) }))
+    : [{ currency: 'MYR', rateToMyr: 1 }, { currency: 'USD', rateToMyr: 4 }, { currency: 'SGD', rateToMyr: 3.2 }]);
   const meta = result.items.find((item) => upper(item.currency || item.title) === 'MYR') || {};
   return { rates, meta };
 }
