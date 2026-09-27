@@ -560,7 +560,7 @@ function openBuyerRoomWindow() {
 function setupFluidCatalogueLayout() {
     const classMap = [
         ['#section6', 'catalogue-results-stage'],
-        ['#box19', 'catalogue-results-shell']
+        ['#box20', 'catalogue-results-shell']
     ];
 
     classMap.forEach(([selector, className]) => {
@@ -569,10 +569,14 @@ function setupFluidCatalogueLayout() {
         catch (error) { console.warn(`Catalogue layout class failed for ${selector}`, error); }
     });
 
-    // #html5 owns the compact product list and right detail pane. The native
-    // dataset stays connected for Wix CMS compatibility, but its old cards hide.
+    // #html5 owns the compact product list and right detail pane. Collapse the
+    // complete legacy shells so later repeater.show() calls cannot restore them.
+    try { $w('#box19').collapse(); } catch (error) {}
+    try { $w('#box16').collapse(); } catch (error) {}
     try { $w('#repeater3').collapse(); } catch (error) {}
     try { $w('#html2').collapse(); } catch (error) {}
+    try { $w('#box20').expand(); } catch (error) {}
+    try { $w('#html5').expand(); } catch (error) {}
 }
 
 $w.onReady(() => {
