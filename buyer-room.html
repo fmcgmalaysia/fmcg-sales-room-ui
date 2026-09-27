@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-order-layout-v35">
+<meta name="build-version" content="2026-09-27-order-columns-v36">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -127,6 +127,13 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #orderView>.table-wrap{border-radius:9px}
 @media(max-width:1160px){.order-summary .metric{padding:0 16px}.order-summary .order-submit{padding-left:16px;margin-left:0}.order-action-bar .toolbar-search{max-width:460px}}
 @media(max-width:980px){.order-summary{align-items:center}.order-summary .order-submit{margin:10px 0 0;padding:12px 0 0}.order-action-bar{height:auto;min-height:62px}}
+/* Keep compact order columns anchored to the same header grid. */
+.order-grid{min-width:1036px;width:100%}
+.order-grid .row{grid-template-columns:112px minmax(300px,1fr) 118px 86px 115px 88px 145px 72px;min-height:48px}
+.order-grid .row.head{min-height:40px}
+.order-grid .row>div{min-width:0;padding:6px 9px;text-align:left}
+.order-grid .row.head>div{display:flex;align-items:center;height:100%;font-size:11px;white-space:nowrap}
+.order-grid .order-product{gap:10px}.order-grid .qty{width:76px}
 </style>
 </head>
 <body>
@@ -168,7 +175,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       <div class="summary order-summary"><div class="metric"><label>Products</label><strong id="sumProducts">0</strong></div><div class="metric"><label>Total Cartons</label><strong id="sumCtn">0 CTN</strong></div><div class="metric"><label>Total CBM</label><strong id="sumCbm">0.0000</strong></div><div class="metric"><label>Estimated Order Total</label><strong id="sumAmount">—</strong></div><div class="order-submit"><button class="btn primary" id="submitOrder">Send Order Request</button></div></div>
       <div class="list-tabs-bar order-action-bar"><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="orderSearch" type="search" aria-label="Search order form by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label><div class="tab-actions order-actions"><div class="export-wrap"><button class="btn export-toggle" id="orderExportToggle" data-export-toggle aria-haspopup="menu" aria-expanded="false"><span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5h10v13H4zM14 7h6v10h-6"/><path d="m7 9 4 6M11 9l-4 6M16 10h2M16 13h2"/></svg></span>View Excel&nbsp; ▾</button><div class="export-menu" role="menu"><button role="menuitem" data-export-mode="with-image">With Images</button><button role="menuitem" data-export-mode="without-image">Without Images</button></div></div></div></div>
       <div class="showing" id="orderShowing"></div><p class="order-note" id="hiddenOrdered"></p>
-      <div class="table-wrap"><div class="order-grid"><div class="row head"><div>Barcode</div><div>Product</div><div>V.I.P Price</div><div>Qty / CTN</div><div>Line Amount</div><div>Total M³</div><div>Edited Time</div><div>Edited By</div></div><div id="orderRows"></div></div></div>
+      <div class="table-wrap"><div class="order-grid"><div class="row head"><div>Barcode</div><div>Product / Packing</div><div>V.I.P Price</div><div>Qty / CTN</div><div>Line Amount</div><div>Total M³</div><div>Edited Time</div><div>Edited By</div></div><div id="orderRows"></div></div></div>
     </section>
     <section id="historyView" class="view"><header class="top"><div><h1>Order History</h1><p class="sub">Confirmed orders and locked quotation snapshots.</p></div></header><div id="historyList" class="history-list"></div><button class="btn" id="historyMore" type="button" hidden>Load More Orders</button></section>
     <section id="docsView" class="view"><header class="top"><div><h1>Documents</h1><p class="sub">Invoices, credit notes, insurance and transaction documents</p></div></header><div class="placeholder"><div class="placeholder-icon">▤</div><h3>No Documents Available Yet</h3><p>Transaction documents will be organized by order and made available when issued.</p></div></section>
