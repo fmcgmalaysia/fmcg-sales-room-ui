@@ -37,51 +37,50 @@ function WIX_json_(payload) {
 
 function WIX_syncFxRates(body) {
   var APPROVED_QD_FOLDER_ID = '1frEBQD7vwPW6X_dqQSoItbFQDUQs3THL';
-  var rows = Array.isArray(body && body.quotations) ? body.quotations : [];
-  var result = { updated: 0, skipped: 0, failed: 0, details: [] };
-  rows.forEach(function (item) {
-    var customerId = String(item && item.customerId || '').trim();
-    var fileId = String(item && item.qdFileId || '').trim();
-    var expectedCurrency = String(item && item.currency || '').trim().toUpperCase();
+  var rates = Array.isArray(body && body.rates) ? body.rates : [];
+  var rateByCurrency = {};
+  rates.forEach(function (item) {
+    var currency = String(item && item.currency || '').trim().toUpperCase();
     var rate = Number(item && item.rateToMyr);
+    if (/^[A-Z]{3}$/.test(currency) && isFinite(rate) && rate > 0) rateByCurrency[currency] = rate;
+  });
+  if (!Object.keys(rateByCurrency).length) throw new Error('No valid FX rates were supplied.');
+
+  var result = { scanned: 0, updated: 0, skipped: 0, failed: 0, details: [] };
+  var files = DriveApp.getFolderById(APPROVED_QD_FOLDER_ID).getFiles();
+  while (files.hasNext()) {
+    var file = files.next();
+    var fileId = file.getId();
+    var fileName = file.getName();
+    result.scanned++;
     try {
-      if (!customerId || !/^[A-Za-z0-9_-]{20,}$/.test(fileId) || !/^[A-Z]{3}$/.test(expectedCurrency) || !isFinite(rate) || rate <= 0) {
+      if (file.getMimeType() !== MimeType.GOOGLE_SHEETS) {
         result.skipped++;
-        result.details.push({ customerId: customerId, status: 'SKIPPED', reason: 'Invalid customer, QD, currency or rate.' });
-        return;
-      }
-      var file = DriveApp.getFileById(fileId);
-      var parents = file.getParents();
-      var inApprovedFolder = false;
-      while (parents.hasNext()) {
-        if (parents.next().getId() === APPROVED_QD_FOLDER_ID) { inApprovedFolder = true; break; }
-      }
-      if (!inApprovedFolder) {
-        result.skipped++;
-        result.details.push({ customerId: customerId, status: 'SKIPPED', reason: 'QD is outside the approved folder.' });
-        return;
+        result.details.push({ fileId: fileId, fileName: fileName, status: 'SKIPPED', reason: 'File is not a Google Sheet.' });
+        continue;
       }
       var spreadsheet = SpreadsheetApp.openById(fileId);
       var sheet = spreadsheet.getSheetByName('WIX QUOTATION');
       if (!sheet) {
         result.skipped++;
-        result.details.push({ customerId: customerId, status: 'SKIPPED', reason: 'WIX QUOTATION sheet is missing.' });
-        return;
+        result.details.push({ fileId: fileId, fileName: fileName, status: 'SKIPPED', reason: 'WIX QUOTATION sheet is missing.' });
+        continue;
       }
-      var sheetCurrency = String(sheet.getRange('D3').getDisplayValue() || sheet.getRange('D3').getValue() || '').trim().toUpperCase();
-      if (sheetCurrency !== expectedCurrency) {
+      var currency = String(sheet.getRange('D3').getDisplayValue() || sheet.getRange('D3').getValue() || '').trim().toUpperCase();
+      var rate = Number(rateByCurrency[currency]);
+      if (!/^[A-Z]{3}$/.test(currency) || !isFinite(rate) || rate <= 0) {
         result.skipped++;
-        result.details.push({ customerId: customerId, status: 'SKIPPED', reason: 'D3 currency mismatch.', expectedCurrency: expectedCurrency, actualCurrency: sheetCurrency });
-        return;
+        result.details.push({ fileId: fileId, fileName: fileName, status: 'SKIPPED', currency: currency, reason: 'D3 currency has no saved FX rate.' });
+        continue;
       }
       sheet.getRange('D4').setValue(rate).setNumberFormat('0.00');
-      SpreadsheetApp.flush();
       result.updated++;
-      result.details.push({ customerId: customerId, status: 'UPDATED', currency: expectedCurrency, rateToMyr: rate });
+      result.details.push({ fileId: fileId, fileName: fileName, status: 'UPDATED', currency: currency, rateToMyr: rate });
     } catch (error) {
       result.failed++;
-      result.details.push({ customerId: customerId, status: 'FAILED', reason: String(error && error.message || error) });
+      result.details.push({ fileId: fileId, fileName: fileName, status: 'FAILED', reason: String(error && error.message || error) });
     }
-  });
+  }
+  SpreadsheetApp.flush();
   return result;
 }
