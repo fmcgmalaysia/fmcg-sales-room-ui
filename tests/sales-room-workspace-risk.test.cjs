@@ -130,9 +130,9 @@ test('Buyer Room shows only the last quoted time and withholds historical prices
   const selectionGuide = html.match(/<div class="selection-guide">[\s\S]*?<\/a><\/div>/)[0];
   assert.doesNotMatch(pageHead, /Add More Items/);
   assert.match(selectionGuide, /Your quotation shortlist[\s\S]*Add More Items/);
-  assert.match(html, /inline-stat awaiting[\s\S]*awaiting-icon[\s\S]*quotation-hourglass-green\.png[\s\S]*awaitingCount/);
-  assert.match(html, /\.awaiting-icon\{width:22px;height:22px/);
-  assert.ok(fs.existsSync(path.join(root, 'assets', 'quotation-hourglass-green.png')));
+  assert.match(html, /inline-stat awaiting[\s\S]*awaiting-icon[\s\S]*hourglass-disc[\s\S]*hourglass-mark[\s\S]*awaitingCount/);
+  assert.match(html, /\.inline-stat\.awaiting\{align-items:center\}/);
+  assert.match(html, /\.awaiting-icon\{width:18px;height:18px/);
   assert.match(html, /timeCell\(item\.addedTime,true\)/);
   assert.match(html, /date-part[\s\S]*clock-part/);
   assert.match(html, /quote-updated\{color:#355f53;font-weight:400\}/);
