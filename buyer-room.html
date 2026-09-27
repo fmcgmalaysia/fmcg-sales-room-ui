@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-flat-hourglass-v34">
+<meta name="build-version" content="2026-09-27-order-layout-v35">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -108,6 +108,25 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .selection-toolbar #exportSelection{min-width:167px;height:34px;border-color:#0d7653;background:#0d7653;color:#fff;font-weight:500}.selection-toolbar #exportSelection:hover{border-color:#075a3e;background:#075a3e}.selection-toolbar #exportSelection svg{stroke:#fff;color:#fff}.selection-toolbar #exportSelection:disabled{opacity:.6;cursor:wait}
 #exportSelection{min-width:167px;border-color:#0d7653!important;background:#0d7653!important;color:#fff!important}#exportSelection .action-icon svg{stroke:#fff!important;color:#fff!important}#exportSelection:hover,#exportSelection:focus-visible{border-color:#075a3e!important;background:#075a3e!important;color:#fff!important}#exportSelection:active{border-color:#064a34!important;background:#064a34!important;color:#fff!important}#exportSelection:disabled,#exportSelection:disabled:hover{border-color:#0d7653!important;background:#0d7653!important;color:#fff!important;opacity:.64}
 .quote-updated{color:#355f53;font-weight:400}.grid .time .date-part,.grid .time .clock-part{display:block;white-space:nowrap}.grid .row:not(.head)>div.time:nth-child(6){display:block}.grid .time .clock-part{margin-top:1px}.price-stack.vip .price-line.ctn strong{color:var(--orange)}.inline-stat.awaiting{align-items:center}.inline-stat.awaiting .awaiting-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;align-self:center}.inline-stat.awaiting .awaiting-icon svg{display:block;width:18px;height:18px}.inline-stat.awaiting .awaiting-icon .hourglass-disc{fill:#17865d}.inline-stat.awaiting .awaiting-icon .hourglass-mark{fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.selection-guide{justify-content:space-between}.selection-guide-copy{min-width:0}.selection-guide .browse{flex:0 0 auto;margin-left:auto}.order-summary{grid-template-columns:repeat(4,minmax(0,1fr)) auto}.order-summary .order-submit{display:flex;align-items:center;padding-left:20px;border-left:1px solid var(--line)}.order-summary #submitOrder{min-width:176px;white-space:nowrap;background:#26384a;border-color:#26384a;color:#fff}.order-summary #submitOrder:hover{background:#1c2b3a;border-color:#1c2b3a}.order-summary #submitOrder:disabled{background:#cbd3d0;border-color:#cbd3d0;color:#fff}.order-action-bar .tab-actions{margin-left:auto}.order-action-bar .export-toggle{min-width:150px}@media(max-width:980px){.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.order-summary .order-submit{grid-column:1/-1;justify-content:flex-end;padding:10px 0 0;border-left:0;border-top:1px solid var(--line)}}@media(max-width:760px){.selection-guide{align-items:flex-start;flex-wrap:wrap}.selection-guide .browse{margin-left:0}.order-summary{grid-template-columns:1fr}.order-summary .metric{border-right:0}.order-summary .order-submit{justify-content:stretch}.order-summary #submitOrder{width:100%}}
+/* Order Form: one aligned command surface with a consistent content grid. */
+#orderView>.top{margin:0 0 14px;min-height:48px;align-items:flex-end}
+#orderView>.top h1{line-height:1}.order-intro{margin-top:6px}
+.order-summary{min-height:78px;margin:0 0 12px;padding:12px 14px;column-gap:0;border-radius:9px;align-items:stretch}
+.order-summary .metric{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:0 26px}
+.order-summary .metric:first-child{padding-left:14px}
+.order-summary .metric label{font-size:11px;line-height:1.2}
+.order-summary .metric strong{margin-top:6px;font-size:20px;line-height:1.1}
+.order-summary .order-submit{justify-content:flex-end;padding:0 0 0 26px;margin-left:10px}
+.order-summary #submitOrder{height:42px;min-width:190px;padding:0 20px}
+.order-action-bar{min-height:62px;height:62px;margin:0 0 0;padding:10px 12px;gap:14px;align-items:center;border:1px solid var(--line);border-radius:9px;background:#fff}
+.order-action-bar .toolbar-search{height:40px;max-width:550px;flex:1 1 420px}
+.order-action-bar .tab-actions{height:40px;margin-left:auto;padding:0;align-items:center}
+.order-action-bar .export-toggle{height:40px;min-width:164px}
+#orderView>.showing{margin:9px 2px 7px}
+#orderView>.order-note:empty{display:none}
+#orderView>.table-wrap{border-radius:9px}
+@media(max-width:1160px){.order-summary .metric{padding:0 16px}.order-summary .order-submit{padding-left:16px;margin-left:0}.order-action-bar .toolbar-search{max-width:460px}}
+@media(max-width:980px){.order-summary{align-items:center}.order-summary .order-submit{margin:10px 0 0;padding:12px 0 0}.order-action-bar{height:auto;min-height:62px}}
 </style>
 </head>
 <body>
