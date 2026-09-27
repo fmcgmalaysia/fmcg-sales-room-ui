@@ -62,6 +62,15 @@ test('Sales Room logo matches the Buyer Room header width', () => {
   assert.match(buyer, /style="display:block;width:220px;max-height:42px/);
 });
 
+test('Staff Management uses readable type and structured panel headings', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /#staff-management \.staff-table td\{height:53px[\s\S]*font-size:12px/);
+  assert.match(html, /#staff-management \.staff-toolbar input,#staff-management \.staff-toolbar select\{height:40px[\s\S]*font-size:12px/);
+  assert.match(html, /staff-panel-heading/);
+  assert.match(html, /<b>Staff Directory<\/b><span class="cn">员工名单<\/span>/);
+  assert.match(html, /<b>Staff Profile<\/b><span class="cn">员工资料<\/span>/);
+});
+
 test('order and staff pages inherit the compact blue customer workspace style', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /Order and Staff pages follow the My Customers visual system/);
