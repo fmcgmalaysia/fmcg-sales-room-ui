@@ -7,8 +7,8 @@ const root = path.resolve(__dirname, '..');
 
 test('recovery build hides the incomplete FX entry from Sales Room', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /Sales Room build: 2026-09-27-sales-room-recovery-v34/);
-  assert.match(html, /#fxRateNav\{display:none!important\}/);
+  assert.match(html, /Sales Room build: 2026-09-27-sales-room-recovery-v35/);
+  assert.match(html, /#fxRateSettingsBtn\{display:none!important\}/);
 });
 
 test('recovery removes FX services from the shared login backend while retaining the guarded QD script', () => {
