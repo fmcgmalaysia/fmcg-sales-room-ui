@@ -99,6 +99,11 @@ test('Buyer Room shows only the last quoted time and withholds historical prices
   assert.match(currentHeader, /Last Quoted<br>最后报价/);
   assert.doesNotMatch(currentHeader, /data-quote-detail|Quotation Details|Previous Quotation/);
   assert.doesNotMatch(html, /Current Quotation · 当前报价|Previous Quotation · 上次报价/);
+  const pageHead = html.match(/<div class="page-head">[\s\S]*?<\/div>\s*<\/div>/)[0];
+  const selectionGuide = html.match(/<div class="selection-guide">[\s\S]*?<\/a><\/div>/)[0];
+  assert.doesNotMatch(pageHead, /Add More Items/);
+  assert.match(selectionGuide, /Your quotation shortlist[\s\S]*Add More Items/);
+  assert.match(html, /inline-stat awaiting[\s\S]*awaiting-icon[\s\S]*awaitingCount/);
   assert.match(html, /timeCell\(item\.addedTime,true\)/);
   assert.match(html, /date-part[\s\S]*clock-part/);
   const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js'), 'utf8');

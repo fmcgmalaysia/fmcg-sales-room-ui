@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-last-quoted-v1">
+<meta name="build-version" content="2026-09-27-last-quoted-v2">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -107,7 +107,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .removed-grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 100px 150px 110px 90px}
 .selection-toolbar #exportSelection{min-width:167px;height:34px;border-color:#0d7653;background:#0d7653;color:#fff;font-weight:500}.selection-toolbar #exportSelection:hover{border-color:#075a3e;background:#075a3e}.selection-toolbar #exportSelection svg{stroke:#fff;color:#fff}.selection-toolbar #exportSelection:disabled{opacity:.6;cursor:wait}
 #exportSelection{min-width:167px;border-color:#0d7653!important;background:#0d7653!important;color:#fff!important}#exportSelection .action-icon svg{stroke:#fff!important;color:#fff!important}#exportSelection:hover,#exportSelection:focus-visible{border-color:#075a3e!important;background:#075a3e!important;color:#fff!important}#exportSelection:active{border-color:#064a34!important;background:#064a34!important;color:#fff!important}#exportSelection:disabled,#exportSelection:disabled:hover{border-color:#0d7653!important;background:#0d7653!important;color:#fff!important;opacity:.64}
-.quote-updated{color:#355f53;font-weight:650}.grid .time .date-part,.grid .time .clock-part{display:block;white-space:nowrap}.grid .time .clock-part{margin-top:1px}
+.quote-updated{color:#355f53;font-weight:650}.grid .time .date-part,.grid .time .clock-part{display:block;white-space:nowrap}.grid .time .clock-part{margin-top:1px}.inline-stat.awaiting .awaiting-icon{width:16px;height:16px;display:inline-grid;place-items:center;align-self:center;color:#17865d}.inline-stat.awaiting .awaiting-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.selection-guide{justify-content:space-between}.selection-guide-copy{min-width:0}.selection-guide .browse{flex:0 0 auto;margin-left:auto}@media(max-width:760px){.selection-guide{align-items:flex-start;flex-wrap:wrap}.selection-guide .browse{margin-left:0}}
 </style>
 </head>
 <body>
@@ -137,12 +137,9 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
     <div class="admin-access-banner" id="adminAccessBanner" hidden><div><strong>Admin Access · 管理员访问</strong><span>You are operating this customer account with Admin authority. All changes are recorded under your Admin identity.</span></div><span class="admin-access-badge">ADMIN</span></div>
     <section id="myView" class="view active">
       <div class="page-head">
-        <div class="page-title"><h1>My Selection</h1><div class="inline-stats"><div class="inline-stat"><b id="myCount">0</b><span>Products</span></div><div class="inline-stat awaiting"><b id="awaitingCount">0</b><span>Awaiting Quotation</span></div><div class="inline-stat currency"><span>Transaction Currency</span><b id="listCurrency">USD</b></div></div></div>
-        <div class="actions">
-          <a class="browse" id="browse" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><span class="plus" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="default-label">Add More Items</span><span class="hover-label">VIEW CATALOGUE</span></a>
-        </div>
+        <div class="page-title"><h1>My Selection</h1><div class="inline-stats"><div class="inline-stat"><b id="myCount">0</b><span>Products</span></div><div class="inline-stat awaiting"><span class="awaiting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 5 2 6 4 8-2 2-4 3-4 10M16 3c0 5-2 6-4 8 2 2 4 3 4 10"/></svg></span><b id="awaitingCount">0</b><span>Awaiting Quotation</span></div><div class="inline-stat currency"><span>Transaction Currency</span><b id="listCurrency">USD</b></div></div></div>
       </div>
-      <div class="selection-guide"><div class="selection-guide-copy"><strong>Your quotation shortlist</strong><span class="selection-guide-line">Add products you want quoted from <a class="catalogue-mini-link" id="catalogueGuideLink" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h7a4 4 0 0 1 4 4V20a4 4 0 0 0-4-3.5H4zM20 4.5h-1a4 4 0 0 0-4 4V20a4 4 0 0 1 4-3.5h1z"/><path d="M17 2h5v5M22 2l-5 5"/></svg>Catalogue</a><span class="limit-note">Your account can add up to <b id="selectionLimit">100</b> products to My Selection.</span></span></div></div>
+      <div class="selection-guide"><div class="selection-guide-copy"><strong>Your quotation shortlist</strong><span class="selection-guide-line">Add products you want quoted.<span class="limit-note">Your account can add up to <b id="selectionLimit">100</b> products to My Selection.</span></span></div><a class="browse" id="browse" href="#" target="_blank" rel="noopener" aria-disabled="true" aria-label="Open Catalogue in a new tab"><span class="plus" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="default-label">Add More Items</span><span class="hover-label">VIEW CATALOGUE</span></a></div>
       <div class="list-tabs-bar selection-toolbar"><div class="list-tabs" role="tablist" aria-label="Selection History"><button class="list-tab active" id="currentTab" data-list-mode="current" role="tab" aria-selected="true">Current Selection <span class="tab-count" id="currentCount">0</span></button><button class="list-tab" id="removedTab" data-list-mode="removed" role="tab" aria-selected="false">Removed History <span class="tab-count" id="removedCount">0</span></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="mySearch" type="search" aria-label="Search selection by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label><div class="tab-actions"><button class="btn" id="exportSelection"><span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5h10v13H4zM14 7h6v10h-6"/><path d="m7 9 4 6M11 9l-4 6M16 10h2"/></svg></span>Export Excel</button></div></div>
       <div class="list-panel active" id="currentPanel"><div class="showing" id="myShowing">Loading your company workspace…</div><div class="table-wrap"><div class="grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>Normal Price</div><div>V.I.P Price</div><div>Added Time</div><div>Selected By</div><div>Last Quoted<br>最后报价</div><div></div></div><div id="myRows" class="empty"><strong>Loading My Selection…</strong>Please wait.</div></div></div></div>
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
@@ -280,7 +277,7 @@ function showView(name){hideImagePreview();document.querySelectorAll('.view').fo
 function setCatalogueLinks(value){
   let url='';try{const parsed=new URL(String(value||''));if(parsed.protocol==='https:'&&parsed.pathname.endsWith('/catalogue'))url=parsed.href}catch{}
   state.catalogueUrl=url;
-  for(const id of ['browse','catalogueGuideLink']){const link=$(id);link.href=url||'#';link.setAttribute('aria-disabled',String(!url))}
+  for(const id of ['browse']){const link=$(id);link.href=url||'#';link.setAttribute('aria-disabled',String(!url))}
 }
 function applyData(d){
   const sameCustomer=!state.customerId||state.customerId===d.customerId;
