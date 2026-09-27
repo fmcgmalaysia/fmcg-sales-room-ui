@@ -453,7 +453,10 @@ export const getSalesRoomCustomersOperational = webMethod(
     });
     const quoteRiskCounts = await Promise.race([
       loadQuoteRiskCounts(riskCustomers),
-      new Promise((resolve) => setTimeout(() => resolve(new Map()), 3500))
+      // A cold Apps Script + Google Sheets read commonly needs more than
+      // 3.5 seconds. Returning unavailable too early made the dashboard and
+      // customer risk bubbles alternate between a number and a dash.
+      new Promise((resolve) => setTimeout(() => resolve(new Map()), 8000))
     ]);
 
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);

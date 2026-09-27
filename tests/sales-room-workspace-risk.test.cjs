@@ -41,8 +41,17 @@ test('workspace scans risk only for customers that have quotation rows', () => {
   assert.match(source, /const riskCustomers = \(base\.customers \|\| \[\]\)\.filter/);
   assert.match(source, /quote\.quoted > 0 \|\| quote\.awaiting > 0/);
   assert.match(source, /loadQuoteRiskCounts\(riskCustomers\)/);
-  assert.match(source, /setTimeout\(\(\) => resolve\(new Map\(\)\), 3500\)/);
+  assert.match(source, /setTimeout\(\(\) => resolve\(new Map\(\)\), 8000\)/);
   assert.match(source, /quoteWorkStatusAvailable/);
+});
+
+test('risk counts keep the last successful snapshot and avoid rapid table redraws', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /quoteWorkSnapshotKey='sales-room-quote-work-v1'/);
+  assert.match(html, /function stabilizeQuoteWork\(customers\)/);
+  assert.match(html, /quoteWorkStatusStale:true/);
+  assert.match(html, /fingerprint===customerRenderFingerprint/);
+  assert.match(html, /requestCustomerRefresh\(\).*60000/);
 });
 
 test('order and staff pages inherit the compact blue customer workspace style', () => {
