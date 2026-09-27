@@ -235,7 +235,7 @@ $w.onReady(async () => {
                 session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId || assistCustomerId };
                 await loadSelectionState(selectionContext.assistCustomerId);
-                try { $w('#repeater3').show(); } catch (error) {}
+                try { $w('#repeater3').collapse(); } catch (error) {}
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(customer.companyName || customer.customerId || '').trim(),
@@ -250,7 +250,7 @@ $w.onReady(async () => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             setProductActions(false);
-            try { $w('#repeater3').show(); } catch (error) {}
+            try { $w('#repeater3').collapse(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
@@ -261,7 +261,7 @@ $w.onReady(async () => {
         try {
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
             await loadSelectionState('');
-            try { $w('#repeater3').show(); } catch (error) {}
+            try { $w('#repeater3').collapse(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'buyer', signedInName: 'Buyer' });
         } catch (error) {
             selectionContext = null;
