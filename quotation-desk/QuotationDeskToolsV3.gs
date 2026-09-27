@@ -76,24 +76,6 @@ const QD_CFG = Object.freeze({
     "WIX MY LIST ID"
   ]),
 
-  // Only these user/system values move when sorting. Formula columns remain in place.
-  SORT_MOVABLE_HEADERS: Object.freeze([
-    "COST HEALTH",
-    "QUOTE STATUS",
-    "UNIT BARCODE",
-    "ITEM NAME",
-    "PACKING SIZE",
-    "EA",
-    "LP /PC",
-    "LP /CTN",
-    "DISC 1",
-    "DISC 2",
-    "DISC 3",
-    "QUOTE $/PC",
-    "TARGET GP",
-    "WIX MY LIST ID"
-  ]),
-
   SYNC_URL_PROPERTY: "WIX_QUOTE_SYNC_URL",
   SYNC_TOKEN_PROPERTY: "WIX_QUOTE_SYNC_TOKEN"
 });
@@ -229,8 +211,13 @@ function onEdit(e) {
     notes.push(["Unknown status was reset to RFQ."]);
   }
 
-  const statusRange = sheet.getRange(firstRow, statusCol, rowCount, 1);
-  statusRange.setValues(output).setNotes(notes);
+  // The QD dropdown uses "Show a warning" for values outside its three visible
+  // choices. That lets this trusted trigger write the system-owned PENDING
+  // state without ever removing or rebuilding the dropdown rule. Rebuilding a
+  // rule through Apps Script drops the custom option colours in Google Sheets.
+  sheet.getRange(firstRow, statusCol, rowCount, 1)
+    .setValues(output)
+    .setNotes(notes);
 
   if (blockedCount) {
     SpreadsheetApp.getActive().toast(
@@ -265,10 +252,10 @@ function sortQuotationByCatalogueOrder() {
 
 
 /**
- * Sorts only the columns owned by the row. Formula columns stay in place and
- * recalculate for the moved product. The work queue puts pending high risk
- * first, then normal pending, published high risk, other risk, RFQ, FAILED and
- * normal published quotes. Catalogue SORT NO. remains authoritative in a group.
+ * Moves complete rows in one native Sheets sort. The work queue puts pending
+ * high risk first, then normal pending, published high risk, other risk, RFQ,
+ * FAILED and normal published quotes. Catalogue SORT NO. remains authoritative
+ * inside each group.
  */
 function sortQuotationSheet_(sheet, waitForLock) {
   const lock = LockService.getDocumentLock();
@@ -299,54 +286,56 @@ function sortQuotationSheet_(sheet, waitForLock) {
     const lastCol = sheet.getLastColumn();
     const dataRange = sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol);
     const values = dataRange.getValues();
-    const notes = dataRange.getNotes();
     const barcodeIndex = barcodeCol - 1;
     const sortIndex = sortCol - 1;
     const healthIndex = healthCol ? healthCol - 1 : -1;
     const gpIndex = gpCol ? gpCol - 1 : -1;
     const statusIndex = statusCol ? statusCol - 1 : -1;
 
-    const rows = values
-      .map((row, originalIndex) => ({
-        row: row,
-        notes: notes[originalIndex],
-        originalIndex: originalIndex,
-        barcode: normalizeBarcode_(row[barcodeIndex]),
-        sort: normalizeSortId_(row[sortIndex]),
-        risk: qdRiskPriority_(
-          healthIndex >= 0 ? row[healthIndex] : "",
-          gpIndex >= 0 ? row[gpIndex] : ""
-        ),
-        status: statusIndex >= 0 ? normalizeStatus_(row[statusIndex]) : ""
-      }))
-      .filter(item => item.barcode)
-      .sort((a, b) => {
-        const aWork = qdWorkflowPriority_(a.status, a.risk);
-        const bWork = qdWorkflowPriority_(b.status, b.risk);
-        if (aWork !== bWork) return aWork - bWork;
-        if (a.sort.rank !== b.sort.rank) return a.sort.rank - b.sort.rank;
-        const bySort = a.sort.value.localeCompare(b.sort.value, undefined, { numeric: true });
-        return bySort || a.originalIndex - b.originalIndex;
-      });
+    // Keep sorting deliberately simple and safe: calculate three temporary
+    // keys, then let Sheets move the entire row in one native sort operation.
+    // Formulas, notes, validations and every visible column travel together.
+    const helperStartCol = lastCol + 1;
+    const helperCount = 3;
+    const requiredLastCol = helperStartCol + helperCount - 1;
+    if (sheet.getMaxColumns() < requiredLastCol) {
+      sheet.insertColumnsAfter(sheet.getMaxColumns(), requiredLastCol - sheet.getMaxColumns());
+    }
 
-    QD_CFG.SORT_MOVABLE_HEADERS.forEach(header => {
-      if (!hasHeader_(headers, header)) return;
-      const sourceIndex = getHeaderIndex_(headers, header);
-      const targetCol = sourceIndex + 1;
-      const destination = sheet.getRange(QD_CFG.DATA_START_ROW, targetCol, rowCount, 1);
-      destination.clearContent().clearNote();
-      if (rows.length) {
-        destination.offset(0, 0, rows.length, 1)
-          .setValues(rows.map(item => [item.row[sourceIndex]]))
-          .setNotes(rows.map(item => [item.notes[sourceIndex] || null]));
-      }
+    let productCount = 0;
+    let riskCount = 0;
+    const helperValues = values.map(row => {
+      const barcode = normalizeBarcode_(row[barcodeIndex]);
+      if (!barcode) return [99, 99, "ZZZZZZZZ"];
+
+      productCount++;
+      const risk = qdRiskPriority_(
+        healthIndex >= 0 ? row[healthIndex] : "",
+        gpIndex >= 0 ? row[gpIndex] : ""
+      );
+      if (risk < 3) riskCount++;
+      const status = statusIndex >= 0 ? normalizeStatus_(row[statusIndex]) : "";
+      const sort = normalizeSortId_(row[sortIndex]);
+      return [qdWorkflowPriority_(status, risk), sort.rank, sort.value];
     });
+
+    const helperRange = sheet.getRange(QD_CFG.DATA_START_ROW, helperStartCol, rowCount, helperCount);
+    try {
+      helperRange.setValues(helperValues);
+      sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol + helperCount).sort([
+        { column: helperStartCol, ascending: true },
+        { column: helperStartCol + 1, ascending: true },
+        { column: helperStartCol + 2, ascending: true }
+      ]);
+    } finally {
+      helperRange.clearContent().clearNote();
+    }
 
     SpreadsheetApp.flush();
     return {
       sorted: true,
-      rowCount: rows.length,
-      riskCount: rows.filter(item => item.risk < 3).length
+      rowCount: productCount,
+      riskCount: riskCount
     };
   } finally {
     lock.releaseLock();

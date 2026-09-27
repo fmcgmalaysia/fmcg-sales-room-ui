@@ -29,9 +29,12 @@ test('QD open hook silently sorts the formal quotation sheet', () => {
   assert.match(source, /sortQuotationSheet_\(formalSheet, false\)/);
 });
 
-test('COST HEALTH and its note move with the product row', () => {
-  assert.match(source, /SORT_MOVABLE_HEADERS:[\s\S]*?"COST HEALTH"[\s\S]*?"QUOTE STATUS"/);
-  assert.match(source, /\.setNotes\(rows\.map\(item => \[item\.notes\[sourceIndex\] \|\| null\]\)\)/);
+test('QD sorting moves each complete row in one native Sheets operation', () => {
+  const sorter = source.slice(source.indexOf('function sortQuotationSheet_'), source.indexOf('function qdRiskPriority_'));
+  assert.match(sorter, /lastCol \+ helperCount\)\.sort\(/);
+  assert.match(sorter, /helperRange\.setValues\(helperValues\)/);
+  assert.match(sorter, /helperRange\.clearContent\(\)\.clearNote\(\)/);
+  assert.doesNotMatch(source, /SORT_MOVABLE_HEADERS/);
 });
 
 test('QD work queue keeps every pending row at the top', () => {
@@ -50,6 +53,14 @@ test('price edits become system-owned PENDING without sorting during the edit', 
   assert.match(onEdit, /QD_CFG\.STATUS\.PENDING/);
   assert.doesNotMatch(onEdit, /sortQuotationSheet_/);
   assert.match(source, /status === QD_CFG\.STATUS\.PENDING[\s\S]*?e\.oldValue/);
+});
+
+test('system-owned PENDING never rebuilds the coloured salesperson dropdown', () => {
+  const onEdit = source.slice(source.indexOf('function onEdit'), source.indexOf('function sortQuotationByCatalogueOrder'));
+  assert.doesNotMatch(onEdit, /getDataValidations\(\)/);
+  assert.doesNotMatch(onEdit, /clearDataValidations\(\)/);
+  assert.doesNotMatch(onEdit, /setDataValidations\(/);
+  assert.match(onEdit, /\.setValues\(output\)\s*\.setNotes\(notes\)/);
 });
 
 test('cost risk warns but does not block a confirmed quotation', () => {
