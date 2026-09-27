@@ -8,7 +8,8 @@ Buyer-facing product discovery, brand browsing, and selection before any order i
 | --- | --- |
 | [`wix/catalogue-header-v2.html`](wix/catalogue-header-v2.html) | Catalogue header `#html3` |
 | [`wix/catalogue-mega-menu-v3.html`](wix/catalogue-mega-menu-v3.html) | Mega menu `#html4` in the unpublished Wix draft; interaction testing pending |
-| [`wix/catalogue-sidebar-v1.html`](wix/catalogue-sidebar-v1.html) | Left sidebar `#html5` |
+| [`wix/catalogue-workspace-v1.html`](wix/catalogue-workspace-v1.html) | Compact product list and right detail workspace used by `#html5` |
+| [`wix/catalogue-sidebar-v1.html`](wix/catalogue-sidebar-v1.html) | Wix `#html5` synchronization copy of the workspace above |
 | [`wix/catalogue-page-v3.js`](wix/catalogue-page-v3.js) | Catalogue page logic synced from Wix IDE to the unpublished editor draft |
 | [`wix/product-details.js`](wix/product-details.js) | Product Details lightbox renderer; CBM displays at four decimal places |
 
@@ -19,5 +20,5 @@ The design, incomplete CMS work, and publishing checks are in [`design-handoff.m
 - Root `../../catalogue-sidebar-v1.html` is an older compatibility file; it is **not** the current editable source above.
 - Root `../../assets/banner-*.webp` and `../../assets/logo-orange-{white,black}-no-slogan.png` are Catalogue assets. They stay in the shared public `assets/` path so existing URLs are not broken.
 
-The menu and page code are staged in Wix, but principal logos and live selection counts still require CMS data and an authorized end-to-end test. Do not publish this branch as a finished Catalogue.
+The workspace continues to use the existing Wix authentication, Sales Room `assist` customer context, Catalogue selection service and Buyer Room route. UI changes must be verified through all three paths before publication.
 

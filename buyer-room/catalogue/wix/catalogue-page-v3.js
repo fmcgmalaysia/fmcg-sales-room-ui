@@ -16,6 +16,10 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
+const CATALOGUE_BUILD_VERSION = '2026-09-27-orange-workspace-v1';
+let catalogueWorkspaceProducts = [];
+let catalogueWorkspaceReady = false;
+let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
 
 const SELECTION_BUTTON_THEME = {
     idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
@@ -64,8 +68,9 @@ async function getPrinciplesForSub(subId) {
 }
 
 function sendCatalogueContext(message) {
-    catalogueContextMessage = message;
-    try { $w('#html3').postMessage(message); } catch (error) {}
+    catalogueContextMessage = { ...message, buyerRoomUrl: buyerRoomUrl() };
+    try { $w('#html3').postMessage(catalogueContextMessage); } catch (error) {}
+    sendCatalogueWorkspaceData();
 }
 
 function sendCatalogueMenu(message) {
@@ -93,7 +98,72 @@ function setProductActions(enabled) {
 }
 
 function sidebarSelectionState(state) {
-    try { $w('#html5').postMessage({ type: 'SIDEBAR_DATA', payload: { counts: state?.counts || { food: 0, household: 0, personalCare: 0, general: 0 } } }); } catch (error) {}
+    selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+    sendCatalogueWorkspaceData();
+}
+
+function catalogueReferenceIds(value) {
+    const values = Array.isArray(value) ? value : value ? [value] : [];
+    return values.map(entry => String(entry?._id || entry || '').trim()).filter(Boolean);
+}
+
+function catalogueUnitPrice(item) {
+    const candidates = [item.unitPrice, item.pricePerUnit, item.normalPrice, item.price];
+    const value = candidates.map(Number).find(number => Number.isFinite(number) && number > 0);
+    return value || null;
+}
+
+function catalogueProductRecord(item) {
+    return {
+        id: String(item?._id || ''),
+        name: String(item?.name || item?.title || '').trim(),
+        description: String(item?.description || item?.packingSize || '').trim(),
+        barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
+        principle: String(item?.principle || '').trim(),
+        image: imageUrl(item?.image),
+        countryOrigin: String(item?.countryOrigin || '').trim(),
+        shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
+        subCategoryIds: catalogueReferenceIds(item?.subCategories),
+        unitPrice: catalogueUnitPrice(item),
+        currency: String(item?.currency || 'USD').trim().toUpperCase()
+    };
+}
+
+function sendCatalogueWorkspaceData() {
+    if (!catalogueWorkspaceReady) return;
+    try {
+        $w('#html5').postMessage({
+            type: 'catalogueWorkspaceData',
+            products: catalogueWorkspaceProducts,
+            selectedProductIds: [...selectedProductIds],
+            buyerRoomUrl: buyerRoomUrl(),
+            context: catalogueContextMessage,
+            buildVersion: CATALOGUE_BUILD_VERSION
+        });
+        $w('#html5').postMessage({ type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter });
+    } catch (error) {}
+}
+
+async function loadCatalogueWorkspaceProducts() {
+    const products = [];
+    try {
+        let result = await wixData.query('FMCGMALAYSIA').ascending('name').limit(1000).find();
+        products.push(...result.items);
+        while (result.hasNext() && products.length < 5000) {
+            result = await result.next();
+            products.push(...result.items);
+        }
+        catalogueWorkspaceProducts = products.map(catalogueProductRecord).filter(item => item.id && item.name);
+    } catch (error) {
+        console.error('Catalogue workspace CMS load failed', error);
+        catalogueWorkspaceProducts = [];
+    }
+    sendCatalogueWorkspaceData();
+}
+
+function sendCatalogueWorkspaceFilter(update) {
+    catalogueWorkspaceFilter = { ...catalogueWorkspaceFilter, ...update };
+    try { $w('#html5').postMessage({ type: 'catalogueWorkspaceFilter', ...catalogueWorkspaceFilter }); } catch (error) {}
 }
 
 async function loadSelectionState(assistCustomerId = '') {
@@ -316,6 +386,7 @@ function setupNav() {
 
     const applySearch = async (rawQuery) => {
         const query = String(rawQuery || '').trim();
+        sendCatalogueWorkspaceFilter({ query });
         try {
             if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
             const subResult = await wixData.query('subCategories').contains('title', query).limit(100).find();
@@ -343,6 +414,7 @@ function setupNav() {
             .filter(item => String(item.mainCategory || '').toUpperCase() === String(main || '').toUpperCase())
             .map(item => item.id)
             .filter(Boolean);
+        sendCatalogueWorkspaceFilter({ main: String(main || '').toUpperCase(), subIds: ids, principle: '' });
         if (ids.length) await dataset.setFilter(wixData.filter().hasSome('subCategories', ids));
     };
 
@@ -366,6 +438,7 @@ function setupNav() {
         } else if (message.type === 'catalogueAll') {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
+            sendCatalogueWorkspaceFilter({ query: '', main: '', subIds: [], principle: '' });
             await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await authentication.logout();
@@ -393,21 +466,31 @@ function setupNav() {
         } else if (message.type === 'catalogueMegaLeave') {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSub') {
-            if (message.id) await dataset.setFilter(wixData.filter().hasSome('subCategories', [message.id]));
+            if (message.id) {
+                sendCatalogueWorkspaceFilter({ main: '', subIds: [message.id], principle: '' });
+                await dataset.setFilter(wixData.filter().hasSome('subCategories', [message.id]));
+            }
             else {
                 const result = await wixData.query('subCategories').eq('title', message.sub).limit(1).find();
-                if (result.items.length) await dataset.setFilter(wixData.filter().hasSome('subCategories', [result.items[0]._id]));
+                if (result.items.length) {
+                    sendCatalogueWorkspaceFilter({ main: '', subIds: [result.items[0]._id], principle: '' });
+                    await dataset.setFilter(wixData.filter().hasSome('subCategories', [result.items[0]._id]));
+                }
             }
             hideMenu();
         } else if (message.type === 'catalogueGroup') {
             const ids = Array.isArray(message.ids) ? message.ids.filter(Boolean) : [];
-            if (ids.length) await dataset.setFilter(wixData.filter().hasSome('subCategories', ids));
+            if (ids.length) {
+                sendCatalogueWorkspaceFilter({ main: '', subIds: ids, principle: '' });
+                await dataset.setFilter(wixData.filter().hasSome('subCategories', ids));
+            }
             hideMenu();
         } else if (message.type === 'cataloguePrinciple') {
             const principle = String(message.principle || '').trim();
             if (!principle) return;
             let filter = wixData.filter().eq('principle', principle);
             if (message.subId) filter = filter.hasSome('subCategories', [message.subId]);
+            sendCatalogueWorkspaceFilter({ main: '', subIds: message.subId ? [message.subId] : [], principle });
             await dataset.setFilter(filter);
             hideMenu();
         }
@@ -424,11 +507,38 @@ function setupNav() {
     }, 180);
 }
 
-function setupSidebar() {
-    const sidebar = $w('#html5');
-    sidebar.onMessage((event) => {
-        if (event.data?.type === 'OPEN_BUYER_ROOM') openBuyerRoomWindow();
+function setupCatalogueWorkspace() {
+    const workspace = $w('#html5');
+    workspace.onMessage(async (event) => {
+        const message = event.data || {};
+        if (message.type === 'catalogueWorkspaceReady') {
+            catalogueWorkspaceReady = true;
+            sendCatalogueWorkspaceData();
+        } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
+            openBuyerRoomWindow();
+        } else if (message.type === 'catalogueWorkspaceSelect') {
+            const productId = String(message.productId || '').trim();
+            if (!selectionContext || !productId || selectionBusyIds.has(productId)) return;
+            if (selectedProductIds.has(productId)) { openBuyerRoomWindow(); return; }
+            selectionBusyIds.add(productId);
+            try {
+                const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
+                if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
+                selectedProductIds.add(productId);
+                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
+                sendCatalogueWorkspaceData();
+                routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
+                    .then(routeResult => { if (!routeResult?.ok) console.error('Background QD routing failed', routeResult?.error || routeResult); })
+                    .catch(error => console.error('Background QD routing failed', error));
+            } catch (error) {
+                console.error('Catalogue workspace selection failed', error);
+                workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: false, productId });
+            } finally {
+                selectionBusyIds.delete(productId);
+            }
+        }
     });
+    loadCatalogueWorkspaceProducts();
 }
 
 function openBuyerRoom() {
@@ -436,11 +546,15 @@ function openBuyerRoom() {
     wixLocationFrontend.to(assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room');
 }
 
-function openBuyerRoomWindow() {
+function buyerRoomUrl() {
+    const url = new URL('buyer-room', new URL('.', wixLocationFrontend.url));
     const assistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
-    const path = assistCustomerId ? '/buyer-room?assist=' + encodeURIComponent(assistCustomerId) : '/buyer-room';
-    try { $w('#html3').postMessage({ type: 'OPEN_BUYER_ROOM_WINDOW', path }); }
-    catch (_) { openBuyerRoom(); }
+    if (assistCustomerId) url.searchParams.set('assist', assistCustomerId);
+    return url.href;
+}
+
+function openBuyerRoomWindow() {
+    openBuyerRoom();
 }
 
 function setupFluidCatalogueLayout() {
@@ -454,14 +568,16 @@ function setupFluidCatalogueLayout() {
         try { $w(selector).customClassList.add(className); }
         catch (error) { console.warn(`Catalogue layout class failed for ${selector}`, error); }
     });
+
+    // #html5 owns the compact product list and right detail pane. The native
+    // dataset stays connected for Wix CMS compatibility, but its old cards hide.
+    try { $w('#repeater3').collapse(); } catch (error) {}
+    try { $w('#html2').collapse(); } catch (error) {}
 }
 
 $w.onReady(() => {
     setupFluidCatalogueLayout();
-    setupSelectionActions();
-    connectCardToLightbox('#repeater3', '#box17', '#button3', '#text16', '#imageX3');
-    setupCataloguePagination();
     setupNav();
-    setupSidebar();
+    setupCatalogueWorkspace();
 });
 
