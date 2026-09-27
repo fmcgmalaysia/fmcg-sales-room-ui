@@ -20,7 +20,6 @@ const BUYER_ORDER_COLLECTION = 'WixBuyerOrders';
 const BUYER_LINE_COLLECTION = 'WixBuyerOrderLines';
 const BUYER_ORDER_AUDIT_COLLECTION = 'WixOrderAudit';
 const ACCOUNT_NOTIFICATION_COLLECTION = 'WixAccountNotifications';
-const FX_RATE_COLLECTION = 'WixFxRates';
 
 const BUSINESS_TYPES = Object.freeze([
   'WHOLESALE',
@@ -412,89 +411,6 @@ export const publishSalesRoomQuotations = webMethod(
     return { ok: true, ...(body.result || {}) };
   }
 );
-
-function normalizeFxRates(rates) {
-  const normalized = new Map();
-  for (const item of Array.isArray(rates) ? rates : []) {
-    const currency = upper(item?.currency);
-    const rateToMyr = Number(item?.rateToMyr);
-    if (!/^[A-Z]{3}$/.test(currency)) throw new Error('Every FX entry requires a three-letter currency code.');
-    if (!Number.isFinite(rateToMyr) || rateToMyr <= 0) throw new Error(`${currency} requires a rate above 0.00.`);
-    normalized.set(currency, { currency, rateToMyr: currency === 'MYR' ? 1 : Math.round(rateToMyr * 1000000) / 1000000 });
-  }
-  normalized.set('MYR', { currency: 'MYR', rateToMyr: 1 });
-  return [...normalized.values()].sort((a, b) => (a.currency === 'MYR' ? -1 : b.currency === 'MYR' ? 1 : a.currency.localeCompare(b.currency)));
-}
-
-async function requireFxAdmin() {
-  const context = await requireAuthorizedStaffContext();
-  if (!context.canViewAllCustomers) throw new Error('FX Rate Settings are restricted to Admin roles.');
-  return context;
-}
-
-async function readFxRegistry() {
-  const result = await wixData.query(FX_RATE_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  const active = result.items.filter((item) => item.active !== false && /^[A-Z]{3}$/.test(upper(item.currency || item.title)));
-  const rates = normalizeFxRates(active.length
-    ? active.map((item) => ({ currency: upper(item.currency || item.title), rateToMyr: Number(item.rateToMyr) }))
-    : [{ currency: 'MYR', rateToMyr: 1 }, { currency: 'USD', rateToMyr: 4 }, { currency: 'SGD', rateToMyr: 3.2 }]);
-  const meta = result.items.find((item) => upper(item.currency || item.title) === 'MYR') || {};
-  return { rates, meta };
-}
-
-async function saveFxRegistry(rates, actorEmail) {
-  const normalizedRates = normalizeFxRates(rates);
-  const existing = await wixData.query(FX_RATE_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  const byCurrency = new Map(existing.items.map((item) => [upper(item.currency || item.title), item]));
-  const activeCodes = new Set(normalizedRates.map((item) => item.currency));
-  const now = new Date();
-  for (const item of normalizedRates) {
-    const previous = byCurrency.get(item.currency);
-    const next = { ...(previous || {}), title: item.currency, currency: item.currency, rateToMyr: item.rateToMyr, active: true, updatedBy: normalizeEmail(actorEmail), rateUpdatedAt: now };
-    if (previous?._id) await wixData.update(FX_RATE_COLLECTION, next, { suppressAuth: true });
-    else await wixData.insert(FX_RATE_COLLECTION, next, { suppressAuth: true });
-  }
-  for (const previous of existing.items) {
-    const currency = upper(previous.currency || previous.title);
-    if (/^[A-Z]{3}$/.test(currency) && !activeCodes.has(currency)) await wixData.update(FX_RATE_COLLECTION, { ...previous, active: false, updatedBy: normalizeEmail(actorEmail), rateUpdatedAt: now }, { suppressAuth: true });
-  }
-  return normalizedRates;
-}
-
-async function fxEligibleCustomers() {
-  const result = await wixData.query(CUSTOMER_COLLECTION).limit(1000).find({ suppressAuth: true, consistentRead: true });
-  return result.items.filter((item) => upper(item.lifecycleStatus || 'ACTIVE') !== 'ARCHIVED' && upper(item.qdStatus) === 'READY' && /^[A-Za-z0-9_-]{20,}$/.test(normalize(item.qdFileId)));
-}
-
-export const getSalesRoomFxRates = webMethod(Permissions.SiteMember, async () => {
-  await requireFxAdmin();
-  const [{ rates, meta }, customers] = await Promise.all([readFxRegistry(), fxEligibleCustomers()]);
-  return { ok: true, rates, qdCount: customers.length, lastSyncAt: meta.lastSyncedAt || null, lastSyncSummary: normalize(meta.lastSyncSummary) };
-});
-
-export const saveSalesRoomFxRates = webMethod(Permissions.SiteMember, async (rates) => {
-  const context = await requireFxAdmin();
-  const saved = await saveFxRegistry(rates, context.loginEmail);
-  const customers = await fxEligibleCustomers();
-  return { ok: true, rates: saved, qdCount: customers.length };
-});
-
-export const syncSalesRoomFxRates = webMethod(Permissions.SiteMember, async (rates) => {
-  const context = await requireFxAdmin();
-  const saved = await saveFxRegistry(rates, context.loginEmail);
-  const customers = await fxEligibleCustomers();
-  const rateMap = new Map(saved.map((item) => [item.currency, item.rateToMyr]));
-  const requested = customers.map((customer) => ({ customerId: normalize(customer.customerId), qdFileId: normalize(customer.qdFileId), currency: upper(customer.preferredCurrency), rateToMyr: rateMap.get(upper(customer.preferredCurrency)) })).filter((item) => Number.isFinite(item.rateToMyr) && item.rateToMyr > 0);
-  const missingRate = customers.length - requested.length;
-  const sharedSecret = await getSecret(SECRET_NAME);
-  const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, { method: 'post', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'SYNC_FX_RATES', sharedSecret, actorEmail: normalizeEmail(context.loginEmail), quotations: requested }) });
-  const body = parseAppsScriptResponse(await response.text());
-  if (!response.ok || !body.ok) throw new Error(body.error || 'FX rate synchronization failed.');
-  const result = { ...(body.result || {}), skipped: (Number(body.result?.skipped) || 0) + missingRate };
-  const registry = await wixData.query(FX_RATE_COLLECTION).eq('currency', 'MYR').limit(1).find({ suppressAuth: true, consistentRead: true });
-  if (registry.items[0]) await wixData.update(FX_RATE_COLLECTION, { ...registry.items[0], lastSyncedAt: new Date(), lastSyncSummary: `${Number(result.updated) || 0} updated · ${Number(result.skipped) || 0} skipped · ${Number(result.failed) || 0} failed`, updatedBy: normalizeEmail(context.loginEmail) }, { suppressAuth: true });
-  return { ok: true, rates: saved, qdCount: customers.length, result };
-});
 
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
