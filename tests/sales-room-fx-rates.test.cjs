@@ -7,7 +7,9 @@ const root = path.resolve(__dirname, '..');
 
 test('FX settings use one save-and-update action', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /Sales Room build: 2026-09-27-admin-fx-save-sync-v36/);
+  assert.match(html, /Sales Room build: 2026-09-27-fx-exchange-icon-v37/);
+  assert.match(html, /class="fx-menu-icon"[^>]*><svg[^>]*viewBox="0 0 32 24"/);
+  assert.match(html, /<text x="16" y="16" text-anchor="middle">\$<\/text>/);
   assert.match(html, /SAVE &amp; UPDATE ALL QDs/);
   assert.match(html, /SALES_ROOM_FX_RATES_APPLY/);
   assert.doesNotMatch(html, /id="fxSyncBtn"/);
