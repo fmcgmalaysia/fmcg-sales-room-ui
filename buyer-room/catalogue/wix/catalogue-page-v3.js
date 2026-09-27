@@ -497,7 +497,7 @@ function setupNav() {
     });
 
     mega.collapse();
-    dataset.onReady(() => dataset.setPageSize(30));
+    try { dataset.setPageSize(30); } catch (error) {}
     loadMenuData();
     logoLoadPromise = loadPrincipleLogos();
     setInterval(async () => {
