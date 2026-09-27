@@ -49,6 +49,7 @@
   </main>
   <script>
     const state={products:[],selectedIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionOnly:false,busyId:'',buyerRoomUrl:''};
+    let renderLimit=120;
     const rows=document.getElementById('rows');
     const post=(type,payload={})=>parent.postMessage({type,...payload},'*');
     const text=v=>String(v??'').trim();
@@ -62,12 +63,12 @@
       if(q&&!`${p.name} ${p.description} ${p.barcode} ${p.principle}`.toLowerCase().includes(q))return false;
       return true})}
     function imageMarkup(p,large=false){return p.image?`<img src="${esc(p.image)}" alt="">`:`<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`}
-    function render(){const items=filtered();document.getElementById('result').innerHTML=`<b>${items.length}</b> products`;document.getElementById('selectionCount').textContent=state.selectedIds.size;document.getElementById('selectionFilter').classList.toggle('active',state.selectionOnly);
-      if(!items.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);return}
-      if(!items.some(p=>p.id===state.activeId))state.activeId=items[0].id;
+    function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems.slice(0,renderLimit);document.getElementById('result').innerHTML=`<b>${allItems.length}</b> products`;document.getElementById('selectionCount').textContent=state.selectedIds.size;document.getElementById('selectionFilter').classList.toggle('active',state.selectionOnly);
+      if(!allItems.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);return}
+      if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
       rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}${p.principle?` · ${esc(p.principle)}`:''}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${selected(p)?'selected':''}">${selected(p)?'✓ In Selection':'Available'}</span></span>`;b.onclick=()=>activate(p.id,true);return b}));
-      showDetail(items.find(p=>p.id===state.activeId)||items[0]);}
-    function activate(id,scroll){state.activeId=id;render();if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);row?.scrollIntoView({block:'nearest'})}}
+      if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);}
+    function activate(id,scroll){const items=filtered(),index=items.findIndex(p=>p.id===id);if(index>=renderLimit)renderLimit=index+40;state.activeId=id;render();if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);row?.scrollIntoView({block:'nearest'})}}
     function showDetail(p){const button=document.getElementById('selectButton');if(!p){document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';document.getElementById('detailPrinciple').textContent='Product information will appear here.';['detailPack','detailBarcode','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.disabled=true;return}
       document.getElementById('productImage').innerHTML=imageMarkup(p,true);document.getElementById('detailName').textContent=text(p.name)||'Unnamed product';document.getElementById('detailPrinciple').textContent=text(p.principle)||'FMCG Malaysia';document.getElementById('detailPack').textContent=text(p.description)||'—';document.getElementById('detailBarcode').textContent=text(p.barcode)||'—';document.getElementById('detailOrigin').textContent=text(p.countryOrigin)||'—';document.getElementById('detailShelf').textContent=text(p.shelfLife)||'—';
       const price=Number(p.unitPrice);document.getElementById('detailPrice').textContent=Number.isFinite(price)&&price>0?`${text(p.currency)||'USD'} ${price.toFixed(2)}`:'QUOTE REQUIRED';document.getElementById('priceUnit').textContent=Number.isFinite(price)&&price>0?'/ PC':'';document.getElementById('priceNote').textContent=Number.isFinite(price)&&price>0?'Final price is confirmed in Buyer Room.':'Add this item to My Selection for a confirmed quotation.';
@@ -75,12 +76,13 @@
     function selectProduct(productId){if(state.busyId)return;state.busyId=productId;showDetail(state.products.find(p=>p.id===productId));post('catalogueWorkspaceSelect',{productId})}
     function openBuyerRoom(){if(state.buyerRoomUrl)window.open(state.buyerRoomUrl,'_blank','noopener');else post('catalogueWorkspaceBuyerRoom')}
     function move(step){const items=filtered();if(!items.length)return;const i=Math.max(0,items.findIndex(p=>p.id===state.activeId));activate(items[Math.max(0,Math.min(items.length-1,i+step))].id,true)}
+    rows.addEventListener('scroll',()=>{const items=filtered();if(rows.scrollTop+rows.clientHeight>=rows.scrollHeight-160&&renderLimit<items.length){renderLimit=Math.min(items.length,renderLimit+120);render(true)}});
     document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1)}});
-    document.getElementById('selectionFilter').onclick=()=>{state.selectionOnly=!state.selectionOnly;render()};document.getElementById('buyerButton').onclick=openBuyerRoom;
+    document.getElementById('selectionFilter').onclick=()=>{state.selectionOnly=!state.selectionOnly;renderLimit=120;render()};document.getElementById('buyerButton').onclick=openBuyerRoom;
     window.addEventListener('message',e=>{const d=e.data||{};
       if(d.type==='catalogueWorkspaceData'){state.products=Array.isArray(d.products)?d.products:[];state.selectedIds=new Set((d.selectedProductIds||[]).map(text));state.buyerRoomUrl=text(d.buyerRoomUrl);render()}
       if(d.type==='catalogueWorkspaceSelection'){state.busyId='';if(d.ok&&d.productId)state.selectedIds.add(text(d.productId));render()}
-      if(d.type==='catalogueWorkspaceFilter'){state.query=text(d.query);state.main=text(d.main).toUpperCase();state.subIds=Array.isArray(d.subIds)?d.subIds.map(text):[];state.principle=text(d.principle);state.selectionOnly=false;render()}
+      if(d.type==='catalogueWorkspaceFilter'){state.query=text(d.query);state.main=text(d.main).toUpperCase();state.subIds=Array.isArray(d.subIds)?d.subIds.map(text):[];state.principle=text(d.principle);state.selectionOnly=false;renderLimit=120;render()}
     });
     post('catalogueWorkspaceReady');
   </script>
