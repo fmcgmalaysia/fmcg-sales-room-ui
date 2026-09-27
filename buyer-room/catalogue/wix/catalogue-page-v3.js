@@ -559,8 +559,7 @@ function openBuyerRoomWindow() {
 
 function setupFluidCatalogueLayout() {
     const classMap = [
-        ['#section6', 'catalogue-results-stage'],
-        ['#box20', 'catalogue-results-shell']
+        ['#section6', 'catalogue-results-stage']
     ];
 
     classMap.forEach(([selector, className]) => {
