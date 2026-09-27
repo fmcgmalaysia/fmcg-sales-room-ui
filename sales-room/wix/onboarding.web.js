@@ -373,13 +373,44 @@ async function loadQuoteRiskCounts(customers) {
     if (!response.ok || !body.ok) throw new Error(body.error || 'Quote risk scan failed.');
     return new Map((body.result?.counts || []).map((item) => [
       normalize(item.customerId),
-      Math.max(0, Number(item.quoteRiskCount) || 0)
+      {
+        available: !item.error,
+        quoteRiskCount: Math.max(0, Number(item.quoteRiskCount) || 0),
+        pendingQuoteCount: Math.max(0, Number(item.pendingQuoteCount) || 0),
+        redSignalCount: Math.max(0, Number(item.redSignalCount) || 0),
+        lowGpCount: Math.max(0, Number(item.lowGpCount) || 0)
+      }
     ]));
   } catch (error) {
     console.warn('Sales Room quote risk scan unavailable:', error?.message || error);
     return new Map();
   }
 }
+
+export const publishSalesRoomQuotations = webMethod(
+  Permissions.SiteMember,
+  async (customerId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const qdFileId = normalize(customer.qdFileId);
+    if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
+    const sharedSecret = await getSecret(SECRET_NAME);
+    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'PUBLISH_QUOTATIONS',
+        sharedSecret,
+        customerId: normalize(customer.customerId),
+        qdFileId,
+        actorEmail: normalizeEmail(staff.loginEmail)
+      })
+    });
+    const body = parseAppsScriptResponse(await response.text());
+    if (!response.ok || !body.ok) throw new Error(body.error || 'Quotation publish failed.');
+    return { ok: true, ...(body.result || {}) };
+  }
+);
 
 export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
@@ -399,8 +430,10 @@ export const getSalesRoomCustomersOperational = webMethod(
       // Quote counts represent formally released QD rows, never merely a
       // non-zero price left in storage.
       const status = upper(item.quoteStatus || 'RFQ');
-      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '' };
+      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
+      const syncedAt = item.quoteEffectiveAt || item.quoteSyncedAt || '';
+      if (syncedAt && (!current.lastQuoteSyncedAt || new Date(syncedAt).getTime() > new Date(current.lastQuoteSyncedAt).getTime())) current.lastQuoteSyncedAt = syncedAt;
       if (status === 'RFQ' || status === 'FAILED') {
         current.awaiting += 1;
         const receivedAt = item.selectedAt || row.record?._createdDate || '';
@@ -438,14 +471,22 @@ export const getSalesRoomCustomersOperational = webMethod(
       incomingByCustomer.set(customerId, current);
     }
     const customers = (base.customers || []).map((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '' };
+      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
+      const qdWork = quoteRiskCounts.get(customer.customerId) || null;
+      const hasQuoteRows = quote.quoted > 0 || quote.awaiting > 0;
+      const quoteWorkStatusAvailable = !hasQuoteRows || Boolean(qdWork && qdWork.available);
       return {
         ...customer,
         quotedItemCount: quote.quoted,
         awaitingQuoteItemCount: quote.awaiting,
-        quoteRiskCount: Number(quoteRiskCounts.get(customer.customerId) || 0),
+        quoteWorkStatusAvailable,
+        quoteRiskCount: quoteWorkStatusAvailable ? Number(qdWork?.quoteRiskCount || 0) : null,
+        pendingQuoteCount: quoteWorkStatusAvailable ? Number(qdWork?.pendingQuoteCount || 0) : null,
+        redSignalCount: quoteWorkStatusAvailable ? Number(qdWork?.redSignalCount || 0) : null,
+        lowGpCount: quoteWorkStatusAvailable ? Number(qdWork?.lowGpCount || 0) : null,
         pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
+        lastQuoteSyncedAt: quote.lastQuoteSyncedAt,
         confirmedOrderCount: incoming.count,
         incomingOrderReceivedAt: incoming.incomingOrderReceivedAt
       };
@@ -460,6 +501,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         quoteCustomerCount: customers.filter((item) => item.awaitingQuoteItemCount > 0).length,
         quotedItemCount: customers.reduce((sum, item) => sum + item.quotedItemCount, 0),
         unquotedItemCount: customers.reduce((sum, item) => sum + item.awaitingQuoteItemCount, 0),
+        pendingQuoteItemCount: customers.every((item) => item.quoteWorkStatusAvailable) ? customers.reduce((sum, item) => sum + item.pendingQuoteCount, 0) : null,
         confirmedOrderCount: incomingOrders.length
       }
     });

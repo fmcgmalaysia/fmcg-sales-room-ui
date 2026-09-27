@@ -228,11 +228,23 @@ async function workspaceItems(customerId) {
     if (barcode) byBarcode.set(barcode, product);
   });
   return rows.map(({ record, data }) => {
+    const safeData = { ...data };
+    delete safeData.targetGp;
+    delete safeData.quoteActorEmail;
+    delete safeData.quoteRequestId;
+    const storedPrevious = data.previousQuote && typeof data.previousQuote === 'object' ? data.previousQuote : null;
+    const previousQuote = storedPrevious && money(storedPrevious.quotePerPc) > 0 && money(storedPrevious.quotePerCtn) > 0 ? {
+      quotePerPc: money(storedPrevious.quotePerPc),
+      quotePerCtn: money(storedPrevious.quotePerCtn),
+      currency: upper(storedPrevious.currency || data.vipCurrency),
+      quoteEffectiveAt: storedPrevious.quoteEffectiveAt || '',
+      expiredAt: storedPrevious.expiredAt || ''
+    } : null;
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
     return {
-      ...data, id, itemId: id,
+      ...safeData, id, itemId: id,
       barcode: normalize(data.barcode || data.unitBarcode || product.barcode),
       itemName: normalize(data.itemName || product.name || product.title),
       // Current selections follow the latest Catalogue packing size. Keep the
@@ -254,6 +266,8 @@ async function workspaceItems(customerId) {
       // allowed to promote an item to VIEW QUOTE.
       quoteStatus: upper(data.quoteStatus || 'RFQ'),
       quoteActive: upper(data.quoteStatus || 'RFQ') === 'VIEW QUOTE',
+      quoteEffectiveAt: data.quoteEffectiveAt || data.quoteSyncedAt || '',
+      previousQuote,
       addedTime: data.addedTime || data.selectedAt || record._createdDate || '',
       selectedByName: normalize(data.selectedByName || data.selectedById),
       lastEditedBy: normalize(data.lastEditedBy || data.selectedByName),
@@ -325,7 +339,7 @@ async function buyerNotifications(customerId, actorUserId) {
       targetUserId: normalize(data.targetUserId), createdAt: data.createdAt || null,
       read: Array.isArray(data.readByUserIds) && data.readByUserIds.map(normalize).includes(normalize(actorUserId))
     }))
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     .slice(0, 50);
 }
 

@@ -19,6 +19,8 @@ function doPost(e) {
         ? WIX_verifyCustomerQuotationDesk(body)
       : action === 'GET_QUOTE_RISK_COUNTS'
         ? WIX_getQuoteRiskCounts(body)
+      : action === 'PUBLISH_QUOTATIONS'
+        ? WIX_publishCustomerQuotations(body)
         : WIX_createCustomerQuotationDesk(body);
     return WIX_json_({ ok: true, result: result });
   } catch (error) {

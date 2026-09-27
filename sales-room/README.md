@@ -71,3 +71,12 @@ Buyer Room and Catalogue work is tracked under [`../buyer-room/`](../buyer-room/
 - A successful selection is written immediately to that customer's independent QD through `../quotation-desk/WixSelectionService.gs`.
 - `../index.html` displays the aggregate My Customers notification bubble and a per-customer **Open QD** action when RFQ items are waiting.
 - The Wix Sales Room page enriches `SALES_ROOM_CUSTOMERS` with `getSalesRoomQuoteSignals()` before posting data to the embedded Sales Room UI.
+
+## Quotation release workflow
+
+- QD price edits create a live `PENDING` work signal in Sales Room. The existing Buyer Room price remains available until a changed quote is successfully published.
+- The salesperson confirms individual rows with `VIEW QUOTE`. **Publish Quotations** scans the complete QD and releases every confirmed row; `PENDING`, `RFQ` and `FAILED` rows are never sent.
+- Releasing the same prices again is idempotent. It does not change the effective time or quote history.
+- A changed release stores one previous quote inside the existing `WixBuyerListItems` payload. The old quote expires at the exact time the new quote becomes effective.
+- Workspace Entry reads `PENDING` and high-risk counts directly from the customer QD. Risk remains an internal warning and never blocks an otherwise complete customer quote.
+- The central Apps Script router requires `WIX_QUOTE_SYNC_URL` and `WIX_QUOTE_SYNC_TOKEN` Script Properties for the Sales Room publish button.

@@ -10,7 +10,7 @@ This folder contains the Google Apps Script for the new one-customer-per-file Qu
 - Google Sheet header row: 5.
 - Hidden formula row: 6.
 - First product row: 7.
-- Supported quote states: `RFQ`, `VIEW QUOTE`, `FAILED`.
+- Supported quote states: `RFQ`, system-owned `PENDING`, `VIEW QUOTE`, `FAILED`.
 - Product and cost source: WIX POINT BASE.
 - Selection, quote and order workflow source: Wix CMS.
 
@@ -66,7 +66,7 @@ This folder contains the Google Apps Script for the new one-customer-per-file Qu
 
 ## Wix sync contract
 
-The script sends only rows deliberately marked `VIEW QUOTE`. A successful row remains `VIEW QUOTE`; a rejected or failed row becomes `FAILED`; `RFQ` rows are untouched.
+Changing either quote price immediately marks that row `PENDING`. The salesperson reviews the row and deliberately selects `VIEW QUOTE`. Publishing checks the whole QD but sends only `VIEW QUOTE` rows. A successful row remains `VIEW QUOTE`; a rejected or failed row becomes `FAILED`; `RFQ` and `PENDING` rows are untouched. Red cost signals and GP below 6% are warnings and sorting priorities; they do not block an otherwise complete quotation.
 
 `SYNC TO WIX` is a separate top-level spreadsheet menu. The `QUOTATION DESK` menu contains only cost capture, catalogue-order sorting and setup checks, so publishing a quote is always a distinct deliberate action.
 
@@ -74,6 +74,8 @@ Before live sync, add these Apps Script Properties to the template project:
 
 - `WIX_QUOTE_SYNC_URL`
 - `WIX_QUOTE_SYNC_TOKEN`
+
+Configure the same two properties on the central QD router Apps Script deployment so the Sales Room `PUBLISH QUOTATIONS` button can execute the identical whole-QD release path.
 
 The Wix backend must accept the documented JSON payload and return either a successful top-level response for all rows or per-row `results` keyed by `wixMyListId`.
 
@@ -85,7 +87,9 @@ The Wix backend must accept the documented JSON payload and return either a succ
 
 This is a frozen design rule for the later Wix–Google coordination phase. It is documented now but must not be added to the current QD build until the main quotation workflow is substantially complete.
 
-- `QUOTE STATUS` remains a workflow field with only `RFQ`, `VIEW QUOTE` and `FAILED`. Cost changes must never push a customer-visible quote back to RFQ/Pending or remove it from My List.
+- `QUOTE STATUS` uses `RFQ`, system-owned `PENDING`, `VIEW QUOTE` and `FAILED`. `PENDING` is written after a quote-price edit and must not be offered as a manual dropdown choice. The previous Buyer Room quote remains visible until a changed `VIEW QUOTE` release succeeds.
+- Re-publishing an unchanged quote is idempotent: it does not reset the effective time or rotate quote history. A changed successful quote keeps exactly one previous quote, whose expiry time equals the new quote's effective time.
+- Work queue order is: pending high risk, normal pending, published high risk, other high risk, RFQ, FAILED, normal published. Sorting runs on open, manual sort, and after a QD-menu publish; it never runs while the salesperson is editing a price cell.
 - `HIGH RISK` is a separate, system-owned risk state in Wix. It is not a salesperson-selected QD status.
 - Real `COST /CTN`, purchase cost, cost variance and other confidential cost figures must never be stored in Wix CMS, returned to page code or committed to GitHub.
 - WIX POINT BASE converts the normalized current carton cost into a keyed, irreversible HMAC reference token. Wix receives only `barcode`, `costReferenceToken` and `costReferenceUpdatedAt` in the existing CMS CATALOGUE record.

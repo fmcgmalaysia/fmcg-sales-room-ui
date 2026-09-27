@@ -29,12 +29,20 @@ test('quote risk rules detect red signals and GP below six percent', () => {
   assert.equal(helpers.redSignal('', '#ffffff', '#286c4d'), false);
 });
 
+test('QD scan returns pending count separately from quote risk', () => {
+  const source = fs.readFileSync(path.join(root, 'sales-room', 'google-apps-script', 'WixSelectionService.gs'), 'utf8');
+  assert.match(source, /pendingQuoteCount/);
+  assert.match(source, /=== 'PENDING'/);
+  assert.match(source, /function WIX_publishCustomerQuotations/);
+});
+
 test('workspace scans risk only for customers that have quotation rows', () => {
   const source = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
   assert.match(source, /const riskCustomers = \(base\.customers \|\| \[\]\)\.filter/);
   assert.match(source, /quote\.quoted > 0 \|\| quote\.awaiting > 0/);
   assert.match(source, /loadQuoteRiskCounts\(riskCustomers\)/);
   assert.match(source, /setTimeout\(\(\) => resolve\(new Map\(\)\), 3500\)/);
+  assert.match(source, /quoteWorkStatusAvailable/);
 });
 
 test('order and staff pages inherit the compact blue customer workspace style', () => {
@@ -63,4 +71,37 @@ test('dashboard presents five premium metrics in the requested order', () => {
   assert.match(dashboard, /id="atRiskQuotationCount"/);
   assert.match(html, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(html, /riskCount=customerRecords\.reduce\(\(sum,item\)=>sum\+\(Number\(item\.quoteRiskCount\)\|\|0\),0\)/);
+});
+
+test('workspace entry uses real QD warnings and a whole-QD publish action', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /customer\.pendingQuoteCount/);
+  assert.match(html, /ACTION REQUIRED · 需要立即处理/);
+  assert.match(html, /PUBLISH QUOTATIONS/);
+  assert.match(html, /SALES_ROOM_PUBLISH_QUOTES/);
+  assert.match(html, /YOUR LAST PUBLISH · 上次发布/);
+  assert.match(html, /QD STATUS UNAVAILABLE · 暂时无法读取报价状态/);
+});
+
+test('quote publishing preserves unchanged dates and keeps one previous quote', () => {
+  const http = fs.readFileSync(path.join(root, 'backend', 'http-functions.js'), 'utf8');
+  assert.match(http, /currentFingerprint === incomingFingerprint/);
+  assert.match(http, /changed: false,[\s\S]*?unchanged: true/);
+  assert.match(http, /const previousQuote = hadLiveQuote/);
+  assert.match(http, /expiredAt: now/);
+  assert.match(http, /quoteEffectiveAt: now/);
+});
+
+test('Buyer Room shows current and previous quote without internal risk data', () => {
+  const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
+  const currentHeader = html.match(/id="currentPanel"[\s\S]*?id="myRows"/)[0];
+  assert.doesNotMatch(currentHeader, /M³ \/ CTN/);
+  assert.match(currentHeader, /Price Updated<br>报价更新/);
+  assert.match(html, /Current Quotation · 当前报价/);
+  assert.match(html, /Previous Quotation · 上次报价/);
+  assert.match(html, /Expired/);
+  const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js'), 'utf8');
+  assert.match(backend, /delete safeData\.targetGp/);
+  assert.match(backend, /delete safeData\.quoteActorEmail/);
+  assert.match(backend, /delete safeData\.quoteRequestId/);
 });

@@ -76,18 +76,18 @@ function WIX_removeCatalogueSelection(payload) {
   }
 }
 
-/** Returns one compact risk count per customer for the Sales Room workspace. */
+/** Returns live QD work counts per customer for the Sales Room workspace. */
 function WIX_getQuoteRiskCounts(payload) {
   const customers = Array.isArray(payload && payload.customers) ? payload.customers : [];
   const counts = customers.slice(0, 100).map(function (raw) {
     const customerId = String(raw && raw.customerId || '').trim().toUpperCase();
     const qdFileId = String(raw && raw.qdFileId || '').trim();
     if (!/^CUS-\d{6}-[A-Z0-9]{6}$/.test(customerId) || !/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) {
-      return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0, error: 'Invalid QD reference.' };
+      return { customerId: customerId, quoteRiskCount: 0, pendingQuoteCount: 0, redSignalCount: 0, lowGpCount: 0, error: 'Invalid QD reference.' };
     }
     try {
       const cache = CacheService.getScriptCache();
-      const cacheKey = 'QD_RISK_' + qdFileId;
+      const cacheKey = 'QD_WORK_V2_' + qdFileId;
       const cached = cache.get(cacheKey);
       if (cached) return JSON.parse(cached);
       const qd = SpreadsheetApp.openById(qdFileId);
@@ -98,41 +98,123 @@ function WIX_getQuoteRiskCounts(payload) {
       if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
       const lastRow = sheet.getLastRow();
       if (lastRow < WIX_SELECTION_CFG.QD_DATA_START_ROW) {
-        return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0 };
+        return { customerId: customerId, quoteRiskCount: 0, pendingQuoteCount: 0, redSignalCount: 0, lowGpCount: 0 };
       }
       const headers = WIX_selectionHeaderMap_(sheet);
       const barcodeColumn = headers['UNIT BARCODE'] || 2;
       const idColumn = headers['WIX MY LIST ID'] || 0;
+      const statusColumn = headers['QUOTE STATUS'] || 2;
       const rowCount = lastRow - WIX_SELECTION_CFG.QD_DATA_START_ROW + 1;
       const signals = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, 1, rowCount, 1);
       const gp = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, 16, rowCount, 1);
       const barcodes = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, barcodeColumn, rowCount, 1).getDisplayValues();
       const ids = idColumn ? sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, idColumn, rowCount, 1).getDisplayValues() : [];
+      const statuses = sheet.getRange(WIX_SELECTION_CFG.QD_DATA_START_ROW, statusColumn, rowCount, 1).getDisplayValues();
       const signalText = signals.getDisplayValues();
       const signalBackgrounds = signals.getBackgrounds();
       const signalFonts = signals.getFontColors();
       const gpValues = gp.getValues();
       const gpDisplay = gp.getDisplayValues();
       let quoteRiskCount = 0;
+      let pendingQuoteCount = 0;
       let redSignalCount = 0;
       let lowGpCount = 0;
       for (let index = 0; index < rowCount; index++) {
         const activeRow = String(barcodes[index] && barcodes[index][0] || '').trim() || String(ids[index] && ids[index][0] || '').trim();
         if (!activeRow) continue;
+        if (String(statuses[index] && statuses[index][0] || '').trim().toUpperCase() === 'PENDING') pendingQuoteCount += 1;
         const redSignal = WIX_hasRedQuoteSignal_(signalText[index][0], signalBackgrounds[index][0], signalFonts[index][0]);
         const lowGp = WIX_isLowGp_(gpValues[index][0], gpDisplay[index][0]);
         if (redSignal) redSignalCount += 1;
         if (lowGp) lowGpCount += 1;
         if (redSignal || lowGp) quoteRiskCount += 1;
       }
-      const result = { customerId: customerId, quoteRiskCount: quoteRiskCount, redSignalCount: redSignalCount, lowGpCount: lowGpCount };
+      const result = { customerId: customerId, quoteRiskCount: quoteRiskCount, pendingQuoteCount: pendingQuoteCount, redSignalCount: redSignalCount, lowGpCount: lowGpCount };
       cache.put(cacheKey, JSON.stringify(result), 45);
       return result;
     } catch (error) {
-      return { customerId: customerId, quoteRiskCount: 0, redSignalCount: 0, lowGpCount: 0, error: String(error && error.message || error) };
+      return { customerId: customerId, quoteRiskCount: 0, pendingQuoteCount: 0, redSignalCount: 0, lowGpCount: 0, error: String(error && error.message || error) };
     }
   });
   return { counts: counts };
+}
+
+/** Publishes every row that the salesperson has deliberately marked VIEW QUOTE. */
+function WIX_publishCustomerQuotations(payload) {
+  const customerId = String(payload && payload.customerId || '').trim().toUpperCase();
+  const qdFileId = String(payload && payload.qdFileId || '').trim();
+  if (!/^CUS-\d{6}-[A-Z0-9]{6}$/.test(customerId)) throw new Error('Invalid Wix Customer ID.');
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('Invalid QD File ID.');
+  const properties = PropertiesService.getScriptProperties();
+  const syncUrl = String(properties.getProperty('WIX_QUOTE_SYNC_URL') || 'https://fmcg999.wixstudio.com/fmcgmalaysia/_functions/quotationSync').trim();
+  const syncToken = String(properties.getProperty('WIX_QUOTE_SYNC_TOKEN') || properties.getProperty('WIX_ONBOARDING_SHARED_SECRET') || '').trim();
+  if (!syncUrl || !syncToken) throw new Error('Quotation publish service is not configured.');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const qd = SpreadsheetApp.openById(qdFileId);
+    if (WIX_spreadsheetMetadataValue_(qd, WIX_SELECTION_CFG.CUSTOMER_ID_METADATA) !== customerId) throw new Error('QD Customer ID mismatch.');
+    if (WIX_spreadsheetMetadataValue_(qd, WIX_SELECTION_CFG.BUILD_STATUS_METADATA) !== 'READY') throw new Error('Quotation Desk is not ready.');
+    const sheet = qd.getSheetByName(WIX_SELECTION_CFG.QD_SHEET);
+    if (!sheet) throw new Error('WIX QUOTATION sheet is missing.');
+    const headers = WIX_selectionHeaderMap_(sheet);
+    ['QUOTE STATUS', 'UNIT BARCODE', 'QUOTE $/PC', 'QUOTE $/CTN', 'WIX MY LIST ID'].forEach(function (name) {
+      if (!headers[name]) throw new Error('QD header is missing: ' + name);
+    });
+    const lastRow = sheet.getLastRow();
+    const quotations = [];
+    const rowById = {};
+    const invalid = [];
+    for (let row = WIX_SELECTION_CFG.QD_DATA_START_ROW; row <= lastRow; row++) {
+      const status = String(sheet.getRange(row, headers['QUOTE STATUS']).getDisplayValue() || '').trim().toUpperCase();
+      if (status !== 'VIEW QUOTE') continue;
+      const wixMyListId = String(sheet.getRange(row, headers['WIX MY LIST ID']).getDisplayValue() || '').trim();
+      const unitBarcode = WIX_normalizeBarcode_(sheet.getRange(row, headers['UNIT BARCODE']).getDisplayValue());
+      const quotePerPc = Number(sheet.getRange(row, headers['QUOTE $/PC']).getValue());
+      const quotePerCtn = Number(sheet.getRange(row, headers['QUOTE $/CTN']).getValue());
+      if (!wixMyListId || !unitBarcode || !(quotePerPc > 0) || !(quotePerCtn > 0)) {
+        invalid.push({ row: row, error: 'Barcode, Wix item ID and both quote prices are required.' });
+        continue;
+      }
+      const targetGp = headers['TARGET GP'] ? Number(sheet.getRange(row, headers['TARGET GP']).getValue()) : null;
+      quotations.push({ wixMyListId: wixMyListId, unitBarcode: unitBarcode, quotePerPc: quotePerPc, quotePerCtn: quotePerCtn, targetGp: isFinite(targetGp) ? targetGp : null });
+      rowById[wixMyListId] = row;
+    }
+    invalid.forEach(function (item) { sheet.getRange(item.row, headers['QUOTE STATUS']).setValue('FAILED').setNote('Publish failed: ' + item.error); });
+    if (!quotations.length) return { customerId: customerId, checked: 0, changed: 0, unchanged: 0, failed: invalid.length, message: 'No confirmed quotations are ready to publish.' };
+
+    const requestId = Utilities.getUuid();
+    const response = UrlFetchApp.fetch(syncUrl, {
+      method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + syncToken }, muteHttpExceptions: true,
+      payload: JSON.stringify({ schemaVersion: 1, requestId: requestId, customerId: customerId, quotationDeskFileId: qdFileId, quotationDeskFileUrl: qd.getUrl(), actorEmail: String(payload.actorEmail || ''), sentAt: new Date().toISOString(), quotations: quotations })
+    });
+    let body = {};
+    try { body = JSON.parse(response.getContentText() || '{}'); } catch (_) { /* handled below */ }
+    if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || body.ok === false) throw new Error(body.error || ('Quotation publish returned HTTP ' + response.getResponseCode()));
+    const results = Array.isArray(body.results) ? body.results : [];
+    const resultById = {};
+    results.forEach(function (result) { resultById[String(result.wixMyListId || '')] = result; });
+    const completed = quotations.map(function (quotation) {
+      return resultById[quotation.wixMyListId] || { ok: false, wixMyListId: quotation.wixMyListId, error: 'No result returned by Wix.' };
+    });
+    completed.forEach(function (result) {
+      if (result.ok !== false) return;
+      const row = rowById[String(result.wixMyListId || '')];
+      if (row) sheet.getRange(row, headers['QUOTE STATUS']).setValue('FAILED').setNote('Publish failed: ' + String(result.error || 'Unknown Wix error.'));
+    });
+    CacheService.getScriptCache().remove('QD_WORK_V2_' + qdFileId);
+    return {
+      customerId: customerId,
+      requestId: requestId,
+      checked: quotations.length,
+      changed: completed.filter(function (item) { return item.ok && item.changed; }).length,
+      unchanged: completed.filter(function (item) { return item.ok && item.unchanged; }).length,
+      failed: invalid.length + completed.filter(function (item) { return item.ok === false; }).length
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function WIX_hasRedQuoteSignal_(value, background, fontColor) {

@@ -33,3 +33,29 @@ test('COST HEALTH and its note move with the product row', () => {
   assert.match(source, /SORT_MOVABLE_HEADERS:[\s\S]*?"COST HEALTH"[\s\S]*?"QUOTE STATUS"/);
   assert.match(source, /\.setNotes\(rows\.map\(item => \[item\.notes\[sourceIndex\] \|\| null\]\)\)/);
 });
+
+test('QD work queue keeps every pending row at the top', () => {
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.PENDING, 1)'), 0);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.PENDING, 3)'), 1);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.VIEW, 0)'), 2);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.RFQ, 1)'), 3);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.RFQ, 3)'), 4);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.FAILED, 3)'), 5);
+  assert.equal(evaluate('qdWorkflowPriority_(QD_CFG.STATUS.VIEW, 3)'), 6);
+});
+
+test('price edits become system-owned PENDING without sorting during the edit', () => {
+  const onEdit = source.slice(source.indexOf('function onEdit'), source.indexOf('function sortQuotationByCatalogueOrder'));
+  assert.match(onEdit, /touchesQuote/);
+  assert.match(onEdit, /QD_CFG\.STATUS\.PENDING/);
+  assert.doesNotMatch(onEdit, /sortQuotationSheet_/);
+  assert.match(source, /status === QD_CFG\.STATUS\.PENDING[\s\S]*?e\.oldValue/);
+});
+
+test('cost risk warns but does not block a confirmed quotation', () => {
+  const validation = source.slice(source.indexOf('function validateQuoteRow_'), source.indexOf('function markSyncFailures_'));
+  assert.match(validation, /QUOTE \$\/PC must be greater than 0/);
+  assert.match(validation, /QUOTE \$\/CTN must be greater than 0/);
+  assert.doesNotMatch(validation, /COST HEALTH must be green or orange/);
+  assert.doesNotMatch(validation, /NET COST \/CTN must be greater than 0/);
+});

@@ -138,9 +138,16 @@ function quotePayload(record) {
 }
 function quoteNumber(value) { const number = Number(value); return Number.isFinite(number) ? number : 0; }
 function quoteBarcode(value) { return String(value || '').replace(/\.0$/, '').trim(); }
+function quoteFingerprint(value) {
+  return JSON.stringify({
+    quotePerPc: quoteNumber(value?.quotePerPc),
+    quotePerCtn: quoteNumber(value?.quotePerCtn),
+    currency: normalize(value?.vipCurrency || value?.currency || '').toUpperCase()
+  });
+}
 async function quoteSecret() {
   try { return await getSecret('WIX_QUOTE_SYNC_TOKEN'); }
-  catch (_) { return getSecret('NCT_ONBOARDING_SHARED_SECRET'); }
+  catch (_) { return getSecret('FMCG_QD_ROUTER_TOKEN'); }
 }
 
 export async function post_quotationSync(request) {
@@ -158,6 +165,7 @@ export async function post_quotationSync(request) {
     const customer = customers.items[0];
     if (normalize(customer.qdFileId) !== qdFileId) return quoteJson(403, { ok: false, error: 'Quotation Desk identity does not match this customer.' });
     const currency = normalize(customer.preferredCurrency || customer.tradingCurrency || 'USD').toUpperCase();
+    const requestId = normalize(body.requestId);
     const results = [];
     for (const quotation of quotations) {
       const wixMyListId = normalize(quotation?.wixMyListId);
@@ -171,15 +179,50 @@ export async function post_quotationSync(request) {
         const quotePerPc = quoteNumber(quotation.quotePerPc);
         const quotePerCtn = quoteNumber(quotation.quotePerCtn);
         if (!(quotePerPc > 0) || !(quotePerCtn > 0)) throw new Error('Both quotation prices must be greater than zero.');
+        const incomingFingerprint = quoteFingerprint({ quotePerPc, quotePerCtn, currency });
+        const currentFingerprint = quoteFingerprint(item);
+        const priorRequestId = normalize(item.quoteRequestId);
+        if (requestId && priorRequestId === requestId && currentFingerprint !== incomingFingerprint) {
+          throw new Error('This request ID was already used for a different quotation value.');
+        }
+        if (item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && currentFingerprint === incomingFingerprint) {
+          results.push({
+            ok: true,
+            changed: false,
+            unchanged: true,
+            wixMyListId,
+            quoteStatus: 'VIEW QUOTE',
+            quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || ''
+          });
+          continue;
+        }
         const now = new Date().toISOString();
-        const next = { ...item, quoteStatus: 'VIEW QUOTE', quoteActive: true, quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, quoteSyncedAt: now, quoteRequestId: normalize(body.requestId), quoteActorEmail: normalizeEmail(body.actorEmail), lastEditedBy: normalizeEmail(body.actorEmail) || 'FMCG Malaysia' };
+        const hadLiveQuote = item.quoteActive === true && normalize(item.quoteStatus).toUpperCase() === 'VIEW QUOTE' && quoteNumber(item.quotePerPc) > 0 && quoteNumber(item.quotePerCtn) > 0;
+        const previousQuote = hadLiveQuote ? {
+          quotePerPc: quoteNumber(item.quotePerPc),
+          quotePerCtn: quoteNumber(item.quotePerCtn),
+          currency: normalize(item.vipCurrency || currency).toUpperCase(),
+          quoteEffectiveAt: item.quoteEffectiveAt || item.quoteSyncedAt || '',
+          expiredAt: now,
+          requestId: normalize(item.quoteRequestId)
+        } : null;
+        const next = { ...item, quoteStatus: 'VIEW QUOTE', quoteActive: true, quotePerPc, quotePerCtn, vipPriceEa: quotePerPc, vipPriceCtn: quotePerCtn, vipCurrency: currency, targetGp: quotation.targetGp ?? null, previousQuote, quoteEffectiveAt: now, quoteSyncedAt: now, quoteRequestId: requestId, quoteActorEmail: normalizeEmail(body.actorEmail), lastEditedBy: normalizeEmail(body.actorEmail) || 'FMCG Malaysia' };
         await wixData.update(QUOTE_LIST_COLLECTION, { ...record, payload: JSON.stringify(next) }, { suppressAuth: true });
-        results.push({ ok: true, wixMyListId, quoteStatus: 'VIEW QUOTE' });
+        results.push({ ok: true, changed: true, unchanged: false, wixMyListId, quoteStatus: 'VIEW QUOTE', quoteEffectiveAt: now });
       } catch (error) {
         results.push({ ok: false, wixMyListId, error: normalize(error?.message || error) });
       }
     }
-    return quoteJson(200, { ok: true, requestId: normalize(body.requestId), results });
+    return quoteJson(200, {
+      ok: true,
+      requestId,
+      summary: {
+        changed: results.filter((item) => item.ok && item.changed).length,
+        unchanged: results.filter((item) => item.ok && item.unchanged).length,
+        failed: results.filter((item) => !item.ok).length
+      },
+      results
+    });
   } catch (error) {
     console.error('Quotation sync failed', error);
     return quoteJson(500, { ok: false, error: normalize(error?.message || error || 'Quotation sync failed.') });
