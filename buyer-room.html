@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-compact-identity-columns-v37">
+<meta name="build-version" content="2026-09-27-order-item-columns-v38">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -134,15 +134,10 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .order-grid .row>div{min-width:0;padding:6px 9px;text-align:left}
 .order-grid .row.head>div{display:flex;align-items:center;height:100%;font-size:11px;white-space:nowrap}
 .order-grid .order-product{gap:10px}.order-grid .qty{width:76px}
-/* Barcode and thumbnail columns should identify the item, not consume product-name space. */
-.grid .row{grid-template-columns:86px 40px minmax(300px,2.7fr) 86px 110px 118px 136px 120px 38px}
-.grid .row>div:first-child{padding-left:7px;padding-right:5px}
-.grid .row>div:nth-child(2){padding-left:4px;padding-right:4px}
-.grid .thumb-shell,.grid .thumb,.grid .thumb-fallback{width:26px;height:30px}
-.removed-grid .row{grid-template-columns:86px 40px minmax(300px,2.7fr) 90px 142px 104px 86px}
-.order-grid{min-width:1022px}
-.order-grid .row{grid-template-columns:98px minmax(314px,1fr) 118px 86px 115px 88px 145px 72px}
-.order-grid .order-product{gap:8px}.order-grid .order-product .thumb-shell{flex-basis:26px}
+/* Order Form mirrors My Selection's first three columns without changing My Selection. */
+.order-grid{min-width:1050px}
+.order-grid .row{grid-template-columns:86px 40px minmax(300px,1fr) 118px 86px 115px 88px 145px 72px}
+.order-grid .row>div:nth-child(2){display:flex;align-items:center;justify-content:center;padding-left:4px;padding-right:4px}
 </style>
 </head>
 <body>
@@ -184,7 +179,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       <div class="summary order-summary"><div class="metric"><label>Products</label><strong id="sumProducts">0</strong></div><div class="metric"><label>Total Cartons</label><strong id="sumCtn">0 CTN</strong></div><div class="metric"><label>Total CBM</label><strong id="sumCbm">0.0000</strong></div><div class="metric"><label>Estimated Order Total</label><strong id="sumAmount">—</strong></div><div class="order-submit"><button class="btn primary" id="submitOrder">Send Order Request</button></div></div>
       <div class="list-tabs-bar order-action-bar"><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="orderSearch" type="search" aria-label="Search order form by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label><div class="tab-actions order-actions"><div class="export-wrap"><button class="btn export-toggle" id="orderExportToggle" data-export-toggle aria-haspopup="menu" aria-expanded="false"><span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5h10v13H4zM14 7h6v10h-6"/><path d="m7 9 4 6M11 9l-4 6M16 10h2M16 13h2"/></svg></span>View Excel&nbsp; ▾</button><div class="export-menu" role="menu"><button role="menuitem" data-export-mode="with-image">With Images</button><button role="menuitem" data-export-mode="without-image">Without Images</button></div></div></div></div>
       <div class="showing" id="orderShowing"></div><p class="order-note" id="hiddenOrdered"></p>
-      <div class="table-wrap"><div class="order-grid"><div class="row head"><div>Barcode</div><div>Product / Packing</div><div>V.I.P Price</div><div>Qty / CTN</div><div>Line Amount</div><div>Total M³</div><div>Edited Time</div><div>Edited By</div></div><div id="orderRows"></div></div></div>
+      <div class="table-wrap"><div class="order-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>V.I.P Price</div><div>Qty / CTN</div><div>Line Amount</div><div>Total M³</div><div>Edited Time</div><div>Edited By</div></div><div id="orderRows"></div></div></div>
     </section>
     <section id="historyView" class="view"><header class="top"><div><h1>Order History</h1><p class="sub">Confirmed orders and locked quotation snapshots.</p></div></header><div id="historyList" class="history-list"></div><button class="btn" id="historyMore" type="button" hidden>Load More Orders</button></section>
     <section id="docsView" class="view"><header class="top"><div><h1>Documents</h1><p class="sub">Invoices, credit notes, insurance and transaction documents</p></div></header><div class="placeholder"><div class="placeholder-icon">▤</div><h3>No Documents Available Yet</h3><p>Transaction documents will be organized by order and made available when issued.</p></div></section>
@@ -265,7 +260,7 @@ function renderOrder(){
     const orderable=isOrderable(x),qty=orderable?num(x.orderQtyCtn):0,amount=qty*ctnPrice(x),cbm=qty*num(x.cbmPerCtn),pending=state.pendingQuantities.get(String(x.id));
     const editedTime=pending?'Saving…':x.qtyEditedAt?timeCell(x.qtyEditedAt,false):'—';
     const editedBy=pending?state.memberName||'—':x.qtyEditedBy||'—';
-    return `<div class="row"><div class="mono">${esc(x.barcode)}</div><div class="order-product">${thumbnail(x,true)}<div><div class="name" title="${esc(x.itemName)}">${esc(x.itemName)}</div><div class="packing-meta">${esc(x.packingSize)}</div></div></div><div>${priceCell(x,'vip')}</div><div><input class="qty" type="number" min="0" step="1" value="${qty||''}" data-qty="${esc(x.id)}" data-committed-qty="${pending?pending.committedQty:qty}" aria-label="${orderable?`Order quantity for ${esc(x.itemName)}`:`Quantity unavailable until ${esc(x.itemName)} is quoted`}" ${orderable?'':'disabled title="Available after the V.I.P price is released"'}></div><div class="price ${orderable?'':'line-unavailable'}">${orderable?`<strong>${esc(x.vipCurrency||state.currency)} ${money(amount)}</strong>`:'—'}</div><div class="mono ${orderable?'':'line-unavailable'}">${orderable?cbm.toFixed(4):'—'}</div><div class="time qty-audit-time">${editedTime}</div><div class="time qty-audit-by">${esc(editedBy)}</div></div>`
+    return `<div class="row"><div class="mono">${esc(x.barcode)}</div><div>${thumbnail(x,true)}</div><div><div class="name" title="${esc(x.itemName)}">${esc(x.itemName)}</div><div class="packing-meta">${esc(x.packingSize)}</div></div><div>${priceCell(x,'vip')}</div><div><input class="qty" type="number" min="0" step="1" value="${qty||''}" data-qty="${esc(x.id)}" data-committed-qty="${pending?pending.committedQty:qty}" aria-label="${orderable?`Order quantity for ${esc(x.itemName)}`:`Quantity unavailable until ${esc(x.itemName)} is quoted`}" ${orderable?'':'disabled title="Available after the V.I.P price is released"'}></div><div class="price ${orderable?'':'line-unavailable'}">${orderable?`<strong>${esc(x.vipCurrency||state.currency)} ${money(amount)}</strong>`:'—'}</div><div class="mono ${orderable?'':'line-unavailable'}">${orderable?cbm.toFixed(4):'—'}</div><div class="time qty-audit-time">${editedTime}</div><div class="time qty-audit-by">${esc(editedBy)}</div></div>`
   }).join(''):'<strong>No Matching Products</strong>Try another product name, brand or barcode.';
   document.querySelectorAll('[data-qty]:not(:disabled)').forEach(el=>{
     el.oninput=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item)){item.orderQtyCtn=Math.max(0,Math.floor(num(el.value)));summary()}};
