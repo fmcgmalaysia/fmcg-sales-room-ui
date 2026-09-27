@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-27-orange-workspace-v1';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-data-mobile-v2';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
@@ -120,6 +120,7 @@ function catalogueProductRecord(item) {
         description: String(item?.description || item?.packingSize || '').trim(),
         barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
         principle: String(item?.principle || '').trim(),
+        mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
         image: imageUrl(item?.image),
         countryOrigin: String(item?.countryOrigin || '').trim(),
         shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
@@ -149,7 +150,7 @@ async function loadCatalogueWorkspaceProducts() {
     try {
         let result = await wixData.query('FMCGMALAYSIA').ascending('name').limit(1000).find();
         products.push(...result.items);
-        while (result.hasNext() && products.length < 5000) {
+        while (result.hasNext() && products.length < 10000) {
             result = await result.next();
             products.push(...result.items);
         }
@@ -514,7 +515,8 @@ function setupCatalogueWorkspace() {
         const message = event.data || {};
         if (message.type === 'catalogueWorkspaceReady') {
             catalogueWorkspaceReady = true;
-            sendCatalogueWorkspaceData();
+            if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
+            else sendCatalogueWorkspaceData();
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
             openBuyerRoomWindow();
         } else if (message.type === 'catalogueWorkspaceSelect') {

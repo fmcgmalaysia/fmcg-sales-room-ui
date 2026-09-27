@@ -24,17 +24,30 @@
     .sub.active{font-weight:600}
     .right{min-width:0;min-height:0;display:flex;flex-direction:column;padding:18px 20px 10px;background:#fff6ef}
     .brands{display:grid;width:100%;margin:0 auto;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,80px);gap:8px;align-content:start}
-    .brand{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #efdcd1;border-radius:8px;background:#fff;padding:4px;color:var(--ink);text-align:center;cursor:pointer}
-    .brand-mark{width:42px;height:35px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;padding:2px;color:#19346d;font-size:8px;font-weight:700;line-height:1.05;overflow-wrap:anywhere}
-    .brand:hover,.brand:focus-visible{border-color:#f4a47f;box-shadow:0 4px 12px rgba(200,73,24,.08)}
-    .brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+    .brand{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:0;border-radius:10px;background:transparent;padding:3px;color:var(--ink);text-align:center;cursor:pointer}
+    .brand-mark{width:52px;height:52px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #eadfd8;border-radius:50%;background:#fff;padding:7px;color:#19346d;font-size:8px;font-weight:700;line-height:1.05;overflow-wrap:anywhere;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+    .brand:hover .brand-mark,.brand:focus-visible .brand-mark{border-color:#f05a28;background:#fff8f3;box-shadow:0 5px 15px rgba(200,73,24,.14)}
+    .brand-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%}
     .brand-name{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:400;color:#2a3954}
     .empty{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:24px}
     .pager{height:26px;margin-top:auto;display:flex;align-items:center;justify-content:center;gap:20px}
     .pager button{width:28px;height:28px;border:0;background:transparent;color:var(--blue);font-size:21px;line-height:1;cursor:pointer}
     .pager button:disabled{color:#b8c2d0;cursor:default}
     .pager span{min-width:34px;text-align:center;color:var(--muted);font-size:12px}
-    @media(max-width:900px){.panel.show{grid-template-columns:1fr}.right{display:none}.left{border-right:0;padding-left:17px;padding-right:17px}.sublist{column-gap:12px}.sub{font-size:12px}.brand-name{font-size:12px}}
+    @media(max-width:900px){
+      .panel{min-height:0;max-height:78vh;overflow-y:auto;border-bottom-width:2px}
+      .panel.show{display:block}
+      .left{border-right:0;padding:14px 14px 12px}
+      .sublist{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row;grid-template-rows:none;column-gap:8px;row-gap:4px}
+      .sub{min-height:42px;padding:4px 8px;font-size:12px}
+      .right{display:flex;padding:14px 12px 10px;border-top:1px solid #eadfd8}
+      .brands{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none;gap:10px 4px}
+      .brand{min-height:82px;padding:2px}
+      .brand-mark{width:54px;height:54px}
+      .brand-name{font-size:10px;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+      .pager{margin-top:10px}
+    }
+    @media(max-width:480px){.brands{grid-template-columns:repeat(3,minmax(0,1fr))}.brand-mark{width:58px;height:58px}.sublist{grid-template-columns:1fr 1fr}}
     @media(prefers-reduced-motion:reduce){.sub,.sub-symbol,.sub span:last-child{transition:none}}
   </style>
 </head>
@@ -76,7 +89,7 @@
       if(d.type==='showMain')renderMain(String(d.main||'FOOD'));
       if(d.type==='cataloguePrinciples'&&d.id===currentSub?.id&&d.requestId===requestId){principals=Array.isArray(d.items)?d.items.filter(x=>x&&x.name):[];renderBrands();if(!principals.length)brandsBox.firstChild.textContent='No brands linked to this subcategory yet.'}
     });
-    post('catalogueMegaReady');
+    const announceReady=()=>post('catalogueMegaReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-build-version" content="2026-09-27-orange-workspace-v1">
+  <meta name="catalogue-build-version" content="2026-09-28-catalogue-data-mobile-v2">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap');
     :root{--orange:#f05a28;--orange2:#ff7a32;--orange-soft:#fff4ed;--navy:#102a4a;--ink:#142943;--muted:#6d7d90;--line:#dfe6ed;--panel:#fff;--bg:#f6f8fa;--green:#16885f}
@@ -21,7 +21,12 @@
     .detail-scroll{overflow:auto;padding:18px 20px 14px}.product-image{height:205px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#fff,#f7f8f9);border:1px solid #edf0f2}.product-image img{display:block;max-width:88%;max-height:188px;object-fit:contain}.product-image .fallback{font-size:13px}.detail h2{margin:16px 0 4px;font-size:20px;line-height:1.2;letter-spacing:-.35px}.principle{margin:0 0 15px;color:#748399;font-size:12px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding-top:14px;border-top:1px solid var(--line)}.fact label{display:block;color:#8794a3;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}.fact span{display:block;margin-top:4px;color:#243c58;font-size:12px;font-weight:650;min-height:15px}
     .price{margin-top:15px;padding:13px 14px;border-radius:10px;background:linear-gradient(135deg,#fff1e8,#fff8f2);border:1px solid #ffd6c2}.price-label{font-size:9px;font-weight:800;letter-spacing:.08em;color:#9a5a3b;text-transform:uppercase}.price-main{display:flex;align-items:baseline;gap:6px;margin-top:4px;color:var(--orange)}.price-main strong{font-size:24px;letter-spacing:-.5px}.price-main span{font-size:11px;font-weight:800}.price-note{margin-top:3px;color:#8e6b5d;font-size:10px}
     .detail-actions{display:grid;grid-template-columns:1fr auto;gap:9px;padding:12px 20px;border-top:1px solid var(--line);background:#fff}.primary,.buyer{height:44px;border-radius:8px;font-weight:800;cursor:pointer}.primary{border:0;background:linear-gradient(100deg,var(--orange),var(--orange2));color:#fff}.primary:hover{filter:brightness(.97)}.primary.selected{background:#e8f4ef;color:#176e4e;border:1px solid #a9cfbf}.primary:disabled{cursor:wait;opacity:.72}.buyer{border:1px solid #cfd9e2;background:#fff;color:var(--navy);padding:0 14px}.buyer:hover{background:#f5f8fa}
-    @media(max-width:900px){.workspace{grid-template-columns:1fr}.detail{display:none}.columns,.row{grid-template-columns:62px minmax(220px,1fr) 120px}.columns span:nth-child(3),.row .barcode{display:none}.toolbar{grid-template-columns:1fr}.tools{display:none}}
+    .detail-close{display:none;position:absolute;right:12px;top:10px;z-index:2;width:38px;height:38px;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(16,42,74,.72);color:#fff;font-size:24px;line-height:1;cursor:pointer}
+    @media(max-width:900px){
+      .shell{min-height:560px}.workspace{grid-template-columns:1fr;padding:9px}.toolbar{grid-template-columns:1fr;padding:8px 12px}.tools{display:none}
+      .columns,.row{grid-template-columns:58px minmax(0,1fr) 92px}.columns span:nth-child(3),.row .barcode{display:none}.columns{padding:0 8px}.row{height:72px;padding:0 8px}.thumb{width:44px;height:52px}.name{font-size:12px}.pack{font-size:10px}.pill{min-width:82px;padding:0 7px}
+      .detail{display:grid;position:fixed;inset:0;z-index:30;border:0;border-radius:0;transform:translateX(100%);transition:transform .22s ease;box-shadow:-14px 0 32px rgba(16,42,74,.18)}.detail.mobile-open{transform:translateX(0)}.detail-close{display:block}.detail-scroll{padding-top:14px}.product-image{height:190px}
+    }
   </style>
 </head>
 <body>
@@ -35,7 +40,8 @@
         <div class="columns"><span>Image</span><span>Item Name / Packing Size</span><span>Barcode</span><span>Status</span></div>
         <div class="rows" id="rows" tabindex="0"></div>
       </section>
-      <aside class="detail" aria-label="Selected product details">
+      <aside class="detail" id="detailPanel" aria-label="Selected product details">
+        <button class="detail-close" id="closeDetail" type="button" aria-label="Close product details">×</button>
         <div class="ad"><div class="ad-copy"><b>Malaysia FMCG Export</b><small>Mixed container support · Worldwide shipment</small></div><div class="ad-mark">BANNER</div></div>
         <div class="detail-scroll">
           <div class="product-image" id="productImage"><span class="fallback">Select a product</span></div>
@@ -66,7 +72,7 @@
     function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems.slice(0,renderLimit);document.getElementById('result').innerHTML=`<b>${allItems.length}</b> products`;document.getElementById('selectionCount').textContent=state.selectedIds.size;document.getElementById('selectionFilter').classList.toggle('active',state.selectionOnly);
       if(!allItems.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);return}
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
-      rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}${p.principle?` · ${esc(p.principle)}`:''}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${selected(p)?'selected':''}">${selected(p)?'✓ In Selection':'Available'}</span></span>`;b.onclick=()=>activate(p.id,true);return b}));
+      rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}${p.principle?` · ${esc(p.principle)}`:''}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${selected(p)?'selected':''}">${selected(p)?'✓ In Selection':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);if(matchMedia('(max-width:900px)').matches)document.getElementById('detailPanel').classList.add('mobile-open')};return b}));
       if(preserveScroll)rows.scrollTop=scrollTop;showDetail(allItems.find(p=>p.id===state.activeId)||allItems[0]);}
     function activate(id,scroll){const items=filtered(),index=items.findIndex(p=>p.id===id);if(index>=renderLimit)renderLimit=index+40;state.activeId=id;render();if(scroll){const row=rows.querySelector(`[data-id="${CSS.escape(id)}"]`);row?.scrollIntoView({block:'nearest'})}}
     function showDetail(p){const button=document.getElementById('selectButton');if(!p){document.getElementById('productImage').innerHTML='<span class="fallback">Select a product</span>';document.getElementById('detailName').textContent='Select a product';document.getElementById('detailPrinciple').textContent='Product information will appear here.';['detailPack','detailBarcode','detailOrigin','detailShelf'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('detailPrice').textContent='QUOTE REQUIRED';document.getElementById('priceUnit').textContent='';button.disabled=true;return}
@@ -78,13 +84,13 @@
     function move(step){const items=filtered();if(!items.length)return;const i=Math.max(0,items.findIndex(p=>p.id===state.activeId));activate(items[Math.max(0,Math.min(items.length-1,i+step))].id,true)}
     rows.addEventListener('scroll',()=>{const items=filtered();if(rows.scrollTop+rows.clientHeight>=rows.scrollHeight-160&&renderLimit<items.length){renderLimit=Math.min(items.length,renderLimit+120);render(true)}});
     document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1)}});
-    document.getElementById('selectionFilter').onclick=()=>{state.selectionOnly=!state.selectionOnly;renderLimit=120;render()};document.getElementById('buyerButton').onclick=openBuyerRoom;
+    document.getElementById('selectionFilter').onclick=()=>{state.selectionOnly=!state.selectionOnly;renderLimit=120;render()};document.getElementById('buyerButton').onclick=openBuyerRoom;document.getElementById('closeDetail').onclick=()=>document.getElementById('detailPanel').classList.remove('mobile-open');
     window.addEventListener('message',e=>{const d=e.data||{};
       if(d.type==='catalogueWorkspaceData'){state.products=Array.isArray(d.products)?d.products:[];state.selectedIds=new Set((d.selectedProductIds||[]).map(text));state.buyerRoomUrl=text(d.buyerRoomUrl);render()}
       if(d.type==='catalogueWorkspaceSelection'){state.busyId='';if(d.ok&&d.productId)state.selectedIds.add(text(d.productId));render()}
       if(d.type==='catalogueWorkspaceFilter'){state.query=text(d.query);state.main=text(d.main).toUpperCase();state.subIds=Array.isArray(d.subIds)?d.subIds.map(text):[];state.principle=text(d.principle);state.selectionOnly=false;renderLimit=120;render()}
     });
-    post('catalogueWorkspaceReady');
+    const announceReady=()=>post('catalogueWorkspaceReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
 </html>

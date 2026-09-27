@@ -32,7 +32,7 @@
   <header class="header">
     <div class="top">
       <div class="brand">
-        <img id="brandLogo" src="https://raw.githubusercontent.com/fmcgmalaysia/fmcg-sales-room-ui/catalogue-zus-blue-refresh/assets/logo-orange-white-no-slogan.png" alt="fmcgMalaysia.com">
+        <img id="brandLogo" src="https://fmcgmalaysia.github.io/fmcg-sales-room-ui/assets/logo-orange-white-no-slogan.png?v=20260928" alt="fmcgMalaysia.com">
         <div id="brandFallback" class="brand-fallback">fmcg<b>Malaysia</b>.com</div>
       </div>
       <label class="search" aria-label="Search catalogue">
@@ -77,6 +77,7 @@
     document.getElementById('buyerRoom').onclick=e=>{if(!e.currentTarget.href||e.currentTarget.getAttribute('href')==='#')e.preventDefault()};
     document.getElementById('brandLogo').onerror=()=>{document.getElementById('brandLogo').style.display='none';document.getElementById('brandFallback').style.display='block'};
     window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer';if(/^https:\/\//.test(String(d.buyerRoomUrl||'')))document.getElementById('buyerRoom').href=d.buyerRoomUrl}});
+    const announceReady=()=>post('catalogueHeaderReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
 </html>
