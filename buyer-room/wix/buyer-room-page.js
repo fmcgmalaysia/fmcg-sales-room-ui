@@ -13,7 +13,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-order-columns-v36';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-compact-identity-columns-v37';
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let exportRequestNumber = 0;

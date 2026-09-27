@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-09-27-order-columns-v36">
+<meta name="build-version" content="2026-09-27-compact-identity-columns-v37">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -134,6 +134,15 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .order-grid .row>div{min-width:0;padding:6px 9px;text-align:left}
 .order-grid .row.head>div{display:flex;align-items:center;height:100%;font-size:11px;white-space:nowrap}
 .order-grid .order-product{gap:10px}.order-grid .qty{width:76px}
+/* Barcode and thumbnail columns should identify the item, not consume product-name space. */
+.grid .row{grid-template-columns:86px 40px minmax(300px,2.7fr) 86px 110px 118px 136px 120px 38px}
+.grid .row>div:first-child{padding-left:7px;padding-right:5px}
+.grid .row>div:nth-child(2){padding-left:4px;padding-right:4px}
+.grid .thumb-shell,.grid .thumb,.grid .thumb-fallback{width:26px;height:30px}
+.removed-grid .row{grid-template-columns:86px 40px minmax(300px,2.7fr) 90px 142px 104px 86px}
+.order-grid{min-width:1022px}
+.order-grid .row{grid-template-columns:98px minmax(314px,1fr) 118px 86px 115px 88px 145px 72px}
+.order-grid .order-product{gap:8px}.order-grid .order-product .thumb-shell{flex-basis:26px}
 </style>
 </head>
 <body>
