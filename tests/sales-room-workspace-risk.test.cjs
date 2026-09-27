@@ -54,6 +54,14 @@ test('risk counts keep the last successful snapshot and avoid rapid table redraw
   assert.match(html, /requestCustomerRefresh\(\).*60000/);
 });
 
+test('Sales Room logo matches the Buyer Room header width', () => {
+  const sales = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const buyer = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
+  assert.match(sales, /\.brand-lockup\{width:220px;height:52px\}/);
+  assert.match(sales, /\.brand-lockup img\{width:220px;max-width:100%\}/);
+  assert.match(buyer, /style="display:block;width:220px;max-height:42px/);
+});
+
 test('order and staff pages inherit the compact blue customer workspace style', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /Order and Staff pages follow the My Customers visual system/);
