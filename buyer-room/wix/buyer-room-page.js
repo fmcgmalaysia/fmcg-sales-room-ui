@@ -13,7 +13,7 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-last-quoted-v29';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20260927-buyer-layout-v30';
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let exportRequestNumber = 0;
@@ -191,7 +191,7 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
       try {
         const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '');
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order confirmed and sent to Sales Room.' });
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
         await loadWorkspace();
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });

@@ -96,7 +96,8 @@ test('Buyer Room shows only the last quoted time and withholds historical prices
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
   const currentHeader = html.match(/id="currentPanel"[\s\S]*?id="myRows"/)[0];
   assert.doesNotMatch(currentHeader, /M³ \/ CTN/);
-  assert.match(currentHeader, /Last Quoted<br>最后报价/);
+  assert.match(currentHeader, /Last Quoted/);
+  assert.doesNotMatch(currentHeader, /报价更新|最后报价/);
   assert.doesNotMatch(currentHeader, /data-quote-detail|Quotation Details|Previous Quotation/);
   assert.doesNotMatch(html, /Current Quotation · 当前报价|Previous Quotation · 上次报价/);
   const pageHead = html.match(/<div class="page-head">[\s\S]*?<\/div>\s*<\/div>/)[0];
@@ -106,6 +107,13 @@ test('Buyer Room shows only the last quoted time and withholds historical prices
   assert.match(html, /inline-stat awaiting[\s\S]*awaiting-icon[\s\S]*awaitingCount/);
   assert.match(html, /timeCell\(item\.addedTime,true\)/);
   assert.match(html, /date-part[\s\S]*clock-part/);
+  assert.match(html, /quote-updated\{color:#355f53;font-weight:400\}/);
+  assert.match(html, /price-line\.ctn strong\{color:var\(--orange\)\}/);
+  const orderSummary = html.match(/<div class="summary order-summary">[\s\S]*?<\/div><\/div>/)[0];
+  const orderActions = html.match(/<div class="list-tabs-bar order-action-bar">[\s\S]*?<\/div><\/div>/)[0];
+  assert.match(orderSummary, /Estimated Order Total[\s\S]*Send Order Request/);
+  assert.match(orderActions, /View Excel/);
+  assert.doesNotMatch(orderActions, /Google Sheets|Confirm Order/);
   const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js'), 'utf8');
   assert.match(backend, /delete safeData\.targetGp/);
   assert.match(backend, /delete safeData\.quoteActorEmail/);
