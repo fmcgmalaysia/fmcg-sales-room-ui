@@ -232,14 +232,9 @@ async function workspaceItems(customerId) {
     delete safeData.targetGp;
     delete safeData.quoteActorEmail;
     delete safeData.quoteRequestId;
-    const storedPrevious = data.previousQuote && typeof data.previousQuote === 'object' ? data.previousQuote : null;
-    const previousQuote = storedPrevious && money(storedPrevious.quotePerPc) > 0 && money(storedPrevious.quotePerCtn) > 0 ? {
-      quotePerPc: money(storedPrevious.quotePerPc),
-      quotePerCtn: money(storedPrevious.quotePerCtn),
-      currency: upper(storedPrevious.currency || data.vipCurrency),
-      quoteEffectiveAt: storedPrevious.quoteEffectiveAt || '',
-      expiredAt: storedPrevious.expiredAt || ''
-    } : null;
+    // Keep the one-generation quotation snapshot in CMS for a future internal
+    // workflow, but never expose historical prices to Buyer Room clients.
+    delete safeData.previousQuote;
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
@@ -267,7 +262,6 @@ async function workspaceItems(customerId) {
       quoteStatus: upper(data.quoteStatus || 'RFQ'),
       quoteActive: upper(data.quoteStatus || 'RFQ') === 'VIEW QUOTE',
       quoteEffectiveAt: data.quoteEffectiveAt || data.quoteSyncedAt || '',
-      previousQuote,
       addedTime: data.addedTime || data.selectedAt || record._createdDate || '',
       selectedByName: normalize(data.selectedByName || data.selectedById),
       lastEditedBy: normalize(data.lastEditedBy || data.selectedByName),

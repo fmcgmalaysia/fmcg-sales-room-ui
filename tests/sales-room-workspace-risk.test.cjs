@@ -92,16 +92,18 @@ test('quote publishing preserves unchanged dates and keeps one previous quote', 
   assert.match(http, /quoteEffectiveAt: now/);
 });
 
-test('Buyer Room shows current and previous quote without internal risk data', () => {
+test('Buyer Room shows only the last quoted time and withholds historical prices', () => {
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
   const currentHeader = html.match(/id="currentPanel"[\s\S]*?id="myRows"/)[0];
   assert.doesNotMatch(currentHeader, /M³ \/ CTN/);
-  assert.match(currentHeader, /Price Updated<br>报价更新/);
-  assert.match(html, /Current Quotation · 当前报价/);
-  assert.match(html, /Previous Quotation · 上次报价/);
-  assert.match(html, /Expired/);
+  assert.match(currentHeader, /Last Quoted<br>最后报价/);
+  assert.doesNotMatch(currentHeader, /data-quote-detail|Quotation Details|Previous Quotation/);
+  assert.doesNotMatch(html, /Current Quotation · 当前报价|Previous Quotation · 上次报价/);
+  assert.match(html, /timeCell\(item\.addedTime,true\)/);
+  assert.match(html, /date-part[\s\S]*clock-part/);
   const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js'), 'utf8');
   assert.match(backend, /delete safeData\.targetGp/);
   assert.match(backend, /delete safeData\.quoteActorEmail/);
   assert.match(backend, /delete safeData\.quoteRequestId/);
+  assert.match(backend, /delete safeData\.previousQuote/);
 });

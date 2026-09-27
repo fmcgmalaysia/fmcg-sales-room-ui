@@ -89,6 +89,7 @@ This is a frozen design rule for the later Wix–Google coordination phase. It i
 
 - `QUOTE STATUS` uses `RFQ`, system-owned `PENDING`, `VIEW QUOTE` and `FAILED`. `PENDING` is written after a quote-price edit and must not be offered as a manual dropdown choice. The previous Buyer Room quote remains visible until a changed `VIEW QUOTE` release succeeds.
 - Re-publishing an unchanged quote is idempotent: it does not reset the effective time or rotate quote history. A changed successful quote keeps exactly one previous quote, whose expiry time equals the new quote's effective time.
+- Buyer Room receives only the current quote and its effective time. The one-generation previous-quote snapshot remains server-side in `WixBuyerListItems.payload` for a future internal workflow and is not exposed to the customer client.
 - Work queue order is: pending high risk, normal pending, published high risk, other high risk, RFQ, FAILED, normal published. Sorting runs on open, manual sort, and after a QD-menu publish; it never runs while the salesperson is editing a price cell.
 - `HIGH RISK` is a separate, system-owned risk state in Wix. It is not a salesperson-selected QD status.
 - Real `COST /CTN`, purchase cost, cost variance and other confidential cost figures must never be stored in Wix CMS, returned to page code or committed to GitHub.
