@@ -36,9 +36,19 @@ const fs = require('fs');
   if (Math.abs(detailHeaderSize - 21) > 0.5) throw new Error('Product name size changed unexpectedly.');
   const factHeaderSize = Number.parseFloat(await page.locator('.fact label').first().evaluate(element => getComputedStyle(element).fontSize));
   if (factHeaderSize < 11) throw new Error('Product information headers remain too small.');
+  const factHeaderWeight = await page.locator('.fact label').first().evaluate(element => getComputedStyle(element).fontWeight);
+  if (Number(factHeaderWeight) > 500) throw new Error('Product information headers remain bold.');
   if (!(await page.locator('.media-wrap > #selectButton').count())) throw new Error('Primary selection action is not positioned below the product image.');
+  if ((await page.locator('#selectButton').innerText()) !== '✓ Selected') throw new Error('Selected product action label is incorrect.');
+  if (await page.getByText('Browse products', { exact: true }).count()) throw new Error('Removed keyboard browsing hint is still visible.');
   const availablePill = page.locator('.pill:not(.selected)').first();
   if ((await availablePill.evaluate(element => getComputedStyle(element).borderRadius)) !== '999px') throw new Error('Status pill styling is missing.');
+  const selectedPill = page.locator('.pill.selected').first();
+  const statusColors = await Promise.all([
+    availablePill.evaluate(element => getComputedStyle(element).backgroundColor),
+    selectedPill.evaluate(element => getComputedStyle(element).backgroundColor)
+  ]);
+  if (statusColors[0] === statusColors[1]) throw new Error('Available and Selected states are not visually distinct.');
   const pageCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-page-v3.js'), 'utf8');
   const workspaceCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-workspace-v1.html'), 'utf8');
   if (workspaceCode.includes('scrollIntoView')) throw new Error('Keyboard navigation can still scroll the outer Wix page.');
