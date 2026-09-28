@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-row-layout-v11';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-clean-layout-v12';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -618,7 +618,6 @@ function setupFluidCatalogueLayout() {
     try { $w('#box16').collapse(); } catch (error) {}
     try { $w('#repeater3').collapse(); } catch (error) {}
     try { $w('#html2').collapse(); } catch (error) {}
-    try { $w('#videoBox1').collapse(); } catch (error) {}
     try { $w('#box20').expand(); } catch (error) {}
     try { $w('#html5').expand(); } catch (error) {}
 }
