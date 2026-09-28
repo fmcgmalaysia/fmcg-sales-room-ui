@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-link-v3';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-price-v4';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
@@ -108,7 +108,7 @@ function catalogueReferenceIds(value) {
 }
 
 function catalogueUnitPrice(item) {
-    const candidates = [item.unitPrice, item.pricePerUnit, item.normalPrice, item.price];
+    const candidates = [item.unitPrice, item.pricePerUnit];
     const value = candidates.map(Number).find(number => Number.isFinite(number) && number > 0);
     return value || null;
 }
@@ -118,6 +118,7 @@ function catalogueProductRecord(item) {
         id: String(item?._id || ''),
         name: String(item?.name || item?.title || '').trim(),
         description: String(item?.description || item?.packingSize || '').trim(),
+        ea: String(item?.ea ?? item?.EA ?? '').trim(),
         barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
         principle: String(item?.principle || '').trim(),
         mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
