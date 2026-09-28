@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-selection-counts-v23';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-native-header-v25';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -463,7 +463,9 @@ function setupNav() {
     const mega = $w('#html4');
     const dataset = $w('#dataset1');
     let nativeSearch;
+    let nativeBuyerButton;
     try { nativeSearch = $w('#input1'); } catch (error) { nativeSearch = null; }
+    try { nativeBuyerButton = $w('#catalogueBuyerButton'); } catch (error) { nativeBuyerButton = null; }
     let activeMain = 'FOOD';
     let isOpen = false;
     let lastScrollY = 0;
@@ -508,10 +510,27 @@ function setupNav() {
     // The search control is a Wix element in the same section as the header.
     // It filters the existing CMS-backed catalogue without relying on iframe sizing.
     let searchTimer;
-    if (nativeSearch) nativeSearch.onInput(() => {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => applySearch(nativeSearch.value), 240);
-    });
+    if (nativeSearch) {
+        nativeSearch.placeholder = 'Search products, brands or categories...';
+        nativeSearch.expand();
+        nativeSearch.show();
+        nativeSearch.onInput(() => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => applySearch(nativeSearch.value), 240);
+        });
+    }
+
+    if (nativeBuyerButton) {
+        nativeBuyerButton.label = '🛒  Buyer Room';
+        nativeBuyerButton.style.backgroundColor = '#FFFFFF';
+        nativeBuyerButton.style.color = '#D94D1E';
+        nativeBuyerButton.style.borderColor = '#FFFFFF';
+        nativeBuyerButton.style.borderWidth = '1px';
+        nativeBuyerButton.style.borderRadius = '8px';
+        nativeBuyerButton.expand();
+        nativeBuyerButton.show();
+        nativeBuyerButton.onClick(() => openBuyerRoomWindow());
+    }
 
     const applyMainCategory = async (main) => {
         const items = catalogueMenuMessage && Array.isArray(catalogueMenuMessage.items)
