@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-build-version" content="2026-09-28-catalogue-keyboard-scroll-v18">
+  <meta name="catalogue-build-version" content="2026-09-28-catalogue-keyboard-viewport-v19">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap');
     :root{--orange:#f05a28;--orange2:#ff7a32;--orange-soft:#fff4ed;--navy:#102a4a;--ink:#142943;--muted:#6d7d90;--line:#dfe6ed;--panel:#fff;--bg:#f6f8fa;--green:#16885f}
@@ -78,7 +78,7 @@
     function selectProduct(productId){if(state.busyId)return;state.busyId=productId;showDetail(state.products.find(p=>p.id===productId));post('catalogueWorkspaceSelect',{productId})}
     function move(step){const items=filtered();if(!items.length)return;const i=Math.max(0,items.findIndex(p=>p.id===state.activeId));activate(items[Math.max(0,Math.min(items.length-1,i+step))].id,true)}
     rows.addEventListener('scroll',()=>{const items=filtered();if(rows.scrollTop+rows.clientHeight>=rows.scrollHeight-160&&renderLimit<items.length){renderLimit=Math.min(items.length,renderLimit+120);render(true)}});
-    document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1)}});
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();e.stopPropagation();move(e.key==='ArrowDown'?1:-1);post('catalogueWorkspaceNavigate')}});
     function setSelectionView(view){state.selectionView=state.selectionView===view?'':view;renderLimit=120;render()}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=()=>document.getElementById('detailPanel').classList.remove('mobile-open');
     window.addEventListener('message',e=>{const d=e.data||{};

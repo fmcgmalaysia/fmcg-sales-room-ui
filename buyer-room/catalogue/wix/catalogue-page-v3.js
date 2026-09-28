@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-keyboard-scroll-v18';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-keyboard-viewport-v19';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -601,6 +601,8 @@ function setupCatalogueWorkspace() {
             catalogueWorkspaceReady = true;
             if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
             else sendCatalogueWorkspaceData();
+        } else if (message.type === 'catalogueWorkspaceNavigate') {
+            try { await $w('#html3').scrollTo(); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
             openBuyerRoomWindow();
         } else if (message.type === 'catalogueWorkspaceSelect') {
