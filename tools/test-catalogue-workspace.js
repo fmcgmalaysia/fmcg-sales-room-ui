@@ -6,9 +6,25 @@ const path = require('path');
   const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  const preview = path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'preview', 'catalogue-workspace-v1.html').replace(/\\/g, '/');
+  const preview = path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-workspace-v1.html').replace(/\\/g, '/');
   await page.goto(`file:///${preview}`);
+  await page.evaluate(() => window.postMessage({
+    type: 'catalogueWorkspaceData',
+    selectedProductIds: ['food-1', 'nonfood-1'],
+    products: [
+      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND A' },
+      { id: 'food-2', name: 'Second food product', description: '200G x 6', barcode: '1002', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND B' },
+      { id: 'nonfood-1', name: 'Non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'HOUSEHOLD & CLEANING', principle: 'BRAND C' }
+    ]
+  }, '*'));
   await page.locator('.row').first().waitFor();
+  if ((await page.locator('#selectionCount').innerText()) !== '2') throw new Error('My Selection count is incorrect.');
+  if ((await page.locator('#foodSelectionCount').innerText()) !== '1') throw new Error('Food selection count is incorrect.');
+  if ((await page.locator('#nonFoodSelectionCount').innerText()) !== '1') throw new Error('Non-food selection count is incorrect.');
+  if (await page.getByText('Product Catalogue', { exact: true }).count()) throw new Error('Removed Product Catalogue title is still visible.');
+  if (await page.getByText('BANNER', { exact: true }).count()) throw new Error('Removed banner is still visible.');
+  const imageBox = await page.locator('.product-image').boundingBox();
+  if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 1 || imageBox.width < 345) throw new Error('Desktop product image container is not a square at the required minimum size.');
   const first = await page.locator('.row.active .name').innerText();
   await page.keyboard.press('ArrowDown');
   const second = await page.locator('.row.active .name').innerText();
