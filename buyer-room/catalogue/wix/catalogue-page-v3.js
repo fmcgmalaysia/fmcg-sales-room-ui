@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-keyboard-viewport-v20';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-detail-action-v21';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
