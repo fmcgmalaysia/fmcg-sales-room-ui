@@ -41,11 +41,8 @@
       </label>
       <div class="utilities">
         <a class="utility" id="buyerRoom" href="#" target="_blank" rel="noopener" aria-label="Open Buyer Room in a new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M5 3.5h14v17H5zM8 7h8M8 11h8M8 15h5"/></svg><span>Buyer Room</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20.5 8H7"/><circle cx="10" cy="19" r="1.35"/><circle cx="17" cy="19" r="1.35"/></svg><span>Buyer Room</span>
         </a>
-        <button class="utility" id="account" type="button" aria-label="Account">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4.1 3.3-6.2 7.5-6.2s6.7 2.1 7.5 6.2"/></svg><span>Account</span>
-        </button>
         <button class="utility usd" type="button" aria-label="Currency USD">USD</button>
         <div class="identity"><div class="hello" id="hello">Signed in</div><div class="name" id="identityName">Buyer</div></div>
       </div>
@@ -73,7 +70,6 @@
     document.querySelector('.nav').addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
     document.getElementById('catalogueSearch').addEventListener('input',e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>post('catalogueSearch',{query:e.target.value.trim()}),300)});
     document.getElementById('catalogueSearch').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';post('catalogueSearch',{query:''});e.target.blur()}});
-    document.getElementById('account').onclick=()=>post('catalogueAccount');
     document.getElementById('buyerRoom').onclick=e=>{if(!e.currentTarget.href||e.currentTarget.getAttribute('href')==='#')e.preventDefault()};
     document.getElementById('brandLogo').onerror=()=>{document.getElementById('brandLogo').style.display='none';document.getElementById('brandFallback').style.display='block'};
     window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}if(d.type==='catalogueContext'){document.getElementById('hello').textContent=d.mode==='assist'?'Customer catalogue':'Signed in';document.getElementById('identityName').textContent=d.sheetName||d.signedInName||'Buyer';if(/^https:\/\//.test(String(d.buyerRoomUrl||'')))document.getElementById('buyerRoom').href=d.buyerRoomUrl}});
