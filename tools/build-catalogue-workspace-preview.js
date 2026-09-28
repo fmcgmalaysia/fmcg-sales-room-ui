@@ -16,6 +16,7 @@ const products = [...concept.matchAll(/data-name="([^"]+)" data-pack="([^"]+)" d
     barcode: match[3],
     image: match[4],
     principle: index < 6 ? 'NESTLÉ' : 'FMCG MALAYSIA',
+    mainCategory: 'FOOD',
     countryOrigin: 'MALAYSIA',
     shelfLife: '12 MONTHS',
     subCategoryIds: ['preview-food'],
@@ -28,6 +29,8 @@ const mock = JSON.stringify({
   type: 'catalogueWorkspaceData',
   products,
   selectedProductIds: ['preview-2', 'preview-5'],
+  selectionLimit: 700,
+  selectionTotal: 2,
   buyerRoomUrl: '#'
 });
 html = html.replace(

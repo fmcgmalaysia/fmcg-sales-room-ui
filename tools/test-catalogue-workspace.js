@@ -12,6 +12,8 @@ const fs = require('fs');
   await page.evaluate(() => window.postMessage({
     type: 'catalogueWorkspaceData',
     selectedProductIds: ['food-1', 'nonfood-1'],
+    selectionLimit: 700,
+    selectionTotal: 2,
     products: [
       { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
       { id: 'food-2', name: 'Second food product', description: '200G x 6', barcode: '1002', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND B' },
@@ -20,6 +22,8 @@ const fs = require('fs');
   }, '*'));
   await page.locator('.row').first().waitFor();
   if ((await page.locator('#selectionCount').innerText()) !== '2') throw new Error('My Selection count is incorrect.');
+  if ((await page.locator('#selectionLimit').innerText()) !== '700') throw new Error('Account selection limit is incorrect.');
+  if ((await page.locator('#selectionAllowance').innerText()) !== 'Your account allows up to 700 selected SKUs.') throw new Error('Account allowance copy is incorrect.');
   if ((await page.locator('#foodSelectionCount').innerText()) !== '1') throw new Error('Food selection count is incorrect.');
   if ((await page.locator('#nonFoodSelectionCount').innerText()) !== '1') throw new Error('Non-food selection count is incorrect.');
   if (await page.getByText('Product Catalogue', { exact: true }).count()) throw new Error('Removed Product Catalogue title is still visible.');
@@ -28,6 +32,10 @@ const fs = require('fs');
   const firstThumbBox = await page.locator('.thumb').first().boundingBox();
   if (!firstRowBox || Math.abs(firstRowBox.height - 64) > 1) throw new Error('Desktop row spacing changed.');
   if (!firstThumbBox || firstThumbBox.width < 56 || firstThumbBox.height < 56) throw new Error('Desktop thumbnail was not enlarged inside the existing row.');
+  const detailHeaderSize = Number.parseFloat(await page.locator('#detailName').evaluate(element => getComputedStyle(element).fontSize));
+  if (detailHeaderSize < 21) throw new Error('Detail header was not enlarged.');
+  const availablePill = page.locator('.pill:not(.selected)').first();
+  if ((await availablePill.evaluate(element => getComputedStyle(element).borderRadius)) !== '999px') throw new Error('Status pill styling is missing.');
   const pageCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-page-v3.js'), 'utf8');
   if (!pageCode.includes('catalogueSubCategoryMainMap.get')) throw new Error('Subcategory-to-main-category counting fallback is missing.');
   if (!pageCode.includes("hasSome('subCategories', foodSubCategoryIds)")) throw new Error('Food category membership query is missing.');
@@ -41,6 +49,10 @@ const fs = require('fs');
   if ((await page.locator('#detailName').innerText()) !== second) throw new Error('Detail panel did not follow the active product.');
   await page.locator('#selectionFilter').click();
   if ((await page.locator('.row').count()) !== 2) throw new Error('My Selection filter did not return the two selected products.');
+  await page.locator('#foodSelectionFilter').click();
+  if ((await page.locator('.row').count()) !== 1 || (await page.locator('.row .name').innerText()) !== 'Food product') throw new Error('Food selected-product filter is incorrect.');
+  await page.locator('#nonFoodSelectionFilter').click();
+  if ((await page.locator('.row').count()) !== 1 || (await page.locator('.row .name').innerText()) !== 'Non-food product') throw new Error('Non-food selected-product filter is incorrect.');
   if (errors.length) throw new Error(`Browser errors: ${errors.join(' | ')}`);
   console.log('Catalogue workspace interaction test passed.');
   await browser.close();

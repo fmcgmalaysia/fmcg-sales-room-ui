@@ -16,10 +16,12 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v16';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-selection-filters-v17';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
+let catalogueSelectionLimit = 100;
+let catalogueSelectionTotal = 0;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
 let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
@@ -103,6 +105,8 @@ function setProductActions(enabled) {
 
 function sidebarSelectionState(state) {
     selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+    catalogueSelectionLimit = Number(state?.selectionLimit) || 100;
+    catalogueSelectionTotal = Number.isFinite(Number(state?.total)) ? Number(state.total) : selectedProductIds.size;
     sendCatalogueWorkspaceData();
 }
 
@@ -152,6 +156,8 @@ function sendCatalogueWorkspaceData() {
                         .find(Boolean) || product.mainCategory || ''
             })),
             selectedProductIds: [...selectedProductIds],
+            selectionLimit: catalogueSelectionLimit,
+            selectionTotal: catalogueSelectionTotal,
             buyerRoomUrl: buyerRoomUrl(),
             context: catalogueContextMessage,
             buildVersion: CATALOGUE_BUILD_VERSION
