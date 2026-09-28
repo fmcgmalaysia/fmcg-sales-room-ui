@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-price-v5';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-price-v6';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -122,6 +122,7 @@ function catalogueProductRecord(item) {
         ea: String(item?.ea ?? item?.EA ?? '').trim(),
         barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
         innerBoxBarcode: String(item?.innerBoxBarcode || '').trim(),
+        cartonBarcode: String(item?.cartonBarcode || '').trim(),
         cbmPerCtn: String(item?.m3Ctn ?? item?.cbmPerCtn ?? item?.cbm ?? '').trim(),
         principle: String(item?.principle || '').trim(),
         mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
