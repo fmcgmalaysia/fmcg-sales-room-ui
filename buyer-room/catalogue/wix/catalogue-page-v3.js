@@ -16,11 +16,12 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-compact-workspace-v13';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v14';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+let catalogueSubCategoryMainMap = new Map();
 
 const SELECTION_BUTTON_THEME = {
     idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
@@ -140,7 +141,12 @@ function sendCatalogueWorkspaceData() {
     try {
         $w('#html5').postMessage({
             type: 'catalogueWorkspaceData',
-            products: catalogueWorkspaceProducts,
+            products: catalogueWorkspaceProducts.map(product => ({
+                ...product,
+                mainCategory: product.mainCategory || (product.subCategoryIds || [])
+                    .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
+                    .find(Boolean) || ''
+            })),
             selectedProductIds: [...selectedProductIds],
             buyerRoomUrl: buyerRoomUrl(),
             context: catalogueContextMessage,
@@ -372,10 +378,15 @@ function setupCataloguePagination() {
 async function loadMenuData() {
     try {
         const result = await wixData.query('subCategories').ascending('mainCategory').ascending('title').limit(1000).find();
+        catalogueSubCategoryMainMap = new Map(result.items.map(item => [
+            String(item._id || ''),
+            String(item.mainCategory || '').trim().toUpperCase()
+        ]).filter(([id, mainCategory]) => id && mainCategory));
         sendCatalogueMenu({
             type: 'catalogueMenuData',
             items: result.items.map(item => ({ id: item._id, title: String(item.title || '').trim(), mainCategory: String(item.mainCategory || '').trim().toUpperCase() })).filter(item => item.id && item.title && item.mainCategory)
         });
+        sendCatalogueWorkspaceData();
     } catch (error) {
         console.error('Catalogue menu CMS load failed', error);
         sendCatalogueMenu({ type: 'catalogueMenuData', items: [] });

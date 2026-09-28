@@ -1,5 +1,6 @@
 const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const path = require('path');
+const fs = require('fs');
 
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe' });
@@ -12,7 +13,7 @@ const path = require('path');
     type: 'catalogueWorkspaceData',
     selectedProductIds: ['food-1', 'nonfood-1'],
     products: [
-      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND A' },
+      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
       { id: 'food-2', name: 'Second food product', description: '200G x 6', barcode: '1002', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND B' },
       { id: 'nonfood-1', name: 'Non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'HOUSEHOLD & CLEANING', principle: 'BRAND C' }
     ]
@@ -23,6 +24,12 @@ const path = require('path');
   if ((await page.locator('#nonFoodSelectionCount').innerText()) !== '1') throw new Error('Non-food selection count is incorrect.');
   if (await page.getByText('Product Catalogue', { exact: true }).count()) throw new Error('Removed Product Catalogue title is still visible.');
   if (await page.getByText('BANNER', { exact: true }).count()) throw new Error('Removed banner is still visible.');
+  const firstRowBox = await page.locator('.row').first().boundingBox();
+  const firstThumbBox = await page.locator('.thumb').first().boundingBox();
+  if (!firstRowBox || Math.abs(firstRowBox.height - 64) > 1) throw new Error('Desktop row spacing changed.');
+  if (!firstThumbBox || firstThumbBox.width < 56 || firstThumbBox.height < 56) throw new Error('Desktop thumbnail was not enlarged inside the existing row.');
+  const pageCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-page-v3.js'), 'utf8');
+  if (!pageCode.includes('catalogueSubCategoryMainMap.get')) throw new Error('Subcategory-to-main-category counting fallback is missing.');
   const imageBox = await page.locator('.product-image').boundingBox();
   if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 1 || imageBox.width < 345) throw new Error('Desktop product image container is not a square at the required minimum size.');
   const first = await page.locator('.row.active .name').innerText();
