@@ -121,6 +121,8 @@ function catalogueProductRecord(item) {
         description: String(item?.description || item?.packingSize || '').trim(),
         ea: String(item?.ea ?? item?.EA ?? '').trim(),
         barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
+        innerBoxBarcode: String(item?.innerBoxBarcode || '').trim(),
+        cbmPerCtn: String(item?.m3Ctn ?? item?.cbmPerCtn ?? item?.cbm ?? '').trim(),
         principle: String(item?.principle || '').trim(),
         mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
         image: imageUrl(item?.image),
