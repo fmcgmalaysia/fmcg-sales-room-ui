@@ -16,7 +16,7 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-keyboard-viewport-v19';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-keyboard-viewport-v20';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -602,7 +602,7 @@ function setupCatalogueWorkspace() {
             if (!catalogueWorkspaceProducts.length) await loadCatalogueWorkspaceProducts();
             else sendCatalogueWorkspaceData();
         } else if (message.type === 'catalogueWorkspaceNavigate') {
-            try { await $w('#html3').scrollTo(); } catch (error) {}
+            try { await wixWindowFrontend.scrollTo(0, 0); } catch (error) {}
         } else if (message.type === 'catalogueWorkspaceBuyerRoom') {
             openBuyerRoomWindow();
         } else if (message.type === 'catalogueWorkspaceSelect') {

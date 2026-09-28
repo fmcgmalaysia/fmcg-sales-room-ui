@@ -42,7 +42,7 @@ const fs = require('fs');
   if (!workspaceCode.includes('rows.scrollTop+=rowBox.bottom-listBox.bottom')) throw new Error('Keyboard navigation is not isolated to the product list.');
   if (!workspaceCode.includes("post('catalogueWorkspaceNavigate')")) throw new Error('Keyboard navigation does not request outer viewport preservation.');
   if (!pageCode.includes("message.type === 'catalogueWorkspaceNavigate'")) throw new Error('Page code does not handle outer viewport preservation.');
-  if (!pageCode.includes("await $w('#html3').scrollTo()")) throw new Error('Page code does not keep the Catalogue header in view.');
+  if (!pageCode.includes('await wixWindowFrontend.scrollTo(0, 0)')) throw new Error('Page code does not keep the outer Wix viewport at the top.');
   if (!pageCode.includes('catalogueSubCategoryMainMap.get')) throw new Error('Subcategory-to-main-category counting fallback is missing.');
   if (!pageCode.includes("hasSome('subCategories', foodSubCategoryIds)")) throw new Error('Food category membership query is missing.');
   if (!pageCode.includes('catalogueFoodPrinciples.has(product.principle.toUpperCase())')) throw new Error('Food principle fallback is missing.');
