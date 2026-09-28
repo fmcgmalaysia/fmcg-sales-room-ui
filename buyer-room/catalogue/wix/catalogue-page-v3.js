@@ -16,8 +16,9 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-price-v4';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-filter-price-v5';
 let catalogueWorkspaceProducts = [];
+let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
 
@@ -149,17 +150,41 @@ function sendCatalogueWorkspaceData() {
 async function loadCatalogueWorkspaceProducts() {
     const products = [];
     try {
-        let result = await wixData.query('FMCGMALAYSIA').include('subCategories').ascending('name').limit(1000).find();
+        let result = await wixData.query('FMCGMALAYSIA').ascending('name').limit(1000).find();
+        products.push(...result.items);
+        while (result.hasNext() && products.length < 10000) {
+            result = await result.next();
+            products.push(...result.items);
+        }
+        catalogueWorkspaceAllProducts = products.map(catalogueProductRecord).filter(item => item.id && item.name);
+        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+    } catch (error) {
+        console.error('Catalogue workspace CMS load failed', error);
+        catalogueWorkspaceProducts = [];
+    }
+    sendCatalogueWorkspaceData();
+}
+
+async function showCatalogueWorkspaceQuery(query) {
+    const products = [];
+    try {
+        let result = await query.ascending('name').limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
             products.push(...result.items);
         }
         catalogueWorkspaceProducts = products.map(catalogueProductRecord).filter(item => item.id && item.name);
+        catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
+        sendCatalogueWorkspaceData();
     } catch (error) {
-        console.error('Catalogue workspace CMS load failed', error);
-        catalogueWorkspaceProducts = [];
+        console.error('Catalogue workspace filtered CMS load failed', error);
     }
+}
+
+function showAllCatalogueWorkspaceProducts() {
+    catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+    catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
     sendCatalogueWorkspaceData();
 }
 
@@ -417,8 +442,12 @@ function setupNav() {
             .filter(item => String(item.mainCategory || '').toUpperCase() === String(main || '').toUpperCase())
             .map(item => item.id)
             .filter(Boolean);
-        sendCatalogueWorkspaceFilter({ main: '', subIds: ids, principle: '' });
-        if (ids.length) await dataset.setFilter(wixData.filter().hasSome('subCategories', ids));
+        if (ids.length) {
+            await Promise.all([
+                dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
+                showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids))
+            ]);
+        }
     };
 
     header.onMessage(async (event) => {
@@ -441,7 +470,7 @@ function setupNav() {
         } else if (message.type === 'catalogueAll') {
             await hideMenu();
             if (nativeSearch) nativeSearch.value = '';
-            sendCatalogueWorkspaceFilter({ query: '', main: '', subIds: [], principle: '' });
+            showAllCatalogueWorkspaceProducts();
             await dataset.setFilter(wixData.filter());
         } else if (message.type === 'catalogueAccount') {
             await authentication.logout();
@@ -470,22 +499,29 @@ function setupNav() {
             leaveTimer = setTimeout(hideMenu, 420);
         } else if (message.type === 'catalogueSub') {
             if (message.id) {
-                sendCatalogueWorkspaceFilter({ main: '', subIds: [message.id], principle: '' });
-                await dataset.setFilter(wixData.filter().hasSome('subCategories', [message.id]));
+                await Promise.all([
+                    dataset.setFilter(wixData.filter().hasSome('subCategories', [message.id])),
+                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', [message.id]))
+                ]);
             }
             else {
                 const result = await wixData.query('subCategories').eq('title', message.sub).limit(1).find();
                 if (result.items.length) {
-                    sendCatalogueWorkspaceFilter({ main: '', subIds: [result.items[0]._id], principle: '' });
-                    await dataset.setFilter(wixData.filter().hasSome('subCategories', [result.items[0]._id]));
+                    const subId = result.items[0]._id;
+                    await Promise.all([
+                        dataset.setFilter(wixData.filter().hasSome('subCategories', [subId])),
+                        showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', [subId]))
+                    ]);
                 }
             }
             hideMenu();
         } else if (message.type === 'catalogueGroup') {
             const ids = Array.isArray(message.ids) ? message.ids.filter(Boolean) : [];
             if (ids.length) {
-                sendCatalogueWorkspaceFilter({ main: '', subIds: ids, principle: '' });
-                await dataset.setFilter(wixData.filter().hasSome('subCategories', ids));
+                await Promise.all([
+                    dataset.setFilter(wixData.filter().hasSome('subCategories', ids)),
+                    showCatalogueWorkspaceQuery(wixData.query('FMCGMALAYSIA').hasSome('subCategories', ids))
+                ]);
             }
             hideMenu();
         } else if (message.type === 'cataloguePrinciple') {
@@ -493,8 +529,9 @@ function setupNav() {
             if (!principle) return;
             let filter = wixData.filter().eq('principle', principle);
             if (message.subId) filter = filter.hasSome('subCategories', [message.subId]);
-            sendCatalogueWorkspaceFilter({ main: '', subIds: message.subId ? [message.subId] : [], principle });
-            await dataset.setFilter(filter);
+            let query = wixData.query('FMCGMALAYSIA').eq('principle', principle);
+            if (message.subId) query = query.hasSome('subCategories', [message.subId]);
+            await Promise.all([dataset.setFilter(filter), showCatalogueWorkspaceQuery(query)]);
             hideMenu();
         }
     });
