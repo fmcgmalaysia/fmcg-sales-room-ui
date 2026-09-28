@@ -16,13 +16,14 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v15';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v16';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
 let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
+let catalogueFoodPrinciples = new Set();
 
 const SELECTION_BUTTON_THEME = {
     idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
@@ -144,7 +145,7 @@ function sendCatalogueWorkspaceData() {
             type: 'catalogueWorkspaceData',
             products: catalogueWorkspaceProducts.map(product => ({
                 ...product,
-                mainCategory: catalogueFoodProductIds.has(product.id)
+                mainCategory: catalogueFoodProductIds.has(product.id) || catalogueFoodPrinciples.has(product.principle.toUpperCase())
                     ? 'FOOD'
                     : (product.subCategoryIds || [])
                         .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
@@ -394,12 +395,21 @@ async function loadMenuData() {
             .map(item => item._id)
             .filter(Boolean);
         catalogueFoodProductIds = new Set();
+        catalogueFoodPrinciples = new Set();
         if (foodSubCategoryIds.length) {
             let foodResult = await wixData.query('FMCGMALAYSIA').hasSome('subCategories', foodSubCategoryIds).limit(1000).find();
-            foodResult.items.forEach(item => catalogueFoodProductIds.add(String(item._id || '')));
+            foodResult.items.forEach(item => {
+                catalogueFoodProductIds.add(String(item._id || ''));
+                const principle = String(item.principle || '').trim().toUpperCase();
+                if (principle) catalogueFoodPrinciples.add(principle);
+            });
             while (foodResult.hasNext() && catalogueFoodProductIds.size < 10000) {
                 foodResult = await foodResult.next();
-                foodResult.items.forEach(item => catalogueFoodProductIds.add(String(item._id || '')));
+                foodResult.items.forEach(item => {
+                    catalogueFoodProductIds.add(String(item._id || ''));
+                    const principle = String(item.principle || '').trim().toUpperCase();
+                    if (principle) catalogueFoodPrinciples.add(principle);
+                });
             }
         }
         sendCatalogueWorkspaceData();

@@ -31,6 +31,7 @@ const fs = require('fs');
   const pageCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-page-v3.js'), 'utf8');
   if (!pageCode.includes('catalogueSubCategoryMainMap.get')) throw new Error('Subcategory-to-main-category counting fallback is missing.');
   if (!pageCode.includes("hasSome('subCategories', foodSubCategoryIds)")) throw new Error('Food category membership query is missing.');
+  if (!pageCode.includes('catalogueFoodPrinciples.has(product.principle.toUpperCase())')) throw new Error('Food principle fallback is missing.');
   const imageBox = await page.locator('.product-image').boundingBox();
   if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 1 || imageBox.width < 345) throw new Error('Desktop product image container is not a square at the required minimum size.');
   const first = await page.locator('.row.active .name').innerText();
