@@ -16,12 +16,13 @@ let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v14';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-category-counts-v15';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
 let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
 let catalogueSubCategoryMainMap = new Map();
+let catalogueFoodProductIds = new Set();
 
 const SELECTION_BUTTON_THEME = {
     idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
@@ -143,9 +144,11 @@ function sendCatalogueWorkspaceData() {
             type: 'catalogueWorkspaceData',
             products: catalogueWorkspaceProducts.map(product => ({
                 ...product,
-                mainCategory: product.mainCategory || (product.subCategoryIds || [])
-                    .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
-                    .find(Boolean) || ''
+                mainCategory: catalogueFoodProductIds.has(product.id)
+                    ? 'FOOD'
+                    : (product.subCategoryIds || [])
+                        .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
+                        .find(Boolean) || product.mainCategory || ''
             })),
             selectedProductIds: [...selectedProductIds],
             buyerRoomUrl: buyerRoomUrl(),
@@ -386,6 +389,19 @@ async function loadMenuData() {
             type: 'catalogueMenuData',
             items: result.items.map(item => ({ id: item._id, title: String(item.title || '').trim(), mainCategory: String(item.mainCategory || '').trim().toUpperCase() })).filter(item => item.id && item.title && item.mainCategory)
         });
+        const foodSubCategoryIds = result.items
+            .filter(item => String(item.mainCategory || '').trim().toUpperCase().startsWith('FOOD'))
+            .map(item => item._id)
+            .filter(Boolean);
+        catalogueFoodProductIds = new Set();
+        if (foodSubCategoryIds.length) {
+            let foodResult = await wixData.query('FMCGMALAYSIA').hasSome('subCategories', foodSubCategoryIds).limit(1000).find();
+            foodResult.items.forEach(item => catalogueFoodProductIds.add(String(item._id || '')));
+            while (foodResult.hasNext() && catalogueFoodProductIds.size < 10000) {
+                foodResult = await foodResult.next();
+                foodResult.items.forEach(item => catalogueFoodProductIds.add(String(item._id || '')));
+            }
+        }
         sendCatalogueWorkspaceData();
     } catch (error) {
         console.error('Catalogue menu CMS load failed', error);
