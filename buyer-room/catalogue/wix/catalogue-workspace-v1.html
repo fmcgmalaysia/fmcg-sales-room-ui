@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-build-version" content="2026-09-28-catalogue-status-action-v22">
+  <meta name="catalogue-build-version" content="2026-09-28-catalogue-selection-counts-v23">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap');
     :root{--orange:#f05a28;--orange2:#ff7a32;--orange-soft:#fff4ed;--navy:#102a4a;--ink:#142943;--muted:#6d7d90;--line:#dfe6ed;--panel:#fff;--bg:#f6f8fa;--green:#16885f}
@@ -48,7 +48,7 @@
     </section>
   </main>
   <script>
-    const state={products:[],selectedIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,busyId:'',buyerRoomUrl:''};
+    const state={products:[],selectionProducts:[],selectedIds:new Set(),activeSelectedIds:new Set(),activeId:'',query:'',main:'',subIds:[],principle:'',selectionView:'',selectionLimit:100,selectionTotal:0,selectionFoodCount:0,selectionNonFoodCount:0,selectionCountsReady:false,busyId:'',buyerRoomUrl:''};
     let renderLimit=120;
     const rows=document.getElementById('rows');
     const post=(type,payload={})=>parent.postMessage({type,...payload},'*');
@@ -56,15 +56,15 @@
     const esc=v=>text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const selected=p=>state.selectedIds.has(text(p.id));
     const isFood=p=>['FOOD','FOOD & BEVERAGES'].includes(text(p.mainCategory).toUpperCase());
-    function filtered(){const q=state.query.toLowerCase();return state.products.filter(p=>{
-      if(state.selectionView){if(!selected(p))return false;if(state.selectionView==='FOOD'&&!isFood(p))return false;if(state.selectionView==='NON_FOOD'&&isFood(p))return false;return true}
+    function filtered(){const q=state.query.toLowerCase(),source=state.selectionView?state.selectionProducts:state.products;return source.filter(p=>{
+      if(state.selectionView){if(!state.activeSelectedIds.has(text(p.id)))return false;if(state.selectionView==='FOOD'&&!isFood(p))return false;if(state.selectionView==='NON_FOOD'&&isFood(p))return false;return true}
       if(state.main&&text(p.mainCategory).toUpperCase()!==state.main)return false;
       if(state.subIds.length&&!state.subIds.some(id=>(p.subCategoryIds||[]).includes(id)))return false;
       if(state.principle&&text(p.principle)!==state.principle)return false;
       if(q&&!`${p.name} ${p.description} ${p.barcode} ${p.principle}`.toLowerCase().includes(q))return false;
       return true})}
     function imageMarkup(p,large=false){return p.image?`<img src="${esc(p.image)}" alt="">`:`<span class="fallback">${large?'IMAGE PENDING':'NO IMAGE'}</span>`}
-    function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems.slice(0,renderLimit),selectedProducts=state.products.filter(p=>state.selectedIds.has(text(p.id))),foodCount=selectedProducts.filter(isFood).length,selectedTotal=Number.isFinite(state.selectionTotal)?state.selectionTotal:state.selectedIds.size,nonFoodCount=Math.max(0,state.selectedIds.size-foodCount);document.getElementById('selectionCount').textContent=selectedTotal;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=foodCount;document.getElementById('nonFoodSelectionCount').textContent=nonFoodCount;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
+    function render(preserveScroll=false){const scrollTop=rows.scrollTop,allItems=filtered(),items=allItems.slice(0,renderLimit),pending=state.selectionCountsReady?'':'—';document.getElementById('selectionCount').textContent=state.selectionCountsReady?state.selectionTotal:pending;document.getElementById('selectionLimit').textContent=state.selectionLimit;document.getElementById('foodSelectionCount').textContent=state.selectionCountsReady?state.selectionFoodCount:pending;document.getElementById('nonFoodSelectionCount').textContent=state.selectionCountsReady?state.selectionNonFoodCount:pending;document.getElementById('selectionAllowance').textContent=`Your account allows up to ${state.selectionLimit} selected SKUs.`;document.getElementById('selectionFilter').classList.toggle('active',state.selectionView==='ALL');document.getElementById('foodSelectionFilter').classList.toggle('active',state.selectionView==='FOOD');document.getElementById('nonFoodSelectionFilter').classList.toggle('active',state.selectionView==='NON_FOOD');
       if(!allItems.length){rows.innerHTML='<div class="empty">No products match the current filter.</div>';showDetail(null);return}
       if(!allItems.some(p=>p.id===state.activeId))state.activeId=allItems[0].id;
       rows.replaceChildren(...items.map(p=>{const b=document.createElement('button');b.type='button';b.className='row'+(p.id===state.activeId?' active':'');b.dataset.id=p.id;b.innerHTML=`<span class="thumb">${imageMarkup(p)}</span><span class="product"><span class="name">${esc(p.name)||'Unnamed product'}</span><span class="pack">${esc(p.description)||'Packing size pending'}</span></span><span class="barcode">${esc(p.barcode)||'—'}</span><span class="state"><span class="pill ${selected(p)?'selected':''}">${selected(p)?'Selected':'Available'}</span></span>`;b.onclick=()=>{activate(p.id,true);if(matchMedia('(max-width:900px)').matches)document.getElementById('detailPanel').classList.add('mobile-open')};return b}));
@@ -81,8 +81,8 @@
     function setSelectionView(view){state.selectionView=state.selectionView===view?'':view;renderLimit=120;render()}
     document.getElementById('selectionFilter').onclick=()=>setSelectionView('ALL');document.getElementById('foodSelectionFilter').onclick=()=>setSelectionView('FOOD');document.getElementById('nonFoodSelectionFilter').onclick=()=>setSelectionView('NON_FOOD');document.getElementById('closeDetail').onclick=()=>document.getElementById('detailPanel').classList.remove('mobile-open');
     window.addEventListener('message',e=>{const d=e.data||{};
-      if(d.type==='catalogueWorkspaceData'){state.products=Array.isArray(d.products)?d.products:[];state.selectedIds=new Set((d.selectedProductIds||[]).map(text));state.selectionLimit=Number(d.selectionLimit)||100;state.selectionTotal=Number.isFinite(Number(d.selectionTotal))?Number(d.selectionTotal):state.selectedIds.size;state.buyerRoomUrl=text(d.buyerRoomUrl);render()}
-      if(d.type==='catalogueWorkspaceSelection'){state.busyId='';if(d.ok&&d.productId){state.selectedIds.add(text(d.productId));state.selectionTotal+=1}render()}
+      if(d.type==='catalogueWorkspaceData'){state.products=Array.isArray(d.products)?d.products:[];state.selectionProducts=Array.isArray(d.selectionProducts)?d.selectionProducts:[];state.selectedIds=new Set((d.selectedProductIds||[]).map(text));state.activeSelectedIds=new Set((d.activeSelectedProductIds||[]).map(text));state.selectionLimit=Number(d.selectionLimit)||100;state.selectionTotal=Number.isFinite(Number(d.selectionTotal))?Number(d.selectionTotal):state.activeSelectedIds.size;state.selectionFoodCount=Number(d.selectionFoodCount)||0;state.selectionNonFoodCount=Number(d.selectionNonFoodCount)||0;state.selectionCountsReady=d.selectionCountsReady!==false;state.buyerRoomUrl=text(d.buyerRoomUrl);render()}
+      if(d.type==='catalogueWorkspaceSelection'){state.busyId='';if(d.ok&&d.productId){state.selectedIds.add(text(d.productId));state.activeSelectedIds.add(text(d.productId))}render()}
       if(d.type==='catalogueWorkspaceFilter'){state.query=text(d.query);state.main=text(d.main).toUpperCase();state.subIds=Array.isArray(d.subIds)?d.subIds.map(text):[];state.principle=text(d.principle);state.selectionView='';renderLimit=120;render()}
     });
     const announceReady=()=>post('catalogueWorkspaceReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));

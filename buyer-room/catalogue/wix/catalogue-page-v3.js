@@ -15,8 +15,9 @@ const principleCache = new Map();
 let logoLoadPromise;
 let selectionContext = null;
 let selectedProductIds = new Set();
+let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-status-action-v22';
+const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-selection-counts-v23';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -26,6 +27,9 @@ let catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' 
 let catalogueSubCategoryMainMap = new Map();
 let catalogueFoodProductIds = new Set();
 let catalogueFoodPrinciples = new Set();
+let catalogueProductsLoaded = false;
+let catalogueCategoriesLoaded = false;
+let catalogueSelectionResolved = false;
 
 const SELECTION_BUTTON_THEME = {
     idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
@@ -105,8 +109,10 @@ function setProductActions(enabled) {
 
 function sidebarSelectionState(state) {
     selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
+    activeSelectedProductIds = new Set((state?.activeSelectedProductIds || state?.selectedProductIds || []).map(String));
     catalogueSelectionLimit = Number(state?.selectionLimit) || 100;
-    catalogueSelectionTotal = Number.isFinite(Number(state?.total)) ? Number(state.total) : selectedProductIds.size;
+    catalogueSelectionTotal = activeSelectedProductIds.size;
+    catalogueSelectionResolved = true;
     sendCatalogueWorkspaceData();
 }
 
@@ -142,22 +148,44 @@ function catalogueProductRecord(item) {
     };
 }
 
+function catalogueMainCategory(product) {
+    if (catalogueFoodProductIds.has(product.id) || catalogueFoodPrinciples.has(product.principle.toUpperCase())) return 'FOOD';
+    return (product.subCategoryIds || [])
+        .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
+        .find(Boolean) || product.mainCategory || '';
+}
+
+function catalogueSelectionSummary() {
+    const allById = new Map(catalogueWorkspaceAllProducts.map(product => [product.id, product]));
+    const selectedProducts = [...activeSelectedProductIds].map(id => allById.get(id)).filter(Boolean);
+    const food = selectedProducts.filter(product => catalogueMainCategory(product).startsWith('FOOD')).length;
+    const total = activeSelectedProductIds.size;
+    return {
+        total,
+        food,
+        nonFood: Math.max(0, total - food),
+        products: selectedProducts.map(product => ({ ...product, mainCategory: catalogueMainCategory(product) }))
+    };
+}
+
 function sendCatalogueWorkspaceData() {
     if (!catalogueWorkspaceReady) return;
     try {
+        const selection = catalogueSelectionSummary();
         $w('#html5').postMessage({
             type: 'catalogueWorkspaceData',
             products: catalogueWorkspaceProducts.map(product => ({
                 ...product,
-                mainCategory: catalogueFoodProductIds.has(product.id) || catalogueFoodPrinciples.has(product.principle.toUpperCase())
-                    ? 'FOOD'
-                    : (product.subCategoryIds || [])
-                        .map(subCategoryId => catalogueSubCategoryMainMap.get(String(subCategoryId)))
-                        .find(Boolean) || product.mainCategory || ''
+                mainCategory: catalogueMainCategory(product)
             })),
             selectedProductIds: [...selectedProductIds],
+            activeSelectedProductIds: [...activeSelectedProductIds],
+            selectionProducts: selection.products,
             selectionLimit: catalogueSelectionLimit,
-            selectionTotal: catalogueSelectionTotal,
+            selectionTotal: selection.total,
+            selectionFoodCount: selection.food,
+            selectionNonFoodCount: selection.nonFood,
+            selectionCountsReady: catalogueProductsLoaded && catalogueCategoriesLoaded && catalogueSelectionResolved,
             buyerRoomUrl: buyerRoomUrl(),
             context: catalogueContextMessage,
             buildVersion: CATALOGUE_BUILD_VERSION
@@ -181,6 +209,7 @@ async function loadCatalogueWorkspaceProducts() {
         console.error('Catalogue workspace CMS load failed', error);
         catalogueWorkspaceProducts = [];
     }
+    catalogueProductsLoaded = true;
     sendCatalogueWorkspaceData();
 }
 
@@ -214,7 +243,6 @@ function sendCatalogueWorkspaceFilter(update) {
 
 async function loadSelectionState(assistCustomerId = '') {
     const state = await getCatalogueSelectionState(assistCustomerId);
-    selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
     sidebarSelectionState(state);
     setProductActions(true);
     return state;
@@ -295,6 +323,7 @@ $w.onReady(async () => {
         } else {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
+            catalogueSelectionResolved = true;
             setProductActions(false);
             try { $w('#repeater3').collapse(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
@@ -325,6 +354,7 @@ $w.onReady(async () => {
             const expiredAssistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
             selectionContext = null;
             selectedProductIds = new Set();
+            activeSelectedProductIds = new Set();
             setProductActions(false);
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
@@ -422,6 +452,9 @@ async function loadMenuData() {
     } catch (error) {
         console.error('Catalogue menu CMS load failed', error);
         sendCatalogueMenu({ type: 'catalogueMenuData', items: [] });
+    } finally {
+        catalogueCategoriesLoaded = true;
+        sendCatalogueWorkspaceData();
     }
 }
 
@@ -614,6 +647,8 @@ function setupCatalogueWorkspace() {
                 const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
                 if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
                 selectedProductIds.add(productId);
+                activeSelectedProductIds.add(productId);
+                catalogueSelectionTotal = activeSelectedProductIds.size;
                 workspace.postMessage({ type: 'catalogueWorkspaceSelection', ok: true, productId });
                 sendCatalogueWorkspaceData();
                 routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')

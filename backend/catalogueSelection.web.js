@@ -38,6 +38,7 @@ export const getCatalogueSelectionState = webMethod(
       ok: true,
       customerId: context.customerId,
       selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
+      activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
       counts,
       total: activeItems.length,

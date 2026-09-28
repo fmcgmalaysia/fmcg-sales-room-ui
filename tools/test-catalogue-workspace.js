@@ -12,8 +12,15 @@ const fs = require('fs');
   await page.evaluate(() => window.postMessage({
     type: 'catalogueWorkspaceData',
     selectedProductIds: ['food-1', 'nonfood-1'],
+    activeSelectedProductIds: ['food-1', 'nonfood-1'],
     selectionLimit: 700,
     selectionTotal: 2,
+    selectionFoodCount: 1,
+    selectionNonFoodCount: 1,
+    selectionProducts: [
+      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
+      { id: 'nonfood-1', name: 'Non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'HOUSEHOLD & CLEANING', principle: 'BRAND C' }
+    ],
     products: [
       { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
       { id: 'food-2', name: 'Second food product', description: '200G x 6', barcode: '1002', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND B' },
@@ -26,6 +33,38 @@ const fs = require('fs');
   if ((await page.locator('#selectionAllowance').innerText()) !== 'Your account allows up to 700 selected SKUs.') throw new Error('Account allowance copy is incorrect.');
   if ((await page.locator('#foodSelectionCount').innerText()) !== '1') throw new Error('Food selection count is incorrect.');
   if ((await page.locator('#nonFoodSelectionCount').innerText()) !== '1') throw new Error('Non-food selection count is incorrect.');
+  await page.evaluate(() => window.postMessage({
+    type: 'catalogueWorkspaceData',
+    selectedProductIds: ['food-1', 'removed-food-1'],
+    activeSelectedProductIds: ['food-1'],
+    selectionLimit: 700,
+    selectionTotal: 1,
+    selectionFoodCount: 1,
+    selectionNonFoodCount: 0,
+    selectionProducts: [{ id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' }],
+    products: [{ id: 'nonfood-1', name: 'Filtered non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'NON-FOOD', principle: 'BRAND C' }]
+  }, '*'));
+  if ((await page.locator('#selectionCount').innerText()) !== '1') throw new Error('Active selection total was contaminated by historical IDs.');
+  if ((await page.locator('#foodSelectionCount').innerText()) !== '1') throw new Error('Food count changed with the visible product query.');
+  if ((await page.locator('#nonFoodSelectionCount').innerText()) !== '0') throw new Error('Non-food count included a historical or filtered product.');
+  await page.evaluate(() => window.postMessage({
+    type: 'catalogueWorkspaceData',
+    selectedProductIds: ['food-1', 'nonfood-1'],
+    activeSelectedProductIds: ['food-1', 'nonfood-1'],
+    selectionLimit: 700,
+    selectionTotal: 2,
+    selectionFoodCount: 1,
+    selectionNonFoodCount: 1,
+    selectionProducts: [
+      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
+      { id: 'nonfood-1', name: 'Non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'HOUSEHOLD & CLEANING', principle: 'BRAND C' }
+    ],
+    products: [
+      { id: 'food-1', name: 'Food product', description: '100G x 12', barcode: '1001', mainCategory: 'FOOD', principle: 'BRAND A' },
+      { id: 'food-2', name: 'Second food product', description: '200G x 6', barcode: '1002', mainCategory: 'FOOD & BEVERAGES', principle: 'BRAND B' },
+      { id: 'nonfood-1', name: 'Non-food product', description: '1 PC x 24', barcode: '2001', mainCategory: 'HOUSEHOLD & CLEANING', principle: 'BRAND C' }
+    ]
+  }, '*'));
   if (await page.getByText('Product Catalogue', { exact: true }).count()) throw new Error('Removed Product Catalogue title is still visible.');
   if (await page.getByText('BANNER', { exact: true }).count()) throw new Error('Removed banner is still visible.');
   const firstRowBox = await page.locator('.row').first().boundingBox();
@@ -61,6 +100,7 @@ const fs = require('fs');
   if (!pageCode.includes('catalogueFoodPrinciples.has(product.principle.toUpperCase())')) throw new Error('Food principle fallback is missing.');
   const imageBox = await page.locator('.product-image').boundingBox();
   if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 1 || imageBox.width < 345) throw new Error('Desktop product image container is not a square at the required minimum size.');
+  await page.locator('.row').first().click();
   const first = await page.locator('.row.active .name').innerText();
   await page.keyboard.press('ArrowDown');
   const second = await page.locator('.row.active .name').innerText();
