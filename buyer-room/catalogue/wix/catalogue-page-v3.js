@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-nav-v28';
+const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-menu-backdrop-v32';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -334,11 +334,16 @@ function setupNav() {
     let lastScrollY = 0;
     let leaveTimer;
 
+    const setWorkspaceMenuState = (open) => {
+        try { $w('#html5').postMessage({ type: 'catalogueWorkspaceMenuState', open: Boolean(open) }); } catch (error) {}
+    };
+
     const showMenu = async (main = activeMain) => {
         clearTimeout(leaveTimer);
         activeMain = main;
         if (!isOpen) await mega.expand();
         isOpen = true;
+        setWorkspaceMenuState(true);
         mega.postMessage({ type: 'showMain', main: activeMain });
         setTimeout(() => {
             if (!isOpen) return;
@@ -351,6 +356,7 @@ function setupNav() {
     const hideMenu = async () => {
         clearTimeout(leaveTimer);
         if (!isOpen) return;
+        setWorkspaceMenuState(false);
         await mega.collapse();
         isOpen = false;
         header.postMessage({ type: 'megaState', open: false, main: activeMain });
@@ -485,6 +491,7 @@ function setupNav() {
         }
     });
 
+    setWorkspaceMenuState(false);
     mega.collapse();
     try { dataset.setPageSize(30); } catch (error) {}
     loadMenuData();
