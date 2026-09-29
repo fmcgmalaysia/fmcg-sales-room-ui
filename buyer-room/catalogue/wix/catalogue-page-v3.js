@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-menu-backdrop-v32';
+const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-ea-v34';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -98,7 +98,9 @@ function catalogueProductRecord(item) {
         id: String(item?._id || ''),
         name: String(item?.name || item?.title || '').trim(),
         description: String(item?.description || item?.packingSize || '').trim(),
-        ea: String(item?.ea ?? item?.EA ?? '').trim(),
+        // The Catalogue CMS field labelled "EA" still uses the legacy key
+        // `price`. Keep it separate from indicative unit-price fields.
+        ea: String(item?.ea ?? item?.EA ?? item?.price ?? '').trim(),
         barcode: String(item?.barcode || item?.unitBarcode || '').trim(),
         innerBoxBarcode: String(item?.innerBoxBarcode || '').trim(),
         cartonBarcode: String(item?.cartonBarcode || '').trim(),
