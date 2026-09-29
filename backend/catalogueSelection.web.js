@@ -37,6 +37,8 @@ export const getCatalogueSelectionState = webMethod(
     return Object.freeze({
       ok: true,
       customerId: context.customerId,
+      companyName: context.companyName,
+      actorName: context.actorName,
       selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
       selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
@@ -431,6 +433,7 @@ async function resolveSelectionContext_(assistCustomerId) {
   if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)) throw new Error('This customer Quotation Desk is not ready.');
   return {
     customerId: normalize(customer.customerId),
+    companyName: normalize(customer.title),
     qdFileId: normalize(customer.qdFileId),
     assignedStaffId: upper(customer.assignedStaffId),
     actorType,

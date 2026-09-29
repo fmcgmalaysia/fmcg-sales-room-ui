@@ -3,30 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-header-build-version" content="2026-09-28-catalogue-native-mobile-header-v27">
+  <meta name="catalogue-header-build-version" content="2026-09-29-catalogue-nav-v31">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{--navy:#112f51;--navy2:#d94d1e;--ink:#172b4a;--muted:#64738a;--line:#e7e3df;--orange:#f05a28;--orange2:#ff7b32;--burnt:#a93e19;--soft:#fff1eb}
-    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:'Wix Madefor Text',Arial,sans-serif;color:var(--ink);background:transparent}
-    button,input,a{font:inherit}.header{height:145px;padding-top:78px;background:transparent;border-bottom:1px solid var(--line);pointer-events:none}
-    .brand-fallback{font-family:'Wix Madefor Display','Wix Madefor Text',Arial,sans-serif}
-    .top{height:78px;display:grid;grid-template-columns:264px minmax(280px,720px) minmax(190px,1fr);align-items:center;gap:22px;padding:0 24px;background:linear-gradient(105deg,#d94918 0%,var(--orange) 56%,var(--orange2) 100%)}
-    .brand{display:flex;align-items:center;min-width:0}.brand img{display:block;width:252px;max-height:48px;object-fit:contain;object-position:left center}.brand-fallback{display:none;color:#fff;font-size:27px;font-weight:800;letter-spacing:-1.2px;white-space:nowrap}.brand-fallback b{color:var(--orange)}
-    .search{height:44px;min-width:0;display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid rgba(255,255,255,.34);border-radius:8px;background:#fff}.search svg{width:19px;height:19px;stroke:#49627d;flex:none}.search input{width:100%;min-width:0;height:40px;border:0;outline:0;background:transparent;color:var(--ink);font-size:14px}.search input::placeholder{color:#7b8795}
-    .utilities{display:flex;align-items:center;justify-content:flex-end;gap:10px;color:#fff;min-width:0}.utility{height:42px;padding:0 12px;border:1px solid rgba(255,255,255,.28);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:650;white-space:nowrap;text-decoration:none}.utility:hover{background:rgba(255,255,255,.16)}.utility svg{width:19px;height:19px;stroke:currentColor}.identity{min-width:96px;padding-left:12px;border-left:1px solid rgba(255,255,255,.32);line-height:1.15}.identity .hello{font-size:11px;color:#ffe1d3}.identity .name{margin-top:3px;font-size:13px;font-weight:750;color:#fff;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .navrow{height:67px;display:flex;align-items:stretch;background:#fff;pointer-events:auto}.page-id{position:relative;flex:0 0 205px;display:flex;align-items:center;gap:11px;padding-left:20px;background:linear-gradient(105deg,#c84318,var(--navy2));color:#fff;font-size:16px;font-weight:800;letter-spacing:.105em;white-space:nowrap;user-select:none}.page-id svg{width:24px;height:24px;flex:none;fill:currentColor}.page-id:after{content:"";position:absolute;right:-1px;top:17px;bottom:17px;width:1px;background:var(--line)}.nav{min-width:0;flex:1;display:flex;align-items:stretch;justify-content:flex-start;gap:9px;padding:0 16px;background:#fff}.navbtn{position:relative;border:0;background:#fff;color:#172b4a;display:flex;align-items:center;justify-content:center;padding:0 11px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}.navbtn:after{content:"";position:absolute;left:11px;right:11px;bottom:0;height:3px;background:var(--orange);transform:scaleX(0);transition:transform .16s ease}.navbtn:hover,.navbtn.active{color:var(--burnt);background:#fff8f3}.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
-    @media(max-width:1050px){.top{grid-template-columns:220px minmax(0,1fr) auto;gap:16px;padding:0 18px}.brand img{width:210px}.utility{width:42px;padding:0;justify-content:center}.utility span{display:none}.identity{display:none}.page-id{flex-basis:162px;gap:8px;padding-left:15px;font-size:13px}.page-id svg{width:19px;height:19px}.nav{padding:0 12px;gap:3px}.navbtn{font-size:12px;padding:0 8px}}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:'Wix Madefor Text',Arial,sans-serif;color:var(--ink);background:#fff}
+    button{font:inherit}.header{height:67px;background:#fff;border-bottom:1px solid var(--line)}
+    .navrow{height:67px;display:flex;align-items:stretch;background:#fff}.page-id{position:relative;flex:0 0 205px;display:flex;align-items:center;gap:11px;padding-left:20px;background:linear-gradient(105deg,#c84318,var(--navy2));color:#fff;font-size:16px;font-weight:800;letter-spacing:.105em;white-space:nowrap;user-select:none}.page-id svg{width:24px;height:24px;flex:none;fill:currentColor}.page-id:after{content:"";position:absolute;right:-1px;top:17px;bottom:17px;width:1px;background:rgba(255,255,255,.28)}.nav{min-width:0;flex:1;display:flex;align-items:stretch;justify-content:flex-start;gap:9px;padding:0 16px;background:#fff}.navbtn{position:relative;border:0;background:#fff;color:#172b4a;display:flex;align-items:center;justify-content:center;padding:0 11px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}.navbtn:after{content:"";position:absolute;left:11px;right:11px;bottom:0;height:3px;background:var(--orange);transform:scaleX(0);transition:transform .16s ease}.navbtn:hover,.navbtn.active{color:var(--burnt);background:#fff8f3}.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
+    .nav-actions{display:flex;align-items:center;padding:0 22px 0 12px;background:#fff}.buyer-room{height:42px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 18px;border:1px solid #f05a28;border-radius:10px;background:linear-gradient(105deg,#f05a28,#ff7430);color:#fff;text-decoration:none;font-size:13px;font-weight:750;letter-spacing:.01em;cursor:pointer;white-space:nowrap;box-shadow:0 7px 18px rgba(240,90,40,.18);transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}.buyer-room:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(240,90,40,.24);filter:brightness(.99)}.buyer-room:focus-visible{outline:3px solid rgba(240,90,40,.22);outline-offset:2px}.buyer-room svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}.buyer-room .arrow{font-size:16px;font-weight:500;opacity:.82}
+    @media(max-width:1050px){.page-id{flex-basis:162px;gap:8px;padding-left:15px;font-size:13px}.page-id svg{width:19px;height:19px}.nav{padding:0 10px;gap:3px}.navbtn{font-size:12px;padding:0 8px}.nav-actions{padding:0 12px 0 6px}.buyer-room{height:40px;padding:0 12px;font-size:12px}}
     @media(max-width:750px){
-      body{overflow-x:hidden}.header{height:130px;padding-top:90px}
-      .top{height:90px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:46px 40px;gap:0 10px;padding:3px 10px}
-      .brand{grid-column:1;grid-row:1}.brand img{width:min(184px,100%);max-height:38px}.brand-fallback{font-size:20px}
-      .search{grid-column:1/-1;grid-row:2;height:38px;padding:0 11px;border-color:rgba(255,255,255,.4);border-radius:7px}.search input{height:36px;font-size:13px}.search svg{width:17px;height:17px}
-      .utilities{grid-column:2;grid-row:1;gap:0}.utility{width:38px;height:36px;padding:0;justify-content:center;border-color:rgba(255,255,255,.34)}.utility span{display:none}.utility svg{width:19px;height:19px}.identity{display:none}
-      .navrow{height:40px}.page-id{flex-basis:112px;gap:6px;padding-left:9px;font-size:10px;letter-spacing:.04em}.page-id svg{width:16px;height:16px}.nav{display:flex;gap:2px;padding:0 7px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;padding:0 10px;font-size:11px}.navbtn:after{left:10px;right:10px;height:2px}
+      body{overflow-x:hidden}.header,.navrow{height:52px}
+      .page-id{flex-basis:112px;gap:6px;padding-left:9px;font-size:10px;letter-spacing:.04em}.page-id svg{width:16px;height:16px}.nav{display:flex;gap:2px;padding:0 7px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;padding:0 10px;font-size:11px}.navbtn:after{left:10px;right:10px;height:2px}.nav-actions{padding:0 7px}.buyer-room{width:40px;height:38px;padding:0;border-radius:9px}.buyer-room span:not(.icon){display:none}.buyer-room .arrow{display:none}.buyer-room svg{width:19px;height:19px}
     }
-    @media(max-width:390px){.brand img{width:min(166px,100%)}.utilities{gap:0}}
+    @media(max-width:390px){.navbtn{padding:0 8px}.nav-actions{padding-left:4px}}
   </style>
 </head>
 <body>
@@ -39,11 +31,18 @@
       <button class="navbtn" data-key="PERSONAL CARE" type="button"><span>Personal Care &amp; Health</span></button>
       <button class="navbtn" data-key="OTHERS" type="button"><span>General Merchandise</span></button>
       </nav>
+      <div class="nav-actions">
+        <a class="buyer-room" id="buyerRoom" href="https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room" target="fmcgMalaysiaBuyerRoom" aria-label="Open Buyer Room">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 5h2l1.5 9.1h10.4l2.1-6.3H6.1M9.2 18.5a1.2 1.2 0 1 0 0 .1M17 18.5a1.2 1.2 0 1 0 0 .1"/></svg></span>
+          <span>Buyer Room</span><span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
     </div>
   </header>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-    const buttons=[...document.querySelectorAll('.navbtn')];let active='',hoverTimer,searchTimer;
+    const fallbackBuyerRoomUrl='https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room';
+    const buttons=[...document.querySelectorAll('.navbtn')];let active='',hoverTimer,searchTimer,buyerRoomUrl=fallbackBuyerRoomUrl;
     function paint(){buttons.forEach(b=>b.classList.toggle('active',b.dataset.key===active))}
     function openMenu(key){active=key;paint();post('catalogueMain',{main:key,open:true})}
     buttons.forEach(btn=>{
@@ -52,7 +51,16 @@
       btn.addEventListener('click',()=>{clearTimeout(hoverTimer);const same=active===btn.dataset.key;active=same?'':btn.dataset.key;paint();post('catalogueMain',{main:btn.dataset.key,open:!same})});
     });
     document.querySelector('.nav').addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
-    window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}});
+    const buyerRoomLink=document.getElementById('buyerRoom');
+    buyerRoomLink.addEventListener('click',event=>{
+      if(buyerRoomUrl)return;
+      event.preventDefault();post('catalogueBuyerRoom');
+    });
+    window.addEventListener('message',e=>{
+      const d=e.data||{};
+      if(d.type==='catalogueContext'){buyerRoomUrl=String(d.buyerRoomUrl||'').trim();buyerRoomLink.href=buyerRoomUrl||'#'}
+      if(d.type==='megaState'){active=d.open?String(d.main||''):'';paint()}
+    });
     const announceReady=()=>post('catalogueHeaderReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>

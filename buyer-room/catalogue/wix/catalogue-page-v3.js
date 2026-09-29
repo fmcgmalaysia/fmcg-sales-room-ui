@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-28-catalogue-native-header-v25';
+const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-nav-v28';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -30,23 +30,6 @@ let catalogueFoodPrinciples = new Set();
 let catalogueProductsLoaded = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
-
-const SELECTION_BUTTON_THEME = {
-    idle: { label: 'Add to Selection', background: '#0B2A4A', color: '#FFFFFF', border: '#0B2A4A' },
-    busy: { label: 'Adding…', background: '#D9E2EA', color: '#536575', border: '#D9E2EA' },
-    selected: { label: '✓ In My Selection', background: '#EDF4F1', color: '#214C3D', border: '#739B8B' },
-    error: { label: 'Try Again', background: '#FFF7ED', color: '#9A4B14', border: '#D9A66E' }
-};
-
-function paintSelectionButton(button, state = 'idle') {
-    const theme = SELECTION_BUTTON_THEME[state] || SELECTION_BUTTON_THEME.idle;
-    button.label = theme.label;
-    button.style.backgroundColor = theme.background;
-    button.style.color = theme.color;
-    button.style.borderColor = theme.border;
-    button.style.borderWidth = '1px';
-    button.style.borderRadius = '8px';
-}
 
 function imageUrl(value) {
     const raw = String(value || '').trim();
@@ -79,6 +62,8 @@ async function getPrinciplesForSub(subId) {
 
 function sendCatalogueContext(message) {
     catalogueContextMessage = { ...message, buyerRoomUrl: buyerRoomUrl() };
+    try { $w('#text19').text = String(message.sheetName || 'FMCG Malaysia').trim(); } catch (error) {}
+    try { $w('#text20').text = String(message.signedInName || 'Buyer').trim(); } catch (error) {}
     try { $w('#html3').postMessage(catalogueContextMessage); } catch (error) {}
     sendCatalogueWorkspaceData();
 }
@@ -86,25 +71,6 @@ function sendCatalogueContext(message) {
 function sendCatalogueMenu(message) {
     catalogueMenuMessage = message;
     try { $w('#html4').postMessage(message); } catch (error) {}
-}
-
-function setProductActions(enabled) {
-    const repeater = $w('#repeater3');
-    const updateAction = ($item, itemData) => {
-        try {
-            if (enabled) {
-                const selected = selectedProductIds.has(String(itemData?._id || ''));
-                paintSelectionButton($item('#button3'), selected ? 'selected' : 'idle');
-                $item('#button3').enable();
-                $item('#button3').expand();
-                $item('#button3').show();
-            } else {
-                $item('#button3').collapse();
-            }
-        } catch (error) {}
-    };
-    repeater.onItemReady(updateAction);
-    repeater.forEachItem(updateAction);
 }
 
 function sidebarSelectionState(state) {
@@ -244,58 +210,10 @@ function sendCatalogueWorkspaceFilter(update) {
 async function loadSelectionState(assistCustomerId = '') {
     const state = await getCatalogueSelectionState(assistCustomerId);
     sidebarSelectionState(state);
-    setProductActions(true);
     return state;
 }
 
-function setupSelectionActions() {
-    const repeater = $w('#repeater3');
-    const configure = ($item, itemData) => {
-        const button = $item('#button3');
-        button.onClick(async () => {
-            const productId = String(itemData?._id || '');
-            if (!selectionContext || !productId || selectionBusyIds.has(productId)) return;
-            if (selectedProductIds.has(productId)) {
-                openBuyerRoomWindow();
-                return;
-            }
-            selectionBusyIds.add(productId);
-            paintSelectionButton(button, 'busy');
-            button.disable();
-            try {
-                const result = await addCatalogueSelection(productId, selectionContext.assistCustomerId || '');
-                if (!result?.ok) throw new Error(result?.error || 'Quotation Desk selection sync failed.');
-                if (result?.ok) selectedProductIds.add(productId);
-                paintSelectionButton(button, 'selected');
-                button.enable();
-                getCatalogueSelectionState(selectionContext.assistCustomerId || '')
-                    .then((state) => {
-                        selectedProductIds = new Set((state?.selectedProductIds || []).map(String));
-                        sidebarSelectionState(state);
-                    })
-                    .catch((error) => console.error('Selection sidebar refresh failed', error));
-                // QD routing is deliberately independent from the buyer's
-                // selection confirmation. Failure is retried by Sales Room.
-                routeCatalogueSelection(result?.selection?.id, selectionContext.assistCustomerId || '')
-                    .then((routeResult) => {
-                        if (!routeResult?.ok) console.error('Background QD routing failed', routeResult?.error || routeResult);
-                    })
-                    .catch((error) => console.error('Background QD routing failed', error));
-            } catch (error) {
-                console.error('Catalogue selection failed', error);
-                paintSelectionButton(button, 'error');
-                button.enable();
-            } finally {
-                selectionBusyIds.delete(productId);
-            }
-        });
-    };
-    repeater.onItemReady(configure);
-    repeater.forEachItem(configure);
-}
-
 $w.onReady(async () => {
-    try { $w('#repeater3').hide(); } catch (error) {}
     const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
     let staff;
     try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
@@ -309,7 +227,6 @@ $w.onReady(async () => {
                 session.setItem('catalogueAssistCustomerId', customer.customerId || assistCustomerId);
                 selectionContext = { mode: staff.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId || assistCustomerId };
                 await loadSelectionState(selectionContext.assistCustomerId);
-                try { $w('#repeater3').collapse(); } catch (error) {}
                 sendCatalogueContext({
                     type: 'catalogueContext', mode: staff.canViewAllCustomers ? 'admin' : 'assist',
                     sheetName: String(customer.companyName || customer.customerId || '').trim(),
@@ -324,8 +241,6 @@ $w.onReady(async () => {
             session.removeItem('catalogueAssistCustomerId');
             selectionContext = null;
             catalogueSelectionResolved = true;
-            setProductActions(false);
-            try { $w('#repeater3').collapse(); } catch (error) {}
             sendCatalogueContext({ type: 'catalogueContext', mode: 'preview', signedInName: String(staff.staffName || staff.staffId || '').trim() });
         }
         return;
@@ -335,15 +250,16 @@ $w.onReady(async () => {
     if (hasBuyerAccess) {
         try {
             selectionContext = { mode: 'buyer', assistCustomerId: '' };
-            await loadSelectionState('');
-            try { $w('#repeater3').collapse(); } catch (error) {}
-            sendCatalogueContext({ type: 'catalogueContext', mode: 'buyer', signedInName: 'Buyer' });
+            const state = await loadSelectionState('');
+            sendCatalogueContext({
+                type: 'catalogueContext', mode: 'buyer',
+                sheetName: String(state?.companyName || 'Buyer Account').trim(),
+                signedInName: String(state?.actorName || 'Buyer').trim()
+            });
         } catch (error) {
             selectionContext = null;
-            setProductActions(false);
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
-            try { $w('#repeater3').hide(); } catch (hideError) {}
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to('/buyer-room');
         }
     }
@@ -355,65 +271,12 @@ $w.onReady(async () => {
             selectionContext = null;
             selectedProductIds = new Set();
             activeSelectedProductIds = new Set();
-            setProductActions(false);
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
-            try { $w('#repeater3').hide(); } catch (hideError) {}
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(expiredAssistCustomerId ? '/sales-room' : '/buyer-room');
         }
     }, 15000);
 });
-
-const DEFAULT_PLACEHOLDER_MEDIA_ID = '55d98a_3287270d83ef4efabfdd1f52d0dc6ec2';
-
-function connectCardToLightbox(repeaterId, cardId, buttonId, priceId, imageId) {
-    const repeater = $w(repeaterId);
-    const configureCard = ($item, itemData) => {
-        if (priceId) $item(priceId).collapse();
-        if (imageId) {
-            const image = $item(imageId);
-            setTimeout(() => {
-                const isDefaultPlaceholder = String(image.src || '').includes(DEFAULT_PLACEHOLDER_MEDIA_ID);
-                if (!itemData.image || isDefaultPlaceholder) image.hide(); else image.show();
-            }, 150);
-        }
-        $item(cardId).onClick((event) => {
-            if (event.target && event.target.id === buttonId.slice(1)) return;
-            wixWindowFrontend.openLightbox('Product Details', itemData);
-        });
-    };
-    repeater.onItemReady(configureCard);
-    repeater.forEachItem(configureCard);
-}
-
-function hideDefaultPlaceholderImages() {
-    $w('#repeater3').forEachItem(($item, itemData) => {
-        const image = $item('#imageX3');
-        const isDefaultPlaceholder = String(image.src || '').includes(DEFAULT_PLACEHOLDER_MEDIA_ID);
-        if (!itemData.image || isDefaultPlaceholder) image.hide();
-    });
-}
-
-function setupCataloguePagination() {
-    const dataset = $w('#dataset1');
-    const pager = $w('#html2');
-    $w('#pagination3').collapse();
-    const sendPaginationState = () => pager.postMessage({ type: 'catalogue:update', currentPage: dataset.getCurrentPageIndex(), totalPages: dataset.getTotalPageCount() });
-    pager.onMessage(async (event) => {
-        const message = event.data || {};
-        if (message.type === 'catalogue:ready') { sendPaginationState(); return; }
-        if (message.type !== 'catalogue:page') return;
-        try {
-            if (message.action === 'prev' && dataset.hasPreviousPage()) await dataset.previousPage();
-            else if (message.action === 'next' && dataset.hasNextPage()) await dataset.nextPage();
-            else if (message.action === 'page') await dataset.loadPage(Math.max(1, Math.min(Number(message.page) || 1, dataset.getTotalPageCount())));
-            setTimeout(hideDefaultPlaceholderImages, 150);
-            sendPaginationState();
-            await $w('#section6').scrollTo();
-        } catch (error) { console.error('Catalogue pagination failed', error); sendPaginationState(); }
-    });
-    dataset.onReady(() => { sendPaginationState(); setTimeout(hideDefaultPlaceholderImages, 150); });
-}
 
 async function loadMenuData() {
     try {
@@ -463,9 +326,9 @@ function setupNav() {
     const mega = $w('#html4');
     const dataset = $w('#dataset1');
     let nativeSearch;
-    let nativeBuyerButton;
-    try { nativeSearch = $w('#input1'); } catch (error) { nativeSearch = null; }
-    try { nativeBuyerButton = $w('#catalogueBuyerButton'); } catch (error) { nativeBuyerButton = null; }
+    try { nativeSearch = $w('#input2'); } catch (error) {
+        try { nativeSearch = $w('#input1'); } catch (fallbackError) { nativeSearch = null; }
+    }
     let activeMain = 'FOOD';
     let isOpen = false;
     let lastScrollY = 0;
@@ -518,18 +381,6 @@ function setupNav() {
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => applySearch(nativeSearch.value), 240);
         });
-    }
-
-    if (nativeBuyerButton) {
-        nativeBuyerButton.label = '🛒  Buyer Room';
-        nativeBuyerButton.style.backgroundColor = '#FFFFFF';
-        nativeBuyerButton.style.color = '#D94D1E';
-        nativeBuyerButton.style.borderColor = '#FFFFFF';
-        nativeBuyerButton.style.borderWidth = '1px';
-        nativeBuyerButton.style.borderRadius = '8px';
-        nativeBuyerButton.expand();
-        nativeBuyerButton.show();
-        nativeBuyerButton.onClick(() => openBuyerRoomWindow());
     }
 
     const applyMainCategory = async (main) => {
@@ -711,12 +562,8 @@ function setupFluidCatalogueLayout() {
         catch (error) { console.warn(`Catalogue layout class failed for ${selector}`, error); }
     });
 
-    // #html5 owns the compact product list and right detail pane. Collapse the
-    // complete legacy shells so later repeater.show() calls cannot restore them.
-    try { $w('#box19').collapse(); } catch (error) {}
-    try { $w('#box16').collapse(); } catch (error) {}
-    try { $w('#repeater3').collapse(); } catch (error) {}
-    try { $w('#html2').collapse(); } catch (error) {}
+    // #html5 is the only visible Catalogue surface. The legacy card repeater
+    // and pagination have been removed from the Wix page.
     try { $w('#box20').expand(); } catch (error) {}
     try { $w('#html5').expand(); } catch (error) {}
 }
