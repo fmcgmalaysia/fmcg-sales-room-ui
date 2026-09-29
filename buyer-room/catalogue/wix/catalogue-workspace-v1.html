@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-build-version" content="2026-09-30-catalogue-virtual-list-v40">
+  <meta name="catalogue-build-version" content="2026-09-30-catalogue-overlay-guard-v41">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap');
     :root{--orange:#f05a28;--orange2:#ff7a32;--orange-soft:#fff4ed;--navy:#102a4a;--ink:#142943;--muted:#6d7d90;--line:#dfe6ed;--panel:#fff;--bg:#f6f8fa;--green:#16885f}
     *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'Wix Madefor Text',Arial,sans-serif}button,input{font:inherit}
+    html>body~*,body>:not(.shell):not(script){display:none!important}
     body:after{content:'';position:fixed;inset:0;z-index:40;background:rgba(16,42,74,.13);opacity:0;pointer-events:none;transition:opacity .2s ease}
     .shell{height:100vh;min-height:660px;display:grid;grid-template-rows:54px minmax(0,1fr);background:#fff;transform:translateZ(0);transition:filter .2s ease,opacity .2s ease}
     body.mega-open:after{opacity:1}
