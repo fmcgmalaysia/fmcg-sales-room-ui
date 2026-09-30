@@ -37,8 +37,16 @@ const path = require('path');
   for (const expected of ['BARCODE', 'DESCRIPTIONS', 'PACKING SIZE', 'USD / PC', 'USD / CTN', 'QTY CTN', 'LINE AMOUNT / USD']) if (!headings.includes(expected)) throw new Error(`Missing history column ${expected}: ${headings}`);
   const lineText = (await page.locator('.history-line').innerText()).replace(/\s+/g, ' ').trim();
   for (const expected of ['9556570012598', '100 PLUS ISOTONIC - ZERO SUGAR', '325ML x 24', '0.41', '9.84', '50', '492.00']) if (!lineText.includes(expected)) throw new Error(`Missing history line value ${expected}: ${lineText}`);
-  const lineStyle = await page.locator('.history-line').evaluate(node => ({ height: node.getBoundingClientRect().height, borderTop: getComputedStyle(node).borderTopWidth, borderBottom: getComputedStyle(node).borderBottomWidth }));
-  if (lineStyle.height > 40 || lineStyle.borderTop !== '0px' || lineStyle.borderBottom !== '0px') throw new Error(`History detail is not dense and borderless: ${JSON.stringify(lineStyle)}`);
+  const lineStyle = await page.locator('.history-line').evaluate(node => ({ height: node.getBoundingClientRect().height, borderTop: getComputedStyle(node).borderTopWidth, borderBottom: getComputedStyle(node).borderBottomWidth, size: getComputedStyle(node).fontSize, weights: [...node.children].map(cell => getComputedStyle(cell).fontWeight), priceColor: getComputedStyle(node.querySelector('.history-price')).color }));
+  if (lineStyle.height > 33 || lineStyle.borderTop !== '0px' || lineStyle.borderBottom !== '0px' || lineStyle.size !== '11px' || lineStyle.weights.some(weight => weight !== '400')) throw new Error(`History detail is not dense, borderless and regular weight: ${JSON.stringify(lineStyle)}`);
+  const priceRgb=(lineStyle.priceColor.match(/\d+/g)||[]).map(Number);if (!(priceRgb[0]>priceRgb[1]&&priceRgb[1]>priceRgb[2])) throw new Error(`History prices are not orange-red: ${lineStyle.priceColor}`);
+  const alignment = await page.evaluate(() => { const head=[...document.querySelector('.history-line-head').children],row=[...document.querySelector('.history-line').children];return head.map((cell,index)=>Math.abs(cell.getBoundingClientRect().left-row[index].getBoundingClientRect().left)); });
+  if (alignment.some(delta => delta > 1)) throw new Error(`History headers and entries are misaligned: ${alignment.join(', ')}`);
+  if (await page.locator('.history-copy').count()) throw new Error('Copy Order ID control still exists.');
+  const capsule = await page.locator('.history-status').first().evaluate(node => getComputedStyle(node).backgroundColor);
+  if (capsule === 'rgb(229, 244, 236)') throw new Error('Confirmed status capsule is still too pale.');
+  const arrow = await page.locator('.history-chevron').first().evaluate(node => ({ text: node.textContent.trim(), width: node.getBoundingClientRect().width, color: getComputedStyle(node).color }));
+  if (arrow.text !== '›' || arrow.width < 24) throw new Error(`Order expand arrow is not clear: ${JSON.stringify(arrow)}`);
 
   await page.locator('#historySearch').fill('9556570012598');
   if (await page.locator('.history-card').count() !== 1) throw new Error('History product/barcode search did not use loaded line details.');
