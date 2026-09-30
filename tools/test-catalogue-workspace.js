@@ -111,6 +111,8 @@ const fs = require('fs');
   if (!pageCode.includes('catalogueFoodPrinciples.has(product.principle.toUpperCase())')) throw new Error('Food principle fallback is missing.');
   if (pageCode.includes("ascending('name')")) throw new Error('Catalogue is still sorted by product name.');
   if (!pageCode.includes('sortCatalogueProducts') || !pageCode.includes('item?.sortNo')) throw new Error('Catalogue SORT NO ordering is missing.');
+  const activeFilters = pageCode.match(/eq\('pointBaseStatus', 'ACTIVE'\)/g) || [];
+  if (activeFilters.length < 4) throw new Error('ACTIVE-only filtering is not applied to every Catalogue product query path.');
   const imageBox = await page.locator('.product-image').boundingBox();
   if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 1 || imageBox.width < 345) throw new Error('Desktop product image container is not a square at the required minimum size.');
   await page.locator('.row').first().click();

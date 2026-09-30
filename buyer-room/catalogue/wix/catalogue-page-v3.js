@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-30-catalogue-sort-optimistic-v48';
+const CATALOGUE_BUILD_VERSION = '2026-09-30-catalogue-active-sort-optimistic-v49';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -53,7 +53,7 @@ async function getPrinciplesForSub(subId) {
     if (!subId) return [];
     if (logoLoadPromise) await logoLoadPromise;
     if (principleCache.has(subId)) return principleCache.get(subId);
-    const result = await wixData.query('FMCGMALAYSIA').hasSome('subCategories', [subId]).limit(1000).distinct('principle');
+    const result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', [subId]).limit(1000).distinct('principle');
     const names = (result.items || []).map(value => String(value || '').trim()).filter(Boolean);
     const items = [...new Set(names)].sort((a, b) => a.localeCompare(b)).map(name => ({ name, logo: principleLogoMap.get(name.toLowerCase()) || '' }));
     principleCache.set(subId, items);
@@ -185,7 +185,7 @@ function sendCatalogueWorkspaceData() {
 async function loadCatalogueWorkspaceProducts() {
     const products = [];
     try {
-        let result = await wixData.query('FMCGMALAYSIA').limit(1000).find();
+        let result = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
@@ -204,7 +204,7 @@ async function loadCatalogueWorkspaceProducts() {
 async function showCatalogueWorkspaceQuery(query) {
     const products = [];
     try {
-        let result = await query.limit(1000).find();
+        let result = await query.eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
@@ -318,7 +318,7 @@ async function loadMenuData() {
         catalogueFoodProductIds = new Set();
         catalogueFoodPrinciples = new Set();
         if (foodSubCategoryIds.length) {
-            let foodResult = await wixData.query('FMCGMALAYSIA').hasSome('subCategories', foodSubCategoryIds).limit(1000).find();
+            let foodResult = await wixData.query('FMCGMALAYSIA').eq('pointBaseStatus', 'ACTIVE').hasSome('subCategories', foodSubCategoryIds).limit(1000).find();
             foodResult.items.forEach(item => {
                 catalogueFoodProductIds.add(String(item._id || ''));
                 const principle = String(item.principle || '').trim().toUpperCase();
