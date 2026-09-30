@@ -106,6 +106,8 @@ const fs = require('fs');
   const headerCode = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room', 'catalogue', 'wix', 'catalogue-header-v2.html'), 'utf8');
   if (!headerCode.includes("post('catalogueMain'")) throw new Error('Catalogue header does not trigger the Mega Menu.');
   if (!headerCode.includes("post('catalogueBuyerRoom')")) throw new Error('Catalogue header does not trigger Buyer Room navigation.');
+  if (!headerCode.includes("window.open(buyerRoomHref,'fmcgBuyerRoom')")) throw new Error('Catalogue header does not open the customer Buyer Room in its reusable tab.');
+  if (!headerCode.includes("data.type==='catalogueContext'")) throw new Error('Catalogue header does not receive the customer Buyer Room URL.');
   if (!headerCode.includes('<span class="label">Buyer Room</span>')) throw new Error('Desktop Buyer Room label is missing.');
   if (!headerCode.trim().endsWith('</html>')) throw new Error('Catalogue header HTML is truncated.');
   if (workspaceCode.includes('scrollIntoView')) throw new Error('Keyboard navigation can still scroll the outer Wix page.');

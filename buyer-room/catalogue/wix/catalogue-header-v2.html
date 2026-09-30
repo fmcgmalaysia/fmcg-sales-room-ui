@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-header-restored-v50">
+  <meta name="catalogue-header-build-version" content="2026-09-30-catalogue-buyer-room-v51">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,13 +26,16 @@
   </div></header>
   <script>
     const post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-    const buttons=[...document.querySelectorAll('.navbtn')];let active='',hoverTimer;
+    const buttons=[...document.querySelectorAll('.navbtn')];let active='',hoverTimer,buyerRoomHref='';
     function paint(){buttons.forEach(button=>button.classList.toggle('active',button.dataset.key===active))}
     function openMenu(key){active=key;paint();post('catalogueMain',{main:key,open:true})}
     buttons.forEach(button=>{button.addEventListener('mouseenter',()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openMenu(button.dataset.key),220)});button.addEventListener('mouseleave',()=>clearTimeout(hoverTimer));button.addEventListener('click',()=>{clearTimeout(hoverTimer);const same=active===button.dataset.key;active=same?'':button.dataset.key;paint();post('catalogueMain',{main:button.dataset.key,open:!same})})});
     document.querySelector('.nav').addEventListener('mouseleave',()=>post('catalogueMegaLeave'));
-    document.getElementById('buyerRoom').addEventListener('click',()=>post('catalogueBuyerRoom'));
-    window.addEventListener('message',event=>{const data=event.data||{};if(data.type==='megaState'){active=data.open?String(data.main||''):'';paint()}});
+    document.getElementById('buyerRoom').addEventListener('click',()=>{
+      if(buyerRoomHref){const target=window.open(buyerRoomHref,'fmcgBuyerRoom');if(target){try{target.opener=null}catch(error){}target.focus();return}}
+      post('catalogueBuyerRoom');
+    });
+    window.addEventListener('message',event=>{const data=event.data||{};if(data.type==='catalogueContext'){buyerRoomHref=String(data.buyerRoomUrl||'').trim()}else if(data.type==='megaState'){active=data.open?String(data.main||''):'';paint()}});
     const announceReady=()=>post('catalogueHeaderReady');announceReady();[250,1000,3000].forEach(delay=>setTimeout(announceReady,delay));
   </script>
 </body>
