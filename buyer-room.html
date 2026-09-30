@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-buyer-room-download-sink-v60">
+<meta name="build-version" content="2026-10-01-buyer-room-user-click-v61">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -223,7 +223,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="submitModalBg" class="modal-bg"><div class="modal"><h3>Review Order Request</h3><p>Review the quantities before sending this request to your assigned salesperson.</p><div class="review-grid"><div class="review-row"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="review-row"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="review-row"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="review-row"><span>Estimated Order Total</span><strong id="reviewAmount">—</strong></div></div><p class="review-note">This is an order request for FMCG Malaysia to review. Final availability and pricing will be confirmed by your salesperson.</p><div class="modal-actions"><button class="btn" id="cancelSubmit">Back to Edit</button><button class="btn primary" id="confirmSubmit">Send Request</button></div></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionDownloadUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 let exportBusy=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -345,6 +345,7 @@ function applyData(d){
   const sameCustomer=!state.customerId||state.customerId===d.customerId;
   if(!sameCustomer){state.orderDetails={};state.openOrderId='';state.orders=[];state.ordersNextCursor=''}
   state.customerId=d.customerId||state.customerId;state.companyName=d.companyName||state.companyName;state.memberName=d.memberName||'Company Purchasing Access';state.currency=d.currency||'USD';state.selectionLimit=[100,300,500,700].includes(Number(d.selectionLimit))?Number(d.selectionLimit):state.selectionLimit;state.adminAccess=Boolean(d.adminAccess);state.account=d.account&&typeof d.account==='object'?d.account:state.account;state.notifications=Array.isArray(d.notifications)?d.notifications:state.notifications;$('selectionLimit').textContent=state.selectionLimit;$('adminAccessBanner').hidden=!state.adminAccess;placeAdminBanner((document.querySelector('.view.active')?.id||'myView').replace(/View$/,''));$('accountUserForm').querySelector('.account-form-note').textContent='The request will be sent to the assigned salesperson for approval.';
+  state.selectionDownloadUrl=String(d.selectionDownloadUrl||state.selectionDownloadUrl||'');
   if(d.catalogueUrl)setCatalogueLinks(d.catalogueUrl);
   state.my=Array.isArray(d.myList)?d.myList:[];state.removed=Array.isArray(d.removed)?d.removed:[];
   const firstPage=Array.isArray(d.orders)?d.orders:[],older=state.orders.filter(order=>!firstPage.some(recent=>recent.orderId===order.orderId));
@@ -367,7 +368,13 @@ function renderNotificationPanel(){const account=state.notifications.slice(0,8),
 $('quoteBell').onclick=()=>{const panel=$('quoteNotifications'),opening=panel.hidden;panel.hidden=!opening;$('quoteBell').setAttribute('aria-expanded',String(opening));if(opening)renderNotificationPanel()};
 $('mySearch').oninput=()=>state.listMode==='current'?renderMy():renderRemoved();$('orderSearch').oninput=renderOrder;
 function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=>{w.querySelector('.export-menu').classList.remove('show');w.querySelector('[data-export-toggle]').setAttribute('aria-expanded','false')})}document.querySelectorAll('[data-export-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=b.closest('.export-wrap').querySelector('.export-menu'),open=!menu.classList.contains('show');closeExportMenus();menu.classList.toggle('show',open);b.setAttribute('aria-expanded',String(open))});document.querySelectorAll('[data-export-mode]').forEach(b=>b.onclick=()=>{post('BUYER_ROOM_EXPORT',{mode:b.dataset.exportMode});closeExportMenus()});document.addEventListener('click',e=>{if(!e.target.closest('.export-wrap'))closeExportMenus();if(!e.target.closest('.limit-note'))setLimitInfo(false)});document.addEventListener('keydown',event=>{if(event.key==='Escape')setLimitInfo(false)});$('submitOrder').onclick=()=>{const lines=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0).map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));if(!lines.length)return toast('Enter a quantity for at least one quoted product.');state.pendingOrder=lines;$('reviewProducts').textContent=$('sumProducts').textContent;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('submitModalBg').classList.add('show')};
-$('exportSelection').onclick=()=>{if(exportBusy)return;exportBusy=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT')};
+$('exportSelection').onclick=()=>{
+  if(exportBusy)return;
+  if(!state.selectionDownloadUrl){exportBusy=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT');return}
+  const link=document.createElement('a');
+  link.href=state.selectionDownloadUrl;link.target='_blank';link.rel='noopener';
+  document.body.appendChild(link);link.click();link.remove();
+};
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
@@ -384,10 +391,9 @@ window.addEventListener('message',e=>{
   if(m.type==='BUYER_ROOM_EXPORT_DOWNLOAD'){
     exportBusy=false;$('exportSelection').disabled=false;
     if(!m.ok||!m.url){toast(m.message||'Excel download could not be started.');return}
-    const sink=document.createElement('iframe');
-    sink.hidden=true;sink.setAttribute('aria-hidden','true');sink.src=m.url;
-    document.body.appendChild(sink);
-    setTimeout(()=>sink.remove(),60000);
+    state.selectionDownloadUrl=m.url;
+    const link=document.createElement('a');link.href=m.url;link.target='_blank';link.rel='noopener';
+    document.body.appendChild(link);link.click();link.remove();
     return;
   }
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){

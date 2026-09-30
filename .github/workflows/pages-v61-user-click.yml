@@ -1,4 +1,4 @@
-name: Deploy Buyer Room v60 to Pages
+name: Deploy Buyer Room v61 to Pages
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v60-download-sink
+  group: pages-v61-user-click
   cancel-in-progress: false
 
 jobs:
