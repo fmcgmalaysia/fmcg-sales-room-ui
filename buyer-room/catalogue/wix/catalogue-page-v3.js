@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-29-catalogue-ea-v34';
+const CATALOGUE_BUILD_VERSION = '2026-09-30-catalogue-sort-optimistic-v48';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -110,10 +110,30 @@ function catalogueProductRecord(item) {
         image: imageUrl(item?.image),
         countryOrigin: String(item?.countryOrigin || '').trim(),
         shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
+        sortNo: item?.sortNo ?? item?.sortNO ?? item?.sortNumber ?? item?.sortOrder ?? '',
         subCategoryIds: catalogueReferenceIds(item?.subCategories),
         unitPrice: catalogueUnitPrice(item),
         currency: String(item?.currency || 'USD').trim().toUpperCase()
     };
+}
+
+function sortCatalogueProducts(items) {
+    return items
+        .map((item, index) => ({ item, index }))
+        .sort((left, right) => {
+            const leftRaw = String(left.item.sortNo ?? '').trim();
+            const rightRaw = String(right.item.sortNo ?? '').trim();
+            if (!leftRaw && !rightRaw) return left.index - right.index;
+            if (!leftRaw) return 1;
+            if (!rightRaw) return -1;
+            const leftNumber = Number(leftRaw);
+            const rightNumber = Number(rightRaw);
+            const order = Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
+                ? leftNumber - rightNumber
+                : leftRaw.localeCompare(rightRaw, 'en', { numeric: true, sensitivity: 'base' });
+            return order || left.index - right.index;
+        })
+        .map(entry => entry.item);
 }
 
 function catalogueMainCategory(product) {
@@ -165,13 +185,13 @@ function sendCatalogueWorkspaceData() {
 async function loadCatalogueWorkspaceProducts() {
     const products = [];
     try {
-        let result = await wixData.query('FMCGMALAYSIA').ascending('name').limit(1000).find();
+        let result = await wixData.query('FMCGMALAYSIA').limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
             products.push(...result.items);
         }
-        catalogueWorkspaceAllProducts = products.map(catalogueProductRecord).filter(item => item.id && item.name);
+        catalogueWorkspaceAllProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     } catch (error) {
         console.error('Catalogue workspace CMS load failed', error);
@@ -184,13 +204,13 @@ async function loadCatalogueWorkspaceProducts() {
 async function showCatalogueWorkspaceQuery(query) {
     const products = [];
     try {
-        let result = await query.ascending('name').limit(1000).find();
+        let result = await query.limit(1000).find();
         products.push(...result.items);
         while (result.hasNext() && products.length < 10000) {
             result = await result.next();
             products.push(...result.items);
         }
-        catalogueWorkspaceProducts = products.map(catalogueProductRecord).filter(item => item.id && item.name);
+        catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
         sendCatalogueWorkspaceData();
     } catch (error) {
