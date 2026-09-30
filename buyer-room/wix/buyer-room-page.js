@@ -16,21 +16,15 @@ $w.onReady(async function () {
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
-  let activeDownloadUrl = '';
-  let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
 
-  async function primeSelectionDownload(force = false) {
+  async function prepareSelectionDownload() {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
-    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) return activeDownloadUrl;
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
-      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
-      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
-      activeDownloadExpiresAt = Number(result.expiresAt);
-      return activeDownloadUrl;
+      if (!result?.ok || !/^https:\/\//i.test(String(result.url || ''))) throw new Error('Excel download is unavailable.');
+      return result.url;
     })();
     try { return await downloadPreparation; }
     finally { downloadPreparation = null; }
@@ -38,8 +32,9 @@ $w.onReady(async function () {
 
   async function startSelectionDownload() {
     try {
-      const url = await primeSelectionDownload();
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_DOWNLOAD', ok: true, url });
+      const url = await prepareSelectionDownload();
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
+      wixLocationFrontend.to(url);
     } catch (error) {
       console.error('Buyer Room direct Excel download failed', error);
       frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
@@ -63,18 +58,10 @@ $w.onReady(async function () {
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
-    if (activeCustomerId && activeCustomerId !== result.context.customerId) {
-      activeDownloadUrl = '';
-      activeDownloadExpiresAt = 0;
-    }
     activeCustomerId = result.context.customerId;
-    let selectionDownloadUrl = '';
-    try { selectionDownloadUrl = await primeSelectionDownload(); }
-    catch (error) { console.error('Buyer Room Excel download preflight failed', error); }
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
-      selectionDownloadUrl,
       catalogueUrl: siteBaseUrl ? siteBaseUrl + '/catalogue' + (assistCustomerId ? '?assist=' + encodeURIComponent(assistCustomerId) : '') : '',
       companyName: result.context.companyName,
       memberName: result.context.actorName || result.context.email,
@@ -181,7 +168,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-top-download-v62';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-wix-media-v63';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

@@ -1,4 +1,5 @@
 import wixData from 'wix-data';
+import { mediaManager } from 'wix-media-backend';
 import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -117,4 +118,43 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, currency, rows });
   const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
   return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length };
+}
+
+export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl) {
+  const id = normalize(customerId);
+  const file = await buildBuyerSelectionDownload(id, buyerRoomUrl);
+  const safeCustomerId = id.replace(/[^A-Za-z0-9_-]/g, '_') || 'buyer';
+  const uploaded = await mediaManager.upload(
+    `/buyer-selection-exports/${safeCustomerId}`,
+    file.bytes,
+    file.fileName,
+    {
+      mediaOptions: {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mediaType: 'document'
+      },
+      metadataOptions: {
+        isPrivate: true,
+        isVisitorUpload: false,
+        context: { purpose: 'buyer-selection-export', customerId: id }
+      }
+    }
+  );
+  if (!uploaded?.fileUrl) throw new Error('Excel file could not be prepared for download.');
+  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 10, file.fileName, null);
+  if (!downloadUrl) throw new Error('Excel download URL is unavailable.');
+
+  // Keep only the current export in this customer's dedicated folder.
+  try {
+    const files = uploaded.parentFolderId
+      ? await mediaManager.listFiles({ parentFolderId: uploaded.parentFolderId }, { fieldName: '_createdDate', order: 'DESC' }, { limit: 100 })
+      : [];
+    const stale = files
+      .filter(candidate => candidate?.fileUrl && candidate.fileUrl !== uploaded.fileUrl && String(candidate.originalFileName || '').startsWith('fmcgmalaysia.com-My-Selection-'))
+      .map(candidate => candidate.fileUrl);
+    if (stale.length) await mediaManager.moveFilesToTrash(stale);
+  } catch (error) {
+    console.warn('Old Buyer Room exports could not be cleaned up', error);
+  }
+  return { ok: true, url: downloadUrl, fileName: file.fileName, rowCount: file.rowCount };
 }
