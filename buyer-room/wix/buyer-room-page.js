@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, getBuyerSelectionExport, uploadBuyerSelectionExcel, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -15,31 +15,35 @@ $w.onReady(async function () {
   const frame = $w('#html1');
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
-  let exportRequestNumber = 0;
-  let activeExportRequestId = '';
   let activeCustomerId = '';
   let activeDownloadUrl = '';
+  let activeDownloadExpiresAt = 0;
+  let downloadPreparation = null;
 
-  async function prepareSelectionDownload() {
-    if (!activeCustomerId) {
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: 'Buyer account is still loading.' });
-      return;
-    }
-    const requestId = `${activeCustomerId}-${++exportRequestNumber}`;
-    activeExportRequestId = requestId;
-    activeDownloadUrl = '';
-    try {
-      const result = await getBuyerSelectionExport(assistCustomerId);
-      if (requestId !== activeExportRequestId) return;
-      if (!result?.rows?.length) {
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: 'There are no products to export.' });
-        return;
-      }
+  async function primeSelectionDownload(force = false) {
+    if (!activeCustomerId) throw new Error('Buyer account is still loading.');
+    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) return activeDownloadUrl;
+    if (downloadPreparation) return downloadPreparation;
+    downloadPreparation = (async () => {
+      const result = await createBuyerSelectionDownload(assistCustomerId);
+      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
       const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_PREPARE', ...result, buyerRoomUrl: siteBaseUrl + '/buyer-room', requestId });
+      activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      activeDownloadExpiresAt = Number(result.expiresAt);
+      return activeDownloadUrl;
+    })();
+    try { return await downloadPreparation; }
+    finally { downloadPreparation = null; }
+  }
+
+  async function startSelectionDownload() {
+    try {
+      const url = await primeSelectionDownload();
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
+      wixLocationFrontend.to(url);
     } catch (error) {
-      console.error('Buyer Room Excel preparation failed', error);
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel export could not be prepared.' });
+      console.error('Buyer Room direct Excel download failed', error);
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
     }
   }
 
@@ -60,7 +64,12 @@ $w.onReady(async function () {
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
+    if (activeCustomerId && activeCustomerId !== result.context.customerId) {
+      activeDownloadUrl = '';
+      activeDownloadExpiresAt = 0;
+    }
     activeCustomerId = result.context.customerId;
+    primeSelectionDownload().catch(error => console.error('Buyer Room Excel download preflight failed', error));
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
@@ -126,14 +135,8 @@ $w.onReady(async function () {
       catch (error) { console.error('Buyer Room notification update failed', error); }
       return;
     }
-    if (message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
-      await prepareSelectionDownload();
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_EXPORT_DOWNLOAD') {
-      if (message.requestId && message.requestId === activeExportRequestId && /^https:\/\//i.test(activeDownloadUrl)) {
-        wixLocationFrontend.to(activeDownloadUrl);
-      }
+    if (message.type === 'BUYER_ROOM_EXPORT' || message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
+      await startSelectionDownload();
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
@@ -146,30 +149,6 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_RECOVER') {
       await runAction(() => recoverBuyerItem(message.itemId || '', assistCustomerId), 'Restored to My Selection. A new quote has been requested.', 'recover', message.itemId || '');
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_EXPORT_FILE') {
-      try {
-        if (!message.requestId || message.requestId !== activeExportRequestId) return;
-        const result = await uploadBuyerSelectionExcel(message.customerId || '', message.base64 || '', assistCustomerId);
-        if (!result?.ok) {
-          const stage = result?.stage ? `[${result.stage}] ` : '';
-          const code = result?.code ? ` (${result.code})` : '';
-          throw new Error(`${stage}${result?.message || 'Excel upload failed.'}${code}`);
-        }
-        if (!String(result.downloadUrl || '').startsWith('https://')) throw new Error('[DOWNLOAD_URL] Excel download link is unavailable.');
-        if (message.requestId !== activeExportRequestId) return;
-        activeDownloadUrl = result.downloadUrl;
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_READY', ok: true, requestId: message.requestId, fileName: result.fileName || '' });
-      } catch (error) {
-        console.error('Buyer Room Excel upload failed', error);
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
-      }
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_EXPORT_FILE_ERROR') {
-      console.error('Buyer Room Excel file generation failed', message.message || 'Unknown error');
-      if (message.requestId === activeExportRequestId) frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: message.message || 'Excel export could not be prepared.' });
       return;
     }
     if (message.type === 'BUYER_ROOM_ORDER_PAGE') {
@@ -200,7 +179,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-text-v58';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-direct-excel-v59';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

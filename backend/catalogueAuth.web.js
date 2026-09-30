@@ -3,7 +3,7 @@ import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
-import { mediaManager } from 'wix-media-backend';
+import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -508,73 +508,10 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
   }
   return { ok: true, changed };
 });
-export const getBuyerSelectionExport = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
+export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const items = (await workspaceItems(buyer.customerId)).filter(item => !item.removed);
-  const rows = items.map(item => {
-    if (!Number.isInteger(item.catalogueEa) || item.catalogueEa <= 0) {
-      throw new Error(`Catalogue EA is missing for ${item.barcode || item.itemName}.`);
-    }
-    const quoted = item.quoteStatus === 'VIEW QUOTE' && item.quoteActive;
-    if (quoted && item.vipCurrency && upper(item.vipCurrency) !== buyer.currency) {
-      throw new Error(`Quotation currency needs review for ${item.barcode || item.itemName}.`);
-    }
-    return {
-      unitBarcode: item.barcode,
-      itemName: item.itemName,
-      packingSize: item.packingSize,
-      ea: item.catalogueEa,
-      pricePerPc: quoted && money(item.vipPriceEa) > 0 ? money(item.vipPriceEa) : null,
-      pricePerCtn: quoted && money(item.vipPriceCtn) > 0 ? money(item.vipPriceCtn) : null,
-      cbmPerCtn: money(item.cbmPerCtn)
-    };
-  });
-  return { ok: true, customerId: buyer.customerId, companyName: buyer.companyName, currency: buyer.currency, rows };
-});
-export const uploadBuyerSelectionExcel = webMethod(Permissions.SiteMember, async (customerId, base64, assistCustomerId = '') => {
-  let stage = 'BUYER_CONTEXT';
-  try {
-    const buyer = await resolveBuyerContext(assistCustomerId);
-    stage = 'VALIDATE_FILE';
-    if (normalize(customerId) !== buyer.customerId) throw new Error('Buyer account changed. Please try again.');
-    const encoded = normalize(base64);
-    if (!encoded || encoded.length > 3000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Excel file is too large or invalid.');
-    const file = Buffer.from(encoded, 'base64');
-    if (file.length < 1000 || file.length > 2250000 || file.subarray(0, 4).toString('hex') !== '504b0304') throw new Error('Excel file is invalid.');
-    const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-
-    stage = 'MEDIA_UPLOAD';
-    const uploaded = await mediaManager.upload('/buyer-room-exports', file, fileName, {
-      mediaOptions: { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', mediaType: 'document' },
-      metadataOptions: { isPrivate: true, isVisitorUpload: false }
-    });
-    if (!uploaded?.fileUrl) throw new Error('Wix Media did not return a file URL.');
-
-    stage = 'DOWNLOAD_URL';
-    let downloadUrl = '';
-    let lastDownloadError;
-    for (let attempt = 1; attempt <= 6; attempt += 1) {
-      try {
-        downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 60, fileName);
-        if (String(downloadUrl || '').startsWith('https://')) break;
-        throw new Error('Wix Media returned an invalid download URL.');
-      } catch (error) {
-        lastDownloadError = error;
-        if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
-      }
-    }
-    if (!downloadUrl) throw lastDownloadError || new Error('Wix Media download URL is unavailable.');
-    return { ok: true, customerId: buyer.customerId, downloadUrl, fileName, fileUrl: uploaded.fileUrl };
-  } catch (error) {
-    const diagnostic = {
-      stage,
-      name: normalize(error?.name) || 'Error',
-      code: normalize(error?.code || error?.details?.applicationError?.code),
-      message: normalize(error?.message) || 'Unknown Wix Media error.'
-    };
-    console.error('Buyer Room Excel export failed', diagnostic);
-    return { ok: false, ...diagnostic };
-  }
+  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 300);
+  return { ok: true, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
