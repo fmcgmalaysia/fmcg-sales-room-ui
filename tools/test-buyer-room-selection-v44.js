@@ -23,7 +23,7 @@ const path = require('path');
   };
   await expectText('#foodCount', '1');
   await expectText('#nonFoodCount', '1');
-  await expectText('#myRows .row:first-child > div:nth-child(4)', 'USD 1.50 | 18.00');
+  await expectText('#myRows .row:first-child > div:nth-child(4)', '- NIL -');
   await expectText('#myRows .row:first-child > div:nth-child(5)', 'USD 1.20 | 14.40');
   const rowText = await page.locator('#myRows .row:first-child').innerText();
   if (/\/ EA|\/ CTN/.test(rowText)) throw new Error('EA/CTN labels remain in My Selection pricing.');
@@ -31,7 +31,7 @@ const path = require('path');
 
   const styles = await page.locator('#myRows .row:first-child').evaluate(row => {
     const read = selector => { const css = getComputedStyle(row.querySelector(selector)); return { size: css.fontSize, weight: css.fontWeight, whiteSpace: css.whiteSpace, color: css.color }; };
-    return { name: read('.name'), packing: read('.packing-meta'), normal: read('.price-pair:not(.vip)'), vip: read('.price-pair.vip'), time: read('.time') };
+    return { name: read('.name'), packing: read('.packing-meta'), normal: read('.price-pair.normal'), vip: read('.price-pair.vip'), time: read('.time') };
   });
   for (const key of ['name', 'packing', 'normal', 'vip', 'time']) if (styles[key].size !== '11px') throw new Error(`${key} is ${styles[key].size}, expected 11px.`);
   if (styles.name.weight !== '700' || styles.packing.weight !== '400' || styles.normal.weight !== '400' || styles.vip.weight !== '700' || styles.time.weight !== '400') throw new Error(`Unexpected font weights: ${JSON.stringify(styles)}`);
@@ -47,6 +47,6 @@ const path = require('path');
   const browseBackground = await page.locator('#browse').evaluate(node => getComputedStyle(node).backgroundColor);
   if (browseBackground === 'rgb(255, 255, 255)' || browseBackground === 'rgba(0, 0, 0, 0)') throw new Error('Add More Items is not a solid button.');
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
-  console.log('Buyer Room My Selection v43 checks passed.');
+  console.log('Buyer Room My Selection v44 checks passed.');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });

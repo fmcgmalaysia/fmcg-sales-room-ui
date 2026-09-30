@@ -30,7 +30,6 @@ function quantity(value) { const n = Number(value); return Number.isFinite(n) ? 
 function money(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
 function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
 function referenceIds(value) { return (Array.isArray(value) ? value : value ? [value] : []).map(entry => normalize(entry?._id || entry)).filter(Boolean); }
-function firstPositive(values) { return values.map(money).find(value => value > 0) || 0; }
 function imageUrl(value, depth = 0) {
   if (depth > 5 || value == null) return '';
   if (typeof value === 'object') {
@@ -252,8 +251,6 @@ async function workspaceItems(customerId) {
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
     const ea = money(data.ea || product.ea || product.price);
-    const normalPriceEa = firstPositive([data.normalPriceEa, product.unitPrice, product.pricePerUnit]);
-    const normalPriceCtn = firstPositive([data.normalPriceCtn, product.pricePerCtn]) || (normalPriceEa * ea);
     const category = normalize(data.category || data.mainCategory || product.mainCategory || referenceIds(product.subCategories).map(id => subCategoryCategories.get(id)).find(Boolean));
     return {
       ...safeData, id, itemId: id,
@@ -272,7 +269,7 @@ async function workspaceItems(customerId) {
       // Point Base sync writes CBM /CTN to FMCGMALAYSIA.m3Ctn. An older
       // selection payload must not mask a newer CMS value, including zero.
       cbmPerCtn: money(hasValue(product.m3Ctn) ? product.m3Ctn : hasValue(product.cbmPerCtn) ? product.cbmPerCtn : hasValue(product.cbm) ? product.cbm : data.cbmPerCtn),
-      normalPriceEa, normalPriceCtn,
+      normalPriceEa: 0, normalPriceCtn: 0,
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
       // A stored price is not a released quotation. Only the QD sync endpoint is
       // allowed to promote an item to VIEW QUOTE.
