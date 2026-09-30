@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-buyer-room-user-click-v61">
+<meta name="build-version" content="2026-10-01-buyer-room-top-download-v62">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -372,7 +372,7 @@ $('exportSelection').onclick=()=>{
   if(exportBusy)return;
   if(!state.selectionDownloadUrl){exportBusy=true;$('exportSelection').disabled=true;post('BUYER_ROOM_EXPORT');return}
   const link=document.createElement('a');
-  link.href=state.selectionDownloadUrl;link.target='_blank';link.rel='noopener';
+  link.href=state.selectionDownloadUrl;link.target='_top';
   document.body.appendChild(link);link.click();link.remove();
 };
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
@@ -392,7 +392,7 @@ window.addEventListener('message',e=>{
     exportBusy=false;$('exportSelection').disabled=false;
     if(!m.ok||!m.url){toast(m.message||'Excel download could not be started.');return}
     state.selectionDownloadUrl=m.url;
-    const link=document.createElement('a');link.href=m.url;link.target='_blank';link.rel='noopener';
+    const link=document.createElement('a');link.href=m.url;link.target='_top';
     document.body.appendChild(link);link.click();link.remove();
     return;
   }
