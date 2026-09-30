@@ -3,7 +3,7 @@ import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
-import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
+import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -510,7 +510,8 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
+  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 300);
+  return { ok: true, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

@@ -16,15 +16,21 @@ $w.onReady(async function () {
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
+  let activeDownloadUrl = '';
+  let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
 
-  async function prepareSelectionDownload() {
+  async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
+    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) return activeDownloadUrl;
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
-      if (!result?.ok || !/^https:\/\//i.test(String(result.url || ''))) throw new Error('Excel download is unavailable.');
-      return result.url;
+      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
+      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+      activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      activeDownloadExpiresAt = Number(result.expiresAt);
+      return activeDownloadUrl;
     })();
     try { return await downloadPreparation; }
     finally { downloadPreparation = null; }
@@ -168,7 +174,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-wix-media-v63';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-same-origin-v64';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

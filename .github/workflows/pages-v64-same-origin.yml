@@ -1,4 +1,4 @@
-name: Deploy Buyer Room v63 to Pages
+name: Deploy Buyer Room v64 to Pages
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v63-wix-media
+  group: pages-v64-same-origin
   cancel-in-progress: false
 
 jobs:
