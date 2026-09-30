@@ -39,8 +39,7 @@ $w.onReady(async function () {
   async function startSelectionDownload() {
     try {
       const url = await primeSelectionDownload();
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
-      wixLocationFrontend.to(url);
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_DOWNLOAD', ok: true, url });
     } catch (error) {
       console.error('Buyer Room direct Excel download failed', error);
       frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
@@ -179,7 +178,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-direct-excel-v59';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-download-sink-v60';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

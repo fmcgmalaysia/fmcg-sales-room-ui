@@ -1,4 +1,4 @@
-name: Deploy Buyer Room v59 to Pages
+name: Deploy Buyer Room v60 to Pages
 
 on:
   push:
@@ -11,9 +11,8 @@ permissions:
   pages: write
   id-token: write
 
-# Keep this deployment independent from the damaged legacy Pages run.
 concurrency:
-  group: pages-v59-direct-excel
+  group: pages-v60-download-sink
   cancel-in-progress: false
 
 jobs:

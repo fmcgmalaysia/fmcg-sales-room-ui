@@ -26,12 +26,18 @@ assert.equal(verifyBuyerSelectionExportToken(issued.token, secret).customerId, '
 assert.throws(() => verifyBuyerSelectionExportToken(issued.token + 'x', secret));
 
 const pageCode = fs.readFileSync(new URL('../buyer-room/wix/buyer-room-page.js', import.meta.url), 'utf8');
+const buyerRoomHtml = fs.readFileSync(new URL('../buyer-room.html', import.meta.url), 'utf8');
 const webModule = fs.readFileSync(new URL('../backend/catalogueAuth.web.js', import.meta.url), 'utf8');
 const httpFunctions = fs.readFileSync(new URL('../backend/http-functions.js', import.meta.url), 'utf8');
 assert.match(pageCode, /createBuyerSelectionDownload/);
 assert.match(pageCode, /message\.type === 'BUYER_ROOM_EXPORT'/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
+assert.match(pageCode, /BUYER_ROOM_EXPORT_DOWNLOAD/);
+assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE|base64/);
+assert.match(buyerRoomHtml, /m\.type==='BUYER_ROOM_EXPORT_DOWNLOAD'/);
+assert.match(buyerRoomHtml, /document\.createElement\('iframe'\)/);
+assert.match(buyerRoomHtml, /buyer-room-download-sink-v60/);
 assert.doesNotMatch(webModule, /mediaManager|uploadBuyerSelectionExcel/);
 assert.match(httpFunctions, /content-disposition/);
 assert.match(httpFunctions, /body: file\.bytes/);
