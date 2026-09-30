@@ -9,6 +9,7 @@ const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
 const STAFF_COLLECTION = 'StaffMaster';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
+const SUBCATEGORY_COLLECTION = 'subCategories';
 const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
 const DEFAULT_SELECTION_LIMIT = 100;
 const SELECTION_LIMITS = new Set([100, 300, 500, 700]);
@@ -28,6 +29,8 @@ function normalizeEmail(value) { return normalize(value).toLowerCase(); }
 function quantity(value) { const n = Number(value); return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; }
 function money(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
 function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== ''; }
+function referenceIds(value) { return (Array.isArray(value) ? value : value ? [value] : []).map(entry => normalize(entry?._id || entry)).filter(Boolean); }
+function firstPositive(values) { return values.map(money).find(value => value > 0) || 0; }
 function imageUrl(value, depth = 0) {
   if (depth > 5 || value == null) return '';
   if (typeof value === 'object') {
@@ -86,6 +89,15 @@ async function productsByBarcodes(barcodes) {
     matches.push(...batch);
   }
   return matches.filter(Boolean);
+}
+async function subCategoryMainMap(products) {
+  const ids = [...new Set(products.flatMap(product => referenceIds(product.subCategories)))];
+  const map = new Map();
+  for (let index = 0; index < ids.length; index += 100) {
+    const result = await wixData.query(SUBCATEGORY_COLLECTION).hasSome('_id', ids.slice(index, index + 100)).limit(100).find({ suppressAuth: true });
+    result.items.forEach(item => map.set(normalize(item._id), upper(item.mainCategory)));
+  }
+  return map;
 }
 async function putPayload(collectionId, title, payload) {
   const result = await wixData.query(collectionId).eq('title', normalize(title)).limit(2).find({ suppressAuth: true, consistentRead: true });
@@ -220,6 +232,7 @@ async function workspaceItems(customerId) {
   const resolvedBarcodes = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
   const barcodeProducts = await productsByBarcodes(barcodes.filter(barcode => !resolvedBarcodes.has(barcode)));
   products.push(...barcodeProducts);
+  const subCategoryCategories = await subCategoryMainMap(products);
   const byProductId = new Map();
   const byBarcode = new Map();
   products.forEach(product => {
@@ -238,6 +251,10 @@ async function workspaceItems(customerId) {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
+    const ea = money(data.ea || product.ea || product.price);
+    const normalPriceEa = firstPositive([data.normalPriceEa, product.unitPrice, product.pricePerUnit]);
+    const normalPriceCtn = firstPositive([data.normalPriceCtn, product.pricePerCtn]) || (normalPriceEa * ea);
+    const category = normalize(data.category || data.mainCategory || product.mainCategory || referenceIds(product.subCategories).map(id => subCategoryCategories.get(id)).find(Boolean));
     return {
       ...safeData, id, itemId: id,
       barcode: normalize(data.barcode || data.unitBarcode || product.barcode),
@@ -246,16 +263,16 @@ async function workspaceItems(customerId) {
       // stored value only when the product is unavailable in Catalogue CMS.
       packingSize: normalize(product.description || data.packingSize),
       brand: normalize(data.brand || product.brandName || product.principle),
-      category: normalize(data.category || data.mainCategory || product.mainCategory),
+      category,
       imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
-      ea: money(data.ea || product.ea),
+      ea,
       // Read EA (pieces per carton) from the dedicated Catalogue CMS field.
       // Read it afresh for exports instead of trusting an older selection payload.
       catalogueEa: hasValue(product.ea) ? money(product.ea) : null,
       // Point Base sync writes CBM /CTN to FMCGMALAYSIA.m3Ctn. An older
       // selection payload must not mask a newer CMS value, including zero.
       cbmPerCtn: money(hasValue(product.m3Ctn) ? product.m3Ctn : hasValue(product.cbmPerCtn) ? product.cbmPerCtn : hasValue(product.cbm) ? product.cbm : data.cbmPerCtn),
-      normalPriceEa: money(data.normalPriceEa || product.pricePerPc || product.price), normalPriceCtn: money(data.normalPriceCtn || product.pricePerCtn),
+      normalPriceEa, normalPriceCtn,
       vipPriceEa: money(data.vipPriceEa || data.quotePerPc), vipPriceCtn: money(data.vipPriceCtn || data.quotePerCtn || data.vipPrice),
       // A stored price is not a released quotation. Only the QD sync endpoint is
       // allowed to promote an item to VIEW QUOTE.
