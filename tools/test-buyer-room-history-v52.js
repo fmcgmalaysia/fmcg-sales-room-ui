@@ -37,8 +37,9 @@ const path = require('path');
   for (const expected of ['Barcode', 'Descriptions', 'Packing Size', 'USD / PC', 'USD / CTN', 'Qty CTN', 'Line Amount / USD']) if (!headings.includes(expected)) throw new Error(`Missing history column ${expected}: ${headings}`);
   const lineText = (await page.locator('.history-line').innerText()).replace(/\s+/g, ' ').trim();
   for (const expected of ['9556570012598', '100 PLUS ISOTONIC - ZERO SUGAR', '325ML x 24', '0.41', '9.84', '50', '492.00']) if (!lineText.includes(expected)) throw new Error(`Missing history line value ${expected}: ${lineText}`);
-  const lineStyle = await page.locator('.history-line').evaluate(node => ({ height: node.getBoundingClientRect().height, borderTop: getComputedStyle(node).borderTopWidth, borderBottom: getComputedStyle(node).borderBottomWidth, size: getComputedStyle(node).fontSize, weights: [...node.children].map(cell => getComputedStyle(cell).fontWeight), priceColor: getComputedStyle(node.querySelector('.history-price')).color }));
+  const lineStyle = await page.locator('.history-line').evaluate(node => ({ height: node.getBoundingClientRect().height, borderTop: getComputedStyle(node).borderTopWidth, borderBottom: getComputedStyle(node).borderBottomWidth, size: getComputedStyle(node).fontSize, color: getComputedStyle(node).color, weights: [...node.children].map(cell => getComputedStyle(cell).fontWeight), priceColor: getComputedStyle(node.querySelector('.history-price')).color }));
   if (lineStyle.height > 33 || lineStyle.borderTop !== '0px' || lineStyle.borderBottom !== '0px' || lineStyle.size !== '11px' || lineStyle.weights.some(weight => weight !== '400')) throw new Error(`History detail is not dense, borderless and regular weight: ${JSON.stringify(lineStyle)}`);
+  if (lineStyle.color !== 'rgb(36, 59, 87)') throw new Error(`History detail text is still too light: ${lineStyle.color}`);
   const priceRgb=(lineStyle.priceColor.match(/\d+/g)||[]).map(Number);if (!(priceRgb[0]>priceRgb[1]&&priceRgb[1]>priceRgb[2])) throw new Error(`History prices are not orange-red: ${lineStyle.priceColor}`);
   const alignment = await page.evaluate(() => { const head=[...document.querySelector('.history-line-head').children],row=[...document.querySelector('.history-line').children];return head.map((cell,index)=>Math.abs(cell.getBoundingClientRect().left-row[index].getBoundingClientRect().left)); });
   if (alignment.some(delta => delta > 1)) throw new Error(`History headers and entries are misaligned: ${alignment.join(', ')}`);
@@ -53,6 +54,6 @@ const path = require('path');
 
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
   if (process.env.BUYER_ROOM_HISTORY_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_HISTORY_SCREENSHOT, fullPage: true });
-  console.log('Buyer Room Order History v54 checks passed.');
+  console.log('Buyer Room Order History v55 checks passed.');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });
