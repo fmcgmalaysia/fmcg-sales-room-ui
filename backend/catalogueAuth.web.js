@@ -89,14 +89,31 @@ async function productsByBarcodes(barcodes) {
   }
   return matches.filter(Boolean);
 }
-async function subCategoryMainMap(products) {
-  const ids = [...new Set(products.flatMap(product => referenceIds(product.subCategories)))];
+async function productCategoryContext(products) {
+  const referencedIds = [...new Set(products.flatMap(product => referenceIds(product.subCategories)))];
   const map = new Map();
-  for (let index = 0; index < ids.length; index += 100) {
-    const result = await wixData.query(SUBCATEGORY_COLLECTION).hasSome('_id', ids.slice(index, index + 100)).limit(100).find({ suppressAuth: true });
+  for (let index = 0; index < referencedIds.length; index += 100) {
+    const result = await wixData.query(SUBCATEGORY_COLLECTION).hasSome('_id', referencedIds.slice(index, index + 100)).limit(100).find({ suppressAuth: true });
     result.items.forEach(item => map.set(normalize(item._id), upper(item.mainCategory)));
   }
-  return map;
+  // Wix does not consistently return multi-reference values on product rows.
+  // Match the Catalogue's authoritative FOOD query so older selections still
+  // receive the correct category even when product.subCategories is omitted.
+  const foodSubResult = await wixData.query(SUBCATEGORY_COLLECTION).startsWith('mainCategory', 'FOOD').limit(1000).find({ suppressAuth: true });
+  const foodSubCategoryIds = foodSubResult.items.map(item => normalize(item._id)).filter(Boolean);
+  const productIds = [...new Set(products.map(product => normalize(product._id)).filter(Boolean))];
+  const foodProductIds = new Set();
+  if (foodSubCategoryIds.length) {
+    for (let index = 0; index < productIds.length; index += 100) {
+      const result = await wixData.query(PRODUCT_COLLECTION)
+        .hasSome('_id', productIds.slice(index, index + 100))
+        .hasSome('subCategories', foodSubCategoryIds)
+        .limit(100)
+        .find({ suppressAuth: true });
+      result.items.forEach(item => foodProductIds.add(normalize(item._id)));
+    }
+  }
+  return { map, foodProductIds };
 }
 async function putPayload(collectionId, title, payload) {
   const result = await wixData.query(collectionId).eq('title', normalize(title)).limit(2).find({ suppressAuth: true, consistentRead: true });
@@ -231,7 +248,7 @@ async function workspaceItems(customerId) {
   const resolvedBarcodes = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
   const barcodeProducts = await productsByBarcodes(barcodes.filter(barcode => !resolvedBarcodes.has(barcode)));
   products.push(...barcodeProducts);
-  const subCategoryCategories = await subCategoryMainMap(products);
+  const categoryContext = await productCategoryContext(products);
   const byProductId = new Map();
   const byBarcode = new Map();
   products.forEach(product => {
@@ -251,7 +268,7 @@ async function workspaceItems(customerId) {
     const product = byProductId.get(normalize(data.productId)) || byBarcode.get(storedBarcode) || {};
     const id = normalize(record._id || data.id || data.itemId);
     const ea = money(data.ea || product.ea || product.price);
-    const category = normalize(data.category || data.mainCategory || product.mainCategory || referenceIds(product.subCategories).map(id => subCategoryCategories.get(id)).find(Boolean));
+    const category = normalize(data.category || data.mainCategory || (categoryContext.foodProductIds.has(normalize(product._id)) ? 'FOOD' : '') || product.mainCategory || referenceIds(product.subCategories).map(id => categoryContext.map.get(id)).find(Boolean));
     return {
       ...safeData, id, itemId: id,
       barcode: normalize(data.barcode || data.unitBarcode || product.barcode),

@@ -47,6 +47,6 @@ const path = require('path');
   const browseBackground = await page.locator('#browse').evaluate(node => getComputedStyle(node).backgroundColor);
   if (browseBackground === 'rgb(255, 255, 255)' || browseBackground === 'rgba(0, 0, 0, 0)') throw new Error('Add More Items is not a solid button.');
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
-  console.log('Buyer Room My Selection v44 checks passed.');
+  console.log('Buyer Room My Selection v45 checks passed.');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });
