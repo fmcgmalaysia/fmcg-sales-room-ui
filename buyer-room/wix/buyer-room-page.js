@@ -25,7 +25,7 @@ $w.onReady(async function () {
 
   downloadButton.disable();
   downloadButton.hide();
-  downloadButton.label = 'Preparing Excel…';
+  downloadButton.label = '';
   downloadButton.target = '_self';
 
   function updateDownloadButtonVisibility() {
@@ -55,7 +55,7 @@ $w.onReady(async function () {
       activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
       activeDownloadExpiresAt = Number(result.expiresAt);
       downloadButton.link = activeDownloadUrl;
-      downloadButton.label = 'Export Excel';
+      downloadButton.label = '';
       downloadButton.enable();
       updateDownloadButtonVisibility();
       scheduleSelectionDownloadRefresh();
@@ -69,7 +69,7 @@ $w.onReady(async function () {
     try { await prepareSelectionDownload(force); }
     catch (error) {
       downloadButton.link = '';
-      downloadButton.label = 'Export unavailable';
+      downloadButton.label = '';
       downloadButton.disable();
       downloadButton.hide();
       console.error('Buyer Room Excel link preparation failed', error);
