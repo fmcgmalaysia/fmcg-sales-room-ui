@@ -13,7 +13,7 @@ const path = require('path');
     myList: [
       { id: 'quoted-1', barcode: '1001', itemName: 'ALPHA DRINK', packingSize: '500ML x 24', category: 'FOOD & BEVERAGES', vipPriceEa: 0.5, vipPriceCtn: 12, vipCurrency: 'USD', quoteStatus: 'VIEW QUOTE', quoteActive: true, orderQtyCtn: 50, cbmPerCtn: 0.01, qtyEditedAt: '2026-09-30T12:52:00.000Z', qtyEditedBy: 'LAW' },
       { id: 'waiting-1', barcode: '2001', itemName: 'BETA WAITING ITEM', packingSize: '250G x 12', category: 'FOOD & BEVERAGES', quoteStatus: 'WAITING', quoteActive: false, orderQtyCtn: 0 },
-      { id: 'quoted-2', barcode: '3001', itemName: 'GAMMA CLEANER', packingSize: '1L x 12', category: 'HOUSEHOLD & CLEANING', vipPriceEa: 1, vipPriceCtn: 20, vipCurrency: 'USD', quoteStatus: 'VIEW QUOTE', quoteActive: true, orderQtyCtn: 60, cbmPerCtn: 0.02, qtyEditedAt: '2026-09-30T12:54:00.000Z', qtyEditedBy: 'LAW' }
+      { id: 'quoted-2', barcode: '3001', itemName: 'GAMMA CLEANER', packingSize: '1L x 12', category: 'HOUSEHOLD & CLEANING', vipPriceEa: 1, vipPriceCtn: 20, vipCurrency: 'USD', quoteStatus: 'VIEW QUOTE', quoteActive: true, orderQtyCtn: 60, cbmPerCtn: 0, qtyEditedAt: '2026-09-30T12:54:00.000Z', qtyEditedBy: 'LAW' }
     ], removed: [], orders: []
   }}, '*'));
   await page.locator('#myRows .row').first().waitFor();
@@ -25,6 +25,7 @@ const path = require('path');
   if (await page.locator('#orderRows .row').count() !== 3) throw new Error('ALL ITEMS does not show all three products.');
   if (await text('.order-grid .row.head > div:nth-child(3)') !== 'Descriptions') throw new Error('Order table description header was not renamed.');
   if (await page.locator('#orderRows .order-waiting').count() !== 1) throw new Error('Waiting product is not visually identified.');
+  if (await page.locator('#orderRows .cbm-zero-pill').count() !== 1 || await text('#orderRows .cbm-zero-pill') !== '0.0000') throw new Error('Ordered product with zero CBM is not highlighted.');
   if (await page.locator('#orderShowing').isVisible()) throw new Error('Legacy Showing line is still visible.');
 
   const summaryBefore = await page.locator('.order-summary').innerText();
@@ -43,12 +44,17 @@ const path = require('path');
   if (await page.locator('#reviewRows .order-review-line').count() !== 2) throw new Error('Review Order does not contain exactly the ordered products.');
   if (await text('#reviewOrderTitle') !== 'Review Order' || await text('#confirmSubmit') !== 'Send Request') throw new Error('Review Order actions are incorrect.');
   if (!(await text('.order-assurance')).includes('Submit with confidence')) throw new Error('Order quantity reassurance is missing.');
+  if (await page.locator('#reviewRows .cbm-zero-pill').count() !== 1 || await text('#reviewRows .cbm-zero-pill') !== '0.0000') throw new Error('Review Order does not highlight zero CBM.');
   const reviewMetrics = await page.evaluate(() => ({
     fontSize: getComputedStyle(document.querySelector('#reviewRows .order-review-line')).fontSize,
     rowHeight: document.querySelector('#reviewRows .order-review-line').getBoundingClientRect().height,
-    overflow: getComputedStyle(document.querySelector('.order-review-table')).overflowY
+    overflow: getComputedStyle(document.querySelector('.order-review-table')).overflowY,
+    modalWidth: document.querySelector('.order-review').getBoundingClientRect().width,
+    closeLabel: document.querySelector('#cancelSubmit').getAttribute('aria-label'),
+    hasBackToEdit: document.querySelector('.order-review-footer').textContent.includes('Back to Edit')
   }));
   if (reviewMetrics.fontSize !== '10px' || reviewMetrics.rowHeight > 30 || !['auto','scroll'].includes(reviewMetrics.overflow)) throw new Error(`Review Order is not compact: ${JSON.stringify(reviewMetrics)}`);
+  if (reviewMetrics.modalWidth > 1100 || reviewMetrics.closeLabel !== 'Close order review' || reviewMetrics.hasBackToEdit) throw new Error(`Review Order close control or width is incorrect: ${JSON.stringify(reviewMetrics)}`);
   if (process.env.BUYER_ROOM_REVIEW_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_REVIEW_SCREENSHOT, fullPage: true });
   await page.locator('#cancelSubmit').click();
 
@@ -74,6 +80,8 @@ const path = require('path');
   if (await page.locator('#orderRows [data-qty]').first().inputValue() !== '9999') throw new Error('Compact quantity input does not accept four digits.');
   const edited = await text('#orderRows .row:first-child .qty-audit-time');
   if (!/^\d{2}-\d{2}-\d{2} \d{2}:\d{2}(am|pm)$/.test(edited)) throw new Error(`Edited Time is not compact: ${edited}`);
+  await page.locator('#orderRows [data-qty]').first().blur();
+  await page.evaluate(() => window.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: 'quantity', ok: true, itemId: 'quoted-1', quantityCtn: 9999, qtyEditedAt: '2026-10-01T08:00:00.000Z', qtyEditedBy: 'Test User' }, '*'));
   await page.evaluate(() => {
     HTMLAnchorElement.prototype.click = function () { window.__orderDownloadHref = this.href; };
     window.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: true, orderId: 'ORD-TEST-001', downloadUrl: 'https://example.com/_functions/buyerOrderExcel?token=test' }, '*');
