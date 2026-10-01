@@ -236,7 +236,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261002-buyer-tracking-v82';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261002-buyer-tracking-v83';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
