@@ -23,6 +23,7 @@ assert.ok(binaryText.includes('fullCalcOnLoad="1"'));
 const secret = 'test-only-secret';
 const issued = createBuyerSelectionExportToken('CUS-TEST-001', secret, 120);
 assert.equal(verifyBuyerSelectionExportToken(issued.token, secret).customerId, 'CUS-TEST-001');
+assert.ok(issued.expiresAt - Date.now() > 3500 * 1000);
 assert.throws(() => verifyBuyerSelectionExportToken(issued.token + 'x', secret));
 const longLived = createBuyerSelectionExportToken('CUS-TEST-001', secret);
 assert.ok(longLived.expiresAt - Date.now() > 3500 * 1000);

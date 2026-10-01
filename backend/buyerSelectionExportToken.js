@@ -25,7 +25,7 @@ export function createBuyerSelectionExportToken(customerId, secret, lifetimeSeco
     aud: TOKEN_AUDIENCE,
     customerId: id,
     iat: now,
-    exp: now + Math.max(60, Math.min(7200, Number(lifetimeSeconds) || 3600))
+    exp: now + Math.max(3600, Math.min(7200, Number(lifetimeSeconds) || 3600))
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = base64UrlEncode(signatureFor(encodedPayload, key));
