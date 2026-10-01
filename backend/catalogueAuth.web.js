@@ -524,6 +524,16 @@ export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async 
   const issued = createBuyerOrderExportToken(buyer.customerId, id, await getSecret(QD_ROUTER_SECRET), 900);
   return { ok: true, orderId: id, ...issued };
 });
+export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async (requestId = '', assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  const submissionId = normalize(requestId);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) {
+    throw new Error('Please refresh the order form and try again.');
+  }
+  const orderId = nextOrderId(buyer.customerId, submissionId);
+  const issued = createBuyerOrderExportToken(buyer.customerId, orderId, await getSecret(QD_ROUTER_SECRET), 900);
+  return { ok: true, orderId, ...issued };
+});
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   return { ok: true, customerId: buyer.customerId, ...(await buyerOrderHistory(buyer.customerId, cursor)) };

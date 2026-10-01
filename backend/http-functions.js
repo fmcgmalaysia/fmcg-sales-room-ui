@@ -187,7 +187,20 @@ export async function get_buyerOrderExcel(request) {
   try {
     const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
     const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
-    const file = await buildBuyerOrderDownload(authorization.customerId, authorization.orderId, buyerRoomUrl);
+    let file;
+    let lastError;
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      try {
+        file = await buildBuyerOrderDownload(authorization.customerId, authorization.orderId, buyerRoomUrl);
+        break;
+      } catch (error) {
+        lastError = error;
+        const message = normalize(error?.message);
+        if (!['Order was not found.', 'Order is not ready for download.', 'Order lines are incomplete.'].includes(message)) throw error;
+        if (attempt < 15) await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    if (!file) throw lastError || new Error('Order Excel could not be created.');
     return response({
       status: 200,
       headers: {
