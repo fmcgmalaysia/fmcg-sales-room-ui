@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-order-popup-v78">
+<meta name="build-version" content="2026-10-01-order-direct-v79">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -167,7 +167,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 @media(max-width:760px){.limit-popover{left:-120px}.limit-popover:before{left:125px}}
 .history-line .history-description,.history-line .history-qty,.history-line .history-total{color:#243b57}
 .cbm-zero-pill{display:inline-flex;align-items:center;justify-content:center;min-width:51px;padding:2px 7px;border:1px solid #efb5b5;border-radius:999px;background:#fff0f0;color:#a63232;font-size:10px;font-weight:650;line-height:1.3;font-variant-numeric:tabular-nums}
-.order-grid .row:not(.head)>div:.order-grid .row:not(.head)>div:nth-child(6) strong{width:100%;font-size:11px;text-align:right}.order-grid .row.head>div:nth-child(6){justify-content:flex-end;text-align:right}.order-grid .row>div:nth-child(7){display:flex;align-items:center;justify-content:center;text-align:center}.order-grid .row.head>div:nth-child(7){justify-content:center;text-align:center}
+.order-grid .row:not(.head)>div:nth-child(6){display:flex;align-items:center;justify-content:flex-end;text-align:right}.order-grid .row:not(.head)>div:nth-child(6) strong{width:100%;font-size:11px;text-align:right}.order-grid .row.head>div:nth-child(6){justify-content:flex-end;text-align:right}.order-grid .row>div:nth-child(7){display:flex;align-items:center;justify-content:center;text-align:center}.order-grid .row.head>div:nth-child(7){justify-content:center;text-align:center}
 .order-grid .thumb-shell,.order-grid .thumb,.order-grid .thumb-fallback{width:38px;height:38px}.order-grid .thumb-shell{flex-basis:38px}
 .history-details{padding-top:1px;padding-bottom:6px}.history-detail-meta{min-height:24px;padding-top:1px;padding-bottom:3px}.history-line-head{height:26px}.history-line{min-height:28px}
 .order-review{position:relative;width:min(1080px,calc(100vw - 64px));max-height:calc(100vh - 48px);overflow:hidden;display:flex;flex-direction:column;background:#fff;border-radius:9px;box-shadow:0 26px 80px rgba(0,0,0,.25);color:#173557}.order-review-close{position:absolute;top:13px;right:15px;z-index:4;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;background:transparent;color:#526981;font:400 24px/1 Arial,sans-serif;cursor:pointer}.order-review-close:hover{background:#edf2f7;color:#173557}.order-review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:18px 58px 10px 28px}.order-review-head h3{margin:0;font-size:23px;line-height:1.1;letter-spacing:-.35px}.order-review-head p{margin:4px 0 0;color:#61748c;font-size:11px}.order-review-meta{display:flex;align-items:center;gap:10px;padding-top:5px;color:#173557;font-size:11px;font-weight:750;white-space:nowrap}.order-review-meta i{color:#9caabd;font-style:normal}.order-review-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 28px 8px;border-radius:7px;background:#eef4fa}.order-review-metric{position:relative;padding:8px 20px;text-align:center}.order-review-metric+.order-review-metric:before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:1px;background:#c9d7e6}.order-review-metric span{display:block;color:#60738b;font-size:9px}.order-review-metric strong{display:block;margin-top:2px;color:#173557;font-size:14px;font-weight:760;font-variant-numeric:tabular-nums}.order-review-metric:last-child strong{color:var(--orange-dark)}.order-review-table{min-height:0;max-height:510px;flex:0 1 auto;margin:0 28px;border-top:1px solid #dbe4ed;border-bottom:1px solid #dbe4ed;overflow:auto;scrollbar-width:thin;scrollbar-color:#9eb2c8 transparent}.order-review-grid{min-width:980px}.order-review-line{display:grid;grid-template-columns:32px 120px minmax(250px,1fr) 128px 92px 82px 132px 76px;align-items:center;min-height:28px;color:#29425f;font-size:10px;font-weight:400;font-variant-numeric:tabular-nums}.order-review-line:nth-child(odd){background:#f5f8fb}.order-review-line>div{min-width:0;padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.order-review-line>div:nth-child(n+5){text-align:right}.order-review-line.review-table-head{position:sticky;top:0;z-index:2;min-height:33px;background:#e5edf5;color:#324d6d;font-size:10px;font-weight:700}.order-review-line .review-price{color:var(--orange-dark)}.order-review-footer{display:grid;grid-template-columns:minmax(420px,1fr) auto;align-items:center;gap:22px;padding:9px 28px 11px}.order-assurance{min-height:46px;display:flex;align-items:center;gap:12px;padding:7px 14px;border-radius:7px;background:#fff8e8}.order-assurance svg{width:25px;height:25px;flex:0 0 25px;fill:#173557}.order-assurance strong{display:block;font-size:11px}.order-assurance span{display:block;margin-top:2px;color:#415b79;font-size:10px}.order-review-actions{display:flex;gap:9px}.order-review-actions .btn.primary{min-width:160px;background:#173557;border-color:#173557}.order-review-actions .btn.primary:hover{background:#102b48;border-color:#102b48}.order-success{width:min(470px,calc(100vw - 40px));padding:26px 28px 28px;border-radius:10px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.25);text-align:center;color:#173557}.success-mark{width:48px;height:48px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;background:#15945f}.success-mark svg{width:26px;height:26px;fill:#fff}.order-success h3{margin:0;font-size:22px}.order-success-copy{margin:8px 0 17px;color:#5f728a;font-size:12px;line-height:1.55}.order-download-status{display:flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:8px 12px;border-radius:7px;background:#edf8f1;color:#176746;font-size:11px;font-weight:650}.order-download-status.warn{background:#fff4dc;color:#80590f}.order-download-status svg{width:22px;height:22px;fill:currentColor}.success-order-id{margin:11px 0 18px;color:#718198;font-size:10px}.order-success .btn{min-width:220px;background:#173557;border-color:#173557}.order-action-bar{grid-template-columns:auto minmax(280px,1fr)}@media(max-width:900px){.order-review{width:calc(100vw - 20px);height:calc(100vh - 20px)}.order-review-head,.order-review-footer{padding-left:16px;padding-right:52px}.order-review-summary,.order-review-table{margin-left:16px;margin-right:16px}.order-review-footer{grid-template-columns:1fr}.order-assurance{display:none}.order-review-actions{justify-content:flex-end}}
@@ -231,7 +231,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="successModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle"><div class="order-success"><div class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 17.2-4.4-4.4 1.8-1.8 2.6 2.6 8.2-8.2 1.8 1.8-10 10Z"/></svg></div><h3 id="orderSuccessTitle">Order Received</h3><p class="order-success-copy">We’ve received your order.<br>Our sales team will update you on its progress shortly.</p><div class="order-download-status" id="orderDownloadStatus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5V2Zm8 1.8V8h4.2L13 3.8ZM8 12h2l1.2 2 1.2-2h2l-2.1 3 2.2 3h-2l-1.3-2-1.3 2h-2l2.2-3L8 12Z"/></svg><span>Your order Excel download has started. Check your browser downloads.</span></div><p class="success-order-id" id="successOrderId">Order ID: —</p><button class="btn primary" id="closeSuccess">Done</button></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderDownloadUrl:'',orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -382,6 +382,11 @@ function openOrderReview(){
   const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0);
   if(!ordered.length)return toast('Enter a quantity for at least one quoted product.');
   state.pendingOrder=ordered.map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));
+  const signature=JSON.stringify(state.pendingOrder);
+  if(!state.orderAttempt||state.orderAttempt.signature!==signature)state.orderAttempt={signature,requestId:crypto.randomUUID()};
+  state.orderDownloadUrl='';
+  $('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Preparing…';
+  post('BUYER_ROOM_PREPARE_ORDER_DOWNLOAD',{requestId:state.orderAttempt.requestId});
   $('reviewItemCount').textContent=ordered.length;$('reviewProducts').textContent=ordered.length;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('reviewCompany').textContent=state.companyName;$('reviewDate').textContent=reviewDate();$('reviewCurrency').textContent=state.currency;$('reviewPriceHeader').textContent=`${state.currency} / CTN`;$('reviewAmountHeader').textContent=`Line Amount / ${state.currency}`;
   $('reviewRows').innerHTML=ordered.map((item,index)=>{const qty=num(item.orderQtyCtn),price=ctnPrice(item),totalCbm=qty*num(item.cbmPerCtn),cbmDisplay=totalCbm===0?'<span class="cbm-zero-pill" title="CBM data is currently unavailable">0.0000</span>':totalCbm.toFixed(4);return `<div class="order-review-line"><div>${index+1}</div><div>${esc(item.barcode)}</div><div title="${esc(item.itemName)}">${esc(item.itemName)}</div><div>${esc(item.packingSize)}</div><div class="review-price">${money(price)}</div><div>${qty.toLocaleString('en-US')}</div><div>${money(qty*price)}</div><div>${cbmDisplay}</div></div>`}).join('');
   $('submitModalBg').classList.add('show');
@@ -390,23 +395,16 @@ $('submitOrder').onclick=openOrderReview;
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
-  const signature=JSON.stringify(state.pendingOrder);
-  if(!state.orderAttempt||state.orderAttempt.signature!==signature)state.orderAttempt={signature,requestId:crypto.randomUUID()};
-  state.orderDownloadWindow=openOrderDownloadWindow();
+  if(!state.orderDownloadUrl)return toast('Order Excel is still being prepared. Please wait a moment.');
+  state.orderDownloadWindow=openOrderDownloadWindow(state.orderDownloadUrl);
   state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
   post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
   $('submitModalBg').classList.remove('show');
 };
 $('closeSuccess').onclick=()=>{$('successModalBg').classList.remove('show')};
-function openOrderDownloadWindow(){
+function openOrderDownloadWindow(url){
   try{
-    const popup=window.open('about:blank','buyerOrderExcelDownload','popup,width=420,height=240');
-    if(!popup)return null;
-    try{
-      popup.document.title='Preparing order Excel';
-      popup.document.body.innerHTML='<main style="font:14px Arial,sans-serif;color:#17365d;text-align:center;padding:48px 24px"><strong style="font-size:18px">Preparing your order Excel…</strong><p style="color:#60748d;line-height:1.5">The download will start automatically when your order is ready.</p></main>';
-    }catch(error){}
-    return popup;
+    return window.open(url,'buyerOrderExcelDownload','popup,width=420,height=240');
   }catch(error){console.error('Order Excel preparation window could not be opened',error);return null}
 }
 function closeOrderDownloadWindow(){const popup=state.orderDownloadWindow;state.orderDownloadWindow=null;if(popup&&!popup.closed)try{popup.close()}catch(error){}}
@@ -423,6 +421,12 @@ $('historyMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)r
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');$('successModalBg').classList.remove('show');closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
 window.addEventListener('message',e=>{
   const m=e.data||{};
+  if(m.type==='BUYER_ROOM_ORDER_DOWNLOAD_READY'){
+    if(!state.orderAttempt||m.requestId!==state.orderAttempt.requestId)return;
+    if(m.ok&&m.downloadUrl){state.orderDownloadUrl=m.downloadUrl;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request'}
+    else{state.orderDownloadUrl='';$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Unavailable';toast(m.message||'Order Excel could not be prepared.')}
+    return;
+  }
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){if(!m.ok)toast(m.message||'Excel download could not be started.');return;}
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
   if(m.type==='BUYER_ROOM_USER_RESULT'){
@@ -450,14 +454,15 @@ window.addEventListener('message',e=>{
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
       state.orderAttempt=null;state.pendingOrder=null;addOrderNotification(m.orderId);
-      const started=triggerOrderDownload(m.downloadUrl||'');
+      const started=Boolean(state.orderDownloadWindow)&&Boolean(state.orderDownloadUrl);
+      state.orderDownloadWindow=null;state.orderDownloadUrl='';
       $('successOrderId').textContent=`Order ID: ${m.orderId||'—'}`;
       const status=$('orderDownloadStatus');
       status.classList.toggle('warn',!started);
       status.querySelector('span').textContent=started?'Your order Excel download has started. Check your browser downloads.':(m.downloadUrl?'Your order Excel is ready. Use the green Download Excel button to download it.':(m.downloadError||'Your order was received, but the Excel download could not be prepared.'));
       $('successModalBg').classList.add('show');
     }else{
-      closeOrderDownloadWindow();
+      closeOrderDownloadWindow();state.orderDownloadUrl='';
       $('submitModalBg').classList.add('show');
       toast(m.message||'Order could not be confirmed.');
     }
@@ -468,6 +473,6 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 </script>
 
 
-<style id="order-column-alignment-v78">.order-grid .row:not(.head)>div:nth-child(6){display:flex;align-items:center;justify-content:flex-end;text-align:right}.order-grid .row:not(.head)>div:nth-child(6) strong{width:100%;font-size:11px;text-align:right}.order-grid .row.head>div:nth-child(6){justify-content:flex-end;text-align:right}.order-grid .row>div:nth-child(7){display:flex;align-items:center;justify-content:center;text-align:center}.order-grid .row.head>div:nth-child(7){justify-content:center;text-align:center}</style></body></html>
+</body></html>
 
 
