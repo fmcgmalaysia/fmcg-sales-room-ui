@@ -123,7 +123,7 @@ $w.onReady(async function () {
     try {
       const result = await action();
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, itemId: result?.itemId || itemId, action: actionName, ok: true, message: successMessage });
-      await loadWorkspace(actionName !== 'quantity');
+      await loadWorkspace();
     } catch (error) {
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
     }
