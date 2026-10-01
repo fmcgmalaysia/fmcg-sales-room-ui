@@ -24,6 +24,8 @@ const secret = 'test-only-secret';
 const issued = createBuyerSelectionExportToken('CUS-TEST-001', secret, 120);
 assert.equal(verifyBuyerSelectionExportToken(issued.token, secret).customerId, 'CUS-TEST-001');
 assert.throws(() => verifyBuyerSelectionExportToken(issued.token + 'x', secret));
+const longLived = createBuyerSelectionExportToken('CUS-TEST-001', secret);
+assert.ok(longLived.expiresAt - Date.now() > 3500 * 1000);
 
 const pageCode = fs.readFileSync(new URL('../buyer-room/wix/buyer-room-page.js', import.meta.url), 'utf8');
 const buyerRoomHtml = fs.readFileSync(new URL('../buyer-room.html', import.meta.url), 'utf8');
@@ -44,7 +46,8 @@ assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE|
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.match(webModule, /createBuyerSelectionExportToken/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /buyer-room-view-scope-v68/);
+assert.match(pageCode, /buyer-room-excel-v69/);
+assert.match(webModule, /createBuyerSelectionExportToken\(buyer\.customerId, await getSecret\(QD_ROUTER_SECRET\), 3600\)/);
 assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
 assert.doesNotMatch(buyerRoomHtml, /document\.createElement\('iframe'\)/);
 assert.doesNotMatch(webModule, /mediaManager|uploadBuyerSelectionExcel/);

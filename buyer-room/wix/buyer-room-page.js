@@ -35,7 +35,7 @@ $w.onReady(async function () {
 
   function scheduleSelectionDownloadRefresh() {
     if (downloadRenewalTimer) clearTimeout(downloadRenewalTimer);
-    const delay = Math.max(30000, activeDownloadExpiresAt - Date.now() - 60000);
+    const delay = Math.max(30000, activeDownloadExpiresAt - Date.now() - 300000);
     downloadRenewalTimer = setTimeout(() => {
       refreshSelectionDownload(true).catch(() => {});
     }, delay);
@@ -219,7 +219,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-view-scope-v68';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-excel-v69';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

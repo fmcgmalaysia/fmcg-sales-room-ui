@@ -510,7 +510,7 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 300);
+  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
   return { ok: true, ...issued };
 });
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {

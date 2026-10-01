@@ -15,7 +15,7 @@ function signatureFor(encodedPayload, secret) {
   return createHmac('sha256', normalize(secret)).update(encodedPayload).digest();
 }
 
-export function createBuyerSelectionExportToken(customerId, secret, lifetimeSeconds = 300) {
+export function createBuyerSelectionExportToken(customerId, secret, lifetimeSeconds = 3600) {
   const id = normalize(customerId);
   const key = normalize(secret);
   if (!id || !key) throw new Error('Buyer selection download authorization is unavailable.');
@@ -25,7 +25,7 @@ export function createBuyerSelectionExportToken(customerId, secret, lifetimeSeco
     aud: TOKEN_AUDIENCE,
     customerId: id,
     iat: now,
-    exp: now + Math.max(60, Math.min(600, Number(lifetimeSeconds) || 300))
+    exp: now + Math.max(60, Math.min(7200, Number(lifetimeSeconds) || 3600))
   };
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signature = base64UrlEncode(signatureFor(encodedPayload, key));
@@ -46,7 +46,7 @@ export function verifyBuyerSelectionExportToken(token, secret) {
   catch (_) { throw new Error('INVALID_EXPORT_TOKEN'); }
   const now = Math.floor(Date.now() / 1000);
   if (payload?.v !== TOKEN_VERSION || payload?.aud !== TOKEN_AUDIENCE || !normalize(payload?.customerId)
-      || !Number.isFinite(Number(payload?.exp)) || Number(payload.exp) < now || Number(payload.exp) > now + 600) {
+      || !Number.isFinite(Number(payload?.exp)) || Number(payload.exp) < now || Number(payload.exp) > now + 7200) {
     throw new Error('EXPIRED_EXPORT_TOKEN');
   }
   return { customerId: normalize(payload.customerId), expiresAt: Number(payload.exp) * 1000 };
