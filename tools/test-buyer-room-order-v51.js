@@ -93,7 +93,7 @@ const path = require('path');
     window.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: true, orderId: 'ORD-TEST-001', downloadUrl: 'https://example.com/_functions/buyerOrderExcel?token=test' }, '*');
   });
   if (!await page.locator('#successModalBg').isVisible()) throw new Error('Order success notice did not open.');
-  if (await text('#orderSuccessTitle') !== 'Order Received' || !(await text('#orderDownloadStatus')).includes('started downloading')) throw new Error('Order success notice copy is incorrect.');
+  if (await text('#orderSuccessTitle') !== 'Order Received' || !(await text('#orderDownloadStatus')).includes('green Download Excel button')) throw new Error('Order success notice copy is incorrect.');
   if (!String(await page.evaluate(() => window.__orderDownloadHref || '')).includes('/_functions/buyerOrderExcel?token=test')) throw new Error('Order Excel download was not triggered.');
   if (await page.locator('#quoteDot').getAttribute('hidden') !== null || await text('#quoteDot') !== '1' || !((await page.locator('#quoteDot').getAttribute('class'))||'').includes('order-alert')) throw new Error('Successful order did not create a red notification badge.');
   if (process.env.BUYER_ROOM_SUCCESS_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_SUCCESS_SCREENSHOT, fullPage: true });
