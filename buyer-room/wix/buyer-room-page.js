@@ -13,12 +13,17 @@ function getAssistCustomerId() {
 $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
+  const downloadButton = $w('#downloadExcelButton');
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
   let activeDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
+
+  downloadButton.disable();
+  downloadButton.label = 'Preparing Excel…';
+  downloadButton.target = '_self';
 
   async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
@@ -30,20 +35,22 @@ $w.onReady(async function () {
       const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
       activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
       activeDownloadExpiresAt = Number(result.expiresAt);
+      downloadButton.link = activeDownloadUrl;
+      downloadButton.label = 'Export Excel';
+      downloadButton.enable();
       return activeDownloadUrl;
     })();
     try { return await downloadPreparation; }
     finally { downloadPreparation = null; }
   }
 
-  async function startSelectionDownload() {
-    try {
-      const url = await prepareSelectionDownload();
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
-      wixLocationFrontend.to(url);
-    } catch (error) {
-      console.error('Buyer Room direct Excel download failed', error);
-      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
+  async function refreshSelectionDownload(force = false) {
+    try { await prepareSelectionDownload(force); }
+    catch (error) {
+      downloadButton.link = '';
+      downloadButton.label = 'Export unavailable';
+      downloadButton.disable();
+      console.error('Buyer Room Excel link preparation failed', error);
     }
   }
 
@@ -65,6 +72,7 @@ $w.onReady(async function () {
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
     activeCustomerId = result.context.customerId;
+    refreshSelectionDownload().catch(() => {});
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
@@ -131,7 +139,7 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_EXPORT' || message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
-      await startSelectionDownload();
+      frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: 'Use the Export Excel button above the workspace.' });
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
@@ -174,7 +182,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-same-origin-v64';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-native-download-v65';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
