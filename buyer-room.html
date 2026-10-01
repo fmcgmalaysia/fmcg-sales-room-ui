@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-order-native-v80">
+<meta name="build-version" content="2026-10-01-order-lightbox-v81">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -228,10 +228,9 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="toast" class="toast"></div>
 <div id="imagePreview" class="image-preview" aria-hidden="true"><img id="imagePreviewImg" alt="Product preview"></div>
 <div id="submitModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reviewOrderTitle"><div class="order-review"><button class="order-review-close" id="cancelSubmit" type="button" aria-label="Close order review">×</button><header class="order-review-head"><div><h3 id="reviewOrderTitle">Review Order</h3><p><span id="reviewItemCount">0</span> items selected for this order.</p></div><div class="order-review-meta"><span id="reviewCompany">Buyer Account</span><i>•</i><span id="reviewDate">—</span><i>•</i><span id="reviewCurrency">USD</span></div></header><div class="order-review-summary"><div class="order-review-metric"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="order-review-metric"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="order-review-metric"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="order-review-metric"><span>Estimated Total</span><strong id="reviewAmount">—</strong></div></div><div class="order-review-table"><div class="order-review-grid"><div class="order-review-line review-table-head"><div>#</div><div>Barcode</div><div>Descriptions</div><div>Packing Size</div><div id="reviewPriceHeader">USD / CTN</div><div>Qty CTN</div><div id="reviewAmountHeader">Line Amount / USD</div><div>CBM</div></div><div id="reviewRows"></div></div></div><footer class="order-review-footer"><div class="order-assurance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 6v6c0 5.5-3.8 9-9 10-5.2-1-9-4.5-9-10V6l9-4Zm-1.1 13.5 6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg><div><strong>Submit with confidence</strong><span>Order quantities can still be adjusted with assistance from our sales team after submission.</span></div></div><div class="order-review-actions"><button class="btn primary" id="confirmSubmit">Send Request</button></div></footer></div></div>
-<div id="successModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle"><div class="order-success"><div class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 17.2-4.4-4.4 1.8-1.8 2.6 2.6 8.2-8.2 1.8 1.8-10 10Z"/></svg></div><h3 id="orderSuccessTitle">Order Received</h3><p class="order-success-copy">We’ve received your order.<br>Our sales team will update you on its progress shortly.</p><div class="order-download-status" id="orderDownloadStatus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5V2Zm8 1.8V8h4.2L13 3.8ZM8 12h2l1.2 2 1.2-2h2l-2.1 3 2.2 3h-2l-1.3-2-1.3 2h-2l2.2-3L8 12Z"/></svg><span>Your order Excel download has started. Check your browser downloads.</span></div><p class="success-order-id" id="successOrderId">Order ID: —</p><button class="btn primary" id="closeSuccess">Done</button></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderDownloadUrl:'',nativeOrderDownloadStarted:false,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -384,53 +383,23 @@ function openOrderReview(){
   state.pendingOrder=ordered.map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));
   const signature=JSON.stringify(state.pendingOrder);
   if(!state.orderAttempt||state.orderAttempt.signature!==signature)state.orderAttempt={signature,requestId:crypto.randomUUID()};
-  state.orderDownloadUrl='';
-  $('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Preparing…';
-  post('BUYER_ROOM_PREPARE_ORDER_DOWNLOAD',{requestId:state.orderAttempt.requestId});
+  $('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
   $('reviewItemCount').textContent=ordered.length;$('reviewProducts').textContent=ordered.length;$('reviewCtn').textContent=$('sumCtn').textContent;$('reviewCbm').textContent=$('sumCbm').textContent;$('reviewAmount').textContent=$('sumAmount').textContent;$('reviewCompany').textContent=state.companyName;$('reviewDate').textContent=reviewDate();$('reviewCurrency').textContent=state.currency;$('reviewPriceHeader').textContent=`${state.currency} / CTN`;$('reviewAmountHeader').textContent=`Line Amount / ${state.currency}`;
   $('reviewRows').innerHTML=ordered.map((item,index)=>{const qty=num(item.orderQtyCtn),price=ctnPrice(item),totalCbm=qty*num(item.cbmPerCtn),cbmDisplay=totalCbm===0?'<span class="cbm-zero-pill" title="CBM data is currently unavailable">0.0000</span>':totalCbm.toFixed(4);return `<div class="order-review-line"><div>${index+1}</div><div>${esc(item.barcode)}</div><div title="${esc(item.itemName)}">${esc(item.itemName)}</div><div>${esc(item.packingSize)}</div><div class="review-price">${money(price)}</div><div>${qty.toLocaleString('en-US')}</div><div>${money(qty*price)}</div><div>${cbmDisplay}</div></div>`}).join('');
   $('submitModalBg').classList.add('show');
 }
 $('submitOrder').onclick=openOrderReview;
-$('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null;state.orderDownloadUrl='';post('BUYER_ROOM_CANCEL_ORDER_DOWNLOAD')};
+$('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
-  toast('Use the green Send Request button to submit and download your order Excel.');
+  state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
+  post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
+  $('submitModalBg').classList.remove('show');
 };
-$('closeSuccess').onclick=()=>{$('successModalBg').classList.remove('show')};
-function openOrderDownloadWindow(url){
-  try{
-    return window.open(url,'buyerOrderExcelDownload','popup,width=420,height=240');
-  }catch(error){console.error('Order Excel preparation window could not be opened',error);return null}
-}
-function closeOrderDownloadWindow(){const popup=state.orderDownloadWindow;state.orderDownloadWindow=null;if(popup&&!popup.closed)try{popup.close()}catch(error){}}
-function triggerOrderDownload(url){
-  const popup=state.orderDownloadWindow;state.orderDownloadWindow=null;
-  if(!url){if(popup&&!popup.closed)try{popup.close()}catch(error){};return false}
-  if(popup&&!popup.closed){
-    try{popup.location.replace(url);setTimeout(()=>{try{popup.close()}catch(error){}},8000);return true}
-    catch(error){console.error('Order Excel popup navigation failed',error);try{popup.close()}catch(closeError){}}
-  }
-  try{const link=document.createElement('a');link.href=url;link.target='_self';link.rel='noopener';link.style.display='none';document.body.appendChild(link);link.click();setTimeout(()=>link.remove(),2000);return false}catch(error){console.error('Order Excel download could not be triggered',error);return false}
-}
 $('historyMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)return;state.historyLoading=true;post('BUYER_ROOM_ORDER_PAGE',{cursor:state.ordersNextCursor});renderHistory()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');$('successModalBg').classList.remove('show');closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
 window.addEventListener('message',e=>{
   const m=e.data||{};
-  if(m.type==='BUYER_ROOM_ORDER_DOWNLOAD_READY'){
-    if(!state.orderAttempt||m.requestId!==state.orderAttempt.requestId)return;
-    if(m.ok&&m.downloadUrl){state.orderDownloadUrl=m.downloadUrl;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Use green Send Request button'}
-    else{state.orderDownloadUrl='';$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Unavailable';toast(m.message||'Order Excel could not be prepared.')}
-    return;
-  }
-  if(m.type==='BUYER_ROOM_NATIVE_ORDER_SUBMIT'){
-    if(!state.orderAttempt||m.requestId!==state.orderAttempt.requestId||!state.pendingOrder||state.orderSubmitting)return;
-    state.nativeOrderDownloadStarted=true;
-    state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
-    post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
-    $('submitModalBg').classList.remove('show');
-    return;
-  }
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){if(!m.ok)toast(m.message||'Excel download could not be started.');return;}
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
   if(m.type==='BUYER_ROOM_USER_RESULT'){
@@ -458,16 +427,8 @@ window.addEventListener('message',e=>{
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
       state.orderAttempt=null;state.pendingOrder=null;addOrderNotification(m.orderId);
-      const started=Boolean(state.nativeOrderDownloadStarted);
-      state.nativeOrderDownloadStarted=false;
-      state.orderDownloadWindow=null;state.orderDownloadUrl='';
-      $('successOrderId').textContent=`Order ID: ${m.orderId||'—'}`;
-      const status=$('orderDownloadStatus');
-      status.classList.toggle('warn',!started);
-      status.querySelector('span').textContent=started?'Your order Excel download has started. Check your browser downloads.':(m.downloadUrl?'Your order Excel is ready. Use the green Download Excel button to download it.':(m.downloadError||'Your order was received, but the Excel download could not be prepared.'));
-      $('successModalBg').classList.add('show');
+      toast('Order received. View its progress in Order History.');
     }else{
-      closeOrderDownloadWindow();state.orderDownloadUrl='';
       $('submitModalBg').classList.add('show');
       toast(m.message||'Order could not be confirmed.');
     }
@@ -479,4 +440,5 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 
 
 </body></html>
+
 
