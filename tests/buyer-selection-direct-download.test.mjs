@@ -31,13 +31,15 @@ const webModule = fs.readFileSync(new URL('../backend/catalogueAuth.web.js', imp
 const httpFunctions = fs.readFileSync(new URL('../backend/http-functions.js', import.meta.url), 'utf8');
 assert.match(pageCode, /createBuyerSelectionDownload/);
 assert.match(pageCode, /downloadButton\.link = activeDownloadUrl/);
+assert.match(pageCode, /scheduleSelectionDownloadRefresh/);
+assert.match(pageCode, /downloadButton\.onClick/);
 assert.match(pageCode, /downloadButton\.target = '_self'/);
 assert.match(pageCode, /downloadButton\.enable\(\)/);
 assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE|base64/);
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.match(webModule, /createBuyerSelectionExportToken/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /buyer-room-native-download-v65/);
+assert.match(pageCode, /buyer-room-repeat-download-v66/);
 assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
 assert.doesNotMatch(buyerRoomHtml, /document\.createElement\('iframe'\)/);
 assert.doesNotMatch(webModule, /mediaManager|uploadBuyerSelectionExcel/);

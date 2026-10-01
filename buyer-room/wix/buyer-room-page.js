@@ -20,10 +20,19 @@ $w.onReady(async function () {
   let activeDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
+  let downloadRenewalTimer = null;
 
   downloadButton.disable();
   downloadButton.label = 'Preparing Excel…';
   downloadButton.target = '_self';
+
+  function scheduleSelectionDownloadRefresh() {
+    if (downloadRenewalTimer) clearTimeout(downloadRenewalTimer);
+    const delay = Math.max(30000, activeDownloadExpiresAt - Date.now() - 60000);
+    downloadRenewalTimer = setTimeout(() => {
+      refreshSelectionDownload(true).catch(() => {});
+    }, delay);
+  }
 
   async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
@@ -38,6 +47,7 @@ $w.onReady(async function () {
       downloadButton.link = activeDownloadUrl;
       downloadButton.label = 'Export Excel';
       downloadButton.enable();
+      scheduleSelectionDownloadRefresh();
       return activeDownloadUrl;
     })();
     try { return await downloadPreparation; }
@@ -53,6 +63,12 @@ $w.onReady(async function () {
       console.error('Buyer Room Excel link preparation failed', error);
     }
   }
+
+  downloadButton.onClick(() => {
+    // The current click uses the already prepared native link. Prepare a new
+    // signed link immediately afterwards so repeated downloads keep working.
+    setTimeout(() => refreshSelectionDownload(true).catch(() => {}), 1500);
+  });
 
   async function loadWorkspace() {
     let result;
@@ -182,7 +198,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-native-download-v65';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-repeat-download-v66';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
