@@ -37,6 +37,20 @@ const path = require('path');
   await page.locator('#orderSearch').fill('');
   await page.locator('[data-order-filter="all"]').click();
   if (await page.locator('#orderRows .row').count() !== 3) throw new Error('ALL ITEMS did not restore every product.');
+  if (await page.locator('#orderExportToggle').count()) throw new Error('Legacy Order Form Excel button is still present.');
+  await page.locator('#submitOrder').click();
+  if (!await page.locator('#submitModalBg').isVisible()) throw new Error('Review Order did not open.');
+  if (await page.locator('#reviewRows .order-review-line').count() !== 2) throw new Error('Review Order does not contain exactly the ordered products.');
+  if (await text('#reviewOrderTitle') !== 'Review Order' || await text('#confirmSubmit') !== 'Send Request') throw new Error('Review Order actions are incorrect.');
+  if (!(await text('.order-assurance')).includes('Submit with confidence')) throw new Error('Order quantity reassurance is missing.');
+  const reviewMetrics = await page.evaluate(() => ({
+    fontSize: getComputedStyle(document.querySelector('#reviewRows .order-review-line')).fontSize,
+    rowHeight: document.querySelector('#reviewRows .order-review-line').getBoundingClientRect().height,
+    overflow: getComputedStyle(document.querySelector('.order-review-table')).overflowY
+  }));
+  if (reviewMetrics.fontSize !== '10px' || reviewMetrics.rowHeight > 30 || !['auto','scroll'].includes(reviewMetrics.overflow)) throw new Error(`Review Order is not compact: ${JSON.stringify(reviewMetrics)}`);
+  if (process.env.BUYER_ROOM_REVIEW_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_REVIEW_SCREENSHOT, fullPage: true });
+  await page.locator('#cancelSubmit').click();
 
   const metrics = await page.evaluate(() => {
     const toolbar = document.querySelector('.order-action-bar');
@@ -60,6 +74,28 @@ const path = require('path');
   if (await page.locator('#orderRows [data-qty]').first().inputValue() !== '9999') throw new Error('Compact quantity input does not accept four digits.');
   const edited = await text('#orderRows .row:first-child .qty-audit-time');
   if (!/^\d{2}-\d{2}-\d{2} \d{2}:\d{2}(am|pm)$/.test(edited)) throw new Error(`Edited Time is not compact: ${edited}`);
+  await page.evaluate(() => {
+    HTMLAnchorElement.prototype.click = function () { window.__orderDownloadHref = this.href; };
+    window.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: true, orderId: 'ORD-TEST-001', downloadUrl: 'https://example.com/_functions/buyerOrderExcel?token=test' }, '*');
+  });
+  if (!await page.locator('#successModalBg').isVisible()) throw new Error('Order success notice did not open.');
+  if (await text('#orderSuccessTitle') !== 'Order Received' || !(await text('#orderDownloadStatus')).includes('started downloading')) throw new Error('Order success notice copy is incorrect.');
+  if (!String(await page.evaluate(() => window.__orderDownloadHref || '')).includes('/_functions/buyerOrderExcel?token=test')) throw new Error('Order Excel download was not triggered.');
+  if (process.env.BUYER_ROOM_SUCCESS_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_SUCCESS_SCREENSHOT, fullPage: true });
+  await page.locator('#closeSuccess').click();
+  if (process.env.BUYER_ROOM_STRESS_200) {
+    await page.evaluate(() => window.postMessage({ type: 'BUYER_ROOM_DATA', data: {
+      customerId: 'TEST-ORDER-200', companyName: 'Stress Test Buyer', memberName: 'Test User', currency: 'USD', selectionLimit: 700,
+      myList: Array.from({ length: 200 }, (_, index) => ({ id: `stress-${index + 1}`, barcode: String(9556000000000 + index), itemName: `STRESS TEST PRODUCT ${String(index + 1).padStart(3, '0')}`, packingSize: '500ML x 24', vipPriceEa: 0.5, vipPriceCtn: 12, vipCurrency: 'USD', quoteStatus: 'VIEW QUOTE', quoteActive: true, orderQtyCtn: 1, cbmPerCtn: 0.01 })),
+      removed: [], orders: []
+    }}, '*'));
+    await page.locator('#submitOrder').click();
+    await page.locator('#reviewRows .order-review-line').nth(199).waitFor({ state: 'attached' });
+    const stress = await page.evaluate(() => { const table = document.querySelector('.order-review-table'), modal = document.querySelector('.order-review'); return { rows: document.querySelectorAll('#reviewRows .order-review-line').length, scrolls: table.scrollHeight > table.clientHeight, bottom: modal.getBoundingClientRect().bottom, viewport: innerHeight }; });
+    if (stress.rows !== 200 || !stress.scrolls || stress.bottom > stress.viewport) throw new Error(`200-item review failed: ${JSON.stringify(stress)}`);
+    if (process.env.BUYER_ROOM_STRESS_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_STRESS_SCREENSHOT, fullPage: true });
+    await page.locator('#cancelSubmit').click();
+  }
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
   if (process.env.BUYER_ROOM_ORDER_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_ORDER_SCREENSHOT, fullPage: true });
   console.log('Buyer Room Order Form v51 checks passed.');

@@ -4,6 +4,7 @@ import wixData from 'wix-data';
 import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
+import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -513,6 +514,16 @@ export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, as
   const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
   return { ok: true, ...issued };
 });
+export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  const id = normalize(orderId);
+  const result = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', id).eq('customerId', buyer.customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (result.items.length !== 1) throw new Error('Order was not found.');
+  const order = payloadData(result.items[0]);
+  if (!order.isComplete || upper(order.status) !== 'CONFIRMED') throw new Error('Order is not ready for download.');
+  const issued = createBuyerOrderExportToken(buyer.customerId, id, await getSecret(QD_ROUTER_SECRET), 900);
+  return { ok: true, orderId: id, ...issued };
+});
 export const getBuyerOrderPage = webMethod(Permissions.SiteMember, async (cursor = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   return { ok: true, customerId: buyer.customerId, ...(await buyerOrderHistory(buyer.customerId, cursor)) };
@@ -622,12 +633,16 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     const item = byId.get(normalize(request.itemId));
     const qty = quantity(request.quantityCtn);
     if (!item || qty < 1) throw new Error('Invalid order line.');
-    const lockedUnitPrice = money(item.vipPriceCtn || item.vipPrice) || (money(item.vipPriceEa) * money(item.ea));
+    const eaPerCtn = money(item.catalogueEa || item.ea);
+    const explicitUnitPrice = money(item.vipPriceEa || item.quotePerPc);
+    const lockedUnitPrice = money(item.vipPriceCtn || item.quotePerCtn || item.vipPrice) || (explicitUnitPrice * eaPerCtn);
+    const lockedUnitPriceEa = explicitUnitPrice || (eaPerCtn > 0 ? Number((lockedUnitPrice / eaPerCtn).toFixed(6)) : 0);
     if (!(lockedUnitPrice > 0) || upper(item.quoteStatus) !== 'VIEW QUOTE') throw new Error('All ordered products must have a released V.I.P price.');
-    return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)) };
+    if (!(eaPerCtn > 0) || !(lockedUnitPriceEa > 0)) throw new Error('All ordered products require EA and unit price data before submission.');
+    return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, eaPerCtn, lockedUnitPriceEa, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)), totalCbm: Number((money(item.cbmPerCtn) * qty).toFixed(4)) };
   });
   const confirmedAt = new Date().toISOString();
-  const order = { orderId: id, requestId: submissionId, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
+  const order = { orderId: id, requestId: submissionId, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), totalCbm: Number(lines.reduce((sum, line) => sum + line.totalCbm, 0).toFixed(4)), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
   const savedOrder = await putPayload(BUYER_ORDER_COLLECTION, id, order);
   return finishBuyerOrder(payloadData(savedOrder), buyer);
 });

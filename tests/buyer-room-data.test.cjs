@@ -17,6 +17,7 @@ const wixData = {
     let sort = '', pageSize = 50;
     const query = {
       eq(key, value) { predicates.push(row => row[key] === value); return query; },
+      startsWith(key, value) { predicates.push(row => String(row[key] || '').startsWith(String(value))); return query; },
       hasSome(key, values) { predicates.push(row => values.includes(row[key])); return query; },
       lt(key, value) { predicates.push(row => row[key] < value); return query; },
       descending(key) { sort = key; return query; },

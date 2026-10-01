@@ -5,6 +5,8 @@ import { authentication } from 'wix-members-backend';
 import wixData from 'wix-data';
 import { verifyBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { buildBuyerSelectionDownload } from 'backend/buyerSelectionDownload.js';
+import { verifyBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
+import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 
 const SITE_BASE = 'https://fmcg999.wixstudio.com/fmcgmalaysia';
 const CALLBACK_URL = SITE_BASE + '/_functions/googleStaffAuth';
@@ -177,6 +179,36 @@ export async function get_buyerSelectionExcel(request) {
       status,
       headers: { 'content-type': 'application/json', 'cache-control': 'no-store, max-age=0' },
       body: JSON.stringify({ ok: false, error: status === 403 ? 'This download link has expired. Return to Buyer Room and try again.' : code || 'Excel download could not be created.' })
+    });
+  }
+}
+
+export async function get_buyerOrderExcel(request) {
+  try {
+    const authorization = verifyBuyerOrderExportToken(request?.query?.token, await getSecret('FMCG_QD_ROUTER_TOKEN'));
+    const buyerRoomUrl = normalize(request?.baseUrl).replace(/\/_functions\/?$/i, '') + '/buyer-room';
+    const file = await buildBuyerOrderDownload(authorization.customerId, authorization.orderId, buyerRoomUrl);
+    return response({
+      status: 200,
+      headers: {
+        'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'content-disposition': `attachment; filename="${file.fileName}"`,
+        'content-length': String(file.bytes.length),
+        'cache-control': 'private, no-store, max-age=0',
+        pragma: 'no-cache',
+        'x-content-type-options': 'nosniff',
+        'cross-origin-resource-policy': 'cross-origin'
+      },
+      body: file.bytes
+    });
+  } catch (error) {
+    const code = normalize(error?.message);
+    const status = ['INVALID_ORDER_EXPORT_TOKEN', 'EXPIRED_ORDER_EXPORT_TOKEN'].includes(code) ? 403 : code === 'Order was not found.' ? 404 : 500;
+    console.error('Buyer order direct download failed', { status, code });
+    return response({
+      status,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store, max-age=0' },
+      body: JSON.stringify({ ok: false, error: status === 403 ? 'This order download link has expired.' : code || 'Order Excel could not be created.' })
     });
   }
 }

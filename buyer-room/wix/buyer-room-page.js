@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -208,7 +208,17 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
       try {
         const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '');
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
+        let downloadUrl = '';
+        let downloadError = '';
+        try {
+          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId);
+          const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+          downloadUrl = `${siteBaseUrl}/_functions/buyerOrderExcel?token=${encodeURIComponent(download.token)}`;
+        } catch (error) {
+          downloadError = error?.message || 'Order Excel could not be prepared.';
+          console.error('Buyer order Excel preparation failed', error);
+        }
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
         await loadWorkspace();
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
@@ -219,7 +229,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-excel-v69';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-order-request-v70';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
