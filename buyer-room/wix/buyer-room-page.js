@@ -17,7 +17,8 @@ $w.onReady(async function () {
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
-  let activeDownloadUrl = '';
+  let selectionDownloadUrl = '';
+  let orderDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
   let downloadRenewalTimer = null;
@@ -29,8 +30,14 @@ $w.onReady(async function () {
   downloadButton.target = '_self';
 
   function updateDownloadButtonVisibility() {
-    if (activeBuyerRoomView === 'my' && activeDownloadUrl) downloadButton.show();
-    else downloadButton.hide();
+    const url = orderDownloadUrl || (activeBuyerRoomView === 'my' ? selectionDownloadUrl : '');
+    if (url) {
+      downloadButton.link = url;
+      downloadButton.enable();
+      downloadButton.show();
+    } else {
+      downloadButton.hide();
+    }
   }
 
   function scheduleSelectionDownloadRefresh() {
@@ -43,23 +50,21 @@ $w.onReady(async function () {
 
   async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
-    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+    if (!force && selectionDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
       updateDownloadButtonVisibility();
-      return activeDownloadUrl;
+      return selectionDownloadUrl;
     }
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
       if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
       const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      selectionDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
       activeDownloadExpiresAt = Number(result.expiresAt);
-      downloadButton.link = activeDownloadUrl;
       downloadButton.label = '';
-      downloadButton.enable();
       updateDownloadButtonVisibility();
       scheduleSelectionDownloadRefresh();
-      return activeDownloadUrl;
+      return selectionDownloadUrl;
     })();
     try { return await downloadPreparation; }
     finally { downloadPreparation = null; }
@@ -68,15 +73,24 @@ $w.onReady(async function () {
   async function refreshSelectionDownload(force = false) {
     try { await prepareSelectionDownload(force); }
     catch (error) {
-      downloadButton.link = '';
+      selectionDownloadUrl = '';
       downloadButton.label = '';
-      downloadButton.disable();
-      downloadButton.hide();
+      updateDownloadButtonVisibility();
       console.error('Buyer Room Excel link preparation failed', error);
     }
   }
 
   downloadButton.onClick(() => {
+    if (orderDownloadUrl) {
+      const completedUrl = orderDownloadUrl;
+      setTimeout(() => {
+        if (orderDownloadUrl === completedUrl) {
+          orderDownloadUrl = '';
+          updateDownloadButtonVisibility();
+        }
+      }, 1500);
+      return;
+    }
     // Let the current prepared link download immediately, then prepare a new
     // signed link so the same button also works on every later click.
     setTimeout(() => refreshSelectionDownload(true).catch(() => {}), 1500);
@@ -218,6 +232,8 @@ $w.onReady(async function () {
           downloadError = error?.message || 'Order Excel could not be prepared.';
           console.error('Buyer order Excel preparation failed', error);
         }
+        orderDownloadUrl = downloadUrl;
+        updateDownloadButtonVisibility();
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
         await loadWorkspace();
       } catch (error) {
@@ -229,7 +245,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-order-review-v76';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-order-download-v77';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
