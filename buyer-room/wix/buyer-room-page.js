@@ -76,12 +76,6 @@ $w.onReady(async function () {
     }
   }
 
-  downloadButton.onClick(() => {
-    // The current click uses the already prepared native link. Prepare a new
-    // signed link immediately afterwards so repeated downloads keep working.
-    setTimeout(() => refreshSelectionDownload(true).catch(() => {}), 1500);
-  });
-
   async function loadWorkspace() {
     let result;
     try { result = await getBuyerWorkspace(assistCustomerId); }
