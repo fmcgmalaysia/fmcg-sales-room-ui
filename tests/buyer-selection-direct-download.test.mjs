@@ -35,7 +35,8 @@ const httpFunctions = fs.readFileSync(new URL('../backend/http-functions.js', im
 assert.match(pageCode, /createBuyerSelectionDownload/);
 assert.match(pageCode, /downloadButton\.link = activeDownloadUrl/);
 assert.match(pageCode, /scheduleSelectionDownloadRefresh/);
-assert.doesNotMatch(pageCode, /downloadButton\.onClick/);
+assert.match(pageCode, /downloadButton\.onClick/);
+assert.match(pageCode, /setTimeout\(\(\) => refreshSelectionDownload\(true\)/);
 assert.match(pageCode, /downloadButton\.target = '_self'/);
 assert.match(pageCode, /downloadButton\.enable\(\)/);
 assert.match(pageCode, /downloadButton\.hide\(\)/);
