@@ -19,6 +19,7 @@ $w.onReady(async function () {
   let activeCustomerId = '';
   let selectionDownloadUrl = '';
   let orderDownloadUrl = '';
+  let preparedOrderRequestId = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
   let downloadRenewalTimer = null;
@@ -83,9 +84,12 @@ $w.onReady(async function () {
   downloadButton.onClick(() => {
     if (orderDownloadUrl) {
       const completedUrl = orderDownloadUrl;
+      const requestId = preparedOrderRequestId;
+      if (requestId) frame.postMessage({ type: 'BUYER_ROOM_NATIVE_ORDER_SUBMIT', requestId });
       setTimeout(() => {
         if (orderDownloadUrl === completedUrl) {
           orderDownloadUrl = '';
+          preparedOrderRequestId = '';
           updateDownloadButtonVisibility();
         }
       }, 1500);
@@ -224,10 +228,24 @@ $w.onReady(async function () {
         const prepared = await prepareBuyerOrderDownload(message.requestId || '', assistCustomerId);
         const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
         const downloadUrl = `${siteBaseUrl}/_functions/buyerOrderExcel?token=${encodeURIComponent(prepared.token)}`;
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_DOWNLOAD_READY', ok: true, requestId: message.requestId || '', orderId: prepared.orderId, downloadUrl });
+        orderDownloadUrl = downloadUrl;
+        preparedOrderRequestId = message.requestId || '';
+        downloadButton.label = 'Send Request';
+        updateDownloadButtonVisibility();
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_DOWNLOAD_READY', ok: true, requestId: message.requestId || '', orderId: prepared.orderId, downloadUrl, nativeButton: true });
       } catch (error) {
+        orderDownloadUrl = '';
+        preparedOrderRequestId = '';
+        updateDownloadButtonVisibility();
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_DOWNLOAD_READY', ok: false, requestId: message.requestId || '', message: error?.message || 'Order Excel could not be prepared.' });
       }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_CANCEL_ORDER_DOWNLOAD') {
+      orderDownloadUrl = '';
+      preparedOrderRequestId = '';
+      downloadButton.label = '';
+      updateDownloadButtonVisibility();
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
@@ -243,7 +261,9 @@ $w.onReady(async function () {
           downloadError = error?.message || 'Order Excel could not be prepared.';
           console.error('Buyer order Excel preparation failed', error);
         }
-        orderDownloadUrl = downloadUrl;
+        orderDownloadUrl = '';
+        preparedOrderRequestId = '';
+        downloadButton.label = '';
         updateDownloadButtonVisibility();
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
         await loadWorkspace();
@@ -256,9 +276,8 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-order-direct-v79';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-order-native-v80';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
 });
-
