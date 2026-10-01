@@ -21,11 +21,17 @@ $w.onReady(async function () {
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
   let downloadRenewalTimer = null;
+  let activeBuyerRoomView = 'my';
 
   downloadButton.disable();
   downloadButton.hide();
   downloadButton.label = 'Preparing Excel…';
   downloadButton.target = '_self';
+
+  function updateDownloadButtonVisibility() {
+    if (activeBuyerRoomView === 'my' && activeDownloadUrl) downloadButton.show();
+    else downloadButton.hide();
+  }
 
   function scheduleSelectionDownloadRefresh() {
     if (downloadRenewalTimer) clearTimeout(downloadRenewalTimer);
@@ -37,7 +43,10 @@ $w.onReady(async function () {
 
   async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
-    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) return activeDownloadUrl;
+    if (!force && activeDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+      updateDownloadButtonVisibility();
+      return activeDownloadUrl;
+    }
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
@@ -48,7 +57,7 @@ $w.onReady(async function () {
       downloadButton.link = activeDownloadUrl;
       downloadButton.label = 'Export Excel';
       downloadButton.enable();
-      downloadButton.show();
+      updateDownloadButtonVisibility();
       scheduleSelectionDownloadRefresh();
       return activeDownloadUrl;
     })();
@@ -122,8 +131,17 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'BUYER_ROOM_VIEW_CHANGED') {
+      activeBuyerRoomView = ['my', 'order', 'history', 'docs', 'account'].includes(message.view) ? message.view : 'my';
+      updateDownloadButtonVisibility();
+      return;
+    }
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
       frameReady = true;
+      if (['my', 'order', 'history', 'docs', 'account'].includes(message.view)) {
+        activeBuyerRoomView = message.view;
+        updateDownloadButtonVisibility();
+      }
       try { await loadWorkspace(); }
       catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
       return;
@@ -201,7 +219,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-download-scope-v67';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261001-buyer-room-view-scope-v68';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

@@ -335,7 +335,7 @@ function renderAccount(){
 }
 let toastTimer;function toast(text,undo=false){clearTimeout(toastTimer);$('toast').innerHTML=esc(text)+(undo?' <button id="undo">Undo</button>':'');$('toast').classList.add('show');if(undo)$('undo').onclick=()=>state.lastRemoved&&requestRestore(state.lastRemoved);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),7000)}
 function placeAdminBanner(name){const view=$(`${name}View`),header=view?.querySelector(':scope > .page-head, :scope > .top'),banner=$('adminAccessBanner');if(header&&banner)header.insertAdjacentElement('afterend',banner)}
-function showView(name){hideImagePreview();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$(`${name}View`).classList.add('active');placeAdminBanner(name);window.scrollTo(0,0);if(name==='order')renderOrder();if(name==='history')renderHistory();if(name==='account')renderAccount()}
+function showView(name){hideImagePreview();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));$(`${name}View`).classList.add('active');placeAdminBanner(name);window.scrollTo(0,0);if(name==='order')renderOrder();if(name==='history')renderHistory();if(name==='account')renderAccount();post('BUYER_ROOM_VIEW_CHANGED',{view:name})}
 function setCatalogueLinks(value){
   let url='';try{const parsed=new URL(String(value||''));if(parsed.protocol==='https:'&&parsed.pathname.endsWith('/catalogue'))url=parsed.href}catch{}
   state.catalogueUrl=url;
@@ -409,7 +409,7 @@ window.addEventListener('message',e=>{
     toast(m.message||(m.ok?'Order confirmed and sent to Sales Room.':'Order could not be confirmed.'));
   }
 });
-post('BUYER_ROOM_READY');post('BUYER_ROOM_REQUEST_DATA');
+post('BUYER_ROOM_READY',{view:'my'});post('BUYER_ROOM_REQUEST_DATA',{view:'my'});
 setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 </script>
 
