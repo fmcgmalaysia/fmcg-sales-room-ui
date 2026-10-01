@@ -33,7 +33,7 @@ const buyerRoomHtml = fs.readFileSync(new URL('../buyer-room.html', import.meta.
 const webModule = fs.readFileSync(new URL('../backend/catalogueAuth.web.js', import.meta.url), 'utf8');
 const httpFunctions = fs.readFileSync(new URL('../backend/http-functions.js', import.meta.url), 'utf8');
 assert.match(pageCode, /createBuyerSelectionDownload/);
-assert.match(pageCode, /downloadButton\.link = activeDownloadUrl/);
+assert.match(pageCode, /downloadButton\.link = url/);
 assert.match(pageCode, /scheduleSelectionDownloadRefresh/);
 assert.match(pageCode, /downloadButton\.onClick/);
 assert.match(pageCode, /setTimeout\(\(\) => refreshSelectionDownload\(true\)/);
@@ -41,6 +41,8 @@ assert.match(pageCode, /downloadButton\.target = '_self'/);
 assert.match(pageCode, /downloadButton\.enable\(\)/);
 assert.match(pageCode, /downloadButton\.hide\(\)/);
 assert.match(pageCode, /downloadButton\.show\(\)/);
+assert.match(pageCode, /orderDownloadUrl = downloadUrl/);
+assert.match(pageCode, /const url = orderDownloadUrl \|\|/);
 assert.match(pageCode, /BUYER_ROOM_VIEW_CHANGED/);
 assert.match(pageCode, /activeBuyerRoomView === 'my'/);
 assert.match(buyerRoomHtml, /BUYER_ROOM_VIEW_CHANGED/);
@@ -48,7 +50,7 @@ assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE|
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.match(webModule, /createBuyerSelectionExportToken/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /order-review-v76/);
+assert.match(pageCode, /order-download-v77/);
 assert.match(webModule, /createBuyerSelectionExportToken\(buyer\.customerId, await getSecret\(QD_ROUTER_SECRET\), 3600\)/);
 assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
 assert.doesNotMatch(buyerRoomHtml, /document\.createElement\('iframe'\)/);
