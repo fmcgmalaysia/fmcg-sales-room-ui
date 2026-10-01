@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-order-direct-v79">
+<meta name="build-version" content="2026-10-01-order-native-v80">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -231,7 +231,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="successModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle"><div class="order-success"><div class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 17.2-4.4-4.4 1.8-1.8 2.6 2.6 8.2-8.2 1.8 1.8-10 10Z"/></svg></div><h3 id="orderSuccessTitle">Order Received</h3><p class="order-success-copy">We’ve received your order.<br>Our sales team will update you on its progress shortly.</p><div class="order-download-status" id="orderDownloadStatus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5V2Zm8 1.8V8h4.2L13 3.8ZM8 12h2l1.2 2 1.2-2h2l-2.1 3 2.2 3h-2l-1.3-2-1.3 2h-2l2.2-3L8 12Z"/></svg><span>Your order Excel download has started. Check your browser downloads.</span></div><p class="success-order-id" id="successOrderId">Order ID: —</p><button class="btn primary" id="closeSuccess">Done</button></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderDownloadUrl:'',orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderDownloadUrl:'',nativeOrderDownloadStarted:false,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -392,14 +392,10 @@ function openOrderReview(){
   $('submitModalBg').classList.add('show');
 }
 $('submitOrder').onclick=openOrderReview;
-$('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
+$('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null;state.orderDownloadUrl='';post('BUYER_ROOM_CANCEL_ORDER_DOWNLOAD')};
 $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
-  if(!state.orderDownloadUrl)return toast('Order Excel is still being prepared. Please wait a moment.');
-  state.orderDownloadWindow=openOrderDownloadWindow(state.orderDownloadUrl);
-  state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
-  post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
-  $('submitModalBg').classList.remove('show');
+  toast('Use the green Send Request button to submit and download your order Excel.');
 };
 $('closeSuccess').onclick=()=>{$('successModalBg').classList.remove('show')};
 function openOrderDownloadWindow(url){
@@ -423,8 +419,16 @@ window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_ORDER_DOWNLOAD_READY'){
     if(!state.orderAttempt||m.requestId!==state.orderAttempt.requestId)return;
-    if(m.ok&&m.downloadUrl){state.orderDownloadUrl=m.downloadUrl;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request'}
+    if(m.ok&&m.downloadUrl){state.orderDownloadUrl=m.downloadUrl;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Use green Send Request button'}
     else{state.orderDownloadUrl='';$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Unavailable';toast(m.message||'Order Excel could not be prepared.')}
+    return;
+  }
+  if(m.type==='BUYER_ROOM_NATIVE_ORDER_SUBMIT'){
+    if(!state.orderAttempt||m.requestId!==state.orderAttempt.requestId||!state.pendingOrder||state.orderSubmitting)return;
+    state.nativeOrderDownloadStarted=true;
+    state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
+    post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
+    $('submitModalBg').classList.remove('show');
     return;
   }
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){if(!m.ok)toast(m.message||'Excel download could not be started.');return;}
@@ -454,7 +458,8 @@ window.addEventListener('message',e=>{
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
       state.orderAttempt=null;state.pendingOrder=null;addOrderNotification(m.orderId);
-      const started=Boolean(state.orderDownloadWindow)&&Boolean(state.orderDownloadUrl);
+      const started=Boolean(state.nativeOrderDownloadStarted);
+      state.nativeOrderDownloadStarted=false;
       state.orderDownloadWindow=null;state.orderDownloadUrl='';
       $('successOrderId').textContent=`Order ID: ${m.orderId||'—'}`;
       const status=$('orderDownloadStatus');
@@ -474,5 +479,4 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 
 
 </body></html>
-
 
