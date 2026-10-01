@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-01-order-download-v77">
+<meta name="build-version" content="2026-10-01-order-popup-v78">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -228,7 +228,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="toast" class="toast"></div>
 <div id="imagePreview" class="image-preview" aria-hidden="true"><img id="imagePreviewImg" alt="Product preview"></div>
 <div id="submitModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reviewOrderTitle"><div class="order-review"><button class="order-review-close" id="cancelSubmit" type="button" aria-label="Close order review">×</button><header class="order-review-head"><div><h3 id="reviewOrderTitle">Review Order</h3><p><span id="reviewItemCount">0</span> items selected for this order.</p></div><div class="order-review-meta"><span id="reviewCompany">Buyer Account</span><i>•</i><span id="reviewDate">—</span><i>•</i><span id="reviewCurrency">USD</span></div></header><div class="order-review-summary"><div class="order-review-metric"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="order-review-metric"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="order-review-metric"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="order-review-metric"><span>Estimated Total</span><strong id="reviewAmount">—</strong></div></div><div class="order-review-table"><div class="order-review-grid"><div class="order-review-line review-table-head"><div>#</div><div>Barcode</div><div>Descriptions</div><div>Packing Size</div><div id="reviewPriceHeader">USD / CTN</div><div>Qty CTN</div><div id="reviewAmountHeader">Line Amount / USD</div><div>CBM</div></div><div id="reviewRows"></div></div></div><footer class="order-review-footer"><div class="order-assurance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 6v6c0 5.5-3.8 9-9 10-5.2-1-9-4.5-9-10V6l9-4Zm-1.1 13.5 6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg><div><strong>Submit with confidence</strong><span>Order quantities can still be adjusted with assistance from our sales team after submission.</span></div></div><div class="order-review-actions"><button class="btn primary" id="confirmSubmit">Send Request</button></div></footer></div></div>
-<div id="successModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle"><div class="order-success"><div class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 17.2-4.4-4.4 1.8-1.8 2.6 2.6 8.2-8.2 1.8 1.8-10 10Z"/></svg></div><h3 id="orderSuccessTitle">Order Received</h3><p class="order-success-copy">We’ve received your order.<br>Our sales team will update you on its progress shortly.</p><div class="order-download-status" id="orderDownloadStatus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5V2Zm8 1.8V8h4.2L13 3.8ZM8 12h2l1.2 2 1.2-2h2l-2.1 3 2.2 3h-2l-1.3-2-1.3 2h-2l2.2-3L8 12Z"/></svg><span>Your order Excel is ready. If the download does not start, use the green Download Excel button.</span></div><p class="success-order-id" id="successOrderId">Order ID: —</p><button class="btn primary" id="closeSuccess">Done</button></div></div>
+<div id="successModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle"><div class="order-success"><div class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 17.2-4.4-4.4 1.8-1.8 2.6 2.6 8.2-8.2 1.8 1.8-10 10Z"/></svg></div><h3 id="orderSuccessTitle">Order Received</h3><p class="order-success-copy">We’ve received your order.<br>Our sales team will update you on its progress shortly.</p><div class="order-download-status" id="orderDownloadStatus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5V2Zm8 1.8V8h4.2L13 3.8ZM8 12h2l1.2 2 1.2-2h2l-2.1 3 2.2 3h-2l-1.3-2-1.3 2h-2l2.2-3L8 12Z"/></svg><span>Your order Excel download has started. Check your browser downloads.</span></div><p class="success-order-id" id="successOrderId">Order ID: —</p><button class="btn primary" id="closeSuccess">Done</button></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
 const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},openOrderId:'',historyLoading:false,orderAttempt:null,orderSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
@@ -392,12 +392,33 @@ $('confirmSubmit').onclick=()=>{
   if(!state.pendingOrder||state.orderSubmitting)return;
   const signature=JSON.stringify(state.pendingOrder);
   if(!state.orderAttempt||state.orderAttempt.signature!==signature)state.orderAttempt={signature,requestId:crypto.randomUUID()};
+  state.orderDownloadWindow=openOrderDownloadWindow();
   state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
   post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
   $('submitModalBg').classList.remove('show');
 };
 $('closeSuccess').onclick=()=>{$('successModalBg').classList.remove('show')};
-function triggerOrderDownload(url){if(!url)return false;try{const link=document.createElement('a');link.href=url;link.target='_self';link.rel='noopener';link.style.display='none';document.body.appendChild(link);link.click();setTimeout(()=>link.remove(),2000);return true}catch(error){console.error('Order Excel download could not be triggered',error);return false}}
+function openOrderDownloadWindow(){
+  try{
+    const popup=window.open('about:blank','buyerOrderExcelDownload','popup,width=420,height=240');
+    if(!popup)return null;
+    try{
+      popup.document.title='Preparing order Excel';
+      popup.document.body.innerHTML='<main style="font:14px Arial,sans-serif;color:#17365d;text-align:center;padding:48px 24px"><strong style="font-size:18px">Preparing your order Excel…</strong><p style="color:#60748d;line-height:1.5">The download will start automatically when your order is ready.</p></main>';
+    }catch(error){}
+    return popup;
+  }catch(error){console.error('Order Excel preparation window could not be opened',error);return null}
+}
+function closeOrderDownloadWindow(){const popup=state.orderDownloadWindow;state.orderDownloadWindow=null;if(popup&&!popup.closed)try{popup.close()}catch(error){}}
+function triggerOrderDownload(url){
+  const popup=state.orderDownloadWindow;state.orderDownloadWindow=null;
+  if(!url){if(popup&&!popup.closed)try{popup.close()}catch(error){};return false}
+  if(popup&&!popup.closed){
+    try{popup.location.replace(url);setTimeout(()=>{try{popup.close()}catch(error){}},8000);return true}
+    catch(error){console.error('Order Excel popup navigation failed',error);try{popup.close()}catch(closeError){}}
+  }
+  try{const link=document.createElement('a');link.href=url;link.target='_self';link.rel='noopener';link.style.display='none';document.body.appendChild(link);link.click();setTimeout(()=>link.remove(),2000);return false}catch(error){console.error('Order Excel download could not be triggered',error);return false}
+}
 $('historyMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)return;state.historyLoading=true;post('BUYER_ROOM_ORDER_PAGE',{cursor:state.ordersNextCursor});renderHistory()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');$('successModalBg').classList.remove('show');closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
 window.addEventListener('message',e=>{
@@ -433,9 +454,10 @@ window.addEventListener('message',e=>{
       $('successOrderId').textContent=`Order ID: ${m.orderId||'—'}`;
       const status=$('orderDownloadStatus');
       status.classList.toggle('warn',!started);
-      status.querySelector('span').textContent=started?'Your order Excel is ready. If the download does not start, use the green Download Excel button.':(m.downloadError||'Your order was received, but the Excel download could not be prepared.');
+      status.querySelector('span').textContent=started?'Your order Excel download has started. Check your browser downloads.':(m.downloadUrl?'Your order Excel is ready. Use the green Download Excel button to download it.':(m.downloadError||'Your order was received, but the Excel download could not be prepared.'));
       $('successModalBg').classList.add('show');
     }else{
+      closeOrderDownloadWindow();
       $('submitModalBg').classList.add('show');
       toast(m.message||'Order could not be confirmed.');
     }
