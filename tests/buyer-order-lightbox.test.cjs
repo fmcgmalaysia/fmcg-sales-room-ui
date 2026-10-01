@@ -17,7 +17,7 @@ test('native lightbox owns the optional Excel download button', () => {
   assert.match(lightboxCode, /#downloadOrderExcelButton/);
   assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
   assert.match(lightboxCode, /downloadButton\.target = '_self'/);
-  assert.match(lightboxCode, /#doneButton/);
+  assert.match(lightboxCode, /#closeButton/);
   assert.match(lightboxCode, /lightbox\.close/);
 });
 
