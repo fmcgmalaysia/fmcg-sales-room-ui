@@ -26,6 +26,8 @@ const path = require('path');
   if (await text('.order-grid .row.head > div:nth-child(3)') !== 'Descriptions') throw new Error('Order table description header was not renamed.');
   if (await page.locator('#orderRows .order-waiting').count() !== 1) throw new Error('Waiting product is not visually identified.');
   if (await page.locator('#orderRows .cbm-zero-pill').count() !== 1 || await text('#orderRows .cbm-zero-pill') !== '0.0000') throw new Error('Ordered product with zero CBM is not highlighted.');
+  const lineAmount = await page.evaluate(() => { const head=document.querySelector('.order-grid .row.head>div:nth-child(6)'),cell=document.querySelector('#orderRows .row>div:nth-child(6)'),value=cell.querySelector('strong'); return { text:cell.textContent.trim(), align:getComputedStyle(cell).textAlign, headAlign:getComputedStyle(head).justifyContent, fontSize:getComputedStyle(value).fontSize }; });
+  if (lineAmount.text !== '600.00' || lineAmount.align !== 'right' || lineAmount.headAlign !== 'flex-end' || lineAmount.fontSize !== '11px') throw new Error(`Line Amount format is incorrect: ${JSON.stringify(lineAmount)}`);
   if (await page.locator('#orderShowing').isVisible()) throw new Error('Legacy Showing line is still visible.');
 
   const summaryBefore = await page.locator('.order-summary').innerText();
@@ -70,11 +72,15 @@ const path = require('path');
       labelSize: getComputedStyle(label).fontSize,
       countSize: getComputedStyle(count).fontSize,
       qtyWidth: document.querySelector('.order-grid .qty').getBoundingClientRect().width,
-      waitingBackground: getComputedStyle(waiting).backgroundColor
+    waitingBackground: getComputedStyle(waiting).backgroundColor,
+    rowHeight: document.querySelector('#orderRows .row').getBoundingClientRect().height,
+    thumbWidth: document.querySelector('#orderRows .thumb-fallback').getBoundingClientRect().width,
+    thumbHeight: document.querySelector('#orderRows .thumb-fallback').getBoundingClientRect().height
     };
   });
   if (metrics.toolbar > 54 || metrics.summary > 76 || metrics.labelSize !== '11px' || metrics.countSize !== '14px') throw new Error(`Order workspace is not compact: ${JSON.stringify(metrics)}`);
   if (metrics.qtyWidth > 64) throw new Error(`Order quantity input is too wide: ${metrics.qtyWidth}px`);
+  if (metrics.rowHeight > 49 || metrics.thumbWidth !== 38 || metrics.thumbHeight !== 38) throw new Error(`Order image did not enlarge inside the existing row height: ${JSON.stringify(metrics)}`);
   if (metrics.waitingBackground === 'rgba(0, 0, 0, 0)' || metrics.waitingBackground === 'rgb(255, 255, 255)') throw new Error('Waiting row has no visual distinction.');
   await page.locator('#orderRows [data-qty]').first().fill('9999');
   if (await page.locator('#orderRows [data-qty]').first().inputValue() !== '9999') throw new Error('Compact quantity input does not accept four digits.');
@@ -89,8 +95,14 @@ const path = require('path');
   if (!await page.locator('#successModalBg').isVisible()) throw new Error('Order success notice did not open.');
   if (await text('#orderSuccessTitle') !== 'Order Received' || !(await text('#orderDownloadStatus')).includes('started downloading')) throw new Error('Order success notice copy is incorrect.');
   if (!String(await page.evaluate(() => window.__orderDownloadHref || '')).includes('/_functions/buyerOrderExcel?token=test')) throw new Error('Order Excel download was not triggered.');
+  if (await page.locator('#quoteDot').getAttribute('hidden') !== null || await text('#quoteDot') !== '1' || !((await page.locator('#quoteDot').getAttribute('class'))||'').includes('order-alert')) throw new Error('Successful order did not create a red notification badge.');
   if (process.env.BUYER_ROOM_SUCCESS_SCREENSHOT) await page.screenshot({ path: process.env.BUYER_ROOM_SUCCESS_SCREENSHOT, fullPage: true });
   await page.locator('#closeSuccess').click();
+  await page.locator('#quoteBell').click();
+  if (!(await text('[data-order-notification]')).includes('VIEW ORDER HISTORY')) throw new Error('Order notification does not guide the customer to Order History.');
+  await page.locator('[data-order-notification]').click();
+  if (!await page.locator('#historyView').evaluate(node=>node.classList.contains('active')) || !(await text('.history-card')).includes('ORDER #001')) throw new Error('Order notification did not open the submitted order in Order History.');
+  await page.locator('[data-view="order"]').click();
   if (process.env.BUYER_ROOM_STRESS_200) {
     await page.evaluate(() => window.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: 'TEST-ORDER-200', companyName: 'Stress Test Buyer', memberName: 'Test User', currency: 'USD', selectionLimit: 700,
