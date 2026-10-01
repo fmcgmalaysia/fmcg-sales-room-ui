@@ -14,7 +14,6 @@ $w.onReady(async function () {
   if (wixWindowFrontend.rendering.env !== 'browser') return;
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
-  const downloadVisual = $w('#imageX38');
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
@@ -28,18 +27,10 @@ $w.onReady(async function () {
   downloadButton.hide();
   downloadButton.label = '';
   downloadButton.target = '_self';
-  downloadVisual.hide();
-  downloadVisual.link = '';
-  downloadVisual.target = '_self';
 
   function updateDownloadButtonVisibility() {
-    if (activeBuyerRoomView === 'my' && activeDownloadUrl) {
-      downloadVisual.show();
-      downloadButton.show();
-    } else {
-      downloadVisual.hide();
-      downloadButton.hide();
-    }
+    if (activeBuyerRoomView === 'my' && activeDownloadUrl) downloadButton.show();
+    else downloadButton.hide();
   }
 
   function scheduleSelectionDownloadRefresh() {
@@ -64,7 +55,6 @@ $w.onReady(async function () {
       activeDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
       activeDownloadExpiresAt = Number(result.expiresAt);
       downloadButton.link = activeDownloadUrl;
-      downloadVisual.link = activeDownloadUrl;
       downloadButton.label = '';
       downloadButton.enable();
       updateDownloadButtonVisibility();
@@ -79,11 +69,9 @@ $w.onReady(async function () {
     try { await prepareSelectionDownload(force); }
     catch (error) {
       downloadButton.link = '';
-      downloadVisual.link = '';
       downloadButton.label = '';
       downloadButton.disable();
       downloadButton.hide();
-      downloadVisual.hide();
       console.error('Buyer Room Excel link preparation failed', error);
     }
   }
