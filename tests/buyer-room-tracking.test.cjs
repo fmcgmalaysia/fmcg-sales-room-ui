@@ -22,3 +22,8 @@ test('Track Orders lays six stages out responsively', () => {
 test('Track Orders uses the lorry navigation icon', () => {
   assert.match(html, /data-view="track"[\s\S]*?<path d="M3 6h11v11H3zM14 10h4l3 3v4h-7zM17 10v4h4"\/>[\s\S]*?<circle cx="7" cy="18" r="2"\/>[\s\S]*?<circle cx="18" cy="18" r="2"\/>[\s\S]*?Track Orders/);
 });
+
+test('Track Orders build includes buyer-owned reductions', () => {
+  assert.match(html, /2026-10-02-buyer-reduction-v84/);
+  assert.match(html, /Reduce \/ Cancel Requested Qty/);
+});

@@ -527,6 +527,8 @@ export const getSalesRoomConfirmedOrders = webMethod(
       .map((order) => ({
         ...order,
         status: upper(order.status || 'CONFIRMED'),
+        totalCartons: order.effectiveTotalCartons ?? order.totalCartons,
+        estimatedTotal: order.effectiveEstimatedTotal ?? order.estimatedTotal,
         productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId)).length
       }))
       .sort((a, b) => String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')));
@@ -546,7 +548,7 @@ export const getSalesRoomOrderDetail = webMethod(
       .map((entry) => entry.data)
       .filter((line) => normalize(line.orderId) === normalize(orderId))
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
-    return Object.freeze({ ok: true, order: { ...orderEntry.data, lines } });
+    return Object.freeze({ ok: true, order: { ...orderEntry.data, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal, lines } });
   }
 );
 
@@ -593,22 +595,9 @@ export const confirmSalesRoomOrderForm = webMethod(
 
 export const saveSalesRoomOrderQty = webMethod(
   Permissions.SiteMember,
-  async (orderId, lineId, quantityCtn) => {
-    const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
-    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
-    if (upper(orderEntry.data.status).startsWith('SUBMITTED')) throw new Error('Submitted order quantities are locked.');
-    const lineEntry = (await readPayloadRows(BUYER_LINE_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.lineId) === normalize(lineId));
-    if (!lineEntry) throw new Error('Order line was not found.');
-    const qty = quantity(quantityCtn);
-    const line = { ...lineEntry.data, quantityCtn: qty, lineAmount: roundMoney(money(lineEntry.data.lockedUnitPrice) * qty), editedAt: new Date().toISOString(), editedBy: normalizeEmail(staff.loginEmail) };
-    await putPayload(BUYER_LINE_COLLECTION, lineEntry.record.title, line);
-    await recalculateOrder(orderEntry);
-    await writeOrderAudit('SALES_QTY_UPDATED', orderId, orderEntry.data.customerId, staff, { lineId: normalize(lineId), quantityCtn: qty });
-    return Object.freeze({ ok: true, orderId: normalize(orderId), lineId: normalize(lineId), quantityCtn: qty });
+  async () => {
+    await requireAuthorizedStaffContext();
+    throw new Error('Sales Room quantities are read-only. Additions require a new Buyer Room request; reductions must be made in Track Orders before NCT / GHR submission.');
   }
 );
 

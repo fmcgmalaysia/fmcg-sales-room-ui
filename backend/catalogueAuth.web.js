@@ -581,6 +581,68 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
   return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: now, qtyEditedBy: actor };
 });
+export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (orderId, lineId, newQuantityCtn, requestId = '', assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  const id = normalize(orderId);
+  const lineKey = normalize(lineId);
+  const reductionId = normalize(requestId);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reductionId)) throw new Error('Please refresh Track Orders and try again.');
+  const auditTitle = 'BUYER-REDUCTION-' + reductionId;
+  const existingAudit = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).eq('title', auditTitle).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (existingAudit.items.length) {
+    const audit = payloadData(existingAudit.items[0]);
+    if (normalize(audit.customerId) !== buyer.customerId || normalize(audit.orderId) !== id || normalize(audit.lineId) !== lineKey) throw new Error('Reduction request conflict. Please contact Sales Room.');
+    return { ok: true, orderId: id, lineId: lineKey, quantityCtn: quantity(audit.newQuantityCtn), reductionQtyCtn: quantity(audit.reductionQtyCtn), message: 'Reduction request already recorded.' };
+  }
+  const orderResult = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', id).eq('customerId', buyer.customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (orderResult.items.length !== 1) throw new Error('Order was not found.');
+  const orderRecord = orderResult.items[0];
+  const order = payloadData(orderRecord);
+  if (upper(order.status).startsWith('SUBMITTED TO ')) throw new Error('Requested quantity is locked after submission to NCT / GHR.');
+  const lineResult = await wixData.query(BUYER_LINE_COLLECTION).eq('orderId', id).eq('customerId', buyer.customerId).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const lineRecord = lineResult.items.find(record => normalize(payloadData(record).lineId) === lineKey);
+  if (!lineRecord) throw new Error('Order line was not found.');
+  const line = payloadData(lineRecord);
+  const currentQty = quantity(hasValue(line.effectiveRequestedQtyCtn) ? line.effectiveRequestedQtyCtn : hasValue(line.requestedQtyCtn) ? line.requestedQtyCtn : line.quantityCtn);
+  const nextQty = quantity(newQuantityCtn);
+  if (nextQty >= currentQty) throw new Error('Reduction quantity must be below the current requested quantity.');
+  const now = new Date().toISOString();
+  const actor = buyer.actorName || buyer.email;
+  const reductionQty = currentQty - nextQty;
+  const nextLine = {
+    ...line,
+    originalQuantityCtn: hasValue(line.originalQuantityCtn) ? quantity(line.originalQuantityCtn) : quantity(line.quantityCtn),
+    effectiveRequestedQtyCtn: nextQty,
+    reductionTotalCtn: quantity(line.reductionTotalCtn) + reductionQty,
+    effectiveLineAmount: Number((money(line.lockedUnitPrice) * nextQty).toFixed(2)),
+    effectiveTotalCbm: Number((money(line.cbmPerCtn) * nextQty).toFixed(4)),
+    lastReductionAt: now,
+    lastReductionBy: actor,
+    updatedAt: now
+  };
+  await putPayload(BUYER_LINE_COLLECTION, lineRecord.title, nextLine);
+  const refreshedOrder = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', id).eq('customerId', buyer.customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
+  const refreshedStatus = upper(payloadData(refreshedOrder.items[0]).status);
+  if (refreshedStatus.startsWith('SUBMITTED TO ')) {
+    await putPayload(BUYER_LINE_COLLECTION, lineRecord.title, line);
+    throw new Error('The order was submitted to NCT / GHR while this reduction was being processed. Requested quantity remains unchanged.');
+  }
+  const effectiveLines = lineResult.items.map(record => normalize(payloadData(record).lineId) === lineKey ? nextLine : payloadData(record));
+  const nextOrder = {
+    ...order,
+    originalTotalCartons: hasValue(order.originalTotalCartons) ? quantity(order.originalTotalCartons) : quantity(order.totalCartons),
+    effectiveTotalCartons: effectiveLines.reduce((sum, item) => sum + quantity(hasValue(item.effectiveRequestedQtyCtn) ? item.effectiveRequestedQtyCtn : item.quantityCtn), 0),
+    effectiveEstimatedTotal: Number(effectiveLines.reduce((sum, item) => sum + money(hasValue(item.effectiveLineAmount) ? item.effectiveLineAmount : item.lineAmount), 0).toFixed(2)),
+    effectiveTotalCbm: Number(effectiveLines.reduce((sum, item) => sum + money(hasValue(item.effectiveTotalCbm) ? item.effectiveTotalCbm : item.totalCbm), 0).toFixed(4)),
+    lastReductionAt: now,
+    lastReductionBy: actor,
+    revision: quantity(order.revision) + 1,
+    updatedAt: now
+  };
+  await putPayload(BUYER_ORDER_COLLECTION, orderRecord.title, nextOrder);
+  await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditTitle, { auditId: auditTitle, requestId: reductionId, action: nextQty === 0 ? 'BUYER_CANCELLED_ORDER_LINE' : 'BUYER_REDUCED_ORDER_LINE', orderId: id, lineId: lineKey, customerId: buyer.customerId, originalQuantityCtn: quantity(line.quantityCtn), previousQuantityCtn: currentQty, newQuantityCtn: nextQty, reductionQtyCtn: reductionQty, at: now, actorEmail: buyer.email, actorName: actor, actorType: buyer.actorType });
+  return { ok: true, orderId: id, lineId: lineKey, quantityCtn: nextQty, reductionQtyCtn: reductionQty, message: nextQty === 0 ? 'Item cancelled before NCT / GHR submission.' : 'Reduction request recorded.' };
+});
 export const removeBuyerItem = webMethod(Permissions.SiteMember, async (itemId, assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const row = await findOwnedItem(buyer, itemId);

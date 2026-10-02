@@ -32,12 +32,14 @@ const path = require('path');
 
   await page.locator('[data-view="track"]').click();
   await page.locator('#trackRows .tracking-row').waitFor();
-  if (await page.locator('.tracking-stage').count() !== 7) throw new Error('Overall progress does not contain seven stages.');
+  if (await page.locator('.tracking-stage').count() !== 6) throw new Error('Overall progress does not contain six stages.');
+  if ((await page.locator('#trackCommittedValue').innerText()).trim() !== 'USD 787.20') throw new Error('Committed transaction value is incorrect.');
   if ((await page.locator('#trackCommittedCbm').innerText()).trim() !== '0.4720 m³') throw new Error('Committed CBM total is incorrect.');
   const trackText = (await page.locator('#trackView').innerText()).replace(/\s+/g, ' ');
-  for (const value of ['CBM', '02-10-26 09:18am', 'Requested Qty', 'Committed Qty', 'Processing · 3/7']) if (!trackText.includes(value)) throw new Error(`Track Orders is missing ${value}`);
+  for (const value of ['CBM', '02-10-26 09:18am', 'Requested Qty', 'Committed Qty', 'Processing · 3/6']) if (!trackText.includes(value)) throw new Error(`Track Orders is missing ${value}`);
   const rowHeight = await page.locator('#trackRows .tracking-row').first().evaluate(node => node.getBoundingClientRect().height);
   if (rowHeight > 34) throw new Error(`Track row is not compact: ${rowHeight}px`);
+  if (await page.locator('#trackRows .tracking-edit').count() !== 1) throw new Error('Eligible Track row does not expose one pencil reduction action.');
   if (process.env.TRACK_SCREENSHOT) await page.screenshot({ path: process.env.TRACK_SCREENSHOT, fullPage: true });
 
   await page.locator('[data-view="completed"]').click();
@@ -46,6 +48,6 @@ const path = require('path');
   for (const value of ['NC-INV-00001', 'TOTAL CBM', '0.2891', 'Completed Qty', '411.60']) if (!completedText.includes(value)) throw new Error(`Completed Orders is missing ${value}`);
   if (process.env.COMPLETED_SCREENSHOT) await page.screenshot({ path: process.env.COMPLETED_SCREENSHOT, fullPage: true });
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
-  console.log('Buyer Room Track and Completed Orders V82 checks passed.');
+  console.log('Buyer Room Track and Completed Orders V84 checks passed.');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });
