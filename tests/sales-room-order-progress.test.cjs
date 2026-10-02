@@ -6,7 +6,7 @@ const test = require('node:test');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-02-order-progress-item-width-v46/);
+  assert.match(html, /Sales Room build: 2026-10-02-order-progress-retry-v47/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -19,6 +19,14 @@ test('Order Progress requests one selected customer and handles live responses',
   assert.match(html, /m\.type==='SALES_ROOM_ORDER_PROGRESS'/);
   assert.match(html, /function renderSalesOrderProgress\(payload\)/);
   assert.match(html, /populateOrderProgressCustomers\(\)/);
+});
+
+test('Order Progress retries one lost or slow first response and then exposes a manual retry', () => {
+  assert.match(html, /salesProgressRetryCountV47<1/);
+  assert.match(html, /requestSalesOrderProgress\(\{retry:true\}\)/);
+  assert.match(html, /isRetry\?15000:10000/);
+  assert.match(html, /button\.textContent='Retry Progress'/);
+  assert.match(html, /No order data was changed/);
 });
 
 test('Order Progress mirrors the six Buyer Room fulfilment stages', () => {

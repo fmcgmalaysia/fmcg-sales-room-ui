@@ -1,4 +1,4 @@
-<!-- Sales Room build: 2026-10-02-order-progress-item-width-v46 -->
+<!-- Sales Room build: 2026-10-02-order-progress-retry-v47 -->
 <style>.fx-modal{width:min(680px,100%)!important}.fx-modal-grid{display:block!important}.fx-sync-result{margin:12px 0 0!important}</style>
 <!doctype html>
 <html>
@@ -1027,6 +1027,38 @@ function customerAlphaCompare(a,b){
   const nameB=String(b?.companyName||b?.customerId||'').trim();
   return nameA.localeCompare(nameB,'en',{sensitivity:'base',numeric:true})||String(a?.customerId||'').localeCompare(String(b?.customerId||''),'en',{sensitivity:'base',numeric:true});
 }
+
+/* V47: recover automatically when the first Wix progress request is slow or its response is lost. */
+let salesProgressRetryTimerV47=0,salesProgressRetryCountV47=0;
+const renderSalesOrderProgressV46=renderSalesOrderProgress;
+requestSalesOrderProgress=function(options={}){
+  if(!salesProgressCustomerId)return;
+  const isRetry=Boolean(options&&options.retry);
+  if(!isRetry)salesProgressRetryCountV47=0;
+  clearTimeout(salesProgressRetryTimerV47);
+  const requestId='progress-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  salesProgressRequestId=requestId;
+  const customer=customerRecords.find(item=>String(item.customerId)===String(salesProgressCustomerId));
+  const button=document.getElementById('progressRefresh');
+  button.disabled=true;button.textContent=isRetry?'Retrying…':'Loading…';
+  document.getElementById('progressCustomerMeta').textContent=(customer?.companyName||salesProgressCustomerId)+(isRetry?' · First response delayed, retrying…':' · Loading live progress…');
+  document.getElementById('salesProgressBody').innerHTML='<div class="progress-empty-state"><span>↻</span><strong>'+(isRetry?'Retrying Order Progress':'Loading Order Progress')+'</strong><small>'+(isRetry?'The first response was delayed. Retrying automatically…':'Reading current committed quantities and fulfilment status.')+'</small></div>';
+  window.parent.postMessage({type:'SALES_ROOM_ORDER_PROGRESS_REQUEST',customerId:salesProgressCustomerId,requestId},'*');
+  salesProgressRetryTimerV47=setTimeout(()=>{
+    if(requestId!==salesProgressRequestId)return;
+    if(salesProgressRetryCountV47<1){salesProgressRetryCountV47+=1;requestSalesOrderProgress({retry:true});return}
+    button.disabled=false;button.textContent='Retry Progress';
+    document.getElementById('progressCustomerMeta').textContent=(customer?.companyName||salesProgressCustomerId)+' · Progress request timed out.';
+    document.getElementById('salesProgressBody').innerHTML='<div class="sales-progress-error"><strong>Progress Is Taking Too Long</strong><br>Please select Refresh Progress to try again. No order data was changed.</div>';
+  },isRetry?15000:10000);
+};
+renderSalesOrderProgress=function(payload){
+  if(payload.requestId&&salesProgressRequestId&&payload.requestId!==salesProgressRequestId)return;
+  clearTimeout(salesProgressRetryTimerV47);salesProgressRetryCountV47=0;
+  const button=document.getElementById('progressRefresh');button.disabled=false;button.textContent='Refresh Progress';
+  renderSalesOrderProgressV46(payload);
+};
+document.getElementById('progressRefresh').onclick=()=>requestSalesOrderProgress();
 </script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->
