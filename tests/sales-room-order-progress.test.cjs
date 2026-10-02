@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8'
 const backend = fs.readFileSync(path.resolve(__dirname, '..', 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-03-customer-account-activation-v60/);
+  assert.match(html, /Sales Room build: 2026-10-03-customer-qd-activation-v61/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -90,6 +90,8 @@ test('New Customer requires a short name and the customer workspace is a one-pag
   assert.match(html, /<h3>Contact &amp; Delivery<\/h3>/);
   assert.match(html, /backdrop-filter:blur\(7px\)/);
   assert.match(html, /\.customer-profile-modal \.tag\.green\{background:#e5eef9;color:#185abd\}/);
+  assert.match(html, /VERIFY &amp; ACTIVATE QD/);
+  assert.match(html, /SALES_ROOM_QD_VERIFY/);
 });
 
 test('Sales Room progress is loaded directly from Wix orders instead of a Buyer Room projection', () => {
