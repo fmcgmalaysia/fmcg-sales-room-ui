@@ -102,11 +102,19 @@ test('dashboard presents five premium metrics in the requested order', () => {
 test('workspace entry uses real QD warnings and a whole-QD publish action', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /customer\.pendingQuoteCount/);
-  assert.match(html, /ACTION REQUIRED · 需要立即处理/);
+  assert.match(html, /ACTION REQUIRED/);
   assert.match(html, /PUBLISH QUOTATIONS/);
   assert.match(html, /SALES_ROOM_PUBLISH_QUOTES/);
-  assert.match(html, /YOUR LAST PUBLISH · 上次发布/);
-  assert.match(html, /QD STATUS UNAVAILABLE · 暂时无法读取报价状态/);
+  assert.match(html, /LAST PUBLISH/);
+  assert.match(html, /QD STATUS UNAVAILABLE/);
+  assert.match(html, /id="drawerOpenBuyerRoom"/);
+  assert.match(html, /buyerRoomAdminUrlV27\(customer\.customerId\)/);
+  assert.match(html, /workspace-command-action buyer/);
+  assert.match(html, /workspace-command-action catalogue/);
+  assert.match(html, /\.workspace-command-action\.buyer\{background:#16885b\}/);
+  assert.match(html, /\.workspace-command-action\.catalogue\{background:#e87324\}/);
+  assert.match(html, /ACCESS ENABLED/);
+  assert.doesNotMatch(html, /class="record-access-switch /);
 });
 
 test('quote publishing preserves unchanged dates and keeps one previous quote', () => {

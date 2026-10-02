@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8'
 const backend = fs.readFileSync(path.resolve(__dirname, '..', 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-02-customer-shortname-progress-v48/);
+  assert.match(html, /Sales Room build: 2026-10-02-customer-workspace-v56/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -26,7 +26,8 @@ test('Order Progress retries one lost or slow first response and then exposes a 
   assert.match(html, /salesProgressRetryCountV47<1/);
   assert.match(html, /requestSalesOrderProgress\(\{retry:true\}\)/);
   assert.match(html, /isRetry\?15000:10000/);
-  assert.match(html, /button\.textContent='Retry Progress'/);
+  assert.match(html, /setProgressRefreshStateV54\(state\)/);
+  assert.match(html, /state==='retry'\?'Retry Progress'/);
   assert.match(html, /No order data was changed/);
 });
 

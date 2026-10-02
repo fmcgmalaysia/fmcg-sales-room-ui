@@ -9,12 +9,18 @@ const customer = {
   lifecycleStatus: 'ACTIVE',
   accessStatus: 'ACTIVE',
   qdStatus: 'READY',
+  qdFileId: '1TESTDUDUQD1234567890',
   country: 'SINGAPORE',
   preferredCurrency: 'USD',
   assignedStaffId: 'STF-RINN01',
   activeOrderLineCount: 12,
   accessUserCount: 1,
-  selectionLimit: 300
+  selectionLimit: 300,
+  awaitingQuoteItemCount: 18,
+  pendingQuoteCount: 4,
+  quoteRiskCount: 2,
+  quoteWorkStatusAvailable: true,
+  lastQuoteSyncedAt: '2026-10-02T02:15:00.000Z'
 };
 
 (async () => {
@@ -79,6 +85,19 @@ const customer = {
   await page.screenshot({ path: 'sales-room-progress-v48-local.png', fullPage: true });
 
   await page.getByRole('button', { name: /My Customers/ }).click();
+  await page.locator('[data-workspace-customer="CUS-TEST-DUDU"]').click();
+  await page.locator('.workspace-command-modal').waitFor();
+  const workspaceBox = await page.locator('.workspace-command-modal').boundingBox();
+  const workspaceActions = await page.locator('.workspace-command-action').allTextContents();
+  if (!workspaceBox || workspaceBox.width > 740 || workspaceBox.width < 620) throw new Error(`Workspace modal width is not compact: ${JSON.stringify(workspaceBox)}`);
+  for (const label of ['OPEN QUOTATION DESK', 'PUBLISH QUOTATIONS', 'ENTER BUYER ROOM', 'OPEN CATALOGUE']) {
+    if (!workspaceActions.some((text) => text.includes(label))) throw new Error(`Missing workspace action: ${label}`);
+  }
+  const buyerActionColor = await page.locator('#drawerOpenBuyerRoom').evaluate((element) => getComputedStyle(element).backgroundColor);
+  const catalogueActionColor = await page.locator('#drawerAssistSelection').evaluate((element) => getComputedStyle(element).backgroundColor);
+  if (buyerActionColor !== 'rgb(22, 136, 91)' || catalogueActionColor !== 'rgb(232, 115, 36)') throw new Error(`Workspace action colors are incorrect: ${buyerActionColor}, ${catalogueActionColor}`);
+  await page.screenshot({ path: 'sales-room-customer-workspace-v56-local.png', fullPage: true });
+  await page.getByRole('button', { name: 'Close Customer Workspace' }).click();
   await page.locator('[data-customer="CUS-TEST-DUDU"]').click();
   await page.evaluate((record) => window.postMessage({
     type: 'SALES_ROOM_CUSTOMER_DETAIL',
@@ -110,6 +129,8 @@ const customer = {
     throw new Error(JSON.stringify({ modal, headings, visibleActions }));
   }
   if (summaryIconCount !== 4) throw new Error(`Expected four SVG summary icons, found ${summaryIconCount}.`);
+  if ((await page.locator('.customer-access-state').innerText()) !== 'ACCESS ENABLED') throw new Error('Catalogue access must use a read-only status pill.');
+  if (await page.locator('.record-access-switch').count()) throw new Error('The misleading Catalogue Access switch is still present.');
   if (scrollState.overflowY !== 'auto' || scrollState.scrollHeight <= scrollState.clientHeight) throw new Error(`Modal content is not independently scrollable: ${JSON.stringify(scrollState)}`);
   for (const label of ['EDIT', 'MANAGE USERS', 'SUSPEND']) {
     if (!visibleActions.includes(label)) throw new Error(`Missing primary record action: ${label}`);
@@ -149,6 +170,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, menuBadgeColor, progressTriggerWidth: progressTriggerBox.width, progressRefreshSize: [progressRefreshBox.width, progressRefreshBox.height], modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, menuBadgeColor, progressTriggerWidth: progressTriggerBox.width, progressRefreshSize: [progressRefreshBox.width, progressRefreshBox.height], workspaceWidth: workspaceBox.width, workspaceActions, buyerActionColor, catalogueActionColor, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-workspace-v56-local.png', 'sales-room-customer-modal-v52-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
