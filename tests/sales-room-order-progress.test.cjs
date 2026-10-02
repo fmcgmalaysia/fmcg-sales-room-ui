@@ -32,7 +32,7 @@ test('Order Progress retries one lost or slow first response and then exposes a 
 
 test('Order Progress mirrors the six Buyer Room fulfilment stages', () => {
   assert.match(html, /const salesProgressStages=\['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'\]/);
-  assert.match(html, /background:conic-gradient\(#23a573 calc\(var\(--progress\)\*1%\),#dce6ee 0\)/);
+  assert.match(html, /background:conic-gradient\(#2b6cb0 calc\(var\(--progress\)\*1%\),#dce6ee 0\)/);
   assert.match(html, /sales-progress-pill s'\+row\.stage[\s\S]{0,40}row\.stage\+'\/6/);
   assert.doesNotMatch(html, /salesProgressStages=.*Full Payment/);
 });
@@ -69,7 +69,7 @@ test('Sales Room matches the compact Buyer Room header and uses deeper progress 
   assert.match(html, /\.room-title\{height:32px[\s\S]*background:#203047/);
   assert.match(html, /class="sales-account"/);
   assert.match(html, /\.sales-progress-pill\{[\s\S]*background:#31577e;color:#fff/);
-  assert.match(html, /\.sales-progress-pill\.s6\{background:#0e6749;color:#fff\}/);
+  assert.match(html, /\.sales-progress-pill\.s6\{background:#174a84;color:#fff\}/);
 });
 
 test('New Customer requires a short name and the customer workspace is a one-page blue modal', () => {
