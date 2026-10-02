@@ -163,21 +163,32 @@ function WIX_publishCustomerQuotations(payload) {
       if (!headers[name]) throw new Error('QD header is missing: ' + name);
     });
     const lastRow = sheet.getLastRow();
+    const dataStartRow = WIX_SELECTION_CFG.QD_DATA_START_ROW;
+    const rowCount = Math.max(0, lastRow - dataStartRow + 1);
+    const columnCount = sheet.getLastColumn();
+    // The QD template contains formulas down thousands of rows. Batch reads
+    // keep quotation publishing inside the Wix request timeout.
+    const quotationRange = rowCount ? sheet.getRange(dataStartRow, 1, rowCount, columnCount) : null;
+    const displayRows = quotationRange ? quotationRange.getDisplayValues() : [];
+    const valueRows = quotationRange ? quotationRange.getValues() : [];
     const quotations = [];
     const rowById = {};
     const invalid = [];
-    for (let row = WIX_SELECTION_CFG.QD_DATA_START_ROW; row <= lastRow; row++) {
-      const status = String(sheet.getRange(row, headers['QUOTE STATUS']).getDisplayValue() || '').trim().toUpperCase();
+    for (let index = 0; index < displayRows.length; index++) {
+      const displayRow = displayRows[index];
+      const valueRow = valueRows[index];
+      const row = dataStartRow + index;
+      const status = String(displayRow[headers['QUOTE STATUS'] - 1] || '').trim().toUpperCase();
       if (status !== 'VIEW QUOTE') continue;
-      const wixMyListId = String(sheet.getRange(row, headers['WIX MY LIST ID']).getDisplayValue() || '').trim();
-      const unitBarcode = WIX_normalizeBarcode_(sheet.getRange(row, headers['UNIT BARCODE']).getDisplayValue());
-      const quotePerPc = Number(sheet.getRange(row, headers['QUOTE $/PC']).getValue());
-      const quotePerCtn = Number(sheet.getRange(row, headers['QUOTE $/CTN']).getValue());
+      const wixMyListId = String(displayRow[headers['WIX MY LIST ID'] - 1] || '').trim();
+      const unitBarcode = WIX_normalizeBarcode_(displayRow[headers['UNIT BARCODE'] - 1]);
+      const quotePerPc = Number(valueRow[headers['QUOTE $/PC'] - 1]);
+      const quotePerCtn = Number(valueRow[headers['QUOTE $/CTN'] - 1]);
       if (!wixMyListId || !unitBarcode || !(quotePerPc > 0) || !(quotePerCtn > 0)) {
         invalid.push({ row: row, error: 'Barcode, Wix item ID and both quote prices are required.' });
         continue;
       }
-      const targetGp = headers['TARGET GP'] ? Number(sheet.getRange(row, headers['TARGET GP']).getValue()) : null;
+      const targetGp = headers['TARGET GP'] ? Number(valueRow[headers['TARGET GP'] - 1]) : null;
       quotations.push({ wixMyListId: wixMyListId, unitBarcode: unitBarcode, quotePerPc: quotePerPc, quotePerCtn: quotePerCtn, targetGp: isFinite(targetGp) ? targetGp : null });
       rowById[wixMyListId] = row;
     }

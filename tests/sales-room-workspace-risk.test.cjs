@@ -36,6 +36,17 @@ test('QD scan returns pending count separately from quote risk', () => {
   assert.match(source, /function WIX_publishCustomerQuotations/);
 });
 
+test('quotation publishing scans the QD template with batch reads', () => {
+  const source = fs.readFileSync(path.join(root, 'sales-room', 'google-apps-script', 'WixSelectionService.gs'), 'utf8');
+  const publishSource = source.slice(
+    source.indexOf('function WIX_publishCustomerQuotations'),
+    source.indexOf('function WIX_hasRedQuoteSignal_')
+  );
+  assert.match(publishSource, /quotationRange\.getDisplayValues\(\)/);
+  assert.match(publishSource, /quotationRange\.getValues\(\)/);
+  assert.doesNotMatch(publishSource, /sheet\.getRange\(row,\s*headers\[[^\n]+\.get(?:Display)?Value\(\)/);
+});
+
 test('workspace scans risk only for customers that have quotation rows', () => {
   const source = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
   assert.match(source, /const riskCustomers = \(base\.customers \|\| \[\]\)\.filter/);
