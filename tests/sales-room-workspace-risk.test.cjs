@@ -117,6 +117,7 @@ test('workspace entry uses a compact vertical action launcher with readable Chin
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /PUBLISH QUOTATIONS/);
   assert.match(html, /SALES_ROOM_PUBLISH_QUOTES/);
+  assert.match(html, /result\.ok!==false/);
   assert.doesNotMatch(html, /workspace-command-summary/);
   assert.match(html, /检查待确认及高风险报价/);
   assert.match(html, /发布已确认的 VIEW QUOTE 价格/);

@@ -402,25 +402,30 @@ async function loadQuoteRiskCounts(customers) {
 export const publishSalesRoomQuotations = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
-    const staff = await requireAuthorizedStaffContext();
-    const customer = await findAuthorizedCustomer(customerId, staff);
-    const qdFileId = normalize(customer.qdFileId);
-    if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
-    const sharedSecret = await getSecret(SECRET_NAME);
-    const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'PUBLISH_QUOTATIONS',
-        sharedSecret,
-        customerId: normalize(customer.customerId),
-        qdFileId,
-        actorEmail: normalizeEmail(staff.loginEmail)
-      })
-    });
-    const body = parseAppsScriptResponse(await response.text());
-    if (!response.ok || !body.ok) throw new Error(body.error || 'Quotation publish failed.');
-    return { ok: true, ...(body.result || {}) };
+    try {
+      const staff = await requireAuthorizedStaffContext();
+      const customer = await findAuthorizedCustomer(customerId, staff);
+      const qdFileId = normalize(customer.qdFileId);
+      if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
+      const sharedSecret = await getSecret(SECRET_NAME);
+      const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'PUBLISH_QUOTATIONS',
+          sharedSecret,
+          customerId: normalize(customer.customerId),
+          qdFileId,
+          actorEmail: normalizeEmail(staff.loginEmail || staff.staffEmail)
+        })
+      });
+      const body = parseAppsScriptResponse(await response.text());
+      if (!response.ok || !body.ok) return { ok: false, error: body.error || 'Quotation publish failed.' };
+      return { ok: true, ...(body.result || {}) };
+    } catch (error) {
+      console.error('Sales Room quotation publish failed', error);
+      return { ok: false, error: safeMessage(error) || 'Quotation publish failed.' };
+    }
   }
 );
 
