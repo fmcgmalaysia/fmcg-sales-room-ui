@@ -6,6 +6,7 @@ const test = require('node:test');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
+  assert.match(html, /Sales Room build: 2026-10-02-order-progress-header-v45/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -40,4 +41,12 @@ test('Sales projection is compact and has no quantity edit control', () => {
   assert.match(html, /\.sales-progress-head\{min-height:48px[\s\S]*font-size:11px/);
   const section = html.match(/<section id="order-progress"[\s\S]*?<section id="activity"/)?.[0] || '';
   assert.doesNotMatch(section, /tracking-edit|data-reduce-order|pencil/);
+});
+
+test('Sales Room matches the compact Buyer Room header and uses deeper progress pills', () => {
+  assert.match(html, /\.top\{height:48px;padding:0 19px/);
+  assert.match(html, /\.room-title\{height:32px[\s\S]*background:#203047/);
+  assert.match(html, /class="sales-account"/);
+  assert.match(html, /\.sales-progress-pill\{[\s\S]*background:#31577e;color:#fff/);
+  assert.match(html, /\.sales-progress-pill\.s6\{background:#0e6749;color:#fff\}/);
 });
