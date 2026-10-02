@@ -71,12 +71,17 @@ const customer = {
     }
   }, '*'), customer);
   await page.locator('.customer-profile-modal').waitFor();
+  await page.setViewportSize({ width: 1680, height: 700 });
   const modal = await page.locator('.customer-profile-modal').boundingBox();
   const headings = await page.locator('.customer-profile-modal h3').allTextContents();
   const visibleActions = await page.locator('.customer-profile-modal button:visible').allTextContents();
+  const summaryIconCount = await page.locator('.record-summary-icon svg').count();
+  const scrollState = await page.locator('.customer-record-scroll').evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight, overflowY: getComputedStyle(element).overflowY }));
   if (!modal || modal.width < 1100 || !headings.includes('Company Information') || !headings.includes('Business Setup') || !headings.includes('Authorized Customer Users') || !headings.includes('Recent Change History')) {
     throw new Error(JSON.stringify({ modal, headings, visibleActions }));
   }
+  if (summaryIconCount !== 4) throw new Error(`Expected four SVG summary icons, found ${summaryIconCount}.`);
+  if (scrollState.overflowY !== 'auto' || scrollState.scrollHeight <= scrollState.clientHeight) throw new Error(`Modal content is not independently scrollable: ${JSON.stringify(scrollState)}`);
   for (const label of ['EDIT', 'MANAGE USERS', 'SUSPEND']) {
     if (!visibleActions.includes(label)) throw new Error(`Missing primary record action: ${label}`);
   }
@@ -87,7 +92,7 @@ const customer = {
   await page.getByRole('button', { name: 'EDIT' }).click();
   if (!(await page.locator('#editableProfileSection').isVisible())) throw new Error('Edit did not reveal the customer profile form.');
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await page.screenshot({ path: 'sales-room-customer-modal-v49-local.png', fullPage: true });
+  await page.screenshot({ path: 'sales-room-customer-modal-v50-local.png', fullPage: true });
   await page.evaluate((record) => window.postMessage({
     type: 'SALES_ROOM_CUSTOMER_DETAIL', ok: true,
     customer: { ...record, accessStatus: 'SUSPENDED', lifecycleStatus: 'ACTIVE', users: [] }
@@ -95,6 +100,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v49-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v50-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
