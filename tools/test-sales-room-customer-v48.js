@@ -66,7 +66,11 @@ const customer = {
       primaryEmail: 'dudu.test@example.com',
       mobileNo: '+65 8000 0000',
       destinationPortName: 'PORT OF SINGAPORE',
-      users: [],
+      users: [
+        { userId: 'USR-CUS-TEST-DUDU-01', userName: 'DUDU PRIMARY', email: 'primary@dudu.test', mobileNo: '+65 8000 0001', status: 'ACTIVE', primaryUser: true },
+        { userId: 'USR-CUS-TEST-DUDU-02', userName: 'DUDU BUYER', email: 'buyer@dudu.test', mobileNo: '+65 8000 0002', status: 'ACTIVE', primaryUser: false },
+        { userId: 'USR-CUS-TEST-DUDU-03', userName: 'OLD USER', email: 'old@dudu.test', mobileNo: '+65 8000 0003', status: 'REVOKED', primaryUser: false }
+      ],
       recentAudit: []
     }
   }, '*'), customer);
@@ -86,8 +90,16 @@ const customer = {
     if (!visibleActions.includes(label)) throw new Error(`Missing primary record action: ${label}`);
   }
   if (visibleActions.includes('ARCHIVE')) throw new Error('Archive must not appear for an active customer.');
+  const primaryToggles = page.locator('.primary-toggle');
+  if (await primaryToggles.count() !== 2) throw new Error('Expected Primary switches for the two active users.');
+  if (await primaryToggles.nth(0).getAttribute('aria-pressed') !== 'true' || await primaryToggles.nth(1).getAttribute('aria-pressed') !== 'false') throw new Error('Primary switch state is incorrect.');
+  if (!(await primaryToggles.nth(0).isDisabled())) throw new Error('The current Primary switch must be locked on.');
   await page.getByRole('button', { name: 'MANAGE USERS' }).click();
   if (!(await page.getByRole('button', { name: '+ ADD USER' }).isVisible())) throw new Error('Manage Users did not reveal user controls.');
+  if (!(await page.getByRole('button', { name: 'REMOVE ACCESS' }).isVisible())) throw new Error('Manage Users did not reveal the secondary active-user action.');
+  await primaryToggles.nth(1).click();
+  if (!(await page.getByRole('heading', { name: 'Set Primary User' }).isVisible())) throw new Error('Primary switch did not open the confirmation workflow.');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'DONE' }).click();
   await page.getByRole('button', { name: 'EDIT' }).click();
   if (!(await page.locator('#editableProfileSection').isVisible())) throw new Error('Edit did not reveal the customer profile form.');
@@ -104,7 +116,7 @@ const customer = {
   const profileSavePayload = await page.evaluate(() => window.__profileSavePayload);
   if (Object.prototype.hasOwnProperty.call(profileSavePayload, 'customerShortName')) throw new Error('Profile save payload must not include Customer Short Name.');
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await page.screenshot({ path: 'sales-room-customer-modal-v50-local.png', fullPage: true });
+  await page.screenshot({ path: 'sales-room-customer-modal-v52-local.png', fullPage: true });
   await page.evaluate((record) => window.postMessage({
     type: 'SALES_ROOM_CUSTOMER_DETAIL', ok: true,
     customer: { ...record, accessStatus: 'SUSPENDED', lifecycleStatus: 'ACTIVE', users: [] }
@@ -112,6 +124,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, shortNameLocked: true, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v50-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
