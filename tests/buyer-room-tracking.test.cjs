@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-column-align-v89/);
+  assert.match(html, /2026-10-02-track-deep-progress-v90/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -51,6 +51,12 @@ test('Track operational columns shift left and Updated stays aligned', () => {
   assert.match(html, /\.tracking-row\{grid-template-columns:8% 23% 8% 6% 10% 6% 6% 9% 5% 5% 9% 5%\}/);
   assert.match(html, /\.tracking-row>div:nth-child\(11\)\{padding-right:10px;text-align:right\}/);
   assert.match(html, /\.tracking-row>\.tracking-edit\{justify-self:start;margin-left:6px\}/);
+});
+
+test('Track progress pills use the same deep status palette as Sales Room', () => {
+  assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3\{background:#31577e;color:#fff\}/);
+  assert.match(html, /\.progress-pill\.s4,\.progress-pill\.s5\{background:#1e7659;color:#fff\}/);
+  assert.match(html, /\.progress-pill\.s6\{background:#0e6749;color:#fff\}/);
 });
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
