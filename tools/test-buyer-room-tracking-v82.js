@@ -40,6 +40,12 @@ const path = require('path');
   const rowHeight = await page.locator('#trackRows .tracking-row').first().evaluate(node => node.getBoundingClientRect().height);
   if (rowHeight > 38) throw new Error(`Track row is not compact: ${rowHeight}px`);
   if (await page.locator('#trackRows .tracking-edit').count() !== 1) throw new Error('Eligible Track row does not expose one pencil reduction action.');
+  await page.locator('#trackRows .tracking-row').first().hover();
+  await page.waitForTimeout(220);
+  const hoverStyle = await page.locator('#trackRows .tracking-row').first().evaluate((node) => ({ background: getComputedStyle(node).backgroundColor, shadow: getComputedStyle(node).boxShadow }));
+  const hoverPencil = await page.locator('#trackRows .tracking-edit').first().evaluate((node) => ({ background: getComputedStyle(node).backgroundColor, color: getComputedStyle(node).color }));
+  if (hoverStyle.background !== 'rgb(234, 246, 241)' || !hoverStyle.shadow.includes('rgb(20, 131, 95)')) throw new Error(`Track row hover is not visible enough: ${JSON.stringify(hoverStyle)}`);
+  if (hoverPencil.background !== 'rgb(20, 131, 95)' || hoverPencil.color !== 'rgb(255, 255, 255)') throw new Error(`Track pencil is not highlighted with its row: ${JSON.stringify(hoverPencil)}`);
   if (process.env.TRACK_SCREENSHOT) await page.screenshot({ path: process.env.TRACK_SCREENSHOT, fullPage: true });
 
   await page.locator('[data-view="completed"]').click();

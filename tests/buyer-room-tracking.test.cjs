@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-header-green-v92/);
+  assert.match(html, /2026-10-02-track-row-hover-v93/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -58,6 +58,11 @@ test('Track operational columns shift left and Updated stays aligned', () => {
 
 test('Track progress pills use one consistent green status color', () => {
   assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3,\.progress-pill\.s4,\.progress-pill\.s5,\.progress-pill\.s6\{background:#14835f;color:#fff\}/);
+});
+
+test('Track row hover clearly connects the row to its pencil action', () => {
+  assert.match(html, /#trackRows \.tracking-row:hover\{[^}]*background:#eaf6f1!important;[^}]*box-shadow:inset 4px 0 #14835f/);
+  assert.match(html, /#trackRows \.tracking-row:hover \.tracking-edit\{background:#14835f;color:#fff/);
 });
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
