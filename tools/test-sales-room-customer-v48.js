@@ -150,6 +150,7 @@ const customer = {
   if (!(await primaryToggles.nth(0).isDisabled())) throw new Error('The current Primary switch must be locked on.');
   await page.getByRole('button', { name: 'MANAGE USERS' }).click();
   if (!(await page.getByRole('button', { name: '+ ADD USER' }).isVisible())) throw new Error('Manage Users did not reveal user controls.');
+  if (await page.getByRole('link', { name: 'OPEN BUYER ROOM' }).count()) throw new Error('Manage Users must not duplicate the Buyer Room entry point.');
   if (!(await page.getByRole('button', { name: 'REMOVE ACCESS' }).isVisible())) throw new Error('Manage Users did not reveal the secondary active-user action.');
   await primaryToggles.nth(1).click();
   if (!(await page.getByRole('heading', { name: 'Set Primary User' }).isVisible())) throw new Error('Primary switch did not open the confirmation workflow.');

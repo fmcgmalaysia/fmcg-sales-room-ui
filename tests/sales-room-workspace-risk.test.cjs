@@ -118,6 +118,7 @@ test('workspace entry uses a compact vertical action launcher with readable Chin
   assert.match(html, /\.workspace-command-action\.catalogue\{background:#e87324\}/);
   assert.match(html, /ACCESS ENABLED/);
   assert.doesNotMatch(html, /class="record-access-switch /);
+  assert.doesNotMatch(html, /admin-buyer-link/);
 });
 
 test('quote publishing preserves unchanged dates and keeps one previous quote', () => {
