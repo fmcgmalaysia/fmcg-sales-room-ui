@@ -166,20 +166,26 @@ function WIX_publishCustomerQuotations(payload) {
     const dataStartRow = WIX_SELECTION_CFG.QD_DATA_START_ROW;
     const rowCount = Math.max(0, lastRow - dataStartRow + 1);
     const columnCount = sheet.getLastColumn();
-    // The QD template contains formulas down thousands of rows. Batch reads
-    // keep quotation publishing inside the Wix request timeout.
-    const quotationRange = rowCount ? sheet.getRange(dataStartRow, 1, rowCount, columnCount) : null;
-    const displayRows = quotationRange ? quotationRange.getDisplayValues() : [];
-    const valueRows = quotationRange ? quotationRange.getValues() : [];
+    // The template carries formulas down thousands of rows. Read only the
+    // single status column first, then fetch the handful of confirmed rows.
+    // This keeps the Sales Room web method safely below Wix's request limit.
+    const statusValues = rowCount
+      ? sheet.getRange(dataStartRow, headers['QUOTE STATUS'], rowCount, 1).getDisplayValues()
+      : [];
+    const confirmedRows = [];
+    for (let index = 0; index < statusValues.length; index++) {
+      if (String(statusValues[index][0] || '').trim().toUpperCase() === 'VIEW QUOTE') {
+        confirmedRows.push(dataStartRow + index);
+      }
+    }
     const quotations = [];
     const rowById = {};
     const invalid = [];
-    for (let index = 0; index < displayRows.length; index++) {
-      const displayRow = displayRows[index];
-      const valueRow = valueRows[index];
-      const row = dataStartRow + index;
-      const status = String(displayRow[headers['QUOTE STATUS'] - 1] || '').trim().toUpperCase();
-      if (status !== 'VIEW QUOTE') continue;
+    for (let index = 0; index < confirmedRows.length; index++) {
+      const row = confirmedRows[index];
+      const quotationRange = sheet.getRange(row, 1, 1, columnCount);
+      const displayRow = quotationRange.getDisplayValues()[0];
+      const valueRow = quotationRange.getValues()[0];
       const wixMyListId = String(displayRow[headers['WIX MY LIST ID'] - 1] || '').trim();
       const unitBarcode = WIX_normalizeBarcode_(displayRow[headers['UNIT BARCODE'] - 1]);
       const quotePerPc = Number(valueRow[headers['QUOTE $/PC'] - 1]);

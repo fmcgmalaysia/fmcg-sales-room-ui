@@ -42,8 +42,10 @@ test('quotation publishing scans the QD template with batch reads', () => {
     source.indexOf('function WIX_publishCustomerQuotations'),
     source.indexOf('function WIX_hasRedQuoteSignal_')
   );
-  assert.match(publishSource, /quotationRange\.getDisplayValues\(\)/);
-  assert.match(publishSource, /quotationRange\.getValues\(\)/);
+  assert.match(publishSource, /statusValues/);
+  assert.match(publishSource, /confirmedRows/);
+  assert.match(publishSource, /quotationRange\.getDisplayValues\(\)\[0\]/);
+  assert.match(publishSource, /quotationRange\.getValues\(\)\[0\]/);
   assert.doesNotMatch(publishSource, /sheet\.getRange\(row,\s*headers\[[^\n]+\.get(?:Display)?Value\(\)/);
 });
 
