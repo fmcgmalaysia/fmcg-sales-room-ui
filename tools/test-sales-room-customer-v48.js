@@ -1,0 +1,78 @@
+const { chromium } = require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const path = require('node:path');
+
+const customer = {
+  customerId: 'CUS-TEST-DUDU',
+  companyName: 'DUDU CORPORATION PTE. LTD.',
+  customerShortName: 'DUDU',
+  customerStatus: 'ACTIVE',
+  lifecycleStatus: 'ACTIVE',
+  accessStatus: 'ACTIVE',
+  qdStatus: 'READY',
+  country: 'SINGAPORE',
+  preferredCurrency: 'USD',
+  assignedStaffId: 'STF-RINN01',
+  activeOrderLineCount: 12,
+  accessUserCount: 1,
+  selectionLimit: 300
+};
+
+(async () => {
+  const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe' });
+  const page = await browser.newPage({ viewport: { width: 1680, height: 960 }, deviceScaleFactor: 1 });
+  const source = path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/');
+  await page.goto(`file:///${source}`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate((record) => window.postMessage({
+    type: 'SALES_ROOM_CUSTOMERS',
+    ok: true,
+    customers: [record],
+    summary: { confirmedOrderCount: 1, quoteCustomerCount: 0 }
+  }, '*'), customer);
+
+  await page.getByRole('button', { name: /Order Progress/ }).click();
+  await page.locator('#progressCustomerTrigger').click();
+  const menuLabel = await page.locator('[data-progress-customer="CUS-TEST-DUDU"]').innerText();
+  if (!menuLabel.includes('DUDU') || !menuLabel.includes('12')) throw new Error(`Unexpected progress menu: ${menuLabel}`);
+  await page.locator('[data-progress-customer="CUS-TEST-DUDU"]').click();
+  await page.evaluate(() => window.postMessage({
+    type: 'SALES_ROOM_ORDER_PROGRESS',
+    ok: true,
+    customerId: 'CUS-TEST-DUDU',
+    companyName: 'DUDU CORPORATION PTE. LTD.',
+    customerShortName: 'DUDU',
+    currency: 'USD',
+    orders: [{
+      orderId: 'ORD-DUDU-001', confirmedAt: '2026-10-02T01:45:00.000Z', status: 'PROCESSING',
+      lines: [{ lineId: 'L1', customerId: 'CUS-TEST-DUDU', barcode: '9556570311202', itemName: '100 PLUS ISOTONIC (PET) - LEMON LIME', packingSize: '500ML x 24', quantityCtn: 12, committedQtyCtn: 10, lockedUnitPrice: 12.24, cbmPerCtn: 0.035, poNumber: 'PO-0001', updatedAt: '2026-10-02T04:10:00.000Z' }]
+    }]
+  }, '*'));
+  await page.locator('.sales-progress-overview').waitFor();
+  await page.screenshot({ path: 'sales-room-progress-v48-local.png', fullPage: true });
+
+  await page.getByRole('button', { name: /My Customers/ }).click();
+  await page.locator('[data-customer="CUS-TEST-DUDU"]').click();
+  await page.evaluate((record) => window.postMessage({
+    type: 'SALES_ROOM_CUSTOMER_DETAIL',
+    ok: true,
+    customer: {
+      ...record,
+      qdFileLabel: 'QD - DUDU',
+      qdLastVerifiedAt: '2026-10-02 10:00',
+      picName: 'DUDU TEST',
+      primaryEmail: 'dudu.test@example.com',
+      mobileNo: '+65 8000 0000',
+      destinationPortName: 'PORT OF SINGAPORE',
+      users: [],
+      recentAudit: []
+    }
+  }, '*'), customer);
+  await page.locator('.customer-profile-modal').waitFor();
+  const modal = await page.locator('.customer-profile-modal').boundingBox();
+  const headings = await page.locator('.customer-profile-modal h3').allTextContents();
+  if (!modal || modal.width < 1100 || !headings.includes('Company') || !headings.includes('Operations') || !headings.includes('Contact & Delivery')) {
+    throw new Error(JSON.stringify({ modal, headings }));
+  }
+  await page.screenshot({ path: 'sales-room-customer-modal-v48-local.png', fullPage: true });
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v48-local.png'] }));
+  await browser.close();
+})().catch((error) => { console.error(error); process.exit(1); });

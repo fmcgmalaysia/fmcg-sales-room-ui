@@ -77,6 +77,16 @@ export const createSalesRoomCustomer = webMethod(
       throw new Error('This company is already registered.');
     }
 
+    const duplicateShortName = await wixData
+      .query(CUSTOMER_COLLECTION)
+      .eq('customerShortName', customer.customerShortName)
+      .limit(1)
+      .find({ suppressAuth: true });
+
+    if (duplicateShortName.items.length) {
+      throw new Error('This CUSTOMER SHORT NAME is already in use.');
+    }
+
     const customerId = await generateUniqueCustomerId();
     const userId = 'USR-' + customerId + '-01';
     const now = new Date();
@@ -85,6 +95,7 @@ export const createSalesRoomCustomer = webMethod(
       CUSTOMER_COLLECTION,
       {
         title: customer.companyName,
+        customerShortName: customer.customerShortName,
         customerId,
         country: customer.country,
         natureOfBusiness: customer.natureOfBusiness,
@@ -312,6 +323,7 @@ async function loadSalesRoomCustomers() {
       .map((item) => ({
         customerId: normalize(item.customerId),
         companyName: normalize(item.title),
+        customerShortName: upper(item.customerShortName),
         country: normalize(item.country),
         qdStatus: upper(item.qdStatus),
         qdFileId: normalize(item.qdFileId),
@@ -416,9 +428,10 @@ export const getSalesRoomCustomersOperational = webMethod(
   Permissions.SiteMember,
   async () => {
     const base = await loadSalesRoomCustomers();
-    const [listRows, orderRows] = await Promise.all([
-      readPayloadRows(BUYER_LIST_COLLECTION),
-      readPayloadRows(BUYER_ORDER_COLLECTION)
+    const [listRows, orderRows, lineRows] = await Promise.all([
+      readAllPayloadRows(BUYER_LIST_COLLECTION),
+      readAllPayloadRows(BUYER_ORDER_COLLECTION),
+      readAllPayloadRows(BUYER_LINE_COLLECTION)
     ]);
 
     const quoteByCustomer = new Map();
@@ -473,6 +486,13 @@ export const getSalesRoomCustomersOperational = webMethod(
       }
       incomingByCustomer.set(customerId, current);
     }
+    const activeLineByCustomer = new Map();
+    for (const row of lineRows) {
+      const line = row.data;
+      const customerId = normalize(line.customerId);
+      if (!customerId || isCompletedProgressLine(line)) continue;
+      activeLineByCustomer.set(customerId, Number(activeLineByCustomer.get(customerId) || 0) + 1);
+    }
     const customers = (base.customers || []).map((customer) => {
       const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
@@ -491,6 +511,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         pendingQuoteReceivedAt: quote.pendingQuoteReceivedAt,
         lastQuoteSyncedAt: quote.lastQuoteSyncedAt,
         confirmedOrderCount: incoming.count,
+        activeOrderLineCount: Number(activeLineByCustomer.get(customer.customerId) || 0),
         incomingOrderReceivedAt: incoming.incomingOrderReceivedAt
       };
     });
@@ -571,6 +592,7 @@ export const getSalesRoomOrderForm = webMethod(
       customer: {
         customerId: normalize(customer.customerId),
         companyName: normalize(customer.title),
+        customerShortName: upper(customer.customerShortName),
         currency: upper(customer.preferredCurrency || 'USD')
       },
       lines
@@ -656,6 +678,7 @@ export const getSalesRoomCustomerDetail = webMethod(
       customer: {
         customerId: normalize(customer.customerId),
         companyName: normalize(customer.title),
+        customerShortName: upper(customer.customerShortName),
         country: normalize(customer.country),
         natureOfBusiness: normalize(customer.natureOfBusiness),
         picTitle: normalize(customer.picTitle),
@@ -832,6 +855,7 @@ const LOCKED_CUSTOMER_FIELDS = Object.freeze([
 ]);
 
 const EDITABLE_CUSTOMER_FIELDS = Object.freeze({
+  customerShortName: 'CUSTOMER SHORT NAME',
   natureOfBusiness: 'NATURE OF BUSINESS',
   picTitle: 'PERSON IN CHARGE TITLE',
   picName: 'PERSON IN CHARGE NAME',
@@ -894,6 +918,17 @@ export const updateSalesRoomCustomerProfile = webMethod(
         beforeValue: customer[key],
         afterValue: patch[key]
       }));
+
+    if (Object.prototype.hasOwnProperty.call(patch, 'customerShortName') && upper(customer.customerShortName) !== patch.customerShortName) {
+      const duplicate = await wixData
+        .query(CUSTOMER_COLLECTION)
+        .eq('customerShortName', patch.customerShortName)
+        .limit(2)
+        .find({ suppressAuth: true });
+      if (duplicate.items.some((item) => normalize(item.customerId) !== normalize(customer.customerId))) {
+        throw new Error('This CUSTOMER SHORT NAME is already in use.');
+      }
+    }
 
     if (!changes.length) {
       return Object.freeze({ ok: true, customerId: normalize(customer.customerId), changedFields: [] });
@@ -1212,6 +1247,61 @@ async function readPayloadRows(collectionId) {
   return result.items.map((record) => ({ record, data: payloadData(record) }));
 }
 
+async function readAllPayloadRows(collectionId) {
+  let result = await wixData
+    .query(collectionId)
+    .limit(1000)
+    .find({ suppressAuth: true, consistentRead: true });
+  const items = [...result.items];
+  while (typeof result.hasNext === 'function' && result.hasNext()) {
+    result = await result.next();
+    items.push(...result.items);
+  }
+  return items.map((record) => ({ record, data: payloadData(record) }));
+}
+
+export const getSalesRoomOrderProgress = webMethod(
+  Permissions.SiteMember,
+  async (customerId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const customer = await findAuthorizedCustomer(customerId, staff);
+    const normalizedCustomerId = normalize(customer.customerId);
+    const [orderRows, lineRows] = await Promise.all([
+      readAllPayloadRows(BUYER_ORDER_COLLECTION),
+      readAllPayloadRows(BUYER_LINE_COLLECTION)
+    ]);
+    const linesByOrder = new Map();
+    for (const row of lineRows) {
+      const line = row.data;
+      if (normalize(line.customerId) !== normalizedCustomerId) continue;
+      const orderId = normalize(line.orderId);
+      if (!orderId) continue;
+      if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, []);
+      linesByOrder.get(orderId).push(line);
+    }
+    const orders = orderRows
+      .map((row) => row.data)
+      .filter((order) => normalize(order.customerId) === normalizedCustomerId)
+      .map((order) => {
+        const orderId = normalize(order.orderId);
+        const storedLines = linesByOrder.get(orderId) || [];
+        const embeddedLines = Array.isArray(order.lines) ? order.lines : Array.isArray(order.pendingLines) ? order.pendingLines : [];
+        const lines = (storedLines.length ? storedLines : embeddedLines).filter((line) => !isCompletedProgressLine(line));
+        return { ...order, orderId, lines };
+      })
+      .filter((order) => order.lines.length)
+      .sort((a, b) => new Date(b.confirmedAt || 0).getTime() - new Date(a.confirmedAt || 0).getTime());
+    return Object.freeze({
+      ok: true,
+      customerId: normalizedCustomerId,
+      companyName: normalize(customer.title),
+      customerShortName: upper(customer.customerShortName),
+      activeLineCount: orders.reduce((sum, order) => sum + order.lines.length, 0),
+      orders
+    });
+  }
+);
+
 async function putPayload(collectionId, title, payload) {
   const result = await wixData
     .query(collectionId)
@@ -1348,6 +1438,7 @@ async function writeOrderAudit(action, orderId, customerId, staff, detail) {
 }
 
 function normalizeEditableCustomerValue(key, value) {
+  if (key === 'customerShortName') return validateCustomerShortName(value);
   if (key === 'natureOfBusiness') {
     const normalized = upper(value);
     if (!BUSINESS_TYPES.includes(normalized)) throw new Error('Invalid nature of business.');
@@ -1808,6 +1899,8 @@ function successResult(customerRecord, userRecord, staff, qdResult = {}) {
     result: {
       ...qdResult,
       customerId: customerRecord.customerId,
+      companyName: normalize(customerRecord.title),
+      customerShortName: upper(customerRecord.customerShortName),
       qdSheetName: customerRecord.qdSheetName,
       qdStatus: customerRecord.qdStatus,
       customerStatus: customerRecord.customerStatus,
@@ -1879,6 +1972,7 @@ function parseAppsScriptResponse(text) {
 function normalizeAndValidate(raw) {
   const p = {
     companyName: upper(raw.companyName),
+    customerShortName: validateCustomerShortName(raw.customerShortName),
     country: upper(raw.country),
     natureOfBusiness: upper(raw.natureOfBusiness),
     picTitle: upper(raw.picTitle),
@@ -1914,6 +2008,29 @@ function normalizeAndValidate(raw) {
   }
 
   return Object.freeze(p);
+}
+
+function validateCustomerShortName(value) {
+  const normalized = upper(value).replace(/\s+/g, ' ');
+  if (normalized.length < 2 || normalized.length > 24) {
+    throw new Error('CUSTOMER SHORT NAME must contain 2 to 24 characters.');
+  }
+  if (!/^[A-Z0-9][A-Z0-9 .&'()/-]*$/.test(normalized)) {
+    throw new Error('CUSTOMER SHORT NAME contains unsupported characters.');
+  }
+  return normalized;
+}
+
+function isCompletedProgressLine(line = {}) {
+  const status = upper(line.lineStatus || line.progressStatus || line.status);
+  return Boolean(
+    line.shippedOn ||
+    line.shippedAt ||
+    line.cancelledAt ||
+    status.includes('SHIP') ||
+    status.includes('CANCEL') ||
+    status === 'COMPLETED'
+  );
 }
 
 
