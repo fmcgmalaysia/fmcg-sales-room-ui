@@ -54,6 +54,8 @@ const customer = {
   await page.locator('#progressCustomerTrigger').click();
   const menuLabel = await page.locator('[data-progress-customer="CUS-TEST-DUDU"]').innerText();
   if (!menuLabel.includes('DUDU') || !menuLabel.includes('12')) throw new Error(`Unexpected progress menu: ${menuLabel}`);
+  const menuBadgeColor = await page.locator('[data-progress-customer="CUS-TEST-DUDU"] b').evaluate((element) => getComputedStyle(element).backgroundColor);
+  if (menuBadgeColor !== 'rgb(217, 52, 59)') throw new Error(`Progress menu badge is not red: ${menuBadgeColor}`);
   await page.locator('[data-progress-customer="CUS-TEST-DUDU"]').click();
   await page.evaluate(() => window.postMessage({
     type: 'SALES_ROOM_ORDER_PROGRESS',
@@ -147,6 +149,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, progressTriggerWidth: progressTriggerBox.width, progressRefreshSize: [progressRefreshBox.width, progressRefreshBox.height], modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, menuBadgeColor, progressTriggerWidth: progressTriggerBox.width, progressRefreshSize: [progressRefreshBox.width, progressRefreshBox.height], modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
