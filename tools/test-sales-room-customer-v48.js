@@ -33,6 +33,23 @@ const customer = {
     summary: { confirmedOrderCount: 1, quoteCustomerCount: 0 }
   }, '*'), customer);
 
+  await page.evaluate(() => showView('new'));
+  const uppercaseSamples = {
+    companyName: 'dudu corporation pte. ltd.',
+    customerShortName: 'dudu',
+    country: 'singapore',
+    picName: 'dudu buyer',
+    destinationPort: 'port of singapore'
+  };
+  for (const [name, value] of Object.entries(uppercaseSamples)) {
+    const input = page.locator(`#customerForm [name="${name}"]`);
+    await input.fill(value);
+    if (await input.inputValue() !== value.toUpperCase()) throw new Error(`${name} did not normalize to uppercase while typing.`);
+  }
+  const emailInput = page.locator('#customerForm [name="picEmail"]');
+  await emailInput.fill('buyer@dudu.test');
+  if (await emailInput.inputValue() !== 'buyer@dudu.test') throw new Error('Email must preserve normal lowercase formatting.');
+
   await page.getByRole('button', { name: /Order Progress/ }).click();
   await page.locator('#progressCustomerTrigger').click();
   const menuLabel = await page.locator('[data-progress-customer="CUS-TEST-DUDU"]').innerText();
@@ -124,6 +141,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
