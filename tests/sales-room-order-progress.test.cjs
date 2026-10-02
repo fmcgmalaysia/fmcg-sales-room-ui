@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8'
 const backend = fs.readFileSync(path.resolve(__dirname, '..', 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-02-customer-workspace-v58/);
+  assert.match(html, /Sales Room build: 2026-10-02-buyer-progress-parity-v59/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -47,13 +47,21 @@ test('Order Progress totals and rows use committed quantity only', () => {
 });
 
 test('Sales direct progress view is compact and has no quantity edit control', () => {
-  assert.match(html, /\.sales-progress-row\{grid-template-columns:7% 25% 8% 7% 10% 6% 6% 7% 5% 7% 12%\}/);
-  assert.match(html, /\.sales-progress-head\{min-height:48px[\s\S]*font-size:11px/);
+  assert.match(html, /\.sales-progress-row\{grid-template-columns:8% 27% 10% 6% 10% 6% 6% 9% 5% 5% 8%;min-height:38px/);
+  assert.match(html, /\.sales-progress-head\{min-height:42px[\s\S]*font-size:11px/);
   assert.match(html, /content:"Requested\\A Qty"/);
   assert.match(html, /content:"Committed\\A Qty"/);
   assert.match(html, /content:"Line Amount\\A \/ USD"/);
   const section = html.match(/<section id="order-progress"[\s\S]*?<section id="activity"/)?.[0] || '';
   assert.doesNotMatch(section, /tracking-edit|data-reduce-order|pencil/);
+});
+
+test('Sales progress matches Buyer Room sizing and shows count-only stage totals', () => {
+  assert.match(html, /\.sales-progress-ring\{width:58px;height:58px/);
+  assert.match(html, /\.sales-progress-ring span\{color:#17466f;font-size:24px/);
+  assert.match(html, /\.sales-progress-title\{display:flex;align-items:baseline;gap:11px\}/);
+  assert.match(html, /small\.innerHTML='<strong>'\+match\[1\]\+' \/ '\+match\[2\]\+'<\/strong>'/);
+  assert.match(html, /label\+' '\+match\[1\]\+' of '\+match\[2\]\+' completed'/);
 });
 
 test('Order Progress customer picker uses short names and active-line badges only', () => {

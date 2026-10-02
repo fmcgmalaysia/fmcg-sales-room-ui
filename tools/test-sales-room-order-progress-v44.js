@@ -9,11 +9,11 @@ const path = require('node:path');
   await page.evaluate(() => window.postMessage({
     type: 'SALES_ROOM_CUSTOMERS',
     ok: true,
-    customers: [{ customerId: 'TEST-001', companyName: 'Demo Malaysia Trading', customerStatus: 'ACTIVE', accessStatus: 'ACTIVE', qdStatus: 'READY' }],
+    customers: [{ customerId: 'TEST-001', companyName: 'Demo Malaysia Trading', customerShortName: 'DEMO', activeOrderLineCount: 3, customerStatus: 'ACTIVE', accessStatus: 'ACTIVE', qdStatus: 'READY' }],
     summary: { confirmedOrderCount: 1, quoteCustomerCount: 0 }
   }, '*'));
   await page.getByRole('button', { name: /Order Progress/ }).click();
-  await page.locator('#progressCustomerSelect').selectOption('TEST-001');
+  await page.evaluate(() => selectProgressCustomer('TEST-001', false));
   await page.evaluate(() => window.postMessage({
     type: 'SALES_ROOM_ORDER_PROGRESS',
     ok: true,
@@ -34,8 +34,9 @@ const path = require('node:path');
   const stages = await page.locator('.sales-progress-stage').count();
   const rows = await page.locator('.sales-progress-grid > .sales-progress-row:not(.sales-progress-head)').count();
   const editable = await page.locator('#order-progress input, #order-progress [data-reduce-order], #order-progress .tracking-edit').count();
-  if (!visible || stages !== 6 || rows !== 3 || editable !== 0) throw new Error(JSON.stringify({ visible, stages, rows, editable }));
-  await page.screenshot({ path: 'sales-room-order-progress-v45-local.png', fullPage: true });
-  console.log(JSON.stringify({ visible, stages, rows, editable, screenshot: 'sales-room-order-progress-v45-local.png' }));
+  const countOnly = await page.locator('.sales-progress-stage small').evaluateAll(nodes => nodes.every(node => /^\d+\s\/\s\d+$/.test(node.textContent.trim())));
+  if (!visible || stages !== 6 || rows !== 3 || editable !== 0 || !countOnly) throw new Error(JSON.stringify({ visible, stages, rows, editable, countOnly }));
+  await page.screenshot({ path: 'sales-room-progress-v59-local.png', fullPage: true });
+  console.log(JSON.stringify({ visible, stages, rows, editable, countOnly, screenshot: 'sales-room-progress-v59-local.png' }));
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });
