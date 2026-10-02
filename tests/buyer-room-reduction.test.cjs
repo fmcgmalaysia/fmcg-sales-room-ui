@@ -33,6 +33,7 @@ test('reduction preserves the original quantity and records an immutable audit',
 
 test('reduction dialog keeps product details readable and uses one clear action', () => {
   assert.match(html, /2026-10-02-reduction-dialog-polish-v94/);
+  assert.match(page, /buyer-room\.html\?v=20261002-reduction-dialog-polish-v94/);
   assert.match(html, /\.reduction-product span\{[^}]+font-size:11px/);
   assert.match(html, /\.reduction-value\{display:flex;align-items:center;font-size:16px/);
   assert.match(html, /\.reduction-actions #submitReduction\{[^}]+background:#e87524[^}]+color:#fff!important/);
