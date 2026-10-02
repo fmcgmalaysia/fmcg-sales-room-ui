@@ -68,6 +68,12 @@ const customer = {
     }]
   }, '*'));
   await page.locator('.sales-progress-overview').waitFor();
+  const progressTriggerBox = await page.locator('#progressCustomerTrigger').boundingBox();
+  const progressRefreshBox = await page.locator('#progressRefresh').boundingBox();
+  if (!progressTriggerBox || progressTriggerBox.width > 340) throw new Error(`Progress customer picker is still too wide: ${JSON.stringify(progressTriggerBox)}`);
+  if (!progressRefreshBox || progressRefreshBox.width > 44 || progressRefreshBox.height > 44) throw new Error(`Progress refresh control is not compact: ${JSON.stringify(progressRefreshBox)}`);
+  if (await page.locator('#progressRefresh svg').count() !== 1 || await page.locator('#progressRefresh').getAttribute('aria-label') !== 'Refresh Progress') throw new Error('Progress refresh icon or accessible label is missing.');
+  if (await page.locator('.progress-trigger-chevron svg').count() !== 1) throw new Error('Customer picker chevron is missing.');
   await page.screenshot({ path: 'sales-room-progress-v48-local.png', fullPage: true });
 
   await page.getByRole('button', { name: /My Customers/ }).click();
@@ -141,6 +147,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, progressTriggerWidth: progressTriggerBox.width, progressRefreshSize: [progressRefreshBox.width, progressRefreshBox.height], modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, uppercaseFields: Object.keys(uppercaseSamples), shortNameLocked: true, primarySwitches: 2, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v52-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
