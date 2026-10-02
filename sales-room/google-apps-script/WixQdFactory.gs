@@ -12,7 +12,7 @@ const WIX_QD_FACTORY_CFG = Object.freeze({
   TEMPLATE_FILE_ID: '1f2pT-KYlNTYT62ZAvHEqy0uVvV6rrnnmI_bmbVynpLU',
   DESTINATION_FOLDER_ID: '1frEBQD7vwPW6X_dqQSoItbFQDUQs3THL',
   POINT_BASE_FILE_ID: '12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg',
-  TEMPLATE_VERSION: 'QD-2026.09.27-V2',
+  TEMPLATE_VERSION: 'QD-2026.10.03-V3',
   QUOTATION_SHEET: 'WIX QUOTATION',
   DRAFT_SHEET: 'DRAFT 草稿区',
   SETUP_SHEET: 'QD SETUP',
@@ -177,7 +177,29 @@ function WIX_verifyCopiedQd_(spreadsheet) {
     if (copied.getFrozenRows() !== template.getFrozenRows()) errors.push(name + ' frozen rows changed');
     if (copied.getFrozenColumns() !== template.getFrozenColumns()) errors.push(name + ' frozen columns changed');
   });
+  const quotation = spreadsheet.getSheetByName(WIX_QD_FACTORY_CFG.QUOTATION_SHEET);
+  if (quotation) {
+    const statusRuleError = WIX_quoteStatusRuleError_(quotation.getRange('B7').getDataValidation());
+    if (statusRuleError) errors.push(statusRuleError);
+  }
   return { ok: errors.length === 0, errors: errors };
+}
+
+function WIX_quoteStatusRuleError_(rule) {
+  if (!rule) return 'QUOTE STATUS dropdown is missing';
+  if (rule.getCriteriaType() !== SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST) {
+    return 'QUOTE STATUS validation type changed';
+  }
+  const criteria = rule.getCriteriaValues();
+  const values = criteria && criteria[0] ? criteria[0].map(String) : [];
+  const expected = ['RFQ', 'VIEW QUOTE', 'FAILED'];
+  if (values.length !== expected.length || values.some(function (value, index) { return value !== expected[index]; })) {
+    return 'QUOTE STATUS dropdown values changed';
+  }
+  // Invalid values must be warnings because PENDING is written by the workflow,
+  // while the visible dropdown remains limited to salesperson-owned choices.
+  if (!rule.getAllowInvalid()) return 'QUOTE STATUS must show a warning for workflow-owned values';
+  return '';
 }
 
 function WIX_formulaCount_(sheet) {

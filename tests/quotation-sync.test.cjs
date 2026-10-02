@@ -82,3 +82,38 @@ test('one request ID cannot publish two different quote values', async () => {
   assert.equal(updateCount, 1);
   assert.equal(JSON.parse(selection.payload).quotePerPc, 12);
 });
+
+test('active Google staff can publish without a per-sheet shared secret', async () => {
+  const googleWixData = {
+    ...wixData,
+    query(collection) {
+      const items = collection === 'StaffMaster'
+        ? [{ staffEmail: 'sales@example.com', status: 'ACTIVE' }]
+        : [customer];
+      return { eq() { return this; }, limit() { return this; }, async find() { return { items }; } };
+    }
+  };
+  const googlePostQuotationSync = new Function('response', 'fetch', 'getSecret', 'authentication', 'wixData',
+    `${source}\nreturn post_quotationSync;`)(
+    value => value,
+    async (url) => {
+      assert.match(url, /openidconnect\.googleapis\.com\/v1\/userinfo/);
+      return { ok: true, async json() { return { email: 'sales@example.com', email_verified: true }; } };
+    },
+    async () => 'quote-token',
+    {},
+    googleWixData
+  );
+  const response = await googlePostQuotationSync({
+    headers: { authorization: 'Bearer google-access-token' },
+    body: { json: async () => ({
+      requestId: 'google-request',
+      customerId: customer.customerId,
+      quotationDeskFileId: customer.qdFileId,
+      actorEmail: 'sales@example.com',
+      quotations: [{ wixMyListId: selection._id, unitBarcode: '95550001', quotePerPc: 12, quotePerCtn: 120 }]
+    }) }
+  });
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(response.body).ok, true);
+});

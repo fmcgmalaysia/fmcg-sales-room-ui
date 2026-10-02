@@ -10,12 +10,12 @@
  *
  * Important:
  * - Replace the old QD script. Do not paste this below the old script.
- * - Configure WIX_QUOTE_SYNC_URL and WIX_QUOTE_SYNC_TOKEN in Script Properties
- *   before using SYNC QUOTATION TO WIX.
+ * - SYNC QUOTATION TO WIX uses the signed-in Google staff identity by default.
+ * - WIX_QUOTE_SYNC_TOKEN remains available for service-account deployments.
  */
 
 const QD_CFG = Object.freeze({
-  VERSION: "3.1.0",
+  VERSION: "3.2.0",
   POINT_BASE_ID: "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
   POINT_BASE_SHEETS: ["FOOD", "NONFOOD", "OTHERS"],
 
@@ -458,10 +458,12 @@ function syncQuotationToWix() {
       }))
     };
 
+    const authorizationToken = config.token || ScriptApp.getOAuthToken();
+    if (!authorizationToken) throw new Error('Google staff authorization is unavailable. Sign in again and retry.');
     const response = UrlFetchApp.fetch(config.url, {
       method: "post",
       contentType: "application/json",
-      headers: { Authorization: "Bearer " + config.token },
+      headers: { Authorization: "Bearer " + authorizationToken },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
@@ -716,12 +718,7 @@ function getSyncConfig_() {
   const url = String(properties.getProperty(QD_CFG.SYNC_URL_PROPERTY) ||
     "https://fmcg999.wixstudio.com/fmcgmalaysia/_functions/quotationSync").trim();
   const token = String(properties.getProperty(QD_CFG.SYNC_TOKEN_PROPERTY) || "").trim();
-  if (!url || !token) {
-    throw new Error(
-      "Wix sync is not configured. Add " + QD_CFG.SYNC_URL_PROPERTY +
-      " and " + QD_CFG.SYNC_TOKEN_PROPERTY + " in Apps Script Properties."
-    );
-  }
+  if (!url) throw new Error("Wix quotation sync URL is unavailable.");
   return { url: url, token: token };
 }
 

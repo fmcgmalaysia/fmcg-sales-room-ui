@@ -70,7 +70,12 @@ Changing either quote price immediately marks that row `PENDING`. The salesperso
 
 `SYNC TO WIX` is a separate top-level spreadsheet menu. The `QUOTATION DESK` menu contains only cost capture, catalogue-order sorting and setup checks, so publishing a quote is always a distinct deliberate action.
 
-Before live sync, add these Apps Script Properties to the template project:
+The QD publishes with the signed-in Google staff identity. Wix verifies that
+the Google email belongs to an ACTIVE Sales Room employee before accepting the
+quotation, so copied customer QDs do not require their own secret property.
+
+The following optional Apps Script Properties remain supported for a trusted
+central service deployment:
 
 - `WIX_QUOTE_SYNC_URL`
 - `WIX_QUOTE_SYNC_TOKEN`

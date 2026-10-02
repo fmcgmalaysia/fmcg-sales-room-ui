@@ -63,6 +63,17 @@ test('system-owned PENDING never rebuilds the coloured salesperson dropdown', ()
   assert.match(onEdit, /\.setValues\(output\)\s*\.setNotes\(notes\)/);
 });
 
+test('copied QDs publish with Google staff identity when no script secret exists', () => {
+  const publisher = source.slice(source.indexOf('function syncQuotationToWix'), source.indexOf('function checkQuotationDeskSetup'));
+  const config = source.slice(source.indexOf('function getSyncConfig_'), source.indexOf('function getMetadataValue_'));
+  assert.match(publisher, /config\.token \|\| ScriptApp\.getOAuthToken\(\)/);
+  assert.doesNotMatch(config, /!url \|\| !token/);
+});
+
+test('QD release marker identifies the Google-identity publication build', () => {
+  assert.match(source, /VERSION:\s*["']3\.2\.0["']/);
+});
+
 test('cost risk warns but does not block a confirmed quotation', () => {
   const validation = source.slice(source.indexOf('function validateQuoteRow_'), source.indexOf('function markSyncFailures_'));
   assert.match(validation, /QUOTE \$\/PC must be greater than 0/);
