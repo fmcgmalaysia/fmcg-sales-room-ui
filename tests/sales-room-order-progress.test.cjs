@@ -6,7 +6,7 @@ const test = require('node:test');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-02-order-progress-header-v45/);
+  assert.match(html, /Sales Room build: 2026-10-02-order-progress-item-width-v46/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
@@ -37,8 +37,11 @@ test('Order Progress totals and rows use committed quantity only', () => {
 });
 
 test('Sales projection is compact and has no quantity edit control', () => {
-  assert.match(html, /\.sales-progress-row\{display:grid;grid-template-columns:7% 20% 8% 7% 10% 7% 7% 9% 6% 7% 12%/);
+  assert.match(html, /\.sales-progress-row\{grid-template-columns:7% 25% 8% 7% 10% 6% 6% 7% 5% 7% 12%\}/);
   assert.match(html, /\.sales-progress-head\{min-height:48px[\s\S]*font-size:11px/);
+  assert.match(html, /content:"Requested\\A Qty"/);
+  assert.match(html, /content:"Committed\\A Qty"/);
+  assert.match(html, /content:"Line Amount\\A \/ USD"/);
   const section = html.match(/<section id="order-progress"[\s\S]*?<section id="activity"/)?.[0] || '';
   assert.doesNotMatch(section, /tracking-edit|data-reduce-order|pencil/);
 });
