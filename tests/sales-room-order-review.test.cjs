@@ -8,7 +8,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const backend = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room uses the compact incoming-order review build', () => {
-  assert.match(html, /Sales Room build: 2026-10-02-compact-order-review-v41/);
+  assert.match(html, /Sales Room build: 2026-10-02-buyer-owned-quantity-v42/);
   assert.match(html, /incoming-order-review/);
   assert.match(html, /#orderDetailArea:has\(\.incoming-order-review\)\{width:min\(820px,96vw\)/);
   assert.match(html, /incoming-order-table-wrap\{max-height:calc\(100vh - 252px\);overflow:auto\}/);
@@ -22,9 +22,11 @@ test('incoming-order table exposes barcode and compact operational columns', () 
   assert.match(html, /ORDER VALUE/);
 });
 
-test('quantity editing and downstream actions remain wired', () => {
-  assert.match(html, /data-order-qty/);
-  assert.match(html, /SALES_ROOM_ORDER_QTY_UPDATE/);
+test('incoming-order quantity is read-only and downstream actions remain wired', () => {
+  assert.match(html, /order-qty-locked/);
+  assert.match(html, /Prices and quantities locked · Adjust in Buyer Room before transfer/);
+  assert.doesNotMatch(html, /data-order-qty/);
+  assert.doesNotMatch(html, /SALES_ROOM_ORDER_QTY_UPDATE/);
   assert.match(html, /SALES_ROOM_CREATE_PROFORMA/);
   assert.match(html, /SALES_ROOM_SUBMIT_ORDER/);
 });
