@@ -147,7 +147,10 @@ function WIX_publishCustomerQuotations(payload) {
   if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('Invalid QD File ID.');
   const properties = PropertiesService.getScriptProperties();
   const syncUrl = String(properties.getProperty('WIX_QUOTE_SYNC_URL') || 'https://fmcg999.wixstudio.com/fmcgmalaysia/_functions/quotationSync').trim();
-  const syncToken = String(properties.getProperty('WIX_QUOTE_SYNC_TOKEN') || properties.getProperty('WIX_ONBOARDING_SHARED_SECRET') || '').trim();
+  // The same shared secret already authenticated Wix -> Apps Script above.
+  // Reuse it for Apps Script -> Wix so an old optional quote token cannot
+  // silently drift and make the central Sales Room publisher fail with 401.
+  const syncToken = String(properties.getProperty('WIX_ONBOARDING_SHARED_SECRET') || properties.getProperty('WIX_QUOTE_SYNC_TOKEN') || '').trim();
   if (!syncUrl || !syncToken) throw new Error('Quotation publish service is not configured.');
 
   const lock = LockService.getScriptLock();

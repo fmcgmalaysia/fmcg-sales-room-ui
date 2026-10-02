@@ -46,6 +46,7 @@ test('quotation publishing scans the QD template with batch reads', () => {
   assert.match(publishSource, /confirmedRows/);
   assert.match(publishSource, /quotationRange\.getDisplayValues\(\)\[0\]/);
   assert.match(publishSource, /quotationRange\.getValues\(\)\[0\]/);
+  assert.match(publishSource, /getProperty\('WIX_ONBOARDING_SHARED_SECRET'\)\s*\|\|\s*properties\.getProperty\('WIX_QUOTE_SYNC_TOKEN'\)/);
   assert.doesNotMatch(publishSource, /sheet\.getRange\(row,\s*headers\[[^\n]+\.get(?:Display)?Value\(\)/);
 });
 
