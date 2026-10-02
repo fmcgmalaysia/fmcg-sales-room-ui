@@ -38,7 +38,7 @@ const path = require('path');
   const trackText = (await page.locator('#trackView').innerText()).replace(/\s+/g, ' ');
   for (const value of ['CBM', '02-10-26 09:18am', 'Requested Qty', 'Committed Qty', 'Processing · 3/6']) if (!trackText.includes(value)) throw new Error(`Track Orders is missing ${value}`);
   const rowHeight = await page.locator('#trackRows .tracking-row').first().evaluate(node => node.getBoundingClientRect().height);
-  if (rowHeight > 34) throw new Error(`Track row is not compact: ${rowHeight}px`);
+  if (rowHeight > 38) throw new Error(`Track row is not compact: ${rowHeight}px`);
   if (await page.locator('#trackRows .tracking-edit').count() !== 1) throw new Error('Eligible Track row does not expose one pencil reduction action.');
   if (process.env.TRACK_SCREENSHOT) await page.screenshot({ path: process.env.TRACK_SCREENSHOT, fullPage: true });
 
@@ -48,6 +48,6 @@ const path = require('path');
   for (const value of ['NC-INV-00001', 'TOTAL CBM', '0.2891', 'Completed Qty', '411.60']) if (!completedText.includes(value)) throw new Error(`Completed Orders is missing ${value}`);
   if (process.env.COMPLETED_SCREENSHOT) await page.screenshot({ path: process.env.COMPLETED_SCREENSHOT, fullPage: true });
   if (errors.length) throw new Error(`Page errors: ${errors.join('; ')}`);
-  console.log('Buyer Room Track and Completed Orders V84 checks passed.');
+  console.log('Buyer Room Track and Completed Orders V85 checks passed.');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });

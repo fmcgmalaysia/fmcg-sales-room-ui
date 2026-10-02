@@ -24,6 +24,13 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-buyer-reduction-v84/);
+  assert.match(html, /2026-10-02-track-readable-v85/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
+});
+
+test('Track rows use readable 11px dark typography', () => {
+  assert.match(html, /\.tracking-row\{min-height:36px;color:#173557;font-size:11px/);
+  assert.match(html, /\.tracking-head\{min-height:37px;color:#213f5e;font-size:11px/);
+  assert.match(html, /\.progress-pill\{height:23px;padding:0 8px;color:#27435f;font-size:11px/);
+  assert.match(html, /\.tracking-pending\{color:#5d7186;font-size:11px\}/);
 });
