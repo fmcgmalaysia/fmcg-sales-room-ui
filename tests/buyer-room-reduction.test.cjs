@@ -10,7 +10,7 @@ const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js
 const sales = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('Track Orders uses the compact unlabeled pencil action column', () => {
-  assert.match(html, /grid-template-columns:98px minmax\(210px,1\.65fr\)[^;}]+32px/);
+  assert.match(html, /grid-template-columns:8% 25% 10% 6% 10% 6% 6% 9% 5% 5% 8% 2%/);
   assert.match(html, /<div class="num">Updated<\/div><div aria-hidden="true"><\/div>/);
   assert.match(html, /class="tracking-edit"[^>]+data-reduce-order/);
   assert.doesNotMatch(html, />ACTION<\/div>/);
@@ -35,6 +35,6 @@ test('Overall Progress exposes readable committed value and CBM summaries', () =
   assert.match(html, /Committed Value/);
   assert.match(html, /id="trackCommittedValue"/);
   assert.match(html, /activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\)/);
-  assert.match(html, /\.tracking-stage-top b\{color:#173557;font-size:11px\}/);
-  assert.match(html, /\.tracking-progress-title span,\.tracking-stage-top b,\.tracking-stage-top span,\.tracking-stage small\{font-size:10px\}/);
+  assert.match(html, /\.tracking-stage-label\{[^}]+font-size:11px/);
+  assert.match(html, /\.tracking-stage small\{[^}]+font-size:11px/);
 });

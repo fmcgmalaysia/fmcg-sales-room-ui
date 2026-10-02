@@ -36,7 +36,7 @@ const path = require('path');
   if ((await page.locator('#trackCommittedValue').innerText()).trim() !== 'USD 787.20') throw new Error('Committed transaction value is incorrect.');
   if ((await page.locator('#trackCommittedCbm').innerText()).trim() !== '0.4720 m³') throw new Error('Committed CBM total is incorrect.');
   const trackText = (await page.locator('#trackView').innerText()).replace(/\s+/g, ' ');
-  for (const value of ['CBM', '02-10-26 09:18am', 'Requested Qty', 'Committed Qty', 'Processing · 3/6']) if (!trackText.includes(value)) throw new Error(`Track Orders is missing ${value}`);
+  for (const value of ['Descriptions', 'Packing Size', 'CBM', '02-10-26 09:18am', 'Requested Qty', 'Committed Qty', '3/6']) if (!trackText.includes(value)) throw new Error(`Track Orders is missing ${value}`);
   const rowHeight = await page.locator('#trackRows .tracking-row').first().evaluate(node => node.getBoundingClientRect().height);
   if (rowHeight > 38) throw new Error(`Track row is not compact: ${rowHeight}px`);
   if (await page.locator('#trackRows .tracking-edit').count() !== 1) throw new Error('Eligible Track row does not expose one pencil reduction action.');

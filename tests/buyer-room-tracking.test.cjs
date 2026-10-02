@@ -24,21 +24,27 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-compact-v87/);
+  assert.match(html, /2026-10-02-track-percent-flow-v88/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
-test('Track rows use compact 10px dark typography', () => {
-  assert.match(html, /\.tracking-row\{grid-template-columns:[^}]+min-height:34px;color:#173557;font-size:10px/);
-  assert.match(html, /\.progress-pill\{height:21px;padding:0 7px;color:#27435f;font-size:10px/);
-  assert.match(html, /\.tracking-pending\{color:#5d7186;font-size:10px\}/);
+test('Track rows and headers use readable 11px typography', () => {
+  assert.match(html, /\.tracking-row\{grid-template-columns:8% 25% 10% 6% 10% 6% 6% 9% 5% 5% 8% 2%;min-height:38px;color:#173557;font-size:11px/);
+  assert.match(html, /\.tracking-head\{min-height:42px;background:#dce7f1!important;color:#173557;font-size:11px/);
+  assert.match(html, /\.tracking-pending,\.tracking-delta,\.progress-pill\{font-size:11px\}/);
 });
 
 test('Track header fits operational columns into a compact desktop width', () => {
-  assert.match(html, /\.tracking-grid\{min-width:1220px\}/);
-  assert.match(html, /\.tracking-row\{grid-template-columns:98px minmax\(210px,1\.65fr\)/);
+  assert.match(html, /\.tracking-grid\{min-width:1180px/);
+  assert.match(html, /\.tracking-row\{grid-template-columns:8% 25% 10%/);
   assert.match(html, /\.tracking-row>div:nth-child\(n\+4\):nth-child\(-n\+11\)\{text-align:right\}/);
-  assert.match(html, /\.tracking-head\{min-height:44px;background:#dce7f1!important;color:#173557;font-size:12px/);
+  assert.match(html, /<div>Descriptions<\/div><div>Packing Size<\/div>/);
+});
+
+test('Overall Progress uses percentage-filled numbered rings', () => {
+  assert.match(html, /background:conic-gradient\(#14835f calc\(var\(--progress\)\*1%\),#e7eef4 0\)/);
+  assert.match(html, /class="tracking-ring" style="--progress:\$\{percent\}"/);
+  assert.match(html, /<span>\$\{index\+1\}<\/span>/);
 });
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
