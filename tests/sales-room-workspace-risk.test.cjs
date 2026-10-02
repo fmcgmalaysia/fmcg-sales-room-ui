@@ -99,14 +99,17 @@ test('dashboard presents five premium metrics in the requested order', () => {
   assert.match(html, /riskCount=customerRecords\.reduce\(\(sum,item\)=>sum\+\(Number\(item\.quoteRiskCount\)\|\|0\),0\)/);
 });
 
-test('workspace entry uses real QD warnings and a whole-QD publish action', () => {
+test('workspace entry uses a compact vertical action launcher with readable Chinese guidance', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /customer\.pendingQuoteCount/);
-  assert.match(html, /ACTION REQUIRED/);
   assert.match(html, /PUBLISH QUOTATIONS/);
   assert.match(html, /SALES_ROOM_PUBLISH_QUOTES/);
-  assert.match(html, /LAST PUBLISH/);
-  assert.match(html, /QD STATUS UNAVAILABLE/);
+  assert.doesNotMatch(html, /workspace-command-summary/);
+  assert.match(html, /检查待确认及高风险报价/);
+  assert.match(html, /发布已确认的 VIEW QUOTE 价格/);
+  assert.match(html, /进入此客户的 Buyer Room/);
+  assert.match(html, /协助客户浏览及选择商品/);
+  assert.match(html, /\.workspace-command-actions\{display:grid;grid-template-columns:1fr;/);
+  assert.match(html, /\.workspace-command-action small\{[^}]*font-size:12px/);
   assert.match(html, /id="drawerOpenBuyerRoom"/);
   assert.match(html, /buyerRoomAdminUrlV27\(customer\.customerId\)/);
   assert.match(html, /workspace-command-action buyer/);

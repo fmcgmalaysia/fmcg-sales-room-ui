@@ -89,14 +89,22 @@ const customer = {
   await page.locator('.workspace-command-modal').waitFor();
   const workspaceBox = await page.locator('.workspace-command-modal').boundingBox();
   const workspaceActions = await page.locator('.workspace-command-action').allTextContents();
-  if (!workspaceBox || workspaceBox.width > 740 || workspaceBox.width < 620) throw new Error(`Workspace modal width is not compact: ${JSON.stringify(workspaceBox)}`);
+  if (!workspaceBox || workspaceBox.width > 540 || workspaceBox.width < 480) throw new Error(`Workspace modal width is not compact: ${JSON.stringify(workspaceBox)}`);
   for (const label of ['OPEN QUOTATION DESK', 'PUBLISH QUOTATIONS', 'ENTER BUYER ROOM', 'OPEN CATALOGUE']) {
     if (!workspaceActions.some((text) => text.includes(label))) throw new Error(`Missing workspace action: ${label}`);
   }
+  for (const guide of ['检查待确认及高风险报价', '发布已确认的 VIEW QUOTE 价格', '进入此客户的 Buyer Room', '协助客户浏览及选择商品']) {
+    if (!workspaceActions.some((text) => text.includes(guide))) throw new Error(`Missing Chinese workspace guidance: ${guide}`);
+  }
+  const workspaceActionBoxes = await page.locator('.workspace-command-action').evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect()).map(({ x, y, width, height }) => ({ x, y, width, height })));
+  if (workspaceActionBoxes.some((box, index) => index && (Math.abs(box.x - workspaceActionBoxes[0].x) > 1 || box.y <= workspaceActionBoxes[index - 1].y))) throw new Error(`Workspace actions are not vertically stacked: ${JSON.stringify(workspaceActionBoxes)}`);
+  if (await page.locator('.workspace-command-summary').count()) throw new Error('Redundant workspace summary is still present.');
+  const guideFontSize = await page.locator('.workspace-command-action small').first().evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+  if (guideFontSize < 12) throw new Error(`Workspace guidance is still too small: ${guideFontSize}px`);
   const buyerActionColor = await page.locator('#drawerOpenBuyerRoom').evaluate((element) => getComputedStyle(element).backgroundColor);
   const catalogueActionColor = await page.locator('#drawerAssistSelection').evaluate((element) => getComputedStyle(element).backgroundColor);
   if (buyerActionColor !== 'rgb(22, 136, 91)' || catalogueActionColor !== 'rgb(232, 115, 36)') throw new Error(`Workspace action colors are incorrect: ${buyerActionColor}, ${catalogueActionColor}`);
-  await page.screenshot({ path: 'sales-room-customer-workspace-v56-local.png', fullPage: true });
+  await page.screenshot({ path: 'sales-room-customer-workspace-v57-local.png', fullPage: true });
   await page.getByRole('button', { name: 'Close Customer Workspace' }).click();
   await page.locator('[data-customer="CUS-TEST-DUDU"]').click();
   await page.evaluate((record) => window.postMessage({
