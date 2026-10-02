@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-deep-progress-v90/);
+  assert.match(html, /2026-10-02-track-counts-v91/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -45,6 +45,8 @@ test('Overall Progress uses percentage-filled numbered rings', () => {
   assert.match(html, /background:conic-gradient\(#14835f calc\(var\(--progress\)\*1%\),#e7eef4 0\)/);
   assert.match(html, /class="tracking-ring" style="--progress:\$\{percent\}"/);
   assert.match(html, /<span>\$\{index\+1\}<\/span>/);
+  assert.match(html, /<small><strong>\$\{done\} \/ \$\{total\}<\/strong><\/small>/);
+  assert.doesNotMatch(html, /<strong>\$\{percent\}%<\/strong>/);
 });
 
 test('Track operational columns shift left and Updated stays aligned', () => {
