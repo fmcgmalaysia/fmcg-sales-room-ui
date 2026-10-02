@@ -2,8 +2,10 @@ import wixWindowFrontend from 'wix-window-frontend';
 
 $w.onReady(function () {
   const context = wixWindowFrontend.lightbox.getContext() || {};
-  const downloadButton = $w('#downloadOrderExcelButton');
-  const closeButton = $w('#closeButton');
+  // This popup predates the named-code convention. Keep the real Wix element
+  // ID here so the button receives its signed URL instead of failing during
+  // initialization on a selector that does not exist in the live lightbox.
+  const downloadButton = $w('#comp-mupidwxx');
   const downloadUrl = String(context.downloadUrl || '').trim();
 
   downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
@@ -19,5 +21,4 @@ $w.onReady(function () {
     downloadButton.disable();
   }
 
-  closeButton.onClick(() => wixWindowFrontend.lightbox.close({ action: 'close' }));
 });
