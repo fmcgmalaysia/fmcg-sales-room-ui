@@ -836,6 +836,7 @@ export const updateSalesRoomCustomerLifecycle = webMethod(
 
 const LOCKED_CUSTOMER_FIELDS = Object.freeze([
   'customerId',
+  'customerShortName',
   'companyName',
   'title',
   'country',
@@ -855,7 +856,6 @@ const LOCKED_CUSTOMER_FIELDS = Object.freeze([
 ]);
 
 const EDITABLE_CUSTOMER_FIELDS = Object.freeze({
-  customerShortName: 'CUSTOMER SHORT NAME',
   natureOfBusiness: 'NATURE OF BUSINESS',
   picTitle: 'PERSON IN CHARGE TITLE',
   picName: 'PERSON IN CHARGE NAME',
@@ -899,7 +899,7 @@ export const updateSalesRoomCustomerProfile = webMethod(
 
     for (const key of LOCKED_CUSTOMER_FIELDS) {
       if (Object.prototype.hasOwnProperty.call(input, key)) {
-        throw new Error('COMPANY NAME, COUNTRY, CUSTOMER ID, assignment and QD routing are locked.');
+        throw new Error('CUSTOMER SHORT NAME, COMPANY NAME, COUNTRY, CUSTOMER ID, assignment and QD routing are locked.');
       }
     }
 
@@ -918,17 +918,6 @@ export const updateSalesRoomCustomerProfile = webMethod(
         beforeValue: customer[key],
         afterValue: patch[key]
       }));
-
-    if (Object.prototype.hasOwnProperty.call(patch, 'customerShortName') && upper(customer.customerShortName) !== patch.customerShortName) {
-      const duplicate = await wixData
-        .query(CUSTOMER_COLLECTION)
-        .eq('customerShortName', patch.customerShortName)
-        .limit(2)
-        .find({ suppressAuth: true });
-      if (duplicate.items.some((item) => normalize(item.customerId) !== normalize(customer.customerId))) {
-        throw new Error('This CUSTOMER SHORT NAME is already in use.');
-      }
-    }
 
     if (!changes.length) {
       return Object.freeze({ ok: true, customerId: normalize(customer.customerId), changedFields: [] });

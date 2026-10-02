@@ -91,6 +91,18 @@ const customer = {
   await page.getByRole('button', { name: 'DONE' }).click();
   await page.getByRole('button', { name: 'EDIT' }).click();
   if (!(await page.locator('#editableProfileSection').isVisible())) throw new Error('Edit did not reveal the customer profile form.');
+  const shortNameInput = page.locator('#editableProfileSection input[name="customerShortName"]');
+  if (await shortNameInput.isEditable()) throw new Error('Customer Short Name must be read-only after customer creation.');
+  await page.evaluate(() => {
+    window.__profileSavePayload = null;
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'SALES_ROOM_CUSTOMER_PROFILE_SAVE') window.__profileSavePayload = event.data.payload;
+    }, { once: true });
+  });
+  await page.getByRole('button', { name: 'Save profile' }).click();
+  await page.waitForFunction(() => window.__profileSavePayload !== null);
+  const profileSavePayload = await page.evaluate(() => window.__profileSavePayload);
+  if (Object.prototype.hasOwnProperty.call(profileSavePayload, 'customerShortName')) throw new Error('Profile save payload must not include Customer Short Name.');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.screenshot({ path: 'sales-room-customer-modal-v50-local.png', fullPage: true });
   await page.evaluate((record) => window.postMessage({
@@ -100,6 +112,6 @@ const customer = {
   if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
     throw new Error('Suspended customer controls are incomplete.');
   }
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v50-local.png'] }));
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, summaryIconCount, scrollState, shortNameLocked: true, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v50-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
