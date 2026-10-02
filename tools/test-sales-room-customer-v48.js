@@ -22,6 +22,10 @@ const customer = {
   const page = await browser.newPage({ viewport: { width: 1680, height: 960 }, deviceScaleFactor: 1 });
   const source = path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/');
   await page.goto(`file:///${source}`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => window.postMessage({
+    type: 'SALES_ROOM_STAFF',
+    staff: { staffId: 'STF-ADMIN01', staffName: 'ADMIN', role: 'SUPER ADMIN', canViewAllCustomers: true }
+  }, '*'));
   await page.evaluate((record) => window.postMessage({
     type: 'SALES_ROOM_CUSTOMERS',
     ok: true,
@@ -69,10 +73,28 @@ const customer = {
   await page.locator('.customer-profile-modal').waitFor();
   const modal = await page.locator('.customer-profile-modal').boundingBox();
   const headings = await page.locator('.customer-profile-modal h3').allTextContents();
-  if (!modal || modal.width < 1100 || !headings.includes('Company') || !headings.includes('Operations') || !headings.includes('Contact & Delivery')) {
-    throw new Error(JSON.stringify({ modal, headings }));
+  const visibleActions = await page.locator('.customer-profile-modal button:visible').allTextContents();
+  if (!modal || modal.width < 1100 || !headings.includes('Company Information') || !headings.includes('Business Setup') || !headings.includes('Authorized Customer Users') || !headings.includes('Recent Change History')) {
+    throw new Error(JSON.stringify({ modal, headings, visibleActions }));
   }
-  await page.screenshot({ path: 'sales-room-customer-modal-v48-local.png', fullPage: true });
-  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v48-local.png'] }));
+  for (const label of ['EDIT', 'MANAGE USERS', 'SUSPEND']) {
+    if (!visibleActions.includes(label)) throw new Error(`Missing primary record action: ${label}`);
+  }
+  if (visibleActions.includes('ARCHIVE')) throw new Error('Archive must not appear for an active customer.');
+  await page.getByRole('button', { name: 'MANAGE USERS' }).click();
+  if (!(await page.getByRole('button', { name: '+ ADD USER' }).isVisible())) throw new Error('Manage Users did not reveal user controls.');
+  await page.getByRole('button', { name: 'DONE' }).click();
+  await page.getByRole('button', { name: 'EDIT' }).click();
+  if (!(await page.locator('#editableProfileSection').isVisible())) throw new Error('Edit did not reveal the customer profile form.');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.screenshot({ path: 'sales-room-customer-modal-v49-local.png', fullPage: true });
+  await page.evaluate((record) => window.postMessage({
+    type: 'SALES_ROOM_CUSTOMER_DETAIL', ok: true,
+    customer: { ...record, accessStatus: 'SUSPENDED', lifecycleStatus: 'ACTIVE', users: [] }
+  }, '*'), customer);
+  if (!(await page.getByRole('button', { name: 'REACTIVATE', exact: true }).isVisible()) || !(await page.getByRole('button', { name: 'ARCHIVE', exact: true }).isVisible())) {
+    throw new Error('Suspended customer controls are incomplete.');
+  }
+  console.log(JSON.stringify({ menuLabel, modalWidth: modal.width, headings, visibleActions, screenshots: ['sales-room-progress-v48-local.png', 'sales-room-customer-modal-v49-local.png'] }));
   await browser.close();
 })().catch((error) => { console.error(error); process.exit(1); });
