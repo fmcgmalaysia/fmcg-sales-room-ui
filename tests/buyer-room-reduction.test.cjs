@@ -10,7 +10,7 @@ const backend = fs.readFileSync(path.join(root, 'backend', 'catalogueAuth.web.js
 const sales = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('Track Orders uses the compact unlabeled pencil action column', () => {
-  assert.match(html, /grid-template-columns:8% 25% 10% 6% 10% 6% 6% 9% 5% 5% 8% 2%/);
+  assert.match(html, /grid-template-columns:8% 23% 8% 6% 10% 6% 6% 9% 5% 5% 9% 5%/);
   assert.match(html, /<div class="num">Updated<\/div><div aria-hidden="true"><\/div>/);
   assert.match(html, /class="tracking-edit"[^>]+data-reduce-order/);
   assert.doesNotMatch(html, />ACTION<\/div>/);

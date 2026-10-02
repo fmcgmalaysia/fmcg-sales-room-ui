@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-percent-flow-v88/);
+  assert.match(html, /2026-10-02-track-column-align-v89/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -45,6 +45,12 @@ test('Overall Progress uses percentage-filled numbered rings', () => {
   assert.match(html, /background:conic-gradient\(#14835f calc\(var\(--progress\)\*1%\),#e7eef4 0\)/);
   assert.match(html, /class="tracking-ring" style="--progress:\$\{percent\}"/);
   assert.match(html, /<span>\$\{index\+1\}<\/span>/);
+});
+
+test('Track operational columns shift left and Updated stays aligned', () => {
+  assert.match(html, /\.tracking-row\{grid-template-columns:8% 23% 8% 6% 10% 6% 6% 9% 5% 5% 9% 5%\}/);
+  assert.match(html, /\.tracking-row>div:nth-child\(11\)\{padding-right:10px;text-align:right\}/);
+  assert.match(html, /\.tracking-row>\.tracking-edit\{justify-self:start;margin-left:6px\}/);
 });
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
