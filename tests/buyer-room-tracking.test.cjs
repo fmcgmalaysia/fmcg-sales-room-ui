@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-counts-v91/);
+  assert.match(html, /2026-10-02-track-header-green-v92/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -32,6 +32,7 @@ test('Track rows and headers use readable 11px typography', () => {
   assert.match(html, /\.tracking-row\{grid-template-columns:8% 25% 10% 6% 10% 6% 6% 9% 5% 5% 8% 2%;min-height:38px;color:#173557;font-size:11px/);
   assert.match(html, /\.tracking-head\{min-height:42px;background:#dce7f1!important;color:#173557;font-size:11px/);
   assert.match(html, /\.tracking-pending,\.tracking-delta,\.progress-pill\{font-size:11px\}/);
+  assert.match(html, /\.tracking-head>div\{color:#173557!important;font-size:11px;font-weight:850!important\}/);
 });
 
 test('Track header fits operational columns into a compact desktop width', () => {
@@ -55,10 +56,8 @@ test('Track operational columns shift left and Updated stays aligned', () => {
   assert.match(html, /\.tracking-row>\.tracking-edit\{justify-self:start;margin-left:6px\}/);
 });
 
-test('Track progress pills use the same deep status palette as Sales Room', () => {
-  assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3\{background:#31577e;color:#fff\}/);
-  assert.match(html, /\.progress-pill\.s4,\.progress-pill\.s5\{background:#1e7659;color:#fff\}/);
-  assert.match(html, /\.progress-pill\.s6\{background:#0e6749;color:#fff\}/);
+test('Track progress pills use one consistent green status color', () => {
+  assert.match(html, /\.progress-pill\.s1,\.progress-pill\.s2,\.progress-pill\.s3,\.progress-pill\.s4,\.progress-pill\.s5,\.progress-pill\.s6\{background:#14835f;color:#fff\}/);
 });
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
