@@ -164,9 +164,11 @@ export async function get_buyerSelectionExcel(request) {
       headers: {
         'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'content-disposition': `attachment; filename="${file.fileName}"`,
+        'content-length': String(file.bytes.length),
         'cache-control': 'private, no-store, max-age=0',
         pragma: 'no-cache',
         'x-content-type-options': 'nosniff',
+        'cross-origin-resource-policy': 'cross-origin',
         'referrer-policy': 'no-referrer'
       },
       body: file.bytes

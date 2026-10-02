@@ -55,5 +55,7 @@ assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
 assert.doesNotMatch(buyerRoomHtml, /document\.createElement\('iframe'\)/);
 assert.doesNotMatch(webModule, /mediaManager|uploadBuyerSelectionExcel/);
 assert.match(httpFunctions, /content-disposition/);
+assert.match(httpFunctions, /'content-length': String\(file\.bytes\.length\)/);
+assert.match(httpFunctions, /'cross-origin-resource-policy': 'cross-origin'/);
 assert.match(httpFunctions, /body: file\.bytes/);
 console.log('buyer selection direct download tests passed');
