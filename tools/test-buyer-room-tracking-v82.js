@@ -48,6 +48,27 @@ const path = require('path');
   if (hoverPencil.background !== 'rgb(20, 131, 95)' || hoverPencil.color !== 'rgb(255, 255, 255)') throw new Error(`Track pencil is not highlighted with its row: ${JSON.stringify(hoverPencil)}`);
   if (process.env.TRACK_SCREENSHOT) await page.screenshot({ path: process.env.TRACK_SCREENSHOT, fullPage: true });
 
+  await page.locator('#trackRows .tracking-edit').first().click();
+  await page.locator('#reductionModalBg.show').waitFor();
+  const reductionMetrics = await page.locator('.reduction-dialog').evaluate((dialog) => {
+    const meta = dialog.querySelector('#reductionItemMeta');
+    const value = dialog.querySelector('#reductionCurrentQty');
+    const submit = dialog.querySelector('#submitReduction');
+    return {
+      metaFontSize: getComputedStyle(meta).fontSize,
+      valueDisplay: getComputedStyle(value).display,
+      valueAlign: getComputedStyle(value).alignItems,
+      submitBackground: getComputedStyle(submit).backgroundColor,
+      submitColor: getComputedStyle(submit).color,
+      backCount: dialog.querySelectorAll('#cancelReduction').length
+    };
+  });
+  if (reductionMetrics.metaFontSize !== '11px') throw new Error(`Reduction product details are too small: ${JSON.stringify(reductionMetrics)}`);
+  if (reductionMetrics.valueDisplay !== 'flex' || reductionMetrics.valueAlign !== 'center') throw new Error(`Reduction quantities are not vertically centred: ${JSON.stringify(reductionMetrics)}`);
+  if (reductionMetrics.submitBackground !== 'rgb(232, 117, 36)' || reductionMetrics.submitColor !== 'rgb(255, 255, 255)' || reductionMetrics.backCount !== 0) throw new Error(`Reduction actions are not polished: ${JSON.stringify(reductionMetrics)}`);
+  if (process.env.REDUCTION_SCREENSHOT) await page.screenshot({ path: process.env.REDUCTION_SCREENSHOT, fullPage: true });
+  await page.locator('#closeReduction').click();
+
   await page.locator('[data-view="completed"]').click();
   await page.locator('.completed-invoice').waitFor();
   const completedText = (await page.locator('#completedView').innerText()).replace(/\s+/g, ' ');
