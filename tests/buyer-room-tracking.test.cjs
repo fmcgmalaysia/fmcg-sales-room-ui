@@ -6,7 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room.html'), 'utf8');
 
 test('Track Orders uses the six operational stages only', () => {
-  assert.match(html, /const trackingStages=\['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped On'\]/);
+  assert.match(html, /const trackingStages=\['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'\]/);
   assert.doesNotMatch(html, /Full Payment/);
   assert.doesNotMatch(html, /fullPaymentAt/);
   assert.doesNotMatch(html, /paymentStatus/);
@@ -24,20 +24,25 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-track-columns-v86/);
+  assert.match(html, /2026-10-02-track-compact-v87/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
-test('Track rows use readable 11px dark typography', () => {
-  assert.match(html, /\.tracking-row\{min-height:36px;color:#173557;font-size:11px/);
-  assert.match(html, /\.tracking-head\{min-height:37px;color:#213f5e;font-size:11px/);
-  assert.match(html, /\.progress-pill\{height:23px;padding:0 8px;color:#27435f;font-size:11px/);
-  assert.match(html, /\.tracking-pending\{color:#5d7186;font-size:11px\}/);
+test('Track rows use compact 10px dark typography', () => {
+  assert.match(html, /\.tracking-row\{grid-template-columns:[^}]+min-height:34px;color:#173557;font-size:10px/);
+  assert.match(html, /\.progress-pill\{height:21px;padding:0 7px;color:#27435f;font-size:10px/);
+  assert.match(html, /\.tracking-pending\{color:#5d7186;font-size:10px\}/);
 });
 
-test('Track header is larger and spare width is shared across operational columns', () => {
-  assert.match(html, /\.tracking-grid\{min-width:1340px\}/);
-  assert.match(html, /\.tracking-row\{grid-template-columns:minmax\(110px,\.9fr\) minmax\(230px,1\.8fr\)/);
-  assert.match(html, /minmax\(112px,\.9fr\) 64px minmax\(128px,1\.03fr\)/);
+test('Track header fits operational columns into a compact desktop width', () => {
+  assert.match(html, /\.tracking-grid\{min-width:1220px\}/);
+  assert.match(html, /\.tracking-row\{grid-template-columns:98px minmax\(210px,1\.65fr\)/);
+  assert.match(html, /\.tracking-row>div:nth-child\(n\+4\):nth-child\(-n\+11\)\{text-align:right\}/);
   assert.match(html, /\.tracking-head\{min-height:44px;background:#dce7f1!important;color:#173557;font-size:12px/);
+});
+
+test('Track values only count committed quantity in rows and dashboard totals', () => {
+  assert.match(html, /amount=committed===null&&!completed\?null:qty\*ctn/);
+  assert.match(html, /activeCommittedQty=row=>row\.committed===null\?0:Math\.max\(0,row\.committed-completedLineQty\(row\.line\)\)/);
+  assert.match(html, /committedValue=rows\.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\),0\)/);
 });
