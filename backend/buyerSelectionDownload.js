@@ -147,7 +147,7 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
   // Keep only the current export in this customer's dedicated folder.
   try {
     const files = uploaded.parentFolderId
-      ? await mediaManager.listFiles({ parentFolderId: uploaded.parentFolderId }, { fieldName: '_createdDate', order: 'DESC' }, { limit: 100 })
+      ? await mediaManager.listFiles({ parentFolderId: uploaded.parentFolderId })
       : [];
     const stale = files
       .filter(candidate => candidate?.fileUrl && candidate.fileUrl !== uploaded.fileUrl && String(candidate.originalFileName || '').startsWith('fmcgmalaysia.com-My-Selection-'))
