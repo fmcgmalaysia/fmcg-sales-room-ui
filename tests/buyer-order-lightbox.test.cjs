@@ -12,17 +12,16 @@ test('successful order opens the native Wix Order Received lightbox', () => {
   assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
 });
 
-test('Order Received popup exposes its signed Excel link on a stable button ID', () => {
+test('Order Received popup downloads its signed Excel on click using a stable button ID', () => {
   const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
   assert.match(lightboxCode, /#downloadOrderExcelButton/);
   assert.doesNotMatch(lightboxCode, /#closeButton/);
   assert.match(lightboxCode, /Download Order Excel/);
-  assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
-  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
+  assert.match(lightboxCode, /downloadButton\.onClick\(\(\) => wixLocationFrontend\.to\(downloadUrl\)\)/);
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);
-  assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
+  assert.match(lightboxCode, /import wixLocationFrontend from 'wix-location-frontend'/);
   assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(downloadUrl\)/);
   assert.doesNotMatch(html, /startOrderExcelDownload/);
 });
