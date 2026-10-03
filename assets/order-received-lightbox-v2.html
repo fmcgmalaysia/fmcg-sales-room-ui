@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Order Received Lightbox Artwork V2</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:1440px;height:920px;margin:0;overflow:hidden;background:transparent;font-family:Arial,"Helvetica Neue",sans-serif;color:#173a5e}
+    .card{position:relative;width:1440px;height:920px;background:#fff;border:2px solid #dce5ee;border-radius:28px;overflow:hidden}
+    .accent{height:12px;background:#173a5e}
+    .content{height:908px;padding:38px 112px 0;text-align:center}
+    .journey{display:block;width:440px;height:166px;margin:0 auto 14px;object-fit:contain;filter:drop-shadow(0 14px 20px rgba(25,75,109,.12))}
+    h1{margin:0;font-size:58px;line-height:1.08;letter-spacing:-1.5px;font-weight:750;color:#112f50}
+    .copy{margin:22px auto 0;font-size:27px;line-height:1.55;color:#48627d;font-weight:400}
+    .copy strong{display:block;color:#173a5e;font-weight:650}
+    .info{display:flex;align-items:center;justify-content:center;gap:18px;width:1040px;height:92px;margin:38px auto 0;border-radius:16px;background:#eef5fb;color:#365875;font-size:22px}
+    .info svg{width:34px;height:34px;fill:#4e789c;flex:0 0 auto}
+    .divider{height:2px;margin-top:44px;background:#e3e9ef}
+    .action-space{height:168px;display:flex;align-items:center;justify-content:center;gap:26px}
+    .slot{height:86px;border-radius:14px;background:transparent}
+    .slot.primary{width:520px}.slot.secondary{width:250px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="accent"></div>
+    <section class="content">
+      <img class="journey" src="order-received-flow-v2.png" alt="Order moving into the fulfilment workflow">
+      <h1>Order Received</h1>
+      <p class="copy"><strong>We’ve received your order.</strong>Our sales team will update you on its progress shortly.</p>
+      <div class="info">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17h2v-6h-2v6Zm1-15a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-1-11h2V7h-2v2Z"/></svg>
+        <span>Download a copy of this order now, or close this window.</span>
+      </div>
+      <div class="divider"></div>
+      <div class="action-space" aria-label="Reserved Wix button positions">
+        <div class="slot primary"></div>
+        <div class="slot secondary"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
