@@ -16,7 +16,7 @@ test('native lightbox owns the optional Excel download button', () => {
   const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
   assert.match(lightboxCode, /#comp-mupidwxx/);
   assert.doesNotMatch(lightboxCode, /#closeButton/);
-  assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
+  assert.match(lightboxCode, /wixLocationFrontend\.to\(downloadUrl\)/);
   assert.match(lightboxCode, /downloadButton\.target = '_self'/);
 });
 

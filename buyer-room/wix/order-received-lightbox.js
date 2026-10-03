@@ -1,4 +1,5 @@
 import wixWindowFrontend from 'wix-window-frontend';
+import wixLocationFrontend from 'wix-location-frontend';
 
 $w.onReady(function () {
   const context = wixWindowFrontend.lightbox.getContext() || {};
@@ -14,7 +15,11 @@ $w.onReady(function () {
   // stop at about:blank and never request the signed file URL.
   downloadButton.target = '_self';
   if (downloadUrl) {
-    downloadButton.link = downloadUrl;
+    // This lightbox uses a regular Wix Button. Unlike the Buyer Room page's
+    // dedicated download link, assigning `.link` does not produce an href in
+    // the published lightbox DOM. Navigate explicitly on click so the signed
+    // attachment endpoint is always requested.
+    downloadButton.onClick(() => wixLocationFrontend.to(downloadUrl));
     downloadButton.enable();
   } else {
     downloadButton.disable();
