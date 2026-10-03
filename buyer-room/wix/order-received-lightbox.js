@@ -9,14 +9,13 @@ $w.onReady(function () {
   closeButton.onClick(() => wixWindowFrontend.lightbox.close());
 
   downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
+  downloadButton.target = '_self';
   if (downloadUrl) {
-    // Let the Buyer Room page request the attachment. Direct navigation from
-    // inside a Wix lightbox can be swallowed without reaching Chrome's normal
-    // download manager, while the page that opened it can navigate reliably.
-    downloadButton.onClick(() => wixWindowFrontend.lightbox.close({
-      action: 'download',
-      downloadUrl
-    }));
+    // Use Wix's native button link. Wix documents that the link must be set
+    // before the click rather than assigned from an onClick handler. The HTTP
+    // endpoint responds as an attachment, so Chrome keeps the popup open and
+    // sends the workbook to its normal download manager.
+    downloadButton.link = downloadUrl;
     downloadButton.enable();
   } else {
     downloadButton.disable();

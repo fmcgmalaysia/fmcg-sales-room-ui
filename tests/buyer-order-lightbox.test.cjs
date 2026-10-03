@@ -20,15 +20,12 @@ test('Order Received popup downloads its signed Excel on click using a stable bu
   assert.match(lightboxCode, /#closeButton/);
   assert.match(lightboxCode, /closeButton\.onClick\(\(\) => wixWindowFrontend\.lightbox\.close\(\)\)/);
   assert.match(lightboxCode, /Download Order Excel/);
-  assert.match(lightboxCode, /downloadButton\.onClick\(\(\) => wixWindowFrontend\.lightbox\.close\(\{/);
-  assert.match(lightboxCode, /action: 'download'/);
-  assert.match(lightboxCode, /downloadUrl/);
+  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
+  assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);
   assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
-  assert.match(pageCode, /openLightbox\('Order Received',[\s\S]*\.then\(lightboxResult => \{/);
-  assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
-  assert.match(pageCode, /requestedUrl === downloadUrl/);
-  assert.match(pageCode, /wixLocationFrontend\.to\(requestedUrl\)/);
+  assert.doesNotMatch(lightboxCode, /downloadButton\.onClick/);
+  assert.doesNotMatch(pageCode, /lightboxResult\?\.action === 'download'/);
   assert.doesNotMatch(html, /startOrderExcelDownload/);
 });
 

@@ -240,12 +240,6 @@ $w.onReady(async function () {
         updateDownloadButtonVisibility();
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
         wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadUrl, downloadError })
-          .then(lightboxResult => {
-            const requestedUrl = String(lightboxResult?.downloadUrl || '').trim();
-            if (lightboxResult?.action === 'download' && requestedUrl && requestedUrl === downloadUrl) {
-              wixLocationFrontend.to(requestedUrl);
-            }
-          })
           .catch(error => console.error('Order Received lightbox could not be opened', error));
         await loadWorkspace();
       } catch (error) {
