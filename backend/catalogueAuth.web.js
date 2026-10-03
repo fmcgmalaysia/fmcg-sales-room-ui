@@ -5,6 +5,7 @@ import { getSecret } from 'wix-secrets-backend';
 import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
+import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -514,15 +515,24 @@ export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, as
   const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
   return { ok: true, ...issued };
 });
-export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '') => {
+export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '', buyerRoomUrl = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
   const id = normalize(orderId);
-  const result = await wixData.query(BUYER_ORDER_COLLECTION).eq('orderId', id).eq('customerId', buyer.customerId).limit(2).find({ suppressAuth: true, consistentRead: true });
-  if (result.items.length !== 1) throw new Error('Order was not found.');
-  const order = payloadData(result.items[0]);
-  if (!order.isComplete || upper(order.status) !== 'CONFIRMED') throw new Error('Order is not ready for download.');
-  const issued = createBuyerOrderExportToken(buyer.customerId, id, await getSecret(QD_ROUTER_SECRET), 900);
-  return { ok: true, orderId: id, ...issued };
+  const roomUrl = /^https:\/\//i.test(normalize(buyerRoomUrl)) ? normalize(buyerRoomUrl) : 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room';
+  let file;
+  let lastError;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    try {
+      file = await buildBuyerOrderDownload(buyer.customerId, id, roomUrl);
+      break;
+    } catch (error) {
+      lastError = error;
+      if (!['Order was not found.', 'Order is not ready for download.', 'Order lines are incomplete.'].includes(normalize(error?.message))) throw error;
+      if (attempt < 15) await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  if (!file) throw lastError || new Error('Order Excel could not be created.');
+  return { ok: true, orderId: id, fileName: file.fileName, base64: file.bytes.toString('base64') };
 });
 export const prepareBuyerOrderDownload = webMethod(Permissions.SiteMember, async (requestId = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

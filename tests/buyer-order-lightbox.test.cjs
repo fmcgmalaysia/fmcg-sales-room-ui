@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 
 test('successful order opens the native Wix Order Received lightbox', () => {
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
-  assert.match(pageCode, /openLightbox\('Order Received', \{ orderId: result\.orderId, downloadUrl, downloadError \}\)/);
+  assert.match(pageCode, /openLightbox\('Order Received', \{ orderId: result\.orderId, downloadReady: Boolean\(downloadFile\), downloadError \}\)/);
   assert.doesNotMatch(pageCode, /BUYER_ROOM_NATIVE_ORDER_SUBMIT/);
   assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
 });
@@ -23,12 +23,12 @@ test('Order Received popup hands its signed Excel to the embedded Buyer Room dow
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);
   assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
   assert.match(lightboxCode, /downloadButton\.onClick/);
-  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download', downloadUrl \}\)/);
+  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download' \}\)/);
   assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
   assert.match(pageCode, /BUYER_ROOM_DOWNLOAD_ORDER_EXCEL/);
-  assert.match(html, /async function downloadOrderExcel/);
-  assert.match(html, /fetch\(String\(url\|\|''\)/);
-  assert.match(html, /response\.blob\(\)/);
+  assert.match(html, /function downloadOrderExcel/);
+  assert.match(html, /atob\(String\(payload\?\.base64/);
+  assert.match(html, /new Blob\(\[bytes\]/);
   assert.match(html, /URL\.createObjectURL\(blob\)/);
   assert.match(html, /anchor\.download=fileName/);
 });

@@ -425,15 +425,12 @@ $('reductionNewQty').oninput=updateReductionPreview;
 $('closeReduction').onclick=closeReduction;
 $('submitReduction').onclick=()=>{const pending=state.pendingReduction;if(!pending||state.reductionSubmitting)return;const nextQty=Math.max(0,Math.floor(num($('reductionNewQty').value)));if(nextQty>=pending.currentQty){toast('Enter a quantity below the current requested quantity.');return}state.reductionSubmitting=true;$('submitReduction').disabled=true;$('submitReduction').textContent='Submitting…';post('BUYER_ROOM_REDUCE_ORDER',{orderId:pending.orderId,lineId:pending.lineId,newQuantityCtn:nextQty,requestId:crypto.randomUUID()})};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');closeReduction();closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
-async function downloadOrderExcel(url){
+function downloadOrderExcel(payload){
   try{
-    const response=await fetch(String(url||''),{credentials:'include',cache:'no-store'});
-    if(!response.ok){let message='Excel download could not be created.';try{const payload=await response.json();message=payload.error||message}catch{}throw new Error(message)}
-    const blob=await response.blob();
-    const disposition=response.headers.get('content-disposition')||'';
-    const encoded=disposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const plain=disposition.match(/filename="?([^";]+)"?/i);
-    let fileName=encoded?decodeURIComponent(encoded[1]):(plain?plain[1]:'FMCG-Malaysia-Order.xlsx');
+    const binary=atob(String(payload?.base64||''));if(!binary)throw new Error('Excel file data is unavailable.');
+    const bytes=new Uint8Array(binary.length);for(let index=0;index<binary.length;index+=1)bytes[index]=binary.charCodeAt(index);
+    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    let fileName=String(payload?.fileName||'FMCG-Malaysia-Order.xlsx');
     fileName=fileName.replace(/[\\/:*?"<>|]/g,'-');
     const objectUrl=URL.createObjectURL(blob);
     const anchor=document.createElement('a');anchor.href=objectUrl;anchor.download=fileName;anchor.style.display='none';document.body.appendChild(anchor);anchor.click();anchor.remove();
@@ -444,7 +441,7 @@ async function downloadOrderExcel(url){
 window.addEventListener('message',e=>{
   const m=e.data||{};
   if(m.type==='BUYER_ROOM_EXPORT_RESULT'){if(!m.ok)toast(m.message||'Excel download could not be started.');return;}
-  if(m.type==='BUYER_ROOM_DOWNLOAD_ORDER_EXCEL'){downloadOrderExcel(m.downloadUrl);return;}
+  if(m.type==='BUYER_ROOM_DOWNLOAD_ORDER_EXCEL'){downloadOrderExcel(m);return;}
   if(m.type==='BUYER_ROOM_DATA')applyData(m.data||{});
   if(m.type==='BUYER_ROOM_USER_RESULT'){
     const status=$('accountUserFormStatus');

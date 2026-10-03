@@ -226,24 +226,24 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
       try {
         const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '');
-        let downloadUrl = '';
+        let downloadFile = null;
         let downloadError = '';
         try {
-          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId);
           const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-          downloadUrl = `${siteBaseUrl}/_functions/buyerOrderExcel?token=${encodeURIComponent(download.token)}`;
+          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId, `${siteBaseUrl}/buyer-room`);
+          downloadFile = { fileName: String(download.fileName || '').trim(), base64: String(download.base64 || '').trim() };
+          if (!downloadFile.fileName || !downloadFile.base64) throw new Error('Order Excel response was incomplete.');
         } catch (error) {
           downloadError = error?.message || 'Order Excel could not be prepared.';
           console.error('Buyer order Excel preparation failed', error);
         }
         downloadButton.label = '';
         updateDownloadButtonVisibility();
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
-        wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadUrl, downloadError })
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadReady: Boolean(downloadFile), downloadError, message: result.warning || 'Order request sent to Sales Room.' });
+        wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadReady: Boolean(downloadFile), downloadError })
           .then(lightboxResult => {
-            const requestedUrl = String(lightboxResult?.downloadUrl || '').trim();
-            if (lightboxResult?.action === 'download' && requestedUrl) {
-              frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', downloadUrl: requestedUrl });
+            if (lightboxResult?.action === 'download' && downloadFile) {
+              frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', ...downloadFile });
             }
           })
           .catch(error => console.error('Order Received lightbox could not be opened', error));
