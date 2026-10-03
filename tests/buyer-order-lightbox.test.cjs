@@ -17,7 +17,7 @@ test('native lightbox owns the optional Excel download button', () => {
   assert.match(lightboxCode, /#comp-mupidwxx/);
   assert.doesNotMatch(lightboxCode, /#closeButton/);
   assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
-  assert.match(lightboxCode, /downloadButton\.target = '_blank'/);
+  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
 });
 
 test('Review Order submits directly and has no embedded success modal', () => {

@@ -26,7 +26,11 @@ $w.onReady(async function () {
   downloadButton.disable();
   downloadButton.hide();
   downloadButton.label = '';
-  downloadButton.target = '_blank';
+  // Keep the request in the current tab. The HTTP function responds with
+  // Content-Disposition: attachment, so Chrome hands the file to its download
+  // manager without replacing Buyer Room. Opening the signed URL in a new tab
+  // can leave an inert about:blank tab instead of starting the download.
+  downloadButton.target = '_self';
 
   function updateDownloadButtonVisibility() {
     const url = activeBuyerRoomView === 'my' ? selectionDownloadUrl : '';

@@ -9,11 +9,10 @@ $w.onReady(function () {
   const downloadUrl = String(context.downloadUrl || '').trim();
 
   downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
-  // Keep the Buyer Room and this success lightbox in place while Chrome hands
-  // the attachment response to its download manager. A self-targeted link turns
-  // the file request into a main-frame navigation, which strict browser control
-  // layers can block before the download manager sees it.
-  downloadButton.target = '_blank';
+  // The endpoint returns an attachment, so a same-tab request starts Chrome's
+  // download manager while leaving the lightbox in place. A new-tab target can
+  // stop at about:blank and never request the signed file URL.
+  downloadButton.target = '_self';
   if (downloadUrl) {
     downloadButton.link = downloadUrl;
     downloadButton.enable();

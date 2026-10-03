@@ -37,7 +37,7 @@ assert.match(pageCode, /downloadButton\.link = url/);
 assert.match(pageCode, /scheduleSelectionDownloadRefresh/);
 assert.match(pageCode, /downloadButton\.onClick/);
 assert.match(pageCode, /setTimeout\(\(\) => refreshSelectionDownload\(true\)/);
-assert.match(pageCode, /downloadButton\.target = '_blank'/);
+assert.match(pageCode, /downloadButton\.target = '_self'/);
 assert.match(pageCode, /downloadButton\.enable\(\)/);
 assert.match(pageCode, /downloadButton\.hide\(\)/);
 assert.match(pageCode, /downloadButton\.show\(\)/);

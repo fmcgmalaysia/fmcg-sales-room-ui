@@ -252,6 +252,18 @@ function WIX_isRedColor_(value) {
   return red >= 150 && red > green * 1.25 && red > blue * 1.25;
 }
 
+/**
+ * One-time owner authorization helper for the central router deployment.
+ * Running this after adding the external-request OAuth scope refreshes the
+ * deployer's grant without reading or modifying any customer data.
+ */
+function WIX_authorizeExternalRequest() {
+  const response = UrlFetchApp.fetch('https://www.google.com/generate_204', {
+    muteHttpExceptions: true
+  });
+  return response.getResponseCode();
+}
+
 function WIX_isLowGp_(rawValue, displayValue) {
   if (rawValue === '' || rawValue === null || typeof rawValue === 'undefined') return false;
   let value = Number(rawValue);
