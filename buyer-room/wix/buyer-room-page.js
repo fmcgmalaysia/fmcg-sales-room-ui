@@ -109,9 +109,11 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_EXPORT' || message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
       try {
         const result = await createBuyerSelectionDownload(assistCustomerId);
-        if (!result?.ok || !/^https:\/\//i.test(String(result.url || ''))) throw new Error('Excel download could not be started.');
+        if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be started.');
+        const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+        const downloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
         frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
-        wixLocationFrontend.to(result.url);
+        wixLocationFrontend.to(downloadUrl);
       } catch (error) {
         console.error('Buyer Room Excel export failed', error);
         frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
@@ -187,7 +189,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-click-download-v97';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
