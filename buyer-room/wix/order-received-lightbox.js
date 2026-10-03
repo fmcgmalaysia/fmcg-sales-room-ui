@@ -8,18 +8,11 @@ $w.onReady(function () {
   const downloadButton = $w('#comp-mupidwxx');
   const downloadUrl = String(context.downloadUrl || '').trim();
 
-  downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
+  downloadButton.label = downloadUrl ? 'Excel Download Started' : 'Excel Unavailable';
   if (downloadUrl) {
-    // Return the signed URL to the Buyer Room page. Navigation from inside a
-    // Wix lightbox is silently swallowed on the published site, while the page
-    // that opened the lightbox can start the attachment download reliably.
-    downloadButton.onClick(() => wixWindowFrontend.lightbox.close({
-      action: 'download',
-      downloadUrl
-    }));
-    downloadButton.enable();
-  } else {
-    downloadButton.disable();
+    // The Buyer Room page starts the attachment download before opening this
+    // receipt. Keep this element as a clear status instead of a second control.
   }
+  downloadButton.disable();
 
 });
