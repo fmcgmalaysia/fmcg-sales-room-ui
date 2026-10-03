@@ -239,10 +239,6 @@ $w.onReady(async function () {
         downloadButton.label = '';
         updateDownloadButtonVisibility();
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadUrl, downloadError, message: result.warning || 'Order request sent to Sales Room.' });
-        // Wix popup buttons do not reliably navigate to attachment endpoints.
-        // Start the signed download from the Buyer Room page as soon as the
-        // order succeeds, following Wix's documented download-URL pattern.
-        if (downloadUrl) wixLocationFrontend.to(downloadUrl);
         wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadUrl, downloadError })
           .catch(error => console.error('Order Received lightbox could not be opened', error));
         await loadWorkspace();
