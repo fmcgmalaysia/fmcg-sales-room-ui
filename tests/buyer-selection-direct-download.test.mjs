@@ -49,7 +49,7 @@ assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE/
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.match(webModule, /createBuyerSelectionExportToken/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /20261002-reduction-dialog-polish-v94/);
+assert.match(pageCode, /20261003-order-download-3961e94/);
 assert.match(webModule, /createBuyerSelectionExportToken\(buyer\.customerId, await getSecret\(QD_ROUTER_SECRET\), 3600\)/);
 assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
 assert.doesNotMatch(buyerRoomHtml, /document\.createElement\('iframe'\)/);
