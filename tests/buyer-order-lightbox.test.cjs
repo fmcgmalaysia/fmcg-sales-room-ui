@@ -12,7 +12,7 @@ test('successful order opens the native Wix Order Received lightbox', () => {
   assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
 });
 
-test('Order Received popup downloads its signed Excel on click using a stable button ID', () => {
+test('Order Received popup hands its signed Excel to the embedded Buyer Room downloader', () => {
   const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
@@ -20,13 +20,17 @@ test('Order Received popup downloads its signed Excel on click using a stable bu
   assert.match(lightboxCode, /#closeButton/);
   assert.match(lightboxCode, /closeButton\.onClick\(\(\) => wixWindowFrontend\.lightbox\.close\(\)\)/);
   assert.match(lightboxCode, /Download Order Excel/);
-  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
-  assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);
   assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
-  assert.doesNotMatch(lightboxCode, /downloadButton\.onClick/);
-  assert.doesNotMatch(pageCode, /lightboxResult\?\.action === 'download'/);
-  assert.doesNotMatch(html, /startOrderExcelDownload/);
+  assert.match(lightboxCode, /downloadButton\.onClick/);
+  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download', downloadUrl \}\)/);
+  assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
+  assert.match(pageCode, /BUYER_ROOM_DOWNLOAD_ORDER_EXCEL/);
+  assert.match(html, /async function downloadOrderExcel/);
+  assert.match(html, /fetch\(String\(url\|\|''\)/);
+  assert.match(html, /response\.blob\(\)/);
+  assert.match(html, /URL\.createObjectURL\(blob\)/);
+  assert.match(html, /anchor\.download=fileName/);
 });
 
 test('Review Order submits directly and has no embedded success modal', () => {

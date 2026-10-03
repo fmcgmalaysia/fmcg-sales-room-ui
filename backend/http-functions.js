@@ -239,7 +239,10 @@ export async function get_buyerOrderExcel(request) {
         'cache-control': 'private, no-store, max-age=0',
         pragma: 'no-cache',
         'x-content-type-options': 'nosniff',
-        'cross-origin-resource-policy': 'cross-origin'
+        'cross-origin-resource-policy': 'cross-origin',
+        'access-control-allow-origin': 'https://fmcgmalaysia.github.io',
+        'access-control-expose-headers': 'content-disposition',
+        vary: 'Origin'
       },
       body: file.bytes
     });
@@ -249,7 +252,13 @@ export async function get_buyerOrderExcel(request) {
     console.error('Buyer order direct download failed', { status, code });
     return response({
       status,
-      headers: { 'content-type': 'application/json', 'cache-control': 'no-store, max-age=0' },
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store, max-age=0',
+        'access-control-allow-origin': 'https://fmcgmalaysia.github.io',
+        'access-control-expose-headers': 'content-disposition',
+        vary: 'Origin'
+      },
       body: JSON.stringify({ ok: false, error: status === 403 ? 'This order download link has expired.' : code || 'Order Excel could not be created.' })
     });
   }
