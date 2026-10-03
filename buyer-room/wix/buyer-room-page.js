@@ -17,25 +17,17 @@ $w.onReady(async function () {
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
   let activeCustomerId = '';
-  let selectionDownloadUrl = '';
-  let activeDownloadExpiresAt = 0;
+  let selectionDownloadFile = null;
   let downloadPreparation = null;
-  let downloadRenewalTimer = null;
   let activeBuyerRoomView = 'my';
 
   downloadButton.disable();
   downloadButton.hide();
   downloadButton.label = '';
-  // Keep the request in the current tab. The HTTP function responds with
-  // Content-Disposition: attachment, so Chrome hands the file to its download
-  // manager without replacing Buyer Room. Opening the signed URL in a new tab
-  // can leave an inert about:blank tab instead of starting the download.
-  downloadButton.target = '_self';
 
   function updateDownloadButtonVisibility() {
-    const url = activeBuyerRoomView === 'my' ? selectionDownloadUrl : '';
-    if (url) {
-      downloadButton.link = url;
+    const ready = activeBuyerRoomView === 'my' && selectionDownloadFile?.fileName && selectionDownloadFile?.base64;
+    if (ready) {
       downloadButton.enable();
       downloadButton.show();
     } else {
@@ -43,30 +35,20 @@ $w.onReady(async function () {
     }
   }
 
-  function scheduleSelectionDownloadRefresh() {
-    if (downloadRenewalTimer) clearTimeout(downloadRenewalTimer);
-    const delay = Math.max(30000, activeDownloadExpiresAt - Date.now() - 300000);
-    downloadRenewalTimer = setTimeout(() => {
-      refreshSelectionDownload(true).catch(() => {});
-    }, delay);
-  }
-
   async function prepareSelectionDownload(force = false) {
     if (!activeCustomerId) throw new Error('Buyer account is still loading.');
-    if (!force && selectionDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+    if (!force && selectionDownloadFile?.fileName && selectionDownloadFile?.base64) {
       updateDownloadButtonVisibility();
-      return selectionDownloadUrl;
+      return selectionDownloadFile;
     }
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
-      if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
-      selectionDownloadUrl = String(result.url);
-      activeDownloadExpiresAt = Number(result.expiresAt);
+      if (!result?.ok || !result.fileName || !result.base64) throw new Error('Excel download data is unavailable.');
+      selectionDownloadFile = { fileName: String(result.fileName), base64: String(result.base64) };
       downloadButton.label = '';
       updateDownloadButtonVisibility();
-      scheduleSelectionDownloadRefresh();
-      return selectionDownloadUrl;
+      return selectionDownloadFile;
     })();
     try { return await downloadPreparation; }
     finally { downloadPreparation = null; }
@@ -75,7 +57,7 @@ $w.onReady(async function () {
   async function refreshSelectionDownload(force = false) {
     try { await prepareSelectionDownload(force); }
     catch (error) {
-      selectionDownloadUrl = '';
+      selectionDownloadFile = null;
       downloadButton.label = '';
       updateDownloadButtonVisibility();
       console.error('Buyer Room Excel link preparation failed', error);
@@ -83,8 +65,9 @@ $w.onReady(async function () {
   }
 
   downloadButton.onClick(() => {
-    // Let the current prepared link download immediately, then prepare a new
-    // signed link so the same button also works on every later click.
+    if (selectionDownloadFile) {
+      frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_SELECTION_EXCEL', ...selectionDownloadFile });
+    }
     setTimeout(() => refreshSelectionDownload(true).catch(() => {}), 1500);
   });
 
@@ -256,7 +239,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261003-selection-media-download-v95';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-blob-download-v96';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
