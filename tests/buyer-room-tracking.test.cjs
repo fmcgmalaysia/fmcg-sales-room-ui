@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-02-reduction-dialog-polish-v94/);
+  assert.match(html, /2026-10-03-selection-media-download-v95/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 

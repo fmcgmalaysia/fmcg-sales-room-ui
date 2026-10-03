@@ -50,7 +50,7 @@ assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE/
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(url\)/);
 assert.match(pageCode, /selectionDownloadUrl = String\(result\.url\)/);
 assert.doesNotMatch(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /20261003-order-download-3961e94/);
+assert.match(pageCode, /20261003-selection-media-download-v95/);
 assert.match(webModule, /createBuyerSelectionMediaDownload/);
 assert.match(webModule, /return createBuyerSelectionMediaDownload\(buyer\.customerId/);
 assert.doesNotMatch(buyerRoomHtml, /id="exportSelection"/);
