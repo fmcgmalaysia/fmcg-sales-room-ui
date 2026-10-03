@@ -12,19 +12,19 @@ test('successful order opens the native Wix Order Received lightbox', () => {
   assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
 });
 
-test('Buyer Room starts the order Excel download inside the embedded workspace', () => {
+test('Order Received popup exposes its signed Excel link on a stable button ID', () => {
   const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  assert.match(lightboxCode, /#comp-mupidwxx/);
+  assert.match(lightboxCode, /#downloadOrderExcelButton/);
   assert.doesNotMatch(lightboxCode, /#closeButton/);
-  assert.match(lightboxCode, /Excel Download Started/);
-  assert.match(lightboxCode, /downloadButton\.disable\(\)/);
+  assert.match(lightboxCode, /Download Order Excel/);
+  assert.match(lightboxCode, /downloadButton\.link = downloadUrl/);
+  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
+  assert.match(lightboxCode, /downloadButton\.enable\(\)/);
   assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
   assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(downloadUrl\)/);
-  assert.match(html, /function startOrderExcelDownload\(url\)/);
-  assert.match(html, /downloadFrame\.src=source/);
-  assert.match(html, /startOrderExcelDownload\(m\.downloadUrl\)/);
+  assert.doesNotMatch(html, /startOrderExcelDownload/);
 });
 
 test('Review Order submits directly and has no embedded success modal', () => {
