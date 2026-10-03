@@ -17,7 +17,8 @@ test('Order Received popup downloads its signed Excel on click using a stable bu
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
   assert.match(lightboxCode, /#downloadOrderExcelButton/);
-  assert.doesNotMatch(lightboxCode, /#closeButton/);
+  assert.match(lightboxCode, /#closeButton/);
+  assert.match(lightboxCode, /closeButton\.onClick\(\(\) => wixWindowFrontend\.lightbox\.close\(\)\)/);
   assert.match(lightboxCode, /Download Order Excel/);
   assert.match(lightboxCode, /downloadButton\.onClick\(\(\) => wixLocationFrontend\.to\(downloadUrl\)\)/);
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);

@@ -3,8 +3,11 @@ import wixLocationFrontend from 'wix-location-frontend';
 
 $w.onReady(function () {
   const context = wixWindowFrontend.lightbox.getContext() || {};
+  const closeButton = $w('#closeButton');
   const downloadButton = $w('#downloadOrderExcelButton');
   const downloadUrl = String(context.downloadUrl || '').trim();
+
+  closeButton.onClick(() => wixWindowFrontend.lightbox.close());
 
   downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
   if (downloadUrl) {
