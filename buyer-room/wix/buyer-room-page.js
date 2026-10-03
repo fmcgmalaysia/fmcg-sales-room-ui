@@ -60,9 +60,8 @@ $w.onReady(async function () {
     if (downloadPreparation) return downloadPreparation;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
-      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
-      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      selectionDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download authorization is unavailable.');
+      selectionDownloadUrl = String(result.url);
       activeDownloadExpiresAt = Number(result.expiresAt);
       downloadButton.label = '';
       updateDownloadButtonVisibility();
