@@ -1,5 +1,4 @@
 import wixWindowFrontend from 'wix-window-frontend';
-import wixLocationFrontend from 'wix-location-frontend';
 
 $w.onReady(function () {
   const context = wixWindowFrontend.lightbox.getContext() || {};
@@ -10,16 +9,14 @@ $w.onReady(function () {
   const downloadUrl = String(context.downloadUrl || '').trim();
 
   downloadButton.label = downloadUrl ? 'Download Order Excel' : 'Excel Unavailable';
-  // The endpoint returns an attachment, so a same-tab request starts Chrome's
-  // download manager while leaving the lightbox in place. A new-tab target can
-  // stop at about:blank and never request the signed file URL.
-  downloadButton.target = '_self';
   if (downloadUrl) {
-    // This lightbox uses a regular Wix Button. Unlike the Buyer Room page's
-    // dedicated download link, assigning `.link` does not produce an href in
-    // the published lightbox DOM. Navigate explicitly on click so the signed
-    // attachment endpoint is always requested.
-    downloadButton.onClick(() => wixLocationFrontend.to(downloadUrl));
+    // Return the signed URL to the Buyer Room page. Navigation from inside a
+    // Wix lightbox is silently swallowed on the published site, while the page
+    // that opened the lightbox can start the attachment download reliably.
+    downloadButton.onClick(() => wixWindowFrontend.lightbox.close({
+      action: 'download',
+      downloadUrl
+    }));
     downloadButton.enable();
   } else {
     downloadButton.disable();

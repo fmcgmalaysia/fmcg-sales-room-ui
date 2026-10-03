@@ -14,10 +14,14 @@ test('successful order opens the native Wix Order Received lightbox', () => {
 
 test('native lightbox owns the optional Excel download button', () => {
   const lightboxCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'order-received-lightbox.js'), 'utf8');
+  const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
   assert.match(lightboxCode, /#comp-mupidwxx/);
   assert.doesNotMatch(lightboxCode, /#closeButton/);
-  assert.match(lightboxCode, /wixLocationFrontend\.to\(downloadUrl\)/);
-  assert.match(lightboxCode, /downloadButton\.target = '_self'/);
+  assert.match(lightboxCode, /lightbox\.close\(\{/);
+  assert.match(lightboxCode, /action: 'download'/);
+  assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
+  assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
+  assert.match(pageCode, /wixLocationFrontend\.to\(requestedUrl\)/);
 });
 
 test('Review Order submits directly and has no embedded success modal', () => {
