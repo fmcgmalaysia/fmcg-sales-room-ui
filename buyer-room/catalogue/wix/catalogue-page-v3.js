@@ -65,6 +65,11 @@ function sendCatalogueContext(message) {
     try { $w('#text19').text = String(message.sheetName || 'FMCG Malaysia').trim(); } catch (error) {}
     try { $w('#text20').text = String(message.signedInName || 'Buyer').trim(); } catch (error) {}
     try { $w('#html3').postMessage(catalogueContextMessage); } catch (error) {}
+    [250, 1000, 3000].forEach(delay => setTimeout(() => {
+        try { $w('#text19').text = String(message.sheetName || 'FMCG Malaysia').trim(); } catch (error) {}
+        try { $w('#text20').text = String(message.signedInName || 'Buyer').trim(); } catch (error) {}
+        try { $w('#html3').postMessage(catalogueContextMessage); } catch (error) {}
+    }, delay));
     sendCatalogueWorkspaceData();
 }
 
@@ -237,8 +242,33 @@ async function loadSelectionState(assistCustomerId = '') {
 
 $w.onReady(async () => {
     const hasBuyerAccess = local.getItem('catalogueAccess') === 'granted' || session.getItem('catalogueAccess') === 'granted';
-    let staff;
-    try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
+    let staff = null;
+    if (!String(wixLocationFrontend.query?.assist || '').trim()) {
+        try { staff = await getCurrentStaffContext(); } catch (error) { staff = null; }
+    }
+
+    // An explicit Sales Room customer must never fall through to a stale
+    // Buyer Room session. getSalesRoomCustomerDetail performs the authoritative
+    // staff/customer authorization and is also the proven path used by Sales Room.
+    const explicitAssistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
+    if (explicitAssistCustomerId) {
+        try {
+            const response = await getSalesRoomCustomerDetail(explicitAssistCustomerId);
+            const customer = response?.customer || {};
+            session.setItem('catalogueAssistCustomerId', customer.customerId || explicitAssistCustomerId);
+            selectionContext = { mode: staff?.canViewAllCustomers ? 'admin' : 'assist', assistCustomerId: customer.customerId || explicitAssistCustomerId };
+            await loadSelectionState(selectionContext.assistCustomerId);
+            sendCatalogueContext({
+                type: 'catalogueContext', mode: staff?.canViewAllCustomers ? 'admin' : 'assist',
+                sheetName: String(customer.companyName || customer.customerId || '').trim(),
+                signedInName: String(staff?.staffName || staff?.staffId || 'Sales Room').trim()
+            });
+        } catch (error) {
+            session.removeItem('catalogueAssistCustomerId');
+            wixLocationFrontend.to('/blank-1');
+        }
+        return;
+    }
 
     if (staff?.authorized) {
         const assistCustomerId = String(wixLocationFrontend.query?.assist || '').trim();
