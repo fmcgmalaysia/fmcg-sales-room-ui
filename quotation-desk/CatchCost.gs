@@ -84,7 +84,7 @@ function catchCostCurrentQuotationDesk() {
 
     stageStartedAt = Date.now();
     if (profile.costHealth) {
-      issueCounts.costMismatch = ccWriteHealth_(sheet, columns, targets, outcomes);
+      // COST HEALTH is formula-owned; do not overwrite column A.
       SpreadsheetApp.flush();
       recordTime("Verify QD net cost and write health", stageStartedAt);
     }

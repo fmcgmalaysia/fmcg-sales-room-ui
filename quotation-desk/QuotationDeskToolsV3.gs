@@ -121,7 +121,7 @@ function onEdit(e) {
   if (!e || !e.range) return;
 
   // COST HEALTH is recalculated independently and never changes QUOTE STATUS.
-  ccHandleCostEdit_(e);
+  // COST HEALTH is formula-owned; do not overwrite column A.
 
   const sheet = e.range.getSheet();
   const firstRow = Math.max(e.range.getRow(), QD_CFG.DATA_START_ROW);
