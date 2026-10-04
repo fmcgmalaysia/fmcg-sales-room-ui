@@ -84,15 +84,13 @@ const QD_CFG = Object.freeze({
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui
-    .createMenu("QUOTATION DESK")
-    .addItem("CATCH COST", "catchCostCurrentQuotationDesk")
-    .addItem("SORT WORK QUEUE", "sortQuotationByCatalogueOrder")
-    .addSeparator()
-    .addItem("CHECK QD SETUP", "checkQuotationDeskSetup")
+    .createMenu("工具")
+    .addItem("抓成本", "catchCostCurrentQuotationDesk")
+    .addItem("排列产品顺序", "sortQuotationByCatalogueOrder")
     .addToUi();
   ui
     .createMenu("PUBLISH QUOTATIONS")
-    .addItem("PUBLISH CONFIRMED QUOTATIONS", "syncQuotationToWix")
+    .addItem("对客户公开报价", "syncQuotationToWix")
     .addToUi();
 
   // Keep the salesperson's work queue actionable as soon as the QD opens.
@@ -104,8 +102,8 @@ function onOpen() {
     } catch (error) {
       console.error("Automatic QD sort failed: " + error.message);
       SpreadsheetApp.getActive().toast(
-        "Automatic risk sorting could not finish. Use QUOTATION DESK > SORT BY CATALOGUE ORDER.",
-        "QD SORT NEEDS ATTENTION",
+        "自动排列未完成。请使用 工具 > 排列产品顺序。",
+        "排列产品需要处理",
         8
       );
     }

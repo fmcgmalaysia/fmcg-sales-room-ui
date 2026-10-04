@@ -37,6 +37,7 @@ function WIX_json_(payload) {
 
 function WIX_syncFxRates(body) {
   var APPROVED_QD_FOLDER_ID = '1frEBQD7vwPW6X_dqQSoItbFQDUQs3THL';
+  var FX_RATES_PROPERTY = 'WIX_QD_FX_RATES_JSON';
   var rates = Array.isArray(body && body.rates) ? body.rates : [];
   var rateByCurrency = {};
   rates.forEach(function (item) {
@@ -45,6 +46,7 @@ function WIX_syncFxRates(body) {
     if (/^[A-Z]{3}$/.test(currency) && isFinite(rate) && rate > 0) rateByCurrency[currency] = rate;
   });
   if (!Object.keys(rateByCurrency).length) throw new Error('No valid FX rates were supplied.');
+  PropertiesService.getScriptProperties().setProperty(FX_RATES_PROPERTY, JSON.stringify(rateByCurrency));
 
   var result = { scanned: 0, updated: 0, skipped: 0, failed: 0, details: [] };
   var files = DriveApp.getFolderById(APPROVED_QD_FOLDER_ID).getFiles();
@@ -61,9 +63,10 @@ function WIX_syncFxRates(body) {
       }
       var spreadsheet = SpreadsheetApp.openById(fileId);
       var sheet = spreadsheet.getSheetByName('WIX QUOTATION');
-      if (!sheet) {
+      var draft = spreadsheet.getSheetByName('DRAFT 草稿区');
+      if (!sheet || !draft) {
         result.skipped++;
-        result.details.push({ fileId: fileId, fileName: fileName, status: 'SKIPPED', reason: 'WIX QUOTATION sheet is missing.' });
+        result.details.push({ fileId: fileId, fileName: fileName, status: 'SKIPPED', reason: 'WIX QUOTATION or DRAFT 草稿区 sheet is missing.' });
         continue;
       }
       var currency = String(sheet.getRange('D3').getDisplayValue() || sheet.getRange('D3').getValue() || '').trim().toUpperCase();
@@ -74,6 +77,7 @@ function WIX_syncFxRates(body) {
         continue;
       }
       sheet.getRange('D4').setValue(rate).setNumberFormat('0.00');
+      draft.getRange('L3').setValue(rate).setNumberFormat('0.00');
       result.updated++;
       result.details.push({ fileId: fileId, fileName: fileName, status: 'UPDATED', currency: currency, rateToMyr: rate });
     } catch (error) {

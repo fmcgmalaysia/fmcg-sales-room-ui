@@ -125,6 +125,10 @@ function WIX_prepareCopiedQd_(spreadsheet, p) {
   quotation.getRange('D1').setValue(p.companyName);
   quotation.getRange('D2').setValue(p.customerId);
   quotation.getRange('D3').setValue(p.currency);
+  const fxRate = WIX_currentFxRate_(p.currency);
+  quotation.getRange('D4').setValue(fxRate).setNumberFormat('0.00');
+  draft.getRange('L2').setValue(p.currency);
+  draft.getRange('L3').setValue(fxRate).setNumberFormat('0.00');
 
   let setup = spreadsheet.getSheetByName(WIX_QD_FACTORY_CFG.SETUP_SHEET);
   if (!setup) setup = WIX_createSetupSheet_(spreadsheet);
@@ -135,6 +139,22 @@ function WIX_prepareCopiedQd_(spreadsheet, p) {
   WIX_setSpreadsheetMetadata_(spreadsheet, WIX_QD_FACTORY_CFG.STAFF_ID_METADATA, p.assignedStaffId);
   WIX_setSpreadsheetMetadata_(spreadsheet, WIX_QD_FACTORY_CFG.BUILD_STATUS_METADATA, 'ACTIVATION_REQUIRED');
   WIX_setSpreadsheetMetadata_(spreadsheet, WIX_QD_FACTORY_CFG.TEMPLATE_VERSION_METADATA, WIX_QD_FACTORY_CFG.TEMPLATE_VERSION);
+}
+
+function WIX_currentFxRate_(currency) {
+  const raw = PropertiesService.getScriptProperties().getProperty('WIX_QD_FX_RATES_JSON');
+  let rates = {};
+  try {
+    rates = raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    rates = {};
+  }
+  const normalizedCurrency = String(currency || '').trim().toUpperCase();
+  const rate = Number(rates[normalizedCurrency]);
+  if (!isFinite(rate) || rate <= 0) {
+    throw new Error('No current FX rate is configured for ' + normalizedCurrency + '. Run FX Rate Settings sync before creating this QD.');
+  }
+  return rate;
 }
 
 function WIX_createSetupSheet_(spreadsheet) {

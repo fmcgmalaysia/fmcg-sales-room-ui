@@ -29,6 +29,16 @@ test('QD open hook silently sorts the formal quotation sheet', () => {
   assert.match(source, /sortQuotationSheet_\(formalSheet, false\)/);
 });
 
+test('QD menus expose only the requested Chinese actions', () => {
+  const onOpen = source.slice(source.indexOf('function onOpen'), source.indexOf('/**', source.indexOf('function onOpen')));
+  assert.match(onOpen, /createMenu\("工具"\)/);
+  assert.match(onOpen, /addItem\("抓成本", "catchCostCurrentQuotationDesk"\)/);
+  assert.match(onOpen, /addItem\("排列产品顺序", "sortQuotationByCatalogueOrder"\)/);
+  assert.doesNotMatch(onOpen, /CHECK QD SETUP|checkQuotationDeskSetup/);
+  assert.match(onOpen, /createMenu\("PUBLISH QUOTATIONS"\)/);
+  assert.match(onOpen, /addItem\("对客户公开报价", "syncQuotationToWix"\)/);
+});
+
 test('QD sorting moves each complete row in one native Sheets operation', () => {
   const sorter = source.slice(source.indexOf('function sortQuotationSheet_'), source.indexOf('function qdRiskPriority_'));
   assert.match(sorter, /lastCol \+ helperCount\)\.sort\(/);
