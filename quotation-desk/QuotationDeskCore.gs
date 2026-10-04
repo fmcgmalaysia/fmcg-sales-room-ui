@@ -23,12 +23,6 @@ function qdCoreInstallLegacyMenu_() {
     .addToUi();
 }
 
-// QuotationDeskToolsV3.gs owns the live onEdit trigger and delegates cost
-// recalculation to ccHandleCostEdit_.
-function qdCoreHandleCostEdit_(e) {
-  ccHandleCostEdit_(e);
-}
-
 function sortCurrentQuotationDeskBySortId() {
   const startedAt = Date.now();
   const ui = SpreadsheetApp.getUi();
