@@ -30,6 +30,7 @@ let catalogueFoodPrinciples = new Set();
 let catalogueProductsLoaded = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
+let catalogueWorkspaceQueryVersion = 0;
 
 function imageUrl(value) {
     const raw = String(value || '').trim();
@@ -202,6 +203,7 @@ async function loadCatalogueWorkspaceProducts() {
 }
 
 async function showCatalogueWorkspaceQuery(query) {
+    const queryVersion = ++catalogueWorkspaceQueryVersion;
     const products = [];
     try {
         let result = await query.eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
@@ -210,6 +212,7 @@ async function showCatalogueWorkspaceQuery(query) {
             result = await result.next();
             products.push(...result.items);
         }
+        if (queryVersion !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
         sendCatalogueWorkspaceData();
@@ -219,6 +222,7 @@ async function showCatalogueWorkspaceQuery(query) {
 }
 
 function showAllCatalogueWorkspaceProducts() {
+    catalogueWorkspaceQueryVersion += 1;
     catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
     sendCatalogueWorkspaceData();
@@ -386,7 +390,10 @@ function setupNav() {
 
     const applySearch = async (rawQuery) => {
         const query = String(rawQuery || '').trim();
-        sendCatalogueWorkspaceFilter({ query });
+        catalogueWorkspaceQueryVersion += 1;
+        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+        catalogueWorkspaceFilter = { query, main: '', subIds: [], principle: '' };
+        sendCatalogueWorkspaceData();
         try {
             if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
             const subResult = await wixData.query('subCategories').contains('title', query).limit(100).find();
