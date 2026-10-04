@@ -44,6 +44,7 @@ test('QD sorting moves each complete row in one native Sheets operation', () => 
   assert.match(sorter, /lastCol \+ helperCount\)\.sort\(/);
   assert.match(sorter, /helperRange\.setValues\(helperValues\)/);
   assert.match(sorter, /helperRange\.clearContent\(\)\.clearNote\(\)/);
+  assert.match(sorter, /sheet\.deleteColumns\(originalMaxColumns \+ 1, insertedHelperColumns\)/);
   assert.doesNotMatch(source, /SORT_MOVABLE_HEADERS/);
 });
 

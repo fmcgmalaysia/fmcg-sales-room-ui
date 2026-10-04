@@ -296,8 +296,10 @@ function sortQuotationSheet_(sheet, waitForLock) {
     const helperStartCol = lastCol + 1;
     const helperCount = 3;
     const requiredLastCol = helperStartCol + helperCount - 1;
-    if (sheet.getMaxColumns() < requiredLastCol) {
-      sheet.insertColumnsAfter(sheet.getMaxColumns(), requiredLastCol - sheet.getMaxColumns());
+    const originalMaxColumns = sheet.getMaxColumns();
+    const insertedHelperColumns = Math.max(0, requiredLastCol - originalMaxColumns);
+    if (insertedHelperColumns) {
+      sheet.insertColumnsAfter(originalMaxColumns, insertedHelperColumns);
     }
 
     let productCount = 0;
@@ -327,6 +329,9 @@ function sortQuotationSheet_(sheet, waitForLock) {
       ]);
     } finally {
       helperRange.clearContent().clearNote();
+      if (insertedHelperColumns) {
+        sheet.deleteColumns(originalMaxColumns + 1, insertedHelperColumns);
+      }
     }
 
     SpreadsheetApp.flush();
