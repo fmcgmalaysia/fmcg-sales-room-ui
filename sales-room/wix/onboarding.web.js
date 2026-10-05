@@ -924,6 +924,17 @@ export const updateSalesRoomCustomerProfile = webMethod(
         afterValue: patch[key]
       }));
 
+    if (Object.prototype.hasOwnProperty.call(patch, 'customerShortName') && upper(customer.customerShortName) !== patch.customerShortName) {
+      const duplicate = await wixData
+        .query(CUSTOMER_COLLECTION)
+        .eq('customerShortName', patch.customerShortName)
+        .limit(2)
+        .find({ suppressAuth: true });
+      if (duplicate.items.some((item) => normalize(item.customerId) !== normalize(customer.customerId))) {
+        throw new Error('This CUSTOMER SHORT NAME is already in use.');
+      }
+    }
+
     if (!changes.length) {
       return Object.freeze({ ok: true, customerId: normalize(customer.customerId), changedFields: [] });
     }
