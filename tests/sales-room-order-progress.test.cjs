@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8'
 const backend = fs.readFileSync(path.resolve(__dirname, '..', 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room includes a dedicated customer Order Progress page', () => {
-  assert.match(html, /Sales Room build: 2026-10-03-customer-qd-activation-v61/);
+  assert.match(html, /Sales Room build: 2026-10-05-order-list-refresh-room5-v1/);
   assert.match(html, /data-view="order-progress"/);
   assert.match(html, /id="order-progress" class="view"/);
   assert.match(html, /id="progressCustomerSelect"/);
