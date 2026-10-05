@@ -6,16 +6,16 @@
  * - Header row: 5. Hidden formula row: 6. First product row: 7.
  * - WIX POINT BASE is the product and cost source of truth.
  * - Wix CMS is the workflow source of truth for selection, quote and order state.
- * - QD row statuses: RFQ, VIEW QUOTE, FAILED.
+ * - QD row statuses: RFQ, PENDING, VIEW QUOTE, FAILED.
  *
  * Important:
  * - Replace the old QD script. Do not paste this below the old script.
- * - Configure WIX_QUOTE_SYNC_URL and WIX_QUOTE_SYNC_TOKEN in Script Properties
- *   before using SYNC QUOTATION TO WIX.
+ * - SYNC QUOTATION TO WIX uses the signed-in Google staff identity by default.
+ * - WIX_QUOTE_SYNC_TOKEN remains available for service-account deployments.
  */
 
 const QD_CFG = Object.freeze({
-  VERSION: "3.0.0",
+  VERSION: "3.2.0",
   POINT_BASE_ID: "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
   POINT_BASE_SHEETS: ["FOOD", "NONFOOD", "OTHERS"],
 
@@ -24,9 +24,11 @@ const QD_CFG = Object.freeze({
   DATA_START_ROW: 7,
   DATA_END_ROW: 3003,
   MAX_COST_ROWS_PER_RUN: 100,
+  FORMAL_SHEET_NAME: "WIX QUOTATION",
 
   STATUS: Object.freeze({
     RFQ: "RFQ",
+    PENDING: "PENDING",
     VIEW: "VIEW QUOTE",
     FAILED: "FAILED"
   }),
@@ -74,23 +76,6 @@ const QD_CFG = Object.freeze({
     "WIX MY LIST ID"
   ]),
 
-  // Only these user/system values move when sorting. Formula columns remain in place.
-  SORT_MOVABLE_HEADERS: Object.freeze([
-    "QUOTE STATUS",
-    "UNIT BARCODE",
-    "ITEM NAME",
-    "PACKING SIZE",
-    "EA",
-    "LP /PC",
-    "LP /CTN",
-    "DISC 1",
-    "DISC 2",
-    "DISC 3",
-    "QUOTE $/PC",
-    "TARGET GP",
-    "WIX MY LIST ID"
-  ]),
-
   SYNC_URL_PROPERTY: "WIX_QUOTE_SYNC_URL",
   SYNC_TOKEN_PROPERTY: "WIX_QUOTE_SYNC_TOKEN"
 });
@@ -99,26 +84,41 @@ const QD_CFG = Object.freeze({
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui
-    .createMenu("QUOTATION DESK")
-    .addItem("CATCH COST", "catchCostCurrentQuotationDesk")
-    .addItem("SORT BY CATALOGUE ORDER", "sortQuotationByCatalogueOrder")
-    .addSeparator()
-    .addItem("CHECK QD SETUP", "checkQuotationDeskSetup")
+    .createMenu("工具")
+    .addItem("抓成本", "catchCostCurrentQuotationDesk")
+    .addItem("排列产品顺序", "sortQuotationByCatalogueOrder")
     .addToUi();
   ui
-    .createMenu("SYNC TO WIX")
-    .addItem("SYNC VIEW QUOTE ROWS", "syncQuotationToWix")
+    .createMenu("PUBLISH QUOTATIONS")
+    .addItem("对客户公开报价", "syncQuotationToWix")
     .addToUi();
+
+  // Keep the salesperson's work queue actionable as soon as the QD opens.
+  // This is silent because onOpen must never block the sheet with a dialog.
+  const formalSheet = SpreadsheetApp.getActive().getSheetByName(QD_CFG.FORMAL_SHEET_NAME);
+  if (formalSheet) {
+    try {
+      sortQuotationSheet_(formalSheet, false);
+    } catch (error) {
+      console.error("Automatic QD sort failed: " + error.message);
+      SpreadsheetApp.getActive().toast(
+        "自动排列未完成。请使用 工具 > 排列产品顺序。",
+        "排列产品需要处理",
+        8
+      );
+    }
+  }
 }
 
 
 /**
- * Protects the three-state workflow without overwriting the salesperson's
- * dropdown choice. VIEW QUOTE is a deliberate sync selection; validation is
- * enforced by the sync command, not by silently changing the cell back to RFQ.
+ * A quote price edit is system-owned workflow input: the row becomes PENDING
+ * immediately, while the last published Buyer Room quote remains live. PENDING
+ * is not a salesperson dropdown decision; VIEW QUOTE is the deliberate release.
  */
 function onEdit(e) {
   if (!e || !e.range) return;
+
 
   const sheet = e.range.getSheet();
   const firstRow = Math.max(e.range.getRow(), QD_CFG.DATA_START_ROW);
@@ -137,9 +137,15 @@ function onEdit(e) {
 
   const statusCol = getHeaderCol_(headers, QD_CFG.HEADERS.QUOTE_STATUS);
   const barcodeCol = getHeaderCol_(headers, QD_CFG.HEADERS.BARCODE);
+  const quotePcCol = hasHeader_(headers, QD_CFG.HEADERS.QUOTE_PC)
+    ? getHeaderCol_(headers, QD_CFG.HEADERS.QUOTE_PC) : null;
+  const quoteCtnCol = hasHeader_(headers, QD_CFG.HEADERS.QUOTE_CTN)
+    ? getHeaderCol_(headers, QD_CFG.HEADERS.QUOTE_CTN) : null;
   const touchesBarcode = rangeTouchesColumn_(e.range, barcodeCol);
   const touchesStatus = rangeTouchesColumn_(e.range, statusCol);
-  if (!touchesStatus && !touchesBarcode) return;
+  const touchesQuote = (quotePcCol && rangeTouchesColumn_(e.range, quotePcCol)) ||
+    (quoteCtnCol && rangeTouchesColumn_(e.range, quoteCtnCol));
+  if (!touchesStatus && !touchesBarcode && !touchesQuote) return;
 
   const rowCount = lastRow - firstRow + 1;
   const statuses = sheet.getRange(firstRow, statusCol, rowCount, 1).getDisplayValues();
@@ -150,12 +156,25 @@ function onEdit(e) {
 
   for (let i = 0; i < rowCount; i++) {
     const barcode = normalizeBarcode_(barcodes[i][0]);
-    const status = normalizeStatus_(statuses[i][0]);
+    let status = normalizeStatus_(statuses[i][0]);
 
     if (!barcode) {
       output.push([""]);
       notes.push([""]);
       continue;
+    }
+
+    if (touchesQuote) {
+      output.push([QD_CFG.STATUS.PENDING]);
+      notes.push([""]);
+      continue;
+    }
+
+    // PENDING is written by the script after a quote edit. It is deliberately
+    // unavailable as a manual workflow choice.
+    if (touchesStatus && status === QD_CFG.STATUS.PENDING) {
+      const prior = normalizeStatus_(e.oldValue);
+      status = prior && prior !== QD_CFG.STATUS.PENDING ? prior : QD_CFG.STATUS.RFQ;
     }
 
     if (!status) {
@@ -164,7 +183,7 @@ function onEdit(e) {
       continue;
     }
 
-    if (status === QD_CFG.STATUS.RFQ || status === QD_CFG.STATUS.FAILED) {
+    if (status === QD_CFG.STATUS.RFQ || status === QD_CFG.STATUS.FAILED || status === QD_CFG.STATUS.PENDING) {
       output.push([status]);
       notes.push([""]);
       continue;
@@ -177,8 +196,11 @@ function onEdit(e) {
         notes.push([""]);
       } else {
         blockedCount++;
-        output.push([QD_CFG.STATUS.VIEW]);
-        notes.push(["VIEW QUOTE is selected but not ready to sync: " + validation.errors.join("; ")]);
+        const prior = normalizeStatus_(e.oldValue);
+        const fallback = touchesStatus && rowCount === 1 &&
+          prior && prior !== QD_CFG.STATUS.VIEW ? prior : QD_CFG.STATUS.RFQ;
+        output.push([fallback]);
+        notes.push([""]);
       }
       continue;
     }
@@ -188,13 +210,18 @@ function onEdit(e) {
     notes.push(["Unknown status was reset to RFQ."]);
   }
 
-  const statusRange = sheet.getRange(firstRow, statusCol, rowCount, 1);
-  statusRange.setValues(output).setNotes(notes);
+  // The QD dropdown uses "Show a warning" for values outside its three visible
+  // choices. That lets this trusted trigger write the system-owned PENDING
+  // state without ever removing or rebuilding the dropdown rule. Rebuilding a
+  // rule through Apps Script drops the custom option colours in Google Sheets.
+  sheet.getRange(firstRow, statusCol, rowCount, 1)
+    .setValues(output)
+    .setNotes(notes);
 
   if (blockedCount) {
     SpreadsheetApp.getActive().toast(
-      blockedCount + " row(s) remain VIEW QUOTE but are not ready to sync. Check the cell note.",
-      "VIEW QUOTE NEEDS ATTENTION",
+      "请先输入有效报价，再选择 VIEW QUOTE。",
+      "报价未完成",
       8
     );
   }
@@ -204,10 +231,37 @@ function onEdit(e) {
 function sortQuotationByCatalogueOrder() {
   const ui = SpreadsheetApp.getUi();
   const sheet = SpreadsheetApp.getActiveSheet();
+  try {
+    const result = sortQuotationSheet_(sheet, true);
+    if (!result.sorted) {
+      ui.alert("SORT", "There are no product rows to sort.", ui.ButtonSet.OK);
+      return;
+    }
+    ui.alert(
+      "SORT DONE",
+      result.rowCount + " product row(s) sorted.\n" +
+      result.riskCount + " high-risk row(s) moved to the top.",
+      ui.ButtonSet.OK
+    );
+  } catch (error) {
+    ui.alert("SORT ERROR", error.message, ui.ButtonSet.OK);
+    throw error;
+  }
+}
+
+
+/**
+ * Moves complete rows in one native Sheets sort. The work queue puts pending
+ * high risk first, then normal pending, published high risk, other risk, RFQ,
+ * FAILED and normal published quotes. Catalogue SORT NO. remains authoritative
+ * inside each group.
+ */
+function sortQuotationSheet_(sheet, waitForLock) {
   const lock = LockService.getDocumentLock();
-  if (!lock.tryLock(30000)) {
-    ui.alert("SORT", "Another QD task is running. Please try again.", ui.ButtonSet.OK);
-    return;
+  const lockWaitMs = waitForLock ? 30000 : 5000;
+  if (!lock.tryLock(lockWaitMs)) {
+    if (waitForLock) throw new Error("Another QD task is running. Please try again.");
+    return { sorted: false, rowCount: 0, riskCount: 0, skipped: true };
   }
 
   try {
@@ -216,48 +270,115 @@ function sortQuotationByCatalogueOrder() {
 
     const barcodeCol = getHeaderCol_(headers, QD_CFG.HEADERS.BARCODE);
     const sortCol = getHeaderCol_(headers, QD_CFG.HEADERS.SORT_ID);
+    const healthCol = hasHeader_(headers, QD_CFG.HEADERS.COST_HEALTH)
+      ? getHeaderCol_(headers, QD_CFG.HEADERS.COST_HEALTH) : null;
+    const gpCol = hasHeader_(headers, QD_CFG.HEADERS.GP)
+      ? getHeaderCol_(headers, QD_CFG.HEADERS.GP) : null;
+    const statusCol = hasHeader_(headers, QD_CFG.HEADERS.QUOTE_STATUS)
+      ? getHeaderCol_(headers, QD_CFG.HEADERS.QUOTE_STATUS) : null;
     const lastRow = findLastDataRow_(sheet, barcodeCol);
     if (lastRow < QD_CFG.DATA_START_ROW) {
-      ui.alert("SORT", "There are no product rows to sort.", ui.ButtonSet.OK);
-      return;
+      return { sorted: false, rowCount: 0, riskCount: 0 };
     }
 
     const rowCount = lastRow - QD_CFG.DATA_START_ROW + 1;
     const lastCol = sheet.getLastColumn();
-    const values = sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol).getValues();
+    const dataRange = sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol);
+    const values = dataRange.getValues();
     const barcodeIndex = barcodeCol - 1;
     const sortIndex = sortCol - 1;
+    const healthIndex = healthCol ? healthCol - 1 : -1;
+    const gpIndex = gpCol ? gpCol - 1 : -1;
+    const statusIndex = statusCol ? statusCol - 1 : -1;
 
-    const rows = values
-      .map(row => ({
-        row: row,
-        barcode: normalizeBarcode_(row[barcodeIndex]),
-        sort: normalizeSortId_(row[sortIndex])
-      }))
-      .filter(item => item.barcode)
-      .sort((a, b) => {
-        if (a.sort.rank !== b.sort.rank) return a.sort.rank - b.sort.rank;
-        const bySort = a.sort.value.localeCompare(b.sort.value, undefined, { numeric: true });
-        return bySort || a.barcode.localeCompare(b.barcode);
-      });
+    // Keep sorting deliberately simple and safe: calculate three temporary
+    // keys, then let Sheets move the entire row in one native sort operation.
+    // Formulas, notes, validations and every visible column travel together.
+    const helperStartCol = lastCol + 1;
+    const helperCount = 3;
+    const requiredLastCol = helperStartCol + helperCount - 1;
+    const originalMaxColumns = sheet.getMaxColumns();
+    const insertedHelperColumns = Math.max(0, requiredLastCol - originalMaxColumns);
+    if (insertedHelperColumns) {
+      sheet.insertColumnsAfter(originalMaxColumns, insertedHelperColumns);
+    }
 
-    QD_CFG.SORT_MOVABLE_HEADERS.forEach(header => {
-      if (!hasHeader_(headers, header)) return;
-      const sourceIndex = getHeaderIndex_(headers, header);
-      const targetCol = sourceIndex + 1;
-      const destination = sheet.getRange(QD_CFG.DATA_START_ROW, targetCol, rowCount, 1);
-      destination.clearContent().clearNote();
-      if (rows.length) destination.offset(0, 0, rows.length, 1)
-        .setValues(rows.map(item => [item.row[sourceIndex]]));
+    let productCount = 0;
+    let riskCount = 0;
+    const helperValues = values.map(row => {
+      const barcode = normalizeBarcode_(row[barcodeIndex]);
+      if (!barcode) return [99, 99, "ZZZZZZZZ"];
+
+      productCount++;
+      const risk = qdRiskPriority_(
+        healthIndex >= 0 ? row[healthIndex] : "",
+        gpIndex >= 0 ? row[gpIndex] : ""
+      );
+      if (risk < 3) riskCount++;
+      const status = statusIndex >= 0 ? normalizeStatus_(row[statusIndex]) : "";
+      const sort = normalizeSortId_(row[sortIndex]);
+      return [qdWorkflowPriority_(status, risk), sort.rank, sort.value];
     });
 
-    ui.alert("SORT DONE", rows.length + " product row(s) sorted by SORT NO.", ui.ButtonSet.OK);
-  } catch (error) {
-    ui.alert("SORT ERROR", error.message, ui.ButtonSet.OK);
-    throw error;
+    const helperRange = sheet.getRange(QD_CFG.DATA_START_ROW, helperStartCol, rowCount, helperCount);
+    try {
+      helperRange.setValues(helperValues);
+      sheet.getRange(QD_CFG.DATA_START_ROW, 1, rowCount, lastCol + helperCount).sort([
+        { column: helperStartCol, ascending: true },
+        { column: helperStartCol + 1, ascending: true },
+        { column: helperStartCol + 2, ascending: true }
+      ]);
+    } finally {
+      helperRange.clearContent().clearNote();
+      if (insertedHelperColumns) {
+        sheet.deleteColumns(originalMaxColumns + 1, insertedHelperColumns);
+      }
+    }
+
+    SpreadsheetApp.flush();
+    return {
+      sorted: true,
+      rowCount: productCount,
+      riskCount: riskCount
+    };
   } finally {
     lock.releaseLock();
   }
+}
+
+
+function qdRiskPriority_(costHealth, gpValue) {
+  const costRed = String(costHealth || "").trim() === "🔴";
+  const lowGp = qdIsLowGp_(gpValue);
+  if (costRed && lowGp) return 0;
+  if (costRed) return 1;
+  if (lowGp) return 2;
+  return 3;
+}
+
+
+function qdWorkflowPriority_(status, riskPriority) {
+  const normalized = normalizeStatus_(status);
+  const risky = Number(riskPriority) < 3;
+  if (normalized === QD_CFG.STATUS.PENDING && risky) return 0;
+  if (normalized === QD_CFG.STATUS.PENDING) return 1;
+  if (normalized === QD_CFG.STATUS.VIEW && risky) return 2;
+  if (risky) return 3;
+  if (normalized === QD_CFG.STATUS.RFQ) return 4;
+  if (normalized === QD_CFG.STATUS.FAILED) return 5;
+  if (normalized === QD_CFG.STATUS.VIEW) return 6;
+  return 7;
+}
+
+
+function qdIsLowGp_(value) {
+  if (value === "" || value === null || typeof value === "undefined") return false;
+  if (typeof value === "number") return Number.isFinite(value) && value < 0.06;
+  const text = String(value).trim();
+  if (!text) return false;
+  const number = Number(text.replace(/%/g, "").replace(/,/g, ""));
+  if (!Number.isFinite(number)) return false;
+  return text.indexOf("%") >= 0 ? number < 6 : number < 0.06;
 }
 
 
@@ -341,10 +462,12 @@ function syncQuotationToWix() {
       }))
     };
 
+    const authorizationToken = config.token || ScriptApp.getOAuthToken();
+    if (!authorizationToken) throw new Error('Google staff authorization is unavailable. Sign in again and retry.');
     const response = UrlFetchApp.fetch(config.url, {
       method: "post",
       contentType: "application/json",
-      headers: { Authorization: "Bearer " + config.token },
+      headers: { Authorization: "Bearer " + authorizationToken },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
@@ -369,21 +492,24 @@ function syncQuotationToWix() {
     });
 
     const failed = [];
-    let synced = 0;
+    let changed = 0;
+    let unchanged = 0;
     ready.forEach(item => {
-      const result = resultMap.size ? resultMap.get(item.myListId) : { ok: true };
+      const result = resultMap.get(item.myListId);
       if (!result || result.ok === false) {
         failed.push({ row: item.row, error: (result && (result.error || result.message)) || "No result returned by Wix." });
       } else {
-        synced++;
+        if (result.changed === false || result.unchanged === true) unchanged++;
+        else changed++;
       }
     });
     markSyncFailures_(sheet, headers, failed);
 
     ui.alert(
-      "SYNC COMPLETE",
-      "Sent: " + ready.length +
-      "\nSynced: " + synced +
+      failed.length || invalid.length ? "PUBLISH COMPLETED WITH ERRORS" : "QUOTATIONS PUBLISHED",
+      "Confirmed rows checked: " + ready.length +
+      "\nNew or updated: " + changed +
+      "\nUnchanged: " + unchanged +
       "\nFailed: " + (failed.length + invalid.length) +
       "\nRequest ID: " + requestId,
       ui.ButtonSet.OK
@@ -393,6 +519,7 @@ function syncQuotationToWix() {
     throw error;
   } finally {
     lock.releaseLock();
+    try { sortQuotationSheet_(sheet, false); } catch (sortError) { console.error("Post-publish sort failed: " + sortError.message); }
   }
 }
 
@@ -534,9 +661,6 @@ function writeCostResults_(sheet, headers, success, failed) {
       QD_CFG.HEADERS.DISC_2, QD_CFG.HEADERS.DISC_3, QD_CFG.HEADERS.SORT_ID]
       .forEach(header => sheet.getRange(result.row, getHeaderCol_(headers, header)).clearContent());
     const statusCell = sheet.getRange(result.row, statusCol);
-    if (normalizeStatus_(statusCell.getDisplayValue()) === QD_CFG.STATUS.VIEW) {
-      statusCell.setValue(QD_CFG.STATUS.RFQ);
-    }
     statusCell.setNote("Cost refresh blocked: " + result.reason);
   });
 }
@@ -545,20 +669,14 @@ function writeCostResults_(sheet, headers, success, failed) {
 function validateQuoteRow_(sheet, headers, row) {
   const errors = [];
   const barcode = normalizeBarcode_(getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.BARCODE));
-  const costHealth = String(getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.COST_HEALTH) || "").trim();
-  const netCost = getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.NET_COST_CTN);
   const quotePc = getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.QUOTE_PC);
   const quoteCtn = getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.QUOTE_CTN);
   const myListId = String(getCellByHeader_(sheet, headers, row, QD_CFG.HEADERS.WIX_MY_LIST_ID) || "").trim();
 
   if (!barcode) errors.push("UNIT BARCODE is missing");
   if (!myListId) errors.push("WIX MY LIST ID is missing");
-  if (!isFinitePositive_(netCost)) errors.push("NET COST /CTN must be greater than 0");
   if (!isFinitePositive_(quotePc)) errors.push("QUOTE $/PC must be greater than 0");
   if (!isFinitePositive_(quoteCtn)) errors.push("QUOTE $/CTN must be greater than 0");
-  if (costHealth !== "🟢" && costHealth !== "🟠") {
-    errors.push("COST HEALTH must be green or orange");
-  }
 
   return { ok: errors.length === 0, errors: errors };
 }
@@ -601,14 +719,10 @@ function getSelectedDataRows_(sheet, barcodeCol, maxRows) {
 
 function getSyncConfig_() {
   const properties = PropertiesService.getScriptProperties();
-  const url = String(properties.getProperty(QD_CFG.SYNC_URL_PROPERTY) || "").trim();
+  const url = String(properties.getProperty(QD_CFG.SYNC_URL_PROPERTY) ||
+    "https://fmcg999.wixstudio.com/fmcgmalaysia/_functions/quotationSync").trim();
   const token = String(properties.getProperty(QD_CFG.SYNC_TOKEN_PROPERTY) || "").trim();
-  if (!url || !token) {
-    throw new Error(
-      "Wix sync is not configured. Add " + QD_CFG.SYNC_URL_PROPERTY +
-      " and " + QD_CFG.SYNC_TOKEN_PROPERTY + " in Apps Script Properties."
-    );
-  }
+  if (!url) throw new Error("Wix quotation sync URL is unavailable.");
   return { url: url, token: token };
 }
 
@@ -750,4 +864,3 @@ function isFinitePositive_(value) {
 function isBlank_(value) {
   return value === "" || value === null || value === undefined;
 }
-
