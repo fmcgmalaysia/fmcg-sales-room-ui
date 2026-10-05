@@ -2,6 +2,7 @@ import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownlo
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
+import wixRealtimeFrontend from 'wix-realtime-frontend';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
@@ -185,6 +186,11 @@ $w.onReady(async function () {
       }
     }
   });
+  wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, (message) => {
+    if (!frameReady || message?.payload?.type !== 'ORDER_QUANTITY_CHANGED') return;
+    frame.postMessage({ type: 'BUYER_ROOM_ORDER_REFRESH' });
+    loadWorkspace().catch(error => console.error('Buyer order realtime refresh failed', error));
+  }).catch(error => console.error('Buyer order realtime subscription failed', error));
 
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving

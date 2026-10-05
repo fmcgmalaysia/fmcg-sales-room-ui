@@ -16,9 +16,9 @@ test('Track Orders uses the compact unlabeled pencil action column', () => {
   assert.doesNotMatch(html, />ACTION<\/div>/);
 });
 
-test('reduction is available only before NCT or GHR submission', () => {
-  assert.match(html, /function canReduceOrder\(order\)\{return !String\(order\.status\|\|''\)\.toUpperCase\(\)\.startsWith\('SUBMITTED TO '\)\}/);
-  assert.match(backend, /if \(upper\(order\.status\)\.startsWith\('SUBMITTED TO '\)\) throw new Error\('Requested quantity is locked after submission to NCT \/ GHR\.'\)/);
+test('customer quantities are locked immediately after submission, including the existing API route', () => {
+  assert.match(html, /function canReduceOrder\(order\)\{return false\}/);
+  assert.match(backend, /throw new Error\('Submitted orders are locked\. Please contact your salesperson to request changes\.'\)/);
   assert.match(page, /message\.type === 'BUYER_ROOM_REDUCE_ORDER'/);
   assert.match(page, /reduceBuyerOrderLine\(/);
 });
@@ -32,7 +32,7 @@ test('reduction preserves the original quantity and records an immutable audit',
 });
 
 test('reduction dialog keeps product details readable and uses one clear action', () => {
-  assert.match(html, /2026-10-05-quantity-width-room5-v1/);
+  assert.match(html, /2026-10-05-sales-quantity-history-room5-v1/);
   assert.match(page, /buyer-room\.html\?v=20261004-selection-same-site-download-v98/);
   assert.match(html, /\.reduction-product span\{[^}]+font-size:11px/);
   assert.match(html, /\.reduction-value\{display:flex;align-items:center;font-size:16px/);
