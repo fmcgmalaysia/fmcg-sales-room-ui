@@ -1,4 +1,4 @@
-<!-- Sales Room build: 2026-10-03-customer-qd-activation-v61 -->
+<!-- Sales Room build: 2026-10-05-quotation-result-room5-v1 -->
 <style>.fx-modal{width:min(680px,100%)!important}.fx-modal-grid{display:block!important}.fx-sync-result{margin:12px 0 0!important}</style>
 <!doctype html>
 <html>
@@ -958,7 +958,17 @@ renderCustomerWorkspaceDrawer=function(customer){
   const assist=document.getElementById('drawerAssistSelection');if(assist&&!assist.disabled)assist.onclick=()=>window.open(catalogueUrl(customer.customerId),'_blank','noopener');
 };
 
-window.addEventListener('message',event=>{const message=event.data||{};if(message.type!=='SALES_ROOM_PUBLISH_QUOTES_RESULT')return;const button=document.getElementById('drawerPublishQuotes'),status=document.getElementById('drawerPublishStatus'),result=message.result||message,succeeded=message.ok!==false&&result.ok!==false;if(button){button.disabled=false;const label=button.querySelector('b');if(label)label.textContent='PUBLISH QUOTATIONS'}if(!status)return;status.className='workspace-publish-status show'+(succeeded?'':' error');if(!succeeded){status.textContent=result.error||message.error||'Quotation publishing failed.';return}status.textContent='Published '+(Number(result.changed)||0)+' updated · '+(Number(result.unchanged)||0)+' unchanged · '+(Number(result.failed)||0)+' failed';window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*')});
+function quotationPublishResultText(message){
+  const result=message.result||message,succeeded=message.ok!==false&&result.ok!==false;
+  if(!succeeded)return '报价同步失败\n'+(result.error||message.error||'服务未返回具体错误。')+'\n无法确认已完成数量，请核对报价状态。';
+  const count=key=>{const value=result[key];return (typeof value==='number'||typeof value==='string'&&value.trim()!=='')&&Number.isInteger(Number(value))&&Number(value)>=0?Number(value)+' 项':'未返回（无法确认）'};
+  const lines=['报价同步结果','已发布／更新：'+count('changed'),'价格未变化（跳过更新）：'+count('unchanged'),'失败：'+count('failed')];
+  if(result.customerId)lines.splice(1,0,'客户：'+String(result.customerId));
+  if(result.message)lines.push(result.message==='No confirmed quotations are ready to publish.'?'没有已确认且有效的报价可发布。':String(result.message));
+  lines.push('以上数量来自本次服务返回。未确认报价不发布，其数量未返回。');
+  return lines.join('\n');
+}
+window.addEventListener('message',event=>{const message=event.data||{};if(message.type!=='SALES_ROOM_PUBLISH_QUOTES_RESULT')return;const button=document.getElementById('drawerPublishQuotes'),status=document.getElementById('drawerPublishStatus'),result=message.result||message,succeeded=message.ok!==false&&result.ok!==false,copy=quotationPublishResultText(message);if(button){button.disabled=false;const label=button.querySelector('b');if(label)label.textContent='PUBLISH QUOTATIONS'}if(status){status.className='workspace-publish-status show'+(succeeded?'':' error');status.textContent=copy}if(succeeded)window.parent.postMessage({type:'SALES_ROOM_CUSTOMERS_REQUEST'},'*');window.alert(copy)});
 
 let pendingAccountActionV16=null;
 function ensureAccountConfirm(){
