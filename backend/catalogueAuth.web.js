@@ -555,7 +555,11 @@ export const getBuyerOrderDetail = webMethod(Permissions.SiteMember, async (orde
   let linesResult = await wixData.query(BUYER_LINE_COLLECTION).eq('customerId', buyer.customerId).eq('orderId', normalize(orderId)).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const lines = [...linesResult.items];
   while (linesResult.hasNext()) { linesResult = await linesResult.next(); lines.push(...linesResult.items); }
-  return { ok: true, customerId: buyer.customerId, order: { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) } };
+  let auditResult = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).contains('payload', '"orderId":' + JSON.stringify(normalize(orderId))).limit(1000).find({ suppressAuth: true, consistentRead: true });
+  const audits = [...auditResult.items];
+  while (auditResult.hasNext()) { auditResult = await auditResult.next(); audits.push(...auditResult.items); }
+  const editHistory = audits.map(payloadData).filter(audit => normalize(audit.customerId) === buyer.customerId && normalize(audit.orderId) === normalize(orderId) && ['SALES_QTY_UPDATED', 'BUYER_REDUCED_ORDER_LINE', 'BUYER_CANCELLED_ORDER_LINE'].includes(audit.action));
+  return { ok: true, customerId: buyer.customerId, order: { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))), editHistory } };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;
@@ -593,6 +597,7 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
 });
 export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (orderId, lineId, newQuantityCtn, requestId = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
+  throw new Error('Submitted orders are locked. Please contact your salesperson to request changes.');
   const id = normalize(orderId);
   const lineKey = normalize(lineId);
   const reductionId = normalize(requestId);

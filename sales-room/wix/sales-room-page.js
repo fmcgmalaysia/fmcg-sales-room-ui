@@ -1,4 +1,4 @@
-import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress } from 'backend/onboarding.web';
+import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web';
 import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web';
 import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web';
@@ -481,6 +481,13 @@ $w.onReady(function () {
     if (message.type === 'SALES_ROOM_ORDER_DETAIL_REQUEST') {
       try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_DETAIL', ...(await getSalesRoomOrderDetail(message.orderId || '')) }); }
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_DETAIL', ok: false, error: error?.message || 'Order detail could not be loaded.' }); }
+      return;
+    }
+    if (message.type === 'SALES_ROOM_ORDER_QTY_UPDATE') {
+      try {
+        const result = await saveSalesRoomOrderQty(message.orderId || '', message.lineId || '', message.quantityCtn, message.expectedRevision, message.requestId || '');
+        salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_QTY_RESULT', requestId: message.requestId, ...result });
+      } catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_QTY_RESULT', requestId: message.requestId, ok: false, error: error?.message || 'Quantity could not be saved.' }); }
       return;
     }
     if (message.type === 'SALES_ROOM_ORDER_FORM_REQUEST') {

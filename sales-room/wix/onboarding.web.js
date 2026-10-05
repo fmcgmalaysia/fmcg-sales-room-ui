@@ -4,6 +4,7 @@ import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
 import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
+import wixRealtimeBackend from 'wix-realtime-backend';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -622,26 +623,91 @@ export const confirmSalesRoomOrderForm = webMethod(
 
 export const saveSalesRoomOrderQty = webMethod(
   Permissions.SiteMember,
-  async () => {
-    await requireAuthorizedStaffContext();
-    throw new Error('Sales Room quantities are read-only. Additions require a new Buyer Room request; reductions must be made in Track Orders before NCT / GHR submission.');
+  async (orderId, lineId, newQuantityCtn, expectedRevision, requestId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const nextQty = Number(newQuantityCtn);
+    if (!Number.isSafeInteger(nextQty) || nextQty < 0) throw new Error('Enter a whole carton quantity of zero or more.');
+    const key = normalize(requestId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data;
+      const auditId = 'SALES-QTY-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || normalize(prior.data.detail?.lineId) !== normalize(lineId) || Number(prior.data.detail?.newQuantityCtn) !== nextQty || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'Quantity change already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Quantities are locked after transfer to NCT / GHR.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      const entries = (await readAllPayloadRows(BUYER_LINE_COLLECTION)).filter(entry => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.customerId) === normalize(order.customerId));
+      const entry = entries.find(item => normalize(item.data.lineId) === normalize(lineId));
+      if (!entry) throw new Error('Order line was not found.');
+      const line = entry.data;
+      if (line.masterSubmittedAt || line.submittedToMasterAt || line.orderConfirmedAt || ['committedQtyCtn', 'committedQty', 'customerOrderQty', 'masterQtyCtn', 'completedQtyCtn'].some(field => line[field] !== undefined && line[field] !== null && line[field] !== '')) throw new Error('This line is already committed and cannot be changed.');
+      const previousQty = quantity(line.effectiveRequestedQtyCtn ?? line.requestedQtyCtn ?? line.quantityCtn);
+      if (nextQty === previousQty) return { ok: true, orderId: normalize(orderId), message: 'Quantity is unchanged.' };
+      const at = new Date().toISOString();
+      const actorName = normalize(staff.staffName || staff.title || staff.loginEmail);
+      const nextLine = { ...line, originalQuantityCtn: quantity(line.originalQuantityCtn ?? line.quantityCtn), effectiveRequestedQtyCtn: nextQty, effectiveLineAmount: money(nextQty * money(line.lockedPriceCtn || line.lockedUnitPrice)), effectiveLineCbm: nextQty * Number(line.cbmPerCtn || 0), lastQuantityEditAt: at, lastQuantityEditBy: actorName, updatedAt: at };
+      const effectiveLines = entries.map(item => item === entry ? nextLine : item.data);
+      const nextOrder = { ...order, originalTotalCartons: quantity(order.originalTotalCartons ?? order.totalCartons), effectiveTotalCartons: effectiveLines.reduce((sum, item) => sum + quantity(item.effectiveRequestedQtyCtn ?? item.requestedQtyCtn ?? item.quantityCtn), 0), effectiveEstimatedTotal: money(effectiveLines.reduce((sum, item) => sum + money(item.effectiveLineAmount ?? item.lineAmount), 0)), effectiveTotalCbm: effectiveLines.reduce((sum, item) => sum + Number(item.effectiveLineCbm ?? item.lineCbm ?? 0), 0), revision: quantity(order.revision) + 1, updatedAt: at };
+      try {
+        await putPayload(BUYER_LINE_COLLECTION, entry.record.title, nextLine);
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, nextOrder);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'SALES_QTY_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), actorName, detail: { lineId: normalize(lineId), barcode: normalize(line.barcode), itemName: normalize(line.itemName), originalQuantityCtn: nextLine.originalQuantityCtn, previousQuantityCtn: previousQty, newQuantityCtn: nextQty, revision: nextOrder.revision } });
+      } catch (error) {
+        try {
+          await putPayload(BUYER_LINE_COLLECTION, entry.record.title, line);
+          await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order);
+        } catch (recoveryError) {
+          error.keepOrderMutationLock = true;
+          console.error('Order quantity recovery failed', recoveryError);
+          throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true });
+        }
+        throw error;
+      }
+      try { await wixRealtimeBackend.publish({ name: 'sales-room-signals' }, { type: 'ORDER_QUANTITY_CHANGED', at }); }
+      catch (error) { console.warn('Order realtime refresh failed', error); }
+      return { ok: true, orderId: normalize(orderId), message: 'Quantity updated. Buyer Room will refresh automatically.' };
+    });
   }
 );
+
+async function withSalesOrderMutation(orderId, staff, action) {
+  const id = normalize(orderId);
+  const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);
+  if (!initial) throw new Error('Order was not found.');
+  await findAuthorizedCustomer(initial.data.customerId, staff);
+  const lockId = 'ORDER-LOCK-' + id;
+  try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString() }) }, { suppressAuth: true }); }
+  catch (error) {
+    let lock = null;
+    try { lock = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* Preserve the actual insert error when no lock exists. */ }
+    if (lock) throw new Error('This order is being updated. Refresh it and try again.');
+    throw error;
+  }
+  let release = true;
+  try {
+    const record = await wixData.get(BUYER_ORDER_COLLECTION, initial.record._id, { suppressAuth: true, consistentRead: true });
+    return await action({ record, data: payloadData(record) });
+  } catch (error) { release = !error.keepOrderMutationLock; throw error; }
+  finally {
+    if (release) await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
+  }
+}
 
 export const submitSalesRoomOrder = webMethod(
   Permissions.SiteMember,
   async (orderId, destination) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
-    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     const target = upper(destination);
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'SUBMITTED TO ' + target, destination: target, submittedAt: new Date().toISOString(), submittedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
     await writeOrderAudit('ORDER_SUBMITTED', orderId, next.customerId, staff, { destination: target });
     return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status, destination: target });
+    });
   }
 );
 
@@ -649,14 +715,12 @@ export const createSalesRoomProforma = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
-      .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
-    if (!orderEntry) throw new Error('Order was not found.');
-    await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'PROFORMA REQUESTED', proformaRequestedAt: new Date().toISOString(), proformaRequestedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
     await writeOrderAudit('PROFORMA_REQUESTED', orderId, next.customerId, staff, {});
     return Object.freeze({ ok: true, orderId: normalize(orderId), status: next.status });
+    });
   }
 );
 
