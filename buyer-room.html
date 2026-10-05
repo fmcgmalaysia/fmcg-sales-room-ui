@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-05-visible-quotes-read-room5-v1">
+<meta name="build-version" content="2026-10-05-quantity-drafts-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -141,7 +141,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .order-grid .order-product{gap:10px}.order-grid .qty{width:62px;padding-left:7px;padding-right:5px}
 /* Order Form reuses My Selection's first three column widths and spacing. */
 .order-grid{min-width:1050px}
-.order-grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 118px 74px 115px 88px 145px 72px}
+.order-grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 118px 120px 115px 88px 145px 72px}
 .order-grid .row>div:nth-child(-n+3){padding:4px 7px}
 .order-grid .row>div:nth-child(2){display:flex;align-items:center;justify-content:flex-start;text-align:left}
 .order-grid .row.head>div.order-qty-head{flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.15;white-space:normal}
@@ -191,6 +191,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 /* Buyer Room V93: make the pencil-to-row relationship unmistakable. */
 #trackRows .tracking-row{transition:background-color .14s ease,box-shadow .14s ease,transform .14s ease}#trackRows .tracking-row:hover{position:relative;z-index:2;background:#eaf6f1!important;box-shadow:inset 4px 0 #14835f,0 4px 12px rgba(20,83,65,.12);transform:translateY(-1px)}#trackRows .tracking-row:hover .tracking-edit{background:#14835f;color:#fff;box-shadow:0 3px 9px rgba(20,131,95,.24);transform:scale(1.05)}
 </style>
+<style>.qty-editor{display:flex;align-items:center;gap:4px}.qty-editor .qty{flex:0 0 78px;min-width:78px;width:78px}.qty-edit{flex:0 0 22px;border:0;background:transparent;color:#1769d7;padding:3px;font-size:16px;cursor:pointer}.qty-edit:disabled{color:#9aa6b6;cursor:wait}.qty[readonly]{background:#f3f6fa;color:#173a2f}.qty-edit:focus-visible{outline:2px solid #1769d7;border-radius:3px}</style>
 </head>
 <body>
 <div class="mobile-note"><div><strong>Buyer Room works best on a computer or tablet.</strong>Please continue on a larger screen to manage product lists and orders.</div></div>
@@ -228,7 +229,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
     </section>
     <section id="orderView" class="view">
-      <header class="top"><div><h1>Order Form</h1><p class="sub order-intro">Enter quantities for quoted products, then review your order before sending the request.</p></div></header>
+      <header class="top"><div><h1>Order Form</h1><p class="sub order-intro">Enter a quantity, then press Enter to save. Use the pencil to edit. Review your order before sending the request.</p></div></header>
       <div class="summary order-summary"><div class="metric"><label>Products</label><strong id="sumProducts">0</strong></div><div class="metric"><label>Total Cartons</label><strong id="sumCtn">0 CTN</strong></div><div class="metric"><label>Total CBM</label><strong id="sumCbm">0.0000</strong></div><div class="metric"><label>Estimated Order Total</label><strong id="sumAmount">—</strong></div><div class="order-submit"><button class="btn primary" id="submitOrder">Send Order Request</button></div></div>
       <div class="list-tabs-bar order-action-bar"><div class="order-filters" role="tablist" aria-label="Filter Order Form"><button class="order-filter active" type="button" data-order-filter="all" role="tab" aria-selected="true" aria-pressed="true">All Items <b id="orderAllCount">0</b></button><button class="order-filter" type="button" data-order-filter="qty" role="tab" aria-selected="false" aria-pressed="false">With Qty <b id="orderQtyCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="orderSearch" type="search" aria-label="Search order form by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="showing" id="orderShowing"></div><p class="order-note" id="hiddenOrdered"></p>
@@ -252,7 +253,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="submitModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reviewOrderTitle"><div class="order-review"><button class="order-review-close" id="cancelSubmit" type="button" aria-label="Close order review">×</button><header class="order-review-head"><div><h3 id="reviewOrderTitle">Review Order</h3><p><span id="reviewItemCount">0</span> items selected for this order.</p></div><div class="order-review-meta"><span id="reviewCompany">Buyer Account</span><i>•</i><span id="reviewDate">—</span><i>•</i><span id="reviewCurrency">USD</span></div></header><div class="order-review-summary"><div class="order-review-metric"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="order-review-metric"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="order-review-metric"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="order-review-metric"><span>Estimated Total</span><strong id="reviewAmount">—</strong></div></div><div class="order-review-table"><div class="order-review-grid"><div class="order-review-line review-table-head"><div>#</div><div>Barcode</div><div>Descriptions</div><div>Packing Size</div><div id="reviewPriceHeader">USD / CTN</div><div>Qty CTN</div><div id="reviewAmountHeader">Line Amount / USD</div><div>CBM</div></div><div id="reviewRows"></div></div></div><footer class="order-review-footer"><div class="order-assurance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 6v6c0 5.5-3.8 9-9 10-5.2-1-9-4.5-9-10V6l9-4Zm-1.1 13.5 6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg><div><strong>Submit with confidence</strong><span>Additions use a new request. Reductions are available in Track Orders until transfer to NCT / GHR.</span></div></div><div class="order-review-actions"><button class="btn primary" id="confirmSubmit">Send Request</button></div></footer></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
-const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},orderDetailRequests:new Set(),historyLoading:false,orderAttempt:null,orderSubmitting:false,pendingReduction:null,reductionSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
+const state={customerId:'',companyName:'Buyer Account',memberName:'',currency:'USD',catalogueUrl:'',selectionLimit:100,adminAccess:false,account:null,notifications:[],orderNotifications:[],my:[],removed:[],orders:[],ordersNextCursor:'',orderDetails:{},orderDetailRequests:new Set(),historyLoading:false,orderAttempt:null,orderSubmitting:false,pendingReduction:null,reductionSubmitting:false,listMode:'current',selectionFilter:'all',orderFilter:'all',pendingRemovals:new Map(),pendingRestores:new Map(),pendingQuantities:new Map(),quantityDrafts:new Map(),pendingOrder:null,lastRemoved:null,newQuoteItems:[],quoteSnapshot:{},quoteStorageKey:''};
 globalThis.__buyerRoomState=state;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0, money=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -286,6 +287,26 @@ function markDisplayedQuotesSeen(view,items){
   state.newQuoteItems=state.newQuoteItems.filter(item=>!ids.has(String(item.id||item.barcode)));updateNotificationBadge();if(!$('quoteNotifications').hidden)renderNotificationPanel()
 }
 function markQuotesSeen(){try{localStorage.setItem(state.quoteStorageKey,JSON.stringify(state.quoteSnapshot))}catch{}state.newQuoteItems=[];updateNotificationBadge()}
+function quantityEditsBlocked(){return state.pendingQuantities.size>0||[...state.quantityDrafts.values()].some(draft=>draft.editing||draft.error)}
+function rememberQuantityDraft(item,input){
+  const key=String(item.id),draft=state.quantityDrafts.get(key)||{committedQty:num(input.dataset.committedQty)};
+  draft.value=input.value;draft.editing=true;draft.error='';draft.awaitingEcho=false;state.quantityDrafts.set(key,draft);item.orderQtyCtn=Math.max(0,Math.floor(num(input.value)));summary()
+}
+function confirmQuantityDraft(item,input){
+  if(state.pendingQuantities.has(String(item.id)))return;
+  if(input.value.trim()&&!input.checkValidity())return input.reportValidity();
+  rememberQuantityDraft(item,input);const draft=state.quantityDrafts.get(String(item.id));draft.editing=false;draft.value=String(Math.max(0,Math.floor(num(input.value))));
+  queueQuantitySave(item,input);renderOrder()
+}
+function restoreQuantityDrafts(){
+  for(const [id,draft] of state.quantityDrafts){
+    const item=state.my.find(candidate=>String(candidate.id)===id);if(!item){state.quantityDrafts.delete(id);continue}
+    const echoed=num(item.orderQtyCtn)===num(draft.value)&&(!draft.savedAt||String(item.qtyEditedAt||'')>=draft.savedAt);
+    if(draft.awaitingEcho&&echoed)draft.awaitingEcho=false;
+    if(draft.editing||draft.error||draft.awaitingEcho||(draft.savedAt&&String(item.qtyEditedAt||'')<draft.savedAt)||state.pendingQuantities.has(id)){item.orderQtyCtn=Math.max(0,Math.floor(num(draft.value)));if(draft.savedAt){item.qtyEditedAt=draft.savedAt;item.qtyEditedBy=draft.savedBy}}
+    else{draft.value=String(num(item.orderQtyCtn));draft.committedQty=num(item.orderQtyCtn)}
+  }
+}
 function queueQuantitySave(item,input){
   const key=String(item.id),qty=Math.max(0,Math.floor(num(input.value)));
   let pending=state.pendingQuantities.get(key);
@@ -306,16 +327,19 @@ function finishQuantity(result){
   const item=state.my.find(x=>String(x.id)===key);
   if(!result.ok){
     state.pendingQuantities.delete(key);
-    if(item){item.orderQtyCtn=pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
+    const draft=state.quantityDrafts.get(key);if(draft){draft.error=result.message||'Quantity could not be saved.';draft.editing=false;draft.awaitingEcho=false}
+    if(item){item.orderQtyCtn=draft?num(draft.value):pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
     renderOrder();toast(result.message||'Quantity could not be saved. Please try again.');return;
   }
   pending.committedQty=num(result.quantityCtn);pending.committedAt=result.qtyEditedAt||'';pending.committedBy=result.qtyEditedBy||'';
   if(pending.desiredQty!==pending.committedQty){pending.sentQty=pending.desiredQty;post('BUYER_ROOM_SAVE_QTY',{itemId:key,quantityCtn:pending.desiredQty});return}
   state.pendingQuantities.delete(key);
+  const draft=state.quantityDrafts.get(key);if(draft){draft.value=String(pending.committedQty);draft.committedQty=pending.committedQty;draft.savedAt=pending.committedAt;draft.savedBy=pending.committedBy;draft.error='';draft.awaitingEcho=true}
   if(item){item.orderQtyCtn=pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
   renderOrder();
 }
 function renderOrder(){
+  const focusedQty=document.activeElement?.dataset?.qty;
   // Detach old change handlers before replacing focused inputs: removing one
   // otherwise fires a stale blur/change and queues the same quantity twice.
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{input.onchange=null;input.oninput=null});
@@ -323,15 +347,23 @@ function renderOrder(){
   $('orderAllCount').textContent=state.my.length;$('orderQtyCount').textContent=qtyItems.length;document.querySelectorAll('[data-order-filter]').forEach(button=>{const active=button.dataset.orderFilter===state.orderFilter;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.setAttribute('aria-pressed',String(active))});$('orderShowing').textContent=state.orderFilter==='qty'?`Showing ${items.length} items with quantity`:`Showing ${items.length} of ${state.my.length} items`;$('orderRows').className=items.length?'':'empty';
   $('orderRows').innerHTML=items.length?items.map(x=>{
     const orderable=isOrderable(x),qty=orderable?num(x.orderQtyCtn):0,amount=qty*ctnPrice(x),cbm=qty*num(x.cbmPerCtn),pending=state.pendingQuantities.get(String(x.id));
-    const editedTime=pending?'Saving…':x.qtyEditedAt?compactTime(x.qtyEditedAt):'—';
+    const draft=state.quantityDrafts.get(String(x.id)),editing=orderable&&!pending&&(draft?draft.editing:qty===0),committedQty=pending?pending.committedQty:draft?draft.committedQty:qty;
+    const editedTime=draft?.error?'Save failed · retry':pending?'Saving…':x.qtyEditedAt?compactTime(x.qtyEditedAt):'—';
     const editedBy=pending?state.memberName||'—':x.qtyEditedBy||'—';
     const cbmDisplay=orderable&&qty>0&&cbm===0?'<span class="cbm-zero-pill" title="CBM data is currently unavailable">0.0000</span>':orderable?cbm.toFixed(4):'—';
-    return `<div class="row${orderable?'':' order-waiting'}"><div class="mono">${esc(x.barcode)}</div><div>${thumbnail(x,true)}</div><div><div class="name" title="${esc(x.itemName)}">${esc(x.itemName)}</div><div class="packing-meta">${esc(x.packingSize)}</div></div><div>${priceCell(x,'vip')}</div><div><input class="qty" type="number" min="0" step="1" value="${qty||''}" data-qty="${esc(x.id)}" data-committed-qty="${pending?pending.committedQty:qty}" aria-label="${orderable?`Order quantity for ${esc(x.itemName)}`:`Quantity unavailable until ${esc(x.itemName)} is quoted`}" ${orderable?'':'disabled title="Available after the V.I.P price is released"'}></div><div class="price ${orderable?'':'line-unavailable'}">${orderable?`<strong>${money(amount)}</strong>`:'—'}</div><div class="mono ${orderable?'':'line-unavailable'}">${cbmDisplay}</div><div class="time qty-audit-time">${editedTime}</div><div class="time qty-audit-by">${esc(editedBy)}</div></div>`
+    return `<div class="row${orderable?'':' order-waiting'}"><div class="mono">${esc(x.barcode)}</div><div>${thumbnail(x,true)}</div><div><div class="name" title="${esc(x.itemName)}">${esc(x.itemName)}</div><div class="packing-meta">${esc(x.packingSize)}</div></div><div>${priceCell(x,'vip')}</div><div class="qty-editor"><input class="qty" type="number" min="0" step="1" value="${esc(draft?.editing?draft.value:draft?String(qty):qty||'')}" ${editing?'':'readonly'} title="${editing?'Press Enter to confirm and save':'Click the pencil to edit'}" data-qty="${esc(x.id)}" data-committed-qty="${committedQty}" aria-label="${orderable?`Order quantity for ${esc(x.itemName)}`:`Quantity unavailable until ${esc(x.itemName)} is quoted`}" ${orderable?'':'disabled'}>${orderable?`<button type="button" class="qty-edit" data-qty-edit="${esc(x.id)}" aria-label="${draft?.error?'Retry quantity for ':'Edit quantity for '}${esc(x.itemName)}" title="${draft?.error?'Edit and retry':'Edit quantity'}" ${editing?'hidden':''} ${pending?'disabled':''}>✎</button>`:''}</div><div class="price ${orderable?'':'line-unavailable'}">${orderable?`<strong>${money(amount)}</strong>`:'—'}</div><div class="mono ${orderable?'':'line-unavailable'}">${cbmDisplay}</div><div class="time qty-audit-time">${editedTime}</div><div class="time qty-audit-by">${esc(editedBy)}</div></div>`
   }).join(''):state.orderFilter==='qty'?'<strong>No Items with Quantity</strong>Enter an order quantity in All Items to build your request.':'<strong>No Matching Products</strong>Try another product name, brand or barcode.';
   document.querySelectorAll('[data-qty]:not(:disabled)').forEach(el=>{
-    el.oninput=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item)){item.orderQtyCtn=Math.max(0,Math.floor(num(el.value)));summary()}};
-    el.onchange=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item))queueQuantitySave(item,el)};
+    el.oninput=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item)&&!el.readOnly)rememberQuantityDraft(item,el)};
+    el.onchange=null;
+    el.onkeydown=event=>{if(event.key==='Enter'&&!el.readOnly){event.preventDefault();const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item))confirmQuantityDraft(item,el)}};
   });
+  document.querySelectorAll('[data-qty-edit]').forEach(button=>button.onclick=()=>{
+    const input=button.parentElement.querySelector('[data-qty]'),item=state.my.find(x=>String(x.id)===button.dataset.qtyEdit);if(!item||state.pendingQuantities.has(String(item.id)))return;
+    if(!input.readOnly){confirmQuantityDraft(item,input);return}
+    rememberQuantityDraft(item,input);input.readOnly=false;input.title='Press Enter to confirm and save';button.hidden=true;input.focus();input.select()
+  });
+  if(focusedQty){const input=[...document.querySelectorAll('#orderRows [data-qty]')].find(el=>el.dataset.qty===focusedQty);if(input&&!input.readOnly&&!input.disabled)input.focus()}
   bindImagePreview();summary();markDisplayedQuotesSeen('order',items)
 }
 function orderInvoiceNo(order,line={}){return String(line.invoiceNo||line.invoiceNumber||line.desk3InvoiceNo||order.invoiceNo||order.invoiceNumber||order.desk3InvoiceNo||'').trim()}
@@ -355,7 +387,7 @@ function renderTrackingRail(rows){const total=rows.length,stages=trackingStages.
 function renderTrackOrders(){const rows=allTrackingRows(),activeCommittedQty=row=>row.committed===null?0:Math.max(0,row.committed-completedLineQty(row.line)),committedCbm=rows.reduce((sum,row)=>sum+activeCommittedQty(row)*num(row.line.cbmPerCtn),0),committedValue=rows.reduce((sum,row)=>sum+activeCommittedQty(row)*num(row.line.lockedPriceCtn||row.line.lockedUnitPrice),0);$('trackCommittedValue').textContent=`${state.currency||'USD'} ${money(committedValue)}`;$('trackCommittedCbm').textContent=`${committedCbm.toFixed(4)} m³`;renderTrackingRail(rows);$('trackRows').innerHTML=rows.length?rows.map(row=>trackingLineHtml(row)).join(''):state.orders.length&&!Object.keys(state.orderDetails).length?'<div class="tracking-empty"><strong>Loading active request lines…</strong>Please wait.</div>':'<div class="tracking-empty"><strong>No Active Request Lines</strong>New requests will appear here after they are sent.</div>';document.querySelectorAll('[data-reduce-order]').forEach(button=>button.onclick=()=>openReduction(button.dataset.reduceOrder,button.dataset.reduceLine));$('trackMore').hidden=!state.ordersNextCursor;$('trackMore').disabled=state.historyLoading;$('trackMore').textContent=state.historyLoading?'Loading…':'Load More Requests'}
 function renderCompletedOrders(){const rows=allCompletedRows(),groups=new Map();for(const row of rows){if(!groups.has(row.invoiceNo))groups.set(row.invoiceNo,[]);groups.get(row.invoiceNo).push(row)}$('completedList').innerHTML=groups.size?[...groups].map(([invoiceNo,items])=>{const totalCtn=items.reduce((s,x)=>s+x.qty,0),total=items.reduce((s,x)=>s+x.qty*num(x.line.lockedPriceCtn||x.line.lockedUnitPrice),0),cbm=items.reduce((s,x)=>s+x.qty*num(x.line.cbmPerCtn),0),completedAt=items[0].line.completedAt||items[0].order.completedAt||items[0].order.updatedAt||items[0].order.confirmedAt;return `<article class="completed-invoice"><div class="completed-invoice-head"><div class="completed-invoice-title"><small>COMPLETED ORDER / INVOICE</small><strong>${esc(invoiceNo)}</strong><span>Completed ${esc(compactTime(completedAt))}</span></div><div class="completed-metric"><span>ITEM LINES</span><b>${items.length}</b></div><div class="completed-metric"><span>TOTAL CTN</span><b>${totalCtn.toLocaleString('en-US')}</b></div><div class="completed-metric"><span>TOTAL CBM</span><b>${cbm.toFixed(4)}</b></div><div class="completed-metric"><span>FINAL VALUE</span><b>${esc(items[0].line.currency||items[0].order.currency||state.currency)} ${money(total)}</b><span class="completed-status">COMPLETED</span></div></div><div class="completed-body"><div class="completed-body-title">Completed Item Snapshot <span>${items.length} request line${items.length===1?'':'s'}</span></div><div class="tracking-row tracking-head"><div>Barcode</div><div>Item Name</div><div>Packing Size</div><div class="num">USD / CTN</div><div>Request On</div><div class="num two-line">Requested<br>Qty</div><div class="num two-line">Completed<br>Qty</div><div class="num two-line">Line Amount<br>/ USD</div><div class="num">CBM</div><div>Status</div><div class="center">Updated</div></div>${items.map(item=>trackingLineHtml(item,true)).join('')}</div></article>`}).join(''):state.orders.length&&!Object.keys(state.orderDetails).length?'<div class="tracking-empty"><strong>Loading completed transactions…</strong>Please wait.</div>':'<div class="placeholder"><div class="placeholder-icon">✓</div><h3>No Completed Orders Yet</h3><p>Lines move here after Master assigns the final invoice.</p></div>'}
 function renderOrderTracking(){renderTrackOrders();renderCompletedOrders();requestOrderDetails()}
-function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),ctn=ordered.reduce((s,x)=>s+num(x.orderQtyCtn),0),cbm=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*num(x.cbmPerCtn),0),amount=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*ctnPrice(x),0);$('sumProducts').textContent=ordered.length;$('sumCtn').textContent=`${ctn} CTN`;$('sumCbm').textContent=cbm.toFixed(4);$('sumAmount').textContent=`${state.currency} ${money(amount)}`;$('orderQtyCount').textContent=ordered.length;$('submitOrder').disabled=!ordered.length||state.pendingQuantities.size>0;$('submitOrder').title=state.pendingQuantities.size?'Please wait for quantity changes to save.':'';const visibleIds=new Set([...document.querySelectorAll('#orderRows [data-qty]')].map(x=>x.dataset.qty)),hidden=ordered.filter(x=>!visibleIds.has(x.id)).length;$('hiddenOrdered').textContent=hidden?`${hidden} ordered item${hidden===1?' is':'s are'} currently hidden by this search.`:''}
+function summary(){const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),ctn=ordered.reduce((s,x)=>s+num(x.orderQtyCtn),0),cbm=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*num(x.cbmPerCtn),0),amount=ordered.reduce((s,x)=>s+num(x.orderQtyCtn)*ctnPrice(x),0);$('sumProducts').textContent=ordered.length;$('sumCtn').textContent=`${ctn} CTN`;$('sumCbm').textContent=cbm.toFixed(4);$('sumAmount').textContent=`${state.currency} ${money(amount)}`;$('orderQtyCount').textContent=ordered.length;$('submitOrder').disabled=!ordered.length||quantityEditsBlocked();$('submitOrder').title=quantityEditsBlocked()?'Confirm each edited quantity with Enter and wait for saving to finish.':'';const visibleIds=new Set([...document.querySelectorAll('#orderRows [data-qty]')].map(x=>x.dataset.qty)),hidden=ordered.filter(x=>!visibleIds.has(x.id)).length;$('hiddenOrdered').textContent=hidden?`${hidden} ordered item${hidden===1?' is':'s are'} currently hidden by this search.`:''}
 function hideImagePreview(){const preview=$('imagePreview');preview.classList.remove('show');preview.setAttribute('aria-hidden','true');$('imagePreviewImg').removeAttribute('src')}
 function bindImagePreview(){const preview=$('imagePreview'),previewImg=$('imagePreviewImg');document.querySelectorAll('.my-thumb[data-preview-src]').forEach(img=>{img.onmouseenter=()=>{previewImg.src=img.dataset.previewSrc;preview.classList.add('show');preview.setAttribute('aria-hidden','false')};img.onmousemove=e=>{const gap=14,edge=10,box=preview.getBoundingClientRect(),width=box.width||220,height=box.height||220;let left=e.clientX+gap,top=e.clientY+gap;if(left+width>innerWidth-edge)left=e.clientX-width-gap;if(top+height>innerHeight-edge)top=e.clientY-height-gap;preview.style.left=`${Math.max(edge,Math.min(left,innerWidth-width-edge))}px`;preview.style.top=`${Math.max(edge,Math.min(top,innerHeight-height-edge))}px`};img.onmouseleave=hideImagePreview})}
 function bindRows(){document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();requestRemove(b.dataset.remove)});document.querySelectorAll('[data-recover]').forEach(b=>b.onclick=()=>requestRestore(b.dataset.recover));bindImagePreview()}
@@ -382,7 +414,7 @@ function setCatalogueLinks(value){
 }
 function applyData(d){
   const sameCustomer=!state.customerId||state.customerId===d.customerId;
-  if(!sameCustomer){state.orderDetails={};state.orderDetailRequests.clear();state.orders=[];state.ordersNextCursor=''}
+  if(!sameCustomer){state.quantityDrafts.clear();state.pendingQuantities.clear();state.orderDetails={};state.orderDetailRequests.clear();state.orders=[];state.ordersNextCursor=''}
   state.customerId=d.customerId||state.customerId;state.companyName=d.companyName||state.companyName;state.memberName=d.memberName||'Company Purchasing Access';state.currency=d.currency||'USD';state.selectionLimit=[100,300,500,700].includes(Number(d.selectionLimit))?Number(d.selectionLimit):state.selectionLimit;state.adminAccess=Boolean(d.adminAccess);state.account=d.account&&typeof d.account==='object'?d.account:state.account;state.notifications=Array.isArray(d.notifications)?d.notifications:state.notifications;$('selectionLimit').textContent=state.selectionLimit;$('adminAccessBanner').hidden=!state.adminAccess;placeAdminBanner((document.querySelector('.view.active')?.id||'myView').replace(/View$/,''));$('accountUserForm').querySelector('.account-form-note').textContent='The request will be sent to the assigned salesperson for approval.';
   if(d.catalogueUrl)setCatalogueLinks(d.catalogueUrl);
   state.my=Array.isArray(d.myList)?d.myList:[];state.removed=Array.isArray(d.removed)?d.removed:[];
@@ -392,6 +424,7 @@ function applyData(d){
   for(const [id,{item}] of state.pendingRemovals){state.my=state.my.filter(candidate=>String(candidate.id)!==id);if(!state.removed.some(candidate=>String(candidate.id)===id))state.removed.unshift({...item,removed:true,removedTime:new Date().toISOString(),orderQtyCtn:0,quoteStatus:'REMOVED',quoteActive:false})}
   for(const [id,{optimistic}] of state.pendingRestores){state.removed=state.removed.filter(candidate=>String(candidate.id)!==id);if(!state.my.some(candidate=>String(candidate.id)===id))state.my.unshift(optimistic)}
   for(const [id,pending] of state.pendingQuantities){const item=state.my.find(candidate=>String(candidate.id)===id);if(item)item.orderQtyCtn=pending.desiredQty}
+  restoreQuantityDrafts();
   $('companyName').textContent=state.companyName;$('memberName').textContent=state.memberName;$('accountInitial').textContent=(state.companyName.trim()[0]||'B').toUpperCase();$('listCurrency').textContent=state.currency;
   updateQuoteNotifications(d);renderMy();renderRemoved();renderOrder();renderOrderTracking();renderAccount()
 }
@@ -420,6 +453,7 @@ $('exportToggle').onclick=()=>{
 function closeExportMenus(){document.querySelectorAll('.export-wrap').forEach(w=>{w.querySelector('.export-menu').classList.remove('show');w.querySelector('[data-export-toggle]').setAttribute('aria-expanded','false')})}document.querySelectorAll('[data-export-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=b.closest('.export-wrap').querySelector('.export-menu'),open=!menu.classList.contains('show');closeExportMenus();menu.classList.toggle('show',open);b.setAttribute('aria-expanded',String(open))});document.addEventListener('click',e=>{if(!e.target.closest('.export-wrap'))closeExportMenus();if(!e.target.closest('.limit-note'))setLimitInfo(false)});document.addEventListener('keydown',event=>{if(event.key==='Escape')setLimitInfo(false)});
 function reviewDate(){return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Kuala_Lumpur'}).format(new Date()).replaceAll('/','-')}
 function openOrderReview(){
+  if(quantityEditsBlocked())return toast('Confirm each edited quantity with Enter and wait for saving to finish.');
   const ordered=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0);
   if(!ordered.length)return toast('Enter a quantity for at least one quoted product.');
   state.pendingOrder=ordered.map(x=>({itemId:x.id,quantityCtn:num(x.orderQtyCtn)}));
@@ -433,6 +467,7 @@ function openOrderReview(){
 $('submitOrder').onclick=openOrderReview;
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
+  if(quantityEditsBlocked())return toast('Confirm each edited quantity with Enter and wait for saving to finish.');
   if(!state.pendingOrder||state.orderSubmitting)return;
   state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
   post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
@@ -496,7 +531,7 @@ window.addEventListener('message',e=>{
   if(m.type==='BUYER_ROOM_ORDER_RESULT'){
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
-      state.orderAttempt=null;state.pendingOrder=null;addOrderNotification(m.orderId);
+      state.orderAttempt=null;for(const line of state.pendingOrder||[])state.quantityDrafts.delete(String(line.itemId));state.pendingOrder=null;addOrderNotification(m.orderId);
       toast('Order received. View its progress in Track Orders.');
     }else{
       $('submitModalBg').classList.add('show');
