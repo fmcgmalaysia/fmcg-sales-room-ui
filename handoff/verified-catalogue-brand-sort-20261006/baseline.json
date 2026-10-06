@@ -1,0 +1,58 @@
+{
+  "objective": "Catalogue brand then Sort No ordering",
+  "date": "2026-10-06",
+  "branch": "fix/catalogue-brand-sort-search-room5",
+  "commit": "9d8049973def87b395ecd12fede21619398f821a",
+  "pullRequest": 8,
+  "marker": "2026-10-06-catalogue-brand-sort-v53",
+  "recoveryTag": "verified/catalogue-search-20261004",
+  "wixBeforeHash": "29de7e2f13dca644353b851bab63d40cc256fea7af3ecfff0ff2eaa1754bfa2b",
+  "wixAfterHash": "817acc21ad8248ed7e3ef0a056fa8b9bf26f9e8d985c1760b8a8e3e2cc4838dd",
+  "isolatedWixPatchCount": 5,
+  "appsScriptChanged": false,
+  "cmsChanged": false,
+  "htmlChanged": false,
+  "pages": {
+    "run": 37411763693,
+    "status": "success",
+    "markerVerified": true
+  },
+  "temporaryPermissionRevoked": true,
+  "wix": "Published and live confirmation received",
+  "publicVerification": {
+    "status": "passed",
+    "account": "BERJAYA 06",
+    "selectionCount": 7,
+    "cadburyRowsChecked": 60,
+    "orderMatchesCmsSnapshot": true,
+    "firstSortNos": [
+      "FO-00263",
+      "FO-00264",
+      "FO-00265"
+    ],
+    "cbm": "0.0120",
+    "initialLoadingObservation": "First refresh remained empty; subsequent reload loaded successfully. No additional code edits applied.",
+    "newSelectionOrOrderWrites": false,
+    "userAcceptance": "confirmed perfect by user"
+  },
+  "verifiedTag": "verified/catalogue-brand-sort-20261006",
+  "userAcceptance": {
+    "quote": "完美了。你还需要做哪些后续工作吗？完成后我会给你下一个任务",
+    "date": "2026-10-06",
+    "scope": "Catalogue brand-first then Sort No ordering; no whole-system acceptance inferred"
+  },
+  "protectedInvariants": [
+    "Brand Name first",
+    "Sort No within brand",
+    "Same ordering for full catalogue, search, categories and selected products",
+    "Preserve existing CBM four-decimal display and selection/QD event handlers"
+  ],
+  "wixPageHash": "817acc21ad8248ed7e3ef0a056fa8b9bf26f9e8d985c1760b8a8e3e2cc4838dd",
+  "workspaceHtmlHash": "69ed5e5c8379fc6d8581f9bf7ed87928d97928a0311703d54cf92f01dedf34b6",
+  "backend": {
+    "changed": false,
+    "liveRecapturedThisAcceptance": false,
+    "note": "Sorting patch only changed Catalogue page; existing backend recovery snapshots retained. No claim of fresh backend audit."
+  },
+  "repositoryMain": "unchanged; upstream acceptance scope not broadened"
+}
