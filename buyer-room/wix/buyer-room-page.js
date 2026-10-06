@@ -17,12 +17,48 @@ $w.onReady(async function () {
   const downloadButton = $w('#downloadExcelButton');
   assistCustomerId = getAssistCustomerId();
   let frameReady = false;
+  let activeBuyerRoomView = 'my';
+  let selectionDownloadUrl = '';
+  let activeDownloadExpiresAt = 0;
+  let downloadPreparation = null;
 
-  // This legacy Wix control used to sit above the embedded workspace and
-  // intercept clicks. My Selection now uses the proven in-workspace button.
   downloadButton.disable();
   downloadButton.hide();
-  downloadButton.label = '';
+  downloadButton.target = '_self';
+
+  function updateDownloadButtonVisibility() {
+    if (activeBuyerRoomView === 'my' && selectionDownloadUrl) {
+      downloadButton.link = selectionDownloadUrl;
+      downloadButton.enable();
+      downloadButton.show();
+    } else downloadButton.hide();
+  }
+
+  async function prepareSelectionDownload(force = false) {
+    if (!force && selectionDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+      updateDownloadButtonVisibility();
+      return;
+    }
+    if (downloadPreparation) return downloadPreparation;
+    downloadPreparation = (async () => {
+      const result = await createBuyerSelectionDownload(assistCustomerId);
+      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');
+      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+      selectionDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      activeDownloadExpiresAt = Number(result.expiresAt);
+      updateDownloadButtonVisibility();
+    })();
+    try { await downloadPreparation; }
+    catch (error) {
+      selectionDownloadUrl = '';
+      downloadButton.hide();
+      console.error('Buyer Room Excel link preparation failed', error);
+    } finally { downloadPreparation = null; }
+  }
+
+  downloadButton.onClick(() => {
+    setTimeout(() => prepareSelectionDownload(true), 1500);
+  });
 
   async function loadWorkspace() {
     let result;
@@ -57,6 +93,7 @@ $w.onReady(async function () {
       orders: result.orders || [],
       ordersNextCursor: result.ordersNextCursor || ''
     }});
+    prepareSelectionDownload();
   }
 
   async function runAction(action, successMessage, actionName, itemId = '') {
@@ -71,7 +108,11 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
-    if (message.type === 'BUYER_ROOM_VIEW_CHANGED') return;
+    if (message.type === 'BUYER_ROOM_VIEW_CHANGED') {
+      activeBuyerRoomView = message.view;
+      updateDownloadButtonVisibility();
+      return;
+    }
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
       frameReady = true;
       try { await loadWorkspace(); }
@@ -105,20 +146,6 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
       try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(); }
       catch (error) { console.error('Buyer Room notification update failed', error); }
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_EXPORT' || message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
-      try {
-        const result = await createBuyerSelectionDownload(assistCustomerId);
-        if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be started.');
-        const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-        const downloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
-        wixLocationFrontend.to(downloadUrl);
-      } catch (error) {
-        console.error('Buyer Room Excel export failed', error);
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
-      }
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
