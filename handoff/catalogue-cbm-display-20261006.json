@@ -1,0 +1,70 @@
+{
+  "objective": "Catalogue CBM display fixed four decimals only",
+  "date": "2026-10-06",
+  "commit": "5f76bec8fb1121707f44d7ffb80349ed2f108261",
+  "branch": "fix/catalogue-cbm-display-room5",
+  "pullRequest": 7,
+  "basePagesCommit": "2f14372166179119f0f3d0db117b92e06e6e8a83",
+  "marker": "2026-10-06-catalogue-cbm-four-decimals-v52",
+  "recoveryTag": "verified/catalogue-search-20261004",
+  "beforeHash": "c43883b40c6763af12488fa20469c1b0f03fe2fdc571a68f15d83e3ef88e0914",
+  "afterHash": "69ed5e5c8379fc6d8581f9bf7ed87928d97928a0311703d54cf92f01dedf34b6",
+  "changes": [
+    "CBM display expression",
+    "HTML build marker"
+  ],
+  "cmsSchemaChanged": false,
+  "appsScriptChanged": false,
+  "wixPageJsChanged": false,
+  "pages": {
+    "run": 37410233694,
+    "status": "success",
+    "markerVerified": true
+  },
+  "temporaryPermissionRevoked": true,
+  "wix": "published and live confirmation received",
+  "publicVerification": {
+    "status": "passed",
+    "account": "BERJAYA 06",
+    "barcode": "8934680033510",
+    "cbm": "0.0120",
+    "blankBarcode": "9556182104001",
+    "blankCbm": "—",
+    "existingSelectionCount": 7,
+    "selectedButtonLocked": true,
+    "searchAndProductDetailsPassed": true,
+    "newSelectionWritesTested": false,
+    "publicMarker": "2026-10-06-catalogue-cbm-four-decimals-v52",
+    "publicHtml": "4ecd18_6b7ae87e9d0228c4abd5fe3ccd664291.html",
+    "userAcceptance": "pending"
+  },
+  "formatChecks": [
+    {
+      "input": 0.012,
+      "result": "0.0120"
+    },
+    {
+      "input": 0,
+      "result": "0.0000"
+    },
+    {
+      "input": 0.0153,
+      "result": "0.0153"
+    },
+    {
+      "input": null,
+      "result": "—"
+    },
+    {
+      "input": "",
+      "result": "—"
+    },
+    {
+      "input": "  ",
+      "result": "—"
+    },
+    {
+      "result": "—"
+    }
+  ]
+}
