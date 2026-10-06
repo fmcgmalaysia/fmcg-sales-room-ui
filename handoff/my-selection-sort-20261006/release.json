@@ -1,0 +1,44 @@
+{
+  "objective": "My Selection: FOOD, NONFOOD, Brand Name, Sort No",
+  "commit": "8d78a57540868029b53690c961de1f05b69febd1",
+  "branch": "fix/buyer-selection-brand-sort-room5",
+  "pullRequest": 9,
+  "recoveryTag": "verified/catalogue-brand-sort-20261006",
+  "marker": "2026-10-06-my-selection-food-brand-sort-room5-v1",
+  "pages": {
+    "run": 37414702798,
+    "status": "success",
+    "sourceEqualsRepository": true
+  },
+  "wix": {
+    "backendReadbackEqualsRepository": true,
+    "publishedAndLive": true
+  },
+  "temporaryPermissionRevoked": true,
+  "public": {
+    "account": "BERJAYA 06",
+    "selectionCount": 8,
+    "quotedCount": 7,
+    "awaitingCount": 1,
+    "kitkatOrder": [
+      "FO-00019",
+      "FO-00024"
+    ],
+    "misterPotatoOrder": [
+      "FO-01280",
+      "FO-01284"
+    ],
+    "search": "passed",
+    "foodFilter": "passed",
+    "nonFoodEmptyFilter": "passed",
+    "mixedFoodNonFood": "local fixture passed; account has no Non-food products",
+    "refresh": "force refresh followed by reload; final page loaded correctly",
+    "relevantConsoleErrors": [],
+    "selectionOrOrderWritesByAgent": false
+  },
+  "regressionTests": {
+    "passed": 25,
+    "actualExcelDownloadThisRelease": false
+  },
+  "userAcceptance": "pending"
+}

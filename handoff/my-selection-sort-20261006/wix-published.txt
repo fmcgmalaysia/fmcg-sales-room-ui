@@ -1,0 +1,300 @@
+Browser tab: 51421495, Title: "Wix Studio | FMCG MALAYSIA", URL: "https://fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651".
+0 AXWebArea Wix Studio | FMCG MALAYSIA, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
+	1 container
+		2 container mainView
+			3 image Logo
+			4 container
+				5 text Catalogue
+				6 image
+			268 container success
+				269 image
+				270 text Autosave on
+			10 button
+			11 button 1280px
+				12 container
+					13 text 1280 px
+				14 image
+			15 container
+				16 container
+					17 text 100 %
+				18 image
+			19 button Upgrade
+			20 text L
+			271 button
+			22 container
+				23 button
+				24 button
+			25 button Publish
+			26 container
+				27 container
+					28 button
+					29 button
+					30 button
+					31 button
+					32 button
+					33 button
+					34 button
+					35 button
+					36 button
+					37 button
+					38 button
+					39 button
+					40 button
+					41 button
+					42 button
+				43 container
+					44 content list
+						45 text Page Code
+						46 text Backend & Public
+						47 text Search Code
+						48 text Databases
+						49 text Packages & Apps
+						50 text GitHub
+						51 text Developer Tools
+						52 text AI Code Assistant
+						53 text Resources
+					54 button Documentation
+						55 text Documentation
+						56 image
+					57 button API Reference
+						58 text API Reference
+						59 image
+					60 button Turn Off Coding
+						61 text Turn Off Coding
+					62 container
+						63 text Backend & Public
+						64 button
+							65 image
+						66 button
+							67 image
+					68 container
+						69 image
+						70 text Backend
+					71 content list
+						72 container
+							73 image
+							74 text buyerOrderDownload.js
+						75 container
+							76 image
+							77 text buyerOrderExportToken.js
+						78 container
+							79 image
+							80 text buyerSelectionDownload.js
+						81 container
+							82 image
+							83 text buyerSelectionExcel.js
+						84 container
+							85 image
+							86 text buyerSelectionExportToken.js
+						87 container
+							88 image
+							89 text catalogueAuth.web.js
+						90 container
+							91 image
+							92 text catalogueSelection.web.js
+						93 container
+							94 image
+							95 text fxRates.web.js
+						96 container
+							97 image
+							98 text onboarding.web.js
+						99 container
+							100 image
+							101 text realtime-permissions.js
+						102 container
+							103 image
+							104 text staffAuth.web.js
+						105 container
+							106 image
+							107 text http-functions.js
+					108 container
+						109 image
+						110 text Public
+					111 content list
+						112 container
+							113 text Add frontend code that you can call from any code file on your site, including page, frontend, and backend code.
+							114 button Learn more
+								115 text Learn more
+						116 button + Add file
+							117 text + Add file
+					118 container
+						119 image
+						120 text Service Plugins
+					121 container
+						122 text Service plugins, formerly custom extensions, allow you to add your own custom logic to out-of-the-box apps and to integrate services from 3rd party providers.
+						123 button Learn more
+							124 text Learn more
+				125 container
+					126 container
+						127 container
+							128 image
+							129 text Desktop (Primary)
+					130 container preview-frame
+						131 AXWebArea Preview, URL: fmcg999-fmcgmalaysia.editor.wix.com/html/editor/web/renderer/render/document/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb/catalogue?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651&editorSessionId=db0f4f17-8e2e-46ed-ac87-50867127b7e6&esi=db0f4f17-8e2e-46ed-ac87-50867127b7e6&isEdited=true&isSantaEditor=true&dsOrigin=studio&languages=&ds=true&forceResponsive=true&configName=responsive&commonConfig=%7B%22host%22%3A%22STUDIO%22%2C%22brand%22%3A%22studio%22%2C%22branchId%22%3A%2200000000-0000-0000-0000-000000000000%22%7D&enableScopes=true&consent-policy=%7B%22func%22%3A1%2C%22anl%22%3A1%2C%22adv%22%3A0%2C%22dt3%22%3A0%2C%22ess%22%3A1%7D
+							132 container main_MF
+								133 container Description: top of page, ID: SCROLL_TO_TOP
+								134 container uxcu1
+									135 container
+										136 container PAGE_SECTIONSuxcu1
+											137 container comp-mumb0yrl
+												138 container
+													139 image LOGO.png
+													140 container comp-mumipd14
+														141 text field (settable) input_comp-mumb9u31
+													142 container comp-mumdrheg
+														143 container comp-mumc13li
+															144 heading Company Name, Value: 1
+																145 text Company Name
+															146 heading User Name, Value: 1
+																147 text User Name
+											148 container comp-mto6waot
+												149 container Embedded Content
+													150 AXWebArea 5292b63a-30e5-4c0e-8762-a1b127bbc651.filesusr.com, URL: chrome-error://chromewebdata/
+											151 container comp-mt8ndgyv
+												152 container Embedded Content
+													153 AXWebArea 5292b63a-30e5-4c0e-8762-a1b127bbc651.filesusr.com/html/4ecd18_6b7ae87e9d0228c4abd5fe3ccd664291.html
+														154 container
+															155 button MY SELECTION 0 of 100, ID: selectionFilter
+																156 text MY SELECTION
+																157 text 0
+																158 text of
+																159 text 100
+															160 button FOOD 0, ID: foodSelectionFilter
+																161 text FOOD
+																162 text 0
+															163 button NON-FOOD 0, ID: nonFoodSelectionFilter
+																164 text NON-FOOD
+																165 text 0
+															166 text Your account allows up to 100 selected SKUs.
+															167 container Catalogue products
+																168 text IMAGE DESCRIPTIONS BARCODE STATUS
+															169 container Description: Selected product details, ID: detailPanel
+																170 heading Select a product, Value: 2, ID: detailName
+																	171 text Select a product
+																172 text Product information will appear here.
+																173 container
+																	174 text Select a product
+																	175 button (disabled) + Select for Quote, ID: selectButton
+																	176 text Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room. Packing Size
+																	177 text —
+																	178 text EA / CTN
+																	179 text —
+																	180 text Unit Barcode
+																	181 text —
+																	182 text Carton Barcode
+																	183 text —
+																	184 text CBM / CTN
+																	185 text —
+																	186 text Made In
+																	187 text —
+																	188 text Shelf Life
+																	189 text —
+																	190 text Indicative unit price
+																	191 text QUOTE REQUIRED
+																	192 container Description: Member benefits, ID: promoCarousel
+																		272 image Buyer Room with VIP pricing, ordering and documents
+																		194 container Advertisement slides
+																			195 button Show catalogue benefits
+																			196 button Show Buyer Room features
+																			197 button Show transaction tracking
+										198 container comp-mt5av06i_r_comp-kbgakgyt
+											199 text © 2026 fmcgMalaysia.com. All rights reserved.
+										200 container Embedded Content
+											201 AXWebArea 5292b63a-30e5-4c0e-8762-a1b127bbc651.filesusr.com, URL: chrome-error://chromewebdata/
+												202 container sub-frame-error
+													203 image
+													204 text The connection was reset.
+								205 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+					206 container
+						207 container
+							208 link Description: https://fmcg999.wixstudio.com/fmcgmalaysia, Value: fmcg999.wixstudio.com/fmcgmalaysia
+							209 button Connect Domain
+				210 container
+					211 image
+					212 text Select an element to see and edit its properties here.
+			213 container
+				214 container
+					215 container
+						216 container scrollable content
+							217 container
+								273 image
+								219 text Catalogue
+								220 image
+							221 container
+								274 image
+								223 text catalogueAuth.web.js
+								224 image
+					225 container
+						226 button Code in Wix IDE
+							227 image
+							228 text Code in Wix IDE
+						229 button Run
+							230 image
+							231 text Run
+						232 button
+							233 image
+					234 container
+						235 editor (settable) Description: Editor content;Press Alt+F1 for Accessibility Options., Value: import { webMethod, Permissions } from 'wix-web-module';
+import { currentMember } from 'wix-members-backend';
+import wixData from 'wix-data';
+import { getSecret } from 'wix-secrets-backend';
+import { request as httpsRequest } from 'https';
+import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
+import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
+import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
+
+const CUSTOMER_COLLECTION = 'WixCustomers';
+…      resetFailures++;
+      console.warn('Confirmed order quantity reset failed', { orderId: id, itemId: normalize(line.itemId), error: normalize(error?.message || error) });
+    }
+  }
+  return { ok: true, orderId: id, status: 'CONFIRMED', warning: resetFailures ? 'Order confirmed, but some quantities could not be cleared. Please check Order Form before submitting another order.' : '' };
+}
+
+						236 container
+							237 text 242  261 
+							238 content list
+								239 container
+									240 text async
+									241 text function
+									242 text workspaceItems
+									243 text (
+									244 text customerId
+									245 text )
+									246 text {
+								247 container
+									248 text return
+									249 text rows
+									250 text .
+									251 text map
+									252 text (
+									253 text (
+									254 text {
+									255 text record
+									256 text ,
+									257 text data
+									258 text }
+									259 text )
+									260 text =>
+									261 text {
+				262 button Page
+			275 container
+				276 button
+					277 image
+				278 container
+					279 text Congratulations This site is published and live online.
+					280 image
+					281 text field https://fmcg999.wixstudio.com/fmcgmalaysia
+					282 button View Site
+				283 container
+					284 image
+					285 text Don’t show this again
+				286 button Done
+		263 container Rich Text Editor, editor1, ID: cke_editor1
+			264 container Rich Text Editor, editor1
+				265 AXWebArea Rich Text Editor, editor1, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
+					266 container 
+
+		267 text let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];, 1 of 1 found for ' brand: normalize(data.brand || product.brandName || product.principle),', at 156:1
+
+The focused UI element is 0 AXWebArea Wix Studio | FMCG MALAYSIA, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
