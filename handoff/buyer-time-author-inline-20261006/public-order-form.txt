@@ -1,0 +1,149 @@
+Browser tab: 51421704, Title: "Buyer Room | FMCG MALAYSIA", URL: "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F".
+1 AXWebArea Buyer Room | FMCG MALAYSIA, URL: fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F
+	2 container main_MF
+		3 container Description: top of page, ID: SCROLL_TO_TOP
+		4 link Description: Built on Wix Studio, Value: wix.com/studio
+		5 container ic0dd
+			6 container
+				7 container comp-mtza6nh7
+					8 container Embedded Content
+						9 AXWebArea FMCG Malaysia Buyer Room, URL: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98
+							10 container
+								11 button Description: Return to your Catalogue, Help: Return to Catalogue
+									12 image fmcgMalaysia.com
+								13 text BUYER ROOM
+								14 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+								163 text B
+								164 text BERJAYA 06
+								165 text LAW
+							18 container
+								19 button My Selection
+									20 image
+									21 text My Selection
+								22 button Order Form
+									23 image
+									24 text Order Form
+								25 button Track Orders
+									26 image
+									27 text Track Orders
+								28 button Completed Orders
+									29 image
+									30 text Completed Orders
+								31 button Documents
+									32 image
+									33 text Documents
+								34 button Account
+									35 image
+									36 text Account
+							166 container orderView
+								167 container
+									168 heading Order Form, Value: 1
+										169 text Order Form
+									170 text Enter a quantity, then press Enter to save. Use the pencil to edit. Review your order before sending the request.
+								171 container adminAccessBanner
+									172 text Admin Access · 管理员访问
+									173 text You are operating this customer account with Admin authority. All changes are recorded under your Admin identity. ADMIN
+								174 text Products
+								175 text 2
+								176 text Total Cartons
+								177 text 150 CTN
+								178 text Total CBM
+								179 text 2.3800
+								180 text Estimated Order Total
+								181 text USD 20,838.00
+								182 button Send Order Request, ID: submitOrder
+								183 tab group Filter Order Form
+									184 tab (selected, settable, boolean) All Items 8, Value: 1
+All Items
+8
+									185 tab (selectable, settable, boolean) With Qty 2, Value: 0
+With Qty
+2
+								186 search text field (settable) Description: Search order form by product, brand or barcode, ID: orderSearch
+								187 container
+									188 text Barcode Image Descriptions V.I.P Price Order Qty (CTN) Line Amount Total M³ Edited Time
+								189 container orderRows
+									190 text 7622201422929
+									191 image CADBURY DAIRY MILK BITES 50G - ALMOND
+									192 text CADBURY DAIRY MILK BITES 50G - ALMOND
+									193 text 50G x 24
+									194 container
+										195 text USD 0.98 23.52
+									196 stepper (settable) Description: Order quantity for CADBURY DAIRY MILK BITES 50G - ALMOND, Help: Press Enter to confirm and save
+									197 text 0.00
+									198 text 0.0000
+									199 text —
+									200 text 8901233025001
+									201 image CADBURY ZIP X20 BAR - CHOCOLATE
+									202 text CADBURY ZIP X20 BAR - CHOCOLATE
+									203 text 160G x 16
+									204 container
+										205 text USD 2.31 36.96
+									206 stepper (settable, integer) Description: Order quantity for CADBURY ZIP X20 BAR - CHOCOLATE, Help: Click the pencil to edit, Value: 50
+									207 button Description: Edit quantity for CADBURY ZIP X20 BAR - CHOCOLATE, Help: Edit quantity
+									208 text 1,848.00
+									209 text 0.0000
+									210 container
+										211 text 05-10-26 11:11pm  by LAW
+									212 text 9556001284860
+									213 image KITKAT 2 FINGERS MULTI-PACK 18
+									214 text KITKAT 2 FINGERS MULTI-PACK 18
+									215 text (15G x 18) x 24
+									216 container
+										217 text USD 5.09 122.16
+									218 stepper (settable) Description: Order quantity for KITKAT 2 FINGERS MULTI-PACK 18, Help: Press Enter to confirm and save
+									219 text 0.00
+									220 text 0.0000
+									221 text —
+									222 text 59800511261
+									223 image KITKAT COOKIES CRUMBLE
+									224 text KITKAT COOKIES CRUMBLE
+									225 text 120G x 6 x 15 out
+									226 container
+										227 text USD 2.11 189.90
+									228 stepper (settable, integer) Description: Order quantity for KITKAT COOKIES CRUMBLE, Help: Click the pencil to edit, Value: 100
+									229 button Description: Edit quantity for KITKAT COOKIES CRUMBLE, Help: Edit quantity
+									230 text 18,990.00
+									231 text 2.3800
+									232 container
+										233 text 05-10-26 11:30pm  by LAW
+									234 text 8935001708988
+									235 image MENTOS GUM (PURE) - FRESH
+									236 text MENTOS GUM (PURE) - FRESH
+									237 text 29G x 10 x 12 out
+									238 text Waiting
+									239 stepper (disabled, settable) Description: Quantity unavailable until MENTOS GUM (PURE) - FRESH is quoted, Help: Click the pencil to edit
+									240 text — —
+									241 text —
+									242 text 9557062343107
+									243 text MISTER POTATO CRISPS - SOUR CREAM & ONION
+									244 text 85G x 14
+									245 container
+										246 text USD 0.70 9.80
+									247 stepper (settable) Description: Order quantity for MISTER POTATO CRISPS - SOUR CREAM & ONION, Help: Press Enter to confirm and save
+									248 text 0.00
+									249 text 0.0000
+									250 text —
+									251 text 9557062321778
+									252 image MISTER POTATO CRISPS - SWEET POTATO
+									253 text MISTER POTATO CRISPS - SWEET POTATO
+									254 text 40G x 20
+									255 container
+										256 text USD 0.55 11.00
+									257 stepper (settable) Description: Order quantity for MISTER POTATO CRISPS - SWEET POTATO, Help: Press Enter to confirm and save
+									258 text 0.00
+									259 text 0.0000
+									260 text —
+									261 text 9556023663407
+									262 image ORIENTAL SUPER RING (CAN)
+									263 text ORIENTAL SUPER RING (CAN)
+									264 text 80G x 12
+									265 container
+										266 text USD 1.09 13.08
+									267 stepper (settable) Description: Order quantity for ORIENTAL SUPER RING (CAN), Help: Press Enter to confirm and save
+									268 text 0.00
+									269 text 0.0000
+									270 text —
+		162 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+
+The focused UI element is 22 button Order Form
