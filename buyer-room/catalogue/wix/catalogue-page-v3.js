@@ -17,7 +17,7 @@ let selectionContext = null;
 let selectedProductIds = new Set();
 let activeSelectedProductIds = new Set();
 let selectionBusyIds = new Set();
-const CATALOGUE_BUILD_VERSION = '2026-09-30-catalogue-header-banner-v50';
+const CATALOGUE_BUILD_VERSION = '2026-10-06-catalogue-brand-sort-v51';
 let catalogueWorkspaceProducts = [];
 let catalogueWorkspaceAllProducts = [];
 let catalogueWorkspaceReady = false;
@@ -30,6 +30,7 @@ let catalogueFoodPrinciples = new Set();
 let catalogueProductsLoaded = false;
 let catalogueCategoriesLoaded = false;
 let catalogueSelectionResolved = false;
+let catalogueWorkspaceQueryVersion = 0;
 
 function imageUrl(value) {
     const raw = String(value || '').trim();
@@ -106,11 +107,12 @@ function catalogueProductRecord(item) {
         cartonBarcode: String(item?.cartonBarcode || '').trim(),
         cbmPerCtn: String(item?.m3Ctn ?? item?.cbmPerCtn ?? item?.cbm ?? '').trim(),
         principle: String(item?.principle || '').trim(),
+        brandName: String(item?.brandName || '').trim(),
         mainCategory: String(item?.mainCategory || '').trim().toUpperCase(),
         image: imageUrl(item?.image),
         countryOrigin: String(item?.countryOrigin || '').trim(),
         shelfLife: String(item?.shelflife || item?.shelfLife || '').trim(),
-        sortNo: item?.sortNo ?? item?.sortNO ?? item?.sortNumber ?? item?.sortOrder ?? '',
+        sortNo: item?.pointBaseSortId ?? item?.sortNo ?? item?.sortNO ?? item?.sortNumber ?? item?.sortOrder ?? '',
         subCategoryIds: catalogueReferenceIds(item?.subCategories),
         unitPrice: catalogueUnitPrice(item),
         currency: String(item?.currency || 'USD').trim().toUpperCase()
@@ -121,6 +123,12 @@ function sortCatalogueProducts(items) {
     return items
         .map((item, index) => ({ item, index }))
         .sort((left, right) => {
+            const leftBrand = String(left.item.brandName || '').trim();
+            const rightBrand = String(right.item.brandName || '').trim();
+            if (!leftBrand && rightBrand) return 1;
+            if (leftBrand && !rightBrand) return -1;
+            const brandOrder = leftBrand.localeCompare(rightBrand, 'en', { numeric: true, sensitivity: 'base' });
+            if (brandOrder) return brandOrder;
             const leftRaw = String(left.item.sortNo ?? '').trim();
             const rightRaw = String(right.item.sortNo ?? '').trim();
             if (!leftRaw && !rightRaw) return left.index - right.index;
@@ -145,7 +153,7 @@ function catalogueMainCategory(product) {
 
 function catalogueSelectionSummary() {
     const allById = new Map(catalogueWorkspaceAllProducts.map(product => [product.id, product]));
-    const selectedProducts = [...activeSelectedProductIds].map(id => allById.get(id)).filter(Boolean);
+    const selectedProducts = sortCatalogueProducts([...activeSelectedProductIds].map(id => allById.get(id)).filter(Boolean));
     const food = selectedProducts.filter(product => catalogueMainCategory(product).startsWith('FOOD')).length;
     const total = activeSelectedProductIds.size;
     return {
@@ -202,6 +210,7 @@ async function loadCatalogueWorkspaceProducts() {
 }
 
 async function showCatalogueWorkspaceQuery(query) {
+    const queryVersion = ++catalogueWorkspaceQueryVersion;
     const products = [];
     try {
         let result = await query.eq('pointBaseStatus', 'ACTIVE').limit(1000).find();
@@ -210,6 +219,7 @@ async function showCatalogueWorkspaceQuery(query) {
             result = await result.next();
             products.push(...result.items);
         }
+        if (queryVersion !== catalogueWorkspaceQueryVersion) return;
         catalogueWorkspaceProducts = sortCatalogueProducts(products.map(catalogueProductRecord).filter(item => item.id && item.name));
         catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
         sendCatalogueWorkspaceData();
@@ -219,6 +229,7 @@ async function showCatalogueWorkspaceQuery(query) {
 }
 
 function showAllCatalogueWorkspaceProducts() {
+    catalogueWorkspaceQueryVersion += 1;
     catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
     catalogueWorkspaceFilter = { query: '', main: '', subIds: [], principle: '' };
     sendCatalogueWorkspaceData();
@@ -386,7 +397,10 @@ function setupNav() {
 
     const applySearch = async (rawQuery) => {
         const query = String(rawQuery || '').trim();
-        sendCatalogueWorkspaceFilter({ query });
+        catalogueWorkspaceQueryVersion += 1;
+        catalogueWorkspaceProducts = [...catalogueWorkspaceAllProducts];
+        catalogueWorkspaceFilter = { query, main: '', subIds: [], principle: '' };
+        sendCatalogueWorkspaceData();
         try {
             if (query.length < 2) { await dataset.setFilter(wixData.filter()); return; }
             const subResult = await wixData.query('subCategories').contains('title', query).limit(100).find();
