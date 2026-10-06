@@ -15,7 +15,7 @@
  */
 
 const QD_CFG = Object.freeze({
-  VERSION: "3.2.1",
+  VERSION: "3.2.2",
   POINT_BASE_ID: "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
   POINT_BASE_SHEETS: ["FOOD", "NONFOOD", "OTHERS"],
 
@@ -240,7 +240,7 @@ function sortQuotationByCatalogueOrder() {
     ui.alert(
       "SORT DONE",
       result.rowCount + " product row(s) sorted.\n" +
-      result.riskCount + " high-risk row(s) moved to the top.",
+      "FOOD → NON FOOD → OTHERS, then SORT NO.",
       ui.ButtonSet.OK
     );
   } catch (error) {
@@ -252,9 +252,8 @@ function sortQuotationByCatalogueOrder() {
 
 /**
  * Moves complete rows in one native Sheets sort. The work queue puts pending
- * high risk first, then normal pending, published high risk, other risk, RFQ,
- * FAILED and normal published quotes. Catalogue SORT NO. remains authoritative
- * inside each group.
+ * FOOD first, then NON FOOD, then OTHERS. Catalogue SORT NO. remains
+ * authoritative inside each group; risk and quote status do not reorder rows.
  */
 function sortQuotationSheet_(sheet, waitForLock) {
   const lock = LockService.getDocumentLock();
@@ -317,7 +316,7 @@ function sortQuotationSheet_(sheet, waitForLock) {
       if (risk < 3) riskCount++;
       const status = statusIndex >= 0 ? normalizeStatus_(row[statusIndex]) : "";
       const sort = normalizeSortId_(row[sortIndex]);
-      return [qdWorkflowPriority_(status, risk), sort.rank, sort.value];
+      return [/^FO-/i.test(sort.value) ? 0 : /^NF-/i.test(sort.value) ? 1 : 2, sort.rank, sort.value];
     });
 
     const helperRange = sheet.getRange(QD_CFG.DATA_START_ROW, helperStartCol, rowCount, helperCount);
