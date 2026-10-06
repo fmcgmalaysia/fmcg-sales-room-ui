@@ -1,0 +1,10 @@
+{
+  "objective": "Confirm quantity on blur and wait before order review",
+  "marker": "2026-10-06-buyer-quantity-blur-room5-v1",
+  "testsPassed": 29,
+  "publicBeforeAndWixMatch": true,
+  "cssAndBackendUnchanged": true,
+  "userAcceptance": "pending",
+  "publication": "not started",
+  "recoveryTag": "verified/my-selection-sort-20261006"
+}
