@@ -24,11 +24,10 @@ $w.onReady(async function () {
 
   downloadButton.disable();
   downloadButton.hide();
-  downloadButton.target = '_self';
+  downloadButton.link = '';
 
   function updateDownloadButtonVisibility() {
     if (activeBuyerRoomView === 'my' && selectionDownloadUrl) {
-      downloadButton.link = selectionDownloadUrl;
       downloadButton.enable();
       downloadButton.show();
     } else downloadButton.hide();
@@ -57,6 +56,12 @@ $w.onReady(async function () {
   }
 
   downloadButton.onClick(() => {
+    if (!selectionDownloadUrl || activeDownloadExpiresAt <= Date.now()) {
+      console.warn('Excel link expired. Please click again after it is prepared.');
+      prepareSelectionDownload(true);
+      return;
+    }
+    wixLocationFrontend.to(selectionDownloadUrl);
     setTimeout(() => prepareSelectionDownload(true), 1500);
   });
 

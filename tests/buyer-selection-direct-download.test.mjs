@@ -36,7 +36,8 @@ const httpFunctions = fs.readFileSync(new URL('../backend/http-functions.js', im
 assert.match(pageCode, /createBuyerSelectionDownload/);
 assert.match(pageCode, /downloadButton\.hide\(\)/);
 assert.match(pageCode, /_functions\/buyerSelectionExcel\?token=/);
-assert.match(pageCode, /downloadButton\.link = selectionDownloadUrl/);
+assert.match(pageCode, /downloadButton\.link = ''/);
+assert.match(pageCode, /wixLocationFrontend\.to\(selectionDownloadUrl\)/);
 assert.doesNotMatch(pageCode, /wixLocationFrontend\.to\(downloadUrl\)/);
 assert.match(pageCode, /downloadButton\.onClick/);
 assert.match(pageCode, /wixWindowFrontend\.openLightbox\('Order Received', \{ orderId: result\.orderId, downloadReady: Boolean\(downloadFile\), downloadError \}\)/);
