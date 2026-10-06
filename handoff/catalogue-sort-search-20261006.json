@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-06",
+  "fault": "Catalogue does not read CMS pointBaseSortId; brand-sort candidate not active in live Wix",
+  "liveHash": "29de7e2f13dca644353b851bab63d40cc256fea7af3ecfff0ff2eaa1754bfa2b",
+  "repositoryHash": "f3af45e92b5f8936cba2f74d49102e44634834e5cd811c4300b52539f68a9201",
+  "liveMatchesRecovery": true,
+  "changesRequested": [
+    "Read brandName",
+    "Read pointBaseSortId",
+    "Sort brand then Point Base Sort ID",
+    "Version marker"
+  ],
+  "protected": [
+    "CBM four-decimal display",
+    "Customer identity",
+    "Search handlers",
+    "Selection and QD route",
+    "Downloads"
+  ],
+  "writes": "Five isolated Wix page patches applied; exact readback",
+  "approval": "User explicitly approved Catalogue brand then Sort No ordering",
+  "marker": "2026-10-06-catalogue-brand-sort-v53",
+  "recoveryTag": "verified/catalogue-search-20261004",
+  "base": "3e0152c; preserves deployed CBM v52",
+  "tests": "3 catalogue sorting and search tests passed"
+}
