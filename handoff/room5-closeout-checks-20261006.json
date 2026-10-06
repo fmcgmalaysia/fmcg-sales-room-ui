@@ -14,10 +14,12 @@
     "Pages environment permits only main"
   ],
   "pending": {
-    "mainIntegration": "Blocked on explicit user-confirmed PR4 flow; user replied not personally tested. No merge or main publication.",
-    "escape": "Independent one-call patch prepared; 21 checks pass; not deployed yet",
+    "mainIntegration": "User explicitly replied not personally tested entire PR4 flow; do not merge that dependency to main.",
+    "escape": "ecfb4a8 complete, 21 checks passed; Pages/Wix/public pending one temporary permission confirmation",
     "bluePublish": "Paused, not solved. No more tests or writes."
   },
   "costValuesIncluded": false,
-  "screenshotsOrRawPrivateLogsIncluded": false
+  "screenshotsOrRawPrivateLogsIncluded": false,
+  "archivePr": 17,
+  "escapePr": 18
 }

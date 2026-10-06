@@ -43,3 +43,5 @@ PO Number、Proforma 设计、选单合并、Master 完成送货触发的新归�
 用户在本次收尾明确回复“尚未亲自测试整条流程”（PR #4）。因此不得整条合并包含该流程的当前分支至 main；main 整合保留待验收依赖，不进行自动发布。当前线上流程保持原状。
 
 恢复标签按系统范围使用：QD 标签仅用于 QD 绑定脚本恢复，不得把 QD 标签所在的整套旧 checkout 用来部署 Pages。诊断 PR #16、批量读取 Version 17、POINTBASE draft-access 候选均不能作为已验收恢复点。
+
+收尾归档 PR：https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/17（maintenance/room5-closeout-20261006，仅记录）。Escape 独立补丁 PR：https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/18，代码 ecfb4a8，21 项检查通过；marker 2026-10-06-buyer-escape-close-room5-v1。当前 Pages／Wix／公开页验证均待发布，不能称已上线。
