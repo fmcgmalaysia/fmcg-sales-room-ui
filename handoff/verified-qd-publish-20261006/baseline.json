@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-06",
+  "acceptance": "User: PUBLISH成功了; sorting order not accepted and remains separate task",
+  "gitHubCommit": "e2a2453b2f18b7da3a361ddce2d36cc90f83bb6e",
+  "localEquivalentCommit": "1d042d15ef9f9bbf3d8308771ed76bced8a8b3a1",
+  "codeHash": "ba35f6f132a6e429e3972bb85b03193b5584fee45b5151b876154ab04a7b5cc6",
+  "templateProject": "1FKaXAAjCz3CDBeLo8sRAoisTwEIVP_cFoJ2r4ytlETS44FjrgN6ym3ZQ",
+  "customerProject": "13cKZP99RkEB_w63-IdYRkOEYPmlW1z2rsdyyR_LM0tGc5JML2BmC_ncr",
+  "execution": "saved HEAD bound menu; no web deployment",
+  "scope": "Publication only; no sorting acceptance",
+  "evidence": "User attached codex-clipboard-4bcfee0e-6ae6-430d-837d-ee1a4b320f16.png; confirmed publication success"
+}

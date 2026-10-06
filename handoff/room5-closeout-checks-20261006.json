@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-06T10:20:46.242Z",
+  "recordOnly": true,
+  "completed": [
+    "PR12 acceptance corrected; ready for review",
+    "PR13 publication and acceptance corrected; ready for review",
+    "PR14 historical 3.2.1 superseded scope documented",
+    "PR15 acceptance corrected; ready for review",
+    "PR16 latest HTTP404 evidence and explicit pause documented",
+    "QD 3.2.1/3.2.2 source snapshots archived",
+    "QD annotated recovery tags pushed to GitHub",
+    "root START_HERE linked to current handoff",
+    "Template/customer Code and CatchCost reread and matched",
+    "Pages environment permits only main"
+  ],
+  "pending": {
+    "mainIntegration": "User explicitly replied not personally tested entire PR4 flow; do not merge that dependency to main.",
+    "escape": "ecfb4a8 complete, 21 checks passed; Pages/Wix/public pending one temporary permission confirmation",
+    "bluePublish": "Paused, not solved. No more tests or writes."
+  },
+  "costValuesIncluded": false,
+  "screenshotsOrRawPrivateLogsIncluded": false,
+  "archivePr": 17,
+  "escapePr": 18
+}

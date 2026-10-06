@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-06T09:41:12.844Z",
+  "authorization": "Maximum three existing-quote tests, at least 60 seconds apart, stop after first failure",
+  "attemptsExecuted": 1,
+  "stoppedAfterFirstFailure": true,
+  "confirmedRows": 20,
+  "rfqRows": 2,
+  "observed": {
+    "frontendStatus": 504,
+    "backendFinalHttpStatus": 404,
+    "backendFinalContentType": "text/html; charset=utf-8",
+    "beforeCentralMs": 661,
+    "centralResponseElapsedMs": 17575,
+    "parsed": false
+  },
+  "known": "HTTP request returns an HTML 404 rather than the central JSON response; synchronous Wix request times out",
+  "unknown": "Current logs record only the final response. Need to distinguish original script.google.com response from the ContentService redirect response before changing transport logic.",
+  "sourceUnchangedThisRound": true,
+  "pricesNotEdited": true,
+  "centralVersion": 16,
+  "status": "Paused by explicit user instruction; not fixed or accepted",
+  "liveDiagnosticHash": "47732919f69ccfff0ca675156b4ac538eec3cea988ba73e13952ab1b7a07cdeb",
+  "productionBusinessSourceHash": "f09dce771a1b26f91b8b937d1cfc939fd50859c54ee20345bc99b5349654e8f1",
+  "currentDeploymentId": "AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv",
+  "diagnosticPr": 16,
+  "outstandingHopProposal": "Not approved or applied; no further tests authorized",
+  "failedBatchCandidate": "Version 17 was restored to Version 16; must not redeploy as a solution"
+}
