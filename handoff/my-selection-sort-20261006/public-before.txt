@@ -1,0 +1,161 @@
+Browser tab: 51421519, Title: "Buyer Room | FMCG MALAYSIA", URL: "https://fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F".
+0 AXWebArea Buyer Room | FMCG MALAYSIA, URL: fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F
+	1 container main_MF
+		2 container Description: top of page, ID: SCROLL_TO_TOP
+		3 link Description: Built on Wix Studio, Value: wix.com/studio
+		4 container ic0dd
+			5 container
+				6 container comp-mtza6nh7
+					7 container Embedded Content
+						8 AXWebArea FMCG Malaysia Buyer Room, URL: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98
+							9 container
+								10 button Description: Return to your Catalogue, Help: Return to Catalogue
+									11 image fmcgMalaysia.com
+								12 text BUYER ROOM
+								13 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+								14 text B
+								15 text BERJAYA 06
+								16 text LAW
+							17 container
+								18 button My Selection
+									19 image
+									20 text My Selection
+								21 button Order Form
+									22 image
+									23 text Order Form
+								24 button Track Orders
+									25 image
+									26 text Track Orders
+								27 button Completed Orders
+									28 image
+									29 text Completed Orders
+								30 button Documents
+									31 image
+									32 text Documents
+								33 button Account
+									34 image
+									35 text Account
+							36 container myView
+								37 heading My Selection, Value: 1
+									38 text My Selection
+								39 text 7
+								40 text Products
+								41 text 0
+								42 text Awaiting Quotation Transaction Currency
+								43 text USD
+								44 link Description: Open Catalogue in a new tab, Value: fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F, ID: browse
+								45 container adminAccessBanner
+									46 text Admin Access · 管理员访问
+									47 text You are operating this customer account with Admin authority. All changes are recorded under your Admin identity. ADMIN
+								48 tab group Filter My Selection
+									49 tab (selected, settable, boolean) All 7, ID: currentTab, Value: 1
+All
+7
+									50 tab (selectable, settable, boolean) Food 7, Value: 0
+Food
+7
+									51 tab (selectable, settable, boolean) Non-food 0, Value: 0
+Non-food
+0
+									52 tab (selectable, settable, boolean) Removed 0, ID: removedTab, Value: 0
+Removed
+0
+								53 search text field (settable) Description: Search selection by product, brand or barcode, ID: mySearch
+								54 button (disabled) Download Excel, ID: exportToggle
+								55 text Showing 7 of 7 products
+								56 button (collapsed) Description: How selection limits and V.I.P quotations work, ID: limitInfoButton, Secondary Actions: Expand
+								57 text 7
+								58 text of
+								59 text 100
+								60 text selected
+								61 container currentPanel
+									62 container
+										63 text Barcode Image Descriptions Normal Price V.I.P Price Added Time Selected By Last Quoted
+										64 container Remove
+									65 container myRows
+										66 text 7622201422929
+										67 image CADBURY DAIRY MILK BITES 50G - ALMOND
+										68 text CADBURY DAIRY MILK BITES 50G - ALMOND
+										69 text 50G x 24
+										70 text - NIL -
+										71 text USD 0.98 23.52
+										72 text 05-10-26 11:02pm
+										73 text LAW
+										74 text 05-10-26 11:05pm
+										75 button Remove×
+											76 text Remove
+											77 text ×
+										78 text 8901233025001
+										79 image CADBURY ZIP X20 BAR - CHOCOLATE
+										80 text CADBURY ZIP X20 BAR - CHOCOLATE
+										81 text 160G x 16
+										82 text - NIL -
+										83 text USD 2.31 36.96
+										84 text 05-10-26 11:02pm
+										85 text LAW
+										86 text 05-10-26 11:05pm
+										87 button Remove×
+											88 text Remove
+											89 text ×
+										90 text 9556001284860
+										91 image KITKAT 2 FINGERS MULTI-PACK 18
+										92 text KITKAT 2 FINGERS MULTI-PACK 18
+										93 text (15G x 18) x 24
+										94 text - NIL -
+										95 text USD 5.09 122.16
+										96 text 05-10-26 11:02pm
+										97 text LAW
+										98 text 05-10-26 11:05pm
+										99 button Remove×
+											100 text Remove
+											101 text ×
+										102 text 59800511261
+										103 image KITKAT COOKIES CRUMBLE
+										104 text KITKAT COOKIES CRUMBLE
+										105 text 120G x 6 x 15 out
+										106 text - NIL -
+										107 text USD 2.11 189.90
+										108 text 05-10-26 11:02pm
+										109 text LAW
+										110 text 05-10-26 11:05pm
+										111 button Remove×
+											112 text Remove
+											113 text ×
+										114 text 9557062343107
+										115 text MISTER POTATO CRISPS - SOUR CREAM & ONION
+										116 text 85G x 14
+										117 text - NIL -
+										118 text USD 0.70 9.80
+										119 text 05-10-26 11:03pm
+										120 text LAW
+										121 text 05-10-26 11:05pm
+										122 button Remove×
+											123 text Remove
+											124 text ×
+										125 text 9557062321778
+										126 image MISTER POTATO CRISPS - SWEET POTATO
+										127 text MISTER POTATO CRISPS - SWEET POTATO
+										128 text 40G x 20
+										129 text - NIL -
+										130 text USD 0.55 11.00
+										131 text 05-10-26 11:03pm
+										132 text LAW
+										133 text 05-10-26 11:05pm
+										134 button Remove×
+											135 text Remove
+											136 text ×
+										137 text 9556023663407
+										138 image ORIENTAL SUPER RING (CAN)
+										139 text ORIENTAL SUPER RING (CAN)
+										140 text 80G x 12
+										141 text - NIL -
+										142 text USD 1.09 13.08
+										143 text 05-10-26 11:03pm
+										144 text LAW
+										145 text 05-10-26 11:05pm
+										146 button Remove×
+											147 text Remove
+											148 text ×
+		149 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+
+The focused UI element is 18 button My Selection

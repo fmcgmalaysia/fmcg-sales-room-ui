@@ -1,0 +1,56 @@
+{
+  "objective": "My Selection: FOOD, NONFOOD, Brand Name, Sort No",
+  "commit": "8d78a57540868029b53690c961de1f05b69febd1",
+  "branch": "fix/buyer-selection-brand-sort-room5",
+  "pullRequest": 9,
+  "recoveryTag": "verified/catalogue-brand-sort-20261006",
+  "marker": "2026-10-06-my-selection-food-brand-sort-room5-v1",
+  "pages": {
+    "run": 37414702798,
+    "status": "success",
+    "sourceEqualsRepository": true
+  },
+  "wix": {
+    "backendReadbackEqualsRepository": true,
+    "publishedAndLive": true
+  },
+  "temporaryPermissionRevoked": true,
+  "public": {
+    "account": "BERJAYA 06",
+    "selectionCount": 8,
+    "quotedCount": 7,
+    "awaitingCount": 1,
+    "kitkatOrder": [
+      "FO-00019",
+      "FO-00024"
+    ],
+    "misterPotatoOrder": [
+      "FO-01280",
+      "FO-01284"
+    ],
+    "search": "passed",
+    "foodFilter": "passed",
+    "nonFoodEmptyFilter": "passed",
+    "mixedFoodNonFood": "local fixture passed; account has no Non-food products",
+    "refresh": "force refresh followed by reload; final page loaded correctly",
+    "relevantConsoleErrors": [],
+    "selectionOrOrderWritesByAgent": false
+  },
+  "regressionTests": {
+    "passed": 25,
+    "actualExcelDownloadThisRelease": false
+  },
+  "userAcceptance": {
+    "quote": "可以收尾了，完成后给你下一个任务",
+    "date": "2026-10-06",
+    "scope": "My Selection sorting release accepted for closeout; no whole-system acceptance inferred"
+  },
+  "verifiedTag": "verified/my-selection-sort-20261006",
+  "hashes": {
+    "method": "SHA256, LF-normalized with trailing whitespace removed",
+    "wixBuyerPage": "1d984fbbf238f22c12eaa2244e4b2fb50a0a8acacfe9529200b5a714ebe6a7a0",
+    "wixBackend": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b",
+    "buyerHtml": "67ad48f2a12258ed6c5fc5e0e97ccef52f4c626b765bc609c63a424024df879d"
+  },
+  "main": "Unchanged; task PR retained separately from its upstream branches"
+}
