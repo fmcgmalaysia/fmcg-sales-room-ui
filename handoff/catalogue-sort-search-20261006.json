@@ -1,26 +1,38 @@
 {
+  "objective": "Catalogue brand then Sort No ordering",
   "date": "2026-10-06",
-  "fault": "Catalogue does not read CMS pointBaseSortId; brand-sort candidate not active in live Wix",
-  "liveHash": "29de7e2f13dca644353b851bab63d40cc256fea7af3ecfff0ff2eaa1754bfa2b",
-  "repositoryHash": "f3af45e92b5f8936cba2f74d49102e44634834e5cd811c4300b52539f68a9201",
-  "liveMatchesRecovery": true,
-  "changesRequested": [
-    "Read brandName",
-    "Read pointBaseSortId",
-    "Sort brand then Point Base Sort ID",
-    "Version marker"
-  ],
-  "protected": [
-    "CBM four-decimal display",
-    "Customer identity",
-    "Search handlers",
-    "Selection and QD route",
-    "Downloads"
-  ],
-  "writes": "Five isolated Wix page patches applied; exact readback",
-  "approval": "User explicitly approved Catalogue brand then Sort No ordering",
+  "branch": "fix/catalogue-brand-sort-search-room5",
+  "commit": "9d8049973def87b395ecd12fede21619398f821a",
+  "pullRequest": 8,
   "marker": "2026-10-06-catalogue-brand-sort-v53",
   "recoveryTag": "verified/catalogue-search-20261004",
-  "base": "3e0152c; preserves deployed CBM v52",
-  "tests": "3 catalogue sorting and search tests passed"
+  "wixBeforeHash": "29de7e2f13dca644353b851bab63d40cc256fea7af3ecfff0ff2eaa1754bfa2b",
+  "wixAfterHash": "817acc21ad8248ed7e3ef0a056fa8b9bf26f9e8d985c1760b8a8e3e2cc4838dd",
+  "isolatedWixPatchCount": 5,
+  "appsScriptChanged": false,
+  "cmsChanged": false,
+  "htmlChanged": false,
+  "pages": {
+    "run": 37411763693,
+    "status": "success",
+    "markerVerified": true
+  },
+  "temporaryPermissionRevoked": true,
+  "wix": "Published and live confirmation received",
+  "publicVerification": {
+    "status": "passed",
+    "account": "BERJAYA 06",
+    "selectionCount": 7,
+    "cadburyRowsChecked": 60,
+    "orderMatchesCmsSnapshot": true,
+    "firstSortNos": [
+      "FO-00263",
+      "FO-00264",
+      "FO-00265"
+    ],
+    "cbm": "0.0120",
+    "initialLoadingObservation": "First refresh remained empty; subsequent reload loaded successfully. No additional code edits applied.",
+    "newSelectionOrOrderWrites": false,
+    "userAcceptance": "pending user test"
+  }
 }
