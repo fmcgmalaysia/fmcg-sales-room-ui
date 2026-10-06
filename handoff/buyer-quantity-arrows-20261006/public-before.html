@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-06-buyer-quantity-arrows-room5-v1">
+<meta name="build-version" content="2026-10-06-buyer-quantity-blur-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -241,7 +241,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
       <div class="list-panel" id="removedPanel"><div class="showing" id="removedShowing"></div><div class="table-wrap"><div class="grid removed-grid"><div class="row head"><div>Barcode</div><div>Image</div><div>Item Name / Packing Size</div><div>M³ / CTN</div><div>Removed Time</div><div>Edited By</div><div></div></div><div id="removedRows"></div></div></div></div>
     </section>
     <section id="orderView" class="view">
-      <header class="top"><div><h1>Order Form</h1><p class="sub order-intro">Enter a quantity, then press Enter or click outside the box to save. Use ↑ / ↓ to move between quantities and the pencil to edit. Review your order before sending the request.</p></div></header>
+      <header class="top"><div><h1>Order Form</h1><p class="sub order-intro">Enter a quantity, then press Enter or click outside the box to save. Use the pencil to edit. Review your order before sending the request.</p></div></header>
       <div class="summary order-summary"><div class="metric"><label>Products</label><strong id="sumProducts">0</strong></div><div class="metric"><label>Total Cartons</label><strong id="sumCtn">0 CTN</strong></div><div class="metric"><label>Total CBM</label><strong id="sumCbm">0.0000</strong></div><div class="metric"><label>Estimated Order Total</label><strong id="sumAmount">—</strong></div><div class="order-submit"><button class="btn primary" id="submitOrder">Send Order Request</button></div></div>
       <div class="list-tabs-bar order-action-bar"><div class="order-filters" role="tablist" aria-label="Filter Order Form"><button class="order-filter active" type="button" data-order-filter="all" role="tab" aria-selected="true" aria-pressed="true">All Items <b id="orderAllCount">0</b></button><button class="order-filter" type="button" data-order-filter="qty" role="tab" aria-selected="false" aria-pressed="false">With Qty <b id="orderQtyCount">0</b></button></div><label class="toolbar-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="orderSearch" type="search" aria-label="Search order form by product, brand or barcode" placeholder="Search products, brands or barcodes" autocomplete="off"></label></div>
       <div class="showing" id="orderShowing"></div><p class="order-note" id="hiddenOrdered"></p>
@@ -364,12 +364,6 @@ function continueQuantityReview(){
   if(quantityEditsBlocked())return toast('A quantity needs attention. Please correct it or retry saving.');
   if($('orderView').classList.contains('active'))openOrderReview()
 }
-function moveQuantityFocus(input,direction){
-  const inputs=[...document.querySelectorAll('#orderRows [data-qty]:not(:disabled)')],index=inputs.indexOf(input),next=inputs[index+direction];
-  if(index<0||!next)return;
-  if(!input.readOnly&&input.value.trim()&&!input.checkValidity()){input.reportValidity();return}
-  next.focus();if(!next.readOnly)next.select()
-}
 function renderOrder(){
   const focusedQty=document.activeElement?.dataset?.qty;
   // Detach old change handlers before replacing focused inputs: removing one
@@ -389,14 +383,14 @@ function renderOrder(){
     el.oninput=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item)&&!el.readOnly)rememberQuantityDraft(item,el)};
     el.onchange=null;
     el.onblur=()=>{const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item)&&!el.readOnly&&state.quantityDrafts.get(String(item.id))?.editing)confirmQuantityDraft(item,el,false)};
-    el.onkeydown=event=>{if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();moveQuantityFocus(el,event.key==='ArrowUp'?-1:1);return}if(event.key==='Enter'&&!el.readOnly){event.preventDefault();const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item))confirmQuantityDraft(item,el)}};
+    el.onkeydown=event=>{if(event.key==='Enter'&&!el.readOnly){event.preventDefault();const item=state.my.find(x=>String(x.id)===el.dataset.qty);if(item&&isOrderable(item))confirmQuantityDraft(item,el)}};
   });
   document.querySelectorAll('[data-qty-edit]').forEach(button=>button.onclick=()=>{
     const input=button.parentElement.querySelector('[data-qty]'),item=state.my.find(x=>String(x.id)===button.dataset.qtyEdit);if(!item||state.pendingQuantities.has(String(item.id)))return;
     if(!input.readOnly){confirmQuantityDraft(item,input);return}
     rememberQuantityDraft(item,input);input.readOnly=false;input.title='Press Enter or click outside to save';button.hidden=true;input.focus();input.select()
   });
-  if(focusedQty){const input=[...document.querySelectorAll('#orderRows [data-qty]')].find(el=>el.dataset.qty===focusedQty);if(input&&!input.disabled)input.focus()}
+  if(focusedQty){const input=[...document.querySelectorAll('#orderRows [data-qty]')].find(el=>el.dataset.qty===focusedQty);if(input&&!input.readOnly&&!input.disabled)input.focus()}
   bindImagePreview();summary();markDisplayedQuotesSeen('order',items)
 }
 function orderInvoiceNo(order,line={}){return String(line.invoiceNo||line.invoiceNumber||line.desk3InvoiceNo||order.invoiceNo||order.invoiceNumber||order.desk3InvoiceNo||'').trim()}
@@ -584,4 +578,5 @@ setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
 
 
 </body></html>
+
 
