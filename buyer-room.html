@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-06-buyer-quantity-arrows-room5-v1">
+<meta name="build-version" content="2026-10-06-buyer-escape-close-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -515,7 +515,7 @@ $('trackMore').onclick=()=>{if(!state.ordersNextCursor||state.historyLoading)ret
 $('reductionNewQty').oninput=updateReductionPreview;
 $('closeReduction').onclick=closeReduction;
 $('submitReduction').onclick=()=>{const pending=state.pendingReduction;if(!pending||state.reductionSubmitting)return;const nextQty=Math.max(0,Math.floor(num($('reductionNewQty').value)));if(nextQty>=pending.currentQty){toast('Enter a quantity below the current requested quantity.');return}state.reductionSubmitting=true;$('submitReduction').disabled=true;$('submitReduction').textContent='Submitting…';post('BUYER_ROOM_REDUCE_ORDER',{orderId:pending.orderId,lineId:pending.lineId,newQuantityCtn:nextQty,requestId:crypto.randomUUID()})};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');closeReduction();closeQuoteDetail();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('submitModalBg').classList.remove('show');closeReduction();closeExportMenus();if(!state.orderSubmitting)state.pendingOrder=null}});
 function downloadOrderExcel(payload){
   try{
     const binary=atob(String(payload?.base64||''));if(!binary)throw new Error('Excel file data is unavailable.');
