@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-06-buyer-column-spacing-room5-v1">
+<meta name="build-version" content="2026-10-06-buyer-time-author-inline-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -191,12 +191,9 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 .tracking-head>div{color:#173557!important;font-size:11px;font-weight:850!important}.progress-pill.s1,.progress-pill.s2,.progress-pill.s3,.progress-pill.s4,.progress-pill.s5,.progress-pill.s6{background:#14835f;color:#fff}
 /* Buyer Room V93: make the pencil-to-row relationship unmistakable. */
 #trackRows .tracking-row{transition:background-color .14s ease,box-shadow .14s ease,transform .14s ease}#trackRows .tracking-row:hover{position:relative;z-index:2;background:#eaf6f1!important;box-shadow:inset 4px 0 #14835f,0 4px 12px rgba(20,83,65,.12);transform:translateY(-1px)}#trackRows .tracking-row:hover .tracking-edit{background:#14835f;color:#fff;box-shadow:0 3px 9px rgba(20,131,95,.24);transform:scale(1.05)}
-#currentPanel .grid .row{grid-template-columns:9% 4% 33% 10% 13% 18% 10% 3%}
-.order-grid{min-width:1240px}
-.order-grid .row{grid-template-columns:9% 4% 32% 12% 9% 10% 8% 16%}
+#currentPanel .grid .row{grid-template-columns:96px 50px minmax(270px,2.5fr) 124px 132px 210px 128px 42px}
+.order-grid .row{grid-template-columns:110px 52px minmax(260px,1fr) 130px 104px 120px 90px 190px}
 #currentPanel .audit-author,.order-grid .audit-author{color:#7d8ea2}
-#currentPanel .grid .row>div,.order-grid .row>div{padding-left:10px;padding-right:10px;min-width:0}
-#currentPanel .grid .row>div:nth-child(2),.order-grid .row>div:nth-child(2){padding-left:4px;padding-right:4px}
 </style>
 <style>.qty-editor{display:flex;align-items:center;gap:4px}.qty-editor .qty{flex:0 0 62px;min-width:62px;width:62px}.qty-edit{flex:0 0 22px;border:0;background:transparent;color:#1769d7;padding:3px;font-size:16px;cursor:pointer}.qty-edit:disabled{color:#9aa6b6;cursor:wait}.qty[readonly]{background:#f3f6fa;color:#173a2f}.qty-edit:focus-visible{outline:2px solid #1769d7;border-radius:3px}</style>
 <style>.order-lock-note{padding:12px 16px;margin:0 0 16px;border:1px solid #d7e2ef;border-radius:8px;background:#f1f6fc;color:#315274;font-size:13px}.track-history-tabs{display:flex;gap:24px;border-bottom:1px solid #dce5ef;margin-bottom:20px}.track-history-tabs button{border:0;border-bottom:3px solid transparent;background:transparent;padding:12px 2px;color:#65758b;font:inherit;font-weight:700;cursor:pointer}.track-history-tabs button[aria-selected="true"]{color:#17375b;border-bottom-color:#17375b}.order-edit-history-wrap{overflow:auto;border:1px solid #dce5ef;border-radius:8px;background:#fff}.order-edit-history{width:100%;min-width:980px;border-collapse:collapse;font-size:12px}.order-edit-history th{background:#edf3f9;color:#254666;padding:13px 12px;text-align:left;white-space:nowrap}.order-edit-history td{padding:13px 12px;border-top:1px solid #e2e9f1;vertical-align:top}.order-edit-history .num{text-align:right;white-space:nowrap}.order-edit-history td:first-child{max-width:180px;overflow-wrap:anywhere;color:#62758c}.order-edit-history td:nth-child(2){min-width:240px;font-weight:600}.completed-edit-history{margin-top:16px}.completed-edit-history summary{cursor:pointer;color:#254666;font-size:13px;font-weight:700;padding:10px 0}#trackCurrentPanel[hidden],#trackHistoryPanel[hidden]{display:none}
