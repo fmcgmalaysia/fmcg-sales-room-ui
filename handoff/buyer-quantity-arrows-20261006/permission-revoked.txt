@@ -1,0 +1,65 @@
+Browser tab: 51421525, Title: "Configure environment github-pages · fmcgmalaysia/fmcg-sales-room-ui", URL: "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments/21782900731/edit".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 112-145
+~		43 text Deployment branch rule "feat/buyer-quantity-arrows-room5" removed.
+~				49 link Description: General, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings, ID: item-37934f74-acc2-4078-9de6-a3846ea7c684
+~					51 heading Access, Value: 2, ID: heading-title-3bf971ee-022f-4912-8368-93df72728fd3
+~					53 content list Access, ID: group-d26b78ea-eadc-4b45-be1e-51b2a5f05ca3
+~						54 link Description: Collaborators, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/access, ID: item-10ebd4b5-927d-4019-8919-8386d818e23b
+~						55 button (collapsed) Moderation, ID: item-16d7e91e-d5b3-4870-a1a4-a16f2d7963f2, Secondary Actions: Expand
+~					57 heading Code, planning, and automation, Value: 2, ID: heading-title-7360fefc-b2ff-4148-b263-99f9c493661f
+~					59 content list Code, planning, and automation, ID: group-0f5b34c5-122c-43a5-bc85-983600cd1725
+~						61 link Description: Branches, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/branches, ID: item-45311f52-d2d5-4506-a0d2-7b52e38c933f
+~						62 link Description: Tags, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/tag_protection, ID: item-09f75b1a-b5d4-4434-aa7e-10ba245fc23a
+~						63 button (collapsed) Actions, ID: item-2e4022ce-966d-4448-99c8-760a28288607, Secondary Actions: Expand
+~						64 link Description: Webhooks, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/hooks, ID: item-1ead8bb5-6642-4b51-9ed7-298afbf6b83a
+~						65 button (collapsed) Copilot, ID: item-684e7c22-c20c-4d55-b926-750960f48324, Secondary Actions: Expand
+~						67 link Description: Environments, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments, ID: item-d21722f7-9e2a-43e0-be6c-3a337e77b059
+~						68 link Description: Codespaces, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/codespaces, ID: item-0fd1d8c8-987d-4156-ab1b-bdd6c60df3df
+~						69 link Description: Pages, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/pages, ID: item-ebcbe667-6aee-4742-ba32-58c980877c03
+~					71 heading Security and quality, Value: 2, ID: heading-title-6975f16e-d1df-45bf-91e5-9a2eed505e5b
+~					73 content list Security and quality, ID: group-5b24d603-e3a6-40c0-9c79-8e1b7b0e477e
+~						74 link Description: Advanced Security, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/security_analysis, ID: item-0fa38954-2a7a-4336-a69e-80e63492fb2a
+~						75 link Description: Deploy keys, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/keys, ID: item-62725cae-ea58-4bc7-ad1f-971263007ec3
+~						76 button (collapsed) Secrets and variables, ID: item-15939a74-bdb0-4525-8664-a07638f0c4a7, Secondary Actions: Expand
+~					78 heading Integrations, Value: 2, ID: heading-title-8f386c29-605c-4546-8009-84f7d777e8f9
+~					80 content list Integrations, ID: group-17990996-307d-48fe-a706-116d382d71df
+~						81 link Description: GitHub Apps, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/installations, ID: item-dc827609-5a23-4827-8d12-4f13ec84c472
+~						82 link Description: Email notifications, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/notifications, ID: item-f2307900-a5ad-438f-a7bd-8bf8ff1face7
+~		105 pop up button (collapsed) Selected branches and tags, ID: action-menu-c995cde4-7909-4079-b2a8-22d1a616931c-button, Secondary Actions: Expand
+~		106 text 1 branch and 0 tags allowed
+~		107 text main Currently applies to 1 branch
+~		110 button (collapsed) Add deployment branch or tag rule, Secondary Actions: Expand
+~		111 container
++			112 heading Environment secrets, Value: 2, ID: environment-secrets
++				113 text Environment secrets
++			114 text Secrets are encrypted environment variables. They are accessible only by GitHub Actions in the context of this environment by using the 
++			115 link Description: secret context, Value: docs.github.com/actions/learn-github-actions/contexts#secrets-context
++			116 text . This environment has no secrets.
++			117 button Add environment secret
++		118 container
++			119 heading Environment variables, Value: 2, ID: environment-variables
++				120 text Environment variables
++			121 text Variables are used for non-sensitive configuration data. They are accessible only by GitHub Actions in the context of this environment by using the 
++			122 link Description: variable context, Value: docs.github.com/actions/learn-github-actions/contexts#vars-context
++			123 text . This environment has no variables.
++			124 button Add environment variable
++	125 container
++		126 heading Footer, Value: 2
++			127 text Footer
++		128 link Description: GitHub Homepage, Value: github.com/
++		129 text © 2026 GitHub, Inc.
++		130 container Footer
++			131 heading Footer navigation, Value: 3, ID: sr-footer-heading
++				132 text Footer navigation
++			133 content list Footer navigation
++				134 link Description: Terms, Value: docs.github.com/site-policy/github-terms/github-terms-of-service
++				135 link Description: Privacy, Value: docs.github.com/site-policy/privacy-policies/github-privacy-statement
++				136 link Description: Security, Value: github.com/security
++				137 link Description: Status, Value: githubstatus.com/
++				138 link Description: Community, Value: github.community/
++				139 link Description: Docs, Value: docs.github.com/
++				140 link Description: Contact, Value: support.github.com/?tags=dotcom-footer
++				141 button Manage cookies
++				142 button Do not share my personal information
+The focused UI element is 42 button Dismiss this message
