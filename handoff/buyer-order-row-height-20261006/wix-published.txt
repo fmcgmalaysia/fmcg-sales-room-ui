@@ -1,0 +1,302 @@
+Browser tab: 51421495, Title: "Wix Studio | FMCG MALAYSIA", URL: "https://fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651".
+0 AXWebArea Wix Studio | FMCG MALAYSIA, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
+	1 container
+		2 container mainView
+			3 image Logo
+			4 container
+				5 text Buyer Room
+				6 image
+			7 container success
+				278 image
+				279 text Autosave on
+			10 button
+			11 button 1280px
+				12 container
+					13 text 1280 px
+				14 image
+			15 container
+				16 container
+					17 text 100 %
+				18 image
+			19 button Upgrade
+			20 text L
+			21 button
+			22 container
+				23 button
+				24 button
+			25 button Publish
+			26 container
+				27 container
+					28 button
+					29 button
+					30 button
+					31 button
+					32 button
+					33 button
+					34 button
+					35 button
+					36 button
+					37 button
+					38 button
+					39 button
+					40 button
+					41 button
+					42 button
+				43 container
+					44 content list
+						45 text Page Code
+						46 text Backend & Public
+						47 text Search Code
+						48 text Databases
+						49 text Packages & Apps
+						50 text GitHub
+						51 text Developer Tools
+						52 text AI Code Assistant
+						53 text Resources
+					54 button Documentation
+						55 text Documentation
+						56 image
+					57 button API Reference
+						58 text API Reference
+						59 image
+					60 button Turn Off Coding
+						61 text Turn Off Coding
+					62 container
+						63 text Page Code
+						64 button
+							65 image
+						66 button
+							67 image
+						68 text Main Pages
+						69 content list
+							70 container
+								71 image
+								72 text Buyer Roon Landing Page
+							73 container
+								74 image
+								75 text Buyer Room Login
+							76 container
+								77 image
+								78 text Catalogue
+							79 container
+								80 image
+								81 text Buyer Room
+							82 container
+								83 image
+								84 text Sales Room Login
+							85 container
+								86 image
+								87 text Sales Room
+							88 container
+								89 image
+								90 text Privacy Policy
+						91 image
+						92 text masterPage.js
+						93 text CSS
+						94 image
+						95 text global.css
+						96 container
+						97 text Members Area
+						98 content list
+							99 container
+								100 image
+								101 text Account Settings
+							102 container
+								103 image
+								104 text My Orders
+						105 text Cart & Thank You
+						106 content list
+							107 container
+								108 image
+								109 text Cart Page
+							110 container
+								111 image
+								112 text Thank You Page
+							113 container
+								114 image
+								115 text Side Cart
+						116 text Member Authentication
+						117 content list
+							118 container
+								119 image
+								120 text Access Restricted
+							121 container
+								122 image
+								123 text Expired Reset Link
+							124 container
+								125 image
+								126 text Create New Password
+							127 container
+								128 image
+								129 text Pending Approval (Popup)
+							130 container
+								131 image
+								132 text Email Confirmation (Popup)
+							133 container
+								134 image
+								135 text Signup form (Popup)
+							136 container
+								137 image
+								138 text Reset Password (Popup)
+							139 container
+								140 image
+								141 text Login form (Popup)
+						142 text Popups (Lightboxes)
+						143 content list
+							144 text Product Details
+							145 text Order Received
+				146 container
+					147 container
+						148 container
+							149 image
+							150 text Desktop (Primary)
+					151 container preview-frame
+						152 AXWebArea Preview, URL: fmcg999-fmcgmalaysia.editor.wix.com/html/editor/web/renderer/render/document/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb/buyer-room?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651&editorSessionId=db0f4f17-8e2e-46ed-ac87-50867127b7e6&esi=db0f4f17-8e2e-46ed-ac87-50867127b7e6&isEdited=true&isSantaEditor=true&dsOrigin=studio&languages=&ds=true&forceResponsive=true&configName=responsive&commonConfig=%7B%22host%22%3A%22STUDIO%22%2C%22brand%22%3A%22studio%22%2C%22branchId%22%3A%2200000000-0000-0000-0000-000000000000%22%7D&enableScopes=true&consent-policy=%7B%22func%22%3A1%2C%22anl%22%3A1%2C%22adv%22%3A0%2C%22dt3%22%3A0%2C%22ess%22%3A1%7D
+							153 container main_MF
+								154 container Description: top of page, ID: SCROLL_TO_TOP
+								155 container ic0dd
+									156 container
+										157 container comp-mtza6nh7
+											158 container Embedded Content
+												159 AXWebArea FMCG Malaysia Buyer Room, URL: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html
+													160 container
+														161 button Description: Return to your Catalogue, Help: Return to Catalogue
+															162 image fmcgMalaysia.com
+														163 text BUYER ROOM
+														164 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+														165 text B
+														166 text Buyer Account
+														167 text Company Purchasing Access
+													168 container
+														169 button My Selection
+															170 image
+															171 text My Selection
+														172 button Order Form
+															173 image
+															174 text Order Form
+														175 button Track Orders
+															176 image
+															177 text Track Orders
+														178 button Completed Orders
+															179 image
+															180 text Completed Orders
+														181 button Documents
+															182 image
+															183 text Documents
+														184 button Account
+															185 image
+															186 text Account
+													187 container myView
+														188 heading My Selection, Value: 1
+															189 text My Selection
+														190 text 0
+														191 text Products
+														192 text 0
+														193 text Awaiting Quotation Transaction Currency
+														194 text USD
+														195 link Description: Open Catalogue in a new tab, Value: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html#, ID: browse
+														196 tab group Filter My Selection
+															197 tab (selected, settable, boolean) All 0, ID: currentTab, Value: 1
+All
+0
+															198 tab (selectable, settable, boolean) Food 0, Value: 0
+Food
+0
+															199 tab (selectable, settable, boolean) Non-food 0, Value: 0
+Non-food
+0
+															200 tab (selectable, settable, boolean) Removed 0, ID: removedTab, Value: 0
+Removed
+0
+														201 search text field (settable) Description: Search selection by product, brand or barcode, ID: mySearch
+														202 button Download Excel, ID: exportToggle
+														203 text Loading your company workspace…
+														204 button (collapsed) Description: How selection limits and V.I.P quotations work, ID: limitInfoButton, Secondary Actions: Expand
+														205 text 0
+														206 text of
+														207 text 100
+														208 text selected
+														209 container
+															210 text Barcode
+															211 text Image
+															212 text Descriptions
+															213 text Normal Price
+															214 text V.I.P Price
+															215 text Added Time
+															216 text Selected By
+															217 text Last Quoted
+															218 container Remove
+															219 container myRows
+																220 text Loading My Selection…
+																221 text Please wait.
+											222 button Description: Export My Selection to Excel, ID: comp-muoufasq
+								223 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+					224 container
+						225 container
+							226 link Description: https://fmcg999.wixstudio.com/fmcgmalaysia, Value: fmcg999.wixstudio.com/fmcgmalaysia
+							227 button Connect Domain
+				228 container
+					229 image
+					230 text Select an element to see and edit its properties here.
+			231 container
+				232 container
+					233 container
+						234 container scrollable content
+							235 container
+								280 image
+								237 text Buyer Room
+								238 image
+							239 container
+								281 image
+								241 text catalogueAuth.web.js
+								242 image
+					243 container
+						244 button Code in Wix IDE
+							245 image
+							246 text Code in Wix IDE
+						247 button Run
+							248 image
+							249 text Run
+						250 button
+							251 image
+					252 container
+						253 editor (settable) Description: Editor content;Press Alt+F1 for Accessibility Options., Value: import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import wixLocationFrontend from 'wix-location-frontend';
+import wixWindowFrontend from 'wix-window-frontend';
+import { session } from 'wix-storage-frontend';
+import wixRealtimeFrontend from 'wix-realtime-frontend';
+
+let assistCustomerId = '';
+function getAssistCustomerId() {
+  // Assisted access must be explicit in the URL. Catalogue already preserves
+  // the `assist` query when staff return to Buyer Room, while ignoring an old
+…  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
+});
+
+					254 text Properties & Events
+					255 text CSS Classes
+					256 image
+					257 text Select an element to add events, edit its ID, and more.
+					258 link Learn more
+						259 text Learn more
+				260 button Page
+			282 container
+				283 button
+					284 image
+				285 container
+					286 text Congratulations This site is published and live online.
+					287 image
+					288 text field https://fmcg999.wixstudio.com/fmcgmalaysia
+					289 button View Site
+				290 container
+					291 image
+					292 text Don’t show this again
+				293 button Done
+		273 container Rich Text Editor, editor1, ID: cke_editor1
+			274 container Rich Text Editor, editor1
+				275 AXWebArea Rich Text Editor, editor1, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
+					276 container 
+
+		277 text let matches = memberId ? (await wixData.query(STAFF_COLLECTION).eq('wixMemberId', memberId).limit(2).find({ suppressAuth: true })).items : [];, 1 of 1 found for ' brand: normalize(data.brand || product.brandName || product.principle),', at 156:1
+
+The focused UI element is 0 AXWebArea Wix Studio | FMCG MALAYSIA, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651
