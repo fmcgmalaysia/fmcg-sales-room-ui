@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-06",
+  "timezone": "Asia/Kuala_Lumpur",
+  "objective": "Remove the undefined Escape callback only",
+  "codeCommit": "ecfb4a8ed7e675c529f113bcbbca2583fba4039a",
+  "marker": "2026-10-06-buyer-escape-close-room5-v1",
+  "codeStatus": "Complete; 21 tests passed; only handler call removal and build marker changed production HTML",
+  "pages": {
+    "status": "Success",
+    "run": "37450752957",
+    "url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37450752957",
+    "scriptMatches": true,
+    "stylesMatchVerifiedBaseline": true
+  },
+  "wix": {
+    "status": "This site is published and live online",
+    "buyerPageUnchanged": true,
+    "pageHash": "1d984fbbf238f22c12eaa2244e4b2fb50a0a8acacfe9529200b5a714ebe6a7a0",
+    "pageCodeReadbackMatchesRecovery": true
+  },
+  "public": {
+    "status": "Verified after fresh load and reload",
+    "account": "BERJAYA 06",
+    "url": "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F",
+    "markerVerified": true,
+    "reviewEscapeClosedTwice": true,
+    "quantityValuesAndLocksUnchanged": true,
+    "arrowDownAndUpFocusPassed": true,
+    "ordersSubmitted": 0,
+    "quantitiesWritten": 0,
+    "relevantConsoleErrors": []
+  },
+  "temporaryPermission": "Removed after deployment; main-only setting reread",
+  "acceptance": "Assistant public verification complete; user real-world acceptance pending",
+  "main": "Not merged; PR4 end-to-end flow explicitly untested by user",
+  "salesPublish": "Paused; no retry or code change"
+}
