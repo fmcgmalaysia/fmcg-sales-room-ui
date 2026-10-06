@@ -176,6 +176,14 @@ $w.onReady(function () {
   salesRoom.onMessage(async (event) => {
     const message = event.data || {};
 
+    if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
+      const staff = await staffPromise;
+      const customerId = String(message.customerId || '').trim();
+      if (!staff.authorized || !/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      wixLocationFrontend.to('/buyer-room?assist=' + encodeURIComponent(customerId));
+      return;
+    }
+
     if (message.type === 'SALES_ROOM_FX_RATES_REQUEST') {
       try {
         const response = await getFxRateSettings();
