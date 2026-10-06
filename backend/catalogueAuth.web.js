@@ -6,6 +6,7 @@ import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
+import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -514,8 +515,7 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
-  return { ok: true, ...issued };
+  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
 });
 export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '', buyerRoomUrl = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

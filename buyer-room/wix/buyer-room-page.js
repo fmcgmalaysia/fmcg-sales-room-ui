@@ -21,6 +21,7 @@ $w.onReady(async function () {
   let selectionDownloadUrl = '';
   let activeDownloadExpiresAt = 0;
   let downloadPreparation = null;
+  let selectionDataKey = '';
 
   downloadButton.disable();
   downloadButton.hide();
@@ -39,12 +40,15 @@ $w.onReady(async function () {
       return;
     }
     if (downloadPreparation) return downloadPreparation;
+    const preparingKey = selectionDataKey;
     downloadPreparation = (async () => {
       const result = await createBuyerSelectionDownload(assistCustomerId);
-      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');
-      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      selectionDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
+      if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');
+      if (preparingKey !== selectionDataKey) return;
+      selectionDownloadUrl = result.url;
       activeDownloadExpiresAt = Number(result.expiresAt);
+      downloadButton.link = selectionDownloadUrl;
+      downloadButton.target = '_self';
       updateDownloadButtonVisibility();
     })();
     try { await downloadPreparation; }
@@ -52,7 +56,7 @@ $w.onReady(async function () {
       selectionDownloadUrl = '';
       downloadButton.hide();
       console.error('Buyer Room Excel link preparation failed', error);
-    } finally { downloadPreparation = null; }
+    } finally { downloadPreparation = null; if (preparingKey !== selectionDataKey) prepareSelectionDownload(); }
   }
 
   downloadButton.onClick(() => {
@@ -61,7 +65,7 @@ $w.onReady(async function () {
       prepareSelectionDownload(true);
       return;
     }
-    wixLocationFrontend.to(selectionDownloadUrl);
+    // The native button follows its prebound link. Refresh only the short-lived URL.
     setTimeout(() => prepareSelectionDownload(true), 1500);
   });
 
@@ -82,6 +86,14 @@ $w.onReady(async function () {
       return;
     }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
+    const currentSelectionKey = JSON.stringify(result.myList || []);
+    if (currentSelectionKey !== selectionDataKey) {
+      selectionDataKey = currentSelectionKey;
+      selectionDownloadUrl = '';
+      activeDownloadExpiresAt = 0;
+      downloadButton.disable();
+      downloadButton.link = '';
+    }
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
@@ -231,5 +243,6 @@ $w.onReady(async function () {
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
+  setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);
 });
 
