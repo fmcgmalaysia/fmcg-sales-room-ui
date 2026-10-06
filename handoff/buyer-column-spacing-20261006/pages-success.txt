@@ -1,0 +1,109 @@
+Browser tab: 51421726, Title: "Deploy Buyer Room v64 to Pages · fmcgmalaysia/fmcg-sales-room-ui@a01e18a", URL: "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546".
+1 AXWebArea Deploy Buyer Room v64 to Pages · fmcgmalaysia/fmcg-sales-room-ui@a01e18a, URL: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546
+	2 container
+		3 link Description: Skip to content, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546#start-of-content
+		4 container Global navigation menu
+			5 pop up button Open menu
+			6 link Description: Homepage ( g then d ), Value: github.com/
+			7 container Breadcrumbs
+				8 content list
+					9 container
+						10 link Description: fmcgmalaysia, Value: github.com/fmcgmalaysia
+					11 container
+						12 link Description: fmcg-sales-room-ui, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui
+						13 pop up button (collapsed) Switch repository ( alt shift r ), Secondary Actions: Expand
+			14 button Open quick search dialog, type / to search
+				15 text Type 
+				16 text /
+				17 text  to search
+			18 link Description: Chat with Copilot, Value: github.com/copilot
+			19 pop up button (collapsed) Description: Open Copilot…, Secondary Actions: Expand
+			20 pop up button (collapsed) Create new..., Secondary Actions: Expand
+			21 link Description: All issues, Value: github.com/issues
+			22 link Description: All pull requests, Value: github.com/pulls
+			23 link Description: All repositories, Value: github.com/repos
+			24 link Description: You have no unread notifications ( g then n ), Value: github.com/notifications
+			25 pop up button Open user navigation menu
+				26 image User avatar
+			27 heading Repository navigation, Value: 2
+				28 text Repository navigation
+			29 container Repository
+				30 content list
+					31 link Description: Code, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui
+					32 link Description: Issues, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/issues
+					33 link Description: Pull requests  (9), Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/pulls
+					34 link Description: Agents, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/agents?author=fmcgmalaysia
+					35 link Description: Actions, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions
+					36 link Description: Projects, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/projects
+					37 link Description: Wiki, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/wiki
+					38 link Description: Security and quality, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/security
+					39 link Description: Insights, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/pulse
+					40 link Description: Settings, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings
+	41 container repo-content-turbo-frame
+		42 link Description: Deploy Buyer Room v64 to Pages, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/workflows/pages-v64-same-origin.yml
+		43 image completed successfully: 
+		44 heading Deploy Buyer Room v64 to Pages #107, Value: 1
+			45 text Deploy Buyer Room v64 to Pages  #107
+		46 button Re-run all jobs
+		47 pop up button (collapsed) Workflow run options, ID: action-menu-bed9502f-1d0d-47d5-81c0-52c68d70d6f2-button, Secondary Actions: Expand
+		48 container Workflow run summary
+			49 text Manually triggered 
+			50 container Oct 6, 2026, 1:10 PM GMT+8
+				51 text now
+			52 link Description: @fmcgmalaysia fmcgmalaysia, Value: github.com/fmcgmalaysia
+			53 text ⁠
+			54 link Description:  a01e18a, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/commit/a01e18a7dd09b6104a5f170bafb4a5c8036e6530
+			55 link Description: style/buyer-column-spacing-room5, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/tree/refs/heads/style/buyer-column-spacing-room5
+			56 text Status Success Total duration
+			57 link Description: 26s, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/usage
+			58 text Artifacts
+			59 link Description: 1, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546#artifacts
+		60 container Workflow run graph
+			61 container
+				62 container
+					63 heading pages-v64-same-origin.yml, Value: 2
+						64 link Description: pages-v64-same-origin.yml, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/workflow
+					65 text on: workflow_dispatch
+				66 container
+					67 link Description: completed successfully: deploy 19s, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/job/112118328258, ID: workflow-job-name-deploy
+					68 link Description: https://fmcgmalaysia.github.io/fmcg-sales-room-ui/, Value: fmcgmalaysia.github.io/fmcg-sales-room-ui/
+				69 button (disabled) Fit to window, ID: icon-button-3f1fcf7a-a426-4895-be15-91d999819151
+				70 button (disabled) Zoom out, ID: icon-button-01cbbcdb-413e-486b-aa69-8c4485194cdb
+				71 button (disabled) Zoom in, ID: icon-button-47ce6881-8d78-4dc6-9b50-66c72f32a4c8
+		72 container Annotations
+			73 heading Annotations, Value: 2
+				74 text Annotations
+			75 text 1 notice
+			76 row
+				77 cell
+					78 link Description: deploy, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/job/112118328258
+					79 container
+						80 text "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see 
+						81 link Description: https://github.com/actions/runner-images/issues/14748, Value: github.com/actions/runner-images/issues/14748
+						82 text "
+		83 container Description: Artifacts, ID: artifacts
+			84 heading Artifacts, Value: 2
+				85 text Artifacts
+			86 text Produced during runtime
+			87 table
+				88 row
+					89 cell
+						90 text Name
+					91 cell
+						92 text Size
+					93 cell
+						94 text Digest
+				95 row
+					96 cell
+						97 link Description: Download github-pages (opens in a new tab), Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/artifacts/11391251603
+						98 link Description: Download github-pages (opens in a new tab), Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/artifacts/11391251603
+					99 cell
+						100 text 4 MB
+					101 cell
+						102 text sha256:5ca7b74b4b80c8d29e4325846f0115008e87f66a7c4b37aaddfcd86a2c213aff
+						103 button Copy artifact digest
+					104 cell
+						105 link Description: Download github-pages (opens in a new tab), Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546/artifacts/11391251603, ID: icon-button-3fcdeb8a-a9fb-4dfb-81fa-9d481a402194
+						106 button Delete github-pages, ID: icon-button-965c1060-d415-4095-bd05-39f6614965ed
+
+The focused UI element is 1 AXWebArea Deploy Buyer Room v64 to Pages · fmcgmalaysia/fmcg-sales-room-ui@a01e18a, URL: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/37417200546

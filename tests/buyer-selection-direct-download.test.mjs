@@ -43,7 +43,7 @@ assert.match(pageCode, /BUYER_ROOM_VIEW_CHANGED/);
 assert.match(buyerRoomHtml, /BUYER_ROOM_VIEW_CHANGED/);
 assert.doesNotMatch(pageCode, /uploadBuyerSelectionExcel|BUYER_ROOM_EXPORT_FILE/);
 assert.match(pageCode, /20261004-selection-same-site-download-v98/);
-assert.match(buyerRoomHtml, /2026-10-06-buyer-time-author-inline-room5-v1/);
+assert.match(buyerRoomHtml, /2026-10-06-buyer-column-spacing-room5-v3/);
 assert.match(webModule, /createBuyerSelectionExportToken/);
 assert.match(webModule, /createBuyerSelectionExportToken\(buyer\.customerId, await getSecret\(QD_ROUTER_SECRET\), 3600\)/);
 assert.match(buyerRoomHtml, /id="exportToggle"/);
