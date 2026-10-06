@@ -24,6 +24,19 @@ test('blur locks only its input and concurrent rows keep their drafts',()=>{
   assert.equal(f.item('a').orderQtyCtn,9999);assert.equal(f.item('b').orderQtyCtn,650);
   f.reply('a',9999);assert.equal(f.context.quantityEditsBlocked(),false);
 });
+test('quantity arrows follow displayed enabled rows without unlocking saved quantities',()=>{
+  const f=fixture(),a=f.input(50),b=f.input(100,'b');f.inputs.push(a,b);
+  let focused='',selected=0;b.readOnly=true;b.focus=()=>{focused='b'};b.select=()=>{selected++};
+  a.focus=()=>{focused='a'};a.select=()=>{selected++};
+  f.context.moveQuantityFocus(a,1);assert.equal(focused,'b');assert.equal(b.readOnly,true);assert.equal(selected,0);
+  f.context.moveQuantityFocus(b,-1);assert.equal(focused,'a');assert.equal(selected,1);assert.equal(f.posted.length,0);
+  f.context.moveQuantityFocus(a,-1);assert.equal(focused,'a');f.context.moveQuantityFocus(b,1);assert.equal(focused,'a');
+});
+test('invalid quantity stays on its row when an arrow is pressed',()=>{
+  const f=fixture(),a=f.input(-1),b=f.input(0,'b');f.inputs.push(a,b);let invalid=false,moved=false;
+  a.checkValidity=()=>false;a.reportValidity=()=>{invalid=true};b.focus=()=>{moved=true};
+  f.context.moveQuantityFocus(a,1);assert.equal(invalid,true);assert.equal(moved,false);assert.equal(f.posted.length,0);
+});
 test('direct review click saves the last draft and waits for all replies',()=>{
   const f=fixture(),a=f.input(111),b=f.input(650,'b');f.inputs.push(a,b);
   f.context.confirmQuantityDraft(f.item('a'),a,false);f.context.rememberQuantityDraft(f.item('b'),b);
