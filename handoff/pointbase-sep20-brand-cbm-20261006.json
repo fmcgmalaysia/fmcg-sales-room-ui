@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-06",
+  "objective": "Restore September 20 21:52 whole sync with brand mapping and four-decimal CBM; preserve current menus",
+  "projectId": "1C8QPaUfguenEMZSC_-1sPLJuaEThzK-RixbmTX1pJaizEgJgKyNUDT69",
+  "baseFile": "C:/FMCG-WIX-LOCAL/pointbase_wix_sync.gs",
+  "baseFileHash": "b7fabfa6c396c9f1f730dad5ca74355d5f9fb1e9fde1db82adebb81fd1932a7d",
+  "beforeHash": "3fc3a30766ba9d4bd74786955ccd15fc2920e194461856861f39a38b5310b5c8",
+  "afterHash": "f36bfc105a7e22782a329ab7a689791eb9d8dffd58561e6128239a83ad123320",
+  "hashNormalization": "CRLF to LF; trimEnd",
+  "isolatedPatches": 8,
+  "currentOnOpenPreserved": true,
+  "relatedFilesUnchanged": {
+    "WIX_IMAGE_URL": "a800a5dfd851295da68bef499a765e98421a760ace9fd741e2ec3724b467a32f",
+    "COST_VERIFIED_MENU": "cacce805a9b260f8542ed5eb6ea5fb0606f48bd2ae8746fe91a918c855d0f1c7"
+  },
+  "recovery": "Exact before code and related files stored in local handoff/pointbase-sep20-brand-cbm-20261006",
+  "protectedApplicationTag": "verified/buyer-quantity-enter-20261005",
+  "branch": "fix/pointbase-unified-brand-cbm-room5",
+  "baseCommit": "e1a51c509da7d4861c9cb427b765c66cc3a839dd",
+  "immutableVersion": null,
+  "deploymentId": null,
+  "deployedVersion": null,
+  "runtime": "Bound spreadsheet menu uses saved Head; no Web App deployment changed",
+  "status": "Saved Head confirmed; exact readback, original menu Preview and Execute completed successfully",
+  "limitations": [
+    "Default CMS query may exclude unpublished items; failed draft access workaround is not reinstated",
+    "Invalid source rows remain skipped and reported under September 20 rules",
+    "This is not a Catalogue sorting release"
+  ],
+  "preview": {
+    "sourceNonEmpty": 6835,
+    "validUnique": 5972,
+    "matched": 5972,
+    "unchanged": 5972,
+    "updates": 0,
+    "inserts": 0,
+    "blockedSourceRows": 863,
+    "globalBlockers": 0
+  },
+  "tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "menuFunctions": [
+    {
+      "name": "previewPointBaseWixSync",
+      "definitions": 1
+    },
+    {
+      "name": "confirmAndExecutePointBaseWixSync",
+      "definitions": 1
+    },
+    {
+      "name": "auditPointBaseBarcodeTypes",
+      "definitions": 1
+    },
+    {
+      "name": "previewWixImageUrlsToPointBase",
+      "definitions": 1
+    },
+    {
+      "name": "confirmAndPullWixImageUrlsToPointBase",
+      "definitions": 1
+    },
+    {
+      "name": "previewSelectedPrincipleWixImageUrlsToPointBase",
+      "definitions": 1
+    },
+    {
+      "name": "confirmAndPullSelectedPrincipleWixImageUrlsToPointBase",
+      "definitions": 1
+    },
+    {
+      "name": "markSelectedCostsVerifiedToday",
+      "definitions": 1
+    }
+  ],
+  "unrelatedExistingIssue": "COST_VERIFIED_MENU allows NON FOOD while live sheet is NONFOOD; preserved unchanged and not included in this sync repair.",
+  "execution": {
+    "matched": 5972,
+    "unchanged": 5972,
+    "updated": 0,
+    "inserted": 0,
+    "blockedSourceRows": 863,
+    "globalBlockers": 0,
+    "apiFailures": 0,
+    "verificationFailures": 0
+  }
+}
