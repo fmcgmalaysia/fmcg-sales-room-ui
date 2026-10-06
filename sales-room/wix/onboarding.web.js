@@ -403,12 +403,15 @@ async function loadQuoteRiskCounts(customers) {
 export const publishSalesRoomQuotations = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
+    const publishStartedAt = Date.now();
+    console.info('[quote-publish-timing]', { stage: 'start', elapsedMs: 0 });
     try {
       const staff = await requireAuthorizedStaffContext();
       const customer = await findAuthorizedCustomer(customerId, staff);
       const qdFileId = normalize(customer.qdFileId);
       if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
       const sharedSecret = await getSecret(SECRET_NAME);
+      console.info('[quote-publish-timing]', { stage: 'before-central-request', elapsedMs: Date.now() - publishStartedAt });
       const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
@@ -420,10 +423,13 @@ export const publishSalesRoomQuotations = webMethod(
           actorEmail: normalizeEmail(staff.loginEmail || staff.staffEmail)
         })
       });
+      console.info('[quote-publish-timing]', { stage: 'central-response', elapsedMs: Date.now() - publishStartedAt, status: response.status, contentType: response.headers.get('content-type') });
       const body = parseAppsScriptResponse(await response.text());
+      console.info('[quote-publish-timing]', { stage: 'response-parsed', elapsedMs: Date.now() - publishStartedAt });
       if (!response.ok || !body.ok) return { ok: false, error: body.error || 'Quotation publish failed.' };
       return { ok: true, ...(body.result || {}) };
     } catch (error) {
+      console.info('[quote-publish-timing]', { stage: 'caught-error', elapsedMs: Date.now() - publishStartedAt });
       console.error('Sales Room quotation publish failed', error);
       return { ok: false, error: safeMessage(error) || 'Quotation publish failed.' };
     }
