@@ -1,0 +1,388 @@
+Browser tab: 51421522, Title: "Catalogue | FMCG MALAYSIA", URL: "https://fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F&verify=brand-sort-v53-20261006".
+1 AXWebArea Catalogue | FMCG MALAYSIA, URL: fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F&verify=brand-sort-v53-20261006
+	2 container main_MF
+		3 container Description: top of page, ID: SCROLL_TO_TOP
+		4 link Description: Built on Wix Studio, Value: wix.com/studio
+		5 container masterPage
+			6 container uxcu1
+				7 container
+					8 container PAGE_SECTIONSuxcu1
+						9 container comp-mumb0yrl
+							10 container
+								11 image LOGO.png
+								12 container comp-mumipd14
+									13 text field (settable) Value: CADBURY, ID: input_comp-mumb9u31
+								14 container comp-mumdrheg
+									15 container comp-mumc13li
+										16 heading BERJAYA 06, Value: 1
+											17 text BERJAYA 06
+										18 heading LAW, Value: 1
+											19 text LAW
+						20 container comp-mto6waot
+							21 container Embedded Content
+								22 AXWebArea fmcg999-wixstudio-com.filesusr.com/html/4ecd18_779b7cbf2b7072555387f73192b279d5.html
+									23 container
+										24 container Current page: Catalogue
+											25 text CATALOGUE
+										26 container Catalogue categories
+											27 button Food & Beverages
+											28 button Household & Cleaning
+											29 button Personal Care & Health
+											30 button General Merchandise
+										31 link Description: Open Buyer Room, Value: fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F, ID: buyerRoom
+						32 container comp-mt8ndgyv
+							33 container Embedded Content
+								34 AXWebArea fmcg999-wixstudio-com.filesusr.com/html/4ecd18_6b7ae87e9d0228c4abd5fe3ccd664291.html
+									35 container
+										36 button MY SELECTION 7 of 100, ID: selectionFilter
+											37 text MY SELECTION
+											745 text 7
+											39 text of
+											746 text 100
+										41 button FOOD 7, ID: foodSelectionFilter
+											42 text FOOD
+											747 text 7
+										44 button NON-FOOD 0, ID: nonFoodSelectionFilter
+											45 text NON-FOOD
+											748 text 0
+										749 text Your account allows up to 100 selected SKUs.
+										48 container Catalogue products
+											49 text IMAGE DESCRIPTIONS BARCODE STATUS
+											50 container rows
+												750 button CADBURY DAIRY MILK SHAREBAG 17 MINI BARS - FAVOURITES 195.5G x 16 7622201680350 AVAILABLE
+													751 text CADBURY DAIRY MILK SHAREBAG 17 MINI BARS - FAVOURITES
+													752 text 195.5G x 16
+													753 text 7622201680350
+													754 text AVAILABLE
+												755 button CADBURY DAIRY MILK SHAREBAG 20 MINI BARS 230G x 16 7622201680343 AVAILABLE
+													756 text CADBURY DAIRY MILK SHAREBAG 20 MINI BARS
+													757 text 230G x 16
+													758 text 7622201680343
+													759 text AVAILABLE
+												760 button CADBURY DAIRY MILK SHAREBAG 10 MINI BARS 115G x 16 7622210164780 AVAILABLE
+													761 text CADBURY DAIRY MILK SHAREBAG 10 MINI BARS
+													762 text 115G x 16
+													763 text 7622210164780
+													764 text AVAILABLE
+												765 button CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - ROAST ALMOND 115G x 16 7622210436467 AVAILABLE
+													766 text CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - ROAST ALMOND
+													767 text 115G x 16
+													768 text 7622210436467
+													769 text AVAILABLE
+												770 button CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - CHIPSMORE 115G x 16 7622201810832 AVAILABLE
+													771 text CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - CHIPSMORE
+													772 text 115G x 16
+													773 text 7622201810832
+													774 text AVAILABLE
+												775 button CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - OREO 115G x 16 7622201450809 AVAILABLE
+													776 text CADBURY DAIRY MILK SHAREBAG 10 MINI BARS - OREO
+													777 text 115G x 16
+													778 text 7622201450809
+													779 text AVAILABLE
+												780 button NO IMAGE CADBURY DAIRY BISCOFF (SHAREBAG 10) 115G x 16 7622202836213 AVAILABLE
+													781 text NO IMAGE
+													782 text CADBURY DAIRY BISCOFF (SHAREBAG 10)
+													783 text 115G x 16
+													784 text 7622202836213
+													785 text AVAILABLE
+												786 button CADBURY DAIRY MILK DOYBAG 10 MINI BARS - HAZELNUT 120G x 16 7622201710163 AVAILABLE
+													787 text CADBURY DAIRY MILK DOYBAG 10 MINI BARS - HAZELNUT
+													788 text 120G x 16
+													789 text 7622201710163
+													790 text AVAILABLE
+												791 button CADBURY DAIRY MILK CHUNKS (SHAREBAG 30) 135G x 16 7622210758583 AVAILABLE
+													792 text CADBURY DAIRY MILK CHUNKS (SHAREBAG 30)
+													793 text 135G x 16
+													794 text 7622210758583
+													795 text AVAILABLE
+												796 button CADBURY DAIRY MILK CHUNKS MINI (DOYBAG 18) 81G x 40 7622210777768 AVAILABLE
+													797 text CADBURY DAIRY MILK CHUNKS MINI (DOYBAG 18)
+													798 text 81G x 40
+													799 text 7622210777768
+													800 text AVAILABLE
+												801 button CADBURY DAIRY MILK (KING SIZE) 200G x 12 x 6 out 7622202289927 AVAILABLE
+													802 text CADBURY DAIRY MILK (KING SIZE)
+													803 text 200G x 12 x 6 out
+													804 text 7622202289927
+													805 text AVAILABLE
+												806 button CADBURY DAIRY MILK (KING SIZE) - ROAST ALMOND 190G x 12 x 6out 7622202289965 AVAILABLE
+													807 text CADBURY DAIRY MILK (KING SIZE) - ROAST ALMOND
+													808 text 190G x 12 x 6out
+													809 text 7622202289965
+													810 text AVAILABLE
+												811 button CADBURY DAIRY MILK (KING SIZE) - FRUIT & NUT 190G x 12 x 6out 7622202289941 AVAILABLE
+													812 text CADBURY DAIRY MILK (KING SIZE) - FRUIT & NUT
+													813 text 190G x 12 x 6out
+													814 text 7622202289941
+													815 text AVAILABLE
+												816 button CADBURY DAIRY MILK 135G 135G x 12 x 6 out 7622210410474 AVAILABLE
+													817 text CADBURY DAIRY MILK 135G
+													818 text 135G x 12 x 6 out
+													819 text 7622210410474
+													820 text AVAILABLE
+												821 button CADBURY DAIRY MILK 130G - HAZELNUT 130G x 12 x 6 out 7622210400277 AVAILABLE
+													822 text CADBURY DAIRY MILK 130G - HAZELNUT
+													823 text 130G x 12 x 6 out
+													824 text 7622210400277
+													825 text AVAILABLE
+												826 button CADBURY DAIRY MILK 130G - ROAST ALMOND 130G x 12 x 6 out 7622210400291 AVAILABLE
+													827 text CADBURY DAIRY MILK 130G - ROAST ALMOND
+													828 text 130G x 12 x 6 out
+													829 text 7622210400291
+													830 text AVAILABLE
+												831 button CADBURY DAIRY MILK 130G - FRUIT & NUT 130G x 12 x 6 out 7622210410511 AVAILABLE
+													832 text CADBURY DAIRY MILK 130G - FRUIT & NUT
+													833 text 130G x 12 x 6 out
+													834 text 7622210410511
+													835 text AVAILABLE
+												836 button CADBURY DAIRY MILK 130G - BLACK FOREST 130G x 12 x 6 out 7622210400284 AVAILABLE
+													837 text CADBURY DAIRY MILK 130G - BLACK FOREST
+													838 text 130G x 12 x 6 out
+													839 text 7622210400284
+													840 text AVAILABLE
+												841 button CADBURY DAIRY MILK 130G - CHIPSMORE 130G x 12 x 6 out 7622201150969 AVAILABLE
+													842 text CADBURY DAIRY MILK 130G - CHIPSMORE
+													843 text 130G x 12 x 6 out
+													844 text 7622201150969
+													845 text AVAILABLE
+												846 button CADBURY DAIRY MILK 124G - OREO 124G x 12 x 6 out 7622201762223 AVAILABLE
+													847 text CADBURY DAIRY MILK 124G - OREO
+													848 text 124G x 12 x 6 out
+													849 text 7622201762223
+													850 text AVAILABLE
+												851 button CADBURY DAIRY MILK 112G - BUBBLY 112G x 10 x 8 out 7622201762346 AVAILABLE
+													852 text CADBURY DAIRY MILK 112G - BUBBLY
+													853 text 112G x 10 x 8 out
+													854 text 7622201762346
+													855 text AVAILABLE
+												856 button CADBURY DAIRY MILK 110G - MOUSSE 110G x 12 x 6 out 7622202323843 AVAILABLE
+													857 text CADBURY DAIRY MILK 110G - MOUSSE
+													858 text 110G x 12 x 6 out
+													859 text 7622202323843
+													860 text AVAILABLE
+												861 button CADBURY DAIRY MILK 130G - CRISP IT 130G x 10 x 6 out 7622202272455 AVAILABLE
+													862 text CADBURY DAIRY MILK 130G - CRISP IT
+													863 text 130G x 10 x 6 out
+													864 text 7622202272455
+													865 text AVAILABLE
+												866 button CADBURY DAIRY MILK 85G 85G x 12 x 6 out 7622210816634 AVAILABLE
+													867 text CADBURY DAIRY MILK 85G
+													868 text 85G x 12 x 6 out
+													869 text 7622210816634
+													870 text AVAILABLE
+												871 button CADBURY DAIRY MILK 80G - HAZELNUT 80G x 12 x 6 out 7622210816856 AVAILABLE
+													872 text CADBURY DAIRY MILK 80G - HAZELNUT
+													873 text 80G x 12 x 6 out
+													874 text 7622210816856
+													875 text AVAILABLE
+												876 button CADBURY DAIRY MILK 80G - ROAST ALMOND 80G x 12 x 6 out 7622210816887 AVAILABLE
+													877 text CADBURY DAIRY MILK 80G - ROAST ALMOND
+													878 text 80G x 12 x 6 out
+													879 text 7622210816887
+													880 text AVAILABLE
+												881 button CADBURY DAIRY MILK 80G - FRUIT & NUT 80G x 12 x 6 out 7622210816665 AVAILABLE
+													882 text CADBURY DAIRY MILK 80G - FRUIT & NUT
+													883 text 80G x 12 x 6 out
+													884 text 7622210816665
+													885 text AVAILABLE
+												886 button CADBURY DAIRY MILK 80G - BLACK FOREST 80G x 12 x 6 out 7622210816917 AVAILABLE
+													887 text CADBURY DAIRY MILK 80G - BLACK FOREST
+													888 text 80G x 12 x 6 out
+													889 text 7622210816917
+													890 text AVAILABLE
+												891 button CADBURY DAIRY MILK 80G - CHIPSMORE 80G x 12 x 6 out 7622201150617 AVAILABLE
+													892 text CADBURY DAIRY MILK 80G - CHIPSMORE
+													893 text 80G x 12 x 6 out
+													894 text 7622201150617
+													895 text AVAILABLE
+												896 button CADBURY DAIRY MILK 80G - CRISP IT 80G x 12 x 6 out 7622202272479 AVAILABLE
+													897 text CADBURY DAIRY MILK 80G - CRISP IT
+													898 text 80G x 12 x 6 out
+													899 text 7622202272479
+													900 text AVAILABLE
+												901 button CADBURY DAIRY MILK 34G 34G x 24 x 12 out 9556182104001 AVAILABLE
+													902 text CADBURY DAIRY MILK 34G
+													903 text 34G x 24 x 12 out
+													904 text 9556182104001
+													905 text AVAILABLE
+												906 button CADBURY DAIRY MILK 32G - HAZELNUT 32G x 24 x 12 out 9556182104025 AVAILABLE
+													907 text CADBURY DAIRY MILK 32G - HAZELNUT
+													908 text 32G x 24 x 12 out
+													909 text 9556182104025
+													910 text AVAILABLE
+												911 button CADBURY DAIRY MILK 32G - ROAST ALMOND 32G x 24 x 12 out 9556182104018 AVAILABLE
+													912 text CADBURY DAIRY MILK 32G - ROAST ALMOND
+													913 text 32G x 24 x 12 out
+													914 text 9556182104018
+													915 text AVAILABLE
+												916 button CADBURY DAIRY MILK 32G - FRUIT & NUT 32G x 24 x 12 out 9556182104049 AVAILABLE
+													917 text CADBURY DAIRY MILK 32G - FRUIT & NUT
+													918 text 32G x 24 x 12 out
+													919 text 9556182104049
+													920 text AVAILABLE
+												921 button CADBURY DAIRY MILK 32G - BLACK FOREST 32G x 24 x 12 out 9556182104162 AVAILABLE
+													922 text CADBURY DAIRY MILK 32G - BLACK FOREST
+													923 text 32G x 24 x 12 out
+													924 text 9556182104162
+													925 text AVAILABLE
+												926 button CADBURY DAIRY MILK 32G - CHIPSMORE 32G x 24 x 12 out 7622201150099 AVAILABLE
+													927 text CADBURY DAIRY MILK 32G - CHIPSMORE
+													928 text 32G x 24 x 12 out
+													929 text 7622201150099
+													930 text AVAILABLE
+												931 button CADBURY DAIRY MILK 32G - CRISP IT 32G x 24 x 12 out 7622202272493 AVAILABLE
+													932 text CADBURY DAIRY MILK 32G - CRISP IT
+													933 text 32G x 24 x 12 out
+													934 text 7622202272493
+													935 text AVAILABLE
+												936 button CADBURY DAIRY MILK OREO 58.5G 58.5G x 32 x 6 out 7622201762193 AVAILABLE
+													937 text CADBURY DAIRY MILK OREO 58.5G
+													938 text 58.5G x 32 x 6 out
+													939 text 7622201762193
+													940 text AVAILABLE
+												941 button CADBURY DAIRY MILK BUBBLY 46G 46G x 20 x 8 out 7622201761820 AVAILABLE
+													942 text CADBURY DAIRY MILK BUBBLY 46G
+													943 text 46G x 20 x 8 out
+													944 text 7622201761820
+													945 text AVAILABLE
+												946 button CADBURY DAIRY MILK MOUSSE 48.5G 48.5G x 24 x 6 7622202323874 AVAILABLE
+													947 text CADBURY DAIRY MILK MOUSSE 48.5G
+													948 text 48.5G x 24 x 6
+													949 text 7622202323874
+													950 text AVAILABLE
+												951 button CADBURY DAIRY MILK BITES 50G - ALMOND 50G x 24 7622201422929 ✓ SELECTED
+													952 text CADBURY DAIRY MILK BITES 50G - ALMOND
+													953 text 50G x 24
+													954 text 7622201422929
+													955 text ✓
+													956 text SELECTED
+												957 button CADBURY DAIRY MILK BITES 50G - HAZELNUT 50G x 24 7622201422943 AVAILABLE
+													958 text CADBURY DAIRY MILK BITES 50G - HAZELNUT
+													959 text 50G x 24
+													960 text 7622201422943
+													961 text AVAILABLE
+												962 button CADBURY DAIRY MILK BITES 50G - RAISIN 50G x 24 7622201422967 AVAILABLE
+													963 text CADBURY DAIRY MILK BITES 50G - RAISIN
+													964 text 50G x 24
+													965 text 7622201422967
+													966 text AVAILABLE
+												967 button CADBURY DAIRY MILK BITES 120G - ALMOND 120G x 24 7622201700591 AVAILABLE
+													968 text CADBURY DAIRY MILK BITES 120G - ALMOND
+													969 text 120G x 24
+													970 text 7622201700591
+													971 text AVAILABLE
+												972 button CADBURY DAIRY MILK BITES 120G - HAZELNUT 120G x 24 7622201700577 AVAILABLE
+													973 text CADBURY DAIRY MILK BITES 120G - HAZELNUT
+													974 text 120G x 24
+													975 text 7622201700577
+													976 text AVAILABLE
+												977 button CADBURY DAIRY MILK CHUNKS (JAR) 382G x 12 7622210478351 AVAILABLE
+													978 text CADBURY DAIRY MILK CHUNKS (JAR)
+													979 text 382G x 12
+													980 text 7622210478351
+													981 text AVAILABLE
+												982 button CADBURY COOKIES 150G TIRAMISU (25G x 6) x 18 8934680014342 AVAILABLE
+													983 text CADBURY COOKIES 150G TIRAMISU
+													984 text (25G x 6) x 18
+													985 text 8934680014342
+													986 text AVAILABLE
+												987 button CADBURY COOKIES 150G (25G x 6) x 18 8934680046640 AVAILABLE
+													988 text CADBURY COOKIES 150G
+													989 text (25G x 6) x 18
+													990 text 8934680046640
+													991 text AVAILABLE
+												992 button CADBURY COOKIES 50G (25G x 2) x 36 7622202037634 AVAILABLE
+													993 text CADBURY COOKIES 50G
+													994 text (25G x 2) x 36
+													995 text 7622202037634
+													996 text AVAILABLE
+												997 button CADBURY ZIP - CHOCOLATE 32G x 28 x 12 out 8901233024981 AVAILABLE
+													998 text CADBURY ZIP - CHOCOLATE
+													999 text 32G x 28 x 12 out
+													1000 text 8901233024981
+													1001 text AVAILABLE
+												1002 button CADBURY ZIP - STRAWBERRY 32G x 28 x 12 out 7622201689704 AVAILABLE
+													1003 text CADBURY ZIP - STRAWBERRY
+													1004 text 32G x 28 x 12 out
+													1005 text 7622201689704
+													1006 text AVAILABLE
+												1007 button CADBURY ZIP X20 BAR - CHOCOLATE 160G x 16 8901233025001 ✓ SELECTED
+													1008 text CADBURY ZIP X20 BAR - CHOCOLATE
+													1009 text 160G x 16
+													1010 text 8901233025001
+													1011 text ✓
+													1012 text SELECTED
+												1013 button CADBURY ZIP X20 BAR - STRAWBERRY 160G x 16 7622201689728 AVAILABLE
+													1014 text CADBURY ZIP X20 BAR - STRAWBERRY
+													1015 text 160G x 16
+													1016 text 7622201689728
+													1017 text AVAILABLE
+												1018 button CADBURY PICNIC 46G x 25 x 4 out 9300617408642 AVAILABLE
+													1019 text CADBURY PICNIC
+													1020 text 46G x 25 x 4 out
+													1021 text 9300617408642
+													1022 text AVAILABLE
+												1023 button CADBURY CRUNCHIE 50G x 42 x 6 out 9300617322863 AVAILABLE
+													1024 text CADBURY CRUNCHIE
+													1025 text 50G x 42 x 6 out
+													1026 text 9300617322863
+													1027 text AVAILABLE
+												1028 button CADBURY DAIRY MILK PANNED - FRUIT & NUT 200G x 12 7622202260292 AVAILABLE
+													1029 text CADBURY DAIRY MILK PANNED - FRUIT & NUT
+													1030 text 200G x 12
+													1031 text 7622202260292
+													1032 text AVAILABLE
+												1033 button CADBURY DAIRY MILK FAVOURITES (BOX) 231G x 18 7622202273407 AVAILABLE
+													1034 text CADBURY DAIRY MILK FAVOURITES (BOX)
+													1035 text 231G x 18
+													1036 text 7622202273407
+													1037 text AVAILABLE
+												1038 button CADBURY HOT CHOCOLATE DRINK (30G x 13) x 18 9556182914723 AVAILABLE
+													1039 text CADBURY HOT CHOCOLATE DRINK
+													1040 text (30G x 13) x 18
+													1041 text 9556182914723
+													1042 text AVAILABLE
+												1043 button CADBURY HOT CHOCOLATE DRINK (30G x 5) x 24 7622202247880 AVAILABLE
+													1044 text CADBURY HOT CHOCOLATE DRINK
+													1045 text (30G x 5) x 24
+													1046 text 7622202247880
+													1047 text AVAILABLE
+												1048 button NO IMAGE CADBURY Hazelnut Stick 80ML x 24 9556001325426 AVAILABLE
+													1049 text NO IMAGE
+													1050 text CADBURY Hazelnut Stick
+													1051 text 80ML x 24
+													1052 text 9556001325426
+													1053 text AVAILABLE
+										714 container Description: Selected product details, ID: detailPanel
+											715 heading CADBURY DAIRY MILK SHAREBAG 17 MINI BARS - FAVOURITES, Value: 2, ID: detailName
+												1054 text CADBURY DAIRY MILK SHAREBAG 17 MINI BARS - FAVOURITES
+											1055 text MONDELEZ
+											718 container
+												719 button + Select for Quote, ID: selectButton
+												720 text Add this product to My Selection, then review your products and request a confirmed quote in Buyer Room. Packing Size
+												1056 text 195.5G x 16
+												722 text EA / CTN
+												1057 text 16
+												724 text Unit Barcode
+												1058 text 7622201680350
+												726 text Carton Barcode
+												1059 text —
+												728 text CBM / CTN
+												1060 text —
+												730 text Made In
+												1061 text MALAYSIA
+												732 text Shelf Life
+												1062 text 11 MTH
+												734 text Indicative unit price
+												1063 text QUOTE REQUIRED
+												736 container Description: Member benefits, ID: promoCarousel
+													1064 image Track every milestone from quote to shipment
+													738 container Advertisement slides
+														739 button Show catalogue benefits
+														740 button Show Buyer Room features
+														741 button Show transaction tracking
+					742 container comp-mt5av06i_r_comp-kbgakgyt
+						743 text © 2026 fmcgMalaysia.com. All rights reserved.
+		744 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+
+The focused UI element is 13 text field (settable) Value: CADBURY, ID: input_comp-mumb9u31
