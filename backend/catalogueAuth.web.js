@@ -279,6 +279,8 @@ async function workspaceItems(customerId) {
       // stored value only when the product is unavailable in Catalogue CMS.
       packingSize: normalize(product.description || data.packingSize),
       brand: normalize(data.brand || product.brandName || product.principle),
+      brandName: normalize(product.brandName),
+      sortNo: normalize(product.pointBaseSortId),
       category,
       imageUrl: imageUrl(data.imageUrl || data.image || product.image || product.productImage || product.mainImage || product.wixImageUrl),
       ea,
