@@ -6,7 +6,6 @@ import { request as httpsRequest } from 'https';
 import { createBuyerSelectionExportToken } from 'backend/buyerSelectionExportToken.js';
 import { createBuyerOrderExportToken } from 'backend/buyerOrderExportToken.js';
 import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';
-import { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const CUSTOMER_USER_COLLECTION = 'WixCustomerUsers';
@@ -515,7 +514,8 @@ export const markBuyerAccountNotificationsRead = webMethod(Permissions.SiteMembe
 });
 export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
-  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');
+  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);
+  return { ok: true, ...issued };
 });
 export const createBuyerOrderDownload = webMethod(Permissions.SiteMember, async (orderId, assistCustomerId = '', buyerRoomUrl = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
@@ -764,4 +764,3 @@ async function finishBuyerOrder(order, buyer) {
   }
   return { ok: true, orderId: id, status: 'CONFIRMED', warning: resetFailures ? 'Order confirmed, but some quantities could not be cleared. Please check Order Form before submitting another order.' : '' };
 }
-

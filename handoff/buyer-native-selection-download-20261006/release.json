@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-06T11:51:56.245Z",
+  "codeCommit": "fed76f5",
+  "pagesCommit": "e736ff46d4efeeb30dc110ed90511c87519090d7",
+  "pagesRun": "37457949029",
+  "pagesMarker": "2026-10-06-buyer-native-selection-download-room5-v1",
+  "temporaryAccessRevoked": true,
+  "wixEditorHash": "7c5820af86890c3a9e578730e85cb3df13e265fc81a6547b8402794cb8ecfb95",
+  "wixPublishReceipt": "This site is published and live online.",
+  "publicRuntime": {
+    "source": "Buyer Room ic0dd.js observed in browser Sources",
+    "oldNativeLabelClear": true,
+    "newLinkPreparation": false,
+    "embeddedQueryStill": "20261004-selection-same-site-download-v98",
+    "nativeButtonVisible": false,
+    "downloadTest": "not performed; no native control available"
+  },
+  "blocker": "Wix publish receipts contradict public page running code; editor reload remains on Loading",
+  "status": "not complete; do not merge main or create verified tag"
+}

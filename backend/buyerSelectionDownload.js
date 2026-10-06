@@ -1,5 +1,6 @@
 import wixData from 'wix-data';
 import { mediaManager } from 'wix-media-backend';
+import { createHash } from 'crypto';
 import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
@@ -117,17 +118,31 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   });
   const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, currency, rows });
   const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length };
+  const versionKey = createHash('sha256').update(JSON.stringify({ id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
+  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length, versionKey };
+}
+
+async function selectionExportFolder(safeCustomerId) {
+  const roots = await mediaManager.listFolders(null, null, null);
+  const root = roots.find(folder => folder.folderName === 'buyer-selection-exports');
+  if (!root) return '';
+  const customers = await mediaManager.listFolders({ parentFolderId: root.folderId }, null, null);
+  return customers.find(folder => folder.folderName === safeCustomerId)?.folderId || '';
 }
 
 export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl) {
   const id = normalize(customerId);
   const file = await buildBuyerSelectionDownload(id, buyerRoomUrl);
   const safeCustomerId = id.replace(/[^A-Za-z0-9_-]/g, '_') || 'buyer';
-  const uploaded = await mediaManager.upload(
+  const storedName = 'fmcgmalaysia.com-My-Selection-' + file.versionKey + '.xlsx';
+  const folderId = await selectionExportFolder(safeCustomerId);
+  const existingFiles = folderId ? await mediaManager.listFiles({ parentFolderId: folderId }, null, null) : [];
+  let uploaded = existingFiles.find(candidate => candidate.originalFileName === storedName && candidate.isPrivate === true);
+  const reused = Boolean(uploaded);
+  if (!uploaded) uploaded = await mediaManager.upload(
     `/buyer-selection-exports/${safeCustomerId}`,
     file.bytes,
-    file.fileName,
+    storedName,
     {
       mediaOptions: {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -141,7 +156,9 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
     }
   );
   if (!uploaded?.fileUrl) throw new Error('Excel file could not be prepared for download.');
-  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 10, file.fileName, null);
+  const info = await mediaManager.getFileInfo(uploaded.fileUrl);
+  if (info.isPrivate !== true) throw new Error('Excel export must remain private.');
+  const downloadUrl = await mediaManager.getDownloadUrl(info.fileUrl, 10, file.fileName, null);
   if (!downloadUrl) throw new Error('Excel download URL is unavailable.');
 
   // Keep only the current export in this customer's dedicated folder.
@@ -161,6 +178,8 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
     url: downloadUrl,
     expiresAt: Date.now() + (10 * 60 * 1000),
     fileName: file.fileName,
-    rowCount: file.rowCount
+    rowCount: file.rowCount,
+    reused,
+    versionKey: file.versionKey
   };
 }

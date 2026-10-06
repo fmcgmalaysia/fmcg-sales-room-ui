@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-06",
+  "scope": "Fixed existing simulation XLSX via prebound native Wix button",
+  "testAccount": "BERJAYA 07 / CUS-261006-2034B6",
+  "file": "fmcgmalaysia.com-buyer-room-download-test.xlsx",
+  "permissionApproval": "User confirmed test-only ACTIVE StaffMaster ADMIN/SUPER ADMIN check",
+  "functionAdminTest": {
+    "ok": true,
+    "sizeInBytes": 4132,
+    "isPrivate": false
+  },
+  "publicAdminCall": "Generic Unable to handle request; no definitive cause",
+  "publicStaffAdminCall": "Success and native button bound",
+  "download": {
+    "verified": true,
+    "path": "C:/Users/User/Downloads/fmcgmalaysia.com-buyer-room-download-test.xlsx",
+    "bytes": 4132,
+    "sha256": "538ef70ccb38de04d1c91ee706ad276585e782b6aac375bb0d619f0570ffd03c",
+    "reference": "C:/FMCG-WIX-LOCAL/buyer-room-download-test/downloads/fmcgmalaysia.com-buyer-room-download-test.xlsx",
+    "identical": true,
+    "xlsxZipIntegrityPassed": true,
+    "deliveryHost": "download-files.wixmp.com"
+  },
+  "restoration": {
+    "pageHash": "9deb99bcda851a441a563427e16dfa23be936d3d395d9b62b80530002a183817",
+    "matchesBefore": true,
+    "testModuleExportDisabled": true,
+    "wixReceipt": true,
+    "publicVerification": "Passed: force refreshed, BERJAYA07 SGD 3 items, normal native button restored; Order Form quantities 20/5/10 and total 35 CTN unchanged",
+    "sharedBackendHash": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b",
+    "sharedBackendMatchesBefore": true,
+    "disabledTestModuleHash": "837f5117c238f680355f8be9fd310d6ebccdec399eb561b4a23b664ce27f1112"
+  },
+  "pages": "Unchanged",
+  "cloudFilesCreated": 0,
+  "cloudFilesDeleted": 0,
+  "customerWrites": 0,
+  "limitations": [
+    "Simulation file only; real My Selection generation and PUBLISH lifecycle not implemented",
+    "No historic failing-download global root cause claim",
+    "No user-verified baseline tag"
+  ]
+}
