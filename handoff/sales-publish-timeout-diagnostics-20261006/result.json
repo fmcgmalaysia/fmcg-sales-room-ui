@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-06T09:25:42.523Z",
+  "objective": "Diagnose Sales Room blue-button quotation request without changing business logic",
+  "codeHash": "47732919f69ccfff0ca675156b4ac538eec3cea988ba73e13952ab1b7a07cdeb",
+  "codeChanges": "Six diagnostic lines; response log additionally reports HTTP status and content type",
+  "activeCentralVersion": 16,
+  "pagesStatus": "unchanged",
+  "wixStatus": "Studio confirmed published and live; official Sales Room force refreshed",
+  "publicTest": {
+    "account": "BERJAYA 06",
+    "attempts": 1,
+    "confirmedRows": 20,
+    "rfqRows": 2,
+    "changed": 0,
+    "unchanged": 20,
+    "failed": 0,
+    "httpStatus": 200,
+    "contentType": "application/json; charset=utf-8",
+    "beforeCentralMs": 853,
+    "centralResponseElapsedMs": 6424,
+    "responseParsedElapsedMs": 6427
+  },
+  "priorTest": {
+    "beforeCentralMs": 824,
+    "centralResponseElapsedMs": 40003,
+    "error": "Invalid central service response; frontend HTTP 504"
+  },
+  "conclusion": "Same production business code produced a successful response after previous failures. Intermittent response delay/invalid response observed; underlying service/network cause not established. No permanent bug-fix claim.",
+  "protected": {
+    "qdVersion": "3.2.2",
+    "qdHash": "8bf97063f4dab56e75e63c0e46df9d54e25cb9faa3c860ccfdb560a9c936215e",
+    "qtyUnchanged": true,
+    "pricesNotEdited": true,
+    "otherWixFunctionsUnchanged": true
+  },
+  "recovery": {
+    "originalWixHash": "f09dce771a1b26f91b8b937d1cfc939fd50859c54ee20345bc99b5349654e8f1",
+    "originalWixCopy": "onboarding-before.js",
+    "immutableCentralVersion": 16
+  },
+  "userConfirmationPending": true
+}

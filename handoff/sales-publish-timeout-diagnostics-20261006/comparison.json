@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-06T09:20:31.748Z",
+  "referenceTag": "verified/berjaya05-quotation-order-track-20261005",
+  "referenceCommit": "7ed6a9bee4054c2be40799226375bbc974b01f70",
+  "sameAfterRemovingSixDiagnosticLines": [
+    "publishSalesRoomQuotations",
+    "APPS_SCRIPT_ENDPOINT",
+    "httpsFetchLike",
+    "parseAppsScriptResponse"
+  ],
+  "centralPublisherIdentical": true,
+  "activeDeploymentVersion": 16,
+  "activeVersionSaved": "2026-10-04 19:50 Asia/Kuala_Lumpur",
+  "diagnosticFindings": {
+    "authAndCustomerMs": 824,
+    "centralResponseElapsedMs": 40003,
+    "error": "Quotation Desk service returned an invalid response.",
+    "failureCauseNotYetProven": true
+  },
+  "currentDiagnosticCodeHash": "7e2a231f945f4d63aebf150ca443e4093a7c27c77fdab4e9c10c88dad9a31592",
+  "pagesUnchanged": true,
+  "qdCodeHash": "8bf97063f4dab56e75e63c0e46df9d54e25cb9faa3c860ccfdb560a9c936215e"
+}
