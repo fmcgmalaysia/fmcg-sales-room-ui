@@ -19,13 +19,13 @@
   "temporaryPermissionRevoked": true,
   "public": {
     "account": "BERJAYA 06",
-    "bothTableSpacing": "visually passed",
+    "bothTableSpacing": "assistant initially passed; user subsequently rejected spacing",
     "barcodeAndTime": "complete",
     "externalQuantityPencil": "complete",
     "totals": "150 CTN, 2.3800 CBM, USD 20,838.00",
     "errors": [],
     "initialLoadFailure": "Wix santa-data-fixer script fetch error on existing tab; fresh public visit loaded successfully without code changes",
-    "userAcceptance": "pending",
+    "userAcceptance": "rejected: 有太宽，也有太窄的情况出现; Order Form spacing screenshot supplied",
     "quantityOrOrderWrites": false
   },
   "javascriptAndBodyMarkupUnchanged": true,

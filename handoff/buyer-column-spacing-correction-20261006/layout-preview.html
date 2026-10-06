@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-06-buyer-column-spacing-room5-v2">
+<meta name="build-version" content="2026-10-06-buyer-column-spacing-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -557,6 +557,8 @@ window.addEventListener('message',e=>{
 });
 post('BUYER_ROOM_READY',{view:'my'});post('BUYER_ROOM_REQUEST_DATA',{view:'my'});
 setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
+
+applyData({"customerId":"preview","companyName":"LAYOUT PREVIEW","memberName":"LAW","currency":"USD","selectionLimit":100,"myList":[{"id":"preview1","barcode":"7622201422929","itemName":"CADBURY DAIRY MILK BITES 50G - ALMOND","packingSize":"50G x 24","brandName":"CADBURY","sortNo":"FO-00305","category":"FOOD","quoteActive":true,"quoteStatus":"VIEW QUOTE","vipPriceEa":0.98,"vipPriceCtn":23.52,"addedTime":"2026-10-05T15:02:00Z","selectedByName":"LAW","quoteEffectiveAt":"2026-10-05T15:05:00Z","orderQtyCtn":50,"qtyEditedAt":"2026-10-05T15:11:00Z","qtyEditedBy":"LAW","cbmPerCtn":0.012},{"id":"preview2","barcode":"8901233025001","itemName":"CADBURY ZIP X20 BAR - CHOCOLATE","packingSize":"160G x 16","brandName":"CADBURY","sortNo":"FO-00316","category":"FOOD","quoteActive":true,"quoteStatus":"VIEW QUOTE","vipPriceEa":2.31,"vipPriceCtn":36.96,"addedTime":"2026-10-05T15:02:00Z","selectedByName":"LAW","quoteEffectiveAt":"2026-10-05T15:05:00Z"}]});
 </script>
 
 

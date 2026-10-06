@@ -1,0 +1,10 @@
+{
+  "objective": "Correct excessive quantity/amount whitespace and narrow CBM/time separation",
+  "userFeedback": "v1 spacing rejected: 有太宽，也有太窄的情况出现; screenshot supplied",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "scope": "CSS column sizing/padding and build marker only; no JS or body edits",
+  "candidateMarker": "2026-10-06-buyer-column-spacing-room5-v2",
+  "testsPassed": 6,
+  "publication": "not started",
+  "userAcceptance": "pending"
+}
