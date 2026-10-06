@@ -15,7 +15,7 @@
  */
 
 const QD_CFG = Object.freeze({
-  VERSION: "3.2.0",
+  VERSION: "3.2.1",
   POINT_BASE_ID: "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
   POINT_BASE_SHEETS: ["FOOD", "NONFOOD", "OTHERS"],
 
@@ -390,6 +390,12 @@ function qdIsLowGp_(value) {
 function syncQuotationToWix() {
   const ui = SpreadsheetApp.getUi();
   const sheet = SpreadsheetApp.getActiveSheet();
+  try {
+    sortQuotationSheet_(sheet, true);
+  } catch (error) {
+    ui.alert("SORT ERROR", error.message, ui.ButtonSet.OK);
+    throw error;
+  }
   const lock = LockService.getDocumentLock();
   if (!lock.tryLock(30000)) {
     ui.alert("SYNC", "Another QD task is running. Please try again.", ui.ButtonSet.OK);

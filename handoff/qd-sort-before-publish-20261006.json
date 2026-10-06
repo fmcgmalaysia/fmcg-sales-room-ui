@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-06",
+  "objective": "Sort the active QD with the existing sorter before reading and publishing quotations",
+  "codeVersion": "3.2.1",
+  "baselineCommit": "a62d4f2",
+  "verifiedWorkflowRecoveryTag": "verified/berjaya05-quotation-order-track-20261005",
+  "baselineCodeHash": "ea296a0a25ee9a970cc40d11afa3cffe442046f17cac92fe0b2ec62d3ae583ef",
+  "savedCodeHash": "ba35f6f132a6e429e3972bb85b03193b5584fee45b5151b876154ab04a7b5cc6",
+  "templateProjectId": "1FKaXAAjCz3CDBeLo8sRAoisTwEIVP_cFoJ2r4ytlETS44FjrgN6ym3ZQ",
+  "testCustomerProjectId": "13cKZP99RkEB_w63-IdYRkOEYPmlW1z2rsdyyR_LM0tGc5JML2BmC_ncr",
+  "executionMode": "Container-bound Google Sheets menu executes saved HEAD, not a web deployment",
+  "immutableAppsScriptVersionNumber": null,
+  "deploymentId": null,
+  "deployedVersion": "not applicable to this menu; no web deployment created or changed",
+  "savedEditorCode": {
+    "templateReadAfterReloadMatches": true,
+    "customerReadbackMatches": true
+  },
+  "tests": {
+    "local": 2,
+    "liveConfirmedRows": 15,
+    "liveChangedRows": 0,
+    "liveUnchangedRows": 15,
+    "liveFailures": 0,
+    "requestId": "c9b3c974-5268-46c7-b269-62dad8ea5f5f",
+    "barcodePriceIdPairsPreserved": true,
+    "publicBuyerProducts": 15
+  },
+  "scope": {
+    "catchCostFileChanged": false,
+    "sortingRulesChanged": false,
+    "wixChanged": false,
+    "githubPagesDeploymentNeeded": false,
+    "otherCustomerScriptsChanged": false
+  },
+  "headerFaultRepair": "BERJAYA 06 WIX QUOTATION Q5 restored from numeric 1% to canonical TARGET GP; no formula or product quote edits",
+  "userAcceptance": "pending"
+}
