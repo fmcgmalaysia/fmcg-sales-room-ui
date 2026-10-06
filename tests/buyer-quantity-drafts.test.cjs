@@ -7,11 +7,42 @@ const html=fs.readFileSync(path.join(__dirname,'..','buyer-room.html'),'utf8');
 const source=html.slice(html.indexOf('function quantityEditsBlocked('),html.indexOf('function renderOrder('));
 function fixture(){
   const posted=[],state={my:[{id:'a',orderQtyCtn:0},{id:'b',orderQtyCtn:0}],pendingQuantities:new Map(),quantityDrafts:new Map(),memberName:'Tester'};
-  const context={state,Map,Set,num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast(){}};
+  const inputs=[],reviews=[],messages=[];
+  const context={state,Map,Set,document:{querySelectorAll:()=>inputs},isOrderable:()=>true,$:()=>({classList:{contains:()=>true}}),openOrderReview:()=>reviews.push(true),num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast:message=>messages.push(message)};
   vm.createContext(context);vm.runInContext(source,context);
-  const input=value=>({value:String(value),dataset:{committedQty:'0'},checkValidity:()=>true,reportValidity(){throw Error('invalid')},closest:()=>({querySelector:()=>({textContent:''})})});
-  return {state,context,posted,input,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
+  const input=(value,id='a')=>({value:String(value),dataset:{qty:id,committedQty:'0'},readOnly:false,parentElement:{querySelector:()=>({hidden:true,disabled:false})},checkValidity:()=>true,reportValidity(){throw Error('invalid')},closest:()=>({querySelector:()=>({textContent:''})})});
+  return {state,context,posted,input,inputs,reviews,messages,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
 }
+
+test('blur locks only its input and concurrent rows keep their drafts',()=>{
+  const f=fixture(),a=f.input(9999),b=f.input(650,'b');
+  f.context.rememberQuantityDraft(f.item('a'),a);f.context.confirmQuantityDraft(f.item('a'),a,false);
+  assert.equal(a.readOnly,true);assert.equal(f.posted.length,1);
+  f.context.rememberQuantityDraft(f.item('b'),b);f.context.confirmQuantityDraft(f.item('b'),b,false);
+  f.context.confirmQuantityDraft(f.item('a'),a,false);assert.equal(f.posted.length,2);
+  f.reply('b',650);f.refresh([{id:'a',orderQtyCtn:0},{id:'b',orderQtyCtn:0}]);
+  assert.equal(f.item('a').orderQtyCtn,9999);assert.equal(f.item('b').orderQtyCtn,650);
+  f.reply('a',9999);assert.equal(f.context.quantityEditsBlocked(),false);
+});
+test('direct review click saves the last draft and waits for all replies',()=>{
+  const f=fixture(),a=f.input(111),b=f.input(650,'b');f.inputs.push(a,b);
+  f.context.confirmQuantityDraft(f.item('a'),a,false);f.context.rememberQuantityDraft(f.item('b'),b);
+  f.context.requestQuantityReview();assert.equal(f.posted.length,2);assert.equal(f.reviews.length,0);
+  f.reply('b',650);assert.equal(f.reviews.length,0);f.reply('a',111);assert.equal(f.reviews.length,1);
+  f.reply('a',111);assert.equal(f.reviews.length,1);
+});
+test('save failure cancels queued review and retry does not open it unexpectedly',()=>{
+  const f=fixture(),a=f.input(333);f.inputs.push(a);f.context.rememberQuantityDraft(f.item('a'),a);
+  f.context.requestQuantityReview();f.reply('a',0,false);
+  assert.equal(f.reviews.length,0);assert.equal(f.state.quantityReviewRequested,false);assert.equal(f.item('a').orderQtyCtn,333);
+  f.context.confirmQuantityDraft(f.item('a'),f.input(333),false);f.reply('a',333);assert.equal(f.reviews.length,0);
+  f.context.requestQuantityReview();assert.equal(f.reviews.length,1);
+});
+test('invalid last quantity cannot save or open review',()=>{
+  const f=fixture(),a=f.input(-1);a.checkValidity=()=>false;a.reportValidity=()=>{};
+  f.inputs.push(a);f.context.rememberQuantityDraft(f.item('a'),a);f.context.requestQuantityReview();
+  assert.equal(f.posted.length,0);assert.equal(f.reviews.length,0);assert.equal(f.context.quantityEditsBlocked(),true);
+});
 test('saving first row and stale full-table data cannot erase second row draft',()=>{
   const f=fixture();f.context.confirmQuantityDraft(f.item('a'),f.input(111));f.context.rememberQuantityDraft(f.item('b'),f.input('222'));
   f.reply('a',111);f.refresh([{id:'a',orderQtyCtn:0},{id:'b',orderQtyCtn:0}]);

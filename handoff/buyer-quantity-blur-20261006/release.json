@@ -1,0 +1,33 @@
+{
+  "objective": "Confirm quantity on blur and wait before order review",
+  "marker": "2026-10-06-buyer-quantity-blur-room5-v1",
+  "testsPassed": 29,
+  "publicBeforeAndWixMatch": true,
+  "cssAndBackendUnchanged": true,
+  "userAcceptance": "pending",
+  "publication": "four stages complete",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "commit": "31241f27d718f88c48efc66c3384ca56d0497255",
+  "pages": {
+    "run": 37421452809,
+    "status": "success",
+    "sourceMatches": true
+  },
+  "wix": {
+    "codeUnchanged": true,
+    "readbackMatches": true,
+    "publishedLive": true
+  },
+  "public": {
+    "marker": "2026-10-06-buyer-quantity-blur-room5-v1",
+    "account": "BERJAYA 06",
+    "originalQty100BlurLocks": true,
+    "externalPencilVisible": true,
+    "originalQty100DirectClickOpensReview": true,
+    "errors": [],
+    "orderSubmitted": false,
+    "quantityChanged": false,
+    "slowSaveAndFailure": "mock browser and unit tests; no live mutation"
+  },
+  "temporaryPermissionRevoked": true
+}
