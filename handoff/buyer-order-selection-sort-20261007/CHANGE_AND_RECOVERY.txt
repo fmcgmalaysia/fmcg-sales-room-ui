@@ -1,0 +1,33 @@
+Order Form uses the same order as My Selection — 2026-10-07
+Preparation only; release stages pending.
+
+Single objective: both active product lists share FOOD first, non-food next,
+then brandName and sortNo, without Item Name sorting in Order Form.
+
+Production patch: only renderOrder's items=byItemName(...) becomes
+items=bySelectionOrder(...). The existing user-verified bySelectionOrder helper
+is reused unchanged, not replaced or duplicated. Filters and QTY eligibility stay unchanged.
+Only HTML build marker and one Wix frame.src cache-version reference also change.
+All CSS, element IDs, QTY save/blur/Enter/arrows/pencil handlers, quotes, downloads,
+identity, backend, AppsScript and CMS stay unchanged. Keep the latest40px images,
+43px rows, framed sidebar note, gray-blue hover and existing native Excel top distance.
+
+Before modification: actual public script matches repository after LF normalization;
+exact Wix page readback matches repository. Raw before/after copies retained locally.
+Parent recovery code: c4cfbcddbc7eb27cfe297fe6a8fa3b75ef68c764.
+Protected My Selection tag: verified/my-selection-sort-20261006.
+Protected QTY tag: verified/buyer-quantity-arrows-20261006.
+Tags are scoped invariants; never deploy the entire older checkout.
+
+Checks passed: syntax; inline JS identical except the one sorting invocation;
+all style blocks identical; mixed-category/brand/2-vs10 fixture sorts correctly;
+original input array unchanged; With Qty retains shared relative order.
+Wix candidate/readback must be confirmed before publication.
+Public acceptance: All lists must have identical ordered item IDs (not just similar names),
+filtered subsets retain relative order, existing quantities and totals stay unchanged.
+No customer writes or order submission required.
+
+Recovery: reverse only the invocation and build/version references to this task's
+captured prepatch state. Do not restore the whole old My Selection/QTY tag or change styles.
+Excel Entry download and Sales Room PUBLISH remain paused.
+No main merge or verified acceptance tag before user hands-on confirmation.
