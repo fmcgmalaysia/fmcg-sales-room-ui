@@ -1,5 +1,5 @@
 Order Form uses the same order as My Selection — 2026-10-07
-Preparation only; release stages pending.
+Four release stages passed assistant checks; user acceptance pending.
 
 Single objective: both active product lists share FOOD first, non-food next,
 then brandName and sortNo, without Item Name sorting in Order Form.
@@ -22,7 +22,7 @@ Tags are scoped invariants; never deploy the entire older checkout.
 Checks passed: syntax; inline JS identical except the one sorting invocation;
 all style blocks identical; mixed-category/brand/2-vs10 fixture sorts correctly;
 original input array unchanged; With Qty retains shared relative order.
-Wix candidate/readback must be confirmed before publication.
+Wix candidate/readback matched exactly before publication.
 Public acceptance: All lists must have identical ordered item IDs (not just similar names),
 filtered subsets retain relative order, existing quantities and totals stay unchanged.
 No customer writes or order submission required.
@@ -31,3 +31,5 @@ Recovery: reverse only the invocation and build/version references to this task'
 captured prepatch state. Do not restore the whole old My Selection/QTY tag or change styles.
 Excel Entry download and Sales Room PUBLISH remain paused.
 No main merge or verified acceptance tag before user hands-on confirmation.
+
+Public result:9 ordered IDs identical;2 search matches retain same order. CSS unchanged, row43px. New submitted3-line35CTN order observed with20/5/10 retained; draft qty0, not claimed unchanged35 in draft. Agent did not edit qty or submit. Excel remains paused. Pages37565622376 and Wixpublish/live receipt; permissions restored main-only.
