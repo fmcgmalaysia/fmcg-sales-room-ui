@@ -19,7 +19,8 @@
   "testsPassed": 52,
   "temporaryDeploymentPermission": "revoked; main-only confirmed",
   "protectedCheckpoint": "verified/order-quantity-user-tests-20261007",
-  "userAcceptance": "pending for this UI",
+  "userAcceptance": "2026-10-07 user confirmed: 效果不错，需要收尾吗; scoped History layout and Order Qty icon acceptance",
+  "verifiedTag": "verified/history-quantity-path-ui-20261007",
   "mainMerged": false,
   "excel": "paused; untouched",
   "wix500": "investigation deferred by user; untouched"
