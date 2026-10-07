@@ -1,5 +1,5 @@
 Buyer Room compact green styling — 2026-10-07
-Scope: presentation only; user-approved visual changes. Publication pending.
+Scope: presentation only; user-approved visual changes. Assistant publication/verification complete; user acceptance pending.
 
 Production changes:
 - buyer-room.html: compact framed Admin note below Account; existing adminAccess gate retained.
@@ -45,4 +45,4 @@ Draft/test receipts and mocked data do not prove production publication.
 GitHub Pages branch permissions must be separately approved and reverted to main-only after deployment.
 Confirm all four release stages and user visual acceptance before creating a new verified baseline.
 
-V1 Pages run37561721006 succeeded; temporary permission revoked. Wix build96a23399-39cc-48cc-bf31-1228b1147a1d succeeded at2026-10-07 10:25:21, publish/live receipt captured. Initial public visits remained loading; a later refresh loaded the correct customer and9 products. No login/backend change was made and no loading issue is claimed fixed. Public rows43px, thumbnails40x40, sidebar note and hidden title count verified. Native margin156px and actual top186px verified. User rejected the green hover and requested gray-blue, now prepared as v2; final publication pending.
+V1 Pages run37561721006 succeeded; temporary permission revoked. Wix build96a23399-39cc-48cc-bf31-1228b1147a1d succeeded at2026-10-07 10:25:21, publish/live receipt captured. Initial public visits remained loading; a later refresh loaded the correct customer and9 products. No login/backend change was made and no loading issue is claimed fixed. Public rows43px, thumbnails40x40, sidebar note and hidden title count verified. Native margin156px and actual top186px verified. User rejected the green hover and requested gray-blue, v2 now deployed as703123f, Pages37563345416; Wixpublish/live and exact readback confirmed; correct public data and layout measured. User acceptance pending.
