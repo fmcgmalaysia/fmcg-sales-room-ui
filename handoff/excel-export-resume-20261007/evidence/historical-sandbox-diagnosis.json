@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-06T12:31:46.628Z",
+  "userManualDownloadFailed": true,
+  "scope": "Native Wix My Selection download button and directly called download chain only",
+  "httpLiveHash": "3e64d5c496b1486c2a1db752ae2483b3e87ac965d73673367831eab2af954d47",
+  "httpLiveMatchesRepo": true,
+  "httpDownloadFunctionIdenticalTo": [
+    "15e48dc",
+    "4a71876"
+  ],
+  "tokenLiveHash": "06000904796ab4ed4f07f57449def6008633c4fe6b58d84d6942e5d0ae8a34cc",
+  "responseObserved": {
+    "status": "200 OK (from prefetch cache)",
+    "contentDisposition": "attachment; filename=\"fmcgmalaysia.com-My-Selection-2026-10-06.xlsx\"",
+    "contentLength": 8008,
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "noActualDownload": true
+  },
+  "browserMessage": "\t\t\t\t\t\t\t\t\t\t\t\t\t\t3307 log Download is disallowed. The frame initiating or instantiating the download is sandboxed, but the flag ‘allow-downloads’ is not set. See https://www.chromestatus.com/feature/5706745674465280 for more details.\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t3309 group buyer-room?assist=[TEST_IDENTITY_REDACTED]:1 Download is disallowed. The frame initiating or instantiating the download is sandboxed, but the flag ‘allow-downloads’ is not set. See https://www.chromestatus.com/feature/5706745674465280 for more details. Stack table collapsed\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t3313 text Download is disallowed. The frame initiating or instantiating the download is sandboxed, but the flag ‘allow-downloads’ is not set. See",
+  "embeddedFrameSandbox": "allow-same-origin allow-forms allow-popups allow-modals allow-scripts allow-pointer-lock",
+  "limits": "Sandbox download restriction directly observed; exact initiating frame relationship to native Wix link requires care. No claim that file contents were verified. No browser protection bypass.",
+  "codeChangesThisTurn": 0,
+  "proposal": "Only adjust native button click initiation in buyer-room/wix/buyer-room-page.js; keep existing HTTP endpoint, token, Excel builder, all quantity/sorting/CSS and sandbox permissions. Do not swap backend or restore whole page.",
+  "status": "Not fixed; stopped before a different click-binding implementation"
+}

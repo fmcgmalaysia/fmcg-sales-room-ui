@@ -1,0 +1,9 @@
+{
+  "index.html": "e60d110e014bf3a980b04fcc84d6fb0057381bb3357e1d489117f01849d82690",
+  "buyer-room.html": "304c72d810a5cfcf2be616784a4951d02c2d9dc897a00954143a7737741c24ae",
+  "sales-room/wix/sales-room-page.js": "422284cbc1ef94483c128e6355e8812da7c1ca8dfd4f8ba2add397cd54c45464",
+  "buyer-room/wix/buyer-room-page.js": "0b8c405f13cd07a4a304dcdf576a913ad0bb259d5d2fd6becc7fbed5f4124a50",
+  "backend/catalogueAuth.web.js": "ac43cc479014e836c9410884dfd0f0751f5207d7c07bb4b1ad5153ec645c6912",
+  "backend/buyerSelectionDownload.js": "09adec1513452249fba9cdc23843d6b1cf9965a709a44180c6ffd569c85fe97d",
+  "backend/buyerSelectionExcel.js": "002f2ce9e34b86c035c5bf090b7cbe08b466ebf7cc351cea6134efd06d4c543e"
+}

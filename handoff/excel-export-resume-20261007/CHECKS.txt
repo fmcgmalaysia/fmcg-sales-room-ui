@@ -1,0 +1,11 @@
+PASS exact ordinary-success live readback + recorded normalized SHA256: buyer-room-page.js
+PASS exact ordinary-success live readback + recorded normalized SHA256: catalogueAuth.web.js
+PASS exact ordinary-success live readback + recorded normalized SHA256: buyerSelectionDownload.js
+PASS current repository production file LF-normalized-identical to b70ece5: backend/buyerSelectionExcel.js (checkout newline differences; committed bytes archived)
+PASS current repository production file LF-normalized-identical to b70ece5: backend/buyerSelectionDownload.js (checkout newline differences; committed bytes archived)
+PASS current repository production file LF-normalized-identical to b70ece5: backend/catalogueAuth.web.js (raw byte-identical)
+PASS current repository production file LF-normalized-identical to b70ece5: buyer-room/wix/buyer-room-page.js (raw byte-identical)
+PASS every existing fixed-file archive file matches its original manifest
+PASS actual saved XLSX size/hash/ZIP structure: native-button-downloaded-test.xlsx
+PASS actual saved XLSX size/hash/ZIP structure: ordinary-native-download.xlsx
+PASS no production code edits; only newly created archival files

@@ -1,0 +1,15 @@
+{
+  "scope": "Read-only existing Buyer Room download failure inspection",
+  "account": "[TEST_IDENTITY_REDACTED]",
+  "tab": "51422273",
+  "downloadClickedOnce": true,
+  "downloadEvent": false,
+  "waitSeconds": 15,
+  "consoleLogsReturned": [],
+  "consoleSandboxWarningCaptured": false,
+  "incognitoFailure": "User reported; agent did not access incognito window",
+  "codeEdits": 0,
+  "publishes": 0,
+  "customerEdits": 0,
+  "conclusion": "Download failure reproduced; specific root not confirmed from available console evidence"
+}
