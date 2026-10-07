@@ -1,4 +1,5 @@
 Sales Room F layout and per-order P.O./shipment planning candidate — 2026-10-08 Asia/Kuala_Lumpur
+Code commit5ad4daa6ff5cc4e48a7461292d40a1647ead3614 and exact reference record37533d5 pushed. Draft PR38 created and attached: https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/38, base style/sales-soft-blue-review-room5. Pages/Wix/public release remains pending. This record supersedes previous task status only for the new candidate; previous published source remains online until approved deployment.
 
 User approved design F with “非常满意”, then approved the summarized scope and instructed “开始吧”. This is design approval, not production acceptance. The accepted concept is preserved as design-F.png, SHA256 1b6a80431eaee81050248f58aff6dca66871ebec138b0a9bd35f42400eaf833f. User answered: edit P.O./Est. Shipment in Order Progress; one shared customer/sales shipment date; store each Order ID independently. Buyer pre-submission optional inputs and Buyer Track dashboard remain a subsequent step.
 
