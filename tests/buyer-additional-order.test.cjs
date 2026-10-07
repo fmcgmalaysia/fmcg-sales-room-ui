@@ -42,7 +42,7 @@ function harness() {
   vm.runInContext(source('backend/catalogueAuth.web.js') + "\nresolveBuyerContext=async()=>({customerId:'C1',companyName:'DEMO',currency:'SGD',selectionLimit:100,email:'demo@example.test',actorName:'LAW',actorType:'STAFF'}); workspaceItems=async()=>__products(); globalThis.api={submitBuyerOrder,getBuyerOrderDetail,buyerOrderHistory};", buyer);
   buyer.__products = () => clone([...products.values()]);
   const sales = vm.createContext({ ...base, wixRealtimeBackend: { publish: async () => {} } });
-  vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canViewAllCustomers:false});globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress};", sales);
+  vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canViewAllCustomers:false});loadSalesRoomCustomers=async()=>({customers:[{customerId:'C1'}],summary:{}});loadQuoteRiskCounts=async()=>new Map([['C1',{available:true,quoteRiskCount:0,pendingQuoteCount:0,redSignalCount:0,lowGpCount:0}]]);globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress,getSalesRoomCustomersOperational};", sales);
   const download = vm.createContext({ ...base, buildBuyerOrderExcel: input => Buffer.from(JSON.stringify(input)) });
   vm.runInContext(source('backend/buyerOrderDownload.js') + '\nglobalThis.download=buildBuyerOrderDownload;', download);
   return {
@@ -70,6 +70,9 @@ test('20 +100 +200 accumulates one task, preserves three Excel receipts and two 
   const incoming = await h.getSalesRoomConfirmedOrders(), progress = await h.getSalesRoomOrderProgress('C1');
   assert.equal(incoming.orders.length, 1); assert.equal(incoming.orders[0].totalCartons, 320); assert.equal(incoming.orders[0].productCount, 1);
   assert.equal(progress.activeLineCount, 1); assert.equal((await h.buyerOrderHistory('C1')).orders.length, 1);
+  const overview = await h.getSalesRoomCustomersOperational();
+  assert.equal(overview.customers[0].confirmedOrderCount, 1); assert.equal(overview.customers[0].activeOrderLineCount, 1);
+  assert.equal(overview.summary.confirmedOrderCount, 1);
 });
 
 test('replay never adds twice and conflicting reuse of a request ID is rejected', async () => {
