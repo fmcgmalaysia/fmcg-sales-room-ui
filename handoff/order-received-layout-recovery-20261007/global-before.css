@@ -1,0 +1,38 @@
+.catalogue-results-stage {
+  min-height: 100vh !important;
+}
+
+.catalogue-results-shell {
+  height: auto !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+  align-self: start !important;
+}
+
+.catalogue-pagination-shell {
+  height: 72px !important;
+  min-height: 72px !important;
+  margin-top: 12px !important;
+  align-self: start !important;
+}
+
+#comp-mtn40jjb {
+  z-index: 52 !important;
+}
+
+
+
+/* Order Received: compact desktop layout and uncropped artwork. */
+@media (min-width:881px){
+  #comp-muphqj64{width:min(800px,calc(100vw - 48px))!important;height:510px!important;min-height:510px!important;}
+  #comp-muphwlpw{top:20px!important;height:calc(100% - 20px)!important;}
+  #comp-muphwlpw img{object-fit:contain!important;}
+  #comp-mupidwxx{left:50%!important;right:auto!important;top:auto!important;bottom:24px!important;transform:translateX(-50%)!important;}
+}
+/* Wix Studio test-site banner occupies about 30px above Buyer Room. */
+@media (min-width: 881px) {
+  section:has(iframe[src*="buyer-room.html"]) {
+    height: calc(100dvh - 31px) !important;
+    min-height: calc(100dvh - 31px) !important;
+  }
+}
