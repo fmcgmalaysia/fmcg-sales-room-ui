@@ -19,7 +19,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
   const wixData = {
     query(name) {
       const filters = []; let size = 1000;
-      const query = { eq(field, value) { filters.push(row => row[field] === value); return query; }, contains(field, value) { filters.push(row => String(row[field] || '').includes(value)); return query; }, limit(value) { size = value; return query; }, find: async () => page([...collection(name).values()].filter(row => filters.every(filter => filter(row))), 0, size) };
+      const query = { eq(field, value) { filters.push(row => row[field] === value); return query; }, hasSome(field, values) { filters.push(row => (Array.isArray(row[field]) ? row[field] : [row[field]]).some(value => values.includes(value))); return query; }, startsWith(field, value) { filters.push(row => String(row[field] || '').startsWith(value)); return query; }, contains(field, value) { filters.push(row => String(row[field] || '').includes(value)); return query; }, limit(value) { size = value; return query; }, find: async () => page([...collection(name).values()].filter(row => filters.every(filter => filter(row))), 0, size) };
       return query;
     },
     get: async (name, id) => { const row = collection(name).get(id); if (!row) throw new Error('Not found'); return copy(row); },
@@ -253,5 +253,13 @@ test('PO cannot change after transfer and a saved PO does not bypass the quantit
 });
 test('progress product metadata includes only authorized customer display fields',async()=>{
   const h=harness(); h.seed('WixBuyerListItems','product',{customerId:'C1',id:'P1',barcode:'ONE',category:'FOOD',brandName:'A',sortNo:3,cost:123}); h.seed('WixBuyerListItems','other',{customerId:'C2',id:'SECRET',barcode:'OTHER'});
-  const result=await h.getSalesRoomOrderProgress('C1'); assert.equal(result.selectionOrder.length,1); assert.equal(result.selectionOrder[0].id,'P1'); assert.equal(result.selectionOrder[0].cost,undefined); assert.equal(result.orders.length,1);
+  const result=await h.getSalesRoomOrderProgress('C1'); assert.equal(result.selectionOrder.length,1); assert.equal(result.selectionOrder[0].id,'product'); assert.equal(result.selectionOrder[0].cost,undefined); assert.equal(result.orders.length,1);
+});
+
+test('legacy selection sorting uses current Catalogue brand, point-base sort and Food references like Buyer',async()=>{
+  const h=harness(); h.seed('WixBuyerListItems','selected',{customerId:'C1',id:'OLD-ID',productId:'CAT',barcode:'123'});
+  h.collection('FMCGMALAYSIA').set('CAT',{_id:'CAT',barcode:'123',brandName:'Kelloggs',pointBaseSortId:7,subCategories:['FOOD-SUB'],cost:999});
+  h.collection('subCategories').set('FOOD-SUB',{_id:'FOOD-SUB',mainCategory:'FOOD & BEVERAGES'});
+  const result=await h.getSalesRoomOrderProgress('C1'),item=result.selectionOrder[0];
+  assert.equal(item.id,'selected'); assert.equal(item.category,'FOOD'); assert.equal(item.brandName,'Kelloggs'); assert.equal(item.sortNo,'7'); assert.equal(item.cost,undefined);
 });

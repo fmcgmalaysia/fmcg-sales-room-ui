@@ -1367,6 +1367,43 @@ async function readAllPayloadRows(collectionId) {
   return items.map((record) => ({ record, data: payloadData(record) }));
 }
 
+// Read the same Catalogue classification/brand/sort fields used by Buyer workspaceItems.
+// Only the authorized customer's selection rows are passed in; no operational writes.
+async function salesSelectionSortProjection(rows) {
+  const ids = [...new Set(rows.map(row => normalize(row.data.productId)).filter(Boolean))], products = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const result = await wixData.query('FMCGMALAYSIA').hasSome('_id', ids.slice(i, i + 100)).limit(100).find({ suppressAuth: true });
+    products.push(...result.items);
+  }
+  const resolved = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
+  const barcodes = [...new Set(rows.map(row => normalize(row.data.barcode || row.data.unitBarcode)).filter(Boolean))].filter(barcode => !resolved.has(barcode));
+  for (const barcode of barcodes) {
+    let product = null;
+    try { product = (await wixData.query('FMCGMALAYSIA').eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true })).items[0]; } catch (_) { /* Match Buyer's numeric barcode retry. */ }
+    if (!product && Number.isFinite(Number(barcode))) {
+      try { product = (await wixData.query('FMCGMALAYSIA').eq('barcode', Number(barcode)).limit(1).find({ suppressAuth: true, consistentRead: true })).items[0]; } catch (_) { /* Product is unavailable. */ }
+    }
+    if (product) products.push(product);
+  }
+  const refs = value => (Array.isArray(value) ? value : value ? [value] : []).map(entry => normalize(entry?._id || entry)).filter(Boolean);
+  const categoryMap = new Map(), referencedIds = [...new Set(products.flatMap(product => refs(product.subCategories)))];
+  for (let i = 0; i < referencedIds.length; i += 100) {
+    const result = await wixData.query('subCategories').hasSome('_id', referencedIds.slice(i, i + 100)).limit(100).find({ suppressAuth: true });
+    result.items.forEach(item => categoryMap.set(normalize(item._id), upper(item.mainCategory)));
+  }
+  const foodIds = (await wixData.query('subCategories').startsWith('mainCategory', 'FOOD').limit(1000).find({ suppressAuth: true })).items.map(item => normalize(item._id)).filter(Boolean);
+  const productIds = [...new Set(products.map(product => normalize(product._id)).filter(Boolean))], foodProducts = new Set();
+  if (foodIds.length) for (let i = 0; i < productIds.length; i += 100) {
+    const result = await wixData.query('FMCGMALAYSIA').hasSome('_id', productIds.slice(i, i + 100)).hasSome('subCategories', foodIds).limit(100).find({ suppressAuth: true });
+    result.items.forEach(item => foodProducts.add(normalize(item._id)));
+  }
+  const byId = new Map(products.map(product => [normalize(product._id), product])), byBarcode = new Map(products.map(product => [normalize(product.barcode), product]));
+  return rows.map(({ record, data }) => {
+    const product = byId.get(normalize(data.productId)) || byBarcode.get(normalize(data.barcode || data.unitBarcode)) || {};
+    return { id: normalize(record._id || data.id || data.itemId), barcode: normalize(data.barcode || data.unitBarcode || product.barcode), category: normalize(data.category || data.mainCategory || (foodProducts.has(normalize(product._id)) ? 'FOOD' : '') || product.mainCategory || refs(product.subCategories).map(id => categoryMap.get(id)).find(Boolean)), brandName: normalize(product.brandName), sortNo: normalize(product.pointBaseSortId) };
+  });
+}
+
 export const getSalesRoomOrderProgress = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
@@ -1405,7 +1442,7 @@ export const getSalesRoomOrderProgress = webMethod(
       companyName: normalize(customer.title),
       customerShortName: upper(customer.customerShortName),
       activeLineCount: orders.reduce((sum, order) => sum + order.lines.length, 0),
-      selectionOrder: selectionRows.filter(row => normalize(row.data.customerId) === normalizedCustomerId).map(({ data }) => ({ id: data.id || data.itemId, barcode: data.barcode, category: data.category, mainCategory: data.mainCategory, brandName: data.brandName, sortNo: data.sortNo })),
+      selectionOrder: await salesSelectionSortProjection(selectionRows.filter(row => normalize(row.data.customerId) === normalizedCustomerId)),
       orders
     });
   }
