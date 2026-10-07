@@ -403,12 +403,15 @@ async function loadQuoteRiskCounts(customers) {
 export const publishSalesRoomQuotations = webMethod(
   Permissions.SiteMember,
   async (customerId) => {
+    const publishStartedAt = Date.now();
+    console.info('[quote-publish-timing]', { stage: 'start', elapsedMs: 0 });
     try {
       const staff = await requireAuthorizedStaffContext();
       const customer = await findAuthorizedCustomer(customerId, staff);
       const qdFileId = normalize(customer.qdFileId);
       if (!/^[A-Za-z0-9_-]{20,}$/.test(qdFileId)) throw new Error('This customer does not have a valid Quotation Desk.');
       const sharedSecret = await getSecret(SECRET_NAME);
+      console.info('[quote-publish-timing]', { stage: 'before-central-request', elapsedMs: Date.now() - publishStartedAt });
       const response = await httpsFetchLike(APPS_SCRIPT_ENDPOINT, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
@@ -420,10 +423,13 @@ export const publishSalesRoomQuotations = webMethod(
           actorEmail: normalizeEmail(staff.loginEmail || staff.staffEmail)
         })
       });
+      console.info('[quote-publish-timing]', { stage: 'central-response', elapsedMs: Date.now() - publishStartedAt, status: response.status, contentType: response.headers.get('content-type') });
       const body = parseAppsScriptResponse(await response.text());
+      console.info('[quote-publish-timing]', { stage: 'response-parsed', elapsedMs: Date.now() - publishStartedAt });
       if (!response.ok || !body.ok) return { ok: false, error: body.error || 'Quotation publish failed.' };
       return { ok: true, ...(body.result || {}) };
     } catch (error) {
+      console.info('[quote-publish-timing]', { stage: 'caught-error', elapsedMs: Date.now() - publishStartedAt });
       console.error('Sales Room quotation publish failed', error);
       return { ok: false, error: safeMessage(error) || 'Quotation publish failed.' };
     }
@@ -479,7 +485,7 @@ export const getSalesRoomCustomersOperational = webMethod(
     ]);
 
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
-    const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)));
+    const incomingOrders = orderRows.filter((row) => incomingStatuses.has(upper(row.data.status)) && !row.data.receiptOnly);
     const incomingByCustomer = new Map();
     for (const row of incomingOrders) {
       const customerId = normalize(row.data.customerId);
@@ -496,7 +502,7 @@ export const getSalesRoomCustomersOperational = webMethod(
     for (const row of lineRows) {
       const line = row.data;
       const customerId = normalize(line.customerId);
-      if (!customerId || isCompletedProgressLine(line)) continue;
+      if (!customerId || line.addedToOrderId || isCompletedProgressLine(line)) continue;
       activeLineByCustomer.set(customerId, Number(activeLineByCustomer.get(customerId) || 0) + 1);
     }
     const customers = (base.customers || []).map((customer) => {
@@ -550,13 +556,13 @@ export const getSalesRoomConfirmedOrders = webMethod(
     const incomingStatuses = new Set(['CONFIRMED', 'PROCESSING', 'PROFORMA REQUESTED']);
     const rows = orders
       .map((entry) => entry.data)
-      .filter((order) => customerIds.has(normalize(order.customerId)) && incomingStatuses.has(upper(order.status)))
+      .filter((order) => customerIds.has(normalize(order.customerId)) && !order.receiptOnly && incomingStatuses.has(upper(order.status)))
       .map((order) => ({
         ...order,
         status: upper(order.status || 'CONFIRMED'),
         totalCartons: order.effectiveTotalCartons ?? order.totalCartons,
         estimatedTotal: order.effectiveEstimatedTotal ?? order.estimatedTotal,
-        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId)).length
+        productCount: lines.filter((line) => normalize(line.data.orderId) === normalize(order.orderId) && !line.data.addedToOrderId).length
       }))
       .sort((a, b) => String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')));
     return Object.freeze({ ok: true, orders: rows });
@@ -573,7 +579,7 @@ export const getSalesRoomOrderDetail = webMethod(
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
     const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
       .map((entry) => entry.data)
-      .filter((line) => normalize(line.orderId) === normalize(orderId))
+      .filter((line) => normalize(line.orderId) === normalize(orderId) && !line.addedToOrderId)
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
     return Object.freeze({ ok: true, order: { ...orderEntry.data, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal, lines } });
   }
@@ -639,7 +645,7 @@ export const saveSalesRoomOrderQty = webMethod(
       }
       if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Quantities are locked after transfer to NCT / GHR.');
       if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
-      const entries = (await readAllPayloadRows(BUYER_LINE_COLLECTION)).filter(entry => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.customerId) === normalize(order.customerId));
+      const entries = (await readAllPayloadRows(BUYER_LINE_COLLECTION)).filter(entry => normalize(entry.data.orderId) === normalize(orderId) && normalize(entry.data.customerId) === normalize(order.customerId) && !entry.data.addedToOrderId);
       const entry = entries.find(item => normalize(item.data.lineId) === normalize(lineId));
       if (!entry) throw new Error('Order line was not found.');
       const line = entry.data;
@@ -678,6 +684,7 @@ async function withSalesOrderMutation(orderId, staff, action) {
   const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);
   if (!initial) throw new Error('Order was not found.');
   await findAuthorizedCustomer(initial.data.customerId, staff);
+  if (initial.data.receiptOnly) throw new Error('This submission is a receipt. Open its active order task instead.');
   const lockId = 'ORDER-LOCK-' + id;
   try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString() }) }, { suppressAuth: true }); }
   catch (error) {
@@ -1342,7 +1349,7 @@ export const getSalesRoomOrderProgress = webMethod(
     const linesByOrder = new Map();
     for (const row of lineRows) {
       const line = row.data;
-      if (normalize(line.customerId) !== normalizedCustomerId) continue;
+      if (normalize(line.customerId) !== normalizedCustomerId || line.addedToOrderId) continue;
       const orderId = normalize(line.orderId);
       if (!orderId) continue;
       if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, []);
@@ -1350,7 +1357,7 @@ export const getSalesRoomOrderProgress = webMethod(
     }
     const orders = orderRows
       .map((row) => row.data)
-      .filter((order) => normalize(order.customerId) === normalizedCustomerId)
+      .filter((order) => normalize(order.customerId) === normalizedCustomerId && !order.receiptOnly)
       .map((order) => {
         const orderId = normalize(order.orderId);
         const storedLines = linesByOrder.get(orderId) || [];
