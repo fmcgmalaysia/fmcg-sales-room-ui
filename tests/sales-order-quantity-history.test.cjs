@@ -156,7 +156,7 @@ test('Buyer edit history paginates past 1000, filters customer identity, and exc
 
 function buyerUi(state) {
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  const names = ['orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackingLineHtml', 'orderEditEntries', 'editHistoryHtml'];
+  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'editHistoryHtml'];
   const definitions = names.map(name => html.split(/\r?\n/).find(line => line.startsWith('function ' + name + '('))).join('\n');
   const requests = [];
   const context = vm.createContext({ state, post: (...args) => requests.push(args), num: value => Number(value) || 0, money: value => Number(value || 0).toFixed(2), compactTime: value => value, esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'), Date, Set });
@@ -174,12 +174,39 @@ test('active edit history disappears on existing completion criteria and remains
   assert.equal(state.orderDetails.O1.editHistory.length, 2);
 });
 
-test('Current Status hides customer edits and staff identity while showing latest quantity time', () => {
+test('Current Status keeps customer edits locked and committed update time blank until Master provides it', () => {
   const order = { orderId: 'O1', status: 'CONFIRMED' }, line = { lineId: 'L1', itemName: 'PRODUCT', quantityCtn: 10, effectiveRequestedQtyCtn: 9, lastQuantityEditBy: 'SECRET STAFF NAME', lastQuantityEditAt: '2026-10-05T02:00:00Z', progressUpdatedAt: '2026-10-05T01:00:00Z' };
   const ui = buyerUi({ orders: [order], orderDetails: { O1: { lines: [line] } }, orderDetailRequests: new Set() });
   const row = ui.trackingLineHtml({ order, line });
   assert.doesNotMatch(row, /data-reduce-order/); assert.doesNotMatch(row, /SECRET STAFF NAME/);
-  assert.match(row, /2026-10-05T02:00:00Z/);
+  assert.doesNotMatch(row, /2026-10-05T02:00:00Z/);
+});
+
+test('Track reuses selection product ranking and groups repeated requests without changing amounts', () => {
+  const products = [{ id: 'N1', barcode: '3', category: 'NONFOOD', brandName: 'A', sortNo: '1' }, { id: 'F2', barcode: '2', category: 'FOOD', brandName: 'B', sortNo: '2' }, { id: 'F1', barcode: '1', category: 'FOOD', brandName: 'B', sortNo: '1' }];
+  const lines = [{ lineId: 'L1', itemId: 'F2', barcode: '2', quantityCtn: 20 }, { lineId: 'L2', itemId: 'N1', barcode: '3', quantityCtn: 5 }, { lineId: 'L3', itemId: 'F1', barcode: '1', quantityCtn: 10 }, { lineId: 'L4', itemId: 'F2', barcode: '2', quantityCtn: 7 }];
+  const state = { my: products, removed: [], orders: [{ orderId: 'O1' }], orderDetails: { O1: { lines } } };
+  const before = JSON.stringify(state);
+  const rows = buyerUi(state).allTrackingRows();
+  assert.equal(rows.map(row => row.line.lineId).join(','), 'L3,L1,L4,L2');
+  assert.equal(rows.reduce((sum,row) => sum + row.requested,0),42);
+  assert.equal(JSON.stringify(state),before);
+});
+
+test('Change Details explains saved additions, reductions and cancellations without generating audits', () => {
+  const lines = [{ lineId: 'L1', itemName: 'Product', quantityCtn: 20 }];
+  const editHistory = [
+    { detail: { lineId: 'L1', previousQuantityCtn: 20, newQuantityCtn: 30 } },
+    { detail: { lineId: 'L1', previousQuantityCtn: 30, newQuantityCtn: 25 } },
+    { detail: { lineId: 'L1', previousQuantityCtn: 25, newQuantityCtn: 0 } }
+  ];
+  const state = { orders: [{ orderId: 'O1' }], orderDetails: { O1: { lines, editHistory } } };
+  const ui=buyerUi(state), html=ui.editHistoryHtml(ui.allTrackingRows());
+  assert.match(html,/Change Details/);
+  assert.match(html,/Qty added: \+10 CTN · 20 → 30 CTN/);
+  assert.match(html,/Qty reduced: −5 CTN · 30 → 25 CTN/);
+  assert.match(html,/Item cancelled · 25 → 0 CTN/);
+  assert.equal(editHistory.length,3);
 });
 
 test('changed order versions and realtime signals refresh cached detail without a manual click', () => {
