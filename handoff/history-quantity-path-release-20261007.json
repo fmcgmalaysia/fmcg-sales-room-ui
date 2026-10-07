@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-07",
+  "timezone": "Asia/Kuala_Lumpur",
+  "pullRequest": 36,
+  "branch": "style/history-quantity-path-room5",
+  "htmlCommit": "482f14d117fbae75a592d87aca0560ca10c5e1d9",
+  "wixReferenceCommit": "09ac70c",
+  "marker": "2026-10-07-history-quantity-path-room5-v1",
+  "pages": {"run": 37625435213, "job": 112805876158, "conclusion": "success", "markerAndScriptMatch": true},
+  "wix": {
+    "change": "one frame.src version line only",
+    "exactReadbackMatch": true,
+    "receipt": "This site is published and live online",
+    "deploymentId": null,
+    "beforeSha256": "e523348a53185997383876b9e9856efbd39e34015f3f5dd07225eb3c3c1c41e5",
+    "afterSha256": "6a3c0cf21c14d4ae2b01bc3fc10d53b7686d0c86c21f485ec4dc15b1a2e89048"
+  },
+  "public": {"correctCustomer": true, "newIframeVersionAndScriptMatch": true, "activeTasksBefore": 16, "activeTasksAfter": 16, "allStatusRowsUnchanged": true, "historyEvents": 5, "historyTasks": 2, "historyRowHeightPx": 43, "clientWidth": 1316, "scrollWidth": 1316, "reasonEmpty": true, "orderQtyIconPx": 13, "savedDraftCtn": 50, "allQuantityInputsUnchanged": true, "capturedErrors": 0, "initialLoadingNeededOneAdditionalRefresh": true},
+  "testsPassed": 52,
+  "temporaryDeploymentPermission": "revoked; main-only confirmed",
+  "protectedCheckpoint": "verified/order-quantity-user-tests-20261007",
+  "userAcceptance": "2026-10-07 user confirmed: 效果不错，需要收尾吗; scoped History layout and Order Qty icon acceptance",
+  "verifiedTag": "verified/history-quantity-path-ui-20261007",
+  "mainMerged": false,
+  "excel": "paused; untouched",
+  "wix500": "investigation deferred by user; untouched"
+}

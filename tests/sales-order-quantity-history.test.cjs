@@ -156,7 +156,7 @@ test('Buyer edit history paginates past 1000, filters customer identity, and exc
 
 function buyerUi(state) {
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'editHistoryHtml'];
+  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'orderEditGroups', 'historyPathHtml', 'editHistoryHtml'];
   const definitions = names.map(name => html.split(/\r?\n/).find(line => line.startsWith('function ' + name + '('))).join('\n');
   const requests = [];
   const context = vm.createContext({ state, post: (...args) => requests.push(args), num: value => Number(value) || 0, money: value => Number(value || 0).toFixed(2), compactTime: value => value, esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'), Date, Set });
@@ -193,7 +193,7 @@ test('Track reuses selection product ranking and groups repeated requests withou
   assert.equal(JSON.stringify(state),before);
 });
 
-test('Change Details explains saved additions, reductions and cancellations without generating audits', () => {
+test('History path preserves saved additions, reductions and cancellations without generating audits', () => {
   const lines = [{ lineId: 'L1', itemName: 'Product', quantityCtn: 20 }];
   const editHistory = [
     { detail: { lineId: 'L1', previousQuantityCtn: 20, newQuantityCtn: 30 } },
@@ -202,10 +202,9 @@ test('Change Details explains saved additions, reductions and cancellations with
   ];
   const state = { orders: [{ orderId: 'O1' }], orderDetails: { O1: { lines, editHistory } } };
   const ui=buyerUi(state), html=ui.editHistoryHtml(ui.allTrackingRows());
-  assert.match(html,/Change Details/);
-  assert.match(html,/Qty added: \+10 CTN · 20 → 30 CTN/);
-  assert.match(html,/Qty reduced: −5 CTN · 30 → 25 CTN/);
-  assert.match(html,/Item cancelled · 25 → 0 CTN/);
+  assert.match(html,/<th>Path<\/th>/);
+  assert.match(html,/20 → 30 → 25 → 0 CTN/);
+  assert.match(html,/<th>Reason<\/th>/);
   assert.equal(editHistory.length,3);
 });
 
