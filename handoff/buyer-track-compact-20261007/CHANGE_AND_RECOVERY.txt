@@ -9,3 +9,7 @@ Syntax and regression checks pass. Simulated3 lines/1 edit count passes;1920 wid
 Production files: buyer-room.html, and one Wix frame.src cache version line. No Entry, auth, QTY, downloads, backend, Apps Script or CMS change. Unrelated dirty release.json excluded.
 Release state: code candidate only; GitHub Pages/Wix/public acceptance pending. Do not claim published. No main merge/new user-verified tag.
 Recovery reverse only this task diff, preserving the installed order sorting and gray-blue style. Do not deploy entire older baseline.
+
+2026-10-07 requested supplement: Goods Exp defaults to blank with small native hover-help question button (Chinese exact requested copy); Qty Updated remains em dash. Active committed qty>0 and displayed CBM0.0000 reuse Order Form cbm-zero-pill. Pending CBM remains em dash; nonzero CBM normal. Calculations and Completed Orders unchanged. Not deployed.
+
+Track Order On time: Today HH:MM / Yesterday HH:MM / DD-MM-YY HH:MM, MYT calendar. Invalid/empty em dash; future date full date. Global compactTime remains unchanged. Qty Updated has no MASTER data yet.
