@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-07",
+  "timezone": "Asia/Kuala_Lumpur",
+  "authorization": "允许发布",
+  "branch": "style/sales-soft-blue-review-room5",
+  "pullRequest": 37,
+  "uiCode": "1ea147f",
+  "backendCode": "0d7f5aab9e799bc4eae3484fa2d48c77e8a26aab",
+  "pages": {"commit": "d56f3b249aa28c6065369fdaf4a20e5e29885b97", "marker": "2026-10-07-sales-soft-blue-review-room5-v1", "run": 37638921118, "job": 112852401006, "success": true, "exactScriptsAndStyles": true},
+  "wix": {"publishedLiveReceipt": true, "salesPageRawSha256": "6ec9aecd4f7625d9bd9ab2e46a4627231a445c55d12d639f58f82ff1b6a6dc94", "onboardingRawSha256": "e56879e1bfb2a0d2dbb671a3a8ce75febf241a1d8361047503d8423b25cdb88a", "exactNormalizedReadback": true, "independentDeploymentId": null},
+  "public": {"salesOrderRows": 50, "orderBadge": 50, "salesProgressRows": 16, "buyerProgressRows": 16, "matchingBarcodeAndQtySequence": true, "rowHeightPx": 43, "poSavedAndReopened": true, "poTestRestoredBlank": true, "qtyAndAmountUnchanged": true, "menusDoNotSubmit": true, "buyerCurrentStatusUnchanged": true, "buyerQuantityInputsUnchanged": true, "buyerHistoryEvents": 5, "buyerHistoryRows": 2, "capturedJavaScriptErrors": 0},
+  "testsPassed": 96,
+  "temporaryPermission": "revoked; main-only",
+  "mainMerged": false,
+  "userAcceptance": "pending",
+  "recovery": "verified/history-quantity-path-ui-20261007 at b147b16, plus separate accepted quantity checkpoint; restore scoped changes only",
+  "limitations": ["MASTER delivery not connected", "Company actions preview-only", "Qty Updated and Goods Expiry await MASTER mapping", "No Excel or quotation repair", "Loading root cause not fixed", "No public overflow claim from hidden grid"]
+}

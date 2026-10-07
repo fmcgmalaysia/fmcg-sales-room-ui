@@ -16,7 +16,7 @@ function harness() {
   const wixData = {
     query(name) {
       const filters = []; let size = 1000, sort = null;
-      const q = { eq(k, v) { filters.push(r => r[k] === v); return q; }, lt(k, v) { filters.push(r => r[k] < v); return q; }, contains(k, v) { filters.push(r => String(r[k] || '').includes(v)); return q; }, limit(n) { size = n; return q; }, descending(k) { sort = k; return q; }, find: async () => {
+      const q = { eq(k, v) { filters.push(r => r[k] === v); return q; }, hasSome(k, values) { filters.push(r => (Array.isArray(r[k]) ? r[k] : [r[k]]).some(value => values.includes(value))); return q; }, startsWith(k, v) { filters.push(r => String(r[k] || '').startsWith(v)); return q; }, lt(k, v) { filters.push(r => r[k] < v); return q; }, contains(k, v) { filters.push(r => String(r[k] || '').includes(v)); return q; }, limit(n) { size = n; return q; }, descending(k) { sort = k; return q; }, find: async () => {
         const rows = [...table(name).values()].filter(r => filters.every(f => f(r)));
         if (sort) rows.sort((a, b) => String(b[sort]).localeCompare(String(a[sort])));
         return page(rows, 0, size);

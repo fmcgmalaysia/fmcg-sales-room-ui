@@ -8,11 +8,11 @@ const root = path.resolve(__dirname, '..');
 test('workspace uses the compact customer, sku, user icon and risk layout', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const workspaceOverride = html.slice(html.indexOf('const originalWorkspaceCustomerTable'));
-  assert.match(workspaceOverride, /CUSTOMER<span>客户 \/ 国家<\/span>/);
+  assert.match(workspaceOverride, /Customer<span>客户<\/span>/);
   assert.doesNotMatch(workspaceOverride, /<th>COUNTRY<span>国家<\/span><\/th>/);
   assert.match(workspaceOverride, /\+esc\(selectionLimit\)\+' sku/);
   assert.match(workspaceOverride, /workspace-user-count/);
-  assert.match(workspaceOverride, /RISK<span>报价风险<\/span>/);
+  assert.match(workspaceOverride, /Risk <span class="risk-warning" aria-label="Risk warning">⚠<\/span><span>报价风险<\/span>/);
   assert.match(workspaceOverride, /quoteRiskCount/);
   assert.match(html, /\.workspace-table \.work-alert,\.workspace-table \.risk-alert/);
   assert.match(html, /month:'short',year:'numeric'/);

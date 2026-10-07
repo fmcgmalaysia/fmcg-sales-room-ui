@@ -7,30 +7,30 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const backend = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
-test('Sales Room uses the compact incoming-order review build', () => {
-  assert.match(html, /Sales Room build: 2026-10-05-sales-quantity-history-room5-v1/);
+test('Sales Room uses the full workspace incoming-order review build', () => {
+  assert.match(html, /Sales Room build: 2026-10-07-sales-soft-blue-review-room5-v1/);
   assert.match(html, /incoming-order-review/);
-  assert.match(html, /#orderDetailArea:has\(\.incoming-order-review\)\{width:min\(820px,96vw\)/);
-  assert.match(html, /incoming-order-table-wrap\{max-height:calc\(100vh - 252px\);overflow:auto\}/);
+  assert.match(html, /#orderDetailArea:has\(\.incoming-order-review\)\{position:static!important/);
+  assert.match(html, /incoming-order-table-wrap\{max-height:none!important;overflow:visible!important\}/);
 });
 
 test('incoming-order table exposes barcode and compact operational columns', () => {
-  assert.match(html, /<th>#<\/th><th>Barcode<\/th><th>Item &amp; Packing<\/th><th>Locked \/ CTN<\/th><th>Qty<\/th><th>Amount<\/th>/);
+  assert.match(html, /<th>Barcode<\/th><th>Descriptions<\/th>/);
+  assert.match(html, /<th>Qty \(CTN\)<\/th><th>Line Amount/);
   assert.match(html, /esc\(line\.barcode\|\|'—'\)/);
   assert.match(html, /esc\(line\.packingSize\|\|'Packing not provided'\)/);
   assert.match(html, /incoming-order-summary/);
-  assert.match(html, /ORDER VALUE/);
+  assert.match(html, /Order Value/);
 });
 
 test('authorized quantity edits preserve locked quotes and downstream actions', () => {
   assert.match(html, /order-qty-locked/);
-  assert.match(html, /Quoted prices locked · Sales may change quantities before transfer/);
+  assert.match(html, /Quoted prices locked · Edit quantities before transfer/);
   assert.doesNotMatch(html, /data-order-qty/);
   assert.match(html, /SALES_ROOM_ORDER_QTY_UPDATE/);
-  assert.match(html, /Save or cancel the quantity edit before transferring this order/);
-  assert.match(html, /Save or cancel the quantity edit before creating a proforma invoice/);
-  assert.match(html, /SALES_ROOM_CREATE_PROFORMA/);
-  assert.match(html, /SALES_ROOM_SUBMIT_ORDER/);
+  assert.match(html, /Save or cancel the current edit first/);
+  assert.match(html, /data-company-preview="With North Cape"/);
+  assert.match(html, /data-company-preview="To Global HR"/);
 });
 
 test('order detail backend preserves barcode on stored lines', () => {
