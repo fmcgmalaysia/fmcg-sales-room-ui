@@ -7,11 +7,11 @@ const html=fs.readFileSync(path.join(__dirname,'..','buyer-room.html'),'utf8');
 const source=html.slice(html.indexOf('function quantityEditsBlocked('),html.indexOf('function renderOrder('));
 function fixture(){
   const posted=[],state={my:[{id:'a',orderQtyCtn:0},{id:'b',orderQtyCtn:0}],pendingQuantities:new Map(),quantityDrafts:new Map(),memberName:'Tester'};
-  const inputs=[],reviews=[],messages=[];
-  const context={state,Map,Set,document:{querySelectorAll:()=>inputs},isOrderable:()=>true,$:()=>({classList:{contains:()=>true}}),openOrderReview:()=>reviews.push(true),num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast:message=>messages.push(message)};
+  const inputs=[],reviews=[],messages=[],shown=new Set();
+  const context={state,Map,Set,document:{querySelectorAll:()=>inputs},isOrderable:()=>true,$:id=>({classList:{contains:()=>true,add:()=>shown.add(id),remove:()=>shown.delete(id)},setAttribute(){}}),openOrderReview:()=>reviews.push(true),num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast:message=>messages.push(message)};
   vm.createContext(context);vm.runInContext(source,context);
   const input=(value,id='a')=>({value:String(value),dataset:{qty:id,committedQty:'0'},readOnly:false,parentElement:{querySelector:()=>({hidden:true,disabled:false})},checkValidity:()=>true,reportValidity(){throw Error('invalid')},closest:()=>({querySelector:()=>({textContent:''})})});
-  return {state,context,posted,input,inputs,reviews,messages,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
+  return {state,context,posted,input,inputs,reviews,messages,shown,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
 }
 
 test('blur locks only its input and concurrent rows keep their drafts',()=>{
@@ -89,4 +89,15 @@ test('both review opening and final sending guard all quantity edits',()=>{
   assert.match(html,/function openOrderReview\(\)\{\s*if\(quantityEditsBlocked\(\)\)/);
   assert.match(html,/\$\('confirmSubmit'\)\.onclick=\(\)=>\{\s*if\(quantityEditsBlocked\(\)\)/);
   assert.match(html,/for\(const line of state\.pendingOrder\|\|\[\]\)state\.quantityDrafts\.delete\(String\(line\.itemId\)\)/);
+});
+
+test('order preparation stays visible until all quantity saves finish',()=>{
+ const f=fixture();for(const id of ['a','b'])f.context.confirmQuantityDraft(f.item(id),f.input(10,id),false);
+ f.context.requestQuantityReview();assert.equal(f.shown.has('orderWaitBg'),true);
+ f.reply('a',10);assert.equal(f.shown.has('orderWaitBg'),true);assert.equal(f.reviews.length,0);
+ f.reply('b',10);assert.equal(f.shown.has('orderWaitBg'),false);assert.equal(f.reviews.length,1);assert.equal(f.posted.length,2);
+});
+test('quantity save failure dismisses preparation and never opens review',()=>{
+ const f=fixture();f.context.confirmQuantityDraft(f.item('a'),f.input(10),false);f.context.requestQuantityReview();
+ f.reply('a',10,false);assert.equal(f.shown.has('orderWaitBg'),false);assert.equal(f.reviews.length,0);assert.equal(f.posted.length,1);
 });

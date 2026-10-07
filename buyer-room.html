@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-07-buyer-numeric-weight-room5-v1">
+<meta name="build-version" content="2026-10-07-order-submit-feedback-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -227,6 +227,10 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 /* Match the approved Track barcode weight in the requested list cells. */
 #myRows .row>div:first-child,#myRows .row>.time,#orderRows .row>div:first-child,#orderRows .row>div:nth-child(7),#orderRows .row>.qty-audit-time{font-weight:540}
 #myRows .audit-author,#orderRows .qty-audit-by{font-weight:400}
+
+/* Order submission feedback: presentation only, driven by existing responses. */
+.order-grid .row>div:last-child{padding-left:20px}
+.order-wait-bg{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(20,39,54,.30);backdrop-filter:blur(2px)}.order-wait-bg.show{display:grid}.order-wait-card{position:relative;width:min(430px,calc(100vw - 32px));padding:30px 34px 27px;background:#fff;border:1px solid #e0e9e5;border-radius:18px;text-align:center;box-shadow:0 22px 70px rgba(15,42,40,.20);overflow:hidden;color:#173557}.order-wait-card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:#12815d}.order-wait-icon{position:relative;width:66px;height:66px;margin:0 auto 19px;display:grid;place-items:center;border-radius:50%;background:#eef8f3}.order-wait-icon svg{width:29px;height:29px;stroke:#11805c;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.order-wait-icon:before{content:"";position:absolute;inset:-3px;border:2px solid #e2efe8;border-right-color:#15946b;border-top-color:#15946b;border-radius:50%;animation:order-wait-spin 1.4s linear infinite}.order-wait-card h3{font-size:23px;line-height:1.3;letter-spacing:-.35px;margin:0 0 8px;font-weight:700}.order-wait-copy{font-size:13px;color:#697f8f;margin:0;line-height:1.6}.order-wait-status{margin:19px auto 20px;padding:10px 12px;border-radius:8px;background:#f3f8f6;font-size:12px;color:#3d6d5c}.order-wait-foot{padding-top:16px;border-top:1px solid #ecf0f2;font-size:11px;color:#7c8d9b}@keyframes order-wait-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.order-wait-icon:before{animation:none}}
 </style>
 </head>
 <body>
@@ -288,6 +292,7 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 <div id="toast" class="toast"></div>
 <div id="imagePreview" class="image-preview" aria-hidden="true"><img id="imagePreviewImg" alt="Product preview"></div>
 <div id="reductionModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reductionTitle"><div class="reduction-dialog"><header class="reduction-head"><div><h3 id="reductionTitle">Reduce / Cancel Requested Qty</h3><p>Available only before this order is submitted to NCT / GHR.</p></div><button class="reduction-close" id="closeReduction" type="button" aria-label="Close reduction request">×</button></header><div class="reduction-body"><div class="reduction-product"><strong id="reductionItemName">—</strong><span id="reductionItemMeta">—</span></div><div class="reduction-fields"><div class="reduction-field"><label>Current Requested Qty</label><div class="reduction-value" id="reductionCurrentQty">0 CTN</div></div><div class="reduction-field"><label for="reductionNewQty">New Requested Qty</label><input id="reductionNewQty" type="number" min="0" step="1" value="0"></div><div class="reduction-field"><label>Reduction</label><div class="reduction-value" id="reductionDelta">0 CTN</div></div></div><p class="reduction-note">This creates a reduction record. The original request remains in Order History. Enter 0 to cancel this item.</p></div><footer class="reduction-footer"><small>After NCT / GHR submission, Requested Qty is permanently locked.</small><div class="reduction-actions"><button class="btn danger" id="submitReduction" type="button">Submit Reduction</button></div></footer></div></div>
+<div id="orderWaitBg" class="order-wait-bg" role="dialog" aria-modal="true" aria-labelledby="orderWaitTitle" aria-describedby="orderWaitCopy" aria-hidden="true"><div class="order-wait-card" role="status" aria-live="polite"><div class="order-wait-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 9 15M21 3l-7 18-5-6-6-5 18-7Z"/></svg></div><h3 id="orderWaitTitle">Sending your order…</h3><p class="order-wait-copy" id="orderWaitCopy">This may take about 10 seconds.</p><div class="order-wait-status">Please keep this page open.</div><div class="order-wait-foot">Your request is being processed.</div></div></div>
 <div id="submitModalBg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="reviewOrderTitle"><div class="order-review"><button class="order-review-close" id="cancelSubmit" type="button" aria-label="Close order review">×</button><header class="order-review-head"><div><h3 id="reviewOrderTitle">Review Order</h3><p><span id="reviewItemCount">0</span> items selected for this order.</p></div><div class="order-review-meta"><span id="reviewCompany">Buyer Account</span><i>•</i><span id="reviewDate">—</span><i>•</i><span id="reviewCurrency">USD</span></div></header><div class="order-review-summary"><div class="order-review-metric"><span>Products</span><strong id="reviewProducts">0</strong></div><div class="order-review-metric"><span>Total Cartons</span><strong id="reviewCtn">0 CTN</strong></div><div class="order-review-metric"><span>Total CBM</span><strong id="reviewCbm">0.0000</strong></div><div class="order-review-metric"><span>Estimated Total</span><strong id="reviewAmount">—</strong></div></div><div class="order-review-table"><div class="order-review-grid"><div class="order-review-line review-table-head"><div>#</div><div>Barcode</div><div>Descriptions</div><div>Packing Size</div><div id="reviewPriceHeader">USD / CTN</div><div>Qty CTN</div><div id="reviewAmountHeader">Line Amount / USD</div><div>CBM</div></div><div id="reviewRows"></div></div></div><footer class="order-review-footer"><div class="order-assurance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 6v6c0 5.5-3.8 9-9 10-5.2-1-9-4.5-9-10V6l9-4Zm-1.1 13.5 6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg><div><strong>Submit with confidence</strong><span>Submitted orders are locked. Contact your salesperson to request changes.</span></div></div><div class="order-review-actions"><button class="btn primary" id="confirmSubmit">Send Request</button></div></footer></div></div>
 <script>
 const $=id=>document.getElementById(id),post=(type,payload={})=>window.parent.postMessage({type,...payload},'*');
@@ -367,6 +372,7 @@ function finishQuantity(result){
   if(!pending){if(!result.ok&&result.message)toast(result.message);return}
   const item=state.my.find(x=>String(x.id)===key);
   if(!result.ok){
+    hideOrderWait();
     state.quantityReviewRequested=false;
     state.pendingQuantities.delete(key);
     const draft=state.quantityDrafts.get(key);if(draft){draft.error=result.message||'Quantity could not be saved.';draft.editing=false;draft.awaitingEcho=false}
@@ -380,14 +386,17 @@ function finishQuantity(result){
   if(item){item.orderQtyCtn=pending.committedQty;item.qtyEditedAt=pending.committedAt;item.qtyEditedBy=pending.committedBy}
   renderOrder();continueQuantityReview();
 }
+function showOrderWait(preparing=false){$('orderWaitTitle').textContent=preparing?'Preparing your order…':'Sending your order…';$('orderWaitCopy').textContent=preparing?'Saving your latest quantities.':'This may take about 10 seconds.';$('orderWaitBg').classList.add('show');$('orderWaitBg').setAttribute('aria-hidden','false')}
+function hideOrderWait(){$('orderWaitBg').classList.remove('show');$('orderWaitBg').setAttribute('aria-hidden','true')}
 function requestQuantityReview(){
+  showOrderWait(true);
   state.quantityReviewRequested=true;
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{const item=state.my.find(x=>String(x.id)===input.dataset.qty);if(item&&isOrderable(item)&&!input.disabled&&!input.readOnly&&state.quantityDrafts.get(String(item.id))?.editing)confirmQuantityDraft(item,input,false)});
   continueQuantityReview();summary()
 }
 function continueQuantityReview(){
   if(!state.quantityReviewRequested||state.pendingQuantities.size)return;
-  state.quantityReviewRequested=false;summary();
+  state.quantityReviewRequested=false;hideOrderWait();summary();
   if(quantityEditsBlocked())return toast('A quantity needs attention. Please correct it or retry saving.');
   if($('orderView').classList.contains('active'))openOrderReview()
 }
@@ -528,6 +537,7 @@ $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state
 $('confirmSubmit').onclick=()=>{
   if(quantityEditsBlocked())return toast('Confirm each edited quantity with Enter and wait for saving to finish.');
   if(!state.pendingOrder||state.orderSubmitting)return;
+  showOrderWait();
   state.orderSubmitting=true;$('confirmSubmit').disabled=true;$('confirmSubmit').textContent='Sending…';
   post('BUYER_ROOM_SUBMIT_ORDER',{lines:state.pendingOrder,requestId:state.orderAttempt.requestId});
   $('submitModalBg').classList.remove('show');
@@ -583,6 +593,7 @@ window.addEventListener('message',e=>{
   }
   if(m.type==='BUYER_ROOM_ORDER_REFRESH')requestOrderDetails(true);
   if(m.type==='BUYER_ROOM_ORDER_RESULT'){
+    hideOrderWait();
     state.orderSubmitting=false;$('confirmSubmit').disabled=false;$('confirmSubmit').textContent='Send Request';
     if(m.ok){
       state.orderAttempt=null;for(const line of state.pendingOrder||[])state.quantityDrafts.delete(String(line.itemId));state.pendingOrder=null;addOrderNotification(m.orderId);
