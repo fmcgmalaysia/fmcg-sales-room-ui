@@ -1,0 +1,253 @@
+EXPORT EXCEL 工作报告与后续恢复入口
+记录日期：2026-10-07，Asia/Kuala_Lumpur
+范围：Buyer Room / My Selection 原生 Wix Excel 下载；仅证据归档，无网站修改。
+公开版：客户名称、编号与员工身份已脱敏；原始身份对应证据仅本地保留。精确JS代码未改变。
+
+一、必须先读的结论
+
+1. 已有可复现的下载成功机制，不需要重新发明 Excel 下载后台：
+   现存 XLSX → mediaManager.getFileInfo() → mediaManager.getDownloadUrl()
+   → 点击前绑定原生 #downloadExcelButton.link → 用户点击 → XLSX 实际落盘。
+2. 固定模拟 XLSX 的成功代码、真实文件及恢复补丁已经在 GitHub verified 标签中保存。
+3. 真实 My Selection 的独立直接打开路径也已两次下载成功，文件内容及校验值留档。
+4. Sales Room HTML Entry 打开的新标签仍然下载失败；用户无痕实测也失败。
+5. 所以：下载机制的成功证据 ≠ 全部入口已成功。当前整体任务未完成、未收尾、未获准合并 main。
+6. 用户暂时不能购买套餐／绑定正式域名，要求暂停修复，先完整记录以便其他任务结束后继续。
+7. 当前候选方向是独立的 Wix Custom Element 最小测试，不是已实现或已验证方案。
+
+二、下次接续的唯一入口
+
+先阅读本报告、project AGENTS.md、START_HERE.md、ROOM_5_CURRENT_STATE.md。
+本目录 manifest.json 给出所有归档文件的原始 SHA256；CHECKS.txt 给出本次核查结果。
+REMOTE_RECORD.txt 在推送并核对后记录归档提交／标签与 GitHub 固定链接。
+本报告为后续操作说明；代码与真实线上系统各有其权威，不能用报告覆盖未核对的 live Wix。
+
+三、成功证据 A：固定模拟文件下载
+
+固定 Git 提交：257f9239ff27dc2563a9268e885b1e57b66b96c1
+已存在 annotated 标签：verified/native-wix-fixed-file-download-20261006
+GitHub：
+https://github.com/fmcgmalaysia/fmcg-sales-room-ui/tree/257f9239ff27dc2563a9268e885b1e57b66b96c1/handoff/verified-native-wix-fixed-file-download-20261006
+
+精确成功代码、恢复代码及补丁：
+- buyer-page-success.js：成功点击时的完整 Wix 页面回读。
+- xlsxTest-success.web.js：成功测试的完整后台模块回读。
+- catalogueAuth-unchanged.web.js：测试时共享后台，未改。
+- buyer-page-before.js、buyer-page-restored.js：测试前后完全一致。
+- page-test-only-forward.patch、page-test-only-reverse.patch：只有测试所需三处增量。
+- xlsxTest-disabled.web.js：撤回测试后的模块，没有前端 export。
+- native-button-downloaded-test.xlsx：4132 字节的模拟文件，可在 GitHub 留存，无客户报价内容。
+- manifest.json、acceptance-and-result.json、RECOVERY_AND_REPRODUCTION.txt：证据和边界。
+
+模拟文件 SHA256：
+538ef70ccb38de04d1c91ee706ad276585e782b6aac375bb0d619f0570ffd03c
+ZIP 完整，实际落盘文件与参考文件逐字节一致。
+成功函数使用 getDownloadUrl(info.fileUrl, 10, null, null)，有效时间单位是分钟。
+测试文件本身是公开模拟数据 isPrivate=false；不能把这个结果当成私有客户文件已验证。
+测试门禁：SiteMember + StaffMaster ACTIVE ADMIN/SUPER ADMIN，仅固定模拟文件。
+不能把测试门禁改成正式客户下载权限，也不能重新开放测试模块给普通客户。
+用户认可助手报告的这次模拟下载成功；不能宣称用户当时独立手动验收了所有客户入口。
+成功 Wix deployment ID 未捕获，已有回执／截图和代码回读，但不补造部署编号。
+
+四、成功证据 B：真实 My Selection 的独立直接打开路径
+
+实现提交：b70ece52fff02dac7669a0c856972b02aea95982
+分支：fix/buyer-native-selection-download-room5
+PR19：https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/19
+固定代码：
+https://github.com/fmcgmalaysia/fmcg-sales-room-ui/tree/b70ece52fff02dac7669a0c856972b02aea95982
+
+助手测试账号：[TEST_IDENTITY_REDACTED]；SGD；9 项产品。
+独立直接打开普通 Buyer Room URL，无 excelProbe 参数；不是模拟测试页面。
+已完成两次实际下载，其中一次刷新后；两份文件逐字节一致。
+文件：fmcgmalaysia.com-My-Selection-2026-10-06.xlsx
+大小：11161 字节。
+SHA256：1883018b67dc95f040acd89ff32f821ac6892179129288a80842892c65164bbd
+ZIP 完整；9 项条码、SGD 币种及 9 项单价与页面核对匹配。
+刷新后复用同一云端文件。真实文件含客户报价，保存在本地，绝不上传 GitHub。
+本地路径：C:/FMCG-WIX-LOCAL/handoff/ordinary-selection-download-20261006/ordinary-native-download.xlsx
+助手未修改客户数据或提交订单，既有数量20/5/10及总35CTN不变。
+独立普通客户会员身份登录测试尚未进行；这是职员协助访问的成功证据。
+当前成功范围不能覆盖 Sales Room Entry 弹出的新标签。
+
+精确 Wix 成功回读原来只在本地，现归档到本目录 snapshots/ordinary-success/：
+- buyer-room-page.js ← page-readback.js
+- catalogueAuth.web.js ← backend-readback.js
+- buyerSelectionDownload.js ← media-readback.js
+这些是当时回读副本，不宣称本轮再次读取当前 live。
+另保存当时三个修改前副本及 patches.json，供逐行检查；禁止整页套用回滚。
+backend/buyerSelectionExcel.js 的当时 Git 版本单独保留，作为生成器依赖。
+
+当时 Wix 成功代码归一化 SHA256（LF + trimEnd）：
+buyer-room-page.js：0f8dbff8109e70e281896fac00f72862cafa7d8c1c3c8f3a5faa924c90fc6131
+catalogueAuth.web.js：7cf6f64f038d3193b1ad3a0a1ecbede7325e024ebbde6e9293515688763557e4
+buyerSelectionDownload.js：9710eb1dd146e4b1b87024d20e52dec35932889b0b72fed4d1766afa88451969
+原始字节 hash 见 manifest.json；repo与live的换行／空白不同也分别记录，不混称完全相同。
+
+五、真实下载机制的准确工作方式
+
+页面：buyer-room/wix/buyer-room-page.js
+原生按钮 ID：downloadExcelButton；HTML组件 ID：html1。
+1. 页面从显式 assist 查询参数读取协助客户编号，不从旧 session 继承身份。
+2. loadWorkspace 调用现有客户授权接口，确认 ACTIVE 后加载 My Selection。
+3. prepareSelectionDownload 调用 createBuyerSelectionDownload(assistCustomerId)。
+4. 后台回复 ok/url/expiresAt；页面在用户点击前设置按钮 .link，.target='_self'。
+5. 只在 My Selection 视图、URL准备成功时显示／启用原生按钮。
+6. 原生按钮自己跟随预绑定链接，点击事件不是同步生成文件后再调用 wixLocation.to。
+7. 点击后1.5秒刷新短链接；每30秒检查临近过期；工作区每15秒刷新数据。
+8. 数据变化时清空旧link并重新准备，防止旧报价文件继续下载。
+9. 控制异步返回与选品版本对应，不把过时响应重新绑定到当前页面。
+
+权限入口：backend/catalogueAuth.web.js
+createBuyerSelectionDownload = webMethod(Permissions.SiteMember, ...)
+内部必须执行 resolveBuyerContext(assistCustomerId)，以授权结果的 customerId生成文件。
+仅SiteMember不能替代客户归属检查；禁止接收任意fileUrl／customerId就签发下载。
+现有归属、员工协助访问及 ACTIVE检查保持，不向Anyone开放。
+此函数中的 buyerRoomBase 仍是原 WixStudio Buyer Room地址；域名绑定后是否更新是单独的小范围检查，不自动改动。
+
+生成与文件管理：backend/buyerSelectionDownload.js
+读取 WixCustomers、WixBuyerListItems、FMCGMALAYSIA 当前数据。
+只导出当前未Removed选品；只有 VIEW QUOTE 且币种吻合的有效单价才输出。
+buildBuyerSelectionExcel 生成实际XLSX；使用现有内容映射，不重新设计报价文件。
+versionKey = customerId + buyerRoomUrl + currency + rows + quote时间 的SHA256。
+文件目录 /buyer-selection-exports/<清理后的customerId>/。
+存储名 fmcgmalaysia.com-My-Selection-<versionKey>.xlsx；下载名保留UTC日期命名惯例。
+相同内容版本复用已有私有文件；变化后才上传新版本 isPrivate=true。
+再次 getFileInfo 校验 isPrivate===true，才取得 getDownloadUrl(info.fileUrl,10,fileName,null)。
+客户拿到的是短时签名文件URL，不是CMS数据库访问权限。
+有效期10分钟的是链接，不是文件；链接可重新生成，不需重建云端文件。
+刷新时后台仍会读取数据并构造候选XLSX字节以求版本键；“复用”指不重复上传同版云端文件，不是完全零生成／零查询。
+新私有版本及链接取得成功后，把同客户目录的旧导出移入Trash；签名失败不先删除旧版。
+Trash不是30天后自动删除；30天清理尚未实现，暂不属于当前下载修复。
+listFolders/listFiles的分页、并发准备／更新的规模边界尚未做完整线上测试；这里记录，不顺便扩展修复。
+
+重要纠正：当前不是“每次PUBLISH生成新Excel”。
+当前在Buyer Room准备下载时，依据当下My Selection及报价版本准备／复用文件。
+PUBLISH生命周期和30天归档曾被讨论，但没有接入／完成，不得把讨论写成现有功能。
+没有每刷新一次必上传新文件；100次刷新复用测试是本地mock，不是线上100次真实刷新验收。
+
+六、当前正式 Entry 状态与失败路径
+
+Entry恢复提交：563feb92a8b606a7272ef1a311503975f4990f4a
+记录提交：d9fa4d9b7acd737886ca04e57298e5d64ffaadd7
+PR20：https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/20
+Pages run：37501555267
+Sales marker：2026-10-07-entry-new-tab-restored-room5-v1
+Buyer marker：2026-10-06-buyer-native-selection-download-room5-v1
+原绿色HTML按钮：window.open(buyerRoomAdminUrlV27(customer.customerId),'_blank','noopener')。
+正式Wix Sales Room仅更新嵌入版本引用，没有新增原生叠加按钮。
+用户确认打开新页，但报告下载又失败；新标签行为保留，下载仍未验收。
+此前同页试验4138a55/c4a809c不是最终方案，不得恢复为当前方案。
+当前Wix Sales页面遗留未被HTML调用的同页消息监听属于试验历史；不可为了清理顺手删改。
+
+Entry实际sandbox：
+allow-same-origin allow-forms allow-popups allow-modals allow-scripts allow-pointer-lock
+缺少allow-downloads及allow-popups-to-escape-sandbox。
+从HTML iframe打开的新上下文继承限制，符合HTML标准；noopener不等于解除沙盒。
+当前Entry失败页：download-files.wixmp.com is blocked / ERR_BLOCKED_BY_CLIENT。
+无痕失败是用户实际反馈；本轮浏览器工具未控制无痕窗口，不冒充助手无痕实测。
+最近一次读取只能复现15秒无下载，dev.logs返回空，不等于没有浏览器错误。
+
+直接浏览器警告的原始证据：
+2026-10-06T12:31:46.628Z 的 download-sandbox-diagnosis.json：
+“Download is disallowed. The frame initiating or instantiating the download is sandboxed, but the flag ‘allow-downloads’ is not set.”
+当次旧HTTP路径返回200、Excel MIME和8008字节，仍没有文件落盘。
+这是旧路径直接沙盒证据，不能假称是今天新签名路径刚捕获的同一警告。
+与当前入口对照、sandbox配置及用户无痕失败共同支持沙盒继承为最充分的原因。
+ERR_BLOCKED_BY_CLIENT不是扩展专属错误码，单凭它不能唯一判定根因。
+
+七、已排除／不得重复采用的说法与路径
+
+- 不把GitHub Pages部署成功、HTTP200、按钮链接非空、控制台success当成下载成功。
+- 不把固定模拟成功标签当成真实客户／全部入口成功基准。
+- 不再建议先取消新标签、覆盖Sales Room：用户已要求一次点击开NEW TAB。
+- 不再直接在HTML弹窗上叠加独立原生按钮：用户已拒绝，且存在错位风险。
+- wixLocation.to(url,'_blank')不是官方支持的新标签接口，不能复制Gemini旧示例。
+- postMessage异步，不能据此保证保留点击权限；也不能断言一切异步必然丢失权限。
+- 不使用DOM操纵去删除Wix sandbox、修改浏览器安全设置、改CDN/代理来绕过限制。
+- 不把绑定域名／购买Plus当成自动修复下载。
+- 不把Media Manager管理员Download成功等同于普通客户原生按钮成功。
+- 不改QTY、排序、蓝色PUBLISH、AppsScript、CMS schema或身份归属去解决入口问题。
+- 不删除历史失败记录，不整页回滚，不把包含未验收功能的分支合并main。
+
+八、用户同意的候选验证方向：Custom Element
+
+Wix官方Custom Element可承载自己编写的HTML/CSS/JS；编辑器／预览会使用iframe。
+正式站点实际呈现与预览不同；先验证组件是否直接处于主页面DOM中再测试新标签。
+官方前提：符合套餐要求、已连接自定义域名、移除Wix广告。
+用户暂时买不了配套，所以暂停，不实施正式Entry替换，不采购，不绑定域名。
+用户讨论测试阶段可先选Plus；实际套餐页Basic/Standard/Plus/Elite均列Custom Elements。
+套餐额度与业务存储选择是另一个任务，不混入下载修复。
+
+后续最小测试顺序：
+1. 用户明确恢复下载任务，并确认套餐与域名已就绪。
+2. 重读本报告；只读核对live页面／后台与归档。若业务差异冲突，保留双方并停止写入。
+3. 建独立窄范围测试分支；不得把当前整个站点迁移到Custom Element。
+4. 使用独立测试页面／区域，只做一个Custom Element按钮，不替换生产Entry。
+5. 客户目标URL在点击前备好，DOM点击直接同步触发新标签；不在点击中等待取URL。
+6. 核对正式站点Custom Element外部没有iframe包裹；预览不能代替这项验收。
+7. 一次点击打开Buyer Room；Sales原标签保留，账号／员工身份／币种／选品正确。
+8. 点现有原生Wix下载按钮，必须获得实际XLSX落盘并检查内容。
+9. 对照独立直接打开路径；以相同数据版本比较文件内容／必要校验，不保存或公开令牌。
+10. 失败则保存错误、停止；不得连续加补丁扩大范围。
+11. 若成功，只证明Custom Element按钮路径可行；正式Entry迁移需要单独明确批准。
+12. 若获批迁移，保留弹窗外观及四个入口行为，先验证所有受影响保护流程，最终用户从真实Entry亲测。
+
+Custom Element不会先承诺成功。若最终测试不满足要求，再据证据讨论约束，不擅自整页改原生。
+
+九、必须保持的已验收功能与恢复点
+
+Catalogue Brand→Sort、CBM四位：verified/catalogue-brand-sort-20261006，PR8。
+MySelection FOOD→NONFOOD→Brand→Sort：verified/my-selection-sort-20261006，PR9。
+QTY保存／铅笔／上下键／43px／时间人员一行：verified/buyer-quantity-arrows-20261006，commit8e093fbd70ae0a84b79ef50f1d61fb4bd88c8652。
+QD发布类别排序：verified/qd-publish-category-sort-20261006，PR15；绑定Code.gs3.2.2。
+蓝色PUBLISH仍暂停；不能重新试报价。
+提交后锁量／销售转交前改量／Edit History整条PR4没有独立用户完整验收，不扩大保护证明。
+Order Received Excel是另一条下载链，当前本报告不修、不新增交单来测试，也不称已成功。
+每个恢复标签只保护对应范围，禁止部署整个旧checkout覆盖新功能。
+
+十、GitHub记录与本地证据边界
+
+GitHub存：成功机制代码、模拟XLSX、精确历史live回读、生成器依赖、局部恢复补丁、脱敏结果、hash、固定提交及标签。
+本地存：真实客户XLSX、客户页截图、原始带财务内容的DOM、发布截图／回执。
+manifest只把本地证据的路径、大小及校验值留到Git，不能上传客户数据或签名URL。
+精确回读内不能包含下载JWT／密码／密钥；归档前扫描，如发现敏感内容不能直接上传。
+归档分支 maintenance/excel-export-redacted-handoff-20261007；不改变业务文件，不发布网站，不合并main。
+新增archive标签表示证据固定，不命名为真实客户export的verified成功标签。
+已有模拟verified标签保持不变。
+Pages工作流只有push main或手动dispatch才部署；本归档分支不触发部署。
+
+十一、四阶段状态（历史结果，不是本轮新发布）
+
+代码：模拟成功257f923精确快照；真实机制b70ece5；Entry恢复563feb9。
+GitHub Pages：Buyer既有marker与Sales37501555267记录；本轮不部署Pages。
+Wix：先前publish/live回执留档；本轮无Wix编辑／同步／发布。成功deployment ID缺口明确保留。
+公开页：模拟和独立真实下载成功；完整Entry客户路径失败；无痕失败用户反馈。
+整体验收：未完成。不能使用“EXPORT EXCEL完美修好／所有入口恢复／工作已收尾”。
+本轮可完成的是证据报告归档；下载修复暂停等待用户日后恢复。
+
+十二、官方资料与外部建议的边界
+
+Wix Custom Element：
+https://support.wix.com/en/article/wix-editor-adding-a-custom-element-to-your-site
+https://dev.wix.com/docs/develop-websites/articles/wix-editor-elements/custom-elements/about-custom-elements
+Wix HTML Component sandbox：
+https://support.wix.com/en/article/studio-editor-adding-an-html-iframe-element
+HTML sandbox继承／禁止下载：
+https://html.spec.whatwg.org/multipage/browsers.html#sandboxing
+点击激活不是简单“同步／异步即消失”：
+https://html.spec.whatwg.org/multipage/interaction.html#tracking-user-activation
+getDownloadUrl正确API：
+https://dev.wix.com/docs/velo/apis/wix-media-backend/media-manager/get-download-url
+wixLocation.to签名：
+https://dev.wix.com/docs/velo/apis/wix-location-frontend/to
+Chromium错误码定义：
+https://chromium.googlesource.com/chromium/src/+/main/net/base/net_error_list.h
+Wix Trash：
+https://support.wix.com/en/article/wix-media-deleting-media-files-from-your-media-manager
+
+Gemini／Claude回复属于外部建议，不是官方批准或已测试代码。
+不能照抄 permissions.Admin、ttl对象参数、wixLocation.to('_blank')等历史错误示例。
+下次以本报告、精确代码、校验值及当前live证据继续，不依赖聊天记忆。
+
+附加归档说明：原本含客户身份的未推送本地归档1b538cb仅留本地，不发布其分支或标签。公开归档从已有远端d9fa4d9另起分支，避免敏感内容进入新增提交历史。

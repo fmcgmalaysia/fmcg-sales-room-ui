@@ -1,0 +1,19 @@
+{
+  "userSpecifiedPath": "Sales Room -> [TEST_IDENTITY_REDACTED] Entry -> ENTER BUYER ROOM -> native Download Excel",
+  "actualEntryClicked": true,
+  "salesTab": "51422084",
+  "createdBuyerTab": "51422211",
+  "buyerUrlBeforeDownload": "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=[TEST_IDENTITY_REDACTED]",
+  "customerDataLoaded": "[TEST_IDENTITY_REDACTED] / [TEST_IDENTITY_REDACTED] / SGD / 9 products",
+  "downloadLinkPrepared": true,
+  "downloadEvent": "Timed out after 15000ms",
+  "actualChromeErrorPage": "download-files.wixmp.com is blocked; This page has been blocked by Chrome; ERR_BLOCKED_BY_CLIENT",
+  "salesIframeSandboxObserved": "allow-same-origin allow-forms allow-popups allow-modals allow-scripts allow-pointer-lock",
+  "repositoryEntryHandler": "index.html:964 window.open(buyerRoomAdminUrlV27(customer.customerId), '_blank', 'noopener')",
+  "diagnosis": "Observed Entry popup fails while direct ordinary tab downloads. Sandbox propagation and absence of allow-downloads match HTML Standard. Exact Chrome policy error alone is not proof of every possible blocking cause; the observed iframe sandbox plus popup creation identifies the likely path-specific mechanism.",
+  "standard": "https://html.spec.whatwg.org/multipage/browsers.html",
+  "screenshot": "entry-download-blocked-20261007.png",
+  "productionEdits": 0,
+  "scopeForNextDecision": "Entry page-opening mechanism, not Excel generation or file retention",
+  "userAcceptance": "Failed; not closed"
+}

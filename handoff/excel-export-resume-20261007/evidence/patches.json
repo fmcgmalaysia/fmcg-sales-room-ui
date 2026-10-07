@@ -1,0 +1,72 @@
+{
+  "media": [
+    {
+      "find": "import { mediaManager } from 'wix-media-backend';",
+      "replace": "import { mediaManager } from 'wix-media-backend';\nimport { createHash } from 'crypto';"
+    },
+    {
+      "find": "  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length };",
+      "replace": "  const versionKey = createHash('sha256').update(JSON.stringify({ id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');\n  return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length, versionKey };"
+    },
+    {
+      "find": "export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl) {",
+      "replace": "async function selectionExportFolder(safeCustomerId) {\n  const roots = await mediaManager.listFolders(null, null, null);\n  const root = roots.find(folder => folder.folderName === 'buyer-selection-exports');\n  if (!root) return '';\n  const customers = await mediaManager.listFolders({ parentFolderId: root.folderId }, null, null);\n  return customers.find(folder => folder.folderName === safeCustomerId)?.folderId || '';\n}\n\nexport async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl) {"
+    },
+    {
+      "find": "  const uploaded = await mediaManager.upload(",
+      "replace": "  const storedName = 'fmcgmalaysia.com-My-Selection-' + file.versionKey + '.xlsx';\n  const folderId = await selectionExportFolder(safeCustomerId);\n  const existingFiles = folderId ? await mediaManager.listFiles({ parentFolderId: folderId }, null, null) : [];\n  let uploaded = existingFiles.find(candidate => candidate.originalFileName === storedName && candidate.isPrivate === true);\n  const reused = Boolean(uploaded);\n  if (!uploaded) uploaded = await mediaManager.upload("
+    },
+    {
+      "find": "    file.fileName,\r\n    {",
+      "replace": "    storedName,\r\n    {"
+    },
+    {
+      "find": "  const downloadUrl = await mediaManager.getDownloadUrl(uploaded.fileUrl, 10, file.fileName, null);",
+      "replace": "  const info = await mediaManager.getFileInfo(uploaded.fileUrl);\n  if (info.isPrivate !== true) throw new Error('Excel export must remain private.');\n  const downloadUrl = await mediaManager.getDownloadUrl(info.fileUrl, 10, file.fileName, null);"
+    },
+    {
+      "find": "    rowCount: file.rowCount\r\n  };",
+      "replace": "    rowCount: file.rowCount,\r\n    reused,\r\n    versionKey: file.versionKey\r\n  };"
+    }
+  ],
+  "backend": [
+    {
+      "find": "import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';",
+      "replace": "import { buildBuyerOrderDownload } from 'backend/buyerOrderDownload.js';\nimport { createBuyerSelectionMediaDownload } from 'backend/buyerSelectionDownload.js';"
+    },
+    {
+      "find": "export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {\r\n  const buyer = await resolveBuyerContext(assistCustomerId);\r\n  const issued = createBuyerSelectionExportToken(buyer.customerId, await getSecret(QD_ROUTER_SECRET), 3600);\r\n  return { ok: true, ...issued };\r\n});",
+      "replace": "export const createBuyerSelectionDownload = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {\n  const buyer = await resolveBuyerContext(assistCustomerId);\n  return createBuyerSelectionMediaDownload(buyer.customerId, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room');\n});"
+    }
+  ],
+  "page": [
+    {
+      "find": "  let downloadPreparation = null;",
+      "replace": "  let downloadPreparation = null;\n  let selectionDataKey = '';"
+    },
+    {
+      "find": "      const result = await createBuyerSelectionDownload(assistCustomerId);\r\n      if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');\r\n      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\\/+$/, '');\r\n      selectionDownloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;\r\n      activeDownloadExpiresAt = Number(result.expiresAt);\r\n      updateDownloadButtonVisibility();",
+      "replace": "      const result = await createBuyerSelectionDownload(assistCustomerId);\n      if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');\n      if (preparingKey !== selectionDataKey) return;\n      selectionDownloadUrl = result.url;\n      activeDownloadExpiresAt = Number(result.expiresAt);\n      downloadButton.link = selectionDownloadUrl;\n      downloadButton.target = '_self';\n      updateDownloadButtonVisibility();"
+    },
+    {
+      "find": "    downloadPreparation = (async () => {",
+      "replace": "    const preparingKey = selectionDataKey;\n    downloadPreparation = (async () => {"
+    },
+    {
+      "find": "    } finally { downloadPreparation = null; }",
+      "replace": "    } finally { downloadPreparation = null; if (preparingKey !== selectionDataKey) prepareSelectionDownload(); }"
+    },
+    {
+      "find": "    wixLocationFrontend.to(selectionDownloadUrl);\r\n    setTimeout(() => prepareSelectionDownload(true), 1500);",
+      "replace": "    // The native button follows its prebound link. Refresh only the short-lived URL.\n    setTimeout(() => prepareSelectionDownload(true), 1500);"
+    },
+    {
+      "find": "    const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\\/+$/, '');\r\n    frame.postMessage",
+      "replace": "    const currentSelectionKey = JSON.stringify(result.myList || []);\n    if (currentSelectionKey !== selectionDataKey) {\n      selectionDataKey = currentSelectionKey;\n      selectionDownloadUrl = '';\n      activeDownloadExpiresAt = 0;\n      downloadButton.disable();\n      downloadButton.link = '';\n    }\n    const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\\/+$/, '');\n    frame.postMessage"
+    },
+    {
+      "find": "  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);",
+      "replace": "  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);\n  setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);"
+    }
+  ]
+}

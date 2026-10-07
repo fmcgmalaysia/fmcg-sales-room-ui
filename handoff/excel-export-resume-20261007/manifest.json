@@ -1,0 +1,211 @@
+{
+  "date": "2026-10-07",
+  "scope": "Archived success mechanisms and current failure; not complete Entry acceptance",
+  "archivedFiles": [
+    {
+      "file": ".gitattributes",
+      "bytes": 8,
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "file": "CHECKS.txt",
+      "bytes": 1181,
+      "sha256": "6764554a3f3f42a2df70b0ba26e85fce752cf455aa15eb9e4cd8b54fb74262ac",
+      "normalizedLfTrimEndSha256": "df78e8db61d433b4f3f9e0fec3d15bfa50da42bfcc09595c9734dce8c416571e"
+    },
+    {
+      "file": "evidence/catalogueAuth-before.js",
+      "bytes": 53739,
+      "sha256": "2a3193fe0e7978b27c04652f2b7128c349a1c73973e9de23fd12a3165d91ecec",
+      "normalizedLfTrimEndSha256": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b"
+    },
+    {
+      "file": "evidence/check-download.mjs",
+      "bytes": 4843,
+      "sha256": "4b70cfd4f7a62b67843b1cfac84fe97a0f50159791e6ca8ef771b8fce6c2adcf"
+    },
+    {
+      "file": "evidence/download-validation.json",
+      "bytes": 390,
+      "sha256": "5d7b97ac30bb4680dfc667996dc40893aeed1fc7e651bd675a54a9470124e497",
+      "normalizedLfTrimEndSha256": "4de2f0f0b8ca2d14e3c73bce730d1a28c457d953834489cce28d7814bd21c543"
+    },
+    {
+      "file": "evidence/entry-path-reproduction-20261007.json",
+      "bytes": 1511,
+      "sha256": "3d860524b6a708eeb7c7cd86babcc12839b219139de0a48562378a8c1f6cd1d4",
+      "normalizedLfTrimEndSha256": "a8304e3ec229e015c38f689a24412a562ee2f01ff4863ea5ca198020264c1702"
+    },
+    {
+      "file": "evidence/entry-release-sanitized.json",
+      "bytes": 2160,
+      "sha256": "9992cb14e9d52a806b1ef5c6cc1b4f8501e82a13aff1c2fba01d28928854ec83",
+      "normalizedLfTrimEndSha256": "fc39fc2583d1aa12b7b3a92f8e4a3e85408c226cfe77773d7e7ec9db82ca02a8"
+    },
+    {
+      "file": "evidence/historical-sandbox-diagnosis.json",
+      "bytes": 2244,
+      "sha256": "3ddb4cf81b6b18c532f03189432ea98a9e83c1adf3940152372af9cd0402e884",
+      "normalizedLfTrimEndSha256": "ec06cc8545dafeae3e2f2e7586697b594eb97167dd47343ce48419cafd186de7"
+    },
+    {
+      "file": "evidence/latest-readonly-failure.json",
+      "bytes": 543,
+      "sha256": "854a63c42ae7165dfe86960679e2b36c77ef5ef2c8278b8404c883a00c8f3ea6",
+      "normalizedLfTrimEndSha256": "64836f6adb1b4a479c040ee777cc72d32ecb8eab104a3fa61360c31a3f85dc26"
+    },
+    {
+      "file": "evidence/media-before.js",
+      "bytes": 8742,
+      "sha256": "074b56fa52b3d08ab210856bc6d484cff7ad1eb13c8531b10cc47edb214d97de",
+      "normalizedLfTrimEndSha256": "b3de57c213a8008b071d68180575526d9c5870a0180319d62f8619ce8baf4944"
+    },
+    {
+      "file": "evidence/ordinary-success-release-historical.json",
+      "bytes": 3788,
+      "sha256": "a032db6ba4c68830d5d577f414a758c0dc583a5b69909b9aa6fe3e3d76cce3c0",
+      "normalizedLfTrimEndSha256": "c2a687688c5d2a09b1d9dc54a7943c0b018870d32c78eae1f5796f9e615b8063"
+    },
+    {
+      "file": "evidence/page-before.js",
+      "bytes": 12723,
+      "sha256": "967431dbdfe329bf851e660d5874d77bd572b77eb2d4eb8bdb6e823d4492fde0",
+      "normalizedLfTrimEndSha256": "9deb99bcda851a441a563427e16dfa23be936d3d395d9b62b80530002a183817"
+    },
+    {
+      "file": "evidence/patches.json",
+      "bytes": 6761,
+      "sha256": "edba8ccd41e8292000b07936593c42d7723f8f4d85703b6a0f8adfc06cec8529",
+      "normalizedLfTrimEndSha256": "f49610e990ae4c3b56703285462cb9c8672747303dfe29e0d3d324b06d304b0f"
+    },
+    {
+      "file": "evidence/user-retest-failure-20261007.json",
+      "bytes": 882,
+      "sha256": "3cd2c39a637335a5f8f715ecb000e1d6163e3829d81280d15702a0900c5185fe",
+      "normalizedLfTrimEndSha256": "a0529dcbf026b77097efb43eeb81c7268bb26dc19a24a62240c525facade2be4"
+    },
+    {
+      "file": "production-files-before.json",
+      "bytes": 712,
+      "sha256": "0ae2572d58b88941e89dfbcd93ce5e1f6af9cf39de378f0c5e606fd83d89cf67",
+      "normalizedLfTrimEndSha256": "b176377bb96639605716a1aadb30686505fb760ad3c87c188edc109b06441f03"
+    },
+    {
+      "file": "REPORT.txt",
+      "bytes": 18623,
+      "sha256": "360ec59ed56577db81d8756b2a7ca0e0a48856d20524c15f24aa3ad155f39b09",
+      "normalizedLfTrimEndSha256": "6c6292a15164683f90d0c59bd0edb471ea9de290bf4e4e99cc6a4d2484e487b9"
+    },
+    {
+      "file": "snapshots/entry-restored/sales-page-before.js",
+      "bytes": 23765,
+      "sha256": "55fb6ccedbca376d66688b1f51deef3a2a04f1756406c394e0712f987f9be0c4",
+      "normalizedLfTrimEndSha256": "e522cb0ef7b25184449a89e5523a3b81ead278857bc783338d6bb7785020b773"
+    },
+    {
+      "file": "snapshots/entry-restored/sales-page-readback.js",
+      "bytes": 23765,
+      "sha256": "422284cbc1ef94483c128e6355e8812da7c1ca8dfd4f8ba2add397cd54c45464",
+      "normalizedLfTrimEndSha256": "a91a25d94fb12a701893e6ceeec7a5c36fb661595cb3c70fdc5688ee5a70c9b1"
+    },
+    {
+      "file": "snapshots/ordinary-success/buyer-room-page.js",
+      "bytes": 13386,
+      "sha256": "cb68581bb71b101071466e3caa47a35f58da721eaa4a594d3522f2dcca1ebe01",
+      "normalizedLfTrimEndSha256": "0f8dbff8109e70e281896fac00f72862cafa7d8c1c3c8f3a5faa924c90fc6131"
+    },
+    {
+      "file": "snapshots/ordinary-success/buyerSelectionDownload.js",
+      "bytes": 10063,
+      "sha256": "c6659eb477a7a1fe7c5764fab365a821e9f5838678b40306d8006f3506bad562",
+      "normalizedLfTrimEndSha256": "9710eb1dd146e4b1b87024d20e52dec35932889b0b72fed4d1766afa88451969"
+    },
+    {
+      "file": "snapshots/ordinary-success/catalogueAuth.web.js",
+      "bytes": 53802,
+      "sha256": "ed17eec456dd75615c2821b3b60ea543650c25a2fd6f0108e64d6626a7f8c05c",
+      "normalizedLfTrimEndSha256": "7cf6f64f038d3193b1ad3a0a1ecbede7325e024ebbde6e9293515688763557e4"
+    },
+    {
+      "file": "snapshots/repository-b70ece5/backend/buyerSelectionDownload.js",
+      "bytes": 9856,
+      "sha256": "d4dd98a433f147a690864f700b576b5288af20ed204841b62a486ed3b02290bc",
+      "normalizedLfTrimEndSha256": "198b81bcb41c8104f2d2e3bd5bf84ce0a3c81d5e874b02c994cafe4384a936e0"
+    },
+    {
+      "file": "snapshots/repository-b70ece5/backend/buyerSelectionExcel.js",
+      "bytes": 18686,
+      "sha256": "e494ca9678e098e3601dfd4acbc029e37c107bb5d3d54e7fb29f9a8c6bc80e2f",
+      "normalizedLfTrimEndSha256": "a882c7911812c5cee4dadcc6dd7739541f1efd0a8aba6e5c3f821d5287879bfd"
+    },
+    {
+      "file": "snapshots/repository-b70ece5/backend/catalogueAuth.web.js",
+      "bytes": 53678,
+      "sha256": "ac43cc479014e836c9410884dfd0f0751f5207d7c07bb4b1ad5153ec645c6912",
+      "normalizedLfTrimEndSha256": "7cf6f64f038d3193b1ad3a0a1ecbede7325e024ebbde6e9293515688763557e4"
+    },
+    {
+      "file": "snapshots/repository-b70ece5/buyer-room/wix/buyer-room-page.js",
+      "bytes": 13255,
+      "sha256": "0b8c405f13cd07a4a304dcdf576a913ad0bb259d5d2fd6becc7fbed5f4124a50",
+      "normalizedLfTrimEndSha256": "0f8dbff8109e70e281896fac00f72862cafa7d8c1c3c8f3a5faa924c90fc6131"
+    }
+  ],
+  "localOnlyEvidence": [
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\ordinary-selection-download-20261006\\entry-download-blocked-20261007.png",
+      "bytes": 14900,
+      "sha256": "53af6140905420319d1907a85fceebce5c808a909f086edb6d803b139b41c11c",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\ordinary-selection-download-20261006\\normal-public-success.png",
+      "bytes": 107013,
+      "sha256": "f36d1637c279807bcff8454f485667347652709b3fb6875e37f5920f99db9793",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\ordinary-selection-download-20261006\\ordinary-native-download.xlsx",
+      "bytes": 11161,
+      "sha256": "1883018b67dc95f040acd89ff32f821ac6892179129288a80842892c65164bbd",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\ordinary-selection-download-20261006\\wix-publish.png",
+      "bytes": 56195,
+      "sha256": "3356b92a0a79ffc77d4cbb23b3a4acff74b095cafe14641e79af33d7b442635e",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\restore-html-entry-20261007\\new-buyer-tab.png",
+      "bytes": 111885,
+      "sha256": "30861ddfd51463ef64a602bd06cc0258151d7429c785703ddecbfe783c884d55",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\restore-html-entry-20261007\\sales-entry-preserved.png",
+      "bytes": 63825,
+      "sha256": "0d79de90a3a2fa9de5344e5a3f8b11b62540e9878d1aef6a7d6476c6799ba38d",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\restore-html-entry-20261007\\wix-publish.png",
+      "bytes": 54585,
+      "sha256": "297c5ea4dce967d3c65f0c8708bd1217d220398cb8f152479181ba9541d3638c",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\download-readonly-20261007\\buyer-click-no-download.png",
+      "bytes": 111661,
+      "sha256": "088a542dd7d5d11db3b9de4b6815e8650fcee4775ee19638756218c283ad9f8a",
+      "reasonNotUploaded": "Customer data / screenshot retained locally"
+    },
+    {
+      "path": "C:\\FMCG-WIX-LOCAL\\handoff\\restore-html-entry-20261007\\release.json",
+      "bytes": 2361,
+      "sha256": "f3821b28df13905dfe1b2e67fc921369bfc320599d2381b1877a497e70ccc937",
+      "reasonNotUploaded": "Original record contains obsolete signed URL; sanitized copy archived"
+    }
+  ],
+  "redaction": "Customer names, customer identifiers and staff names removed from public evidence; JS success snapshots byte-exact. Original report and raw evidence remain local."
+}

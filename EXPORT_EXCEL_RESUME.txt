@@ -1,0 +1,21 @@
+EXPORT EXCEL — READ THIS BEFORE ANY DOWNLOAD WORK
+
+Detailed Chinese report: handoff/excel-export-resume-20261007/REPORT.txt
+Exact historical live/repository snapshots: that directory's snapshots/.
+Hash manifest and checks: manifest.json and CHECKS.txt.
+Fixed evidence tag: archive/excel-export-redacted-evidence-20261007 (not a verified full-workflow release).
+
+Successful fixed simulation mechanism:
+verified/native-wix-fixed-file-download-20261006
+commit 257f9239ff27dc2563a9268e885b1e57b66b96c1
+
+Real My Selection mechanism: b70ece52fff02dac7669a0c856972b02aea95982.
+Independently opened ordinary Buyer Room downloaded actual private customer XLSX.
+Sales Room HTML Entry popup still fails; user incognito test also fails.
+Never treat simulation success, assistant direct-page success, HTTP200, or a build receipt
+as user acceptance of the complete Sales Room Entry download workflow.
+
+PAUSED: user cannot purchase/connect domain yet; no Custom Element implemented.
+Candidate: isolated Custom Element live test after domain/plan readiness, not migration now.
+Never overwrite whole Wix page or backend from this archive. Compare current live first.
+No production edits, Wix publish, Pages deployment, main merge or customer writes in this archival task.
