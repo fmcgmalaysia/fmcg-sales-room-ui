@@ -3,7 +3,7 @@
   "branch": "style/sales-progress-review-layout-room5",
   "base": "e5ac7ad424696ea1638fcdbaeca002def046af2a",
   "designApproval": "F concept: 非常满意; not production acceptance",
-  "codeCommit": null,
+  "codeCommit": "5ad4daa6ff5cc4e48a7461292d40a1647ead3614",
   "marker": "2026-10-08-sales-progress-review-layout-room5-v1",
   "codeComplete": true,
   "testsPassed": 105,
