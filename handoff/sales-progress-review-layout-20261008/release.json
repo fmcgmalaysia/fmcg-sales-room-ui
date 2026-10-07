@@ -14,13 +14,44 @@
     "sales-room/wix/onboarding.web.js": "ce5032b8c6e36c6a0f473c697878ce41548a8a201fab641d83358773d8f9345f",
     "sales-room/wix/sales-room-page.js": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4"
   },
-  "pages": "not deployed",
-  "wix": "not synchronized or published",
-  "publicCandidate": "not verified",
+  "pages": {
+    "commit": "af41d1e7a2bf3a8e4e6e9509816c5aeaae482057",
+    "run": 37653763859,
+    "job": 112903549088,
+    "success": true,
+    "durationSeconds": 295,
+    "exactScriptsAndStyles": true,
+    "marker": "2026-10-08-sales-progress-review-layout-room5-v1"
+  },
+  "wix": {
+    "publishedLiveReceipt": true,
+    "exactNormalizedReadback": true,
+    "onboardingRawSha256": "a1dba8a8b8ef5b3387effe2776bb843f013d1760e8d2f13df90d017cddd0f342",
+    "salesPageRawSha256": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4",
+    "independentDeploymentId": null
+  },
+  "publicCandidate": {
+    "verified": false,
+    "blocker": "Account/customer initialization remains loading after refresh; no captured error; cause not determined",
+    "salesIframeSrcObserved": "20260924-workspace-pages-v16",
+    "livePlanningWriteAttempted": false,
+    "liveQuantityWriteAttempted": false,
+    "userManualRefreshRequested": true
+  },
   "userAcceptance": "pending",
-  "temporaryPermission": "not expanded; main-only",
+  "temporaryPermission": "revoked; main-only",
   "mainMerged": false,
   "dateScope": "per Order ID; shared customer/sales calendar date",
   "editLocation": "Order Progress",
-  "buyerChanges": "deferred"
+  "buyerChanges": "deferred",
+  "authorization": "确认",
+  "preReleaseBaseline": {
+    "testOrderQtyCtn": 100,
+    "testOrderValue": 8160,
+    "testOrderCbm": 4.54,
+    "buyerActiveTasks": 16,
+    "buyerQuantityHistoryEvents": 6,
+    "buyerHistoryTaskRows": 3,
+    "savedDraftCtn": 50
+  }
 }
