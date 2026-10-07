@@ -1,0 +1,63 @@
+FMCG Malaysia — 2026-10-07 全天工作与收尾报告
+日期按 Asia/Kuala_Lumpur。此文件是当天状态总索引；历史候选说明不能覆盖本报告中的实际结果和失败反馈。
+
+一、先回答“进行到一半的工作是什么”
+
+刚才进行的是 Buyer Room 加单累加、Order Change History 显示、原生 X 关闭及相应验收，不是在优化 Send Order Request 成功弹窗的 Excel 按钮。
+用户要求 Excel 按钮工作先暂停。本次没有改 Excel 生成器、下载事件、交付机制或权限；之前只是尝试验证每次交单凭证，实际下载没有落盘。后续收尾不再点击、修复或测试 Excel 下载。
+
+最新工作状态：加单候选 a1f2b4973b813974c2ca2c1304401f680ae6a453 已获得 Wix 上线回执；记录补齐到 862ad6b。当前 Pages HTML 是 7053ebda270f183e3dd1fd7227093f8c86a492a9，build-version=2026-10-07-history-product-identifiers-room5-v1。
+真实假数据测试：原 SUNQUICK 30 箱，增加用户准备的1000箱，再加1箱、2箱，最终1033箱。Buyer和Sales原任务一致，15行活动任务保持；History恰好3条，每次增加仅记录一次，Barcode与名称下方Packing Size正确。原Order On、锁定价格和Pending Committed Qty保留。
+最后2箱曾出现Wix通用请求错误/500，同一请求编号重试恢复，没有重复加量。根因未确认；不能把当前结果称为生产稳定性已经完全解决。
+
+二、当天完成的功能、修订与记录
+
+1. Sales Room Entry恢复HTML绿色入口一次点击打开新标签，保留Sales Room。最终代码563feb9，PR20，Pages37501555267及Wix回执、真实入口检查已记录；当前标签试验和原生叠加试验不是最终版本。
+2. EXPORT EXCEL详细接续报告与成功/失败证据归档：e4cf05bf，PR21，archive/excel-export-redacted-evidence-20261007。固定模拟成功、独立页面成功与真实Entry路径失败分开记录；归档完成不等于下载修复完成。
+3. Buyer Room基础界面：左菜单框内双语Admin说明；删除冗余标题产品计数；My Selection/Order Form图片40px与既有行高；统一浅灰蓝表头；浅灰蓝悬停，保留Track移动和编辑按钮放大，去阴影。最终703123f，PR22。早上Excel只调整顶部距离，未变更机制。
+4. My Selection和Order Form直接共用Food→Non Food→Brand→Sort Number排序，搜索/With Qty相对顺序一致。f27b3cc，PR23。两个页面9项真实排列已核对。
+5. 上午资料归档a3899bd、PR24；客户名字间歇性加载调查停止记录b3d9084。没有替换身份加载或认证流程，成功样本不能证明间歇性故障已修复。
+6. Track布局：红色任务数字按行计数；紧凑加粗Current Status和History标签；橙色历史计数；数量变更联系销售员提示移到Active Item Progress同层；Descriptions合并名称/包装；规定11列顺序；客户币种；紧凑列宽且不增加底部横向滚动。PR25/27，最终修订58aed05及后续3f50d9b。早期1280px滚动候选已被后续一屏布局取代。
+7. 全Buyer Room时间列统一浏览器本地IANA时区，Today/Yesterday以本地日期判断，24小时制；其他日期DD-MM-YY。侧栏显示时区；日期型Goods Expiry不因时区改变日期。9dc7477，PR26，随PR27联合部署；不是仍然未部署的候选。
+8. Goods Expiry问号：英文提示、黄色圆圈、手指光标；Track Order On下方by NAME为9px灰色；Qty Updated保持MASTER提供Committed时间的未来占位；Goods Expiry默认空白，按客户要求提供。零CBM胶囊延用Order Form方式，Pending不伪造数值。
+9. 请求截图指定的Barcode/时间/普通CBM字体weight540，by LAW原状态保留，红CBM胶囊原样保留。14fa5f7，PR28。
+10. 交单即时等待卡：Preparing your order / Sending your order，约10秒为估计，成功/失败响应关闭；失败恢复原Review，不用定时器强制成功、不另发请求。22d6525，PR29；后来在真实交单中观察到。Edited Time最终通过240→190px列分配向右移动约50px，3f50d9b。
+11. Order Received完整窄版/图片留白试验出现用户不满意布局及X失败。PR29的Fit图片和弹窗媒体CSS已在PR30撤回；全局CSS恢复原687字符，图片恢复Fill。该布局试验不能作为成功最终版。完整弹窗重新设计仍未实施，不在本次收尾中冒充完成。
+12. Order Change History名称、Change Details叙事、Goods Expiry名称、全Buyer产品名字黑色title悬停删除、Track表头与Order Form一致、Track按产品顺序分组，重复请求相邻。3f50d9b，PR31；当时只改显示，并未合并数量。
+13. X关闭：发现Wix内置X/Close开关原来均关闭。开启内置X，button1原生Close Popup、35×37、右16/上12；保留旧closeButton ID/事件并隐藏旧文字X。9a76054，PR32，真实多次一击关闭通过。原自定义文字间歇失效根因未证明；PR30一次助手成功已被用户后续失败反馈覆盖，不能作为最终恢复。
+14. History增加Barcode独立列，Packing Size在产品名下方，保留原始/上次/新数量、叙事、人员、当地时间。7053ebd，PR33；最初没有实际历史行，后来PR34真实加单产生3条记录，1316px容器=scrollWidth，无底部横滚。
+15. 加单业务：a1f2b49，PR34。提交NCT/GHR前，同产品/包装/EA/币种/锁定价格的未Committed活动行累加Effective Requested Qty；转交后或不匹配则新任务。保留逐次原始凭证，新增凭证不重复算活动任务。使用现有CMS payload与Sales同一ORDER-LOCK，逐次审计、绝对量恢复计划和请求幂等。没有追溯清理原假数据，没有开发MASTER，没有改Committed Qty。
+
+三、最新四个发布阶段分别记录
+
+代码版本：功能代码a1f2b49；最新功能接续记录862ad6b；46项相关检查通过。当天文件和源码都保留在任务分支。
+GitHub Pages：UI7053ebd；run37598512517/job112716866684成功，公开marker及完整内联脚本与源一致。后台补丁不需要重新部署Pages。临时分支授权已撤销，收尾复核为main-only。
+Wix Studio：Buyer/Sales后台通过6/8处唯一上下文补丁同步，精确读回相符；Success2026-10-07 17:44:52 MYT及published/live回执保留。收尾再次读取Buyer后台、Sales后台、Buyer页面、弹窗代码，与源一致；全局CSS为原687字符。独立部署ID没有捕获，不虚构。
+真实公开验收：刷新后正确客户、正确UI版本；SUNQUICK1033箱、三条历史、15活动行、Sales列表和明细1033箱/1产品/SGD28076.94；X及即时等待反馈已检查。第三次通用请求/500和一次同编号恢复仍列为稳定性待验证，真实Excel下载未验收且已暂停；不称整条业务及下载路径全部“发布完成”。用户独立最终验收待定。
+
+四、明确暂停、待确认或尚未实施
+
+— 两个Excel下载及Send Order Request弹窗的Excel按钮优化：暂停。固定模拟成功不替代客户完整路径；本次下载尝试没有文件落盘，后续显示ExcelUnavailable。不得在“收尾”名义下恢复下载诊断。
+— PUBLISH时生成新Excel、旧版保留30天/定时清理：尚未实施。当前选品导出按内容版本准备/复用，不等于已实现PUBLISH钩子。
+— Custom Element正式域名/套餐测试：尚未实施，域名/套餐采购与支付没有完成。
+— Sales蓝色PUBLISH及Apps Script异常：继续暂停，中央Version16不变；线上6行报价诊断按用户明确授权保留，未新增报价改造。
+— Entry后客户名字间歇性加载/登录：调查停止，根因未确定。当前成功加载不覆盖用户失败。
+— Wix通用请求/500：本次加单曾发生，同一编号重试恢复；日志未确定根因。没有连接Google Cloud日志或给第三方新增访问。
+— 完整Order Received弹窗窄版/顶部图片留白重新设计：原试验已撤回，尚未实施；当前只保留原布局和新原生X。
+— MASTER页面、Committed Qty/Qty Updated/Goods Expiry正式反馈、真实NCT/GHR交付与提交成功数据契约：尚未实施。提交后锁定/新行边界只有逻辑测试，不能称已完成真实MASTER交单。
+— 域名、套餐/CMS容量、内外部管理架构和资料安全属于讨论，没有采购、迁移或内部站点开发。
+
+五、GitHub与恢复边界
+
+main仍是d16cd1bfd311b58e772c802f92d498e39dbb91b3，仅允许已被用户验收的生产基准进入。当天PR20–34在核对时均未合并，保持draft。收尾是代码、证据、状态与接续说明完整保存；不自动产生用户验收。
+所有现有verified标签保留，没有force-push、删除分支或删除保护历史。本报告使用archive标签，不能当作verified标签部署。
+已保存5份收尾时实际Wix代码到live/，manifest.json保留原始字节hash与Pages/代码引用；加单前后原码及6/8精确补丁在handoff/buyer-pretransfer-additions-20261007/。图片、实际订单ID、客户数据和旧私有下载凭证保留本地，不上传本报告。
+已被接受的加单数据、逐次凭证和History现在存在。不得直接部署旧读取器或全量回滚：旧读取器会重复显示已关联凭证、漏掉新审计。恢复必须保留receiptOnly/addedToOrderId读取过滤、已保存有效数量、原始逐次凭证及审计，并只处理被证实故障；先规划数据兼容方案。
+原有handoff/buyer-native-selection-download-20261006/release.json包含旧私有记录，其既有未提交修改不上传、不重置。它不是本次漏掉的生产代码。
+
+六、下次接续
+
+先读AGENTS.md、START_HERE.md及本报告；再读PR34接续记录和本报告manifest。先核对线上与源，别用旧main替换当前站点。
+继续加单验收时：检查原有1033任务与3条历史、不重复加量、Sales一致；只在用户明确的假数据中操作，不盲目重发不同编号。发生错误先记录并确认保存状态；不抹掉已成功凭证。
+Excel须等用户明确恢复授权，再读PR21报告，从真实Sales Entry完整路径验证落盘；不会因为本报告完成而自动启动。
+用户确认相关具体功能之后，再保存对应verified精确基准并评估main合并；本次没有进行这一步。

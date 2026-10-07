@@ -1,5 +1,7 @@
 # FMCG Malaysia web interfaces
 
+Latest 2026-10-07 status and exact live-source archive: [day closeout report](handoff/room5-day-closeout-20261007/REPORT.txt). Addition code a1f2b49 is installed for testing; independent acceptance and Wix request stability remain pending. Excel work is explicitly paused. Do not deploy this documentation branch or old main as a site recovery.
+
 This repository contains two separate workspaces. Its historical GitHub name, `fmcg-sales-room-ui`, does **not** mean that Buyer Room or Catalogue changes belong to Sales Room.
 
 | Area | Audience and purpose | Source / existing entry point |
