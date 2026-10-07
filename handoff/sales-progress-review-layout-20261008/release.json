@@ -53,5 +53,19 @@
     "buyerQuantityHistoryEvents": 6,
     "buyerHistoryTaskRows": 3,
     "savedDraftCtn": 50
+  },
+  "remoteRecordSync": {
+    "success": false,
+    "lastRemoteHead": "af41d1e7a2bf3a8e4e6e9509816c5aeaae482057",
+    "localRecordCommits": [
+      "1106f1b",
+      "1cb1729"
+    ],
+    "pushAttempts": 3,
+    "errors": [
+      "fatal error in commit_refs",
+      "Internal Server Error"
+    ],
+    "prUpdateSucceeded": false
   }
 }
