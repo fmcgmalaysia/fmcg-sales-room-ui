@@ -26,7 +26,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
     insert: async (name, row) => {
       const id = row._id || row.title;
       if (collection(name).has(id)) throw new Error('Duplicate ID');
-      if (failAudit && JSON.parse(row.payload || '{}').action === 'SALES_QTY_UPDATED') throw new Error('Audit unavailable');
+      if (failAudit && ['SALES_QTY_UPDATED', 'CUSTOMER_PO_UPDATED'].includes(JSON.parse(row.payload || '{}').action)) throw new Error('Audit unavailable');
       const next = { ...copy(row), _id: id }; collection(name).set(id, next); writes.push({ operation: 'insert', collection: name, row: copy(next) }); return copy(next);
     },
     update: async (name, row) => { collection(name).set(row._id, copy(row)); writes.push({ operation: 'update', collection: name, row: copy(row) }); return copy(row); },
@@ -37,7 +37,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
   const context = vm.createContext({ wixData, Permissions: { SiteMember: 'member' }, webMethod: (_, method) => method, wixRealtimeBackend: { publish: async (channel, message) => signals.push(copy({ channel, message })) }, console, Date, Map, Set });
   vm.runInContext(source + (buyer
     ? "\nresolveBuyerContext=async()=>({customerId:'C1'});globalThis.api={reduceBuyerOrderLine,getBuyerOrderDetail};"
-    : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,submitSalesRoomOrder,createSalesRoomProforma};`), context);
+    : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);
   return { ...context.api, collection, seed, writes, signals, data: (name, id) => JSON.parse(collection(name).get(id).payload) };
 }
 
@@ -224,4 +224,34 @@ test('all edited inline scripts parse as JavaScript', () => {
     const html = fs.readFileSync(path.join(root, filename), 'utf8');
     for (const [, source] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(source, { filename });
   }
+});
+
+test('customer PO survives reopening without changing quantities, totals, prices or processing PO', async () => {
+  const h=harness(); const line=h.data('WixBuyerOrderLines','line'); line.poNumber='PROCUREMENT-PO'; h.seed('WixBuyerOrderLines','line',line,{orderId:'O1',customerId:'C1'});
+  const before=h.data('WixBuyerOrders','order'); await h.saveSalesRoomOrderPo('O1',' CUSTOMER-PO-7 ',0,requestId);
+  const reopened=(await h.getSalesRoomOrderDetail('O1')).order;
+  assert.equal(reopened.customerPoNumber,'CUSTOMER-PO-7'); assert.equal(reopened.revision,1);
+  assert.deepEqual(h.data('WixBuyerOrderLines','line'),line);
+  assert.deepEqual(h.data('WixBuyerOrders','order'),{...before,customerPoNumber:'CUSTOMER-PO-7',revision:1});
+});
+test('PO replay is idempotent, and conflicts, stale changes and unassigned staff are rejected',async()=>{
+  const h=harness(); await h.saveSalesRoomOrderPo('O1','PO1',0,requestId); await h.saveSalesRoomOrderPo('O1','PO1',0,requestId);
+  assert.equal(h.data('WixBuyerOrders','order').revision,1); assert.equal([...h.collection('WixOrderAudit').values()].length,1);
+  await assert.rejects(h.saveSalesRoomOrderPo('O1','OTHER',1,requestId),/conflict/);
+  await assert.rejects(h.saveSalesRoomOrderPo('O1','PO2',0,'22222222-2222-4222-8222-222222222222'),/changed/);
+  const other=harness({staffId:'OTHER'}); await assert.rejects(other.saveSalesRoomOrderPo('O1','PO',0,requestId),/Customer was not found/); assert.equal(other.writes.length,0);
+});
+test('PO audit failure restores the exact order and leaves quantities untouched',async()=>{
+  const h=harness({failAudit:true}),before=h.data('WixBuyerOrders','order'),line=h.data('WixBuyerOrderLines','line');
+  await assert.rejects(h.saveSalesRoomOrderPo('O1','PO',0,requestId),/Audit unavailable/); assert.deepEqual(h.data('WixBuyerOrders','order'),before); assert.deepEqual(h.data('WixBuyerOrderLines','line'),line);
+  assert.equal([...h.collection('WixOrderAudit').values()].length,0);
+});
+test('PO cannot change after transfer and a saved PO does not bypass the quantity revision guard',async()=>{
+  const h=harness(); await h.saveSalesRoomOrderPo('O1','PO1',0,requestId); await assert.rejects(h.saveSalesRoomOrderQty('O1','L1',12,0,requestId),/changed/);
+  await h.saveSalesRoomOrderQty('O1','L1',12,1,requestId); assert.equal(h.data('WixBuyerOrders','order').customerPoNumber,'PO1');
+  await h.submitSalesRoomOrder('O1','NCT'); await assert.rejects(h.saveSalesRoomOrderPo('O1','PO2',2,'22222222-2222-4222-8222-222222222222'),/locked after transfer/);
+});
+test('progress product metadata includes only authorized customer display fields',async()=>{
+  const h=harness(); h.seed('WixBuyerListItems','product',{customerId:'C1',id:'P1',barcode:'ONE',category:'FOOD',brandName:'A',sortNo:3,cost:123}); h.seed('WixBuyerListItems','other',{customerId:'C2',id:'SECRET',barcode:'OTHER'});
+  const result=await h.getSalesRoomOrderProgress('C1'); assert.equal(result.selectionOrder.length,1); assert.equal(result.selectionOrder[0].id,'P1'); assert.equal(result.selectionOrder[0].cost,undefined); assert.equal(result.orders.length,1);
 });

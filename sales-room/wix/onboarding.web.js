@@ -679,6 +679,37 @@ export const saveSalesRoomOrderQty = webMethod(
   }
 );
 
+export const saveSalesRoomOrderPo = webMethod(
+  Permissions.SiteMember,
+  async (orderId, customerPoNumber, expectedRevision, requestId) => {
+    const staff = await requireAuthorizedStaffContext();
+    if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+    const value = customerPoNumber.trim(), key = normalize(requestId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data, auditId = 'SALES-PO-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || prior.data.detail?.customerPoNumber !== value || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'P.O. number already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('P.O. number is locked after transfer to NCT / GHR.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      if (normalize(order.customerPoNumber) === value) return { ok: true, orderId: normalize(orderId), message: 'P.O. number is unchanged.' };
+      const at = new Date().toISOString(), next = { ...order, customerPoNumber: value, revision: quantity(order.revision) + 1 };
+      try {
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'CUSTOMER_PO_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), detail: { previousCustomerPoNumber: normalize(order.customerPoNumber), customerPoNumber: value, revision: next.revision } });
+      } catch (error) {
+        try { await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order); }
+        catch (recoveryError) { console.error('Order P.O. recovery failed', recoveryError); throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true }); }
+        throw error;
+      }
+      return { ok: true, orderId: normalize(orderId), message: 'P.O. number saved.' };
+    });
+  }
+);
+
 async function withSalesOrderMutation(orderId, staff, action) {
   const id = normalize(orderId);
   const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);
@@ -1342,9 +1373,10 @@ export const getSalesRoomOrderProgress = webMethod(
     const staff = await requireAuthorizedStaffContext();
     const customer = await findAuthorizedCustomer(customerId, staff);
     const normalizedCustomerId = normalize(customer.customerId);
-    const [orderRows, lineRows] = await Promise.all([
+    const [orderRows, lineRows, selectionRows] = await Promise.all([
       readAllPayloadRows(BUYER_ORDER_COLLECTION),
-      readAllPayloadRows(BUYER_LINE_COLLECTION)
+      readAllPayloadRows(BUYER_LINE_COLLECTION),
+      readAllPayloadRows(BUYER_LIST_COLLECTION)
     ]);
     const linesByOrder = new Map();
     for (const row of lineRows) {
@@ -1373,6 +1405,7 @@ export const getSalesRoomOrderProgress = webMethod(
       companyName: normalize(customer.title),
       customerShortName: upper(customer.customerShortName),
       activeLineCount: orders.reduce((sum, order) => sum + order.lines.length, 0),
+      selectionOrder: selectionRows.filter(row => normalize(row.data.customerId) === normalizedCustomerId).map(({ data }) => ({ id: data.id || data.itemId, barcode: data.barcode, category: data.category, mainCategory: data.mainCategory, brandName: data.brandName, sortNo: data.sortNo })),
       orders
     });
   }
