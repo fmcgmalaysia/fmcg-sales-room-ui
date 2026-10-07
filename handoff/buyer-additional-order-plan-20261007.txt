@@ -1,0 +1,43 @@
+Buyer additional-order execution plan — 2026-10-07
+Status: repository/read-only public inspection completed; NOT implemented, NOT deployed.
+
+Authority and regression status
+Read AGENTS.md, START_HERE.md, ROOM_5_CURRENT_STATE.md, PR31 CHANGE_AND_RECOVERY/RELEASE and PR30 STATUS.
+PR30 assistant single-click closure is superseded by the user's subsequent repeated X failure. Do not describe popup closure as recovered or user-verified. Current public page has Track 11 active lines; no Order Received popup is open. No new order was submitted by the assistant. Must obtain the failed real popup and recover closure before feature mutations, per recovery-first law.
+Current UI candidate: 3f50d9b, record 31f0089, PR31, user acceptance pending; not a verified recovery tag. Protected quantity behaviour: verified/buyer-quantity-arrows-20261006, 8e093fb; use scoped restoration only, never deploy the whole old checkout over newer work.
+
+User-confirmed business boundary
+Sales Room > Order Management > SUBMIT ORDER TO NCT / GHR, successful submission, separates pre-transfer accumulation from post-transfer new requests. MASTER implementation is not a prerequisite for Buyer accumulation. Do not build MASTER or destination delivery under this task. User says operational transfer is currently unavailable.
+Repository submitSalesRoomOrder currently writes SUBMITTED TO <destination>, destination, submittedAt and ORDER_SUBMITTED audit under ORDER-LOCK-<orderId>; it is not evidence of delivery into an implemented MASTER. Live code and actual status must be inspected before using this gate. Never set submitted status merely because a popup or button was clicked.
+
+Approved outcome / proposed safe matching defaults
+Pre-transfer: same customer, authoritative product identity, currency, locked CTN price, EA/packing snapshot match -> add to effective Requested Qty of the eligible active line. Preserve original quantity and original Order On. Different price/currency/pack -> separate line, never rewrite a locked price. Multiple historical eligible lines are ambiguous: no automatic retrospective consolidation.
+Post-transfer: preserve existing line; new request creates a separate unsubmitted line. Same-product rows remain adjacent under the existing Food -> Non Food -> Brand -> Sort Number display ordering.
+Do not update Committed Qty or Qty Updated; these belong to future MASTER feedback.
+Prospective rule only until the user explicitly authorizes historical consolidation. Existing 7UP 20/100/200 rows stay unchanged during implementation/testing. In a fresh prospectively eligible sequence, 20 +100 +200 -> one 320 CTN task with two addition records.
+
+Required consistency
+Persist actual effective quantities; do not aggregate only rendered rows. Recompute corresponding order effective carton total, amount and CBM using existing locked-price conventions. Preserve original snapshots for audit and existing Sales quantity edits. No new CMS collection/field or authentication changes inferred here.
+Addition audit must record request ID, target order/line ID, added quantity, prior/new effective quantities, original quantity, actor and UTC event time. Extend existing getBuyerOrderDetail audit inclusion and existing History rendering minimally; history owns event time, browser-local formatting already exists.
+Use the existing order lock identity to serialize additions against Sales edits and transfers. Two new concurrent submissions with no target also need a deterministic uniqueness strategy; cannot assume an order lock alone solves creation races. Prove the smallest strategy with failure/interleaving tests before implementation. No silent fallback to a competing accumulation path.
+Retry must replay the same receipt without applying quantity twice. Preserve original request identity throughout partial-save recovery. Audit failure must not leave an unrecorded accepted quantity; recovery failure must retain a lock and require review.
+User clarified Excel on 2026-10-07: original20 + this addition10 -> downloadable receipt contains THIS ADDITION10 only. Every submission receipt must remain immutable and include all products from that submission, even when accumulation targets several active orders. Existing return contract is a single orderId; preserve the existing receipt/download mechanism where possible. Current builder reads line.quantityCtn (original snapshot), not effectiveRequestedQtyCtn. Receipt retention alone must never create a second operational task/count in Sales or Track. Exact receipt-to-task mapping remains a design candidate pending inspection of all Sales consumers; do not implement a front-end-only aggregate or silently omit products. If single-order contract cannot accommodate matching targets minimally, report the required scope change before code writes.
+
+Acceptance matrix
+1. Fresh same-product 20 then +100 then +200 before transfer -> 320, exactly two narrative addition audits, original Order On preserved.
+2. Same request retry and double-click -> one addition / one receipt.
+3. Two concurrent additions -> correct sum, no lost update; creation race -> no duplicate eligible aggregate.
+4. Addition racing with successful NCT/GHR transfer -> one coherent outcome; transferred snapshot never changed.
+5. Price/currency/packing mismatch -> separate line, old snapshots unchanged.
+6. Mixed request: existing product + new product -> quantities, totals, receipt and Excel all account for both exactly once.
+7. Failure after line/order/audit save -> retry/recovery leaves consistent totals and immutable history.
+8. Sales quantity edit interaction -> addition uses latest effective quantity, increments revision coherently.
+9. Unauthorized customer, completed or committed line -> no mutation.
+10. Existing QTY blur/arrows/locks, ordering, published quotations, identity and download mechanism preserved; local time / by LAW styles unchanged.
+
+Expected inspection/patch scope after closure recovery
+backend/catalogueAuth.web.js submission + detail-audit filter; existing Sales mutation lock/status contract in sales-room/wix/onboarding.web.js; buyer-room.html existing detail refresh/history inclusion only if necessary; buyer-room/wix/buyer-room-page.js single receipt contract read-only until separately scoped necessity established. Tests must exercise actual backend functions and interleavings, not just duplicate implementation assertions.
+Before any code edit: capture live Wix backend/page exact copies and compare repository; identify scoped recovery points. Separate X repair branch from accumulation branch. No main merge, verified tag or deployment permission inferred from prior approvals. Four release stages and real user acceptance must be recorded separately.
+
+Read-only live comparison completed
+Wix editor catalogueAuth.web.js copied via code editor; compared with repository. Normalized content matches after trimEnd; differences only CRLF/trailing blank line. LF-normalized hashes before trim: live1dbf882b0784c461236b619bd12c08f9f43d2f4cb49d411abfbeffbebb26b8ec; repo807c19ff1838d0aadba2d1be662150c18eb06b0c05b8fb8c110611ecfd392b4c. Exact live copy local handoff/buyer-additional-order-live-backend-before-20261007.js. No Wix code writes/publish, no order writes. Current Order Received editor still shows original closeButton.onClick lightbox.close; real failed popup not open, root cause still unproven.
