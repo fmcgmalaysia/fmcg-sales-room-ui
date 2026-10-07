@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="2026-10-07-buyer-compact-grayblue-room5-v2">
+<meta name="build-version" content="2026-10-07-buyer-order-selection-sort-room5-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -388,7 +388,7 @@ function renderOrder(){
   // Detach old change handlers before replacing focused inputs: removing one
   // otherwise fires a stale blur/change and queues the same quantity twice.
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{input.onchange=null;input.oninput=null;input.onblur=null});
-  const q=$('orderSearch').value.trim(),qtyItems=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),scope=state.orderFilter==='qty'?qtyItems:state.my,items=byItemName(scope.filter(x=>matches(x,q)));
+  const q=$('orderSearch').value.trim(),qtyItems=state.my.filter(x=>isOrderable(x)&&num(x.orderQtyCtn)>0),scope=state.orderFilter==='qty'?qtyItems:state.my,items=bySelectionOrder(scope.filter(x=>matches(x,q)));
   $('orderAllCount').textContent=state.my.length;$('orderQtyCount').textContent=qtyItems.length;document.querySelectorAll('[data-order-filter]').forEach(button=>{const active=button.dataset.orderFilter===state.orderFilter;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.setAttribute('aria-pressed',String(active))});$('orderShowing').textContent=state.orderFilter==='qty'?`Showing ${items.length} items with quantity`:`Showing ${items.length} of ${state.my.length} items`;$('orderRows').className=items.length?'':'empty';
   $('orderRows').innerHTML=items.length?items.map(x=>{
     const orderable=isOrderable(x),qty=orderable?num(x.orderQtyCtn):0,amount=qty*ctnPrice(x),cbm=qty*num(x.cbmPerCtn),pending=state.pendingQuantities.get(String(x.id));

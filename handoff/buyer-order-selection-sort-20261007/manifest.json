@@ -1,0 +1,76 @@
+{
+  "archivedFiles": [
+    {
+      "file": ".gitattributes",
+      "bytes": 9,
+      "sha256": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992"
+    },
+    {
+      "file": "buyer-html-before.html",
+      "bytes": 182750,
+      "sha256": "d2907012a849f5a05d9e00ad420203699e5a5acf4de92a8f09bf092c5b285d9e"
+    },
+    {
+      "file": "CHANGE_AND_RECOVERY.txt",
+      "bytes": 2491,
+      "sha256": "28e82101fef8f6c6259e12b7cf63a56078b6bfd094fddf0e419dade66d48157d"
+    },
+    {
+      "file": "release.json",
+      "bytes": 2526,
+      "sha256": "1cedd4286b52697119fb9053a90e4c50bb38532acb409328f51a10c647db57e8"
+    },
+    {
+      "file": "wix-page-before.js",
+      "bytes": 13383,
+      "sha256": "19982440ff5f35713a56002401eaf42e65281203b5f74c162cb02e8b74727d0b"
+    },
+    {
+      "file": "wix-page-readback.js",
+      "bytes": 13387,
+      "sha256": "2d658fb04f4c7e1c6c895cb892cd6a8e4566f2ad6d919df27376a92ad7db4e7a"
+    }
+  ],
+  "localOnlyEvidence": [
+    {
+      "file": "public-final-order.png",
+      "bytes": 101354,
+      "sha256": "6823f38538d3a4c468b1032b637af7185608ae576e0dcdf330f48d7e40aaeff4"
+    },
+    {
+      "file": "public-final-my.png",
+      "bytes": 108779,
+      "sha256": "5b9421a5b4add411ae210d2e32f346bdd29e717f7a44369fd342835afa6c0e67"
+    },
+    {
+      "file": "public-order-form.png",
+      "bytes": 66907,
+      "sha256": "8d6a479a37583b6b44c8b36629cc4cb0c57be78a507d236ce639dce8b1d0c220"
+    },
+    {
+      "file": "public-my-selection.png",
+      "bytes": 107007,
+      "sha256": "3a6002b0b277e58293fb743dd176784f4942a4ef09ca116d9ca29e5370792116"
+    },
+    {
+      "file": "wix-publish.png",
+      "bytes": 64854,
+      "sha256": "6e24e2a4cd52042bc9158b929f2abdfcc2083a938a44dd1343d044bbf7e81871"
+    },
+    {
+      "file": "wix-publish.txt",
+      "bytes": 10206,
+      "sha256": "648455c10d71373f8b8cf413378107c12bd69ef5f48934dcc48fd4ab08e8ac57"
+    },
+    {
+      "file": "acceptance-result.json",
+      "bytes": 494,
+      "sha256": "52e6b3df68b78fb5c86f228b3789b33592003d5496347e1a48f80630f02d13ec"
+    },
+    {
+      "file": "permissions-restored.txt",
+      "bytes": 8583,
+      "sha256": "0ff2de3c185510494340e908425a6f05abe8a3a4ccb80e403e220ddb6ed0308c"
+    }
+  ]
+}
