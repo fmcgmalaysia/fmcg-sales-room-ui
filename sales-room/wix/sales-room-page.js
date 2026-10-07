@@ -1,4 +1,4 @@
-import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo } from 'backend/onboarding.web';
+import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web';
 import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web';
 import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web';
@@ -70,7 +70,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261007-sales-soft-blue-review-room5-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261008-sales-progress-review-layout-room5-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -503,6 +503,13 @@ $w.onReady(function () {
         const result = await saveSalesRoomOrderPo(message.orderId || '', message.customerPoNumber, message.expectedRevision, message.requestId || '');
         salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PO_RESULT', requestId: message.requestId, ...result });
       } catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PO_RESULT', requestId: message.requestId, ok: false, error: error?.message || 'P.O. number could not be saved.' }); }
+      return;
+    }
+    if (message.type === 'SALES_ROOM_ORDER_PLANNING_UPDATE') {
+      try {
+        const result = await saveSalesRoomOrderPlanning(message.orderId || '', message.customerPoNumber, message.estimatedShipmentDate, message.expectedRevision, message.requestId || '');
+        salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ...result });
+      } catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ok: false, error: error?.message || 'Order details could not be saved.' }); }
       return;
     }
     if (message.type === 'SALES_ROOM_ORDER_FORM_REQUEST') {

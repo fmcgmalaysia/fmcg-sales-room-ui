@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-08",
+  "branch": "style/sales-progress-review-layout-room5",
+  "base": "e5ac7ad424696ea1638fcdbaeca002def046af2a",
+  "designApproval": "F concept: 非常满意; not production acceptance",
+  "codeCommit": null,
+  "marker": "2026-10-08-sales-progress-review-layout-room5-v1",
+  "codeComplete": true,
+  "testsPassed": 105,
+  "protectedSourceCheck": true,
+  "candidateRawHashes": {
+    "index.html": "c315df018df2a5645430d65f294bd365ca04285453d50f05677c1954922721bb",
+    "sales-room/wix/onboarding.web.js": "ce5032b8c6e36c6a0f473c697878ce41548a8a201fab641d83358773d8f9345f",
+    "sales-room/wix/sales-room-page.js": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4"
+  },
+  "pages": "not deployed",
+  "wix": "not synchronized or published",
+  "publicCandidate": "not verified",
+  "userAcceptance": "pending",
+  "temporaryPermission": "not expanded; main-only",
+  "mainMerged": false,
+  "dateScope": "per Order ID; shared customer/sales calendar date",
+  "editLocation": "Order Progress",
+  "buyerChanges": "deferred"
+}
