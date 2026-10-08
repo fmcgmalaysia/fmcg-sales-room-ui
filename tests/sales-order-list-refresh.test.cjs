@@ -6,8 +6,10 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 function fixture(){
   const messages=[], elements=new Map(['dashboard','orders','order-progress'].map(id=>[id,{id,active:false,classList:{toggle(_name,on){elements.get(id).active=on},contains(){return elements.get(id).active}}}]));
+  elements.set('orderDetailArea',{innerHTML:'<div>Open Sales Review</div>'});
   let tick;
-  const context={document:{hidden:false,body:{classList:{toggle(){}}},querySelectorAll:selector=>selector==='.view'?[...elements.values()]:[],getElementById:id=>elements.get(id)},window:{parent:{postMessage:m=>messages.push(m)}},salesProgressCustomerId:'',salesRoomHandshakeComplete:true,requestSalesOrderProgress(){},requestCustomerRefresh(){},setInterval:fn=>{tick=fn;return 1}};
+  const context={document:{hidden:false,body:{classList:{toggle(){}}},querySelectorAll:selector=>selector==='.view'?[...elements.values()].filter(element=>element.classList):[],getElementById:id=>elements.get(id)},window:{parent:{postMessage:m=>messages.push(m)}},salesProgressCustomerId:'',salesRoomHandshakeComplete:true,requestSalesOrderProgress(){},requestCustomerRefresh(){},setInterval:fn=>{tick=fn;return 1}};
+  context.salesNavigationAllowed=()=>true;context.pendingSalesQtyEdit=null;context.pendingSalesPoEdit=null;
   vm.createContext(context);
   vm.runInContext(html.match(/function showView\(id\)\{[^\n]+/)[0],context);
   vm.runInContext(html.match(/const salesRoomCustomerAutoRefreshTimer=[^\n]+/)[0],context);
@@ -22,4 +24,10 @@ test('open order list refreshes periodically without polling hidden or unrelated
   f.messages.length=0;f.context.document.hidden=true;f.tick();assert.equal(f.messages.length,0);
   f.context.document.hidden=false;f.context.showView('dashboard');f.tick();assert.equal(f.messages.length,0);
   f.context.showView('orders');f.messages.length=0;f.context.salesRoomHandshakeComplete=false;f.tick();assert.equal(f.messages.length,0);
+});
+
+test('clicking Order Management clears its review, but a pending edit prevents navigation',()=>{
+  const f=fixture();f.context.showView('orders');assert.equal(f.context.document.getElementById('orderDetailArea').innerHTML,'');
+  f.context.document.getElementById('orderDetailArea').innerHTML='edited review';f.context.salesNavigationAllowed=()=>false;f.messages.length=0;
+  assert.equal(f.context.showView('orders'),false);assert.equal(f.context.document.getElementById('orderDetailArea').innerHTML,'edited review');assert.equal(f.messages.length,0);
 });

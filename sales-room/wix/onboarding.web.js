@@ -710,6 +710,41 @@ export const saveSalesRoomOrderPo = webMethod(
   }
 );
 
+export const saveSalesRoomOrderPlanning = webMethod(
+  Permissions.SiteMember,
+  async (orderId, customerPoNumber, estimatedShipmentDate, expectedRevision, requestId) => {
+    const staff = await requireAuthorizedStaffContext();
+    if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+    if (typeof estimatedShipmentDate !== 'string') throw new Error('Select a valid shipment date.');
+    const value = customerPoNumber.trim(), date = estimatedShipmentDate.trim(), key = normalize(requestId);
+    if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number(date.slice(0, 4)) < 1000 || !Number.isFinite(Date.parse(date + 'T00:00:00Z')) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date)) throw new Error('Select a valid shipment date.');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) throw new Error('Refresh the order and try again.');
+    return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
+      const order = orderEntry.data, auditId = 'SALES-PLAN-' + key;
+      const prior = (await readAllPayloadRows(BUYER_ORDER_AUDIT_COLLECTION)).find(entry => normalize(entry.data.auditId) === auditId);
+      if (prior) {
+        if (normalize(prior.data.orderId) !== normalize(orderId) || prior.data.detail?.customerPoNumber !== value || prior.data.detail?.estimatedShipmentDate !== date || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
+        return { ok: true, orderId: normalize(orderId), message: 'Order details already saved.' };
+      }
+      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Order details are locked after transfer to NCT / GHR.');
+      if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
+      if (normalize(order.customerPoNumber) === value && normalize(order.estimatedShipmentDate) === date) return { ok: true, orderId: normalize(orderId), message: 'Order details are unchanged.' };
+      const at = new Date().toISOString(), actorName = normalize(staff.staffName || staff.title || staff.loginEmail);
+      const next = { ...order, customerPoNumber: value, estimatedShipmentDate: date, revision: quantity(order.revision) + 1 };
+      if (normalize(order.estimatedShipmentDate) !== date) { next.shipmentDateUpdatedAt = at; next.shipmentDateUpdatedBy = actorName; }
+      try {
+        await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
+        await putPayload(BUYER_ORDER_AUDIT_COLLECTION, auditId, { auditId, action: 'ORDER_PLANNING_UPDATED', orderId: normalize(orderId), customerId: normalize(order.customerId), at, actorStaffId: upper(staff.staffId), actorEmail: normalizeEmail(staff.loginEmail), actorName, detail: { previousCustomerPoNumber: normalize(order.customerPoNumber), customerPoNumber: value, previousEstimatedShipmentDate: normalize(order.estimatedShipmentDate), estimatedShipmentDate: date, revision: next.revision } });
+      } catch (error) {
+        try { await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, order); }
+        catch (recoveryError) { console.error('Order planning recovery failed', recoveryError); throw Object.assign(new Error('Order update needs Admin review. Further changes are locked.'), { keepOrderMutationLock: true }); }
+        throw error;
+      }
+      return { ok: true, orderId: normalize(orderId), message: 'Order details saved.' };
+    });
+  }
+);
+
 async function withSalesOrderMutation(orderId, staff, action) {
   const id = normalize(orderId);
   const initial = (await readAllPayloadRows(BUYER_ORDER_COLLECTION)).find(entry => normalize(entry.data.orderId) === id);

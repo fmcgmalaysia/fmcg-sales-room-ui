@@ -26,7 +26,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
     insert: async (name, row) => {
       const id = row._id || row.title;
       if (collection(name).has(id)) throw new Error('Duplicate ID');
-      if (failAudit && ['SALES_QTY_UPDATED', 'CUSTOMER_PO_UPDATED'].includes(JSON.parse(row.payload || '{}').action)) throw new Error('Audit unavailable');
+      if (failAudit && ['SALES_QTY_UPDATED', 'CUSTOMER_PO_UPDATED', 'ORDER_PLANNING_UPDATED'].includes(JSON.parse(row.payload || '{}').action)) throw new Error('Audit unavailable');
       const next = { ...copy(row), _id: id }; collection(name).set(id, next); writes.push({ operation: 'insert', collection: name, row: copy(next) }); return copy(next);
     },
     update: async (name, row) => { collection(name).set(row._id, copy(row)); writes.push({ operation: 'update', collection: name, row: copy(row) }); return copy(row); },
@@ -37,9 +37,46 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
   const context = vm.createContext({ wixData, Permissions: { SiteMember: 'member' }, webMethod: (_, method) => method, wixRealtimeBackend: { publish: async (channel, message) => signals.push(copy({ channel, message })) }, console, Date, Map, Set });
   vm.runInContext(source + (buyer
     ? "\nresolveBuyerContext=async()=>({customerId:'C1'});globalThis.api={reduceBuyerOrderLine,getBuyerOrderDetail};"
-    : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);
+    : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,saveSalesRoomOrderPlanning,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);
   return { ...context.api, collection, seed, writes, signals, data: (name, id) => JSON.parse(collection(name).get(id).payload) };
 }
+
+test('order planning preserves quantities, quotes and another order while persisting a date-only value', async () => {
+  const h=harness(),beforeLine=h.data('WixBuyerOrderLines','line'),before=h.data('WixBuyerOrders','order');
+  h.seed('WixBuyerOrders','other',{...before,orderId:'O2',customerPoNumber:'OTHER-PO',estimatedShipmentDate:'2026-11-01'});
+  await h.saveSalesRoomOrderPlanning('O1',' PO-CUSTOMER ','2026-10-21',0,requestId);
+  const order=h.data('WixBuyerOrders','order');assert.equal(order.customerPoNumber,'PO-CUSTOMER');assert.equal(order.estimatedShipmentDate,'2026-10-21');assert.equal(order.shipmentDateUpdatedBy,'LAW');assert.ok(order.shipmentDateUpdatedAt.endsWith('Z'));assert.equal(order.revision,1);
+  for(const key of Object.keys(before).filter(key=>key!=='revision'))assert.deepEqual(order[key],before[key]);
+  assert.deepEqual(h.data('WixBuyerOrderLines','line'),beforeLine);assert.equal(h.data('WixBuyerOrders','other').customerPoNumber,'OTHER-PO');
+  assert.equal(h.data('WixOrderAudit','SALES-PLAN-'+requestId).action,'ORDER_PLANNING_UPDATED');
+  const detail=await h.getSalesRoomOrderDetail('O1');assert.equal(detail.order.estimatedShipmentDate,'2026-10-21');
+});
+
+test('planning replay is idempotent, rejects changed replay and stale quantities, and retains the date actor on P.O.-only edits',async()=>{
+  const h=harness();await h.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId);const at=h.data('WixBuyerOrders','order').shipmentDateUpdatedAt;
+  await h.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId);assert.equal(h.data('WixBuyerOrders','order').revision,1);
+  await assert.rejects(h.saveSalesRoomOrderPlanning('O1','PO','2026-10-22',1,requestId),/request conflict/);
+  await assert.rejects(h.saveSalesRoomOrderQty('O1','L1',5,0,'22222222-2222-4222-8222-222222222222'),/has changed/);
+  await h.saveSalesRoomOrderPlanning('O1','PO-NEW','2026-10-21',1,'33333333-3333-4333-8333-333333333333');assert.equal(h.data('WixBuyerOrders','order').shipmentDateUpdatedAt,at);
+  assert.equal(h.data('WixBuyerOrderLines','line').quantityCtn,10);
+});
+
+test('invalid calendar dates and stale revisions cannot write order planning',async()=>{
+  const h=harness();for(const date of ['2026-02-30','2026-13-01','21-10-2026','2026-10-21T00:00:00Z','0026-01-01'])await assert.rejects(h.saveSalesRoomOrderPlanning('O1','PO',date,0,requestId),/valid shipment date/);
+  await assert.rejects(h.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',9,requestId),/has changed/);assert.equal(h.writes.filter(w=>w.operation==='update').length,0);
+  await h.saveSalesRoomOrderPlanning('O1','','2028-02-29',0,requestId);assert.equal(h.data('WixBuyerOrders','order').estimatedShipmentDate,'2028-02-29');
+});
+
+test('planning respects assigned staff, transfer locks and audit rollback',async()=>{
+  const denied=harness({staffId:'OTHER'});await assert.rejects(denied.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId),/Customer was not found/);assert.equal(denied.writes.length,0);
+  const transferred=harness();await transferred.submitSalesRoomOrder('O1','NCT');await assert.rejects(transferred.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId),/locked after transfer/);
+  const failed=harness({failAudit:true}),before=failed.data('WixBuyerOrders','order');await assert.rejects(failed.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId),/Audit unavailable/);assert.deepEqual(failed.data('WixBuyerOrders','order'),before);assert.equal(failed.collection('WixOrderAudit').size,0);
+});
+
+test('planning and quantity edits share the existing mutation lock',async()=>{
+  const h=harness(),results=await Promise.allSettled([h.saveSalesRoomOrderPlanning('O1','PO','2026-10-21',0,requestId),h.saveSalesRoomOrderQty('O1','L1',5,0,'44444444-4444-4444-8444-444444444444')]);
+  assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal(h.data('WixBuyerOrders','order').revision,1);assert.equal(h.collection('WixOrderAudit').size,1);
+});
 
 test('Buyer customer mutation is rejected before any operational write or duplicate replay', async () => {
   const h = harness({ buyer: true });
