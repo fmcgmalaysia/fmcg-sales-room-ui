@@ -8,7 +8,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const backend = fs.readFileSync(path.join(root, 'sales-room', 'wix', 'onboarding.web.js'), 'utf8');
 
 test('Sales Room uses the full workspace incoming-order review build', () => {
-  assert.match(html, /Sales Room build: 2026-10-08-sales-progress-review-layout-room5-v1/);
+  assert.match(html, /Sales Room build: 2026-10-08-sales-progress-review-layout-room5-v2/);
   assert.match(html, /incoming-order-review/);
   assert.match(html, /#orderDetailArea:has\(\.incoming-order-review\)\{position:static!important/);
   assert.match(html, /incoming-order-table-wrap\{max-height:none!important;overflow:visible!important\}/);
