@@ -4,10 +4,10 @@
   "pullRequest": 38,
   "base": "e5ac7ad424696ea1638fcdbaeca002def046af2a",
   "designApproval": "F concept: 非常满意; not production acceptance",
-  "codeCommit": "5ad4daa6ff5cc4e48a7461292d40a1647ead3614",
-  "marker": "2026-10-08-sales-progress-review-layout-room5-v1",
+  "codeCommit": "448f3c57a3a04842b2bea48ba0eb89f48f4e584f",
+  "marker": "2026-10-08-sales-progress-review-layout-room5-v2",
   "codeComplete": true,
-  "testsPassed": 105,
+  "testsPassed": 107,
   "protectedSourceCheck": true,
   "candidateRawHashes": {
     "index.html": "c315df018df2a5645430d65f294bd365ca04285453d50f05677c1954922721bb",
@@ -15,26 +15,28 @@
     "sales-room/wix/sales-room-page.js": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4"
   },
   "pages": {
-    "commit": "af41d1e7a2bf3a8e4e6e9509816c5aeaae482057",
-    "run": 37653763859,
-    "job": 112903549088,
+    "commit": "9d8df4e08ec25db9c9f863501e8c4e542a714ccb",
+    "run": 37710223842,
+    "job": 113094172596,
     "success": true,
-    "durationSeconds": 295,
+    "workflowDurationSeconds": 22,
+    "jobDurationSeconds": 16,
     "exactScriptsAndStyles": true,
-    "marker": "2026-10-08-sales-progress-review-layout-room5-v1"
+    "marker": "2026-10-08-sales-progress-review-layout-room5-v2"
   },
   "wix": {
     "publishedLiveReceipt": true,
     "exactNormalizedReadback": true,
     "onboardingRawSha256": "a1dba8a8b8ef5b3387effe2776bb843f013d1760e8d2f13df90d017cddd0f342",
-    "salesPageRawSha256": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4",
-    "independentDeploymentId": null
+    "salesPageRawSha256": "b77db066fdf0b5585f7ab4df09f161678c440f90d02b54ab7ccdeaf31d27d549",
+    "independentDeploymentId": null,
+    "v2BackendRawUnchanged": true
   },
   "publicCandidate": {
-    "verified": false,
-    "blocker": "Account load recovered; v1 order planning selection fails after same-customer list refresh; v2 correction awaits deployment",
-    "salesIframeSrcObserved": "20261008-sales-progress-review-layout-room5-v1",
-    "livePlanningWriteAttempted": false,
+    "verified": true,
+    "blocker": null,
+    "salesIframeSrcObserved": "20261008-sales-progress-review-layout-room5-v2",
+    "livePlanningWriteAttempted": true,
     "liveQuantityWriteAttempted": false,
     "userManualRefreshRequested": true,
     "salesAccountVisible": true,
@@ -44,7 +46,19 @@
     "salesBuyerRowSequenceMatch": true,
     "sameCustomerSelectionDefectFound": true,
     "buyerHistoryUnchanged": true,
-    "buyerDraftsUnchanged": true
+    "buyerDraftsUnchanged": true,
+    "sameCustomerSelectionDefectResolved": true,
+    "planningTestCustomer": "TESTING88",
+    "planningSavedAndReviewReopened": true,
+    "testPlanningRestoredBlank": true,
+    "retainedPlanningAudits": 2,
+    "siblingOrderUnchanged": true,
+    "userOriginalPlanningPreserved": true,
+    "qtyEditorOpened100AndCanceled": true,
+    "userOrderQtyValueCbmUnchanged": true,
+    "selectionRetainedAfter103SecondsAndReload": true,
+    "capturedV2Errors": 0,
+    "historicalV1ErrorCaptured": true
   },
   "userAcceptance": "pending",
   "temporaryPermission": "revoked; main-only",
@@ -52,7 +66,7 @@
   "dateScope": "per Order ID; shared customer/sales calendar date",
   "editLocation": "Order Progress",
   "buyerChanges": "deferred",
-  "authorization": "确认",
+  "authorization": "允许临时放行并发布修正，完成后撤销",
   "preReleaseBaseline": {
     "testOrderQtyCtn": 100,
     "testOrderValue": 8160,
@@ -75,7 +89,8 @@
       "Internal Server Error"
     ],
     "prUpdateSucceeded": false,
-    "note": "Previously rejected record commits now synchronized by successful ordinary v2 candidate push"
+    "note": "Previously rejected record commits now synchronized by successful ordinary v2 candidate push",
+    "finalRecordPushConfirmed": false
   },
   "revisionCandidate": {
     "marker": "2026-10-08-sales-progress-review-layout-room5-v2",
@@ -83,10 +98,34 @@
     "testsPassed": 107,
     "scope": "Preserve current order/cache during same-customer background refresh",
     "backendChanged": false,
-    "deployed": false,
+    "deployed": true,
     "hashes": {
       "index.html": "b6c0d26afa8877144ca8c3eef1b1dd3da620d5beb61ef20a4d54ea829f3c42ae",
       "sales-room/wix/sales-room-page.js": "b77db066fdf0b5585f7ab4df09f161678c440f90d02b54ab7ccdeaf31d27d549"
+    },
+    "publicVerified": true
+  },
+  "previousV1Release": {
+    "codeCommit": "5ad4daa6ff5cc4e48a7461292d40a1647ead3614",
+    "marker": "2026-10-08-sales-progress-review-layout-room5-v1",
+    "pages": {
+      "commit": "af41d1e7a2bf3a8e4e6e9509816c5aeaae482057",
+      "run": 37653763859,
+      "job": 112903549088,
+      "success": true,
+      "durationSeconds": 295,
+      "exactScriptsAndStyles": true,
+      "marker": "2026-10-08-sales-progress-review-layout-room5-v1"
+    },
+    "wix": {
+      "publishedLiveReceipt": true,
+      "exactNormalizedReadback": true,
+      "onboardingRawSha256": "a1dba8a8b8ef5b3387effe2776bb843f013d1760e8d2f13df90d017cddd0f342",
+      "salesPageRawSha256": "b77db066fdf0b5585f7ab4df09f161678c440f90d02b54ab7ccdeaf31d27d549",
+      "independentDeploymentId": null,
+      "v2BackendRawUnchanged": true
     }
-  }
+  },
+  "backendCodeCommit": "5ad4daa6ff5cc4e48a7461292d40a1647ead3614",
+  "publicationComplete": true
 }
