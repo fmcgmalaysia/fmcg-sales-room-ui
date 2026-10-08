@@ -10,9 +10,9 @@
   "testsPassed": 107,
   "protectedSourceCheck": true,
   "candidateRawHashes": {
-    "index.html": "c315df018df2a5645430d65f294bd365ca04285453d50f05677c1954922721bb",
+    "index.html": "b6c0d26afa8877144ca8c3eef1b1dd3da620d5beb61ef20a4d54ea829f3c42ae",
     "sales-room/wix/onboarding.web.js": "ce5032b8c6e36c6a0f473c697878ce41548a8a201fab641d83358773d8f9345f",
-    "sales-room/wix/sales-room-page.js": "e48773796d13b901d5059f15654e04f8a71981f9d360b9e79e942ad2183d36b4"
+    "sales-room/wix/sales-room-page.js": "b77db066fdf0b5585f7ab4df09f161678c440f90d02b54ab7ccdeaf31d27d549"
   },
   "pages": {
     "commit": "9d8df4e08ec25db9c9f863501e8c4e542a714ccb",
@@ -78,7 +78,7 @@
   },
   "remoteRecordSync": {
     "success": true,
-    "lastRemoteHead": "448f3c57a3a04842b2bea48ba0eb89f48f4e584f",
+    "lastRemoteHead": "e5c56a99b945b8dac55f70db8d3d4b0c49ccf02e",
     "localRecordCommits": [
       "1106f1b",
       "1cb1729"
@@ -88,9 +88,10 @@
       "fatal error in commit_refs",
       "Internal Server Error"
     ],
-    "prUpdateSucceeded": false,
-    "note": "Previously rejected record commits now synchronized by successful ordinary v2 candidate push",
-    "finalRecordPushConfirmed": false
+    "prUpdateSucceeded": true,
+    "note": "Final v2 release record e5c56a9 pushed successfully; PR38 full release status updated and returned exact confirmed head",
+    "finalRecordPushConfirmed": true,
+    "lastConfirmedRecordCommit": "e5c56a99b945b8dac55f70db8d3d4b0c49ccf02e"
   },
   "revisionCandidate": {
     "marker": "2026-10-08-sales-progress-review-layout-room5-v2",
