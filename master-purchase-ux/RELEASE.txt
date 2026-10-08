@@ -1,0 +1,2 @@
+2026-10-08 Master Purchase UX test candidate. Build2026-10-08-master-purchase-ux-v1. Fictional fixtures, browser storage only,36checks. Authentication/department authorization/realCMS/NETformula unimplemented. Wix test page must be access-restricted before publication. No existing repository production source changed. No main merge. Pages/Wix/public release pending.
+
