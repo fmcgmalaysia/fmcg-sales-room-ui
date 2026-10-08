@@ -42,7 +42,9 @@
     "badge": 50,
     "buyerRowsUnchanged": true,
     "salesBuyerRowSequenceMatch": true,
-    "sameCustomerSelectionDefectFound": true
+    "sameCustomerSelectionDefectFound": true,
+    "buyerHistoryUnchanged": true,
+    "buyerDraftsUnchanged": true
   },
   "userAcceptance": "pending",
   "temporaryPermission": "revoked; main-only",
@@ -61,8 +63,8 @@
     "savedDraftCtn": 50
   },
   "remoteRecordSync": {
-    "success": false,
-    "lastRemoteHead": "af41d1e7a2bf3a8e4e6e9509816c5aeaae482057",
+    "success": true,
+    "lastRemoteHead": "448f3c57a3a04842b2bea48ba0eb89f48f4e584f",
     "localRecordCommits": [
       "1106f1b",
       "1cb1729"
@@ -72,11 +74,12 @@
       "fatal error in commit_refs",
       "Internal Server Error"
     ],
-    "prUpdateSucceeded": false
+    "prUpdateSucceeded": false,
+    "note": "Previously rejected record commits now synchronized by successful ordinary v2 candidate push"
   },
   "revisionCandidate": {
     "marker": "2026-10-08-sales-progress-review-layout-room5-v2",
-    "codeCommit": null,
+    "codeCommit": "448f3c57a3a04842b2bea48ba0eb89f48f4e584f",
     "testsPassed": 107,
     "scope": "Preserve current order/cache during same-customer background refresh",
     "backendChanged": false,
