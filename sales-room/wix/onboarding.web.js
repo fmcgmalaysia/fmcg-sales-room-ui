@@ -5,7 +5,6 @@ import { fetch } from 'wix-fetch';
 import { request as httpsRequest } from 'https';
 import { getSecret } from 'wix-secrets-backend';
 import wixRealtimeBackend from 'wix-realtime-backend';
-import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
 
 const APPS_SCRIPT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzpMXT1ap2sOXRUkCAXx3BomPQK0E-0oTp6g3tna3Rs7cGHGRU0W2qRtwnU9YcC94qv/exec';
 const SECRET_NAME = 'FMCG_QD_ROUTER_TOKEN';
@@ -776,20 +775,6 @@ export const submitSalesRoomOrder = webMethod(
     const staff = await requireAuthorizedStaffContext();
     const target = upper(destination);
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
-    if (target === 'NCT') {
-      const input = { orderId: normalize(orderId), staff,
-        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
-        readPayloadRows: readAllPayloadRows, putPayload };
-      let receipt, entered = false;
-      try {
-        receipt = await withSalesOrderMutation(orderId, staff,
-          orderEntry => { entered = true; return submitNctSalesOrder({ ...input, lockedOrderEntry: orderEntry }); });
-      } catch (error) {
-        if (entered) throw error;
-        receipt = await submitNctSalesOrder({ ...input, initialError: error });
-      }
-      return Object.freeze({ ...receipt, status: 'SUBMITTED TO NCT' });
-    }
     return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'SUBMITTED TO ' + target, destination: target, submittedAt: new Date().toISOString(), submittedBy: normalizeEmail(staff.loginEmail) };
     await putPayload(BUYER_ORDER_COLLECTION, orderEntry.record.title, next);
