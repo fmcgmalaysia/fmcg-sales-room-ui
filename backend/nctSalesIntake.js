@@ -3,7 +3,7 @@ import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
 import { createHash } from 'crypto';
-import { createNctSubmissionDelivery } from './nctSubmissionDelivery.js';
+import { createNctSubmissionDelivery } from 'backend/nctSubmissionDelivery.js';
 
 const ORDERS = 'WixBuyerOrders', LINES = 'WixBuyerOrderLines', AUDIT = 'WixOrderAudit';
 const MASTER_ENDPOINT = 'https://fmcg999.wixstudio.com/master/_functions/nctIntake';

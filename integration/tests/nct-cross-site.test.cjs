@@ -7,7 +7,7 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const adapterSource = fs.readFileSync(path.join(__dirname, '../../backend/nctSalesIntake.js'), 'utf8')
   .replace(/^import .+;\r?\n/gm, '').replace('export async function submitNctSalesOrder', 'async function submitNctSalesOrder');
 async function setup() {
-  const { createNctSubmissionDelivery } = await import('../../backend/nctSubmissionDelivery.js');
+  const { createNctSubmissionDelivery } = await require('./load-nct-delivery.cjs')();
   const { createNctReceiver } = await import('../backend/nctReceiver.js');
   const rows = new Map(), master = new Map(), requests = [];
   let fault = '', captures = 0, authorized = 0;

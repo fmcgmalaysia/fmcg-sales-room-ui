@@ -1,4 +1,4 @@
-import { buildNctSubmission } from './nctSubmissionPayload.js';
+import { buildNctSubmission } from 'backend/nctSubmissionPayload.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);

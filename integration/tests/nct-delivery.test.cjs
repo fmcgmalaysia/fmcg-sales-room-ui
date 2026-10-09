@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const copy = value => JSON.parse(JSON.stringify(value));
-const delivery = import('../../backend/nctSubmissionDelivery.js');
+const delivery = require('./load-nct-delivery.cjs')();
 async function fixture() {
   const { createNctSubmissionDelivery } = await delivery;
   let order = { orderId: 'ORDER', customerId: 'CUSTOMER', companyName: 'TEST CUSTOMER', currency: 'MYR', status: 'CONFIRMED', isComplete: true };
