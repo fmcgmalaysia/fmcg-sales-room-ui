@@ -21,7 +21,7 @@ function harness() {
     for(const callback of listeners.get('window:message')) callback({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
   }
   return { node,messages,timers,reply,
-    click(attrs){const control={ id:'',dataset:attrs };for(const callback of listeners.get('document:click'))callback({ target:{ closest:selector=>selector==='#closeModal'?null:control } }); },
+    click(attrs){const control={ id:attrs.controlId||'',dataset:attrs };for(const callback of listeners.get('document:click'))callback({ target:{ closest:selector=>selector==='button'?control:selector==='#closeModal'&&control.id==='closeModal'?control:selector==='[data-supplier-tab]'&&attrs.supplierTab?control:selector==='#addSupplierContact'&&control.id==='addSupplierContact'?control:null } }); },
     switchCompany(value){listeners.get('#companySelect:change')({target:{value}});} };
 }
 const workspace=()=>({ company:'NCT',staff:{staffName:'ACTUAL STAFF'},fetchedAt:'2026-10-10T03:00:00Z',suppliers:[],
@@ -72,5 +72,22 @@ test('CMS Purchase Room restores v13 track, tools and exact sixteen-column order
 test('unconnected operations disclose lack of saving and cannot report a successful write',()=>{
   const h=harness();h.reply(workspace());h.click({unavailable:'Save'});
   assert.match(h.node('#dialogContent').innerHTML,/尚未连接保存流程/);
+  assert.equal(h.messages.length,1);
+});
+
+test('supplier dialog retains approved company/short-name pair, tabs and all six contact roles without demo brands',()=>{
+  const h=harness(),data=workspace();data.suppliers=[{id:'SUP',name:'ACTUAL SUPPLIER',shortName:'ACTUAL'}];h.reply(data);h.click({editSupplier:'SUP'});
+  const html=h.node('#dialogContent').innerHTML;
+  for(const text of ['dialoghead','dialogbody','dialogfoot','Company Info','Sales Contacts','Brands','supplier-name-pair','Company Name *','Short Name','ACTUAL SUPPLIER'])assert.ok(html.includes(text),text);
+  const contacts=h.node('#supplierContacts').innerHTML;
+  for(const role of ['Sales Representative','Sales Manager','Director','Account Dept.','Warehouse','Others'])assert.ok(contacts.includes(role),role);
+  assert.doesNotMatch(html,/Demo Brand|localStorage/);
+  h.click({noSave:'1'});assert.match(h.node('#dialogError').textContent,/输入仍保留/);assert.equal(h.messages.length,1);
+});
+
+test('compact Special Purchase dialog uses actual source, quantity and reason without creating tasks',()=>{
+  const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({controlId:'specialPurchase'});
+  const html=h.node('#dialogContent').innerHTML;
+  for(const text of ['Add Item From *','Original Qty','Extra Qty *','Total Purchase','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.equal(h.messages.length,1);
 });
