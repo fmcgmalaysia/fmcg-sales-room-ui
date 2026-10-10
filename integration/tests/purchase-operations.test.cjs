@@ -1,6 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {createPurchaseOperations}=load('purchaseOperations.js'),{taskEditVersion}=load('purchaseTaskIdentity.js'),{projectPurchaseWorkspace}=load('purchaseProjection.js');
 const copy=value=>JSON.parse(JSON.stringify(value));
+test('supplier can be cleared before commitment, with audit and unchanged quantities/prices; committed suppliers stay locked',async()=>{
+ const f=fixture(),before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{supplierId:''}}]};
+ await f.operate({...f.base,operation:'EDIT',input});await f.operate({...f.base,operation:'EDIT',input});
+ assert.equal(f.task().supplierId,'');for(const key of ['purchaseQtyInCtn','lpPc','lpCtn','disc1','disc2','disc3'])assert.equal(f.task()[key],before[key]);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);
+ for(const operation of ['PO','PLAN']){const g=fixture();await g.operate({...g.base,operation,input:operation==='PO'?{taskIds:[g.id],versions:g.versions(),poNumber:'PO-1'}:{taskId:g.id,version:taskEditVersion(g.task()),planRevision:'',totalCtn:250,reason:'Confirmed'}});
+ await assert.rejects(g.operate({...g.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'EDIT',input:{edits:[{taskId:g.id,version:taskEditVersion(g.task()),changes:{supplierId:''}}]}}),/locked/);}
+});
 function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);let failAfter=0,writes=0;
  for(const [i,key] of [id,second].entries()) {
   rows.set('NCTTasks/'+key,{_id:key,title:key,description:'ORDER',imageAltText:'L'+i,purchaseQtyInCtn:250,rowPosition:i+1,supplierId:'S',purchaseStage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,originalCostSnapshot:{lpCtn:16},latestCostReference:{netCostCtn:11.68},manualCostField:[]});

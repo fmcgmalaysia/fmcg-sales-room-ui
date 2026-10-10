@@ -30,7 +30,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           for(const [key,value] of Object.entries(item.changes)) {
             if(key==='supplierId') {if(task.ourPoNumber&&value!==task.supplierId)throw Error('Supplier is locked after assigning a P.O.');
               if(value!==task.supplierId&&readPurchasePlan(task,s.activity).revision)throw Error('Supplier is locked to the saved procurement plan.');
-              if(typeof value!=='string'||!s.suppliers.some(row=>row.title===value&&row.supplierStatus!=='INACTIVE'))throw Error('Select an active supplier.');patch[key]=value;continue;}
+              if(typeof value!=='string'||(value!==''&&!s.suppliers.some(row=>row.title===value&&row.supplierStatus!=='INACTIVE')))throw Error('Select an active supplier.');patch[key]=value;continue;}
             if(typeof value!=='number'||!Number.isFinite(value)||value<0||(['disc1','disc2'].includes(key)&&value>1))throw Error('Check cost and discount values.');patch[key]=value;
           }
           if('lpPc' in patch && !('lpCtn' in patch)){if(!Number.isFinite(order.orderId)||order.orderId<=0)throw Error('EA is unavailable.');patch.lpCtn=Number((patch.lpPc*order.orderId).toFixed(2));}
