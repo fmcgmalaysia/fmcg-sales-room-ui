@@ -25,3 +25,20 @@ test('quantity requires supplier and reason, only reduces, preserves received/so
 test('quantity retry finishes missing history after a lost write response',async()=>{const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),quantity:90,reason:'Stock shortage'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'QTY',input}),/response lost/);await f.operate({...f.base,operation:'QTY',input});assert.equal(f.task().purchaseQtyInCtn,90);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_QTY_REDUCED').length,1);});
 
 test('another decrease cannot pass an unfinished prior quantity save',async()=>{const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),quantity:90,reason:'Stock shortage'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'QTY',input}));await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'QTY',input:{...input,version:taskEditVersion(f.task()),quantity:80}}),/Previous quantity/);await f.operate({...f.base,operation:'QTY',input});assert.equal(f.task().purchaseQtyInCtn,90);});
+
+test('average cost applies unrounded amount once, zeros discounts and audits employee/time without quantity changes',async()=>{
+ const f=fixture(),before=copy(f.task()),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:921.50,cartons:11,note:'100 less 5% less 3%; buy ten get one'};
+ await f.operate({...f.base,operation:'AVERAGE_COST',input});await f.operate({...f.base,operation:'AVERAGE_COST',input});
+ assert.equal(f.task().lpCtn,921.5/11);assert.equal(f.task().lpPc,921.5/11/16);for(const key of ['disc1','disc2','disc3'])assert.equal(f.task()[key],0);
+ assert.equal(f.task().purchaseQtyInCtn,before.purchaseQtyInCtn);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);
+ const events=[...f.rows.values()].filter(row=>row.action==='PURCHASE_AVERAGE_COST_APPLIED');assert.equal(events.length,1);assert.equal(events[0].initiatedByStaffName,'LAW');assert.equal(events[0].initiatedByStaffId,'STF');assert(!isNaN(Date.parse(events[0].activityTime)));assert.equal(events[0].details.calculation.totalCtn,11);assert.equal(events[0].details.calculation.note,input.note);assert.equal(events[0].details.before.disc1,.1);
+ assert.equal(f.workspace().tasks.find(row=>row.id===f.id).history.find(event=>event.action==='PURCHASE_AVERAGE_COST_APPLIED').changes.calculation.lineCost,921.5);
+});
+test('average cost refuses missing supplier, invalid amount/cartons and missing EA before business writes',async()=>{
+ for(const patch of [{lineCost:-1},{lineCost:NaN},{lineCost:1.234},{cartons:0},{cartons:1.5},{cartons:10000}]){const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input:{taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:10,...patch}}));assert.deepEqual(f.task(),before);}
+ for(const kind of ['supplier','EA']){const f=fixture();if(kind==='supplier')f.task().supplierId='';else f.rows.get('NCTOrders/O0').orderId=null;await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input:{taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:10}}),kind==='supplier'?/supplier/:/EA/);}
+});
+test('average cost lost response retries exact calculation and invoice blocks cost changes',async()=>{
+ const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),lineCost:100,cartons:11,note:'Offer'};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'AVERAGE_COST',input}),/response lost/);await f.operate({...f.base,operation:'AVERAGE_COST',input});assert.equal(f.task().lpCtn,100/11);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_AVERAGE_COST_APPLIED').length,1);
+ f.rows.get('NCTOrders/O0').salesInvoiceNumber='INV';await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'AVERAGE_COST',input:{...input,version:taskEditVersion(f.task())}}),/locked/);
+});

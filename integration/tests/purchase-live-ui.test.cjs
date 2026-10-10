@@ -95,7 +95,7 @@ test('supplier dialog retains approved company/short-name pair, tabs and all six
 test('row editor keeps barcode first, omits received quantity and gates changes on a saved supplier',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({taskEdit:'TASK'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['Catch Cost','Edit Qty','Special Purchase','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
+  for(const text of ['Catch Cost','Edit Qty','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.ok(html.indexOf('00123')<html.indexOf('ACTUAL PRODUCT'));
   assert.ok(html.indexOf('ACTUAL PRODUCT')<html.indexOf('SIZE x16'));
   assert.doesNotMatch(html,/Received Qty|Total Purchase|Add Item From/);
@@ -125,4 +125,11 @@ test('partial price input survives redraw and cannot submit a stale numeric valu
   h.event('focusin',field);field.value='bad';h.event('input',field);h.event('focusout',field);h.click({controlId:'saveEdits'});
   assert.equal(h.messages.filter(message=>message.type==='PURCHASE_SAVE_REQUEST').length,0);
   h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/value="bad"/);
+});
+
+test('cost calculator sends source amounts and internal note, not a client calculated price or quantity edit',()=>{
+ const h=harness(),data=workspace();data.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(data.tasks[0],{supplierId:'S',editVersion:'REV',ea:16});h.reply(data);h.click({customer:'C'});h.click({taskEdit:'TASK'});h.click({taskTab:'average'});
+ assert.match(h.node('#dialogContent').innerHTML,/Line Cost · MYR/);assert.match(h.node('#dialogContent').innerHTML,/Internal Note/);assert.match(h.node('#dialogContent').innerHTML,/id="applyAverageCost"/);
+ h.node('#averageLineCost').value='921.50';h.node('#averageCartons').value='11';h.node('#averageNote').value='Buy ten get one';h.event('input',{id:'averageLineCost'});assert.equal(h.node('#averageResult').textContent,'MYR 83.77');
+ h.click({controlId:'applyAverageCost'});const request=h.messages.at(-1);assert.equal(request.operation,'AVERAGE_COST');assert.equal(request.input.lineCost,921.5);assert.equal(request.input.cartons,11);assert.equal(request.input.note,'Buy ten get one');assert.equal(request.input.quantity,undefined);assert.equal(request.input.lpCtn,undefined);
 });

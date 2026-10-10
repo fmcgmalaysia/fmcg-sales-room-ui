@@ -12,7 +12,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff})};
   }
   return async ({company,requestId,staff,operation,input})=>{
-    if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY'].includes(operation))throw Error('Unsupported purchase operation.');
+    if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST'].includes(operation))throw Error('Unsupported purchase operation.');
     const names=PURCHASE_COLLECTIONS[company];
     return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},prepare:async()=>{
       const s=await state(company,staff),updates=[],events=[];
@@ -43,6 +43,18 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(!Array.isArray(input.taskIds)||input.taskIds.length!==current.length||new Set(input.taskIds).size!==current.length||current.some(row=>!input.taskIds.includes(row.id)))throw Error('Row order must include every active task for this customer.');
         if(current.some(row=>input.versions?.[row.id]!==taskEditVersion(s.tasks.find(task=>task.title===row.id))))throw Error('Row order changed. Refresh before saving.');
         input.taskIds.forEach((id,index)=>{const {task}=verified(id);edit(task,{rowPosition:index+1});events.push({taskId:id,action:'PURCHASE_ROW_MOVED',before:task.rowPosition,after:index+1});});
+      } else if(operation==='AVERAGE_COST') {
+        const {task,order}=verified(input.taskId),note=String(input.note||'').trim();
+        if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
+        if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before applying cost.');
+        if(typeof input.lineCost!=='number'||!Number.isFinite(input.lineCost)||input.lineCost<0||input.lineCost>999999999||Math.abs(input.lineCost*100-Math.round(input.lineCost*100))>0.00001)throw Error('Enter the actual line cost in MYR, with at most two decimal places.');
+        if(!Number.isSafeInteger(input.cartons)||input.cartons<1||input.cartons>9999)throw Error('Total cartons including free cartons must be between 1 and 9999.');
+        if(!Number.isSafeInteger(order.orderId)||order.orderId<=0)throw Error('EA is unavailable. Cost cannot be applied.');
+        if(note.length>2000)throw Error('Calculation note must be at most 2000 characters.');
+        const average=input.lineCost/input.cartons;
+        const patch={lpCtn:average,lpPc:average/order.orderId,disc1:0,disc2:0,disc3:0,manualCostField:[...new Set([...(task.manualCostField||[]),...prices])]};
+        edit(task,patch);
+        events.push({taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');
