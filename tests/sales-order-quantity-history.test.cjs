@@ -13,8 +13,8 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
   const collection = name => { if (!records.has(name)) records.set(name, new Map()); return records.get(name); };
   function seed(name, id, data, fields = {}) { collection(name).set(id, { _id: id, title: id, payload: JSON.stringify(data), ...fields }); }
   collection('WixCustomers').set('customer', { _id: 'customer', customerId: 'C1', assignedStaffId: 'LAW', title: 'CUSTOMER', customerStatus: 'ACTIVE' });
-  seed('WixBuyerOrders', 'order', { orderId: 'O1', customerId: 'C1', status: 'CONFIRMED', revision: 0, totalCartons: 10, estimatedTotal: 20, totalCbm: 5, isComplete: true }, { orderId: 'O1', customerId: 'C1', isComplete: true });
-  seed('WixBuyerOrderLines', 'line', { orderId: 'O1', customerId: 'C1', lineId: 'L1', barcode: 'PRODUCT', itemName: 'Product', quantityCtn: 10, lockedUnitPrice: 2, lineAmount: 20, lineCbm: 5, cbmPerCtn: 0.5 }, { orderId: 'O1', customerId: 'C1' });
+  seed('WixBuyerOrders', 'order', { orderId: 'O1', customerId: 'C1', companyName: 'CUSTOMER', currency: 'SGD', status: 'CONFIRMED', revision: 0, totalCartons: 10, estimatedTotal: 20, totalCbm: 5, isComplete: true }, { orderId: 'O1', customerId: 'C1', isComplete: true });
+  seed('WixBuyerOrderLines', 'line', { orderId: 'O1', customerId: 'C1', lineId: 'L1', barcode: 'PRODUCT', itemName: 'Product', packingSize: '2 x1', eaPerCtn: 2, lockedUnitPriceEa: 1, currency: 'SGD', quantityCtn: 10, lockedUnitPrice: 2, lineAmount: 20, lineCbm: 5, cbmPerCtn: 0.5 }, { orderId: 'O1', customerId: 'C1' });
   function page(items, offset, size) { return { items: copy(items.slice(offset, offset + size)), hasNext: () => offset + size < items.length, next: async () => page(items, offset + size, size) }; }
   const wixData = {
     query(name) {
@@ -35,6 +35,22 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
   const file = buyer ? 'backend/catalogueAuth.web.js' : 'sales-room/wix/onboarding.web.js';
   const source = fs.readFileSync(path.join(root, file), 'utf8').replace(/^import .*;\r?$/gm, '').replace(/^export const /gm, 'const ');
   const context = vm.createContext({ wixData, Permissions: { SiteMember: 'member' }, webMethod: (_, method) => method, wixRealtimeBackend: { publish: async (channel, message) => signals.push(copy({ channel, message })) }, console, Date, Map, Set });
+  if (!buyer) {
+    collection('WixFxRates').set('SGD', { _id: 'SGD', currency: 'SGD', active: true, rateToMyr: 3.25 });
+    context.createHash = require('node:crypto').createHash;
+    context.getSecret = async () => 'LOCAL-TEST-ONLY';
+    context.fetch = async (_url, options) => {
+      const body = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ ok: true, destination: 'NCT', orderId: body.orderId,
+        submissionId: body.submissionId, receiptId: 'RECEIPT-' + body.orderId,
+        masterReceivedAt: new Date().toISOString(), taskIds: body.lines.map(line => 'TASK-' + line.sourceLineId), costErrorTaskCount: 0 }) };
+    };
+    for (const [file, name] of [['backend/nctSubmissionPayload.js', 'buildNctSubmission'],
+        ['backend/nctSubmissionDelivery.js', 'createNctSubmissionDelivery'], ['backend/nctSalesIntake.js', 'submitNctSalesOrder']]) {
+      const moduleSource = fs.readFileSync(path.join(root, file), 'utf8').replace(/^import .*;\r?$/gm, '').replace(/^export (async function|function) /gm, '$1 ');
+      context[name] = vm.runInContext('(function(){' + moduleSource + '\nreturn ' + name + ';})()', context);
+    }
+  }
   vm.runInContext(source + (buyer
     ? "\nresolveBuyerContext=async()=>({customerId:'C1'});globalThis.api={reduceBuyerOrderLine,getBuyerOrderDetail};"
     : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,saveSalesRoomOrderPlanning,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);

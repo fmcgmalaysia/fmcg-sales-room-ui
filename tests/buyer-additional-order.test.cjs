@@ -42,6 +42,21 @@ function harness() {
   vm.runInContext(source('backend/catalogueAuth.web.js') + "\nresolveBuyerContext=async()=>({customerId:'C1',companyName:'DEMO',currency:'SGD',selectionLimit:100,email:'demo@example.test',actorName:'LAW',actorType:'STAFF'}); workspaceItems=async()=>__products(); globalThis.api={submitBuyerOrder,getBuyerOrderDetail,buyerOrderHistory};", buyer);
   buyer.__products = () => clone([...products.values()]);
   const sales = vm.createContext({ ...base, wixRealtimeBackend: { publish: async () => {} } });
+  // Exercise the real new source modules. Only the external Master HTTP boundary is mocked here;
+  // receiver persistence/replay is covered by integration/tests/nct-cross-site.test.cjs.
+  table('WixFxRates').set('SGD', { _id: 'SGD', currency: 'SGD', active: true, rateToMyr: 3.25 });
+  sales.createHash = require('node:crypto').createHash;
+  sales.getSecret = async () => 'LOCAL-TEST-ONLY';
+  sales.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    return { ok: true, json: async () => ({ ok: true, destination: 'NCT', orderId: body.orderId,
+      submissionId: body.submissionId, receiptId: 'RECEIPT-' + body.orderId,
+      masterReceivedAt: new Date().toISOString(), taskIds: body.lines.map(line => 'TASK-' + line.sourceLineId), costErrorTaskCount: 0 }) };
+  };
+  for (const [file, name] of [['backend/nctSubmissionPayload.js', 'buildNctSubmission'],
+      ['backend/nctSubmissionDelivery.js', 'createNctSubmissionDelivery'], ['backend/nctSalesIntake.js', 'submitNctSalesOrder']]) {
+    sales[name] = vm.runInContext('(function(){' + source(file) + '\nreturn ' + name + ';})()', sales);
+  }
   vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canViewAllCustomers:false});loadSalesRoomCustomers=async()=>({customers:[{customerId:'C1'}],summary:{}});loadQuoteRiskCounts=async()=>new Map([['C1',{available:true,quoteRiskCount:0,pendingQuoteCount:0,redSignalCount:0,lowGpCount:0}]]);globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress,getSalesRoomCustomersOperational};", sales);
   const download = vm.createContext({ ...base, buildBuyerOrderExcel: input => Buffer.from(JSON.stringify(input)) });
   vm.runInContext(source('backend/buyerOrderDownload.js') + '\nglobalThis.download=buildBuyerOrderDownload;', download);

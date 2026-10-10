@@ -70,7 +70,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261008-sales-progress-review-layout-room5-v2';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261010-nct-submit-purchase-cms-room6-v3';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -522,9 +522,20 @@ $w.onReady(function () {
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', ok: false, error: error?.message || 'Order could not be confirmed.' }); }
       return;
     }
+    if (message.type === 'SALES_ROOM_NCT_RECEIPT_REQUEST') {
+      try {
+        const detail = await getSalesRoomOrderDetail(message.orderId || '');
+        salesRoom.postMessage({ type: 'SALES_ROOM_NCT_RECEIPT_RESULT', requestId: message.requestId,
+          orderId: message.orderId, ok: true, receipt: detail.order?.masterReceipt || null });
+      } catch (error) {
+        salesRoom.postMessage({ type: 'SALES_ROOM_NCT_RECEIPT_RESULT', requestId: message.requestId,
+          orderId: message.orderId, ok: false, error: error?.message || 'Receipt could not be checked.' });
+      }
+      return;
+    }
     if (message.type === 'SALES_ROOM_SUBMIT_ORDER') {
-      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
-      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', ok: false, error: error?.message || 'Order could not be submitted.' }); }
+      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
+      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', orderId: message.orderId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ok: false, error: error?.message || 'Order could not be submitted.' }); }
       return;
     }
     if (message.type === 'SALES_ROOM_CREATE_PROFORMA') {
