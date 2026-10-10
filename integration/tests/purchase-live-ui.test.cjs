@@ -49,3 +49,28 @@ test('read failure and timeout show explicit feedback without inventing zero rec
   assert.match(h.node('#liveStatus').textContent,/not configured/);assert.doesNotMatch(h.node('#app').innerHTML,/Supplier A|33/);
   const other=harness();other.timers[0]();assert.match(other.node('#liveStatus').textContent,/读取超时/);
 });
+
+test('CMS Dashboard retains the approved directory structure, summary icons and required add buttons',()=>{
+  const h=harness();h.reply(workspace());const html=h.node('#app').innerHTML;
+  for(const marker of ['dashboard-summary','summary-icon','directory-heading','customer-directory','supplier-directory','Add Customer','Add Supplier','Search customer','Search supplier / brand'])assert.ok(html.includes(marker),marker);
+  assert.match(html,/<th>Edit<\/th>/);
+});
+
+test('CMS Purchase Room restores v13 track, tools and exact sixteen-column order without changing task data',()=>{
+  const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
+  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','Risk','Special Purchase','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
+  const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
+  const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1]);
+  assert.deepEqual(labels.slice(1),['Row','Order Received','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP']);
+  assert.equal(labels.length,16);
+  assert.match(html,/value="23%"|width:23%/);
+  assert.match(html,/data-cost="TASK"/);
+  assert.match(html,/250/);
+  assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
+});
+
+test('unconnected operations disclose lack of saving and cannot report a successful write',()=>{
+  const h=harness();h.reply(workspace());h.click({unavailable:'Save'});
+  assert.match(h.node('#dialogContent').innerHTML,/尚未连接保存流程/);
+  assert.equal(h.messages.length,1);
+});
