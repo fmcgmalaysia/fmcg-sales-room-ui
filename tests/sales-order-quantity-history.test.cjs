@@ -51,6 +51,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
       context[name] = vm.runInContext('(function(){' + moduleSource + '\nreturn ' + name + ';})()', context);
     }
   }
+  require('./load-master-quantity.cjs')(context,()=>[...collection('WixBuyerOrderLines').values()].map(row=>JSON.parse(row.payload)));
   vm.runInContext(source + (buyer
     ? "\nresolveBuyerContext=async()=>({customerId:'C1'});globalThis.api={reduceBuyerOrderLine,getBuyerOrderDetail};"
     : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,saveSalesRoomOrderPlanning,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);

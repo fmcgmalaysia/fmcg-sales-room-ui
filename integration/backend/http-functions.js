@@ -1,3 +1,4 @@
+import { readPurchaseQuantities } from 'backend/purchaseQuantityRead.js';
 // Candidate for the Master site only. Existing source-site http-functions.js must remain untouched.
 import { response } from 'wix-http-functions';
 import wixData from 'wix-data';
@@ -27,4 +28,9 @@ export async function post_nctIntake(request) {
   return response({ status: result.status, headers: {
     'Content-Type': 'application/json', 'Cache-Control': 'no-store'
   }, body: JSON.stringify(result.body) });
+}
+
+export async function post_purchaseQuantities(request) {
+  try {const result=await readPurchaseQuantities(request);return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)});}
+  catch(error){return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Current purchase quantities could not be confirmed.'})});}
 }

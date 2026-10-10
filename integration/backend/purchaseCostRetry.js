@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';
+import { acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 const clone = value => JSON.parse(JSON.stringify(value));
 const id = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
 const priceFields = ['lpPc', 'lpCtn', 'disc1', 'disc2', 'disc3'];
@@ -17,7 +18,13 @@ export function createPurchaseCostRetry({ store, captureCosts, now = () => new D
     const order = await store.one(names.orders, { title: task.description, sourceLineId: task.imageAltText });
     if (order?.salesInvoiceNumber) throw Error('Customer invoice has locked this transaction.');
     const receipt = await store.one(names.activity, { description: task.description, action: 'ORDER_RECEIVED', result: 'ACCEPTED' });
-    if (!order || receipt?.details?.submissionId !== order.submissionId || !receipt.details.taskIds?.includes(taskId)) throw Error('Master receipt is not complete.');
+    let accepted=Boolean(order && receipt?.details?.submissionId===order.submissionId && receipt.details.taskIds?.includes(taskId));
+    if(!accepted && task.specialPurchase===true && receipt?.details?.taskIds) {
+      const event=await store.one(names.activity,{action:'SPECIAL_PURCHASE_ADDED',imageAltText:taskId,result:'SAVED'});
+      const parent=event?.details?.parentTaskId?await store.read(names.tasks,event.details.parentTaskId):null;
+      accepted=acceptedSpecialTask(task,order,{submissionId:receipt.details.submissionId,ids:new Set(receipt.details.taskIds)},event,parent);
+    }
+    if (!accepted) throw Error('Master receipt is not complete.');
     const base = [company, taskId, requestId, staff.memberId], resultId = id(...base, 'RESULT'), lockId = id(company, taskId, 'COST_LOCK');
     const prior = await store.read(names.activity, resultId);
     if (prior?.details?.outcome) return clone(prior.details.outcome);

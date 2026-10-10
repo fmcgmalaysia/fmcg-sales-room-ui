@@ -98,7 +98,7 @@ test('Sales Room progress is loaded directly from Wix orders instead of a Buyer 
   assert.match(backend, /export const getSalesRoomOrderProgress = webMethod/);
   assert.match(backend, /readAllPayloadRows\(BUYER_ORDER_COLLECTION\)/);
   assert.match(backend, /readAllPayloadRows\(BUYER_LINE_COLLECTION\)/);
-  assert.match(backend, /activeLineCount: orders\.reduce/);
+  assert.match(backend, /activeLineCount: currentOrders\.reduce/);
   assert.match(backend, /customerShortName: upper\(customer\.customerShortName\)/);
 });
 

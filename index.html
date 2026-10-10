@@ -1,4 +1,4 @@
-<!-- Sales Room build: 2026-10-10-nct-submit-purchase-cms-room6-v3; previous 2026-10-05-sales-quantity-history-room5-v1 -->
+<!-- Sales Room build: 2026-10-10-sales-master-qty-v4; previous 2026-10-05-sales-quantity-history-room5-v1 -->
 <style>.fx-modal{width:min(680px,100%)!important}.fx-modal-grid{display:block!important}.fx-sync-result{margin:12px 0 0!important}</style>
 <!doctype html>
 <html>
@@ -1250,6 +1250,15 @@ renderSalesOrderProgress=function(payload){
   renderSalesOrderProgressV46(payload);
 };
 document.getElementById('progressRefresh').onclick=()=>requestSalesOrderProgress();
+// Refresh only the visible progress page, retaining any open planning edit.
+setInterval(()=>{
+  if(document.hidden||!salesProgressCustomerId||!document.getElementById('order-progress').classList.contains('active')||pendingSalesPlanning||document.getElementById('progressRefresh').disabled)return;
+  const requestId='progress-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);salesProgressRequestId=requestId;
+  document.getElementById('progressRefresh').disabled=true;
+  window.parent.postMessage({type:'SALES_ROOM_ORDER_PROGRESS_REQUEST',customerId:salesProgressCustomerId,requestId},'*');
+  setTimeout(()=>{if(salesProgressRequestId===requestId){document.getElementById('progressRefresh').disabled=false;}},15000);
+},10000);
+
 </script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->

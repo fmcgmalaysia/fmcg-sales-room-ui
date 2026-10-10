@@ -1,3 +1,4 @@
+import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
@@ -571,7 +572,9 @@ export const getBuyerOrderDetail = webMethod(Permissions.SiteMember, async (orde
   const audits = [...auditResult.items];
   while (auditResult.hasNext()) { auditResult = await auditResult.next(); audits.push(...auditResult.items); }
   const editHistory = audits.map(payloadData).filter(audit => normalize(audit.customerId) === buyer.customerId && normalize(audit.orderId) === normalize(orderId) && ['SALES_QTY_UPDATED', 'BUYER_REDUCED_ORDER_LINE', 'BUYER_CANCELLED_ORDER_LINE', 'BUYER_ADDED_ORDER_LINE'].includes(audit.action));
-  return { ok: true, customerId: buyer.customerId, order: { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId && !line.addedToOrderId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))), editHistory } };
+  const sourceOrder = { ...payloadData(result.items[0]), lines: lines.map(payloadData).filter(line => normalize(line.customerId) === buyer.customerId && !line.addedToOrderId).sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId))) };
+  const [projected] = await withMasterQuantities(buyer.customerId, [sourceOrder]);
+  return { ok: true, customerId: buyer.customerId, order: { ...projected, editHistory: [...editHistory, ...(projected.masterQuantityHistory || [])] } };
 });
 async function findOwnedItem(buyer, itemId) {
   let record = null;

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const modulePromise = import('../backend/purchaseProjection.js');
+const modulePromise = Promise.resolve(require('./load-master-module.cjs')('purchaseProjection.js'));
 function fixture() {
   return { company: 'NCT', staff: { staffId: 'STAFF', staffName: 'OPERATOR' }, suppliers: [],
     orders: [{ title: 'ORDER', sourceLineId: 'LINE', submissionId: 'SUB', customerId: 'CUSTOMER',

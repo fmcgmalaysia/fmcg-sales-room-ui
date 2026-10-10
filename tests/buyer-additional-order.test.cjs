@@ -39,6 +39,7 @@ function harness() {
   const base = { wixData, Permissions: { SiteMember: 'member' }, webMethod: (_, fn) => fn, console, Date, Map, Set, Buffer };
   const source = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/^import .*;\r?$/gm, '').replace(/^export (const|async function|function) /gm, '$1 ');
   const buyer = vm.createContext({ ...base });
+  require('./load-master-quantity.cjs')(buyer,()=>[...table('WixBuyerOrderLines').values()].map(data));
   vm.runInContext(source('backend/catalogueAuth.web.js') + "\nresolveBuyerContext=async()=>({customerId:'C1',companyName:'DEMO',currency:'SGD',selectionLimit:100,email:'demo@example.test',actorName:'LAW',actorType:'STAFF'}); workspaceItems=async()=>__products(); globalThis.api={submitBuyerOrder,getBuyerOrderDetail,buyerOrderHistory};", buyer);
   buyer.__products = () => clone([...products.values()]);
   const sales = vm.createContext({ ...base, wixRealtimeBackend: { publish: async () => {} } });
@@ -59,6 +60,7 @@ function harness() {
   }
   vm.runInContext(source('sales-room/wix/onboarding.web.js') + "\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:'LAW',staffName:'LAW',loginEmail:'demo@example.test',canViewAllCustomers:false});loadSalesRoomCustomers=async()=>({customers:[{customerId:'C1'}],summary:{}});loadQuoteRiskCounts=async()=>new Map([['C1',{available:true,quoteRiskCount:0,pendingQuoteCount:0,redSignalCount:0,lowGpCount:0}]]);globalThis.api={submitSalesRoomOrder,saveSalesRoomOrderQty,getSalesRoomConfirmedOrders,getSalesRoomOrderDetail,getSalesRoomOrderProgress,getSalesRoomCustomersOperational};", sales);
   const download = vm.createContext({ ...base, buildBuyerOrderExcel: input => Buffer.from(JSON.stringify(input)) });
+  require('./load-master-quantity.cjs')(sales,()=>[...table('WixBuyerOrderLines').values()].map(data));
   vm.runInContext(source('backend/buyerOrderDownload.js') + '\nglobalThis.download=buildBuyerOrderDownload;', download);
   return {
     ...buyer.api, ...sales.api, product, products, seed, table, writes,

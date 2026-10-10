@@ -4,6 +4,7 @@ var MASTER_POINTBASE_TABS = ['FOOD', 'NONFOOD', 'OTHERS'];
 
 // Called only by the existing authenticated central doPost dispatcher after its live comparison.
 function WIX_masterCaptureCost(body) {
+  if(body && body.mode === 'BRANDS') return {kind:'MASTER_POINTBASE_BRANDS_V1',brands:MPC_listBrands_()};
   return { kind: 'MASTER_POINTBASE_COST_V1', costs: MPC_captureOrderCosts_(body && body.barcodes) };
 }
 
@@ -128,4 +129,19 @@ function MPC_captureOrderCosts_(barcodes) {
     } catch (error) { results[barcode] = MPC_failure_(barcode, at, 'POINTBASE_ROW_READ_FAILED'); }
   });
   return results;
+}
+
+
+// Brand choices only: no costs, customer QDs or product rows are exported or written.
+function MPC_listBrands_() {
+  var spreadsheet=SpreadsheetApp.openById(MASTER_POINTBASE_ID), brands=Object.create(null);
+  MASTER_POINTBASE_TABS.forEach(function(name) {
+    var sheet=spreadsheet.getSheetByName(name);if(!sheet)throw new Error('Required POINTBASE sheet is unavailable.');
+    var headers=sheet.getRange(1,1,1,27).getDisplayValues()[0],matches=[];
+    headers.forEach(function(header,index){if(MPC_header_(header)==='BRANDNAME')matches.push(index);});
+    if(matches.length!==1)throw new Error('POINTBASE brand header missing or duplicated.');
+    var last=sheet.getLastRow();if(last<3)return;
+    sheet.getRange(3,matches[0]+1,last-2,1).getDisplayValues().forEach(function(row){var brand=MPC_text_(row[0]).toUpperCase();if(brand)brands[brand]=true;});
+  });
+  return Object.keys(brands).sort();
 }

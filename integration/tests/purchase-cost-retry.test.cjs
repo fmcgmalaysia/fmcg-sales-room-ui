@@ -1,8 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createHash}=require('node:crypto');
 const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseCostRetry.js'),'utf8').replace(/^import .*;\r?$/gm,'').replace(/^export /gm,'');
+const {acceptedSpecialTask}=require('./load-master-module.cjs')('purchaseTaskIdentity.js');
 const {createPurchaseCostRetry}=vm.runInNewContext('(function(){'+source+'\nreturn {createPurchaseCostRetry};})()',{
-  createHash,PURCHASE_COLLECTIONS:{NCT:{orders:'Orders',tasks:'Tasks',activity:'Activity'}},Date,JSON,Error,Object,Array,Number,Promise});
+  createHash,acceptedSpecialTask,PURCHASE_COLLECTIONS:{NCT:{orders:'Orders',tasks:'Tasks',activity:'Activity'}},Date,JSON,Error,Object,Array,Number,Promise,Set});
 const copy=value=>JSON.parse(JSON.stringify(value));
 function fixture(){
   const taskId='a'.repeat(32),requestId='11111111-1111-4111-8111-111111111111',rows=new Map();let captures=0;
