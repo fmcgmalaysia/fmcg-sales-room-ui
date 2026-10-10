@@ -1,3 +1,4 @@
+import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
@@ -1481,19 +1482,22 @@ export const getSalesRoomOrderProgress = webMethod(
         const orderId = normalize(order.orderId);
         const storedLines = linesByOrder.get(orderId) || [];
         const embeddedLines = Array.isArray(order.lines) ? order.lines : Array.isArray(order.pendingLines) ? order.pendingLines : [];
-        const lines = (storedLines.length ? storedLines : embeddedLines).filter((line) => !isCompletedProgressLine(line));
+        const lines = storedLines.length ? storedLines : embeddedLines;
         return { ...order, orderId, lines };
       })
       .filter((order) => order.lines.length)
       .sort((a, b) => new Date(b.confirmedAt || 0).getTime() - new Date(a.confirmedAt || 0).getTime());
+    const currentOrders = (await withMasterQuantities(normalizedCustomerId, orders))
+      .map(order => ({ ...order, lines: order.lines.filter(line => !isCompletedProgressLine(line)) }))
+      .filter(order => order.lines.length);
     return Object.freeze({
       ok: true,
       customerId: normalizedCustomerId,
       companyName: normalize(customer.title),
       customerShortName: upper(customer.customerShortName),
-      activeLineCount: orders.reduce((sum, order) => sum + order.lines.length, 0),
+      activeLineCount: currentOrders.reduce((sum, order) => sum + order.lines.length, 0),
       selectionOrder: await salesSelectionSortProjection(selectionRows.filter(row => normalize(row.data.customerId) === normalizedCustomerId)),
-      orders
+      orders: currentOrders
     });
   }
 );
