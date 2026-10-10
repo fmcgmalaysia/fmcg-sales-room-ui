@@ -61,3 +61,14 @@ test('Master access requires approved actual member and exactly one active staff
   assert.throws(() => requirePurchaseStaff(member, [{ ...row, staffStatus: 'SUSPENDED' }]), /not authorized/);
   assert.throws(() => requirePurchaseStaff(member, [{ ...row, description: 'OTHER MEMBER' }]), /not authorized/);
 });
+
+test('TOP MANAGEMENT can enter Purchase without department tags but still requires a complete active member binding', async () => {
+  const { requirePurchaseStaff } = await modulePromise;
+  const member = { _id: 'MEMBER', loginEmail: 'manager@example.test', status: 'APPROVED' };
+  const row = { title: 'STAFF', description: 'MEMBER', staffEmail: member.loginEmail,
+    staffStatus: 'ACTIVE', staffName: 'MANAGER', role: 'TOP MANAGEMENT', departments: [] };
+  assert.equal(requirePurchaseStaff(member, [row]).role, 'TOP MANAGEMENT');
+  assert.throws(() => requirePurchaseStaff(member, [{ ...row, title: '' }]), /not authorized/);
+  assert.throws(() => requirePurchaseStaff(member, [{ ...row, description: 'OTHER MEMBER' }]), /not authorized/);
+  assert.throws(() => requirePurchaseStaff(member, [{ ...row, staffStatus: 'SUSPENDED' }]), /not authorized/);
+});

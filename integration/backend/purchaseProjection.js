@@ -14,7 +14,7 @@ export function requirePurchaseStaff(member, records) {
   const row = matches[0], role = text(row.role).toUpperCase();
   const departments = Array.isArray(row.departments) ? row.departments.map(value => text(value).toUpperCase()) : [];
   if (!text(row.title) || text(row.description) !== member._id || !text(row.staffName) || text(row.staffStatus).toUpperCase() !== 'ACTIVE' ||
-      !(departments.includes('PURCHASE') || role === 'SUPER ADMIN')) throw Error('Purchase access is not authorized.');
+      !(departments.includes('PURCHASE') || role === 'SUPER ADMIN' || role === 'TOP MANAGEMENT')) throw Error('Purchase access is not authorized.');
   return { staffId: text(row.title), staffName: text(row.staffName), role };
 }
 export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff }) {
