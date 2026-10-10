@@ -243,6 +243,7 @@ const stages=[
       control.dataset.cost?button('Retry this task',`id="retryTaskCost" data-task-id="${esc(row.id)}"`):'');
   });
   // A separate close listener avoids treating a modal close as a task operation.
+  modal.addEventListener('close',()=>{if(!modal.open)modal.classList.toggle('po-dialog',false);});
   document.addEventListener('click',event=>{if(event.target.closest('#closeModal')){modal.close();modal.classList.toggle('supplier-dialog',false);modal.classList.toggle('special-dialog',false);}});
   function previewAverageCost(){const cost=document.querySelector('#averageLineCost'),ctn=document.querySelector('#averageCartons'),result=document.querySelector('#averageResult');if(result)result.textContent=cost.value.trim()&&ctn.value.trim()&&Number.isFinite(Number(cost.value))&&Number(cost.value)>=0&&Number.isSafeInteger(Number(ctn.value))&&Number(ctn.value)>0?'MYR '+num(Number(cost.value)/Number(ctn.value)):'—';}
   document.addEventListener('input',event=>{if(['averageLineCost','averageCartons'].includes(event.target.id))previewAverageCost();if(['planTotal','planReason','planExtraKind','planConfirmExtra','planSupplierConfirmed'].includes(event.target.id))previewPlan();});
