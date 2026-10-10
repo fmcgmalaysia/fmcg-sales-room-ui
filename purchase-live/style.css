@@ -106,3 +106,22 @@ td small,.barcode,.packing,.date,.selection,.empty,.owner{color:#465765}.paid{co
 /* Shared header treatment also applies to Purchase Room and detail dialogs. */
 th{background:var(--workbench-head);color:var(--workbench-text);font-family:var(--workbench-font);font-weight:700}
 
+/* Supplier quantity editor only; all other workbench layouts are unchanged. */
+.supplier-plan{font-size:13px;color:var(--workbench-text);line-height:1.4}
+.supplier-plan .task-identity{font-size:13px;margin-bottom:16px}
+.supplier-plan-quantities{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.supplier-plan-quantities label,.supplier-plan-quantities>div>span{display:block;font-weight:700}
+.supplier-plan-quantities>div>b{display:block;font-size:18px;margin-top:9px;font-variant-numeric:tabular-nums}
+.supplier-plan-input{display:flex;align-items:center;border:1px solid #b8cbdc;border-radius:4px;margin-top:5px}
+.supplier-plan-input input{width:100%;min-width:0;height:38px;border:0;padding:6px 9px;font:700 18px var(--workbench-font);color:var(--workbench-text);background:transparent;font-variant-numeric:tabular-nums}
+.supplier-plan-input>span{padding-right:9px;font-weight:700}
+.supplier-plan-hint{font-size:12px;color:#344d63;margin-top:6px}
+.supplier-plan-result{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:10px 12px;margin-top:12px;background:#eef5fb;border-radius:4px}
+.supplier-plan-result b{display:block;margin-top:3px;font-size:17px;font-variant-numeric:tabular-nums}
+.supplier-plan .task-reason{font-size:13px;margin-top:12px}
+.supplier-plan .task-reason select{display:block;box-sizing:border-box;width:100%;height:34px;margin-top:5px;padding:5px 8px;border:1px solid #b8cbdc;border-radius:4px;color:var(--workbench-text);background:white;font:13px var(--workbench-font)}
+.supplier-plan .task-reason textarea{font:13px var(--workbench-font);min-height:50px}
+.supplier-plan-check{display:flex;align-items:flex-start;gap:7px;margin-top:10px;font-size:12px;color:var(--workbench-text)}
+.supplier-plan-check input{flex:0 0 auto;margin:2px 0 0;accent-color:#0078d4}
+.task-dialog .dialogfoot .supplier-plan-save{font-size:13px;font-weight:700;min-height:34px}
+
