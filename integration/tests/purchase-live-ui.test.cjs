@@ -51,6 +51,28 @@ test('supplier plan confirms excess and keeps customer qty out of its write payl
  h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).requestId,saved.requestId);
 });
 
+test('supplier quantity editor restores saved source and makes customer versus kept stock explicit',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:90,supplierId:'S',procurement:{revision:'P1',totalCtn:100,extraKind:'FREE_GOODS'}});
+ h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
+ assert.equal(h.node('#planExtraKind').value,'FREE_GOODS');
+ h.node('#planTotal').value='100';h.event('input',{id:'planTotal'});
+ assert.equal(h.node('#planStockResult').textContent,'10 CTN');assert.equal(h.node('#planExtraOptions').hidden,false);assert.equal(h.node('#saveSupplierPlan').disabled,true);
+ h.node('#planTotal').value='90';h.event('input',{id:'planTotal'});
+ assert.equal(h.node('#planStockResult').textContent,'0 CTN');assert.equal(h.node('#planExtraOptions').hidden,true);assert.equal(w.tasks[0].ord,90);
+ assert.match(h.node('#dialogContent').innerHTML,/给客户/);assert.match(h.node('#dialogContent').innerHTML,/留库存/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/receivedQty|RECEIVED QTY/);
+ assert.equal(h.messages.length,1,'preview never writes quantity or stock');
+});
+
+test('unchanged supplier quantities and unconfirmed P.O. changes give local feedback without failed backend requests',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO-1',procurement:{revision:'P1',totalCtn:250,extraKind:''}});
+ h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
+ h.node('#planTotal').value='250';h.node('#planReason').value='Same quantity';h.click({controlId:'saveSupplierPlan'});
+ assert.match(h.node('#dialogError').textContent,/没有变化/);assert.equal(h.messages.length,1);
+ h.node('#planTotal').value='275';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=true;h.node('#planSupplierConfirmed').checked=false;h.click({controlId:'saveSupplierPlan'});
+ assert.match(h.node('#dialogError').textContent,/P.O./);assert.equal(h.messages.length,1);
+ h.node('#planSupplierConfirmed').checked=true;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
+});
+
 test('shared expected-stock view includes all company customers but never enables allocation',()=>{
  const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
  const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" disabled>Allocate/);assert.doesNotMatch(html,/data-allocate/);
@@ -119,7 +141,7 @@ test('supplier dialog retains approved company/short-name pair, tabs and all six
 test('row editor keeps barcode first, omits received quantity and gates changes on a saved supplier',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({taskEdit:'TASK'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['Catch Cost','Qty Adjustment','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
+  for(const text of ['Catch Cost','Customer Qty','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.ok(html.indexOf('00123')<html.indexOf('ACTUAL PRODUCT'));
   assert.ok(html.indexOf('ACTUAL PRODUCT')<html.indexOf('SIZE x16'));
   assert.doesNotMatch(html,/Received Qty|Total Purchase|Add Item From/);
