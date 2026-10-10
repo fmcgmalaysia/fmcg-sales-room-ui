@@ -1,5 +1,6 @@
 // Explicit procurement projection. Never return original order rows or intake snapshots.
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
+import { readPurchasePlan } from 'backend/purchasePlan.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -43,10 +44,12 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
+    const procurement=readPurchasePlan(task,activity);
     rows.push({
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: number(task.receivedQtyInCtn),
+      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:null,allocationEnabled:false},
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),
@@ -59,7 +62,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
       estimatedShipmentDate: stamp(order.estimatedShipmentDate)?.slice(0, 10) || null,
       history: activity.filter(event => event.description === task.description &&
-        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED'].includes(event.action) &&
+        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED'].includes(event.action) &&
         (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({
           id: text(event.title), action: text(event.action), time: stamp(event.activityTime),
           requestId: text(event.details?.requestId), retryOutcome: event.action === 'COST_RETRY_RESULT' ? {
@@ -67,7 +70,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
           } : null,
           actor: event.actorType === 'SYSTEM' ? 'System' : text(event.initiatedByStaffName),
           initiatedBy: text(event.initiatedByStaffName), result: text(event.result), message: text(event.message)
-          ,changes:['PURCHASE_PRICE_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED'].includes(event.action)?{before:event.details?.before??null,after:event.details?.after??null,reason:text(event.details?.reason)}:event.action==='SPECIAL_PURCHASE_ADDED'?{parentTaskId:text(event.details?.parentTaskId),extraQty:number(event.details?.extraQty),reason:text(event.details?.reason)}:null
+          ,changes:['PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED'].includes(event.action)?{before:event.details?.before??null,after:event.details?.after??null,reason:text(event.details?.reason),...(event.action==='PURCHASE_AVERAGE_COST_APPLIED'?{calculation:event.details?.calculation}:{} )}:event.action==='SPECIAL_PURCHASE_ADDED'?{parentTaskId:text(event.details?.parentTaskId),extraQty:number(event.details?.extraQty),reason:text(event.details?.reason)}:null
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
     });
   }

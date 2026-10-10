@@ -31,6 +31,19 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_CBMPERCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+
+test('supplier plan confirms excess and keeps customer qty out of its write payload',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];w.tasks[0].supplierId='S';w.tasks[0].editVersion='V';w.tasks[0].procurement={revision:'',totalCtn:null};h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
+ h.node('#planTotal').value='275';h.node('#planReason').value='Supplier bonus';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=false;
+ h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.filter(m=>m.operation==='PLAN').length,0);
+ h.node('#planConfirmExtra').checked=true;h.click({controlId:'saveSupplierPlan'});const saved=h.messages.at(-1);assert.equal(saved.operation,'PLAN');assert.equal(saved.input.totalCtn,275);assert.equal(saved.input.quantity,undefined);assert.equal(saved.input.receivedQtyInCtn,undefined);
+ h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).requestId,saved.requestId);
+});
+
+test('shared expected-stock view includes all company customers but never enables allocation',()=>{
+ const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
+ const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" disabled>Allocate/);assert.doesNotMatch(html,/data-allocate/);
+});
 test('live page starts empty, requests real Master data and never seeds demo business records',()=>{
   const h=harness();assert.equal(h.messages.length,1);assert.equal(h.messages[0].type,'PURCHASE_WORKSPACE_REQUEST');
   assert.doesNotMatch(h.node('#app').innerHTML,/AVATA|Supplier A|CORN FLAKES/);
@@ -95,7 +108,7 @@ test('supplier dialog retains approved company/short-name pair, tabs and all six
 test('row editor keeps barcode first, omits received quantity and gates changes on a saved supplier',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({taskEdit:'TASK'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['Catch Cost','Edit Qty','Special Purchase','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
+  for(const text of ['Catch Cost','Qty Adjustment','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.ok(html.indexOf('00123')<html.indexOf('ACTUAL PRODUCT'));
   assert.ok(html.indexOf('ACTUAL PRODUCT')<html.indexOf('SIZE x16'));
   assert.doesNotMatch(html,/Received Qty|Total Purchase|Add Item From/);
@@ -125,4 +138,11 @@ test('partial price input survives redraw and cannot submit a stale numeric valu
   h.event('focusin',field);field.value='bad';h.event('input',field);h.event('focusout',field);h.click({controlId:'saveEdits'});
   assert.equal(h.messages.filter(message=>message.type==='PURCHASE_SAVE_REQUEST').length,0);
   h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/value="bad"/);
+});
+
+test('cost calculator sends source amounts and internal note, not a client calculated price or quantity edit',()=>{
+ const h=harness(),data=workspace();data.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(data.tasks[0],{supplierId:'S',editVersion:'REV',ea:16});h.reply(data);h.click({customer:'C'});h.click({taskEdit:'TASK'});h.click({taskTab:'average'});
+ assert.match(h.node('#dialogContent').innerHTML,/Line Cost · MYR/);assert.match(h.node('#dialogContent').innerHTML,/Internal Note/);assert.match(h.node('#dialogContent').innerHTML,/id="applyAverageCost"/);
+ h.node('#averageLineCost').value='921.50';h.node('#averageCartons').value='11';h.node('#averageNote').value='Buy ten get one';h.event('input',{id:'averageLineCost'});assert.equal(h.node('#averageResult').textContent,'MYR 83.77');
+ h.click({controlId:'applyAverageCost'});const request=h.messages.at(-1);assert.equal(request.operation,'AVERAGE_COST');assert.equal(request.input.lineCost,921.5);assert.equal(request.input.cartons,11);assert.equal(request.input.note,'Buy ten get one');assert.equal(request.input.quantity,undefined);assert.equal(request.input.lpCtn,undefined);
 });
