@@ -145,3 +145,22 @@ dialog.po-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;font:14px va
 .po-dialog .dialogfoot>.muted{display:none}
 .po-dialog .dialogfoot .btn{min-height:36px;font-size:13px}
 
+
+/* Customer task table and progress capsules: display only, existing actions retained. */
+.purchase-tasks th,.purchase-tasks td{padding-left:7px;padding-right:7px}
+.purchase-tasks th{white-space:nowrap}
+.purchase-tasks th:nth-child(7),.purchase-tasks td:nth-child(7){text-align:center}
+.purchase-tasks th:nth-child(n+8):nth-child(-n+13),.purchase-tasks td:nth-child(n+8):nth-child(-n+13){text-align:right!important}
+.purchase-tasks .money{display:block;width:100%;text-align:right;font-variant-numeric:tabular-nums;padding-left:4px;padding-right:6px}
+.purchase-tasks th:nth-child(n+15),.purchase-tasks td:nth-child(n+15){text-align:center}
+#taskRows .barcode{font-size:13px;font-weight:600;line-height:20px;display:block;font-variant-numeric:tabular-nums}
+#taskRows .barcode .cost-error,#taskRows .barcode .special-badge{font-size:11px;font-weight:500}
+#taskRows .qty-pair{width:100%;justify-content:center}
+.history-heading,.task-history{display:inline-flex;align-items:center;justify-content:center;color:#17314f}
+.history-heading svg,.task-history svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#taskRows .task-history{width:30px;height:32px;padding:4px;border:0;background:transparent;border-radius:4px}
+#taskRows .task-history:hover,#taskRows .task-history:focus-visible{background:#e5f2fd;color:#0078d4}
+.roomhead .stage-capsule{display:inline-flex;align-items:center;justify-content:center;gap:12px;width:auto;min-width:88px;height:44px;padding:0 14px;border-radius:24px;font-size:19px;margin-bottom:10px}
+.roomhead .stage-capsule .stage-icon{width:25px;height:25px;flex:none;color:inherit;margin:0;stroke-width:1.65}
+.roomhead .stage-count{font-size:inherit;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.roomhead .trackitem:after{top:22px;left:calc(50% + 49px);width:calc(100% - 98px)}

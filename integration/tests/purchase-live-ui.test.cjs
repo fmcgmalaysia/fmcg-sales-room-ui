@@ -121,10 +121,10 @@ test('CMS Purchase Room restores v13 track, tools and approved columns plus the 
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
   for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','Risk','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
-  const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Order Received','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net CTN Cost','Our P.O. No.','Path','GP','Edit']);
+  const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
+  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','History','GP','Edit']);
   assert.equal(labels.length,17);
-  assert.match(html,/width:20%/);
+  assert.match(html,/width:21%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -190,4 +190,16 @@ test('cost calculator sends source amounts and internal note, not a client calcu
  assert.match(h.node('#dialogContent').innerHTML,/Line Cost · MYR/);assert.match(h.node('#dialogContent').innerHTML,/Internal Note/);assert.match(h.node('#dialogContent').innerHTML,/id="applyAverageCost"/);
  h.node('#averageLineCost').value='921.50';h.node('#averageCartons').value='11';h.node('#averageNote').value='Buy ten get one';h.event('input',{id:'averageLineCost'});assert.equal(h.node('#averageResult').textContent,'MYR 83.77');
  h.click({controlId:'applyAverageCost'});const request=h.messages.at(-1);assert.equal(request.operation,'AVERAGE_COST');assert.equal(request.input.lineCost,921.5);assert.equal(request.input.cartons,11);assert.equal(request.input.note,'Buy ten get one');assert.equal(request.input.quantity,undefined);assert.equal(request.input.lpCtn,undefined);
+});
+
+test('history icon keeps the actual history dialog and progress capsules keep existing counts without writes',()=>{
+ const h=harness(),w=workspace();w.tasks[0].history=[{id:'E1',action:'PURCHASE_QTY_REDUCED',time:'2026-10-10T12:00:00Z',actor:'LAW',message:'Supplier only 90 cartons'}];
+ h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
+ assert.match(html,/class="path task-history" data-path="TASK" aria-label="History 00123"/);
+ assert.doesNotMatch(html,/PURCHASE_QTY_REDUCED/);
+ assert.equal((html.match(/class="stage-count">1<\/span>/g)||[]).length,7);
+ assert.match(html,/class="circle stage-capsule [^"]*" data-stage="0"/);
+ h.click({path:'TASK'});assert.equal(h.node('#modal').open,true);
+ assert.match(h.node('#dialogContent').innerHTML,/Supplier only 90 cartons/);
+ assert.match(h.node('#dialogContent').innerHTML,/LAW/);assert.equal(h.messages.length,1);
 });
