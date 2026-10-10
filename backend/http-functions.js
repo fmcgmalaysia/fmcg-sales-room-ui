@@ -1,4 +1,5 @@
 import { response } from 'wix-http-functions';
+import { readMasterFxRates } from 'backend/masterFxRead.js';
 import { fetch } from 'wix-fetch';
 import { getSecret } from 'wix-secrets-backend';
 import { authentication } from 'wix-members-backend';
@@ -340,5 +341,13 @@ export async function post_quotationSync(request) {
   } catch (error) {
     console.error('Quotation sync failed', error);
     return quoteJson(500, { ok: false, error: normalize(error?.message || error || 'Quotation sync failed.') });
+  }
+}
+export async function post_masterFxRates(request) {
+  try {
+    const result = await readMasterFxRates(request);
+    return response({ status: result.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(result.body) });
+  } catch (_) {
+    return response({ status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({ ok: false, error: 'Current Admin FX rates could not be confirmed.' }) });
   }
 }

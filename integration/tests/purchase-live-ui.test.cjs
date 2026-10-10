@@ -32,6 +32,17 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_CBMPERCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
 
+test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
+ for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,'—'],[undefined,'—']]){
+  const h=harness(),w=workspace();w.tasks[0].gp=gp;h.reply(w);h.click({customer:'C'});
+  assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],shown);
+  assert.equal(h.messages.length,1);
+ }
+ const h=harness(),w=workspace();w.tasks[0].gp=.125;h.reply(w);h.click({customer:'C'});
+ h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({customer:'C'});
+ assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],'—');
+});
+
 test('supplier plan confirms excess and keeps customer qty out of its write payload',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];w.tasks[0].supplierId='S';w.tasks[0].editVersion='V';w.tasks[0].procurement={revision:'',totalCtn:null};h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
  h.node('#planTotal').value='275';h.node('#planReason').value='Supplier bonus';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=false;
