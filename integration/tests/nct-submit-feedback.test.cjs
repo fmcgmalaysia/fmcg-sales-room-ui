@@ -48,9 +48,20 @@ test('an ok flag without a complete receipt cannot display success', () => {
   const f = fixture(); f.start(); f.respond({ ok: true, destination: 'NCT' });
   assert.equal(f.renders.length, 0); assert.match(f.status.textContent, /receipt is not confirmed/);
 });
-test('timeout gives uncertainty and enables retry, never falsely reports failure or success', () => {
-  const f = fixture(); f.start(); f.timers[0](); assert.match(f.status.textContent, /Receipt is not confirmed yet/);
-  assert.equal(f.renders.length, 0); f.start(); assert.equal(f.requests.length, 2);
+test('timeout checks the saved receipt without resubmitting, then leaves explicit uncertainty if no response arrives', () => {
+  const f = fixture(); f.start(); f.timers[0](); assert.match(f.status.textContent, /Checking Master receipt/);
+  assert.equal(f.requests[1].type,'SALES_ROOM_NCT_RECEIPT_REQUEST');
+  for(let attempt=0;attempt<3;attempt++)f.timers.at(-1)();
+  assert.match(f.status.textContent,/Receipt is not confirmed yet/);assert.equal(f.renders.length,0);
+  assert.equal(f.requests.filter(message=>message.type==='SALES_ROOM_SUBMIT_ORDER').length,1);
+  f.start();assert.equal(f.requests.filter(message=>message.type==='SALES_ROOM_SUBMIT_ORDER').length,2);
+});
+test('a 504 followed by a stored complete receipt displays success without a second write request',()=>{
+  const f=fixture();f.start();f.respond({ok:false,error:'Request failed with status code 504'});
+  const check=f.requests.at(-1);assert.equal(check.type,'SALES_ROOM_NCT_RECEIPT_REQUEST');
+  f.respond({type:'SALES_ROOM_NCT_RECEIPT_RESULT',requestId:check.requestId,ok:true,receipt:{ok:true,orderId:'ORDER',destination:'NCT',receiptId:'RECEIPT',masterReceivedAt:'2026-10-10T03:00:00Z',costErrorTaskCount:1}});
+  assert.equal(f.renders.length,1);assert.match(f.dialog.innerHTML,/交单成功/);
+  assert.equal(f.requests.filter(message=>message.type==='SALES_ROOM_SUBMIT_ORDER').length,1);
 });
 test('stale response or another opened order cannot replace the current review', () => {
   const f = fixture(); f.start(); f.respond({ ok: true, requestId: 'OTHER', receiptId: 'RECEIPT', destination: 'NCT' });

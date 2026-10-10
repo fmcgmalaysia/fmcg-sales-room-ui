@@ -64,7 +64,7 @@ export function createNctIntake({ store, captureCosts, now = () => new Date() })
       catch (error) {
         costs = Object.fromEntries(body.lines.map(line => [line.unitBarcode, {
           unitBarcode: line.unitBarcode, capturedAt: at, costCurrency: 'MYR', costStatus: 'ERROR',
-          costIssues: ['POINTBASE_SERVICE_UNAVAILABLE'], lpPc: null, lpCtn: null,
+          costIssues: [/^POINTBASE_[A-Z0-9_]+$/.test(String(error?.code || '')) ? error.code : 'POINTBASE_SERVICE_UNAVAILABLE'], lpPc: null, lpCtn: null,
           disc1: null, disc2: null, disc3: null, netCostCtn: null, cbmPerCtn: null
         }]));
       }

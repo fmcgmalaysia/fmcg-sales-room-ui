@@ -49,14 +49,18 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       netCostCtn: number(snapshot.netCostCtn), cbmPerCtn: number(order.cbmCtn),
       costStatus: text(task.costStatus), costErrorReason: text(task.costErrorReason), costCapturedAt: stamp(task.lastCostCaptureTime),
       stage: text(task.purchaseStage), risk: task.risk === true, riskReason: text(task.riskReason),
+      archived: task.purchaseStage === 'SHIPPED' && Boolean(text(order.salesInvoiceNumber)),
       specialPurchase: task.specialPurchase === true, specialPurchaseReason: text(task.specialPurchaseReason),
       rowPosition: number(task.rowPosition), masterReceivedAt: stamp(order.masterReceivedTime) || receipt.receivedAt,
       submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
       estimatedShipmentDate: stamp(order.estimatedShipmentDate)?.slice(0, 10) || null,
       history: activity.filter(event => event.description === task.description &&
-        ['ORDER_RECEIVED', 'COST_CAPTURE'].includes(event.action) &&
+        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT'].includes(event.action) &&
         (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({
           id: text(event.title), action: text(event.action), time: stamp(event.activityTime),
+          requestId: text(event.details?.requestId), retryOutcome: event.action === 'COST_RETRY_RESULT' ? {
+            ok: event.details?.outcome?.ok === true, error: text(event.details?.outcome?.error)
+          } : null,
           actor: event.actorType === 'SYSTEM' ? 'System' : text(event.initiatedByStaffName),
           initiatedBy: text(event.initiatedByStaffName), result: text(event.result), message: text(event.message)
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))

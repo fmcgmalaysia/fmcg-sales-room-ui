@@ -1,7 +1,7 @@
 /* Master CMS only. No fixture data and no browser business-record persistence. */
 (() => {
   const app = document.querySelector('#app'), status = document.querySelector('#liveStatus'), modal = document.querySelector('#modal');
-  let company = 'NCT', view = 'dashboard', customerId = '', data = null, pending = null, query = '';
+  let company = 'NCT', view = 'dashboard', customerId = '', data = null, pending = null, query = '', costRetry = null;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const num = (value, places = 2) => typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('en-MY', { minimumFractionDigits: places, maximumFractionDigits: places }) : '—';
   const time = value => value ? new Date(value).toLocaleString('en-MY', { timeZone:'Asia/Kuala_Lumpur', hour12:false }) : '—';
@@ -29,19 +29,29 @@
       showStatus('Master 回执格式不完整，未显示任何资料。', true); return;
     }
     data = result; document.querySelector('#session').textContent = result.staff.staffName + ' / Purchase';
+    if(costRetry){const outcome=data.tasks.find(row=>row.id===costRetry.taskId)?.history.find(event=>event.action==='COST_RETRY_RESULT'&&event.requestId===costRetry.requestId)?.retryOutcome;
+      if(outcome){costRetry=null;document.querySelector('#companySelect').disabled=false;modal.close();}
+    }
     showStatus('Master CMS · Last read ' + time(result.fetchedAt)); render();
   });
   window.addEventListener('message', event => { if(event.source !== window.parent || event.data?.type !== 'PURCHASE_LOGIN_RESULT') return;
     if(event.data.ok) request(); else showStatus(event.data.error || 'Login was not completed.', true); });
+  window.addEventListener('message', event=>{
+    const message=event.data||{};if(event.source!==window.parent||message.type!=='PURCHASE_COST_RETRY_RESULT'||!costRetry||message.requestId!==costRetry.requestId||message.taskId!==costRetry.taskId||message.company!==costRetry.company)return;
+    if(message.ok){costRetry=null;document.querySelector('#companySelect').disabled=false;modal.close();request();return;}
+    showStatus(message.error||'Cost retry could not be confirmed. Refresh this task to check the history.',true);
+    if(!/504|timeout|processing|not.*confirmed/i.test(message.error||'')){costRetry=null;document.querySelector('#companySelect').disabled=false;}
+    request();
+  });
   function summary() {
-    const rows = data.tasks.filter(row => row.stage !== 'SHIPPED'), items = [
+    const rows = data.tasks.filter(row => !row.archived), items = [
       ['Active Orders', new Set(rows.map(row => row.orderId)).size, false], ['Purchase Tasks', rows.length, false],
       ['Payment Requests', null, false], ['At Risk', rows.filter(row => row.risk).length, true]
     ];
     return `<section class="dashboard-summary">${items.map(([label,count,risk]) => `<div class="summary-item ${risk?'summary-risk':''}"><div><span class="summary-label">${label}</span>${count===null?'<span class="summary-zero">—</span>':count===0?'<span class="summary-zero">—</span>':`<b>${count}</b>`}</div></div>`).join('')}</section>`;
   }
   function dashboard() {
-    const rows = data.tasks.filter(row => row.stage !== 'SHIPPED');
+    const rows = data.tasks.filter(row => !row.archived);
     return `<div class="dashboard-title"><h1>Purchase Dashboard</h1><span>${company}</span></div>${summary()}<div class="dashboard-grid">
       <section class="panel"><div class="panelhead"><h2>Customers</h2></div><div class="directory-scroll"><table class="directory"><colgroup><col style="width:34%"><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr><th>Customer</th><th>Est. Shipment Date</th><th>Tasks</th><th>Risk</th><th>Entry</th></tr></thead><tbody>${data.customers.map(customer => {
         const tasks = rows.filter(row => row.customerId === customer.id), dates = [...new Set(tasks.map(row => row.estimatedShipmentDate).filter(Boolean))];
@@ -52,7 +62,7 @@
       }).join('')}</tbody></table>${data.suppliers.length?'':'<div class="live-empty">尚无供应商资料。</div>'}</div></section></div>`;
   }
   function room() {
-    const customer = data.customers.find(row => row.id === customerId), rows = data.tasks.filter(row => row.customerId === customerId && row.stage !== 'SHIPPED');
+    const customer = data.customers.find(row => row.id === customerId), rows = data.tasks.filter(row => row.customerId === customerId && !row.archived);
     const shown = rows.filter(row => [row.barcode,row.name,row.orderId,row.po].join(' ').toLowerCase().includes(query.toLowerCase()));
     return `<div class="dashboard-title"><h1>${esc(customer?.name || '')} · Purchase Room</h1>${button('← Dashboard','data-view="dashboard"')}</div><div class="live-toolbar"><input id="taskSearch" aria-label="Search product / order / P.O." placeholder="Search product / order / P.O." value="${esc(query)}"><span>${shown.length} / ${rows.length} tasks · MYR costs</span></div><section class="panel"><div class="tablewrap"><table class="live-task-table"><colgroup>${[3,10,9,27,9,6,6,6,5,5,5,6,7,6].map(width=>`<col style="width:${width}%">`).join('')}</colgroup><thead><tr>${['Row','Order Received','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O.','Path'].map(label=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${shown.map((row,index)=>`<tr><td>${index+1}</td><td>${esc(time(row.masterReceivedAt))}<small>${esc(row.submittedByName)}</small></td><td>${esc(row.stage.replaceAll('_',' '))}</td><td class="live-product"><span>${esc(row.barcode)}${row.specialPurchase?'<span class="live-special">Special Purchase</span>':''}${row.costStatus==='ERROR'?`<button class="cost-error" data-cost="${esc(row.id)}">Cost Error</button>`:''}</span><b>${esc(row.name)}</b><small>${esc(row.packing)}</small></td><td>${esc(supplierName(row.supplierId))}</td><td class="live-number">${num(row.ord,0)}<small>inc ${num(row.inc,0)}</small></td><td class="live-number">${num(row.lpPc)}</td><td class="live-number">${num(row.lpCtn)}</td><td class="live-number">${row.disc1===null?'—':num(row.disc1*100)+'%'}</td><td class="live-number">${row.disc2===null?'—':num(row.disc2*100)+'%'}</td><td class="live-number">${num(row.disc3)}</td><td class="live-number"><b>${num(row.netCostCtn)}</b></td><td>${esc(row.po||'—')}</td><td>${button('Path',`data-path="${esc(row.id)}"`)}</td></tr>`).join('')}</tbody></table>${shown.length?'':'<div class="live-empty">没有符合条件的采购任务。</div>'}</div></section>`;
   }
@@ -74,17 +84,26 @@
     const control=event.target.closest('button');if(!control)return;
     if(control.id==='refresh')return request();
     if(control.id==='masterLogin'){window.parent.postMessage({type:'PURCHASE_LOGIN_REQUEST'},'*');return;}
+    if(control.id==='retryTaskCost'){
+      if(costRetry)return;costRetry={company,taskId:control.dataset.taskId,requestId:crypto.randomUUID()};
+      control.disabled=true;control.textContent='正在抓取…';document.querySelector('#companySelect').disabled=true;
+      showStatus('正在重新抓取此任务的参考成本；已有价格保持原样。');
+      window.parent.postMessage({type:'PURCHASE_COST_RETRY_REQUEST',...costRetry},'*');
+      const retry=costRetry;setTimeout(()=>{if(costRetry===retry){showStatus('结果待确认，请 Refresh 核对本任务的历史。不要重复创建任务。',true);request();}},30000);return;
+    }
     if(control.dataset.customer){customerId=control.dataset.customer;view='room';query='';return render();}
     if(control.dataset.view){view=control.dataset.view;return render();}
     const id=control.dataset.cost||control.dataset.path;if(!id||!data)return;
     const row=data.tasks.find(task=>task.id===id);if(!row)return;
     const detail=control.dataset.cost?`<p>${esc(row.costErrorReason)}</p><p>请联系交单销售员：<b>${esc(row.submittedByName)}</b></p><p>Catch Cost：${esc(time(row.costCapturedAt))}</p><p>Task ID：${esc(row.id)}</p>`:
       `<p>Order：${esc(row.orderId)}</p><p>Sales submitted：${esc(time(row.submittedAt))} · ${esc(row.submittedByName)}</p><p>Master received：${esc(time(row.masterReceivedAt))}</p>${row.history.map(item=>`<p class="live-path"><b>${esc(item.action)}</b><br>${esc(time(item.time))} · ${esc(item.actor)} · ${esc(item.result)}<br>${esc(item.message)}</p>`).join('')}`;
-    document.querySelector('#dialogContent').innerHTML=`<h2>${control.dataset.cost?'Cost Error':'Task Path'}</h2>${detail}<footer>${button('Close','id="closeModal"')}</footer>`;modal.showModal();
+    document.querySelector('#dialogContent').innerHTML=`<h2>${control.dataset.cost?'Cost Error':'Task Path'}</h2>${detail}`+
+      (control.dataset.cost?'<p>重试仅抓此 Task。保留已有价格，补齐初次缺失且未编辑的成本。</p>':'')+
+      `<footer>${control.dataset.cost?button('Retry this task',`id="retryTaskCost" data-task-id="${esc(row.id)}"`):''}${button('Close','id="closeModal"')}</footer>`;modal.showModal();
   });
   // A separate close listener avoids treating a modal close as a task operation.
   document.addEventListener('click',event=>{if(event.target.closest('#closeModal'))modal.close();});
   document.addEventListener('input',event=>{if(event.target.id!=='taskSearch')return;const caret=event.target.selectionStart;query=event.target.value;render();const input=document.querySelector('#taskSearch');input.focus();input.setSelectionRange(caret,caret);});
-  document.querySelector('#companySelect').addEventListener('change',event=>{company=event.target.value;view='dashboard';customerId='';document.querySelector('#workspaceCompany').textContent=company;modal.close();request();});
+  document.querySelector('#companySelect').addEventListener('change',event=>{if(costRetry){event.target.value=company;return;}company=event.target.value;view='dashboard';customerId='';document.querySelector('#workspaceCompany').textContent=company;modal.close();request();});
   request();
 })();
