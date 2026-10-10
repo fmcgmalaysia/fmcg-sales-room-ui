@@ -30,7 +30,7 @@ function harness(storage) {
 const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',staffName:'ACTUAL STAFF'},fetchedAt:'2026-10-10T03:00:00Z',suppliers:[],
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
-    costErrorReason:'UNAVAILABLE_CBMPERCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+    costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
 
 test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
  for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,'—'],[undefined,'—']]){
@@ -98,7 +98,7 @@ test('customer entry displays actual quantity and opens a cost exception with ac
   const h=harness();h.reply(workspace());h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ACTUAL PRODUCT/);
   assert.match(h.node('#app').innerHTML,/250/);assert.match(h.node('#app').innerHTML,/Cost Error/);
   h.click({cost:'TASK'});assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/ACTUAL SALESPERSON/);
-  assert.match(h.node('#dialogContent').innerHTML,/UNAVAILABLE_CBMPERCTN/);
+  assert.match(h.node('#dialogContent').innerHTML,/UNAVAILABLE_LPCTN/);
 });
 test('late response from prior company cannot mix NCT and GHR data',()=>{
   const h=harness(),old=h.messages[0];h.switchCompany('GHR');h.reply(workspace(),old);
@@ -119,12 +119,12 @@ test('CMS Dashboard retains the approved directory structure, summary icons and 
 
 test('CMS Purchase Room restores v13 track, tools and approved columns plus the final task editor without changing task data',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
-  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','Risk','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
-  const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Order Received','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net CTN Cost','Our P.O. No.','Path','GP','Edit']);
+  const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
+  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','History','GP','Edit']);
   assert.equal(labels.length,17);
-  assert.match(html,/width:20%/);
+  assert.match(html,/width:21%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -191,3 +191,19 @@ test('cost calculator sends source amounts and internal note, not a client calcu
  h.node('#averageLineCost').value='921.50';h.node('#averageCartons').value='11';h.node('#averageNote').value='Buy ten get one';h.event('input',{id:'averageLineCost'});assert.equal(h.node('#averageResult').textContent,'MYR 83.77');
  h.click({controlId:'applyAverageCost'});const request=h.messages.at(-1);assert.equal(request.operation,'AVERAGE_COST');assert.equal(request.input.lineCost,921.5);assert.equal(request.input.cartons,11);assert.equal(request.input.note,'Buy ten get one');assert.equal(request.input.quantity,undefined);assert.equal(request.input.lpCtn,undefined);
 });
+
+test('history icon keeps the actual history dialog and progress capsules keep existing counts without writes',()=>{
+ const h=harness(),w=workspace();w.tasks[0].history=[{id:'E1',action:'PURCHASE_QTY_REDUCED',time:'2026-10-10T12:00:00Z',actor:'LAW',message:'Supplier only 90 cartons'}];
+ h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
+ assert.match(html,/class="path task-history" data-path="TASK" aria-label="History 00123"/);
+ assert.doesNotMatch(html,/PURCHASE_QTY_REDUCED/);
+ assert.equal((html.match(/class="stage-count">1<\/span>/g)||[]).length,7);
+ assert.match(html,/class="circle stage-capsule [^"]*" data-stage="0"/);
+ h.click({path:'TASK'});assert.equal(h.node('#modal').open,true);
+ assert.match(h.node('#dialogContent').innerHTML,/Supplier only 90 cartons/);
+ assert.match(h.node('#dialogContent').innerHTML,/LAW/);assert.equal(h.messages.length,1);
+});
+
+test('CBM alone does not flag a complete cost; financial cost errors remain visible',()=>{for(const [reason,lpCtn,shown] of [['UNAVAILABLE_CBMPERCTN',16,false],['UNAVAILABLE_CBMPERCTN',null,true],['UNAVAILABLE_CBMPERCTN; UNAVAILABLE_LPCTN',16,true],['POINTBASE_SERVICE_UNAVAILABLE',16,true]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{costErrorReason:reason,lpCtn});h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('data-cost="TASK"'),shown);assert.equal(h.messages.length,1);}});
+test('Risk Deal threshold uses valid saved GP; six percent and unknown GP are not flagged',()=>{for(const [gp,shown] of [[.0599,true],[.06,false],[-.1,true],[0,true],[null,false],[undefined,false]]){const h=harness(),w=workspace();w.tasks[0].gp=gp;h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('class="risk-deal"'),shown);assert.doesNotMatch(h.node('#app').innerHTML,/id="riskFilter"/);}});
+test('Save is hidden when clean and allocation is a same-room read-only filter',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Awaiting warehouse/);assert.match(h.node('#app').innerHTML,/disabled>Allocate/);assert.match(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.messages.length,1);});
