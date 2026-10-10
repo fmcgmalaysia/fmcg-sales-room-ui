@@ -12,13 +12,13 @@ function harness() {
       showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
     return nodes.get(id);
   }
-  const parent = { postMessage:message => messages.push(message) }, window = { parent, addEventListener(type,callback){ listeners.set('window:'+type,callback); } };
+  const parent = { postMessage:message => messages.push(message) }, window = { parent, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
   vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:()=>[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, setTimeout:callback=>timers.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
-    listeners.get('window:message')({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
+    for(const callback of listeners.get('window:message')) callback({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
   }
   return { node,messages,timers,reply,
     click(attrs){const control={ id:'',dataset:attrs };for(const callback of listeners.get('document:click'))callback({ target:{ closest:selector=>selector==='#closeModal'?null:control } }); },

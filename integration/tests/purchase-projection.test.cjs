@@ -43,14 +43,21 @@ test('company mapping uses actual GHR collection IDs and rejects untrusted compa
   assert.equal(PURCHASE_COLLECTIONS.GHR.orders, 'NCTOrders1');
   assert.throws(() => projectPurchaseWorkspace({ ...fixture(), company: '../NCT' }), /Select NCT or GHR/);
 });
+test('shared suppliers retain the native primary Supplier ID and verified name fields', async () => {
+  const { projectPurchaseWorkspace } = await modulePromise;
+  const data=fixture();data.suppliers=[{title:'SUP-01',companyName:'SUPPLIER COMPANY',shortName:'SUPPLIER',staffEmail:'hidden@example.test'}];
+  const result=projectPurchaseWorkspace(data);assert.equal(result.suppliers[0].id,'SUP-01');assert.equal(result.suppliers[0].shortName,'SUPPLIER');
+  assert.doesNotMatch(JSON.stringify(result.suppliers),/hidden@example/);
+});
 test('Master access requires approved actual member and exactly one active staff binding', async () => {
   const { requirePurchaseStaff } = await modulePromise;
   const member = { _id: 'MEMBER', loginEmail: 'staff@example.test', status: 'APPROVED' };
-  const row = { staffEmail: member.loginEmail, staffStatus: 'ACTIVE', sourceStaffId: 'STAFF', staffName: 'OPERATOR', departments: ['PURCHASE'] };
+  const row = { title: 'STAFF', description: 'MEMBER', staffEmail: member.loginEmail, staffStatus: 'ACTIVE', staffName: 'OPERATOR', departments: ['PURCHASE'] };
   assert.equal(requirePurchaseStaff(member, [row]).staffId, 'STAFF');
   assert.throws(() => requirePurchaseStaff(member, []), /not configured/);
   assert.throws(() => requirePurchaseStaff(member, [row, row]), /not configured/);
   assert.throws(() => requirePurchaseStaff({ ...member, status: 'PENDING' }, [row]), /approved/);
   assert.throws(() => requirePurchaseStaff(member, [{ ...row, departments: ['ACCOUNT'] }]), /not authorized/);
   assert.throws(() => requirePurchaseStaff(member, [{ ...row, staffStatus: 'SUSPENDED' }]), /not authorized/);
+  assert.throws(() => requirePurchaseStaff(member, [{ ...row, description: 'OTHER MEMBER' }]), /not authorized/);
 });

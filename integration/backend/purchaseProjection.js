@@ -13,9 +13,9 @@ export function requirePurchaseStaff(member, records) {
   if (matches.length !== 1) throw Error('Master staff access is not configured.');
   const row = matches[0], role = text(row.role).toUpperCase();
   const departments = Array.isArray(row.departments) ? row.departments.map(value => text(value).toUpperCase()) : [];
-  if (!text(row.sourceStaffId) || !text(row.staffName) || text(row.staffStatus).toUpperCase() !== 'ACTIVE' ||
+  if (!text(row.title) || text(row.description) !== member._id || !text(row.staffName) || text(row.staffStatus).toUpperCase() !== 'ACTIVE' ||
       !(departments.includes('PURCHASE') || role === 'SUPER ADMIN')) throw Error('Purchase access is not authorized.');
-  return { staffId: text(row.sourceStaffId), staffName: text(row.staffName), role };
+  return { staffId: text(row.title), staffName: text(row.staffName), role };
 }
 export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff }) {
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
@@ -68,7 +68,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   return {
     company, staff: { staffId: staff.staffId, staffName: staff.staffName }, fetchedAt: new Date().toISOString(),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
-    suppliers: suppliers.map(row => ({ id: text(row.supplierId), name: text(row.companyName), shortName: text(row.shortName) }))
+    suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName) }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
     paymentRequestsConnected: false
   };

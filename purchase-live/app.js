@@ -21,7 +21,9 @@
     if (event.source !== window.parent || message.type !== 'PURCHASE_WORKSPACE_RESULT' || !pending ||
       message.requestId !== pending.requestId || message.company !== pending.company) return;
     pending = null;
-    if (!message.ok) { showStatus(message.error || 'Master data could not be loaded.', true); app.innerHTML = '<div class="live-empty">资料未载入。请核对员工登录及 Purchase Access。</div>'; return; }
+    if (!message.ok) { showStatus(message.error || 'Master data could not be loaded.', true); app.innerHTML = '<div class="live-empty">资料未载入。请核对员工登录及 Purchase Access。'+
+      (message.canLogin?'<p><button class="btn primary" id="masterLogin">Sign in to Master</button></p>':'')+
+      (message.identity?'<p>Master Member ID: <b>'+esc(message.identity.memberId)+'</b></p><p>'+esc(message.identity.email)+'</p>':'')+'</div>'; return; }
     const result = message.workspace;
     if (result?.company !== company || !Array.isArray(result.tasks) || !Array.isArray(result.customers) || !Array.isArray(result.suppliers)) {
       showStatus('Master 回执格式不完整，未显示任何资料。', true); return;
@@ -29,6 +31,8 @@
     data = result; document.querySelector('#session').textContent = result.staff.staffName + ' / Purchase';
     showStatus('Master CMS · Last read ' + time(result.fetchedAt)); render();
   });
+  window.addEventListener('message', event => { if(event.source !== window.parent || event.data?.type !== 'PURCHASE_LOGIN_RESULT') return;
+    if(event.data.ok) request(); else showStatus(event.data.error || 'Login was not completed.', true); });
   function summary() {
     const rows = data.tasks.filter(row => row.stage !== 'SHIPPED'), items = [
       ['Active Orders', new Set(rows.map(row => row.orderId)).size, false], ['Purchase Tasks', rows.length, false],
@@ -69,6 +73,7 @@
   document.addEventListener('click',event=>{
     const control=event.target.closest('button');if(!control)return;
     if(control.id==='refresh')return request();
+    if(control.id==='masterLogin'){window.parent.postMessage({type:'PURCHASE_LOGIN_REQUEST'},'*');return;}
     if(control.dataset.customer){customerId=control.dataset.customer;view='room';query='';return render();}
     if(control.dataset.view){view=control.dataset.view;return render();}
     const id=control.dataset.cost||control.dataset.path;if(!id||!data)return;
