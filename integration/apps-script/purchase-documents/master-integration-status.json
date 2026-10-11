@@ -6,11 +6,11 @@
   "masterSecret": "Owner confirmed saved; value not read or recorded",
   "collection": {"id":"PurchaseOrders","fields":{"title":"Text","company":"Text","details":"Object"},"permissions":"Admin only; all other roles unchecked"},
   "masterDraft": "v15 document modules and guards published; v16 Save publicly verified. v17 Home and customer Short Name modules saved/read back exactly, not published. Account page go8ts/ html1 created; layout bridge exact, new-page header/footer removed and section fixed-height850/Stretch/full-width configured.",
-  "checks": {"integrationTestsPassed":170,"realUploadTest":"blocked before file selection; no request sent; user says INV PDF is below 1 MB"},
+  "checks": {"integrationTestsPassed":170,"realUploadTest":"Public v16 NCT test PO: 38 KB PI and final INV each uploaded once; fixed Drive directory, readable PDF, persisted association, orange/green and unique LAW/time audits verified. User manually selected local files."},
   "knownRemaining": [
     "Authoritative Short Name read integration is prepared in PR57 and exact Wix drafts; two-site publication and public lookup verification pending. Existing order snapshots are unchanged.",
     "Warehouse receipt closure, completed payment and Account final-verification writers do not exist yet. No order can be marked History by this candidate.",
-    "Actual PDF transport, Drive upload, same-request retry and document colour acceptance remain unverified.",
+    "NCT PDF transport, Drive upload and orange/green state passed public testing. Ambiguous same-request retry passed automated tests only; GHR public upload remains untested.",
     "Purchase v17 and Account layout publication await temporary release branch approval; four-stage verification remains required. Account payments/bank/debtor/creditor and Warehouse closure are future unconnected workflows."
   ],
   "protected": "No current order quantities, costs, quotes, customer identity, existing P.O. values or business history changed during installation."
