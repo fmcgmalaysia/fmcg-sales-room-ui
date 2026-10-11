@@ -186,3 +186,15 @@ dialog.po-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;font:14px va
 #taskRows .grip-down td{background:#dcecf7!important}
 #taskRows .dragging-row{opacity:.65;outline:2px solid #739bb7}
 #taskRows .drop-target td{box-shadow:inset 0 3px #4c8aaf}
+
+/* Compact task typography and softer action icons; business controls unchanged. */
+.purchase-tasks th,#taskRows td,#taskRows .barcode,#taskRows .itemname,#taskRows .packing,#taskRows .mission,#taskRows .money,#taskRows .supplier,#taskRows .po-field,#taskRows .net,#taskRows .gp{font-size:11px}
+.purchase-tasks th{background:#d2dfea;color:#20374a;padding-top:8px;padding-bottom:8px;height:32px}
+#taskRows td,#taskRows .special-row td{height:44px;padding-top:3px;padding-bottom:3px;line-height:14px}
+#taskRows .barcode{line-height:14px;margin-bottom:1px}
+#taskRows .money,#taskRows .supplier,#taskRows .po-field{height:24px;padding-top:2px;padding-bottom:2px}
+#taskRows .net:not(.negative),#taskRows .gp{color:#202b36!important}
+#taskRows .task-edit,#taskRows .task-history{color:#7891a5}
+#taskRows .task-history img{opacity:.55}
+#taskRows .task-edit:hover,#taskRows .task-edit:focus-visible,#taskRows .task-history:hover,#taskRows .task-history:focus-visible{color:#0078d4;background:#e5f2fd}
+#taskRows .task-history:hover img,#taskRows .task-history:focus-visible img{opacity:.8}
