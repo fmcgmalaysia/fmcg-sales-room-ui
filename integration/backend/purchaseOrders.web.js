@@ -4,6 +4,7 @@ import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -18,7 +19,11 @@ const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,doc
   return projectPurchaseWorkspace({company,orders:orderRows,tasks,activity,suppliers,staff});
 }});
 export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await getPurchaseStaffContext();return {company,orders:await orders.list(company,staff),documentsConnected:true,paymentConnected:false,warehouseConnected:false};
+  const staff=await getPurchaseStaffContext(),rows=await orders.list(company,staff);
+  let names=[],customerNamesError='';
+  try {names=await readCustomerShortNames([...new Set(rows.map(row=>row.customerId))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
+  catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
+  return {company,orders:rows.map(row=>({...row,customerName:names.find(customer=>customer.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,documentsConnected:true,paymentConnected:false,warehouseConnected:false};
 });
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await getPurchaseStaffContext();
