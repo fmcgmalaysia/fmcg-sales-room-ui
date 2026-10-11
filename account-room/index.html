@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="build" content="2026-10-11-account-layout-v1"><title>Account Department</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="department-header"><label><span class="sr-only">Company</span><select id="company"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select></label><strong>Account Department</strong><span class="staff">员工身份待连接</span></header>
+<nav aria-label="Account navigation"><button data-view="payments" class="active" aria-current="page">Purchase Payments</button><button data-view="bank">Bank &amp; Cash Flow</button><button data-view="debtor">Debtor</button><button data-view="creditor">Creditor</button><button data-view="history">History</button><span class="preview">页面预览</span></nav>
+<main id="app"></main>
+<dialog id="documents" aria-labelledby="documentsTitle"><div class="dialog-header"><div><h2 id="documentsTitle">Supplier Documents / 供应商文件</h2><p>文件入口预留</p></div><button id="closeDocuments" aria-label="Close documents">×</button></div><div class="dialog-body"><div class="document-context"><span id="documentCompany">NCT</span><strong>请先关联采购单</strong><p>文件将按采购单保存，包含单号、上传时间和上传员工。</p></div><div id="documentList"></div><p class="document-note">付款完成并核齐必需文件后，财务确认归档。CN 仅在适用时需要。</p></div><footer><button id="documentsDone">Close</button></footer></dialog>
+<script src="app.js?v=20261011-account-layout-v1"></script>
+</body></html>

@@ -1,4 +1,4 @@
-# Purchase document service (service v1 deployed; Master connection pending)
+# Purchase document service (service v1 and Master connection deployed; upload acceptance pending)
 
 On 2026-10-11 Google confirmed deployment version 1. See deployment-v1.json.
 Code.gs was saved and its complete editor readback matched the local source.
@@ -6,8 +6,10 @@ Drive v3 was enabled in the editor. appsscript.json is a configuration template;
 the full live manifest has not yet been captured, so it is not a live snapshot.
 The owner confirmed the Script Property was saved and explicitly approved the
 actual Drive OAuth scope and the web-app access setting. No secret is recorded here.
-Master integration and actual PDF upload acceptance remain unfinished. This is
-not a Purchase website release or a user-verified production baseline.
+Master document integration was published in Purchase v15 and retained in publicly
+verified v16. Actual PDF upload acceptance remains unfinished: browser automation
+timed out before local file selection, so no successful upload is claimed. Current
+v17 and Account layout drafts await release approval; see master-integration-status.json.
 
 Create a dedicated Apps Script project owned by the authorized Workspace account.
 Do not install these files in the existing Onboarding, QD or Pointbase projects.
