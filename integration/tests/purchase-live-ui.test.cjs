@@ -111,10 +111,10 @@ test('read failure and timeout show explicit feedback without inventing zero rec
   const other=harness();other.timers[0]();assert.match(other.node('#liveStatus').textContent,/读取超时/);
 });
 
-test('CMS Dashboard retains the approved directory structure, summary icons and required add buttons',()=>{
+test('CMS Dashboard retains the approved directory structure, summary icons and supplier entry without customer registration',()=>{
   const h=harness();h.reply(workspace());const html=h.node('#app').innerHTML;
-  for(const marker of ['dashboard-summary','summary-icon','directory-heading','customer-directory','supplier-directory','Add Customer','Add Supplier','Search customer','Search supplier / brand'])assert.ok(html.includes(marker),marker);
-  assert.match(html,/<th>Edit<\/th>/);
+  for(const marker of ['dashboard-summary','summary-icon','directory-heading','customer-directory','supplier-directory','Add Supplier','Search customer','Search supplier / brand'])assert.ok(html.includes(marker),marker);
+  assert.match(html,/<th>Edit<\/th>/);assert.doesNotMatch(html,/Add Customer|id="addCustomer"/);
 });
 
 test('CMS Purchase Room restores v13 track, tools and approved columns plus the final task editor without changing task data',()=>{
