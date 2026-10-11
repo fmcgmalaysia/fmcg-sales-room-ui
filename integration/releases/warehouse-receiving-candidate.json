@@ -3,7 +3,7 @@
   "branch": "feat/warehouse-receiving",
   "base": "d3ad0ff / feat/account-purchase-payments (unpublished Account candidate)",
   "objective": "Warehouse Department batch receiving, customer-safe quantity feedback and the existing Master visual style",
-  "status": "candidate-wix-drafts-synchronized-not-published",
+  "status": "published-ui-and-read-verification-complete",
   "recovery": "Current public Purchase v18 deployed 18226cb, recorded at 2b031aa; Account parent candidate d3ad0ff. Scoped verified/send-order-addition-user-tests-20261009 remains protected; no claim of whole-site user acceptance.",
   "authorityChecks": "Fresh Wix source comparisons exact for Purchase projection, operations, customer quantity projection/read, shared PO workflow, and source masterQuantityProjection. Published Buyer/Sales inline scripts matched before changes. Exact before/after copies in private handoff/warehouse-receiving-20261011.",
   "storage": "Immutable batch events in existing company Activity collections; existing company/PURCHASE journal prevents duplicate receipt saves. No new collection, no received-quantity cache overwrites, no order price or original quantity writes.",
@@ -29,7 +29,7 @@
     ],
     "syntax": "Warehouse/Account JavaScript and actual Buyer/Sales inline scripts parsed",
     "legacyUIAssertions": "3 existing failures reproduced on untouched HEAD: old Buyer build marker, old Buyer hover styling expectation, old Sales build marker. Not changed to hide failures.",
-    "publicReceivingTest": false,
+    "publicReceivingTest": "Read and backend invalid-save validation passed; a positive physical receipt was not created on existing business POs",
     "realBusinessRecordsWritten": false
   },
   "wixDraft": {
@@ -50,7 +50,7 @@
       "purchaseOrderWorkflow.js",
       "source masterQuantityProjection.js"
     ],
-    "published": false,
+    "published": true,
     "hashes": {
       "masterQuantityProjection-after.js": "0e313abbdb87df856cd8874bcaea755840c22381849692089bf486acc2d6c6ce",
       "masterQuantityProjection-before.js": "bacead42ff61a80515af0f733a44feff095e32c1f27c98d8b1ae686449b2e9c4",
@@ -70,12 +70,17 @@
     }
   },
   "pages": {
-    "deployed": false,
-    "temporaryBranchRuleAdded": false,
-    "approvalRequested": true
+    "deployed": true,
+    "commit": "08fefdc7b1dbc60f7925f00bbfd37abc56253398",
+    "runId": "38138939027",
+    "jobId": "114468570333",
+    "durationSeconds": 18,
+    "temporaryBranchRuleAdded": true,
+    "temporaryBranchRuleRevoked": true,
+    "originalSevenRulesRestored": true
   },
   "pending": [
-    "GitHub Pages deployment and both Wix publications, then real public read/receipt verification",
+    "Positive physical-receipt write and cross-room receipt-change public acceptance require an actual/disposable receipt; current existing quantities were preserved",
     "Existing financial payment/proof, DO and final reconciliation remain unfinished; no financial Checked or final transaction History enabled",
     "Source customer gateway is the existing NCT integration; GHR customer submission gateway was not introduced",
     "Receiving corrections, short-close via CN/refund and extra-stock reassignment require their audited business workflows; no silent override is provided",
@@ -89,5 +94,27 @@
     "departmentBar": "49px / #193246",
     "navigation": "42px",
     "fontFamily": "Segoe UI, Arial, Microsoft YaHei, sans-serif"
+  },
+  "codeCommit": "08fefdc7b1dbc60f7925f00bbfd37abc56253398",
+  "wixPublication": {
+    "master": true,
+    "source": true,
+    "receipts": [
+      "master-published.png",
+      "source-published.png"
+    ]
+  },
+  "publicVerification": {
+    "warehouse": "2 current NCT POs; supplier full-name modal; 100 planned/0 received for Eclipse; history month selector; GHR empty isolation; 11px/44px rows and 49px #193246 department bar; actual zero-carton batch rejected by authenticated backend",
+    "purchase": "2 tasks, committed250/90, received unavailable unchanged, GP readable, Add Customer absent",
+    "account": "2 shared POs; Creditors has only current Final Invoice PO; existing INV and PI links preserved; Checked disabled",
+    "source": "Sales and Buyer 3 active lines, committed340CTN, original quoted prices preserved; unsubmitted200CTN remains Pending; inline scripts exactly match candidate",
+    "markers": {
+      "warehouse": "2026-10-11-warehouse-receiving-v1",
+      "purchase": "2026-10-11-account-invoice-review-v19",
+      "account": "2026-10-11-account-payments-v2",
+      "buyer": "2026-10-11-warehouse-buyer-receipts-v1",
+      "sales": "2026-10-11-warehouse-sales-receipts-v1"
+    }
   }
 }
