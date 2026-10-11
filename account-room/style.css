@@ -8,3 +8,12 @@
 
 /* Department shell measured against published Purchase v18; used by Account and Warehouse. */
 :root{color:#202b36}.department-header{height:49px;background:#193246;padding:0 20px;gap:20px}.department-header strong{font-size:13px;padding-left:20px;border-left-color:#61798b}.department-header .staff{font-size:11px}nav{height:42px;padding:0 20px;gap:25px}nav button{font-size:12px;padding:0 2px;color:#202b36}main{padding:18px 20px}
+/* Financial dialogs use the existing Master shell and compact field sizing. */
+.settlement-dialog{width:min(560px,calc(100vw - 32px))}
+.settlement-dialog .account-field{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:12px;margin:8px 0;font-size:11px}
+.settlement-dialog input,.settlement-dialog textarea{width:100%;min-width:0;border:1px solid #c8d9e5;border-radius:4px;padding:7px;font:inherit;background:#fff}
+.settlement-dialog input[type=checkbox]{width:18px;height:18px;justify-self:start}
+.settlement-dialog .document-note{font-size:11px;line-height:1.5}
+.account-money{padding:3px 5px;font-size:11px;color:#193246;background:#f1f5f8;min-height:25px;text-align:right}
+.settlement-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.settlement-tools button{font-size:11px;min-height:30px}

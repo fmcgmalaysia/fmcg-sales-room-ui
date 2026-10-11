@@ -23,7 +23,7 @@ export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   let names=[],customerNamesError='';
   try {names=await readCustomerShortNames([...new Set(rows.map(row=>row.customerId))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
   catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
-  return {company,orders:rows.map(row=>({...row,customerName:names.find(customer=>customer.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,documentsConnected:true,paymentConnected:false,warehouseConnected:false};
+  return {company,orders:rows.map(row=>({...row,customerName:names.find(customer=>customer.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,documentsConnected:true,paymentConnected:true,warehouseConnected:true};
 });
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await getPurchaseStaffContext();

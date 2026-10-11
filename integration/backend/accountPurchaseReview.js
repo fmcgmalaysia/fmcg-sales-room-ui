@@ -1,5 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
+import { projectAccountSettlement } from 'backend/accountSettlement.js';
 const text=value=>String(value??'').trim();
 export function requireAccountStaff(member,records) {
   const email=text(member?.loginEmail).toLowerCase();
@@ -15,14 +16,7 @@ export function invoiceReviewVersion(row) {
   return operationId(row.company,row.id,row.number,row.supplierId,row.taskIds,row.contentVersion,row.amount,documents);
 }
 export function projectInvoiceReview(row,details) {
-  const hasInvoice=row.documents.some(doc=>doc.type==='INV'&&doc.fileId&&doc.linked===true&&!doc.superseded);
-  // Whole-transaction review replaces the unpublished invoice-only candidate.
-  // No authoritative warehouse closure or financial reconciliation writer exists yet.
-  // A legacy flag or a browser request must never stand in for those records.
-  const checked=false;
-  return {invoiceChecked:checked,invoiceCheck:details.invoiceCheck?{...details.invoiceCheck}:null,
-    canCheck:false,checkBlocker:'等待仓库实收及财务对账接通 / Warehouse receipts and financial reconciliation are not connected.',
-    creditorActive:hasInvoice,documentStatus:purchaseDocumentState(row.documents,checked)};
+  return projectAccountSettlement(row,details);
 }
 export function createAccountReviewOperations({store,listOrders,names,now=()=>new Date()}) {
   const journal=createOperationJournal({store,now});

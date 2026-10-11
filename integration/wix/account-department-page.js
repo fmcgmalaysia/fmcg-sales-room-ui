@@ -1,4 +1,4 @@
-import { getAccountPurchaseOrders, saveAccountInvoiceCheck } from 'backend/accountPurchase.web';
+import { getAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
@@ -9,12 +9,12 @@ $w.onReady(() => {
       try{await authentication.promptLogin({mode:'login',modal:true});room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:true});}
       catch(_){room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:false});}return;
     }
-    if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>20000)return;
-    const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':'ACCOUNT_CHECK_RESULT';
+    if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST','ACCOUNT_SETTLEMENT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='ACCOUNT_SETTLEMENT_REQUEST'&&message.input?.action==='DOCUMENT_UPLOAD'?4250000:200000))return;
+    const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':message.type==='ACCOUNT_SETTLEMENT_REQUEST'?'ACCOUNT_SETTLEMENT_RESULT':'ACCOUNT_CHECK_RESULT';
     try{
-      const result=message.type==='ACCOUNT_ORDERS_REQUEST'?await getAccountPurchaseOrders(message.company):await saveAccountInvoiceCheck(message.company,message.requestId,message.input);
+      const result=message.type==='ACCOUNT_ORDERS_REQUEST'?await getAccountPurchaseOrders(message.company):message.type==='ACCOUNT_SETTLEMENT_REQUEST'?await saveAccountSettlement(message.company,message.requestId,message.input):await saveAccountInvoiceCheck(message.company,message.requestId,message.input);
       room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
     }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261011-account-payments-v2';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261011-account-settlement-v3';
 });
