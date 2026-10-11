@@ -34,11 +34,11 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const invoiceDate=invoiceDates[0]||null,termDays=Number.isSafeInteger(details.termDays)?details.termDays:null;
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
     // Their department writers are not connected yet; never offer a premature archive.
-    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion)),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,
+    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse)),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerName:customer?.shortName||customer?.name||'',
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
-      itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,
+      itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,salesInvoiceComplete:rows.every(row=>Boolean(text(row.salesInvoiceNumber))&&row.salesInvoiceLocked===true),
       warehouse:{connected:true,receivedCtn:rows.reduce((sum,row)=>sum+(row.warehouse?.accepted||0),0),complete:rows.every(row=>row.warehouse&&row.warehouse.accepted===row.procurement?.totalCtn&&!row.warehouse.issue),issues:rows.some(row=>row.warehouse?.issue===true)},
       termDays,invoiceDate,dueDate:purchaseInvoiceDueDate(invoiceDate,termDays),
       chasePayment:details.chasePayment===true,state:'ACTIVE',documents,documentStatus:purchaseDocumentState(documents,details.finalInvoiceComplete===true),

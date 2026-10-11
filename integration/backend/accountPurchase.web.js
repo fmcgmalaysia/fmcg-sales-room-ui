@@ -5,6 +5,8 @@ import { requireAccountStaff, createAccountReviewOperations } from 'backend/acco
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
+import { createAccountSettlementOperations } from 'backend/accountSettlement.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -20,11 +22,17 @@ const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,rea
   return projectPurchaseWorkspace({company,orders:orderRows,tasks,activity,suppliers,staff});
 }});
 const reviews=createAccountReviewOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list});
+const settlements=createAccountSettlementOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list,documentService:requestPurchaseDocument});
+export const saveAccountSettlement=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
+  const staff=await accountStaff();
+  try{return await settlements.save({company,staff,requestId,input});}
+  catch(error){const message=String(error?.message||'');const safe=/^(Unsupported financial action\.|Purchase order changed\.|Purchase order changed while saving\.|Enter |Select |Review the existing CN|Financial check has not changed|This payment (reference|proof)|This DO|CN total|Final Invoice required|Confirm INV|Supplier DO required|Confirm CN|Complete warehouse receiving|Resolve overpayment|Payment records require review)/.test(message);const processing=/^A save is still processing\./.test(message);return {ok:false,requestId,retryable:!safe,error:safe||processing?message:'Financial save could not be confirmed. Retry the same save.'};}
+});
 export const getAccountPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   const staff=await accountStaff(),rows=await orders.list(company,staff);let names=[],customerNamesError='';
   try{names=await readCustomerShortNames([...new Set(rows.map(row=>row.customerId))]);if(names.some(row=>!row.shortName))customerNamesError='部分客户 Short Name 尚未填写。';}
   catch(_){customerNamesError='客户 Short Name 暂时无法读取，保留已保存名称。';}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,paymentConnected:false,warehouseConnected:false,invoiceReviewConnected:false,readAt:new Date().toISOString()};
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,paymentConnected:true,warehouseConnected:true,invoiceReviewConnected:true,readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
