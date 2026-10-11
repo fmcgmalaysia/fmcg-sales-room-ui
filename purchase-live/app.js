@@ -251,7 +251,7 @@ const stages=[
       let binary='';for(let offset=0;offset<bytes.length;offset+=16384)binary+=String.fromCharCode(...bytes.subarray(offset,offset+16384));
       if(dialogContext!==context||!modal.open)return;
       mutate('PURCHASE_ORDER_SAVE_REQUEST',{input:{id:row.id,version:context.version,action:'DOCUMENT',type,date,number,reason,base64:btoa(binary)}});
-    }catch(problem){error.textContent=problem.message;}finally{button.disabled=false;}
+    }catch(problem){error.textContent=problem.message;}finally{if(!savePending)button.disabled=false;}
   }
   document.addEventListener('click',event=>{
     const control=event.target.closest('button');if(!control)return;
