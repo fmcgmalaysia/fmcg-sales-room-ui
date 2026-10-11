@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Asia/Kuala_Lumpur",
+  "purchaseBuild": "2026-10-11-purchase-closeout-v17",
+  "accountBuild": "2026-10-11-account-layout-v1",
+  "branch": "release/purchase-account-closeout",
+  "recovery": "e0d0a1566208344912d07ed7aa3918e599308b37 / Purchase v16",
+  "isolatedPatches": { "refresh": "PR55", "layout": "PR56", "shortName": "PR57", "pendingUpload": "PR58" },
+  "accountSource": "375d432 / feat/account-department-layout; three frontend files preserved exactly",
+  "accountWixPage": { "pageId": "go8ts", "slug": "account-department", "htmlComponentId": "html1", "sectionId": "section4", "height": 850, "sectionSizing": "Fixed height", "componentSizing": "Stretch", "maxWidth": false, "headerFooter": "Removed from this new page only", "bridgeReadbackExact": true },
+  "shortName": { "source": "WixCustomers.customerShortName", "lookupKey": "customerId", "auth": "Existing MASTER_INTAKE_SHARED_SECRET", "writesBusinessData": false, "sourceHttpBeforeExact": true, "sourceHttpDraftExact": true, "masterPoWebBeforeExact": true, "masterPoWebDraftExact": true },
+  "checks": { "integrationPassed": 170, "realPDFUpload": "Blocked before file selection by browser chooser; no request sent" },
+  "publication": "Pending branch deployment approval and four-stage verification",
+  "futureDependencies": ["Account real payment records", "Warehouse receipt closure", "Account final verification", "Bank, debtor and creditor financial sources"],
+  "safety": "No fake payment/receipt/archive state. Real Purchase IDs, quantities, quote locks, PO values and history retained. No main merge or new verified tag."
+}
