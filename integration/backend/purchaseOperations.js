@@ -91,12 +91,21 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn});
       } else if(operation==='PO') {
         const po=String(input.poNumber||'').trim().toUpperCase();if(!po||po.length>80||!Array.isArray(input.taskIds)||!input.taskIds.length||input.taskIds.length>100||new Set(input.taskIds).size!==input.taskIds.length)throw Error('P.O. number and distinct tasks are required.');
+        if(/^(NCT|GHR)-PO-?$/.test(po))throw Error('Enter the P.O. number after the company prefix.');
         const chosen=input.taskIds.map(verified),first=chosen[0];
         if(!first.task.supplierId||chosen.some(({task,row})=>task.supplierId!==first.task.supplierId||row.customerId!==first.row.customerId))throw Error('One P.O. must belong to one customer and one supplier.');
         if(!s.suppliers.some(row=>row.title===first.task.supplierId))throw Error('Supplier profile is missing. Select a registered supplier.');
         if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
         const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
         if(used.some(row=>row.customerId!==first.row.customerId||row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another customer or supplier.');
+        const savedOrders=(await store.all('PurchaseOrders')).filter(row=>row.company===company);
+        const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
+        for(const saved of savedOrders){
+          const members=proposed.filter(row=>saved.details?.taskIds?.includes(row.id));
+          if(members.length!==(saved.details?.taskIds?.length||0)||new Set(members.map(row=>row.po)).size>1)throw Error('This P.O. has saved records. Select all its tasks when changing its number.');
+        }
+        const destination=proposed.filter(row=>row.po===po).map(row=>row.id);
+        if(savedOrders.filter(row=>row.details?.taskIds?.some(id=>destination.includes(id))).length>1)throw Error('Two purchase orders with saved records cannot be merged.');
         for(const {task} of chosen){if(input.versions?.[task.title]!==taskEditVersion(task))throw Error('A task changed. Refresh before saving.');
           requireSettledPlan(task);
           const patch={ourPoNumber:po,purchaseStage:['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)?'WAITING_FOR_SUPPLIER_INV':task.purchaseStage};

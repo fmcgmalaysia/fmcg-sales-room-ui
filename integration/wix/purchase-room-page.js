@@ -1,4 +1,5 @@
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
+import { getPurchaseOrders, savePurchaseOrder } from 'backend/purchaseOrders.web';
 import { retryPurchaseTaskCost } from 'backend/purchaseCostRetry.web';
 import { savePurchaseOperation, getSupplierProfile, getSupplierBrandOptions, saveSupplierProfile, getPurchaseSaveResult } from 'backend/purchaseOperations.web';
 import { authentication, currentMember } from 'wix-members-frontend';
@@ -7,6 +8,16 @@ $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(['PURCHASE_ORDERS_REQUEST','PURCHASE_ORDER_SAVE_REQUEST'].includes(message.type)) {
+      const maxSize=message.type==='PURCHASE_ORDER_SAVE_REQUEST'&&message.input?.action==='DOCUMENT'?4250000:200000;
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>maxSize)return;
+      const replyType=message.type==='PURCHASE_ORDERS_REQUEST'?'PURCHASE_ORDERS_RESULT':'PURCHASE_SAVE_RESULT';
+      try {
+        const result=message.type==='PURCHASE_ORDERS_REQUEST'?await getPurchaseOrders(message.company):await savePurchaseOrder(message.company,message.requestId,message.input);
+        room.postMessage({type:replyType,ok:true,company:message.company,requestId:message.requestId,result});
+      } catch(error) {room.postMessage({type:replyType,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Purchase order request could not be confirmed.'});}
+      return;
+    }
     if(['PURCHASE_SAVE_REQUEST','PURCHASE_SUPPLIER_SAVE_REQUEST','PURCHASE_PROFILE_REQUEST','PURCHASE_BRANDS_REQUEST','PURCHASE_SAVE_CHECK_REQUEST'].includes(message.type)) {
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const replyType={PURCHASE_PROFILE_REQUEST:'PURCHASE_PROFILE_RESULT',PURCHASE_BRANDS_REQUEST:'PURCHASE_BRANDS_RESULT',PURCHASE_SAVE_CHECK_REQUEST:'PURCHASE_SAVE_CHECK_RESULT'}[message.type]||'PURCHASE_SAVE_RESULT';
@@ -54,5 +65,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261011-purchase-compact-v14';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261011-purchase-orders-v15';
 });

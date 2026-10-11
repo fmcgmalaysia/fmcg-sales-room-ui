@@ -19,7 +19,7 @@ const operate=createPurchaseOperations({store}),suppliers=createSharedSupplierOp
 export const savePurchaseOperation=webMethod(Permissions.SiteMember,async(company,requestId,operation,input)=>{
  const staff=await getPurchaseStaffContext();
  try { return await operate({company,requestId,operation,input,staff}); }
- catch(error) { if(error?.message==='Net cost cannot be negative.')return {ok:false,requestId,error:'Net cost cannot be negative.'}; throw error; }
+ catch(error) { if(['Net cost cannot be negative.','Enter the P.O. number after the company prefix.','This P.O. has saved records. Select all its tasks when changing its number.','Two purchase orders with saved records cannot be merged.'].includes(error?.message))return {ok:false,requestId,error:error.message}; throw error; }
 });
 export const getSupplierProfile=webMethod(Permissions.SiteMember,async supplierId=>{
  await getPurchaseStaffContext();if(typeof supplierId!=='string'||supplierId.length>100)throw Error('Invalid supplier.');return suppliers.profile(supplierId);

@@ -32,6 +32,17 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
 
+test('purchase orders render persisted documents and readable history, with upload input instead of fixture controls',async()=>{
+ const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
+ assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
+ const row={id:'POID',version:'V',number:'NCT-PO-001',taskIds:['TASK'],customerName:'BUYER',supplierId:'S',supplierShortName:'SUP',supplierName:'SUPPLIER',itemCount:1,amount:100,termDays:30,documents:[{fileId:'file_123456789',type:'INV',number:'INV001',date:'2026-10-11',uploadedBy:'LAW'}],documentStatus:'COMPLETE',state:'ACTIVE',history:[{action:'PAYMENT_TERM_CHANGED',actor:'LAW',time:'2026-10-11T01:00:00Z',changes:{before:{termDays:15},after:{termDays:30},reason:'Agreed terms'}}]};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match(h.node('#app').innerHTML,/doc-dot complete/);assert.match(h.node('#app').innerHTML,/BUYER/);
+ h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
+ h.click({poHistory:'POID'});const history=h.node('#dialogContent').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
+});
+
 test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
  for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,'—'],[undefined,'—']]){
   const h=harness(),w=workspace();w.tasks[0].gp=gp;h.reply(w);h.click({customer:'C'});
@@ -53,6 +64,11 @@ test('P.O. dialog hides system IDs, places an obvious input first and keeps orig
 test('P.O. details stay read-only and show human product references without internal IDs',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',procurement:{totalCtn:275}});h.reply(w);h.click({poView:'TASK'});
  const html=h.node('#dialogContent').innerHTML;assert.match(html,/采购单详情/);assert.match(html,/NCT-00123/);assert.match(html,/00123/);assert.doesNotMatch(html,/<small>TASK<\/small>|id="poNumber"|id="savePo"/);assert.equal(h.messages.length,1);
+});
+
+test('a company prefix alone cannot create a PO or lose the current input',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV'});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
+ h.node('#poNumber').value='NCT-PO-';h.click({controlId:'savePo'});assert.equal(h.messages.length,1);assert.match(h.node('#dialogError').textContent,/采购单号码/);assert.equal(h.node('#poNumber').value,'NCT-PO-');
 });
 
 test('supplier plan confirms excess and keeps customer qty out of its write payload',()=>{
