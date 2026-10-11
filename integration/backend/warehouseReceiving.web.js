@@ -22,8 +22,8 @@ async function readOrders(company,staff){
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
   const staff=await staffContext(),orders=await readOrders(company,staff);let names=[];
-  try{names=await readCustomerShortNames([...new Set(orders.map(row=>row.customerId))]);}catch(_){}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:orders.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),readAt:new Date().toISOString()};
+  try{names=await readCustomerShortNames([...new Set(orders.flatMap(row=>row.customerIds||[row.customerId]))]);}catch(_){}
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:orders.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
 });
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await staffContext();

@@ -31,6 +31,12 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+test('planner allocation editor sends the selected receipt and explicit customer quantities with a reason',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
+ h.reply(w);h.click({view:'stock'});assert.match(h.node('#app').innerHTML,/data-allocate="TASK"/);h.click({allocate:'TASK'});
+ assert.match(h.node('#dialogContent').innerHTML,/ACTUAL CUSTOMER/);h.node('#allocateQty0').value='80';h.node('#allocationReason').value='Hold ten cartons';h.click({controlId:'saveAllocation'});
+ const request=h.messages.at(-1);assert.equal(request.operation,'ALLOCATE');assert.equal(request.input.version,'AV');assert.equal(request.input.targets[0].quantity,80);assert.equal(request.input.sourceTaskId,'TASK');assert.equal(request.input.reason,'Hold ten cartons');
+});
 test('Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'payments'});const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
  const row={id:'PO',number:'NCT-PO-001',createdAt:'2026-10-11T01:00:00Z',createdBy:'LAW',supplierName:'SUPPLIER FULL NAME',supplierShortName:'SUP',customerName:'BUYER',amount:1200,status:'Paid W/T Inv',finance:{payableCents:100000,paidCents:100000,balanceCents:0,payments:[{id:'P',confirmed:true,reference:'BANK001',cents:100000,at:'2026-10-11T02:00:00Z',by:'FINANCE',proof:{fileId:'proof_123456789'}}]}};
@@ -145,9 +151,9 @@ test('unchanged supplier quantities and unconfirmed P.O. changes give local feed
  h.node('#planSupplierConfirmed').checked=true;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
 });
 
-test('shared expected-stock view includes all company customers but never enables allocation',()=>{
+test('shared expected-stock view includes all company customers and disables allocation before receipt',()=>{
  const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
- const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" disabled>Allocate/);assert.doesNotMatch(html,/data-allocate/);
+ const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" data-allocate="[^"]+" disabled>Allocate/);assert.equal([...html.matchAll(/<button[^>]*data-allocate[^>]*>/g)].every(match=>match[0].includes("disabled")),true);
 });
 test('live page starts empty, requests real Master data and never seeds demo business records',()=>{
   const h=harness();assert.equal(h.messages.length,1);assert.equal(h.messages[0].type,'PURCHASE_WORKSPACE_REQUEST');

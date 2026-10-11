@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {projectPurchaseOrders,createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
+test('one supplier PO includes multiple customers without combining their task identities',()=>{
+ const f=fixture();f.workspace.customers.push({id:'B',name:'SECOND CUSTOMER',shortName:'SECOND'});f.workspace.tasks[1].customerId='B';
+ const rows=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]});
+ assert.equal(rows.length,1);assert.equal(rows[0].customerName,'CUST / SECOND');assert.equal(rows[0].taskIds.length,2);assert.equal(rows[0].amount,1105);assert.equal(rows[0].itemCount,1);
+});
 function fixture(documentService){
  const workspace={company:'NCT',customers:[{id:'C',name:'CUSTOMER',shortName:'CUST'}],suppliers:[{id:'S',shortName:'SUP',name:'SUPPLIER FULL'}],tasks:[
   {id:'T1',editVersion:'V1',customerId:'C',supplierId:'S',po:'NCT-PO-001',barcode:'001',packing:'16',ord:90,procurement:{totalCtn:100},lpCtn:10.05,disc1:0,disc2:0,disc3:0,history:[{id:'A',action:'PURCHASE_PO_ASSIGNED',result:'SAVED',time:'2026-10-11T01:00:00Z',actor:'LAW'}]},

@@ -1,0 +1,58 @@
+{
+  "status": "local implementation in progress; not published",
+  "approvedBy": "User authorized complete implementation, publishing and testing on 2026-10-12",
+  "recovery": {
+    "productionCandidate": "fe28971431803696a967981004906fab27a90bf6",
+    "protectedTag": "verified/send-order-addition-user-tests-20261009",
+    "scope": "Customer submission and addition only; not full Master acceptance",
+    "exactLiveCopies": "C:/FMCG-WIX-LOCAL/handoff/master-demand-protection-20261012"
+  },
+  "rules": {
+    "customerDemand": "Super Admin only; purchaser changes supplier plan, never demand",
+    "allocation": "Warehouse records physical accepted quantities; purchaser explicitly allocates matching products to customer tasks",
+    "payments": "MYR actual payments with proofs; track prepayments before final invoice",
+    "documents": "Purchase records invoice/DO/CN; finance verifies completeness after receiving",
+    "risk": "Persistent responsible department and downstream blockers; acknowledgement never resolves",
+    "history": "Separate customer fulfilment and supplier financial closure; partial shipments and multi-customer POs supported",
+    "invoice": "Sales selects quantities; Support records invoice number/date/amount; no finance shipment gate",
+    "exceptions": [
+      "Cancelled without sales invoice retains supplier liability",
+      "Surplus remains traceable inventory",
+      "Corrections require role authority and audit"
+    ]
+  },
+  "phases": [
+    {
+      "name": "Customer demand protection",
+      "commit": "82df98d",
+      "tests": 193,
+      "status": "local committed"
+    },
+    {
+      "name": "Explicit planner allocation and multi-customer PO",
+      "tests": 198,
+      "status": "local implementation"
+    },
+    {
+      "name": "Persistent shortage decisions and departmental task signals",
+      "status": "pending"
+    },
+    {
+      "name": "Supplier prepayment/refunds/credits and document reconciliation",
+      "status": "pending"
+    },
+    {
+      "name": "Sales shipment selection, Support invoicing, customer debtor and warehouse dispatch",
+      "status": "pending"
+    },
+    {
+      "name": "Unified department UI, release and public acceptance",
+      "status": "pending"
+    }
+  ],
+  "release": {
+    "githubPages": false,
+    "wixPublished": false,
+    "publicVerified": false
+  }
+}

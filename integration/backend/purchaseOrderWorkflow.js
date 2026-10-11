@@ -7,7 +7,7 @@ export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
-const groupKey = row => JSON.stringify([row.customerId,row.supplierId,row.po]);
+const groupKey = row => JSON.stringify([row.supplierId,row.po]);
 
 // A stored identity survives number changes. Tasks and supplier plans remain authoritative.
 export function projectPurchaseOrders({company,workspace,records,now=new Date()}) {
@@ -35,7 +35,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
     // Their department writers are not connected yet; never offer a premature archive.
     const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse)),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,
-      number:first.po,company,currency:'MYR',customerId:first.customerId,customerName:customer?.shortName||customer?.name||'',
+      number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
       itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,salesInvoiceComplete:rows.every(row=>Boolean(text(row.salesInvoiceNumber))&&row.salesInvoiceLocked===true),

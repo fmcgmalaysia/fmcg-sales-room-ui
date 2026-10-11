@@ -11,7 +11,7 @@ export async function readPurchaseQuantities(request){
   if(!secret||actual.length!==expected.length||!timingSafeEqual(actual,expected))return {status:401,body:{ok:false,error:'Unauthorized request.'}};
   try {const body=await request.body.json();if(body.company!=='NCT'||typeof body.customerId!=='string'||body.customerId.length>100||!Array.isArray(body.orders)||!body.orders.length||body.orders.length>100)throw Error('Invalid request.');
     const ids=body.orders.map(row=>row.orderId);if(ids.some(id=>typeof id!=='string'||id.length>160))throw Error('Invalid order.');
-    const [orders,tasks,activity,receipts]=await Promise.all([rows('NCTOrders','title',ids),rows('NCTTasks','description',ids),rows('NCTActivity','description',ids),rows('NCTActivity','image',[body.customerId])]);
-    return {status:200,body:projectPurchaseQuantities({customerId:body.customerId,requests:body.orders,orders,tasks,activity:[...activity,...receipts.filter(row=>row.action==='WAREHOUSE_RECEIPT_SAVED'&&!activity.some(item=>item._id===row._id))]})};
+    const [orders,tasks,activity,receipts]=await Promise.all([rows('NCTOrders','title',ids),rows('NCTTasks','description',ids),rows('NCTActivity','description',ids),rows('NCTActivity','action',['WAREHOUSE_RECEIPT_SAVED','PLANNER_ALLOCATION_SAVED'])]);
+    return {status:200,body:projectPurchaseQuantities({customerId:body.customerId,requests:body.orders,orders,tasks,activity:[...activity,...receipts.filter(row=>!activity.some(item=>item._id===row._id))]})};
   }catch(error){return {status:503,body:{ok:false,error:'Current purchase quantities could not be confirmed. Please refresh.'}};}
 }

@@ -2,6 +2,7 @@
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -30,7 +31,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     if (accepted.has(orderId)) throw Error('Duplicate Master receipt requires review.');
     accepted.set(orderId, { submissionId, ids: new Set(ids), receivedAt: stamp(event.activityTime) });
   }
-  const rows = [], seen = new Set(), customers = new Map();
+  const rows = [], seen = new Set(), customers = new Map(), allocations=readAllocations(activity);
   for (const task of tasks) {
     const receipt = accepted.get(text(task.description));
     if (!receipt) continue;
@@ -50,7 +51,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
-      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:null,allocationEnabled:false},
+      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:warehouse?warehouse.accepted-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
       warehouse:warehouse?{accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
@@ -80,7 +81,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   return {
-    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),
+    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),

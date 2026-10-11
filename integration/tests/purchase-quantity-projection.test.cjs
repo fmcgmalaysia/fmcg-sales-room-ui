@@ -9,6 +9,8 @@ test('source projection keeps original ordered qty and quote while both views re
 
 test('warehouse reply exposes only allocated customer cartons and source displays completion without changing price',()=>{
  const f=fixture();f.activity.push({title:'R',description:'PO',image:'C',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:'2026-10-11T02:00:00Z',initiatedByStaffName:'PRIVATE WAREHOUSE',details:{beforeRevision:'',lines:[{taskId:'T',orderId:'O',sourceLineId:'L',beforeAccepted:0,beforeRejected:0,accepted:100,rejected:3,issue:false,reason:'PRIVATE SUPPLIER'}]}});
+ assert.equal(projectPurchaseQuantities(f).orders[0].lines[0].receivedQtyCtn,0);
+ f.activity.push({title:'AL',imageAltText:'T',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-11T02:00:00Z',details:{beforeRevision:'',targets:[{taskId:'T',quantity:80}]}});
  const reply=projectPurchaseQuantities(f);assert.equal(reply.orders[0].lines[0].receivedQtyCtn,80);assert.doesNotMatch(JSON.stringify(reply),/PRIVATE|rejected|extraReceived/);
  const order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]};const [result]=apply('C',[order],reply);
  assert.equal(result.lines[0].receivedQtyCtn,80);assert.equal(result.lines[0].goodsReceivedAt,'2026-10-11T02:00:00.000Z');assert.equal(result.lines[0].lockedPriceCtn,23);assert.equal(order.lines[0].receivedQtyCtn,undefined);

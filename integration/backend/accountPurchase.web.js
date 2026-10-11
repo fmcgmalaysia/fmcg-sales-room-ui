@@ -30,9 +30,9 @@ export const saveAccountSettlement=webMethod(Permissions.SiteMember,async(compan
 });
 export const getAccountPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   const staff=await accountStaff(),rows=await orders.list(company,staff);let names=[],customerNamesError='';
-  try{names=await readCustomerShortNames([...new Set(rows.map(row=>row.customerId))]);if(names.some(row=>!row.shortName))customerNamesError='部分客户 Short Name 尚未填写。';}
+  try{names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='部分客户 Short Name 尚未填写。';}
   catch(_){customerNamesError='客户 Short Name 暂时无法读取，保留已保存名称。';}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,paymentConnected:true,warehouseConnected:true,invoiceReviewConnected:true,readAt:new Date().toISOString()};
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,paymentConnected:true,warehouseConnected:true,invoiceReviewConnected:true,readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();

@@ -65,7 +65,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing procurement quantity.');
-        if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999||input.totalCtn<task.purchaseQtyInCtn)throw Error('Supplier total must cover the customer quantity, between 1 and 9999 cartons.');
+        if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
@@ -97,11 +97,11 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const po=String(input.poNumber||'').trim().toUpperCase();if(!po||po.length>80||!Array.isArray(input.taskIds)||!input.taskIds.length||input.taskIds.length>100||new Set(input.taskIds).size!==input.taskIds.length)throw Error('P.O. number and distinct tasks are required.');
         if(/^(NCT|GHR)-PO-?$/.test(po))throw Error('Enter the P.O. number after the company prefix.');
         const chosen=input.taskIds.map(verified),first=chosen[0];
-        if(!first.task.supplierId||chosen.some(({task,row})=>task.supplierId!==first.task.supplierId||row.customerId!==first.row.customerId))throw Error('One P.O. must belong to one customer and one supplier.');
+        if(!first.task.supplierId||chosen.some(({task})=>task.supplierId!==first.task.supplierId))throw Error('One P.O. must belong to one supplier.');
         if(!s.suppliers.some(row=>row.title===first.task.supplierId))throw Error('Supplier profile is missing. Select a registered supplier.');
         if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
         const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
-        if(used.some(row=>row.customerId!==first.row.customerId||row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another customer or supplier.');
+        if(used.some(row=>row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another supplier.');
         const savedOrders=(await store.all('PurchaseOrders')).filter(row=>row.company===company);
         const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
         for(const saved of savedOrders){

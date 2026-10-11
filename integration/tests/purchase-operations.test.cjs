@@ -98,7 +98,7 @@ test('customer reduction after P.O. retains supplier total and increases expecte
 });
 
 test('procurement safeguards require supplier, explicit extra type/confirmation and current company identities',async()=>{
- for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:249},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
+ for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:0},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
  const f=fixture();f.task().supplierId='';await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:250,reason:'Plan'}}),/supplier/);
  await assert.rejects(f.operate({...f.base,company:'GHR',operation:'PLAN',input:{taskId:f.id}}),/accepted/);
 });
