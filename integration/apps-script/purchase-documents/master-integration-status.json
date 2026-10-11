@@ -1,8 +1,8 @@
 {
   "date": "2026-10-11",
-  "candidateBuild": "2026-10-11-purchase-closeout-v17",
-  "lastPublishedBuild": "2026-10-11-purchase-closeout-v17",
-  "status": "v17-and-account-layout-published-publicly-verified-user-acceptance-pending",
+  "candidateBuild": "2026-10-11-purchase-po-polish-v18",
+  "lastPublishedBuild": "2026-10-11-purchase-po-polish-v18",
+  "status": "v18-and-account-layout-published-publicly-verified-user-acceptance-pending",
   "masterSecret": "Owner confirmed saved; value not read or recorded",
   "collection": {"id":"PurchaseOrders","fields":{"title":"Text","company":"Text","details":"Object"},"permissions":"Admin only; all other roles unchecked"},
   "masterDraft": "Published v17 Home and customer Short Name modules; source HTTP and Master Home readbacks exact. Source and Master both returned published/live receipts. Account page go8ts/html1/account-department publicly renders v1 layout; new-page header/footer removed and section fixed-height850/Stretch/full-width configured.",
