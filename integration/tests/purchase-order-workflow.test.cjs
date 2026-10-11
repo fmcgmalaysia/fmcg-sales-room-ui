@@ -46,7 +46,7 @@ test('a lost upload receipt retries one file; no PDF bytes are written to CMS an
  assert.equal(JSON.stringify([...f.records.values()]).includes(base64),false);
  await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});
  assert.equal(allocated,1);assert.equal(uploads,2);assert.equal(new Set(ids).size,1);
- const saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(saved.documents.length,1);assert.equal(saved.documents[0].uploadedBy,'LAW');assert.equal(saved.documentStatus,'COMPLETE');assert.equal(saved.invoiceDate,'2026-10-11');assert.equal(saved.canArchive,false);
+ const saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(saved.documents.length,1);assert.equal(saved.documents[0].uploadedBy,'LAW');assert.equal(saved.documentStatus,'PROVISIONAL');assert.equal(saved.invoiceChecked,false);assert.equal(saved.invoiceDate,'2026-10-11');assert.equal(saved.canArchive,false);
  assert.equal(saved.history.filter(event=>event.action==='SUPPLIER_DOCUMENT_UPLOADED').length,1);
 });
 test('corrupt PDF is rejected before storage or Drive access',async()=>{

@@ -1,4 +1,20 @@
-// Published layout only. Financial data and payment actions remain unconnected.
+import { getAccountPurchaseOrders, saveAccountInvoiceCheck } from 'backend/accountPurchase.web';
+import { authentication } from 'wix-members-frontend';
+// PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
-  $w('#html1').src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261011-account-layout-v1';
+  const room=$w('#html1');
+  room.onMessage(async event=>{
+    const message=event.data||{};
+    if(message.type==='ACCOUNT_LOGIN_REQUEST'){
+      try{await authentication.promptLogin({mode:'login',modal:true});room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:true});}
+      catch(_){room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:false});}return;
+    }
+    if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>20000)return;
+    const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':'ACCOUNT_CHECK_RESULT';
+    try{
+      const result=message.type==='ACCOUNT_ORDERS_REQUEST'?await getAccountPurchaseOrders(message.company):await saveAccountInvoiceCheck(message.company,message.requestId,message.input);
+      room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
+    }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
+  });
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261011-account-payments-v2';
 });

@@ -2,6 +2,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate } from 'backend/purchaseDocumentPolicy.js';
+import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -33,7 +34,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const invoiceDate=invoiceDates[0]||null,termDays=Number.isSafeInteger(details.termDays)?details.termDays:null;
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
     // Their department writers are not connected yet; never offer a premature archive.
-    return {id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion)),taskIds,
+    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion)),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerName:customer?.shortName||customer?.name||'',
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
@@ -43,6 +44,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       status:'Awaiting payment records',canArchive:false,archiveBlockers:['Warehouse receipt closure','Completed supplier payment','Final Account verification'],
       history:[...history,...(details.audit||[])].sort((a,b)=>String(a.time).localeCompare(String(b.time))),
       updatedAt:date(details.updatedAt),readAt:now.toISOString()};
+    return {...projected,...projectInvoiceReview(projected,details)};
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
