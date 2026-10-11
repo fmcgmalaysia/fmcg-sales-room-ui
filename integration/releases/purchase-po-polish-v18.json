@@ -1,0 +1,17 @@
+{
+  "date":"2026-10-11",
+  "timezone":"Asia/Kuala_Lumpur",
+  "branch":"style/purchase-po-dialog-polish",
+  "pullRequest":60,
+  "codeCommit":"d7e99af",
+  "deployedCommit":"18226cbf2f4c92f522677e1931607a27be141fd0",
+  "build":"2026-10-11-purchase-po-polish-v18",
+  "recovery":"3226ed1782dee11b4f0d505b9b5651a46324f6f6 / Purchase v17",
+  "code":{"complete":true,"existingIntegrationChecksPassed":170,"syntaxPassed":true,"backendChanged":false,"uploadAndFollowingBusinessCodeExact":true},
+  "pages":{"runId":"38118687489","jobId":"114408738121","status":"Success","duration":"19s","appStyleIndexNormalizedExact":true,"publicMetaBuildVerified":true},
+  "wix":{"homeBeforeExact":true,"patch":"One version reference v17 to v18","homeAfterExact":true,"publishedLiveReceipt":true,"sourceSiteChanged":false},
+  "publicVerification":{"url":"https://fmcg999.wixstudio.com/master","forceRefreshV18":true,"staff":"LAW","checks":["Purchase Department and explicit Company picker","Creation date/time and closely stacked by LAW","Amount header and values right aligned with equal8px padding","Thin long chase switch and open-folder status icon","Supplier full name in Files and Upload blue header","Upload width434px; labels left and inputs right","Combined PI/SO, separate final INV/CN upload choices","Existing PI and INV links and green COMPLETE status retained","Documents history has final INV and PI/SO specific titles","Committed Qty Reduced quantity title; missing original procurement baseline remains PO Qty Updated","Two Active POs, original amounts1861.11/1005, chase ON/OFF retained","Background reads retain visible list"]},
+  "temporaryBranchRule":"Added for this release then removed; previous seven rules retained; no Save protection rules changes",
+  "limitations":["This visual release did not submit another PDF or change business records; actual NCT transport was verified on v16 and retained thereafter","CN/increased-quantity titles have no corresponding actual new event in this public test","Account financial and Warehouse/final payment closure dependencies remain unconnected"],
+  "userAcceptance":"Pending; no main merge or new verified tag"
+}
