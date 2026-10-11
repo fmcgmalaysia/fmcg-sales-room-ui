@@ -122,9 +122,9 @@ test('CMS Purchase Room restores v13 track, tools and approved columns plus the 
   for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','History','GP','Edit']);
+  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
   assert.equal(labels.length,17);
-  assert.match(html,/width:21%/);
+  assert.match(html,/width:22.5%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
