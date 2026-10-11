@@ -1,20 +1,65 @@
 {
-  "date":"2026-10-11",
-  "timezone":"Asia/Kuala_Lumpur",
-  "branch":"feat/account-purchase-payments",
-  "status":"candidate-only-not-synchronized-or-published",
-  "objective":"Account reads the same PurchaseOrders projection; financial staff explicitly check the final supplier Invoice before files become green",
-  "prerequisites":"Root rules and START_HERE; v18 final handoff; Account original discussion/layout; PO workflow and current authoritative live source",
-  "freshBeforeComparison":{"home":true,"accountPage":true,"purchaseOrderWorkflow":true,"purchaseOrdersWeb":true,"purchaseAccess":true,"purchaseDocumentPolicy":true,"publicPurchaseApp":true,"publicAccountApp":true,"publicAccountStyle":true},
-  "recovery":"Current public v18 at 18226cb; final record 2b031aa. Scoped user-verified Send Order tag 6b545502 remains protected, not a whole Purchase acceptance.",
-  "reads":"Existing StaffMasterAccess, company orders/tasks/activity, SharedSuppliers and PurchaseOrders. No new sync, collection or supplier upload service change.",
-  "writes":"Candidate invoiceCheck metadata and audit only, with current Account staff identity and the same company PURCHASE operation lock/replay journal",
-  "permission":"ACCOUNT department or existing TOP MANAGEMENT/SUPER ADMIN, plus approved member, unique active employee binding. Purchase-only staff rejected.",
-  "freshCMS":"StaffMasterAccess has one existing TOP MANAGEMENT / LAW binding; read only, no permission or member changes",
-  "reviewInvalidation":"Canonical current files plus PO identity and financial line content. Supplier quantity/cost/file changes invalidate; non-financial row order does not.",
-  "ui":"12 compact columns, 11px, 44px rows, 30px gray-blue headers, blue bilingual compact dialogs, aligned MYR amounts; other Account tabs retained",
-  "verification":{"integrationChecks":174,"localFixtureOnly":true,"localChecks":["Two PO rows render","Finance check switches both toggle and Files green","Missing final invoice disables check","Cancellation requires reason and returns orange","NCT/GHR switch clears foreign list","Supplier filter works","History active navigation works","Bank placeholder retained"]},
-  "protected":"Existing purchase Save, costs/quantity writes, intake/Buyer/Sales flows, PDF upload function and service, company folders, credentials, real PO and supplier documents unchanged",
-  "pending":["Owner decision on financial amount basis and payment proof destination","Payment recording/proof and Purchase Payment Follow-up implementation","GitHub Pages release","Wix draft synchronization/publication","Actual public Account data/read/review acceptance","Warehouse writer and actual shared History closure remain unconnected"],
-  "main":"Not merged; no new verified tag"
+  "date": "2026-10-11",
+  "timezone": "Asia/Kuala_Lumpur",
+  "branch": "feat/account-purchase-payments",
+  "status": "candidate-only-not-synchronized-or-published",
+  "objective": "Account Purchase Payments and Creditors from the shared PO; Checked is final transaction reconciliation, not an invoice-only check",
+  "prerequisites": "Root rules and START_HERE; v18 final handoff; Account original discussion/layout; PO workflow and current authoritative live source",
+  "freshBeforeComparison": {
+    "home": true,
+    "accountPage": true,
+    "purchaseOrderWorkflow": true,
+    "purchaseOrdersWeb": true,
+    "purchaseAccess": true,
+    "purchaseDocumentPolicy": true,
+    "publicPurchaseApp": true,
+    "publicAccountApp": true,
+    "publicAccountStyle": true
+  },
+  "recovery": "Current public v18 at 18226cb; final record 2b031aa. Scoped user-verified Send Order tag 6b545502 remains protected, not a whole Purchase acceptance.",
+  "reads": "Existing StaffMasterAccess, company orders/tasks/activity, SharedSuppliers and PurchaseOrders. No new sync, collection or supplier upload service change.",
+  "writes": "No financial approval enabled: the unpublished invoice-only candidate is blocked until authoritative warehouse and financial reconciliation are connected",
+  "permission": "ACCOUNT department or existing TOP MANAGEMENT/SUPER ADMIN, plus approved member, unique active employee binding. Purchase-only staff rejected.",
+  "freshCMS": "StaffMasterAccess has one existing TOP MANAGEMENT / LAW binding; read only, no permission or member changes",
+  "reviewInvalidation": "Canonical current files plus PO identity and financial line content. Supplier quantity/cost/file changes invalidate; non-financial row order does not.",
+  "ui": "12 compact columns, 11px, 44px rows, 30px gray-blue headers, blue bilingual compact dialogs, aligned MYR amounts; other Account tabs retained",
+  "verification": {
+    "integrationChecks": 174,
+    "localFixtureOnly": true,
+    "localChecks": [
+      "Current invoice projects into Creditors without a second write",
+      "PI and superseded invoices excluded",
+      "Legacy completion flags never approve transaction",
+      "Client-supplied receipt/payment flags rejected without PO writes",
+      "Account-only authorization, stale request and company protections"
+    ],
+    "previousInvoiceOnlyFixture": "Superseded by owner transaction-check rule; prior green-toggle fixture is not current acceptance"
+  },
+  "protected": "Existing purchase Save, costs/quantity writes, intake/Buyer/Sales flows, PDF upload function and service, company folders, credentials, real PO and supplier documents unchanged",
+  "pending": [
+    "Final Invoice/CN amount entry and audit",
+    "Payment recording/proof upload into new Account roots and Purchase Payment Follow-up",
+    "DO upload support and audited CN not-applicable selection",
+    "Authoritative warehouse receipt reconciliation and final Checked/History gates",
+    "Current candidate browser verification",
+    "GitHub Pages release",
+    "Wix synchronization/publication",
+    "Real public Account acceptance"
+  ],
+  "main": "Not merged; no new verified tag",
+  "ownerDecisions": {
+    "payableBasis": "Final supplier Invoice is authoritative; PO amount is reference only; applicable CN adjustments must be reconciled",
+    "checked": "Final INV and DO plus CN or explicit finance CN-not-applicable decision; warehouse actual received quantities must exist; no unresolved short delivery or overpayment",
+    "cnNotApplicable": "Allowed; record finance staff name, ID and timestamp",
+    "creditorEntry": "Current linked Final Invoice upload",
+    "creditorExit": "Authoritative fully paid AND current transaction Checked; retain records and audit",
+    "proofFolders": "Separate Account Dept folders under the existing PURCHASE DEPT parent, alongside existing company Purchase Dept folders"
+  },
+  "accountDocumentRoots": {
+    "NCT": "1grq9bx7TcVhI3baSzpkLG0zglCuBorjA",
+    "GHR": "1hZ4qVKtNP2oc4Fj5NXbEamdIWU0RR30o",
+    "parent": "1c4utbbXIomQ4ej34h0BSLIvISVWS9QDh",
+    "verifiedCreated": "2026-10-11",
+    "serviceRoutingConnected": false
+  }
 }

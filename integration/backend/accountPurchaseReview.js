@@ -15,8 +15,14 @@ export function invoiceReviewVersion(row) {
   return operationId(row.company,row.id,row.number,row.supplierId,row.taskIds,row.contentVersion,row.amount,documents);
 }
 export function projectInvoiceReview(row,details) {
-  const checked=details.invoiceCheck?.enabled===true&&details.invoiceCheck.reviewVersion===invoiceReviewVersion(row)&&row.documents.some(doc=>doc.type==='INV'&&doc.linked===true&&!doc.superseded);
-  return {invoiceChecked:checked,invoiceCheck:details.invoiceCheck?{...details.invoiceCheck}:null,documentStatus:purchaseDocumentState(row.documents,checked)};
+  const hasInvoice=row.documents.some(doc=>doc.type==='INV'&&doc.fileId&&doc.linked===true&&!doc.superseded);
+  // Whole-transaction review replaces the unpublished invoice-only candidate.
+  // No authoritative warehouse closure or financial reconciliation writer exists yet.
+  // A legacy flag or a browser request must never stand in for those records.
+  const checked=false;
+  return {invoiceChecked:checked,invoiceCheck:details.invoiceCheck?{...details.invoiceCheck}:null,
+    canCheck:false,checkBlocker:'等待仓库实收及财务对账接通 / Warehouse receipts and financial reconciliation are not connected.',
+    creditorActive:hasInvoice,documentStatus:purchaseDocumentState(row.documents,checked)};
 }
 export function createAccountReviewOperations({store,listOrders,names,now=()=>new Date()}) {
   const journal=createOperationJournal({store,now});
@@ -27,6 +33,7 @@ export function createAccountReviewOperations({store,listOrders,names,now=()=>ne
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       if(input.enabled===row.invoiceChecked)throw Error('Invoice check has not changed.');
       if(input.enabled&&!row.documents.some(doc=>doc.type==='INV'&&doc.linked===true&&!doc.superseded))throw Error('Final supplier Invoice is required before checking.');
+      if(input.enabled)throw Error('Warehouse receipts and financial reconciliation are not connected.');
       if(input.enabled&&row.amount===null)throw Error('Purchase amount is incomplete. Review the purchase order first.');
       const reason=text(input.reason);if(reason.length>2000||(!input.enabled&&!reason))throw Error('Please enter a reason to cancel the invoice check.');
       const current=await store.read('PurchaseOrders',row.id),before=current?.details||{},at=now().toISOString();

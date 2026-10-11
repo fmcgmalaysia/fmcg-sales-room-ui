@@ -24,10 +24,10 @@ export const getAccountPurchaseOrders=webMethod(Permissions.SiteMember,async com
   const staff=await accountStaff(),rows=await orders.list(company,staff);let names=[],customerNamesError='';
   try{names=await readCustomerShortNames([...new Set(rows.map(row=>row.customerId))]);if(names.some(row=>!row.shortName))customerNamesError='部分客户 Short Name 尚未填写。';}
   catch(_){customerNamesError='客户 Short Name 暂时无法读取，保留已保存名称。';}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,paymentConnected:false,warehouseConnected:false,invoiceReviewConnected:true,readAt:new Date().toISOString()};
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:rows.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),customerNamesError,paymentConnected:false,warehouseConnected:false,invoiceReviewConnected:false,readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
   try{return await reviews.save({company,staff,requestId,input});}
-  catch(error){const message=String(error?.message||'');const safe=/^(Unsupported Account action\.|Purchase order changed\.|Purchase order changed while saving\.|Invoice check has not changed\.|Final supplier Invoice is required before checking\.|Purchase amount is incomplete\.|Please enter a reason to cancel the invoice check\.|A save is still processing\.)/.test(message);return {ok:false,requestId,error:safe?message:'Invoice check save could not be confirmed. Retry the same save.'};}
+  catch(error){const message=String(error?.message||'');const safe=/^(Warehouse receipts and financial reconciliation are not connected\.|Unsupported Account action\.|Purchase order changed\.|Purchase order changed while saving\.|Invoice check has not changed\.|Final supplier Invoice is required before checking\.|Purchase amount is incomplete\.|Please enter a reason to cancel the invoice check\.|A save is still processing\.)/.test(message);return {ok:false,requestId,error:safe?message:'Invoice check save could not be confirmed. Retry the same save.'};}
 });
