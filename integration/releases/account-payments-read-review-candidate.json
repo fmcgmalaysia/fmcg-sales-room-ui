@@ -2,7 +2,7 @@
   "date": "2026-10-11",
   "timezone": "Asia/Kuala_Lumpur",
   "branch": "feat/account-purchase-payments",
-  "status": "candidate-only-not-synchronized-or-published",
+  "status": "wix-draft-synchronized-awaiting-action-time-pages-branch-approval",
   "objective": "Account Purchase Payments and Creditors from the shared PO; Checked is final transaction reconciliation, not an invoice-only check",
   "prerequisites": "Root rules and START_HERE; v18 final handoff; Account original discussion/layout; PO workflow and current authoritative live source",
   "freshBeforeComparison": {
@@ -33,7 +33,13 @@
       "Client-supplied receipt/payment flags rejected without PO writes",
       "Account-only authorization, stale request and company protections"
     ],
-    "previousInvoiceOnlyFixture": "Superseded by owner transaction-check rule; prior green-toggle fixture is not current acceptance"
+    "previousInvoiceOnlyFixture": "Superseded by owner transaction-check rule; prior green-toggle fixture is not current acceptance",
+    "localBrowserChecks": [
+      "Payments renders both fixture PO rows",
+      "Creditors renders only current Final Invoice fixture",
+      "Checked disabled",
+      "GHR switch clears NCT rows"
+    ]
   },
   "protected": "Existing purchase Save, costs/quantity writes, intake/Buyer/Sales flows, PDF upload function and service, company folders, credentials, real PO and supplier documents unchanged",
   "pending": [
@@ -61,5 +67,26 @@
     "parent": "1c4utbbXIomQ4ej34h0BSLIvISVWS9QDh",
     "verifiedCreated": "2026-10-11",
     "serviceRoutingConnected": false
+  },
+  "codeCommit": "e639ca061074d3c8f103e4bff6980fb091c07027",
+  "wixDraft": {
+    "normalizedExact": true,
+    "published": false,
+    "hashes": {
+      "release-home-before.js": "e3b840d59034844a15925ecde943f03bcf9d1f83338c85095dfe39c5a4fb3358",
+      "release-home-after.js": "7875199dc51dd852f99351a843cf1a145a6506ca0dfd144df731fdc2ce9d83c7",
+      "release-account-before.js": "4a6252f462ba72834cabacb8edcd525d7abd0c45f6d5d77144c9c8a6453daba4",
+      "release-account-after.js": "187be3b79f671a34712bfe3fa360623be1997dbbaa068e8087fdfe15ec1a5615",
+      "release-workflow-before.js": "3cc63d35b90c3f3201e379f80592472c2a91ae107f852e36068fd98f00f39729",
+      "release-workflow-after.js": "a9d84b1b64f857de62a419cc73d338b51800b840d5c237dae022ebd556ec08b1",
+      "release-accountPurchaseReview-after.js": "2b81c6ecd24b6f0d223115945bf361992aea5960a87179610cbaf58d967e6c19",
+      "release-accountPurchase-web-after.js": "f95eef9b7adedd7ecd5d2413e9741065d38b13c4a2d2ceaa77338d7df9df9eb3"
+    }
+  },
+  "pages": {
+    "deployed": false,
+    "temporaryBranchRuleAdded": false,
+    "approvalRequested": true,
+    "priorSevenRulesUnchanged": true
   }
 }
