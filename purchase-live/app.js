@@ -58,6 +58,7 @@
       message.requestId !== pending.requestId || message.company !== pending.company) return;
     const quiet=pending.quiet;pending = null;
     if(quiet&&editingTask())return;
+    if(quiet&&!message.ok){showStatus(message.error||'后台更新失败，当前资料已保留。',true);return;}
     if (!message.ok) { showStatus(message.error || 'Master data could not be loaded.', true); app.innerHTML = '<div class="live-empty">资料未载入。请核对员工登录及 Purchase Access。'+
       (message.canLogin?'<p><button class="btn primary" id="masterLogin">Sign in to Master</button></p>':'')+
       (message.identity?'<p>Master Member ID: <b>'+esc(message.identity.memberId)+'</b></p><p>'+esc(message.identity.email)+'</p>':'')+'</div>'; return; }
@@ -65,11 +66,11 @@
     if (result?.company !== company || !Array.isArray(result.tasks) || !Array.isArray(result.customers) || !Array.isArray(result.suppliers)) {
       showStatus('Master 回执格式不完整，未显示任何资料。', true); return;
     }
-    data = result;if(view==='po')poData=null;draftKey='fmcg-purchase-draft-v1/'+company+'/'+result.staff.staffId+'/'+result.staff.memberId;restoreDraft(); document.querySelector('#session').textContent = result.staff.staffName + ' / Purchase';
+    data = result;if(view==='po'&&!quiet)poData=null;draftKey='fmcg-purchase-draft-v1/'+company+'/'+result.staff.staffId+'/'+result.staff.memberId;restoreDraft(); document.querySelector('#session').textContent = result.staff.staffName + ' / Purchase';
     if(costRetry){const outcome=data.tasks.find(row=>row.id===costRetry.taskId)?.history.find(event=>event.action==='COST_RETRY_RESULT'&&event.requestId===costRetry.requestId)?.retryOutcome;
       if(outcome){costRetry=null;document.querySelector('#companySelect').disabled=false;modal.close();}
     }
-    showStatus(''); document.querySelector('nav .demo').textContent='Master CMS · '+time(result.fetchedAt); render();if(reviewAfterRefresh){reviewAfterRefresh=false;reviewDraft();}
+    showStatus(''); document.querySelector('nav .demo').textContent='Master CMS · '+time(result.fetchedAt); render();if(quiet&&view==='po')loadPurchaseOrders();if(reviewAfterRefresh){reviewAfterRefresh=false;reviewDraft();}
   });
   window.addEventListener('message', event => { if(event.source !== window.parent || event.data?.type !== 'PURCHASE_LOGIN_RESULT') return;
     if(event.data.ok) request(); else showStatus(event.data.error || 'Login was not completed.', true); });

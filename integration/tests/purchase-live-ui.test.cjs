@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
 function harness(storage,feedbackRows=[]) {
-  const nodes = new Map(), listeners = new Map(), messages = [], timers = [];
+  const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
       classList:{ toggle(){} }, addEventListener(type,callback){ listeners.set(id+':'+type,callback); },
@@ -16,11 +16,11 @@ function harness(storage,feedbackRows=[]) {
   let count=0;
   vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
-    crypto:{ randomUUID:()=>String(++count) }, sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:()=>{}, Date, Number, Map, Set });
+    crypto:{ randomUUID:()=>String(++count) }, sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
     for(const callback of listeners.get('window:message')) callback({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
   }
-  return { node,messages,timers,reply,
+  return { node,messages,timers,intervals,reply,
     event(type,target,extra={}){for(const callback of listeners.get('document:'+type)||[])callback({...extra,target});},
     send(message){for(const callback of listeners.get('window:message'))callback({source:parent,data:message});},
     change(attrs){for(const callback of listeners.get('document:change')||[])callback({target:attrs});},
@@ -41,6 +41,17 @@ test('purchase orders render persisted documents and readable history, with uplo
  assert.match(h.node('#app').innerHTML,/doc-dot complete/);assert.match(h.node('#app').innerHTML,/BUYER/);
  h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
  h.click({poHistory:'POID'});const history=h.node('#dialogContent').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
+});
+
+test('quiet refresh retains the PO list until the new receipt and does not erase it on failure',async()=>{
+ const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
+ const row={id:'POID',number:'NCT-PO-001',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',amount:100,termDays:null};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
+ h.intervals[0]();h.reply(w);assert.match(h.node('#app').innerHTML,/NCT-PO-001/);assert.doesNotMatch(h.node('#app').innerHTML,/正在读取采购单/);
+ const reread=h.messages.at(-1);assert.equal(reread.type,'PURCHASE_ORDERS_REQUEST');
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:reread.requestId,ok:false,error:'Temporary read failure'});await new Promise(resolve=>setImmediate(resolve));
+ assert.match(h.node('#app').innerHTML,/NCT-PO-001/);assert.match(h.node('#app').innerHTML,/Temporary read failure/);
+ h.intervals[0]();const quiet=h.messages.at(-1);h.reply(null,quiet,{ok:false,error:'Workspace read failure'});assert.match(h.node('#app').innerHTML,/NCT-PO-001/);assert.match(h.node('#liveStatus').textContent,/Workspace read failure/);
 });
 
 test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
