@@ -17,7 +17,9 @@ const store={
 };
 const operate=createPurchaseOperations({store}),suppliers=createSharedSupplierOperations({store,brandOptions:getPointbaseBrands});
 export const savePurchaseOperation=webMethod(Permissions.SiteMember,async(company,requestId,operation,input)=>{
- const staff=await getPurchaseStaffContext();return operate({company,requestId,operation,input,staff});
+ const staff=await getPurchaseStaffContext();
+ try { return await operate({company,requestId,operation,input,staff}); }
+ catch(error) { if(error?.message==='Net cost cannot be negative.')return {ok:false,requestId,error:'Net cost cannot be negative.'}; throw error; }
 });
 export const getSupplierProfile=webMethod(Permissions.SiteMember,async supplierId=>{
  await getPurchaseStaffContext();if(typeof supplierId!=='string'||supplierId.length>100)throw Error('Invalid supplier.');return suppliers.profile(supplierId);

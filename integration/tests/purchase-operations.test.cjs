@@ -95,3 +95,5 @@ test('plan revisions reject branched history instead of displaying invented avai
  await f.operate({...f.base,operation:'PLAN',input});const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');f.rows.set('NCTActivity/FORK',{...copy(event),_id:'FORK',title:'FORK'});
  assert.throws(()=>f.workspace(),/history requires review/);
 });
+
+test('negative net cost rejects before preparing or changing any business fields',async()=>{const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'EDIT',input:{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{disc3:320}}]}}),/Net cost cannot be negative/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_OPERATION_PREPARED'||row.action==='PURCHASE_PRICE_SAVED').length,0);});
