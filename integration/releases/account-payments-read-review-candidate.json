@@ -1,0 +1,20 @@
+{
+  "date":"2026-10-11",
+  "timezone":"Asia/Kuala_Lumpur",
+  "branch":"feat/account-purchase-payments",
+  "status":"candidate-only-not-synchronized-or-published",
+  "objective":"Account reads the same PurchaseOrders projection; financial staff explicitly check the final supplier Invoice before files become green",
+  "prerequisites":"Root rules and START_HERE; v18 final handoff; Account original discussion/layout; PO workflow and current authoritative live source",
+  "freshBeforeComparison":{"home":true,"accountPage":true,"purchaseOrderWorkflow":true,"purchaseOrdersWeb":true,"purchaseAccess":true,"purchaseDocumentPolicy":true,"publicPurchaseApp":true,"publicAccountApp":true,"publicAccountStyle":true},
+  "recovery":"Current public v18 at 18226cb; final record 2b031aa. Scoped user-verified Send Order tag 6b545502 remains protected, not a whole Purchase acceptance.",
+  "reads":"Existing StaffMasterAccess, company orders/tasks/activity, SharedSuppliers and PurchaseOrders. No new sync, collection or supplier upload service change.",
+  "writes":"Candidate invoiceCheck metadata and audit only, with current Account staff identity and the same company PURCHASE operation lock/replay journal",
+  "permission":"ACCOUNT department or existing TOP MANAGEMENT/SUPER ADMIN, plus approved member, unique active employee binding. Purchase-only staff rejected.",
+  "freshCMS":"StaffMasterAccess has one existing TOP MANAGEMENT / LAW binding; read only, no permission or member changes",
+  "reviewInvalidation":"Canonical current files plus PO identity and financial line content. Supplier quantity/cost/file changes invalidate; non-financial row order does not.",
+  "ui":"12 compact columns, 11px, 44px rows, 30px gray-blue headers, blue bilingual compact dialogs, aligned MYR amounts; other Account tabs retained",
+  "verification":{"integrationChecks":174,"localFixtureOnly":true,"localChecks":["Two PO rows render","Finance check switches both toggle and Files green","Missing final invoice disables check","Cancellation requires reason and returns orange","NCT/GHR switch clears foreign list","Supplier filter works","History active navigation works","Bank placeholder retained"]},
+  "protected":"Existing purchase Save, costs/quantity writes, intake/Buyer/Sales flows, PDF upload function and service, company folders, credentials, real PO and supplier documents unchanged",
+  "pending":["Owner decision on financial amount basis and payment proof destination","Payment recording/proof and Purchase Payment Follow-up implementation","GitHub Pages release","Wix draft synchronization/publication","Actual public Account data/read/review acceptance","Warehouse writer and actual shared History closure remain unconnected"],
+  "main":"Not merged; no new verified tag"
+}
