@@ -20,7 +20,13 @@
   "verification": {
     "integrationTests": 181,
     "integrationPassed": 181,
-    "localBrowser": ["80 then 20 cartons accumulates to 100", "Missing partial-delivery reason rejected", "Partial remains Active", "Full receipt enters current-month completion and Receiving History", "Company switch clears foreign-company rows"],
+    "localBrowser": [
+      "80 then 20 cartons accumulates to 100",
+      "Missing partial-delivery reason rejected",
+      "Partial remains Active",
+      "Full receipt enters current-month completion and Receiving History",
+      "Company switch clears foreign-company rows"
+    ],
     "syntax": "Warehouse/Account JavaScript and actual Buyer/Sales inline scripts parsed",
     "legacyUIAssertions": "3 existing failures reproduced on untouched HEAD: old Buyer build marker, old Buyer hover styling expectation, old Sales build marker. Not changed to hide failures.",
     "publicReceivingTest": false,
@@ -29,16 +35,59 @@
   "wixDraft": {
     "warehousePageId": "pv871",
     "warehousePath": "/warehouse-department",
-    "newModules": ["warehouseReceiving.js", "warehouseReceiving.web.js"],
-    "exactReadback": ["warehouse page", "warehouseReceiving.js", "warehouseReceiving.web.js", "purchaseProjection.js", "purchaseOperations.js", "purchaseQuantityProjection.js", "purchaseQuantityRead.js", "purchaseOrderWorkflow.js", "source masterQuantityProjection.js"],
-    "published": false
+    "newModules": [
+      "warehouseReceiving.js",
+      "warehouseReceiving.web.js"
+    ],
+    "exactReadback": [
+      "warehouse page",
+      "warehouseReceiving.js",
+      "warehouseReceiving.web.js",
+      "purchaseProjection.js",
+      "purchaseOperations.js",
+      "purchaseQuantityProjection.js",
+      "purchaseQuantityRead.js",
+      "purchaseOrderWorkflow.js",
+      "source masterQuantityProjection.js"
+    ],
+    "published": false,
+    "hashes": {
+      "masterQuantityProjection-after.js": "0e313abbdb87df856cd8874bcaea755840c22381849692089bf486acc2d6c6ce",
+      "masterQuantityProjection-before.js": "bacead42ff61a80515af0f733a44feff095e32c1f27c98d8b1ae686449b2e9c4",
+      "purchaseOperations-after.js": "e4998562f062f9d3330db9cec07d7f03daaad65fe09e00252d105099862ad450",
+      "purchaseOperations-before.js": "daa861a9fec5c4c2d55e92b9c48d70e4b08436c8a5536956a5d6124ad08eab77",
+      "purchaseOrderWorkflow-after.js": "4748b46272a77c2f0c53001fe1aa368328b43a360c10008e0b764d297949c1fa",
+      "purchaseOrderWorkflow-before.js": "a9d84b1b64f857de62a419cc73d338b51800b840d5c237dae022ebd556ec08b1",
+      "purchaseProjection-after.js": "f17db11ead43e9b68615160db92a46e4d3f25a3248c86889cde7c79270095de9",
+      "purchaseProjection-before.js": "831f4ba4ae41cd5e25701e470bbd7835608a9c9f5d08835af88f09faf66b3aba",
+      "purchaseQuantityProjection-after.js": "1a5bb6c919042e5606e4492b9477ee0861103ab0c0c134da98ba5aa16294f01b",
+      "purchaseQuantityProjection-before.js": "da5a05cf82612f2e121be800e0ae839ed725519af8180550f3882342ddf111ac",
+      "purchaseQuantityRead-after.js": "48f5fba36e492f5ebd59bd56c108bdf45f524025e79ad610e436c78c093b32e0",
+      "purchaseQuantityRead-before.js": "fe5b1680dd5ae4d134e3e8b69f175e771655c180f7d3c16f36be530029b081d8",
+      "warehouse-page-after.js": "89ef3cdda776961750879de85188707794b9c9d1f93be126225d62cc58f551bd",
+      "warehouseReceiving-after.js": "cf4afd274bdc9efb4fcfeb5d927bd4dffa0b56f9cf070452956185108480ac26",
+      "warehouseReceiving-web-after.js": "b3c40dc021c140015c700c238baf27950a7212dbc2c821756834292fb5e1887a"
+    }
   },
-  "pages": {"deployed": false, "temporaryBranchRuleAdded": false},
+  "pages": {
+    "deployed": false,
+    "temporaryBranchRuleAdded": false,
+    "approvalRequested": true
+  },
   "pending": [
     "GitHub Pages deployment and both Wix publications, then real public read/receipt verification",
     "Existing financial payment/proof, DO and final reconciliation remain unfinished; no financial Checked or final transaction History enabled",
     "Source customer gateway is the existing NCT integration; GHR customer submission gateway was not introduced",
     "Receiving corrections, short-close via CN/refund and extra-stock reassignment require their audited business workflows; no silent override is provided",
     "User real-world acceptance; no main merge or new verified tag"
-  ]
+  ],
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/62",
+  "designMeasurements": {
+    "font": "11px",
+    "row": "44px",
+    "header": "30px",
+    "departmentBar": "49px / #193246",
+    "navigation": "42px",
+    "fontFamily": "Segoe UI, Arial, Microsoft YaHei, sans-serif"
+  }
 }
