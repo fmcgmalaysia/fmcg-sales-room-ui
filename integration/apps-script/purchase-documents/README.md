@@ -1,4 +1,4 @@
-# Purchase document service (service v1 and Master connection deployed; upload acceptance pending)
+# Purchase document service (service v1 deployed; NCT public upload verified)
 
 On 2026-10-11 Google confirmed deployment version 1. See deployment-v1.json.
 Code.gs was saved and its complete editor readback matched the local source.
@@ -6,10 +6,13 @@ Drive v3 was enabled in the editor. appsscript.json is a configuration template;
 the full live manifest has not yet been captured, so it is not a live snapshot.
 The owner confirmed the Script Property was saved and explicitly approved the
 actual Drive OAuth scope and the web-app access setting. No secret is recorded here.
-Master document integration was published in Purchase v15 and retained in publicly
-verified v16. Actual PDF upload acceptance remains unfinished: browser automation
-timed out before local file selection, so no successful upload is claimed. Current
-v17 and Account layout drafts await release approval; see master-integration-status.json.
+Master document integration was published in Purchase v15 and retained in v16/v17.
+NCT public testing uploaded a 38 KB PI and final INV, verified fixed Drive destination,
+readable PDFs, persistent PO association, orange/green state and unique staff/time audits.
+The user selected local files because the automated chooser failed. Same-ID lost-receipt
+retry passed automated tests only; GHR public upload remains untested. Purchase v17 and
+Account layout v1 passed four-stage publication; Account financial data is unconnected.
+See master-integration-status.json and integration/releases/purchase-closeout-v17.json.
 
 Create a dedicated Apps Script project owned by the authorized Workspace account.
 Do not install these files in the existing Onboarding, QD or Pointbase projects.
