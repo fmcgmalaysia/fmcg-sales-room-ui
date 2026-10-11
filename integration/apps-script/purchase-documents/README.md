@@ -29,7 +29,8 @@ Configuration needed before use:
 4. Create an immutable version and deploy as a web app executing as its owner.
    Server-to-server access must be configured deliberately; the application secret
    authenticates every POST. Record project ID, version and deployment ID.
-5. Store the deployment URL in Master's `PURCHASE_DOCUMENT_SERVICE_URL` secret.
+5. The Master adapter uses the fixed, non-secret deployment URL recorded here;
+   only the shared credential is stored in Wix Secrets Manager.
 6. Verify an actual disposable PDF upload to each company, read back the file,
    retry the same ID without duplication, and confirm Master association and audit.
 

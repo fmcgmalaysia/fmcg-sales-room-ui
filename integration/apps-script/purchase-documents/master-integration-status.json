@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-11",
+  "candidateBuild": "2026-10-11-purchase-orders-v15",
+  "status": "draft-not-published",
+  "masterSecret": "Owner confirmed saved; value not read or recorded",
+  "collection": {"id":"PurchaseOrders","fields":{"title":"Text","company":"Text","details":"Object"},"permissions":"Admin only; all other roles unchecked"},
+  "masterDraft": "Four new backend files, local P.O. guards, safe error messages and additive Home message bridge saved and read back exactly. Home still references public v13.",
+  "checks": {"integrationTestsPassed":159,"realUploadTest":"pending; user says INV PDF is below 1 MB"},
+  "knownRemaining": [
+    "Customer Short Name is absent from existing Master intake records; current projection displays the stored full name until authoritative mapping is added.",
+    "Warehouse receipt closure, completed payment and Account final-verification writers do not exist yet. No order can be marked History by this candidate.",
+    "Actual PDF transport, Drive upload, same-request retry and document colour acceptance remain unverified.",
+    "GitHub Pages v15 deployment, Wix publication and public-page verification are pending."
+  ],
+  "protected": "No current order quantities, costs, quotes, customer identity, existing P.O. values or business history changed during installation."
+}
