@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
-function harness(storage) {
+function harness(storage,feedbackRows=[]) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false,
@@ -14,14 +14,14 @@ function harness(storage) {
   }
   const parent = { postMessage:message => messages.push(message) }, window = { parent, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
-  vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:()=>[], addEventListener(type,callback){
+  vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:()=>{}, Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
     for(const callback of listeners.get('window:message')) callback({ source:parent,data:{type:'PURCHASE_WORKSPACE_RESULT',requestId:request.requestId,company:request.company,ok:true,workspace,...extra} });
   }
   return { node,messages,timers,reply,
-    event(type,target){for(const callback of listeners.get('document:'+type)||[])callback({target});},
+    event(type,target,extra={}){for(const callback of listeners.get('document:'+type)||[])callback({...extra,target});},
     send(message){for(const callback of listeners.get('window:message'))callback({source:parent,data:message});},
     change(attrs){for(const callback of listeners.get('document:change')||[])callback({target:attrs});},
     click(attrs){const control={ id:attrs.controlId||'',dataset:attrs };for(const callback of listeners.get('document:click'))callback({ target:{ closest:selector=>selector==='button'?control:selector==='#closeModal'&&control.id==='closeModal'?control:selector==='[data-supplier-tab]'&&attrs.supplierTab?control:selector==='#addSupplierContact'&&control.id==='addSupplierContact'?control:null } }); },
@@ -216,4 +216,15 @@ test('negative net cost is explained before a write and known failed save frees 
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{ok:false,requestId:request.requestId,error:'Net cost cannot be negative.'}});
  assert.equal(h.node('#companySelect').disabled,false);assert.match(h.node('#liveStatus').textContent,/Net cost cannot be negative/);
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'0'});h.click({controlId:'saveEdits'});assert.notEqual(h.messages.at(-1).requestId,request.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,0);
+});
+
+test('drag feedback marks grip, source and exact insertion target while keeping original save ordering',()=>{
+ const row=id=>{const classes=new Set();return {dataset:{id},classes,classList:{add(...names){names.forEach(name=>classes.add(name))},remove(...names){names.forEach(name=>classes.delete(name))}}}},first=row('TASK'),second=row('TASK2');
+ const h=harness(undefined,[first,second]),w=workspace();w.tasks[0].editVersion='REV1';w.tasks.push({...w.tasks[0],id:'TASK2',editVersion:'REV2'});h.reply(w);h.click({customer:'C'});
+ const grip={dataset:{drag:'TASK2'},closest:()=>second},handleTarget={closest:selector=>selector==='[data-drag]'?grip:null};
+ h.event('pointerdown',handleTarget);assert(second.classes.has('grip-down'));
+ h.event('dragstart',handleTarget,{dataTransfer:{setData(type,id){assert.equal(type,'text/plain');assert.equal(id,'TASK2')}}});assert(second.classes.has('dragging-row'));
+ const target={closest:selector=>selector==='tr[data-id]'?first:null};h.event('dragover',target,{preventDefault(){}});assert(first.classes.has('drop-target'));assert.equal(h.messages.length,1);
+ h.event('drop',target,{preventDefault(){}});assert(!first.classes.has('drop-target'));assert(!second.classes.has('dragging-row'));assert.equal(h.messages.length,1);
+ h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);assert.equal(save.input.versions.TASK,'REV1');assert.equal(save.input.versions.TASK2,'REV2');assert.equal(save.input.edits.length,0);
 });
