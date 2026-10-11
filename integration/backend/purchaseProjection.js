@@ -1,6 +1,7 @@
 // Explicit procurement projection. Never return original order rows or intake snapshots.
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan } from 'backend/purchasePlan.js';
+import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -44,12 +45,13 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
-    const procurement=readPurchasePlan(task,activity);
+    const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
     rows.push({
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
-      ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: number(task.receivedQtyInCtn),
+      ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
       procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:null,allocationEnabled:false},
+      warehouse:warehouse?{accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),

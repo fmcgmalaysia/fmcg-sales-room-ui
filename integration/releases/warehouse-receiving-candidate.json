@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-11",
+  "branch": "feat/warehouse-receiving",
+  "base": "d3ad0ff / feat/account-purchase-payments (unpublished Account candidate)",
+  "objective": "Warehouse Department batch receiving, customer-safe quantity feedback and the existing Master visual style",
+  "status": "candidate-wix-drafts-synchronized-not-published",
+  "recovery": "Current public Purchase v18 deployed 18226cb, recorded at 2b031aa; Account parent candidate d3ad0ff. Scoped verified/send-order-addition-user-tests-20261009 remains protected; no claim of whole-site user acceptance.",
+  "authorityChecks": "Fresh Wix source comparisons exact for Purchase projection, operations, customer quantity projection/read, shared PO workflow, and source masterQuantityProjection. Published Buyer/Sales inline scripts matched before changes. Exact before/after copies in private handoff/warehouse-receiving-20261011.",
+  "storage": "Immutable batch events in existing company Activity collections; existing company/PURCHASE journal prevents duplicate receipt saves. No new collection, no received-quantity cache overwrites, no order price or original quantity writes.",
+  "scope": [
+    "Warehouse staff-only read and batch-receipt API; NCT/GHR isolated",
+    "Active receiving, current-month completed receiving, month/supplier Receiving History",
+    "Partial deliveries distinct from shortage/damage/wrong goods; reason and named audit",
+    "Customer received quantity capped at committed quantity; extra receipt reported separately",
+    "Purchase right quantity and minimum-quantity guards read receipts",
+    "Existing NCT customer read gateway passes only allocated receipt quantity/time to Sales and Buyer",
+    "Account PO read includes receipt summary; financial Checked remains disabled"
+  ],
+  "design": "Warehouse reuses account-room/style.css; shared Master deep-blue company bar, 11px tables, 30px gray-blue headers, compact 44px rows, light icons, blue bilingual dialogs. Warehouse CSS contains only receiving layout.",
+  "verification": {
+    "integrationTests": 181,
+    "integrationPassed": 181,
+    "localBrowser": ["80 then 20 cartons accumulates to 100", "Missing partial-delivery reason rejected", "Partial remains Active", "Full receipt enters current-month completion and Receiving History", "Company switch clears foreign-company rows"],
+    "syntax": "Warehouse/Account JavaScript and actual Buyer/Sales inline scripts parsed",
+    "legacyUIAssertions": "3 existing failures reproduced on untouched HEAD: old Buyer build marker, old Buyer hover styling expectation, old Sales build marker. Not changed to hide failures.",
+    "publicReceivingTest": false,
+    "realBusinessRecordsWritten": false
+  },
+  "wixDraft": {
+    "warehousePageId": "pv871",
+    "warehousePath": "/warehouse-department",
+    "newModules": ["warehouseReceiving.js", "warehouseReceiving.web.js"],
+    "exactReadback": ["warehouse page", "warehouseReceiving.js", "warehouseReceiving.web.js", "purchaseProjection.js", "purchaseOperations.js", "purchaseQuantityProjection.js", "purchaseQuantityRead.js", "purchaseOrderWorkflow.js", "source masterQuantityProjection.js"],
+    "published": false
+  },
+  "pages": {"deployed": false, "temporaryBranchRuleAdded": false},
+  "pending": [
+    "GitHub Pages deployment and both Wix publications, then real public read/receipt verification",
+    "Existing financial payment/proof, DO and final reconciliation remain unfinished; no financial Checked or final transaction History enabled",
+    "Source customer gateway is the existing NCT integration; GHR customer submission gateway was not introduced",
+    "Receiving corrections, short-close via CN/refund and extra-stock reassignment require their audited business workflows; no silent override is provided",
+    "User real-world acceptance; no main merge or new verified tag"
+  ]
+}

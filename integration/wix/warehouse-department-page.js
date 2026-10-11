@@ -1,0 +1,17 @@
+import { getWarehouseOrders, saveWarehouseReceipt } from 'backend/warehouseReceiving.web';
+import { authentication } from 'wix-members-frontend';
+$w.onReady(()=>{
+  const room=$w('#html1');
+  room.onMessage(async event=>{
+    const message=event.data||{};
+    if(message.type==='WAREHOUSE_LOGIN_REQUEST'){
+      try{await authentication.promptLogin({mode:'login',modal:true});room.postMessage({type:'WAREHOUSE_LOGIN_RESULT',ok:true});}
+      catch(_){room.postMessage({type:'WAREHOUSE_LOGIN_RESULT',ok:false});}return;
+    }
+    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+    const type=message.type==='WAREHOUSE_ORDERS_REQUEST'?'WAREHOUSE_ORDERS_RESULT':'WAREHOUSE_RECEIPT_RESULT';
+    try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
+    catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
+  });
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261011-warehouse-receiving-v1';
+});

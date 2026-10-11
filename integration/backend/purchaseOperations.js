@@ -2,6 +2,7 @@ import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchase
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan } from 'backend/purchasePlan.js';
+import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
 const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
 const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
@@ -64,7 +65,8 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing procurement quantity.');
         if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999||input.totalCtn<task.purchaseQtyInCtn)throw Error('Supplier total must cover the customer quantity, between 1 and 9999 cartons.');
-        if(Number.isFinite(task.receivedQtyInCtn)&&input.totalCtn<task.receivedQtyInCtn)throw Error('Supplier total cannot be below the warehouse received quantity.');
+        const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
+        if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn)throw Error('Procurement quantity has not changed.');
         const extra=input.totalCtn-task.purchaseQtyInCtn;
@@ -80,7 +82,8 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing quantity.');
         if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||!Number.isSafeInteger(task.purchaseQtyInCtn)||input.quantity>=task.purchaseQtyInCtn)throw Error('Quantity can only be reduced to a positive value. Zero requires cancellation.');
-        if(Number.isFinite(task.receivedQtyInCtn)&&input.quantity<task.receivedQtyInCtn)throw Error('Quantity cannot be reduced below received cartons before warehouse allocation is resolved.');
+        const received=readWarehouseTask(task,s.activity)?.customerReceived??task.receivedQtyInCtn;
+        if(Number.isFinite(received)&&input.quantity<received)throw Error('Quantity cannot be reduced below received cartons before warehouse allocation is resolved.');
         if(task.ourPoNumber&&!readPurchasePlan(task,s.activity).revision)throw Error('Record the current supplier procurement quantity before reducing a task with a P.O.');
         if(!reason||reason.length>2000)throw Error('A quantity change reason is required.');
         let confirmed=order.orderQtyInCtn;

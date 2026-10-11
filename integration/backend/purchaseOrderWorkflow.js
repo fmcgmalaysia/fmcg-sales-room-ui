@@ -39,6 +39,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
       itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,
+      warehouse:{connected:true,receivedCtn:rows.reduce((sum,row)=>sum+(row.warehouse?.accepted||0),0),complete:rows.every(row=>row.warehouse&&row.warehouse.accepted===row.procurement?.totalCtn&&!row.warehouse.issue),issues:rows.some(row=>row.warehouse?.issue===true)},
       termDays,invoiceDate,dueDate:purchaseInvoiceDueDate(invoiceDate,termDays),
       chasePayment:details.chasePayment===true,state:'ACTIVE',documents,documentStatus:purchaseDocumentState(documents,details.finalInvoiceComplete===true),
       status:'Awaiting payment records',canArchive:false,archiveBlockers:['Warehouse receipt closure','Completed supplier payment','Final Account verification'],

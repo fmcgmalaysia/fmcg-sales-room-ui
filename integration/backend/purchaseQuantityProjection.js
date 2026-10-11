@@ -1,4 +1,5 @@
-// Read-only customer projection. Supplier, cost, warehouse and staff membership data never leave Master.
+// Read-only customer projection. Only customer-allocated receipt quantities leave Master.
+import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity}) {
   if(typeof customerId!=='string'||!customerId||!Array.isArray(requests)||!requests.length||requests.length>100)throw Error('Invalid quantity request.');
   const output=[];
@@ -20,7 +21,8 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
         quantity=detail.after;remaining.splice(remaining.indexOf(event),1);
       }
       if(!Number.isSafeInteger(quantity)||quantity<0||task.purchaseQtyInCtn!==quantity)throw Error('Quantity save is still being confirmed.');
-      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history});
+      const warehouse=readWarehouseTask(task,activity);
+      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.at}:{})});
     }
     output.push({orderId:request.orderId,submissionId:request.submissionId,lines});
   }
