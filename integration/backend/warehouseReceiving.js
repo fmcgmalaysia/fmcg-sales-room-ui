@@ -51,7 +51,7 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     const lines=po.taskIds.map(id=>{
       const matches=tasks.filter(task=>task.id===id);if(matches.length!==1)throw Error('Warehouse purchase task is missing.');
       const task=matches[0],saved=receipt.lines.find(line=>line.taskId===id),planned=task.procurement?.totalCtn;
-      if(!saved&&Number.isFinite(task.inc)&&task.inc>0)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
+      if(!saved&&!task.warehouse&&Number.isFinite(task.inc)&&task.inc>0)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
       if(!quantity(planned)||planned===0||!quantity(task.ord))throw Error('Confirm supplier purchase quantities before receiving.');
       if(saved&&(saved.orderId!==task.orderId||saved.sourceLineId!==task.sourceLineId))throw Error('Warehouse purchase identity changed.');
       const accepted=saved?.accepted||0,rejected=saved?.rejected||0;

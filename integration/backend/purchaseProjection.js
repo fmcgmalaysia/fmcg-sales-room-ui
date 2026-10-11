@@ -3,6 +3,7 @@ import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdenti
 import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
+import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -77,6 +78,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
     });
   }
+  for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));

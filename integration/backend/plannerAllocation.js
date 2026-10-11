@@ -9,7 +9,7 @@ export function readAllocations(activity){
     for(const event of candidates){
       const detail=event.details;
       if(!event.title||!event.imageAltText||!Array.isArray(detail.targets)||new Set(detail.targets.map(row=>row.taskId)).size!==detail.targets.length||detail.targets.some(row=>!row.taskId||!qty(row.quantity)))throw Error('Allocation identity requires review.');
-      sources.set(event.imageAltText,{sourceTaskId:event.imageAltText,revision:event.title,targets:detail.targets,at:event.activityTime,by:event.initiatedByStaffName});
+      sources.set(event.imageAltText,{sourceTaskId:event.imageAltText,revision:event.title,targets:detail.targets,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName});
       pending.splice(pending.indexOf(event),1);
     }
   }
