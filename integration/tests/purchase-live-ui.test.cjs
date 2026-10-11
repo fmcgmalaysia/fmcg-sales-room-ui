@@ -39,8 +39,26 @@ test('purchase orders render persisted documents and readable history, with uplo
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});
  await new Promise(resolve=>setImmediate(resolve));
  assert.match(h.node('#app').innerHTML,/doc-dot complete/);assert.match(h.node('#app').innerHTML,/BUYER/);
- h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
- h.click({poHistory:'POID'});const history=h.node('#dialogContent').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
+ h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
+ h.click({poUpload:'POID'});assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);assert.match(h.node('#dialogContent').innerHTML,/Upload Supplier PDF/);
+ h.click({poHistory:'POID'});const history=h.node('#poHistoryEntries').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
+});
+
+test('PO history is current month only; independent history filters archived month, supplier and document number',async()=>{
+ const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1),current=new Date().toISOString(),old=new Date();old.setUTCMonth(old.getUTCMonth()-2);
+ const make=(id,state,completedAt,supplierId)=>({id,number:id,state,completedAt,supplierId,taskIds:['TASK'],documents:[{number:id+'-INV'}],history:[],documentStatus:'MISSING',amount:100,termDays:null});
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[make('ACTIVE-OLD','ACTIVE',old.toISOString(),'A'),make('CURRENT-DONE','HISTORY',current,'A'),make('OLDER-DONE','HISTORY',old.toISOString(),'B')]}});await new Promise(resolve=>setImmediate(resolve));
+ assert.match(h.node('#app').innerHTML,/ACTIVE-OLD/);h.click({poTab:'HISTORY'});assert.match(h.node('#app').innerHTML,/CURRENT-DONE/);assert.doesNotMatch(h.node('#app').innerHTML,/OLDER-DONE/);
+ h.click({view:'pohistory'});assert.match(h.node('#app').innerHTML,/OLDER-DONE/);assert.doesNotMatch(h.node('#app').innerHTML,/ACTIVE-OLD/);
+ h.change({id:'poSupplier',value:'B',dataset:{}});assert.match(h.node('#app').innerHTML,/OLDER-DONE/);assert.doesNotMatch(h.node('#app').innerHTML,/CURRENT-DONE/);
+});
+
+test('Path categories show human bilingual changes without internal action strings',async()=>{
+ const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
+ const row={id:'PO',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],documentStatus:'MISSING',termDays:null,history:[{action:'PURCHASE_PRICE_SAVED',time:'2026-10-11T01:00:00Z',actor:'LAW',message:'PURCHASE PRICE SAVED',changes:{before:{lpCtn:20},after:{lpCtn:19}}},{action:'PAYMENT_CHASE_CHANGED',time:'2026-10-11T02:00:00Z',actor:'LAW',changes:{before:{chasePayment:false},after:{chasePayment:true},reason:'Urgent'}}]};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
+ h.click({poHistory:'PO'});assert.match(h.node('#poHistoryEntries').innerHTML,/修改成本/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/PURCHASE PRICE SAVED/);
+ h.change({id:'poHistoryCategory',value:'CHASE',dataset:{}});assert.match(h.node('#poHistoryEntries').innerHTML,/Urgent/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/修改成本/);
 });
 
 test('quiet refresh retains the PO list until the new receipt and does not erase it on failure',async()=>{
