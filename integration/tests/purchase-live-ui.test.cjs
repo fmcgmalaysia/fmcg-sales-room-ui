@@ -232,11 +232,12 @@ test('supplier dialog retains approved company/short-name pair, tabs and all six
 test('row editor keeps barcode first, omits received quantity and gates changes on a saved supplier',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({taskEdit:'TASK'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['Catch Cost','Customer Qty','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
+  for(const text of ['Catch Cost','Purchase Qty','Cost Calculator','客户需求由 Admin 管理','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.ok(html.indexOf('00123')<html.indexOf('ACTUAL PRODUCT'));
   assert.ok(html.indexOf('ACTUAL PRODUCT')<html.indexOf('SIZE x16'));
   assert.doesNotMatch(html,/Received Qty|Total Purchase|Add Item From/);
-  assert.match(html,/id="saveTaskQty" disabled/);
+  assert.doesNotMatch(html,/id="saveTaskQty"|id="taskNewQty"/);
+  assert.match(html,/id="editSupplierPlan" disabled/);
   assert.match(html,/Select and save a supplier/);
   assert.equal(h.messages.length,1);
 });

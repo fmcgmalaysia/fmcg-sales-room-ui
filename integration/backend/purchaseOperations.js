@@ -14,6 +14,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff})};
   }
   return async ({company,requestId,staff,operation,input})=>{
+    if(operation==='QTY'&&staff?.role!=='SUPER ADMIN')throw Error('Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。');
     if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST','PLAN'].includes(operation))throw Error('Unsupported purchase operation.');
     const names=PURCHASE_COLLECTIONS[company];
     return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},prepare:async()=>{
@@ -91,7 +92,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         while(prior.length){const matches=prior.filter(event=>event.details?.before===confirmed);if(matches.length!==1)throw Error('Previous quantity save requires confirmation. Retry the original save.');const event=matches[0];if(!Number.isSafeInteger(event.details.after)||event.details.after<0||event.details.after>=confirmed)throw Error('Quantity history requires review.');confirmed=event.details.after;prior.splice(prior.indexOf(event),1);}
         if(confirmed!==task.purchaseQtyInCtn)throw Error('Previous quantity save requires confirmation. Retry the original save.');
         edit(task,{purchaseQtyInCtn:input.quantity});
-        events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn});
+        events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn,authorizedRole:staff.role});
       } else if(operation==='PO') {
         const po=String(input.poNumber||'').trim().toUpperCase();if(!po||po.length>80||!Array.isArray(input.taskIds)||!input.taskIds.length||input.taskIds.length>100||new Set(input.taskIds).size!==input.taskIds.length)throw Error('P.O. number and distinct tasks are required.');
         if(/^(NCT|GHR)-PO-?$/.test(po))throw Error('Enter the P.O. number after the company prefix.');
