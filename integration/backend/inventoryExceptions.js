@@ -1,25 +1,31 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { readStockResolutions } from 'backend/stockExceptionState.js';
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 export const STOCK_EXCEPTION_ACTION='STOCK_EXCEPTION_REPORTED';
 
 // A quarantine changes usable stock, never the historical accepted receipt.
 export function readStockExceptions(activity){
- const events=activity.filter(event=>event.action===STOCK_EXCEPTION_ACTION&&event.result==='SAVED');
+ const events=activity.filter(event=>event.action===STOCK_EXCEPTION_ACTION&&event.result==='SAVED'),resolutions=readStockResolutions(activity);
  if(new Set(events.map(event=>event.title)).size!==events.length)throw Error('Duplicate stock exception requires review.');
  return events.map(event=>{
   const item=event.details;
   if(!event.title||!event.imageAltText||!item||!['NCT','GHR'].includes(item.company)||!quantity(item.quantity)||!['INTERNAL_DAMAGE','WRONG_ITEM','SHORT_EXPIRY'].includes(item.kind)||!text(item.reason)||!event.initiatedByStaffId||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Stock exception record requires review.');
-  return {id:event.title,sourceTaskId:event.imageAltText,company:item.company,quantity:item.quantity,kind:item.kind,reason:item.reason,status:'OPEN',owner:item.kind==='INTERNAL_DAMAGE'?'ADMIN':'PURCHASE',at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,byStaffId:event.initiatedByStaffId};
+  const resolution=resolutions.get(event.title)||null;
+  let owner=item.kind==='INTERNAL_DAMAGE'?(resolution?.adminApproval?'ACCOUNT':'ADMIN'):'PURCHASE';
+  if(item.kind!=='INTERNAL_DAMAGE'&&resolution?.decision&&resolution.decision.value!=='PENDING')owner=resolution.decision.disposition==='RETURN'&&(resolution.returns||[]).reduce((n,row)=>n+row.quantity,0)<item.quantity||resolution.decision.value==='REPLACE'&&(resolution.replacements||[]).reduce((n,row)=>n+row.quantity,0)<item.quantity?'WAREHOUSE':'ACCOUNT';
+  return {id:event.title,sourceTaskId:event.imageAltText,company:item.company,quantity:item.quantity,kind:item.kind,reason:item.reason,referenceCostCents:Number.isSafeInteger(item.referenceCostCents)?item.referenceCostCents:null,resolution,status:resolution?.financeApproval?'RESOLVED':'OPEN',owner,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,byStaffId:event.initiatedByStaffId};
  });
 }
 export function stockPosition(sourceTaskId,received,activity){
  const cases=readStockExceptions(activity).filter(row=>row.sourceTaskId===sourceTaskId);
- const held=cases.reduce((sum,row)=>sum+row.quantity,0);
+ const excluded=cases.filter(row=>row.resolution?.financeApproval?.outcome!=='RELEASED').reduce((sum,row)=>sum+row.quantity,0);
+ const replacementReceived=cases.reduce((sum,row)=>sum+(row.resolution?.replacements||[]).reduce((n,entry)=>n+entry.quantity,0),0);
+ const held=cases.filter(row=>row.status!=='RESOLVED').reduce((sum,row)=>sum+row.quantity-(row.resolution?.returns||[]).reduce((n,entry)=>n+entry.quantity,0),0);
  const shipped=readCustomerShipments(activity).filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===sourceTaskId).reduce((sum,row)=>sum+row.quantity,0);
- if(!Number.isSafeInteger(received)||received<0||held+shipped>received)throw Error('Stock exception exceeds unshipped physical stock.');
- return {received,held,shipped,usableReceived:received-held,availablePhysical:received-held-shipped,cases};
+ if(!Number.isSafeInteger(received)||received<0||excluded+shipped>received+replacementReceived)throw Error('Stock exception exceeds unshipped physical stock.');
+ return {received,held,excluded,replacementReceived,shipped,usableReceived:received-excluded+replacementReceived,availablePhysical:received-excluded+replacementReceived-shipped,cases};
 }
 export function stockExceptionVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.warehouse?.accepted]),readStockExceptions(context.activity),readCustomerShipments(context.activity));}
 export function createStockExceptionOperations({store,names,readContext,now=()=>new Date()}){
@@ -35,7 +41,8 @@ export function createStockExceptionOperations({store,names,readContext,now=()=>
    const stock=stockPosition(source.id,source.warehouse.accepted,context.activity);
    if(input.quantity>stock.availablePhysical)throw Error('Cannot quarantine more than the unshipped physical stock.');
    const id=operationId(company,requestId,staff.memberId,'STOCK_EXCEPTION');
-   return {version:input.version,event:{_id:id,title:id,description:source.orderId,image:source.sourceLineId,imageAltText:source.id,action:STOCK_EXCEPTION_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:'Stock quarantined; internal review required',details:{company,quantity:input.quantity,kind:input.kind,reason}}};
+   const referenceCostCents=Number.isFinite(source.netCostCtn)&&source.netCostCtn>=0?Math.round(source.netCostCtn*input.quantity*100):null;
+   return {version:input.version,event:{_id:id,title:id,description:source.orderId,image:source.sourceLineId,imageAltText:source.id,action:STOCK_EXCEPTION_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:'Stock quarantined; internal review required',details:{company,quantity:input.quantity,kind:input.kind,reason,referenceCostCents}}};
   },apply:async plan=>{
    const existing=await store.read(names[company].activity,plan.event._id);
    if(!existing){if(stockExceptionVersion(await readContext(company,staff))!==plan.version)throw Error('Stock changed while reporting.');await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}

@@ -12,6 +12,7 @@ const { createCustomerFulfilmentOperations, shipmentVersion } = load('customerFu
 const { customerCompletion } = load('customerCompletionProjection.js');
 const { projectCustomerAccount } = load('customerDebtor.js');
 const { createStockExceptionOperations, stockExceptionVersion } = load('inventoryExceptions.js');
+const { createStockResolutionOperations, stockResolutionVersion } = load('stockExceptionResolution.js');
 
 async function scenario(company = 'NCT', demand = 100) {
   const rows = new Map(), clone = value => JSON.parse(JSON.stringify(value));
@@ -50,10 +51,12 @@ async function scenario(company = 'NCT', demand = 100) {
   const allocator = createPlannerAllocationOperations({ store, names, readWorkspace: workspace, now });
   const allocate = async quantity => allocator(request('PURCHASE', { action: 'ALLOCATE', sourceTaskId: id, version: allocationVersion(await workspace(), await store.all(n.activity)), targets: [{ taskId: id, quantity }], reason: 'Allocate actual cartons' }));
   const shortageOps = createShortageOperations({ store, names, readWorkspace: workspace, now });
-  const shortage = async (customerDecision, supplierDecision) => shortageOps(request('PURCHASE', { action: 'SHORTAGE', taskId: id, version: shortageVersion(await task(), await store.all(n.activity)), customerDecision, supplierDecision, expectedDate: '2026-10-15', reason: 'Supplier decision', customerMessage: 'Customer informed', financeRequired: true }));
+  const shortage = async (customerDecision, supplierDecision, financeRequired = true) => shortageOps(request('PURCHASE', { action: 'SHORTAGE', taskId: id, version: shortageVersion(await task(), await store.all(n.activity)), customerDecision, supplierDecision, expectedDate: '2026-10-15', reason: 'Supplier decision', customerMessage: 'Customer informed', financeRequired }));
   const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc: 15 })) });
   const stockOps=createStockExceptionOperations({store,names,readContext:context,now});
   const quarantine=async(quantity,kind)=>stockOps({...request('WAREHOUSE',{action:'QUARANTINE',sourceTaskId:id,version:stockExceptionVersion(await context()),quantity,kind,reason:'Internal stock finding'}),staff:{...staff('WAREHOUSE'),canReportStockException:true}});
+  const resolutionOps=createStockResolutionOperations({store,names,readContext:context,listOrders:poOps.list,now});
+  const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
   const plan=async totalCtn=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,planRevision:(await task()).procurement.revision,totalCtn,supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
   const shipAction = async (who, input) => { const r = request(who, { version: shipmentVersion(await context()), reason: 'Scenario shipment', ...input }); r.staff = { ...r.staff, canSelectShipment: who === 'SALES', canInvoiceShipment: who === 'SUPPORT', canDispatchShipment: who === 'WAREHOUSE' }; return fulfilment(r); };
@@ -61,7 +64,7 @@ async function scenario(company = 'NCT', demand = 100) {
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan };
+  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve };
 }
 
 for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close', async () => {
@@ -146,10 +149,70 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   assert.deepEqual(Array.from(row.warehouse.stock.cases,item=>item.owner),['ADMIN','PURCHASE','PURCHASE']);
   await assert.rejects(f.invoice(180),/Available stock changed/);
   await assert.rejects(f.allocate(480),/quarantined stock/);
-  await f.allocate(470);const second=await f.invoice(170);await f.dispatch(second);
+  await f.allocate(470);await f.shortage('STOP','PENDING',false);const second=await f.invoice(170);await f.dispatch(second);
   row=await f.task();assert.equal(row.ord,500);assert.equal(row.inc,470);assert.equal(row.warehouse.accepted,480);
   assert.equal((await f.completion()).dispatchedQty,470);assert.equal((await f.po()).financialRisk,true);
   await f.upload('INV',4800000);await f.upload('DO');await f.amounts();await f.finance({action:'CN_NOT_APPLICABLE',enabled:true});
   await assert.rejects(f.finance({action:'CHECK',enabled:true}),/quarantined stock/);
   assert.equal((await f.po()).state,'ACTIVE');
+  const [damage,wrong,expiry]=(await f.task()).warehouse.stock.cases;
+  await assert.rejects(f.resolve('ACCOUNT',{action:'CLOSE',id:damage.id,outcome:'LOSS',cents:50000}),/Super Admin/);
+  await f.resolve('ADMIN',{action:'APPROVE_LOSS',id:damage.id});
+  await f.resolve('ACCOUNT',{action:'CLOSE',id:damage.id,outcome:'LOSS',cents:50000});
+  for(const item of [wrong,expiry]){
+    await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REFUND',disposition:'RETURN',supplierReference:'Supplier accepted claim'});
+    await f.resolve('WAREHOUSE',{action:'RETURN',id:item.id,quantity:item.quantity,reference:'RETURN-'+item.kind});
+  }
+  await f.upload('CN',50000);await f.amounts();await f.pay(50000,'CLAIM-REFUND','REFUND');
+  const po=await f.po(),cn=po.documents.find(doc=>doc.type==='CN'),refund=po.finance.payments.find(row=>row.direction==='REFUND');
+  for(const item of [wrong,expiry])await f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'REFUND',cents:item.quantity*10000,cnAllocations:[{fileId:cn.fileId,cents:item.quantity*10000}],refundAllocations:[{paymentId:refund.id,cents:item.quantity*10000}]});
+  assert.equal((await f.po()).financialRisk,false,'no unresolved stock claims remain, final Checked still required');
+  await f.finance({action:'CHECK',enabled:true});
+  assert.equal((await f.po()).state,'HISTORY');assert.equal((await f.po()).finance.stockLossCents,50000);
+  assert.equal((await f.po()).finance.payableCents,4750000);assert.equal((await f.po()).finance.paidCents,4750000);
+  assert.equal((await f.completion()).completedQty,470);assert.equal((await f.task()).warehouse.accepted,480);
+});
+
+test('supplier replacement received in two batches restores usable stock without rewriting the original receipt', async () => {
+  const f=await scenario();await f.delivery(100,'DELIVERY');await f.allocate(100);await f.quarantine(5,'WRONG_ITEM');
+  const item=(await f.task()).warehouse.stock.cases[0];
+  await assert.rejects(f.resolve('WAREHOUSE',{action:'DECIDE',id:item.id,decision:'REPLACE'}),/not authorized/);
+  await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REPLACE',disposition:'RETURN',supplierReference:'Supplier exchange',expectedDate:'2026-10-15'});
+  await f.resolve('WAREHOUSE',{action:'RETURN',id:item.id,quantity:5,reference:'RETURN-5'});
+  await f.resolve('WAREHOUSE',{action:'REPLACEMENT',id:item.id,quantity:3,reference:'REPLACE-3',acceptedGood:true});
+  assert.equal((await f.task()).warehouse.stock.usableReceived,98);
+  await assert.rejects(f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'REPLACED',noExtraCharge:true}),/complete good replacement/);
+  await f.resolve('WAREHOUSE',{action:'REPLACEMENT',id:item.id,quantity:2,reference:'REPLACE-2',acceptedGood:true});
+  await f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'REPLACED',noExtraCharge:true});
+  const stock=(await f.task()).warehouse.stock;
+  assert.equal(stock.received,100);assert.equal(stock.replacementReceived,5);assert.equal(stock.usableReceived,100);
+  assert.equal(stock.cases[0].status,'RESOLVED');
+  await assert.rejects(f.resolve('WAREHOUSE',{action:'REPLACEMENT',id:item.id,quantity:1,reference:'EXTRA',acceptedGood:true}),/Resolved stock/);
+});
+
+test('a supplier refund below lost stock cost stays red until Admin approves the unrecovered difference', async () => {
+  const f=await scenario();await f.pay(1000000,'PREPAY');await f.delivery(100,'DELIVERY');await f.quarantine(5,'SHORT_EXPIRY');
+  const item=(await f.task()).warehouse.stock.cases[0];
+  await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REFUND',disposition:'SUPPLIER_NO_RETURN',supplierReference:'Supplier accepts RM400 only'});
+  await f.upload('INV',1000000);await f.upload('DO');await f.upload('CN',40000);await f.amounts();await f.pay(40000,'REFUND','REFUND');
+  const po=await f.po(),cn=po.documents.find(doc=>doc.type==='CN'),refund=po.finance.payments.find(row=>row.direction==='REFUND');
+  const close={action:'CLOSE',id:item.id,outcome:'REFUND',cents:40000,cnAllocations:[{fileId:cn.fileId,cents:40000}],refundAllocations:[{paymentId:refund.id,cents:40000}]};
+  await assert.rejects(f.resolve('ACCOUNT',close),/shortfall requires separate Super Admin/);
+  assert.equal((await f.po()).financialRisk,true);
+  await f.resolve('ADMIN',{action:'APPROVE_VARIANCE',id:item.id,cents:10000});
+  await f.resolve('ACCOUNT',close);
+  assert.equal((await f.po()).finance.stockLossCents,10000);
+  assert.equal((await f.task()).warehouse.stock.usableReceived,95);
+});
+
+test('releasing an incorrect quarantine blocks supplier replacement from creating extra usable stock', async () => {
+  const f=await scenario();await f.delivery(100,'DELIVERY');await f.quarantine(5,'WRONG_ITEM');
+  const item=(await f.task()).warehouse.stock.cases[0];
+  await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REPLACE',disposition:'RETURN',supplierReference:'Reviewing exchange',expectedDate:'2026-10-15'});
+  await f.resolve('ADMIN',{action:'APPROVE_RELEASE',id:item.id});
+  await assert.rejects(f.resolve('WAREHOUSE',{action:'REPLACEMENT',id:item.id,quantity:5,reference:'BAD-REPLACE',acceptedGood:true}),/release is awaiting/);
+  await assert.rejects(f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REFUND'}),/release is awaiting/);
+  await f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'RELEASED'});
+  assert.equal((await f.task()).warehouse.stock.usableReceived,100);
+  assert.equal((await f.task()).warehouse.stock.replacementReceived,0);
 });

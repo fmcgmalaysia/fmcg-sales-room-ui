@@ -75,7 +75,7 @@
     },
     {
       "name": "Post-receipt quarantine and split-shipment scenario",
-      "status": "Quarantine guards and 500/480/300+170 local scenario passed; resolution writers, web bridges and UI pending",
+      "status": "Quarantine, Admin/Finance loss approval, supplier return/replacement/refund and claim variance local scenarios passed; web bridges and UI pending",
       "scope": "Original demand 500, supplier receipt 480, dispatch 300, internal damage 5, wrong item 3, short expiry 2; only 170 usable for next dispatch. Customer-visible explanation excludes internal fault."
     }
   ],
@@ -84,7 +84,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 249,
+  "localTests": 252,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
