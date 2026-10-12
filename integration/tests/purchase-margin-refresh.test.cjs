@@ -66,3 +66,37 @@ test('failed GP lock cleanup cannot take the procurement save lock or fail the w
   assert.equal(f.rows.has('NCTActivity/' + operationId('NCT', 'T', 'COST_LOCK')), false);
   assert.equal(f.rows.has('NCTActivity/' + operationId('NCT', 'T', 'GP_LOCK')), true);
 });
+
+function withInvoice(input, quantity) {
+  input.workspace.tasks[0].ord = 90;
+  const line = { taskId:'T',quantity,sources:[{sourceTaskId:'T',quantity}] };
+  const shipment = { id:'SHIP',company:'NCT',customerId:'C',currency:'SGD',status:'REQUESTED',lines:[line] };
+  const event = { action:'CUSTOMER_SHIPMENT_CHANGED',result:'SAVED',description:'SHIP',activityTime:'2026-10-12T00:00:00Z',initiatedByStaffName:'SUPPORT' };
+  input.activity = [
+    {...event,title:'SELECT',details:{beforeRevision:'',shipment:clone(shipment)}},
+    {...event,title:'INVOICE',details:{beforeRevision:'SELECT',shipment:{...shipment,status:'INVOICED',
+      invoice:{number:'SI-001',date:'2026-10-12',amountCents:quantity*10000,currency:'SGD',rateToMyr:3,at:event.activityTime,by:'SUPPORT',byStaffId:'S'},
+      lines:[{...line,sellingPriceCtn:100,rateToMyr:3,costSources:[{sourceTaskId:'T',quantity,netCostCtn:240}]}]}}}
+  ];
+  return input;
+}
+
+test('partial invoice writes CMS invoice summary and weighted GP without locking the remaining quantity', async () => {
+  const f=fixture(); f.setRate(4); const input=withInvoice(f.input(),40);
+  const expected=(40*100*3+50*100*4-90*240)/(40*100*3+50*100*4);
+  assert.equal((await f.refresh(input)).get('T'),expected);
+  const saved=f.rows.get('NCTOrders/O');assert.equal(saved.gp,expected);
+  assert.equal(saved.salesInvoiceSummary[0].number,'SI-001');assert.equal(saved.salesInvoiceSummary[0].quantity,40);
+  assert.equal(saved.salesInvoiceSummary[0].by,'SUPPORT');assert.equal(saved.salesInvoiceSummary[0].rateToMyr,3);
+  assert.equal(saved.salesInvoiceNumber,'');assert.equal(saved.sellingPricePc,10);
+  await f.refresh(withInvoice(f.input(),40));assert.equal(f.events().length,1);
+  f.setRate(5);await f.refresh(withInvoice(f.input(),40));assert.equal(f.rows.get('NCTOrders/O').salesInvoiceSummary[0].rateToMyr,3);
+  assert.notEqual(f.rows.get('NCTOrders/O').gp,expected);
+});
+
+test('fully invoiced GP and invoice summary cache do not require a current FX service response', async () => {
+  const f=fixture(),refresh=createPurchaseMarginRefresh({store:f.store,readRates:async()=>{throw Error('Offline');}});
+  assert.equal((await refresh(withInvoice(f.input(),90))).get('T'),.2);
+  const saved=f.rows.get('NCTOrders/O');assert.equal(saved.gp,.2);assert.equal(saved.salesInvoiceSummary[0].rateToMyr,3);
+  assert.equal(saved.adminFxSource,3);assert.equal(f.rows.get('NCTTasks/T').purchaseQtyInCtn,90);
+});
