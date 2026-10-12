@@ -10,6 +10,7 @@ const { createShortageOperations, shortageVersion } = load('purchaseShortage.js'
 const { createAccountSettlementOperations } = load('accountSettlement.js');
 const { createCustomerFulfilmentOperations, shipmentVersion } = load('customerFulfilment.js');
 const { customerCompletion } = load('customerCompletionProjection.js');
+const { applyPurchaseProgress } = load('purchaseProgress.js');
 const { projectCustomerAccount } = load('customerDebtor.js');
 const { createStockExceptionOperations, stockExceptionVersion } = load('inventoryExceptions.js');
 const { createStockResolutionOperations, stockResolutionVersion } = load('stockExceptionResolution.js');
@@ -79,7 +80,8 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, allPos:()=>poOps.list(company,staff('PURCHASE')) };
+  const progress=async()=>applyPurchaseProgress(await workspace(),await store.all(n.activity),await poOps.list(company,staff('PURCHASE'))).tasks;
+  return { store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, progress, allPos:()=>poOps.list(company,staff('PURCHASE')) };
 }
 
 test('payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance',async()=>{
@@ -118,8 +120,10 @@ for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments
   await f.finance({ action: 'CN_NOT_APPLICABLE', enabled: true }); await f.finance({ action: 'CHECK', enabled: true });
   assert.equal((await f.po()).documentStatus, 'COMPLETE'); assert.equal((await f.po()).state, 'ACTIVE');
   const shipment = await f.invoice(100); assert.equal((await f.completion()).completedQty, 0);
+  assert.equal((await f.progress())[0].stage,'WAITING_FOR_SHIPMENT');assert.equal((await f.progress())[0].archived,false);
   await f.dispatch(shipment); assert.equal((await f.completion()).completedQty, 100);
   assert.equal((await f.po()).state, 'HISTORY'); assert.equal((await f.po()).creditorActive, false);
+  assert.equal((await f.progress())[0].stage,'SHIPPED');assert.equal((await f.progress())[0].archived,true);
   assert.equal(projectCustomerAccount(await f.context()).balances[0].balanceCents, 1500000);
 });
 
@@ -159,8 +163,10 @@ test('credit-term supplier does not block customer dispatch but remains active u
   const shipment = await f.invoice(100); await f.dispatch(shipment);
   assert.equal((await f.completion()).dispatchedQty, 100); assert.equal((await f.completion()).completedQty, 0);
   assert.equal((await f.po()).state, 'ACTIVE'); assert.equal((await f.po()).creditorActive, true);
+  assert.equal((await f.progress())[0].stage,'WAITING_FOR_PAYMENT');assert.equal((await f.progress())[0].archived,false);
   await f.pay(1000000, 'TERM-PAYMENT');
   assert.equal((await f.po()).invoiceChecked, false, 'changed financial record requires final recheck');
+  assert.equal((await f.progress())[0].stage,'WAITING_FOR_ACC_REVIEW');
   await f.finance({ action: 'CHECK', enabled: true });
   assert.equal((await f.completion()).completedQty, 100); assert.equal((await f.po()).state, 'HISTORY');
 });

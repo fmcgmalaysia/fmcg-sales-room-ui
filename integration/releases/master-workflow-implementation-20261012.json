@@ -108,6 +108,11 @@
       "name": "payment-handoff-signals",
       "status": "local scenarios and syntax checks passed; not deployed",
       "scope": "Account paper-receipt/review stage, requested amount, partial/full paid distinction, per-proof purchaser acknowledgement and supplier-invoice due-date queues. Acknowledgement does not clear financial risks."
+    },
+    {
+      "name": "purchase-progress-projection",
+      "status": "local scenarios passed; not deployed",
+      "scope": "Read-only stages derive from supplier documents, payment review, physical receipts, invoice portions and actual dispatch; child procurement sources archive only after their own dispatch and financial closure."
     }
   ],
   "release": {
@@ -115,7 +120,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 273,
+  "localTests": 276,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
