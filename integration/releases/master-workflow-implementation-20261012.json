@@ -1,5 +1,5 @@
 {
-  "status": "local implementation in progress; not published",
+  "status": "Release candidate prepared; not published or publicly accepted",
   "approvedBy": "User authorized complete implementation, publishing and testing on 2026-10-12",
   "recovery": {
     "productionCandidate": "fe28971431803696a967981004906fab27a90bf6",
@@ -125,7 +125,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 279,
+  "localTests": 282,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
@@ -190,7 +190,7 @@
     ],
     "existingModulesSynchronized": true,
     "published": false,
-    "note": "Browser connection recovered. Interrupted purchaseMarginRefresh confirmed exactly two of three patches applied, then remaining isolated patch completed. Existing Master backend modules and three existing page bridges now read back exactly against candidate. New Support page, source-site bridges, CMS schema, build markers and public acceptance remain pending. Do not publish yet.",
+    "note": "All listed Master modules, source-site bridges, six page references and the new Support page are saved and exact-readback verified. Six CMS fields added without record edits. Multi-source open GP corrected. No Wix publication yet.",
     "exactPatchedReadbacks": [
       {
         "file": "account-department-page.js",
@@ -276,7 +276,97 @@
     "pageBridgesSynchronized": [
       "Purchase Home",
       "Account Department",
-      "Warehouse Department"
+      "Warehouse Department",
+      "Support Department",
+      "Sales Room",
+      "Buyer Room"
+    ],
+    "cmsFields": [
+      "NCTTasks.procurementSource:Boolean",
+      "NCTTasks.customerDemandTaskId:Text",
+      "NCTTasks1.procurementSource:Boolean",
+      "NCTTasks1.customerDemandTaskId:Text",
+      "NCTOrders.salesInvoiceSummary:Array",
+      "NCTOrders1.salesInvoiceSummary:Array"
+    ],
+    "latestReadbackHashes": [
+      {
+        "file": "installed-source-masterFulfilmentClient.js",
+        "sha256": "83a3c07082da3f082796812f74a672cb5fc4b5cf8f548578da443450a7a9ade1"
+      },
+      {
+        "file": "patched-purchaseMarginRefresh.js",
+        "sha256": "80195e0ab9e9523f297da7282bcb4e3e83520433989a34a1dd699f02df4d354d"
+      },
+      {
+        "file": "patched-source-masterQuantityClient.js",
+        "sha256": "55ce71337641631265446158c894ec53f63ff22936a4d37ba8cdd217cb920cfd"
+      },
+      {
+        "file": "patched-source-masterQuantityProjection.js",
+        "sha256": "36e0eb7dc430eac42732f03c0fdac33b7a7c11aaccfd859843e5453314334128"
+      },
+      {
+        "file": "patched-source-nctSalesIntake.js",
+        "sha256": "d1f32d1cc45770b1bea01f10eae367e0dafc9b51122c246da462b4d274a7cd91"
+      },
+      {
+        "file": "patched-source-nctSubmissionDelivery.js",
+        "sha256": "dc9802440e50e43247099ed1301cdf883e3f374e8c9afb272d73331440950b4b"
+      },
+      {
+        "file": "patched-source-nctSubmissionPayload.js",
+        "sha256": "3ff0026cdf6561a9d1875e71f288df330ae7349ef3b6f24125278b80ec77258c"
+      },
+      {
+        "file": "patched-source-onboarding.web.js",
+        "sha256": "7e73d7020909d25606d425e2c3e36ee3d7d8b11a2800dce5756b66db137332ea"
+      },
+      {
+        "file": "patched-source-sales-room-page.js",
+        "sha256": "ab3fc28f067b7130d2c1840a1d955419e742d026f33528a72e6ffa6596c1a03d"
+      },
+      {
+        "file": "release-account-department-page.js",
+        "sha256": "ce6ef0b50ae0f5fbdcd751a2e5fd54df85ce9e3c5e73855d8088d24199dc218a"
+      },
+      {
+        "file": "release-buyer-room-page.js",
+        "sha256": "1f9c980c8059e5ad7ef11fbeb0055663889af8d3c661bb7fb934fc145d162c94"
+      },
+      {
+        "file": "release-page-versions-draft.png",
+        "sha256": "9bd62170f21176004e08a4f4d92a5ecd2b24a058d36332f777597f2c37aaab11"
+      },
+      {
+        "file": "release-purchase-room-page.js",
+        "sha256": "26471a51b06ed0b093fd465523c91d857c4bca7386fad13de83df7789f6b8709"
+      },
+      {
+        "file": "release-sales-room-page.js",
+        "sha256": "8f1292e2bf991ee920be4243745682895949833fb9d57e1b54f8b2641495127d"
+      },
+      {
+        "file": "release-support-department-page.js",
+        "sha256": "a2990427a7d073a4782ed326a503ed72c624a8c37a01443ca8c2a512e68dc36a"
+      },
+      {
+        "file": "release-warehouse-department-page.js",
+        "sha256": "119e0c261b8303146ce58ced9b4d201afc5e6e2ae36b89acaf2d594e0a908454"
+      }
     ]
+  },
+  "candidateBuild": "2026-10-12-master-workflow-v1",
+  "releaseBranch": "release/master-workflow-20261012",
+  "regressionAudit": {
+    "baseline": "fe28971431803696a967981004906fab27a90bf6",
+    "baselineSuite": {
+      "passed": 78,
+      "tests": 86,
+      "failed": 8
+    },
+    "candidateAdditionalFailures": 5,
+    "classification": "Three hardcoded NCT mock receipts, one missing UI helper in the test harness, one outdated formula assertion. All five resolved by fixture/behavior-test changes; no production regression established.",
+    "historicalFailures": "Eight failures reproduce unchanged on the prior baseline and are not claimed as passed."
   }
 }
