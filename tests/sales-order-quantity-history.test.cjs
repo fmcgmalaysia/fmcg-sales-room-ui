@@ -41,7 +41,7 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
     context.getSecret = async () => 'LOCAL-TEST-ONLY';
     context.fetch = async (_url, options) => {
       const body = JSON.parse(options.body);
-      return { ok: true, json: async () => ({ ok: true, destination: 'NCT', orderId: body.orderId,
+      return { ok: true, json: async () => ({ ok: true, destination: body.destination, orderId: body.orderId,
         submissionId: body.submissionId, receiptId: 'RECEIPT-' + body.orderId,
         masterReceivedAt: new Date().toISOString(), taskIds: body.lines.map(line => 'TASK-' + line.sourceLineId), costErrorTaskCount: 0 }) };
     };
@@ -210,7 +210,7 @@ test('Buyer edit history paginates past 1000, filters customer identity, and exc
 
 function buyerUi(state) {
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'orderEditGroups', 'historyPathHtml', 'editHistoryHtml'];
+  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'customerFulfilmentHtml', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'orderEditGroups', 'historyPathHtml', 'editHistoryHtml'];
   const definitions = names.map(name => html.split(/\r?\n/).find(line => line.startsWith('function ' + name + '('))).join('\n');
   const requests = [];
   const context = vm.createContext({ state, post: (...args) => requests.push(args), num: value => Number(value) || 0, money: value => Number(value || 0).toFixed(2), compactTime: value => value, esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'), Date, Set });

@@ -5,6 +5,20 @@ import { operationId } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { calculateGrossProfitMargin, calculateNetCartonCost } from 'backend/grossProfitMargin.js';
 const finite = value => typeof value === 'number' && Number.isFinite(value);
+function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
+  const sources = workspace.tasks.filter(source => source.id === row.id || source.customerDemandTaskId === row.id);
+  if (!sources.some(source => source.procurementSource)) return calculateNetCartonCost(task);
+  let quantity = 0, amount = 0;
+  for (const source of sources) {
+    const invoiced = invoiceLines.flatMap(line => line.costSources || []).filter(part => part.sourceTaskId === source.id).reduce((sum, part) => sum + part.quantity, 0);
+    const remaining = Math.max(0, (source.procurement?.totalCtn || 0) - invoiced);
+    if (!remaining) continue;
+    const raw = tasks.find(item => item.title === source.id), cost = raw ? calculateNetCartonCost(raw) : null;
+    if (!finite(cost)) return null;
+    quantity += remaining; amount += remaining * cost;
+  }
+  return quantity ? amount / quantity : null;
+}
 // GP is a backend read cache. Financial consumers must refresh open transactions.
 // The future Sales Co invoice save must acquire GP_LOCK and COST_LOCK and freeze
 // GP, FX and financial amounts together; a bare invoice number is not a lock snapshot.
@@ -34,7 +48,7 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
     catch (_) { rates=[]; }
     for (const { row, order, task, invoiceLines, quantity, invoiceSummary } of open) {
       const matches = rates.filter(rate => rate.currency === order.transactionCurrency);
-      const rate = matches.length === 1 ? matches[0] : null, cost = calculateNetCartonCost(task);
+      const rate = matches.length === 1 ? matches[0] : null, cost = openSourceCost(row, task, tasks, workspace, invoiceLines);
       const gp = invoiceLines?partialInvoiceMargin({quantity,invoiceLines,sellingPricePc:order.sellingPricePc,eaPerCtn:order.orderId,netCostCtn:cost,rateToMyr:rate?.rateToMyr}):calculateGrossProfitMargin({ sellingPricePc: order.sellingPricePc, eaPerCtn: order.orderId, netCostCtn: cost, rateToMyr: rate?.rateToMyr });
       results.set(row.id, gp);
       const hasOpenQuantity=invoiceLines?quantity>invoiceLines.reduce((sum,line)=>sum+line.quantity,0):true;
@@ -47,6 +61,12 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
         if (await store.read(names.activity, lockId) || await store.read(names.activity, operationId(company, task.title, 'COST_LOCK'))) { results.set(row.id, null); continue; }
         await store.insert(names.activity, { _id: lockId, title: lockId, description: order.title, activityTime: now(), details: { requestId, actorMemberId: 'SYSTEM_GP' } });
         held = true;
+        let sourceChanged = false;
+        for (const source of workspace.tasks.filter(item => item.customerDemandTaskId === row.id)) {
+          const before = tasks.find(item => item.title === source.id), current = before && await store.read(names.tasks, before._id);
+          if (!current || taskEditVersion(current) !== taskEditVersion(before) || await store.read(names.activity, operationId(company, source.id, 'COST_LOCK'))) { sourceChanged = true; break; }
+        }
+        if (sourceChanged) { results.set(row.id, null); continue; }
         const currentTask = await store.read(names.tasks, task._id), currentOrder = await store.read(names.orders, order._id);
         if (!currentTask || !currentOrder || taskEditVersion(currentTask) !== taskEditVersion(task) ||
             currentOrder.title !== order.title || currentOrder.sourceLineId !== order.sourceLineId || currentOrder.customerId !== order.customerId ||

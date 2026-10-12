@@ -81,6 +81,39 @@ function withInvoice(input, quantity) {
   return input;
 }
 
+function withSources(f, input) {
+  const source = { ...clone(f.rows.get('NCTTasks/T')), _id: 'B', title: 'B', procurementSource: true, customerDemandTaskId: 'T', purchaseQtyInCtn: 0, lpCtn: 300 };
+  f.rows.set('NCTTasks/B', clone(source)); input.tasks.push(source);
+  input.workspace.tasks[0].procurement = { totalCtn: 60 };
+  input.workspace.tasks.push({ id: 'B', procurementSource: true, customerDemandTaskId: 'T', procurement: { totalCtn: 30 } });
+  return input;
+}
+
+test('multiple suppliers contribute weighted open cost while demand and each supplier price remain unchanged', async () => {
+  const f = fixture(), input = withSources(f, f.input()), before = clone(input.tasks);
+  assert.equal((await f.refresh(input)).get('T'), (320 - 260) / 320);
+  assert.deepEqual(input.tasks, before); assert.equal(f.rows.get('NCTOrders/O').orderQtyInCtn, 100);
+  assert.equal(f.rows.get('NCTTasks/B').lpCtn, 300);
+});
+
+test('partial invoice preserves its source snapshot and weights only remaining supplier cartons at current FX', async () => {
+  const f = fixture(); f.setRate(4);
+  const input = withSources(f, withInvoice(f.input(), 40));
+  const revenue = 40 * 100 * 3 + 50 * 100 * 4;
+  assert.equal((await f.refresh(input)).get('T'), (revenue - 40 * 240 - 20 * 240 - 30 * 300) / revenue);
+  assert.equal(f.rows.get('NCTOrders/O').salesInvoiceSummary[0].rateToMyr, 3);
+});
+
+test('missing or concurrently edited secondary supplier cost cannot expose an inaccurate GP', async () => {
+  for (const kind of ['missing', 'changed', 'locked']) {
+    const f = fixture(), input = withSources(f, f.input());
+    if (kind === 'missing') input.tasks[1].disc3 = null;
+    if (kind === 'changed') f.rows.get('NCTTasks/B').lpCtn = 310;
+    if (kind === 'locked') f.rows.set('NCTActivity/' + operationId('NCT', 'B', 'COST_LOCK'), { details: { requestId: 'OTHER' } });
+    assert.equal((await f.refresh(input)).get('T'), null); assert.equal(f.events().length, 0);
+  }
+});
+
 test('partial invoice writes CMS invoice summary and weighted GP without locking the remaining quantity', async () => {
   const f=fixture(); f.setRate(4); const input=withInvoice(f.input(),40);
   const expected=(40*100*3+50*100*4-90*240)/(40*100*3+50*100*4);
