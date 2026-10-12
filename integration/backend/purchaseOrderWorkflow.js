@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate } from 'backend/purchaseDocumentPolicy.js';
 import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
+import { projectPaymentHandoff } from 'backend/paymentHandoff.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -50,7 +51,8 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       status:'Awaiting payment records',canArchive:false,archiveBlockers:['Warehouse receipt closure','Completed supplier payment','Final Account verification'],
       history:[...history,...(details.audit||[])].sort((a,b)=>String(a.time).localeCompare(String(b.time))),
       updatedAt:date(details.updatedAt),readAt:now.toISOString()};
-    return {...projected,...projectInvoiceReview(projected,details)};
+    const settlement={...projected,...projectInvoiceReview(projected,details)};
+    return {...settlement,...projectPaymentHandoff(settlement,details,now)};
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
@@ -62,7 +64,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     return projectPurchaseOrders({company,workspace,records,now:now()});
   }
   async function save({company,staff,requestId,input}) {
-    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','ACK_PAYMENT'].includes(input.action))throw Error('Unsupported purchase order action.');
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
       if(!documentService)throw Error('Document upload is not connected.');
@@ -88,6 +90,12 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,name,type:input.type,sha256:journalInput.sha256};
         const document={fileId:allocated.fileId,name,type:input.type,number:text(input.number),date:input.date,size:journalInput.size,sha256:journalInput.sha256,linked:true,...(Number.isSafeInteger(input.declaredCents)?{declaredCents:input.declaredCents}:{}),uploadedAt:now().toISOString(),uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
         patch={documents:[...(before.documents||[]),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{})};
+      } else if(input.action==='ACK_PAYMENT'){
+        const payment=row.finance.payments.find(payment=>payment.id===input.paymentId&&payment.confirmed&&payment.direction!=='REFUND'&&payment.proof?.linked);
+        if(!payment)throw Error('Select an actual payment notification.');
+        const acknowledgements=before.paymentHandoff?.acknowledgements||[];
+        if(acknowledgements.some(entry=>entry.paymentId===payment.id&&entry.sha256===payment.proof.sha256))throw Error('This payment notification was already acknowledged.');
+        patch={paymentHandoff:{...(before.paymentHandoff||{}),acknowledgements:[...acknowledgements,{paymentId:payment.id,sha256:payment.proof.sha256,by:staff.staffName,byStaffId:staff.staffId,at:now().toISOString()}]}};
       } else if(input.action==='CHASE'){
         if(typeof input.enabled!=='boolean'||input.enabled===row.chasePayment)throw Error('Payment chase has not changed.');
         patch={chasePayment:input.enabled};
@@ -96,7 +104,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         if(input.termDays===row.termDays)throw Error('Payment term has not changed.');
         patch={termDays:input.termDays};
       }
-      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
+      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
       return {record,expected:current?operationId(current):null,event,...(upload?{upload}:{})};
     },apply:async plan=>{

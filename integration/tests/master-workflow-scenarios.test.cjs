@@ -49,6 +49,7 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const financeOps = createAccountSettlementOperations({ store, names, listOrders: poOps.list, documentService: documents, now });
   const finance = async input => financeOps.save(request('ACCOUNT', { id: (await po()).id, version: (await po()).version, reason: 'Scenario reconciliation', ...input }));
   const pay = async (cents, number, direction = 'PAYMENT') => finance({ action: 'DOCUMENT_UPLOAD', type: 'PAYMENT', date: '2026-10-12', number, cents, direction, base64: pdf(number) });
+  const acknowledge=async paymentId=>{const current=await po(),req=request('PURCHASE',{id:current.id,version:current.version,action:'ACK_PAYMENT',paymentId,reason:'Payment proof received'}),result=await poOps.save(req);assert.deepEqual(await poOps.save(req),result);return result;};
   const warehouseOrders = async () => projectWarehouseOrders({ company, purchaseOrders: await poOps.list(company, staff('WAREHOUSE')), tasks: (await workspace()).tasks, activity: await store.all(n.activity) });
   const warehouseOps = createWarehouseOperations({ store, names, readOrders: warehouseOrders, now });
   const delivery = async (accepted, kind, resolveIssue = false) => warehouseOps.save(request('WAREHOUSE', { action: 'RECEIVE', id: (await po()).id, version: (await warehouseOrders()).find(row=>row.taskIds?.includes(id)||row.lines.some(line=>line.taskId===id)).version, lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] }));
@@ -78,8 +79,18 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, allPos:()=>poOps.list(company,staff('PURCHASE')) };
+  return { store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, allPos:()=>poOps.list(company,staff('PURCHASE')) };
 }
+
+test('payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance',async()=>{
+ const f=await scenario();await f.upload('PI');
+ await f.finance({action:'PAYMENT_REVIEW',stage:'RECEIVED',paperReceived:true,requestedCents:1000000});assert.equal((await f.po()).paymentHandoff.status,'RECEIVED');
+ await f.finance({action:'PAYMENT_REVIEW',stage:'REVIEWING',paperReceived:true,requestedCents:1000000});assert.equal((await f.po()).paymentHandoff.review.by,'ACCOUNT');
+ await f.pay(300000,'FIRST-PAY');let current=await f.po();assert.equal(current.paymentHandoff.status,'PARTLY_PAID');assert.equal(current.paymentHandoff.unreadCount,1);assert.equal(current.invoiceChecked,false);
+ await f.acknowledge(current.paymentHandoff.notices[0].paymentId);current=await f.po();assert.equal(current.paymentHandoff.unreadCount,0);assert.equal(current.paymentHandoff.notices[0].acknowledgement.by,'PURCHASE');assert.equal(current.finance.paidCents,300000);assert.equal(current.invoiceChecked,false);
+ await f.pay(700000,'SECOND-PAY');current=await f.po();assert.equal(current.paymentHandoff.status,'PAID');assert.equal(current.paymentHandoff.unreadCount,1);assert.equal(current.finance.paymentCompleted,false,'paid PI is not final invoice reconciliation');
+ await f.upload('INV',1000000);current=await f.po();assert.equal(current.paymentHandoff.reviewStale,true);assert.equal(current.paymentHandoff.review,null);
+});
 
 test('A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes',async()=>{
  const f=await scenario('NCT',200);await f.plan(180);const sourceId=await f.source(10);await f.decideQuantity('UNPLACED','STOP');

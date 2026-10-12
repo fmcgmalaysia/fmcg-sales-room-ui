@@ -23,12 +23,15 @@
   if(department==='ACCOUNT')for(const po of orders.filter(po=>po.state!=='HISTORY'||po.finance?.supplierCreditCents>0)){
    const title=po.number+' · '+po.supplierName;
    if(po.chasePayment)add(po.id,'todo',title,'ACCOUNT',['PURCHASE'],'settle','Payment requested / 采购正在催款');
+   if(po.paymentHandoff?.reviewStale)add(po.id,'urgent',title,'ACCOUNT',['PURCHASE'],'settle','Payment documents changed / 付款文件已变更，必须重新过目');
+   if(po.paymentHandoff?.paymentDue){add(po.id,'urgent',title,'ACCOUNT',['PURCHASE'],'settle','Supplier payment due / 供应商款项已到期');add(po.id,'todo',title,'ACCOUNT',['PURCHASE'],'settle','Payment due today or overdue / 今天应付款或已逾期');}
    if(po.creditorActive||po.prepaymentPending)add(po.id,'partial',title,'ACCOUNT',[],'settle','Payment or reconciliation open / 付款或对账尚未完成');
    if(po.financialRisk)add(po.id,'urgent',title,'ACCOUNT',['PURCHASE'],'settle','Shortage / overpayment must be reconciled / 少货、多付款或贷项尚待核对');
    if(!po.invoiceChecked&&po.canCheck)add(po.id,'feedback',title,'ACCOUNT',['PURCHASE'],'settle','Final check ready / 请完成最终核对，采购等待结单');
    if(!po.invoiceChecked){if(!po.documents?.some(doc=>doc.type==='INV'&&!doc.superseded))add(po.id,'blocked',title,'PURCHASE',['ACCOUNT'],'settle','Final Invoice required / 等待采购上载最终发票');
     if(!po.warehouse?.complete&&!po.finance?.receiptResolved)add(po.id,'blocked',title,po.warehouse?.issues?'PURCHASE':'WAREHOUSE',['ACCOUNT'],'settle',po.warehouse?.issues?'Shortage decision required / 等待采购处理少货':'Receiving incomplete / 等待货仓收货结果');}
   }
+  if(department==='PURCHASE')for(const po of orders.filter(po=>po.paymentHandoff?.unreadCount>0))add(po.id,'feedback',po.number+' · '+po.supplierName,'PURCHASE',['WAREHOUSE'],'payment-proof','New payment proof / 财务已上传付款证明，请确认并联系供应商发货');
   if(department==='WAREHOUSE')for(const po of orders.filter(po=>po.status!=='COMPLETE')){
    const title=po.number+' · '+po.supplierName;
    add(po.id,po.status==='WAITING'?'todo':'partial',title,'WAREHOUSE',[],'receive',po.status==='WAITING'?'Awaiting delivery / 等待到货登记':'Receiving in progress / 分批收货中');

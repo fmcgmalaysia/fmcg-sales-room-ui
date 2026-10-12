@@ -103,6 +103,11 @@
       "name": "shortage-claim-evidence",
       "status": "local scenarios, duplicate-proof tests and browser form passed; not deployed",
       "scope": "Finance maps shortage to verified CN and received refund amounts; evidence cannot be reused across receipt and stock claims; final Checked requires the case mapping."
+    },
+    {
+      "name": "payment-handoff-signals",
+      "status": "local scenarios and syntax checks passed; not deployed",
+      "scope": "Account paper-receipt/review stage, requested amount, partial/full paid distinction, per-proof purchaser acknowledgement and supplier-invoice due-date queues. Acknowledgement does not clear financial risks."
     }
   ],
   "release": {
@@ -110,7 +115,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 269,
+  "localTests": 273,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
