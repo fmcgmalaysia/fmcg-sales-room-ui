@@ -188,8 +188,95 @@
       "supplierCredit.js",
       "warehouseCustomerReadiness.js"
     ],
-    "existingModulesSynchronized": false,
+    "existingModulesSynchronized": true,
     "published": false,
-    "note": "24 newly created draft modules read back; 23 match current candidate. plannerAllocation requires isolated quarantine/source updates. Existing production modules and page bridges are not yet synchronized; do not publish."
+    "note": "Browser connection recovered. Interrupted purchaseMarginRefresh confirmed exactly two of three patches applied, then remaining isolated patch completed. Existing Master backend modules and three existing page bridges now read back exactly against candidate. New Support page, source-site bridges, CMS schema, build markers and public acceptance remain pending. Do not publish yet.",
+    "exactPatchedReadbacks": [
+      {
+        "file": "account-department-page.js",
+        "sha256": "5da5044c859c7b88a6f4d79268cc9317ba8d6bff5729e6ec5a6f1fd33bfe726d"
+      },
+      {
+        "file": "accountPurchase.web.js",
+        "sha256": "1022d8ac9c8f3a78d4a8de5926edb3b58f30d82859584fc8bb7fda18cdd48f8d"
+      },
+      {
+        "file": "accountSettlement.js",
+        "sha256": "44060eaea9e5783384d2716ba73aadacbca9fc1a198698ad5846e1923ca6dfd9"
+      },
+      {
+        "file": "http-functions.js",
+        "sha256": "971f813f74b9c584e38e403b1116992d0670a52e1e6aa47e44bda7412e9eadbf"
+      },
+      {
+        "file": "nctIntake.js",
+        "sha256": "d345eda322f964140a73fdff96d9ac1faa89e0cfb86b6d5b3a3351367a357c17"
+      },
+      {
+        "file": "plannerAllocation.js",
+        "sha256": "31e607af08cc35bff42c7eaec2f4124ccb6429bfd67f31fd31fd0b049e49abb8"
+      },
+      {
+        "file": "purchase-room-page.js",
+        "sha256": "14385245391784f0287adca4eaf0d10d10d30ddf009614fb91624b183ba1f555"
+      },
+      {
+        "file": "purchaseDocumentPolicy.js",
+        "sha256": "d562459cd955f78258f78973c665072142ce20ba6cb633643408439cb3d1c368"
+      },
+      {
+        "file": "purchaseMarginRefresh.js",
+        "sha256": "5fb63493d29c03170e9853f7dd9b223bc8861e2ebe6ba930a92997410829ee92"
+      },
+      {
+        "file": "purchaseOperations.js",
+        "sha256": "06ee9df16d881a7de6348a387a76f5568a15461928daa392749ca6cc9f215e1e"
+      },
+      {
+        "file": "purchaseOperations.web.js",
+        "sha256": "247de4e3ef533131f15dab65144f8b010a0568cadad073a22be16244d05a3509"
+      },
+      {
+        "file": "purchaseOrders.web.js",
+        "sha256": "c98b21a3cb7d98a92adfe5c16fdd135c26df5baea52abe7a912d923f2fe0deae"
+      },
+      {
+        "file": "purchaseOrderWorkflow.js",
+        "sha256": "a94e5026201dbb9c2d9d35d08b2693174d9faf3a0ff18536a3660062158b8387"
+      },
+      {
+        "file": "purchaseProjection.js",
+        "sha256": "bd2fc59e0d1f38425bf4eea40164c0b1ab3ffbc4d5380e07654827b01b14b30d"
+      },
+      {
+        "file": "purchaseQuantityProjection.js",
+        "sha256": "279d30240997386fb7e7e08c5e6318f936038eaa60fb2ee97c805902f7b0298a"
+      },
+      {
+        "file": "purchaseQuantityRead.js",
+        "sha256": "e48b7a84c23960aaa0187a6fe6d73083c62d811096eca19e36e6e4409624120c"
+      },
+      {
+        "file": "purchaseWorkspace.web.js",
+        "sha256": "005fb27afcda86ad2d965dbdc7b8b05b0dedd95f5fdd8505d8c6bab224f6ed8e"
+      },
+      {
+        "file": "warehouse-department-page.js",
+        "sha256": "3ba43bbe678960370c9689d7cb7e7eaac63f4198411b5003d25b25f7b5763c96"
+      },
+      {
+        "file": "warehouseReceiving.js",
+        "sha256": "cefc7775f85c94e51d36a4dc6b2f30055db63909224c712bd0dfea15729f0bd9"
+      },
+      {
+        "file": "warehouseReceiving.web.js",
+        "sha256": "5bab31deb23030e9e55b8d2b74a7bb092f7ab0ec74515e006c757b9aecec7447"
+      }
+    ],
+    "pageBridgesSynchronized": [
+      "Purchase Home",
+      "Account Department",
+      "Warehouse Department"
+    ]
   }
 }
