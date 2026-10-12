@@ -5,6 +5,7 @@ import { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperation
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
+import { projectWarehouseCustomerReadiness } from 'backend/warehouseCustomerReadiness.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -13,17 +14,18 @@ const store={
   remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
 };
 async function staffContext(){return requireWarehouseStaff(await currentMember.getMember({fieldsets:['FULL']}),await store.all('StaffMasterAccess'));}
-async function readOrders(company,staff){
+async function readWarehouseData(company,staff){
   const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
   const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
-  return projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity});
+  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace)};
 }
+async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await staffContext(),orders=await readOrders(company,staff);let names=[];
-  try{names=await readCustomerShortNames([...new Set(orders.flatMap(row=>row.customerIds||[row.customerId]))]);}catch(_){}
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},orders:orders.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
+  const staff=await staffContext(),{orders,customerLines}=await readWarehouseData(company,staff);let names=[];
+  try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},customerLines:customerLines.map(row=>({...row,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),orders:orders.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
 });
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await staffContext();
