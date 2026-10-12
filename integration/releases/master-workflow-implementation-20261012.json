@@ -1,5 +1,5 @@
 {
-  "status": "Release candidate prepared; not published or publicly accepted",
+  "status": "Deployed candidate; public read and negative validation passed; full transaction acceptance pending",
   "approvedBy": "User authorized complete implementation, publishing and testing on 2026-10-12",
   "recovery": {
     "productionCandidate": "fe28971431803696a967981004906fab27a90bf6",
@@ -121,9 +121,27 @@
     }
   ],
   "release": {
-    "githubPages": false,
-    "wixPublished": false,
-    "publicVerified": false
+    "githubPages": true,
+    "wixPublished": true,
+    "publicVerified": false,
+    "deployedCommit": "41936c8ef3b1d95e3befa0e92f54e192a3bb9e57",
+    "pagesRun": "38222544671",
+    "pagesRunUrl": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/38222544671",
+    "htmlExactMatches": [
+      "index.html",
+      "buyer-room.html",
+      "purchase-live/index.html",
+      "account-room/index.html",
+      "warehouse-room/index.html",
+      "support-room/index.html"
+    ],
+    "wixSites": [
+      "Master",
+      "FMCGMALAYSIA"
+    ],
+    "wixReceipt": "Both editors confirmed Congratulations / This site is published and live online.",
+    "temporaryBranchRuleRemoved": true,
+    "remainingAllowedBranches": 7
   },
   "localTests": 282,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
@@ -189,8 +207,8 @@
       "warehouseCustomerReadiness.js"
     ],
     "existingModulesSynchronized": true,
-    "published": false,
-    "note": "All listed Master modules, source-site bridges, six page references and the new Support page are saved and exact-readback verified. Six CMS fields added without record edits. Multi-source open GP corrected. No Wix publication yet.",
+    "published": true,
+    "note": "Exact captured code synchronized and both sites published. Historical phase notes above describe pre-release development milestones, not current deployment state.",
     "exactPatchedReadbacks": [
       {
         "file": "account-department-page.js",
@@ -375,5 +393,27 @@
     "acceptance": "handoff/scenario2-transaction-closeout-20261012/acceptance.json",
     "requiredChecks": 13,
     "completedChecks": 0
+  },
+  "publicAcceptance": {
+    "date": "2026-10-12",
+    "passed": [
+      "Purchase fresh-tab dashboard and Order Qty / Rcv Qty columns",
+      "Sales active progress retains 340 CTN and MYR 105296.00",
+      "Warehouse readiness retains 340 requested and zero allocated",
+      "Account actual PO read and Checked guards",
+      "Buyer signed-in product data",
+      "Support NCT customer data and GHR empty-company isolation",
+      "Empty Sales shipment request rejected before mutation"
+    ],
+    "resolved": "Support live log: Fulfilment access is not authorized. User explicitly approved adding SUPPORT department only to LAW / STF-ADMI01; saved and successful read verified. TOP MANAGEMENT role retained.",
+    "preserved": "Original Purchase tab has an unresolved session draft. It was neither saved nor cleared. A fresh tab reads the current records correctly.",
+    "pending": [
+      "Dedicated positive supplier payment-proof upload and saved payment",
+      "Dedicated partial receipt, shortage resolution and allocation",
+      "Dedicated Support invoice and Warehouse dispatch mutation",
+      "Full GHR intake and mutation acceptance",
+      "User real-world confirmation"
+    ],
+    "evidenceDirectory": "C:/FMCG-WIX-LOCAL/handoff/master-demand-protection-20261012"
   }
 }
