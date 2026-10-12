@@ -3,7 +3,7 @@ import { buildNctSubmission } from 'backend/nctSubmissionPayload.js';
 const clone = value => JSON.parse(JSON.stringify(value));
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function verifiedReceipt(receipt, body) {
-  if (receipt?.ok !== true || receipt.destination !== 'NCT' || receipt.orderId !== body.orderId ||
+  if (receipt?.ok !== true || receipt.destination !== body.destination || receipt.orderId !== body.orderId ||
       receipt.submissionId !== body.submissionId || typeof receipt.receiptId !== 'string' || !receipt.receiptId ||
       !Number.isFinite(Date.parse(receipt.masterReceivedAt)) || !Array.isArray(receipt.taskIds) ||
       receipt.taskIds.length !== body.lines.length || new Set(receipt.taskIds).size !== body.lines.length ||
@@ -18,12 +18,13 @@ function verifiedReceipt(receipt, body) {
  * while an uncertain delivery is outstanding. It never replaces another workflow's lock.
  */
 export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, now = () => new Date() }) {
-  return async function submit({ orderId, staff, authorizeCustomer }) {
+  return async function submit({ orderId, staff, authorizeCustomer, destination = 'NCT' }) {
+    if (!['NCT', 'GHR'].includes(destination)) throw new Error('Invalid receiving company.');
     const initial = await store.readOrder(orderId);
     if (!initial || initial.data.orderId !== orderId || initial.data.receiptOnly) throw new Error('Open the active order, not its addition receipt.');
     await authorizeCustomer(initial.data.customerId);
     if (initial.data.masterReceipt) {
-      if (initial.data.destination !== 'NCT' || !initial.data.nctSubmissionBody) throw new Error('Stored Master receipt identity conflict.');
+      if (initial.data.destination !== destination || initial.data.nctSubmissionBody?.destination !== destination) throw new Error('Stored Master receipt identity conflict.');
       const receipt = verifiedReceipt(initial.data.masterReceipt, initial.data.nctSubmissionBody);
       await store.releaseOwnLock(orderId, receipt.submissionId);
       return receipt;
@@ -45,7 +46,7 @@ export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, now 
         if (!current || current.data.customerId !== initial.data.customerId) throw new Error('Order identity changed.');
         const snapshot = await loadSnapshot(current.data);
         body = buildNctSubmission({ ...snapshot, order: current.data, staff,
-          submittedAt: lock.at, submissionId: 'NCT-' + orderId });
+          submittedAt: lock.at, submissionId: destination + '-' + orderId, destination });
         preparedWriteStarted = true;
         await store.savePrepared(orderId, { ...lock, preparedBody: clone(body) });
         // A confirmed readback is required BEFORE any request can reach Master.
@@ -66,12 +67,12 @@ export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, now 
       }
     }
     body = clone(body);
-    if (body.orderId !== orderId || body.customerId !== initial.data.customerId) throw new Error('Prepared submission identity conflict.');
+    if (body.orderId !== orderId || body.customerId !== initial.data.customerId || body.destination !== destination) throw new Error('Prepared submission identity conflict. Retry the original receiving company.');
     let receipt;
     try { receipt = verifiedReceipt(await deliver(body), body); }
     catch (error) {
       // Keep the saved snapshot and existing mutation lock. Do not guess whether Master received it.
-      throw new Error('Master receipt is not confirmed. The order and its submitted quantities are preserved. Retry Submit to NCT for this same order.');
+      throw new Error('Master receipt is not confirmed. The order and its submitted quantities are preserved. Retry Submit to ' + destination + ' for this same order.');
     }
     await store.writeAcceptedAuditOnce(body, receipt);
     await store.saveTransferred(orderId, body, receipt);

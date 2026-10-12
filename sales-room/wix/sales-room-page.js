@@ -539,8 +539,8 @@ $w.onReady(function () {
       return;
     }
     if (message.type === 'SALES_ROOM_SUBMIT_ORDER') {
-      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
-      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', orderId: message.orderId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ok: false, error: error?.message || 'Order could not be submitted.' }); }
+      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : message.destination === 'GHR' ? 'SUBMIT_GHR' : '', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
+      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', orderId: message.orderId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : message.destination === 'GHR' ? 'SUBMIT_GHR' : '', ok: false, error: error?.message || 'Order could not be submitted.' }); }
       return;
     }
     if (message.type === 'SALES_ROOM_CREATE_PROFORMA') {

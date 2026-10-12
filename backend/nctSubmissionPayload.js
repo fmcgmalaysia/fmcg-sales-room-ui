@@ -1,7 +1,8 @@
 /** Internal source backend mapper. Call only after existing staff/customer authorization. */
 const text = value => String(value == null ? '' : value).trim();
 const clone = value => JSON.parse(JSON.stringify(value));
-export function buildNctSubmission({ order, lines, staff, currentAdminRate, submittedAt, submissionId, history }) {
+export function buildNctSubmission({ order, lines, staff, currentAdminRate, submittedAt, submissionId, history, destination = 'NCT' }) {
+  if (!['NCT', 'GHR'].includes(destination)) throw new Error('Invalid receiving company.');
   if (!order || order.receiptOnly || order.isComplete !== true ||
       !['CONFIRMED', 'PROFORMA REQUESTED'].includes(text(order.status).toUpperCase())) throw new Error('Open a complete, unsubmitted order.');
   if (order.destination || order.submittedAt) throw new Error('Order has already been transferred.');
@@ -23,7 +24,7 @@ export function buildNctSubmission({ order, lines, staff, currentAdminRate, subm
   }).filter(line => line.qtyCtn > 0);
   if (!mapped.length) throw new Error('All order lines have zero quantity.');
   return {
-    sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination: 'NCT',
+    sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination,
     orderId: text(order.orderId), customerId: text(order.customerId), customerCompanyName: text(order.companyName),
     submissionId: text(submissionId), submittedAt, submittedByStaffId: text(staff.staffId),
     submittedByStaffName: text(staff.staffName || staff.title), submittedByEmail: text(staff.loginEmail), transactionCurrency: currency,

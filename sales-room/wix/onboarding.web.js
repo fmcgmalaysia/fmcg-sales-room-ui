@@ -778,8 +778,8 @@ export const submitSalesRoomOrder = webMethod(
     const staff = await requireAuthorizedStaffContext();
     const target = upper(destination);
     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
-    if (target === 'NCT') {
-      const input = { orderId: normalize(orderId), staff,
+    if (['NCT', 'GHR'].includes(target)) {
+      const input = { orderId: normalize(orderId), staff, destination: target,
         authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
         readPayloadRows: readAllPayloadRows, putPayload };
       let receipt, entered = false;
@@ -790,7 +790,7 @@ export const submitSalesRoomOrder = webMethod(
         if (entered) throw error;
         receipt = await submitNctSalesOrder({ ...input, initialError: error });
       }
-      return Object.freeze({ ...receipt, status: 'SUBMITTED TO NCT' });
+      return Object.freeze({ ...receipt, status: 'SUBMITTED TO ' + target });
     }
     return withSalesOrderMutation(orderId, staff, async (orderEntry) => {
     const next = { ...orderEntry.data, status: 'SUBMITTED TO ' + target, destination: target, submittedAt: new Date().toISOString(), submittedBy: normalizeEmail(staff.loginEmail) };

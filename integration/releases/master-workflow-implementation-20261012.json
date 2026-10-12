@@ -67,6 +67,11 @@
       "status": "Local tests passed; not deployed",
       "scope": "Customer history uses actual dispatch and supplier-source financial closure; shared POs wait for all source cartons to be invoiced; NCT/GHR quantity reads isolated; partially invoiced GP projected from immutable slices",
       "remaining": "Legacy Orders CMS GP cache intentionally not overwritten for sliced invoices; invoice/CMS fields and correction workflows still need implementation"
+    },
+    {
+      "name": "GHR authenticated Master intake",
+      "status": "Local regression tests passed; not deployed",
+      "scope": "Preserves NCT IDs and mutation locks; GHR destination, own collections, complete receipt, retry and opposite-company rejection"
     }
   ],
   "release": {
@@ -74,7 +79,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 236,
+  "localTests": 240,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

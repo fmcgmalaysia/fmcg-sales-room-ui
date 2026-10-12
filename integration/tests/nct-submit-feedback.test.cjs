@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8');
 const start = html.indexOf('let pendingNctSubmit=null;'), end = html.indexOf('function renderOrderDetail(o){', start);
 assert.ok(start > 0 && end > start);
-function fixture() {
+function fixture(destination = 'NCT') {
   const requests = [], timers = [], busy = [], renders = [], controls = [{ disabled: false }, { disabled: false }];
   const status = { textContent: '' }, area = { dataset: { nctOrderId: 'ORDER' }, innerHTML: 'KEEP ORDER AND QUANTITIES' };
   const dialog = { style: {}, open: false, innerHTML: '', querySelector: () => ({}), showModal() { this.open = true; }, close() { this.open = false; } };
@@ -22,11 +22,20 @@ function fixture() {
     setTimeout: callback => timers.push(callback) });
   vm.runInContext(html.slice(start, end), ctx);
   const order = { orderId: 'ORDER', companyName: 'TEST CUSTOMER', lines: [{ quantityCtn: 250 }] };
-  return { start: () => ctx.submitOrderToNct(order), requests, timers, busy, renders, status, area, dialog,
+  return { start: () => ctx.submitOrderToNct(order, destination), requests, timers, busy, renders, status, area, dialog,
     respond: (message, source = parent) => { const event = { source, data: { type: 'SALES_ROOM_ORDER_ACTION_RESULT',
-      action: 'SUBMIT_NCT', orderId: 'ORDER', requestId: 'REQUEST-1', ...message }, stopped: false,
+      action: 'SUBMIT_' + destination, orderId: 'ORDER', requestId: 'REQUEST-1', ...message }, stopped: false,
       stopImmediatePropagation() { this.stopped = true; } }; handler(event); return event; } };
 }
+
+test('GHR feedback requires a GHR receipt and retains quantities', () => {
+  const f = fixture('GHR'); f.start(); assert.equal(f.requests[0].destination, 'GHR');
+  f.respond({ ok: true, receiptId: 'GHR-RECEIPT', destination: 'GHR', masterReceivedAt: '2026-10-12T03:00:00Z' });
+  assert.equal(f.renders[0].destination, 'GHR'); assert.equal(f.renders[0].lines[0].quantityCtn, 250);
+  assert.match(f.dialog.innerHTML, /Submitted to GHR/);
+  const wrong = fixture('GHR'); wrong.start(); wrong.respond({ ok: true, receiptId: 'NCT-RECEIPT', destination: 'NCT', masterReceivedAt: '2026-10-12T03:00:00Z' });
+  assert.equal(wrong.renders.length, 0);
+});
 test('one click starts one correlated NCT request and gives immediate waiting feedback', () => {
   const f = fixture(); f.start(); f.start(); assert.equal(f.requests.length, 1);
   assert.equal(f.requests[0].type, 'SALES_ROOM_SUBMIT_ORDER'); assert.equal(f.requests[0].destination, 'NCT');
