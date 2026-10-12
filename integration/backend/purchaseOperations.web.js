@@ -1,3 +1,4 @@
+import { createPurchaseSourceOperations } from 'backend/purchaseSources.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import wixData from 'wix-data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
@@ -22,11 +23,12 @@ const readPlannerWorkspace=async(company,staff)=>{
  const names=PURCHASE_COLLECTIONS[company];const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
  return projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
 };
+const addSource=createPurchaseSourceOperations({store,names:PURCHASE_COLLECTIONS,readWorkspace:readPlannerWorkspace});
 const allocate=createPlannerAllocationOperations({store,names:PURCHASE_COLLECTIONS,readWorkspace:readPlannerWorkspace});
 const decideShortage=createShortageOperations({store,names:PURCHASE_COLLECTIONS,readWorkspace:readPlannerWorkspace});
 export const savePurchaseOperation=webMethod(Permissions.SiteMember,async(company,requestId,operation,input)=>{
  const staff=await getPurchaseStaffContext();
- try { return operation==='SHORTAGE'?await decideShortage({company,requestId,input,staff}):operation==='ALLOCATE'?await allocate({company,requestId,input,staff}):await operate({company,requestId,operation,input,staff}); }
+ try { return operation==='ADD_SOURCE'?await addSource({company,requestId,input:{...input,action:'ADD_SOURCE'},staff:{...staff,canAddPurchaseSource:true}}):operation==='SHORTAGE'?await decideShortage({company,requestId,input,staff}):operation==='ALLOCATE'?await allocate({company,requestId,input,staff}):await operate({company,requestId,operation,input,staff}); }
  catch(error) { if(['Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。','Net cost cannot be negative.','Enter the P.O. number after the company prefix.','This P.O. has saved records. Select all its tasks when changing its number.','Two purchase orders with saved records cannot be merged.','Stock or allocations changed. Refresh before allocating.','Warehouse receipt and source P.O. are required.','Enter an allocation reason.','Select distinct customer task allocations.','Allocate only matching products to active customer tasks.','Allocated cartons exceed customer demand.','Invoiced allocation must be corrected through Support.','Invoiced allocation cannot be removed.','Allocate no more than the actual accepted cartons.','Allocation has not changed.','An active supplier P.O. is required.','Quantity or shortage decision changed. Refresh before saving.','This task has no outstanding quantity or receiving issue.','Enter an internal reason and customer-facing update.','Select customer waiting and supplier resolution separately.','Enter the expected replenishment date.'].includes(error?.message))return {ok:false,requestId,error:error.message}; throw error; }
 });
 export const getSupplierProfile=webMethod(Permissions.SiteMember,async supplierId=>{

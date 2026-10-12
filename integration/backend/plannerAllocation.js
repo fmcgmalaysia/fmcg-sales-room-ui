@@ -40,7 +40,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       const reservedFor=taskId=>shipments.flatMap(row=>row.lines).filter(line=>line.taskId===taskId).flatMap(line=>line.sources).filter(stock=>stock.sourceTaskId===source.id).reduce((sum,stock)=>sum+stock.quantity,0);
       const targets=input.targets.map(entry=>{
         const target=workspace.tasks.find(row=>row.id===entry.taskId);
-        if(!target||target.archived||target.specialPurchase||target.barcode!==source.barcode||target.packing!==source.packing||target.ea!==source.ea||!qty(entry.quantity))throw Error('Allocate only matching products to active customer tasks.');
+        if(!target||target.procurementSource||target.archived||target.specialPurchase||target.barcode!==source.barcode||target.packing!==source.packing||target.ea!==source.ea||!qty(entry.quantity))throw Error('Allocate only matching products to active customer tasks.');
         const other=prior.filter(row=>row.sourceTaskId!==source.id).reduce((total,row)=>total+(row.targets.find(item=>item.taskId===target.id)?.quantity||0),0);
         if(entry.quantity<reservedFor(target.id))throw Error('Reserved or invoiced cartons cannot be reallocated.');
         if(other+entry.quantity>target.ord)throw Error('Allocated cartons exceed customer demand.');

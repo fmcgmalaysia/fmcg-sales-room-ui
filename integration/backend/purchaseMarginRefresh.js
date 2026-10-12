@@ -12,6 +12,7 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
   return async ({ company, names, orders, tasks, workspace, activity=[] }) => {
     const results = new Map(), open = [], invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status));
     for (const row of workspace.tasks) {
+      if(row.procurementSource)continue;
       const order = orders.find(item => item.title === row.orderId && item.sourceLineId === row.sourceLineId);
       const task = tasks.find(item => item.title === row.id);
       if (!order || !task) continue;

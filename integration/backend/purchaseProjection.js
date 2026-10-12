@@ -6,6 +6,7 @@ import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readCreditTransfers } from 'backend/supplierCredit.js';
+import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -39,18 +40,20 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     const receipt = accepted.get(text(task.description));
     if (!receipt) continue;
     const specialEvent=activity.filter(event=>event.action==='SPECIAL_PURCHASE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
-    if(!receipt.ids.has(text(task.title)) && specialEvent.length!==1) continue;
+    const sourceEvent=activity.filter(event=>event.action==='PURCHASE_SOURCE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
+    if(!receipt.ids.has(text(task.title)) && specialEvent.length!==1 && sourceEvent.length!==1) continue;
     if (seen.has(task.title)) throw Error('Duplicate task identity requires review.');
     const matched = orders.filter(row => row.title === task.description && row.sourceLineId === task.imageAltText && row.submissionId === receipt.submissionId);
     if (matched.length !== 1) throw Error('Accepted task has no unique order line.');
     const order = matched[0];
-    if(!receipt.ids.has(text(task.title)) && !acceptedSpecialTask(task,order,receipt,specialEvent[0],tasks.find(row=>row.title===specialEvent[0].details?.parentTaskId))) continue;
+    if(!receipt.ids.has(text(task.title)) && !acceptedSpecialTask(task,order,receipt,specialEvent[0],tasks.find(row=>row.title===specialEvent[0]?.details?.parentTaskId)) && !acceptedPurchaseSource(task,order,receipt,sourceEvent[0],tasks.find(row=>row.title===task.customerDemandTaskId))) continue;
     if (!text(order.customerId) || !text(order.customerCompanyName) || !text(order.description) || !text(order.image)) throw Error('Accepted product identity is incomplete.');
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
     const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
     rows.push({
+      procurementSource:task.procurementSource===true,customerDemandTaskId:task.procurementSource?task.customerDemandTaskId:null,
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
@@ -81,13 +84,15 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     });
   }
   const invoicedShipments=readCustomerShipments(activity).filter(shipment=>shipment.company===company&&['INVOICED','DISPATCHED'].includes(shipment.status));
+  for(const row of rows.filter(row=>row.procurementSource)){row.requested=0;row.procurement.expectedExtra=0;}
+  attachPurchaseSourceTotals(rows);
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   return {
-    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
+    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),

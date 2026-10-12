@@ -70,7 +70,9 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn)throw Error('Procurement quantity has not changed.');
-        const extra=input.totalCtn-task.purchaseQtyInCtn;
+        const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
+        const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
+        const extra=input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
         if(extra>0&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
         if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,{});
@@ -79,6 +81,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);
+        if(task.procurementSource)throw Error('Customer demand can only be edited on the original customer line.');
         if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing quantity.');

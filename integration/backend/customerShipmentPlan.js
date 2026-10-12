@@ -21,7 +21,7 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
    if(context.company!==company||version!==input.version)throw Error('Shipment plan changed. Refresh before saving.');
    if(!customerId||!orderId||staff.customerId&&staff.customerId!==customerId)throw Error('Shipment plan customer is not authorized.');
    if(!reason||reason.length>2000||!Array.isArray(input.batches)||input.batches.length<2||input.batches.length>20)throw Error('Enter the split reason and two to twenty shipment batches.');
-   const tasks=context.tasks.filter(row=>row.customerId===customerId&&row.orderId===orderId&&!row.specialPurchase);
+   const tasks=context.tasks.filter(row=>row.customerId===customerId&&row.orderId===orderId&&!row.specialPurchase&&!row.procurementSource);
    if(!tasks.length||tasks.every(row=>row.archived))throw Error('Select an active customer order.');
    const totals=new Map(),seen=new Set();
    const batches=input.batches.map((batch,index)=>{

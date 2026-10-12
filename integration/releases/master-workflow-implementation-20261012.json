@@ -83,6 +83,11 @@
       "status": "Local core and browser fixture passed; not deployed",
       "scope": "Sales plans 300+200 before receipt; immutable revisions retain original demand; no stock reservation, invoice or Debtor entry. Actual 300+170 fulfilment remains separate.",
       "remaining": "Formal public validation, plan-to-actual batch association, stock resolution department UI and posted-invoice correction"
+    },
+    {
+      "name": "Multiple supplier sources per customer demand",
+      "status": "Local core scenarios passed in NCT and GHR; UI and deployment pending",
+      "scope": "Preserves one 200-carton demand, A180+B10 sources, A170 then B10 physical receipts, supplier-specific costs and idempotent add-source saves; chocolate/vanilla/drink customer totals remain 600 requested and 580 allocated."
     }
   ],
   "release": {
@@ -90,7 +95,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 253,
+  "localTests": 255,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

@@ -14,8 +14,10 @@ const { projectCustomerAccount } = load('customerDebtor.js');
 const { createStockExceptionOperations, stockExceptionVersion } = load('inventoryExceptions.js');
 const { createStockResolutionOperations, stockResolutionVersion } = load('stockExceptionResolution.js');
 const { createShipmentPlanOperations, shipmentPlanVersion, readShipmentPlans } = load('customerShipmentPlan.js');
+const { createPurchaseSourceOperations, purchaseSourcesVersion } = load('purchaseSources.js');
+const { projectPurchaseQuantities } = load('purchaseQuantityProjection.js');
 
-async function scenario(company = 'NCT', demand = 100) {
+async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const rows = new Map(), clone = value => JSON.parse(JSON.stringify(value));
   const store = {
     all: async c => [...rows].filter(([key]) => key.startsWith(c + '/')).map(([, row]) => clone(row)),
@@ -33,28 +35,33 @@ async function scenario(company = 'NCT', demand = 100) {
   const pdf = label => Buffer.from('%PDF-1.4\nTEST ONLY ' + label).toString('base64');
   await store.insert('SharedSuppliers', { _id: 'S', title: 'S', companyName: 'TEST SUPPLIER', shortName: 'TEST', supplierStatus: 'ACTIVE' });
   const receive = createNctIntake({ store, now, captureCosts: async barcodes => Object.fromEntries(barcodes.map(unitBarcode => [unitBarcode, { unitBarcode, capturedAt: now().toISOString(), costCurrency: 'MYR', costStatus: 'CAPTURED', costIssues: [], lpPc: 10, lpCtn: 100, disc1: 0, disc2: 0, disc3: 0, netCostCtn: 100, cbmPerCtn: .01 }])) });
-  const receipt = await receive({ sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination: company, orderId: 'SCENARIO-' + company, customerId: 'C', customerCompanyName: 'TEST CUSTOMER', submissionId: 'SUB-' + company, submittedByStaffId: 'SALES', submittedByStaffName: 'SALES', submittedAt: now().toISOString(), transactionCurrency: 'MYR', fxRate: 1, lines: [{ sourceLineId: 'L', unitBarcode: '001', itemName: 'TEST PRODUCT', packingSize: '10 x 1', eaPerCtn: 10, qtyCtn: demand, sellingPricePc: 15 }] });
+  const receipt = await receive({ sourceSiteId: '5292b63a-30e5-4c0e-8762-a1b127bbc651', destination: company, orderId: 'SCENARIO-' + company, customerId: 'C', customerCompanyName: 'TEST CUSTOMER', submissionId: 'SUB-' + company, submittedByStaffId: 'SALES', submittedByStaffName: 'SALES', submittedAt: now().toISOString(), transactionCurrency: 'MYR', fxRate: 1, lines: Array.from({length:productCount},(_,index)=>({sourceLineId:'L'+index,unitBarcode:'00'+(index+1),itemName:['CHOCOLATE BISCUITS','VANILLA BISCUITS','SOFT DRINK'][index],packingSize:'10 x 1',eaPerCtn:10,qtyCtn:demand,sellingPricePc:15})) });
   const id = receipt.taskIds[0];
   const workspace = async () => projectPurchaseWorkspace({ company, orders: await store.all(n.orders), tasks: await store.all(n.tasks), activity: await store.all(n.activity), suppliers: await store.all('SharedSuppliers'), staff: staff('PURCHASE') });
-  const task = async () => (await workspace()).tasks[0];
+  const task = async () => (await workspace()).tasks.find(row=>row.id===id);
   const purchase = createPurchaseOperations({ store, now });
-  await purchase({ ...request('PURCHASE', { edits: [{ taskId: id, version: (await task()).editVersion, changes: { supplierId: 'S' } }] }), operation: 'EDIT' });
-  await purchase({ ...request('PURCHASE', { taskIds: [id], versions: { [id]: (await task()).editVersion }, poNumber: company + '-PO-TEST' }), operation: 'PO' });
+  await purchase({ ...request('PURCHASE', { edits: (await workspace()).tasks.map(row=>({taskId:row.id,version:row.editVersion,changes:{supplierId:'S'}})) }), operation: 'EDIT' });
+  await purchase({ ...request('PURCHASE', { taskIds: receipt.taskIds, versions: Object.fromEntries((await workspace()).tasks.map(row=>[row.id,row.editVersion])), poNumber: company + '-PO-TEST' }), operation: 'PO' });
   const poOps = createPurchaseOrderOperations({ store, readWorkspace: workspace, names, documentService: documents, now });
-  const po = async () => (await poOps.list(company, staff('PURCHASE')))[0];
+  const po = async () => (await poOps.list(company, staff('PURCHASE'))).find(row=>row.taskIds.includes(id));
   const upload = async (type, cents) => poOps.save(request('PURCHASE', { id: (await po()).id, version: (await po()).version, action: 'DOCUMENT', type, date: '2026-10-12', number: type + '-TEST', reason: 'Scenario document', base64: pdf(type), ...(cents ? { declaredCents: cents } : {}) }));
   const financeOps = createAccountSettlementOperations({ store, names, listOrders: poOps.list, documentService: documents, now });
   const finance = async input => financeOps.save(request('ACCOUNT', { id: (await po()).id, version: (await po()).version, reason: 'Scenario reconciliation', ...input }));
   const pay = async (cents, number, direction = 'PAYMENT') => finance({ action: 'DOCUMENT_UPLOAD', type: 'PAYMENT', date: '2026-10-12', number, cents, direction, base64: pdf(number) });
   const warehouseOrders = async () => projectWarehouseOrders({ company, purchaseOrders: await poOps.list(company, staff('WAREHOUSE')), tasks: (await workspace()).tasks, activity: await store.all(n.activity) });
   const warehouseOps = createWarehouseOperations({ store, names, readOrders: warehouseOrders, now });
-  const delivery = async (accepted, kind, resolveIssue = false) => warehouseOps.save(request('WAREHOUSE', { action: 'RECEIVE', id: (await po()).id, version: (await warehouseOrders())[0].version, lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] }));
+  const delivery = async (accepted, kind, resolveIssue = false) => warehouseOps.save(request('WAREHOUSE', { action: 'RECEIVE', id: (await po()).id, version: (await warehouseOrders()).find(row=>row.taskIds?.includes(id)||row.lines.some(line=>line.taskId===id)).version, lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] }));
   const allocator = createPlannerAllocationOperations({ store, names, readWorkspace: workspace, now });
   const allocate = async quantity => allocator(request('PURCHASE', { action: 'ALLOCATE', sourceTaskId: id, version: allocationVersion(await workspace(), await store.all(n.activity)), targets: [{ taskId: id, quantity }], reason: 'Allocate actual cartons' }));
   const shortageOps = createShortageOperations({ store, names, readWorkspace: workspace, now });
   const shortage = async (customerDecision, supplierDecision, financeRequired = true) => shortageOps(request('PURCHASE', { action: 'SHORTAGE', taskId: id, version: shortageVersion(await task(), await store.all(n.activity)), customerDecision, supplierDecision, expectedDate: '2026-10-15', reason: 'Supplier decision', customerMessage: 'Customer informed', financeRequired }));
   const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc: 15 })) });
   const stockOps=createStockExceptionOperations({store,names,readContext:context,now});
+  const sourceOps=createPurchaseSourceOperations({store,names,readWorkspace:workspace,now});
+  const source=async quantity=>{if(!await store.read('SharedSuppliers','B'))await store.insert('SharedSuppliers',{_id:'B',title:'B',companyName:'SUPPLIER B',shortName:'B',supplierStatus:'ACTIVE'});const req={...request('PURCHASE',{action:'ADD_SOURCE',parentTaskId:id,version:purchaseSourcesVersion(await workspace()),quantity,supplierId:'B',poNumber:company+'-PO-B',prices:{lpPc:12,lpCtn:120,disc1:0,disc2:0,disc3:0},reason:'Find remaining cartons'}),staff:{...staff('PURCHASE'),canAddPurchaseSource:true}};const result=await sourceOps(req);assert.deepEqual(await sourceOps(req),result,'same save must not add a second supplier source');return result.sourceTaskId;};
+  const sourceDelivery=async(sourceId,accepted,kind)=>{const order=(await warehouseOrders()).find(po=>po.lines.some(line=>line.taskId===sourceId));return warehouseOps.save(request('WAREHOUSE',{action:'RECEIVE',id:order.id,version:order.version,lines:[{taskId:sourceId,accepted,rejected:0,kind,reason:'Supplier source delivery'}]}));};
+  const sourceAllocate=async(sourceId,quantity)=>allocator(request('PURCHASE',{action:'ALLOCATE',sourceTaskId:sourceId,version:allocationVersion(await workspace(),await store.all(n.activity)),targets:[{taskId:id,quantity}],reason:'Allocate supplier source to original demand'}));
+  const otherDeliveries=async()=>{for(const taskId of receipt.taskIds.filter(taskId=>taskId!==id)){await sourceDelivery(taskId,demand,'DELIVERY');await allocator(request('PURCHASE',{action:'ALLOCATE',sourceTaskId:taskId,version:allocationVersion(await workspace(),await store.all(n.activity)),targets:[{taskId,quantity:demand}],reason:'Allocate other ordered product'}));}};
   const quarantine=async(quantity,kind)=>stockOps({...request('WAREHOUSE',{action:'QUARANTINE',sourceTaskId:id,version:stockExceptionVersion(await context()),quantity,kind,reason:'Internal stock finding'}),staff:{...staff('WAREHOUSE'),canReportStockException:true}});
   const resolutionOps=createStockResolutionOperations({store,names,readContext:context,listOrders:poOps.list,now});
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
@@ -67,7 +74,7 @@ async function scenario(company = 'NCT', demand = 100) {
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve, split };
+  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, allPos:()=>poOps.list(company,staff('PURCHASE')) };
 }
 
 for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close', async () => {
@@ -236,4 +243,29 @@ test('Sales split revisions retain audit history and do not grant Support or ano
  await assert.rejects(operate({company:'GHR',staff:{canSelectShipment:false},input}),/Only authorized Sales/);
  await assert.rejects(operate({company:'GHR',staff:{canSelectShipment:true,staffId:'OTHER',staffName:'OTHER',memberId:'OTHER',customerId:'OTHER'},requestId:'11111111-2222-4333-8444-555555555555',input}),/customer is not authorized/);
  assert.equal((await f.task()).ord,500);assert.equal((await f.task()).inc,null);
+});
+
+for(const company of ['NCT','GHR'])test(company+': demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs',async()=>{
+ const f=await scenario(company,200,3);await f.plan(180);
+ await assert.rejects(f.source(21),/exceed customer demand/);
+ const b=await f.source(10),before=await f.task();
+ assert.equal(before.ord,200);assert.equal(before.sourcing.orderedCtn,190);assert.equal(before.sourcing.unplacedCtn,10);
+ const context=await f.context();assert.equal(context.tasks.length,4);assert.equal(context.tasks.reduce((sum,row)=>sum+row.ord,0),600);
+ assert.equal(context.tasks.find(row=>row.id===b).requested,0);
+ assert.equal((await f.allPos()).length,2);assert.equal((await f.po()).amount,58000);
+ assert.equal((await f.allPos()).find(po=>po.taskIds.includes(b)).amount,1200);
+ await f.delivery(170,'SHORT');await f.allocate(170);
+ await f.otherDeliveries();
+ assert.equal((await f.task()).sourcing.receivedCtn,170);assert.equal((await f.task()).inc,170);
+ await f.sourceDelivery(b,10,'DELIVERY');await f.sourceAllocate(b,10);
+ assert.equal((await f.task()).sourcing.receivedCtn,180);assert.equal((await f.task()).inc,180);assert.equal((await f.task()).ord,200);
+ const order=(await f.store.all(f.names.orders))[0],payload=projectPurchaseQuantities({customerId:'C',requests:[{orderId:order.title,submissionId:order.submissionId}],orders:await f.store.all(f.names.orders),tasks:await f.store.all(f.names.tasks),activity:(await f.context()).activity,purchaseOrders:await f.allPos()});
+ assert.equal(JSON.stringify(payload).includes('SUPPLIER B'),false,'customer projection excludes supplier internals');
+ assert.equal(payload.orders[0].lines.length,3);assert.equal(payload.orders[0].lines.reduce((sum,row)=>sum+row.committedQtyCtn,0),600);assert.equal(payload.orders[0].lines.reduce((sum,row)=>sum+row.receivedQtyCtn,0),580);
+ const shipment=await f.invoice(180);await f.dispatch(shipment);
+ const activity=(await f.context()).activity;
+ const fulfilment=load('customerShipmentLedger.js').readCustomerShipments(activity)[0];
+ assert.equal(fulfilment.lines[0].costSources.reduce((sum,row)=>sum+row.quantity*row.netCostCtn,0),18200);
+ assert.equal((await f.po()).warehouse.receivedCtn,570);
+ assert.equal((await f.allPos()).find(po=>po.taskIds.includes(b)).warehouse.receivedCtn,10);
 });
