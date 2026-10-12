@@ -27,3 +27,5 @@ test('allocation revision replaces the prior split without duplicating stock and
  assert.equal(allocatedTo('A',events).quantity,7);assert.equal(allocatedTo('B',events).quantity,8);
  const last=events.filter(row=>row.action==='PLANNER_ALLOCATION_SAVED').at(-1);assert.throws(()=>readAllocations([...events,{...last,title:'FORK'}]),/history/);
 });
+
+test('allocated stock is not a supplier physical receipt on the receiving customer task',async()=>{const f=fixture();await f.save({...f.base,input:f.input()});const {readWarehouseTask}=load('warehouseReceiving.js');const row=readWarehouseTask({title:'B',description:'OB',imageAltText:'LB'},[...f.records.values()]);assert.equal(row.customerReceived,5);assert.equal(row.accepted,0);assert.equal(row.hasPhysicalReceipt,false);});

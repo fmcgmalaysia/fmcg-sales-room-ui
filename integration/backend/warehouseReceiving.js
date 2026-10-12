@@ -37,11 +37,11 @@ export function readWarehouseReceipts(poId,activity){
 export function readWarehouseTask(task,activity){
   const allocation=allocatedTo(task.title,activity);
   const ids=[...new Set(activity.filter(event=>event.action===RECEIPT_ACTION&&event.result==='SAVED'&&event.details?.lines?.some(line=>line.taskId===task.title)).map(event=>event.description))];
-  if(!ids.length)return allocation.sources.length?{accepted:0,rejected:0,issue:false,customerReceived:allocation.quantity,extraReceived:0,at:allocation.at}:null;
+  if(!ids.length)return allocation.sources.length?{hasPhysicalReceipt:false,accepted:0,rejected:0,issue:false,customerReceived:allocation.quantity,extraReceived:0,at:allocation.at}:null;
   if(ids.length!==1)throw Error('Warehouse task belongs to multiple purchase orders.');
   const receipt=readWarehouseReceipts(ids[0],activity),line=receipt.lines.find(line=>line.taskId===task.title);
   if(!line||line.orderId!==task.description||line.sourceLineId!==task.imageAltText)throw Error('Warehouse task identity mismatch.');
-  return {...line,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,line.accepted-task.purchaseQtyInCtn)};
+  return {...line,hasPhysicalReceipt:true,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,line.accepted-task.purchaseQtyInCtn)};
 }
 
 export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){

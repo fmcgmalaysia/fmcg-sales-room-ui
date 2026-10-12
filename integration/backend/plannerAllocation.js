@@ -1,5 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 export function readAllocations(activity){
   const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED'),sources=new Map();
@@ -20,7 +21,7 @@ export function allocatedTo(taskId,activity){
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
-  return operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity));
+  return operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity));
 }
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
@@ -34,16 +35,18 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       if(!source?.warehouse||!source.po||!source.supplierId)throw Error('Warehouse receipt and source P.O. are required.');
       if(!reason||reason.length>2000)throw Error('Enter an allocation reason.');
       if(!Array.isArray(input.targets)||input.targets.length>300||new Set(input.targets.map(row=>row.taskId)).size!==input.targets.length)throw Error('Select distinct customer task allocations.');
-      const prior=readAllocations(activity),old=prior.find(row=>row.sourceTaskId===source.id);
+      const prior=readAllocations(activity),old=prior.find(row=>row.sourceTaskId===source.id),shipments=readCustomerShipments(activity).filter(row=>row.status!=='CANCELLED');
+      const reservedFor=taskId=>shipments.flatMap(row=>row.lines).filter(line=>line.taskId===taskId).flatMap(line=>line.sources).filter(stock=>stock.sourceTaskId===source.id).reduce((sum,stock)=>sum+stock.quantity,0);
       const targets=input.targets.map(entry=>{
         const target=workspace.tasks.find(row=>row.id===entry.taskId);
         if(!target||target.archived||target.specialPurchase||target.barcode!==source.barcode||target.packing!==source.packing||target.ea!==source.ea||!qty(entry.quantity))throw Error('Allocate only matching products to active customer tasks.');
         const other=prior.filter(row=>row.sourceTaskId!==source.id).reduce((total,row)=>total+(row.targets.find(item=>item.taskId===target.id)?.quantity||0),0);
+        if(entry.quantity<reservedFor(target.id))throw Error('Reserved or invoiced cartons cannot be reallocated.');
         if(other+entry.quantity>target.ord)throw Error('Allocated cartons exceed customer demand.');
         if(target.salesInvoiceNumber&&(old?.targets.find(row=>row.taskId===target.id)?.quantity||0)!==entry.quantity)throw Error('Invoiced allocation must be corrected through Support.');
         return {taskId:target.id,orderId:target.orderId,sourceLineId:target.sourceLineId,customerId:target.customerId,quantity:entry.quantity};
       });
-      for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
+      for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&reservedFor(entry.taskId)>0)throw Error('Reserved or invoiced cartons cannot be removed.');if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
       if(targets.reduce((total,row)=>total+row.quantity,0)>source.warehouse.accepted)throw Error('Allocate no more than the actual accepted cartons.');
       if(operationId(targets)===operationId(old?.targets||[]))throw Error('Allocation has not changed.');
       const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();

@@ -1,3 +1,4 @@
+import { requestMasterFulfilment } from 'backend/masterFulfilmentClient.js';
 import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
@@ -2405,3 +2406,5 @@ export const getSalesRoomActivityForAdmin = webMethod(
     return Object.freeze({ ok: true, window, summaries, events });
   }
 );
+
+export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff);return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});

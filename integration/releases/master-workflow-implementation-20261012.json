@@ -26,24 +26,36 @@
       "name": "Customer demand protection",
       "commit": "82df98d",
       "tests": 193,
-      "status": "local committed"
+      "status": "committed and pushed; not deployed"
     },
     {
       "name": "Explicit planner allocation and multi-customer PO",
       "tests": 198,
-      "status": "local implementation"
+      "status": "committed and pushed; not deployed",
+      "commit": "6a0e760"
     },
     {
-      "name": "Persistent shortage decisions and departmental task signals",
-      "status": "pending"
+      "name": "Shortage decisions, customer feedback and persistent department task signals",
+      "commits": [
+        "7651057",
+        "7f1f9e8",
+        "b91478d"
+      ],
+      "status": "committed and pushed; not deployed"
     },
     {
       "name": "Supplier prepayment/refunds/credits and document reconciliation",
-      "status": "pending"
+      "commit": "e5a4fa8",
+      "status": "committed and pushed; not deployed"
+    },
+    {
+      "name": "Warehouse customer readiness",
+      "commit": "0e5548b",
+      "status": "committed and pushed; local browser fixture verified; not deployed"
     },
     {
       "name": "Sales shipment selection, Support invoicing, customer debtor and warehouse dispatch",
-      "status": "pending"
+      "status": "Local code and 229 checks passed; Sales document dialog fixture verified; Wix bridges not installed and public workflow not tested"
     },
     {
       "name": "Unified department UI, release and public acceptance",
@@ -54,5 +66,40 @@
     "githubPages": false,
     "wixPublished": false,
     "publicVerified": false
+  },
+  "localTests": 229,
+  "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
+  "remaining": [
+    "Source Sales shipment selection / Support invoice public acceptance",
+    "Partial invoice / task history projections and portion GP",
+    "Warehouse dispatch and correction approval",
+    "GHR intake and shared read support",
+    "Final invoice replacement / corrections",
+    "Full publish and dedicated test order acceptance",
+    "Sales customer documents/receipts/Debtor public acceptance and financial correction workflow"
+  ],
+  "salesDocuments": {
+    "owner": "Sales",
+    "finance": "Debtor read-only",
+    "types": [
+      "SALES_INV",
+      "SALES_CN",
+      "DEBIT_NOTE",
+      "CUSTOMER_RECEIPT"
+    ],
+    "folders": {
+      "NCT": "1omU7-s3sntQoajBBvOKVXzwS40N5Lmm0",
+      "GHR": "1uPcfFNLpXFDS5vn18hA5pbIdWRzxSzQ_"
+    },
+    "appsScript": {
+      "projectId": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+      "deploymentId": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+      "savedCodeSha256": "fa6b9708b5fafbc12c4da2ccedacd100bbf4c7be11cdf7a74ce0f822e024163f",
+      "immutableVersion": 3,
+      "activeDeploymentVersion": 3,
+      "receipt": "Deployment successfully updated. Version 3 on Oct 12, 2026, 10:29 AM",
+      "publicUploadVerified": false
+    },
+    "status": "Local ledger scenarios passed; public upload and view not tested"
   }
 }

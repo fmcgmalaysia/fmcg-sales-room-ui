@@ -41,7 +41,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
       itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,salesInvoiceComplete:rows.every(row=>Boolean(text(row.salesInvoiceNumber))&&row.salesInvoiceLocked===true),
-      receiptLines:rows.map(row=>({taskId:row.id,hasReceipt:Boolean(row.warehouse),planned:row.procurement?.totalCtn,accepted:row.warehouse?.accepted||0,issue:row.warehouse?.issue===true,decision:row.shortage||null})),
+      receiptLines:rows.map(row=>({taskId:row.id,hasReceipt:Boolean(row.warehouse)&&row.warehouse.hasPhysicalReceipt!==false,planned:row.procurement?.totalCtn,accepted:row.warehouse?.accepted||0,issue:row.warehouse?.issue===true,decision:row.shortage||null})),
       warehouse:{connected:true,receivedCtn:rows.reduce((sum,row)=>sum+(row.warehouse?.accepted||0),0),complete:rows.every(row=>row.warehouse&&row.warehouse.accepted===row.procurement?.totalCtn&&!row.warehouse.issue),issues:rows.some(row=>row.warehouse?.issue===true)},
       termDays,invoiceDate,dueDate:purchaseInvoiceDueDate(invoiceDate,termDays),
       chasePayment:details.chasePayment===true,state:'ACTIVE',documents,documentStatus:purchaseDocumentState(documents,details.finalInvoiceComplete===true),

@@ -54,7 +54,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
       procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:warehouse?warehouse.accepted-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
-      warehouse:warehouse?{accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,updatedAt:warehouse.at}:null,
+      warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),

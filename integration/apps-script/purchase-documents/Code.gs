@@ -1,6 +1,8 @@
 /* Dedicated purchase PDFs only. Never add this to Onboarding or Pointbase. */
 const PURCHASE_ROOTS={NCT:'12gCZmqioYGZyRmgW3CsWyobBBcUnCFUS',GHR:'18w4I96N3PSCTv2Qxs_mycy-PMu-lth9w'};
 const ACCOUNT_ROOTS={NCT:'1grq9bx7TcVhI3baSzpkLG0zglCuBorjA',GHR:'1hZ4qVKtNP2oc4Fj5NXbEamdIWU0RR30o'};
+const SALES_ROOTS={NCT:'1omU7-s3sntQoajBBvOKVXzwS40N5Lmm0',GHR:'1uPcfFNLpXFDS5vn18hA5pbIdWRzxSzQ_'};
+const SALES_TYPES=['SALES_INV','SALES_CN','DEBIT_NOTE','CUSTOMER_RECEIPT'];
 const FILE_FIELDS='id,name,mimeType,size,parents,appProperties,trashed,webViewLink';
 function doPost(e) {
   let result;
@@ -18,8 +20,9 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
 function uploadPurchasePdf_(input) {
-  const folder=input.type==='PAYMENT'&&input.department==='ACCOUNT'?ACCOUNT_ROOTS[input.company]:PURCHASE_ROOTS[input.company];
-  if(!/^[A-Za-z0-9_-]{10,200}$/.test(input.fileId||'')||!/^\w{32}$/.test(input.poId||'')||!/^\w{64}$/.test(input.sha256||'')||!['INV','CN','SO','PI','DO','PAYMENT'].includes(input.type)||(input.type==='PAYMENT'&&input.department!=='ACCOUNT')||typeof input.name!=='string'||!input.name.endsWith('.pdf')||input.name.length>300||typeof input.base64!=='string'||input.base64.length>4200000)throw Error('INVALID_DOCUMENT');
+  const sales=SALES_TYPES.includes(input.type);
+  const folder=sales&&input.department==='SALES'?SALES_ROOTS[input.company]:input.type==='PAYMENT'&&input.department==='ACCOUNT'?ACCOUNT_ROOTS[input.company]:PURCHASE_ROOTS[input.company];
+  if(!/^[A-Za-z0-9_-]{10,200}$/.test(input.fileId||'')||!/^\w{32}$/.test(input.poId||'')||!/^\w{64}$/.test(input.sha256||'')||(!['INV','CN','SO','PI','DO','PAYMENT'].includes(input.type)&&!sales)||(sales&&input.department!=='SALES')||(input.type==='PAYMENT'&&input.department!=='ACCOUNT')||typeof input.name!=='string'||!input.name.endsWith('.pdf')||input.name.length>300||typeof input.base64!=='string'||input.base64.length>4200000)throw Error('INVALID_DOCUMENT');
   const bytes=Utilities.base64Decode(input.base64);
   if(bytes.length<5||bytes.length>3*1024*1024||bytes.slice(0,5).map(n=>String.fromCharCode(n)).join('')!=='%PDF-')throw Error('INVALID_PDF');
   const hash=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,bytes).map(n=>('0'+((n+256)%256).toString(16)).slice(-2)).join('');
