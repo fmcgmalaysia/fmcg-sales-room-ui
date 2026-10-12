@@ -13,6 +13,7 @@ const { customerCompletion } = load('customerCompletionProjection.js');
 const { projectCustomerAccount } = load('customerDebtor.js');
 const { createStockExceptionOperations, stockExceptionVersion } = load('inventoryExceptions.js');
 const { createStockResolutionOperations, stockResolutionVersion } = load('stockExceptionResolution.js');
+const { createShipmentPlanOperations, shipmentPlanVersion, readShipmentPlans } = load('customerShipmentPlan.js');
 
 async function scenario(company = 'NCT', demand = 100) {
   const rows = new Map(), clone = value => JSON.parse(JSON.stringify(value));
@@ -59,12 +60,14 @@ async function scenario(company = 'NCT', demand = 100) {
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
   const plan=async totalCtn=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,planRevision:(await task()).procurement.revision,totalCtn,supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
+  const planOps=createShipmentPlanOperations({store,names,readContext:context,now});
+  const split=async quantities=>planOps({...request('SALES',{action:'PLAN',customerId:'C',orderId:(await task()).orderId,version:shipmentPlanVersion(await context()),reason:'Customer requested split shipment',batches:quantities.map((quantity,index)=>({label:'Shipment '+(index+1),lines:[{taskId:id,quantity}]}))}),staff:{...staff('SALES'),customerId:'C',canSelectShipment:true}});
   const shipAction = async (who, input) => { const r = request(who, { version: shipmentVersion(await context()), reason: 'Scenario shipment', ...input }); r.staff = { ...r.staff, canSelectShipment: who === 'SALES', canInvoiceShipment: who === 'SUPPORT', canDispatchShipment: who === 'WAREHOUSE' }; return fulfilment(r); };
   const invoice = async quantity => { const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: quantity * 15000 }); return selected.shipmentId; };
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve };
+  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve, split };
 }
 
 for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close', async () => {
@@ -140,7 +143,11 @@ test('CN kept for next purchase remains a supplier credit and never becomes cust
 });
 
 test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170', async () => {
-  const f=await scenario('NCT',500);await f.plan(480);await f.pay(4800000,'PREPAY');
+  const f=await scenario('NCT',500);await f.split([300,200]);
+  assert.equal(projectCustomerAccount(await f.context()).entries.length,0,'split intent does not create an invoice or receivable');
+  assert.equal((await f.task()).inc,null,'split intent cannot create received or allocated stock');
+  await assert.rejects(f.split([300,170]),/original customer quantity/);
+  await f.plan(480);await f.pay(4800000,'PREPAY');
   await f.delivery(480,'DELIVERY');await f.allocate(480);
   const first=await f.invoice(300);await f.dispatch(first);
   await f.quarantine(5,'INTERNAL_DAMAGE');await f.quarantine(3,'WRONG_ITEM');await f.quarantine(2,'SHORT_EXPIRY');
@@ -171,6 +178,7 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   assert.equal((await f.po()).state,'HISTORY');assert.equal((await f.po()).finance.stockLossCents,50000);
   assert.equal((await f.po()).finance.payableCents,4750000);assert.equal((await f.po()).finance.paidCents,4750000);
   assert.equal((await f.completion()).completedQty,470);assert.equal((await f.task()).warehouse.accepted,480);
+  assert.deepEqual(Array.from(readShipmentPlans((await f.context()).activity)[0].batches,batch=>batch.lines[0].quantity),[300,200],'actual 300+170 dispatch preserves original split intent');
 });
 
 test('supplier replacement received in two batches restores usable stock without rewriting the original receipt', async () => {
@@ -215,4 +223,17 @@ test('releasing an incorrect quarantine blocks supplier replacement from creatin
   await f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'RELEASED'});
   assert.equal((await f.task()).warehouse.stock.usableReceived,100);
   assert.equal((await f.task()).warehouse.stock.replacementReceived,0);
+});
+
+test('Sales split revisions retain audit history and do not grant Support or another customer planning rights', async () => {
+ const f=await scenario('GHR',500);await f.split([300,200]);await f.split([250,250]);
+ const context=await f.context(),events=context.activity.filter(row=>row.action==='CUSTOMER_SHIPMENT_PLAN_SAVED');
+ assert.equal(events.length,2);assert.equal(readShipmentPlans(context.activity).length,1);
+ assert.deepEqual(Array.from(events[0].details.plan.batches,batch=>batch.lines[0].quantity),[300,200]);
+ assert.deepEqual(Array.from(readShipmentPlans(context.activity)[0].batches,batch=>batch.lines[0].quantity),[250,250]);
+ const operate=createShipmentPlanOperations({store:f.store,names:{GHR:f.names},readContext:f.context});
+ const input={action:'PLAN',customerId:'C',orderId:(await f.task()).orderId,version:shipmentPlanVersion(context),reason:'Planning',batches:events[0].details.plan.batches};
+ await assert.rejects(operate({company:'GHR',staff:{canSelectShipment:false},input}),/Only authorized Sales/);
+ await assert.rejects(operate({company:'GHR',staff:{canSelectShipment:true,staffId:'OTHER',staffName:'OTHER',memberId:'OTHER',customerId:'OTHER'},requestId:'11111111-2222-4333-8444-555555555555',input}),/customer is not authorized/);
+ assert.equal((await f.task()).ord,500);assert.equal((await f.task()).inc,null);
 });

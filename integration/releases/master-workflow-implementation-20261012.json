@@ -77,6 +77,12 @@
       "name": "Post-receipt quarantine and split-shipment scenario",
       "status": "Quarantine, Admin/Finance loss approval, supplier return/replacement/refund and claim variance local scenarios passed; web bridges and UI pending",
       "scope": "Original demand 500, supplier receipt 480, dispatch 300, internal damage 5, wrong item 3, short expiry 2; only 170 usable for next dispatch. Customer-visible explanation excludes internal fault."
+    },
+    {
+      "name": "Sales split shipment intent",
+      "status": "Local core and browser fixture passed; not deployed",
+      "scope": "Sales plans 300+200 before receipt; immutable revisions retain original demand; no stock reservation, invoice or Debtor entry. Actual 300+170 fulfilment remains separate.",
+      "remaining": "Formal public validation, plan-to-actual batch association, stock resolution department UI and posted-invoice correction"
     }
   ],
   "release": {
@@ -84,7 +90,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 252,
+  "localTests": 253,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
