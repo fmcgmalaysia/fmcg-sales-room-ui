@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="build" content="2026-10-11-warehouse-receiving-v1"><title>Warehouse Department</title><link rel="stylesheet" href="../account-room/style.css"><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="build" content="2026-10-11-warehouse-receiving-v1"><title>Warehouse Department</title><link rel="stylesheet" href="../account-room/style.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../master-shared/task-signals.css"><script src="../master-shared/task-signals.js"></script></head>
 <body>
 <header class="department-header"><label><span class="company-label">Company</span><select id="company" aria-label="Company / 公司"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select></label><strong>Warehouse Department</strong><span id="staff" class="staff">员工身份待连接</span></header>
 <nav aria-label="Warehouse navigation"><button data-view="receiving" class="active">Goods Receiving / 收货</button><button data-view="history">Receiving History / 收货历史</button><span id="readAt" class="preview"></span></nav>
-<main><div class="title-row"><h1 id="title">Goods Receiving <span class="company-tag">仓库收货</span></h1><div><button id="login">Sign in / 登录</button> <button id="refresh">Refresh / 刷新</button></div></div>
+<div id="taskSignals" style="margin:0 24px"></div><main><div class="title-row"><h1 id="title">Goods Receiving <span class="company-tag">仓库收货</span></h1><div><button id="login">Sign in / 登录</button> <button id="refresh">Refresh / 刷新</button></div></div>
 <div id="notice" class="account-notice" role="status">正在连接 Master…</div><section id="track" class="warehouse-track" aria-label="Receiving overview"></section>
 <div class="filters"><input id="search" aria-label="Search" placeholder="Search P.O. / supplier / customer · 搜索"><select id="supplier" aria-label="Supplier"><option value="">All Suppliers / 全部供应商</option></select><input id="month" aria-label="Month / 月份" type="month" hidden></div>
 <div id="tables"></div></main>

@@ -56,7 +56,7 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
       if(saved&&(saved.orderId!==task.orderId||saved.sourceLineId!==task.sourceLineId))throw Error('Warehouse purchase identity changed.');
       const accepted=saved?.accepted||0,rejected=saved?.rejected||0;
       if(accepted>planned)throw Error('Received quantity exceeds the supplier purchase plan.');
-      return {taskId:id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,planned,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:allocatedTo(id,activity).quantity,extraReceived:Math.max(0,accepted-task.ord),expectedExtra:Math.max(0,planned-task.ord),issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
+      return {taskId:id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,planned,shortage:task.shortage||null,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:allocatedTo(id,activity).quantity,extraReceived:Math.max(0,accepted-task.ord),expectedExtra:Math.max(0,planned-task.ord),issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
     });
     if(receipt.lines.some(line=>!po.taskIds.includes(line.taskId)))throw Error('Received task no longer belongs to this purchase order.');
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;

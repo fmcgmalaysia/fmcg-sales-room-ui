@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
-function harness(storage,feedbackRows=[]) {
+function harness(storage,feedbackRows=[],signals=null) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
@@ -12,7 +12,7 @@ function harness(storage,feedbackRows=[]) {
       showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
     return nodes.get(id);
   }
-  const parent = { postMessage:message => messages.push(message) }, window = { parent, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
+  const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
   vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
@@ -313,4 +313,8 @@ test('drag feedback marks grip, source and exact insertion target while keeping 
  const target={closest:selector=>selector==='tr[data-id]'?first:null};h.event('dragover',target,{preventDefault(){}});assert(first.classes.has('drop-target'));assert.equal(h.messages.length,1);
  h.event('drop',target,{preventDefault(){}});assert(!first.classes.has('drop-target'));assert(!second.classes.has('dragging-row'));assert.equal(h.messages.length,1);
  h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);assert.equal(save.input.versions.TASK,'REV1');assert.equal(save.input.versions.TASK2,'REV2');assert.equal(save.input.edits.length,0);
+});
+
+test('department financial signals read without rebuilding unsaved task rows',async()=>{
+ const mounts=[],h=harness(undefined,[],{mount:(host,department,data)=>mounts.push(data)}),w=workspace();h.reply(w);const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');h.click({customer:'C'});h.node('#app').innerHTML='UNSAVED FORM';h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[]}});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.node('#app').innerHTML,'UNSAVED FORM');assert.ok(mounts.length>=2);assert.equal(h.messages.filter(message=>message.type.includes('SAVE')).length,0);
 });

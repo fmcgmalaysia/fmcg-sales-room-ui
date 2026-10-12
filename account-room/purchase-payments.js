@@ -12,6 +12,7 @@
  function render(){if(!['payments','history','creditor'].includes(view))return;
   document.querySelector('.staff').textContent=data?data.staff.staffName+' / Account':'员工身份待核对';
   document.querySelector('.preview').textContent=data?'Master CMS · '+stamp(data.readAt):'Master CMS';
+  window.masterTaskSignals?.mount(document.querySelector('#taskSignals'),'ACCOUNT',{orders:data?.orders||[]},entry=>{if(save||window.accountSettlement.busy())return;const row=data?.orders.find(row=>row.id===entry.id);if(row)files(row);});
   const supplierRows=[...new Map((data?.orders||[]).map(row=>[row.supplierId,row])).values()];
   app.innerHTML='<div class="title-row"><h1>'+ (view==='creditor'?'Creditors / 供应商应付款':view==='history'?'Purchase History / 采购历史':'Purchase Payments / 采购付款')+'<span class="company-tag">'+company+'</span></h1><button id="accountRefresh">Refresh / 刷新</button></div>'+
    (error?'<div class="account-notice error" role="alert">'+esc(error)+'</div>':'')+(data?.customerNamesError?'<div class="account-notice">'+esc(data.customerNamesError)+'</div>':'')+
