@@ -31,6 +31,28 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+
+test('supplier sources keep ordered and physical received quantities separate and add a priced PO once',()=>{
+ const h=harness(),w=workspace();w.sourcesVersion='SV';w.suppliers=[{id:'A',name:'Supplier A'},{id:'B',name:'Supplier B'}];
+ Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
+ h.reply(w);h.click({customer:'C'});let html=h.node('#app').innerHTML;
+ assert.match(html,/200 \| 190/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
+ h.click({sources:'SOURCE-B'});assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-A/);assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-B/);
+ for(const [id,value] of Object.entries({sourceSupplier:'B',sourcePo:'NCT-PO-C',sourceQty:'10',sourceCost:'120',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
+ h.click({controlId:'saveAdditionalSource'});const request=h.messages.at(-1);
+ assert.equal(request.operation,'ADD_SOURCE');assert.equal(request.input.parentTaskId,'TASK');assert.equal(request.input.version,'SV');assert.equal(request.input.quantity,10);assert.equal(request.input.prices.lpCtn,120);assert.equal(request.input.prices.lpPc,7.5);assert.equal(request.input.prices.disc1,0);assert.equal(request.input.prices.disc2,0);assert.equal(request.input.prices.disc3,0);
+ const count=h.messages.length;h.click({controlId:'saveAdditionalSource'});assert.equal(h.messages.length,count,'duplicate click while saving cannot create another source');
+});
+
+test('additional source plan uses remaining customer capacity instead of its zero demand field',()=>{
+ const h=harness(),w=workspace();w.staff.canEditCustomerDemand=true;Object.assign(w.tasks[0],{ord:200,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180,revision:'PA'}});
+ w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'NCT-PO-B',procurement:{totalCtn:10,revision:'PB'},editVersion:'VB'});
+ h.reply(w);h.click({qty:'B'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="saveTaskQty"/);h.click({controlId:'editSupplierPlan'});
+ assert.match(h.node('#dialogContent').innerHTML,/可供客户数量<\/span><b>20 CTN/);
+ h.node('#planTotal').value='15';h.node('#planReason').value='Five more now available';h.node('#planExtraKind').value='';h.node('#planConfirmExtra').checked=false;h.node('#planSupplierConfirmed').checked=true;
+ h.click({controlId:'saveSupplierPlan'});const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,15);assert.equal(request.input.confirmExtra,false);
+});
 test('planner allocation editor sends the selected receipt and explicit customer quantities with a reason',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
  h.reply(w);h.click({view:'stock'});assert.match(h.node('#app').innerHTML,/data-allocate="TASK"/);h.click({allocate:'TASK'});
@@ -185,12 +207,12 @@ test('CMS Dashboard retains the approved directory structure, summary icons and 
 
 test('CMS Purchase Room restores v13 track, tools and approved columns plus the final task editor without changing task data',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
-  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
-  assert.equal(labels.length,17);
-  assert.match(html,/width:22.5%/);
+  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Order Qty','Rcv Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
+  assert.equal(labels.length,18);
+  assert.match(html,/width:19%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -248,9 +270,9 @@ test('row editor keeps barcode first, omits received quantity and gates changes 
   assert.equal(h.messages.length,1);
 });
 
-test('four-digit qty capsules preserve the warehouse value and edited left quantity is grey',()=>{
+test('separate four-digit quantities preserve the legacy warehouse value and edited demand marker',()=>{
   const h=harness(),data=workspace();Object.assign(data.tasks[0],{ord:9999,inc:8888,qtyEdited:true});h.reply(data);h.click({customer:'C'});
-  const html=h.node('#app').innerHTML;assert.match(html,/qty-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-task-edit="TASK"/);
+  const html=h.node('#app').innerHTML;assert.match(html,/demand-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-task-edit="TASK"/);
 });
 
 test('reload checks the existing save identity and restores only the same staff member draft',()=>{

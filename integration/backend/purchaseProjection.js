@@ -71,7 +71,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
       estimatedShipmentDate: stamp(order.estimatedShipmentDate)?.slice(0, 10) || null,
       history: activity.filter(event => event.description === task.description &&
-        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED'].includes(event.action) &&
+        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED','PURCHASE_SOURCE_ADDED'].includes(event.action) &&
         (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({
           id: text(event.title), action: text(event.action), time: stamp(event.activityTime),
           requestId: text(event.details?.requestId), retryOutcome: event.action === 'COST_RETRY_RESULT' ? {

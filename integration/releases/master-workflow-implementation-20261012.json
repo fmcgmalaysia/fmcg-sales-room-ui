@@ -88,6 +88,11 @@
       "name": "Multiple supplier sources per customer demand",
       "status": "Local core scenarios passed in NCT and GHR; UI and deployment pending",
       "scope": "Preserves one 200-carton demand, A180+B10 sources, A170 then B10 physical receipts, supplier-specific costs and idempotent add-source saves; chocolate/vanilla/drink customer totals remain 600 requested and 580 allocated."
+    },
+    {
+      "name": "purchase-source-quantity-ui",
+      "status": "local tests passed, public deployment pending",
+      "scope": "Separate demand/ordered and physical receipt columns; supplier-source dialog and distinct priced PO creation; existing shortage entry retained pending independent cases."
     }
   ],
   "release": {
@@ -95,7 +100,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 255,
+  "localTests": 257,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
