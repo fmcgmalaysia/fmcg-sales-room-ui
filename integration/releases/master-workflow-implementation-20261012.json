@@ -113,6 +113,11 @@
       "name": "purchase-progress-projection",
       "status": "local scenarios passed; not deployed",
       "scope": "Read-only stages derive from supplier documents, payment review, physical receipts, invoice portions and actual dispatch; child procurement sources archive only after their own dispatch and financial closure."
+    },
+    {
+      "name": "stock-exception-workspace",
+      "status": "local role tests, scenario checks and browser forms passed; not deployed",
+      "scope": "Shared compact stock workspace for Warehouse, Purchase, Admin and Account; quarantine, supplier resolution, return/replacement and separate Admin/Finance loss confirmation; persistent department risk and responsible owner."
     }
   ],
   "release": {
@@ -120,7 +125,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 276,
+  "localTests": 279,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

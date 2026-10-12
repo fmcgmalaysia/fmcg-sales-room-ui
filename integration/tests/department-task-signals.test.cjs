@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const context={};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../master-shared/task-signals.js'),'utf8'),context);const project=context.masterTaskSignals.project;
 const task={id:'T',barcode:'001',name:'Product',supplierId:'S',po:'P',ord:100,inc:90,procurement:{availableCtn:0},warehouse:{issue:true},shortage:{customerDecision:'STOP',supplierDecision:'CREDIT',financeRequired:true}};
+test('post-receipt stock issues remain red in each department and identify who blocks closure',()=>{
+ const item={id:'CASE',sourceTaskId:'T',quantity:5,kind:'INTERNAL_DAMAGE',status:'OPEN',owner:'ADMIN'},input={tasks:[{id:'T',warehouse:{stock:{cases:[item]}}}],orders:[{id:'P',number:'PO',taskIds:['T'],status:'COMPLETE',state:'HISTORY',stockCases:[item]}]};
+ for(const department of ['PURCHASE','ACCOUNT','WAREHOUSE']){const queue=project(department,input);assert.equal(queue.entries.filter(row=>row.action==='stock'&&row.category==='urgent').length,1);assert.equal(queue.entries.find(row=>row.action==='stock').owner,'ADMIN');}
+ item.status='RESOLVED';assert.equal(project('WAREHOUSE',input).entries.filter(row=>row.action==='stock').length,0);
+});
 test('customer stop and reading never clear supplier risk; only verified financial closure clears it',()=>{
  const input={tasks:[task],orders:[{id:'P',taskIds:['T'],invoiceChecked:false,financialRisk:true}]};const first=project('PURCHASE',input);assert.equal(first.categories.find(row=>row.key==='urgent').count,1);assert.equal(first.entries.find(row=>row.category==='urgent').owner,'ACCOUNT');assert.equal(JSON.stringify(project('PURCHASE',input)),JSON.stringify(first));input.orders[0].invoiceChecked=true;input.orders[0].financialRisk=false;const closed=project('PURCHASE',input);assert.equal(closed.categories.find(row=>row.key==='urgent').count,0);assert.equal(input.tasks[0].ord,100);
 });

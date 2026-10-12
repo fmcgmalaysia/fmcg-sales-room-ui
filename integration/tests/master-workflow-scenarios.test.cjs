@@ -266,6 +266,12 @@ test('releasing an incorrect quarantine blocks supplier replacement from creatin
   assert.equal((await f.task()).warehouse.stock.usableReceived,100);
   assert.equal((await f.task()).warehouse.stock.replacementReceived,0);
 });
+test('awaiting supplier response records a persistent stock issue without inventing return instructions',async()=>{
+ const f=await scenario();await f.delivery(100,'DELIVERY');await f.quarantine(3,'WRONG_ITEM');const item=(await f.task()).warehouse.stock.cases[0];
+ await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'PENDING'});
+ const saved=(await f.task()).warehouse.stock.cases[0];assert.equal(saved.owner,'PURCHASE');assert.equal(saved.status,'OPEN');assert.equal(saved.resolution.decision.disposition,null);assert.equal((await f.task()).warehouse.stock.usableReceived,97);
+ await assert.rejects(f.resolve('ACCOUNT',{action:'CLOSE',id:item.id,outcome:'REPLACED',noExtraCharge:true}),/match Purchase/);
+});
 
 test('Sales split revisions retain audit history and do not grant Support or another customer planning rights', async () => {
  const f=await scenario('GHR',500);await f.split([300,200]);await f.split([250,250]);

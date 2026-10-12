@@ -65,7 +65,7 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     return {id:po.id,company,number:po.number,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.version,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,documents:po.documents};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,documents:po.documents,stockCases:po.stockCases||[]};
   });
 }
 

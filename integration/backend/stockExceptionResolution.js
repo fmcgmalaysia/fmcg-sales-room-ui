@@ -20,9 +20,9 @@ export function createStockResolutionOperations({store,names,readContext,listOrd
     if(state.adminApproval)throw Error('Admin stock release is awaiting Finance verification; supplier movement is blocked.');
     if(item.kind==='INTERNAL_DAMAGE'||!['PENDING','REFUND','CREDIT','REPLACE'].includes(input.decision))throw Error('Select a supplier resolution for supplier-related stock.');
     if((state.returns||[]).length||(state.replacements||[]).length)throw Error('Physical return or replacement already started; retain its agreed resolution.');
-    if(!['RETURN','SUPPLIER_NO_RETURN'].includes(input.disposition)||!text(input.supplierReference))throw Error('Record supplier instructions and whether goods must be returned.');
+    if(input.decision!=='PENDING'&&(!['RETURN','SUPPLIER_NO_RETURN'].includes(input.disposition)||!text(input.supplierReference)))throw Error('Record supplier instructions and whether goods must be returned.');
     if(input.decision==='REPLACE'&&(!/^\d{4}-\d{2}-\d{2}$/.test(input.expectedDate||'')||!Number.isFinite(Date.parse(input.expectedDate))||new Date(input.expectedDate).toISOString().slice(0,10)!==input.expectedDate))throw Error('Enter a valid replacement date.');
-    state.decision={value:input.decision,disposition:input.disposition,supplierReference:text(input.supplierReference),expectedDate:input.expectedDate||null,reason,...identity};
+    state.decision={value:input.decision,disposition:input.decision==='PENDING'?null:input.disposition,supplierReference:text(input.supplierReference),expectedDate:input.decision==='REPLACE'?input.expectedDate:null,reason,...identity};
    }
    if(['APPROVE_LOSS','APPROVE_RELEASE'].includes(input.action)){
     if(input.action==='APPROVE_LOSS'&&item.kind!=='INTERNAL_DAMAGE')throw Error('Supplier-related stock must follow supplier resolution.');

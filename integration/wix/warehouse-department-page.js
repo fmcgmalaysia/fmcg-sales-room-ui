@@ -1,10 +1,17 @@
 import { getCustomerFulfilment, saveCustomerShipment } from 'backend/customerFulfilment.web';
+import { getStockExceptions, saveStockException } from 'backend/stockExceptions.web';
 import { getWarehouseOrders, saveWarehouseReceipt } from 'backend/warehouseReceiving.web';
 import { authentication } from 'wix-members-frontend';
 $w.onReady(()=>{
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+      const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';
+      try{const result=message.type==='STOCK_READ_REQUEST'?await getStockExceptions(message.company):await saveStockException(message.company,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Stock request could not be confirmed.'});}return;
+    }
     if(message.type==='WAREHOUSE_LOGIN_REQUEST'){
       try{await authentication.promptLogin({mode:'login',modal:true});room.postMessage({type:'WAREHOUSE_LOGIN_RESULT',ok:true});}
       catch(_){room.postMessage({type:'WAREHOUSE_LOGIN_RESULT',ok:false});}return;
