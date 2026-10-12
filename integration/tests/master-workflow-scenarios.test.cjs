@@ -55,7 +55,7 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const allocator = createPlannerAllocationOperations({ store, names, readWorkspace: workspace, now });
   const allocate = async quantity => allocator(request('PURCHASE', { action: 'ALLOCATE', sourceTaskId: id, version: allocationVersion(await workspace(), await store.all(n.activity)), targets: [{ taskId: id, quantity }], reason: 'Allocate actual cartons' }));
   const shortageOps = createShortageOperations({ store, names, readWorkspace: workspace, now });
-  const shortage = async (customerDecision, supplierDecision, financeRequired = true) => shortageOps(request('PURCHASE', { action: 'SHORTAGE', taskId: id, version: shortageVersion(await task(), await store.all(n.activity)), customerDecision, supplierDecision, expectedDate: '2026-10-15', reason: 'Supplier decision', customerMessage: 'Customer informed', financeRequired }));
+  const shortage = async (customerDecision, supplierDecision) => decideQuantity((await task()).quantityCases.some(item=>item.kind==='RECEIPT')?'RECEIPT':'UNPLACED',customerDecision,supplierDecision);
   const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc: 15 })) });
   const stockOps=createStockExceptionOperations({store,names,readContext:context,now});
   const quantityCaseOps=createQuantityCaseOperations({store,names,readWorkspace:workspace,now});
@@ -76,8 +76,9 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const invoice = async quantity => { const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: quantity * 15000 }); return selected.shipmentId; };
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
+  const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
-  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, allPos:()=>poOps.list(company,staff('PURCHASE')) };
+  return { store, names: n, company, id, task, po, upload, finance, pay, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, allPos:()=>poOps.list(company,staff('PURCHASE')) };
 }
 
 test('A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes',async()=>{
@@ -90,7 +91,7 @@ test('A180+B10: stopping unplaced ten never clears later short-receipt ten or pu
  const customer=projectPurchaseQuantities({customerId:'C',requests,workspace,orders:await f.store.all(f.names.orders),tasks:await f.store.all(f.names.tasks),activity:workspace.activity,purchaseOrders:await f.allPos()});
  assert.equal(customer.orders[0].lines[0].committedQtyCtn,200);assert.equal(customer.orders[0].lines[0].receivedQtyCtn,180);assert.equal(customer.orders[0].lines[0].fulfilment.decision,'STOP');assert.doesNotMatch(JSON.stringify(customer),/Internal supplier finding|REFUND|SUPPLIER B/);
  await f.upload('INV',1800000);await f.upload('DO');await f.upload('CN',100000);await f.amounts();await assert.rejects(f.finance({action:'CHECK',enabled:true}),/overpayment|shortage/);
- await f.pay(100000,'REFUND-A','REFUND');await f.finance({action:'CHECK',enabled:true});assert.equal((await f.po()).invoiceChecked,true);assert.equal((await f.task()).ord,200);
+ await f.pay(100000,'REFUND-A','REFUND');await f.claim(100000);await f.finance({action:'CHECK',enabled:true});assert.equal((await f.po()).invoiceChecked,true);assert.equal((await f.task()).ord,200);
 });
 
 for (const company of ['NCT','GHR']) test(company + ': prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close', async () => {
@@ -120,6 +121,7 @@ test('100 prepaid / 90 received: stop waiting never clears liability; CN and act
   const shipment = await f.invoice(90); await f.dispatch(shipment);
   assert.equal((await f.completion()).completedQty, 0, 'dispatch does not hide unresolved supplier loss');
   await f.pay(100000, 'REFUND', 'REFUND'); assert.equal((await f.po()).financialRisk, true);
+  await assert.rejects(f.finance({action:'CHECK',enabled:true}),/Reconcile each/);await f.claim(100000);
   await f.finance({ action: 'CHECK', enabled: true });
   assert.equal((await f.po()).financialRisk, false); assert.equal((await f.po()).state, 'HISTORY');
   assert.equal((await f.completion()).completedQty, 90); assert.equal((await f.task()).ord, 100);
@@ -156,7 +158,7 @@ test('CN kept for next purchase remains a supplier credit and never becomes cust
   const f = await scenario(); await f.pay(1000000, 'PREPAY'); await f.delivery(90, 'SHORT');
   await f.allocate(90); await f.shortage('STOP', 'CREDIT');
   await f.upload('INV', 1000000); await f.upload('DO'); await f.upload('CN', 100000); await f.amounts();
-  await f.finance({ action: 'RECOGNIZE_CREDIT', cents: 100000 }); assert.equal((await f.po()).financialRisk, true);
+  await f.claim(100000);await f.finance({ action: 'RECOGNIZE_CREDIT', cents: 100000 }); assert.equal((await f.po()).financialRisk, true);
   await f.finance({ action: 'CHECK', enabled: true });
   assert.equal((await f.po()).finance.supplierCreditCents, 100000);
   assert.equal(projectCustomerAccount(await f.context()).entries.length, 0);

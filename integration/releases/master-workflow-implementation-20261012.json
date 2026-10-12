@@ -98,6 +98,11 @@
       "name": "independent-quantity-cases",
       "status": "local scenarios and browser fixture passed; not deployed",
       "scope": "Separate unplaced and supplier receipt cases, persistent employee/time decisions, customer-safe feedback, independent bubbles and Finance final-check invalidation. Per-case CN/refund allocations still require implementation."
+    },
+    {
+      "name": "shortage-claim-evidence",
+      "status": "local scenarios, duplicate-proof tests and browser form passed; not deployed",
+      "scope": "Finance maps shortage to verified CN and received refund amounts; evidence cannot be reused across receipt and stock claims; final Checked requires the case mapping."
     }
   ],
   "release": {
@@ -105,7 +110,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 265,
+  "localTests": 269,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

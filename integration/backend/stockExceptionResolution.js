@@ -56,7 +56,7 @@ export function createStockResolutionOperations({store,names,readContext,listOrd
       if((state.replacements||[]).reduce((sum,row)=>sum+row.quantity,0)!==item.quantity||input.noExtraCharge!==true)throw Error('Verify complete good replacement and no additional supplier charge.');
      }else{
       if(!money(input.cents)||input.cents===0||!Array.isArray(input.cnAllocations)||!input.cnAllocations.length||new Set(input.cnAllocations.map(row=>row.fileId)).size!==input.cnAllocations.length)throw Error('Allocate the actual supplier CN amount to this stock case.');
-      const others=cases.filter(row=>row.id!==item.id&&po.taskIds.includes(row.sourceTaskId)&&row.resolution?.financeApproval).map(row=>row.resolution.financeApproval);
+      const others=cases.filter(row=>row.id!==item.id&&po.taskIds.includes(row.sourceTaskId)&&row.resolution?.financeApproval).map(row=>row.resolution.financeApproval).concat(po.finance.quantityClaims||[]);
       let total=0;
       for(const allocation of input.cnAllocations){
        const doc=po.documents.find(row=>row.type==='CN'&&row.linked&&!row.superseded&&row.fileId===allocation.fileId),amount=po.finance.amounts.find(row=>row.fileId===allocation.fileId&&row.sha256===doc?.sha256);

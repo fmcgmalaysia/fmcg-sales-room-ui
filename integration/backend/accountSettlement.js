@@ -2,11 +2,12 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
+import { preparePurchaseClaim, purchaseClaimBlockers } from 'backend/purchaseClaimEvidence.js';
 const text=value=>String(value??'').trim();
 const cents=value=>Number.isSafeInteger(value)&&value>=0&&value<=999999999999;
 const currentDocs=row=>row.documents.filter(doc=>doc.linked===true&&!doc.superseded&&doc.fileId);
 export function settlementVersion(row,finance){
-  return operationId(row.company,row.id,row.contentVersion,currentDocs(row).map(doc=>[doc.fileId,doc.type,doc.sha256,doc.date,doc.number]).sort(),row.warehouse,finance.amounts||[],finance.payments||[],row.shortageIssues||[],...(row.quantityCases?.length?[row.quantityCases]:[]),...(row.stockIssues?.length?[row.stockIssues]:[]),(row.creditTransfers||[]).filter(entry=>entry.targetId===row.id));
+  return operationId(row.company,row.id,row.contentVersion,currentDocs(row).map(doc=>[doc.fileId,doc.type,doc.sha256,doc.date,doc.number]).sort(),row.warehouse,finance.amounts||[],finance.payments||[],...(finance.quantityClaims?.length?[finance.quantityClaims]:[]),row.shortageIssues||[],...(row.quantityCases?.length?[row.quantityCases]:[]),...(row.stockIssues?.length?[row.stockIssues]:[]),(row.creditTransfers||[]).filter(entry=>entry.targetId===row.id));
 }
 export function projectAccountSettlement(row,details){
   const finance=details.finance||{},documents=currentDocs(row),invoices=documents.filter(doc=>doc.type==='INV'),credits=documents.filter(doc=>doc.type==='CN');
@@ -26,6 +27,7 @@ export function projectAccountSettlement(row,details){
   const supplierCreditCents=creditRecognized?credit.cents-creditUsedCents:0;
   const receiptResolved=row.warehouse?.complete&&!row.warehouse.issues||Array.isArray(row.receiptLines)&&row.receiptLines.length>0&&row.receiptLines.every(line=>line.hasReceipt&&(line.accepted===line.planned&&!line.issue||['REFUND','CREDIT'].includes(line.decision?.supplierDecision)&&line.decision?.customerDecision!=='PENDING'));
   const blockers=[];
+  blockers.push(...purchaseClaimBlockers(row,finance));
   if(row.stockIssues?.length)blockers.push('Resolve quarantined stock / 隔离库存需完成损耗或供应商索赔核对');
   if(!invoices.length)blockers.push('Final Invoice required / 缺最终发票');
   if(!amountComplete||payableCents===null||payableCents<0)blockers.push('Confirm INV / CN amounts / 请核对发票及贷项金额');
@@ -43,13 +45,13 @@ export function projectAccountSettlement(row,details){
   const paymentCompleted=payableCents!==null&&payableCents>=0&&(balanceCents===0||creditRecognized)&&paymentRecordsValid;
   const archiveBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment / 供应商款项未结清']:[]),...(!checked?['Finance Checked required / 财务尚未核对完成']:[]),...(!row.salesInvoiceComplete?['Customer Sales Invoice required / 客户销售发票未齐']:[])];
   return {invoiceChecked:checked,invoiceCheck:check||null,canCheck:blockers.length===0,checkBlocker:blockers.join('; '),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:!checked&&(cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
-    finance:{receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
+    finance:{receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','RECOGNIZE_CREDIT'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','RECOGNIZE_CREDIT','SHORTAGE_CLAIM'].includes(input?.action))throw Error('Unsupported financial action.');
     let uploadBase64=null,journalInput=input;
     if(input.action==='DOCUMENT_UPLOAD'){
       if(!documentService||!['DO','PAYMENT'].includes(input.type))throw Error('Select a supplier DO or payment proof.');
@@ -90,6 +92,10 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         finance.amounts=input.amounts.map(entry=>{const doc=docs.find(doc=>doc.fileId===entry.fileId);if(!doc||!cents(entry.cents)||(doc.type==='INV'&&entry.cents===0))throw Error('Enter valid MYR document amounts.');if(doc.type==='CN'&&!['DEDUCT','ALREADY_INCLUDED'].includes(entry.treatment))throw Error('Select whether the CN is already included in the final invoice.');return {fileId:doc.fileId,sha256:doc.sha256,cents:entry.cents,...(doc.type==='CN'?{treatment:entry.treatment}:{}),...identity};});
         if(docs.filter(doc=>doc.type==='CN').reduce((n,doc)=>{const entry=finance.amounts.find(entry=>entry.fileId===doc.fileId);return n+(entry.treatment==='ALREADY_INCLUDED'?0:entry.cents);},0)>docs.filter(doc=>doc.type==='INV').reduce((n,doc)=>n+finance.amounts.find(entry=>entry.fileId===doc.fileId).cents,0))throw Error('CN total exceeds the invoice total.');
         audit.changes={before:details.finance?.amounts||[],after:finance.amounts};
+      }else if(input.action==='SHORTAGE_CLAIM'){
+        const claim=preparePurchaseClaim(row,input,identity,reason);
+        finance.quantityClaims=[...(finance.quantityClaims||[]).filter(value=>value.caseId!==claim.caseId),claim];
+        audit.changes={caseId:claim.caseId,before:details.finance?.quantityClaims?.find(value=>value.caseId===claim.caseId)||null,after:claim};
       }else if(input.action==='RECOGNIZE_CREDIT'){
         const state=projectAccountSettlement(row,details);
         if(!currentDocs(row).some(doc=>doc.type==='CN')||!Number.isSafeInteger(state.finance.balanceCents)||state.finance.balanceCents>=0)throw Error('Verified CN and an actual supplier credit balance are required.');
