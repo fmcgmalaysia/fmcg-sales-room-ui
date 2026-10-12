@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const copy = value => JSON.parse(JSON.stringify(value));
 const delivery = require('./load-nct-delivery.cjs')();
-async function fixture() {
+async function fixture(destination = 'NCT') {
   const { createNctSubmissionDelivery } = await delivery;
   let order = { orderId: 'ORDER', customerId: 'CUSTOMER', companyName: 'TEST CUSTOMER', currency: 'MYR', status: 'CONFIRMED', isComplete: true };
   let lock = null, fail = '', deliveries = [], audits = new Map(), snapshotReads = 0, authorized = 0;
@@ -17,7 +17,7 @@ async function fixture() {
     },
     saveTransferred: async (_id, body, receipt) => {
       if (fail === 'finalize') throw Error('Source write failed');
-      order = { ...order, status: 'SUBMITTED TO NCT', destination: 'NCT', submittedAt: body.submittedAt,
+      order = { ...order, status: 'SUBMITTED TO ' + body.destination, destination: body.destination, submittedAt: body.submittedAt,
         nctSubmissionBody: copy(body), masterReceipt: copy(receipt) };
     }
   };
@@ -29,15 +29,16 @@ async function fixture() {
       currentAdminRate: { currency: 'MYR', rateToMyr: 1, active: true }, history: [{ from: 100, to: 250 }]
     }; }, deliver: async body => {
       deliveries.push(copy(body)); if (fail === 'network') throw Error('Timeout after Master may have committed');
-      const receipt = { ok: true, destination: 'NCT', orderId: body.orderId, submissionId: body.submissionId,
+      const receipt = { ok: true, destination: body.destination, orderId: body.orderId, submissionId: body.submissionId,
         receiptId: 'MASTER-RECEIPT', masterReceivedAt: '2026-10-09T12:00:02Z', taskIds: ['TASK'], costErrorTaskCount: 0 };
       if (fail === 'partial') receipt.taskIds = [];
+      if (fail === 'company') receipt.destination = body.destination === 'NCT' ? 'GHR' : 'NCT';
       return receipt;
     }
   });
-  const args = { orderId: 'ORDER', staff: { staffId: 'STAFF', staffName: 'NAME' },
+  const args = { orderId: 'ORDER', destination, staff: { staffId: 'STAFF', staffName: 'NAME' },
     authorizeCustomer: async () => { authorized++; if (fail === 'auth') throw Error('Not authorized'); } };
-  return { run: () => submit(args), fail: value => { fail = value; }, setLock: value => { lock = value; },
+  return { run: (company = destination) => submit({ ...args, destination: company }), fail: value => { fail = value; }, setLock: value => { lock = value; },
     state: () => ({ order: copy(order), lock: copy(lock), deliveries: copy(deliveries), audits: audits.size, snapshotReads, authorized }) };
 }
 test('source becomes submitted only after complete Master acknowledgement and audit', async () => {
@@ -80,4 +81,19 @@ test('existing Buyer addition or Sales mutation locks cannot be stolen or releas
 test('unauthorized customer cannot acquire a lock or access cost delivery', async () => {
   const f = await fixture(); f.fail('auth'); await assert.rejects(f.run(), /Not authorized/);
   assert.equal(f.state().lock, null); assert.equal(f.state().snapshotReads, 0); assert.equal(f.state().deliveries.length, 0);
+});
+
+test('GHR uncertain delivery retries its exact snapshot and rejects changing company', async () => {
+  const f = await fixture('GHR'); f.fail('network'); await assert.rejects(f.run(), /receipt is not confirmed/);
+  await assert.rejects(f.run('NCT'), /Prepared submission identity conflict/);
+  assert.equal(f.state().deliveries.length, 1);
+  f.fail(''); const receipt = await f.run(); assert.equal(receipt.destination, 'GHR');
+  assert.equal(receipt.submissionId, 'GHR-ORDER'); assert.deepEqual(f.state().deliveries[0], f.state().deliveries[1]);
+  assert.deepEqual(await f.run(), receipt); await assert.rejects(f.run('NCT'), /Stored Master receipt identity conflict/);
+  assert.equal(f.state().snapshotReads, 1);
+});
+
+test('a receipt from the wrong company never marks GHR submitted', async () => {
+  const f = await fixture('GHR'); f.fail('company'); await assert.rejects(f.run(), /receipt is not confirmed/);
+  assert.equal(f.state().order.destination, undefined); assert.ok(f.state().lock);
 });

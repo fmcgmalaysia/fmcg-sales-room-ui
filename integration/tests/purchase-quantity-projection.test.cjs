@@ -9,8 +9,22 @@ test('source projection keeps original ordered qty and quote while both views re
 
 test('warehouse reply exposes only allocated customer cartons and source displays completion without changing price',()=>{
  const f=fixture();f.activity.push({title:'R',description:'PO',image:'C',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:'2026-10-11T02:00:00Z',initiatedByStaffName:'PRIVATE WAREHOUSE',details:{beforeRevision:'',lines:[{taskId:'T',orderId:'O',sourceLineId:'L',beforeAccepted:0,beforeRejected:0,accepted:100,rejected:3,issue:false,reason:'PRIVATE SUPPLIER'}]}});
+ assert.equal(projectPurchaseQuantities(f).orders[0].lines[0].receivedQtyCtn,0);
+ f.activity.push({title:'AL',imageAltText:'T',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-11T02:00:00Z',details:{beforeRevision:'',targets:[{taskId:'T',quantity:80}]}});
  const reply=projectPurchaseQuantities(f);assert.equal(reply.orders[0].lines[0].receivedQtyCtn,80);assert.doesNotMatch(JSON.stringify(reply),/PRIVATE|rejected|extraReceived/);
  const order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]};const [result]=apply('C',[order],reply);
  assert.equal(result.lines[0].receivedQtyCtn,80);assert.equal(result.lines[0].goodsReceivedAt,'2026-10-11T02:00:00.000Z');assert.equal(result.lines[0].lockedPriceCtn,23);assert.equal(order.lines[0].receivedQtyCtn,undefined);
  reply.orders[0].lines[0].receivedQtyCtn=81;assert.throws(()=>apply('C',[order],reply),/received quantity/);
 });
+
+test('customer feedback copies only safe fields and never changes demand, receipt or completion',()=>{
+ const order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]};
+ const reply=projectPurchaseQuantities(fixture());reply.orders[0].lines[0].fulfilment={decision:'STOP',message:'Only 80 cartons available',expectedDate:'',at:'2026-10-12T00:00:00Z',internalReason:'PRIVATE',supplierDecision:'REFUND'};
+ const result=apply('C',[order],reply)[0].lines[0];assert.equal(result.masterFulfilment.decision,'STOP');assert.equal(result.quantityCtn,100);assert.equal(result.lockedPriceCtn,23);assert.equal(result.goodsReceivedAt,undefined);assert.doesNotMatch(JSON.stringify(result),/PRIVATE|REFUND/);
+ reply.orders[0].lines[0].fulfilment.decision='COMPLETE';assert.throws(()=>apply('C',[order],reply),/fulfilment/);
+});
+test('Sales and Buyer render escaped customer feedback without internal supplier details',()=>{
+ for(const file of ['index.html','buyer-room.html']){const html=fs.readFileSync(path.join(__dirname,'../..',file),'utf8'),code=html.match(/function customerFulfilmentHtml\(line\)\{[^\n]+/)[0];const render=vm.runInNewContext(code+';customerFulfilmentHtml',{esc:value=>String(value).replaceAll('<','&lt;').replaceAll('>','&gt;')});assert.equal(render({}), '');const output=render({masterFulfilment:{decision:'WAIT',message:'<script>unsafe</script>',expectedDate:'2026-10-15'}});assert.match(output,/等待补货/);assert.match(output,/2026-10-15/);assert.doesNotMatch(output,/<script>/);assert.match(html,/customerFulfilmentHtml\(line\)/);}
+});
+
+test('partial invoice completion preserves original demand and carries only validated history quantities',()=>{const order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]},reply=projectPurchaseQuantities(fixture());reply.orders[0].lines[0].completion={invoicedQty:70,completedQty:60,dispatchedQty:70,closedUnfulfilledQty:0,invoices:[{number:'SI-1',date:'2026-10-12',quantity:70,completedQty:60,dispatchedQty:70,sellingPriceCtn:23,at:'2026-10-12T00:00:00Z',shippedAt:'2026-10-12T01:00:00Z',internalCost:999}]};const line=apply('C',[order],reply)[0].lines[0];assert.equal(line.quantityCtn,100);assert.equal(line.committedQtyCtn,80);assert.equal(line.completedQtyCtn,60);assert.equal(line.invoicedQtyCtn,70);assert.equal(line.invoiceNo,'SI-1');assert.doesNotMatch(JSON.stringify(line),/internalCost/);reply.orders[0].lines[0].completion.closedUnfulfilledQty=21;assert.throws(()=>apply('C',[order],reply),/completion/);});

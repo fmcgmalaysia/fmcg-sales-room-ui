@@ -3,11 +3,12 @@ import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate } from 'backend/purchaseDocumentPolicy.js';
 import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
+import { projectPaymentHandoff } from 'backend/paymentHandoff.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
-const groupKey = row => JSON.stringify([row.customerId,row.supplierId,row.po]);
+const groupKey = row => JSON.stringify([row.supplierId,row.po]);
 
 // A stored identity survives number changes. Tasks and supplier plans remain authoritative.
 export function projectPurchaseOrders({company,workspace,records,now=new Date()}) {
@@ -34,18 +35,24 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const invoiceDate=invoiceDates[0]||null,termDays=Number.isSafeInteger(details.termDays)?details.termDays:null;
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
     // Their department writers are not connected yet; never offer a premature archive.
-    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse)),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,
-      number:first.po,company,currency:'MYR',customerId:first.customerId,customerName:customer?.shortName||customer?.name||'',
+    const shortageIssues=rows.filter(row=>row.warehouse?.issue||row.shortage?.financeRequired).map(row=>({taskId:row.id,barcode:row.barcode,name:row.name,customerId:row.customerId,decision:row.shortage||null,receivingIssue:row.warehouse?.issue===true}));
+    const quantityCases=rows.flatMap(row=>row.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
+    const creditTransfers=(workspace.creditTransfers||[]).filter(entry=>entry.sourceId===id||entry.targetId===id);
+    const stockCases=rows.flatMap(row=>row.warehouse?.stock?.cases||[]),stockIssues=stockCases.filter(row=>row.status!=='RESOLVED');
+    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,stockIssues,stockCases,creditTransfers,
+      number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
       createdAt:details.createdAt||date(assigned?.time),createdBy:details.createdBy||text(assigned?.actor),
-      itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,salesInvoiceComplete:rows.every(row=>Boolean(text(row.salesInvoiceNumber))&&row.salesInvoiceLocked===true),
+      itemCount:new Set(rows.map(row=>JSON.stringify([row.barcode,row.packing]))).size,amount,salesInvoiceComplete:rows.every(row=>row.salesFulfilment?.sourceInvoicedQty>0?row.salesFulfilment.sourceInvoicedQty===(row.warehouse?.stock?.usableReceived??row.warehouse?.accepted):Boolean(text(row.salesInvoiceNumber))&&row.salesInvoiceLocked===true),
+      receiptLines:rows.map(row=>({taskId:row.id,hasReceipt:Boolean(row.warehouse)&&row.warehouse.hasPhysicalReceipt!==false,planned:row.procurement?.totalCtn,accepted:row.warehouse?.accepted||0,issue:row.warehouse?.issue===true,decision:row.shortage||null})),
       warehouse:{connected:true,receivedCtn:rows.reduce((sum,row)=>sum+(row.warehouse?.accepted||0),0),complete:rows.every(row=>row.warehouse&&row.warehouse.accepted===row.procurement?.totalCtn&&!row.warehouse.issue),issues:rows.some(row=>row.warehouse?.issue===true)},
       termDays,invoiceDate,dueDate:purchaseInvoiceDueDate(invoiceDate,termDays),
       chasePayment:details.chasePayment===true,state:'ACTIVE',documents,documentStatus:purchaseDocumentState(documents,details.finalInvoiceComplete===true),
       status:'Awaiting payment records',canArchive:false,archiveBlockers:['Warehouse receipt closure','Completed supplier payment','Final Account verification'],
       history:[...history,...(details.audit||[])].sort((a,b)=>String(a.time).localeCompare(String(b.time))),
       updatedAt:date(details.updatedAt),readAt:now.toISOString()};
-    return {...projected,...projectInvoiceReview(projected,details)};
+    const settlement={...projected,...projectInvoiceReview(projected,details)};
+    return {...settlement,...projectPaymentHandoff(settlement,details,now)};
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
@@ -57,7 +64,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     return projectPurchaseOrders({company,workspace,records,now:now()});
   }
   async function save({company,staff,requestId,input}) {
-    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','ACK_PAYMENT'].includes(input.action))throw Error('Unsupported purchase order action.');
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
       if(!documentService)throw Error('Document upload is not connected.');
@@ -65,7 +72,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const bytes=Buffer.from(input.base64,'base64');
       if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64)throw Error('Select a valid PDF up to 3 MiB.');
       payload=input.base64;
-      journalInput={id:input.id,version:input.version,action:'DOCUMENT',type:input.type,date:input.date,number:text(input.number),reason:text(input.reason),sha256:createHash('sha256').update(bytes).digest('hex'),size:bytes.length};
+      journalInput={id:input.id,version:input.version,action:'DOCUMENT',type:input.type,date:input.date,number:text(input.number),reason:text(input.reason),declaredCents:input.declaredCents,sha256:createHash('sha256').update(bytes).digest('hex'),size:bytes.length};
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{purchaseOrder:journalInput},prepare:async()=>{
       const rows=await list(company,staff),row=rows.find(row=>row.id===input.id);
@@ -76,12 +83,19 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       let upload;
       if(input.action==='DOCUMENT'){
         if(!row.supplierId)throw Error('Select a supplier before uploading documents.');
+        if(['INV','CN'].includes(input.type)&&(!Number.isSafeInteger(input.declaredCents)||input.declaredCents<=0||input.declaredCents>999999999999))throw Error('Enter the supplier document amount in MYR.');
         const name=purchaseDocumentName({date:input.date,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
         if((before.documents||[]).some(doc=>doc.linked&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
         const allocated=await documentService({action:'ALLOCATE',company});
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,name,type:input.type,sha256:journalInput.sha256};
-        const document={fileId:allocated.fileId,name,type:input.type,number:text(input.number),date:input.date,size:journalInput.size,sha256:journalInput.sha256,linked:true,uploadedAt:now().toISOString(),uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
+        const document={fileId:allocated.fileId,name,type:input.type,number:text(input.number),date:input.date,size:journalInput.size,sha256:journalInput.sha256,linked:true,...(Number.isSafeInteger(input.declaredCents)?{declaredCents:input.declaredCents}:{}),uploadedAt:now().toISOString(),uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
         patch={documents:[...(before.documents||[]),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{})};
+      } else if(input.action==='ACK_PAYMENT'){
+        const payment=row.finance.payments.find(payment=>payment.id===input.paymentId&&payment.confirmed&&payment.direction!=='REFUND'&&payment.proof?.linked);
+        if(!payment)throw Error('Select an actual payment notification.');
+        const acknowledgements=before.paymentHandoff?.acknowledgements||[];
+        if(acknowledgements.some(entry=>entry.paymentId===payment.id&&entry.sha256===payment.proof.sha256))throw Error('This payment notification was already acknowledged.');
+        patch={paymentHandoff:{...(before.paymentHandoff||{}),acknowledgements:[...acknowledgements,{paymentId:payment.id,sha256:payment.proof.sha256,by:staff.staffName,byStaffId:staff.staffId,at:now().toISOString()}]}};
       } else if(input.action==='CHASE'){
         if(typeof input.enabled!=='boolean'||input.enabled===row.chasePayment)throw Error('Payment chase has not changed.');
         patch={chasePayment:input.enabled};
@@ -90,7 +104,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         if(input.termDays===row.termDays)throw Error('Payment term has not changed.');
         patch={termDays:input.termDays};
       }
-      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
+      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
       return {record,expected:current?operationId(current):null,event,...(upload?{upload}:{})};
     },apply:async plan=>{

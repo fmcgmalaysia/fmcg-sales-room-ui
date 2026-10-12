@@ -1,4 +1,5 @@
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
+import { getStockExceptions, saveStockException } from 'backend/stockExceptions.web';
 import { getPurchaseOrders, savePurchaseOrder } from 'backend/purchaseOrders.web';
 import { retryPurchaseTaskCost } from 'backend/purchaseCostRetry.web';
 import { savePurchaseOperation, getSupplierProfile, getSupplierBrandOptions, saveSupplierProfile, getPurchaseSaveResult } from 'backend/purchaseOperations.web';
@@ -8,6 +9,12 @@ $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+      const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';
+      try{const result=message.type==='STOCK_READ_REQUEST'?await getStockExceptions(message.company):await saveStockException(message.company,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Stock request could not be confirmed.'});}return;
+    }
     if(['PURCHASE_ORDERS_REQUEST','PURCHASE_ORDER_SAVE_REQUEST'].includes(message.type)) {
       const maxSize=message.type==='PURCHASE_ORDER_SAVE_REQUEST'&&message.input?.action==='DOCUMENT'?4250000:200000;
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>maxSize)return;
@@ -65,5 +72,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261011-account-settlement-v20';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261012-master-workflow-v1';
 });

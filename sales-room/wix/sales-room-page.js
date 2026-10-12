@@ -1,3 +1,4 @@
+import { salesRoomShipment } from 'backend/onboarding.web';
 import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web';
 import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web';
@@ -70,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261010-nct-submit-purchase-cms-room6-v3';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261012-master-workflow-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -471,6 +472,10 @@ $w.onReady(function () {
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_CONFIRMED_ORDERS', ok: false, error: error?.message || 'Incoming orders could not be loaded.' }); }
       return;
     }
+    if(message.type==='SALES_ROOM_SHIPMENT_REQUEST'){
+      try{const result=await salesRoomShipment(message.customerId,message.company,message.action,message.requestId,message.input);salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:true,result});}
+      catch(error){salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:false,error:error?.message||'Shipment request could not be confirmed.'});}return;
+    }
     if (message.type === 'SALES_ROOM_ORDER_PROGRESS_REQUEST') {
       const customerId = String(message.customerId || '').trim();
       try {
@@ -534,8 +539,8 @@ $w.onReady(function () {
       return;
     }
     if (message.type === 'SALES_ROOM_SUBMIT_ORDER') {
-      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
-      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', orderId: message.orderId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : '', ok: false, error: error?.message || 'Order could not be submitted.' }); }
+      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : message.destination === 'GHR' ? 'SUBMIT_GHR' : '', ...(await submitSalesRoomOrder(message.orderId || '', message.destination || '')) }); }
+      catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_ACTION_RESULT', requestId: message.requestId || '', orderId: message.orderId || '', action: message.destination === 'NCT' ? 'SUBMIT_NCT' : message.destination === 'GHR' ? 'SUBMIT_GHR' : '', ok: false, error: error?.message || 'Order could not be submitted.' }); }
       return;
     }
     if (message.type === 'SALES_ROOM_CREATE_PROFORMA') {

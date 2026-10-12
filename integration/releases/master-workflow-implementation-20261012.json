@@ -1,0 +1,419 @@
+{
+  "status": "Deployed candidate; public read and negative validation passed; full transaction acceptance pending",
+  "approvedBy": "User authorized complete implementation, publishing and testing on 2026-10-12",
+  "recovery": {
+    "productionCandidate": "fe28971431803696a967981004906fab27a90bf6",
+    "protectedTag": "verified/send-order-addition-user-tests-20261009",
+    "scope": "Customer submission and addition only; not full Master acceptance",
+    "exactLiveCopies": "C:/FMCG-WIX-LOCAL/handoff/master-demand-protection-20261012"
+  },
+  "rules": {
+    "customerDemand": "Super Admin only; purchaser changes supplier plan, never demand",
+    "allocation": "Warehouse records physical accepted quantities; purchaser explicitly allocates matching products to customer tasks",
+    "payments": "MYR actual payments with proofs; track prepayments before final invoice",
+    "documents": "Purchase records invoice/DO/CN; finance verifies completeness after receiving",
+    "risk": "Persistent responsible department and downstream blockers; acknowledgement never resolves",
+    "history": "Separate customer fulfilment and supplier financial closure; partial shipments and multi-customer POs supported",
+    "invoice": "Sales selects quantities; Support records invoice number/date/amount; no finance shipment gate",
+    "exceptions": [
+      "Cancelled without sales invoice retains supplier liability",
+      "Surplus remains traceable inventory",
+      "Corrections require role authority and audit"
+    ]
+  },
+  "phases": [
+    {
+      "name": "Customer demand protection",
+      "commit": "82df98d",
+      "tests": 193,
+      "status": "committed and pushed; not deployed"
+    },
+    {
+      "name": "Explicit planner allocation and multi-customer PO",
+      "tests": 198,
+      "status": "committed and pushed; not deployed",
+      "commit": "6a0e760"
+    },
+    {
+      "name": "Shortage decisions, customer feedback and persistent department task signals",
+      "commits": [
+        "7651057",
+        "7f1f9e8",
+        "b91478d"
+      ],
+      "status": "committed and pushed; not deployed"
+    },
+    {
+      "name": "Supplier prepayment/refunds/credits and document reconciliation",
+      "commit": "e5a4fa8",
+      "status": "committed and pushed; not deployed"
+    },
+    {
+      "name": "Warehouse customer readiness",
+      "commit": "0e5548b",
+      "status": "committed and pushed; local browser fixture verified; not deployed"
+    },
+    {
+      "name": "Sales shipment selection, Support invoicing, customer debtor and warehouse dispatch",
+      "status": "Committed and pushed; Apps Script v3 deployed; Wix bridges and public workflow not tested",
+      "commit": "3a868f5"
+    },
+    {
+      "name": "Unified department UI, release and public acceptance",
+      "status": "pending"
+    },
+    {
+      "name": "Partial invoice and financial closure projections",
+      "status": "Local tests passed; not deployed",
+      "scope": "Customer history uses actual dispatch and supplier-source financial closure; shared POs wait for all source cartons to be invoiced; NCT/GHR quantity reads isolated; partially invoiced GP projected from immutable slices",
+      "remaining": "Legacy Orders CMS GP cache intentionally not overwritten for sliced invoices; invoice/CMS fields and correction workflows still need implementation"
+    },
+    {
+      "name": "GHR authenticated Master intake",
+      "status": "Local regression tests passed; not deployed",
+      "scope": "Preserves NCT IDs and mutation locks; GHR destination, own collections, complete receipt, retry and opposite-company rejection"
+    },
+    {
+      "name": "Post-receipt quarantine and split-shipment scenario",
+      "status": "Quarantine, Admin/Finance loss approval, supplier return/replacement/refund and claim variance local scenarios passed; web bridges and UI pending",
+      "scope": "Original demand 500, supplier receipt 480, dispatch 300, internal damage 5, wrong item 3, short expiry 2; only 170 usable for next dispatch. Customer-visible explanation excludes internal fault."
+    },
+    {
+      "name": "Sales split shipment intent",
+      "status": "Local core and browser fixture passed; not deployed",
+      "scope": "Sales plans 300+200 before receipt; immutable revisions retain original demand; no stock reservation, invoice or Debtor entry. Actual 300+170 fulfilment remains separate.",
+      "remaining": "Formal public validation, plan-to-actual batch association, stock resolution department UI and posted-invoice correction"
+    },
+    {
+      "name": "Multiple supplier sources per customer demand",
+      "status": "Local core scenarios passed in NCT and GHR; UI and deployment pending",
+      "scope": "Preserves one 200-carton demand, A180+B10 sources, A170 then B10 physical receipts, supplier-specific costs and idempotent add-source saves; chocolate/vanilla/drink customer totals remain 600 requested and 580 allocated."
+    },
+    {
+      "name": "purchase-source-quantity-ui",
+      "status": "local tests passed, public deployment pending",
+      "scope": "Separate demand/ordered and physical receipt columns; supplier-source dialog and distinct priced PO creation; existing shortage entry retained pending independent cases."
+    },
+    {
+      "name": "independent-quantity-cases",
+      "status": "local scenarios and browser fixture passed; not deployed",
+      "scope": "Separate unplaced and supplier receipt cases, persistent employee/time decisions, customer-safe feedback, independent bubbles and Finance final-check invalidation. Per-case CN/refund allocations still require implementation."
+    },
+    {
+      "name": "shortage-claim-evidence",
+      "status": "local scenarios, duplicate-proof tests and browser form passed; not deployed",
+      "scope": "Finance maps shortage to verified CN and received refund amounts; evidence cannot be reused across receipt and stock claims; final Checked requires the case mapping."
+    },
+    {
+      "name": "payment-handoff-signals",
+      "status": "local scenarios and syntax checks passed; not deployed",
+      "scope": "Account paper-receipt/review stage, requested amount, partial/full paid distinction, per-proof purchaser acknowledgement and supplier-invoice due-date queues. Acknowledgement does not clear financial risks."
+    },
+    {
+      "name": "purchase-progress-projection",
+      "status": "local scenarios passed; not deployed",
+      "scope": "Read-only stages derive from supplier documents, payment review, physical receipts, invoice portions and actual dispatch; child procurement sources archive only after their own dispatch and financial closure."
+    },
+    {
+      "name": "stock-exception-workspace",
+      "status": "local role tests, scenario checks and browser forms passed; not deployed",
+      "scope": "Shared compact stock workspace for Warehouse, Purchase, Admin and Account; quarantine, supplier resolution, return/replacement and separate Admin/Finance loss confirmation; persistent department risk and responsible owner."
+    }
+  ],
+  "release": {
+    "githubPages": true,
+    "wixPublished": true,
+    "publicVerified": false,
+    "deployedCommit": "41936c8ef3b1d95e3befa0e92f54e192a3bb9e57",
+    "pagesRun": "38222544671",
+    "pagesRunUrl": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/38222544671",
+    "htmlExactMatches": [
+      "index.html",
+      "buyer-room.html",
+      "purchase-live/index.html",
+      "account-room/index.html",
+      "warehouse-room/index.html",
+      "support-room/index.html"
+    ],
+    "wixSites": [
+      "Master",
+      "FMCGMALAYSIA"
+    ],
+    "wixReceipt": "Both editors confirmed Congratulations / This site is published and live online.",
+    "temporaryBranchRuleRemoved": true,
+    "remainingAllowedBranches": 7
+  },
+  "localTests": 282,
+  "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
+  "remaining": [
+    "Source Sales shipment selection / Support invoice public acceptance",
+    "Partial invoice / task history projections and portion GP",
+    "Warehouse dispatch and correction approval",
+    "GHR intake and shared read support",
+    "Final invoice replacement / corrections",
+    "Full publish and dedicated test order acceptance",
+    "Sales customer documents/receipts/Debtor public acceptance and financial correction workflow",
+    "Sales Split Shipment plan before allocation; stock quarantine UI, Admin/Finance write-off, supplier return/replacement/CN closure, invoiced shipment correction"
+  ],
+  "salesDocuments": {
+    "owner": "Sales",
+    "finance": "Debtor read-only",
+    "types": [
+      "SALES_INV",
+      "SALES_CN",
+      "DEBIT_NOTE",
+      "CUSTOMER_RECEIPT"
+    ],
+    "folders": {
+      "NCT": "1omU7-s3sntQoajBBvOKVXzwS40N5Lmm0",
+      "GHR": "1uPcfFNLpXFDS5vn18hA5pbIdWRzxSzQ_"
+    },
+    "appsScript": {
+      "projectId": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+      "deploymentId": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+      "savedCodeSha256": "fa6b9708b5fafbc12c4da2ccedacd100bbf4c7be11cdf7a74ce0f822e024163f",
+      "immutableVersion": 3,
+      "activeDeploymentVersion": 3,
+      "receipt": "Deployment successfully updated. Version 3 on Oct 12, 2026, 10:29 AM",
+      "publicUploadVerified": false
+    },
+    "status": "Local ledger scenarios passed; public upload and view not tested"
+  },
+  "wixDraft": {
+    "installedNewModules": [
+      "customerAccountLedger.js",
+      "customerCompletionProjection.js",
+      "customerDebtor.js",
+      "customerFulfilment.js",
+      "customerFulfilment.web.js",
+      "customerFulfilmentGateway.js",
+      "customerFulfilmentService.js",
+      "customerShipmentLedger.js",
+      "customerShipmentPlan.js",
+      "inventoryExceptions.js",
+      "partialInvoiceMargin.js",
+      "paymentHandoff.js",
+      "plannerAllocation.js",
+      "purchaseClaimEvidence.js",
+      "purchaseProgress.js",
+      "purchaseQuantityCases.js",
+      "purchaseShortage.js",
+      "purchaseSources.js",
+      "stockExceptionResolution.js",
+      "stockExceptions.web.js",
+      "stockExceptionState.js",
+      "stockExceptionWorkspace.js",
+      "supplierCredit.js",
+      "warehouseCustomerReadiness.js"
+    ],
+    "existingModulesSynchronized": true,
+    "published": true,
+    "note": "Exact captured code synchronized and both sites published. Historical phase notes above describe pre-release development milestones, not current deployment state.",
+    "exactPatchedReadbacks": [
+      {
+        "file": "account-department-page.js",
+        "sha256": "5da5044c859c7b88a6f4d79268cc9317ba8d6bff5729e6ec5a6f1fd33bfe726d"
+      },
+      {
+        "file": "accountPurchase.web.js",
+        "sha256": "1022d8ac9c8f3a78d4a8de5926edb3b58f30d82859584fc8bb7fda18cdd48f8d"
+      },
+      {
+        "file": "accountSettlement.js",
+        "sha256": "44060eaea9e5783384d2716ba73aadacbca9fc1a198698ad5846e1923ca6dfd9"
+      },
+      {
+        "file": "http-functions.js",
+        "sha256": "971f813f74b9c584e38e403b1116992d0670a52e1e6aa47e44bda7412e9eadbf"
+      },
+      {
+        "file": "nctIntake.js",
+        "sha256": "d345eda322f964140a73fdff96d9ac1faa89e0cfb86b6d5b3a3351367a357c17"
+      },
+      {
+        "file": "plannerAllocation.js",
+        "sha256": "31e607af08cc35bff42c7eaec2f4124ccb6429bfd67f31fd31fd0b049e49abb8"
+      },
+      {
+        "file": "purchase-room-page.js",
+        "sha256": "14385245391784f0287adca4eaf0d10d10d30ddf009614fb91624b183ba1f555"
+      },
+      {
+        "file": "purchaseDocumentPolicy.js",
+        "sha256": "d562459cd955f78258f78973c665072142ce20ba6cb633643408439cb3d1c368"
+      },
+      {
+        "file": "purchaseMarginRefresh.js",
+        "sha256": "5fb63493d29c03170e9853f7dd9b223bc8861e2ebe6ba930a92997410829ee92"
+      },
+      {
+        "file": "purchaseOperations.js",
+        "sha256": "06ee9df16d881a7de6348a387a76f5568a15461928daa392749ca6cc9f215e1e"
+      },
+      {
+        "file": "purchaseOperations.web.js",
+        "sha256": "247de4e3ef533131f15dab65144f8b010a0568cadad073a22be16244d05a3509"
+      },
+      {
+        "file": "purchaseOrders.web.js",
+        "sha256": "c98b21a3cb7d98a92adfe5c16fdd135c26df5baea52abe7a912d923f2fe0deae"
+      },
+      {
+        "file": "purchaseOrderWorkflow.js",
+        "sha256": "a94e5026201dbb9c2d9d35d08b2693174d9faf3a0ff18536a3660062158b8387"
+      },
+      {
+        "file": "purchaseProjection.js",
+        "sha256": "bd2fc59e0d1f38425bf4eea40164c0b1ab3ffbc4d5380e07654827b01b14b30d"
+      },
+      {
+        "file": "purchaseQuantityProjection.js",
+        "sha256": "279d30240997386fb7e7e08c5e6318f936038eaa60fb2ee97c805902f7b0298a"
+      },
+      {
+        "file": "purchaseQuantityRead.js",
+        "sha256": "e48b7a84c23960aaa0187a6fe6d73083c62d811096eca19e36e6e4409624120c"
+      },
+      {
+        "file": "purchaseWorkspace.web.js",
+        "sha256": "005fb27afcda86ad2d965dbdc7b8b05b0dedd95f5fdd8505d8c6bab224f6ed8e"
+      },
+      {
+        "file": "warehouse-department-page.js",
+        "sha256": "3ba43bbe678960370c9689d7cb7e7eaac63f4198411b5003d25b25f7b5763c96"
+      },
+      {
+        "file": "warehouseReceiving.js",
+        "sha256": "cefc7775f85c94e51d36a4dc6b2f30055db63909224c712bd0dfea15729f0bd9"
+      },
+      {
+        "file": "warehouseReceiving.web.js",
+        "sha256": "5bab31deb23030e9e55b8d2b74a7bb092f7ab0ec74515e006c757b9aecec7447"
+      }
+    ],
+    "pageBridgesSynchronized": [
+      "Purchase Home",
+      "Account Department",
+      "Warehouse Department",
+      "Support Department",
+      "Sales Room",
+      "Buyer Room"
+    ],
+    "cmsFields": [
+      "NCTTasks.procurementSource:Boolean",
+      "NCTTasks.customerDemandTaskId:Text",
+      "NCTTasks1.procurementSource:Boolean",
+      "NCTTasks1.customerDemandTaskId:Text",
+      "NCTOrders.salesInvoiceSummary:Array",
+      "NCTOrders1.salesInvoiceSummary:Array"
+    ],
+    "latestReadbackHashes": [
+      {
+        "file": "installed-source-masterFulfilmentClient.js",
+        "sha256": "83a3c07082da3f082796812f74a672cb5fc4b5cf8f548578da443450a7a9ade1"
+      },
+      {
+        "file": "patched-purchaseMarginRefresh.js",
+        "sha256": "80195e0ab9e9523f297da7282bcb4e3e83520433989a34a1dd699f02df4d354d"
+      },
+      {
+        "file": "patched-source-masterQuantityClient.js",
+        "sha256": "55ce71337641631265446158c894ec53f63ff22936a4d37ba8cdd217cb920cfd"
+      },
+      {
+        "file": "patched-source-masterQuantityProjection.js",
+        "sha256": "36e0eb7dc430eac42732f03c0fdac33b7a7c11aaccfd859843e5453314334128"
+      },
+      {
+        "file": "patched-source-nctSalesIntake.js",
+        "sha256": "d1f32d1cc45770b1bea01f10eae367e0dafc9b51122c246da462b4d274a7cd91"
+      },
+      {
+        "file": "patched-source-nctSubmissionDelivery.js",
+        "sha256": "dc9802440e50e43247099ed1301cdf883e3f374e8c9afb272d73331440950b4b"
+      },
+      {
+        "file": "patched-source-nctSubmissionPayload.js",
+        "sha256": "3ff0026cdf6561a9d1875e71f288df330ae7349ef3b6f24125278b80ec77258c"
+      },
+      {
+        "file": "patched-source-onboarding.web.js",
+        "sha256": "7e73d7020909d25606d425e2c3e36ee3d7d8b11a2800dce5756b66db137332ea"
+      },
+      {
+        "file": "patched-source-sales-room-page.js",
+        "sha256": "ab3fc28f067b7130d2c1840a1d955419e742d026f33528a72e6ffa6596c1a03d"
+      },
+      {
+        "file": "release-account-department-page.js",
+        "sha256": "ce6ef0b50ae0f5fbdcd751a2e5fd54df85ce9e3c5e73855d8088d24199dc218a"
+      },
+      {
+        "file": "release-buyer-room-page.js",
+        "sha256": "1f9c980c8059e5ad7ef11fbeb0055663889af8d3c661bb7fb934fc145d162c94"
+      },
+      {
+        "file": "release-page-versions-draft.png",
+        "sha256": "9bd62170f21176004e08a4f4d92a5ecd2b24a058d36332f777597f2c37aaab11"
+      },
+      {
+        "file": "release-purchase-room-page.js",
+        "sha256": "26471a51b06ed0b093fd465523c91d857c4bca7386fad13de83df7789f6b8709"
+      },
+      {
+        "file": "release-sales-room-page.js",
+        "sha256": "8f1292e2bf991ee920be4243745682895949833fb9d57e1b54f8b2641495127d"
+      },
+      {
+        "file": "release-support-department-page.js",
+        "sha256": "a2990427a7d073a4782ed326a503ed72c624a8c37a01443ca8c2a512e68dc36a"
+      },
+      {
+        "file": "release-warehouse-department-page.js",
+        "sha256": "119e0c261b8303146ce58ced9b4d201afc5e6e2ae36b89acaf2d594e0a908454"
+      }
+    ]
+  },
+  "candidateBuild": "2026-10-12-master-workflow-v1",
+  "releaseBranch": "release/master-workflow-20261012",
+  "regressionAudit": {
+    "baseline": "fe28971431803696a967981004906fab27a90bf6",
+    "baselineSuite": {
+      "passed": 78,
+      "tests": 86,
+      "failed": 8
+    },
+    "candidateAdditionalFailures": 5,
+    "classification": "Three hardcoded NCT mock receipts, one missing UI helper in the test harness, one outdated formula assertion. All five resolved by fixture/behavior-test changes; no production regression established.",
+    "historicalFailures": "Eight failures reproduce unchanged on the prior baseline and are not claimed as passed."
+  },
+  "scenario2FollowUp": {
+    "status": "Pending phase two; must not be closed by phase-one release",
+    "record": "handoff/scenario2-transaction-closeout-20261012/RECORD.txt",
+    "acceptance": "handoff/scenario2-transaction-closeout-20261012/acceptance.json",
+    "requiredChecks": 13,
+    "completedChecks": 0
+  },
+  "publicAcceptance": {
+    "date": "2026-10-12",
+    "passed": [
+      "Purchase fresh-tab dashboard and Order Qty / Rcv Qty columns",
+      "Sales active progress retains 340 CTN and MYR 105296.00",
+      "Warehouse readiness retains 340 requested and zero allocated",
+      "Account actual PO read and Checked guards",
+      "Buyer signed-in product data",
+      "Support NCT customer data and GHR empty-company isolation",
+      "Empty Sales shipment request rejected before mutation"
+    ],
+    "resolved": "Support live log: Fulfilment access is not authorized. User explicitly approved adding SUPPORT department only to LAW / STF-ADMI01; saved and successful read verified. TOP MANAGEMENT role retained.",
+    "preserved": "Original Purchase tab has an unresolved session draft. It was neither saved nor cleared. A fresh tab reads the current records correctly.",
+    "pending": [
+      "Dedicated positive supplier payment-proof upload and saved payment",
+      "Dedicated partial receipt, shortage resolution and allocation",
+      "Dedicated Support invoice and Warehouse dispatch mutation",
+      "Full GHR intake and mutation acceptance",
+      "User real-world confirmation"
+    ],
+    "evidenceDirectory": "C:/FMCG-WIX-LOCAL/handoff/master-demand-protection-20261012"
+  }
+}

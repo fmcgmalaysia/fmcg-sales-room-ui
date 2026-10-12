@@ -1,4 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { allocatedTo } from 'backend/plannerAllocation.js';
+import { stockPosition } from 'backend/inventoryExceptions.js';
 
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -34,12 +36,14 @@ export function readWarehouseReceipts(poId,activity){
 }
 
 export function readWarehouseTask(task,activity){
+  const allocation=allocatedTo(task.title,activity);
   const ids=[...new Set(activity.filter(event=>event.action===RECEIPT_ACTION&&event.result==='SAVED'&&event.details?.lines?.some(line=>line.taskId===task.title)).map(event=>event.description))];
-  if(!ids.length)return null;
+  if(!ids.length)return allocation.sources.length?{hasPhysicalReceipt:false,accepted:0,rejected:0,issue:false,customerReceived:allocation.quantity,extraReceived:0,at:allocation.at}:null;
   if(ids.length!==1)throw Error('Warehouse task belongs to multiple purchase orders.');
   const receipt=readWarehouseReceipts(ids[0],activity),line=receipt.lines.find(line=>line.taskId===task.title);
   if(!line||line.orderId!==task.description||line.sourceLineId!==task.imageAltText)throw Error('Warehouse task identity mismatch.');
-  return {...line,customerReceived:Math.min(line.accepted,task.purchaseQtyInCtn),extraReceived:Math.max(0,line.accepted-task.purchaseQtyInCtn)};
+  const stock=stockPosition(task.title,line.accepted,activity);
+  return {...line,stock,hasPhysicalReceipt:true,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,stock.usableReceived-task.purchaseQtyInCtn)};
 }
 
 export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
@@ -49,19 +53,19 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     const lines=po.taskIds.map(id=>{
       const matches=tasks.filter(task=>task.id===id);if(matches.length!==1)throw Error('Warehouse purchase task is missing.');
       const task=matches[0],saved=receipt.lines.find(line=>line.taskId===id),planned=task.procurement?.totalCtn;
-      if(!saved&&Number.isFinite(task.inc)&&task.inc>0)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
-      if(!quantity(planned)||planned===0||!quantity(task.ord)||task.ord>planned)throw Error('Confirm supplier purchase quantities before receiving.');
+      if(!saved&&!task.warehouse&&Number.isFinite(task.inc)&&task.inc>0)throw Error('Existing warehouse quantity needs its receipt history before another delivery can be entered.');
+      if(!quantity(planned)||planned===0||!quantity(task.ord))throw Error('Confirm supplier purchase quantities before receiving.');
       if(saved&&(saved.orderId!==task.orderId||saved.sourceLineId!==task.sourceLineId))throw Error('Warehouse purchase identity changed.');
       const accepted=saved?.accepted||0,rejected=saved?.rejected||0;
       if(accepted>planned)throw Error('Received quantity exceeds the supplier purchase plan.');
-      return {taskId:id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,planned,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:Math.min(accepted,task.ord),extraReceived:Math.max(0,accepted-task.ord),expectedExtra:planned-task.ord,issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
+      return {taskId:id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,planned,shortage:task.shortage||null,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:allocatedTo(id,activity).quantity,extraReceived:task.procurementSource?0:Math.max(0,accepted-task.ord),expectedExtra:task.procurementSource?0:Math.max(0,planned-task.ord),issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
     });
     if(receipt.lines.some(line=>!po.taskIds.includes(line.taskId)))throw Error('Received task no longer belongs to this purchase order.');
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;
-    return {id:po.id,company,number:po.number,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,createdAt:po.createdAt,createdBy:po.createdBy,
+    return {id:po.id,company,number:po.number,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.version,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,documents:po.documents};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,documents:po.documents,stockCases:po.stockCases||[]};
   });
 }
 
@@ -83,7 +87,7 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
         if(line.remaining>entry.accepted&&kind==='DELIVERY')throw Error('Select partial delivery or a shortage reason.');
         if(line.issue&&!issue&&entry.resolveIssue!==true)throw Error('Confirm that the previous receiving issue is resolved.');
         if(line.rejected+entry.rejected>9999)throw Error('Rejected carton total is too large.');
-        return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:line.accepted+entry.accepted,rejected:line.rejected+entry.rejected,kind,issue,reason};
+        return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,planned:line.planned,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:line.accepted+entry.accepted,rejected:line.rejected+entry.rejected,kind,issue,reason};
       });
       const id=operationId(company,requestId,staff.memberId,'WAREHOUSE_RECEIPT'),at=now().toISOString();
       return {expectedVersion:po.version,event:{_id:id,title:id,description:po.id,image:po.customerId,action:RECEIPT_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Warehouse delivery received',details:{company,beforeRevision:po.revision,lines:changes}}};

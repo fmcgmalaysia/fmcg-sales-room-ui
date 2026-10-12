@@ -2,6 +2,12 @@
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
+import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
+import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback } from 'backend/purchaseQuantityCases.js';
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { readCreditTransfers } from 'backend/supplierCredit.js';
+import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -30,28 +36,30 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     if (accepted.has(orderId)) throw Error('Duplicate Master receipt requires review.');
     accepted.set(orderId, { submissionId, ids: new Set(ids), receivedAt: stamp(event.activityTime) });
   }
-  const rows = [], seen = new Set(), customers = new Map();
+  const rows = [], seen = new Set(), customers = new Map(), allocations=readAllocations(activity);
   for (const task of tasks) {
     const receipt = accepted.get(text(task.description));
     if (!receipt) continue;
     const specialEvent=activity.filter(event=>event.action==='SPECIAL_PURCHASE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
-    if(!receipt.ids.has(text(task.title)) && specialEvent.length!==1) continue;
+    const sourceEvent=activity.filter(event=>event.action==='PURCHASE_SOURCE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
+    if(!receipt.ids.has(text(task.title)) && specialEvent.length!==1 && sourceEvent.length!==1) continue;
     if (seen.has(task.title)) throw Error('Duplicate task identity requires review.');
     const matched = orders.filter(row => row.title === task.description && row.sourceLineId === task.imageAltText && row.submissionId === receipt.submissionId);
     if (matched.length !== 1) throw Error('Accepted task has no unique order line.');
     const order = matched[0];
-    if(!receipt.ids.has(text(task.title)) && !acceptedSpecialTask(task,order,receipt,specialEvent[0],tasks.find(row=>row.title===specialEvent[0].details?.parentTaskId))) continue;
+    if(!receipt.ids.has(text(task.title)) && !acceptedSpecialTask(task,order,receipt,specialEvent[0],tasks.find(row=>row.title===specialEvent[0]?.details?.parentTaskId)) && !acceptedPurchaseSource(task,order,receipt,sourceEvent[0],tasks.find(row=>row.title===task.customerDemandTaskId))) continue;
     if (!text(order.customerId) || !text(order.customerCompanyName) || !text(order.description) || !text(order.image)) throw Error('Accepted product identity is incomplete.');
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
     const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
     rows.push({
+      procurementSource:task.procurementSource===true,customerDemandTaskId:task.procurementSource?task.customerDemandTaskId:null,
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
-      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:null,allocationEnabled:false},
-      warehouse:warehouse?{accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,updatedAt:warehouse.at}:null,
+      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
+      warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,stock:warehouse.stock,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),
@@ -64,7 +72,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
       estimatedShipmentDate: stamp(order.estimatedShipmentDate)?.slice(0, 10) || null,
       history: activity.filter(event => event.description === task.description &&
-        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED'].includes(event.action) &&
+        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED','PURCHASE_SOURCE_ADDED'].includes(event.action) &&
         (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({
           id: text(event.title), action: text(event.action), time: stamp(event.activityTime),
           requestId: text(event.details?.requestId), retryOutcome: event.action === 'COST_RETRY_RESULT' ? {
@@ -76,12 +84,26 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
     });
   }
+  const invoicedShipments=readCustomerShipments(activity).filter(shipment=>shipment.company===company&&['INVOICED','DISPATCHED'].includes(shipment.status));
+  for(const row of rows.filter(row=>row.procurementSource)){row.requested=0;row.procurement.expectedExtra=0;}
+  attachPurchaseSourceTotals(rows);
+  for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
+  for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
+  const quantityCases=projectQuantityCases({company,tasks:rows},activity);
+  for(const row of rows){
+    row.quantityCases=quantityCases.filter(item=>item.taskId===row.id);
+    const related=quantityCases.filter(item=>item.customerDemandTaskId===(row.customerDemandTaskId||row.id));
+    if(related.some(item=>item.revision)){
+      const feedback=customerCaseFeedback(related),receipt=row.quantityCases.find(item=>item.kind==='RECEIPT');
+      row.shortage={...feedback,supplierDecision:receipt?.decision?.supplierDecision||'PENDING',financeRequired:Boolean(receipt),scopedCases:true};
+    }
+  }
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   return {
-    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId }, fetchedAt: new Date().toISOString(),
-    customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
+    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
+    customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
     paymentRequestsConnected: false

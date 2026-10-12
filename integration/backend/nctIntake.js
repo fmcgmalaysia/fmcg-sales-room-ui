@@ -2,7 +2,10 @@
 import { createHash } from 'crypto';
 
 const SOURCE_SITE = '5292b63a-30e5-4c0e-8762-a1b127bbc651';
-const COLLECTIONS = Object.freeze({ orders: 'NCTOrders', tasks: 'NCTTasks', activity: 'NCTActivity' });
+const COMPANY_COLLECTIONS = Object.freeze({
+  NCT: { orders: 'NCTOrders', tasks: 'NCTTasks', activity: 'NCTActivity' },
+  GHR: { orders: 'NCTOrders1', tasks: 'NCTTasks1', activity: 'NCTActivity1' }
+});
 const clone = value => JSON.parse(JSON.stringify(value));
 const stableJson = value => JSON.stringify(value, (_key, item) => item && typeof item === 'object' &&
   !Array.isArray(item) ? Object.keys(item).sort().reduce((out, key) => ({ ...out, [key]: item[key] }), {}) : item);
@@ -17,7 +20,7 @@ function date(value, label) {
   return new Date(value);
 }
 function validate(body) {
-  if (!body || body.sourceSiteId !== SOURCE_SITE || body.destination !== 'NCT') throw new Error('Invalid source or receiving company');
+  if (!body || body.sourceSiteId !== SOURCE_SITE || !['NCT', 'GHR'].includes(body.destination)) throw new Error('Invalid source or receiving company');
   ['orderId', 'customerId', 'customerCompanyName', 'submissionId', 'submittedByStaffId', 'submittedByStaffName'].forEach(key => requireText(body[key], key));
   if (!/^[A-Z]{3}$/.test(body.transactionCurrency || '') || !Number.isFinite(body.fxRate) || body.fxRate <= 0) throw new Error('Current Admin FX and transaction currency are required');
   date(body.submittedAt, 'Sales submission time');
@@ -53,8 +56,13 @@ export function createNctIntake({ store, captureCosts, now = () => new Date() })
   return async function receiveNctOrder(input) {
     validate(input);
     const body = clone(input), payloadHash = digest(body);
+    const COLLECTIONS = COMPANY_COLLECTIONS[body.destination];
     const base = [SOURCE_SITE, body.orderId];
     const prepareId = recordId(...base, 'PREPARED');
+    const otherCompany = body.destination === 'NCT' ? 'GHR' : 'NCT';
+    if (await store.read(COMPANY_COLLECTIONS[otherCompany].activity, prepareId)) {
+      throw new Error('This order already belongs to another receiving company.');
+    }
     let prepared = await store.read(COLLECTIONS.activity, prepareId);
     if (prepared && prepared.details?.payloadHash !== payloadHash) throw new Error('This order already has a different submission');
     if (!prepared) {
@@ -140,7 +148,7 @@ export function createNctIntake({ store, captureCosts, now = () => new Date() })
       message: 'All order lines, tasks and initial cost history persisted', result: 'ACCEPTED',
       details: { payloadHash, submissionId: body.submissionId, taskIds }
     }, row => row.details?.payloadHash === payloadHash);
-    return { ok: true, destination: 'NCT', orderId: body.orderId, submissionId: body.submissionId,
+    return { ok: true, destination: body.destination, orderId: body.orderId, submissionId: body.submissionId,
       receiptId: acceptedId, masterReceivedAt: receivedAt, taskIds,
       costErrorTaskCount: body.lines.filter(line => costs[line.unitBarcode].costStatus === 'ERROR').length };
   };

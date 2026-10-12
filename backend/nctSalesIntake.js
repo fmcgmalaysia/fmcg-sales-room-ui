@@ -21,7 +21,7 @@ async function ownLock(id) {
   return { record, value: data(record) };
 }
 
-export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, readPayloadRows, putPayload, lockedOrderEntry, initialError }) {
+export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, readPayloadRows, putPayload, lockedOrderEntry, initialError, destination = 'NCT' }) {
   const id = text(orderId);
   if (!id || !text(staff?.staffId) || !text(staff.staffName)) throw new Error('Verified order and staff are required.');
   let firstRead = true;
@@ -63,11 +63,11 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       await wixData.remove(AUDIT, current.record._id, { suppressAuth: true });
     },
     async writeAcceptedAuditOnce(body, receipt) {
-      const eventId = 'NCT-SUBMITTED-' + createHash('sha256').update(body.orderId).digest('hex').slice(0, 32);
+      const eventId = body.destination + '-SUBMITTED-' + createHash('sha256').update(body.orderId).digest('hex').slice(0, 32);
       const proposed = { auditId: eventId, action: 'ORDER_SUBMITTED', orderId: body.orderId,
         customerId: body.customerId, at: body.submittedAt, actorStaffId: body.submittedByStaffId,
         actorName: body.submittedByStaffName, actorEmail: body.submittedByEmail,
-        detail: { destination: 'NCT', submissionId: body.submissionId, masterReceipt: receipt,
+        detail: { destination: body.destination, submissionId: body.submissionId, masterReceipt: receipt,
           submittedFxSnapshot: body.fxRate, transactionCurrency: body.transactionCurrency } };
       let existing = await one(AUDIT, '_id', eventId);
       if (!existing) {
@@ -87,8 +87,8 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         return;
       }
       if (current.data.destination || current.data.submittedAt) throw new Error('Order was transferred without this receipt.');
-      await putPayload(ORDERS, current.record.title, { ...current.data, status: 'SUBMITTED TO NCT',
-        destination: 'NCT', submittedAt: body.submittedAt, submittedBy: body.submittedByEmail,
+      await putPayload(ORDERS, current.record.title, { ...current.data, status: 'SUBMITTED TO ' + body.destination,
+        destination: body.destination, submittedAt: body.submittedAt, submittedBy: body.submittedByEmail,
         submittedByStaffId: body.submittedByStaffId, submittedByStaffName: body.submittedByStaffName,
         nctSubmissionBody: body, masterReceipt: receipt });
     }
@@ -121,7 +121,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
     const current = await ownLock(id), order = await store.readOrder(id);
     if (!(current.value?.source === 'NCT MASTER INTAKE' && current.value.preparedBody) && !order?.data.masterReceipt) throw initialError;
   }
-  try { return await submit({ orderId: id, staff, authorizeCustomer }); }
+  try { return await submit({ orderId: id, staff, authorizeCustomer, destination }); }
   catch (error) {
     if (lockedOrderEntry) {
       try { error.keepOrderMutationLock = Boolean((await ownLock(id)).value?.preparedBody); }

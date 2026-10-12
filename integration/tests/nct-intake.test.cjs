@@ -36,6 +36,19 @@ async function harness() {
 }
 function collection(h, name) { return [...h.rows].filter(([key]) => key.startsWith(name + '/')).map(([, row]) => row); }
 
+test('GHR intake writes only its company collections and survives partial-write retry', async () => {
+  const h = await harness(), input = { ...body(), destination: 'GHR', submissionId: 'GHR-ORDER-TEST' };
+  h.fail('NCTTasks1'); await assert.rejects(h.receive(input), /Database write failed/);
+  assert.equal(collection(h, 'NCTActivity1').some(row => row.action === 'ORDER_RECEIVED'), false);
+  assert.equal(collection(h, 'NCTOrders').length, 0);
+  h.fail(''); const receipt = await h.receive(input); assert.equal(receipt.destination, 'GHR');
+  assert.deepEqual(await h.receive(input), receipt); assert.equal(h.count(), 1);
+  assert.equal(collection(h, 'NCTOrders1').length, 1); assert.equal(collection(h, 'NCTTasks1').length, 1);
+  await assert.rejects(h.receive(body()), /receiving company/);
+  await h.receive({ ...body(), orderId: 'OTHER-NCT-ORDER' }); assert.equal(collection(h, 'NCTOrders').length, 1);
+  assert.equal(collection(h, 'NCTOrders1')[0].submissionId, 'GHR-ORDER-TEST');
+});
+
 test('one source line creates one order row, one task and complete immutable receipt history', async () => {
   const h = await harness(); const receipt = await h.receive(body());
   assert.equal(receipt.ok, true); assert.equal(receipt.taskIds.length, 1);

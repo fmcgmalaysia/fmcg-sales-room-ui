@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
-function harness(storage,feedbackRows=[]) {
+function harness(storage,feedbackRows=[],signals=null) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
@@ -12,7 +12,7 @@ function harness(storage,feedbackRows=[]) {
       showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
     return nodes.get(id);
   }
-  const parent = { postMessage:message => messages.push(message) }, window = { parent, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
+  const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
   vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
@@ -31,12 +31,55 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+
+test('supplier sources keep ordered and physical received quantities separate and add a priced PO once',()=>{
+ const h=harness(),w=workspace();w.sourcesVersion='SV';w.suppliers=[{id:'A',name:'Supplier A'},{id:'B',name:'Supplier B'}];
+ Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
+ h.reply(w);h.click({customer:'C'});let html=h.node('#app').innerHTML;
+ assert.match(html,/200 \| 190/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
+ h.click({sources:'SOURCE-B'});assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-A/);assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-B/);
+ for(const [id,value] of Object.entries({sourceSupplier:'B',sourcePo:'NCT-PO-C',sourceQty:'10',sourceCost:'120',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
+ h.click({controlId:'saveAdditionalSource'});const request=h.messages.at(-1);
+ assert.equal(request.operation,'ADD_SOURCE');assert.equal(request.input.parentTaskId,'TASK');assert.equal(request.input.version,'SV');assert.equal(request.input.quantity,10);assert.equal(request.input.prices.lpCtn,120);assert.equal(request.input.prices.lpPc,7.5);assert.equal(request.input.prices.disc1,0);assert.equal(request.input.prices.disc2,0);assert.equal(request.input.prices.disc3,0);
+ const count=h.messages.length;h.click({controlId:'saveAdditionalSource'});assert.equal(h.messages.length,count,'duplicate click while saving cannot create another source');
+});
+
+test('additional source plan uses remaining customer capacity instead of its zero demand field',()=>{
+ const h=harness(),w=workspace();w.staff.canEditCustomerDemand=true;Object.assign(w.tasks[0],{ord:200,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180,revision:'PA'}});
+ w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'NCT-PO-B',procurement:{totalCtn:10,revision:'PB'},editVersion:'VB'});
+ h.reply(w);h.click({qty:'B'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="saveTaskQty"/);h.click({controlId:'editSupplierPlan'});
+ assert.match(h.node('#dialogContent').innerHTML,/可供客户数量<\/span><b>20 CTN/);
+ h.node('#planTotal').value='15';h.node('#planReason').value='Five more now available';h.node('#planExtraKind').value='';h.node('#planConfirmExtra').checked=false;h.node('#planSupplierConfirmed').checked=true;
+ h.click({controlId:'saveSupplierPlan'});const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,15);assert.equal(request.input.confirmExtra,false);
+});
+
+test('separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk',()=>{
+ const h=harness(),w=workspace();w.quantityCasesVersion='CASES';Object.assign(w.tasks[0],{po:'PO-A',ord:200,inc:180,procurement:{totalCtn:180},quantityCases:[{id:'UNPLACED',kind:'UNPLACED',quantity:10,status:'RESOLVED',decision:{customerDecision:'STOP',by:'PLANNER',at:'2026-10-12T03:00:00Z'}},{id:'RECEIPT',kind:'RECEIPT',quantity:10,status:'OPEN',financeRequired:true,owner:'PURCHASE'}]});
+ h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;assert.match(html,/quantity-case resolved[^>]*data-quantity-case="UNPLACED"/);assert.match(html,/quantity-case financial[^>]*data-quantity-case="RECEIPT"/);
+ h.click({quantityCase:'RECEIPT'});assert.match(h.node('#dialogContent').innerHTML,/Receiving Issue/);assert.match(h.node('#dialogContent').innerHTML,/内部原因不会传给客户/);
+ h.node('#caseCustomer').value='STOP';h.node('#caseSupplier').value='REFUND';h.node('#caseDate').value='';h.node('#caseReason').value='Supplier short delivered';h.node('#caseMessage').value='Available quantity is confirmed';h.click({controlId:'saveQuantityCase'});
+ const request=h.messages.at(-1);assert.equal(request.operation,'QUANTITY_CASE');assert.equal(request.input.id,'RECEIPT');assert.equal(request.input.version,'CASES');assert.equal(request.input.customerDecision,'STOP');assert.equal(request.input.supplierDecision,'REFUND');assert.equal(request.input.enabled,undefined,'Purchase cannot send Finance clearance');
+});
+test('planner allocation editor sends the selected receipt and explicit customer quantities with a reason',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
+ h.reply(w);h.click({view:'stock'});assert.match(h.node('#app').innerHTML,/data-allocate="TASK"/);h.click({allocate:'TASK'});
+ assert.match(h.node('#dialogContent').innerHTML,/ACTUAL CUSTOMER/);h.node('#allocateQty0').value='80';h.node('#allocationReason').value='Hold ten cartons';h.click({controlId:'saveAllocation'});
+ const request=h.messages.at(-1);assert.equal(request.operation,'ALLOCATE');assert.equal(request.input.version,'AV');assert.equal(request.input.targets[0].quantity,80);assert.equal(request.input.sourceTaskId,'TASK');assert.equal(request.input.reason,'Hold ten cartons');
+});
 test('Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'payments'});const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
  const row={id:'PO',number:'NCT-PO-001',createdAt:'2026-10-11T01:00:00Z',createdBy:'LAW',supplierName:'SUPPLIER FULL NAME',supplierShortName:'SUP',customerName:'BUYER',amount:1200,status:'Paid W/T Inv',finance:{payableCents:100000,paidCents:100000,balanceCents:0,payments:[{id:'P',confirmed:true,reference:'BANK001',cents:100000,at:'2026-10-11T02:00:00Z',by:'FINANCE',proof:{fileId:'proof_123456789'}}]}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
  const html=h.node('#app').innerHTML;assert.match(html,/NCT-PO-001/);assert.match(html,/1,000.00/);assert.match(html,/Paid W\/T Inv/);assert.doesNotMatch(html,/付款申请流程尚未连接/);
  h.click({paymentProof:'PO'});const proof=h.node('#dialogContent').innerHTML;assert.match(proof,/BANK001/);assert.match(proof,/FINANCE/);assert.match(proof,/drive.google.com\/uc\?export=download/);assert.match(proof,/proof_123456789/);assert.doesNotMatch(proof,/type="file"|Record Payment|data-settlement/);
+});
+
+test('payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'payments'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'PO-1',supplierName:'SUPPLIER',finance:{paidCents:30000,payments:[{id:'P1',confirmed:true,cents:30000,reference:'BANK1',proof:{fileId:'F1'}}]},paymentHandoff:{status:'PARTLY_PAID',unreadCount:1,notices:[{paymentId:'P1',acknowledgement:null}]}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partly paid \/ 部分付款/);assert.match(h.node('#app').innerHTML,/未确认/);
+ h.click({paymentProof:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-payment-ack="P1"/);h.click({paymentAck:'P1',paymentPo:'PO'});
+ const saved=h.messages.at(-1);assert.equal(saved.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(saved.input.action,'ACK_PAYMENT');assert.equal(saved.input.paymentId,'P1');assert.equal(saved.input.version,'PV');assert.equal(saved.input.enabled,undefined);assert.equal(saved.input.cents,undefined);
 });
 
 test('purchase orders render persisted documents and readable history, with upload input instead of fixture controls',async()=>{
@@ -145,9 +188,9 @@ test('unchanged supplier quantities and unconfirmed P.O. changes give local feed
  h.node('#planSupplierConfirmed').checked=true;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
 });
 
-test('shared expected-stock view includes all company customers but never enables allocation',()=>{
+test('shared expected-stock view includes all company customers and disables allocation before receipt',()=>{
  const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
- const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" disabled>Allocate/);assert.doesNotMatch(html,/data-allocate/);
+ const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" data-allocate="[^"]+" disabled>Allocate/);assert.equal([...html.matchAll(/<button[^>]*data-allocate[^>]*>/g)].every(match=>match[0].includes("disabled")),true);
 });
 test('live page starts empty, requests real Master data and never seeds demo business records',()=>{
   const h=harness();assert.equal(h.messages.length,1);assert.equal(h.messages[0].type,'PURCHASE_WORKSPACE_REQUEST');
@@ -179,12 +222,12 @@ test('CMS Dashboard retains the approved directory structure, summary icons and 
 
 test('CMS Purchase Room restores v13 track, tools and approved columns plus the final task editor without changing task data',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
-  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','qty-pair'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
-  assert.equal(labels.length,17);
-  assert.match(html,/width:22.5%/);
+  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Order Qty','Rcv Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
+  assert.equal(labels.length,18);
+  assert.match(html,/width:19%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -232,18 +275,19 @@ test('supplier dialog retains approved company/short-name pair, tabs and all six
 test('row editor keeps barcode first, omits received quantity and gates changes on a saved supplier',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});h.click({taskEdit:'TASK'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['Catch Cost','Customer Qty','Cost Calculator','Reason *','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
+  for(const text of ['Catch Cost','Purchase Qty','Cost Calculator','客户需求由 Admin 管理','ACTUAL PRODUCT','250 CTN'])assert.ok(html.includes(text),text);
   assert.ok(html.indexOf('00123')<html.indexOf('ACTUAL PRODUCT'));
   assert.ok(html.indexOf('ACTUAL PRODUCT')<html.indexOf('SIZE x16'));
   assert.doesNotMatch(html,/Received Qty|Total Purchase|Add Item From/);
-  assert.match(html,/id="saveTaskQty" disabled/);
+  assert.doesNotMatch(html,/id="saveTaskQty"|id="taskNewQty"/);
+  assert.match(html,/id="editSupplierPlan" disabled/);
   assert.match(html,/Select and save a supplier/);
   assert.equal(h.messages.length,1);
 });
 
-test('four-digit qty capsules preserve the warehouse value and edited left quantity is grey',()=>{
+test('separate four-digit quantities preserve the legacy warehouse value and edited demand marker',()=>{
   const h=harness(),data=workspace();Object.assign(data.tasks[0],{ord:9999,inc:8888,qtyEdited:true});h.reply(data);h.click({customer:'C'});
-  const html=h.node('#app').innerHTML;assert.match(html,/qty-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-task-edit="TASK"/);
+  const html=h.node('#app').innerHTML;assert.match(html,/demand-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-task-edit="TASK"/);
 });
 
 test('reload checks the existing save identity and restores only the same staff member draft',()=>{
@@ -306,4 +350,8 @@ test('drag feedback marks grip, source and exact insertion target while keeping 
  const target={closest:selector=>selector==='tr[data-id]'?first:null};h.event('dragover',target,{preventDefault(){}});assert(first.classes.has('drop-target'));assert.equal(h.messages.length,1);
  h.event('drop',target,{preventDefault(){}});assert(!first.classes.has('drop-target'));assert(!second.classes.has('dragging-row'));assert.equal(h.messages.length,1);
  h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);assert.equal(save.input.versions.TASK,'REV1');assert.equal(save.input.versions.TASK2,'REV2');assert.equal(save.input.edits.length,0);
+});
+
+test('department financial signals read without rebuilding unsaved task rows',async()=>{
+ const mounts=[],h=harness(undefined,[],{mount:(host,department,data)=>mounts.push(data)}),w=workspace();h.reply(w);const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');h.click({customer:'C'});h.node('#app').innerHTML='UNSAVED FORM';h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[]}});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.node('#app').innerHTML,'UNSAVED FORM');assert.ok(mounts.length>=2);assert.equal(h.messages.filter(message=>message.type.includes('SAVE')).length,0);
 });

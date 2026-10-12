@@ -1,6 +1,21 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {createPurchaseOperations}=load('purchaseOperations.js'),{taskEditVersion}=load('purchaseTaskIdentity.js'),{projectPurchaseWorkspace}=load('purchaseProjection.js');
 const copy=value=>JSON.parse(JSON.stringify(value));
+
+test('customer demand rejects Purchase, Account, Warehouse, Top Management and forged client role before any write',async()=>{
+ for(const role of ['PURCHASE','ACCOUNT','WAREHOUSE','TOP MANAGEMENT',undefined]){
+  const f=fixture(),before=copy([...f.rows]);
+  await assert.rejects(f.operate({...f.base,staff:{...f.base.staff,role},operation:'QTY',input:{taskId:f.id,version:taskEditVersion(f.task()),quantity:90,reason:'Customer request',role:'SUPER ADMIN'}}),/Only Super Admin/);
+  assert.deepEqual(copy([...f.rows]),before);
+ }
+});
+
+test('Super Admin demand audit records verified role and workspace capability; Purchase retains planning access',async()=>{
+ const f=fixture();await f.operate({...f.base,operation:'QTY',input:{taskId:f.id,version:taskEditVersion(f.task()),quantity:240,reason:'Customer requested 240'}});
+ const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_QTY_REDUCED');assert.equal(event.details.authorizedRole,'SUPER ADMIN');assert.equal(f.workspace().staff.canEditCustomerDemand,true);
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',staff:{...f.base.staff,role:'PURCHASE'},operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:240,reason:'Supplier confirmed'}});
+ assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.totalCtn,240);
+});
 test('supplier can be cleared before commitment, with audit and unchanged quantities/prices; committed suppliers stay locked',async()=>{
  const f=fixture(),before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{supplierId:''}}]};
  await f.operate({...f.base,operation:'EDIT',input});await f.operate({...f.base,operation:'EDIT',input});
@@ -19,7 +34,7 @@ function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);
  const all=c=>[...rows].filter(([key])=>key.startsWith(c+'/')).map(([,row])=>copy(row));
  const store={all:async c=>all(c),read:async(c,k)=>copy(rows.get(c+'/'+k)||null),one:async(c,criteria)=>all(c).find(row=>Object.entries(criteria).every(([key,value])=>row[key]===value))||null,
  insert:async(c,row)=>{if(rows.has(c+'/'+row._id))throw Error('duplicate');rows.set(c+'/'+row._id,copy(row));return copy(row);},update:async(c,row)=>{rows.set(c+'/'+row._id,copy(row));if(++writes===failAfter)throw Error('response lost');return copy(row);},remove:async(c,k)=>rows.delete(c+'/'+k)};
- const staff={staffId:'STF',staffName:'LAW',memberId:'MEMBER'},base={company:'NCT',requestId:'11111111-1111-4111-8111-111111111111',staff},operate=createPurchaseOperations({store});
+ const staff={staffId:'STF',staffName:'LAW',memberId:'MEMBER',role:'SUPER ADMIN'},base={company:'NCT',requestId:'11111111-1111-4111-8111-111111111111',staff},operate=createPurchaseOperations({store});
  return {store,rows,id,second,base,operate,task:key=>rows.get('NCTTasks/'+(key||id)),versions:()=>Object.fromEntries([id,second].map(key=>[key,taskEditVersion(rows.get('NCTTasks/'+key))])),fail:n=>failAfter=n,
  workspace:()=>projectPurchaseWorkspace({company:'NCT',staff,orders:all('NCTOrders'),tasks:all('NCTTasks'),activity:all('NCTActivity'),suppliers:all('SharedSuppliers')})};}
 test('manual prices derive cartons, preserve original/source quote, audit once and replay saved result',async()=>{const f=fixture(),before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpPc:2,disc3:3}}]};const result=await f.operate({...f.base,operation:'EDIT',input});assert.equal(result.ok,true);assert.equal(f.task().lpCtn,32);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);assert(f.task().manualCostField.includes('lpCtn'));await f.operate({...f.base,operation:'EDIT',input});assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);});
@@ -83,7 +98,7 @@ test('customer reduction after P.O. retains supplier total and increases expecte
 });
 
 test('procurement safeguards require supplier, explicit extra type/confirmation and current company identities',async()=>{
- for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:249},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
+ for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:0},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
  const f=fixture();f.task().supplierId='';await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:250,reason:'Plan'}}),/supplier/);
  await assert.rejects(f.operate({...f.base,company:'GHR',operation:'PLAN',input:{taskId:f.id}}),/accepted/);
 });

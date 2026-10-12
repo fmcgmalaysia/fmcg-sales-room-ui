@@ -10,6 +10,7 @@
  function filters(history=false){return '<div class="filters"><input aria-label="Search purchase documents" placeholder="Search Our P.O. / PO ID / Supplier SO / INV / DO / CN"><select aria-label="Supplier"><option>All Suppliers</option></select>'+(history?'<select aria-label="Year"><option>All Years</option></select><select aria-label="Month"><option>All Months</option>'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+String(i+1).padStart(2,'0')+'</option>').join('')+'</select>':'<select aria-label="Payment status"><option>All Status</option><option>等待放款 / Waiting Payment</option><option>采购部催款 / Purchase Follow-up</option><option>已放款 / Paid</option></select>')+'<button class="files-entry" id="openDocuments">'+folderIcon+'Supplier Documents</button></div>'}
  function render(){
   document.querySelectorAll('nav [data-view]').forEach(button=>{const active=button.dataset.view===view;button.classList.toggle('active',active);active?button.setAttribute('aria-current','page'):button.removeAttribute('aria-current')});
+  if(window.accountCustomerDebtors?.render({company:company.value,view}))return;
   if(window.accountPayments?.render({company:company.value,view}))return;
   if(view==='payments'){
    const summary='<div class="summary" aria-label="Payment workload">'+['Waiting Payment','Purchase Follow-up','Files Pending','Ready to Archive'].map(label=>'<div class="summary-item"><span>'+label+'</span><b>—</b></div>').join('')+'</div>';

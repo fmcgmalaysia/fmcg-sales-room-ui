@@ -11,11 +11,11 @@ function fixture(){
  const input=async(accepted,kind='PARTIAL')=>({id:'PO',version:(await readOrders('NCT'))[0].version,action:'RECEIVE',lines:[{taskId:'T',accepted,rejected:0,kind,reason:'Two deliveries agreed'}]});
  return {records,store,readOrders,operations,base,input,tasks,po,fail:()=>fail=true};
 }
-test('two deliveries accumulate once; customer capped and excess kept separate',async()=>{
+test('two deliveries accumulate once; customer allocation remains pending and physical excess stays separate',async()=>{
  const f=fixture();await f.operations.save({...f.base,input:await f.input(80)});
- let row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'PARTIAL');assert.equal(row.lines[0].customerReceived,80);assert.equal(row.lines[0].extraReceived,0);
+ let row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'PARTIAL');assert.equal(row.lines[0].customerReceived,0);assert.equal(row.lines[0].extraReceived,0);
  await f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:await f.input(20,'DELIVERY')});
- row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'COMPLETE');assert.equal(row.lines[0].customerReceived,90);assert.equal(row.lines[0].extraReceived,10);assert.equal(row.history.length,2);assert.equal(row.history[0].by,'HIA');assert.equal(f.tasks[0].ord,90);
+ row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'COMPLETE');assert.equal(row.lines[0].customerReceived,0);assert.equal(row.lines[0].extraReceived,10);assert.equal(row.history.length,2);assert.equal(row.history[0].by,'HIA');assert.equal(f.tasks[0].ord,90);
 });
 test('lost receipt acknowledgement replays same identity without doubled cartons',async()=>{
  const f=fixture(),input=await f.input(80);f.fail();await assert.rejects(f.operations.save({...f.base,input}),/response lost/);

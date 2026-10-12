@@ -9,6 +9,25 @@ function fixture(){
  return {row,details};
 }
 const payment=(id,cents,confirmed=true)=>({id,cents,confirmed,by:'FINANCE',byStaffId:'F',at:'2026-10-11T00:00:00Z',proof:{fileId:'proof-'+id,sha256:'hash',linked:true}});
+test('prepayment remains visible without final invoice; refund proof reduces cash exposure',()=>{
+ const {row,details}=fixture();row.documents=[];details.finance.payments=[payment('P',100000)];
+ let state=projectAccountSettlement(row,details);assert.equal(state.creditorActive,true);assert.equal(state.prepaymentPending,true);assert.equal(state.finance.paidCents,100000);assert.equal(state.canArchive,false);
+ details.finance.payments.push({...payment('R',10000),direction:'REFUND'});state=projectAccountSettlement(row,details);assert.equal(state.finance.cashPaidCents,100000);assert.equal(state.finance.refundCents,10000);assert.equal(state.finance.paidCents,90000);
+});
+test('CN already reflected in reduced Final Invoice is not deducted twice',()=>{
+ const {row,details}=fixture();details.finance.amounts[0].cents=90000;row.documents.push({fileId:'CN',type:'CN',sha256:'cn',linked:true});details.finance.amounts.push({fileId:'CN',sha256:'cn',cents:10000,treatment:'ALREADY_INCLUDED'});details.finance.payments=[payment('P',100000)];
+ const state=projectAccountSettlement(row,details);assert.equal(state.finance.payableCents,90000);assert.equal(state.finance.balanceCents,-10000);
+});
+test('short received goods plus CN remain high risk until financial check; approved credit survives partial consumption',()=>{
+ const {row,details}=fixture();row.warehouse={complete:false,issues:true,receivedCtn:90};const decision={customerDecision:'STOP',supplierDecision:'CREDIT',financeRequired:true};
+ row.shortageIssues=[{taskId:'T',decision}];row.receiptLines=[{hasReceipt:true,accepted:90,planned:100,issue:true,decision}];row.documents.push({fileId:'CN1',sha256:'cn',type:'CN',linked:true});details.finance.amounts.push({fileId:'CN1',sha256:'cn',cents:10000});details.finance.payments=[payment('P',100000)];
+ let state=projectAccountSettlement(row,details);assert.equal(state.canCheck,false);assert.equal(state.financialRisk,true);
+ details.finance.creditRecognition={cents:10000,reviewVersion:state.finance.reviewVersion,byStaffId:'F',at:'2026-10-12T00:00:00Z'};
+ state=projectAccountSettlement(row,details);assert.equal(state.finance.supplierCreditCents,10000);assert.equal(state.canCheck,true);assert.equal(state.financialRisk,true);
+ details.finance.check={enabled:true,reviewVersion:state.finance.reviewVersion,byStaffId:'F',at:'2026-10-12T00:01:00Z'};
+ state=projectAccountSettlement(row,details);assert.equal(state.financialRisk,false);assert.equal(state.paymentCompleted,true);assert.equal(state.state,'ACTIVE');
+ row.creditTransfers=[{id:'USE',sourceId:'PO',targetId:'NEXT',cents:4000}];state=projectAccountSettlement(row,details);assert.equal(state.finance.supplierCreditCents,6000);assert.equal(state.invoiceChecked,true);assert.equal(state.finance.paidCents,100000);
+});
 test('invoice upload alone cannot approve, remove creditor, or archive; legacy flags ignored',()=>{
  const {row}=fixture(),state=projectAccountSettlement(row,{invoiceCheck:{enabled:true},paymentCompleted:true});
  assert.equal(state.invoiceChecked,false);assert.equal(state.creditorActive,true);assert.equal(state.canArchive,false);assert.match(state.checkBlocker,/amounts/);
@@ -67,3 +86,5 @@ test('payment proof upload uses Account route and lost upload response retries t
  assert.equal(JSON.stringify([...records.values()]).includes(req.input.base64),false,'PDF bytes must not persist in CMS');
  const duplicate={...req,requestId:'44444444-4444-4444-8444-444444444444',input:{...req.input,version:(await listOrders())[0].version}};await assert.rejects(operations.save(duplicate),/reference is already/);assert.equal(allocated,1);
 });
+
+test('shared PO waits until every physically received source carton has a customer invoice',()=>{const task={id:'T',editVersion:'v1',customerId:'C',supplierId:'S',po:'PO-MULTI',barcode:'1',packing:'1',procurement:{totalCtn:30},lpCtn:10,disc1:0,disc2:0,disc3:0,warehouse:{accepted:30,hasPhysicalReceipt:true,issue:false},salesFulfilment:{sourceInvoicedQty:10}};const workspace={company:'NCT',tasks:[task],customers:[],suppliers:[]};assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,false);task.salesFulfilment.sourceInvoicedQty=30;assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,true);});

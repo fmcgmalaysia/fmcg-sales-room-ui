@@ -13,3 +13,5 @@ test('payment proofs require Account routing and fixed company Account roots; DO
  for(const [company,folder] of [['NCT','1grq9bx7TcVhI3baSzpkLG0zglCuBorjA'],['GHR','1hZ4qVKtNP2oc4Fj5NXbEamdIWU0RR30o']]){const f=service();assert.equal(f.run({...f.input,company,type:'PAYMENT'}).error,'INVALID_DOCUMENT');assert.equal(f.calls(),0);assert.equal(f.run({...f.input,company,type:'PAYMENT',department:'ACCOUNT'}).ok,true);assert.equal([...f.files.values()][0].parents[0],folder);}
  const f=service();assert.equal(f.run({...f.input,type:'DO'}).ok,true);assert.equal([...f.files.values()][0].parents[0],'12gCZmqioYGZyRmgW3CsWyobBBcUnCFUS');
 });
+
+test('Sales PDFs route only to fixed Sales folders and retain company isolation',()=>{for(const [company,folder] of [['NCT','1omU7-s3sntQoajBBvOKVXzwS40N5Lmm0'],['GHR','1uPcfFNLpXFDS5vn18hA5pbIdWRzxSzQ_']])for(const type of ['SALES_INV','SALES_CN','DEBIT_NOTE','CUSTOMER_RECEIPT']){const f=service();assert.equal(f.run({...f.input,company,type}).error,'INVALID_DOCUMENT');assert.equal(f.calls(),0);assert.equal(f.run({...f.input,company,type,department:'SALES'}).ok,true);assert.equal([...f.files.values()][0].parents[0],folder);}});

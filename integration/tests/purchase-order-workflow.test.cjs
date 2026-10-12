@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {projectPurchaseOrders,createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
+test('one supplier PO includes multiple customers without combining their task identities',()=>{
+ const f=fixture();f.workspace.customers.push({id:'B',name:'SECOND CUSTOMER',shortName:'SECOND'});f.workspace.tasks[1].customerId='B';
+ const rows=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]});
+ assert.equal(rows.length,1);assert.equal(rows[0].customerName,'CUST / SECOND');assert.equal(rows[0].taskIds.length,2);assert.equal(rows[0].amount,1105);assert.equal(rows[0].itemCount,1);
+});
 function fixture(documentService){
  const workspace={company:'NCT',customers:[{id:'C',name:'CUSTOMER',shortName:'CUST'}],suppliers:[{id:'S',shortName:'SUP',name:'SUPPLIER FULL'}],tasks:[
   {id:'T1',editVersion:'V1',customerId:'C',supplierId:'S',po:'NCT-PO-001',barcode:'001',packing:'16',ord:90,procurement:{totalCtn:100},lpCtn:10.05,disc1:0,disc2:0,disc3:0,history:[{id:'A',action:'PURCHASE_PO_ASSIGNED',result:'SAVED',time:'2026-10-11T01:00:00Z',actor:'LAW'}]},
@@ -40,7 +45,7 @@ test('a lost upload receipt retries one file; no PDF bytes are written to CMS an
  let allocated=0,uploads=0,lost=true;const ids=[];
  const f=fixture(async input=>{if(input.action==='ALLOCATE'){allocated++;return {fileId:'document_file_123'};}uploads++;ids.push(input.fileId);if(lost){lost=false;throw Error('response lost');}return {...input,ok:true};});
  const row=(await f.operations.list('NCT',f.staff))[0],base64=Buffer.from('%PDF-1.4\nfixture').toString('base64');
- const input={id:row.id,version:row.version,action:'DOCUMENT',type:'INV',date:'2026-10-11',number:'INV001',reason:'Final supplier invoice',base64};
+ const input={id:row.id,version:row.version,action:'DOCUMENT',type:'INV',date:'2026-10-11',number:'INV001',reason:'Final supplier invoice',declaredCents:110500,base64};
  await assert.rejects(f.operations.save({...f.base,input}),/response lost/);
  assert.equal((await f.operations.list('NCT',f.staff))[0].documentStatus,'MISSING');
  assert.equal(JSON.stringify([...f.records.values()]).includes(base64),false);

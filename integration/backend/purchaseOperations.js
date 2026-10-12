@@ -14,6 +14,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff})};
   }
   return async ({company,requestId,staff,operation,input})=>{
+    if(operation==='QTY'&&staff?.role!=='SUPER ADMIN')throw Error('Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。');
     if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST','PLAN'].includes(operation))throw Error('Unsupported purchase operation.');
     const names=PURCHASE_COLLECTIONS[company];
     return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},prepare:async()=>{
@@ -64,12 +65,14 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing procurement quantity.');
-        if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999||input.totalCtn<task.purchaseQtyInCtn)throw Error('Supplier total must cover the customer quantity, between 1 and 9999 cartons.');
+        if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn)throw Error('Procurement quantity has not changed.');
-        const extra=input.totalCtn-task.purchaseQtyInCtn;
+        const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
+        const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
+        const extra=input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
         if(extra>0&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
         if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,{});
@@ -78,6 +81,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);
+        if(task.procurementSource)throw Error('Customer demand can only be edited on the original customer line.');
         if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing quantity.');
@@ -91,16 +95,16 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         while(prior.length){const matches=prior.filter(event=>event.details?.before===confirmed);if(matches.length!==1)throw Error('Previous quantity save requires confirmation. Retry the original save.');const event=matches[0];if(!Number.isSafeInteger(event.details.after)||event.details.after<0||event.details.after>=confirmed)throw Error('Quantity history requires review.');confirmed=event.details.after;prior.splice(prior.indexOf(event),1);}
         if(confirmed!==task.purchaseQtyInCtn)throw Error('Previous quantity save requires confirmation. Retry the original save.');
         edit(task,{purchaseQtyInCtn:input.quantity});
-        events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn});
+        events.push({taskId:task.title,action:'PURCHASE_QTY_REDUCED',before:task.purchaseQtyInCtn,after:input.quantity,reason,supplierId:task.supplierId,originalQty:order.orderQtyInCtn,authorizedRole:staff.role});
       } else if(operation==='PO') {
         const po=String(input.poNumber||'').trim().toUpperCase();if(!po||po.length>80||!Array.isArray(input.taskIds)||!input.taskIds.length||input.taskIds.length>100||new Set(input.taskIds).size!==input.taskIds.length)throw Error('P.O. number and distinct tasks are required.');
         if(/^(NCT|GHR)-PO-?$/.test(po))throw Error('Enter the P.O. number after the company prefix.');
         const chosen=input.taskIds.map(verified),first=chosen[0];
-        if(!first.task.supplierId||chosen.some(({task,row})=>task.supplierId!==first.task.supplierId||row.customerId!==first.row.customerId))throw Error('One P.O. must belong to one customer and one supplier.');
+        if(!first.task.supplierId||chosen.some(({task})=>task.supplierId!==first.task.supplierId))throw Error('One P.O. must belong to one supplier.');
         if(!s.suppliers.some(row=>row.title===first.task.supplierId))throw Error('Supplier profile is missing. Select a registered supplier.');
         if(chosen.every(({task})=>task.ourPoNumber===po&&!['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)))throw Error('P.O. number has not changed.');
         const used=s.workspace.tasks.filter(row=>row.po.trim().toUpperCase()===po);
-        if(used.some(row=>row.customerId!==first.row.customerId||row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another customer or supplier.');
+        if(used.some(row=>row.supplierId!==first.task.supplierId))throw Error('This P.O. is already assigned to another supplier.');
         const savedOrders=(await store.all('PurchaseOrders')).filter(row=>row.company===company);
         const proposed=s.workspace.tasks.map(row=>({...row,po:input.taskIds.includes(row.id)?po:row.po}));
         for(const saved of savedOrders){

@@ -50,7 +50,7 @@ function harness() {
   sales.getSecret = async () => 'LOCAL-TEST-ONLY';
   sales.fetch = async (_url, options) => {
     const body = JSON.parse(options.body);
-    return { ok: true, json: async () => ({ ok: true, destination: 'NCT', orderId: body.orderId,
+    return { ok: true, json: async () => ({ ok: true, destination: body.destination, orderId: body.orderId,
       submissionId: body.submissionId, receiptId: 'RECEIPT-' + body.orderId,
       masterReceivedAt: new Date().toISOString(), taskIds: body.lines.map(line => 'TASK-' + line.sourceLineId), costErrorTaskCount: 0 }) };
   };
