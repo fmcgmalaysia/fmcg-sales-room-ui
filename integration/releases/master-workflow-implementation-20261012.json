@@ -163,12 +163,33 @@
   },
   "wixDraft": {
     "installedNewModules": [
+      "customerAccountLedger.js",
+      "customerCompletionProjection.js",
+      "customerDebtor.js",
+      "customerFulfilment.js",
+      "customerFulfilment.web.js",
+      "customerFulfilmentGateway.js",
+      "customerFulfilmentService.js",
       "customerShipmentLedger.js",
+      "customerShipmentPlan.js",
+      "inventoryExceptions.js",
+      "partialInvoiceMargin.js",
+      "paymentHandoff.js",
       "plannerAllocation.js",
-      "purchaseShortage.js"
+      "purchaseClaimEvidence.js",
+      "purchaseProgress.js",
+      "purchaseQuantityCases.js",
+      "purchaseShortage.js",
+      "purchaseSources.js",
+      "stockExceptionResolution.js",
+      "stockExceptions.web.js",
+      "stockExceptionState.js",
+      "stockExceptionWorkspace.js",
+      "supplierCredit.js",
+      "warehouseCustomerReadiness.js"
     ],
     "existingModulesSynchronized": false,
     "published": false,
-    "note": "plannerAllocation draft is older than latest quarantine work; must repatch before publishing."
+    "note": "24 newly created draft modules read back; 23 match current candidate. plannerAllocation requires isolated quarantine/source updates. Existing production modules and page bridges are not yet synchronized; do not publish."
   }
 }
