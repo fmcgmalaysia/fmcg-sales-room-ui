@@ -368,5 +368,12 @@
     "candidateAdditionalFailures": 5,
     "classification": "Three hardcoded NCT mock receipts, one missing UI helper in the test harness, one outdated formula assertion. All five resolved by fixture/behavior-test changes; no production regression established.",
     "historicalFailures": "Eight failures reproduce unchanged on the prior baseline and are not claimed as passed."
+  },
+  "scenario2FollowUp": {
+    "status": "Pending phase two; must not be closed by phase-one release",
+    "record": "handoff/scenario2-transaction-closeout-20261012/RECORD.txt",
+    "acceptance": "handoff/scenario2-transaction-closeout-20261012/acceptance.json",
+    "requiredChecks": 13,
+    "completedChecks": 0
   }
 }
