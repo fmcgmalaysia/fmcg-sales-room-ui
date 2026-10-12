@@ -4,6 +4,7 @@ import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
+import { readCreditTransfers } from 'backend/supplierCredit.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -83,7 +84,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   return {
-    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,
+    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),

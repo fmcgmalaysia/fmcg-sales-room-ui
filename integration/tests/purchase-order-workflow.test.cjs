@@ -45,7 +45,7 @@ test('a lost upload receipt retries one file; no PDF bytes are written to CMS an
  let allocated=0,uploads=0,lost=true;const ids=[];
  const f=fixture(async input=>{if(input.action==='ALLOCATE'){allocated++;return {fileId:'document_file_123'};}uploads++;ids.push(input.fileId);if(lost){lost=false;throw Error('response lost');}return {...input,ok:true};});
  const row=(await f.operations.list('NCT',f.staff))[0],base64=Buffer.from('%PDF-1.4\nfixture').toString('base64');
- const input={id:row.id,version:row.version,action:'DOCUMENT',type:'INV',date:'2026-10-11',number:'INV001',reason:'Final supplier invoice',base64};
+ const input={id:row.id,version:row.version,action:'DOCUMENT',type:'INV',date:'2026-10-11',number:'INV001',reason:'Final supplier invoice',declaredCents:110500,base64};
  await assert.rejects(f.operations.save({...f.base,input}),/response lost/);
  assert.equal((await f.operations.list('NCT',f.staff))[0].documentStatus,'MISSING');
  assert.equal(JSON.stringify([...f.records.values()]).includes(base64),false);

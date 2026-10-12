@@ -6,6 +6,7 @@ import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchase
 import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { createAccountSettlementOperations } from 'backend/accountSettlement.js';
+import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
@@ -23,10 +24,11 @@ const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,rea
 }});
 const reviews=createAccountReviewOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list});
 const settlements=createAccountSettlementOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list,documentService:requestPurchaseDocument});
+const applySupplierCredit=createSupplierCreditOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list});
 export const saveAccountSettlement=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
-  try{return await settlements.save({company,staff,requestId,input});}
-  catch(error){const message=String(error?.message||'');const safe=/^(Unsupported financial action\.|Purchase order changed\.|Purchase order changed while saving\.|Enter |Select |Review the existing CN|Financial check has not changed|This payment (reference|proof)|This DO|CN total|Final Invoice required|Confirm INV|Supplier DO required|Confirm CN|Complete warehouse receiving|Resolve overpayment|Payment records require review)/.test(message);const processing=/^A save is still processing\./.test(message);return {ok:false,requestId,retryable:!safe,error:safe||processing?message:'Financial save could not be confirmed. Retry the same save.'};}
+  try{return input?.action==='APPLY_CREDIT'?await applySupplierCredit({company,staff,requestId,input}):await settlements.save({company,staff,requestId,input});}
+  catch(error){const message=String(error?.message||'');const safe=/^(Credit must stay|Supplier credit or purchase order changed|Credit cannot exceed|Verified CN|Supplier credit amount changed|Refund cannot exceed|Supplier CN required|Resolve supplier shortage liability|Unsupported financial action\.|Purchase order changed\.|Purchase order changed while saving\.|Enter |Select |Review the existing CN|Financial check has not changed|This payment (reference|proof)|This DO|CN total|Final Invoice required|Confirm INV|Supplier DO required|Confirm CN|Complete warehouse receiving|Resolve overpayment|Payment records require review)/.test(message);const processing=/^A save is still processing\./.test(message);return {ok:false,requestId,retryable:!safe,error:safe||processing?message:'Financial save could not be confirmed. Retry the same save.'};}
 });
 export const getAccountPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   const staff=await accountStaff(),rows=await orders.list(company,staff);let names=[],customerNamesError='';
