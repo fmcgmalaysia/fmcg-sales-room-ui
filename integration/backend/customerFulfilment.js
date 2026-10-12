@@ -1,12 +1,13 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
+import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 const cents=value=>Number.isSafeInteger(value)&&value>0&&value<=999999999999;
 import { FULFILMENT_ACTION, readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
-export function shipmentVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity));}
+export function shipmentVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity));}
 export function createCustomerFulfilmentOperations({store,names,readContext,readRates,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
@@ -44,6 +45,14 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
     if(input.action==='DISPATCH'){if(current.status!=='INVOICED')throw Error('Sales Invoice is required before dispatch.');if(!text(input.reference)||text(input.reference).length>120)throw Error('Dispatch reference is required (maximum 120 characters).');shipment.status='DISPATCHED';shipment.dispatch={at,by:staff.staffName,byStaffId:staff.staffId,reference:text(input.reference),reason};}
    }
    if(staff.customerId&&staff.customerId!==shipment.customerId)throw Error('Shipment customer is not authorized.');
+   if(input.action!=='CANCEL')for(const sourceId of new Set(shipment.lines.flatMap(line=>line.sources).map(source=>source.sourceTaskId))){
+    const affected=readStockExceptions(context.activity).some(item=>item.sourceTaskId===sourceId);
+    if(!affected)continue;
+    const source=context.tasks.find(row=>row.id===sourceId),stock=stockPosition(sourceId,source?.warehouse?.accepted,context.activity);
+    const reserved=shipments.filter(row=>row.status!=='CANCELLED'&&row.id!==shipment.id).concat(shipment).flatMap(row=>row.lines).flatMap(line=>line.sources).filter(row=>row.sourceTaskId===sourceId).reduce((sum,row)=>sum+row.quantity,0);
+    if(reserved>stock.usableReceived)throw Error('Available stock changed. Purchase must confirm allocation before invoicing or dispatch.');
+    if(input.action==='SELECT'&&readAllocations(context.activity).find(row=>row.sourceTaskId===sourceId)?.targets.reduce((sum,row)=>sum+row.quantity,0)>stock.usableReceived)throw Error('Available stock changed. Purchase must confirm allocation before invoicing or dispatch.');
+   }
    const id=operationId(company,requestId,staff.memberId,'SHIPMENT_EVENT');return {expectedVersion:version,event:{_id:id,title:id,description:shipment.id,image:shipment.customerId,action:FULFILMENT_ACTION,result:'SAVED',activityTime:at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:reason,details:{beforeRevision,shipment}}};
   },apply:async plan=>{const collection=names[company].activity,existing=await store.read(collection,plan.event._id);if(!existing){if(shipmentVersion(await readContext(company,staff))!==plan.expectedVersion)throw Error('Shipment changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Shipment receipt conflict.');return {ok:true,requestId,company,shipmentId:plan.event.description,status:plan.event.details.shipment.status};}});
  };

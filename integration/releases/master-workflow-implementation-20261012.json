@@ -72,6 +72,11 @@
       "name": "GHR authenticated Master intake",
       "status": "Local regression tests passed; not deployed",
       "scope": "Preserves NCT IDs and mutation locks; GHR destination, own collections, complete receipt, retry and opposite-company rejection"
+    },
+    {
+      "name": "Post-receipt quarantine and split-shipment scenario",
+      "status": "Quarantine guards and 500/480/300+170 local scenario passed; resolution writers, web bridges and UI pending",
+      "scope": "Original demand 500, supplier receipt 480, dispatch 300, internal damage 5, wrong item 3, short expiry 2; only 170 usable for next dispatch. Customer-visible explanation excludes internal fault."
     }
   ],
   "release": {
@@ -79,7 +84,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 240,
+  "localTests": 249,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",
@@ -88,7 +93,8 @@
     "GHR intake and shared read support",
     "Final invoice replacement / corrections",
     "Full publish and dedicated test order acceptance",
-    "Sales customer documents/receipts/Debtor public acceptance and financial correction workflow"
+    "Sales customer documents/receipts/Debtor public acceptance and financial correction workflow",
+    "Sales Split Shipment plan before allocation; stock quarantine UI, Admin/Finance write-off, supplier return/replacement/CN closure, invoiced shipment correction"
   ],
   "salesDocuments": {
     "owner": "Sales",
@@ -113,5 +119,15 @@
       "publicUploadVerified": false
     },
     "status": "Local ledger scenarios passed; public upload and view not tested"
+  },
+  "wixDraft": {
+    "installedNewModules": [
+      "customerShipmentLedger.js",
+      "plannerAllocation.js",
+      "purchaseShortage.js"
+    ],
+    "existingModulesSynchronized": false,
+    "published": false,
+    "note": "plannerAllocation draft is older than latest quarantine work; must repatch before publishing."
   }
 }

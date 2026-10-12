@@ -6,7 +6,7 @@ const text=value=>String(value??'').trim();
 const cents=value=>Number.isSafeInteger(value)&&value>=0&&value<=999999999999;
 const currentDocs=row=>row.documents.filter(doc=>doc.linked===true&&!doc.superseded&&doc.fileId);
 export function settlementVersion(row,finance){
-  return operationId(row.company,row.id,row.contentVersion,currentDocs(row).map(doc=>[doc.fileId,doc.type,doc.sha256,doc.date,doc.number]).sort(),row.warehouse,finance.amounts||[],finance.payments||[],row.shortageIssues||[],(row.creditTransfers||[]).filter(entry=>entry.targetId===row.id));
+  return operationId(row.company,row.id,row.contentVersion,currentDocs(row).map(doc=>[doc.fileId,doc.type,doc.sha256,doc.date,doc.number]).sort(),row.warehouse,finance.amounts||[],finance.payments||[],row.shortageIssues||[],...(row.stockIssues?.length?[row.stockIssues]:[]),(row.creditTransfers||[]).filter(entry=>entry.targetId===row.id));
 }
 export function projectAccountSettlement(row,details){
   const finance=details.finance||{},documents=currentDocs(row),invoices=documents.filter(doc=>doc.type==='INV'),credits=documents.filter(doc=>doc.type==='CN');
@@ -26,6 +26,7 @@ export function projectAccountSettlement(row,details){
   const supplierCreditCents=creditRecognized?credit.cents-creditUsedCents:0;
   const receiptResolved=row.warehouse?.complete&&!row.warehouse.issues||Array.isArray(row.receiptLines)&&row.receiptLines.length>0&&row.receiptLines.every(line=>line.hasReceipt&&(line.accepted===line.planned&&!line.issue||['REFUND','CREDIT'].includes(line.decision?.supplierDecision)&&line.decision?.customerDecision!=='PENDING'));
   const blockers=[];
+  if(row.stockIssues?.length)blockers.push('Resolve quarantined stock / 隔离库存需完成损耗或供应商索赔核对');
   if(!invoices.length)blockers.push('Final Invoice required / 缺最终发票');
   if(!amountComplete||payableCents===null||payableCents<0)blockers.push('Confirm INV / CN amounts / 请核对发票及贷项金额');
   if(!documents.some(doc=>doc.type==='DO'))blockers.push('Supplier DO required / 缺送货单');
@@ -41,7 +42,7 @@ export function projectAccountSettlement(row,details){
   const checked=blockers.length===0&&check?.enabled===true&&check.reviewVersion===reviewVersion&&Boolean(check.byStaffId&&check.at);
   const paymentCompleted=payableCents!==null&&payableCents>=0&&(balanceCents===0||creditRecognized)&&paymentRecordsValid;
   const archiveBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment / 供应商款项未结清']:[]),...(!checked?['Finance Checked required / 财务尚未核对完成']:[]),...(!row.salesInvoiceComplete?['Customer Sales Invoice required / 客户销售发票未齐']:[])];
-  return {invoiceChecked:checked,invoiceCheck:check||null,canCheck:blockers.length===0,checkBlocker:blockers.join('; '),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:!checked&&(cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
+  return {invoiceChecked:checked,invoiceCheck:check||null,canCheck:blockers.length===0,checkBlocker:blockers.join('; '),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:!checked&&(cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
     finance:{receiptResolved:Boolean(receiptResolved),amounts,payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }

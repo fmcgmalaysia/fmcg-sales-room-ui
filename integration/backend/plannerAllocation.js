@@ -1,6 +1,7 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 export function readAllocations(activity){
   const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED'),sources=new Map();
@@ -21,7 +22,7 @@ export function allocatedTo(taskId,activity){
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
-  return operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity));
+  return operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity));
 }
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
@@ -47,7 +48,8 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
         return {taskId:target.id,orderId:target.orderId,sourceLineId:target.sourceLineId,customerId:target.customerId,quantity:entry.quantity};
       });
       for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&reservedFor(entry.taskId)>0)throw Error('Reserved or invoiced cartons cannot be removed.');if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
-      if(targets.reduce((total,row)=>total+row.quantity,0)>source.warehouse.accepted)throw Error('Allocate no more than the actual accepted cartons.');
+      const stock=stockPosition(source.id,source.warehouse.accepted,activity);
+      if(targets.reduce((total,row)=>total+row.quantity,0)>stock.usableReceived)throw Error('Allocate no more than usable received cartons; quarantined stock cannot be allocated.');
       if(operationId(targets)===operationId(old?.targets||[]))throw Error('Allocation has not changed.');
       const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();
       return {expectedVersion:version,event:{_id:id,title:id,description:source.orderId,image:source.customerId,imageAltText:source.id,action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Received stock allocated',details:{beforeRevision:old?.revision||'',sourceTaskId:source.id,targets,reason,accepted:source.warehouse.accepted}}};

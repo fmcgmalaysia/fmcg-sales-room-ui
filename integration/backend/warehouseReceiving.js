@@ -1,5 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { allocatedTo } from 'backend/plannerAllocation.js';
+import { stockPosition } from 'backend/inventoryExceptions.js';
 
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -41,7 +42,8 @@ export function readWarehouseTask(task,activity){
   if(ids.length!==1)throw Error('Warehouse task belongs to multiple purchase orders.');
   const receipt=readWarehouseReceipts(ids[0],activity),line=receipt.lines.find(line=>line.taskId===task.title);
   if(!line||line.orderId!==task.description||line.sourceLineId!==task.imageAltText)throw Error('Warehouse task identity mismatch.');
-  return {...line,hasPhysicalReceipt:true,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,line.accepted-task.purchaseQtyInCtn)};
+  const stock=stockPosition(task.title,line.accepted,activity);
+  return {...line,stock,hasPhysicalReceipt:true,customerReceived:allocation.quantity,allocationAt:allocation.at,extraReceived:Math.max(0,stock.usableReceived-task.purchaseQtyInCtn)};
 }
 
 export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
