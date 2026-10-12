@@ -93,6 +93,11 @@
       "name": "purchase-source-quantity-ui",
       "status": "local tests passed, public deployment pending",
       "scope": "Separate demand/ordered and physical receipt columns; supplier-source dialog and distinct priced PO creation; existing shortage entry retained pending independent cases."
+    },
+    {
+      "name": "independent-quantity-cases",
+      "status": "local scenarios and browser fixture passed; not deployed",
+      "scope": "Separate unplaced and supplier receipt cases, persistent employee/time decisions, customer-safe feedback, independent bubbles and Finance final-check invalidation. Per-case CN/refund allocations still require implementation."
     }
   ],
   "release": {
@@ -100,7 +105,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 257,
+  "localTests": 265,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

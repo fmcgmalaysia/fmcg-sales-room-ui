@@ -30,6 +30,6 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });
   const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace, activity });
   const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
-  for(const row of workspace.tasks){const completion=customerCompletion(row.id,activity,purchaseOrders),ownPo=purchaseOrders.find(po=>po.taskIds.includes(row.id));if(completion){const required=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;row.archived=required>0&&completion.completedQty===required&&(!ownPo||ownPo.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance.receiptResolved);}}
+  for(const row of workspace.tasks){const completion=customerCompletion(row.id,activity,purchaseOrders),ownPo=purchaseOrders.find(po=>po.taskIds.includes(row.id));for(const item of row.quantityCases||[])if(item.kind==='RECEIPT'&&ownPo?.invoiceChecked){item.status='RESOLVED';item.owner=null;item.checkedBy=ownPo.invoiceCheck?.by;item.checkedAt=ownPo.invoiceCheck?.at;}if(completion){const required=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;row.archived=required>0&&completion.completedQty===required&&(!ownPo||ownPo.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance.receiptResolved);}}
   return { ...workspace, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null })) };
 });

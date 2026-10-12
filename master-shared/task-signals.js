@@ -9,8 +9,14 @@
    if(!task.supplierId||!task.po)add(task.id,'todo',title,'PURCHASE',['WAREHOUSE'],'edit','Assign supplier and P.O. / 选择供应商并填写采购单');
    else if(!task.salesInvoiceNumber)add(task.id,'partial',title,'PURCHASE',[],'edit','Procurement in progress / 采购处理中');
    if(task.procurement?.availableCtn>0)add(task.id,'feedback',title,'PURCHASE',['SALES'],'allocate','Allocate received stock / 分配已收到的货物，销售正在等待');
-   if(task.warehouse?.issue&&(!task.shortage||task.shortage.supplierDecision==='PENDING'||task.shortage.customerDecision==='PENDING')){add(task.id,'urgent',title,'PURCHASE',['ACCOUNT','SALES'],'shortage','Resolve shortage and advise departments / 决定少货处理方式并通知相关部门');add(task.id,'feedback',title,'PURCHASE',['ACCOUNT','SALES'],'shortage','Supplier decision required / 等待采购员与供应商确认');}
-   if((task.shortage?.financeRequired||po?.financialRisk)&&!po?.invoiceChecked){add(task.id,'blocked',title,'ACCOUNT',['PURCHASE'],'shortage','Financial reconciliation remains open / 财务尚未解决退款或贷项');add(task.id,'urgent',title,'ACCOUNT',['PURCHASE'],'shortage','Supplier liability remains unresolved / 供应商款项风险仍未解除');}
+   for(const item of task.quantityCases||[]){
+    if(item.status==='RESOLVED'||item.financeRequired&&po?.invoiceChecked)continue;
+    const action='quantity-case:'+item.id,reason=(item.kind==='UNPLACED'?'Unplaced / 未采购 ':'Receiving issue / 收货异常 ')+item.quantity+' CTN';
+    if(item.owner==='PURCHASE'){add(task.id,'feedback',title,'PURCHASE',item.blocks,action,reason);if(item.financeRequired)add(task.id,'urgent',title,'PURCHASE',item.blocks,action,reason);}
+    else{add(task.id,'blocked',title,item.owner, ['PURCHASE'],action,reason);if(item.financeRequired)add(task.id,'urgent',title,item.owner,['PURCHASE'],action,reason);}
+   }
+   if(!Array.isArray(task.quantityCases)&&task.warehouse?.issue&&(!task.shortage||task.shortage.supplierDecision==='PENDING'||task.shortage.customerDecision==='PENDING')){add(task.id,'urgent',title,'PURCHASE',['ACCOUNT','SALES'],'shortage','Resolve shortage and advise departments / 决定少货处理方式并通知相关部门');add(task.id,'feedback',title,'PURCHASE',['ACCOUNT','SALES'],'shortage','Supplier decision required / 等待采购员与供应商确认');}
+   if(!Array.isArray(task.quantityCases)&&(task.shortage?.financeRequired||po?.financialRisk)&&!po?.invoiceChecked){add(task.id,'blocked',title,'ACCOUNT',['PURCHASE'],'shortage','Financial reconciliation remains open / 财务尚未解决退款或贷项');add(task.id,'urgent',title,'ACCOUNT',['PURCHASE'],'shortage','Supplier liability remains unresolved / 供应商款项风险仍未解除');}
    if(task.po&&!(task.inc>0)&&!task.warehouse?.issue)add(task.id,'blocked',title,'WAREHOUSE',['PURCHASE'],'edit','Awaiting physical receipt and allocation / 等待实收及分货');
    if(task.demandReviewRequired)add(task.id,'blocked',title,'ADMIN',['PURCHASE'],'edit','Legacy quantity needs Admin review / 旧数量修改待管理员核实');
   }

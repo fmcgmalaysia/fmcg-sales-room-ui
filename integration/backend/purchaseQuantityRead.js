@@ -16,6 +16,6 @@ export async function readPurchaseQuantities(request){
     const names=PURCHASE_COLLECTIONS[body.company];
     const [orders,tasks,activity,records,suppliers]=await Promise.all([rows(names.orders),rows(names.tasks),rows(names.activity),rows('PurchaseOrders'),rows('SharedSuppliers')]);
     const workspace=projectPurchaseWorkspace({company:body.company,orders,tasks,activity,suppliers,staff:{staffId:'SYSTEM_CUSTOMER_READ',staffName:'System'}}),purchaseOrders=projectPurchaseOrders({company:body.company,workspace,records});
-    return {status:200,body:projectPurchaseQuantities({customerId:body.customerId,requests:body.orders,orders,tasks,activity,purchaseOrders})};
+    return {status:200,body:projectPurchaseQuantities({customerId:body.customerId,requests:body.orders,orders,tasks,activity,purchaseOrders,workspace})};
   }catch(error){return {status:503,body:{ok:false,error:'Current purchase quantities could not be confirmed. Please refresh.'}};}
 }

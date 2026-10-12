@@ -4,6 +4,7 @@ import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
+import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback } from 'backend/purchaseQuantityCases.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
@@ -88,12 +89,21 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   attachPurchaseSourceTotals(rows);
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
+  const quantityCases=projectQuantityCases({company,tasks:rows},activity);
+  for(const row of rows){
+    row.quantityCases=quantityCases.filter(item=>item.taskId===row.id);
+    const related=quantityCases.filter(item=>item.customerDemandTaskId===(row.customerDemandTaskId||row.id));
+    if(related.some(item=>item.revision)){
+      const feedback=customerCaseFeedback(related),receipt=row.quantityCases.find(item=>item.kind==='RECEIPT');
+      row.shortage={...feedback,supplierDecision:receipt?.decision?.supplierDecision||'PENDING',financeRequired:Boolean(receipt),scopedCases:true};
+    }
+  }
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
   return {
     company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
-    customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,
+    customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
     paymentRequestsConnected: false

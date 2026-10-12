@@ -87,7 +87,7 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
         if(line.remaining>entry.accepted&&kind==='DELIVERY')throw Error('Select partial delivery or a shortage reason.');
         if(line.issue&&!issue&&entry.resolveIssue!==true)throw Error('Confirm that the previous receiving issue is resolved.');
         if(line.rejected+entry.rejected>9999)throw Error('Rejected carton total is too large.');
-        return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:line.accepted+entry.accepted,rejected:line.rejected+entry.rejected,kind,issue,reason};
+        return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,planned:line.planned,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:line.accepted+entry.accepted,rejected:line.rejected+entry.rejected,kind,issue,reason};
       });
       const id=operationId(company,requestId,staff.memberId,'WAREHOUSE_RECEIPT'),at=now().toISOString();
       return {expectedVersion:po.version,event:{_id:id,title:id,description:po.id,image:po.customerId,action:RECEIPT_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Warehouse delivery received',details:{company,beforeRevision:po.revision,lines:changes}}};
