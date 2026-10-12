@@ -86,3 +86,5 @@ test('payment proof upload uses Account route and lost upload response retries t
  assert.equal(JSON.stringify([...records.values()]).includes(req.input.base64),false,'PDF bytes must not persist in CMS');
  const duplicate={...req,requestId:'44444444-4444-4444-8444-444444444444',input:{...req.input,version:(await listOrders())[0].version}};await assert.rejects(operations.save(duplicate),/reference is already/);assert.equal(allocated,1);
 });
+
+test('shared PO waits until every physically received source carton has a customer invoice',()=>{const task={id:'T',editVersion:'v1',customerId:'C',supplierId:'S',po:'PO-MULTI',barcode:'1',packing:'1',procurement:{totalCtn:30},lpCtn:10,disc1:0,disc2:0,disc3:0,warehouse:{accepted:30,hasPhysicalReceipt:true,issue:false},salesFulfilment:{sourceInvoicedQty:10}};const workspace={company:'NCT',tasks:[task],customers:[],suppliers:[]};assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,false);task.salesFulfilment.sourceInvoicedQty=30;assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,true);});

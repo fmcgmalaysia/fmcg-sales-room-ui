@@ -1,3 +1,5 @@
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { partialInvoiceMargin } from 'backend/partialInvoiceMargin.js';
 import { randomBytes } from 'crypto';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
@@ -7,24 +9,27 @@ const finite = value => typeof value === 'number' && Number.isFinite(value);
 // The future Sales Co invoice save must acquire GP_LOCK and COST_LOCK and freeze
 // GP, FX and financial amounts together; a bare invoice number is not a lock snapshot.
 export function createPurchaseMarginRefresh({ store, readRates, now = () => new Date() }) {
-  return async ({ company, names, orders, tasks, workspace }) => {
-    const results = new Map(), open = [];
+  return async ({ company, names, orders, tasks, workspace, activity=[] }) => {
+    const results = new Map(), open = [], invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status));
     for (const row of workspace.tasks) {
       const order = orders.find(item => item.title === row.orderId && item.sourceLineId === row.sourceLineId);
       const task = tasks.find(item => item.title === row.id);
       if (!order || !task) continue;
+      const invoiceLines=invoices.flatMap(shipment=>shipment.lines.filter(line=>line.taskId===row.id)),quantity=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;
+      if(invoiceLines.length){open.push({row,order,task,invoiceLines,quantity});continue;}
       if (String(order.salesInvoiceNumber || '').trim()) {
         results.set(row.id, String(order.financialLockedBy || '').trim() && finite(order.gp) ? order.gp : null);
       } else open.push({ row, order, task });
     }
     let rates;
     try { rates = open.length ? await readRates([...new Set(open.map(({ order }) => order.transactionCurrency))]) : []; }
-    catch (_) { for (const { row } of open) results.set(row.id, null); return results; }
-    for (const { row, order, task } of open) {
+    catch (_) { rates=[]; }
+    for (const { row, order, task, invoiceLines, quantity } of open) {
       const matches = rates.filter(rate => rate.currency === order.transactionCurrency);
       const rate = matches.length === 1 ? matches[0] : null, cost = calculateNetCartonCost(task);
-      const gp = calculateGrossProfitMargin({ sellingPricePc: order.sellingPricePc, eaPerCtn: order.orderId, netCostCtn: cost, rateToMyr: rate?.rateToMyr });
+      const gp = invoiceLines?partialInvoiceMargin({quantity,invoiceLines,sellingPricePc:order.sellingPricePc,eaPerCtn:order.orderId,netCostCtn:cost,rateToMyr:rate?.rateToMyr}):calculateGrossProfitMargin({ sellingPricePc: order.sellingPricePc, eaPerCtn: order.orderId, netCostCtn: cost, rateToMyr: rate?.rateToMyr });
       results.set(row.id, gp);
+      if(invoiceLines)continue; // Immutable invoice slices are authoritative; do not overwrite the legacy whole-line cache.
       if (gp === null || (order.gp === gp && order.adminFxSource === rate.rateToMyr)) continue;
       const lockId = operationId(company, task.title, 'GP_LOCK'), requestId = randomBytes(16).toString('hex');
       let held = false;

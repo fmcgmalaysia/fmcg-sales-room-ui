@@ -4,6 +4,7 @@ import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -79,6 +80,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
     });
   }
+  const invoicedShipments=readCustomerShipments(activity).filter(shipment=>shipment.company===company&&['INVOICED','DISPATCHED'].includes(shipment.status));
+  for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||

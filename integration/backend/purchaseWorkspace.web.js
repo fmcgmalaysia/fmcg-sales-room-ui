@@ -4,6 +4,8 @@ import wixData from 'wix-data';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
+import { customerCompletion } from 'backend/customerCompletionProjection.js';
+import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
 const options = { suppressAuth: true, consistentRead: true };
 const refreshMargins = createPurchaseMarginRefresh({ readRates: readCurrentAdminFx, store: {
@@ -21,11 +23,13 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
   const staff = await getPurchaseStaffContext();
   const ids = PURCHASE_COLLECTIONS[company];
-  const [orders, tasks, activity, suppliers] = await Promise.all([
+  const [orders, tasks, activity, suppliers, purchaseRecords] = await Promise.all([
     all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), all(wixData.query(ids.activity)),
-    all(wixData.query('SharedSuppliers'))
+    all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders'))
   ]);
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });
-  const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace });
+  const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace, activity });
+  const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
+  for(const row of workspace.tasks){const completion=customerCompletion(row.id,activity,purchaseOrders),ownPo=purchaseOrders.find(po=>po.taskIds.includes(row.id));if(completion){const required=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;row.archived=required>0&&completion.completedQty===required&&(!ownPo||ownPo.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance.receiptResolved);}}
   return { ...workspace, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null })) };
 });

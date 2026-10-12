@@ -55,11 +55,18 @@
     },
     {
       "name": "Sales shipment selection, Support invoicing, customer debtor and warehouse dispatch",
-      "status": "Local code and 229 checks passed; Sales document dialog fixture verified; Wix bridges not installed and public workflow not tested"
+      "status": "Committed and pushed; Apps Script v3 deployed; Wix bridges and public workflow not tested",
+      "commit": "3a868f5"
     },
     {
       "name": "Unified department UI, release and public acceptance",
       "status": "pending"
+    },
+    {
+      "name": "Partial invoice and financial closure projections",
+      "status": "Local tests passed; not deployed",
+      "scope": "Customer history uses actual dispatch and supplier-source financial closure; shared POs wait for all source cartons to be invoiced; NCT/GHR quantity reads isolated; partially invoiced GP projected from immutable slices",
+      "remaining": "Legacy Orders CMS GP cache intentionally not overwritten for sliced invoices; invoice/CMS fields and correction workflows still need implementation"
     }
   ],
   "release": {
@@ -67,7 +74,7 @@
     "wixPublished": false,
     "publicVerified": false
   },
-  "localTests": 229,
+  "localTests": 236,
   "lastRecovery": "accountSettlement Wix draft restored exactly after user confirmation; not published",
   "remaining": [
     "Source Sales shipment selection / Support invoice public acceptance",

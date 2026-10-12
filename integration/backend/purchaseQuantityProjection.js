@@ -1,7 +1,8 @@
 // Read-only customer projection. Only customer-allocated receipt quantities leave Master.
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { customerCompletion } from 'backend/customerCompletionProjection.js';
 import { readShortage } from 'backend/purchaseShortage.js';
-export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity}) {
+export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity,purchaseOrders=[]}) {
   if(typeof customerId!=='string'||!customerId||!Array.isArray(requests)||!requests.length||requests.length>100)throw Error('Invalid quantity request.');
   const output=[];
   for(const request of requests){
@@ -22,8 +23,8 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
         quantity=detail.after;remaining.splice(remaining.indexOf(event),1);
       }
       if(!Number.isSafeInteger(quantity)||quantity<0||task.purchaseQtyInCtn!==quantity)throw Error('Quantity save is still being confirmed.');
-      const warehouse=readWarehouseTask(task,activity),decision=readShortage(task.title,activity);
-      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.allocationAt||warehouse.at}:{})});
+      const warehouse=readWarehouseTask(task,activity),decision=readShortage(task.title,activity),completion=customerCompletion(task.title,activity,purchaseOrders);if(completion&&(completion.invoicedQty>quantity||completion.invoicedQty>(warehouse?.customerReceived||0)))throw Error('Invoice quantities require review.');
+      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===(warehouse?.customerReceived||0)?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.allocationAt||warehouse.at}:{})});
     }
     output.push({orderId:request.orderId,submissionId:request.submissionId,lines});
   }
