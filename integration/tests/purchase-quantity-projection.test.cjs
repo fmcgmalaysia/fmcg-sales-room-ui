@@ -16,3 +16,13 @@ test('warehouse reply exposes only allocated customer cartons and source display
  assert.equal(result.lines[0].receivedQtyCtn,80);assert.equal(result.lines[0].goodsReceivedAt,'2026-10-11T02:00:00.000Z');assert.equal(result.lines[0].lockedPriceCtn,23);assert.equal(order.lines[0].receivedQtyCtn,undefined);
  reply.orders[0].lines[0].receivedQtyCtn=81;assert.throws(()=>apply('C',[order],reply),/received quantity/);
 });
+
+test('customer feedback copies only safe fields and never changes demand, receipt or completion',()=>{
+ const order={orderId:'O',masterReceipt:{submissionId:'S'},lines:[{lineId:'L',barcode:'001',quantityCtn:100,lockedPriceCtn:23}]};
+ const reply=projectPurchaseQuantities(fixture());reply.orders[0].lines[0].fulfilment={decision:'STOP',message:'Only 80 cartons available',expectedDate:'',at:'2026-10-12T00:00:00Z',internalReason:'PRIVATE',supplierDecision:'REFUND'};
+ const result=apply('C',[order],reply)[0].lines[0];assert.equal(result.masterFulfilment.decision,'STOP');assert.equal(result.quantityCtn,100);assert.equal(result.lockedPriceCtn,23);assert.equal(result.goodsReceivedAt,undefined);assert.doesNotMatch(JSON.stringify(result),/PRIVATE|REFUND/);
+ reply.orders[0].lines[0].fulfilment.decision='COMPLETE';assert.throws(()=>apply('C',[order],reply),/fulfilment/);
+});
+test('Sales and Buyer render escaped customer feedback without internal supplier details',()=>{
+ for(const file of ['index.html','buyer-room.html']){const html=fs.readFileSync(path.join(__dirname,'../..',file),'utf8'),code=html.match(/function customerFulfilmentHtml\(line\)\{[^\n]+/)[0];const render=vm.runInNewContext(code+';customerFulfilmentHtml',{esc:value=>String(value).replaceAll('<','&lt;').replaceAll('>','&gt;')});assert.equal(render({}), '');const output=render({masterFulfilment:{decision:'WAIT',message:'<script>unsafe</script>',expectedDate:'2026-10-15'}});assert.match(output,/等待补货/);assert.match(output,/2026-10-15/);assert.doesNotMatch(output,/<script>/);assert.match(html,/customerFulfilmentHtml\(line\)/);}
+});
