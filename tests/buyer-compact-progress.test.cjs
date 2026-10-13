@@ -18,7 +18,7 @@ test('only current task layout removes Barcode and Updated; existing history and
   const head=html.slice(html.indexOf('<section id="trackView"'),html.indexOf('<div id="trackRows"'));
   assert.match(head,/<div>Order On<\/div><div class="center">Progress<\/div><div class="center">Image<\/div><div>Descriptions<\/div>/);
   assert.doesNotMatch(head,/>Barcode<|Qty Updated|Latest progress from Master|\$\{done\} \/ \$\{total\}/);
-  assert.match(head,/Est\. Shipment Date<\/span><b>—<\/b>/);
+  assert.match(head,/Est\. Shipment Date<\/span><b id="trackShipmentDate">—<\/b>/);
   assert.match(html,/track-barcode/);assert.match(html,/trackEditHistory/);
 });
 test('customer quantity comes only from assigned warehouse receipts and excludes completed history',()=>{
