@@ -1,4 +1,5 @@
 // Explicit procurement projection. Never return original order rows or intake snapshots.
+import { readSalesShipmentDate } from 'backend/customerShipmentPlan.js';
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
@@ -53,6 +54,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
     const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
+    const shipmentDate=readSalesShipmentDate(task.description,order.customerId,order.submissionId,order.estimatedShipmentDate,activity);
     rows.push({
       procurementSource:task.procurementSource===true,customerDemandTaskId:task.procurementSource?task.customerDemandTaskId:null,
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
@@ -70,7 +72,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       specialPurchase: task.specialPurchase === true, specialPurchaseReason: text(task.specialPurchaseReason),
       rowPosition: number(task.rowPosition), masterReceivedAt: stamp(order.masterReceivedTime) || receipt.receivedAt,
       submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
-      estimatedShipmentDate: stamp(order.estimatedShipmentDate)?.slice(0, 10) || null,
+      estimatedShipmentDate: shipmentDate.date || null,
+      shipmentDate,
       history: activity.filter(event => event.description === task.description &&
         ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED','PURCHASE_SOURCE_ADDED'].includes(event.action) &&
         (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({

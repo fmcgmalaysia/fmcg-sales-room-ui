@@ -9,7 +9,7 @@ test('refresh failure preserves customers; identical successful response clears 
   h.renderCustomers({customers:records,summary:{}});assert.equal(notice.hidden,true);assert.equal(list.innerHTML,'SCOMM');assert.equal(h.customerRecords,records);
 });
 test('review saves PO and shipment using the existing API; failed save preserves values and retry identity',()=>{
-  const handlers={},elements=Object.fromEntries(['salesCustomerPo','salesReviewShipment','saveReviewPlanning','cancelReviewPlanning','salesQtyStatus'].map(id=>[id,{value:'',disabled:false,readOnly:false,blur(){},checkValidity:()=>true}]));elements.salesCustomerPo.value='PO-OLD';elements.salesReviewShipment.value='2026-10-20';let sent;
+  const handlers={},elements=Object.fromEntries(['salesCustomerPo','salesReviewShipment','saveReviewPlanning','cancelReviewPlanning','salesQtyStatus'].map(id=>[id,{value:'',disabled:false,readOnly:false,blur(){},classList:{toggle(){}},checkValidity:()=>true}]));elements.salesCustomerPo.value='PO-OLD';elements.salesReviewShipment.value='2026-10-20';let sent;
   const h=vm.createContext({pendingSalesPoEdit:{orderId:'O1',value:'PO-OLD',date:'2026-10-20',expectedRevision:2,dirty:false,saving:false},pendingSalesQtyEdit:null,salesProgressCustomerId:'',lastSalesQtyFeedback:null,crypto:{randomUUID:()=> 'TEST-ID'},salesQtyBusy(){},document:{getElementById:id=>elements[id],querySelectorAll:()=>[]},window:{parent:{postMessage:message=>sent=message},addEventListener:(type,handler)=>handlers[type]=handler}});
   vm.runInContext(line('function wireSalesReviewPlanning('),h);vm.runInContext(html.split(/\r?\n/).find(row=>row.startsWith("window.addEventListener('message',event=>{const message=event.data||{},pending=pendingSalesPoEdit")),h);
   h.wireSalesReviewPlanning({orderId:'O1'},true);elements.salesCustomerPo.value='PO-NEW';elements.salesReviewShipment.value='2026-10-23';elements.salesCustomerPo.oninput();elements.saveReviewPlanning.onclick();assert.equal(sent.type,'SALES_ROOM_ORDER_PLANNING_UPDATE');assert.equal(sent.expectedRevision,2);assert.equal(sent.estimatedShipmentDate,'2026-10-23');
@@ -17,7 +17,7 @@ test('review saves PO and shipment using the existing API; failed save preserves
   elements.saveReviewPlanning.onclick();assert.equal(sent.requestId,'TEST-ID');
 });
 test('transferred orders cannot edit planning from Review',()=>{
-  const elements=Object.fromEntries(['salesCustomerPo','salesReviewShipment','saveReviewPlanning','cancelReviewPlanning','salesQtyStatus'].map(id=>[id,{value:'',checkValidity:()=>true}]));
+  const elements=Object.fromEntries(['salesCustomerPo','salesReviewShipment','saveReviewPlanning','cancelReviewPlanning','salesQtyStatus'].map(id=>[id,{value:'',classList:{toggle(){}},checkValidity:()=>true}]));
   const h=vm.createContext({pendingSalesPoEdit:{value:'',date:'',dirty:false},pendingSalesQtyEdit:null,document:{getElementById:id=>elements[id],querySelectorAll:()=>[]},window:{parent:{postMessage:()=>{throw Error('Locked order sent update')}}}});vm.runInContext(line('function wireSalesReviewPlanning('),h);h.wireSalesReviewPlanning({orderId:'LOCKED'},false);elements.salesCustomerPo.value='EDIT';elements.salesCustomerPo.oninput();elements.saveReviewPlanning.onclick();assert.equal(elements.salesCustomerPo.readOnly,true);assert.equal(elements.salesReviewShipment.readOnly,true);assert.equal(elements.saveReviewPlanning.disabled,true);
 });
 test('Buyer latest active order date is not earliest shipment or an older nonblank date',()=>{
