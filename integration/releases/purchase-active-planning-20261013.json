@@ -1,5 +1,6 @@
 {
-  "status": "candidate complete; publication and user acceptance pending",
+  "status": "published; public read/layout verification complete; user business acceptance pending",
+  "codeCommit": "b097a0706ab1725e6fad640b51da474dd23646ad",
   "branch": "feat/purchase-active-planning",
   "build": "2026-10-13-purchase-active-planning-v1",
   "recovery": {
@@ -51,7 +52,23 @@
     "purchaseWorkspace.web.js",
     "accountSettlement.js"
   ],
-  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "publication": {
+    "githubPages": true,
+    "run": "38392160019",
+    "job": "115278342188",
+    "runStatus": "Success; 43 seconds",
+    "exactAssets": ["purchase-live/index.html", "purchase-live/app.js", "purchase-live/style.css", "purchase-live/task-grid.js", "purchase-live/task-grid.css"],
+    "wixPublished": true,
+    "wixReceipt": "This site is published and live online.",
+    "wixCodeReadback": "All nine changed components exactly matched candidate after normalized newlines; isolated replacements only",
+    "publicVerified": true,
+    "publicScope": "Fresh public Purchase URL: Active Orders with SCOMM Short Name, 4 existing tasks, source/cost dialog, single-customer movement controls and customer room; Account NCT existing PO and persistent risk/Checked blockers, GHR empty state; Warehouse existing receiving issue; captured page errors empty",
+    "businessWrites": false,
+    "userBusinessAcceptance": false,
+    "temporaryDeploymentRuleRemoved": true,
+    "originalRulesRestored": 7,
+    "evidence": "C:/FMCG-WIX-LOCAL/handoff/purchase-active-planning-20261013"
+  },
   "preserved": "No main merge, no new verified tag, no upload service/Drive ACL/role/authentication changes, no bank transfer or real payment/receipt mutation. Existing user business data protected.",
   "followUps": [
     "User acceptance of three suppliers, surplus stock, cross-customer PO and Account per-PO visibility",
