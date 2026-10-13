@@ -34,9 +34,9 @@
   },
   "releaseOrder": [
     "Confirm temporary Pages deployment branch permission at action time",
-    "Recheck/capture live before each isolated Wix edit; publish compatible Master date backend and department references",
-    "Publish compatible FMCGMALAYSIA source backend/client/projection and Sales bridge",
-    "Deploy branch to Pages and verify exact affected assets and preserved Buyer/Purchase assets",
+    "Recheck/capture live before each isolated Wix edit; publish compatible Master date backend, keeping old department version references until assets exist",
+    "Publish compatible FMCGMALAYSIA source backend/client/projection, keeping old Sales version reference until assets exist",
+    "Deploy branch to Pages and verify exact affected assets and preserved Buyer/Purchase assets; then synchronize four final version references and publish both Wix sites",
     "Force refresh formal Sales/Buyer/Purchase/Account/Warehouse/Support read/layout, remove only new deployment rule",
     "User performs real date amendment and business acceptance; keep main protected"
   ],
