@@ -1,10 +1,10 @@
-<!-- Sales Room build: 2026-10-14-sales-progress-shipment-v1; previous 2026-10-14-sales-customer-review-v1 -->
+<!-- Sales Room build: 2026-10-14-sales-submit-wait-v1; previous 2026-10-14-sales-customer-review-v1 -->
 <style>.fx-modal{width:min(680px,100%)!important}.fx-modal-grid{display:block!important}.fx-sync-result{margin:12px 0 0!important} .customer-fulfilment{display:block!important;font-size:11px!important;line-height:1.3;color:#526d82;margin-top:3px}.customer-fulfilment b{font-weight:600;color:#25465e}</style>
 <!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="build-version" content="2026-10-14-sales-progress-shipment-v1">
+<meta name="build-version" content="2026-10-14-sales-submit-wait-v1">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -553,6 +553,10 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 #order-progress .sales-stage-zh{display:block;font-size:10px;font-weight:500;line-height:14px;margin-top:3px;color:#627a93}
 #order-progress .sales-progress-stage small{display:none!important}
 </style>
+<style>
+.nct-submit-spinner{width:30px;height:30px;margin:0 0 16px;border:3px solid #dde7f1;border-top-color:#2b70b8;border-radius:50%;animation:nct-submit-spin .9s linear infinite}@keyframes nct-submit-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.nct-submit-spinner{animation:none}}
+#nctSubmissionFeedback::backdrop{background:rgba(5,20,39,.3)}
+</style>
 </head>
 <body class="dashboard-view">
 <div class="app">
@@ -1007,12 +1011,14 @@ window.addEventListener('message',event=>{const message=event.data||{},pending=p
 function wireSalesOrderPo(order,editable){const input=document.getElementById('salesCustomerPo'),save=document.getElementById('saveSalesPo'),cancel=document.getElementById('cancelSalesPo'),status=document.getElementById('salesQtyStatus');const update=()=>{if(!pendingSalesPoEdit)return;pendingSalesPoEdit.dirty=input.value.trim()!==pendingSalesPoEdit.value;save.disabled=!editable||!pendingSalesPoEdit.dirty||pendingSalesPoEdit.saving||!!pendingSalesQtyEdit;cancel.disabled=!pendingSalesPoEdit.dirty||pendingSalesPoEdit.saving;document.querySelectorAll('[data-edit-order-line]').forEach(button=>button.disabled=pendingSalesPoEdit.dirty||pendingSalesPoEdit.saving)};input.oninput=update;input.onfocus=()=>{if(pendingSalesQtyEdit)input.blur()};cancel.onclick=()=>{input.value=pendingSalesPoEdit.value;update();status.textContent=''};save.onclick=()=>{if(pendingSalesQtyEdit||!pendingSalesPoEdit?.dirty||pendingSalesPoEdit.saving)return;pendingSalesPoEdit.saving=true;pendingSalesPoEdit.requestId=crypto.randomUUID();salesQtyBusy(true);input.readOnly=true;status.textContent='Saving P.O. number…';window.parent.postMessage({type:'SALES_ROOM_ORDER_PO_UPDATE',orderId:order.orderId,customerPoNumber:input.value.trim(),expectedRevision:pendingSalesPoEdit.expectedRevision,requestId:pendingSalesPoEdit.requestId},'*')};update()}
 window.addEventListener('message',event=>{const message=event.data||{};if(message.type!=='SALES_ROOM_ORDER_PO_RESULT'||!pendingSalesPoEdit||message.requestId!==pendingSalesPoEdit.requestId)return;const status=document.getElementById('salesQtyStatus');if(!message.ok){pendingSalesPoEdit.saving=false;salesQtyBusy(false);document.getElementById('salesCustomerPo').readOnly=false;document.getElementById('salesCustomerPo').oninput();status.textContent=message.error||'P.O. number could not be saved. Your entry is retained.';return}lastSalesQtyFeedback={orderId:pendingSalesPoEdit.orderId,message:message.message||'P.O. number saved.'};status.textContent=lastSalesQtyFeedback.message+' Refreshing order…';window.parent.postMessage({type:'SALES_ROOM_ORDER_DETAIL_REQUEST',orderId:pendingSalesPoEdit.orderId},'*')});
 let pendingNctSubmit=null;
-function showNctSubmissionFeedback(title,message,orderId,receivedAt){
+function showNctSubmissionFeedback(title,message,orderId,receivedAt,waiting=false){
   let dialog=document.getElementById('nctSubmissionFeedback');
   if(!dialog){dialog=document.createElement('dialog');dialog.id='nctSubmissionFeedback';dialog.style.cssText='width:min(480px,90vw);padding:22px;border:1px solid #c8d8e8;border-radius:10px;color:#17314f;background:white';document.body.appendChild(dialog);}
-  dialog.innerHTML='<h2 style="margin:0 0 12px;font-size:18px">'+esc(title)+'</h2><p style="font-size:12px;line-height:1.6">'+esc(message)+'</p><p style="font-size:11px;overflow-wrap:anywhere">Order: '+esc(orderId)+'</p>'+(receivedAt?'<p style="font-size:11px">Master received: '+esc(new Date(receivedAt).toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour12:false}))+'</p>':'')+'<div style="text-align:right"><button type="button" class="primary" data-close-nct-feedback>Close</button></div>';
-  dialog.querySelector('[data-close-nct-feedback]').onclick=()=>dialog.close();if(!dialog.open)dialog.showModal();
+  dialog.setAttribute('aria-busy',String(waiting));dialog.oncancel=event=>{if(pendingNctSubmit)event.preventDefault();};
+  dialog.innerHTML=(waiting?'<div class="nct-submit-spinner" aria-hidden="true"></div>':'')+'<h2 style="margin:0 0 12px;font-size:18px">'+esc(title)+'</h2><p style="font-size:12px;line-height:1.6">'+esc(message)+'</p><p style="font-size:11px;overflow-wrap:anywhere">Order: '+esc(orderId)+'</p>'+(receivedAt?'<p style="font-size:11px">Master received: '+esc(new Date(receivedAt).toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour12:false}))+'</p>':'')+(waiting?'<p role="status" aria-live="polite" style="font-size:12px;line-height:1.6">Please keep this page open. Do not submit again. / 请保持本页开启，不要重复交单。</p>':'<div style="text-align:right"><button type="button" class="primary" data-close-nct-feedback>Close</button></div>');
+  const close=dialog.querySelector('[data-close-nct-feedback]');if(close)close.onclick=()=>{if(!pendingNctSubmit)dialog.close();};if(!dialog.open)dialog.showModal();
 }
+window.addEventListener('beforeunload',event=>{if(pendingNctSubmit){event.preventDefault();event.returnValue='';}});
 function validNctReceipt(receipt,order,destination='NCT'){return receipt?.ok===true&&receipt.receiptId&&receipt.destination===destination&&receipt.orderId===order.orderId&&Number.isFinite(Date.parse(receipt.masterReceivedAt));}
 function finishNctSubmission(receipt,order){
   pendingNctSubmit=null;salesQtyBusy(false);renderOrderDetail({...order,status:'SUBMITTED TO '+receipt.destination,destination:receipt.destination});
@@ -1031,6 +1037,7 @@ function checkNctReceipt(pending){
   pending.phase='CHECK';pending.checks=(pending.checks||0)+1;pending.receiptRequestId=pending.requestId+'-receipt-'+pending.checks;
   salesQtyBusy(true);
   const status=document.getElementById('salesQtyStatus');if(status)status.textContent='Checking Master receipt · 正在核对接收回执…';
+  showNctSubmissionFeedback('Checking Master receipt · 正在核对交单回执','The receiving company has not yet confirmed the result. Please wait. / 正在向接收公司核对结果，请稍候。',pending.order.orderId,null,true);
   window.parent.postMessage({type:'SALES_ROOM_NCT_RECEIPT_REQUEST',orderId:pending.order.orderId,requestId:pending.receiptRequestId},'*');
   const checkId=pending.receiptRequestId;setTimeout(()=>{if(pendingNctSubmit===pending&&pending.receiptRequestId===checkId){pending.receiptRequestId=null;checkNctReceipt(pending);}},12000);
 }
@@ -1039,6 +1046,7 @@ function submitOrderToNct(order,destination='NCT'){
   const requestId=crypto.randomUUID();pendingNctSubmit={order,destination,requestId,phase:'SUBMIT',checks:0};
   const status=document.getElementById('salesQtyStatus');if(status)status.textContent='Submitting to '+destination+' and checking costs…';
   salesQtyBusy(true);document.querySelectorAll('.submit-menu').forEach(menu=>menu.classList.remove('show'));
+  showNctSubmissionFeedback('Submitting to '+destination+' · 正在交单','Sending this order and waiting for the Master receipt. / 正在发送订单并等待接收回执。',order.orderId,null,true);
   window.parent.postMessage({type:'SALES_ROOM_SUBMIT_ORDER',orderId:order.orderId,destination,requestId},'*');
   setTimeout(()=>{if(pendingNctSubmit?.requestId!==requestId||pendingNctSubmit.phase!=='SUBMIT')return;
     if(document.getElementById('orderDetailArea')?.dataset.nctOrderId!==order.orderId)return;

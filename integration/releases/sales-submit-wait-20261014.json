@@ -1,0 +1,19 @@
+{
+  "status": "Candidate; not deployed",
+  "branch": "fix/sales-submit-wait-20261014",
+  "base": "feat/sales-progress-shipment-20261014",
+  "baseCommit": "4331d3a",
+  "build": "2026-10-14-sales-submit-wait-v1",
+  "scope": "Immediate blocking submission and receipt-check modal; original terminal feedback and receipt workflow preserved",
+  "checksPassed": 16,
+  "publicBefore": "Exact published5e63e24 inline scripts",
+  "recoveryTag": "verified/send-order-addition-user-tests-20261009",
+  "recoveryCode": "5e63e24",
+  "realBusinessWrites": false,
+  "publication": {
+    "githubPages": false,
+    "wixPublished": false,
+    "publicCandidateVerified": false
+  },
+  "dependencies": "Includes unpublished PR71 candidate; that branch remains preserved separately. Release requires scoped combined permission and prior prepared backend compatibility steps."
+}
