@@ -1,0 +1,69 @@
+/* Compact shared task columns; drag/drop feedback remains in style.css. */
+.purchase-tasks .product-stack .barcode,.purchase-tasks .product-stack .itemname,.purchase-tasks .product-stack .packing{display:block;margin:0;line-height:1.3}
+.purchase-tasks .product-stack .barcode,.purchase-tasks .product-stack .packing{color:#52677b;font-size:11px}
+#taskRows .product-stack .barcode,#taskRows .product-stack .packing{display:block;color:#52677b;font-size:11px}
+.purchase-tasks .product-stack .itemname{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.purchase-tasks .amount{text-align:right;font-variant-numeric:tabular-nums}
+.purchase-tasks th:nth-last-child(5),.purchase-tasks th:nth-last-child(4),.purchase-tasks th:nth-last-child(2){text-align:right}
+.purchase-tasks .supplier-plan-link,.purchase-tasks .po-reference{border:0;background:transparent;padding:3px;color:#17314f;font:inherit;cursor:pointer;text-align:left}
+.purchase-tasks .supplier-plan-link span{color:#7e94a6;display:block;font-size:18px}
+.purchase-tasks .supplier-plan-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.purchase-tasks .gp{color:#202b36}
+.purchase-tasks .po-reference{color:#0078d4;overflow-wrap:anywhere}
+.purchase-tasks .source-row{background:#f5f8fb}
+.purchase-tasks .source-label{padding-left:10px;color:#52677b}
+.purchase-tasks .row-progress{display:flex;justify-content:center;gap:3px;align-items:center}
+.purchase-tasks .progress-node{width:9px;height:9px;min-width:9px;border:0;border-radius:50%;padding:0;background:#c8d5df;cursor:pointer}
+.purchase-tasks .progress-node.complete{background:#0078d4}
+.purchase-tasks .progress-node.problem{background:#c4455a}
+.purchase-tasks .progress-node:focus-visible{outline:2px solid #193246;outline-offset:3px}
+.purchase-tasks .customer-short{font-weight:700;overflow-wrap:anywhere}
+.purchase-tasks td{height:52px;padding:6px 5px;font-size:11px}
+.purchase-tasks .source-row td{height:36px}
+.purchase-tasks th{background:#d4e1eb;color:#202b36;font-size:11px}
+.purchase-tasks:not(.active-order-table) th:nth-child(5),.purchase-tasks:not(.active-order-table) th:nth-child(6),.active-order-table th:nth-child(6),.active-order-table th:nth-child(7){text-align:center}
+.active-order-heading .heading{flex:1;min-width:0;margin:0}
+.active-order-heading h1{font-size:20px}
+.active-order-heading .shipment-summary{display:none}
+.purchase-tasks .order-quantity,.purchase-tasks .received-quantity{text-align:center}
+.purchase-tasks .qty-mismatch{background:#ffe4bc!important;color:#713c00!important;border-radius:12px;padding:3px 7px}
+.purchase-tasks .receipt-complete{background:#16854b!important;color:white!important;border-radius:12px;padding:3px 7px}
+.purchase-tasks .receipt-problem{background:#c4455a!important;color:white!important;border-radius:12px;padding:3px 7px}
+.purchase-tasks .extra-stock{color:#52677b;display:block;font-size:11px}
+#createSelectedPo{background:#0078d4;border-color:#0078d4;color:white}
+@media(max-width:1100px){.purchase-tasks{min-width:1100px}.tablewrap{overflow-x:auto}}
+dialog.purchase-plan-dialog{width:780px;max-width:calc(100vw - 32px)}
+dialog.purchase-plan-dialog .supplier-plan{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px}
+dialog.purchase-plan-dialog .dialoghead{background:#0078d4;color:white}
+dialog.purchase-plan-dialog .dialoghead h2,dialog.purchase-plan-dialog .dialoghead .muted{color:white}
+dialog.purchase-plan-dialog .supplier-plan>*{grid-column:1}
+dialog.purchase-plan-dialog .plan-calculator{grid-column:2;grid-row:1 / span 9;background:#eef5fb;border:1px solid #d4e1eb;border-radius:4px;padding:12px}
+.plan-calculator h3{margin:0 0 10px;font-size:12px}
+.plan-calculator label,.plan-calculator>div{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0;font-size:11px}
+.plan-calculator input{width:95px;min-width:0;border:1px solid #b8cbdc;border-radius:3px;padding:7px;text-align:right;color:#193246;font:11px Arial,sans-serif}
+.plan-supplier{display:flex;flex-direction:column;gap:5px;font-size:11px}
+.plan-supplier select{width:100%;padding:8px;border:1px solid #b8cbdc;border-radius:3px;background:#fff;color:#193246;font-size:11px}
+.plan-audit{border-top:1px solid #d4e1eb;padding-top:8px;font-size:11px}
+.plan-audit small{display:block;color:#52677b}
+.additional-plan h3{font-size:12px}
+dialog.sources-plan-dialog{width:1000px;max-width:calc(100vw - 32px)}
+dialog.sources-plan-dialog .dialogbody{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:12px;align-items:start}
+dialog.sources-plan-dialog #dialogContent,dialog.purchase-plan-dialog #dialogContent{display:flex;flex-direction:column;min-height:0;max-height:inherit;width:100%}
+dialog.sources-plan-dialog .dialogbody{gap:8px}
+dialog.sources-plan-dialog .task-identity{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
+dialog.sources-plan-dialog .dialogbody>p{margin:4px 0}
+dialog.sources-plan-dialog .source-purchase-form input,dialog.sources-plan-dialog .source-purchase-form select{height:28px;padding:4px 6px;font-size:11px}
+dialog.sources-plan-dialog .source-purchase-form textarea{height:48px;min-height:48px;font-size:11px}
+dialog.sources-plan-dialog .additional-plan h3{margin:0 0 8px}
+dialog.sources-plan-dialog .task-identity,dialog.sources-plan-dialog .dialogbody>p,dialog.sources-plan-dialog #dialogError{grid-column:1 / -1}
+dialog.sources-plan-dialog .source-table{grid-column:1;grid-row:3}
+dialog.sources-plan-dialog .additional-plan{grid-column:2;grid-row:3;background:#eef5fb;border:1px solid #d4e1eb;border-radius:4px;padding:10px}
+dialog.sources-plan-dialog .source-purchase-form{grid-template-columns:105px minmax(0,1fr);gap:7px}
+dialog.sources-plan-dialog .source-table td{height:auto;padding:8px 4px}
+dialog.sources-plan-dialog .source-table .btn{padding:4px 6px;margin:2px 0}
+.draft-price-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.draft-price-row>b,.draft-price-row>small{grid-column:1 / -1}
+.draft-price-row label{display:flex;flex-direction:column;gap:4px}
+.draft-price-row input{width:100%;padding:7px;border:1px solid #b8cbdc;border-radius:3px;text-align:right}
+@media(max-width:800px){dialog.sources-plan-dialog .dialogbody{display:block}dialog.sources-plan-dialog .additional-plan{margin-top:12px}}
+@media(max-width:650px){dialog.purchase-plan-dialog .supplier-plan{display:block}.plan-calculator{margin:12px 0}.source-table{min-width:650px}.dialogbody{overflow-x:auto}}

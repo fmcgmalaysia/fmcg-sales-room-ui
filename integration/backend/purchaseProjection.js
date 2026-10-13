@@ -58,7 +58,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
       ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
-      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
+      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.extraCtn??(procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn)),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
       warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,stock:warehouse.stock,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
@@ -85,8 +85,15 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     });
   }
   const invoicedShipments=readCustomerShipments(activity).filter(shipment=>shipment.company===company&&['INVOICED','DISPATCHED'].includes(shipment.status));
-  for(const row of rows.filter(row=>row.procurementSource)){row.requested=0;row.procurement.expectedExtra=0;}
+  for(const row of rows.filter(row=>row.procurementSource)){row.requested=0;row.procurement.expectedExtra=row.procurement.extraCtn??0;}
   attachPurchaseSourceTotals(rows);
+  for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);
+    if(!sources.some(row=>row.procurement.totalCtn>0))continue;
+    let extra=Math.max(0,sources.reduce((sum,row)=>sum+(row.procurement.totalCtn||0),0)-root.ord);
+    for(const source of sources.filter(row=>row.procurementSource)){source.procurement.expectedExtra=Math.min(extra,source.procurement.extraCtn||0);extra-=source.procurement.expectedExtra;}
+    root.procurement.expectedExtra=extra;
+  }
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   const quantityCases=projectQuantityCases({company,tasks:rows},activity);

@@ -13,6 +13,7 @@ export function applyPurchaseProgress(workspace, activity, purchaseOrders) {
   const invoiced=row.procurementSource?sourceLines.reduce((sum,line)=>sum+line.quantity,0):(completion?.invoicedQty||0);
   const dispatched=row.procurementSource?sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0):(completion?.dispatchedQty||0);
   const ownFinanceClosed=Boolean(ownPo?.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance?.receiptResolved);
+  row.progressFacts={sourceRequired,sourceDispatchedQty:sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0),receiptResolved:Boolean(ownPo?.invoiceChecked&&ownPo.finance?.receiptResolved)};
   const completed=row.procurementSource?(ownFinanceClosed?dispatched:0):(completion?.completedQty||0);
   row.archived=required>0&&completed===required&&ownFinanceClosed;
   for(const item of row.quantityCases||[])if(item.kind==='RECEIPT'&&ownPo?.invoiceChecked){item.status='RESOLVED';item.owner=null;item.checkedBy=ownPo.invoiceCheck?.by;item.checkedAt=ownPo.invoiceCheck?.at;}

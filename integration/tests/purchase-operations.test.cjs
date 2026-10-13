@@ -37,6 +37,42 @@ function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);
  const staff={staffId:'STF',staffName:'LAW',memberId:'MEMBER',role:'SUPER ADMIN'},base={company:'NCT',requestId:'11111111-1111-4111-8111-111111111111',staff},operate=createPurchaseOperations({store});
  return {store,rows,id,second,base,operate,task:key=>rows.get('NCTTasks/'+(key||id)),versions:()=>Object.fromEntries([id,second].map(key=>[key,taskEditVersion(rows.get('NCTTasks/'+key))])),fail:n=>failAfter=n,
  workspace:()=>projectPurchaseWorkspace({company:'NCT',staff,orders:all('NCTOrders'),tasks:all('NCTTasks'),activity:all('NCTActivity'),suppliers:all('SharedSuppliers')})};}
+
+test('one plan save commits supplier, quantity and price together and retries without duplicate audits',async()=>{
+ const f=fixture();f.task().supplierId='';
+ const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:200,supplierId:'S',prices:{lpPc:3,lpCtn:48,disc1:.02,disc2:0,disc3:0},reason:'Supplier quoted 200 cartons'};
+ await f.operate({...f.base,operation:'PLAN',input});await f.operate({...f.base,operation:'PLAN',input});
+ assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(f.task().supplierId,'S');assert.equal(f.task().lpCtn,48);
+ const row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.procurement.totalCtn,200);assert.equal(row.netCostCtn,47.04);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
+ const next={...input,version:taskEditVersion(f.task()),planRevision:row.procurement.revision,prices:{...input.prices,lpCtn:50}};
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:next});assert.equal(f.task().lpCtn,50);
+});
+
+test('a new draft plan can change supplier before PO confirmation, while a confirmed PO remains locked',async()=>{
+ const f=fixture();f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
+ const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:200,draftPlan:true,reason:'Compare supplier quotation'};
+ await f.operate({...f.base,operation:'PLAN',input});let row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.procurement.draftPlan,true);
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...input,version:row.editVersion,planRevision:row.procurement.revision,supplierId:'B'}});assert.equal(f.task().supplierId,'B');
+ await f.operate({...f.base,requestId:'33333333-3333-4333-8333-333333333333',operation:'PO',input:{taskIds:[f.id],versions:{[f.id]:taskEditVersion(f.task())},poNumber:'NCT-PO-002'}});
+ row=f.workspace().tasks.find(row=>row.id===f.id);await assert.rejects(f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'PLAN',input:{...input,version:row.editVersion,planRevision:row.procurement.revision,supplierId:'S',supplierConfirmed:true}}),/locked/);
+});
+
+test('unassigned supplier source plans become separate Account POs only when assigned and preserve customer demand',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
+ const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:100,reason:'First supplier plan'}});
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:150,supplierId:'B',poNumber:'',prices:{lpPc:4,lpCtn:64,disc1:0,disc2:0,disc3:0},reason:'Second supplier plan'}};
+ const result=await add(request);assert.deepEqual(await add(request),result);
+ const sourceRow=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
+ await f.operate({...f.base,requestId:'66666666-6666-4666-8666-666666666666',operation:'PLAN',input:{taskId:result.sourceTaskId,version:sourceRow.editVersion,planRevision:sourceRow.procurement.revision,totalCtn:170,extraKind:'PAID_EXTRA',confirmExtra:true,reason:'Buy twenty extra for stock'}});
+ const planned=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);assert.equal(planned.procurement.expectedExtra,20);assert.equal(planned.procurement.availableCtn,null);
+ const poOps=createPurchaseOrderOperations({store:f.store,readWorkspace:async()=>f.workspace(),names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT}});
+ assert.equal((await poOps.list('NCT',f.base.staff)).length,0);
+ for(const [index,id] of [f.id,result.sourceTaskId].entries())await f.operate({...f.base,requestId:String(index+4).repeat(8)+'-4444-4444-8444-444444444444',operation:'PO',input:{taskIds:[id],versions:{[id]:f.workspace().tasks.find(row=>row.id===id).editVersion},poNumber:'NCT-PO-'+index}});
+ const pos=await poOps.list('NCT',f.base.staff);assert.equal(pos.length,2);assert.deepEqual(copy(pos.map(row=>row.amount).sort((a,b)=>a-b)),[1168,10880]);assert.equal(f.task().purchaseQtyInCtn,250);
+});
 test('manual prices derive cartons, preserve original/source quote, audit once and replay saved result',async()=>{const f=fixture(),before=copy(f.task()),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpPc:2,disc3:3}}]};const result=await f.operate({...f.base,operation:'EDIT',input});assert.equal(result.ok,true);assert.equal(f.task().lpCtn,32);assert.deepEqual(f.task().originalCostSnapshot,before.originalCostSnapshot);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);assert(f.task().manualCostField.includes('lpCtn'));await f.operate({...f.base,operation:'EDIT',input});assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);});
 test('partial multirow save resumes exact prepared changes without losing later edits',async()=>{const f=fixture(),input={edits:[f.id,f.second].map(taskId=>({taskId,version:taskEditVersion(f.task(taskId)),changes:{disc3:1}}))};f.fail(1);await assert.rejects(f.operate({...f.base,operation:'EDIT',input}),/response lost/);await f.operate({...f.base,operation:'EDIT',input});assert.equal(f.task().disc3,1);assert.equal(f.task(f.second).disc3,1);});
 test('P.O. validates one supplier/customer and records stage and identities without changing quantities',async()=>{const f=fixture(),input={taskIds:[f.id,f.second],versions:f.versions(),poNumber:'po-001'};await f.operate({...f.base,operation:'PO',input});assert.equal(f.task().ourPoNumber,'PO-001');assert.equal(f.task().purchaseStage,'WAITING_FOR_SUPPLIER_INV');assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(f.workspace().tasks.length,2);});

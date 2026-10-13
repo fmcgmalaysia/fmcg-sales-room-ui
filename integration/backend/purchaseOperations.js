@@ -64,20 +64,28 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const {task}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
         requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
-        if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing procurement quantity.');
+        const supplierId=input.supplierId===undefined?task.supplierId:input.supplierId,patch={};
+        if(!supplierId||!s.suppliers.some(row=>row.title===supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select an active supplier before saving the purchase plan.');
+        if(supplierId!==task.supplierId){if(task.ourPoNumber||plan.revision&&!plan.draftPlan)throw Error('Supplier is locked to the confirmed procurement source.');patch.supplierId=supplierId;}
+        if(input.prices!==undefined){
+          if(!input.prices||Object.keys(input.prices).length!==prices.length||prices.some(key=>typeof input.prices[key]!=='number'||!Number.isFinite(input.prices[key])||input.prices[key]<0)||input.prices.disc1>1||input.prices.disc2>1||input.prices.lpCtn*(1-input.prices.disc1)*(1-input.prices.disc2)-input.prices.disc3<0)throw Error('Check supplier costs and discounts.');
+          for(const key of prices)if(input.prices[key]!==task[key])patch[key]=input.prices[key];
+          if(prices.some(key=>key in patch))patch.manualCostField=[...new Set([...(Array.isArray(task.manualCostField)?task.manualCostField:[]),...prices])];
+        }
         if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
-        if(input.totalCtn===plan.totalCtn)throw Error('Procurement quantity has not changed.');
+        if(input.totalCtn===plan.totalCtn&&!Object.keys(patch).length)throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const extra=input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
         if(extra>0&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
         if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
-        edit(task,{});
+        edit(task,patch);
+        if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
-        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,customerQty:task.purchaseQtyInCtn,extraKind:extra?input.extraKind:'',reason,supplierId:task.supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
+        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?input.extraKind:'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);

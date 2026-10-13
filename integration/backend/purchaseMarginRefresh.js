@@ -11,7 +11,7 @@ function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
   let quantity = 0, amount = 0;
   for (const source of sources) {
     const invoiced = invoiceLines.flatMap(line => line.costSources || []).filter(part => part.sourceTaskId === source.id).reduce((sum, part) => sum + part.quantity, 0);
-    const remaining = Math.max(0, (source.procurement?.totalCtn || 0) - invoiced);
+    const remaining = Math.max(0, (source.procurement?.totalCtn || 0) - (source.procurement?.expectedExtra || 0) - invoiced);
     if (!remaining) continue;
     const raw = tasks.find(item => item.title === source.id), cost = raw ? calculateNetCartonCost(raw) : null;
     if (!finite(cost)) return null;
