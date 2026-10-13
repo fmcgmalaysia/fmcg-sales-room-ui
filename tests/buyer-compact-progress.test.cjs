@@ -21,3 +21,22 @@ test('only current task layout removes Barcode and Updated; existing history and
   assert.match(head,/Est\. Shipment Date<\/span><b>—<\/b>/);
   assert.match(html,/track-barcode/);assert.match(html,/trackEditHistory/);
 });
+test('customer quantity comes only from assigned warehouse receipts and excludes completed history',()=>{
+  const ctx=vm.createContext({Number,Math,completedLineQty:line=>line.completedQtyCtn||0});
+  vm.runInContext(html.slice(html.indexOf('function customerReceivedQty('),html.indexOf('function trackingDots(')),ctx);
+  assert.equal(ctx.customerReceivedQty({committedQtyCtn:200,receivedQtyCtn:90}),90);
+  assert.equal(ctx.customerReceivedQty({committedQtyCtn:200}),null);
+  assert.equal(ctx.customerReceivedQty({committedQtyCtn:200,receivedQtyCtn:0}),0);
+  assert.equal(ctx.customerReceivedQty({receivedQtyCtn:350,completedQtyCtn:300}),50);
+  const active=html.slice(html.indexOf('if(!completed)return `<div class="tracking-row'),html.indexOf(';return `<div class="tracking-row',html.indexOf('function trackingLineHtml(')));
+  assert.doesNotMatch(active,/tracking-delta|tracking-qty-change|Received \/ 已收|\| \$\{line\.receivedQtyCtn/);
+  assert.match(active,/qty===null\?'—':qty\.toLocaleString/);
+  assert.match(html,/activeCommittedQty=row=>customerReceivedQty\(row.line\)\?\?0/);
+});
+test('numbered larger progress dots and Track images reuse the original My Selection hover handler',()=>{
+  assert.match(html,/<span aria-hidden="true">\$\{index\+1\}<\/span>/);
+  assert.match(html,/flex-basis:18px;width:18px;height:18px/);
+  const active=html.slice(html.indexOf('if(!completed)return `<div class="tracking-row'),html.indexOf(';return `<div class="tracking-row',html.indexOf('function trackingLineHtml(')));
+  assert.match(active,/\|\|line,true\)/);
+  assert.match(html,/bindImagePreview\(\);document.querySelectorAll\('\[data-reduce-order\]'/);
+});
