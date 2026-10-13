@@ -603,12 +603,12 @@ export const saveBuyerQuantity = webMethod(Permissions.SiteMember, async (itemId
   if (row.data.removed) throw new Error('Recover this item before entering an order quantity.');
   const requestedQuantity = quantity(quantityCtn);
   if (requestedQuantity > 0 && !(releasedOrderPrice(row.data) > 0)) throw new Error('Order quantity becomes available after the V.I.P price is released.');
-  if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: normalize(row.data.qtyEditedAt), qtyEditedBy: normalize(row.data.qtyEditedBy) };
+  if (requestedQuantity === quantity(row.data.orderQtyCtn)) return { ok: true, itemId: normalize(itemId), quantityCtn: requestedQuantity, qtyEditedAt: requestedQuantity ? normalize(row.data.qtyEditedAt) : '', qtyEditedBy: requestedQuantity ? normalize(row.data.qtyEditedBy) : '' };
   const now = new Date().toISOString();
   const actor = buyer.actorName || buyer.email;
-  const next = { ...row.data, orderQtyCtn: requestedQuantity, qtyEditedAt: now, qtyEditedBy: actor, updatedAt: now, lastEditedBy: actor };
+  const next = { ...row.data, orderQtyCtn: requestedQuantity, qtyEditedAt: requestedQuantity ? now : '', qtyEditedBy: requestedQuantity ? actor : '', updatedAt: now, lastEditedBy: actor };
   await putPayload(BUYER_LIST_COLLECTION, row.record.title, next);
-  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: now, qtyEditedBy: actor };
+  return { ok: true, itemId: normalize(itemId), quantityCtn: next.orderQtyCtn, qtyEditedAt: next.qtyEditedAt, qtyEditedBy: next.qtyEditedBy };
 });
 export const reduceBuyerOrderLine = webMethod(Permissions.SiteMember, async (orderId, lineId, newQuantityCtn, requestId = '', assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
