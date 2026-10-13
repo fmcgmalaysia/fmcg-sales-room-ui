@@ -1,0 +1,12 @@
+{
+  "status": "candidate; not deployed",
+  "branch": "style/sales-dashboard-rfq-queue",
+  "base": "style/buyer-track-received-progress",
+  "build": "2026-10-13-sales-dashboard-rfq-v1",
+  "recovery": {"previousPublishedCode":"58d3b69","previousRecord":"d738328","protectedSubmissionTag":"verified/send-order-addition-user-tests-20261009","copies":"C:/FMCG-WIX-LOCAL/handoff/sales-dashboard-rfq-20261013","liveComparison":"Public index exact; onboarding and Sales page normalized LF/trimEnd exact before edits"},
+  "scope": ["Pending Quotation strictly counts non-removed RFQ items for all customers visible to existing staff authorization", "FAILED quotations remain explicit queue exceptions without inflating RFQ", "Action Queue Updated/Customer Name/Country/Currency/Task; customer column43%", "Active Customers title12px700; rounded two-tone SVGs", "All five cards use existing Workspace/Order Management navigation and unsaved-work guard; queue rows remain read-only"],
+  "components": ["index.html", "sales-room/wix/onboarding.web.js", "sales-room/wix/sales-room-page.js"],
+  "validation": {"targetedPassed":35,"coverage":"RFQ vs FAILED/removed/published/unrelated customer rows, QD pending independence, completion removes queue tasks, failure remains, keyboard/card navigation guard; quote/risk/preview/read and protected addition scenarios","isolatedPreview":"RFQ9+5=14 despite QD pending99; FAILED1 separate; long names readable;12px700; Active card enters Workspace and New Orders Enter opens Order Management","realBusinessWrites":false},
+  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "preserved": "No quotation publish/selection/QD generator/template/permission/storage/payment/quantity changes. Apps Script scanner and quote-risk caches untouched. Existing queue oldest-first order and original received timestamps retained under Updated label. No main merge or new verified tag."
+}

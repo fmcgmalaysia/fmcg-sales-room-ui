@@ -458,10 +458,11 @@ export const getSalesRoomCustomersOperational = webMethod(
       // Quote counts represent formally released QD rows, never merely a
       // non-zero price left in storage.
       const status = upper(item.quoteStatus || 'RFQ');
-      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
+      const current = quoteByCustomer.get(customerId) || { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       if (status === 'VIEW QUOTE' || status === 'WARNING') current.quoted += 1;
       const syncedAt = item.quoteEffectiveAt || item.quoteSyncedAt || '';
       if (syncedAt && (!current.lastQuoteSyncedAt || new Date(syncedAt).getTime() > new Date(current.lastQuoteSyncedAt).getTime())) current.lastQuoteSyncedAt = syncedAt;
+      if (status === 'RFQ') current.rfq += 1;
       if (status === 'RFQ' || status === 'FAILED') {
         current.awaiting += 1;
         const receivedAt = item.selectedAt || row.record?._createdDate || '';
@@ -509,7 +510,7 @@ export const getSalesRoomCustomersOperational = webMethod(
       activeLineByCustomer.set(customerId, Number(activeLineByCustomer.get(customerId) || 0) + 1);
     }
     const customers = (base.customers || []).map((customer) => {
-      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
+      const quote = quoteByCustomer.get(customer.customerId) || { quoted: 0, awaiting: 0, rfq: 0, pendingQuoteReceivedAt: '', lastQuoteSyncedAt: '' };
       const incoming = incomingByCustomer.get(customer.customerId) || { count: 0, incomingOrderReceivedAt: '' };
       const qdWork = quoteRiskCounts.get(customer.customerId) || null;
       const hasQuoteRows = quote.quoted > 0 || quote.awaiting > 0;
@@ -518,6 +519,7 @@ export const getSalesRoomCustomersOperational = webMethod(
         ...customer,
         quotedItemCount: quote.quoted,
         awaitingQuoteItemCount: quote.awaiting,
+        rfqItemCount: quote.rfq,
         quoteWorkStatusAvailable,
         quoteRiskCount: quoteWorkStatusAvailable ? Number(qdWork?.quoteRiskCount || 0) : null,
         pendingQuoteCount: quoteWorkStatusAvailable ? Number(qdWork?.pendingQuoteCount || 0) : null,
