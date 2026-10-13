@@ -8,13 +8,14 @@ function harness(storage,feedbackRows=[],signals=null) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
-      classList:{ toggle(){} }, addEventListener(type,callback){ listeners.set(id+':'+type,callback); },
+      classList:{ toggle(){},remove(){},add(){} }, insertAdjacentHTML(position,html){node('#dialogContent').innerHTML+=html;}, addEventListener(type,callback){ listeners.set(id+':'+type,callback); },
       showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
     return nodes.get(id);
   }
   const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
-  vm.runInNewContext(source,{ window, document:{ querySelector:node, querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
+  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
@@ -32,14 +33,32 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
 
+test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
+ const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});
+ h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/<th>Customer<\/th>/);assert.match(html,/customer-short[^>]*>ALPHA/);assert.match(html,/customer-short[^>]*>BETA/);assert.doesNotMatch(html,/data-drag=/);
+ h.change({dataset:{select:'TASK'},checked:true});h.change({dataset:{select:'OTHER'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/1 Items · 2 Customers · 20 CTN/);assert.equal(h.messages.length,1);
+ h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
+});
+
+test('cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt',()=>{
+ const h=harness(),w=workspace();w.sourcesVersion='S1';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{totalCtn:null,revision:''}});
+ h.reply(w);h.click({customer:'C'});h.click({planTask:'TASK'});
+ for(const [id,value] of Object.entries({planSupplier:'S',planTotal:'200',planReason:'First supplier quotation','planPrice-lpPc':'3','planPrice-lpCtn':'48','planPrice-disc1':'2','planPrice-disc2':'0','planPrice-disc3':'0'}))h.node('#'+id).value=value;
+ h.click({controlId:'saveSupplierPlan'});const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.totalCtn,200);assert.equal(request.input.prices.lpCtn,48);assert.equal(request.input.prices.disc1,.02);assert.equal(request.input.supplierId,'S');
+ const count=h.messages.length;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.length,count);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{ok:true,requestId:request.requestId}});
+ Object.assign(w.tasks[0],{procurement:{totalCtn:200,revision:'P'},sourcing:{orderedCtn:200,unplacedCtn:50}});h.reply(w);
+ assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/Remaining \/ 尚需采购 50/);assert.match(h.node('#dialogContent').innerHTML,/id="sourceQty"[^>]*value="50"/);assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="TASK"/);
+});
+
 test('supplier sources keep ordered and physical received quantities separate and add a priced PO once',()=>{
  const h=harness(),w=workspace();w.sourcesVersion='SV';w.suppliers=[{id:'A',name:'Supplier A'},{id:'B',name:'Supplier B'}];
  Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
  w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
  h.reply(w);h.click({customer:'C'});let html=h.node('#app').innerHTML;
- assert.match(html,/200 \| 190/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
+ assert.match(html,/200 \| <span class="qty-mismatch">190<\/span>/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
  h.click({sources:'SOURCE-B'});assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-A/);assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-B/);
- for(const [id,value] of Object.entries({sourceSupplier:'B',sourcePo:'NCT-PO-C',sourceQty:'10',sourceCost:'120',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
+ for(const [id,value] of Object.entries({sourceSupplier:'B',sourceQty:'10','sourcePrice-lpPc':'7.5','sourcePrice-lpCtn':'120','sourcePrice-disc1':'0','sourcePrice-disc2':'0','sourcePrice-disc3':'0',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
  h.click({controlId:'saveAdditionalSource'});const request=h.messages.at(-1);
  assert.equal(request.operation,'ADD_SOURCE');assert.equal(request.input.parentTaskId,'TASK');assert.equal(request.input.version,'SV');assert.equal(request.input.quantity,10);assert.equal(request.input.prices.lpCtn,120);assert.equal(request.input.prices.lpPc,7.5);assert.equal(request.input.prices.disc1,0);assert.equal(request.input.prices.disc2,0);assert.equal(request.input.prices.disc3,0);
  const count=h.messages.length;h.click({controlId:'saveAdditionalSource'});assert.equal(h.messages.length,count,'duplicate click while saving cannot create another source');
@@ -143,7 +162,7 @@ test('GP is a read-only two-decimal percentage; missing and unsaved values never
 
 test('P.O. dialog hides system IDs, places an obvious input first and keeps original association payload',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{totalCtn:275}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
- const html=h.node('#dialogContent').innerHTML;assert.match(html,/填写采购单号/);assert.match(html,/po-number-entry/);assert.match(html,/po-items/);assert.doesNotMatch(html,/<small>TASK<\/small>|每行任务 ID/);
+ const html=h.node('#dialogContent').innerHTML;assert.match(html,/创建采购单/);assert.match(html,/po-number-entry/);assert.match(html,/po-items/);assert.doesNotMatch(html,/<small>TASK<\/small>|每行任务 ID/);
  assert.ok(html.indexOf('id="poNumber"')<html.indexOf('class="rowlist po-items"'));assert.match(html,/275/);
  h.node('#poNumber').value='NCT-00123';h.click({controlId:'savePo'});const request=h.messages.at(-1);assert.equal(request.operation,'PO');assert.deepEqual(Array.from(request.input.taskIds),['TASK']);assert.equal(request.input.versions.TASK,'REV');assert.equal(request.input.poNumber,'NCT-00123');
 });
@@ -154,7 +173,7 @@ test('P.O. details stay read-only and show human product references without inte
 });
 
 test('a company prefix alone cannot create a PO or lose the current input',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV'});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{totalCtn:250}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
  h.node('#poNumber').value='NCT-PO-';h.click({controlId:'savePo'});assert.equal(h.messages.length,1);assert.match(h.node('#dialogError').textContent,/采购单号码/);assert.equal(h.node('#poNumber').value,'NCT-PO-');
 });
 
@@ -220,14 +239,14 @@ test('CMS Dashboard retains the approved directory structure, summary icons and 
   assert.match(html,/<th>Edit<\/th>/);assert.doesNotMatch(html,/Add Customer|id="addCustomer"/);
 });
 
-test('CMS Purchase Room restores v13 track, tools and approved columns plus the final task editor without changing task data',()=>{
+test('compact Purchase Room keeps track, drag controls and new read-only columns without business writes',()=>{
   const h=harness();h.reply(workspace());h.click({customer:'C'});const html=h.node('#app').innerHTML;
-  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','task-edit','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['roomhead','Pending workload','Waiting for Acc Review','supplierFilter','stageFilter','allocationFilter','supplier-plan-link','row-progress','unified-save','Move selected','row-controls','order-quantity','received-quantity'])assert.ok(html.includes(marker),marker);
   const header=html.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)[1];
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
-  assert.deepEqual(labels.slice(1),['Row','Since','Waiting','Description','Supplier','Order Qty','Rcv Qty','LP/Pc','LP/Ctn','Disc.1','Disc.2','Disc.3','Net Cost','Our P.O. No.','Path','GP','Edit']);
-  assert.equal(labels.length,18);
-  assert.match(html,/width:19%/);
+  assert.deepEqual(labels.slice(1),['Row','Since','Description','Order Qty','Rcv Qty','Supplier','Net Cost','Line Cost','Our P.O.','GP','Progress']);
+  assert.equal(labels.length,12);
+  assert.match(html,/width:23%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
@@ -287,7 +306,7 @@ test('row editor keeps barcode first, omits received quantity and gates changes 
 
 test('separate four-digit quantities preserve the legacy warehouse value and edited demand marker',()=>{
   const h=harness(),data=workspace();Object.assign(data.tasks[0],{ord:9999,inc:8888,qtyEdited:true});h.reply(data);h.click({customer:'C'});
-  const html=h.node('#app').innerHTML;assert.match(html,/demand-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-task-edit="TASK"/);
+  const html=h.node('#app').innerHTML;assert.match(html,/demand-edited/);assert.match(html,/9999/);assert.match(html,/8888/);assert.doesNotMatch(html,/9,999|8,888/);assert.match(html,/net-cost-cell/);assert.match(html,/data-plan-task="TASK"/);
 });
 
 test('reload checks the existing save identity and restores only the same staff member draft',()=>{
@@ -305,7 +324,7 @@ test('partial price input survives redraw and cannot submit a stale numeric valu
   h.event('focusin',field);assert.equal(field.value,'');h.event('focusout',field);assert.equal(field.value,'2.00');
   h.event('focusin',field);field.value='bad';h.event('input',field);h.event('focusout',field);h.click({controlId:'saveEdits'});
   assert.equal(h.messages.filter(message=>message.type==='PURCHASE_SAVE_REQUEST').length,0);
-  h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/value="bad"/);
+  h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/Unsaved changes/);h.click({controlId:'saveEdits'});assert.match(h.node('#liveStatus').textContent,/标红/);
 });
 
 test('cost calculator sends source amounts and internal note, not a client calculated price or quantity edit',()=>{
@@ -318,7 +337,7 @@ test('cost calculator sends source amounts and internal note, not a client calcu
 test('history icon keeps the actual history dialog and progress capsules keep existing counts without writes',()=>{
  const h=harness(),w=workspace();w.tasks[0].history=[{id:'E1',action:'PURCHASE_QTY_REDUCED',time:'2026-10-10T12:00:00Z',actor:'LAW',message:'Supplier only 90 cartons'}];
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
- assert.match(html,/class="path task-history" data-path="TASK" aria-label="History 00123"/);
+ assert.match(html,/data-progress-task="TASK"/);
  assert.doesNotMatch(html,/PURCHASE_QTY_REDUCED/);
  assert.equal((html.match(/class="stage-count">1<\/span>/g)||[]).length,7);
  assert.match(html,/class="circle stage-capsule [^"]*" data-stage="0"/);

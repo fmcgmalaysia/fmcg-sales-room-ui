@@ -96,6 +96,12 @@ test('multiple suppliers contribute weighted open cost while demand and each sup
   assert.equal(f.rows.get('NCTTasks/B').lpCtn, 300);
 });
 
+test('supplier surplus stays out of the customer weighted GP cost',async()=>{
+ const f=fixture(),input=withSources(f,f.input());input.workspace.tasks[1].procurement.expectedExtra=10;
+ assert.equal((await f.refresh(input)).get('T'),(320-255)/320);
+ assert.equal(input.workspace.tasks[1].procurement.totalCtn,30);assert.equal(f.rows.get('NCTTasks/B').lpCtn,300);
+});
+
 test('partial invoice preserves its source snapshot and weights only remaining supplier cartons at current FX', async () => {
   const f = fixture(); f.setRate(4);
   const input = withSources(f, withInvoice(f.input(), 40));

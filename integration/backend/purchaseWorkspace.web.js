@@ -7,6 +7,7 @@ import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { applyPurchaseProgress } from 'backend/purchaseProgress.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
+import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 const options = { suppressAuth: true, consistentRead: true };
 const refreshMargins = createPurchaseMarginRefresh({ readRates: readCurrentAdminFx, store: {
   async read(collection, id) { const found = await wixData.query(collection).eq('_id', id).limit(2).find(options); if (found.items.length > 1) throw Error('Ambiguous margin record.'); return found.items[0] || null; },
@@ -28,8 +29,12 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
     all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders'))
   ]);
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });
+  let customerNames=[],customerNamesError='';
+  try { customerNames=await readCustomerShortNames(workspace.customers.map(row=>row.id)); }
+  catch (_) { customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。'; }
+  workspace.customers=workspace.customers.map(row=>({...row,shortName:customerNames.find(item=>item.customerId===row.id)?.shortName||''}));
   const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace, activity });
   const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
   applyPurchaseProgress(workspace,activity,purchaseOrders);
-  return { ...workspace, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null })) };
+  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null })) };
 });

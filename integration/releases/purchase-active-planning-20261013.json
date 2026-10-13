@@ -1,0 +1,62 @@
+{
+  "status": "candidate complete; publication and user acceptance pending",
+  "branch": "feat/purchase-active-planning",
+  "build": "2026-10-13-purchase-active-planning-v1",
+  "recovery": {
+    "previousCode": "41936c8ef3b1d95e3befa0e92f54e192a3bb9e57",
+    "previousRecord": "a3b5468",
+    "verifiedSourceWorkflowTag": "verified/send-order-addition-user-tests-20261009",
+    "exactLiveCopies": "C:/FMCG-WIX-LOCAL/handoff/purchase-active-planning-20261013",
+    "comparison": "Purchase page, live app/style and all changed existing backend modules were captured and matched repository code before modification. Newline-only differences normalized for comparison."
+  },
+  "implemented": [
+    "Shared compact Purchase Room and Active Orders with Customer Short Name column and customer/supplier filters",
+    "Three-line product identity, read-only Net Cost/Line Cost/GP, seven independent progress nodes and persistent exception actions",
+    "Supplier source expansion including unassigned drafts; concrete source selection for cross-customer PO preview",
+    "Quantity, supplier and five cost fields saved atomically with the existing operation journal",
+    "New draft plans may change supplier before a PO; confirmed and legacy committed identities remain protected",
+    "Successful new plan save reopens remaining supplier planning with no duplicate mutation",
+    "Per-source saved and confirmed timestamps, original task history and authorized Admin demand/average-cost entry retained",
+    "Original drag feedback and save identity retained; source children follow their parent; Active Orders movement is scoped to one selected customer",
+    "Each assigned supplier PO continues to use the same Account/receiving/document/payment identity",
+    "Source-specific surplus forecast, no availability before receipt, and exclusion of surplus from customer GP cost",
+    "Price or quantity change after Finance Checked restores financial risk until Finance confirms the new version",
+    "Quarantined stock uses usable quantities and opens the existing stock exception workspace",
+    "Existing unsaved price drafts remain reviewable and use the original save/retry mechanism"
+  ],
+  "validation": {
+    "targetedChecks": 159,
+    "passed": 159,
+    "failed": 0,
+    "coverage": "Purchase operations/UI/order projection, NCT/GHR scenarios, explicit allocation, invoice/dispatch, financial settlement/CN evidence, customer quantity isolation, short-name mapping, weighted GP and surplus",
+    "localPreview": "Active Orders customer column and source expansion; ALPHA+BETA 10+10 PO preview (one item, 20 cartons, MYR 1200); supplier calculator and remaining quantity; modal footer/input boundaries",
+    "evidenceDirectory": "C:/FMCG-WIX-LOCAL/handoff/purchase-active-planning-20261013",
+    "realBusinessWrites": false,
+    "fullSystemAcceptance": false
+  },
+  "releaseOrder": [
+    "Synchronize and publish backward-compatible Master backend and Purchase bridge before exposing the new Pages UI",
+    "Deploy the task branch to GitHub Pages and verify the build and exact assets",
+    "Force refresh public Purchase/Account/affected Warehouse read-only views",
+    "User performs real business acceptance; retain main and verified tags until user confirmation"
+  ],
+  "wixComponents": [
+    "purchase-room-page.js",
+    "purchaseOperations.js",
+    "purchaseSources.js",
+    "purchasePlan.js",
+    "purchaseProjection.js",
+    "purchaseMarginRefresh.js",
+    "purchaseProgress.js",
+    "purchaseWorkspace.web.js",
+    "accountSettlement.js"
+  ],
+  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "preserved": "No main merge, no new verified tag, no upload service/Drive ACL/role/authentication changes, no bank transfer or real payment/receipt mutation. Existing user business data protected.",
+  "followUps": [
+    "User acceptance of three suppliers, surplus stock, cross-customer PO and Account per-PO visibility",
+    "Previously recorded ordinary-employee Drive file access remains unverified",
+    "Scenario two customer settlement acceptance remains pending; this change does not close that checklist",
+    "Standalone inventory purchasing and posted-invoice correction remain separate from this scoped UI"
+  ]
+}

@@ -9,6 +9,14 @@ function fixture(){
  return {row,details};
 }
 const payment=(id,cents,confirmed=true)=>({id,cents,confirmed,by:'FINANCE',byStaffId:'F',at:'2026-10-11T00:00:00Z',proof:{fileId:'proof-'+id,sha256:'hash',linked:true}});
+
+test('a procurement price change after Finance Checked restores risk until Finance reviews the new version',()=>{
+ const {row,details}=fixture();details.finance.payments=[payment('P',100000)];let state=projectAccountSettlement(row,details);
+ details.finance.check={enabled:true,reviewVersion:state.finance.reviewVersion,byStaffId:'F',at:'2026-10-13T01:00:00Z'};
+ assert.equal(projectAccountSettlement(row,details).invoiceChecked,true);
+ row.contentVersion='new-price';state=projectAccountSettlement(row,details);assert.equal(state.invoiceChecked,false);assert.equal(state.reviewRequired,true);assert.equal(state.financialRisk,true);assert.equal(state.creditorActive,true);assert.match(state.checkBlocker,/重新核对/);
+ details.finance.check={enabled:true,reviewVersion:state.finance.reviewVersion,byStaffId:'F',at:'2026-10-13T02:00:00Z'};state=projectAccountSettlement(row,details);assert.equal(state.financialRisk,false);assert.equal(state.invoiceChecked,true);assert.equal(state.canArchive,false,'customer invoice still required');
+});
 test('prepayment remains visible without final invoice; refund proof reduces cash exposure',()=>{
  const {row,details}=fixture();row.documents=[];details.finance.payments=[payment('P',100000)];
  let state=projectAccountSettlement(row,details);assert.equal(state.creditorActive,true);assert.equal(state.prepaymentPending,true);assert.equal(state.finance.paidCents,100000);assert.equal(state.canArchive,false);
