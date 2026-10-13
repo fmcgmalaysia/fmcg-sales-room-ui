@@ -2,7 +2,7 @@
   "status": "Candidate complete; no deployment or live edits",
   "branch": "feat/sales-progress-shipment-20261014",
   "base": "fix/sales-customer-review-20261014",
-  "codeCommit": "e2196cb",
+  "codeCommit": "8d800dd",
   "salesBuild": "2026-10-14-sales-progress-shipment-v1",
   "departmentBuild": "2026-10-14-sales-shipment-date-v1",
   "recovery": {
