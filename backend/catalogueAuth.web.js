@@ -712,8 +712,10 @@ export const recoverBuyerItem = webMethod(Permissions.SiteMember, async (itemId,
   }
 });
 function nextOrderId(customerId, requestId) { return 'ORD-' + normalize(customerId).replace(/[^A-Z0-9-]/gi, '').toUpperCase() + '-' + requestId.replace(/-/g, '').toUpperCase(); }
-export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '') => {
+export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (requestedLines, assistCustomerId = '', requestId = '', customerPoNumber = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);
+  if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
+  const buyerPo = customerPoNumber.trim();
   const submissionId = normalize(requestId);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(submissionId)) throw new Error('Please refresh the order form and try again.');
   const requests = Array.isArray(requestedLines) ? requestedLines : [];
@@ -721,7 +723,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
   if (requests.length > buyer.selectionLimit || new Set(requests.map(line => normalize(line.itemId))).size !== requests.length) throw new Error('Order lines are invalid. Please refresh the order form.');
   return withBuyerSubmissionLock(buyer, submissionId, async () => {
   const id = nextOrderId(buyer.customerId, submissionId);
-  const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0])));
+  const requestFingerprint = JSON.stringify(requests.map(line => [normalize(line.itemId), Number(line.quantityCtn)]).sort((a, b) => a[0].localeCompare(b[0]))) + (buyerPo ? '|PO:' + JSON.stringify(buyerPo) : '');
   let orderRecord = null;
   try { orderRecord = await wixData.get(BUYER_ORDER_COLLECTION, submissionId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* New submission. */ }
   if (orderRecord) {
@@ -747,7 +749,7 @@ export const submitBuyerOrder = webMethod(Permissions.SiteMember, async (request
     return { lineId: 'L' + String(index + 1).padStart(3, '0'), itemId: item.id, barcode: item.barcode, itemName: item.itemName, packingSize: item.packingSize, eaPerCtn, lockedUnitPriceEa, cbmPerCtn: money(item.cbmPerCtn), currency: upper(item.vipCurrency || buyer.currency || 'USD'), lockedUnitPrice, quantityCtn: qty, qtyEditedAt: item.qtyEditedAt, qtyEditedBy: item.qtyEditedBy, lineAmount: Number((lockedUnitPrice * qty).toFixed(2)), totalCbm: Number((money(item.cbmPerCtn) * qty).toFixed(4)) };
   });
   const confirmedAt = new Date().toISOString();
-  const order = { orderId: id, requestId: submissionId, requestFingerprint, additionVersion: 1, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), totalCbm: Number(lines.reduce((sum, line) => sum + line.totalCbm, 0).toFixed(4)), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
+  const order = { orderId: id, requestId: submissionId, requestFingerprint, ...(buyerPo ? { customerPoNumber: buyerPo } : {}), additionVersion: 1, customerId: buyer.customerId, companyName: buyer.companyName, currency: lines[0].currency, status: 'CREATING', isComplete: false, lineCount: lines.length, pendingLines: lines, source: buyer.actorType === 'STAFF' ? 'SALES ASSISTED' : 'BUYER ROOM', confirmedAt, confirmedBy: buyer.actorName || buyer.email, totalCartons: lines.reduce((sum, line) => sum + line.quantityCtn, 0), totalCbm: Number(lines.reduce((sum, line) => sum + line.totalCbm, 0).toFixed(4)), estimatedTotal: Number(lines.reduce((sum, line) => sum + line.lineAmount, 0).toFixed(2)) };
   const savedOrder = await putPayload(BUYER_ORDER_COLLECTION, id, order);
   return finishBuyerAddition(payloadData(savedOrder), buyer);
   });
@@ -841,7 +843,7 @@ async function planBuyerAddition(order, buyer) {
   const orderRecords = await buyerCustomerRecords(BUYER_ORDER_COLLECTION, buyer.customerId);
   const lineRecords = await buyerCustomerRecords(BUYER_LINE_COLLECTION, buyer.customerId);
   const orders = new Map(orderRecords.map(record => [normalize(payloadData(record).orderId), record]));
-  const candidates = lineRecords.filter(record => !payloadData(record).addedToOrderId).sort((a, b) => {
+  const candidates = lineRecords.filter(record => !payloadData(record).addedToOrderId && (!normalize(order.customerPoNumber) || normalize(payloadData(orders.get(normalize(payloadData(record).orderId))).customerPoNumber) === normalize(order.customerPoNumber))).sort((a, b) => {
     const left = payloadData(orders.get(normalize(payloadData(a).orderId))), right = payloadData(orders.get(normalize(payloadData(b).orderId)));
     return String(left.confirmedAt || '').localeCompare(String(right.confirmedAt || '')) || normalize(a.title).localeCompare(normalize(b.title));
   });
