@@ -73,6 +73,34 @@ function harness() {
   };
 }
 
+test('optional customer PO persists, retries once and rejects conflicting PO reuse', async () => {
+  const h = harness(), lines = [{itemId:'SKU1',quantityCtn:20}], id=request(501);
+  const result=await h.submitBuyerOrder(lines,'',id,' CLIENT-501 ');
+  assert.equal(h.order(result.orderId).customerPoNumber,'CLIENT-501');
+  await h.submitBuyerOrder(lines,'',id,'CLIENT-501');
+  assert.equal(h.line(result.orderId)[0].quantityCtn,20);
+  await assert.rejects(h.submitBuyerOrder(lines,'',id,'CLIENT-502'),/conflict/);
+  await assert.rejects(h.submitBuyerOrder(lines,'',id,''),/conflict/);
+});
+test('different explicit customer POs remain separate; matching PO keeps protected addition behaviour', async () => {
+  const h=harness(),send=(qty,n,po)=>h.submitBuyerOrder([{itemId:'SKU1',quantityCtn:qty}],'',request(n),po);
+  const a=await send(20,502,'CLIENT-A'),b=await send(10,503,'CLIENT-B');
+  assert.equal(h.order(b.orderId).receiptOnly,false);
+  assert.equal(h.line(a.orderId)[0].effectiveRequestedQtyCtn,undefined);
+  await send(5,504,'CLIENT-A');
+  assert.equal(h.line(a.orderId)[0].effectiveRequestedQtyCtn,25);
+  assert.equal(h.line(b.orderId)[0].quantityCtn,10);
+});
+test('invalid customer PO never writes; Sales later editing a blank submission PO does not break replay', async () => {
+  const h=harness(),lines=[{itemId:'SKU1',quantityCtn:20}];
+  for(const po of ['a'.repeat(101),'bad\npo',42])await assert.rejects(h.submitBuyerOrder(lines,'',request(505),po),/P.O./);
+  assert.equal(h.writes.length,0);
+  const result=await h.submit(20,506),record=h.order(result.orderId);
+  h.seed('WixBuyerOrders',request(506),{...record,customerPoNumber:'SALES-EDITED'},{customerId:'C1'});
+  await h.submit(20,506);
+  assert.equal(h.line(result.orderId)[0].quantityCtn,20);
+});
+
 test('20 +100 +200 accumulates one task, preserves three Excel receipts and two history events', async () => {
   const h = harness(), first = await h.submit(20, 1), second = await h.submit(100, 2), third = await h.submit(200, 3);
   const line = h.line(first.orderId)[0];
