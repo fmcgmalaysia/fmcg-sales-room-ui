@@ -1,5 +1,5 @@
 {
-  "status": "Candidate complete; not deployed or Wix-published",
+  "status": "Published; formal read/layout verified; user business acceptance pending",
   "branch": "fix/sales-customer-review-20261014",
   "base": "style/sales-dashboard-rfq-queue",
   "codeCommit": "5e63e24",
@@ -30,10 +30,21 @@
     "backendChanges": false
   },
   "publication": {
-    "githubPages": false,
-    "wixPublished": false,
-    "publicCandidateVerified": false,
-    "temporaryRuleAdded": false
+    "githubPages": true,
+    "deployedCommit": "1a598500c25841967d75cdb9291cf97e593298bd",
+    "run": "38429755722",
+    "job": "115408526272",
+    "status": "Success;25seconds",
+    "publicAssetsExact": ["index.html", "buyer-room.html", "purchase-live/index.html", "purchase-live/app.js", "sales-room/shipment-ui.js"],
+    "wixPublished": true,
+    "wixReadback": "Complete Sales and Buyer page code normalized LF/trimEnd exact; one URL replacement each",
+    "wixReceipt": "This site is published and live online.",
+    "publicCandidateVerified": true,
+    "publicScope": "Fresh Sales and Buyer build markers correct; My Customers/RFQ Time;10 customer and7 order columns left delta0px/default row cursor; yesterday timestamp single line; actual Customer PO retained and both planning inputs editable; both action buttons same Inter/Segoe UI/Arial,11px700; red5badge; latest Buyer order matches Sales latest received order and its blank date; captured errors empty",
+    "realBusinessWrites": false,
+    "temporaryRuleAdded": true,
+    "temporaryRuleRemoved": true,
+    "originalRulesRestored": 7
   },
   "limitations": "Generic Wix request failure shown by user has no captured backend monitoring root cause. This patch fixes demonstrated UI disappearance/recovery, not the origin of intermittent service failures. User performs actual order submissions. No quotation, downloads, financial, receipt, auth or storage changes; no main merge or new verified tag."
 }
