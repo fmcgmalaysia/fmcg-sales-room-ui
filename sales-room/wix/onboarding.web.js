@@ -586,7 +586,8 @@ export const getSalesRoomOrderDetail = webMethod(
       .map((entry) => entry.data)
       .filter((line) => normalize(line.orderId) === normalize(orderId) && !line.addedToOrderId)
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
-    return Object.freeze({ ok: true, order: { ...orderEntry.data, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal, lines } });
+    const [displayOrder] = orderEntry.data.masterReceipt?.submissionId ? await withMasterQuantities(normalize(orderEntry.data.customerId), [{...orderEntry.data, lines}]) : [{...orderEntry.data, lines}];
+    return Object.freeze({ ok: true, order: { ...displayOrder, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal } });
   }
 );
 
@@ -717,7 +718,7 @@ export const saveSalesRoomOrderPo = webMethod(
 
 export const saveSalesRoomOrderPlanning = webMethod(
   Permissions.SiteMember,
-  async (orderId, customerPoNumber, estimatedShipmentDate, expectedRevision, requestId) => {
+  async (orderId, customerPoNumber, estimatedShipmentDate, expectedRevision, requestId, expectedShipmentRevision) => {
     const staff = await requireAuthorizedStaffContext();
     if (typeof customerPoNumber !== 'string' || /[\r\n\x00-\x1f]/.test(customerPoNumber) || customerPoNumber.trim().length > 100) throw new Error('Enter a P.O. number of up to 100 characters.');
     if (typeof estimatedShipmentDate !== 'string') throw new Error('Select a valid shipment date.');
@@ -731,7 +732,15 @@ export const saveSalesRoomOrderPlanning = webMethod(
         if (normalize(prior.data.orderId) !== normalize(orderId) || prior.data.detail?.customerPoNumber !== value || prior.data.detail?.estimatedShipmentDate !== date || upper(prior.data.actorStaffId) !== upper(staff.staffId)) throw new Error('Order edit request conflict.');
         return { ok: true, orderId: normalize(orderId), message: 'Order details already saved.' };
       }
-      if (order.submittedAt || normalize(order.destination) || !['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Order details are locked after transfer to NCT / GHR.');
+      if (order.submittedAt || normalize(order.destination)) {
+        if (!['NCT','GHR'].includes(order.destination) || !normalize(order.masterReceipt?.submissionId) || value !== normalize(order.customerPoNumber)) throw new Error('Customer P.O. is locked after transfer to NCT / GHR.');
+        if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision) || typeof expectedShipmentRevision !== 'string') throw new Error('Refresh the order before changing its shipment date.');
+        const customer = await findAuthorizedCustomer(order.customerId, staff);
+        const receipt = await requestMasterFulfilment({company:order.destination,customerId:normalize(order.customerId),customerName:normalize(customer.companyName||customer.title)||normalize(order.customerId),staff,action:'ORDER_DATE',requestId:key,input:{orderId:normalize(orderId),submissionId:normalize(order.masterReceipt.submissionId),date,version:expectedShipmentRevision}});
+        if (receipt?.ok !== true || receipt.orderId !== normalize(orderId) || receipt.customerId !== normalize(order.customerId) || receipt.company !== order.destination || receipt.requestId !== key || receipt.date !== date || !normalize(receipt.revision)) throw new Error('Shipment date receipt is not confirmed. Retry the same save.');
+        return {ok:true,orderId:normalize(orderId),message:'Shipment date saved.',shipmentDateRevision:receipt.revision};
+      }
+      if (!['CONFIRMED', 'PROFORMA REQUESTED'].includes(upper(order.status))) throw new Error('Order details are locked.');
       if (!Number.isSafeInteger(Number(expectedRevision)) || Number(expectedRevision) !== quantity(order.revision)) throw new Error('This order has changed. Refresh it before editing.');
       if (normalize(order.customerPoNumber) === value && normalize(order.estimatedShipmentDate) === date) return { ok: true, orderId: normalize(orderId), message: 'Order details are unchanged.' };
       const at = new Date().toISOString(), actorName = normalize(staff.staffName || staff.title || staff.loginEmail);

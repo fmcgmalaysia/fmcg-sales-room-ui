@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require('node:path').join(__dirname,'..','buyer-room.html'),'utf8');
-const context=vm.createContext({trackingStages:['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'],committedLineQty:line=>line.committedQtyCtn??null,effectiveRequestedQty:line=>line.quantityCtn,num:v=>Number(v)||0,esc:v=>String(v).replaceAll('<','&lt;').replaceAll('"','&quot;')});
+const context=vm.createContext({trackingStages:['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'],trackingStageZh:['客户交单','订单确认','采购处理中','货仓收货','整理包装','已发货'],committedLineQty:line=>line.committedQtyCtn??null,effectiveRequestedQty:line=>line.quantityCtn,num:v=>Number(v)||0,esc:v=>String(v).replaceAll('<','&lt;').replaceAll('"','&quot;')});
 vm.runInContext(html.slice(html.indexOf('function trackingDots('),html.indexOf('function trackingLineHtml(')),context);
 test('partial receipt is never displayed as fully received; completed and pending dots stay independent',()=>{
   const partial=context.trackingDots({}, {quantityCtn:200,committedQtyCtn:200,receivedQtyCtn:90},3);
   assert.equal((partial.match(/<button /g)||[]).length,6);
   assert.equal((partial.match(/class="tracking-dot complete"/g)||[]).length,3);
   assert.equal((partial.match(/class="tracking-dot partial"/g)||[]).length,1);
-  assert.match(partial,/Goods Received · Partially received/);
+  assert.match(partial,/Goods Received \/ 货仓收货 · Partially received/);
   const complete=context.trackingDots({}, {quantityCtn:200,committedQtyCtn:190,receivedQtyCtn:190},4);
   assert.equal((complete.match(/class="tracking-dot complete"/g)||[]).length,4);
   assert.doesNotMatch(complete,/class="tracking-dot partial"/);
@@ -16,9 +16,10 @@ test('partial receipt is never displayed as fully received; completed and pendin
 });
 test('only current task layout removes Barcode and Updated; existing history and receipt behaviour remains available',()=>{
   const head=html.slice(html.indexOf('<section id="trackView"'),html.indexOf('<div id="trackRows"'));
-  assert.match(head,/<div>Order On<\/div><div class="center">Progress<\/div><div class="center">Image<\/div><div>Descriptions<\/div>/);
+  assert.match(head,/<div>Order On<\/div><div>Descriptions<\/div>/);
+  assert.match(head,/Goods Expiry [\s\S]*<div class="center">Progress<\/div>/);
   assert.doesNotMatch(head,/>Barcode<|Qty Updated|Latest progress from Master|\$\{done\} \/ \$\{total\}/);
-  assert.match(head,/Est\. Shipment Date<\/span><b id="trackShipmentDate">—<\/b>/);
+  assert.match(head,/Est\. Shipment<\/span><b id="trackShipmentDate">—<\/b>/);
   assert.match(html,/track-barcode/);assert.match(html,/trackEditHistory/);
 });
 test('customer quantity comes only from assigned warehouse receipts and excludes completed history',()=>{
@@ -39,4 +40,14 @@ test('numbered larger progress dots and Track images reuse the original My Selec
   const active=html.slice(html.indexOf('if(!completed)return `<div class="tracking-row'),html.indexOf(';return `<div class="tracking-row',html.indexOf('function trackingLineHtml(')));
   assert.match(active,/\|\|line,true\)/);
   assert.match(html,/bindImagePreview\(\);document.querySelectorAll\('\[data-reduce-order\]'/);
+});
+
+test('Buyer clones Sales geometry while preserving received-only totals and readonly dates',()=>{
+  assert.match(html,/grid-template-columns:128px minmax\(260px,1fr\) 82px 75px 87px 110px 72px 128px 148px;min-height:49px/);
+  assert.match(html,/trackCommittedQty.*rows.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\),0\)/);
+  const current=html.slice(html.indexOf('<section id="trackView"'),html.indexOf('<section id="completeView"'));
+  assert.doesNotMatch(current,/type="date"|editSalesShipment|saveSalesPlanning/);
+  assert.match(html,/tracking-stage-zh/);
+  assert.match(html,/track-inline-image/);
+  assert.match(html,/image-preview\{width:min\(286px/);
 });

@@ -1,0 +1,55 @@
+{
+  "status": "Candidate complete; no deployment or live edits",
+  "branch": "feat/sales-progress-shipment-20261014",
+  "base": "fix/sales-customer-review-20261014",
+  "codeCommit": "8d800dd",
+  "salesBuild": "2026-10-14-sales-progress-shipment-v1",
+  "departmentBuild": "2026-10-14-sales-shipment-date-v1",
+  "recovery": {
+    "publishedCode": "5e63e24",
+    "publishedRecord": "837302e",
+    "buyerDateVerifiedTag": "verified/buyer-shipment-date-projection-20261014",
+    "buyerDateScope": "User confirmed existing Buyer Track date projection; does not verify post-transfer date amendment",
+    "snapshots": "C:/FMCG-WIX-LOCAL/handoff/sales-progress-shipment-20261014",
+    "preEditComparison": "Sales public inline scripts exact; source onboarding/two clients and eight Master backend modules/three Master page bridges exact normalized LF/trimEnd; three affected public department scripts exact"
+  },
+  "scope": [
+    "Blank Sales shipment date input uses light grey normal-weight text",
+    "Sales progress descriptions contain barcode/item/packing; long item names remain single-line ellipsis with full title",
+    "Remove Qty Updated and standalone Barcode; six numbered row progress dots with partial-receipt display",
+    "Remove top rail fraction counts; bilingual stage names and bilingual hover explanations",
+    "Goods Expiry before Progress, right aligned, default ASCII hyphen, DD-MM-YY help; Warehouse expiry datasource intentionally not connected",
+    "Sales can amend dates after accepted NCT/GHR transfer until physical customer dispatch is complete; PO and quantity locks remain",
+    "Use existing Sales fulfilment gateway and Master operation journal; immutable initial intake/source snapshots remain unchanged",
+    "Version-checked, actor/time-recorded date amendments projected through existing quantities and departmental order reads",
+    "Read-only customer dates in Warehouse receiving/customer readiness, Account file dialog and Support tasks; Purchase already displays projected order dates",
+    "Buyer Track mirrors Sales Order Progress geometry, fonts, spacing, nine-column order and right summary; sidebar mirrors Sales in green. Retains image hover within Descriptions and received-only customer quantity."
+  ],
+  "validation": {
+    "targetedChecksPassed": 90,
+    "coverage": "NCT/GHR date ownership, stale and altered retries, lost acknowledgement idempotency, partial/full dispatch lock, invalid dates and audit forks, cross-customer merged PO dates with unchanged finance amount/content/check versions, existing purchase/warehouse/account/credit/invoicing, source pretransfer planning/PO lock, date-only source routing, UI descriptions/dots and existing customer refresh recovery",
+    "syntax": "All changed JS and Sales inline scripts parse",
+    "isolatedUi": "Nine columns; full name tooltip and ellipsis; six bilingual numbered dots/partial receipt; top counts absent; bilingual rail labels; expiry before progress/right/hyphen. Submitted demo PO readonly/date editable; failed date save retains value and same-save retry reopens03Nov. Blank date160/172/188 weight400. Warehouse/Account/Support readonly03-11-26 captions verified.",
+    "realBusinessWrites": false,
+    "knownLegacyFixture": "Previously recorded customerReceivedQty missing-context test failure remains outside scope; no claim that every historical test passes Four old buyer-room-tracking regex failures reproduced unchanged against db96161 baseline.",
+    "buyerChecksPassed": 28,
+    "buyerProtectedFunctionLines": 90,
+    "buyerUi": "49px header/body, 218px sidebar and 48px menu, 58px top rings, 18px numbered dots, 11px700/14px item,10px500/12px packing; one-line ellipsis, readonly shipment date; completed renderer exact."
+  },
+  "releaseOrder": [
+    "Confirm temporary Pages deployment branch permission at action time",
+    "Recheck/capture live before each isolated Wix edit; publish compatible Master date backend, keeping old department version references until assets exist",
+    "Publish compatible FMCGMALAYSIA source backend/client/projection, keeping old Sales version reference until assets exist",
+    "Deploy branch to Pages and verify exact affected assets and new Buyer and preserved Purchase assets; then synchronize five final version references and publish both Wix sites",
+    "Force refresh formal Sales/Buyer/Purchase/Account/Warehouse/Support read/layout, remove only new deployment rule",
+    "User performs real date amendment and business acceptance; keep main protected"
+  ],
+  "publication": {
+    "githubPages": false,
+    "wixPublished": false,
+    "publicCandidateVerified": false,
+    "temporaryRuleAdded": false
+  },
+  "preserved": "No new collections, independent sync worker, authentication/employee-role changes, shipment/quantity mutation, payment or receipt records, FX/cost/quotation/download changes. Actual invoice/dispatch dates and immutable intake snapshots remain untouched. Buyer data handlers, completed renderer, image zoom286px and all download mechanisms preserved. No main merge or post-transfer verified tag.",
+  "buyerBuild": "2026-10-14-buyer-sales-style-track-v1"
+}

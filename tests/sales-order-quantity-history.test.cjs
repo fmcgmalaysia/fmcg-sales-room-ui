@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const requestId = '11111111-1111-4111-8111-111111111111';
 const copy = value => JSON.parse(JSON.stringify(value));
 
-function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
+function harness({ buyer = false, staffId = 'LAW', failAudit = false, masterDateCall } = {}) {
   const records = new Map();
   const writes = [], signals = [];
   const collection = name => { if (!records.has(name)) records.set(name, new Map()); return records.get(name); };
@@ -52,11 +52,19 @@ function harness({ buyer = false, staffId = 'LAW', failAudit = false } = {}) {
     }
   }
   require('./load-master-quantity.cjs')(context,()=>[...collection('WixBuyerOrderLines').values()].map(row=>JSON.parse(row.payload)));
+  if(masterDateCall)context.requestMasterFulfilment=masterDateCall;
   vm.runInContext(source + (buyer
     ? "\nresolveBuyerContext=async()=>({customerId:'C1'});globalThis.api={reduceBuyerOrderLine,getBuyerOrderDetail};"
     : `\nresolveCurrentStaffContext=async()=>({authorized:true,staffId:${JSON.stringify(staffId)},staffName:'LAW',loginEmail:'law@example.test',canViewAllCustomers:false});globalThis.api={saveSalesRoomOrderQty,saveSalesRoomOrderPo,saveSalesRoomOrderPlanning,getSalesRoomOrderDetail,getSalesRoomOrderProgress,submitSalesRoomOrder,createSalesRoomProforma};`), context);
   return { ...context.api, collection, seed, writes, signals, data: (name, id) => JSON.parse(collection(name).get(id).payload) };
 }
+
+test('post-transfer Sales planning sends only date amendments and keeps the submitted source snapshot immutable',async()=>{
+ const calls=[],h=harness({masterDateCall:async request=>{calls.push(request);return {ok:true,company:request.company,customerId:request.customerId,orderId:request.input.orderId,requestId:request.requestId,date:request.input.date,revision:'MASTER-DATE-1'};}}),before=h.data('WixBuyerOrders','order');
+ h.seed('WixBuyerOrders','order',{...before,customerPoNumber:'CUSTOMER-PO',destination:'NCT',submittedAt:'2026-10-13T00:00:00Z',masterReceipt:{submissionId:'NCT-O1'}});const submitted=h.data('WixBuyerOrders','order');
+ const result=await h.saveSalesRoomOrderPlanning('O1','CUSTOMER-PO','2026-10-28',0,requestId,'DATE-V1');assert.equal(result.ok,true);assert.equal(calls.length,1);assert.equal(calls[0].action,'ORDER_DATE');assert.equal(calls[0].input.version,'DATE-V1');assert.equal(calls[0].input.submissionId,'NCT-O1');assert.deepEqual(h.data('WixBuyerOrders','order'),submitted);
+ await assert.rejects(h.saveSalesRoomOrderPlanning('O1','CHANGED-PO','2026-10-28',0,'22222222-1111-4111-8111-111111111111','DATE-V1'),/P.O. is locked/);await assert.rejects(h.saveSalesRoomOrderQty('O1','L1',5,0,requestId),/locked/);assert.equal(calls.length,1);
+});
 
 test('order planning preserves quantities, quotes and another order while persisting a date-only value', async () => {
   const h=harness(),beforeLine=h.data('WixBuyerOrderLines','line'),before=h.data('WixBuyerOrders','order');

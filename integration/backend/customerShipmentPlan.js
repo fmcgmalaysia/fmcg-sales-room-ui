@@ -1,6 +1,32 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 const text=value=>String(value??'').trim();
 const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+// Order dates remain immutable intake snapshots; later Sales amendments are read from this journal.
+export function readSalesShipmentDate(orderId,customerId,submissionId,originalDate,activity){
+ const original=originalDate&&Number.isFinite(new Date(originalDate).getTime())?new Date(originalDate).toISOString().slice(0,10):'';
+ let current={date:original,revision:'',at:'',by:''};
+ const pending=activity.filter(row=>row.action==='SALES_SHIPMENT_DATE_SAVED'&&row.result==='SAVED'&&row.description===orderId);
+ while(pending.length){const next=pending.filter(row=>row.details?.beforeRevision===current.revision);if(next.length!==1)throw Error('Shipment date history requires review.');const event=next[0],detail=event.details;
+  if(detail.customerId!==customerId||detail.submissionId!==submissionId||!event.title||!event.initiatedByStaffId||!event.initiatedByStaffName||!Number.isFinite(Date.parse(event.activityTime))||typeof detail.date!=='string'||detail.date&&(!validDate(detail.date)||Number(detail.date.slice(0,4))<1000))throw Error('Shipment date identity requires review.');
+  current={date:detail.date,revision:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName};pending.splice(pending.indexOf(event),1);
+ }
+ return current;
+}
+export function shipmentDateLocked(tasks){const demand=tasks.filter(row=>!row.specialPurchase&&!row.procurementSource);return !demand.some(row=>{const goal=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;const dispatched=(row.salesFulfilment?.invoices||[]).reduce((sum,invoice)=>sum+(invoice.dispatched?invoice.quantity:0),0);return !row.archived&&goal>dispatched;});}
+export function createSalesShipmentDateOperations({store,names,readContext,now=()=>new Date()}){
+ const journal=createOperationJournal({store,now});
+ return async({company,staff,requestId,input})=>{
+  if(!names[company]||staff?.canEditShipmentDate!==true||input?.action!=='ORDER_DATE')throw Error('Only authorized Sales staff may change shipment dates.');
+  if(staff.customerId!==input.customerId)throw Error('Shipment date customer is not authorized.');
+  if(typeof input.date!=='string'||input.date&&(!validDate(input.date)||Number(input.date.slice(0,4))<1000)||typeof input.version!=='string'||typeof input.orderId!=='string'||!input.orderId||typeof input.submissionId!=='string'||!input.submissionId)throw Error('Enter a valid shipment date and order version.');
+  const check=async()=>{const context=await readContext(company,staff),tasks=context.tasks.filter(row=>row.customerId===input.customerId&&row.orderId===input.orderId),receipts=context.activity.filter(row=>row.description===input.orderId&&row.action==='ORDER_RECEIVED'&&row.result==='ACCEPTED'&&row.details?.submissionId===input.submissionId);
+   if(context.company!==company||staff.customerId!==input.customerId||!tasks.length||receipts.length!==1)throw Error('Shipment date order is not authorized.');
+   if(shipmentDateLocked(tasks))throw Error('Shipment date is locked after the order has finished shipping.');
+   const current=readSalesShipmentDate(input.orderId,input.customerId,input.submissionId,tasks[0].estimatedShipmentDate,context.activity);if(current.revision!==input.version)throw Error('Shipment date changed. Refresh before saving.');return current;
+  };
+  return journal({collection:names[company].activity,scope:company+'/PURCHASE',entityId:input.orderId,requestId,staff,input:{salesShipmentDate:input},prepare:async()=>{await check();const at=now().toISOString(),id=operationId(company,requestId,staff.memberId,'SALES_SHIPMENT_DATE');return {event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:'SALES_SHIPMENT_DATE_SAVED',result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Sales adjusted estimated shipment date',details:{customerId:input.customerId,submissionId:input.submissionId,beforeRevision:input.version,date:input.date}}};},apply:async plan=>{const prior=await store.read(names[company].activity,plan.event._id);if(!prior){await check();await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}else if(operationId(prior.details)!==operationId(plan.event.details))throw Error('Shipment date receipt conflict.');return {ok:true,company,requestId,orderId:input.orderId,customerId:input.customerId,date:input.date,revision:plan.event.title,savedAt:plan.event.activityTime,by:staff.staffName};}});
+ };
+}
 export function readShipmentPlans(activity){
  const pending=activity.filter(row=>row.action==='CUSTOMER_SHIPMENT_PLAN_SAVED'&&row.result==='SAVED'),plans=new Map();
  while(pending.length){

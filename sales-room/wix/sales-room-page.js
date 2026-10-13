@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261014-sales-customer-review-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261014-sales-progress-shipment-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -512,7 +512,7 @@ $w.onReady(function () {
     }
     if (message.type === 'SALES_ROOM_ORDER_PLANNING_UPDATE') {
       try {
-        const result = await saveSalesRoomOrderPlanning(message.orderId || '', message.customerPoNumber, message.estimatedShipmentDate, message.expectedRevision, message.requestId || '');
+        const result = await saveSalesRoomOrderPlanning(message.orderId || '', message.customerPoNumber, message.estimatedShipmentDate, message.expectedRevision, message.requestId || '', message.expectedShipmentRevision);
         salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ...result });
       } catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ok: false, error: error?.message || 'Order details could not be saved.' }); }
       return;
