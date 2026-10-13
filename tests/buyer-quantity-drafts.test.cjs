@@ -14,6 +14,18 @@ function fixture(){
   return {state,context,posted,input,inputs,reviews,messages,shown,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
 }
 
+test('cleared quantity stays zero while an older full-table response arrives, then acknowledges empty timestamps',()=>{
+  const f=fixture();f.item('a').orderQtyCtn=10;f.item('a').qtyEditedAt='old';
+  const input=f.input('');input.dataset.committedQty='10';
+  f.context.rememberQuantityDraft(f.item('a'),input);f.context.confirmQuantityDraft(f.item('a'),input,false);
+  assert.equal(f.posted[0].quantityCtn,0);assert.equal(input.value,'');
+  f.context.finishQuantity({itemId:'a',quantityCtn:0,ok:true,qtyEditedAt:'',qtyEditedBy:''});
+  f.refresh([{id:'a',orderQtyCtn:10,qtyEditedAt:'old'},{id:'b',orderQtyCtn:0}]);
+  assert.equal(f.item('a').orderQtyCtn,0);assert.equal(f.state.quantityDrafts.get('a').awaitingEcho,true);
+  f.refresh([{id:'a',orderQtyCtn:0,qtyEditedAt:'',qtyEditedBy:''},{id:'b',orderQtyCtn:0}]);
+  assert.equal(f.item('a').orderQtyCtn,0);assert.equal(f.item('a').qtyEditedAt,'');assert.equal(f.state.quantityDrafts.get('a').awaitingEcho,false);
+});
+
 test('blur locks only its input and concurrent rows keep their drafts',()=>{
   const f=fixture(),a=f.input(9999),b=f.input(650,'b');
   f.context.rememberQuantityDraft(f.item('a'),a);f.context.confirmQuantityDraft(f.item('a'),a,false);
