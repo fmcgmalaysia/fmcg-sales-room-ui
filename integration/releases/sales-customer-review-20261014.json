@@ -1,0 +1,39 @@
+{
+  "status": "Candidate complete; not deployed or Wix-published",
+  "branch": "fix/sales-customer-review-20261014",
+  "base": "style/sales-dashboard-rfq-queue",
+  "codeCommit": "5e63e24",
+  "salesBuild": "2026-10-14-sales-customer-review-v1",
+  "buyerBuild": "2026-10-14-buyer-latest-shipment-v1",
+  "recovery": {
+    "publishedCode": "59998b5",
+    "publishedRecord": "9bc450a",
+    "protectedSubmissionTag": "verified/send-order-addition-user-tests-20261009",
+    "copies": "C:/FMCG-WIX-LOCAL/handoff/sales-customer-review-20261014",
+    "preEditComparison": "Public Sales inline scripts exact; Sales and Buyer live Wix bridge code normalized LF/trimEnd exact. No live edits."
+  },
+  "scope": [
+    "My Customers title and bilingual copy",
+    "Keep last successful customer table/dashboard on refresh failure; show visible stale-data notice and clear it even on an identical successful response",
+    "Customer table left padding and default row cursor; RFQ Time header",
+    "Order Received first column, relative timestamp and actor on one line; left alignment",
+    "Sales Review hierarchy and distinct editable Customer PO/shipment panel",
+    "Reuse existing planning method/revision/audit/transfer lock; save failures retain inputs and same-value retry identity",
+    "Red task count in Order Progress customer trigger and menu",
+    "Buyer shipment metric reads latest received active order, not earliest shipment or an older nonblank date; no date displays a dash"
+  ],
+  "validation": {
+    "targetedPassed": 46,
+    "additionalLegacySuite": "28 passed; one pre-existing fixture failure (customerReceivedQty undefined) reproduced with exact baseline 9bc450a; no business regression inferred",
+    "isolatedBrowser": "Refresh error and same-data recovery preserve table; 10 customer/7 order columns left12px; normal row cursor; failed planning save retains entries, retry saves/reopens, sibling order remains distinct; red count5; Buyer newest30Oct selected over older16Oct; captured errors empty",
+    "realBusinessWrites": false,
+    "backendChanges": false
+  },
+  "publication": {
+    "githubPages": false,
+    "wixPublished": false,
+    "publicCandidateVerified": false,
+    "temporaryRuleAdded": false
+  },
+  "limitations": "Generic Wix request failure shown by user has no captured backend monitoring root cause. This patch fixes demonstrated UI disappearance/recovery, not the origin of intermittent service failures. User performs actual order submissions. No quotation, downloads, financial, receipt, auth or storage changes; no main merge or new verified tag."
+}
