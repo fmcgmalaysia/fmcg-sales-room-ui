@@ -1,12 +1,29 @@
 {
-  "status": "candidate; not deployed",
+  "status": "Published; public Dashboard read/navigation/layout verified; user business acceptance pending",
+  "codeCommit": "59998b597150f1022809cc968489311c4c3276f4",
   "branch": "style/sales-dashboard-rfq-queue",
   "base": "style/buyer-track-received-progress",
-  "build": "2026-10-13-sales-dashboard-rfq-v1",
+  "build": "2026-10-13-sales-dashboard-rfq-v3",
   "recovery": {"previousPublishedCode":"58d3b69","previousRecord":"d738328","protectedSubmissionTag":"verified/send-order-addition-user-tests-20261009","copies":"C:/FMCG-WIX-LOCAL/handoff/sales-dashboard-rfq-20261013","liveComparison":"Public index exact; onboarding and Sales page normalized LF/trimEnd exact before edits"},
   "scope": ["Pending Quotation strictly counts non-removed RFQ items for all customers visible to existing staff authorization", "FAILED quotations remain explicit queue exceptions without inflating RFQ", "Action Queue Updated/Customer Name/Country/Currency/Task; customer column43%", "Active Customers title12px700; rounded two-tone SVGs", "All five cards use existing Workspace/Order Management navigation and unsaved-work guard; queue rows remain read-only"],
   "components": ["index.html", "sales-room/wix/onboarding.web.js", "sales-room/wix/sales-room-page.js"],
   "validation": {"targetedPassed":35,"coverage":"RFQ vs FAILED/removed/published/unrelated customer rows, QD pending independence, completion removes queue tasks, failure remains, keyboard/card navigation guard; quote/risk/preview/read and protected addition scenarios","isolatedPreview":"RFQ9+5=14 despite QD pending99; FAILED1 separate; long names readable;12px700; Active card enters Workspace and New Orders Enter opens Order Management","realBusinessWrites":false},
-  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false},
+  "publication": {
+    "githubPages":true,
+    "run":"38421779073",
+    "job":"115380694799",
+    "status":"Success;23seconds",
+    "publicIndexExact":true,
+    "unchangedAssetsVerified":["buyer-room.html","purchase-live/index.html","sales-room/shipment-ui.js"],
+    "wixPublished":true,
+    "wixReceipt":"This site is published and live online.",
+    "wixReadback":"onboarding and final v3 Sales bridge normalized LF/trimEnd exact",
+    "publicVerified":true,
+    "publicScope":"Fresh v3 formal Sales Dashboard: RFQ16 and queue16; new orders3; five titles12px700; all five header/body left deltas0px and12px padding; cards enter Workspace/Order Management; captured errors empty",
+    "realBusinessWrites":false,
+    "temporaryRuleRemoved":true,
+    "originalRulesRestored":7,
+    "followupCorrections":"User requested all five titles12px and left alignment during release. v1 was cached in original iframe; v2 used a fresh reference; global .view table th important padding required a scoped important override in v3, validated locally then publicly. No protected business regression observed."
+  },
   "preserved": "No quotation publish/selection/QD generator/template/permission/storage/payment/quantity changes. Apps Script scanner and quote-risk caches untouched. Existing queue oldest-first order and original received timestamps retained under Updated label. No main merge or new verified tag."
 }
