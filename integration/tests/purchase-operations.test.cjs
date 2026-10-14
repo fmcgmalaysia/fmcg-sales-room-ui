@@ -73,6 +73,22 @@ test('FOC amount, original inputs, shares, PO cents and retries stay consistent 
  const wh=projectWarehouseOrders({company:'NCT',purchaseOrders:[po],tasks:poWs.tasks,activity:[]})[0];assert.equal(wh.lines[0].planned,33);assert.equal(wh.lines[0].remaining,33);assert.equal(wh.lines[0].expectedExtra,0);assert.equal(wh.lines[0].costing.freeCtn,3);
 });
 
+test('editing B preserves C stock-only shares even when the customer remainder changes',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),f=fixture();
+ f.task().purchaseQtyInCtn=100;f.rows.get('NCTOrders/O0').orderQtyInCtn=100;
+ for(const id of ['B','C'])f.rows.set('SharedSuppliers/'+id,{_id:id,title:id,companyName:id,supplierStatus:'ACTIVE'});
+ const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:'A customer allocation'}});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const addSource=async(supplier,quantity,requestId)=>add({...f.base,requestId,staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity,supplierId:supplier,poNumber:'',costing:cost(quantity),confirmExtra:true,reason:'Explicit stock surplus'}});
+ const b=await addSource('B',50,'33333333-3333-4333-8333-333333333333'),c=await addSource('C',5,'44444444-4444-4444-8444-444444444444');
+ const cBefore=f.workspace().tasks.find(row=>row.id===c.sourceTaskId),bBefore=f.workspace().tasks.find(row=>row.id===b.sourceTaskId);
+ await f.operate({...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:bBefore.id,version:bBefore.editVersion,planRevision:bBefore.procurement.revision,totalCtn:40,costing:cost(40),reason:'B removes only its surplus'}});
+ const ws=f.workspace(),cAfter=ws.tasks.find(row=>row.id===c.sourceTaskId);
+ assert.equal(cAfter.procurement.customerCtn,0);assert.equal(cAfter.procurement.expectedExtra,5);assert.deepEqual(cAfter.procurement.costing,cBefore.procurement.costing);
+ assert.equal(ws.tasks.find(row=>row.id===b.sourceTaskId).procurement.customerCtn,40);assert.equal(ws.tasks.find(row=>row.id===f.id).procurement.customerCtn,60);
+});
+
 test('discounted FOC and negotiated total retain cents without rounded-average multiplication',()=>{
  const {calculatePlanCosting}=load('purchasePlan.js'),price={lpPc:100/16,lpCtn:100,disc1:.1,disc2:0,disc3:0},input={schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:10,freeCtn:1,prices:price};
  let value=calculatePlanCosting(input,11,16);assert.equal(value.amountCents,90000);assert.equal(value.averageCostCtn,900/11);

@@ -26,7 +26,7 @@ test('Finance ownership prevents unilateral withdrawal; return requires explicit
 });
 test('unknown bank outcome remains frozen even when return requested; only reconciled result releases processing',()=>{
  const f=fixture();f.act('SUBMIT_FINANCE');f.act('TAKE_OWNERSHIP',{},'ACCOUNT');
- f.details.paymentHandoff={review:{version:paymentReviewVersion(f.row),requestedCents:500000}};
+ f.details.paymentHandoff={review:{version:paymentReviewVersion(f.row),procurementVersion:f.details.procurementHandoff.submission.version,requestedCents:500000}};
  f.act('PAYMENT_PROCESSING',{bankClear:true},'ACCOUNT');f.act('PAYMENT_UNKNOWN',{},'ACCOUNT');f.act('REQUEST_RETURN');
  assert.equal(f.details.procurementHandoff.stage,'UNKNOWN');
  assert.throws(()=>f.act('RETURN_PROCUREMENT',{bankClear:true},'ACCOUNT'),/unresolved bank/);
@@ -49,4 +49,13 @@ test('incomplete and cross-role submissions are refused; legacy Finance instruct
  const f=fixture();f.row.amount=null;assert.throws(()=>f.act('SUBMIT_FINANCE'),/complete saved/);f.row.amount=10000;
  assert.throws(()=>f.act('SUBMIT_FINANCE',{},'ACCOUNT'),/not authorized/);
  f.details.paymentHandoff={review:{version:'legacy'}};assert.throws(()=>f.act('SUBMIT_FINANCE'),/existing payment instruction/);
+});
+
+test('a final invoice does not authorize repeating an already-paid instalment',()=>{
+ const f=fixture();f.act('SUBMIT_FINANCE');f.act('TAKE_OWNERSHIP',{},'ACCOUNT');
+ f.details.paymentHandoff={review:{version:paymentReviewVersion(f.row),procurementVersion:f.details.procurementHandoff.submission.version,requestedCents:500000,paidAtReviewCents:0}};
+ Object.assign(f.row.finance,{paidCents:500000,payableCents:1000000});
+ assert.throws(()=>f.act('PAYMENT_PROCESSING',{bankClear:true},'ACCOUNT'),/no outstanding/);
+ f.details.paymentHandoff.review.paidAtReviewCents=500000;
+ f.act('PAYMENT_PROCESSING',{bankClear:true},'ACCOUNT');assert.equal(f.details.procurementHandoff.stage,'PROCESSING');
 });

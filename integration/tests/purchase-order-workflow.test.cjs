@@ -83,3 +83,14 @@ test('a saved FOC quantity changing between preparation and application prevents
  await assert.rejects(f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'SUBMIT_FINANCE',reason:'Confirm PO'}}),/changed while saving/);
  assert.equal([...f.records.keys()].some(key=>key.startsWith('PurchaseOrders/')),false);
 });
+
+test('Finance cannot take ownership of FOC content changed after its save was prepared',async()=>{
+ const f=fixture();let row=(await f.operations.list('NCT',f.staff))[0];
+ await f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'SUBMIT_FINANCE',reason:'Confirm PO'}});
+ row=(await f.operations.list('NCT',f.staff))[0];
+ const insert=f.store.insert;let changed=false;
+ f.store.insert=async(collection,record)=>{const result=await insert(collection,record);if(!changed&&record.action==='PURCHASE_OPERATION_PREPARED'){changed=true;f.workspace.tasks[0].procurement.totalCtn=110;}return result;};
+ const account=createAccountSettlementOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},listOrders:f.operations.list});
+ await assert.rejects(account.save({...f.base,requestId:'66666666-6666-4666-8666-666666666666',input:{id:row.id,version:row.version,action:'TAKE_OWNERSHIP',reason:'Check all sources'}}),/changed while saving/);
+ assert.equal((await f.operations.list('NCT',f.staff))[0].procurementHandoff.stage,'SUBMITTED');
+});

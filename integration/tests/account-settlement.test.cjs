@@ -96,3 +96,22 @@ test('payment proof upload uses Account route and lost upload response retries t
 });
 
 test('shared PO waits until every physically received source carton has a customer invoice',()=>{const task={id:'T',editVersion:'v1',customerId:'C',supplierId:'S',po:'PO-MULTI',barcode:'1',packing:'1',procurement:{totalCtn:30},lpCtn:10,disc1:0,disc2:0,disc3:0,warehouse:{accepted:30,hasPhysicalReceipt:true,issue:false},salesFulfilment:{sourceInvoicedQty:10}};const workspace={company:'NCT',tasks:[task],customers:[],suppliers:[]};assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,false);task.salesFulfilment.sourceInvoicedQty=30;assert.equal(projectPurchaseOrders({company:'NCT',workspace,records:[]})[0].salesInvoiceComplete,true);});
+
+test('an actual payment after withdrawal remains recorded with its instruction exception',async()=>{
+ const {row,details}=fixture();details.procurementHandoff={schema:1,stage:'WITHDRAWN',submission:{version:'old-instruction',byStaffId:'P',by:'PURCHASE',at:'2026-10-10T00:00:00Z'}};
+ const records=new Map([['PurchaseOrders/PO',{_id:'PO',company:'NCT',details}]]);
+ const store={read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,r)=>{if(records.has(c+'/'+r._id))throw Error('duplicate');records.set(c+'/'+r._id,clone(r));return clone(r);},update:async(c,r)=>{records.set(c+'/'+r._id,clone(r));return clone(r);},remove:async(c,id)=>records.delete(c+'/'+id)};
+ const listOrders=async()=>{const d=records.get('PurchaseOrders/PO').details;return [{...row,version:JSON.stringify(d),supplierShortName:'SUP',...projectAccountSettlement(row,d)}];};
+ const operations=createAccountSettlementOperations({store,listOrders,names:{NCT:{activity:'NCTActivity'}},documentService:async input=>input.action==='ALLOCATE'?{fileId:'actual-proof'}:{...input,ok:true}});
+ await operations.save({company:'NCT',staff:{memberId:'M',staffId:'F',staffName:'LAW'},requestId:'77777777-7777-4777-8777-777777777777',input:{id:'PO',version:(await listOrders())[0].version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-14',number:'BANK-EXCEPTION',cents:40000,base64:Buffer.from('%PDF-1.4\nACTUAL').toString('base64'),reason:'Actual bank payment discovered after withdrawal'}});
+ const saved=records.get('PurchaseOrders/PO').details;
+ assert.equal(saved.procurementHandoff.stage,'WITHDRAWN');assert.equal(saved.finance.payments[0].cents,40000);
+ assert.equal(saved.finance.payments[0].procurementInstruction.requiresReview,true);assert.equal(saved.finance.payments[0].procurementInstruction.version,'old-instruction');
+ assert.equal((await listOrders())[0].finance.paidCents,40000);
+});
+
+test('final Finance check cannot hide an unresolved bank operation',()=>{
+ const {row,details}=fixture();details.procurementHandoff={stage:'UNKNOWN'};
+ assert.equal(projectAccountSettlement(row,details).canCheck,false);
+ assert.match(projectAccountSettlement(row,details).checkBlocker,/bank payment/);
+});

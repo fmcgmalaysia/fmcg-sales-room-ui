@@ -1,7 +1,7 @@
 /* Supplier planning dialog. Saves use the existing serial PLAN / ADD_SOURCE journal. */
 (() => {
   const priceKeys=['lpPc','lpCtn','disc1','disc2','disc3'];
-  const displayPrice=(value,key)=>!Number.isFinite(value)||value===0?'0.00':String(key==='disc1'||key==='disc2'?Number((value*100).toPrecision(12)):value);
+  const displayPrice=(value,key)=>Number.isFinite(value)?(key==='disc1'||key==='disc2'?value*100:value).toFixed(2):'0.00';
   const copy=value=>JSON.parse(JSON.stringify(value));
   const net=prices=>priceKeys.every(key=>Number.isFinite(prices[key]))?prices.lpCtn*(1-prices.disc1)*(1-prices.disc2)-prices.disc3:null;
   function values(row){return Object.fromEntries(priceKeys.map(key=>[key,row.originalRaw?.[key]===row.raw[key]&&Number.isFinite(row.originalPrices?.[key])?row.originalPrices[key]:row.originalRaw?.[key]===row.raw[key]&&!row.edited?.includes(key)?NaN:row.raw[key]===''?NaN:Number(row.raw[key])/(key==='disc1'||key==='disc2'?100:1)]));}
@@ -69,7 +69,7 @@
       api.modal().classList.add('supplier-allocation-dialog');renderRows();
     }
     function rowMarkup(row,index){
-      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||row.status==='saved'||saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber;
+      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||row.status==='saved'||saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||api.financeLocked?.(row.taskId);
       const supplierLocked=locked||saved?.po||saved?.procurement?.revision&&!saved.procurement.draftPlan;
       const person='<span class="allocation-person" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="3"/><path d="M4 18v-3a6 6 0 0 1 12 0v3z"/></svg><b>'+(index+1)+'</b></span>';
       const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'><option value="">WAITING</option>'+workspace().suppliers.filter(s=>s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id)).map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>'+(saved?.po?'<small data-allocation-status>'+esc(saved.po)+'</small>':'');
@@ -108,14 +108,15 @@
       const rowKey=field.closest?.('[data-allocation-row]')?.dataset.allocationRow;
       const key=rowKey||field.dataset.allocationConfirm||field.dataset.allocationExtraKind||field.dataset.allocationExtraConfirm;
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
-      const name=field.dataset.allocationField;
-      if(name==='supplierId'){row.supplierId=field.value;row.reference=null;row.manual=[];row.edited=[];for(const price of ['lpPc','lpCtn']){row.raw[price]='0.00';row.originalRaw[price]='0.00';row.originalPrices[price]=null;}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
+      if(api.financeLocked?.(row.taskId))return true;
+      const name=field.dataset.allocationField;if(name)row.pendingReference=null;
+      if(name==='supplierId'){row.supplierId=field.value;row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]='0.00';row.originalRaw[price]='0.00';row.originalPrices[price]=price.startsWith('disc')?0:null;}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
       else if(name==='qty'){row.qty=field.value;row.auto=false;}
       else if(name==='mode'){if(field.value==='NORMAL'&&row.mode==='FOC'&&!api.confirm('全部 '+row.qty+' CTN 改为付费采购？')){field.value=row.mode;return true;}row.mode=field.value;row.paid=row.qty;row.free='0';row.auto=false;}
       else if(name==='moneySource'){row.moneySource=field.value;if(row.moneySource==='TOTAL'&&row.amount===''){const computed=calculation({...row,moneySource:'PRICES'});row.amount=Number.isFinite(computed.amountCents)?(computed.amountCents/100).toFixed(2):'';}}
       else if(name==='paid'||name==='free'){row[name]=field.value;row.qty=String(Number(row.paid)+Number(row.free));row.auto=false;}
       else if(name==='amount')row.amount=field.value;
-      else if(priceKeys.includes(name)){row.raw[name]=field.value;row.edited=row.edited||[];if(!row.manual.includes(name))row.manual.push(name);if(!row.edited.includes(name))row.edited.push(name);if(['lpPc','lpCtn'].includes(name)){const ea=rootTask().ea,paired=name==='lpPc'?'lpCtn':'lpPc';if(ea>0){row.raw[paired]=String(name==='lpPc'?Number(field.value)*ea:Number(field.value)/ea);row.manual.push(paired);row.edited.push(paired);}}}
+      else if(priceKeys.includes(name)){row.raw[name]=field.value;row.edited=row.edited||[];if(!row.manual.includes(name))row.manual.push(name);if(!row.edited.includes(name))row.edited.push(name);if(['lpPc','lpCtn'].includes(name)){const ea=rootTask().ea,paired=name==='lpPc'?'lpCtn':'lpPc';if(ea>0){const precise=name==='lpPc'?Number(field.value)*ea:Number(field.value)/ea;row.raw[paired]=displayPrice(precise,paired);row.originalRaw[paired]=row.raw[paired];row.originalPrices[paired]=precise;row.manual.push(paired);row.edited.push(paired);const pairedField=document.querySelector('[data-allocation-row="'+row.key+'"] [data-allocation-field="'+paired+'"]');if(pairedField)pairedField.value=Number(row.raw[paired]).toFixed(2);}}}
       else if(field.dataset.allocationConfirm)row.supplierConfirmed=field.checked;
       else if(field.dataset.allocationExtraKind)row.extraKind=field.value;
       else if(field.dataset.allocationExtraConfirm)row.confirmExtra=field.checked;
@@ -124,6 +125,7 @@
     function next(){
       if(!state?.running||state.current||api.savePending())return;
       const problem=validate(state,workspace());if(problem){pause(problem);return;}
+      if(state.rows.some(row=>row.taskId&&changed(row,workspace().tasks.find(item=>item.id===row.taskId))&&api.financeLocked?.(row.taskId))){pause('PO 已提交财务，请先撤回或申请退回。');return;}
       const candidates=state.rows.filter(row=>row.supplierId&&row.status!=='saved').filter(row=>!row.taskId||changed(row,workspace().tasks.find(item=>item.id===row.taskId)));
       // Decreases first make room for increases and new supplier sources without inventing extra stock.
       candidates.sort((a,b)=>{const rank=row=>!row.taskId?2:Number(row.qty)<(workspace().tasks.find(s=>s.id===row.taskId)?.procurement?.totalCtn||0)?0:1;return rank(a)-rank(b);});
@@ -149,20 +151,21 @@
       if(state.reopen&&!api.savePending()){state.reopen=false;if(api.modal().classList.contains('supplier-allocation-dialog'))render();}
     }
     function rejected(current,message,definite){if(state&&current?.allocationRootId===state.rootId){state.running=false;state.issue=message;state.reopen=true;if(definite)state.current=null;api.cache();if(definite&&api.modal().classList.contains('supplier-allocation-dialog'))render();}}
+    const referenceContext=row=>JSON.stringify([row.supplierId,row.raw,row.version,row.mode,row.moneySource,row.qty,row.paid,row.free,row.amount]);
     function reference(key){
-      const row=state.rows.find(item=>item.key===key);if(!row||state.running||referenceRequest)return;
-      const context=state,manual=JSON.stringify([row.supplierId,row.raw,row.version]);referenceRequest=key;
+      const row=state.rows.find(item=>item.key===key);if(!row||state.running||referenceRequest||api.financeLocked?.(row.taskId))return;
+      const context=state,manual=referenceContext(row);referenceRequest=key;
       api.status('正在读取 POINTBASE 参考价；采购安排尚未提交。');
       api.read('PURCHASE_REFERENCE_REQUEST',{taskId:state.rootId}).then(result=>{
         const saved=workspace().tasks.find(item=>item.id===row.taskId);
-        if(state!==context||result.company!==context.company||result.taskId!==context.rootId||JSON.stringify([row.supplierId,row.raw,row.version])!==manual||saved&&(saved.editVersion!==row.version||saved.archived||saved.salesInvoiceLocked||saved.financeSubmitted))return;
+        if(state!==context||result.company!==context.company||result.taskId!==context.rootId||referenceContext(row)!==manual||api.financeLocked?.(row.taskId)||saved&&(saved.editVersion!==row.version||saved.archived||saved.salesInvoiceLocked||saved.financeSubmitted))return;
         if(!result.prices||priceKeys.some(name=>!Number.isFinite(result.prices[name])||result.prices[name]<0)||result.prices.disc1>1||result.prices.disc2>1||net(result.prices)<0)throw Error('参考价不完整');
-        row.pendingReference={prices:result.prices,at:result.capturedAt,source:'POINTBASE'};
+        row.pendingReference={prices:result.prices,at:result.capturedAt,source:'POINTBASE',context:manual};
         if(row.manual.length||saved?.procurement?.revision){state.issue='参考价 '+money(net(result.prices))+' / CTN';api.cache();if(document.querySelector('#allocationIssue'))document.querySelector('#allocationIssue').innerHTML=esc(state.issue)+' <button type="button" class="btn" data-allocation-use-reference="'+esc(row.key)+'">使用参考价</button>';}
         else applyReference(row);
       }).catch(error=>{if(state===context){state.issue='参考价读取失败：'+error.message+'；原输入保留。';if(document.querySelector('#allocationIssue'))document.querySelector('#allocationIssue').textContent=state.issue;}}).finally(()=>{referenceRequest=null;});
     }
-    function applyReference(row){const ref=row.pendingReference;if(!ref)return;for(const name of priceKeys){row.raw[name]=displayPrice(ref.prices[name],name);row.originalRaw[name]=row.raw[name];row.originalPrices[name]=ref.prices[name];}row.reference={at:ref.at,source:ref.source};row.pendingReference=null;row.manual=[];row.edited=[];state.dirty=true;state.issue='';api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))renderRows();}
+    function applyReference(row){const ref=row.pendingReference;if(!ref||ref.context!==referenceContext(row)||api.financeLocked?.(row.taskId))return;for(const name of priceKeys){row.raw[name]=displayPrice(ref.prices[name],name);row.originalRaw[name]=row.raw[name];row.originalPrices[name]=ref.prices[name];}row.reference={at:ref.at,source:ref.source};row.pendingReference=null;row.manual=[];row.edited=[];state.dirty=true;state.issue='';api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))renderRows();}
     function click(control){
       if(control.dataset.allocationUseReference){const row=state.rows.find(item=>item.key===control.dataset.allocationUseReference);const saved=workspace().tasks.find(item=>item.id===row?.taskId);if(row&&!state.running&&(!saved||saved.editVersion===row.version&&!saved.archived&&!saved.salesInvoiceLocked&&!saved.financeSubmitted))applyReference(row);return true;}
       if(control.dataset.allocationCatch){reference(control.dataset.allocationCatch);return true;}

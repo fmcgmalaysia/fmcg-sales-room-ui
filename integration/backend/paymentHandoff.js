@@ -45,7 +45,8 @@ export function transitionProcurementHandoff(row,details,input,identity,departme
  }else if(action==='PAYMENT_PROCESSING'){
   if(stage!=='OWNED'||current.stale||input.bankClear!==true)throw Error('Procurement handoff requires a current Finance-owned instruction and no unresolved bank operation.');
   const review=details.paymentHandoff?.review;
-  if(!review||review.version!==paymentReviewVersion(row))throw Error('Procurement handoff requires a current payment review.');
+  if(!review||review.version!==paymentReviewVersion(row)||review.procurementVersion!==current.submission.version)throw Error('Procurement handoff requires a current payment review.');
+  if(!(projectPaymentHandoff(row,details).paymentHandoff.instalmentBalanceCents>0))throw Error('Procurement handoff has no outstanding reviewed payment amount.');
   next={...details.procurementHandoff,stage:'PROCESSING',paymentStarted:identity,priorPaymentIds:(row.finance?.payments||[]).map(payment=>payment.id)};
  }else if(action==='PAYMENT_UNKNOWN'){
   if(stage!=='PROCESSING')throw Error('Procurement handoff has no payment processing to mark unknown.');
@@ -59,11 +60,12 @@ export function transitionProcurementHandoff(row,details,input,identity,departme
  return {...next,updatedAt:identity.at,updatedBy:identity.by,updatedByStaffId:identity.byStaffId,reason:input.reason};
 }
 export function projectPaymentHandoff(row,details,now=new Date()){
- const saved=details.paymentHandoff||{},review=saved.review?.version===paymentReviewVersion(row)?saved.review:null;
+ const saved=details.paymentHandoff||{},review=saved.review?.version===paymentReviewVersion(row)&&(!details.procurementHandoff||saved.review.procurementVersion===procurementSubmissionVersion(row)&&saved.review.procurementVersion===details.procurementHandoff.submission?.version)?saved.review:null;
  const payments=(row.finance?.payments||[]).filter(payment=>payment.confirmed&&payment.direction!=='REFUND'&&payment.proof?.linked),acknowledgements=saved.acknowledgements||[];
  const notices=payments.map(payment=>({paymentId:payment.id,reference:payment.reference,cents:payment.cents,at:payment.at,by:payment.by,acknowledgement:acknowledgements.find(entry=>entry.paymentId===payment.id&&entry.sha256===payment.proof.sha256)||null}));
- const paid=row.finance?.paidCents||0,requestedCents=row.finance?.payableCents??review?.requestedCents??null,balance=requestedCents===null?null:requestedCents-paid-(row.finance?.creditAppliedCents||0),today=new Date(now.getTime()+8*60*60*1000).toISOString().slice(0,10);
+ const paid=row.finance?.paidCents||0,finalKnown=row.finance?.payableCents!=null,requestedCents=row.finance?.payableCents??review?.requestedCents??null,balance=requestedCents===null?null:requestedCents-paid-(row.finance?.creditAppliedCents||0)+(finalKnown?0:(review?.paidAtReviewCents||0)+(review?.creditAtReviewCents||0)),today=new Date(now.getTime()+8*60*60*1000).toISOString().slice(0,10);
+ const instalmentRemaining=review?review.requestedCents-paid-(row.finance?.creditAppliedCents||0)+(review.paidAtReviewCents||0)+(review.creditAtReviewCents||0):null,instalmentBalanceCents=instalmentRemaining===null?null:finalKnown?Math.min(instalmentRemaining,balance):instalmentRemaining;
  const dueDays=row.dueDate?Math.round((Date.parse(row.dueDate)-Date.parse(today))/86400000):null;
- const status=paid>0?(balance===null?'PAYMENT_RECORDED':balance<=0?'PAID':'PARTLY_PAID'):review?.stage||'AWAITING_REVIEW';
- return {paymentHandoff:{review,reviewStale:Boolean(saved.review&&!review),requestedCents,balanceCents:balance,status,notices,unreadCount:notices.filter(notice=>!notice.acknowledgement).length,dueDays,paymentDue:balance>0&&dueDays!==null&&dueDays<=0}};
+ const status=paid>0?(balance===null?'PAYMENT_RECORDED':balance<=0?(row.finance?.payableCents==null?'INSTALLMENT_PAID':'PAID'):'PARTLY_PAID'):review?.stage||'AWAITING_REVIEW';
+ return {paymentHandoff:{review,reviewStale:Boolean(saved.review&&!review),requestedCents,balanceCents:balance,instalmentBalanceCents,status,notices,unreadCount:notices.filter(notice=>!notice.acknowledgement).length,dueDays,paymentDue:balance>0&&dueDays!==null&&dueDays<=0}};
 }
