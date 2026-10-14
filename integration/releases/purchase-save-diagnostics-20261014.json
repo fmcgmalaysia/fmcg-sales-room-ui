@@ -3,7 +3,7 @@
   "branch": "fix/purchase-save-diagnostics-20261014",
   "codeCommit": "3e9fa355d3bd949ede81b6bad12d06e9c1fa15f0",
   "build": "2026-10-14-purchase-save-diagnostics-v1",
-  "status": "Candidate tested; not deployed",
+  "status": "Deployed; formal read-only verification passed; real Save acceptance pending",
   "scope": "Stage 1: actionable pre-write validation and unconfirmed CMS error diagnostics only",
   "recoveryCommit": "b00ed56",
   "recoveryDesignTag": "verified/sales-buyer-design-20261014",
@@ -16,12 +16,62 @@
     "Explicit pending results cannot be mistaken for definite validation failure",
     "Purchase build and one Wix version reference prepared"
   ],
-  "protected": ["Core journal, request payloads and idempotency", "Company isolation and staff access", "Cost and quantity formulas", "P.O. and invoice locks", "Success receipt behavior", "Sales and Buyer assets"],
-  "validation": {"testsPassed":77,"testsFailed":0,"syntaxChecks":true,"isolatedBrowserPreview":true,"businessWrites":false},
+  "protected": [
+    "Core journal, request payloads and idempotency",
+    "Company isolation and staff access",
+    "Cost and quantity formulas",
+    "P.O. and invoice locks",
+    "Success receipt behavior",
+    "Sales and Buyer assets"
+  ],
+  "validation": {
+    "testsPassed": 77,
+    "testsFailed": 0,
+    "syntaxChecks": true,
+    "isolatedBrowserPreview": true,
+    "businessWrites": false
+  },
   "preview": "integration/tests/fixtures/purchase-save-diagnostics-preview.html",
-  "pages": "Not deployed",
-  "wix": "Not synchronized or published; backend catch and one Purchase URL token prepared",
-  "publicVerification": "Current baseline read-only evidence only; candidate public verification pending",
-  "releaseOrder": ["Recheck full Wix originals", "Apply isolated backend catch patch and publish compatible backend", "Deploy and verify exact Pages build", "Change one Purchase version reference and publish", "Fresh formal read-only verification; user performs real Save acceptance", "Remove temporary deployment branch permission"],
-  "excluded": ["Automatic save", "Global navigation unlock", "Business recovery or pending draft deletion", "CMS instance repair", "Master visual changes", "Main merge"]
+  "pages": {
+    "runId": "38517981045",
+    "jobId": "115700995213",
+    "status": "Success",
+    "duration": "53s",
+    "exactPublicAssets": 11,
+    "buildMarkerVerified": true
+  },
+  "wix": {
+    "backend": "Two isolated patches; full readback exact; compatible backend published first",
+    "purchasePage": "One version-reference replacement; full readback exact",
+    "publishedLiveReceipts": 2,
+    "otherPagesUnchanged": true
+  },
+  "publicVerification": {
+    "formalPurchaseBuild": "2026-10-14-purchase-save-diagnostics-v1",
+    "forceRefreshed": true,
+    "tasks": 5,
+    "protectedValues": "Existing P.O., received quantity and cost/line cost retained",
+    "clientErrors": [],
+    "realSave": "Not executed; original pending operation and draft retained",
+    "errorPath": "Isolated browser and automated tests only; no claim that historical CMS instance fault is permanently resolved"
+  },
+  "releaseOrder": [
+    "Recheck full Wix originals",
+    "Apply isolated backend catch patch and publish compatible backend",
+    "Deploy and verify exact Pages build",
+    "Change one Purchase version reference and publish",
+    "Fresh formal read-only verification; user performs real Save acceptance",
+    "Remove temporary deployment branch permission"
+  ],
+  "excluded": [
+    "Automatic save",
+    "Global navigation unlock",
+    "Business recovery or pending draft deletion",
+    "CMS instance repair",
+    "Master visual changes",
+    "Main merge"
+  ],
+  "pullRequest": 77,
+  "deploymentCommit": "d294b08b799f463da839af093cb922b9cd2ad4fd",
+  "temporaryBranchPermission": "Removed; original seven rules restored"
 }
