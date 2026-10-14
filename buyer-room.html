@@ -345,6 +345,10 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
 #trackView #trackCurrentPanel .tracking-progress-title{padding:0 10px 13px}
 #trackView #trackCurrentPanel .buyer-planning-fact{padding:10px 0}
 </style>
+<style>
+/* Buyer menu: rounded icon family shared with Sales; navigation unchanged. */
+.side .nav .ico{width:21px;height:21px;flex:0 0 21px}.side .nav .ico svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+</style>
 </head>
 <body>
 <div class="mobile-note"><div><strong>Buyer Room works best on a computer or tablet.</strong>Please continue on a larger screen to manage product lists and orders.</div></div>
@@ -362,12 +366,12 @@ body,.shell{background:#fff}.global-header{height:var(--top);padding:0 25px;back
   </header>
   <aside class="side">
     <nav class="nav">
-      <button data-view="my" class="active"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l2.3 12h13.1l2-9H5"/></svg></span>My Selection  </button>
-      <button data-view="order"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM15 3v4h4M8 14l2.5 2.5L16 11"/></svg></span>Order Form  </button>
-      <button data-view="track"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7zM17 10v4h4"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Track Orders<span id="trackTaskCount" class="track-task-count" hidden>0</span></button>
-      <button data-view="completed"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span>Completed Orders</button>
-      <button data-view="docs"><span class="ico"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h5M9 12h6M9 16h6"/></svg></span>Documents</button>
-      <button data-view="account"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></span>Account</button>
+      <button data-view="my" class="active"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2 10a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5l1.5-7H6M9 10h8"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg></span>My Selection  </button>
+      <button data-view="order"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2.5"/><rect x="9" y="3" width="6" height="4" rx="1.5"/><path d="m9 13 2 2 4-4M9 18h6"/></svg></span>Order Form  </button>
+      <button data-view="track"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H13a1.5 1.5 0 0 1 1.5 1.5V17H8M3 10v7h1M14.5 9H18l3 4v4h-2M14.5 17h.5M17 10v3h4"/><circle cx="6" cy="17.5" r="2.5"/><circle cx="17" cy="17.5" r="2.5"/></svg></span>Track Orders<span id="trackTaskCount" class="track-task-count" hidden>0</span></button>
+      <button data-view="completed"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8 12 2.5 2.5 5.5-5.5"/></svg></span>Completed Orders</button>
+      <button data-view="docs"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 3v4h4M9 11h5M9 15h5M9 18h3"/></svg></span>Documents</button>
+      <button data-view="account"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg></span>Account</button>
     </nav>
     <div class="admin-access-banner" id="adminAccessBanner" hidden><span>Viewing the customer catalogue as Admin.</span></div>
     <small id="buyerTimeZone" style="display:block;margin:12px 10px;color:#718399;font-size:10px;line-height:1.5"></small>
