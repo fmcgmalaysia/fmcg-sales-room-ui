@@ -1,5 +1,5 @@
 {
-  "status": "Candidate; not published",
+  "status": "Published; formal Buyer read/layout verified",
   "branch": "style/buyer-visual-details-20261014",
   "baseCommit": "47f8345",
   "recoveryCode": "a68899d",
@@ -28,9 +28,37 @@
   },
   "wixScope": "One Buyer page URL token only; current live bridge13410chars exact before candidate",
   "publication": {
-    "githubPages": false,
-    "wixPublished": false,
-    "publicCandidateVerified": false
+    "githubPages": true,
+    "wixPublished": true,
+    "publicCandidateVerified": true,
+    "temporaryRuleRemoved": true,
+    "originalRulesRestored": 7
   },
-  "deferred": "Two visible vertical bars: public Wix outerbody overflow-y:scroll (no overflow), Buyer internal real scroll. Separate page-shell task recommended; scrolling structure preserved."
+  "deferred": "Two visible vertical bars: public Wix outerbody overflow-y:scroll (no overflow), Buyer internal real scroll. Separate page-shell task recommended; scrolling structure preserved.",
+  "codeCommit": "6586aa0",
+  "pages": {
+    "run": 38504084660,
+    "job": 115657444730,
+    "status": "Success",
+    "duration": "29s",
+    "exactFiles": 11
+  },
+  "publicChecks": {
+    "selectionItems": 58,
+    "activeTasks": 5,
+    "fontDifferencesFromSales": 0,
+    "englishUi": true,
+    "headerColor": "#e3eee8",
+    "badgeColor": "#176b56",
+    "descriptionWidthSelection": 467.8,
+    "descriptionWidthOrder": 449.8,
+    "barcodeFontSame": true,
+    "outerFilterBorder": 0,
+    "searchBorderPreserved": true,
+    "imageImmediatelyAfterDate": true,
+    "orderButtonFocus": "Review Order; plane hidden",
+    "consoleErrors": [],
+    "actualBusinessWrites": false
+  },
+  "wixBuyerHash": "d8a5a7a8c62ed72047f92be2792a1240ea533f8ac88f97be778095a63ac59129"
 }
