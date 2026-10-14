@@ -1,7 +1,7 @@
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
-import { readPurchasePlan } from 'backend/purchasePlan.js';
+import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
 const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
@@ -28,6 +28,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(!Array.isArray(input.edits)||(!input.edits.length&&!input.taskIds)||input.edits.length>100||new Set(input.edits.map(row=>row.taskId)).size!==input.edits.length)throw Error('Select distinct task edits.');
         for(const item of input.edits) {
           const {task,order}=verified(item.taskId);if(taskEditVersion(task)!==item.version)throw Error('A task changed. Refresh before saving; your input is retained.');
+          if(readPurchasePlan(task,s.activity).costing&&Object.keys(item.changes||{}).some(key=>key==='supplierId'||prices.includes(key)))throw Error('Edit this supplier through the allocation calculator to preserve its costing inputs.');
           const patch={};if(!item.changes||!Object.keys(item.changes).length||Object.keys(item.changes).some(key=>!['supplierId',...prices].includes(key)))throw Error('Unsupported task field.');
           for(const [key,value] of Object.entries(item.changes)) {
             if(key==='supplierId') {if(task.ourPoNumber&&value!==task.supplierId)throw Error('Supplier is locked after assigning a P.O.');
@@ -50,6 +51,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         input.taskIds.forEach((id,index)=>{const {task}=verified(id);edit(task,{rowPosition:index+1});events.push({taskId:id,action:'PURCHASE_ROW_MOVED',before:task.rowPosition,after:index+1});});
       } else if(operation==='AVERAGE_COST') {
         const {task,order}=verified(input.taskId),note=String(input.note||'').trim();
+        if(readPurchasePlan(task,s.activity).costing)throw Error('Edit this supplier through the allocation calculator to preserve its costing inputs.');
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before applying cost.');
         if(typeof input.lineCost!=='number'||!Number.isFinite(input.lineCost)||input.lineCost<0||input.lineCost>999999999||Math.abs(input.lineCost*100-Math.round(input.lineCost*100))>0.00001)throw Error('Enter the actual line cost in MYR, with at most two decimal places.');
@@ -61,13 +63,16 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         edit(task,patch);
         events.push({taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
       } else if(operation==='PLAN') {
-        const {task}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
+        const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
         requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         const supplierId=input.supplierId===undefined?task.supplierId:input.supplierId,patch={};
+        if(plan.costing&&!input.costing)throw Error('Retain the original procurement costing inputs when editing this plan.');
+        const costing=input.costing?calculatePlanCosting(input.costing,input.totalCtn,order.orderId):null;
         if(!supplierId||!s.suppliers.some(row=>row.title===supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select an active supplier before saving the purchase plan.');
         if(supplierId!==task.supplierId){if(task.ourPoNumber||plan.revision&&!plan.draftPlan)throw Error('Supplier is locked to the confirmed procurement source.');patch.supplierId=supplierId;}
-        if(input.prices!==undefined){
+        if(costing){Object.assign(patch,{lpPc:costing.averageCostCtn/costing.ea,lpCtn:costing.averageCostCtn,disc1:0,disc2:0,disc3:0,manualCostField:prices});}
+        else if(input.prices!==undefined){
           if(!input.prices||Object.keys(input.prices).length!==prices.length||prices.some(key=>typeof input.prices[key]!=='number'||!Number.isFinite(input.prices[key])||input.prices[key]<0)||input.prices.disc1>1||input.prices.disc2>1||input.prices.lpCtn*(1-input.prices.disc1)*(1-input.prices.disc2)-input.prices.disc3<0)throw Error('Check supplier costs and discounts.');
           for(const key of prices)if(input.prices[key]!==task[key])patch[key]=input.prices[key];
           if(prices.some(key=>key in patch))patch.manualCostField=[...new Set([...(Array.isArray(task.manualCostField)?task.manualCostField:[]),...prices])];
@@ -76,16 +81,18 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
-        if(input.totalCtn===plan.totalCtn&&!Object.keys(patch).length)throw Error('Procurement quantity and supplier cost have not changed.');
+        if(input.totalCtn===plan.totalCtn&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
-        const extra=input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
-        if(extra>0&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
+        const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
+        const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
+        if(extra>0&&((!costing&&!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind))||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
         if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
-        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?input.extraKind:'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
+        if(allocation){updates[0].sharesRevision=allocation.beforeRevision;updates[0].sharesRootId=demandTask.title;events.push({taskId:task.title,shareRootId:demandTask.title,action:'PURCHASE_SOURCE_SHARES_SAVED',beforeRevision:allocation.beforeRevision,shares:allocation.shares,reason});}
+        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);
@@ -94,6 +101,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
         if(!task.supplierId||!s.suppliers.some(row=>row.title===task.supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select and save an active supplier before editing quantity.');
         if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||!Number.isSafeInteger(task.purchaseQtyInCtn)||input.quantity>=task.purchaseQtyInCtn)throw Error('Quantity can only be reduced to a positive value. Zero requires cancellation.');
+        const fixedShares=readPurchaseShares(task.title,s.activity).shares;if(fixedShares&&fixedShares.reduce((sum,row)=>sum+row.customerCtn,0)>input.quantity)throw Error('Resolve the saved supplier customer shares before reducing demand.');
         const received=readWarehouseTask(task,s.activity)?.customerReceived??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.quantity<received)throw Error('Quantity cannot be reduced below received cartons before warehouse allocation is resolved.');
         if(task.ourPoNumber&&!readPurchasePlan(task,s.activity).revision)throw Error('Record the current supplier procurement quantity before reducing a task with a P.O.');
@@ -139,6 +147,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         events.push({taskId:childId,action:'SPECIAL_PURCHASE_ADDED',parentTaskId:task.title,submissionId:s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText).submissionId,
           extraQty:input.extraQty,reason,stockDestination:'AVATA',allocationPending:true});
       }
+      for(const change of updates.filter(change=>change.sharesRevision!==undefined)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
       return {operation,updates,events,time:now().toISOString()};
     },apply:async plan=>{
       const held=[];
@@ -157,9 +166,10 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           if(change.planRevision!==undefined){
             const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
             if(!await store.read(names.activity,eventId)){
-              if(!current||taskEditVersion(current)!==change.expected||readPurchasePlan(current,await store.all(names.activity)).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
+              if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity)).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
             }
           }
+          if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await store.read(names.activity,shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity)).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}
           if(change.expected===null) {if(current){if(taskEditVersion(current)!==taskEditVersion(change.patch))throw Error('Special Purchase identity conflict.');}else {const record={_id:change.id,...change.patch};if(record.lastCostCaptureTime)record.lastCostCaptureTime=new Date(record.lastCostCaptureTime);await store.insert(names.tasks,record);}}
           else if(!current)throw Error('Task missing.');
           else if(taskEditVersion(current)!==taskEditVersion(target)){if(taskEditVersion(current)!==change.expected)throw Error('Task changed while this save was pending.');await store.update(names.tasks,target);}
@@ -167,7 +177,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         for(const event of plan.events) {
           await stillOwned(event.taskId);
           const change=plan.updates.find(change=>change.id===event.taskId),id=operationId(company,requestId,staff.memberId,event.taskId,event.action);
-          if(!await store.read(names.activity,id))await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.taskId,action:event.action,
+          if(!await store.read(names.activity,id))await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.shareRootId||event.taskId,action:event.action,
             activityTime:new Date(plan.time),actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,result:'SAVED',message:event.action.replaceAll('_',' '),details:{requestId,...event}});
         }
         return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:plan.updates.map(change=>change.id)};

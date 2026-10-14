@@ -1,7 +1,7 @@
 // Explicit procurement projection. Never return original order rows or intake snapshots.
 import { readSalesShipmentDate } from 'backend/customerShipmentPlan.js';
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
-import { readPurchasePlan } from 'backend/purchasePlan.js';
+import { readPurchasePlan, readPurchaseShares } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
@@ -67,6 +67,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),
       netCostCtn: ['lpCtn','disc1','disc2','disc3'].every(key=>number(task[key])!==null)?Number((task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3).toFixed(2)):number(snapshot.netCostCtn), cbmPerCtn: number(order.cbmCtn),
       costStatus: text(task.costStatus), costErrorReason: text(task.costErrorReason), costCapturedAt: stamp(task.lastCostCaptureTime),
+      manualCostField:Array.isArray(task.manualCostField)?task.manualCostField:[],
       stage: text(task.purchaseStage), risk: task.risk === true, riskReason: text(task.riskReason),
       archived: task.purchaseStage === 'SHIPPED' && Boolean(text(order.salesInvoiceNumber)),
       specialPurchase: task.specialPurchase === true, specialPurchaseReason: text(task.specialPurchaseReason),
@@ -92,6 +93,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   attachPurchaseSourceTotals(rows);
   for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
     const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);
+    const fixed=readPurchaseShares(root.id,activity);
+    if(fixed.shares){if(fixed.shares.length!==sources.length)throw Error('Supplier allocation save requires confirmation. Retry the original request.');for(const source of sources){const share=fixed.shares.find(item=>item.taskId===source.id);if(!share||share.totalCtn!==(source.procurement.totalCtn||0))throw Error('Supplier allocation save requires confirmation. Retry the original request.');source.procurement.customerCtn=share.customerCtn;source.procurement.expectedExtra=share.totalCtn-share.customerCtn;}root.sourcing.unplacedCtn=Math.max(0,root.ord-fixed.shares.reduce((sum,share)=>sum+share.customerCtn,0));continue;}
     if(!sources.some(row=>row.procurement.totalCtn>0))continue;
     let extra=Math.max(0,sources.reduce((sum,row)=>sum+(row.procurement.totalCtn||0),0)-root.ord);
     for(const source of sources.filter(row=>row.procurementSource)){source.procurement.expectedExtra=Math.min(extra,source.procurement.extraCtn||0);extra-=source.procurement.expectedExtra;}

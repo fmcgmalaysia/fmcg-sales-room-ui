@@ -2,13 +2,18 @@ import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
 import { getStockExceptions, saveStockException } from 'backend/stockExceptions.web';
 import { getPurchaseOrders, savePurchaseOrder } from 'backend/purchaseOrders.web';
 import { retryPurchaseTaskCost } from 'backend/purchaseCostRetry.web';
-import { savePurchaseOperation, getSupplierProfile, getSupplierBrandOptions, saveSupplierProfile, getPurchaseSaveResult } from 'backend/purchaseOperations.web';
+import { savePurchaseOperation, getSupplierProfile, getSupplierBrandOptions, saveSupplierProfile, getPurchaseSaveResult, getPurchaseReferenceCost } from 'backend/purchaseOperations.web';
 import { authentication, currentMember } from 'wix-members-frontend';
 const UI_ORIGIN = 'https://fmcgmalaysia.github.io';
 $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(message.type==='PURCHASE_REFERENCE_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||typeof message.taskId!=='string'||message.taskId.length>100)return;
+      try{const result=await getPurchaseReferenceCost(message.company,message.taskId);room.postMessage({type:'PURCHASE_REFERENCE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type:'PURCHASE_REFERENCE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Reference cost could not be read; inputs retained.'});}return;
+    }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';

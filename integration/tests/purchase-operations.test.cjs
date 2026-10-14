@@ -38,6 +38,42 @@ function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);
  return {store,rows,id,second,base,operate,task:key=>rows.get('NCTTasks/'+(key||id)),versions:()=>Object.fromEntries([id,second].map(key=>[key,taskEditVersion(rows.get('NCTTasks/'+key))])),fail:n=>failAfter=n,
  workspace:()=>projectPurchaseWorkspace({company:'NCT',staff,orders:all('NCTOrders'),tasks:all('NCTTasks'),activity:all('NCTActivity'),suppliers:all('SharedSuppliers')})};}
 
+test('FOC amount, original inputs, shares, PO cents and retries stay consistent across suppliers',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js'),{projectWarehouseOrders}=load('warehouseReceiving.js');
+ const f=fixture();f.task().purchaseQtyInCtn=100;f.rows.get('NCTOrders/O0').orderQtyInCtn=100;f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
+ const cost=(paid,free,lpCtn,disc1=0)=>({schema:1,mode:free?'FOC':'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:free,prices:{lpPc:lpCtn/16,lpCtn,disc1,disc2:0,disc3:0},manualFields:['lpCtn']});
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60,0,100),draftPlan:true,reason:'A supply'}});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:44,supplierId:'B',poNumber:'',costing:cost(40,4,100),confirmExtra:true,reason:'B 40 plus 4 FOC'}};
+ const result=await add(request);await add(request);let row=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
+ assert.equal(row.procurement.costing.amountCents,400000);assert.equal(row.procurement.expectedExtra,4);assert.equal(row.procurement.customerCtn,40);assert.equal(row.procurement.availableCtn,null);assert.equal(row.lpCtn,4000/44);assert.equal(f.task().purchaseQtyInCtn,100);
+ await assert.rejects(f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'EDIT',input:{edits:[{taskId:row.id,version:row.editVersion,changes:{lpCtn:1}}]}}),/calculator/);
+ const update={...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:row.id,version:row.editVersion,planRevision:row.procurement.revision,totalCtn:33,costing:cost(30,3,100),reason:'B smaller'}};
+ await f.operate(update);await f.operate(update);row=f.workspace().tasks.find(row=>row.id===row.id);
+ const ws=f.workspace(),b=ws.tasks.find(item=>item.id===result.sourceTaskId),a=ws.tasks.find(item=>item.id===f.id);assert.equal(a.procurement.customerCtn,60);assert.equal(a.procurement.costing.amountCents,600000);assert.equal(b.procurement.customerCtn,33);assert.equal(a.sourcing.unplacedCtn,7);
+ const poWs={...ws,tasks:ws.tasks.filter(item=>item.id===result.sourceTaskId).map(item=>({...item,po:'NCT-PO-FOC'}))};const po=projectPurchaseOrders({company:'NCT',workspace:poWs,records:[]})[0];assert.equal(po.amount,3000);
+ const wh=projectWarehouseOrders({company:'NCT',purchaseOrders:[po],tasks:poWs.tasks,activity:[]})[0];assert.equal(wh.lines[0].planned,33);assert.equal(wh.lines[0].remaining,33);assert.equal(wh.lines[0].expectedExtra,0);assert.equal(wh.lines[0].costing.freeCtn,3);
+});
+
+test('discounted FOC and negotiated total retain cents without rounded-average multiplication',()=>{
+ const {calculatePlanCosting}=load('purchasePlan.js'),price={lpPc:100/16,lpCtn:100,disc1:.1,disc2:0,disc3:0},input={schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:10,freeCtn:1,prices:price};
+ let value=calculatePlanCosting(input,11,16);assert.equal(value.amountCents,90000);assert.equal(value.averageCostCtn,900/11);
+ value=calculatePlanCosting({...input,prices:{...price,disc1:0}},11,16);assert.equal(value.amountCents,100000);assert.equal(value.averageCostCtn,1000/11);
+ value=calculatePlanCosting({...input,moneySource:'TOTAL',amountCents:92150},11,16);assert.equal(value.amountCents,92150);assert.equal(value.prices.disc1,.1);assert.equal(value.averageCostCtn,921.5/11);
+ assert.throws(()=>calculatePlanCosting({...input,paidCtn:0},11,16),/Paid/);assert.throws(()=>calculatePlanCosting({...input,prices:{...price,lpCtn:null}},11,16),/prices/);
+});
+
+test('FOC lost write acknowledgement and partial source audit resume the exact prepared request',async()=>{
+ const f=fixture(),costing={schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:10,freeCtn:1,prices:{lpPc:100/16,lpCtn:100,disc1:.1,disc2:0,disc3:0}};
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:11,costing,draftPlan:true,reason:'Ten plus one'}};
+ f.fail(1);await assert.rejects(f.operate(first),/response lost/);await f.operate(first);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.costing.amountCents,90000);
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ let fail=true;const insert=f.store.insert;f.store.insert=async(c,row)=>{if(fail&&row.action==='PURCHASE_SOURCE_ADDED'){fail=false;throw Error('lost source audit');}return insert(c,row);};
+ const input={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:11,supplierId:'B',poNumber:'',costing,reason:'Second ten plus one'}};
+ await assert.rejects(add(input),/lost source audit/);assert.throws(()=>f.workspace(),/confirmation/);const result=await add(input);assert.equal(f.workspace().tasks.find(row=>row.id===result.sourceTaskId).procurement.costing.amountCents,90000);
+});
+
 test('one plan save commits supplier, quantity and price together and retries without duplicate audits',async()=>{
  const f=fixture();f.task().supplierId='';
  const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:200,supplierId:'S',prices:{lpPc:3,lpCtn:48,disc1:.02,disc2:0,disc3:0},reason:'Supplier quoted 200 cartons'};
