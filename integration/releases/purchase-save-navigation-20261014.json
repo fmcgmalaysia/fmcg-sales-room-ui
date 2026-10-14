@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-14",
+  "branch": "fix/purchase-save-navigation-20261014",
+  "codeCommit": "8252faec2e640cdf10406f5a7075a6cdc137cebb",
+  "build": "2026-10-14-purchase-save-navigation-v1",
+  "status": "Candidate; isolated acceptance passed; not deployed",
+  "scope": "Stage 2: permit browsing while retaining one pending Purchase save and its original context",
+  "recoveryCommit": "55290cc",
+  "recoveryApplication": "3e9fa35",
+  "recoveryEvidence": "Fresh full Wix page, operations web method and core normalized exact to repository; public index/app/task-grid normalized exact. Copies and hashes retained in local handoff. Prior design-only verified tag remains unchanged and is not Purchase transaction acceptance.",
+  "changes": [
+    "Dashboard, Active Orders, PO/payment/history views, customer filters and read-only progress/history remain usable while a save is unconfirmed",
+    "Sticky pending-save entry exposes original form or submitted values, receipt checks and explicit same-request retry",
+    "Live pending form nodes are retained when another read-only panel opens; return restores inputs and context",
+    "Successful receipt clears only matching submitted price drafts and the submitted customer row order; unrelated drafts and viewed page remain",
+    "Customer row-order drafts remain scoped across navigation and pre-upgrade session cache restoration",
+    "New Purchase mutations remain blocked while the original result is pending; navigation and Refresh never silently resubmit",
+    "Known rejection restores editable fields without unlocking fields that were already disabled"
+  ],
+  "protected": [
+    "Backend company-level serial journal, receipt identities and prepared-operation recovery unchanged",
+    "Staff access, NCT/GHR isolation and company switching guard unchanged",
+    "Supplier plans, source quantities, costs, discount formulas, PO/invoice locks and warehouse/payment data unchanged",
+    "Sales, Buyer, task-grid renderer and shared Master modules unchanged",
+    "Original user's unresolved save and row-order draft untouched"
+  ],
+  "validation": {
+    "targetedTestsPassed": 84,
+    "targetedTestsFailed": 0,
+    "newNavigationCasesFailOnBaseline": 5,
+    "syntaxAndDiffChecks": true,
+    "isolatedBrowser": "One PLAN request; payment view and second-customer progress accessible while pending; cost49 and reason retained; explicit rejection restores editable form; cost50 delayed receipt stays on payment view without reopening source modal",
+    "businessWrites": false
+  },
+  "preview": "integration/tests/fixtures/purchase-save-navigation-preview.html",
+  "wixChange": "One Purchase version-reference token only; backend remains unchanged",
+  "pages": "Not deployed",
+  "wix": "Not changed or published for this candidate",
+  "publicVerification": "Current production read-only baseline only; candidate verification pending deployment",
+  "temporaryBranchPermission": "Not added; new exact branch requires action-time confirmation",
+  "excluded": [
+    "Automatic save and automatic row-order submission",
+    "Multi-supplier allocation modal redesign and payment action relocation",
+    "CMS WDE0118 root-cause repair or forced removal of locks",
+    "Real Save, pending-request retry, draft deletion, main merge or new Purchase verified tag",
+    "Persistent editable modal reconstruction after a full reload; original submitted payload remains in the existing staff/company-scoped pending cache"
+  ]
+}
