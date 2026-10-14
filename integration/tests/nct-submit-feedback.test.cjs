@@ -9,10 +9,10 @@ assert.ok(start > 0 && end > start);
 function fixture(destination = 'NCT') {
   const requests = [], timers = [], busy = [], renders = [], controls = [{ disabled: false }, { disabled: false }];
   const status = { textContent: '' }, area = { dataset: { nctOrderId: 'ORDER' }, innerHTML: 'KEEP ORDER AND QUANTITIES' };
-  const dialog = { style: {}, open: false, innerHTML: '', querySelector: () => ({}), showModal() { this.open = true; }, close() { this.open = false; } };
+  const attrs = {}; const dialog = { style: {}, setAttribute(k,v){attrs[k]=v;}, open: false, innerHTML: '', querySelector: () => dialog.innerHTML.includes('data-close-nct-feedback') ? {} : null, showModal() { this.open = true; }, close() { this.open = false; } };
   let mounted = false;
-  let handler, count = 0;
-  const parent = { postMessage: value => requests.push(value) }, window = { parent, addEventListener: (_type, callback) => { handler = callback; } };
+  let handler, unload, count = 0;
+  const parent = { postMessage: value => requests.push(value) }, window = { parent, addEventListener: (type, callback) => { if(type==='message')handler=callback;else if(type==='beforeunload')unload=callback; } };
   const ctx = vm.createContext({ window, crypto: { randomUUID: () => 'REQUEST-' + ++count },
     document: { getElementById: id => id === 'nctSubmissionFeedback' ? (mounted ? dialog : null) : id === 'salesQtyStatus' ? status : area,
       createElement: () => dialog, body: { appendChild: () => { mounted = true; } },
@@ -22,7 +22,7 @@ function fixture(destination = 'NCT') {
     setTimeout: callback => timers.push(callback) });
   vm.runInContext(html.slice(start, end), ctx);
   const order = { orderId: 'ORDER', companyName: 'TEST CUSTOMER', lines: [{ quantityCtn: 250 }] };
-  return { start: () => ctx.submitOrderToNct(order, destination), requests, timers, busy, renders, status, area, dialog,
+  return { start: () => ctx.submitOrderToNct(order, destination), requests, timers, busy, renders, status, area, dialog, attrs, unload:()=>{const event={blocked:false,preventDefault(){this.blocked=true;}};unload(event);return event;},
     respond: (message, source = parent) => { const event = { source, data: { type: 'SALES_ROOM_ORDER_ACTION_RESULT',
       action: 'SUBMIT_' + destination, orderId: 'ORDER', requestId: 'REQUEST-1', ...message }, stopped: false,
       stopImmediatePropagation() { this.stopped = true; } }; handler(event); return event; } };
@@ -76,4 +76,14 @@ test('stale response or another opened order cannot replace the current review',
   const f = fixture(); f.start(); f.respond({ ok: true, requestId: 'OTHER', receiptId: 'RECEIPT', destination: 'NCT' });
   assert.equal(f.renders.length, 0); f.area.dataset.nctOrderId = 'OTHER ORDER';
   f.respond({ ok: true, receiptId: 'RECEIPT', destination: 'NCT' }); assert.equal(f.renders.length, 0);
+});
+
+test('waiting modal immediately blocks dismissal and unload, terminal result releases it',()=>{
+  const f=fixture();f.start();assert.equal(f.dialog.open,true);assert.equal(f.attrs['aria-busy'],'true');assert.match(f.dialog.innerHTML,/正在交单/);assert.doesNotMatch(f.dialog.innerHTML,/data-close-nct-feedback/);assert.equal(f.unload().blocked,true);
+  const cancel={blocked:false,preventDefault(){this.blocked=true;}};f.dialog.oncancel(cancel);assert.equal(cancel.blocked,true);
+  f.respond({ok:false,error:'Validation failed'});assert.equal(f.attrs['aria-busy'],'false');assert.match(f.dialog.innerHTML,/data-close-nct-feedback/);assert.equal(f.unload().blocked,false);
+});
+test('receipt lookup retains the modal and cannot create a second submission',()=>{
+  const f=fixture('GHR');f.start();f.respond({ok:false,error:'network timeout'});assert.equal(f.dialog.open,true);assert.equal(f.attrs['aria-busy'],'true');assert.match(f.dialog.innerHTML,/正在核对交单回执/);f.start();assert.equal(f.requests.filter(m=>m.type==='SALES_ROOM_SUBMIT_ORDER').length,1);
+  const check=f.requests.at(-1);f.respond({type:'SALES_ROOM_NCT_RECEIPT_RESULT',requestId:check.requestId,ok:true,receipt:{ok:true,orderId:'ORDER',destination:'GHR',receiptId:'R',masterReceivedAt:'2026-10-14T03:00:00Z'}});assert.equal(f.attrs['aria-busy'],'false');assert.match(f.dialog.innerHTML,/交单成功/);assert.equal(f.unload().blocked,false);
 });
