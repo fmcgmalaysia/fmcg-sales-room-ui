@@ -111,7 +111,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       }
       const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
-      if(patch.procurementHandoff)event.action='PROCUREMENT_'+input.action;
+      if('procurementHandoff' in patch&&patch.procurementHandoff)event.action='PROCUREMENT_'+input.action;
       return {record,expected:current?operationId(current):null,expectedVersion:row.version,expectedBasis:procurementSubmissionVersion(row),event,...(upload?{upload}:{})};
     },apply:async plan=>{
       const current=await store.read(PURCHASE_ORDER_COLLECTION,plan.record._id);
