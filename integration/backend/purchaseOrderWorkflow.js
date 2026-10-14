@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate } from 'backend/purchaseDocumentPolicy.js';
 import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
-import { projectPaymentHandoff } from 'backend/paymentHandoff.js';
+import { projectPaymentHandoff, projectProcurementHandoff, transitionProcurementHandoff, procurementSubmissionVersion } from 'backend/paymentHandoff.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -53,7 +53,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       history:[...history,...(details.audit||[])].sort((a,b)=>String(a.time).localeCompare(String(b.time))),
       updatedAt:date(details.updatedAt),readAt:now.toISOString()};
     const settlement={...projected,...projectInvoiceReview(projected,details)};
-    return {...settlement,...projectPaymentHandoff(settlement,details,now)};
+    return {...settlement,...projectPaymentHandoff(settlement,details,now),procurementHandoff:projectProcurementHandoff(settlement,details)};
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
@@ -65,7 +65,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     return projectPurchaseOrders({company,workspace,records,now:now()});
   }
   async function save({company,staff,requestId,input}) {
-    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','ACK_PAYMENT'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','ACK_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
       if(!documentService)throw Error('Document upload is not connected.');
@@ -82,7 +82,9 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const reason=text(input.reason);if(!reason||reason.length>2000)throw Error('Please enter a reason.');
       let patch;
       let upload;
-      if(input.action==='DOCUMENT'){
+      if(['SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action)){
+        patch={procurementHandoff:transitionProcurementHandoff(row,before,input,{at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},'PURCHASE'),...(input.action==='SUBMIT_FINANCE'?{chasePayment:input.urgent===true}:{})};
+      }else if(input.action==='DOCUMENT'){
         if(!row.supplierId)throw Error('Select a supplier before uploading documents.');
         if(['INV','CN'].includes(input.type)&&(!Number.isSafeInteger(input.declaredCents)||input.declaredCents<=0||input.declaredCents>999999999999))throw Error('Enter the supplier document amount in MYR.');
         const name=purchaseDocumentName({date:input.date,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
@@ -98,20 +100,24 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         if(acknowledgements.some(entry=>entry.paymentId===payment.id&&entry.sha256===payment.proof.sha256))throw Error('This payment notification was already acknowledged.');
         patch={paymentHandoff:{...(before.paymentHandoff||{}),acknowledgements:[...acknowledgements,{paymentId:payment.id,sha256:payment.proof.sha256,by:staff.staffName,byStaffId:staff.staffId,at:now().toISOString()}]}};
       } else if(input.action==='CHASE'){
+        if(before.procurementHandoff&&!row.procurementHandoff.submitted)throw Error('Procurement handoff must be submitted before chasing payment.');
         if(typeof input.enabled!=='boolean'||input.enabled===row.chasePayment)throw Error('Payment chase has not changed.');
         patch={chasePayment:input.enabled};
       } else {
+        if(before.procurementHandoff&&!row.procurementHandoff.editable)throw Error('Procurement handoff has locked payment terms. Request return before editing.');
         if(!Number.isSafeInteger(input.termDays)||input.termDays<0||input.termDays>3650)throw Error('Enter payment terms from 0 to 3650 days.');
         if(input.termDays===row.termDays)throw Error('Payment term has not changed.');
         patch={termDays:input.termDays};
       }
       const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
-      return {record,expected:current?operationId(current):null,event,...(upload?{upload}:{})};
+      if(patch.procurementHandoff)event.action='PROCUREMENT_'+input.action;
+      return {record,expected:current?operationId(current):null,expectedVersion:row.version,expectedBasis:procurementSubmissionVersion(row),event,...(upload?{upload}:{})};
     },apply:async plan=>{
       const current=await store.read(PURCHASE_ORDER_COLLECTION,plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.event.id)) {
         if((current?operationId(current):null)!==plan.expected)throw Error('Purchase order changed while saving.');
+        if(plan.expectedVersion){const latest=(await list(company,staff)).find(row=>row.id===plan.record._id);if(latest?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(latest)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');}
         if(plan.upload){
           const receipt=await documentService({...plan.upload,base64:payload});
           if(receipt.ok!==true||receipt.fileId!==plan.upload.fileId||receipt.sha256!==plan.upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.upload.name)throw Error('Document upload receipt mismatch.');

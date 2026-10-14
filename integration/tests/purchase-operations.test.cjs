@@ -38,6 +38,24 @@ function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);
  return {store,rows,id,second,base,operate,task:key=>rows.get('NCTTasks/'+(key||id)),versions:()=>Object.fromEntries([id,second].map(key=>[key,taskEditVersion(rows.get('NCTTasks/'+key))])),fail:n=>failAfter=n,
  workspace:()=>projectPurchaseWorkspace({company:'NCT',staff,orders:all('NCTOrders'),tasks:all('NCTTasks'),activity:all('NCTActivity'),suppliers:all('SharedSuppliers')})};}
 
+test('submitted PO blocks price, plan and merging a new member, while row ordering remains available',async()=>{
+ for(const operation of ['EDIT','PLAN','PO']){
+  const f=fixture();f.task().ourPoNumber='NCT-PO-1';f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'SUBMITTED'}}});
+  const before=copy(f.task());
+  const input=operation==='EDIT'?{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}]}:operation==='PLAN'?{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:240,supplierConfirmed:true,reason:'Revision'}:{taskIds:[f.second],versions:f.versions(),poNumber:'NCT-PO-1'};
+  await assert.rejects(f.operate({...f.base,operation,input}),/Procurement handoff has locked/);assert.deepEqual(f.task(),before);
+ }
+ const f=fixture();f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'OWNED'}}});
+ await f.operate({...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}});assert.equal(f.task().rowPosition,2);
+});
+
+test('Finance freeze appearing after preparation blocks all task writes at application',async()=>{
+ const f=fixture(),insert=f.store.insert,before=copy(f.task());
+ f.store.insert=async(c,row)=>{const result=await insert(c,row);if(row.action==='PURCHASE_OPERATION_PREPARED')f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'OWNED'}}});return result;};
+ await assert.rejects(f.operate({...f.base,operation:'EDIT',input:{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}]}}),/Procurement handoff has locked/);
+ assert.deepEqual(f.task(),before);
+});
+
 test('FOC amount, original inputs, shares, PO cents and retries stay consistent across suppliers',async()=>{
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js'),{projectWarehouseOrders}=load('warehouseReceiving.js');
  const f=fixture();f.task().purchaseQtyInCtn=100;f.rows.get('NCTOrders/O0').orderQtyInCtn=100;f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
