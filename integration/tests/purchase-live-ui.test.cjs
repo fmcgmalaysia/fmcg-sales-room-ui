@@ -273,6 +273,17 @@ test('one click stays busy, blocks duplicate submission and resolves a lost resp
  assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
 });
 
+test('unconfirmed CMS save keeps original identity and identifies affected tasks throughout receipt checks',async()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});
+ h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,pending:true,errorCode:'WDE0118',error:'CMS connection WDE0118',requestId:save.requestId}});
+ const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);
+ assert.equal(h.node('#companySelect').disabled,true);assert.match(h.node('#liveStatus').textContent,/Barcode 00123/);assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.ok(h.node('#liveStatus').textContent.includes('Ref / 操作编号: '+save.requestId));
+ h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:false,error:'Read failure'});await new Promise(resolve=>setImmediate(resolve));
+ assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.match(h.node('#liveStatus').textContent,/暂时无法核对/);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,5);
+});
+
 test('receipt checks stop after three pending results and explicit retry preserves the original save identity',async()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);h.timers[1]();
