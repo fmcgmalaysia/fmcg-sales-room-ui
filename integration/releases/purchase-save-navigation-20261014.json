@@ -3,7 +3,7 @@
   "branch": "fix/purchase-save-navigation-20261014",
   "codeCommit": "8252faec2e640cdf10406f5a7075a6cdc137cebb",
   "build": "2026-10-14-purchase-save-navigation-v1",
-  "status": "Candidate; isolated acceptance passed; not deployed",
+  "status": "Deployed; formal read-only verification passed; real SAVE acceptance pending",
   "scope": "Stage 2: permit browsing while retaining one pending Purchase save and its original context",
   "recoveryCommit": "55290cc",
   "recoveryApplication": "3e9fa35",
@@ -34,15 +34,43 @@
   },
   "preview": "integration/tests/fixtures/purchase-save-navigation-preview.html",
   "wixChange": "One Purchase version-reference token only; backend remains unchanged",
-  "pages": "Not deployed",
-  "wix": "Not changed or published for this candidate",
-  "publicVerification": "Current production read-only baseline only; candidate verification pending deployment",
-  "temporaryBranchPermission": "Not added; new exact branch requires action-time confirmation",
+  "pages": {
+    "runId": "38525204559",
+    "jobId": "115723835092",
+    "status": "Success",
+    "duration": "19s",
+    "exactPublicAssets": 11,
+    "buildMarkerVerified": true
+  },
+  "wix": {
+    "change": "One Purchase version-reference token; full after readback exact",
+    "publishedLive": true,
+    "pageAfterHash": "531998fba893821223c0a1ffe671e954e4601213c53fd6b2ef3a1ef419d3d07f",
+    "backendUnchanged": true,
+    "sourceSiteUnchanged": true
+  },
+  "publicVerification": {
+    "forceRefreshed": true,
+    "build": "2026-10-14-purchase-save-navigation-v1",
+    "tasks": 5,
+    "views": [
+      "Dashboard",
+      "Active Orders",
+      "Payment Follow-up"
+    ],
+    "protectedValues": "Existing P.O., received quantity, costs, financial paid amount and unknown balance preserved",
+    "clientErrors": [],
+    "realSave": "Not executed; original pending request/draft not retried, refreshed or cleared",
+    "pendingErrorPath": "Isolated browser and automated acceptance only"
+  },
+  "temporaryBranchPermission": "Removed; original seven rules restored",
   "excluded": [
     "Automatic save and automatic row-order submission",
     "Multi-supplier allocation modal redesign and payment action relocation",
     "CMS WDE0118 root-cause repair or forced removal of locks",
     "Real Save, pending-request retry, draft deletion, main merge or new Purchase verified tag",
     "Persistent editable modal reconstruction after a full reload; original submitted payload remains in the existing staff/company-scoped pending cache"
-  ]
+  ],
+  "deploymentCommit": "a6979f31b53289a7fff73c47a9dfed3ec9d146cd",
+  "pullRequest": 78
 }
