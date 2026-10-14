@@ -1,0 +1,31 @@
+{
+  "status": "Candidate complete; not yet deployed",
+  "branch": "release/sales-buyer-closeout-20261014",
+  "recoveryCode": "4f8ae7d",
+  "scope": [
+    "Warm amber Review loading bar, existing loading and failure/retry handling preserved",
+    "Warehouse expiry tooltip provided upon customer request, Sales bilingual and Buyer English only",
+    "Buyer-only outer scrollbar is automatic; retain real inner scrolling and existing height rule",
+    "Consolidate GitHub release records for today's Sales and Buyer changes"
+  ],
+  "salesBuild": "2026-10-14-sales-buyer-closeout-v1",
+  "buyerBuild": "2026-10-14-buyer-closeout-v1",
+  "wixScope": "Two page URL tokens plus one Buyer-only global CSS addition",
+  "globalCssMirror": "integration/wix/source-global.css",
+  "validation": {
+    "salesChecksPassed": 17,
+    "buyerChecksPassed": 28,
+    "originalGlobalCssExactBefore": true,
+    "qtyRecoveryPreserved": true,
+    "actualBusinessWrites": false
+  },
+  "publication": {
+    "pagesVerified": false,
+    "wixPublished": false,
+    "formalVerified": false,
+    "temporaryRuleRemoved": false
+  },
+  "deferredByUser": "Warehouse expiry data source integration",
+  "userAcceptancePending": "Actual submission waiting/receipt workflow and post-transfer shipment-date save",
+  "mainMerged": false
+}
