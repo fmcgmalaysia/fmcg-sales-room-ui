@@ -1,8 +1,14 @@
 # FMCG Malaysia web interfaces
 
-Latest 2026-10-07 status and exact live-source archive: [day closeout report](handoff/room5-day-closeout-20261007/REPORT.txt). Addition code a1f2b49 is installed for testing; independent acceptance and Wix request stability remain pending. Excel work is explicitly paused. Do not deploy this documentation branch or old main as a site recovery.
+Historical 2026-10-07 status and exact live-source archive: [day closeout report](handoff/room5-day-closeout-20261007/REPORT.txt). This archive is not the current release status. Do not deploy this documentation branch or old main as a site recovery.
 
 This repository records two Wix systems, FMCGMALAYSIA and MASTER, with one shared GitHub Pages static deployment. The [system ownership and release boundaries](docs/SYSTEM_OWNERSHIP.md) define their responsibilities. Its historical GitHub name, `fmcg-sales-room-ui`, does **not** mean that Buyer Room, Catalogue or MASTER changes belong to Sales Room.
+
+## Before starting a task
+
+Read the project `AGENTS.md`, `START_HERE.md`, the current task handoff, and [SYSTEM_OWNERSHIP.md](docs/SYSTEM_OWNERSHIP.md) before editing or publishing. Confirm the actual checkout and branch, the owning Wix system, shared consumers, recovery evidence and acceptance scope. Use the task's release record and live evidence for version status; historical README notes and branch names are not deployment evidence.
+
+In the local project `C:\FMCG-WIX-LOCAL`, the project root is not a Git checkout. If the current task branch lacks this document, read `handoff/system-boundaries-20261014/SYSTEM_OWNERSHIP.md` and `RECORD.txt` from the project root. That handoff preserves the GitHub document and its branch/commit reference; do not switch application branches merely to read it.
 
 | Area | Audience and purpose | Source / existing entry point |
 | --- | --- | --- |
