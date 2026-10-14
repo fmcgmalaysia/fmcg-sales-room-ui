@@ -30,7 +30,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const id=record?._id||operationId(company,'PURCHASE_ORDER',taskIds);
     const supplier=workspace.suppliers.find(item=>item.id===first.supplierId),customer=workspace.customers.find(item=>item.id===first.customerId);
     const complete=rows.every(row=>Number.isSafeInteger(row.procurement?.totalCtn)&&row.procurement.totalCtn>0&&['lpCtn','disc1','disc2','disc3'].every(key=>finite(row[key]))&&row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3>=0);
-    const amount=complete?rows.reduce((sum,row)=>sum+Math.round((row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3)*row.procurement.totalCtn*100),0)/100:null;
+    const amount=complete?rows.reduce((sum,row)=>sum+(row.procurement.costing?.amountCents??Math.round((row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3)*row.procurement.totalCtn*100)),0)/100:null;
     const documents=(details.documents||[]).filter(doc=>doc.linked===true),invoiceDates=documents.filter(doc=>doc.type==='INV'&&!doc.superseded).map(doc=>doc.date).sort();
     const invoiceDate=invoiceDates[0]||null,termDays=Number.isSafeInteger(details.termDays)?details.termDays:null;
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
@@ -39,7 +39,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const quantityCases=rows.flatMap(row=>row.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
     const creditTransfers=(workspace.creditTransfers||[]).filter(entry=>entry.sourceId===id||entry.targetId===id);
     const stockCases=rows.flatMap(row=>row.warehouse?.stock?.cases||[]),stockIssues=stockCases.filter(row=>row.status!=='RESOLVED');
-    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,stockIssues,stockCases,creditTransfers,
+    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3,...(row.procurement?.costing?[row.procurement.costing]:[])]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,stockIssues,stockCases,creditTransfers,
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       shipmentDates:[...new Map(rows.map(row=>[row.orderId,{orderId:row.orderId,customerId:row.customerId,date:row.estimatedShipmentDate,updatedAt:row.shipmentDate?.at||'',updatedBy:row.shipmentDate?.by||''}])).values()],
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',

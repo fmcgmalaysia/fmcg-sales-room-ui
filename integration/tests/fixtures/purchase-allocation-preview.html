@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Supplier allocation — isolated acceptance</title><style>body{margin:0;font:12px Arial}body>header{padding:8px;background:#fff3d6;display:flex;gap:12px;align-items:center}iframe{width:100%;height:calc(100dvh - 40px);border:0}</style></head><body>
+<header>ISOLATED SAMPLE — no CMS writes <label>Second source <select id="mode"><option value="success">Success</option><option value="reject">Reject</option><option value="pending">Pending</option></select></label><button id="confirm">Confirm pending receipt</button><span id="trace">No submissions</span></header>
+<iframe id="room" src="../../../purchase-live/index.html?preview=20261014-allocation-v1"></iframe>
+<script>
+const frame=document.querySelector('#room'),rootId='a'.repeat(32);let pendingSave=null,count=0,version=1;
+const task={id:rootId,customerId:'SAMPLE-CUSTOMER',orderId:'SAMPLE-ORDER',barcode:'95510000000001',name:'SAMPLE PRODUCT — SUPPLIER ALLOCATION',packing:'240ML x 24',ea:24,ord:100,inc:null,supplierId:'SUP-A',po:'',lpPc:3.75,lpCtn:90,disc1:.1,disc2:0,disc3:0,netCostCtn:81,costStatus:'CAPTURED',history:[],masterReceivedAt:'2026-10-14T02:00:00Z',stage:'NEW_INCOMING',editVersion:'V1',gp:.19,transactionCurrency:'MYR',estimatedShipmentDate:'2026-10-28',procurement:{totalCtn:null,revision:'',draftPlan:true}};
+const workspace={company:'NCT',staff:{staffId:'PREVIEW',memberId:'PREVIEW',staffName:'PREVIEW',canEditCustomerDemand:false},fetchedAt:new Date().toISOString(),sourcesVersion:'SV1',customers:[{id:'SAMPLE-CUSTOMER',name:'SAMPLE CUSTOMER',shortName:'SAMPLE'}],suppliers:[{id:'SUP-A',name:'HONG LEA TRADING SDN BHD',shortName:'HONG LEA'},{id:'SUP-B',name:'KOH SOON HUAT TRADING SDN BHD',shortName:'KOH SOON HUAT'},{id:'SUP-C',name:'THIRD EXAMPLE SUPPLIER',shortName:'THIRD SUPPLIER'}],tasks:[task]};
+const receipts=new Map();
+function send(type,m,result){frame.contentWindow.postMessage({type,requestId:m.requestId,company:m.company,ok:true,result},'*');}
+function apply(m){
+ if(receipts.has(m.requestId)){send('PURCHASE_SAVE_RESULT',m,receipts.get(m.requestId));return;}
+ let row=workspace.tasks.find(t=>t.id===m.input.taskId),result={ok:true,requestId:m.requestId,company:m.company};
+ if(m.operation==='PLAN'){Object.assign(row,m.input.prices,{supplierId:m.input.supplierId});row.procurement={totalCtn:m.input.totalCtn,revision:'P'+(++version),draftPlan:true};row.editVersion='V'+version;}
+ else {const id=String(workspace.tasks.length+1).padStart(32,'b');row={...structuredClone(task),id,customerDemandTaskId:rootId,procurementSource:true,ord:0,supplierId:m.input.supplierId,...m.input.prices,procurement:{totalCtn:m.input.quantity,revision:'P'+(++version),draftPlan:true},editVersion:'V'+version};workspace.tasks.push(row);result.sourceTaskId=id;result.parentTaskId=rootId;}
+ row.netCostCtn=row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3;task.sourcing={orderedCtn:workspace.tasks.reduce((s,t)=>s+(t.procurement.totalCtn||0),0),unplacedCtn:Math.max(0,100-workspace.tasks.reduce((s,t)=>s+(t.procurement.totalCtn||0),0))};workspace.sourcesVersion='SV'+version;receipts.set(m.requestId,result);send('PURCHASE_SAVE_RESULT',m,result);
+}
+window.addEventListener('message',e=>{if(e.source!==frame.contentWindow)return;const m=e.data||{};
+ if(m.type==='PURCHASE_WORKSPACE_REQUEST'){frame.contentWindow.postMessage({type:'PURCHASE_WORKSPACE_RESULT',requestId:m.requestId,company:m.company,ok:true,workspace},'*');return;}
+ if(m.type==='PURCHASE_ORDERS_REQUEST'){send('PURCHASE_ORDERS_RESULT',m,{company:m.company,orders:[]});return;}
+ if(m.type==='PURCHASE_REFERENCE_REQUEST'){send('PURCHASE_REFERENCE_RESULT',m,{company:m.company,taskId:m.taskId,barcode:task.barcode,capturedAt:new Date().toISOString(),prices:{lpPc:4,lpCtn:96,disc1:.08,disc2:0,disc3:0}});return;}
+ if(m.type==='PURCHASE_SAVE_CHECK_REQUEST'){send('PURCHASE_SAVE_CHECK_RESULT',m,receipts.get(m.saveRequestId)||{ok:false,pending:true,requestId:m.saveRequestId});return;}
+ if(m.type==='PURCHASE_SAVE_REQUEST'){count++;document.querySelector('#trace').textContent='Submissions '+count+' · '+m.operation+' · Ref '+m.requestId;if(count===2&&document.querySelector('#mode').value==='reject'){send('PURCHASE_SAVE_RESULT',m,{ok:false,requestId:m.requestId,error:'Check supplier costs and discounts.'});return;}if(count===2&&document.querySelector('#mode').value==='pending'){pendingSave=m;send('PURCHASE_SAVE_RESULT',m,{ok:false,pending:true,requestId:m.requestId,error:'Sample lost response; result pending.'});return;}apply(m);}
+});
+document.querySelector('#confirm').onclick=()=>{if(pendingSave){const current=pendingSave;pendingSave=null;apply(current);}};
+</script></body></html>

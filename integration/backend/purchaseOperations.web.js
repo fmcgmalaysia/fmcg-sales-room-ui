@@ -10,6 +10,7 @@ import { createPurchaseOperations } from 'backend/purchaseOperations.js';
 import { createSharedSupplierOperations } from 'backend/sharedSupplierOperations.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { getPointbaseBrands } from 'backend/pointbaseBrandClient.js';
+import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
  async all(collection){let page=await wixData.query(collection).limit(1000).find(options),items=[...page.items];while(page.hasNext()){page=await page.next();items.push(...page.items);}return items;},
@@ -34,6 +35,17 @@ export const savePurchaseOperation=webMethod(Permissions.SiteMember,async(compan
 });
 export const getSupplierProfile=webMethod(Permissions.SiteMember,async supplierId=>{
  await getPurchaseStaffContext();if(typeof supplierId!=='string'||supplierId.length>100)throw Error('Invalid supplier.');return suppliers.profile(supplierId);
+});
+// Reference-only: no retry journal, CMS updates, P.O. creation or supplier-price confirmation.
+export const getPurchaseReferenceCost=webMethod(Permissions.SiteMember,async(company,taskId)=>{
+ const staff=await getPurchaseStaffContext();
+ if(!PURCHASE_COLLECTIONS[company]||!/^[a-f0-9]{32}$/i.test(taskId||''))throw Error('Invalid reference task.');
+ const workspace=await readPlannerWorkspace(company,staff),task=workspace.tasks.find(row=>row.id===taskId);
+ if(!task||task.archived)throw Error('Accepted purchase task is unavailable.');
+ const costs=await capturePointbaseCosts([task.barcode]),cost=costs?.[task.barcode];
+ if(!cost||cost.unitBarcode!==task.barcode||cost.costCurrency!=='MYR'||cost.costStatus!=='CAPTURED'||!Number.isFinite(Date.parse(cost.capturedAt)))throw Error('POINTBASE reference is unavailable; current inputs are retained.');
+ const prices=Object.fromEntries(['lpPc','lpCtn','disc1','disc2','disc3'].map(key=>[key,typeof cost[key]==='number'&&Number.isFinite(cost[key])?cost[key]:null]));
+ return {company,taskId,barcode:task.barcode,capturedAt:cost.capturedAt,prices};
 });
 export const getSupplierBrandOptions=webMethod(Permissions.SiteMember,async()=>{await getPurchaseStaffContext();return getPointbaseBrands();});
 export const saveSupplierProfile=webMethod(Permissions.SiteMember,async(requestId,supplierId,expectedVersion,values)=>{
