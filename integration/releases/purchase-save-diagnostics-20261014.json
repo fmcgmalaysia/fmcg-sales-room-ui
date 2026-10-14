@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-14",
+  "branch": "fix/purchase-save-diagnostics-20261014",
+  "codeCommit": "3e9fa355d3bd949ede81b6bad12d06e9c1fa15f0",
+  "build": "2026-10-14-purchase-save-diagnostics-v1",
+  "status": "Candidate tested; not deployed",
+  "scope": "Stage 1: actionable pre-write validation and unconfirmed CMS error diagnostics only",
+  "recoveryCommit": "b00ed56",
+  "recoveryDesignTag": "verified/sales-buyer-design-20261014",
+  "baseline": "Fresh Wix page, operations web method and core operations normalized exact; public index/app/task-grid normalized exact. Original pending user session preserved without retry or draft deletion.",
+  "evidence": "Historical backend monitoring confirms save failures including WDE0118. The particular pending request has not been correlated by request ID; root cause of every historical failure is not claimed.",
+  "patch": [
+    "Return additional exact pre-write cost, plan and reorder validation messages instead of throwing masked Wix exceptions",
+    "WDE0118 produces sanitized pending feedback and safe request-reference logging, including CMS failures during staff lookup; authorization remains required before operations",
+    "Affected barcode/task, action and original request reference remain visible during save failure and receipt checks",
+    "Explicit pending results cannot be mistaken for definite validation failure",
+    "Purchase build and one Wix version reference prepared"
+  ],
+  "protected": ["Core journal, request payloads and idempotency", "Company isolation and staff access", "Cost and quantity formulas", "P.O. and invoice locks", "Success receipt behavior", "Sales and Buyer assets"],
+  "validation": {"testsPassed":77,"testsFailed":0,"syntaxChecks":true,"isolatedBrowserPreview":true,"businessWrites":false},
+  "preview": "integration/tests/fixtures/purchase-save-diagnostics-preview.html",
+  "pages": "Not deployed",
+  "wix": "Not synchronized or published; backend catch and one Purchase URL token prepared",
+  "publicVerification": "Current baseline read-only evidence only; candidate public verification pending",
+  "releaseOrder": ["Recheck full Wix originals", "Apply isolated backend catch patch and publish compatible backend", "Deploy and verify exact Pages build", "Change one Purchase version reference and publish", "Fresh formal read-only verification; user performs real Save acceptance", "Remove temporary deployment branch permission"],
+  "excluded": ["Automatic save", "Global navigation unlock", "Business recovery or pending draft deletion", "CMS instance repair", "Master visual changes", "Main merge"]
+}
