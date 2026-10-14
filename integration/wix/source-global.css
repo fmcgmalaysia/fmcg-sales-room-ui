@@ -28,8 +28,3 @@
     min-height: calc(100dvh - 31px) !important;
   }
 }
-
-/* Buyer embed owns list scrolling; show the Wix outer bar only for real overflow. */
-body:has(iframe[src*="buyer-room.html"]) {
-  overflow-y: auto !important;
-}
