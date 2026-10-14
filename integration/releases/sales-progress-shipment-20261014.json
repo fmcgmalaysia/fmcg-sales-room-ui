@@ -1,5 +1,5 @@
 {
-  "status": "Candidate complete; no deployment or live edits",
+  "status": "Included in published a68899d combined release; public read/layout verified",
   "branch": "feat/sales-progress-shipment-20261014",
   "base": "fix/sales-customer-review-20261014",
   "codeCommit": "8d800dd",
@@ -45,11 +45,14 @@
     "User performs real date amendment and business acceptance; keep main protected"
   ],
   "publication": {
-    "githubPages": false,
-    "wixPublished": false,
-    "publicCandidateVerified": false,
-    "temporaryRuleAdded": false
+    "githubPages": true,
+    "wixPublished": true,
+    "publicCandidateVerified": true,
+    "temporaryRuleAdded": false,
+    "temporaryRuleRemoved": true
   },
   "preserved": "No new collections, independent sync worker, authentication/employee-role changes, shipment/quantity mutation, payment or receipt records, FX/cost/quotation/download changes. Actual invoice/dispatch dates and immutable intake snapshots remain untouched. Buyer data handlers, completed renderer, image zoom286px and all download mechanisms preserved. No main merge or post-transfer verified tag.",
-  "buyerBuild": "2026-10-14-buyer-sales-style-track-v1"
+  "buyerBuild": "2026-10-14-buyer-sales-style-track-v1",
+  "publishedCommit": "a68899d",
+  "finalSalesBuild": "2026-10-14-sales-submit-wait-v1"
 }
