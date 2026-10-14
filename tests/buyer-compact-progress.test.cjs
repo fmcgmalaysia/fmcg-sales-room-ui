@@ -7,7 +7,7 @@ test('partial receipt is never displayed as fully received; completed and pendin
   assert.equal((partial.match(/<button /g)||[]).length,6);
   assert.equal((partial.match(/class="tracking-dot complete"/g)||[]).length,3);
   assert.equal((partial.match(/class="tracking-dot partial"/g)||[]).length,1);
-  assert.match(partial,/Goods Received \/ 货仓收货 · Partially received/);
+  assert.match(partial,/Goods Received · Partially received/);
   const complete=context.trackingDots({}, {quantityCtn:200,committedQtyCtn:190,receivedQtyCtn:190},4);
   assert.equal((complete.match(/class="tracking-dot complete"/g)||[]).length,4);
   assert.doesNotMatch(complete,/class="tracking-dot partial"/);
@@ -16,7 +16,7 @@ test('partial receipt is never displayed as fully received; completed and pendin
 });
 test('only current task layout removes Barcode and Updated; existing history and receipt behaviour remains available',()=>{
   const head=html.slice(html.indexOf('<section id="trackView"'),html.indexOf('<div id="trackRows"'));
-  assert.match(head,/<div>Order On<\/div><div>Descriptions<\/div>/);
+  assert.match(head,/<div>Order On<\/div><div class="center">Image<\/div><div>Descriptions<\/div>/);
   assert.match(head,/Goods Expiry [\s\S]*<div class="center">Progress<\/div>/);
   assert.doesNotMatch(head,/>Barcode<|Qty Updated|Latest progress from Master|\$\{done\} \/ \$\{total\}/);
   assert.match(head,/Est\. Shipment<\/span><b id="trackShipmentDate">—<\/b>/);
@@ -42,8 +42,8 @@ test('numbered larger progress dots and Track images reuse the original My Selec
   assert.match(html,/bindImagePreview\(\);document.querySelectorAll\('\[data-reduce-order\]'/);
 });
 
-test('Buyer clones Sales geometry while preserving received-only totals and readonly dates',()=>{
-  assert.match(html,/grid-template-columns:128px minmax\(260px,1fr\) 82px 75px 87px 110px 72px 128px 148px;min-height:49px/);
+test('Buyer keeps compact progress while preserving received-only totals and readonly dates',()=>{
+  assert.match(html,/grid-template-columns:108px 48px minmax\(280px,1fr\) 80px 72px 84px 110px 68px 102px 136px/);
   assert.match(html,/trackCommittedQty.*rows.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\),0\)/);
   const current=html.slice(html.indexOf('<section id="trackView"'),html.indexOf('<section id="completeView"'));
   assert.doesNotMatch(current,/type="date"|editSalesShipment|saveSalesPlanning/);
