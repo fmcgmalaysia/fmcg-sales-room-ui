@@ -12,6 +12,8 @@
 
 这些位置说明主要归属，不能替代具体文件的现场核对。历史副本、测试、Google Apps Script 和发布记录也在仓库内；文件存在不代表已部署。Catalogue 的历史编辑器副本必须与当前 Wix 代码比较后才能使用。
 
+两个明确例外：`integration/wix/source-global.css` 和 `integration/wix/buyer-outer-scroll-head.html` 属于 FMCGMALAYSIA，不能随 MASTER 同步。`master-shared/` 当前用于 MASTER 各部门共用展示；每个共享文件只按实际消费者决定回归范围。
+
 FMCGMALAYSIA 和 MASTER 的 Wix 页面、后台、CMS 和成员权限分别以各自现场系统为准。MASTER 中 NCT 与 GHR 是公司的业务隔离，不是两个独立 Wix 网站。MASTER 统一继承 Sales 的设计规范；共同视觉风格不改变业务权限或数据归属。
 
 ## 业务数据和跨站接口
