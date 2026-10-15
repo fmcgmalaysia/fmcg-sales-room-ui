@@ -1,18 +1,25 @@
 /* Active Orders presentation only. Keep the original table geometry and handlers. */
 #app:has(> .active-order-heading){font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;font-size:11px;color:#203047}
 #app:has(> .active-order-heading) :is(button,input,select,textarea){font-family:inherit}
-#app>.active-order-heading{min-height:0;background:transparent;border:0;padding:0;margin-bottom:16px}
-#app>.active-order-heading{position:static;justify-content:space-between;gap:24px}
-#app .ao-priorities{display:flex;gap:10px;align-self:center}
-#app .ao-priority{display:flex;align-items:center;gap:24px;min-width:185px;padding:10px 14px;border:1px solid #c5d5e5;border-radius:5px;background:#fff;color:#203047;text-align:left;font-size:13px;font-weight:700}
-#app .ao-priority small{display:block;margin-top:4px;color:#62758a;font-size:9px;font-weight:400}
-#app .ao-priority b{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;min-width:28px;height:28px;padding:0 7px;border-radius:50%;background:#e7eef5;color:#173557;font-size:14px}
+#app>.active-order-heading{display:block;position:static;min-height:0;background:transparent;border:0;padding:0;margin-bottom:12px}
+#app>.active-order-heading .heading{margin-bottom:18px}
+#app>.active-order-heading h1 .ao-title-zh{display:block;margin-top:2px;font-size:10px;font-weight:400;line-height:13px;color:#62758a}
+#app>.active-order-heading .muted{display:none}
+#app .ao-priorities{display:flex;gap:22px;padding:0 2px;border-bottom:1px solid #d5e1ec}
+#app .ao-priority{display:flex;align-items:center;justify-content:flex-start;gap:9px;min-width:0;min-height:45px;padding:5px 3px;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#203047;text-align:left;font-size:12px;font-weight:700}
+#app .ao-priority small{display:block;margin-top:0;color:#62758a;font-size:9px;line-height:12px;font-weight:400}
+#app .ao-priority b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:2px 6px;border-radius:12px;background:#e7eef5;color:#173557;font-size:12px;line-height:20px}
 #app .ao-priority.has-work b{background:#ff8a00;color:#fff}
 #app .ao-priority.incoming.has-work b{background:#c42b31}
-#app .ao-priority:is(:hover,:focus-visible){border-color:#376aa5;background:#f2f6fb}
+#app .ao-priority:is(:hover,:focus-visible){border-bottom-color:#3766a2;background:transparent}
 #app .active-order-table .customer-shipment{margin-top:4px;font-size:10px;line-height:14px;font-weight:400;white-space:nowrap;color:#536b84}
 #app:has(>.active-order-heading) .ao-move{font-size:11px;color:#3766a2;border-color:#b8ccdf;margin-left:auto}
-@media(max-width:900px){#app>.active-order-heading{flex-wrap:wrap}#app .ao-priorities{flex-wrap:wrap}#app .ao-priority{min-width:170px}}
+#app:has(>.active-order-heading)>.tools{flex-wrap:wrap;gap:8px;min-height:30px;margin-bottom:10px}
+#app:has(>.active-order-heading)>.tools :is(select,.btn){height:30px;padding:4px 8px;font-size:11px}
+#app:has(>.active-order-heading) #activeCustomer{width:205px}
+#app:has(>.active-order-heading) #allocationFilter{width:150px}
+#app:has(>.active-order-heading) #supplierFilter{width:180px;min-width:0}
+#app:has(>.active-order-heading) #stageFilter{width:200px}
 #app>.active-order-heading h1{font-size:20px;font-weight:800;line-height:26px;color:#203047}
 #app>.active-order-heading .muted{color:#536b84;font-size:10px}
 #app>.active-order-heading .room-counts b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:50%;background:#ff8a00;color:#fff;font-size:11px;font-weight:700}
@@ -43,12 +50,12 @@
 #app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
 #app .active-order-table .row-progress{justify-content:flex-end;gap:1.5px}
 #app .active-order-table .progress-node{width:14px;height:14px;min-width:14px;color:#fff;font:700 9px/14px 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif;text-align:center}
-#app .ao-progress-overview{margin:0 0 12px;padding:9px 12px;border:1px solid #c5d5e5;border-radius:5px;background:#fff}
-#app .ao-progress-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;font-size:10px;color:#536b84}
+#app .ao-progress-overview{margin:0 0 10px;padding:0;border:0;border-radius:0;background:transparent}
+#app .ao-progress-caption{display:none}
 #app .ao-progress-caption b{color:#203047;font-size:11px}
-#app .ao-progress-stages{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+#app .ao-progress-stages{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
 #app .ao-progress-stages button{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;text-align:left;font-size:11px;color:#173557}
-#app .ao-progress-stages button>b{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:#3766a2;color:#fff;font-size:14px;font-weight:700}
+#app .ao-progress-stages button>b{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;border-radius:50%;background:#3766a2;color:#fff;font-size:12px;font-weight:700}
 #app .ao-progress-stages small{display:block;margin-top:3px;font-size:9px;color:#62758a}
 #app .ao-progress-stages button:is(:hover,:focus-visible)>b{background:#244d82}
 .pd-supplier-alerts .ao-stage-state{font-size:11px;font-weight:600}
