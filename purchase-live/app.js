@@ -7,7 +7,7 @@
   let saveIssue='';
   let saveOrigin=null,saveDialog=null,sequenceCustomerId='';
   let supplierAllocation=null;
-  let dashboardCategory='mine',dashboardQuery='',dashboardSelected='',dashboardEntryAction=null;
+  let dashboardCategory='all',dashboardQuery='',dashboardSelected='',dashboardEntryAction=null;
   function allocationUi(){if(!window.purchaseSupplierAllocation)return null;return supplierAllocation||(supplierAllocation=window.purchaseSupplierAllocation.create({workspace:()=>data,rowLabel:id=>{const index=roomRows().filter(row=>!row.procurementSource).findIndex(row=>row.id===id);return index<0?'':'ROW '+String(index+1).padStart(3,'0');},financeLocked:taskId=>{const handoff=poData?.orders.find(order=>order.taskIds.includes(taskId))?.procurementHandoff;return Boolean(handoff&&handoff.stage!=='LEGACY'&&!handoff.editable);},openPo:taskId=>{selected.clear();selectedSources.clear();poDialog(taskId);},shortTime,company:()=>company,esc,num,status:showStatus,cache:cacheDraft,dialog:formDialog,modal:()=>modal,mutate,read:readOperation,savePending:()=>savePending,confirm:message=>window.confirm(message),atOrigin:()=>Boolean(saveOrigin&&view===saveOrigin.view&&customerId===saveOrigin.customerId&&activeCustomer===saveOrigin.activeCustomer&&modal.open&&saveDialog?.content===document.querySelector('#dialogContent')),handIcon:()=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12V5a2 2 0 0 1 4 0v6-7a2 2 0 0 1 4 0v8-5a2 2 0 0 1 4 0v8c0 5-3 7-7 7h-1c-2 0-3-1-4-3l-4-6a2 2 0 0 1 3-2l3 3"/></svg>'}));}
 
   function saveTaskIds(current=savePending){const input=current?.input||{};return new Set([input.taskId,input.parentTaskId,input.sourceTaskId,...(input.taskIds||[]),...(input.edits||[]).map(item=>item.taskId)].filter(Boolean));}
