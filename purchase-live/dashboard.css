@@ -82,3 +82,15 @@
 #app .purchase-dashboard .pd-queue-scroll{max-height:clamp(140px,calc(100dvh - 445px),232px)}
 
 #app .purchase-dashboard .customer-directory :is(th,td):nth-child(2){text-align:left}
+#app .purchase-dashboard .pd-shipment-alert{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:36px;padding:3px 5px;border:0;border-radius:4px;background:#fff0f1;color:var(--pd-red);cursor:pointer}
+#app .purchase-dashboard .pd-shipment-alert svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#app .purchase-dashboard .pd-shipment-alert b{font-size:11px;color:var(--pd-red)}
+#modal .pd-supplier-alerts{font:11px/1.4 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif}
+#modal .pd-supplier-alert-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid #dce4ed}
+#modal .pd-supplier-alert-item strong,#modal .pd-supplier-alert-item small{display:block}
+#modal .pd-supplier-alert-item strong{font-size:11px;font-weight:700;color:#173557}
+#modal .pd-supplier-alert-item small{font-size:10px;color:#536b84;margin:0}
+#modal .pd-supplier-alert-item p{color:#c42b31;font-size:11px;margin:4px 0 0}
+#modal .pd-supplier-alert-item .pd-bi{display:inline-flex;flex-direction:column}
+#modal .pd-supplier-alert-item .pd-bi>small{font-size:9px;color:#62758a}
+#modal .pd-alert-open{background:#c42b31;color:#fff;border:0;border-radius:4px;padding:6px 9px;white-space:nowrap;cursor:pointer}
