@@ -2,20 +2,24 @@
   "date": "2026-10-15",
   "system": "MASTER",
   "branch": "fix/master-allocation-audit-20261015",
-  "status": "Code complete; Wix backend readback exact; page readback, visual verification and publication pending",
+  "status": "Compact approved-layout candidate complete; full Wix v2 page readback exact; visual confirmation and publication pending",
   "base": "4be59f9492039ad2e98c1f0e9800001a38054eb4",
   "recovery": "verified/purchase-lavender-plan-po-20261014",
   "changes": [
-    "1040px dialog and numeric inputs sized for 0000.00 without horizontal scrolling",
+    "960px compact approved-layout dialog; price inputs sized for 00.00 and percentages for 00.00% without a new numeric limit",
     "Remove supplier acknowledgement checkbox and never silently submit supplierConfirmed=true",
     "Display saved quantity audit with time, actor, source context and before/after quantities",
-    "Refresh FOC detail total immediately when paid or free quantity changes"
+    "Refresh FOC detail total immediately when paid or free quantity changes",
+    "Restore FOC detail indentation, readonly quantity presentation, aligned header and separate right-aligned amount summary"
   ],
   "validation": {
     "targetedChecksPassed": 103,
     "realSave": false,
     "visualVerification": false,
-    "focusedBackendChecksPassed": 34
+    "focusedBackendChecksPassed": 34,
+    "compactLayoutUserAccepted": false,
+    "liveFrontendBaselineMatched": "4056068786cefd37d6f02742508c76762d9ea364",
+    "browserControl": "Policy stop remains; no desktop automation attempted for compact refinement"
   },
   "pendingBackend": {
     "file": "integration/backend/purchaseOperations.js",
@@ -43,6 +47,9 @@
     "originalReadbackExact": true,
     "version": "20261015-allocation-audit-v2",
     "changedTokenOnly": true,
-    "newReadbackPending": true
+    "newReadbackPending": false,
+    "fullReadbackExact": true,
+    "readbackCharacters": 6980,
+    "readbackSHA256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
   }
 }

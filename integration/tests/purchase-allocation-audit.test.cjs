@@ -27,7 +27,7 @@ test('FOC total updates immediately; quantity history contains saved events only
  ui.edit({target:{value:'20',dataset:{allocationField:'free'},closest:()=>({dataset:{allocationRow:'ROOT'}})}});
  assert.equal(node('total:ROOT').textContent,'= 220 CTN');
  assert.equal(node('[data-allocation-row="ROOT"] [data-allocation-field="qty"]').value,'220');
- assert.match(node('#allocationSummary').textContent,/已安排 220 CTN · 待安排 80 CTN/);
+ assert.match(node('#allocationSummary').innerHTML.replace(/<[^>]*>/g,''),/已安排 220 CTN · 待安排 80 CTN/);
  assert.doesNotMatch(node('#allocationHistory').innerHTML,/200 → 220/);
  ui.edit({target:{id:'allocationReason',value:'Revised procurement'}});ui.click({id:'applySupplierAllocation',dataset:{}});
  assert.equal(submitted.length,1);assert.equal(submitted[0].input.totalCtn,220);
