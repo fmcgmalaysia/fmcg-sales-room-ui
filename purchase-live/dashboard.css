@@ -37,7 +37,7 @@
 
 #app .purchase-dashboard *{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif}
 /* Three working queues. Blue selects a view; orange/red indicate actual pending work. */
-#app .purchase-dashboard .pd-heading{min-height:27px;margin-bottom:8px}
+#app .purchase-dashboard .pd-heading{min-height:27px;margin-bottom:18px}
 #app .purchase-dashboard .pd-filters{display:flex;gap:22px;padding:0 2px;background:transparent;border:0;border-bottom:1px solid var(--pd-line);border-radius:0;overflow:auto}
 #app .purchase-dashboard .pd-filters button{min-width:0;min-height:45px;border:0;border-bottom:3px solid transparent;border-radius:0;padding:5px 3px;justify-content:flex-start;gap:9px;background:transparent}
 #app .purchase-dashboard .pd-filters button.active{background:transparent;border-bottom-color:var(--pd-blue);box-shadow:none}
