@@ -8,6 +8,13 @@ test('clicked progress stage opens its task with explicit receiving issue instea
  const h=harness(),w=workspace();w.tasks[0].warehouse={accepted:250,hasPhysicalReceipt:true,issue:true};w.tasks[0].procurement={totalCtn:250,revision:'P'};h.reply(w);const before=h.messages.length;
  h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress problem/);assert.match(h.node('#dialogContent').innerHTML,/Problem \/ 待解决/);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.length,before);
 });
+
+test('mother progress names the blocked source and drills into only that source without submitting writes',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,po:'PO-A',procurement:{totalCtn:60,revision:'P1'}});w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,po:'',procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:30,revision:'P2'}});h.reply(w);const before=h.messages.length;
+ h.click({progressTask:'TASK',progressIndex:'0',progressIsSource:'false'});let html=h.node('#dialogContent').innerHTML;assert.match(html,/current-progress pending/);assert.match(html,/FIRST/);assert.match(html,/SECOND/);assert.match(html,/data-progress-task="CHILD" data-progress-index="0" data-progress-is-source="true"/);assert.match(html,/待安排需求/);assert.match(html,/data-plan-task="TASK"/);
+ h.click({progressTask:'CHILD',progressIndex:'0',progressIsSource:'true'});html=h.node('#dialogContent').innerHTML;assert.match(html,/SECOND · P.O./);assert.match(html,/data-source-po-task="CHILD"/);assert.doesNotMatch(html,/FIRST|Sources \/ 来源明细/);assert.equal(h.messages.length,before);
+ h.click({progressTask:'TASK',progressIndex:'0',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress complete/);assert.match(h.node('#dialogContent').innerHTML,/data-po-view="TASK"/);
+});
 test('disabled demand selection is ignored; first source selection opens only that PO and mixed suppliers remain blocked',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:60,revision:'P1'}});w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:40,revision:'P2'}});h.reply(w);h.click({customer:'C'});
  h.change({dataset:{select:'TASK',selectKind:'demand'},checked:true,disabled:true});assert.match(h.node('#app').innerHTML,/0 selected/);

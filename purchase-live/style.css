@@ -389,3 +389,20 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-summary{padding-top:8px;border-top-color:#cfdfed}
 .supplier-allocation-dialog .dialogfoot{background:#f5f9fd;border-top:1px solid #cfdfed;padding-top:8px;padding-bottom:8px}
 .supplier-allocation-dialog .btn.primary{background:#0f6cbd;border-color:#0f6cbd}
+.progress-product{display:flex;flex-direction:column;gap:2px;background:#edf4fb;padding:8px 10px;margin-bottom:8px}
+.progress-product span{font-size:11px;color:#52677b}
+.progress-product strong{font-size:12px;color:#213b54;overflow-wrap:anywhere}
+.progress-source-heading{font-size:12px;margin:12px 0 6px;color:#234768}
+.progress-source-context{font-size:11px;color:#52677b;margin:8px 0}
+.progress-state.pending,.progress-source-button.pending{color:#966000}
+.progress-state.complete,.progress-source-button.complete{color:#16854b}
+.progress-state.problem,.progress-source-button.problem{color:#c4455a}
+.progress-source-button{padding:4px 6px;font-size:11px}
+.progress-sources td{padding:5px 6px;overflow-wrap:anywhere}
+dialog:has(.progress-product){width:min(760px,calc(100vw - 32px))}
+dialog:has(.progress-product) .dialoghead{padding:9px 12px;background:#dceaf7;border-bottom:1px solid #b4cce1}
+dialog:has(.progress-product) .dialoghead h2{font-size:14px;color:#234768}
+dialog:has(.progress-product) .dialogbody{padding:10px 12px}
+.dialogbody:has(.progress-product) .rowlist td,.dialogbody:has(.progress-product) .rowlist th{height:28px;padding:5px 6px;font-size:11px;line-height:1.3}
+.dialogbody:has(.progress-product) .rowlist{margin:8px 0}
+dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
