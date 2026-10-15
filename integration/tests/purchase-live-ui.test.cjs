@@ -139,7 +139,7 @@ test('Active move entry selects a customer and preserves the original grouped mo
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'D-TASK',customerId:'D'});
  h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});assert.match(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);
  h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);
- h.click({drag:'TASK'});h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});let html=h.node('#app').innerHTML;
+ h.click({drag:'TASK'});const moveMarkup=h.node('#dialogContent').innerHTML;assert.match(moveMarkup,/Move Row 移动行/);assert.match(moveMarkup,/To Top 移到顶部/);assert.match(moveMarkup,/To Bottom 移到底部/);assert.ok(moveMarkup.includes('<option value="OTHER">Before Row 002 前面</option>'));assert.doesNotMatch(moveMarkup,/<option value="SOURCE">/);h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});let html=h.node('#app').innerHTML;
  assert.ok(html.indexOf('data-id="OTHER"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-source-id="SOURCE"'));assert.match(html,/data-active-cancel="true"/);
  h.click({activeCancel:'true'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="OTHER"'));assert.doesNotMatch(html,/data-active-cancel/);assert.equal(h.messages.length,before);
 });
