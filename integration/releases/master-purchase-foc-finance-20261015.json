@@ -25,8 +25,10 @@
     },
     "newDiagnostics": 0,
     "preexistingDiagnostics": 9,
-    "synced": false,
-    "published": false
+    "synced": true,
+    "published": false,
+    "syncEvidence": "IDE status: last synced just now; Studio page displays new reference bridge.",
+    "publishStatus": "Tool clicks produced no acknowledgement; user manual Publish requested after release gates passed."
   },
   "validation": {
     "priorTargetedTests": 130,
@@ -36,7 +38,104 @@
     "realCandidateSave": false
   },
   "pages": {
-    "deployed": false
+    "deployed": true,
+    "commit": "4056068786cefd37d6f02742508c76762d9ea364",
+    "runId": 38665941714,
+    "jobId": 116197819514,
+    "status": "success",
+    "verifiedAssets": [
+      {
+        "file": "purchase-live/index.html",
+        "normalizedExact": true,
+        "sha256": "e4e9706083edcb91fd7ce420c563a11483c45ddff6c6394870a6359440e68a47"
+      },
+      {
+        "file": "purchase-live/app.js",
+        "normalizedExact": true,
+        "sha256": "465b15dc178b7901c117cb013f44e1895e82780b4aca71f575ed9145e3438814"
+      },
+      {
+        "file": "purchase-live/style.css",
+        "normalizedExact": true,
+        "sha256": "dde8ddfbaa7470b8eefb9529968ac5d635bc491570de5f5ba43f5bdb3a152181"
+      },
+      {
+        "file": "purchase-live/supplier-allocation.js",
+        "normalizedExact": true,
+        "sha256": "d50345a03c854536d632d2f7ef39a8fb7ad7737bd53037d8e18087d5794b4cd5"
+      },
+      {
+        "file": "purchase-live/task-grid.js",
+        "normalizedExact": true,
+        "sha256": "a0d44a630b974d9a85442177d2fdeb0aeafbcd2aa6b5de862d51eb7dddadfc20"
+      },
+      {
+        "file": "purchase-live/task-grid.css",
+        "normalizedExact": true,
+        "sha256": "bb856310b3293f7bdda749110f236fbbb1aaec442cad4f6e24d552cdcc8cf818"
+      },
+      {
+        "file": "account-room/index.html",
+        "normalizedExact": true,
+        "sha256": "774de9df924e2938dccbe89350504b79f0fa1ce561bb1ba925271a1ac5f9a4b6"
+      },
+      {
+        "file": "account-room/settlement.js",
+        "normalizedExact": true,
+        "sha256": "6943626ea08aaa20d4bd589de0c78533941c16baa03bcb2907e432b3852265ea"
+      },
+      {
+        "file": "account-room/purchase-payments.js",
+        "normalizedExact": true,
+        "sha256": "0952c9da81e7b6253760b8186aacee9ca2e4c337194f11290de44b9401b22c37"
+      },
+      {
+        "file": "account-room/app.js",
+        "normalizedExact": true,
+        "sha256": "21705afd878329140bee902fa324f7a2a2a1a1d459d98ed1f5eb1c1db732971a"
+      },
+      {
+        "file": "account-room/style.css",
+        "normalizedExact": true,
+        "sha256": "84dee7aae72b16dcf65f87d8d097059aa9a35ea0bffff1b1aea8fd9ce5d6279d"
+      },
+      {
+        "file": "index.html",
+        "normalizedExact": true,
+        "sha256": "23ba131c0657de264f7eff764499f85b9894a7cc95ed2c99476bead301f1f40e"
+      },
+      {
+        "file": "buyer-room.html",
+        "normalizedExact": true,
+        "sha256": "d29e287d95df0cbd457b9825db29cac5d2aae18ed61971909aeee981d81257ad"
+      },
+      {
+        "file": "buyer-login.html",
+        "normalizedExact": true,
+        "sha256": "1e7a3659b475f43b161a7f1e9f1e655e2bf760767064c2ade74c41fb5aa14b3e"
+      },
+      {
+        "file": "warehouse-room/index.html",
+        "normalizedExact": true,
+        "sha256": "1a77173225f8da835e14844353d31699e297497328493b02d1c9750dd7dede94"
+      },
+      {
+        "file": "warehouse-room/app.js",
+        "normalizedExact": true,
+        "sha256": "938d8b0d7229d33857d9d7755e2315fa90aec81c0da046eca8f04708008293e2"
+      },
+      {
+        "file": "support-room/index.html",
+        "normalizedExact": true,
+        "sha256": "eb6cf85b31ce09b4f248f3e35856b51c674a1db8f96acfe13692da986d046fe1"
+      },
+      {
+        "file": "support-room/app.js",
+        "normalizedExact": true,
+        "sha256": "b485959192a6cb8eab128189c375c8734b547777f524cff7f82f6180cb70925c"
+      }
+    ],
+    "originalSevenDeploymentPoliciesRestored": true
   },
   "publicVerification": {
     "complete": false
