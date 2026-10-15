@@ -126,6 +126,15 @@ test('Active reordered columns retain source actions and show green or red GP be
  h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/<td colspan="12" class="empty">/);h.change({id:'stageFilter',value:'',dataset:{}}); h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/<th>GP<\/th>/);assert.doesNotMatch(h.node('#app').innerHTML,/gp-badge/);
 });
 
+test('Active source disclosure defaults open, folds one group only and retains source selection without writes',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:30,revision:'B'}});w.tasks.push({...w.tasks[0],id:'OTHER'});w.tasks.push({...w.tasks[1],id:'OTHER-SOURCE',customerDemandTaskId:'OTHER'});
+ h.reply(w);h.click({view:'active'});const before=h.messages.length;let html=h.node('#app').innerHTML;assert.match(html,/data-toggle-sources="TASK" aria-expanded="true"/);assert.match(html,/data-source-id="SOURCE"/);
+ h.change({dataset:{select:'SOURCE',selectKind:'source'},checked:true});h.click({toggleSources:'TASK'});html=h.node('#app').innerHTML;assert.match(html,/data-toggle-sources="TASK" aria-expanded="false"/);assert.doesNotMatch(html,/data-source-id="SOURCE"|data-waiting-for="TASK"/);assert.match(html,/data-source-id="OTHER-SOURCE"/);assert.match(html,/1 selected/);
+ h.click({toggleSources:'TASK'});html=h.node('#app').innerHTML;assert.match(html,/data-source-id="SOURCE"[^]*?data-select-kind="source"[^>]*checked/);assert.match(html,/data-waiting-for="TASK"/);assert.equal(h.messages.length,before);
+ h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-source-toggle/);
+});
+
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});
