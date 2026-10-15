@@ -2,7 +2,7 @@
   "date": "2026-10-15",
   "system": "MASTER",
   "branch": "fix/master-allocation-audit-20261015",
-  "status": "Frontend candidate only; do not deploy before backend compatibility patch and visual verification",
+  "status": "Code complete; Wix backend readback exact; page readback, visual verification and publication pending",
   "base": "4be59f9492039ad2e98c1f0e9800001a38054eb4",
   "recovery": "verified/purchase-lavender-plan-po-20261014",
   "changes": [
@@ -11,17 +11,38 @@
     "Display saved quantity audit with time, actor, source context and before/after quantities",
     "Refresh FOC detail total immediately when paid or free quantity changes"
   ],
-  "validation": {"targetedChecksPassed": 102, "realSave": false, "visualVerification": false},
+  "validation": {
+    "targetedChecksPassed": 103,
+    "realSave": false,
+    "visualVerification": false,
+    "focusedBackendChecksPassed": 34
+  },
   "pendingBackend": {
     "file": "integration/backend/purchaseOperations.js",
-    "freshLiveCaptureRequired": true,
+    "freshLiveCaptureRequired": false,
     "scope": "Remove acknowledgement requirement for validated costing calculator plans; retain legacy entry-point behavior and all stronger locks",
     "before": "if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');",
-    "after": "if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');"
+    "after": "if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');",
+    "appliedInStudio": true,
+    "fullReadbackExact": true,
+    "readbackCharacters": 26637
   },
-  "protected": ["finance handoff", "actual receipts", "customer invoice locks", "original save journal and retries", "Sales first Catch Cost", "FMCGMALAYSIA components"],
+  "protected": [
+    "finance handoff",
+    "actual receipts",
+    "customer invoice locks",
+    "original save journal and retries",
+    "Sales first Catch Cost",
+    "FMCGMALAYSIA components"
+  ],
   "pagesDeployed": false,
-  "wixChanged": false,
+  "wixChanged": true,
   "publicAcceptance": false,
-  "mainMerged": false
+  "mainMerged": false,
+  "pageBridge": {
+    "originalReadbackExact": true,
+    "version": "20261015-allocation-audit-v2",
+    "changedTokenOnly": true,
+    "newReadbackPending": true
+  }
 }
