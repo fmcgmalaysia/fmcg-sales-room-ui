@@ -355,9 +355,9 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog #allocationStockNote[hidden]{display:none}
 .supplier-allocation .allocation-save{display:block;margin-top:3px;padding:2px 5px;border:1px solid #b8cbdc;border-radius:3px;background:#fff;color:#0078d4;font:inherit;cursor:pointer}
 .supplier-allocation .allocation-save:disabled{color:#63758a;border-color:transparent;cursor:default}
-.supplier-allocation-dialog .allocation-po.pending{color:#d98410}
+.supplier-allocation-dialog .allocation-po.pending{color:#806300}
 .supplier-allocation-dialog .allocation-po.complete{color:#16854b}
-.roomhead .stage-capsule{background:#d98410;color:#fff}
+.roomhead .stage-capsule{background:#b18a00;color:#fff}
 .roomhead .stage-capsule.zero{background:#16854b;color:#fff}
 .roomhead .tracklabel{color:#52677b}
 .rowlist .current-progress>td,.rowlist .current-progress>th{background:#fff3df}
@@ -384,7 +384,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-detail td{background:#f7faff;border-bottom:1px solid #dce7f1;padding-top:2px;padding-bottom:5px}
 .supplier-allocation-dialog .allocation-detail-fields::before{border-color:#9bb9d3}
 .supplier-allocation-dialog .allocation-person.complete{color:#16854b}
-.supplier-allocation-dialog .allocation-person.pending{color:#d98410}
+.supplier-allocation-dialog .allocation-person.pending{color:#b18a00}
 .supplier-allocation-dialog .allocation-waiting select{color:#966000;border-color:#e7cfa9;background:#fffaf2}
 .supplier-allocation-dialog .allocation-summary{padding-top:8px;border-top-color:#cfdfed}
 .supplier-allocation-dialog .dialogfoot{background:#f5f9fd;border-top:1px solid #cfdfed;padding-top:8px;padding-bottom:8px}
@@ -394,9 +394,9 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .progress-product strong{font-size:12px;color:#213b54;overflow-wrap:anywhere}
 .progress-source-heading{font-size:12px;margin:12px 0 6px;color:#234768}
 .progress-source-context{font-size:11px;color:#52677b;margin:8px 0}
-.progress-state.pending,.progress-source-button.pending{color:#966000}
+.progress-state.pending,.progress-source-button.pending{color:#806300}
 .progress-state.complete,.progress-source-button.complete{color:#16854b}
-.progress-state.problem,.progress-source-button.problem{color:#c4455a}
+.progress-state.problem,.progress-source-button.problem{color:#c4314b}
 .progress-source-button{padding:4px 6px;font-size:11px}
 .progress-sources td{padding:5px 6px;overflow-wrap:anywhere}
 dialog:has(.progress-product){width:min(760px,calc(100vw - 32px))}
@@ -406,3 +406,12 @@ dialog:has(.progress-product) .dialogbody{padding:10px 12px}
 .dialogbody:has(.progress-product) .rowlist td,.dialogbody:has(.progress-product) .rowlist th{height:28px;padding:5px 6px;font-size:11px;line-height:1.3}
 .dialogbody:has(.progress-product) .rowlist{margin:8px 0}
 dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
+/* Independent workload filters: compact counters, not a sequential stepper. */
+.roomhead .trackitem:after{display:none}
+.roomhead .stage-capsule{height:30px;min-width:68px;gap:8px;padding:0 10px;margin-bottom:6px;border:1px solid #dfd09a;border-radius:5px;background:#fff6d4;color:#806300;font-size:16px}
+.roomhead .stage-capsule .stage-icon{width:19px;height:19px}
+.roomhead .stage-capsule.zero{background:#eef8f1;border-color:#bedbc9;color:#16854b}
+.roomhead .tracklabel{font-size:11px;min-height:34px;line-height:1.3;padding:0 3px;color:#435d73}
+.roomhead .tracklabel small{font-size:11px;margin-top:3px;font-weight:400}
+.roomhead{min-height:124px}
+.roomhead .track{padding:5px 0}

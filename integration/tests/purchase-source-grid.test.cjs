@@ -11,7 +11,7 @@ test('multiple sources always show both children; disabled mother does not consu
   const f=fixture();f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);
   assert.match(rows[0],/data-select-kind="demand" disabled/);assert.doesNotMatch(rows[0],/ checked/);assert.match(rows[1],/data-select-kind="source"[^>]*checked/);
   assert.match(rows[1],/class="row-number"><input[^>]*data-select-kind="source"/);assert.match(rows[1],/class="received-age">original-intake<\/td>/);assert.doesNotMatch(rows[1],/class="supplier-cell">[\s\S]*?<input/);
-  assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
+  assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,7);assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
   assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?13:12)));
  }
 });
@@ -43,5 +43,5 @@ test('mother progress waits for every source and unplaced demand while preservin
  const g=fixture();for(const row of [g.root,g.child]){row.po='PO';row.procurement.availableCtn=0;row.warehouse={accepted:row.procurement.totalCtn,hasPhysicalReceipt:true};row.salesInvoiceLocked=true;row.archived=true;}const orders=[{taskIds:['R','B'],invoiceChecked:true,paymentCompleted:true}];assert.deepEqual(Array.from(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)),Array(7).fill('complete'));g.root.ord=120;assert.deepEqual(Array.from(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)),Array(7).fill('pending'));orders[0].reviewRequired=true;assert.equal(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)[1],'problem');
 });
 test('one supplier has no duplicate child and keeps the normal checkbox and PO entry',()=>{
- const f=fixture();f.args.rows=f.args.tasks=[f.root];f.args.selectedSources.clear();const html=f.render();assert.equal((html.match(/<tr\b/g)||[]).length,1);assert.match(html,/data-select-kind="demand"[^>]*checked/);assert.doesNotMatch(html,/data-select-kind="demand" disabled/);assert.match(html,/data-po-task="R"/);
+ const f=fixture();f.args.rows=f.args.tasks=[f.root];f.args.selectedSources.clear();const html=f.render();assert.equal((html.match(/<tr\b/g)||[]).length,1);assert.match(html,/data-select-kind="demand"[^>]*checked/);assert.doesNotMatch(html,/data-select-kind="demand" disabled/);assert.match(html,/data-po-task="R"/);assert.equal((html.match(/class="progress-node /g)||[]).length,7);
 });
