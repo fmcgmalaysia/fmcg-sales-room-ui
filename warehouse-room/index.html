@@ -4,7 +4,7 @@
 <body>
 <header class="department-header"><label><span class="company-label">Company</span><select id="company" aria-label="Company 公司"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select></label><strong>Warehouse Department</strong><span id="staff" class="staff">员工身份待连接</span></header>
 <nav aria-label="Warehouse navigation"><button data-view="receiving" class="active">Goods Receiving 收货</button><button data-view="customers">Customer Readiness 客户备货</button><button data-view="dispatch">Customer Dispatch 客户发货</button><button data-view="history">Receiving History 收货历史</button><span id="readAt" class="preview"></span></nav>
-<div id="taskSignals" style="margin:0 24px"></div><main><div class="title-row"><h1 id="title">Goods Receiving <span class="company-tag">仓库收货</span></h1><div><button id="login">Sign in 登录</button> <button id="refresh">Refresh 刷新</button></div></div>
+<div id="taskSignals" style="margin:0 24px"></div><main><div class="title-row"><h1 id="title">Goods Receiving 仓库收货</h1><div><button id="login">Sign in 登录</button> <button id="refresh">Refresh 刷新</button></div></div>
 <div id="notice" class="account-notice" role="status">正在连接 Master…</div><section id="track" class="warehouse-track" aria-label="Receiving overview"></section>
 <div class="filters"><input id="search" aria-label="Search" placeholder="Search P.O. / supplier / customer · 搜索"><select id="supplier" aria-label="Supplier"><option value="">All Suppliers 全部供应商</option></select><select id="customer" aria-label="Customer 客户" hidden><option value="">All Customers 全部客户</option></select><span id="customerQty" hidden></span><input id="month" aria-label="Month 月份" type="month" hidden></div>
 <div id="tables"></div></main>
