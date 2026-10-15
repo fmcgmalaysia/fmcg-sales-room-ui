@@ -223,7 +223,7 @@ dialog.po-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;font:14px va
 .po-payment-proof{width:48px;height:20px;padding:0;border:0;border-radius:12px;background:#e3f0e9;color:#28744d;font-weight:700}
 
 /* Supplier allocation only: compact desktop rows; other dialogs and departments keep their baseline. */
-dialog.task-dialog.supplier-allocation-dialog{width:min(960px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
+dialog.task-dialog.supplier-allocation-dialog{width:min(1080px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
 .supplier-allocation-dialog .dialoghead{padding:9px 12px;background:#193246;color:white}
 .supplier-allocation-dialog .dialoghead h2{font:700 15px/20px Inter,'Segoe UI',Arial,sans-serif;color:white;margin:0 0 2px}
 .supplier-allocation-dialog .dialoghead .muted,.supplier-allocation-dialog .dialoghead button{color:white;font-size:11px}
@@ -345,3 +345,8 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-summary b{font-weight:700}
 .allocation-summary-amount{margin-left:auto;white-space:nowrap}.allocation-summary-amount strong{font-size:16px;font-variant-numeric:tabular-nums;margin-left:4px}
 .supplier-allocation-dialog .allocation-reason{margin-top:6px;gap:7px}
+
+/* PO occupies the final column so all primary controls share one baseline. */
+.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog .allocation-table td.allocation-po-cell{text-align:left}
+.supplier-allocation-dialog .allocation-po-cell .allocation-po{padding:0;font-size:10px;overflow-wrap:anywhere}
+.supplier-allocation-dialog .allocation-po-cell .allocation-po-time{margin-top:3px}

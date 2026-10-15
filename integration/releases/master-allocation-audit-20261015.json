@@ -6,11 +6,12 @@
   "base": "4be59f9492039ad2e98c1f0e9800001a38054eb4",
   "recovery": "verified/purchase-lavender-plan-po-20261014",
   "changes": [
-    "960px compact approved-layout dialog; price inputs sized for 00.00 and percentages for 00.00% without a new numeric limit",
+    "Compact 00.00 / 00.00% inputs; 1080px dialog accommodates the requested final PO column without a new numeric limit",
     "Remove supplier acknowledgement checkbox and never silently submit supplierConfirmed=true",
     "Display saved quantity audit with time, actor, source context and before/after quantities",
     "Refresh FOC detail total immediately when paid or free quantity changes",
-    "Restore FOC detail indentation, readonly quantity presentation, aligned header and separate right-aligned amount summary"
+    "Restore FOC detail indentation, readonly quantity presentation, aligned header and separate right-aligned amount summary",
+    "Remove amount-basis dropdown and ellipsis column; move existing PO entry/time into final column and align source controls"
   ],
   "validation": {
     "targetedChecksPassed": 103,
