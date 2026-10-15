@@ -22,9 +22,6 @@
 #app .purchase-dashboard .pd-directories{align-items:start}#app .purchase-dashboard .pd-note{align-items:flex-start}#app .purchase-dashboard .pd-note .pd-bi{display:inline-flex;flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap}#app .purchase-dashboard .pd-note .pd-bi>span,#app .purchase-dashboard .pd-note .pd-bi>small{display:block}#app .purchase-dashboard .pd-note .pd-bi>small{margin-left:0}
 
 #app .purchase-dashboard .pd-no-selection{grid-template-columns:minmax(0,1fr)}
-#app .purchase-dashboard .pd-directory-section{margin-top:10px;border:1px solid var(--pd-line);border-radius:5px;background:#fff}
-#app .purchase-dashboard .pd-directory-section>.pd-directory-label{padding:8px 12px;color:#21354f;font-size:12px;font-weight:700}
-#app .purchase-dashboard .pd-directory-section .pd-directories{padding:0 9px 9px;margin-top:0}
 #app .purchase-dashboard .pd-close{border:0;background:transparent;font-size:18px;line-height:20px;padding:2px 5px;color:var(--pd-blue)}
 #app .purchase-dashboard .pd-context .pd-state{margin-left:auto}
 #app .purchase-dashboard .pd-context{background:#f7faff}
@@ -59,4 +56,3 @@
 @media(max-width:800px){#app .purchase-dashboard .pd-filters{gap:7px}#app .purchase-dashboard .pd-filters button{padding:7px 9px}#app .purchase-dashboard .pd-filters button .pd-bi>span{font-size:12px}}
 #app .purchase-dashboard h1 .pd-bi>span{line-height:22px}
 #app .purchase-dashboard .pd-note{padding:3px 9px}
-#app .purchase-dashboard .pd-directory-section>.pd-directory-label{padding:6px 12px}
