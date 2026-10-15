@@ -350,3 +350,6 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog .allocation-table td.allocation-po-cell{text-align:left}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po{padding:0;font-size:10px;overflow-wrap:anywhere}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time{margin-top:3px}
+
+.supplier-allocation-dialog #allocationStockNote{margin:7px 0 0;color:#536d84;font-size:11px}
+.supplier-allocation-dialog #allocationStockNote[hidden]{display:none}

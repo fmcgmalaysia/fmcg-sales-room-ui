@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-allocation-surplus-20261015",
+  "base": "448b0a2a31aa58a057022f4589893c96ecc664d4",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "objective": "Calculator surplus always becomes expected stock without a procurement choice or demand increase",
+  "validation": {
+    "checksPassed": 107,
+    "syntax": true,
+    "diffCheck": true,
+    "sourceAndSharedUnchanged": true,
+    "realSave": false
+  },
+  "rules": {
+    "surplusCheckboxRemoved": true,
+    "expectedStockOnly": true,
+    "customerDemandUnchanged": true,
+    "surplusReasonRequired": true,
+    "legacyGuardsPreserved": true,
+    "actualReceiptAuthorityUnchanged": true,
+    "inventoryAllocationOutOfScope": true
+  },
+  "release": {
+    "pagesDeployed": false,
+    "wixBackendPatched": false,
+    "wixPublished": false,
+    "publicVerified": false,
+    "mainMerged": false
+  },
+  "pending": "Fresh compare and minimal changes to purchaseOperations.js and purchaseSources.js; browser URL-confidence policy stop still enforced"
+}
