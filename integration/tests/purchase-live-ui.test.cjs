@@ -84,7 +84,7 @@ test('Active priorities count saved sources rather than demand remainder and ope
  w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{totalCtn:null,revision:''}});
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.match(html,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
- assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>28 Oct 2026/);
+ assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
  assert.equal((html.match(/<th>/g)||[]).length,12);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="B"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
  h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="B" data-progress-index="3"/);assert.equal(h.messages.length,before);
