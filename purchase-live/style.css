@@ -375,8 +375,10 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 #liveStatus.save-pending~dialog #dialogError{color:#805b16}
 /* Office blue hierarchy, scoped to the existing supplier allocation dialog. */
 .supplier-allocation-dialog .dialoghead{background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
-.supplier-allocation-dialog .dialoghead .muted{color:#526b82}
+.supplier-allocation-dialog .dialoghead .muted{color:#526b82;font-weight:700}
 .supplier-allocation-dialog .dialoghead h2,.supplier-allocation-dialog .dialoghead button{color:#234768}
+.supplier-allocation-dialog .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:0;border-radius:4px;font-size:22px;line-height:1}
+.supplier-allocation-dialog .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb;color:#173557}
 .supplier-allocation-dialog .allocation-product{background:#edf4fb;padding:8px 10px;margin-bottom:8px;border-bottom:1px solid #cfdfed;align-items:center}
 .supplier-allocation-dialog .allocation-product-title{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;flex:1}
 .supplier-allocation-dialog .allocation-product-title span{font-size:11px;line-height:1.3;color:#52677b}
