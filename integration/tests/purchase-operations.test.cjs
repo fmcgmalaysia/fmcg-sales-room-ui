@@ -269,3 +269,19 @@ test('blank reason never exempts legacy planning, initial surplus or additional 
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});const before=copy(f.task());
  await assert.rejects(add({...f.base,requestId:'44444444-4444-4444-8444-444444444444',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,0);
 });
+
+test('calculator surplus automatically projects as expected stock without a checkbox or a customer-demand increase',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectWarehouseOrders}=load('warehouseReceiving.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js');
+ const f=fixture(),cost=(paid,free=0)=>({schema:1,mode:free?'FOC':'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:free,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
+ const request={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:260,costing:cost(250,10),draftPlan:true,reason:'Buy250 get10'}};
+ await f.operate(request);await f.operate(request);let row=f.workspace().tasks.find(row=>row.id===f.id);
+ assert.equal(row.ord,250);assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(row.procurement.expectedExtra,10);assert.equal(row.procurement.customerCtn,250);assert.equal(row.procurement.availableCtn,null);
+ const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');assert.equal(event.details.extraKind,'PROCUREMENT_SURPLUS');assert.equal(event.details.extraCtn,10);assert.equal(event.initiatedByStaffName,'LAW');assert.equal(event.details.reason,'Buy250 get10');
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const added=await add({...f.base,requestId:'66666666-6666-4666-8666-666666666666',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:5,supplierId:'B',poNumber:'',costing:cost(5),reason:'Additional stock purchase'}});
+ const ws=f.workspace(),source=ws.tasks.find(row=>row.id===added.sourceTaskId);row=ws.tasks.find(row=>row.id===f.id);
+ assert.equal(row.ord,250);assert.equal(source.procurement.expectedExtra,5);assert.equal(source.procurement.customerCtn,0);assert.equal(source.procurement.availableCtn,null);assert.equal(row.sourcing.orderedCtn,265);
+ const tasks=ws.tasks.filter(t=>t.id===f.id||t.id===source.id).map(t=>({...t,po:'NCT-PO-STOCK-'+t.supplierId})),orders=projectPurchaseOrders({company:'NCT',workspace:{...ws,tasks},records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks,activity:[]});
+ assert.ok(warehouse.every(order=>order.lines.every(line=>!line.received)));assert.equal([...f.rows.values()].filter(e=>String(e.action||'').includes('RECEIV')).length,1);
+});

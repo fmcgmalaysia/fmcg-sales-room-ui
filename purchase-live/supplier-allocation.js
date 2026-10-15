@@ -9,7 +9,7 @@
     return {schema:1,mode:row.mode||'NORMAL',moneySource:row.moneySource||'PRICES',paidCtn:paid,freeCtn:free,totalCtn:total,prices,amountCents,averageCostCtn:total?amountCents/100/total:null,manualFields:row.manual,reference:row.reference||null};}
   const basis=value=>JSON.stringify([value.mode,value.moneySource,value.paidCtn,value.freeCtn,value.prices,value.moneySource==='TOTAL'?value.amountCents:null]);
   function changed(draft,saved){const prices=values(draft),costing=calculation(draft);return !saved?.procurement?.revision||draft.supplierId!==saved.supplierId||Number(draft.qty)!==saved.procurement.totalCtn||(saved.procurement.costing?basis(costing)!==basis(saved.procurement.costing):draft.mode==='FOC'||draft.moneySource==='TOTAL'||priceKeys.some(key=>prices[key]!==saved[key]));}
-  function rowDraft(source,key){const costing=source?.procurement?.costing,original=costing?.prices||source||{},raw=Object.fromEntries(priceKeys.map(name=>[name,displayPrice(original[name],name)]));return {key,taskId:source?.id||null,version:source?.editVersion||null,supplierId:source?.supplierId||'',qty:String(source?.procurement?.totalCtn??source?.ord??''),mode:costing?.mode||'NORMAL',moneySource:costing?.moneySource||'PRICES',paid:String(costing?.paidCtn??source?.procurement?.totalCtn??source?.ord??''),free:String(costing?.freeCtn??0),amount:costing?.amountCents!==undefined?(costing.amountCents/100).toFixed(2):'',raw,originalRaw:{...raw},originalPrices:Object.fromEntries(priceKeys.map(name=>[name,Number.isFinite(original[name])?original[name]:name.startsWith('disc')?0:null])),manual:costing?.manualFields?.slice()||source?.manualCostField?.slice()||[],reference:costing?.reference||null,extraKind:source?.procurement?.extraKind||'',confirmExtra:false,status:'draft'};}
+  function rowDraft(source,key){const costing=source?.procurement?.costing,original=costing?.prices||source||{},raw=Object.fromEntries(priceKeys.map(name=>[name,displayPrice(original[name],name)]));return {key,taskId:source?.id||null,version:source?.editVersion||null,supplierId:source?.supplierId||'',qty:String(source?.procurement?.totalCtn??source?.ord??''),mode:costing?.mode||'NORMAL',moneySource:costing?.moneySource||'PRICES',paid:String(costing?.paidCtn??source?.procurement?.totalCtn??source?.ord??''),free:String(costing?.freeCtn??0),amount:costing?.amountCents!==undefined?(costing.amountCents/100).toFixed(2):'',raw,originalRaw:{...raw},originalPrices:Object.fromEntries(priceKeys.map(name=>[name,Number.isFinite(original[name])?original[name]:name.startsWith('disc')?0:null])),manual:costing?.manualFields?.slice()||source?.manualCostField?.slice()||[],reference:costing?.reference||null,extraKind:source?.procurement?.extraKind||'',status:'draft'};}
   function needsReason(state,workspace){const parent=workspace.tasks.find(row=>row.id===state.rootId);return state.rows.some(row=>{const saved=workspace.tasks.find(item=>item.id===row.taskId);return row.supplierId&&row.status!=='saved'&&saved&&(saved.procurement?.revision||saved.po)&&changed(row,saved);})||state.rows.filter(row=>row.supplierId).reduce((sum,row)=>sum+(Number(row.qty)||0),0)>(parent?.ord??0);}
   function validate(state,workspace){
     const parent=workspace.tasks.find(row=>row.id===state.rootId);if(!parent)return '原客户任务已不存在。';
@@ -36,10 +36,6 @@
     if(!chosen&&!state.rows.some(row=>row.status==='saved'))return '请至少安排一家供应商。';
     if(needsReason(state,workspace)&&!state.reason.trim())return '修改已保存方案或额外采购，请填写原因。';
     if(state.reason.trim().length>2000)return '原因不能超过 2000 字。';
-    if(total>parent.ord){
-      const extras=state.rows.filter(row=>row.supplierId&&row.confirmExtra);
-      if(!extras.length)return '超出客户需求的箱数必须明确确认为赠品或额外采购。';
-    }
     return '';
   }
   function create(api){
@@ -85,7 +81,7 @@
     }
     function renderRows(){
       document.querySelector('#allocationRows').innerHTML=state.rows.map(rowMarkup).join('');
-      document.querySelector('#allocationConfirmations').innerHTML='<label id="allocationStockConfirmation" hidden><input type="checkbox" id="allocationStockConfirm" '+(state.rows.filter(row=>row.supplierId).every(row=>row.confirmExtra)?'checked':'')+' '+(state.running?'disabled':'')+'> 余货留库存 · 客户需求不变</label>';update();renderHistory();
+      document.querySelector('#allocationConfirmations').innerHTML='<p id="allocationStockNote" hidden></p>';update();renderHistory();
     }
     function renderHistory(){
       const target=document.querySelector('#allocationHistory');if(!target)return;
@@ -107,14 +103,13 @@
       }
       for(const row of state.rows){const extra=document.querySelector('[data-allocation-extra="'+row.key+'"]');if(extra)extra.hidden=assigned<=rootTask().ord;}
       const reasonLabel=document.querySelector('#allocationReasonLabel');if(reasonLabel)reasonLabel.textContent=needsReason(state,workspace())?'原因 *':'原因（选填）';
-      const stockConfirmation=document.querySelector('#allocationStockConfirmation');if(stockConfirmation)stockConfirmation.hidden=assigned<=rootTask().ord;
+      const stockNote=document.querySelector('#allocationStockNote');if(stockNote){stockNote.hidden=assigned<=rootTask().ord;stockNote.textContent='预计余货 '+Math.max(0,assigned-rootTask().ord)+' CTN → 库存';}
       document.querySelector('#allocationSummary').innerHTML='<span>已安排 <b>'+assigned+' CTN</b> · 待安排 <b>'+Math.max(0,rootTask().ord-assigned)+' CTN</b>'+(assigned>rootTask().ord?' · 额外库存 <b>'+(assigned-rootTask().ord)+' CTN</b>':'')+'</span><span class="allocation-summary-amount">合计 MYR <strong>'+esc(known?money(amount):'—')+'</strong></span>';
     }
     function edit(event){
       if(!state||state.running||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
       const field=event.target;
       if(field.id==='allocationReason'){state.reason=field.value;state.dirty=true;api.cache();return true;}
-      if(field.id==='allocationStockConfirm'){state.rows.forEach(row=>row.confirmExtra=field.checked);state.dirty=true;api.cache();return true;}
       const rowKey=field.closest?.('[data-allocation-row]')?.dataset.allocationRow;
       const key=rowKey||field.dataset.allocationConfirm||field.dataset.allocationExtraKind||field.dataset.allocationExtraConfirm;
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
@@ -128,7 +123,6 @@
       else if(name==='amount')row.amount=field.value;
       else if(priceKeys.includes(name)){row.raw[name]=field.value;row.edited=row.edited||[];if(!row.manual.includes(name))row.manual.push(name);if(!row.edited.includes(name))row.edited.push(name);if(['lpPc','lpCtn'].includes(name)){const ea=rootTask().ea,paired=name==='lpPc'?'lpCtn':'lpPc';if(ea>0){const precise=name==='lpPc'?Number(field.value)*ea:Number(field.value)/ea;row.raw[paired]=displayPrice(precise,paired);row.originalRaw[paired]=row.raw[paired];row.originalPrices[paired]=precise;row.manual.push(paired);row.edited.push(paired);const pairedField=document.querySelector('[data-allocation-row="'+row.key+'"] [data-allocation-field="'+paired+'"]');if(pairedField)pairedField.value=Number(row.raw[paired]).toFixed(2);}}}
       else if(field.dataset.allocationExtraKind)row.extraKind=field.value;
-      else if(field.dataset.allocationExtraConfirm)row.confirmExtra=field.checked;
       state.dirty=true;const count=state.rows.length;remainingRow();if(['supplierId','mode','moneySource'].includes(name)){renderRows();api.cache();return true;}if(state.rows.length!==count){document.querySelector('#allocationRows').insertAdjacentHTML('beforeend',rowMarkup(state.rows.at(-1),state.rows.length-1));}const totalField=document.querySelector('[data-allocation-row="'+row.key+'"] [data-allocation-field="qty"]');if(row.mode==='FOC'&&totalField)totalField.value=row.qty;update();api.cache();return true;
     }
     function next(){
@@ -139,8 +133,8 @@
       // Decreases first make room for increases and new supplier sources without inventing extra stock.
       candidates.sort((a,b)=>{const rank=row=>!row.taskId?2:Number(row.qty)<(workspace().tasks.find(s=>s.id===row.taskId)?.procurement?.totalCtn||0)?0:1;return rank(a)-rank(b);});
       const row=candidates[0];if(!row){state.running=false;state.dirty=false;state.issue='已保存'+(rootTask().ord>state.rows.filter(row=>row.supplierId).reduce((sum,row)=>sum+Number(row.qty),0)?' · 部分安排':'');state.reopen=false;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))render();api.status(state.issue);return;}
-      const saved=workspace().tasks.find(item=>item.id===row.taskId),input=row.taskId?{taskId:row.taskId,version:row.version,planRevision:saved.procurement?.revision||'',totalCtn:Number(row.qty),reason:state.reason,extraKind:row.extraKind,confirmExtra:row.confirmExtra,supplierId:row.supplierId,prices:values(row),draftPlan:!saved.po}:{parentTaskId:state.rootId,version:workspace().sourcesVersion,supplierId:row.supplierId,poNumber:'',draftPlan:true,quantity:Number(row.qty),prices:values(row),reason:state.reason};
-      input.costing=calculation(row);input.confirmExtra=row.confirmExtra;
+      const saved=workspace().tasks.find(item=>item.id===row.taskId),input=row.taskId?{taskId:row.taskId,version:row.version,planRevision:saved.procurement?.revision||'',totalCtn:Number(row.qty),reason:state.reason,extraKind:row.extraKind,supplierId:row.supplierId,prices:values(row),draftPlan:!saved.po}:{parentTaskId:state.rootId,version:workspace().sourcesVersion,supplierId:row.supplierId,poNumber:'',draftPlan:true,quantity:Number(row.qty),prices:values(row),reason:state.reason};
+      input.costing=calculation(row);
       state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:row.taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId});
     }
     function pause(message){state.running=false;state.current=null;state.issue=message;state.reopen=true;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))render();api.status(message,true);}
