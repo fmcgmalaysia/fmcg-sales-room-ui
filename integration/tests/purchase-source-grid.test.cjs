@@ -45,3 +45,10 @@ test('mother progress waits for every source and unplaced demand while preservin
 test('one supplier has no duplicate child and keeps the normal checkbox and PO entry',()=>{
  const f=fixture();f.args.rows=f.args.tasks=[f.root];f.args.selectedSources.clear();const html=f.render();assert.equal((html.match(/<tr\b/g)||[]).length,1);assert.match(html,/data-select-kind="demand"[^>]*checked/);assert.doesNotMatch(html,/data-select-kind="demand" disabled/);assert.match(html,/data-po-task="R"/);assert.equal((html.match(/class="progress-node /g)||[]).length,7);
 });
+
+test('Active GP uses a red capsule only below six percent and numbered source stages preserve their original actions',()=>{
+ const f=fixture();f.args.active=true;
+ for(const [gp,low]of [[.059,true],[.06,false],[.061,false],[0,true],[-.1,true],[NaN,false]]){f.root.gp=gp;const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows[0].includes('class="gp gp-low"'),low);assert.doesNotMatch(rows[1],/gp-low/);assert.doesNotMatch(rows[0],/progress-node/);for(let i=0;i<7;i++)assert.match(rows[1],new RegExp('data-progress-index="'+i+'"[^>]*><span aria-hidden="true">'+(i+1)+'</span></button>'));}
+ f.root.gp=.059;f.args.drafts.set('R',{changes:{lpCtn:12}});assert.doesNotMatch(f.render(),/gp-low/);
+ f.args.active=false;f.args.drafts.clear();f.root.gp=.01;const room=f.render();assert.doesNotMatch(room,/gp-low|aria-hidden="true">[1-7]<\/span>/);
+});

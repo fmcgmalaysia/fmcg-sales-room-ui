@@ -107,6 +107,15 @@ test('Active actual receipts never open supplier costing while receipt exception
  h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
 });
 
+test('Active large stage numbers open source facts and preserve the original receiving detail without writes',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:90,revision:'P'},warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true}});
+ h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
+ for(let i=0;i<7;i++)assert.match(html,new RegExp('data-active-progress="'+i+'"[^>]*><b>'+(i+1)+'</b>'));
+ h.click({activeProgress:'3'});let body=h.node('#dialogContent').innerHTML;assert.match(body,/4 · Receiving/);assert.match(body,/Issue \/ 待解决/);assert.match(body,/data-progress-task="TASK" data-progress-index="3" data-progress-is-source="true"/);
+ h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});body=h.node('#dialogContent').innerHTML;assert.match(body,/current-progress problem/);assert.match(body,/SUPPLIER · Receiving/);assert.equal(h.messages.length,before);
+ h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-progress-overview/);
+});
+
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});

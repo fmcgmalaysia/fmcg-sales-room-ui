@@ -33,6 +33,23 @@
 #app .active-order-table .received-quantity>:is(span.quantity-reference,.quantity-case){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:34px;padding:0 6px;font-family:inherit;font-size:11px;font-weight:600;line-height:14px;vertical-align:middle}
 #app .active-order-table .received-quantity>span.quantity-reference{border:1px solid transparent;cursor:default;text-decoration:none}
 #app .active-order-table .gp{white-space:nowrap}
+#app .active-order-table :is(th,td):nth-child(n+9){text-align:right!important}
+#app .active-order-table td:nth-child(11) .po-reference{text-align:right}
+#app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
+#app .active-order-table .row-progress{justify-content:flex-end;gap:1.5px}
+#app .active-order-table .progress-node{width:14px;height:14px;min-width:14px;color:#fff;font:700 9px/14px 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif;text-align:center}
+#app .ao-progress-overview{margin:0 0 12px;padding:9px 12px;border:1px solid #c5d5e5;border-radius:5px;background:#fff}
+#app .ao-progress-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;font-size:10px;color:#536b84}
+#app .ao-progress-caption b{color:#203047;font-size:11px}
+#app .ao-progress-stages{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+#app .ao-progress-stages button{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;text-align:left;font-size:11px;color:#173557}
+#app .ao-progress-stages button>b{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:#3766a2;color:#fff;font-size:14px;font-weight:700}
+#app .ao-progress-stages small{display:block;margin-top:3px;font-size:9px;color:#62758a}
+#app .ao-progress-stages button:is(:hover,:focus-visible)>b{background:#244d82}
+.pd-supplier-alerts .ao-stage-state{font-size:11px;font-weight:600}
+.pd-supplier-alerts .ao-stage-state.complete{color:#087443}
+.pd-supplier-alerts .ao-stage-state.pending{color:#b45a00}
+.pd-supplier-alerts .ao-stage-state.problem{color:#c42b31}
 body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
 body:has(#app>.active-order-heading) #taskSignals .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#e7eef5;color:#173557;font-size:12px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
 body:has(#app>.active-order-heading) #taskSignals .task-signal.has-work b{background:#ff8a00;color:#fff}
