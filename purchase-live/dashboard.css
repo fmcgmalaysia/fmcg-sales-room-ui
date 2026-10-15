@@ -98,3 +98,6 @@
 #app .purchase-dashboard .pd-button-arrow{display:inline-block;transition:transform .18s ease;pointer-events:none}
 #app .purchase-dashboard .pd-action-button:is(:hover,:focus-visible) .pd-button-arrow{transform:translateX(3px)}
 @media(prefers-reduced-motion:reduce){#app .purchase-dashboard .pd-button-arrow{transition:none}}
+#app .purchase-dashboard .pd-action-summary strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:14px}
+#app .purchase-dashboard .pd-action-summary>div>small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;line-height:13px;margin-top:2px;font-weight:400}
+#app .purchase-dashboard .pd-queue-scroll td{padding-top:5px;padding-bottom:5px;height:49px}
