@@ -1,7 +1,8 @@
 {
   "public": {
     "url": "https://fmcg999.wixstudio.com/master",
-    "verification": "Pending after clean real page reload; initial frame loading. No final visual acceptance claimed."
+    "verification": "PASS: fresh user public tab51425439 iframe quantity-clean-v1, Active five true SCOMM tasks; all five Order Qty cells have zero small subtexts; quantity values preserved500|500,20|20,30|0,50|0,100|0; five drag handles remain. No production writes.",
+    "evidence": "evidence/public-clean-quantities.png"
   },
   "code": "6b9ca0f2e59d8e42e0d2074e729fd5dc91614bb2",
   "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/95",
