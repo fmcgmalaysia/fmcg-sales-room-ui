@@ -48,7 +48,7 @@
 #app .purchase-dashboard .pd-all[aria-pressed=true]{background:#eef4fb;border-color:var(--pd-blue)}
 
 #app .purchase-dashboard .pd-filters button .pd-bi>span{font-size:12px;line-height:16px;font-weight:700}
-#app .purchase-dashboard .pd-filters button .pd-bi>small{font-size:11px;line-height:14px;font-weight:400}
+#app .purchase-dashboard .pd-filters button .pd-bi>small{font-size:9px;line-height:12px;font-weight:400}
 #app .purchase-dashboard .pd-filters b{font-size:12px;line-height:20px;min-width:24px;height:24px;padding:2px 6px;border-radius:12px}
 #app .purchase-dashboard .pd-all{align-items:center;min-height:30px}
 #app .purchase-dashboard .pd-queue-scroll .pd-select>span:not(.pd-bi){min-width:0}
