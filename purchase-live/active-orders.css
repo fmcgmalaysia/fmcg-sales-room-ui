@@ -34,6 +34,7 @@
 #app .active-order-table td{color:#203047}
 #app .active-order-table .product-stack .itemname{font-size:11px;font-weight:700;color:#173557}
 #app .active-order-table .product-stack :is(.barcode,.packing){font-size:10px;font-weight:400;color:#62758a}
+#app .active-order-table .product-stack .barcode{font-size:11px}
 #app .active-order-table .progress-node.complete{background:#087443}
 #app .active-order-table .progress-node:not(.complete):not(.problem){background:#ff8a00}
 #app .active-order-table .progress-node.problem{background:#c42b31}
