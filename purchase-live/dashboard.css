@@ -78,7 +78,7 @@
 #app .purchase-dashboard .pd-action-summary small>.pd-bi>small{font-size:9px}
 #app .purchase-dashboard .pd-action-button{display:inline-flex;align-items:center;justify-content:center;background:var(--pd-state);border:0;border-radius:4px;color:#fff;padding:4px 9px;min-height:30px;white-space:nowrap}
 #app .purchase-dashboard .pd-action-button .pd-bi>small{color:#fff;font-size:9px}
-#app .purchase-dashboard .pd-target-date{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px;font-weight:500;text-align:left}
+#app .purchase-dashboard .pd-target-date{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:11px;font-weight:500;text-align:left}
 #app .purchase-dashboard .pd-queue-scroll{max-height:clamp(140px,calc(100dvh - 445px),232px)}
 
 #app .purchase-dashboard .customer-directory :is(th,td):nth-child(2){text-align:left}
