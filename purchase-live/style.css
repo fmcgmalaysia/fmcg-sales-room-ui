@@ -353,3 +353,5 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 
 .supplier-allocation-dialog #allocationStockNote{margin:7px 0 0;color:#536d84;font-size:11px}
 .supplier-allocation-dialog #allocationStockNote[hidden]{display:none}
+.supplier-allocation .allocation-save{display:block;margin-top:3px;padding:2px 5px;border:1px solid #b8cbdc;border-radius:3px;background:#fff;color:#0078d4;font:inherit;cursor:pointer}
+.supplier-allocation .allocation-save:disabled{color:#63758a;border-color:transparent;cursor:default}

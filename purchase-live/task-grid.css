@@ -20,6 +20,13 @@
 .purchase-tasks .customer-short{font-weight:700;overflow-wrap:anywhere}
 .purchase-tasks td{height:52px;padding:6px 5px;font-size:11px}
 .purchase-tasks .source-row td{height:36px}
+#app #taskRows .source-row>td{background:#f5f8fb}
+#app #taskRows .source-row>td:nth-child(-n+3),#app .active-order-table #taskRows .source-row>td:nth-child(-n+4){background:#fff}
+.purchase-tasks .rowcheck:disabled{opacity:.4;cursor:not-allowed}
+.purchase-tasks .source-row .supplier-plan-link{display:inline;vertical-align:middle}
+.purchase-tasks .source-row .supplier-plan-link>span{display:none}
+.purchase-tasks .source-row .rowcheck{margin-right:5px;vertical-align:middle}
+.purchase-tasks .po-summary{color:#63758a;font-size:11px}
 .purchase-tasks th{background:#d4e1eb;color:#202b36;font-size:11px}
 .purchase-tasks:not(.active-order-table) th:nth-child(5),.purchase-tasks:not(.active-order-table) th:nth-child(6),.active-order-table th:nth-child(6),.active-order-table th:nth-child(7){text-align:center}
 .active-order-heading .heading{flex:1;min-width:0;margin:0}

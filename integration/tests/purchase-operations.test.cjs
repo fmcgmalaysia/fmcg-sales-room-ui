@@ -2,6 +2,19 @@ const test=require('node:test'),assert=require('node:assert/strict'),load=requir
 const {createPurchaseOperations}=load('purchaseOperations.js'),{taskEditVersion}=load('purchaseTaskIdentity.js'),{projectPurchaseWorkspace}=load('purchaseProjection.js');
 const copy=value=>JSON.parse(JSON.stringify(value));
 
+test('first confirmed B uses existing root PLAN once, opens its PO, and later A adds a distinct source without changing B',async()=>{
+ const f=fixture(),{createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js'),{projectWarehouseOrders}=load('warehouseReceiving.js');
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
+ const cost=qty=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:qty,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}});
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',supplierId:'B',totalCtn:30,draftPlan:true,reason:'',costing:cost(30)}};
+ await f.operate(first);await f.operate(first);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'NCT-PO-B'}});
+ const b=copy(f.task()),add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const added=await add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:40,supplierId:'S',poNumber:'',costing:cost(40),reason:''}});
+ assert.notEqual(added.sourceTaskId,f.id);assert.deepEqual(f.task(),b);const workspace=f.workspace(),root=workspace.tasks.find(row=>row.id===f.id);assert.equal(root.ord,250);assert.equal(root.sourcing.orderedCtn,70);assert.equal(root.sourcing.unplacedCtn,180);
+ const orders=projectPurchaseOrders({company:'NCT',workspace,records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks:workspace.tasks,activity:[...f.rows.values()].filter(row=>row.action)});assert.equal(warehouse.length,1);assert.deepEqual(copy(warehouse[0].lines.map(line=>line.taskId)),[f.id]);assert.equal(warehouse[0].lines[0].planned,30);
+});
+
 test('customer demand rejects Purchase, Account, Warehouse, Top Management and forged client role before any write',async()=>{
  for(const role of ['PURCHASE','ACCOUNT','WAREHOUSE','TOP MANAGEMENT',undefined]){
   const f=fixture(),before=copy([...f.rows]);

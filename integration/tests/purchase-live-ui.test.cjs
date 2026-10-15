@@ -4,6 +4,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(process.env.PURCHASE_UI_BASELINE || path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
+test('disabled demand selection is ignored; first source selection opens only that PO and mixed suppliers remain blocked',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:60,revision:'P1'}});w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:40,revision:'P2'}});h.reply(w);h.click({customer:'C'});
+ h.change({dataset:{select:'TASK',selectKind:'demand'},checked:true,disabled:true});assert.match(h.node('#app').innerHTML,/0 selected/);
+ h.change({dataset:{select:'TASK',selectKind:'source'},checked:true});assert.match(h.node('#app').innerHTML,/1 selected/);h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/60 CTN/);
+ h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#liveStatus').textContent,/同一供应商/);
+ h.click({controlId:'clearSelection'});assert.match(h.node('#app').innerHTML,/0 selected/);
+});
 test('PO submit dialog sends one complete saved version with optional urgency and no accidental term edit',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const request=h.messages.at(-1);
  const row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',amount:1000,taskIds:['TASK','OTHER'],state:'ACTIVE',documents:[],history:[],documentStatus:'MISSING',termDays:30,procurementHandoff:{stage:'LEGACY',submitted:false}};
