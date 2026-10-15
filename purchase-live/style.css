@@ -355,3 +355,17 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog #allocationStockNote[hidden]{display:none}
 .supplier-allocation .allocation-save{display:block;margin-top:3px;padding:2px 5px;border:1px solid #b8cbdc;border-radius:3px;background:#fff;color:#0078d4;font:inherit;cursor:pointer}
 .supplier-allocation .allocation-save:disabled{color:#63758a;border-color:transparent;cursor:default}
+.supplier-allocation-dialog .allocation-po.pending{color:#d98410}
+.supplier-allocation-dialog .allocation-po.complete{color:#16854b}
+.roomhead .stage-capsule{background:#d98410;color:#fff}
+.roomhead .stage-capsule.zero{background:#16854b;color:#fff}
+.roomhead .tracklabel{color:#52677b}
+.rowlist .current-progress>td,.rowlist .current-progress>th{background:#fff3df}
+.rowlist .current-progress.complete>td,.rowlist .current-progress.complete>th{background:#eef8f1}
+.rowlist .problem>td{color:#c4455a}
+#liveStatus.save-pending{background:#fff3d6;color:#805b16;border-bottom-color:#ebd5a3}
+.supplier-allocation-dialog .allocation-issue{color:#52677b}
+.supplier-allocation-dialog .allocation-issue.pending{color:#805b16}
+.supplier-allocation-dialog .allocation-issue.complete{color:#16854b}
+.supplier-allocation-dialog .allocation-issue.problem{color:#c4455a}
+#liveStatus.save-pending~dialog #dialogError{color:#805b16}

@@ -13,8 +13,8 @@
 .purchase-tasks .source-row{background:#f5f8fb}
 .purchase-tasks .source-label{padding-left:10px;color:#52677b}
 .purchase-tasks .row-progress{display:flex;justify-content:center;gap:3px;align-items:center}
-.purchase-tasks .progress-node{width:9px;height:9px;min-width:9px;border:0;border-radius:50%;padding:0;background:#c8d5df;cursor:pointer}
-.purchase-tasks .progress-node.complete{background:#0078d4}
+.purchase-tasks .progress-node{width:9px;height:9px;min-width:9px;border:0;border-radius:50%;padding:0;background:#d98410;cursor:pointer}
+.purchase-tasks .progress-node.complete{background:#16854b}
 .purchase-tasks .progress-node.problem{background:#c4455a}
 .purchase-tasks .progress-node:focus-visible{outline:2px solid #193246;outline-offset:3px}
 .purchase-tasks .customer-short{font-weight:700;overflow-wrap:anywhere}
@@ -26,6 +26,19 @@
 .purchase-tasks .source-row .supplier-plan-link{display:inline;vertical-align:middle}
 .purchase-tasks .source-row .supplier-plan-link>span{display:none}
 .purchase-tasks .source-row .rowcheck{margin-right:5px;vertical-align:middle}
+.purchase-tasks .source-row .row-number{text-align:center}
+.purchase-tasks .source-row .row-number .rowcheck{margin:0}
+#app #taskRows .supplier-cell{text-align:left;padding-left:7px}
+#app .purchase-tasks th:nth-last-child(6){text-align:left!important}
+.purchase-tasks .supplier-plan-link{padding-left:0}
+.purchase-tasks .supplier-plan-link .supplier-heads{display:flex;align-items:center;gap:4px}
+.purchase-tasks .supplier-plan-link .supplier-head{display:inline-flex;vertical-align:middle;margin-right:4px}
+.purchase-tasks .source-row .supplier-plan-link>.supplier-head{display:inline-flex}
+.purchase-tasks .supplier-plan-link .supplier-head.complete{color:#16854b}
+.purchase-tasks .supplier-plan-link .supplier-head.pending{color:#d98410}
+.purchase-tasks .supplier-plan-link .supplier-head svg{width:16px;height:16px;fill:currentColor;stroke:none}
+.purchase-tasks .po-reference.pending,.purchase-tasks .po-summary.pending{color:#d98410}
+.purchase-tasks .po-reference.complete,.purchase-tasks .po-summary.complete{color:#16854b}
 .purchase-tasks .po-summary{color:#63758a;font-size:11px}
 .purchase-tasks th{background:#d4e1eb;color:#202b36;font-size:11px}
 .purchase-tasks:not(.active-order-table) th:nth-child(5),.purchase-tasks:not(.active-order-table) th:nth-child(6),.active-order-table th:nth-child(6),.active-order-table th:nth-child(7){text-align:center}
