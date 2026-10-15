@@ -379,6 +379,34 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .dialoghead h2,.supplier-allocation-dialog .dialoghead button{color:#234768}
 .supplier-allocation-dialog .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:0;border-radius:4px;font-size:22px;line-height:1}
 .supplier-allocation-dialog .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb;color:#173557}
+/* PO number confirmation uses the same compact blue-gray workroom presentation. */
+#modal:has(#poNumber){width:820px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
+#modal:has(#poNumber) :is(button,input){font-family:inherit}
+#modal:has(#poNumber) .dialoghead{padding:12px 16px;background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
+#modal:has(#poNumber) .dialoghead h2{font-size:20px;line-height:26px;font-weight:800;color:#203047;margin:0 0 3px}
+#modal:has(#poNumber) .dialoghead .muted{font-size:14px;line-height:20px;font-weight:700;color:#234768}
+#modal:has(#poNumber) .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;font-size:22px;line-height:1;color:#234768;border-radius:4px}
+#modal:has(#poNumber) .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb}
+#modal:has(#poNumber) .dialogbody{padding:14px 16px;font-size:11px}
+#modal:has(#poNumber) .po-purpose{margin-bottom:12px;color:#536b84;font-size:11px;line-height:16px}
+#modal:has(#poNumber) .po-number-entry label{font-size:11px;margin-bottom:5px}
+#modal:has(#poNumber) #poNumber{width:240px;max-width:100%;height:32px;border:1px solid #b8ccdf;border-radius:3px;padding:6px 8px;background:#fff;color:#203047;font-size:13px;line-height:18px;font-weight:700}
+#modal:has(#poNumber) #poNumber:focus-visible{outline:2px solid #3766a2;outline-offset:1px}
+#modal:has(#poNumber) .po-items-summary{margin:14px 0 8px;font-size:11px;font-weight:600;color:#203047}
+#modal:has(#poNumber) .po-items :is(th,td){height:auto;padding:8px;font-size:11px;line-height:16px;color:#203047}
+#modal:has(#poNumber) .po-items th{background:#d2dfea;font-weight:700}
+#modal:has(#poNumber) .po-items th:nth-child(1){width:17%}
+#modal:has(#poNumber) .po-items th:nth-child(2){width:43%}
+#modal:has(#poNumber) .po-items th:nth-child(3){width:10%}
+#modal:has(#poNumber) .po-items th:nth-child(4){width:14%}
+#modal:has(#poNumber) .po-items th:nth-child(5){width:16%}
+#modal:has(#poNumber) .po-items :is(th,td):nth-child(n+3){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#modal:has(#poNumber) .po-items .po-barcode{font-size:10px;color:#62758a}
+#modal:has(#poNumber) .po-barcode b{display:block;margin-top:2px;font-size:11px;line-height:16px;color:#173557;overflow-wrap:anywhere}
+#modal:has(#poNumber) .po-barcode small{display:block;margin-top:2px;font-size:10px;line-height:14px;color:#62758a}
+#modal:has(#poNumber) .dialogfoot{padding:10px 16px;background:#f5f9fd;border-top:1px solid #cfdfed}
+#modal:has(#poNumber) .dialogfoot .btn{min-height:30px;padding:5px 10px;font-size:11px}
+#modal:has(#poNumber) .dialogfoot .btn.primary{background:#3766a2;border-color:#3766a2}
 /* Compact row destination dialog; sorting and save handlers remain unchanged. */
 #modal:has(#moveTarget){width:440px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
 #modal:has(#moveTarget) :is(button,select){font-family:inherit}
