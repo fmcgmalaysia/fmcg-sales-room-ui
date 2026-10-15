@@ -1,0 +1,23 @@
+{
+  "scope": "Purchase Dashboard only; compact work queue and source context",
+  "date": "2026-10-15",
+  "base": "7b4f259c406f93e62bf75de4b433543f83e5c550",
+  "production": "70a0b59",
+  "branch": "style/purchase-dashboard-compact-20261015",
+  "typography": {"title":18,"product":13,"body":12,"bilingual":"English above Chinese; menu unchanged"},
+  "protected": {
+    "roomRendererExact":true,"formDialogExact":true,
+    "unchangedFiles":["purchase-live/style.css","purchase-live/task-grid.css","purchase-live/task-grid.js","purchase-live/supplier-allocation.js"],
+    "activeOrdersHeaders":13,"activeOrdersProductFont":11,
+    "backendPermissionsSaveJournalFocMath":"unchanged"
+  },
+  "verification": {
+    "targetedChecks":127,"finalDashboardAndUiChecks":61,
+    "ui":["category filter","source selection","search empty state","existing task entry without save","Active Orders round trip","18/13/12px computed","1496px root has no outer horizontal overflow","no console errors"],
+    "publicAssetsMatchProduction":true,
+    "wixPageSha256":"1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+  },
+  "preview":"http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3",
+  "release":{"code":"local candidate for user design review","githubPages":"not deployed","wixStudio":"no edits or publish","publicPage":"candidate not verified; no release"},
+  "next":"Review Dashboard only. Do not proceed to another page or reintroduce the withdrawn global typography candidate. Original user sorting-draft tab remains untouched."
+}

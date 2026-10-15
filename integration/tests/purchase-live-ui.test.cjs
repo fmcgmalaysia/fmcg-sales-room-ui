@@ -42,6 +42,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
   const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/dashboard.js'),'utf8'),{window});
   vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
@@ -269,9 +270,9 @@ test('read failure and timeout show explicit feedback without inventing zero rec
   const other=harness();other.timers[0]();assert.match(other.node('#liveStatus').textContent,/读取超时/);
 });
 
-test('CMS Dashboard retains the approved directory structure, summary icons and supplier entry without customer registration',()=>{
+test('compact Dashboard keeps both directories and supplier entry while replacing duplicated summary cards with a queue',()=>{
   const h=harness();h.reply(workspace());const html=h.node('#app').innerHTML;
-  for(const marker of ['dashboard-summary','summary-icon','directory-heading','customer-directory','supplier-directory','Add Supplier','Search customer','Search supplier / brand'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['purchase-dashboard','pd-metrics','pd-queue','customer-directory','supplier-directory','addSupplier','Search customer','supplierSearch'])assert.ok(html.includes(marker),marker);
   assert.match(html,/<th>Edit<\/th>/);assert.doesNotMatch(html,/Add Customer|id="addCustomer"/);
 });
 
