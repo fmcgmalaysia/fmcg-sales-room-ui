@@ -33,6 +33,9 @@
 #app .active-order-table .ao-child-marker{display:inline-flex;vertical-align:middle;margin-left:6px;color:#7891a5;cursor:default}
 #app .active-order-table .ao-child-marker svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table #clearSelection{padding:3px 4px}
+#app .active-order-table #taskRows .handle{width:20px;height:26px;align-items:center;justify-content:center;border-radius:4px;color:#3766a2;font-size:20px;cursor:grab}
+#app .active-order-table #taskRows .handle:is(:hover,:focus-visible){background:#dce8f4;color:#173557;outline:1px solid #9cb6ce}
+#app .active-order-table #taskRows .handle:active{cursor:grabbing;background:#c7dbee}
 #app .active-order-table .po-reference{white-space:nowrap;overflow-wrap:normal}
 #app .active-order-table td{color:#203047}
 #app .active-order-table .product-stack .itemname{font-size:11px;font-weight:700;color:#173557}

@@ -136,7 +136,7 @@ test('Active child rows are always visible with a noninteractive branch marker i
 
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
- w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'D-TASK',customerId:'D'});
  h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});assert.match(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);
  h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);
  h.click({drag:'TASK'});h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});let html=h.node('#app').innerHTML;
@@ -542,4 +542,13 @@ test('pending dialog unlock after a known rejection preserves fields that were a
 
 test('pre-upgrade row-order cache retains customer scope after navigating to another customer',()=>{
  const cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify({customerId:'C',drafts:[],sequenceDraft:['TASK2','TASK'],sequenceVersions:{TASK:'V',TASK2:'V'}})]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);h.click({customer:'D'});assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.customerId,'C');assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);
+});
+
+
+test('Active move entry immediately exposes native drag handles for a sole customer without submitting',()=>{
+ const h=harness(),w=workspace();h.reply(w);h.click({view:'active'});const before=h.messages.length;
+ assert.doesNotMatch(h.node('#app').innerHTML,/data-drag=/);h.click({activeMove:'true'});
+ assert.match(h.node('#app').innerHTML,/draggable="true" title="Drag to move · 拖动排列" data-drag="TASK"/);
+ assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);assert.equal(h.messages.length,before);
+ assert.match(h.node('#liveStatus').textContent,/Save/);
 });
