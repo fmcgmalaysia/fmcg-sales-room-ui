@@ -1,0 +1,21 @@
+2026-10-16 MASTER workroom presentation closeout
+
+User request: unify MASTER design; Purchase all page headings follow approved Sales Invoicing 销售开票 reference. User then requested closeout and GitHub synchronization before future Warehouse/Account business linking.
+
+Checkout: C:/FMCG-WIX-LOCAL/worktrees/nct-order-submit-room6-20261009
+Branch: style/master-workroom-consistency-20261015
+Immediate recovery: b8932e902b0c284a002fd6eb51b67dace3618034. Earlier limited UI verified tag verified/purchase-allocation-layout-20261015; real limited workflow tag verified/purchase-lavender-plan-po-20261014. Neither asserts all production workflows verified.
+
+Changes: add shared workroom-theme.css consumed by four department index files. Canonical Inter/font roles, blue-gray headers/modals, color semantics, compact numeric bubbles, Warehouse overview state style, Support pending-invoice orange. Frontend display-only bilingual slash cleanup; paymentHandoffLabel internal parser labels preserved, output display replaces delimiter. ReAllocation product-first flexible description col + six fixed columns 136/148/120/100/120/100. Original quantities/action data attributes/eligibility unchanged. Purchase page titles unified English/Chinese 20px/800/26px inline. Shared modal identity remains primary and protected supplier-allocation context stays14px. No backend, authentication, storage, permissions, integration, download or business-write changes.
+
+Validation: node syntax checks for all ten modified JS modules pass; git diff --check pass. Affected tracked purchase/account/warehouse/department test files excluding existing failing quantity-projection test:248/248 pass. Full tracked integration398:396 pass,2fail. Failing tests: master-workflow-scenarios payment handoff expected PAID/actual INSTALLMENT_PAID; purchase-quantity-projection expects 等待补货/actual Awaiting balance. Both reproduced in isolated copies of exact b8932e9 baseline:24tests22pass2fail. Relevant integration/backend, backend, root index/buyer sources unchanged from baseline. UI test3expected labels updated only for bilingual display copy.
+
+Chrome local fixtures: Purchase preview51425339, Account51425343, combined departments51425346. Purchase6nav headings20px/800, canonical table headers, ReAllocation2original rows/description770px at1536viewport/no overflow; Active defaultAllCustomers2move buttons, sourceFOCinline and childSinceblank retained. Warehouse overview24px bubbles with0neutral/1pendingorange. Four departments Inter11/H120/head#d2dfea. Account supplier-files modal header#dceaf7. Warehouse receipt entry fixture did not complete open; only DOM computed style available, not claimed E2E. No real SAVE/receipt/invoice/financial submission, no actual pointer drag. Sample fixtures cannot prove production SAVE; public acceptance remains outstanding.
+
+Design approval evidence: user screenshot Sales Invoicing title, approved exact local support index/app/shared-theme copies and hashes preserved in root handoff before latest title patch. Approval covers visual reference only.
+
+External state: production remains70a0b59, marker2026-10-15-allocation-audit-v2, previous user Wix publish receipt. This candidate: code complete; Pages not deployed; Wix not synchronized/published; new public candidate not verified; main not merged. GitHub sync status stored separately after push.
+
+Next task: establish real Purchase->Warehouse->Account data ownership and live states before implementation. Preserve saved source quantities/prices/FOC/PO, receipt lower bounds, allocation eligibility, payment review, save journal/version and unknown-result handling; do not infer new integration from visual candidate or fixture output. First read root AGENTS.md/START_HERE/system ownership, this record, purchase-room-transition-20261015/HANDOFF.md and exact deployed backend snapshots. New business scope separate branch, smallest patch, protected workflow regression, four-stage release evidence.
+
+Local screenshots, approved-source copies, full baseline-check and raw logs: C:/FMCG-WIX-LOCAL/handoff/master-workroom-consistency-20261016/. Selected safe evidence also versioned in this handoff directory. No unrelated untracked workbench prototype or logs added; allocation-drafts phantom CRLF tracked modification intentionally left untouched.
