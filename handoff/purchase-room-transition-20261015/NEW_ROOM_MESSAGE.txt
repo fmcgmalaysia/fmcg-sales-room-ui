@@ -1,0 +1,7 @@
+继续 C:\FMCG-WIX-LOCAL 的 MASTER Purchase 工作。先完整阅读根 AGENTS.md、START_HERE.md，以及 C:\FMCG-WIX-LOCAL\worktrees\nct-order-submit-room6-20261009\handoff\purchase-room-transition-20261015\HANDOFF.md，再读其中指向的当前任务记录。
+
+新规则：禁止占用电脑处理任何能在后台完成的工作。代码、测试、GitHub、文档和可通过接口完成的核对/部署全部后台做；只有必须依赖 Wix 界面的步骤才集中短时使用浏览器。
+
+我已重启电脑。请先确认实际checkout/分支和四项发布状态，不要重新设计弹窗或重复已完成工作。线上70a0b59，Wix已由我确认发布；独立草稿候选4704f2a/PR85已写好且110检查通过，尚未部署。下一项是外层默认展开母子行、子行供应商旁tickbox/PO入口及每供应商独立保存，库存分配不在范围。
+
+先后台读框架与代码、报告单一目标和恢复点，再实施；确有必要时再只读检测重启后的浏览器连接。此前安全停止不可绕过，不要反复让我切页、重启或复制代码。不创建新架构、不合main、不改FMCGMALAYSIA；不要擅自刷新或丢弃业务草稿。
