@@ -92,12 +92,13 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
-        if(!reason||reason.length>2000)throw Error('A procurement reason is required.');
+        if((!reason&&(!costing||plan.revision||task.ourPoNumber))||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
         const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
+        if(extra>0&&!reason)throw Error('An additional purchase reason is required.');
         if(extra>0&&((!costing&&!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind))||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
         if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);

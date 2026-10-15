@@ -241,3 +241,31 @@ test('plan revisions reject branched history instead of displaying invented avai
 });
 
 test('negative net cost rejects before preparing or changing any business fields',async()=>{const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'EDIT',input:{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{disc3:320}}]}}),/Net cost cannot be negative/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_OPERATION_PREPARED'||row.action==='PURCHASE_PRICE_SAVED').length,0);});
+
+test('calculator first allocation and new remaining source save without a reason; revisions still require one and retry stays exact',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),f=fixture();
+ const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:''}};
+ await f.operate(first);await f.operate(first);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
+ const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');assert.equal(event.details.reason,'');assert.equal(event.initiatedByStaffName,'LAW');assert.ok(event.activityTime);
+ let saved=f.workspace().tasks.find(row=>row.id===f.id),before=copy(f.task());
+ await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...first.input,version:saved.editVersion,planRevision:saved.procurement.revision,totalCtn:50,costing:cost(50)}}),/reason/);assert.deepEqual(f.task(),before);
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:190,supplierId:'B',poNumber:'',costing:cost(190),reason:''}};
+ const result=await add(request);await add(request);saved=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
+ assert.equal(saved.procurement.totalCtn,190);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).sourcing.unplacedCtn,0);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,1);
+ assert.equal([...f.rows.values()].find(row=>row.action==='PURCHASE_SOURCE_ADDED').details.reason,'');
+});
+
+test('blank reason never exempts legacy planning, initial surplus or additional stock procurement',async()=>{
+ const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
+ for(const legacy of [true,false]){const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:legacy?60:260,...(!legacy?{costing:cost(260)}:{}),draftPlan:true,confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);}
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),f=fixture();
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:250,costing:cost(250),draftPlan:true,reason:''}});
+ f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});const before=copy(f.task());
+ await assert.rejects(add({...f.base,requestId:'44444444-4444-4444-8444-444444444444',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,0);
+});
