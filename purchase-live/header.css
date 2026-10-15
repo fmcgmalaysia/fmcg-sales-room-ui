@@ -9,3 +9,6 @@ body>header.purchase-header .company-picker select{height:32px;min-width:240px;m
 body>header.purchase-header .session{margin-left:0;font:400 11px/1.3 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif;white-space:nowrap}
 body>header.purchase-header #refresh{font:500 11px/1.3 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif}
 @media(max-width:800px){body>header.purchase-header{padding:0 12px;gap:10px;flex-wrap:wrap;height:auto;min-height:49px}body>header.purchase-header .master-brand{font-size:16px}body>header.purchase-header .dept{font-size:12px;padding-left:10px}body>header.purchase-header .company-picker select{min-width:190px;max-width:220px}body>header.purchase-header .session{font-size:10px}}
+
+/* Keep existing status nodes and stock handlers available without repeating them in navigation. */
+body>nav[aria-label='Purchase navigation'] :is(#workspaceCompany,.demo,.stock-entry){display:none}
