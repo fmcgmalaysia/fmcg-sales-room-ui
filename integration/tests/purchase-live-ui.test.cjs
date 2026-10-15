@@ -72,7 +72,7 @@ test('stock-only supplier receipts cannot satisfy another supplier customer shor
 
 test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});
- h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/<th>Customer<\/th>/);assert.match(html,/customer-short[^>]*>ALPHA/);assert.match(html,/customer-short[^>]*>BETA/);assert.doesNotMatch(html,/data-drag=/);
+ h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/<th>Customer<\/th>/);assert.match(html,/customer-short[^>]*>ALPHA/);assert.match(html,/customer-short[^>]*>BETA/);assert.match(html,/data-drag="TASK"/);assert.match(html,/data-drag="OTHER"/);
  h.change({dataset:{select:'TASK'},checked:true});h.change({dataset:{select:'OTHER'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/1 Items · 2 Customers · 20 CTN/);assert.equal(h.messages.length,1);
  h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
 });
@@ -547,8 +547,36 @@ test('pre-upgrade row-order cache retains customer scope after navigating to ano
 
 test('Active move entry immediately exposes native drag handles for a sole customer without submitting',()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'active'});const before=h.messages.length;
- assert.doesNotMatch(h.node('#app').innerHTML,/data-drag=/);h.click({activeMove:'true'});
+ assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);h.click({activeMove:'true'});
  assert.match(h.node('#app').innerHTML,/draggable="true" title="Drag to move · 拖动排列" data-drag="TASK"/);
  assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);assert.equal(h.messages.length,before);
  assert.match(h.node('#liveStatus').textContent,/Save/);
+});
+
+
+test('All Customers keeps native handles across navigation and drags a complete group with a customer-scoped Save',()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='V1';w.customers.push({id:'D',name:'SECOND CUSTOMER'});
+ w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',editVersion:'VD'},{...w.tasks[0],id:'TASK2',editVersion:'V2'},{...w.tasks[0],id:'SOURCE2',procurementSource:true,customerDemandTaskId:'TASK2',editVersion:'VS'});
+ h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK2"/);assert.match(html,/data-drag="OTHER"/);assert.doesNotMatch(html,/data-drag="SOURCE2"/);
+ h.click({view:'dashboard'});h.click({view:'active'});assert.match(h.node('#app').innerHTML,/data-drag="TASK2"/);
+ h.change({id:'activeCustomer',value:'C',dataset:{}});h.change({id:'activeCustomer',value:'',dataset:{}});assert.match(h.node('#app').innerHTML,/data-drag="OTHER"/);
+ const drag=()=>{h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});};
+ const before=h.messages.length;drag();html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-source-id="SOURCE2"')<html.indexOf('data-id="OTHER"'));assert.equal(h.messages.length,before);
+ h.click({view:'dashboard'});h.click({view:'active'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/data-drag="TASK2"/);
+ h.click({activeCancel:'true'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="TASK2"'));
+ drag();h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.customerId,'C');assert.deepEqual(Array.from(save.input.taskIds),['TASK2','SOURCE2','TASK']);assert.deepEqual(Object.keys(save.input.versions).sort(),['SOURCE2','TASK','TASK2']);assert.equal(save.input.versions.OTHER,undefined);
+});
+
+test('All Customers rejects cross-customer drop and protects an existing customer sort draft',()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'TASK2'},{...w.tasks[0],id:'OTHER',customerId:'D'});h.reply(w);h.click({view:'active'});const before=h.messages.length;
+ const start=id=>h.event('dragstart',{closest:()=>({dataset:{drag:id},closest:()=>null})},{dataTransfer:{setData(){}}});
+ start('TASK');h.event('drop',{closest:()=>({dataset:{id:'OTHER'}})},{preventDefault(){}});assert.match(h.node('#liveStatus').textContent,/同一客户/);h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
+ start('TASK2');h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});
+ let prevented=false;h.event('dragstart',{closest:()=>({dataset:{drag:'OTHER'},closest:()=>null})},{preventDefault(){prevented=true;},dataTransfer:{setData(){throw Error('must not start another customer');}}});assert.equal(prevented,true);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.at(-1).input.customerId,'C');assert.deepEqual(Array.from(h.messages.at(-1).input.taskIds),['TASK2','TASK']);
+});
+
+test('Clicking a persistent handle in All Customers opens the original destination dialog for its customer',()=>{
+ const h=harness(),w=workspace();w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});h.reply(w);h.click({view:'active'});const before=h.messages.length;
+ h.click({drag:'TASK2'});assert.match(h.node('#dialogContent').innerHTML,/Move Row 移动行/);assert.match(h.node('#dialogContent').innerHTML,/Before Row 001 前面/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<option value="OTHER">/);assert.equal(h.messages.length,before);
 });
