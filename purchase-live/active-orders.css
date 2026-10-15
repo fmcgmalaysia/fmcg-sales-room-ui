@@ -30,10 +30,8 @@
 #app .active-order-table :is(th,td){padding-left:8px;padding-right:8px}
 #app .active-order-table #taskRows :is(.supplier-cell,.net-cost-cell){padding-left:8px;padding-right:8px}
 #app .active-order-table #taskRows .source-row>td.product-stack{border-left:0}
-#app .active-order-table .ao-source-toggle{display:flex;align-items:center;gap:3px;margin-top:3px;padding:0;border:0;background:transparent;color:#3766a2;font-size:9px;font-weight:500;line-height:14px}
-#app .active-order-table .ao-source-toggle svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#app .active-order-table .ao-source-toggle[aria-expanded=false] svg{transform:rotate(-90deg)}
-#app .active-order-table .ao-source-toggle:is(:hover,:focus-visible){color:#244d82}
+#app .active-order-table .ao-child-marker{display:inline-flex;vertical-align:middle;margin-left:6px;color:#7891a5;cursor:default}
+#app .active-order-table .ao-child-marker svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table #clearSelection{padding:3px 4px}
 #app .active-order-table .po-reference{white-space:nowrap;overflow-wrap:normal}
 #app .active-order-table td{color:#203047}
@@ -52,7 +50,7 @@
 #app .active-order-table .gp{white-space:nowrap}
 #app .active-order-table :is(th,td):is(:nth-child(8),:nth-child(10),:nth-child(11),:nth-child(12)){text-align:right!important}
 #app .active-order-table :is(th,td):nth-child(7){text-align:left!important}
-#app .active-order-table :is(th,td):nth-child(9){text-align:center!important}
+#app .active-order-table :is(th,td):is(:nth-child(6),:nth-child(9)){text-align:center!important}
 #app .active-order-table td:nth-child(11) .po-reference{text-align:right}
 #app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
 #app .active-order-table #taskRows .barcode>.gp-badge{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;font-size:9px;font-weight:600;line-height:14px;white-space:nowrap}

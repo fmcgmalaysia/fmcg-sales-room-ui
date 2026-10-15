@@ -85,7 +85,7 @@ test('Active priorities count saved sources rather than demand remainder and ope
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.match(html,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
  assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
- assert.equal((html.match(/<th>/g)||[]).length,12);assert.equal(h.node('#taskSignals').hidden,true);
+ assert.equal((html.match(/<th>/g)||[]).length,11);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="B"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
  h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="B" data-progress-index="3"/);assert.equal(h.messages.length,before);
  h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
@@ -107,32 +107,31 @@ test('Active actual receipts never open supplier costing while receipt exception
  h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
 });
 
-test('Active large stage numbers open source facts and preserve the original receiving detail without writes',()=>{
+test('Active removes progress chrome and ignores the hidden room stage filter without changing room behavior',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:90,revision:'P'},warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true}});
- h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
- for(let i=0;i<7;i++)assert.match(html,new RegExp('data-active-progress="'+i+'"[^>]*><b>'+(i+1)+'</b>'));
- h.click({activeProgress:'3'});let body=h.node('#dialogContent').innerHTML;assert.match(body,/4 · Receiving/);assert.match(body,/Issue \/ 待解决/);assert.match(body,/data-progress-task="TASK" data-progress-index="3" data-progress-is-source="true"/);
- h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});body=h.node('#dialogContent').innerHTML;assert.match(body,/current-progress problem/);assert.match(body,/SUPPLIER · Receiving/);assert.equal(h.messages.length,before);
- h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-progress-overview/);
+ h.reply(w);h.click({customer:'C'});h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/No matching tasks/);
+ h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
+ assert.doesNotMatch(html,/ao-progress-overview|data-active-progress|row-progress|progress-node|<th>Progress<\/th>/);assert.match(html,/<select id="stageFilter" hidden>/);assert.match(html,/data-id="TASK"/);
+ h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/row-progress/);assert.equal(h.messages.length,before);
 });
 
 test('Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',name:'ITEM $& & $1',ord:100,gp:.12,procurement:{totalCtn:60,revision:'P'},warehouse:{accepted:60,hasPhysicalReceipt:true}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:40,revision:'B'},warehouse:{accepted:30,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'ISSUE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
  w.tasks.push({...w.tasks[0],id:'LOW',gp:.03,ord:60});h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,rows=html.match(/<tr (?:data-id|data-source-id)=[\s\S]*?<\/tr>/g);
- assert.match(html,/<th>Order Qty<\/th><th>Supplier<\/th><th>Net Cost<\/th><th>Rcv Qty<\/th><th>Line Cost<\/th><th>Our P.O.<\/th><th>Progress<\/th>/);assert.doesNotMatch(html,/<th>GP<\/th>|risk-deal/);assert.ok(html.includes('ITEM $&amp; &amp; $1'));
+ assert.match(html,/<th>Order Qty<\/th><th>Supplier<\/th><th>Net Cost<\/th><th>Rcv Qty<\/th><th>Line Cost<\/th><th>Our P.O.<\/th>/);assert.doesNotMatch(html,/<th>GP<\/th>|risk-deal/);assert.ok(html.includes('ITEM $&amp; &amp; $1'));
  assert.match(rows[0],/class="barcode">00123<span class="gp gp-badge gp-good"[^>]*>12%<\/span>/);assert.match(html,/class="gp gp-badge gp-low"[^>]*><svg[^]*?<\/svg>3%<\/span>/);
- for(const row of rows){const cells=row.match(/<td\b[\s\S]*?<\/td>/g);assert.equal(cells.length,12);assert.match(cells[5],/order-quantity/);assert.match(cells[6],/supplier-cell/);assert.match(cells[7],/net-cost-cell/);assert.match(cells[8],/received-quantity/);assert.match(cells[11],/row-progress|<td><\/td>/);}
- h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/<td colspan="12" class="empty">/);h.change({id:'stageFilter',value:'',dataset:{}}); h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/<th>GP<\/th>/);assert.doesNotMatch(h.node('#app').innerHTML,/gp-badge/);
+ for(const row of rows){const cells=row.match(/<td\b[\s\S]*?<\/td>/g);assert.equal(cells.length,11);assert.match(cells[5],/order-quantity/);assert.match(cells[6],/supplier-cell/);assert.match(cells[7],/net-cost-cell/);assert.match(cells[8],/received-quantity/);assert.doesNotMatch(row,/row-progress|progress-node/);}
+ h.change({id:'supplierFilter',value:'MISSING',dataset:{}});assert.match(h.node('#app').innerHTML,/<td colspan="11" class="empty">/);h.change({id:'supplierFilter',value:'',dataset:{}}); h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/<th>GP<\/th>/);assert.doesNotMatch(h.node('#app').innerHTML,/gp-badge/);
 });
 
-test('Active source disclosure defaults open, folds one group only and retains source selection without writes',()=>{
+test('Active child rows are always visible with a noninteractive branch marker in each customer cell',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:30,revision:'B'}});w.tasks.push({...w.tasks[0],id:'OTHER'});w.tasks.push({...w.tasks[1],id:'OTHER-SOURCE',customerDemandTaskId:'OTHER'});
- h.reply(w);h.click({view:'active'});const before=h.messages.length;let html=h.node('#app').innerHTML;assert.match(html,/data-toggle-sources="TASK" aria-expanded="true"/);assert.match(html,/data-source-id="SOURCE"/);
- h.change({dataset:{select:'SOURCE',selectKind:'source'},checked:true});h.click({toggleSources:'TASK'});html=h.node('#app').innerHTML;assert.match(html,/data-toggle-sources="TASK" aria-expanded="false"/);assert.doesNotMatch(html,/data-source-id="SOURCE"|data-waiting-for="TASK"/);assert.match(html,/data-source-id="OTHER-SOURCE"/);assert.match(html,/1 selected/);
- h.click({toggleSources:'TASK'});html=h.node('#app').innerHTML;assert.match(html,/data-source-id="SOURCE"[^]*?data-select-kind="source"[^>]*checked/);assert.match(html,/data-waiting-for="TASK"/);assert.equal(h.messages.length,before);
- h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-source-toggle/);
+ h.reply(w);h.click({view:'active'});const before=h.messages.length;let html=h.node('#app').innerHTML;assert.doesNotMatch(html,/ao-source-toggle|data-toggle-sources|aria-expanded/);
+ const rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);for(const row of rows.filter(row=>/data-source-id|data-waiting-for/.test(row))){assert.match(row,/<span class="ao-child-marker" role="img"/);const cell=row.match(/<td\b[\s\S]*?<\/td>/g)[3];assert.match(cell,/ao-child-marker/);assert.doesNotMatch(cell,/<button/);}
+ h.change({dataset:{select:'SOURCE',selectKind:'source'},checked:true});html=h.node('#app').innerHTML;assert.match(html,/data-source-id="SOURCE"[^]*?data-select-kind="source"[^>]*checked/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/data-source-id="OTHER-SOURCE"/);assert.match(html,/1 selected/);assert.equal(h.messages.length,before);
+ h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/ao-child-marker/);
 });
 
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
