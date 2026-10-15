@@ -4,6 +4,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(process.env.PURCHASE_UI_BASELINE || path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
+test('PO submit dialog sends one complete saved version with optional urgency and no accidental term edit',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const request=h.messages.at(-1);
+ const row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',amount:1000,taskIds:['TASK','OTHER'],state:'ACTIVE',documents:[],history:[],documentStatus:'MISSING',termDays:30,procurementHandoff:{stage:'LEGACY',submitted:false}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
+ assert.match(h.node('#app').innerHTML,/提交财务/);h.click({poHandoff:'PO',handoffAction:'SUBMIT_FINANCE'});
+ assert.match(h.node('#dialogContent').innerHTML,/2 行/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poTermDays"/);
+ h.node('#poChangeReason').value='Confirmed both sources';h.node('#poUrgent').checked=true;h.click({controlId:'savePurchaseOrderMeta'});
+ const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.action,'SUBMIT_FINANCE');assert.equal(sent.input.version,'PV');assert.equal(sent.input.urgent,true);assert.equal(sent.input.termDays,undefined);
+});
 function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
@@ -32,6 +41,15 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+
+test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
+ const h=harness(),w=workspace();
+ Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});
+ w.tasks.push({...w.tasks[0],id:'STOCK',customerDemandTaskId:'TASK',procurementSource:true,ord:0,procurement:{totalCtn:50,customerCtn:0,expectedExtra:50},warehouse:{accepted:50,hasPhysicalReceipt:true}});
+ h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
+ assert.match(html,/received-quantity[\s\S]*?>60<\/button>/);
+ assert.match(html,/Stock rcv \/ 库存实收 \+50/);
+});
 
 test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});

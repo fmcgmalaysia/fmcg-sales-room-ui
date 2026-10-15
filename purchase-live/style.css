@@ -223,7 +223,7 @@ dialog.po-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;font:14px va
 .po-payment-proof{width:48px;height:20px;padding:0;border:0;border-radius:12px;background:#e3f0e9;color:#28744d;font-weight:700}
 
 /* Supplier allocation only: compact desktop rows; other dialogs and departments keep their baseline. */
-dialog.task-dialog.supplier-allocation-dialog{width:min(940px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
+dialog.task-dialog.supplier-allocation-dialog{width:min(1120px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
 .supplier-allocation-dialog .dialoghead{padding:9px 12px;background:#193246;color:white}
 .supplier-allocation-dialog .dialoghead h2{font:700 15px/20px Inter,'Segoe UI',Arial,sans-serif;color:white;margin:0 0 2px}
 .supplier-allocation-dialog .dialoghead .muted,.supplier-allocation-dialog .dialoghead button{color:white;font-size:11px}
@@ -303,3 +303,12 @@ dialog.task-dialog.supplier-allocation-dialog .dialogbody{overflow-x:hidden;over
 .supplier-allocation-dialog .allocation-detail-fields label{display:flex;align-items:center;gap:5px}
 .supplier-allocation-dialog .allocation-detail-fields input{width:72px;min-width:0;height:26px;padding:3px 5px;text-align:right;font-size:11px}
 .supplier-allocation-dialog #allocationStockConfirmation{font-size:11px}
+/* Approved v3: independent method column, compact source PO, secondary amount basis. */
+dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-dialog.supplier-allocation-dialog .allocation-table td{width:auto}
+.supplier-allocation-dialog .allocation-table th:nth-child(3),.supplier-allocation-dialog .allocation-table td:nth-child(3),.supplier-allocation-dialog .allocation-table th:nth-child(11),.supplier-allocation-dialog .allocation-table td:nth-child(11),.supplier-allocation-dialog .allocation-table th:last-child,.supplier-allocation-dialog .allocation-table td:last-child{text-align:center}
+.supplier-allocation-dialog .allocation-table th:nth-child(10),.supplier-allocation-dialog .allocation-table td:nth-child(10){text-align:right}
+.allocation-more{position:relative;text-align:left}.allocation-more summary{cursor:pointer;list-style:none;text-align:center;font-size:17px;color:#536d84}.allocation-more>label{position:absolute;right:0;top:24px;z-index:2;width:145px;background:white;border:1px solid #b7cadf;padding:8px;border-radius:4px;box-shadow:0 3px 10px #20304720}.allocation-more select{margin-top:5px}
+.allocation-po{display:block;border:0;background:none;color:#1673ad;font:11px Inter,'Segoe UI',Arial,sans-serif;padding:3px 0 0;text-align:left;cursor:pointer}.allocation-po-time{display:block;font-size:9px;color:#63758a;text-align:left;margin-top:2px}.allocation-waiting-label{color:#ad7415;font-size:10px}
+.supplier-allocation-dialog .allocation-table [data-allocation-amount]{color:#203047}
+.allocation-confirmations>label[hidden]{display:none}
+.allocation-product-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.allocation-product-title strong{font-size:13px;margin:0}.allocation-product>div:last-child{display:flex;align-items:center;gap:5px}.allocation-product>div:last-child strong{font-size:15px}

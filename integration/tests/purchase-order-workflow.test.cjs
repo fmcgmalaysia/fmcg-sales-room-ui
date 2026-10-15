@@ -1,5 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
 const {projectPurchaseOrders,createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
+const {createAccountSettlementOperations}=load('accountSettlement.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
 test('one supplier PO includes multiple customers without combining their task identities',()=>{
  const f=fixture();f.workspace.customers.push({id:'B',name:'SECOND CUSTOMER',shortName:'SECOND'});f.workspace.tasks[1].customerId='B';
@@ -58,4 +59,38 @@ test('corrupt PDF is rejected before storage or Drive access',async()=>{
  let calls=0;const f=fixture(async()=>{calls++;}),row=(await f.operations.list('NCT',f.staff))[0];
  await assert.rejects(f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'DOCUMENT',base64:Buffer.from('not a PDF').toString('base64')}}),/valid PDF/);
  assert.equal(calls,0);assert.equal(f.records.size,0);
+});
+
+test('submission lost receipt retries once; Finance ownership defeats a stale Purchase withdrawal',async()=>{
+ const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0];
+ const input={id:row.id,version:row.version,action:'SUBMIT_FINANCE',urgent:true,reason:'All PO sources confirmed'};
+ f.fail();await assert.rejects(f.operations.save({...f.base,input}),/response lost/);await f.operations.save({...f.base,input});
+ let saved=(await f.operations.list('NCT',f.staff))[0];
+ assert.equal(saved.procurementHandoff.stage,'SUBMITTED');assert.equal(saved.chasePayment,true);assert.equal(saved.history.filter(e=>e.action==='PROCUREMENT_SUBMIT_FINANCE').length,1);
+ const staleWithdraw={id:row.id,version:saved.version,action:'WITHDRAW_FINANCE',reason:'Revised supplier offer'};
+ const account=createAccountSettlementOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},listOrders:f.operations.list});
+ await account.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:{id:row.id,version:saved.version,action:'TAKE_OWNERSHIP',reason:'Finance received PO'}});
+ await assert.rejects(f.operations.save({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:staleWithdraw}),/changed/);
+ saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(saved.procurementHandoff.stage,'OWNED');
+ await assert.rejects(f.operations.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:{...staleWithdraw,version:saved.version}}),/before Finance/);
+ await assert.rejects(f.operations.save({...f.base,requestId:'55555555-5555-4555-8555-555555555555',input:{id:row.id,version:saved.version,action:'TERM',termDays:90,reason:'Change terms'}}),/locked payment terms/);
+});
+
+test('a saved FOC quantity changing between preparation and application prevents stale PO submission',async()=>{
+ const f=fixture(),insert=f.store.insert;let changed=false;
+ f.store.insert=async(collection,record)=>{const result=await insert(collection,record);if(!changed&&record.action==='PURCHASE_OPERATION_PREPARED'){changed=true;f.workspace.tasks[0].procurement.totalCtn=110;}return result;};
+ const row=(await f.operations.list('NCT',f.staff))[0];
+ await assert.rejects(f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'SUBMIT_FINANCE',reason:'Confirm PO'}}),/changed while saving/);
+ assert.equal([...f.records.keys()].some(key=>key.startsWith('PurchaseOrders/')),false);
+});
+
+test('Finance cannot take ownership of FOC content changed after its save was prepared',async()=>{
+ const f=fixture();let row=(await f.operations.list('NCT',f.staff))[0];
+ await f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'SUBMIT_FINANCE',reason:'Confirm PO'}});
+ row=(await f.operations.list('NCT',f.staff))[0];
+ const insert=f.store.insert;let changed=false;
+ f.store.insert=async(collection,record)=>{const result=await insert(collection,record);if(!changed&&record.action==='PURCHASE_OPERATION_PREPARED'){changed=true;f.workspace.tasks[0].procurement.totalCtn=110;}return result;};
+ const account=createAccountSettlementOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},listOrders:f.operations.list});
+ await assert.rejects(account.save({...f.base,requestId:'66666666-6666-4666-8666-666666666666',input:{id:row.id,version:row.version,action:'TAKE_OWNERSHIP',reason:'Check all sources'}}),/changed while saving/);
+ assert.equal((await f.operations.list('NCT',f.staff))[0].procurementHandoff.stage,'SUBMITTED');
 });

@@ -65,5 +65,6 @@ dialog.sources-plan-dialog .source-table .btn{padding:4px 6px;margin:2px 0}
 .draft-price-row>b,.draft-price-row>small{grid-column:1 / -1}
 .draft-price-row label{display:flex;flex-direction:column;gap:4px}
 .draft-price-row input{width:100%;padding:7px;border:1px solid #b8cbdc;border-radius:3px;text-align:right}
+.source-costing,.po-entered-time{display:block;font-size:10px;color:#63758a;white-space:nowrap;margin-top:2px}
 @media(max-width:800px){dialog.sources-plan-dialog .dialogbody{display:block}dialog.sources-plan-dialog .additional-plan{margin-top:12px}}
 @media(max-width:650px){dialog.purchase-plan-dialog .supplier-plan{display:block}.plan-calculator{margin:12px 0}.source-table{min-width:650px}.dialogbody{overflow-x:auto}}

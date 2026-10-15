@@ -3,7 +3,7 @@ import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { preparePurchaseClaim, purchaseClaimBlockers } from 'backend/purchaseClaimEvidence.js';
-import { paymentReviewVersion } from 'backend/paymentHandoff.js';
+import { paymentReviewVersion, procurementSubmissionVersion, projectProcurementHandoff, transitionProcurementHandoff } from 'backend/paymentHandoff.js';
 const text=value=>String(value??'').trim();
 const cents=value=>Number.isSafeInteger(value)&&value>=0&&value<=999999999999;
 const currentDocs=row=>row.documents.filter(doc=>doc.linked===true&&!doc.superseded&&doc.fileId);
@@ -28,6 +28,7 @@ export function projectAccountSettlement(row,details){
   const supplierCreditCents=creditRecognized?credit.cents-creditUsedCents:0;
   const receiptResolved=row.warehouse?.complete&&!row.warehouse.issues||Array.isArray(row.receiptLines)&&row.receiptLines.length>0&&row.receiptLines.every(line=>line.hasReceipt&&(line.accepted===line.planned&&!line.issue||['REFUND','CREDIT'].includes(line.decision?.supplierDecision)&&line.decision?.customerDecision!=='PENDING'));
   const blockers=[];
+  if(['PROCESSING','UNKNOWN'].includes(details.procurementHandoff?.stage))blockers.push('Resolve bank payment processing / 核对未决银行付款');
   blockers.push(...purchaseClaimBlockers(row,finance));
   if(row.stockIssues?.length)blockers.push('Resolve quarantined stock / 隔离库存需完成损耗或供应商索赔核对');
   if(!invoices.length)blockers.push('Final Invoice required / 缺最终发票');
@@ -53,7 +54,7 @@ export function projectAccountSettlement(row,details){
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
     let uploadBase64=null,journalInput=input;
     if(input.action==='DOCUMENT_UPLOAD'){
       if(!documentService||!['DO','PAYMENT'].includes(input.type))throw Error('Select a supplier DO or payment proof.');
@@ -69,8 +70,11 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       if(!reason||reason.length>2000)throw Error('Enter a reason or reconciliation note.');
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
       const identity={at,by:staff.staffName,byStaffId:staff.staffId};
-      let upload=null,document=null,handoff=null;
-      if(input.action==='DOCUMENT_UPLOAD'){
+      let upload=null,document=null,handoff=null,procurement=null;
+      if(['REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input.action)){
+        procurement=transitionProcurementHandoff(row,details,input,identity,'ACCOUNT');
+        audit.changes={before:details.procurementHandoff||null,after:procurement};
+      }else if(input.action==='DOCUMENT_UPLOAD'){
         if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date||'')||!Number.isFinite(Date.parse(input.date))||new Date(input.date).toISOString().slice(0,10)!==input.date)throw Error('Enter a valid document date.');
         const number=text(input.number);if(!number||number.length>120)throw Error('Enter the document or payment reference.');
         if(input.type==='PAYMENT'&&(!cents(input.cents)||input.cents===0))throw Error('Enter a valid paid amount.');
@@ -86,7 +90,10 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         const allocated=await documentService({action:'ALLOCATE',company});
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,type:input.type,name,sha256:journalInput.sha256,...(input.type==='PAYMENT'?{department:'ACCOUNT'}:{})};
         document={fileId:upload.fileId,type:input.type,name,sha256:upload.sha256,size:journalInput.size,number,date:input.date,linked:true,uploadedAt:at,uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
-        if(input.type==='PAYMENT')finance.payments=[...(finance.payments||[]),{id:audit.id,cents:input.cents,direction:input.direction||'PAYMENT',reference:number,date:input.date,confirmed:true,proof:document,...identity}];
+        if(input.type==='PAYMENT'){
+          const state=projectProcurementHandoff(row,details),instruction=details.procurementHandoff?{version:details.procurementHandoff.submission?.version||null,currentVersion:procurementSubmissionVersion(row),stage:state.stage,requiresReview:state.stale||!['PROCESSING','UNKNOWN'].includes(state.stage)}:null;
+          finance.payments=[...(finance.payments||[]),{id:audit.id,cents:input.cents,direction:input.direction||'PAYMENT',reference:number,date:input.date,confirmed:true,proof:document,...(instruction&&input.direction!=='REFUND'?{procurementInstruction:instruction}:{}),...identity}];
+        }
         audit.changes={type:input.type,fileId:upload.fileId,number,date:input.date,...(input.type==='PAYMENT'?{cents:input.cents,direction:input.direction||'PAYMENT'}:{})};
       }else if(input.action==='AMOUNTS'){
         const docs=currentDocs(row).filter(doc=>['INV','CN'].includes(doc.type));
@@ -95,9 +102,10 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(docs.filter(doc=>doc.type==='CN').reduce((n,doc)=>{const entry=finance.amounts.find(entry=>entry.fileId===doc.fileId);return n+(entry.treatment==='ALREADY_INCLUDED'?0:entry.cents);},0)>docs.filter(doc=>doc.type==='INV').reduce((n,doc)=>n+finance.amounts.find(entry=>entry.fileId===doc.fileId).cents,0))throw Error('CN total exceeds the invoice total.');
         audit.changes={before:details.finance?.amounts||[],after:finance.amounts};
       }else if(input.action==='PAYMENT_REVIEW'){
+        if(details.procurementHandoff){const state=projectProcurementHandoff(row,details);if(state.stage!=='OWNED'||state.stale)throw Error('Procurement handoff requires a current Finance-owned submission before payment review.');}
         if(!['RECEIVED','REVIEWING'].includes(input.stage)||input.paperReceived!==true||!cents(input.requestedCents)||input.requestedCents===0)throw Error('Confirm paper documents received, review stage and requested MYR amount.');
         if(!currentDocs(row).some(doc=>['PI','SO','INV'].includes(doc.type)))throw Error('Supplier PI / SO or Final Invoice is required before review.');
-        handoff={...(details.paymentHandoff||{}),review:{stage:input.stage,requestedCents:input.requestedCents,paperReceived:true,version:paymentReviewVersion(row),reason,...identity}};
+        handoff={...(details.paymentHandoff||{}),review:{stage:input.stage,requestedCents:input.requestedCents,paidAtReviewCents:row.finance?.paidCents||0,creditAtReviewCents:row.finance?.creditAppliedCents||0,paperReceived:true,version:paymentReviewVersion(row),...(details.procurementHandoff?{procurementVersion:details.procurementHandoff.submission.version}:{}),reason,...identity}};
         audit.changes={before:details.paymentHandoff?.review||null,after:handoff.review};
       }else if(input.action==='SHORTAGE_CLAIM'){
         const claim=preparePurchaseClaim(row,input,identity,reason);
@@ -118,13 +126,13 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(input.enabled===state.invoiceChecked)throw Error('Financial check has not changed.');
         finance.check={enabled:input.enabled,reviewVersion:state.finance.reviewVersion,...identity,reason};audit.changes={before:state.invoiceChecked,after:input.enabled,reviewVersion:state.finance.reviewVersion};
       }
-      if(!['CHECK','PAYMENT_REVIEW'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
-      return {expected:record?operationId(record):null,expectedVersion:row.version,record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload};
+      if(!procurement&&!['CHECK','PAYMENT_REVIEW'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
+      return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload};
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.audit.id)){
         const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);
-        if((current?operationId(current):null)!==plan.expected||row?.version!==plan.expectedVersion)throw Error('Purchase order changed while saving.');
+        if((current?operationId(current):null)!==plan.expected||row?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(row)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');
         if(plan.upload){
           const receipt=await documentService({...plan.upload,base64:uploadBase64});
           if(receipt?.ok!==true||receipt.fileId!==plan.upload.fileId||receipt.sha256!==plan.upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.upload.name)throw Error('Document upload receipt mismatch.');

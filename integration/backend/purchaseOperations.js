@@ -13,6 +13,18 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
     return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff})};
   }
+  async function requireEditablePurchaseChanges(company,updates){
+    const business=updates.filter(change=>change.planRevision!==undefined||Object.keys(change.patch).some(key=>key!=='rowPosition'));
+    if(!business.length)return;
+    const records=(await store.all('PurchaseOrders')).filter(record=>record.company===company);
+    const destinationNumbers=new Set(business.map(change=>change.patch.ourPoNumber).filter(Boolean));
+    const tasks=destinationNumbers.size?await store.all(PURCHASE_COLLECTIONS[company].tasks):[];
+    const ids=new Set([...business.map(change=>change.id),...tasks.filter(task=>destinationNumbers.has(task.ourPoNumber)).map(task=>task.title)]);
+    for(const record of records.filter(record=>record.details?.taskIds?.some(id=>ids.has(id)))){
+      const handoff=record.details.procurementHandoff;
+      if(handoff&&(handoff.schema!==1||!['WITHDRAWN','RETURNED'].includes(handoff.stage)))throw Error('Procurement handoff has locked this purchase order. Withdraw or request Finance return before editing.');
+    }
+  }
   return async ({company,requestId,staff,operation,input})=>{
     if(operation==='QTY'&&staff?.role!=='SUPER ADMIN')throw Error('Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。');
     if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST','PLAN'].includes(operation))throw Error('Unsupported purchase operation.');
@@ -148,12 +160,14 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           extraQty:input.extraQty,reason,stockDestination:'AVATA',allocationPending:true});
       }
       for(const change of updates.filter(change=>change.sharesRevision!==undefined)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
+      await requireEditablePurchaseChanges(company,updates);
       return {operation,updates,events,time:now().toISOString()};
     },apply:async plan=>{
       const held=[];
       const started=now().getTime();
       const stillOwned=async taskId=>{const id=operationId(company,taskId,'COST_LOCK'),lock=await store.read(names.activity,id);if(started+90000<=now().getTime()||lock?.details?.requestId!==requestId||lock.details.actorMemberId!==staff.memberId)throw Error('Save time limit reached. Refresh and retry this same save.');};
       try {
+        await requireEditablePurchaseChanges(company,plan.updates);
         for(const change of [...plan.updates].sort((a,b)=>a.id.localeCompare(b.id))) {
           const lockId=operationId(company,change.patch.title||change.id,'COST_LOCK');
           if(await store.read(names.activity,lockId))throw Error('A task is busy. Retry this same save after refreshing.');
