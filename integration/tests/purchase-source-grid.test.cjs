@@ -11,8 +11,8 @@ test('multiple sources always show both children; disabled mother does not consu
   const f=fixture();f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);
   assert.match(rows[0],/data-select-kind="demand" disabled/);assert.doesNotMatch(rows[0],/ checked/);assert.match(rows[1],/data-select-kind="source"[^>]*checked/);
   assert.match(rows[1],/class="row-number"><input[^>]*data-select-kind="source"/);assert.match(rows[1],/class="received-age">original-intake<\/td>/);assert.doesNotMatch(rows[1],/class="supplier-cell">[\s\S]*?<input/);
-  assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,7);assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
-  assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?13:12)));
+  assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,7);if(active){assert.match(rows[0],/class="barcode">BAR<span class="gp gp-badge gp-good"[^>]*>20%/);assert.doesNotMatch(rows[1],/gp-badge/);}else{assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);}assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
+  assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===12));
  }
 });
 test('two saved supplier heads plus one remainder head do not invent a third source, amount or PO',()=>{
@@ -20,7 +20,7 @@ test('two saved supplier heads plus one remainder head do not invent a third sou
   const f=fixture();f.root.ord=120;f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,4);
   assert.equal((rows[0].match(/supplier-head complete/g)||[]).length,2);assert.equal((rows[0].match(/supplier-head pending/g)||[]).length,1);assert.doesNotMatch(rows[0],/2 Suppliers|SUPPLIER A|SUPPLIER B/);
   assert.match(rows[1],/SUPPLIER A/);assert.match(rows[2],/SUPPLIER B/);assert.match(rows[3],/data-waiting-for="R"/);assert.match(rows[3],/class="order-quantity">20<\/td>/);assert.match(rows[3],/data-plan-task="R"/);assert.doesNotMatch(rows[3],/data-select|data-source-id|data-po-task|data-source-po-task|1,000|600/);assert.equal(f.args.tasks.length,2);
-  assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?13:12)));
+  assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===12));
  }
 });
 test('unconfirmed and unsaved supplier choices stay orange; PO color follows saved association only',()=>{
@@ -48,7 +48,7 @@ test('one supplier has no duplicate child and keeps the normal checkbox and PO e
 
 test('Active GP uses a red capsule only below six percent and numbered source stages preserve their original actions',()=>{
  const f=fixture();f.args.active=true;
- for(const [gp,low]of [[.059,true],[.06,false],[.061,false],[0,true],[-.1,true],[NaN,false]]){f.root.gp=gp;const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows[0].includes('class="gp gp-low"'),low);assert.doesNotMatch(rows[1],/gp-low/);assert.doesNotMatch(rows[0],/progress-node/);for(let i=0;i<7;i++)assert.match(rows[1],new RegExp('data-progress-index="'+i+'"[^>]*><span aria-hidden="true">'+(i+1)+'</span></button>'));}
+ for(const [gp,low]of [[.059,true],[.06,false],[.061,false],[0,true],[-.1,true],[NaN,false]]){f.root.gp=gp;const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows[0].includes('class="gp gp-badge gp-low"'),low);assert.doesNotMatch(rows[1],/gp-low/);assert.doesNotMatch(rows[0],/progress-node/);for(let i=0;i<7;i++)assert.match(rows[1],new RegExp('data-progress-index="'+i+'"[^>]*><span aria-hidden="true">'+(i+1)+'</span></button>'));}
  f.root.gp=.059;f.args.drafts.set('R',{changes:{lpCtn:12}});assert.doesNotMatch(f.render(),/gp-low/);
  f.args.active=false;f.args.drafts.clear();f.root.gp=.01;const room=f.render();assert.doesNotMatch(room,/gp-low|aria-hidden="true">[1-7]<\/span>/);
 });
