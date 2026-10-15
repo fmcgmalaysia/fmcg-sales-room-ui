@@ -59,5 +59,73 @@
     "activeOrders": "13 headers, original 11px product font, no Dashboard root",
     "clicks": "existing PO view, source PO entry and source Receiving progress; no submissions",
     "wixSha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+  },
+  "salesAlignment": {
+    "date": "2026-10-15",
+    "scope": "Dashboard only; Sales list typography and English primary hierarchy",
+    "recovery": "1270843",
+    "production": "70a0b59",
+    "fonts": {
+      "body": "Inter (same official font files as Sales, isolated Dashboard family alias)",
+      "heading": [
+        14,
+        700
+      ],
+      "englishLabels": [
+        11,
+        600
+      ],
+      "tableHeaders": [
+        11,
+        700
+      ],
+      "product": [
+        11,
+        700
+      ],
+      "chinese": [
+        10,
+        400
+      ],
+      "metadata": [
+        10,
+        400
+      ]
+    },
+    "colors": {
+      "text": "#203047",
+      "product": "#173557",
+      "chinese": "#62758a",
+      "header": "#dce7f1",
+      "blue": "#3766a2",
+      "green": "#087443",
+      "orange": "#ff8a00",
+      "red": "#c42b31"
+    },
+    "layout": {
+      "firstView": "Queue only; details open on explicit selection",
+      "directories": "collapsed native disclosure",
+      "width": 1496,
+      "scrollWidth": 1496
+    },
+    "protected": {
+      "purchase-live/style.css": true,
+      "purchase-live/task-grid.css": true,
+      "purchase-live/task-grid.js": true,
+      "purchase-live/supplier-allocation.js": true
+    },
+    "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=sales-aligned",
+    "chromeTab": "51425180",
+    "preservedDraftTabs": [
+      "51425148",
+      "51425176"
+    ],
+    "validation": "131 targeted tests pass; 13 Active Orders columns retained; no fixture submissions",
+    "status": {
+      "code": "local candidate",
+      "githubPages": "not deployed",
+      "wix": "unchanged",
+      "publicVerification": "candidate not published"
+    }
   }
 }

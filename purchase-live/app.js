@@ -382,8 +382,9 @@ const stages=[
     if(control.id==='viewPendingSave')return viewPendingSave();
     if(control.id==='checkPendingSave'){if(savePending)return checkSaveReceipt(savePending);return;}
     if(control.id==='retryPendingSave')return saveMessage();
-    if(savePending&&!['closeModal','refresh','saveEdits','savePrices','saveOrder'].includes(control.id)&&!['dashboardCategory','dashboardSelect','view','customer','expandTask','poTab','poHistory','poDocs','paymentProof','progressTask','poView','path','cost','stage','unavailable'].some(key=>control.dataset[key]!=null)&&!['retryPurchaseOrders','clearSelection','riskFilter'].includes(control.id)){showStatus(saveDiagnostic(savePending,'可继续浏览；新的采购操作需等原保存确认。'),true);return;}
+    if(savePending&&!['closeModal','refresh','saveEdits','savePrices','saveOrder'].includes(control.id)&&!['dashboardCategory','dashboardSelect','dashboardClose','view','customer','expandTask','poTab','poHistory','poDocs','paymentProof','progressTask','poView','path','cost','stage','unavailable'].some(key=>control.dataset[key]!=null)&&!['retryPurchaseOrders','clearSelection','riskFilter'].includes(control.id)){showStatus(saveDiagnostic(savePending,'可继续浏览；新的采购操作需等原保存确认。'),true);return;}
     if(control.dataset.dashboardCategory!==undefined){dashboardCategory=control.dataset.dashboardCategory;dashboardSelected='';return render();}
+    if(control.dataset.dashboardClose){dashboardSelected='';return render();}
     if(control.dataset.dashboardSelect){dashboardSelected=control.dataset.dashboardSelect;return render();}
     if(control.dataset.dashboardAction!==undefined){const entry=window.purchaseDashboard.model(data,poData?.orders||[]).entries[Number(control.dataset.dashboardAction)];if(entry){if(entry.action==='stock')window.masterStockExceptions?.open();else dashboardEntryAction?.(entry);}return;}
     if(control.dataset.poTab){poTab=control.dataset.poTab;return render();}
