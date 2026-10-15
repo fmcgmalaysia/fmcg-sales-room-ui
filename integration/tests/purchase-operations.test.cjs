@@ -49,6 +49,17 @@ test('submitted PO blocks price, plan and merging a new member, while row orderi
  await f.operate({...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}});assert.equal(f.task().rowPosition,2);
 });
 
+test('calculator PO revisions audit quantity without asserting supplier agreement; stronger locks still reject',async()=>{
+ const make=async()=>{const f=fixture();await f.operate({...f.base,operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'PO-AUDIT'}});return f;};
+ const input=f=>({taskId:f.id,version:taskEditVersion(f.task()),planRevision:f.workspace().tasks.find(row=>row.id===f.id).procurement.revision,totalCtn:220,reason:'Revised supplier quantity',costing:{schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:200,freeCtn:20,prices:{lpPc:6.25,lpCtn:100,disc1:0,disc2:0,disc3:0}}});
+ const f=await make(),request={...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:input(f)};
+ await f.operate(request);await f.operate(request);
+ const revision=f.workspace().tasks.find(row=>row.id===f.id),events=[...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED'&&row.details.before===250);
+ assert.equal(revision.procurement.totalCtn,220);assert.equal(revision.procurement.confirmedAt,null);
+ assert.equal(events.length,1);assert.equal(events[0].details.after,220);assert.equal(events[0].details.supplierConfirmed,false);assert.equal(events[0].initiatedByStaffName,'LAW');assert.ok(events[0].activityTime);
+ for(const lock of ['finance','receipt','invoice']){const g=await make();if(lock==='finance')g.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[g.id],procurementHandoff:{schema:1,stage:'SUBMITTED'}}});if(lock==='receipt')g.task().receivedQtyInCtn=230;if(lock==='invoice')g.rows.get('NCTOrders/O0').salesInvoiceNumber='INV-LOCK';const before=copy(g.task());await assert.rejects(g.operate({...request,input:input(g)}),/locked|received/);assert.deepEqual(g.task(),before);}
+});
+
 test('Finance freeze appearing after preparation blocks all task writes at application',async()=>{
  const f=fixture(),insert=f.store.insert,before=copy(f.task());
  f.store.insert=async(c,row)=>{const result=await insert(c,row);if(row.action==='PURCHASE_OPERATION_PREPARED')f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'OWNED'}}});return result;};
