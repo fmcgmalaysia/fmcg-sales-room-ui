@@ -94,3 +94,7 @@
 #modal .pd-supplier-alert-item .pd-bi{display:inline-flex;flex-direction:column}
 #modal .pd-supplier-alert-item .pd-bi>small{font-size:9px;color:#62758a}
 #modal .pd-alert-open{background:#c42b31;color:#fff;border:0;border-radius:4px;padding:6px 9px;white-space:nowrap;cursor:pointer}
+#app .purchase-dashboard .pd-action-button{width:82px;gap:6px;flex-shrink:0}
+#app .purchase-dashboard .pd-button-arrow{display:inline-block;transition:transform .18s ease;pointer-events:none}
+#app .purchase-dashboard .pd-action-button:is(:hover,:focus-visible) .pd-button-arrow{transform:translateX(3px)}
+@media(prefers-reduced-motion:reduce){#app .purchase-dashboard .pd-button-arrow{transition:none}}
