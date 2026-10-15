@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-independent-drafts-20261015",
+  "base": "43d0d75165534cac793eea38d6670ac51a593f72",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "objective": "Retain per-product unsubmitted supplier drafts while allowing other product allocation work",
+  "protected": [
+    "original save journal and receipt routing",
+    "no implicit saves",
+    "legacy draft restoration",
+    "company isolation",
+    "costing and inventory calculations",
+    "finance,receipt,invoice guards"
+  ],
+  "validation": {
+    "checksPassed": 110,
+    "realSave": false,
+    "visual": false,
+    "liveFrontendMatchedBeforeEdit": true
+  },
+  "build": "2026-10-15-independent-drafts-v1",
+  "pagesDeployed": false,
+  "wixBridgeChangeRequired": false,
+  "publicVerified": false,
+  "mainMerged": false,
+  "pending": "Candidate only; mother/child presentation is the next separate scoped change"
+}
