@@ -78,6 +78,7 @@
 .pd-supplier-alerts .ao-stage-state.complete{color:#087443}
 .pd-supplier-alerts .ao-stage-state.pending{color:#b45a00}
 .pd-supplier-alerts .ao-stage-state.problem{color:#c42b31}
+#modal .pd-supplier-alerts .pd-alert-open[data-source-po-task]{background:#ff8a00;color:#fff}
 body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
 body:has(#app>.active-order-heading) #taskSignals .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#e7eef5;color:#173557;font-size:12px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
 body:has(#app>.active-order-heading) #taskSignals .task-signal.has-work b{background:#ff8a00;color:#fff}

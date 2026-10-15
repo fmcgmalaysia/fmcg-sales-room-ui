@@ -401,7 +401,7 @@ const stages=[
     if(control.dataset.activeNotice){
       const key=control.dataset.activeNotice,rows=activeOrderNotices(roomRows())[key];if(!rows)return;
       const body=key==='incoming'?window.purchaseDashboard.supplierAlertDetails(rows):'<div class="pd-supplier-alerts">'+rows.map(row=>'<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p>'+qtyDigits(row.procurement.totalCtn)+' CTN</p></div><button class="pd-alert-open" data-source-po-task="'+esc(row.id)+'">Create P.O. →</button></section>').join('')+'</div>';
-      return formDialog(key==='incoming'?'Incoming Alert / 收货异常':'Pending P.O. / 待开采购单',company,rows.length?body:'<p>No pending work / 暂无待处理事项</p>','','task');
+      return formDialog(key==='incoming'?'Incoming Alert 收货异常':'Pending P.O. 待开采购单',company,rows.length?body:'<p>No pending work / 暂无待处理事项</p>','','task');
     }
     if(control.dataset.activeMove){
       if(activeCustomer){showStatus('拖动产品主行左侧手柄，或点击手柄选择目的位置；供应商子行会一起移动。');return;}
