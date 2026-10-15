@@ -30,7 +30,7 @@
 #app .active-order-table .po-reference.pending{background:#ff8a00;color:#fff;border-radius:4px}
 #app .active-order-table .qty-mismatch{background:#ff8a00!important;color:#fff!important}
 #app .active-order-table .order-quantity>span.quantity-reference{cursor:default;text-decoration:none}
-#app .active-order-table .received-quantity>:is(span.quantity-reference,.quantity-case){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:24px;min-width:36px;padding:0 6px;font-family:inherit;font-size:11px;font-weight:700;line-height:1;vertical-align:middle}
+#app .active-order-table .received-quantity>:is(span.quantity-reference,.quantity-case){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:34px;padding:0 6px;font-family:inherit;font-size:11px;font-weight:600;line-height:14px;vertical-align:middle}
 #app .active-order-table .received-quantity>span.quantity-reference{border:1px solid transparent;cursor:default;text-decoration:none}
 #app .active-order-table .gp{white-space:nowrap}
 body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
