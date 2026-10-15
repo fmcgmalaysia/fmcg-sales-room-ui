@@ -470,3 +470,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .roomhead .tracklabel small{font-size:11px;margin-top:3px;font-weight:400}
 .roomhead{min-height:124px}
 .roomhead .track{padding:5px 0}
+
+/* Source PO date and saved state share one line. */
+.supplier-allocation-dialog .allocation-po-cell .allocation-po-time{display:inline-block;white-space:nowrap;vertical-align:middle}
+.supplier-allocation-dialog .allocation-po-cell .allocation-po-time + .allocation-save:disabled{display:inline-block;margin-left:6px;padding:0;line-height:16px;vertical-align:middle;white-space:nowrap}
