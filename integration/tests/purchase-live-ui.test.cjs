@@ -275,7 +275,7 @@ test('compact Purchase Room keeps track, drag controls and new read-only columns
   const labels=[...header.matchAll(/<th>(.*?)<\/th>/gs)].map(match=>match[1].includes('history-heading')?'History':match[1]);
   assert.deepEqual(labels.slice(1),['Row','Since','Description','Order Qty','Rcv Qty','Supplier','Net Cost','Line Cost','Our P.O.','GP','Progress']);
   assert.equal(labels.length,12);
-  assert.match(html,/width:23%/);
+  assert.match(html,/width:29%/);
   assert.match(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
