@@ -1,0 +1,25 @@
+2026-10-15 / MASTER Purchase candidate. NOT DEPLOYED.
+
+Branch feat/purchase-source-save-20261015, base PR85/4704f2a.
+Code 43daee0492ff0ab167b10278f718c9a9cd735a1d.
+Build 2026-10-15-source-save-v1.
+Production remains Pages70a0b59 / user-confirmed Wix publish, new SAVE acceptance pending.
+Recovery verified/purchase-lavender-plan-po-20261014 -> 01e397c is LIMITED Lavender PLAN/PRICE/PO acceptance, not a complete Purchase/FOC baseline.
+
+Approved objective: always-visible mother/source rows and independent supplier saves using existing request journal, source identity, PO dialog and locks. Multi-source mother checkbox remains disabled in place; only supplier source checkboxes merge PO. Single source stays on the root row. Child CLEAR/ROW/Since/Customer are blank while cell alignment remains intact. GP only appears on mother. WAITING is the unsaved remainder, never a selectable supplier. Existing movement handle and company/customer restrictions retained.
+
+Per-source save validates the chosen draft plus saved sibling quantities, ignoring invalid unsubmitted siblings. Footer explicitly says Save all sources. Same-product and cross-product drafts remain cached. B may open PO with A draft retained; B's own unsaved edits block B's PO through either entry. Success and workspace readback finalize only B. Unknown requests retain exact identity and block further submissions/edits; no automatic retransmission.
+
+First-save gate solved WITHOUT BACKEND PATCH: when root has no plan revision/quantity, PO, physical receipt, invoice/archive/finance lock or child source and its recorded version matches, first confirmed B uses existing root PLAN. Only a confirmed receipt binds B's draft to that root and unbinds unsaved A to a future ADD_SOURCE. Original row keys/raw fields remain. Never rebind an existing saved source. Backend tests verify PLAN replay once, PO-B, later separate A, B unchanged, demand unchanged and warehouse lists only PO-B.
+
+Fresh pre-edit checks: Wix Purchase page copied via Studio, purchaseSources/Operations/Plan via IDE; all normalized exact to corresponding repository files. Originals saved alongside this record. Public app/allocation/grid/gridCSS/style all normalized exact to deployed70a0b59. Only PR85 app/allocation differences already documented; no unexamined live conflict. Wix editor was not changed/synced/published.
+
+116 targeted checks pass; JS syntax and diff check pass. Source/FMCGMALAYSIA, shared assets, all backend code and Wix bridges unchanged versus4704f2a. No business CMS writes, permission-rule changes, deployment or main merge.
+
+Background in-app browser visual checks at1280x720: Purchase and Active Orders default3 rows for one product/two suppliers; Active Orders13 columns align exactly for all3 rows. Dialog1080 client/scrollwidth, allocation table1048 client/scrollwidth (no horizontal overflow). Live UI fixture: A quantity blank; B FOC price62 saved through one PLAN,20paid+10free/30total/1240; A remains blank and B PO opens30/1240. Fixtures only, not public business acceptance. Screenshot source-b-saved-a-draft.png records that partial save. The mother-child/dialog-final images are clean sample layout, not CMS facts.
+
+In-app browser reported MutationObserver.observe non-Node once at frame creation. Same error reproduced in browser-smoke.html containing only static text and an iframe srcdoc, with NO scripts/business code. This isolates the reported listener error from Purchase implementation; do not fix unrelated browser instrumentation in business files.
+
+Chrome was used only for fresh Wix readback; later preview checks ran hidden in-app, no desktop input. Existing8916 preview service reused after HTTP200 readiness. An attempted extra read-only baseline service on8917 did not respond; never opened that URL. No user dirty formal window was refreshed, cancelled or saved.
+
+Release stages: code candidate complete; Pages NOT deployed; Wix NOT changed for this candidate; formal public new behavior NOT verified. Existing draft PR85 remains separate dependency. Do not deploy docs PR86. User review and scoped release authorization remain before a new deployment; no claim of full Purchase verification.
