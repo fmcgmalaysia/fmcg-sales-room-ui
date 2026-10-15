@@ -33,6 +33,15 @@ test('ordinary partial receipt stays waiting; explicit review problems override 
  states=f.grid.progressStates([f.root],[{taskIds:['R'],invoiceChecked:true,reviewRequired:true}]);assert.equal(states[1],'problem');
  f.root.warehouse.issue=true;assert.equal(f.grid.progressStates([f.root],[])[3],'problem');
 });
+
+test('mother progress waits for every source and unplaced demand while preserving source completion and problem priority',()=>{
+ const f=fixture();f.root.po='PO-A';assert.equal(f.grid.summaryProgressStates(f.root,[f.root,f.child],[])[0],'complete');
+ f.child.po='';assert.equal(f.grid.summaryProgressStates(f.root,[f.root,f.child],[])[0],'pending');assert.equal(f.grid.progressStates([f.root],[])[0],'complete');
+ f.child.po='PO-B';f.root.ord=120;assert.equal(f.grid.summaryProgressStates(f.root,[f.root,f.child],[])[0],'pending');assert.equal(f.grid.progressStates([f.child],[])[0],'complete');
+ f.child.warehouse={issue:true};assert.equal(f.grid.summaryProgressStates(f.root,[f.root,f.child],[])[3],'problem');
+ const waiting=f.render().match(/<tr class="source-row waiting-row"[\s\S]*?<\/tr>/)[0];assert.doesNotMatch(waiting,/progress-node|data-progress-task/);
+ const g=fixture();for(const row of [g.root,g.child]){row.po='PO';row.procurement.availableCtn=0;row.warehouse={accepted:row.procurement.totalCtn,hasPhysicalReceipt:true};row.salesInvoiceLocked=true;row.archived=true;}const orders=[{taskIds:['R','B'],invoiceChecked:true,paymentCompleted:true}];assert.deepEqual(Array.from(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)),Array(7).fill('complete'));g.root.ord=120;assert.deepEqual(Array.from(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)),Array(7).fill('pending'));orders[0].reviewRequired=true;assert.equal(g.grid.summaryProgressStates(g.root,[g.root,g.child],orders)[1],'problem');
+});
 test('one supplier has no duplicate child and keeps the normal checkbox and PO entry',()=>{
  const f=fixture();f.args.rows=f.args.tasks=[f.root];f.args.selectedSources.clear();const html=f.render();assert.equal((html.match(/<tr\b/g)||[]).length,1);assert.match(html,/data-select-kind="demand"[^>]*checked/);assert.doesNotMatch(html,/data-select-kind="demand" disabled/);assert.match(html,/data-po-task="R"/);
 });

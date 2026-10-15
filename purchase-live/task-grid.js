@@ -23,13 +23,14 @@
     const reviewProblem=orders.some(po=>po.reviewRequired&&rows.some(row=>po.taskIds.includes(row.id)));
     return progress(rows,orders).map((done,i)=>(i===3&&receiptProblem||i===1&&reviewProblem)?'problem':done?'complete':'pending');
   }
+  function summaryProgressStates(root,rows,orders){return progressStates(rows,orders).map(state=>totals(rows).customerQty<root.ord&&state==='complete'?'pending':state);}
   function render({rows,tasks,customers,suppliers,selected,selectedSources,expanded,active,canMove,orders,age,quantityCells,drafts,costError,riskDeal,supplierIcon}) {
     const roots = rows.filter(row=>!row.procurementSource), name = id=>suppliers.find(row=>row.id===id)?.shortName || suppliers.find(row=>row.id===id)?.name || 'Select Supplier / 选择供应商';
     const shortName = row=>customers.find(item=>item.id===row.customerId)?.shortName || customers.find(item=>item.id===row.customerId)?.name || row.customerId;
     const person=state=>'<span class="supplier-head '+state+'" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="4"/><path d="M2 19v-3a8 7 0 0 1 16 0v3z"/></svg></span>';
     const assigned=row=>Boolean(row.supplierId&&row.procurement?.revision&&row.procurement.totalCtn>0&&(!drafts.get(row.id)?.changes?.supplierId||row.supplierId===tasks.find(item=>item.id===row.id)?.supplierId));
     function line(original,index,parent,sourceIndex) {
-      const row={...original,...drafts.get(original.id)?.changes},child=Boolean(parent),group=(child?[row]:sources(row,tasks)).map(item=>({...item,...drafts.get(item.id)?.changes})),sum=totals(group),states=progressStates(group,orders),pos=String(index+1).padStart(3,'0')+(child?'-'+String.fromCharCode(65+sourceIndex):'');
+      const row={...original,...drafts.get(original.id)?.changes},child=Boolean(parent),group=(child?[row]:sources(row,tasks)).map(item=>({...item,...drafts.get(item.id)?.changes})),sum=totals(group),states=child?progressStates(group,orders):summaryProgressStates(row,group,orders),pos=String(index+1).padStart(3,'0')+(child?'-'+String.fromCharCode(65+sourceIndex):'');
       const ids=[...new Set(group.map(item=>item.supplierId).filter(Boolean))],posNumbers=[...new Set(group.map(item=>item.po).filter(Boolean))],multiple=!child&&group.length>1;
       const remaining=!child?Math.max(0,row.ord-sum.customerQty):0,supplierMarkup=multiple?'<span class="supplier-heads">'+group.filter(assigned).map(()=>person('complete')).join('')+(remaining>0||group.some(item=>!assigned(item))?person('pending'):'')+'</span>':assigned(row)?escape(name(row.supplierId))+(!child&&remaining>0?person('pending'):''):person('pending');
       const received=group.length===1&&!row.warehouse?row.inc:group.reduce((n,item)=>n+(item.warehouse?.stock?.usableReceived??item.warehouse?.accepted??0),0),hasReceipt=group.some(item=>item.warehouse?.hasPhysicalReceipt)||group.length===1&&Number.isFinite(row.inc),problem=group.some(item=>item.warehouse?.issue||(item.warehouse?.stock?.cases||[]).some(stock=>stock.status!=='RESOLVED')),done=progress(group,orders);
@@ -48,5 +49,5 @@
     }
     return roots.map((row,index)=>line(row,index,null,0)+(sources(row,tasks).length>1?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'')).join('');
   }
-  window.purchaseTaskGrid={render,totals,sources,progress,progressStates,labels,cost};
+  window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
 })();
