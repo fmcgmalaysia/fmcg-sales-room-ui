@@ -34,6 +34,10 @@
 #app .active-order-table th:nth-child(7),#app .active-order-table #taskRows .supplier-cell{padding-left:12px}
 #app .active-order-table th:nth-child(8),#app .active-order-table #taskRows .net-cost-cell{padding-right:14px}
 #app .active-order-table #taskRows .source-row>td.product-stack{border-left:0}
+#app .active-order-table #taskRows .source-row>.product-stack{text-align:left;white-space:nowrap}
+#app .active-order-table #taskRows .source-label{padding-left:0}
+#app .active-order-table #taskRows .source-costing{display:inline;margin:0}
+#app .active-order-table #taskRows .source-costing::before{content:' · '}
 #app .active-order-table .ao-child-marker{display:inline-flex;vertical-align:middle;margin-left:6px;color:#7891a5;cursor:default}
 #app .active-order-table .ao-child-marker svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table #clearSelection{padding:3px 4px}
