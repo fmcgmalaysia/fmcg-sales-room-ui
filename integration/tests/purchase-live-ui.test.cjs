@@ -272,7 +272,7 @@ test('read failure and timeout show explicit feedback without inventing zero rec
 
 test('compact Dashboard keeps both directories and supplier entry while replacing duplicated summary cards with a queue',()=>{
   const h=harness();h.reply(workspace());const html=h.node('#app').innerHTML;
-  for(const marker of ['purchase-dashboard','pd-metrics','pd-queue','customer-directory','supplier-directory','addSupplier','Search customer','supplierSearch'])assert.ok(html.includes(marker),marker);
+  for(const marker of ['purchase-dashboard','pd-filters','pd-queue','customer-directory','supplier-directory','addSupplier','Search customer','supplierSearch'])assert.ok(html.includes(marker),marker);
   assert.match(html,/<th>Edit<\/th>/);assert.doesNotMatch(html,/Add Customer|id="addCustomer"/);
 });
 
