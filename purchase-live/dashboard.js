@@ -28,6 +28,8 @@
   const entryRank=entry=>problemEntry(entry)?0:entry.action.startsWith('quantity-case:')?1:entry.action==='payment-proof'?2:entry.action==='allocate'?3:entry.owner==='PURCHASE'?4:5;
   function actionLabel(entry,group){
     const task=group.task;
+    if(entry.action==='dashboard-receiving')return supplierAlertReasons(task)[0];
+    if(entry.action.startsWith('quantity-case:')){const item=task?.quantityCases?.find(item=>item.id===entry.action.slice(14));if(item?.kind==='RECEIPT'&&Number.isSafeInteger(item.quantity)&&item.quantity>0)return 'Short received · '+item.quantity+' CTN / 少收货 · '+item.quantity+' CTN';}
     if(entry.action==='edit'&&entry.category==='todo')return !task?.supplierId?'Assign supplier / 指定供应商':task.procurement?.revision?'Create P.O. / 开采购单':'Confirm purchase plan / 确认采购方案';
     if(entry.action==='edit'&&entry.owner==='WAREHOUSE')return 'Target shipment date passed; receipt pending / 已过预计发货日，待货仓确认收货';
     if(entry.action==='payment-proof')return 'Review payment proof / 查看并确认付款证明';
@@ -78,7 +80,25 @@
   }
   const bell='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2v1"/><path d="M2 6 1 9m21-3 1 3"/></svg>';
   function supplierAlertBadge(tasks,supplierId){const count=supplierAlertSources(tasks).length;return count?'<button class="pd-shipment-alert" data-supplier-shipment-alert="'+esc(supplierId)+'" aria-label="'+count+' shipment alerts" title="Shipment alerts / 发货风险">'+bell+'<b>'+count+'</b></button>':'<span class="zero-risk">—</span>';}
-  function supplierAlertDetails(tasks){return '<div class="pd-supplier-alerts">'+supplierAlertSources(tasks).map(({task,cases,receipt,stage})=>'<section class="pd-supplier-alert-item"><div><small>'+esc(task.barcode)+'</small><strong>'+esc(task.name)+'</strong><small>'+esc(task.po||'P.O. pending')+'</small><p>'+phrase(receipt?'Receiving or stock issue affects dispatch / 收货或库存异常影响发货':'Open quantity issue blocks dispatch / 数量问题阻碍发货')+(cases.length?' · '+cases.map(item=>esc(item.quantity)+' CTN').join(' · '):'')+'</p></div><button class="pd-alert-open" data-progress-task="'+esc(task.id)+'" data-progress-index="'+stage+'" data-progress-is-source="true">View →</button></section>').join('')+'</div>';}
+  function supplierAlertReasons(task){
+    const reasons=[],qty=value=>Number.isSafeInteger(value)&&value>=0,add=(en,zh,n)=>{const suffix=qty(n)?' · '+n+' CTN':'';reasons.push(en+suffix+' / '+zh+suffix);};
+    const open=(task.quantityCases||[]).filter(item=>item.status!=='RESOLVED'),receipt=open.find(item=>item.kind==='RECEIPT'),physical=task.warehouse?.hasPhysicalReceipt===true,planned=task.procurement?.totalCtn,accepted=task.warehouse?.accepted;
+    const shortage=receipt&&qty(receipt.quantity)?receipt.quantity:task.warehouse?.issue&&physical&&qty(planned)&&qty(accepted)?Math.max(0,planned-accepted):null;
+    if(shortage>0)add('Short received','少收货',shortage);
+    const kinds={INTERNAL_DAMAGE:['Internal damage','内部破损'],WRONG_ITEM:['Wrong item','错货'],SHORT_EXPIRY:['Short expiry','临期货']};
+    for(const item of (task.warehouse?.stock?.cases||[]).filter(item=>item.status!=='RESOLVED')){
+      const label=kinds[item.kind]||['Stock issue — type not recorded','库存异常，未记录类型'];add(label[0],label[1],item.quantity);
+      const resolution=item.resolution||{},returned=(resolution.returns||[]).reduce((sum,row)=>sum+(qty(row.quantity)?row.quantity:0),0),replaced=(resolution.replacements||[]).reduce((sum,row)=>sum+(qty(row.quantity)?row.quantity:0),0);
+      if(returned>0)add('Returned','已退货',returned);
+      if(resolution.decision?.disposition==='RETURN'&&qty(item.quantity)&&returned<item.quantity)add('Return pending','待退货',item.quantity-returned);
+      if(replaced>0)add('Replacement received','已收到换货',replaced);
+      if(resolution.decision?.value==='REPLACE'&&qty(item.quantity)&&replaced<item.quantity)add('Replacement pending','待换货',item.quantity-replaced);
+    }
+    for(const item of open.filter(item=>item.kind!=='RECEIPT'&&(item.blocks||[]).includes('DISPATCH')))add(item.kind==='UNPLACED'?'Unpurchased':'Quantity issue',item.kind==='UNPLACED'?'未采购':'数量异常',item.quantity);
+    if(!reasons.length)add('Receiving issue — reason not recorded','收货异常，未记录具体原因');
+    return reasons;
+  }
+  function supplierAlertDetails(tasks){return '<div class="pd-supplier-alerts">'+supplierAlertSources(tasks).map(({task,cases,receipt,stage})=>'<section class="pd-supplier-alert-item"><div><small>'+esc(task.barcode)+'</small><strong>'+esc(task.name)+'</strong><small>'+esc(task.po||'P.O. pending')+'</small>'+supplierAlertReasons(task).map(reason=>'<p>'+phrase(reason)+'</p>').join('')+'</div><button class="pd-alert-open" data-progress-task="'+esc(task.id)+'" data-progress-index="'+stage+'" data-progress-is-source="true">View →</button></section>').join('')+'</div>';}
   function formatShipmentDate(value){
     return String(value).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(original,year,month,day)=>{const d=new Date(Date.UTC(Number(year),Number(month)-1,Number(day)));return d.getUTCFullYear()===Number(year)&&d.getUTCMonth()===Number(month)-1&&d.getUTCDate()===Number(day)?day+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(month)-1]+' '+year:original;});
   }
@@ -90,5 +110,5 @@
     for(const icon of host.querySelectorAll('.pd-directories .shipment-summary svg')){icon.setAttribute('viewBox','0 0 24 24');icon.innerHTML='<path d="M3 14.5 6 19h11l4-6.5-7 2Z"/><path d="M5 14V8h5v6m0-4h5v5M6 8V5h3v3m6 5V8h4v5"/><path d="M2 21c2-2 4 2 6 0s4 2 6 0 4 2 8 0"/>';}
 
   }
-  window.purchaseDashboard={render,model,workQueues,bilingualDirectories,factStates,formatShipmentDate,supplierAlertSources,supplierAlertBadge,supplierAlertDetails};
+  window.purchaseDashboard={render,model,workQueues,bilingualDirectories,factStates,formatShipmentDate,supplierAlertSources,supplierAlertBadge,supplierAlertDetails,supplierAlertReasons};
 })();
