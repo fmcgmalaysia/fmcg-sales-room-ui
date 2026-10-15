@@ -375,7 +375,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 #liveStatus.save-pending~dialog #dialogError{color:#805b16}
 /* Office blue hierarchy, scoped to the existing supplier allocation dialog. */
 .supplier-allocation-dialog .dialoghead{background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
-.supplier-allocation-dialog .dialoghead .muted{color:#526b82;font-weight:700}
+.supplier-allocation-dialog .dialoghead .muted{color:#234768;font-size:14px;font-weight:700;line-height:20px}
 .supplier-allocation-dialog .dialoghead h2,.supplier-allocation-dialog .dialoghead button{color:#234768}
 .supplier-allocation-dialog .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:0;border-radius:4px;font-size:22px;line-height:1}
 .supplier-allocation-dialog .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb;color:#173557}
@@ -396,14 +396,21 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-product-title span{font-size:11px;line-height:1.3;color:#52677b}
 .supplier-allocation-dialog .allocation-product-title strong{display:block;font-size:12px;line-height:1.4;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#213b54}
 .supplier-allocation-dialog .allocation-table th{background:#dceaf7;color:#234768;border-bottom:1px solid #b4cce1;border-right:0;height:34px}
-.supplier-allocation-dialog .allocation-table tbody>tr:not(.allocation-detail)>td{border-top:1px solid #cfdfed;padding:4px 3px}
+.supplier-allocation-dialog .allocation-table tbody>tr:not(.allocation-detail)>td{border-top:1px solid #cfdfed;padding:5px}
+.supplier-allocation-dialog .allocation-table th{padding-left:5px;padding-right:5px}
+#modal.supplier-allocation-dialog .allocation-table :is(th,td){width:auto}
+.supplier-allocation-dialog .allocation-table :is(th,td):is(:nth-child(3),:nth-child(4)){text-align:center}
+.supplier-allocation-dialog .allocation-table td:nth-child(4) .allocation-number{justify-content:center}
 .supplier-allocation-dialog .allocation-table input,.supplier-allocation-dialog .allocation-table select,.supplier-allocation-dialog .allocation-reason input{border-color:#b8cddd;border-radius:3px}
 .supplier-allocation-dialog .allocation-table input:focus-visible,.supplier-allocation-dialog .allocation-table select:focus-visible,.supplier-allocation-dialog .allocation-reason input:focus-visible{outline:2px solid #0f6cbd;outline-offset:1px}
 .supplier-allocation-dialog .allocation-detail td{background:#f7faff;border-bottom:1px solid #dce7f1;padding-top:2px;padding-bottom:5px}
 .supplier-allocation-dialog .allocation-detail-fields::before{border-color:#9bb9d3}
 .supplier-allocation-dialog .allocation-person.complete{color:#16854b}
-.supplier-allocation-dialog .allocation-person.pending{color:#b18a00}
-.supplier-allocation-dialog .allocation-waiting select{color:#966000;border-color:#e7cfa9;background:#fffaf2}
+.supplier-allocation-dialog .allocation-person.pending{color:#ff8a00}
+.supplier-allocation-dialog #allocationRows>tr.allocation-waiting>td{background:#fff7ed}
+.supplier-allocation-dialog .allocation-waiting select{color:#b85c00;border-color:#ffb35c;background:#fffaf3}
+.supplier-allocation-dialog .allocation-waiting .allocation-waiting-label{color:#b85c00;font-weight:600}
+.supplier-allocation-dialog .allocation-waiting .allocation-number input[readonly]{color:#b85c00}
 .supplier-allocation-dialog .allocation-summary{padding-top:8px;border-top-color:#cfdfed}
 .supplier-allocation-dialog .dialogfoot{background:#f5f9fd;border-top:1px solid #cfdfed;padding-top:8px;padding-bottom:8px}
 .supplier-allocation-dialog .btn.primary{background:#0f6cbd;border-color:#0f6cbd}
