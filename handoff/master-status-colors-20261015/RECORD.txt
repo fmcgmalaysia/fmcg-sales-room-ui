@@ -1,0 +1,16 @@
+2026-10-15 / MASTER permanent design rule, documentation only.
+
+User explicitly requested all MASTER workrooms follow:
+Blue = UX TEMPLATE.
+Green = no problem / work completed.
+Orange = waiting for handling.
+Red = a problem that must be resolved.
+Staff should scan colors and click the actionable colored button to enter the relevant task/problem handling space directly.
+
+Updated docs/MASTER_WORKROOM_STANDARD.md with exact meanings and shared navigation behavior. Existing Sales color measurements remain historical evidence; ordinary MASTER prices must not inherit orange merely because an old Sales measurement used it. Normal pending work must not be presented as a red error. Green belongs to its specific confirmed indicator, not inferred whole-order completion. Existing permission/company/department protections remain.
+
+Root AGENTS.md permanently records the same rule; START_HERE.md points to the cross-branch root handoff copy of MASTER_WORKROOM_STANDARD.md.
+Branch docs/master-status-colors-20261015 starts at Purchase candidate cfc0cdf/PR87. Docs-only delta; do not deploy this branch or merge the unverified business baseline into main.
+No business source, browser input, CMS write, deployment, permission change or main merge. No software tests needed for this prose-only change; verify diff and affected paths.
+
+Purchase candidate remains43daee0/code+cfc0cdf/evidence, PR87, not deployed. Production remains70a0b59 with previous user Wix publication receipt; new SAVE acceptance remains pending. The later ROW/Since/green-orange-head image is a design concept, not implemented in PR87.
