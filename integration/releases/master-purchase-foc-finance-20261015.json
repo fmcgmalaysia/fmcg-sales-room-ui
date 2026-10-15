@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "codeCommit": "03d132d",
+  "branch": "feat/master-purchase-finance-submit-20261014",
+  "build": "2026-10-15-purchase-foc-finance-v1",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "recoveryScope": "Limited user Lavender PLAN/PRICE/PO acceptance only",
+  "wixEditor": {
+    "all13ComponentsExactReadback": true,
+    "normalizedHashes": {
+      "integration/backend/purchasePlan.js": "21f7009698fffd073bee5efada61a68047dd0bd16939ec1fef699b66193b5bf3",
+      "integration/backend/paymentHandoff.js": "535035b3ea4ce55377a3cf8da932af5332dfe4e09ec422fd54da307c053ef934",
+      "integration/backend/purchaseOrders.web.js": "ae5cfc6fa51db1d6dfecbf461acd8069cf62e16ca65c5116b8ba0b615ac86d9f",
+      "integration/backend/accountPurchase.web.js": "a1f6db338590fc20b1814257cafed3b2f93064184979bc13eef444f464059b41",
+      "integration/backend/warehouseReceiving.js": "86683e099ccb1159627379a3c0b0d14a54fd732435665a2a51e8e10a70fa59ae",
+      "integration/backend/purchaseProjection.js": "059c876870ed2b7c9b9c2e0faa9cc074695a08336e71b7cf20df5d4d850de60b",
+      "integration/backend/purchaseSources.js": "e385d7dabca5f92c28913743107d5d0322113733765fb9abefe9c2c11003a5e8",
+      "integration/backend/purchaseOperations.web.js": "f92786d59bb3180b6bb447ebd53e6b5f34c4cb21f2415ae366fd5b56bd4d6827",
+      "integration/backend/purchaseOrderWorkflow.js": "170b2482376ca8972aadf35105fa47d33f2af57e7634820b7dd11b1f4028fb3a",
+      "integration/backend/accountSettlement.js": "99aaf9e1fe4ef1eea5db74938a54bbfd66e685c410ddae762f0391dfc3b0ce23",
+      "integration/backend/purchaseOperations.js": "1542b8a214e677598890c07a6c5a4dd335c9015cb394429acfbdc3af2edb66b8",
+      "integration/wix/purchase-room-page.js": "7a9e6816f504e4d8ea961a95dcb94c626ad2584e0b5c2109dddd1edee2335a1c",
+      "integration/wix/account-department-page.js": "373b4d991379f06e04e2ed34f9466b6b17cd3ed1d58ddf2f390ddbbabe7389b0"
+    },
+    "newDiagnostics": 0,
+    "preexistingDiagnostics": 9,
+    "synced": false,
+    "published": false
+  },
+  "validation": {
+    "priorTargetedTests": 130,
+    "typeFixTests": 24,
+    "approvedLayout": "v3",
+    "accountIsolated": "SUBMITTED ownership modal request correct; simulated explicit refusal retained note",
+    "realCandidateSave": false
+  },
+  "pages": {
+    "deployed": false
+  },
+  "publicVerification": {
+    "complete": false
+  },
+  "mainMerged": false
+}
