@@ -332,7 +332,7 @@ test('receipt checks stop after three pending results and explicit retry preserv
 test('supplier dialog retains approved company/short-name pair, tabs and all six contact roles without demo brands',()=>{
   const h=harness(),data=workspace();data.suppliers=[{id:'SUP',name:'ACTUAL SUPPLIER',shortName:'ACTUAL'}];h.reply(data);h.click({editSupplier:'SUP'});
   const html=h.node('#dialogContent').innerHTML;
-  for(const text of ['dialoghead','dialogbody','dialogfoot','Company Info','Sales Contacts','Brands','supplier-name-pair','Company Name *','Short Name','ACTUAL SUPPLIER'])assert.ok(html.includes(text),text);
+  for(const text of ['dialoghead','dialogbody','dialogfoot','Company Info','Phone Book','Brands','supplier-name-pair','Company Name *','Short Name','ACTUAL SUPPLIER'])assert.ok(html.includes(text),text);
   const contacts=h.node('#supplierContacts').innerHTML;
   for(const role of ['Sales Representative','Sales Manager','Director','Account Dept.','Warehouse','Others'])assert.ok(contacts.includes(role),role);
   assert.doesNotMatch(html,/Demo Brand|localStorage/);
