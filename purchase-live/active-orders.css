@@ -26,9 +26,9 @@
 #app>.active-order-heading .room-counts b+b{background:#e7eef5;color:#173557}
 #app:has(> .active-order-heading) .tools :is(input,select){font-size:11px;color:#203047;border-color:#b8ccdf}
 #app .active-order-table th{background:#d2dfea;color:#203047;font-size:11px;font-weight:700}
-#app .active-order-table{min-width:1360px}
-#app .active-order-table :is(th,td){padding-left:8px;padding-right:8px}
-#app .active-order-table #taskRows :is(.supplier-cell,.net-cost-cell){padding-left:8px;padding-right:8px}
+#app .active-order-table{min-width:1480px}
+#app .active-order-table :is(th,td){padding-left:12px;padding-right:12px}
+#app .active-order-table #taskRows :is(.supplier-cell,.net-cost-cell){padding-left:12px;padding-right:12px}
 #app .active-order-table #taskRows .source-row>td.product-stack{border-left:0}
 #app .active-order-table .ao-child-marker{display:inline-flex;vertical-align:middle;margin-left:6px;color:#7891a5;cursor:default}
 #app .active-order-table .ao-child-marker svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
