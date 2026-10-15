@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(process.env.PURCHASE_UI_BASELINE || path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
 test('clicked progress stage opens its task with explicit receiving issue instead of a false completion',()=>{
  const h=harness(),w=workspace();w.tasks[0].warehouse={accepted:250,hasPhysicalReceipt:true,issue:true};w.tasks[0].procurement={totalCtn:250,revision:'P'};h.reply(w);const before=h.messages.length;
- h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress problem/);assert.match(h.node('#dialogContent').innerHTML,/Problem \/ 待解决/);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.length,before);
+ h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress problem/);assert.match(h.node('#dialogContent').innerHTML,/Problem 待解决/);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.length,before);
 });
 
 test('mother progress names the blocked source and drills into only that source without submitting writes',()=>{
@@ -152,7 +152,7 @@ test('cost-aware plan saves quantity and prices once and reopens remaining suppl
  const count=h.messages.length;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.length,count);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{ok:true,requestId:request.requestId}});
  Object.assign(w.tasks[0],{procurement:{totalCtn:200,revision:'P'},sourcing:{orderedCtn:200,unplacedCtn:50}});h.reply(w);
- assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/Remaining \/ 尚需采购 50/);assert.match(h.node('#dialogContent').innerHTML,/id="sourceQty"[^>]*value="50"/);assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="TASK"/);
+ assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/Remaining 尚需采购 50/);assert.match(h.node('#dialogContent').innerHTML,/id="sourceQty"[^>]*value="50"/);assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="TASK"/);
 });
 
 test('supplier sources keep ordered and physical received quantities separate and add a priced PO once',()=>{
@@ -200,7 +200,7 @@ test('Purchase Payment Follow-up reads shared paid/balance and displays proof li
 
 test('payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'payments'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'PO-1',supplierName:'SUPPLIER',finance:{paidCents:30000,payments:[{id:'P1',confirmed:true,cents:30000,reference:'BANK1',proof:{fileId:'F1'}}]},paymentHandoff:{status:'PARTLY_PAID',unreadCount:1,notices:[{paymentId:'P1',acknowledgement:null}]}};
- h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partly paid \/ 部分付款/);assert.match(h.node('#app').innerHTML,/未确认/);
+ h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partly paid 部分付款/);assert.match(h.node('#app').innerHTML,/未确认/);
  h.click({paymentProof:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-payment-ack="P1"/);h.click({paymentAck:'P1',paymentPo:'PO'});
  const saved=h.messages.at(-1);assert.equal(saved.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(saved.input.action,'ACK_PAYMENT');assert.equal(saved.input.paymentId,'P1');assert.equal(saved.input.version,'PV');assert.equal(saved.input.enabled,undefined);assert.equal(saved.input.cents,undefined);
 });
