@@ -90,9 +90,9 @@
 #modal .pd-supplier-alert-item strong,#modal .pd-supplier-alert-item small{display:block}
 #modal .pd-supplier-alert-item strong{font-size:11px;font-weight:700;color:#173557}
 #modal .pd-supplier-alert-item small{font-size:10px;color:#536b84;margin:0}
-#modal .pd-supplier-alert-item p{color:#c42b31;font-size:11px;margin:4px 0 0}
+#modal .pd-supplier-alert-item p{color:#c42b31;font-size:13px;font-weight:600;line-height:18px;margin:4px 0 0}
 #modal .pd-supplier-alert-item .pd-bi{display:inline-flex;flex-direction:column}
-#modal .pd-supplier-alert-item .pd-bi>small{font-size:9px;color:#62758a}
+#modal .pd-supplier-alert-item .pd-bi>small{font-size:12px;font-weight:500;line-height:18px;color:#30435a}
 #modal .pd-alert-open{background:#c42b31;color:#fff;border:0;border-radius:4px;padding:6px 9px;white-space:nowrap;cursor:pointer}
 #app .purchase-dashboard .pd-action-button{width:82px;gap:6px;flex-shrink:0}
 #app .purchase-dashboard .pd-button-arrow{display:inline-block;transition:transform .18s ease;pointer-events:none}
