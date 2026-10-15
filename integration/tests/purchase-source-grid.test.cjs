@@ -10,7 +10,7 @@ test('multiple sources always show both children; disabled mother does not consu
  for(const active of [false,true]){
   const f=fixture();f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);
   assert.match(rows[0],/data-select-kind="demand" disabled/);assert.doesNotMatch(rows[0],/ checked/);assert.match(rows[1],/data-select-kind="source"[^>]*checked/);
-  assert.match(rows[1],/class="row-number"><input[^>]*data-select-kind="source"/);assert.match(rows[1],/class="received-age">original-intake<\/td>/);assert.doesNotMatch(rows[1],/class="supplier-cell">[\s\S]*?<input/);
+  assert.match(rows[1],/class="row-number"><input[^>]*data-select-kind="source"/);assert.match(rows[0],/class="received-age">original-intake<\/td>/);for(const sourceRow of rows.slice(1))assert.match(sourceRow,active?/class="received-age"><\/td>/:/class="received-age">original-intake<\/td>/);assert.doesNotMatch(rows[1],/class="supplier-cell">[\s\S]*?<input/);
   assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,active?0:7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,active?0:7);if(active){assert.match(rows[0],/class="barcode">BAR<span class="gp gp-badge gp-good"[^>]*>20%/);assert.doesNotMatch(rows[1],/gp-badge/);}else{assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);}assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
   assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?11:12)));
  }
