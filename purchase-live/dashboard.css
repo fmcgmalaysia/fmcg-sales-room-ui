@@ -59,8 +59,8 @@
 #app .purchase-dashboard .pd-note{padding:3px 9px}
 
 #app .purchase-dashboard .pd-directories .task-total{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:2px 6px;border-radius:12px;background:var(--pd-orange);color:#fff;font-size:11px;font-weight:700}
-#app .purchase-dashboard .pd-directories .shipment-summary svg{width:19px;height:19px;fill:none;stroke:#3766a2;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-#app .purchase-dashboard .pd-directories .shipment-summary{align-items:center;gap:5px}
+#app .purchase-dashboard .pd-directories .shipment-summary svg{display:none}
+#app .purchase-dashboard .pd-directories .shipment-summary{align-items:center;justify-content:flex-start;text-align:left;gap:0}
 
 #app .purchase-dashboard .pd-directories .pd-tools .pd-add{flex-shrink:0;white-space:nowrap;min-height:30px}
 #app .purchase-dashboard .pd-add{position:relative}
@@ -80,3 +80,5 @@
 #app .purchase-dashboard .pd-action-button .pd-bi>small{color:#fff;font-size:9px}
 #app .purchase-dashboard .pd-target-date{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:10px}
 #app .purchase-dashboard .pd-queue-scroll{max-height:clamp(140px,calc(100dvh - 445px),232px)}
+
+#app .purchase-dashboard .customer-directory :is(th,td):nth-child(2){text-align:left}
