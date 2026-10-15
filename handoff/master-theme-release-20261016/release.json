@@ -1,0 +1,37 @@
+{
+  "objective": "Publish authorized MASTER shared theme and then audit all live department views before business-link discussion",
+  "marker": "2026-10-16-master-workroom-theme-v1",
+  "token": "20261016-master-theme-v1",
+  "baseCandidate": "35cec1dc60830b2a6b8db639042a4469cbe7caf4",
+  "productionRecovery": "70a0b59b57c284e9f4b5962c11983bec1de55705",
+  "wixReadbacks": {
+    "purchase": {
+      "normalizedExact": true,
+      "sha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+    },
+    "account": {
+      "normalizedExact": true,
+      "sha256": "66adc391de176913ebcd2f20f0e1f943dcb0c9f274485262df153d1a3a66ddd0"
+    },
+    "warehouse": {
+      "normalizedExact": true,
+      "sha256": "89c0e2795911a7814847edc75977bef4aee1ff598c75715865097d3bf001131b"
+    },
+    "support": {
+      "normalizedExact": true,
+      "sha256": "d6ce5c4e339f187b7a8f3c6cc3acf09d086c12e14729768a63bde7b00f6114b7"
+    }
+  },
+  "protectedPathsUnchanged": [
+    "integration/backend",
+    "backend",
+    "index.html",
+    "buyer-room.html",
+    "buyer-login.html",
+    "sales-room",
+    "buyer-room"
+  ],
+  "pages": "pending",
+  "wixPublish": "pending",
+  "publicVerification": "pending"
+}
