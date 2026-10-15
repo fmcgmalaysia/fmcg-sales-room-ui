@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-15",
+  "scope": "handoff and concept images only; no deployment",
+  "businessCandidate": "4704f2a0f6adf08e6c64a53d2bdb74b526976341",
+  "productionPages": "70a0b59b57c284e9f4b5962c11983bec1de55705",
+  "userConfirmedWixPublish": true,
+  "fullPublicSaveAcceptance": false,
+  "newRule": "Do not occupy the computer for work that can be completed in the background",
+  "files": [
+    {
+      "name": "approved-dialog-layout-v3.png",
+      "bytes": 1231492,
+      "sha256": "4042a450c9475181d87352c6ac316b871e438a5c41fa6f1ae9a73db2d5b3510d"
+    },
+    {
+      "name": "HANDOFF.md",
+      "bytes": 12130,
+      "sha256": "d2372be617b83d9698f06f5495f37225e1a8ab5c386cd41c40775cb131b5ff8c"
+    },
+    {
+      "name": "mother-child-table-concept-v1.png",
+      "bytes": 1328384,
+      "sha256": "9f61e6d738e2fe72dfebd31ec992fb77267105c85437198f5236787c10a49715"
+    },
+    {
+      "name": "NEW_ROOM_MESSAGE.txt",
+      "bytes": 1202,
+      "sha256": "7da13d35c9e523407c0c81be914d4d3dd5868d1e8e765b9acbba3dad0b1f9ea8"
+    },
+    {
+      "name": "purchase-real-interface-concept-v2.png",
+      "bytes": 1420808,
+      "sha256": "6e3c1233bff4e255ba99f9dad80a9ddb296c877bf185c46060fcfb0df0d81b99"
+    }
+  ]
+}
