@@ -91,6 +91,15 @@ test('Active priorities count saved sources rather than demand remainder and ope
  h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
 });
 
+test('Active demand summary is display-only and omits duplicate waiting text while retaining remainder and source actions',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:60,revision:'P'},supplierId:'A'});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0,supplierId:'B',procurement:{totalCtn:30,revision:'B'}});
+ h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;const mother=html.match(/<tr data-id="TASK"[\s\S]*?<\/tr>/)[0],order=mother.match(/<td class="order-quantity">[\s\S]*?<\/td>/)[0];
+ assert.match(order,/<span class="quantity-reference/);assert.match(order,/100 \| <span class="qty-mismatch">90<\/span>/);assert.doesNotMatch(order,/<button|data-sources|WAITING/);
+ assert.doesNotMatch(html,/waiting-demand/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/class="order-quantity">10<\/td>/);assert.match(html,/data-plan-task="TASK"/);assert.match(html,/data-plan-source="SOURCE"/);
+ h.click({customer:'C'});html=h.node('#app').innerHTML;assert.match(html,/waiting-demand">WAITING 10 CTN/);assert.match(html,/data-sources="TASK" aria-label="Supplier sources/);
+});
+
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});

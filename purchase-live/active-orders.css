@@ -29,6 +29,7 @@
 #app .active-order-table .supplier-head.pending{color:#ff8a00}
 #app .active-order-table .po-reference.pending{background:#ff8a00;color:#fff;border-radius:4px}
 #app .active-order-table .qty-mismatch{background:#ff8a00!important;color:#fff!important}
+#app .active-order-table .order-quantity>span.quantity-reference{cursor:default;text-decoration:none}
 #app .active-order-table .gp{white-space:nowrap}
 body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
 body:has(#app>.active-order-heading) #taskSignals .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#e7eef5;color:#173557;font-size:12px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
