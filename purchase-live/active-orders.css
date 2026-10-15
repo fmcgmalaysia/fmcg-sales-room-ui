@@ -1,0 +1,27 @@
+/* Active Orders presentation only. Keep the original table geometry and handlers. */
+#app:has(> .active-order-heading){font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;font-size:11px;color:#203047}
+#app:has(> .active-order-heading) :is(button,input,select,textarea){font-family:inherit}
+#app>.active-order-heading{min-height:0;background:transparent;border:0;padding:0;margin-bottom:16px}
+#app>.active-order-heading h1{font-size:20px;font-weight:800;line-height:26px;color:#203047}
+#app>.active-order-heading .muted{color:#536b84;font-size:10px}
+#app>.active-order-heading .room-counts b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:50%;background:#ff8a00;color:#fff;font-size:11px;font-weight:700}
+#app>.active-order-heading .room-counts b+b{background:#e7eef5;color:#173557}
+#app:has(> .active-order-heading) .tools :is(input,select){font-size:11px;color:#203047;border-color:#b8ccdf}
+#app .active-order-table th{background:#d2dfea;color:#203047;font-size:11px;font-weight:700}
+#app .active-order-table td{color:#203047}
+#app .active-order-table .product-stack .itemname{font-size:11px;font-weight:700;color:#173557}
+#app .active-order-table .product-stack :is(.barcode,.packing){font-size:10px;font-weight:400;color:#62758a}
+#app .active-order-table .progress-node.complete{background:#087443}
+#app .active-order-table .progress-node:not(.complete):not(.problem){background:#ff8a00}
+#app .active-order-table .progress-node.problem{background:#c42b31}
+#app .active-order-table :is(.supplier-head.complete,.po-reference.complete){color:#087443}
+#app .active-order-table .supplier-head.pending{color:#ff8a00}
+#app .active-order-table .po-reference.pending{background:#ff8a00;color:#fff;border-radius:4px}
+#app .active-order-table .qty-mismatch{background:#ff8a00!important;color:#fff!important}
+#app .active-order-table .gp{white-space:nowrap}
+body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
+body:has(#app>.active-order-heading) #taskSignals .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#e7eef5;color:#173557;font-size:12px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+body:has(#app>.active-order-heading) #taskSignals .task-signal.has-work b{background:#ff8a00;color:#fff}
+body:has(#app>.active-order-heading) #taskSignals .task-signal.urgent.has-work b{background:#c42b31;color:#fff}
+body:has(#app>.active-order-heading) #taskSignals .task-signal b::before{content:none}
+body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-visible){border-color:#376aa5;background:#f2f6fb}
