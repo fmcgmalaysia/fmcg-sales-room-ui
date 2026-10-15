@@ -407,7 +407,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-detail-fields::before{border-color:#9bb9d3}
 .supplier-allocation-dialog .allocation-person.complete{color:#16854b}
 .supplier-allocation-dialog .allocation-person.pending{color:#ff8a00}
-.supplier-allocation-dialog #allocationRows>tr.allocation-waiting>td{background:#fff7ed}
+.supplier-allocation-dialog #allocationRows>tr.allocation-waiting>td{background:#fff}
 .supplier-allocation-dialog .allocation-waiting select{color:#b85c00;border-color:#ffb35c;background:#fffaf3}
 .supplier-allocation-dialog .allocation-waiting .allocation-waiting-label{color:#b85c00;font-weight:600}
 .supplier-allocation-dialog .allocation-waiting .allocation-number input[readonly]{color:#b85c00}
