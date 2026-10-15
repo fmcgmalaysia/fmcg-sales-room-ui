@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-allocation-audit-20261015",
+  "status": "Frontend candidate only; do not deploy before backend compatibility patch and visual verification",
+  "base": "4be59f9492039ad2e98c1f0e9800001a38054eb4",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "changes": [
+    "1040px dialog and numeric inputs sized for 0000.00 without horizontal scrolling",
+    "Remove supplier acknowledgement checkbox and never silently submit supplierConfirmed=true",
+    "Display saved quantity audit with time, actor, source context and before/after quantities",
+    "Refresh FOC detail total immediately when paid or free quantity changes"
+  ],
+  "validation": {"targetedChecksPassed": 102, "realSave": false, "visualVerification": false},
+  "pendingBackend": {
+    "file": "integration/backend/purchaseOperations.js",
+    "freshLiveCaptureRequired": true,
+    "scope": "Remove acknowledgement requirement for validated costing calculator plans; retain legacy entry-point behavior and all stronger locks",
+    "before": "if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');",
+    "after": "if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');"
+  },
+  "protected": ["finance handoff", "actual receipts", "customer invoice locks", "original save journal and retries", "Sales first Catch Cost", "FMCGMALAYSIA components"],
+  "pagesDeployed": false,
+  "wixChanged": false,
+  "publicAcceptance": false,
+  "mainMerged": false
+}
