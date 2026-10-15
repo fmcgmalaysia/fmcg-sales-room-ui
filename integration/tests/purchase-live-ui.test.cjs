@@ -580,3 +580,18 @@ test('Clicking a persistent handle in All Customers opens the original destinati
  const h=harness(),w=workspace();w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});h.reply(w);h.click({view:'active'});const before=h.messages.length;
  h.click({drag:'TASK2'});assert.match(h.node('#dialogContent').innerHTML,/Move Row 移动行/);assert.match(h.node('#dialogContent').innerHTML,/Before Row 001 前面/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<option value="OTHER">/);assert.equal(h.messages.length,before);
 });
+
+
+test('Active work tabs separate work content from filters and retain a row-order draft and supplier filter',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S1',name:'FIRST SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S1',editVersion:'V',procurement:{expectedExtra:10,totalCtn:20,revision:'P'}});w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({view:'active'});
+ let html=h.node('#app').innerHTML;assert.match(html,/data-active-work="orders" aria-pressed="true"/);assert.match(html,/data-active-work="allocation" aria-pressed="false"/);assert.match(html,/id="allocationFilter" aria-label="Work source" hidden/);assert.match(html,/All Customers 全部客户/);assert.match(html,/All Suppliers 全部供应商/);
+ h.change({id:'supplierFilter',value:'S1',dataset:{}});h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});const before=h.messages.length;
+ h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Awaiting warehouse/);assert.match(html,/disabled>Allocate/);assert.match(html,/class="save-group" (?!hidden)/);assert.ok(!html.includes('Sales / Buyer'));
+ h.click({activeWork:'orders'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/<option value="S1" selected>/);assert.equal((html.match(/data-drag=/g)||[]).length,2);assert.equal(h.messages.length,before);
+ h.click({controlId:'saveEdits'});assert.deepEqual(Array.from(h.messages.at(-1).input.taskIds),['TASK2','TASK']);
+});
+
+test('Active work tabs allow read-only browsing during a pending Save without resubmitting',()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({view:'active'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const count=h.messages.length,request=h.messages.at(-1);
+ h.click({activeWork:'allocation'});assert.match(h.node('#app').innerHTML,/data-active-work="allocation" aria-pressed="true"/);h.click({activeWork:'orders'});assert.match(h.node('#app').innerHTML,/data-id="TASK"/);assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);assert.equal(h.messages.length,count);assert.equal(h.messages.at(-1).requestId,request.requestId);
+});
