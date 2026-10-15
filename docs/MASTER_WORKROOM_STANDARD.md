@@ -66,3 +66,9 @@ Sales 的表格本身已有不同用途的紧凑密度。Master 必须复用相�
 - 保留 Active 默认拖行入口、子行、FOC同行、ETA、PO格式空间、Save/Cancel/草稿和未知结果保护。本次不连接新 Warehouse/Account 业务。
 
 验证：248项受影响检查通过；完整398项中396通过，2项已在原基准b8932e9复现（付款状态期望与客户等待提示语言）。本地Chrome完成主要视图的样式检查；不是正式业务端到端验收，也没有实际指针拖拽验收。记录见 handoff/master-workroom-consistency-20261016。
+
+## 2026-10-16 发布及顶部模板落实
+
+本节更新上一节的“尚未切换候选”状态，历史测量和业务保护仍保留。共用主题0167569已部署Pages并获得Wix发布回执；四正式工作间已读到真实数据或原空列表。用户确认均可打开。
+
+用户随后明确要求 Account、Warehouse、Support 顶部按 Purchase 截图统一：MASTER左侧、部门名称旁边、公司和员工身份右侧。顶部候选e660e63，Pages run38774953460成功；254项受影响检查通过。仅三个index头部和共用主题scoped CSS，控件ID/原事件/数据读写不变；三Wix入口只改版本token，完整读回一致，Wix已确认发布。正式页验收详见 handoff/master-theme-release-20261016/RECORD.txt 和 release.json，不能由部署回执推导业务验收。

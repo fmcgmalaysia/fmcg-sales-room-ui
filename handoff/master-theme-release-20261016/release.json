@@ -31,7 +31,27 @@
     "sales-room",
     "buyer-room"
   ],
-  "pages": "pending",
-  "wixPublish": "pending",
-  "publicVerification": "pending"
+  "pages": {
+    "status": "success",
+    "uiCommit": "e660e63d4b1df08fedf78b906ade277782374ca0",
+    "runId": 38774953460,
+    "publicAssetsNormalizedExact": 31,
+    "originalSevenDeploymentPoliciesRestored": true,
+    "purchaseMarker": "2026-10-16-master-workroom-theme-v1",
+    "otherDepartmentsMarker": "2026-10-16-master-header-v2"
+  },
+  "wixPublish": {
+    "status": "published_and_live_receipt_observed",
+    "codeRecordCommit": "5cde12b",
+    "threeFreshBeforeCodeComparisonsExact": true,
+    "threeTokenOnlyAfterReadbacksExact": true,
+    "receipt": "header-v2/wix-publish-receipt.png"
+  },
+  "publicVerification": {
+    "purchase": "real five tasks and two PO; all main views audited",
+    "account": "header-v2 MASTER, company right, LAW identity and two real PO",
+    "warehouse": "header-v2 MASTER, company right, LAW identity and two real PO",
+    "support": "header-v2 MASTER, full company selector right, LAW, no shipment requests; user-opened fresh check URL visually verified",
+    "businessSubmissions": "none; formal new SAVE and actual pointer drag still not accepted"
+  }
 }
