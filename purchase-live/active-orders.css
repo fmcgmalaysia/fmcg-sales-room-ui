@@ -2,6 +2,17 @@
 #app:has(> .active-order-heading){font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;font-size:11px;color:#203047}
 #app:has(> .active-order-heading) :is(button,input,select,textarea){font-family:inherit}
 #app>.active-order-heading{min-height:0;background:transparent;border:0;padding:0;margin-bottom:16px}
+#app>.active-order-heading{position:static;justify-content:space-between;gap:24px}
+#app .ao-priorities{display:flex;gap:10px;align-self:center}
+#app .ao-priority{display:flex;align-items:center;gap:24px;min-width:185px;padding:10px 14px;border:1px solid #c5d5e5;border-radius:5px;background:#fff;color:#203047;text-align:left;font-size:13px;font-weight:700}
+#app .ao-priority small{display:block;margin-top:4px;color:#62758a;font-size:9px;font-weight:400}
+#app .ao-priority b{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;min-width:28px;height:28px;padding:0 7px;border-radius:50%;background:#e7eef5;color:#173557;font-size:14px}
+#app .ao-priority.has-work b{background:#ff8a00;color:#fff}
+#app .ao-priority.incoming.has-work b{background:#c42b31}
+#app .ao-priority:is(:hover,:focus-visible){border-color:#376aa5;background:#f2f6fb}
+#app .active-order-table .customer-shipment{margin-top:4px;font-size:10px;line-height:14px;font-weight:400;white-space:nowrap;color:#536b84}
+#app:has(>.active-order-heading) .ao-move{font-size:11px;color:#3766a2;border-color:#b8ccdf;margin-left:auto}
+@media(max-width:900px){#app>.active-order-heading{flex-wrap:wrap}#app .ao-priorities{flex-wrap:wrap}#app .ao-priority{min-width:170px}}
 #app>.active-order-heading h1{font-size:20px;font-weight:800;line-height:26px;color:#203047}
 #app>.active-order-heading .muted{color:#536b84;font-size:10px}
 #app>.active-order-heading .room-counts b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:50%;background:#ff8a00;color:#fff;font-size:11px;font-weight:700}

@@ -77,6 +77,30 @@ test('Active Orders exposes customer short names, filters one customer for movem
  h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
 });
 
+test('Active priorities count saved sources rather than demand remainder and open the original source actions',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];
+ Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'},po:'PO-A',estimatedShipmentDate:'2026-10-28'});
+ w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'',procurement:{totalCtn:30,revision:'B'},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
+ w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{totalCtn:null,revision:''}});
+ h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
+ assert.match(html,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
+ assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>28 Oct 2026/);
+ assert.equal((html.match(/<th>/g)||[]).length,13);assert.equal(h.node('#taskSignals').hidden,true);
+ h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="B"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
+ h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="B" data-progress-index="3"/);assert.equal(h.messages.length,before);
+ h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
+});
+
+test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});
+ h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});assert.match(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);
+ h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);
+ h.click({drag:'TASK'});h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});let html=h.node('#app').innerHTML;
+ assert.ok(html.indexOf('data-id="OTHER"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-source-id="SOURCE"'));assert.match(html,/data-active-cancel="true"/);
+ h.click({activeCancel:'true'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="OTHER"'));assert.doesNotMatch(html,/data-active-cancel/);assert.equal(h.messages.length,before);
+});
+
 test('cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt',()=>{
  const h=harness(),w=workspace();w.sourcesVersion='S1';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{totalCtn:null,revision:''}});
  h.reply(w);h.click({customer:'C'});h.click({planTask:'TASK'});
