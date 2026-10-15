@@ -40,6 +40,7 @@
   }
   function create(api){
     let state=null,referenceRequest=null;
+    const parkedDrafts=new Map();
     const esc=api.esc,money=api.num;
     const workspace=()=>api.workspace();
     const rootTask=()=>workspace()?.tasks.find(row=>row.id===state?.rootId);
@@ -53,9 +54,14 @@
     function open(id){
       const data=workspace(),source=data.tasks.find(row=>row.id===id),root=source?.procurementSource?data.tasks.find(row=>row.id===source.customerDemandTaskId):source;
       if(!root)return;
-      if(state&&state.rootId!==root.id&&state.dirty){api.status('另一产品有未提交的供应商草稿；请先应用或明确取消该草稿。',true);return;}
+      if(state&&state.rootId!==root.id){
+        if(state.running||state.current||api.savePending()){api.status('保存结果尚未确认；可继续浏览，请先核对原保存再编辑其他分单。',true);return;}
+        if(state.dirty){parkedDrafts.set(state.rootId,state);const task=data.tasks.find(item=>item.id===state.rootId);api.status((api.rowLabel?.(state.rootId)||state.rowLabel||'产品')+' · '+(task?.barcode||state.rootId)+' 有未完成草稿，已保留；可继续处理其他任务。');}
+        state=parkedDrafts.get(root.id)||null;parkedDrafts.delete(root.id);
+      }
+      if(!state&&parkedDrafts.has(root.id)){state=parkedDrafts.get(root.id);parkedDrafts.delete(root.id);}
       if(!state||state.rootId!==root.id||!state.dirty&&!state.running){const sources=[root,...data.tasks.filter(row=>row.customerDemandTaskId===root.id)];state={company:data.company,rootId:root.id,counter:0,reason:'',rows:sources.map(row=>rowDraft(row,row.id)),dirty:false,running:false,current:null,issue:'',reopen:true};}
-      state.reopen=true;remainingRow();render();api.cache();
+      state.rowLabel=api.rowLabel?.(root.id)||state.rowLabel||'';state.reopen=true;remainingRow();render();api.cache();
     }
     function render(){
       const root=rootTask();if(!root||!state)return;
@@ -177,7 +183,13 @@
       if(control.id==='discardSupplierAllocation'){if(state&&!state.running&&!api.savePending()&&api.confirm('Cancel unsaved supplier allocation / 取消未提交的供应商草稿？已确认的来源不会撤销。')){state=null;api.cache();api.modal().close();}return true;}
       return false;
     }
-    return {open,click,edit,receipt,rejected,receivedWorkspace,serialize:()=>state?.dirty||state?.running?copy(state):null,restore:saved=>{if(saved&&saved.company===api.company()&&Array.isArray(saved.rows)){state=copy(saved);state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issue='Draft restored / 草稿已恢复；请核对后明确应用，不自动重发。';}},dirty:()=>Boolean(state?.dirty||state?.running)};
+    function serialize(){const parked=[...parkedDrafts.values()].filter(item=>item.dirty||item.running).map(item=>copy(item));if(state?.dirty||state?.running)return {...copy(state),parkedDrafts:parked};return parked.length?{company:api.company(),parkedDrafts:parked}:null;}
+    function restore(saved){
+      if(!saved||saved.company!==api.company())return;
+      for(const item of saved.parkedDrafts||[]){if(item.company!==api.company()||!Array.isArray(item.rows)||!item.rootId)continue;const draft=copy(item);draft.running=false;draft.current=null;draft.reopen=true;parkedDrafts.set(draft.rootId,draft);}
+      if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(state.rootId);state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issue='Draft restored / 草稿已恢复；请核对后明确应用，不自动重发。';}
+    }
+    return {open,click,edit,receipt,rejected,receivedWorkspace,serialize,restore,dirty:()=>Boolean(state?.dirty||state?.running||[...parkedDrafts.values()].some(item=>item.dirty||item.running))};
   }
   window.purchaseSupplierAllocation={create,validate,values,net,rowDraft,changed,calculation};
 })();
