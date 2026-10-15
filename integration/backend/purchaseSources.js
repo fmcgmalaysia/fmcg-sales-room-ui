@@ -21,8 +21,8 @@ export function createPurchaseSourceOperations({store,names,readWorkspace,now=()
    if(workspace.company!==company||input.version!==purchaseSourcesVersion(workspace))throw Error('Purchase sources changed. Refresh before saving.');
    const draftPlan=input.draftPlan===true;
    if(!parent||parent.archived||parent.procurementSource||parent.specialPurchase||(!draftPlan&&!parent.po)||!parent.procurement?.totalCtn)throw Error('Select an existing customer demand with a saved first supplier purchase.');
+   if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||(!reason&&(!input.costing||!draftPlan||workspace.tasks.filter(row=>row.id===parent.id||row.customerDemandTaskId===parent.id).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0)+input.quantity>parent.ord))||reason.length>2000)throw Error('Enter whole cartons and the additional purchase reason.');
    const ordered=workspace.tasks.filter(row=>row.id===parent.id||row.customerDemandTaskId===parent.id).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
-   if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||(!reason&&(!input.costing||!draftPlan||ordered+input.quantity>parent.ord))||reason.length>2000)throw Error('Enter whole cartons and the additional purchase reason.');
    if(!input.costing&&ordered+input.quantity>parent.ord)throw Error('Additional supplier quantities exceed customer demand.');
    const suppliers=await store.all('SharedSuppliers');if(!suppliers.some(row=>row.title===input.supplierId&&String(row.supplierStatus).toUpperCase()==='ACTIVE'))throw Error('Select an active supplier.');
    if(draftPlan&&po)throw Error('Save the source plan first, then select its P.O. association.');

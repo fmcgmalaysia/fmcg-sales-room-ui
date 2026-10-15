@@ -98,8 +98,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
         const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
-        if(extra>0&&!reason)throw Error('An additional purchase reason is required.');
-        if(extra>0&&!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true))throw Error('Confirm extra cartons and whether they are free goods or paid procurement.');
+        if(extra>0&&(!reason||!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
         if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
