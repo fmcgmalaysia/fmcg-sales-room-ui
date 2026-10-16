@@ -85,3 +85,13 @@ test('active order quantities omit unplaced chips while receipt issues and legac
  assert.match(html,/data-waiting-for="R"/);assert.match(html,/class="order-quantity">20<\/td>/);assert.equal(JSON.stringify(f.args.tasks),before);
  f.args.active=false;html=f.render();assert.equal((html.match(/data-quantity-case="U"/g)||[]).length,3);
 });
+test('unknown or unconfirmed procurement never displays a GP capsule even when an upstream GP is present',()=>{
+ for(const active of [false,true])for(const kind of ['unplanned','reference-only','missing-source-cost','partial']){
+  const f=fixture();f.args.active=active;
+  if(kind==='unplanned')for(const row of [f.root,f.child])row.procurement={totalCtn:null,revision:''};
+  if(kind==='reference-only')for(const row of [f.root,f.child])row.procurement.revision='';
+  if(kind==='missing-source-cost')f.child.disc3=null;
+  if(kind==='partial')f.root.ord=120;
+  const html=f.render();assert.doesNotMatch(html,/gp-badge/);if(!active)assert.match(html,/<b class="gp">—<\/b>/);
+ }
+});

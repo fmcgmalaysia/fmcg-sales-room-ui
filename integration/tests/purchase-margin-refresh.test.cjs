@@ -14,7 +14,7 @@ function fixture() {
     update: async (c, row) => rows.set(c + '/' + row._id, clone(row)), remove: async (c, id) => rows.delete(c + '/' + id) };
   let rate = 3.2;
   const input = () => ({ company: 'NCT', names, orders: [clone(rows.get(names.orders + '/O'))], tasks: [clone(rows.get(names.tasks + '/T'))],
-    workspace: { tasks: [{ id: 'T', orderId: 'ORDER', sourceLineId: 'LINE' }] } });
+    workspace: { tasks: [{ id: 'T', orderId: 'ORDER', sourceLineId: 'LINE',ord:90,supplierId:'S',procurement:{totalCtn:90,revision:'SAVED-PLAN'} }] } });
   const refresh = createPurchaseMarginRefresh({ store, readRates: async () => [{ currency: 'SGD', rateToMyr: rate, updatedAt: '2026-10-10T14:00:00Z' }] });
   return { names, rows, store, refresh, input, setRate: value => { rate = value; }, events: () => [...rows.values()].filter(row => row.action === 'GP_RECALCULATED') };
 }
@@ -84,8 +84,8 @@ function withInvoice(input, quantity) {
 function withSources(f, input) {
   const source = { ...clone(f.rows.get('NCTTasks/T')), _id: 'B', title: 'B', procurementSource: true, customerDemandTaskId: 'T', purchaseQtyInCtn: 0, lpCtn: 300 };
   f.rows.set('NCTTasks/B', clone(source)); input.tasks.push(source);
-  input.workspace.tasks[0].procurement = { totalCtn: 60 };
-  input.workspace.tasks.push({ id: 'B', procurementSource: true, customerDemandTaskId: 'T', procurement: { totalCtn: 30 } });
+  input.workspace.tasks[0].procurement = { totalCtn: 60,revision:'SAVED-A' };
+  input.workspace.tasks.push({ id: 'B', procurementSource: true, customerDemandTaskId: 'T', procurement: { totalCtn: 30,revision:'SAVED-B' } });
   return input;
 }
 
@@ -97,7 +97,7 @@ test('multiple suppliers contribute weighted open cost while demand and each sup
 });
 
 test('supplier surplus stays out of the customer weighted GP cost',async()=>{
- const f=fixture(),input=withSources(f,f.input());input.workspace.tasks[1].procurement.expectedExtra=10;
+ const f=fixture(),input=withSources(f,f.input());input.workspace.tasks[1].procurement.expectedExtra=10;input.workspace.tasks[0].ord=80;
  assert.equal((await f.refresh(input)).get('T'),(320-255)/320);
  assert.equal(input.workspace.tasks[1].procurement.totalCtn,30);assert.equal(f.rows.get('NCTTasks/B').lpCtn,300);
 });
@@ -138,4 +138,40 @@ test('fully invoiced GP and invoice summary cache do not require a current FX se
   assert.equal((await refresh(withInvoice(f.input(),90))).get('T'),.2);
   const saved=f.rows.get('NCTOrders/O');assert.equal(saved.gp,.2);assert.equal(saved.salesInvoiceSummary[0].rateToMyr,3);
   assert.equal(saved.adminFxSource,3);assert.equal(f.rows.get('NCTTasks/T').purchaseQtyInCtn,90);
+});
+test('unplanned reference prices and partially covered demand cannot produce a GP or refresh its cache',async()=>{
+ for(const plan of [{totalCtn:null,revision:''},{totalCtn:90,revision:''},{totalCtn:60,revision:'PARTIAL'}]){
+  const f=fixture(),input=f.input();input.workspace.tasks[0].procurement=plan;const before=clone(f.rows.get('NCTOrders/O'));
+  assert.equal((await f.refresh(input)).get('T'),null);assert.deepEqual(f.rows.get('NCTOrders/O'),before);assert.equal(f.events().length,0);
+ }
+});
+test('confirmed plan amount owns GP instead of stale task/reference prices, including FOC and inventory surplus',async()=>{
+ for(const [total,extra,cents]of [[90,0,1620000],[110,20,100000]]){
+  const f=fixture(),input=f.input();input.workspace.tasks[0].procurement={revision:'SAVED',totalCtn:total,expectedExtra:extra,costing:{schema:1,totalCtn:total,amountCents:cents,averageCostCtn:cents/100/total}};
+  const before=clone(f.rows.get('NCTTasks/T'));assert.equal((await f.refresh(input)).get('T'),(320-cents/100/total)/320);assert.deepEqual(f.rows.get('NCTTasks/T'),before);
+ }
+});
+test('missing or inconsistent confirmed amount cannot fall back to a reference price',async()=>{
+ for(const costing of [{totalCtn:90,amountCents:null},{totalCtn:89,amountCents:1620000},{totalCtn:90,amountCents:-1}]){
+  const f=fixture(),input=f.input();input.workspace.tasks[0].procurement.costing=costing;assert.equal((await f.refresh(input)).get('T'),null);assert.equal(f.events().length,0);
+ }
+});
+test('multiple confirmed source amounts are weighted by customer share and keep invoice snapshots frozen',async()=>{
+ for(const invoice of [false,true]){
+  const f=fixture(),input=withSources(f,invoice?withInvoice(f.input(),40):f.input());f.setRate(4);
+  for(const [row,cost]of [[input.workspace.tasks[0],120],[input.workspace.tasks[1],300]])row.procurement.costing={schema:1,totalCtn:row.procurement.totalCtn,amountCents:cost*row.procurement.totalCtn*100,averageCostCtn:cost};
+  const expected=invoice?(40*100*3+50*100*4-40*240-20*120-30*300)/(40*100*3+50*100*4):(400-180)/400;
+  assert.equal((await f.refresh(input)).get('T'),expected);if(invoice)assert.equal(input.activity.at(-1).details.shipment.lines[0].costSources[0].netCostCtn,240);
+ }
+});
+test('Sales invoice cache refresh retains supplier children and uses their confirmed costs',async()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),f=fixture(),input=withSources(f,withInvoice(f.input(),40));
+ input.workspace.tasks[0].procurement.costing={schema:1,totalCtn:60,amountCents:720000,averageCostCtn:120};
+ for(const [i,event]of input.activity.entries())f.rows.set('NCTActivity/INVOICE-'+i,{_id:'INVOICE-'+i,...clone(event)});
+ const wixData={query:collection=>{const filters=[];return {limit(){return this},eq(key,value){filters.push([key,value]);return this},async find(){return {items:[...f.rows].filter(([key,row])=>key.startsWith(collection+'/')&&filters.every(([field,value])=>row[field]===value)).map(([,row])=>clone(row)),hasNext:()=>false}}}},insert:f.store.insert,update:f.store.update,remove:f.store.remove};
+ let source=fs.readFileSync(path.join(__dirname,'../backend/customerFulfilmentService.js'),'utf8'),bindings={wixData};
+ for(const match of source.matchAll(/^import \{([^}]+)\} from '[^']+';/gm))for(const name of match[1].split(',').map(x=>x.trim()))bindings[name]=()=>null;
+ Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginRefresh,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({shipmentId:'SHIP'})});
+ source=source.replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');const save=vm.runInNewContext('(function(){'+source+';return saveCustomerFulfilment;})()',bindings);
+ await save({company:'NCT',staff:{},input:{action:'INVOICE'}});const revenue=40*100*3+50*100*4;assert.equal(f.rows.get('NCTOrders/O').gp,(revenue-40*240-20*120-30*300)/revenue);
 });

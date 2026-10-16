@@ -7,17 +7,20 @@ import { calculateGrossProfitMargin, calculateNetCartonCost } from 'backend/gros
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
   const sources = workspace.tasks.filter(source => source.id === row.id || source.customerDemandTaskId === row.id);
-  if (!sources.some(source => source.procurementSource)) return calculateNetCartonCost(task);
   let quantity = 0, amount = 0;
   for (const source of sources) {
     const invoiced = invoiceLines.flatMap(line => line.costSources || []).filter(part => part.sourceTaskId === source.id).reduce((sum, part) => sum + part.quantity, 0);
-    const remaining = Math.max(0, (source.procurement?.totalCtn || 0) - (source.procurement?.expectedExtra || 0) - invoiced);
+    const plan=source.procurement,customerQuantity=plan?.customerCtn??((plan?.totalCtn||0)-(plan?.expectedExtra||0));
+    const remaining = Math.max(0, customerQuantity - invoiced);
     if (!remaining) continue;
-    const raw = tasks.find(item => item.title === source.id), cost = raw ? calculateNetCartonCost(raw) : null;
-    if (!finite(cost)) return null;
+    if (!(plan?.revision||source.po)||!Number.isSafeInteger(plan?.totalCtn)||plan.totalCtn<=0) return null;
+    const raw = tasks.find(item => item.title === source.id),costing=plan.costing;
+    const cost = costing?(Number.isSafeInteger(costing.amountCents)&&costing.amountCents>0&&costing.totalCtn===plan.totalCtn?costing.amountCents/100/plan.totalCtn:null):raw?calculateNetCartonCost(raw):null;
+    if (!finite(cost)||cost<0) return null;
     quantity += remaining; amount += remaining * cost;
   }
-  return quantity ? amount / quantity : null;
+  const demand=row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord,openQuantity=demand-invoiceLines.reduce((sum,line)=>sum+line.quantity,0);
+  return Number.isSafeInteger(openQuantity)&&openQuantity>0&&quantity>=openQuantity ? amount / quantity : null;
 }
 // GP is a backend read cache. Financial consumers must refresh open transactions.
 // The future Sales Co invoice save must acquire GP_LOCK and COST_LOCK and freeze

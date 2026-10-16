@@ -27,7 +27,7 @@ export async function saveCustomerFulfilment(request){
   const {company,staff}=request,names=PURCHASE_COLLECTIONS[company],context=await readFulfilmentContext(company,staff);
   const [orders,tasks]=await Promise.all([fulfilmentStore.all(names.orders),fulfilmentStore.all(names.tasks)]);
   const shipment=readCustomerShipments(context.activity).find(row=>row.id===result.shipmentId);
-  const workspace={...context,tasks:context.tasks.filter(row=>shipment.lines.some(line=>line.taskId===row.id))};
+  const workspace={...context,tasks:context.tasks.filter(row=>shipment.lines.some(line=>line.taskId===row.id||line.taskId===row.customerDemandTaskId))};
   const refreshed=await refreshInvoiceCache({company,names,orders,tasks,workspace,activity:context.activity});
   if(shipment.lines.some(line=>refreshed.get(line.taskId)===null||!refreshed.has(line.taskId)))throw Error('Invoice saved; CMS cache confirmation pending. Retry this same request.');
  }
