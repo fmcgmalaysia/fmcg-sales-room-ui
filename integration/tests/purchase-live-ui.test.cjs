@@ -102,7 +102,7 @@ test('stock-only supplier receipts cannot satisfy another supplier customer shor
  w.tasks.push({...w.tasks[0],id:'STOCK',customerDemandTaskId:'TASK',procurementSource:true,ord:0,procurement:{totalCtn:50,customerCtn:0,expectedExtra:50},warehouse:{accepted:50,hasPhysicalReceipt:true}});
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
  assert.match(html,/received-quantity[\s\S]*?>60<\/button>/);
- assert.match(html,/Stock rcv \/ 库存实收 \+50/);
+ assert.match(html,/Stock rcv 库存实收 \+50/);
 });
 
 test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
@@ -138,7 +138,7 @@ test('Active demand summary is display-only and omits duplicate waiting text whi
 test('Active actual receipts never open supplier costing while receipt exception actions remain available',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:90,revision:'P'},supplierId:'A',warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'RECEIPT-CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH'],owner:'WAREHOUSE'}]});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML,receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];
- assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received \/ 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
+ assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
  h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
 });
 

@@ -220,14 +220,14 @@
       if(control.dataset.allocationCatch){reference(control.dataset.allocationCatch);return true;}
       if(control.dataset.allocationSave){if(!state||state.running||state.current||api.savePending())return true;const row=state.rows.find(item=>item.key===control.dataset.allocationSave);if(!row?.supplierId)return true;const problem=validate(submissionState(state,workspace(),row.key),workspace());if(problem){state.issueTone='problem';state.issue=problem;document.querySelector('#allocationIssue').className='allocation-issue problem';document.querySelector('#allocationIssue').textContent=problem;return true;}state.saveKey=row.key;state.running=true;state.reopen=true;next();return true;}
       if(control.id==='applySupplierAllocation'){if(!state||state.running||state.current||api.savePending())return true;state.saveKey=null;const problem=validate(state,workspace());if(problem){state.issueTone='problem';state.issue=problem;document.querySelector('#allocationIssue').className='allocation-issue problem';document.querySelector('#allocationIssue').textContent=problem;return true;}state.running=true;state.reopen=true;next();return true;}
-      if(control.id==='discardSupplierAllocation'){if(state&&!state.running&&!api.savePending()&&api.confirm('Cancel unsaved supplier allocation / 取消未提交的供应商草稿？已确认的来源不会撤销。')){state=null;api.cache();api.modal().close();}return true;}
+      if(control.id==='discardSupplierAllocation'){if(state&&!state.running&&!api.savePending()&&api.confirm('Cancel unsaved supplier allocation 取消未提交的供应商草稿？已确认的来源不会撤销。')){state=null;api.cache();api.modal().close();}return true;}
       return false;
     }
     function serialize(){const parked=[...parkedDrafts.values()].filter(item=>item.dirty||item.running).map(item=>copy(item));if(state?.dirty||state?.running)return {...copy(state),parkedDrafts:parked};return parked.length?{company:api.company(),parkedDrafts:parked}:null;}
     function restore(saved){
       if(!saved||saved.company!==api.company())return;
       for(const item of saved.parkedDrafts||[]){if(item.company!==api.company()||!Array.isArray(item.rows)||!item.rootId)continue;const draft=copy(item);draft.running=false;draft.current=null;draft.reopen=true;parkedDrafts.set(draft.rootId,draft);}
-      if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(state.rootId);state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issueTone='pending';state.issue='Draft restored / 草稿已恢复；请核对后明确应用，不自动重发。';}
+      if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(state.rootId);state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issueTone='pending';state.issue='Draft restored 草稿已恢复；请核对后明确应用，不自动重发。';}
     }
     return {open,click,edit,format,keyDown,receipt,rejected,receivedWorkspace,serialize,restore,sourceDirty:id=>[state,...parkedDrafts.values()].some(context=>context?.dirty&&context.rows.some(row=>row.taskId===id&&changed(row,workspace().tasks.find(saved=>saved.id===id)))),dirty:()=>Boolean(state?.dirty||state?.running||[...parkedDrafts.values()].some(item=>item.dirty||item.running))};
   }
