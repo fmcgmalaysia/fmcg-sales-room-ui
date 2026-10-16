@@ -534,6 +534,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .po-submission-workspace .po-term-saved{color:#173557;background:none;font:inherit;white-space:nowrap;padding:5px;border:0}
 .po-doc-badges{display:flex;gap:5px;flex-wrap:wrap}.po-doc-badge{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex:0 0 28px;width:28px;height:28px;font:inherit;font-size:10px;white-space:nowrap;border:1px solid;border-radius:5px;padding:3px;cursor:pointer;background:white}
 .po-doc-badge.pending{color:#fff;border-color:var(--master-orange);background:var(--master-orange)}.po-doc-badge.available{color:#fff;border-color:var(--master-green);background:var(--master-green)}.po-doc-badge.problem{color:#fff;border-color:var(--master-red);background:var(--master-red)}
+.po-submission-workspace .po-doc-badge.available{background:#12883e;border-color:#12883e}
 .po-doc-actions{display:flex;gap:12px;margin-top:5px}.po-doc-actions button{display:inline-flex;align-items:center;gap:3px;border:0;background:none;font:inherit;font-size:10px;color:#3766a2;padding:2px 0;cursor:pointer}
 .po-doc-actions svg{height:14px;width:14px;fill:none;stroke:currentColor;stroke-width:1.6}
 dialog.po-term-dialog{width:420px;max-width:calc(100vw - 32px)}.po-term-dialog .field{display:flex;flex-direction:column;gap:8px}.po-term-dialog .field select{width:100%;height:34px;border:1px solid #b4cce1;border-radius:4px;background:white;font:inherit;padding:6px 8px}
