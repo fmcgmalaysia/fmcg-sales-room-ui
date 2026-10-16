@@ -701,7 +701,7 @@ test('payment entry requires current linked Our PO and PI, SO or INV; stale and 
 test('Docs help is read-only and an unconnected payment form cannot submit an unsupported action',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
- h.click({controlId:'poDocsHelp'});assert.match(h.node('#dialogContent').innerHTML,/Our Purchase Order/);assert.match(h.node('#dialogContent').innerHTML,/Credit Note from Supplier/);
+ h.click({controlId:'poDocsHelp'});assert.equal(h.node('#modal').open,false);assert.match(h.node('#app').innerHTML,/popover="auto"/);assert.match(h.node('#app').innerHTML,/Our Purchase Order/);assert.match(h.node('#app').innerHTML,/Credit Note from Supplier/);
  h.click({poRequest:'PO'});assert.match(h.node('#dialogContent').innerHTML,/id="poRequestTerm"/);assert.match(h.node('#dialogContent').innerHTML,/Connection pending/);h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.match(h.node('#dialogError').textContent,/connection is pending/);
 });
 
