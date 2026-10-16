@@ -61,6 +61,19 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
 
+test('Dashboard customer Entry opens Active Orders filtered to that customer, preserving sources and requiring no save',()=>{
+ const h=harness(),w=workspace();w.customers.push({id:'D',name:'OTHER CUSTOMER'});Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-PO-1',procurement:{totalCtn:200,revision:'P'}});w.suppliers=[{id:'S',name:'SUPPLIER'}];w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,ord:0,po:'',procurement:{totalCtn:30,revision:'P2'}},{...w.tasks[0],id:'OTHER',customerId:'D',name:'OTHER PRODUCT'});h.reply(w);
+ assert.match(h.node('#app').innerHTML,/class="room-entry" data-dashboard-entry="true" data-customer="C"/);
+ h.click({customer:'C',dashboardEntry:'true'});const html=h.node('#app').innerHTML;assert.match(html,/active-order-heading/);assert.match(html,/<option value="C" selected/);assert.match(html,/data-source-id="CHILD"/);assert.doesNotMatch(html,/OTHER PRODUCT|class="roomhead"|<th>Progress<\/th>/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ h.click({poTask:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/Review P.O./);
+});
+
+test('Dashboard Entry preserves another customer price draft and saves it with its original task/version',()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='REV-C';w.customers.push({id:'D',name:'OTHER CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'OTHER PRODUCT'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({view:'dashboard'});h.click({customer:'D',dashboardEntry:'true'});
+ assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="D" selected/);assert.match(h.node('#app').innerHTML,/OTHER PRODUCT/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ h.click({controlId:'saveEdits'});const sent=h.messages.at(-1);assert.equal(sent.operation,'EDIT');assert.equal(sent.input.edits[0].taskId,'TASK');assert.equal(sent.input.edits[0].version,'REV-C');assert.equal(sent.input.edits[0].changes.disc3,3);
+});
+
 test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
  const h=harness(),w=workspace();
  Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});
