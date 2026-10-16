@@ -384,33 +384,39 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:0;border-radius:4px;font-size:22px;line-height:1}
 .supplier-allocation-dialog .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb;color:#173557}
 /* PO number confirmation uses the same compact blue-gray workroom presentation. */
-#modal:has(#poNumber){width:820px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
+#modal:has(#poNumber){width:760px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
 #modal:has(#poNumber) :is(button,input){font-family:inherit}
-#modal:has(#poNumber) .dialoghead{padding:12px 16px;background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
+#modal:has(#poNumber) .dialoghead{padding:10px 14px;background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
 #modal:has(#poNumber) .dialoghead>div{display:flex;flex-direction:column;gap:3px}
-#modal:has(#poNumber) .dialoghead .po-dialog-supplier{order:-1;display:block;font-size:20px;line-height:26px;font-weight:800;color:#203047;margin:0}
+#modal:has(#poNumber) .dialoghead .po-dialog-supplier{order:-1;display:block;font-size:18px;line-height:23px;font-weight:800;color:#203047;margin:0}
 #modal:has(#poNumber) .dialoghead h2{font-size:14px;line-height:20px;font-weight:600;color:#234768;margin:0}
 #modal:has(#poNumber) .dialoghead .muted{display:none}
 #modal:has(#poNumber) .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;font-size:22px;line-height:1;color:#234768;border-radius:4px}
 #modal:has(#poNumber) .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb}
-#modal:has(#poNumber) .dialogbody{padding:14px 16px;font-size:11px}
-#modal:has(#poNumber) .po-purpose{margin-bottom:12px;color:#536b84;font-size:11px;line-height:16px}
+#modal:has(#poNumber) .dialogbody{padding:10px 14px;font-size:11px;min-height:0}
+#modal:has(#poNumber) .po-purpose{margin-bottom:9px;color:#536b84;font-size:11px;line-height:16px}
 #modal:has(#poNumber) .po-number-entry label{font-size:11px;margin-bottom:5px}
-#modal:has(#poNumber) #poNumber{width:240px;max-width:100%;height:32px;border:1px solid #b8ccdf;border-radius:3px;padding:6px 8px;background:#fff;color:#203047;font-size:13px;line-height:18px;font-weight:700}
+#modal:has(#poNumber) #poNumber{width:210px;max-width:100%;height:32px;border:1px solid #b8ccdf;border-radius:3px;padding:6px 8px;background:#fff;color:#203047;font-size:13px;line-height:18px;font-weight:700}
 #modal:has(#poNumber) #poNumber:focus-visible{outline:2px solid #3766a2;outline-offset:1px}
-#modal:has(#poNumber) .po-items-summary{margin:14px 0 8px;font-size:11px;font-weight:600;color:#203047}
-#modal:has(#poNumber) .po-items :is(th,td){height:auto;padding:8px;font-size:11px;line-height:16px;color:#203047}
+#modal:has(#poNumber) .po-items-summary{margin:8px 0 5px;font-size:10px;font-weight:400;color:#62758a}
+#modal:has(#poNumber) .po-confirm-overview{display:flex;align-items:center;justify-content:space-between;gap:18px}
+#modal:has(#poNumber) .po-confirm-totals{display:flex;align-items:center;gap:26px;padding:7px 12px;background:#fff0d6;border:1px solid #f0dab5;border-radius:4px}
+#modal:has(#poNumber) .po-confirm-totals span{display:block;font-size:10px;line-height:14px;color:#536b84}
+#modal:has(#poNumber) .po-confirm-totals strong{display:block;font-size:20px;line-height:26px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;color:#173557}
+#modal:has(#poNumber) .po-items td:is(.po-quantity,:last-child){font-size:12px;font-weight:800}
+#modal:has(#poNumber) #dialogError:empty{display:none}
+#modal:has(#poNumber) .po-items :is(th,td){height:auto;padding:5px 6px;font-size:11px;line-height:15px;color:#203047}
 #modal:has(#poNumber) .po-items th{background:#d2dfea;font-weight:700}
-#modal:has(#poNumber) .po-items th:nth-child(1){width:17%}
-#modal:has(#poNumber) .po-items th:nth-child(2){width:43%}
-#modal:has(#poNumber) .po-items th:nth-child(3){width:10%}
-#modal:has(#poNumber) .po-items th:nth-child(4){width:14%}
-#modal:has(#poNumber) .po-items th:nth-child(5){width:16%}
+#modal:has(#poNumber) .po-items th:nth-child(1){width:12%}
+#modal:has(#poNumber) .po-items th:nth-child(2){width:54%}
+#modal:has(#poNumber) .po-items th:nth-child(3){width:8%}
+#modal:has(#poNumber) .po-items th:nth-child(4){width:11%}
+#modal:has(#poNumber) .po-items th:nth-child(5){width:15%}
 #modal:has(#poNumber) .po-items :is(th,td):nth-child(n+3){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 #modal:has(#poNumber) .po-items .po-barcode{font-size:10px;color:#62758a}
-#modal:has(#poNumber) .po-barcode b{display:block;margin-top:2px;font-size:11px;line-height:16px;color:#173557;overflow-wrap:anywhere}
-#modal:has(#poNumber) .po-barcode small{display:block;margin-top:2px;font-size:10px;line-height:14px;color:#62758a}
-#modal:has(#poNumber) .dialogfoot{padding:10px 16px;background:#f5f9fd;border-top:1px solid #cfdfed}
+#modal:has(#poNumber) .po-barcode b{display:block;margin:0;font-size:11px;line-height:15px;color:#173557;overflow-wrap:anywhere}
+#modal:has(#poNumber) .po-barcode small{display:block;margin-top:1px;font-size:10px;line-height:13px;color:#62758a}
+#modal:has(#poNumber) .dialogfoot{padding:8px 14px;background:#f5f9fd;border-top:1px solid #cfdfed}
 #modal:has(#poNumber) .dialogfoot .btn{min-height:30px;padding:5px 10px;font-size:11px}
 #modal:has(#poNumber) .dialogfoot .btn.primary{background:#3766a2;border-color:#3766a2}
 /* Compact row destination dialog; sorting and save handlers remain unchanged. */
@@ -674,3 +680,5 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .history-date input{width:115px}
 #app .activity-workspace .po-number-link{font-weight:700;color:var(--master-blue)}
 #app .activity-workspace .history-result{color:var(--master-muted)}
+
+@media(max-width:600px){#modal:has(#poNumber) .po-confirm-overview{align-items:stretch;flex-direction:column;gap:8px}#modal:has(#poNumber) .po-confirm-totals{justify-content:space-between}#modal:has(#poNumber) .po-confirm-totals strong{font-size:18px}}
