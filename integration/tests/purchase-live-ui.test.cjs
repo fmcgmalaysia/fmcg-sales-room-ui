@@ -382,7 +382,7 @@ test('unconfirmed CMS save keeps original identity and identifies affected tasks
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,pending:true,errorCode:'WDE0118',error:'CMS connection WDE0118',requestId:save.requestId}});
  const check=h.messages.at(-1);assert.equal(check.type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(check.saveRequestId,save.requestId);
- assert.equal(h.node('#companySelect').disabled,true);assert.match(h.node('#liveStatus').textContent,/Barcode 00123/);assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.ok(h.node('#liveStatus').textContent.includes('Ref / 操作编号: '+save.requestId));
+ assert.equal(h.node('#companySelect').disabled,true);assert.match(h.node('#liveStatus').textContent,/Barcode 00123/);assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.ok(h.node('#liveStatus').textContent.includes('Ref 操作编号: '+save.requestId));
  h.send({type:'PURCHASE_SAVE_CHECK_RESULT',company:'NCT',requestId:check.requestId,ok:false,error:'Read failure'});await new Promise(resolve=>setImmediate(resolve));
  assert.match(h.node('#liveStatus').textContent,/WDE0118/);assert.match(h.node('#liveStatus').textContent,/暂时无法核对/);
  h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.edits[0].changes.disc3,5);
@@ -594,4 +594,28 @@ test('Active work tabs separate work content from filters and retain a row-order
 test('Active work tabs allow read-only browsing during a pending Save without resubmitting',()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({view:'active'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const count=h.messages.length,request=h.messages.at(-1);
  h.click({activeWork:'allocation'});assert.match(h.node('#app').innerHTML,/data-active-work="allocation" aria-pressed="true"/);h.click({activeWork:'orders'});assert.match(h.node('#app').innerHTML,/data-id="TASK"/);assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);assert.equal(h.messages.length,count);assert.equal(h.messages.at(-1).requestId,request.requestId);
+});
+
+function rowErrorFixture(){const h=harness(),w=workspace();w.tasks.unshift({...w.tasks[0],id:'BEFORE-1',barcode:'B1'},{...w.tasks[0],id:'BEFORE-2',barcode:'B2'});return {h,w};}
+function rejectSave(h,save){h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,error:'Select an active supplier.',requestId:save.requestId}});return h.node('#liveStatus').textContent;}
+test('failed main-row edit identifies ROW 003 while preserving actual backend error and request reference',()=>{
+ const {h,w}=rowErrorFixture();h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1),text=rejectSave(h,save);assert.match(text,/^ROW 003 · Barcode 00123/);assert.doesNotMatch(text,/的子行/);assert.ok(text.includes('Select an active supplier.'));assert.ok(text.includes(save.requestId));assert.equal(save.input.edits[0].taskId,'TASK');
+});
+test('new supplier failure identifies parent ROW 003 child even though no child task ID exists yet',()=>{
+ const {h,w}=rowErrorFixture();Object.assign(w.tasks[2],{supplierId:'S',po:'PO1',procurement:{revision:'P1',totalCtn:200},sourcing:{unplacedCtn:50}});w.suppliers=[{id:'S',name:'Supplier'}];h.reply(w);h.click({customer:'C'});h.click({sources:'TASK'});
+ for(const [id,value] of Object.entries({sourceSupplier:'S',sourceQty:'10','sourcePrice-lpPc':'1','sourcePrice-lpCtn':'16','sourcePrice-disc1':'0','sourcePrice-disc2':'0','sourcePrice-disc3':'0',sourceReason:'Test'}))h.node('#'+id).value=value;
+ h.click({controlId:'saveAdditionalSource'});const save=h.messages.at(-1);assert.equal(save.operation,'ADD_SOURCE');assert.match(rejectSave(h,save),/^ROW 003 的子行 · Barcode 00123/);assert.equal(save.input.parentTaskId,'TASK');
+});
+test('existing supplier child reports the parent row rather than counting child rows as products',()=>{
+ const {h,w}=rowErrorFixture();w.tasks.splice(1,0,{...w.tasks[2],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'CHILD',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.match(rejectSave(h,save),/^ROW 003 的子行/);
+});
+
+test('supplier-filtered diagnostics use the same visible product numbering as the table',()=>{
+ const {h,w}=rowErrorFixture();w.tasks[0].supplierId='OTHER';w.tasks[1].supplierId='S';w.tasks[2].supplierId='S';w.suppliers=[{id:'S',name:'Supplier'},{id:'OTHER',name:'Other'}];h.reply(w);h.click({view:'active'});h.change({id:'supplierFilter',value:'S'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});assert.match(rejectSave(h,h.messages.at(-1)),/^ROW 002 ·/);
+});
+test('diagnostics follow moved product order without changing submitted edits or sequence',()=>{
+ const {h,w}=rowErrorFixture();h.reply(w);h.click({customer:'C'});h.click({drag:'TASK'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.taskIds[0],'TASK');assert.match(rejectSave(h,save),/^ROW 001 ·/);
+});
+test('the original supplier record rendered as the first child is labelled as a child for source costing',()=>{
+ const {h,w}=rowErrorFixture();w.tasks.push({...w.tasks[2],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});assert.match(rejectSave(h,h.messages.at(-1)),/^ROW 003 的子行/);
 });
