@@ -286,7 +286,11 @@ const stages=[
   }
   function activeOrderNotices(rows){
     const incoming=window.purchaseDashboard.supplierAlertSources(rows).filter(item=>item.receipt).map(item=>item.task);
-    const pending=rows.filter(row=>!row.archived&&!row.po&&row.supplierId&&row.procurement?.revision&&row.procurement.totalCtn>0);
+    const pending=rows.filter(row=>!row.archived&&!row.po&&row.procurement?.totalCtn>0).map(row=>({...row,noticeUnassigned:!row.supplierId||!row.procurement.revision}));
+    for(const root of rows.filter(row=>!row.archived&&!row.procurementSource)){
+      const remaining=Math.max(0,root.ord-window.purchaseTaskGrid.totals(window.purchaseTaskGrid.sources(root,rows)).customerQty);
+      if(remaining>0)pending.push({...root,noticeUnassigned:true,noticeRemaining:true,procurement:{...root.procurement,totalCtn:remaining}});
+    }
     return {pending,incoming};
   }
   function activeProgressKey(){return '<section class="ao-progress-overview" aria-label="Progress stages / 进度阶段"><div class="ao-progress-caption"><b>Progress stages 进度阶段</b><span>Green: completed · Orange: pending · Red: issue</span></div><div class="ao-progress-stages">'+window.purchaseTaskGrid.labels.map((label,i)=>{const [en,zh]=label.split(' / ');return '<button data-active-progress="'+i+'" aria-description="View sources / 查看来源"><b>'+(i+1)+'</b><span>'+esc(en)+'<small>'+esc(zh)+'</small></span></button>';}).join('')+'</div></section>';}
@@ -294,7 +298,7 @@ const stages=[
   function activeNoticeRowButton(row,key){
     const rootId=row.customerDemandTaskId||row.id,roots=roomRows().filter(item=>!item.procurementSource),shown=visibleRoomRows(roomRows()).filter(item=>!item.procurementSource);
     const index=(shown.some(item=>item.id===rootId)?shown:roots).findIndex(item=>item.id===rootId);
-    return '<button class="pd-alert-open ao-notice-row '+key+'" data-active-notice-row="'+esc(row.id)+'">Row '+(index<0?'—':String(index+1).padStart(3,'0'))+' →</button>';
+    return '<button class="pd-alert-open ao-notice-row '+key+'" data-active-notice-row="'+esc(row.id)+'"'+(row.noticeRemaining?' data-active-notice-remaining="true"':'')+'>Row '+(index<0?'—':String(index+1).padStart(3,'0'))+' →</button>';
   }
   function room(){
     const workTabs=view==='active'?'<div class="ao-work-tabs" role="group" aria-label="Work source">'+[['orders','Customer Orders','客户订单'],['allocation','Stock Allocation','库存分配']].map(([key,en,zh])=>'<button data-active-work="'+key+'" aria-pressed="'+String(allocationFilter===(key==='allocation'))+'">'+en+'<small>'+zh+'</small></button>').join('')+'</div>':'';
@@ -501,12 +505,12 @@ const stages=[
     if(control.dataset.activeProgress!==undefined){
       const index=Number(control.dataset.activeProgress);if(!Number.isInteger(index)||index<0||index>6)return;
       const rows=roomRows().filter(row=>row.supplierId&&row.procurement?.revision&&row.procurement.totalCtn>0),stateLabels={complete:'Completed / 已完成',pending:'Pending / 待处理',problem:'Issue / 待解决'};
-      const body=rows.map(row=>{const state=window.purchaseTaskGrid.progressStates([row],poData?.orders||[])[index];return '<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p class="ao-stage-state '+state+'">'+esc(stateLabels[state])+'</p></div><button class="btn progress-source-button '+state+'" data-progress-task="'+esc(row.id)+'" data-progress-index="'+index+'" data-progress-is-source="true">View →</button></section>';}).join('');
+      const body=rows.map(row=>{const state=window.purchaseTaskGrid.progressStates([row],poData?.orders||[])[index];return '<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(row.noticeUnassigned?'Unassigned 待分配':supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p class="ao-stage-state '+state+'">'+esc(stateLabels[state])+'</p></div><button class="btn progress-source-button '+state+'" data-progress-task="'+esc(row.id)+'" data-progress-index="'+index+'" data-progress-is-source="true">View →</button></section>';}).join('');
       return formDialog((index+1)+' · '+window.purchaseTaskGrid.labels[index],company,'<div class="pd-supplier-alerts">'+(body||'<p>No saved supplier sources 暂无已保存采购来源</p>')+'</div>','','task');
     }
     if(control.dataset.activeNotice){
       const key=control.dataset.activeNotice,rows=activeOrderNotices(roomRows())[key];if(!rows)return;
-      const body=key==='incoming'?window.purchaseDashboard.supplierAlertDetails(rows,row=>activeNoticeRowButton(row,key)):'<div class="pd-supplier-alerts">'+rows.map(row=>'<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p>'+qtyDigits(row.procurement.totalCtn)+' CTN</p></div>'+activeNoticeRowButton(row,key)+'</section>').join('')+'</div>';
+      const body=key==='incoming'?window.purchaseDashboard.supplierAlertDetails(rows,row=>activeNoticeRowButton(row,key)):'<div class="pd-supplier-alerts">'+rows.map(row=>'<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(row.noticeUnassigned?'Unassigned 待分配':supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p>'+qtyDigits(row.procurement.totalCtn)+' CTN</p></div>'+activeNoticeRowButton(row,key)+'</section>').join('')+'</div>';
       return formDialog(key==='incoming'?'Incoming Alert 收货异常':'Pending P.O. 待开采购单',company,rows.length?body:'<p>No pending work 暂无待处理事项</p>','','task');
     }
     if(control.dataset.activeNoticeRow&&view==='active'){
@@ -515,7 +519,7 @@ const stages=[
       if(!visibleRoomRows(roomRows()).some(item=>!item.procurementSource&&item.id===rootId)){query='';supplierFilter='';riskFilter=false;}
       allocationFilter=false;modal.close();render();
       const rows=[...document.querySelectorAll('#taskRows tr[data-id],#taskRows tr[data-source-id]')];
-      const target=rows.find(el=>el.dataset.sourceId===row.id)||rows.find(el=>el.dataset.id===rootId);
+      const target=(control.dataset.activeNoticeRemaining?[...document.querySelectorAll('#taskRows tr[data-waiting-for]')].find(el=>el.dataset.waitingFor===rootId):null)||rows.find(el=>el.dataset.sourceId===row.id)||rows.find(el=>el.dataset.id===rootId);
       if(target){rows.forEach(el=>el.classList.remove('highlight'));target.classList.add('highlight');target.scrollIntoView({block:'center',behavior:'instant'});setTimeout(()=>target.classList.remove('highlight'),3000);}
       return;
     }

@@ -96,10 +96,10 @@ test('Active priorities count saved sources and locate their task rows without w
  w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'',procurement:{totalCtn:30,revision:'B'},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
  w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{totalCtn:null,revision:''}});
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
- assert.match(html,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
+ assert.match(html,/data-active-notice="pending"[\s\S]*?<b>3<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
  assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
  assert.equal((html.match(/<th>/g)||[]).length,11);assert.equal(h.node('#taskSignals').hidden,true);
- h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
+ h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="UNPLANNED"/);assert.match(h.node('#dialogContent').innerHTML,/Unassigned 待分配/);assert.match(h.node('#dialogContent').innerHTML,/10 CTN/);assert.match(h.node('#dialogContent').innerHTML,/100 CTN/);
  h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);h.click({activeNoticeRow:'B'});assert.equal(h.node('#modal').open,false);assert.match(h.node('#app').innerHTML,/data-source-id="B"/);assert.equal(h.messages.length,before);
  h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
 });
@@ -804,4 +804,11 @@ test('Follow Up uses requested columns, Malaysian calendar dates, real Account n
  assert.doesNotMatch(html,/Private purchase action/);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({paymentFilter:'UPDATES'});assert.match(h.node('#app').innerHTML,/FULL-PO/);assert.doesNotMatch(h.node('#app').innerHTML,/WAIT-PO|BAD-PO/);
  h.click({accountHistory:'FULL'});assert.match(h.node('#poHistoryEntries').innerHTML,/ACCOUNT STAFF/);assert.match(h.node('#poHistoryEntries').innerHTML,/Reviewing started/);assert.match(h.node('#poHistoryEntries').innerHTML,/Confirm &lt;supplier&gt; documents/);assert.match(h.node('#poHistoryEntries').innerHTML,/ACCOUNT CREDIT STAFF/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/Private purchase action/);
+});
+
+test('Pending PO includes unassigned remainder once and excludes fulfilled or archived demands',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:30,po:'PO-A',supplierId:'S',procurement:{totalCtn:15,revision:'P'}});
+ w.tasks.push({...w.tasks[0],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'PO-B',procurement:{totalCtn:10,revision:'C'}},{...w.tasks[0],id:'FULL',ord:20,procurement:{totalCtn:25,expectedExtra:5,revision:'F'}},{...w.tasks[0],id:'ARCHIVED',archived:true,ord:100,procurement:{totalCtn:0}},{...w.tasks[0],id:'EMPTY',ord:0,procurement:{totalCtn:0}});
+ h.reply(w);h.click({view:'active'});assert.match(h.node('#app').innerHTML,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);h.click({activeNotice:'pending'});const html=h.node('#dialogContent').innerHTML;
+ assert.match(html,/Unassigned 待分配/);assert.match(html,/5 CTN/);assert.equal((html.match(/pd-supplier-alert-item/g)||[]).length,1);assert.match(html,/data-active-notice-row="TASK" data-active-notice-remaining="true"/);assert.doesNotMatch(html,/data-active-notice-row="(?:FULL|ARCHIVED|EMPTY|CHILD)"/);
 });
