@@ -902,3 +902,44 @@ test('Activity History merges task and PO audits once, preserves pre-PO records,
 test('Activity hides numeric row-order noise while preserving ownership changes and underlying task history',()=>{
  const h=harness(),w=workspace(),events=[{id:'MOVE1',action:'PURCHASE_ROW_MOVED',result:'SAVED',actor:'LAW',time:'2026-10-16T01:00:00Z',message:'SORT-ONLY',changes:{before:7,after:5}},{id:'MOVE2',action:'PURCHASE_ROW_MOVED',result:'SAVED',message:'NO-CHANGE',changes:{before:1,after:1}},{id:'OWNER',action:'PURCHASE_CUSTOMER_CHANGED',result:'SAVED',actor:'LAW',message:'Customer ownership updated',changes:{before:{customerId:'A'},after:{customerId:'B'}}},{id:'UNKNOWN',action:'PURCHASE_ROW_MOVED',message:'Unknown old format'}];w.tasks[0].history=events;const before=JSON.stringify(events);h.reply(w);h.click({view:'history'});const html=h.node('#app').innerHTML;assert.doesNotMatch(html,/SORT-ONLY|NO-CHANGE/);assert.match(html,/Customer ownership updated|PURCHASE CUSTOMER CHANGED/);assert.match(html,/Unknown old format/);assert.equal(JSON.stringify(events),before);h.click({path:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/SORT-ONLY/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE_REQUEST')).length,0);
 });
+async function operationFeedbackFixture(action){
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'PO-1',state:'ACTIVE',taskIds:['TASK'],supplierName:'SUP',amount:100,termDays:30,documents:[{type:'PI',number:'PI-1',fileId:'FILE',linked:true,uploadedByStaffId:'STAFF',deleteAllowed:true}],history:[],documentStatus:'PROVISIONAL',finance:{paidCents:0},procurementHandoff:{stage:'SUBMITTED',submitted:true,submission:{at:'2026-10-16T08:00:00Z',paymentRequest:{requestedCents:10000}}}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],documentDeletionConnected:true,documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));
+ const id=action==='DELETE_DOCUMENT'?'deletePurchaseDocument':'sendPaymentChase';
+ if(action==='DELETE_DOCUMENT')h.click({poDelete:'PO',poFile:'FILE'});else{h.click({followupChase:'PO'});h.node('#pfChaseReason').value='Other 其他';}
+ h.node('#'+id).textContent=action==='DELETE_DOCUMENT'?'Delete':'Chase Payment';
+ return {h,id};
+}
+test('delete and chase show in-dialog progress, lock repeat clicks and require the exact success receipt',async()=>{
+ for(const action of ['DELETE_DOCUMENT','CHASE']){
+  const {h,id}=await operationFeedbackFixture(action);h.click({controlId:id});const save=h.messages.at(-1);assert.equal(save.input.action,action);assert.equal(h.node('#'+id).disabled,true);assert.equal(h.node('#operationStatus').hidden,false);assert.match(h.node('#operationStatus').innerHTML,action==='CHASE'?/正在提交催款/:/正在删除文件/);
+  h.click({controlId:id});assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,1);
+  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'WRONG',ok:true,result:{ok:true,requestId:'WRONG'}});assert.equal(h.node('#modal').open,true);assert.doesNotMatch(h.node('#liveStatus').textContent,/已提交|已删除/);
+  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:true,requestId:save.requestId}});assert.equal(h.node('#modal').open,false);assert.match(h.node('#liveStatus').textContent,action==='CHASE'?/催款已提交/:/文件已删除/);
+ }
+});
+test('delete and chase pending receipts keep action disabled and retry preserves the exact request',async()=>{
+ for(const action of ['DELETE_DOCUMENT','CHASE']){
+  const {h,id}=await operationFeedbackFixture(action);h.click({controlId:id});const save=h.messages.at(-1);h.timers.at(-1)();
+  for(let attempt=0;attempt<3;attempt++){const check=h.messages.at(-1);assert.equal(check.saveRequestId,save.requestId);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:save.requestId}});await new Promise(resolve=>setImmediate(resolve));if(attempt<2)h.timers.at(-1)();}
+  assert.equal(h.node('#'+id).disabled,true);assert.match(h.node('#operationStatus').innerHTML,/结果待确认/);h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.deepEqual(h.messages.at(-1).input,save.input);
+ }
+});
+test('definite delete or chase rejection restores original action and retains an error without success',async()=>{
+ for(const action of ['DELETE_DOCUMENT','CHASE']){
+  const {h,id}=await operationFeedbackFixture(action),label=h.node('#'+id).textContent;h.click({controlId:id});const save=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:false,error:'Permission denied.',result:{ok:false,attemptNotStarted:true}});
+  assert.equal(h.node('#'+id).disabled,false);assert.equal(h.node('#'+id).textContent,label);assert.equal(h.node('#operationStatus').hidden,true);assert.match(h.node('#dialogError').textContent,/Permission denied/);assert.doesNotMatch(h.node('#liveStatus').textContent,/催款已提交|文件已删除/);
+ }
+});
+test('Follow Up distinguishes records loading from an actual zero request count',()=>{
+ const h=harness();h.reply(workspace());h.click({view:'payments'});const html=h.node('#app').innerHTML;assert.match(html,/Loading records 正在读取资料/);assert.match(html,/ledger-count">— requests/);assert.match(html,/<b>—<\/b>/);assert.doesNotMatch(html,/ledger-count">0 requests/);
+});
+test('PDF preparation is visible before upload and rejected local files restore the Upload button',async()=>{
+ for(const valid of [true,false]){
+  const {h}=await operationFeedbackFixture('DELETE_DOCUMENT');h.click({poUpload:'PO',poDocType:'DO'});h.node('#poDocumentDate').value='2026-10-17';h.node('#poDocumentNumber').value='DO-TEST';h.node('#poDocumentAmount').value='';h.node('#uploadPurchaseDocument').textContent='Upload 上传';let release;const waiting=new Promise(resolve=>{release=resolve;});h.node('#poDocumentFile').files=[{size:20,arrayBuffer:async()=>{await waiting;return Uint8Array.from(Buffer.from(valid?'%PDF-1.4\nfixture':'INVALID FILE')).buffer;}}];
+  h.click({controlId:'uploadPurchaseDocument'});assert.equal(h.node('#uploadPurchaseDocument').disabled,true);assert.match(h.node('#operationStatus').innerHTML,/Reading PDF|正在读取文件/);assert.equal(h.messages.filter(m=>m.input?.action==='DOCUMENT').length,0);release();await new Promise(resolve=>setImmediate(resolve));
+  if(valid){const save=h.messages.at(-1);assert.equal(save.input.action,'DOCUMENT');assert.match(h.node('#operationStatus').innerHTML,/正在上传文件/);h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:false,error:'Invalid upload.',result:{ok:false,attemptNotStarted:true}});}
+  else assert.match(h.node('#dialogError').textContent,/有效的 PDF/);
+  assert.equal(h.node('#uploadPurchaseDocument').disabled,false);assert.equal(h.node('#uploadPurchaseDocument').textContent,'Upload 上传');
+ }
+});

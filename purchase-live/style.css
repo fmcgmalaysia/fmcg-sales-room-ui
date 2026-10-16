@@ -696,3 +696,9 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 .payment-submit-spinner{flex:none;width:16px;height:16px;margin-top:2px;border:2px solid #d7e2ec;border-top-color:#3766a2;border-radius:50%;animation:payment-submit-spin .8s linear infinite}
 @keyframes payment-submit-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.payment-submit-spinner{animation:none}}
+
+/* In-dialog feedback follows the existing save receipt; success never precedes confirmation. */
+#modal .operation-status{display:flex;align-items:flex-start;gap:9px;margin:10px 0;padding:10px;background:#fff0d6;border:1px solid #edd4a6;border-radius:4px;color:var(--master-text)}
+#modal .operation-status[hidden]{display:none}#modal .operation-status strong{display:block;font-size:11px;line-height:17px;font-weight:700}#modal .operation-status small{display:block;font-size:10px;line-height:15px;margin-top:3px;color:var(--master-muted)}
+#liveStatus.complete{background:#e7f4eb;color:var(--master-green);border-bottom-color:#c4dfcc}
+.po-read-status{padding:6px 10px;margin-bottom:8px;border:1px solid #cfdfed;border-radius:4px;background:#eef5fb;color:var(--master-muted);font-size:11px}
