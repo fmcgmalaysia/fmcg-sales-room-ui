@@ -604,6 +604,8 @@ const stages=[
   document.addEventListener('input',event=>{if(event.target.id.startsWith('sourcePrice-')||event.target.id==='sourceQty'){if(event.target.id==='sourcePrice-lpPc'){const row=data.tasks.find(row=>row.id===dialogContext.taskId);if(row.ea>0)document.querySelector('#sourcePrice-lpCtn').value=Number((Number(event.target.value)*row.ea).toFixed(2));}previewSourceCost();}});
   document.addEventListener('input',event=>{if(event.target.id.startsWith('planPrice-')||event.target.id==='planTotal'){if(event.target.id==='planPrice-lpPc'&&dialogContext?.taskId){const row=data.tasks.find(row=>row.id===dialogContext.taskId);if(row.ea>0)document.querySelector('#planPrice-lpCtn').value=Number((Number(event.target.value)*row.ea).toFixed(2));}previewPurchaseCost();}});
   document.addEventListener('input',event=>allocationUi()?.edit(event));
+  document.addEventListener('focusin',event=>{const el=event.target;if(el.id==='poRequestAmount'&&!el.readOnly&&!el.disabled)el.value='';});
+  document.addEventListener('focusout',event=>{const el=event.target;if(el.id==='poRequestAmount'&&/^\d{1,10}(\.\d{1,2})?$/.test(el.value.trim()))el.value=Number(el.value.trim()).toFixed(2);});
   document.addEventListener('focusout',event=>allocationUi()?.format(event));
   document.addEventListener('keydown',event=>allocationUi()?.keyDown(event));
   document.addEventListener('change',event=>allocationUi()?.edit(event));
