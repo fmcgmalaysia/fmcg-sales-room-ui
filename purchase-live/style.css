@@ -474,3 +474,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 /* Source PO date and saved state share one line. */
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time{display:inline-block;white-space:nowrap;vertical-align:middle}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time + .allocation-save:disabled{display:inline-block;margin-left:6px;padding:0;line-height:16px;vertical-align:middle;white-space:nowrap}
+
+/* Orange identifies the next action only after confirmed workspace readback. */
+.supplier-allocation-dialog .allocation-save.needs-save{background:#ff8a00;border-color:#ff8a00;color:#fff}
+.supplier-allocation-dialog .allocation-po-cell .allocation-po.pending.awaiting-save{background:#fff;border:1px solid #b8cbdc;color:#3766a2}
