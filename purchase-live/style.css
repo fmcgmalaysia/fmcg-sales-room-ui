@@ -566,3 +566,6 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 body dialog.po-dialog .dialoghead .close{color:#173557;background:transparent}
 dialog.po-history-dialog{width:920px;max-width:calc(100vw - 32px)}
 body .po-history-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+.po-dialog .po-file-view{display:inline-flex;align-items:center;gap:7px;min-height:28px;font:600 14px/20px var(--master-font);color:var(--master-blue);text-decoration:none}
+.po-file-view svg{width:18px;height:18px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.po-file-view span{text-decoration:underline;text-underline-offset:3px}.po-file-view:is(:hover,:focus-visible){color:#234768}
