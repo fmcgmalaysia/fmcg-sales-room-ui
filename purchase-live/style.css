@@ -578,7 +578,7 @@ body .po-history-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font
 .po-doc-popover{position:fixed;position-anchor:--po-docs-help;inset:auto;top:anchor(bottom);right:anchor(right);margin:6px 0 0;padding:10px 12px;width:max-content;max-width:calc(100vw - 24px);border:1px solid #c6d7e7;border-radius:4px;background:white;color:var(--master-text);box-shadow:0 3px 12px #17355726}
 .po-doc-popover .po-doc-definitions{grid-template-columns:20px minmax(0,1fr);gap:6px 10px;font-size:10px;line-height:14px}
 .po-payment-ineligible{font:11px var(--master-font);color:var(--master-muted)}
-.po-request-payment{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;border-radius:5px;background:var(--master-orange);color:white;padding:3px}
+.po-request-payment{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;border-radius:50%;background:var(--master-orange);color:white;padding:3px}
 .po-request-payment span{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid currentColor;border-radius:50%;font:700 16px/20px var(--master-font)}
 .po-payment-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.po-payment-form .field{margin:0}.po-payment-form input,.po-payment-form select{width:100%}.po-payment-summary{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:18px}.po-payment-summary b{display:block;margin-top:5px}
 @media(max-width:560px){.po-payment-form{grid-template-columns:1fr}}
