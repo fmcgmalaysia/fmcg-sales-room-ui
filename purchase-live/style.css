@@ -546,3 +546,6 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 .po-submission-workspace .po-doc-actions{display:inline-flex;vertical-align:middle;margin:0 0 0 8px;gap:0}
 .po-submission-workspace .po-tools{padding:6px 8px;gap:8px}
 .po-submission-workspace .po-tools input{width:250px}
+#app:has(>.po-submission-workspace)>.heading{margin:0 0 12px;min-height:50px}
+#app:has(>.po-submission-workspace)>.heading h1{margin:0;line-height:26px}
+#app:has(>.po-submission-workspace)>.heading .muted{display:block;margin-top:4px;font-size:14px;font-weight:600;line-height:20px;color:var(--master-text)}
