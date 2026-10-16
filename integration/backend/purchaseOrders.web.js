@@ -3,6 +3,7 @@ import wixData from 'wix-data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
+import { PURCHASE_DOCUMENT_TYPES } from 'backend/purchaseDocumentPolicy.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 const options={suppressAuth:true,consistentRead:true};
@@ -23,14 +24,14 @@ export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   let names=[],customerNamesError='';
   try {names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
   catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
-  return {company,orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,documentsConnected:true,documentDeletionConnected:true,paymentConnected:true,paymentRequestsConnected:true,warehouseConnected:true};
+  return {company,orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,documentsConnected:true,documentTypes:PURCHASE_DOCUMENT_TYPES,documentDeletionConnected:true,paymentConnected:true,paymentRequestsConnected:true,warehouseConnected:true};
 });
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await getPurchaseStaffContext();
   try{return await orders.save({company,requestId,input,staff});}
   catch(error){
     const message=String(error?.message||'');
-    const safe=/^(Payment request |Only the original uploader can delete this document\.|This document is (not available for deletion|locked by payment or Finance records)\.|A document deletion is pending\.|Document identity is incomplete\.|Document deletion (is not connected|could not be confirmed|state changed)\.|Procurement handoff |Select an actual payment notification|This payment notification was already acknowledged|Unsupported purchase order action\.|Document upload is not connected\.|Select a (valid )?PDF up to 3 MiB\.|Purchase order changed\.|Purchase order changed while saving\.|Please enter a reason\.|Select a supplier before uploading documents\.|This document is already linked to the purchase order\.|Payment chase has not changed\.|Enter payment terms from 0 to 3650 days\.|Payment term has not changed\.|Enter the supplier document date\.|Select INV, CN, SO, PI or DO\.|Enter the supplier document amount in MYR\.|Supplier short name and document number are required\.|Purchase document service is not configured\.|Upload credentials do not match\.|Document service unavailable\.|Document upload could not be confirmed\.|A save is still processing\.)/.test(message);
+    const safe=/^(Payment request |Only the original uploader can delete this document\.|This document is (not available for deletion|locked by payment or Finance records)\.|A document deletion is pending\.|Document identity is incomplete\.|Document deletion (is not connected|could not be confirmed|state changed)\.|Procurement handoff |Select an actual payment notification|This payment notification was already acknowledged|Unsupported purchase order action\.|Document upload is not connected\.|Select a (valid )?PDF up to 3 MiB\.|Purchase order changed\.|Purchase order changed while saving\.|Please enter a reason\.|Select a supplier before uploading documents\.|This document is already linked to the purchase order\.|Payment chase has not changed\.|Enter payment terms from 0 to 3650 days\.|Payment term has not changed\.|Enter the supplier document date\.|Select (PO, )?INV, CN, SO, PI or DO\.|Enter the supplier document amount in MYR\.|Supplier short name and document number are required\.|Purchase document service is not configured\.|Upload credentials do not match\.|Document service unavailable\.|Document upload could not be confirmed\.|A save is still processing\.)/.test(message);
     return {ok:false,requestId,error:safe?message:'Purchase order save could not be confirmed. Retry the same save.'};
   }
 });
