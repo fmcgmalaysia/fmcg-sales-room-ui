@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-16",
+  "timezone": "Asia/Kuala_Lumpur",
+  "runtimeCommit": "8531064869b80b96ebec05884c6a9b5fdfbb5146",
+  "recordHeadBeforeCloseout": "3f7fee41a67b2255f080a6f433cc8b2c4d630fc3",
+  "build": "2026-10-16-purchase-cms-prewrite-v1",
+  "publicUrl": "https://fmcg999.wixstudio.com/master",
+  "recoveryTag": "verified/purchase-identity-read-20261016",
+  "userConfirmation": "可以了，又恢复了",
+  "acceptanceScope": "Existing public Purchase page displays LAW / Purchase and real Dashboard after the reported identity outage; no reload or code rollback at confirmation. Not permanent root-cause resolution or all-business acceptance.",
+  "pagesRun": 38859596845,
+  "pagesAssetsVerified": 33,
+  "wix": "Full code readbacks and published/live receipt retained; one backend scoped patch and one page version token",
+  "publicObserved": "LAW / Purchase; Dashboard All8, Issues1, My actions7, Waiting on others0",
+  "businessWritesDuringCloseout": 0,
+  "codeHashes": [
+    {
+      "file": "purchase-live/app.js",
+      "sha256": "7951DB550177D3AC723C22A31623FBED44C43A8A9C18888DB7A288AA1A9655B9"
+    },
+    {
+      "file": "purchase-live/index.html",
+      "sha256": "F38C3EA3DBE24FB9FC23C13C2A23B528E8E718DC96652BCF63A80E9AA7ADCFB1"
+    },
+    {
+      "file": "integration/wix/purchase-room-page.js",
+      "sha256": "59723227CB44BD85720AB9241BC0118C5FFACC9E3B3D663DA27A6211EA4D8294"
+    },
+    {
+      "file": "integration/backend/purchaseOperations.web.js",
+      "sha256": "A0CAB347DD25609A10EA921BA245A413FD125D0D820D3B8F2ADB0C6FCF6D720A"
+    },
+    {
+      "file": "integration/backend/purchaseSources.js",
+      "sha256": "B3DCC1BEC541CD829032874DD73EF8CB3F0A436FF0DA79F699AAD19D2C4FE493"
+    },
+    {
+      "file": "integration/backend/purchaseAccess.js",
+      "sha256": "B11DB6605B6B5D69345A57BAC5F576612180CA6036934DEF97CD4B064292BCFD"
+    },
+    {
+      "file": "integration/backend/purchaseWorkspace.web.js",
+      "sha256": "7E27406135F01280E7D717E92CC4DE8F0D9D7A35751EC4FCFACFC391F808D397"
+    }
+  ],
+  "evidenceHashes": [
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-closeout-20261016/identity-restored-public.txt",
+      "sha256": "859BB41CC86DBE4235A09879249ECC5C26CD84D405227E5320F74813709548C5"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-closeout-20261016/identity-restored-public.png",
+      "sha256": "DC4BEF146D83A95C35AF7902BE026C7B33A3D59CF4CFE2A6DC95AE04D07DC319"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-connection-recovery-20261016/purchase-page-after.js",
+      "sha256": "59723227CB44BD85720AB9241BC0118C5FFACC9E3B3D663DA27A6211EA4D8294"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-connection-recovery-20261016/purchaseOperations-web-after.js",
+      "sha256": "A0CAB347DD25609A10EA921BA245A413FD125D0D820D3B8F2ADB0C6FCF6D720A"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-connection-recovery-20261016/pages-assets-verification.json",
+      "sha256": "09D97BA0A81E51B0294341E842CA0AE3783DC480CBE5E65977BDB28195DB1EBC"
+    }
+  ]
+}
