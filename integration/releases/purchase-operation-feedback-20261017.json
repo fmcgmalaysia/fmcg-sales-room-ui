@@ -1,0 +1,53 @@
+{
+  "runtime": "0b2ab6feeb21a6316e6e35fd715c685a929a7a82",
+  "branch": "fix/purchase-operation-feedback-20261017",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/159",
+  "recovery": "d77b661823f1e52676f20eddd865217af3dd3fb9; exact Wix before snapshot matches history-slip release",
+  "scope": "Purchase operation display feedback only: delete, chase, PDF preparation/upload, confirmed save notices and pending list read/count display. Existing payloads, permissions, backend, receipt identity and retry journal unchanged.",
+  "tests": {
+    "passed": 216,
+    "failed": 0,
+    "coverage": [
+      "duplicate click",
+      "wrong receipt ignored",
+      "timeout reconciliation",
+      "pending keeps action disabled",
+      "same request retry",
+      "definite rejection restores action/input",
+      "PDF preparation before upload",
+      "invalid PDF restores Upload",
+      "unknown Follow Up counts"
+    ]
+  },
+  "chromePreview": {
+    "simulatedDelaySeconds": 8,
+    "chasePendingVisible": true,
+    "deletePendingVisible": true,
+    "chaseConfirmedRedOnlyAfterReceipt": true,
+    "realFinancialOrFileWrites": false
+  },
+  "pages": {
+    "run": 38938479664,
+    "conclusion": "success",
+    "threeAssetsExact": true,
+    "marker": "2026-10-17-purchase-operation-feedback-v1",
+    "temporaryPolicyRemoved": 63299828,
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "fullReadbackExactOnlyPointerChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSHA256": "aeeae8d2368bf2bd8c0204bf5aeceab86d5bcb092595afeb21782afe2405a58a",
+    "afterSHA256": "4c0b8b7f9597c4536a1ada2fe2f76212974852ddff46220dedacd884a3c4c43a"
+  },
+  "public": "Independent formal tab51425728 force-refreshed once: new iframe source confirmed, embedded body blank, no console errors. Actual public visual acceptance INCOMPLETE. Original user allocation form51425701 preserved.",
+  "cleanup": {
+    "closedTabs": [
+      "51425728 independent blank formal check",
+      "51425721 completed Master editor",
+      "51425708 completed Sales editor"
+    ],
+    "kept": "51425686 isolated candidate preview; original business tabs untouched"
+  },
+  "mainMerged": false
+}
