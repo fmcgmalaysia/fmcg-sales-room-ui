@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-17 Asia/Kuala_Lumpur",
+  "runtime": "93eebfb41e9fa943e202408fd1844a493a851462",
+  "branches": {
+    "search": "fix/purchase-followup-search-20261017",
+    "copyAndRelease": "copy/purchase-receiving-labels-20261017"
+  },
+  "pullRequests": [
+    160,
+    161,
+    162
+  ],
+  "changes": [
+    "Follow Up search count follows visible results; zero matches show bilingual feedback; clearing restores rows.",
+    "Receiving REFUND and CREDIT labels no longer use bilingual slash separators; option values and save handlers unchanged.",
+    "GP cost-source fix already on Wix; actual public source/mother display accepted by read-only checks."
+  ],
+  "tests": {
+    "passed": 203,
+    "failed": 0,
+    "previewSearch": "No-match0 requests and bilingual empty message verified in Chrome."
+  },
+  "release": {
+    "code": "GitHub synchronized; main unchanged",
+    "pages": {
+      "run": 38946776052,
+      "success": true,
+      "assetsExact": [
+        "index.html",
+        "app.js",
+        "task-grid.js"
+      ],
+      "build": "2026-10-17-purchase-closeout-v1",
+      "originalDeploymentPoliciesRestored": 7
+    },
+    "wix": "PENDING. New editor51425765 remains Loading after initial open and one safe reload. Wix console HttpClient-is-not-defined startup errors. No new Wix edits performed; user asked to manually refresh. Existing live Wix page remains GP source-rollup-v2.",
+    "public": "GP actual checks PASS; search/copy final public release verification pending."
+  },
+  "accountDraft": "Separate isolated draft branch and PR163. Production Account untouched."
+}
