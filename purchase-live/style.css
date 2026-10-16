@@ -682,3 +682,12 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .activity-workspace .history-result{color:var(--master-muted)}
 
 @media(max-width:600px){#modal:has(#poNumber) .po-confirm-overview{align-items:stretch;flex-direction:column;gap:8px}#modal:has(#poNumber) .po-confirm-totals{justify-content:space-between}#modal:has(#poNumber) .po-confirm-totals strong{font-size:18px}}
+
+/* Visible feedback stays inside the payment request dialog while its receipt is pending. */
+.po-payment-dialog .payment-submit-status{display:flex;align-items:flex-start;gap:9px;margin:10px 0;padding:10px;background:#fff0d6;border:1px solid #edd4a6;border-radius:4px;color:#173557}
+.po-payment-dialog .payment-submit-status[hidden]{display:none}
+.po-payment-dialog .payment-submit-status strong{display:block;font-size:11px;line-height:17px;font-weight:700}
+.po-payment-dialog .payment-submit-status small{display:block;font-size:10px;line-height:15px;margin-top:3px;color:#536b84}
+.payment-submit-spinner{flex:none;width:16px;height:16px;margin-top:2px;border:2px solid #d7e2ec;border-top-color:#3766a2;border-radius:50%;animation:payment-submit-spin .8s linear infinite}
+@keyframes payment-submit-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.payment-submit-spinner{animation:none}}
