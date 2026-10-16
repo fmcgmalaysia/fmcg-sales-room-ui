@@ -298,3 +298,24 @@ test('calculator surplus automatically projects as expected stock without a chec
  const tasks=ws.tasks.filter(t=>t.id===f.id||t.id===source.id).map(t=>({...t,po:'NCT-PO-STOCK-'+t.supplierId})),orders=projectPurchaseOrders({company:'NCT',workspace:{...ws,tasks},records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks,activity:[]});
  assert.ok(warehouse.every(order=>order.lines.every(line=>!line.received)));assert.equal([...f.rows.values()].filter(e=>String(e.action||'').includes('RECEIV')).length,1);
 });
+
+
+test('second supplier with legacy empty status saves10 while5 remain, preserving first15 and replaying once',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js');
+ for(const status of [undefined,null,'','   ','ACTIVE',' active ']){
+  const f=fixture();f.task().purchaseQtyInCtn=30;f.rows.get('NCTOrders/O0').orderQtyInCtn=30;
+  const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}});
+  await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:15,costing:cost(15),draftPlan:true,reason:''}});
+  const first=copy(f.task());f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SECOND SUPPLIER',supplierStatus:status});
+  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()}),request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),reason:''}};
+  const result=await add(request);assert.deepEqual(await add(request),result);assert.deepEqual(f.task(),first);const workspace=f.workspace(),source=workspace.tasks.find(row=>row.id===result.sourceTaskId);assert.equal(source.procurement.totalCtn,10);assert.equal(source.po,'');assert.equal(workspace.tasks.find(row=>row.id===f.id).ord,30);assert.equal(workspace.tasks.find(row=>row.id===f.id).sourcing.unplacedCtn,5);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,1);assert.equal(f.rows.get('SharedSuppliers/B').supplierStatus,status);
+ }
+});
+test('second supplier rejects inactive, unknown statuses and nonexistent supplier without creating a source',async()=>{
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js');
+ for(const status of ['INACTIVE',' inactive ','SUSPENDED','BLOCKED','MISSING']){
+  const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:15,reason:'First supplier'}});
+  if(status!=='MISSING')f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SECOND',supplierStatus:status});
+  const before=copy([...f.rows]);const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});await assert.rejects(add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:10,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}},reason:''}}),/Select an active supplier/);assert.deepEqual(copy([...f.rows]),before);
+ }
+});

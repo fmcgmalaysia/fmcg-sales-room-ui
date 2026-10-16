@@ -24,7 +24,7 @@ export function createPurchaseSourceOperations({store,names,readWorkspace,now=()
    if(!Number.isSafeInteger(input.quantity)||input.quantity<1||input.quantity>9999||(!reason&&(!input.costing||!draftPlan||workspace.tasks.filter(row=>row.id===parent.id||row.customerDemandTaskId===parent.id).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0)+input.quantity>parent.ord))||reason.length>2000)throw Error('Enter whole cartons and the additional purchase reason.');
    const ordered=workspace.tasks.filter(row=>row.id===parent.id||row.customerDemandTaskId===parent.id).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
    if(!input.costing&&ordered+input.quantity>parent.ord)throw Error('Additional supplier quantities exceed customer demand.');
-   const suppliers=await store.all('SharedSuppliers');if(!suppliers.some(row=>row.title===input.supplierId&&String(row.supplierStatus).toUpperCase()==='ACTIVE'))throw Error('Select an active supplier.');
+   const suppliers=await store.all('SharedSuppliers');if(!suppliers.some(row=>row.title===input.supplierId&&['','ACTIVE'].includes(text(row.supplierStatus).toUpperCase())))throw Error('Select an active supplier.');
    if(draftPlan&&po)throw Error('Save the source plan first, then select its P.O. association.');
    if(!draftPlan&&(!po||po.length>80||/^(NCT|GHR)-PO-?$/.test(po)||workspace.tasks.some(row=>row.po.toUpperCase()===po)))throw Error('Enter a new distinct supplier P.O. number.');
    const costing=input.costing?calculatePlanCosting(input.costing,input.quantity,parent.ea):null;
