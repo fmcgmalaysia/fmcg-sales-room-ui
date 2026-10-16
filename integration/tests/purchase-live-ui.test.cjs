@@ -4,6 +4,28 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(process.env.PURCHASE_UI_BASELINE || path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
+test('each checked orange source PO opens the same cross-row selection without a top PO control',()=>{
+ for(const clicked of ['TASK','OTHER-CHILD']){
+  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SAME SUPPLIER'},{id:'B',name:'OTHER SUPPLIER'}];
+  Object.assign(w.tasks[0],{supplierId:'S',po:'',editVersion:'V1',procurement:{totalCtn:20,revision:'P1'}});
+  w.tasks.push({...w.tasks[0],id:'SIBLING',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:10,revision:'P2'}},
+   {...w.tasks[0],id:'OTHER',supplierId:'B',procurement:{totalCtn:40,revision:'P3'}},
+   {...w.tasks[0],id:'OTHER-CHILD',ord:0,procurementSource:true,customerDemandTaskId:'OTHER',editVersion:'V2',procurement:{totalCtn:15,revision:'P4'}});
+  h.reply(w);h.click({view:'active'});for(const id of ['TASK','OTHER-CHILD'])h.change({dataset:{select:id,selectKind:'source'},checked:true});
+  assert.doesNotMatch(h.node('#app').innerHTML,/id="createSelectedPo"/);
+  h.click({sourcePoTask:clicked});assert.match(h.node('#dialogContent').innerHTML,/35 CTN/);
+  h.node('#poNumber').value='NCT-PO-MERGE';h.click({controlId:'savePo'});const sent=h.messages.at(-1);
+  assert.deepEqual(Array.from(sent.input.taskIds),['TASK','OTHER-CHILD']);assert.equal(sent.input.versions.TASK,'V1');assert.equal(sent.input.versions['OTHER-CHILD'],'V2');
+ }
+});
+test('orange source PO keeps unchecked and mixed-supplier selections from accidental merging; green PO still reviews',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',po:'',procurement:{totalCtn:20,revision:'P1'}});
+ w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:15,revision:'P2'}},
+  {...w.tasks[0],id:'GREEN',po:'NCT-PO-EXISTING'});h.reply(w);h.click({view:'active'});
+ h.change({dataset:{select:'TASK',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/已勾选行/);assert.equal(h.node('#modal').open,false);
+ h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/同一供应商/);assert.match(h.node('#app').innerHTML,/2 selected/);assert.equal(h.node('#modal').open,false);
+ h.click({sourcePoTask:'GREEN'});assert.match(h.node('#dialogContent').innerHTML,/Review P.O./);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="savePo"/);assert.equal(h.messages.length,1);
+});
 test('clicked progress stage opens its task with explicit receiving issue instead of a false completion',()=>{
  const h=harness(),w=workspace();w.tasks[0].warehouse={accepted:250,hasPhysicalReceipt:true,issue:true};w.tasks[0].procurement={totalCtn:250,revision:'P'};h.reply(w);const before=h.messages.length;
  h.click({progressTask:'TASK',progressIndex:'3',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress problem/);assert.match(h.node('#dialogContent').innerHTML,/Problem 待解决/);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.length,before);
