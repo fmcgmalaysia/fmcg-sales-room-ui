@@ -24,7 +24,7 @@
 #app #taskRows>tr:not(.source-row)>td{background:#edf4fb;border-top:2px solid #afc8df;border-bottom:1px solid #cfdfed}
 #app #taskRows .source-row>td.product-stack{border-left:2px solid #c6d9ea}
 #app #taskRows .waiting-row>td{height:28px}
-#app #taskRows tr.selected>td{background:#dceaf7}
+#app .purchase-tasks #taskRows tr.selected>td,#app .purchase-tasks #taskRows tr.source-row.selected>td{background:#fff0d6}
 #app #taskRows tr:hover>td{background:#e6f0fa}
 #app #taskRows .source-row>td:nth-child(-n+3),#app .active-order-table #taskRows .source-row>td:nth-child(-n+4){background:#fff}
 .purchase-tasks .rowcheck:disabled{opacity:.4;cursor:not-allowed}
