@@ -647,3 +647,5 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .payment-workspace .pf-slip-notice{display:block;background:transparent;border:0;padding:2px 0 0;color:var(--master-blue);font-size:10px;cursor:pointer}
 #app .payment-workspace .directory-footer{padding:6px 10px;min-height:0}
 @media(prefers-reduced-motion:reduce){#app .payment-workspace .pf-slip svg{transition:none}#app .payment-workspace .pf-slip.available:is(:hover,:focus-visible) svg{transform:none}}
+
+#app .payment-workspace .pf-slip-heading{display:inline-flex;justify-content:center;width:28px;white-space:nowrap}
