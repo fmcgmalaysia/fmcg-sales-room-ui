@@ -30,5 +30,9 @@
   {
     "file": "tests.txt",
     "sha256": "1a332fb9866d42bc7d54a2d34c1afc9e98eaf35687bc25442c1aa4981a378144"
+  },
+  {
+    "file": "public-saved.png",
+    "sha256": "62188f565e28fdf9c8b058396ebdd766b104f59eee85b9f265efbb59b3f78751"
   }
 ]
