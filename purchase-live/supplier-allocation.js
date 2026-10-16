@@ -46,7 +46,7 @@
   function create(api){
     let state=null,referenceRequest=null,referenceSession={};
     const caughtRows=new Set();
-    const rowLocked=row=>{const saved=workspace().tasks.find(item=>item.id===row.taskId);return Boolean(saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||api.financeLocked?.(row.taskId));};
+    const rowLocked=row=>{const saved=workspace().tasks.find(item=>item.id===row.taskId);return Boolean(saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||saved?.financeSubmitted||api.financeLocked?.(row.taskId));};
     const parkedDrafts=new Map();
     const esc=api.esc,money=api.num;
     const workspace=()=>api.workspace();
@@ -202,8 +202,8 @@
     function reference(key){
       const row=state?.rows.find(item=>item.key===key);if(!row||state.running||state.current||api.savePending()||referenceRequest||caughtRows.has(key)||rowLocked(row)||!api.modal().open)return;
       const context=state,session=referenceSession,manual=referenceContext(row),before=calculation(row).averageCostCtn,request={key,session};referenceRequest=request;state.issueTone='pending';state.issue='正在抓取成本，请稍候…';
-      const showIssue=()=>{const node=document.querySelector('#allocationIssue');if(node){node.className='allocation-issue '+state.issueTone;node.textContent=state.issue;}};
-      showIssue();paintReferences();api.status(state.issue);
+      const showIssue=()=>{const node=document.querySelector('#allocationIssue');if(node){node.className='allocation-issue '+state.issueTone;node.textContent=state.issue;}api.status(state.issue,state.issueTone==='problem');};
+      showIssue();paintReferences();
       const active=()=>state===context&&referenceSession===session&&api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog');
       Promise.resolve().then(()=>api.read('PURCHASE_REFERENCE_REQUEST',{taskId:context.rootId})).then(result=>{
         if(!active())return;
