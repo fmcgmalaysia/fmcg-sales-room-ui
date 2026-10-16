@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-17 Asia/Kuala_Lumpur",
+  "runtime": "2989e4ec32c237404f4da992ac8a2334c4a107be",
+  "branch": "fix/purchase-gp-confirmed-cost-20261017",
+  "pullRequest": 160,
+  "recoveryRuntime": "0b2ab6feeb21a6316e6e35fd715c685a929a7a82",
+  "objective": "GP derives from saved procurement cost; show individual saved-source GP until complete allocation, then weighted mother GP.",
+  "behavior": [
+    "Unplanned reference prices never produce GP.",
+    "Saved plan amount and total cartons own current procurement cost including FOC and supplier surplus.",
+    "Mother GP unavailable until customer demand is fully covered with valid source costs.",
+    "Partial-allocation children each use their own GP, including the first source sharing the mother task ID.",
+    "Only mother aggregate can update the existing Orders GP cache; source GP is display-only.",
+    "Invoiced source portions retain frozen cost and FX.",
+    "No quantity, procurement save, PO, document, payment or authentication handlers changed."
+  ],
+  "validation": {
+    "affectedChecks": 202,
+    "failed": 0,
+    "isolatedPreview": {
+      "partialMother": "hidden",
+      "firstSource": "25%",
+      "secondSource": "10%",
+      "waiting": "hidden",
+      "completeMother": "3%",
+      "completeChildren": "hidden",
+      "unplanned": "hidden"
+    },
+    "realBusinessWrites": false
+  },
+  "release": {
+    "code": "GitHub task branch synchronized; draft PR160; main unchanged",
+    "pages": {
+      "run": 38945443825,
+      "result": "success",
+      "build": "2026-10-17-purchase-gp-source-rollup-v2",
+      "exactAssets": [
+        "index.html",
+        "task-grid.js",
+        "app.js"
+      ],
+      "originalDeploymentPoliciesRestored": 7
+    },
+    "wix": "Three backend modules and Purchase page exact readbacks; published-and-live receipt captured.",
+    "publicVerification": "INCOMPLETE. Existing formal page refreshed with no draft/modal/pending save; new iframe version confirmed, content remains blank with no captured error. This loading symptom also occurred before GP patch. Do not claim full publication or user acceptance."
+  },
+  "normalizedSha256": {
+    "integration/backend/purchaseMarginRefresh.js": "f71d571358b656b681695db612f21c0fadcfec3a53fae3228e04e61e4a6e87b5",
+    "integration/backend/purchaseWorkspace.web.js": "d35dc70c297f621fc3a7a757b4f5e44b0e6ec984245d62e7800639abdc1facb5",
+    "integration/backend/customerFulfilmentService.js": "f2abea285509091890406f1d342f5b5d178b877cd51219f1bc9a42ff40c4a1d0",
+    "integration/wix/purchase-room-page.js": "5a8a149c09919afc024027f73e3dc710ee4f53f86bbc89b36f5daf7cb99bf994",
+    "purchase-live/task-grid.js": "91f7fe12c9c5d9ec926aa7201155d069dd87ec8434b47195edb65a01b037451c",
+    "purchase-live/index.html": "e7f2a1ec7cea4397828bb774443adc64accb614be490507f4cb8f99292afa5ac"
+  }
+}
