@@ -628,16 +628,16 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .payment-workspace .po-ledger :is(th,td){text-align:left}
 
 /* Payment follow-up uses the shared workroom type, colors and compact control sizes. */
-#app .payment-workspace .po-ledger{min-width:1190px}
-#app .payment-workspace .po-ledger :is(th,td){padding:6px 8px;line-height:1.35;vertical-align:middle}
-#app .payment-workspace .po-ledger th{padding-top:7px;padding-bottom:7px}
+#app .payment-workspace .po-ledger{min-width:1350px}
+#app .payment-workspace .po-ledger :is(th,td){padding:6px;line-height:14px;vertical-align:middle}
+#app .payment-workspace .po-ledger th{line-height:1.4}
 #app .payment-workspace td small{margin-top:2px;line-height:1.3}
 #app .payment-workspace .ledger-toolbar{justify-content:flex-start;gap:10px;padding:7px 10px;min-height:0}
 #app .payment-workspace .ledger-toolbar input{width:260px;margin:0;height:30px}
 #app .payment-workspace .ledger-toolbar .btn{min-height:30px;padding:4px 10px}
 #app .payment-workspace .ledger-count{margin-left:auto}
 #app .payment-workspace .pf-status{padding:4px 8px;gap:4px}
-#app .payment-workspace .pf-note>span{display:block;max-width:270px}
+#app .payment-workspace .pf-note>span{display:block}
 #app .payment-workspace .pf-slip{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;color:#fff;text-decoration:none;vertical-align:middle}
 #app .payment-workspace .pf-slip.available{background:var(--master-green);cursor:pointer}
 #app .payment-workspace .pf-slip.missing{background:#b8c4d0;opacity:1;cursor:default}
