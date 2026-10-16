@@ -727,6 +727,30 @@ test('Docs help is read-only and an unconnected payment form cannot submit an un
  h.click({poRequest:'PO'});assert.match(h.node('#dialogContent').innerHTML,/id="poRequestTerm"/);assert.match(h.node('#dialogContent').innerHTML,/Connection pending/);h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.match(h.node('#dialogError').textContent,/connection is pending/);
 });
 
+async function paymentSubmitFixture(){
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);
+ const row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poRequest:'PO'});
+ h.node('#submitPaymentRequest').textContent='Submit to Account';h.node('#poRequestAmount').value='25.00';h.node('#poRequestPurpose').value='DEPOSIT';h.node('#poRequestBasis').value='PI';h.node('#poRequestTerm').value='30';return h;
+}
+test('payment submit shows visible in-dialog progress, disables duplicate submission and waits for its exact success receipt',async()=>{
+ const h=await paymentSubmitFixture();assert.match(h.node('#dialogContent').innerHTML,/id="paymentSubmitStatus"[^>]*role="status"/);
+ h.click({controlId:'submitPaymentRequest'});const save=h.messages.at(-1);assert.equal(h.node('#submitPaymentRequest').disabled,true);assert.equal(h.node('#paymentSubmitStatus').hidden,false);assert.match(h.node('#paymentSubmitStatus').innerHTML,/正在提交财务|payment-submit-spinner/);
+ h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,1);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'WRONG',ok:true,result:{ok:true,requestId:'WRONG'}});assert.equal(h.node('#modal').open,true);assert.doesNotMatch(h.node('#liveStatus').textContent,/Submitted to Account 已提交财务/);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:true,requestId:save.requestId}});assert.equal(h.node('#modal').open,false);assert.match(h.node('#liveStatus').textContent,/Submitted to Account 已提交财务/);assert.equal(h.node('#paymentSubmitStatus').hidden,true);
+});
+test('payment submit timeout checks the original request and pending result keeps submit locked while allowing exact retry',async()=>{
+ const h=await paymentSubmitFixture();h.click({controlId:'submitPaymentRequest'});const save=h.messages.at(-1);h.timers.at(-1)();assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(h.messages.at(-1).saveRequestId,save.requestId);assert.match(h.node('#paymentSubmitStatus').innerHTML,/正在核对提交结果/);
+ for(let attempt=0;attempt<3;attempt++){const check=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:true,result:{ok:false,pending:true,requestId:save.requestId}});await new Promise(resolve=>setImmediate(resolve));if(attempt<2)h.timers.at(-1)();}
+ assert.match(h.node('#paymentSubmitStatus').innerHTML,/提交结果待确认/);assert.equal(h.node('#submitPaymentRequest').disabled,true);assert.equal(h.node('#poRequestAmount').value,'25.00');assert.doesNotMatch(h.node('#liveStatus').textContent,/Submitted to Account 已提交财务/);
+ h.click({controlId:'retryPendingSave'});assert.equal(h.messages.at(-1).requestId,save.requestId);assert.equal(h.messages.at(-1).input.requestedCents,2500);assert.equal(h.node('#submitPaymentRequest').disabled,true);
+});
+test('a definite rejected payment submit restores the original button and retains input without a success notice',async()=>{
+ const h=await paymentSubmitFixture();h.click({controlId:'submitPaymentRequest'});const save=h.messages.at(-1);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:false,error:'Request amount exceeds available amount.',result:{ok:false,attemptNotStarted:true}});
+ assert.equal(h.node('#paymentSubmitStatus').hidden,true);assert.equal(h.node('#submitPaymentRequest').disabled,false);assert.equal(h.node('#submitPaymentRequest').textContent,'Submit to Account');assert.equal(h.node('#poRequestAmount').value,'25.00');assert.match(h.node('#dialogError').textContent,/exceeds available/);assert.doesNotMatch(h.node('#liveStatus').textContent,/Submitted to Account 已提交财务/);
+});
 test('payment request omits manual date and client timestamp; submits saved PO version and entered amount',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poRequest:'PO'});
