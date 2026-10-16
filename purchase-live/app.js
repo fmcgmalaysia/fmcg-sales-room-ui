@@ -290,10 +290,16 @@ const stages=[
     return {pending,incoming};
   }
   function activeProgressKey(){return '<section class="ao-progress-overview" aria-label="Progress stages / 进度阶段"><div class="ao-progress-caption"><b>Progress stages 进度阶段</b><span>Green: completed · Orange: pending · Red: issue</span></div><div class="ao-progress-stages">'+window.purchaseTaskGrid.labels.map((label,i)=>{const [en,zh]=label.split(' / ');return '<button data-active-progress="'+i+'" aria-description="View sources / 查看来源"><b>'+(i+1)+'</b><span>'+esc(en)+'<small>'+esc(zh)+'</small></span></button>';}).join('')+'</div></section>';}
+  function visibleRoomRows(rows){return rows.filter(row=>[row.barcode,row.name,row.orderId,row.po].join(' ').toLowerCase().includes(query.toLowerCase())&&(!supplierFilter||row.supplierId===supplierFilter||!row.procurementSource&&data.tasks.some(source=>source.customerDemandTaskId===row.id&&source.supplierId===supplierFilter))&&(view==='active'||stageFilter===''||String(stageIndex(row))===stageFilter)&&(!riskFilter||row.risk));}
+  function activeNoticeRowButton(row,key){
+    const rootId=row.customerDemandTaskId||row.id,roots=roomRows().filter(item=>!item.procurementSource),shown=visibleRoomRows(roomRows()).filter(item=>!item.procurementSource);
+    const index=(shown.some(item=>item.id===rootId)?shown:roots).findIndex(item=>item.id===rootId);
+    return '<button class="pd-alert-open ao-notice-row '+key+'" data-active-notice-row="'+esc(row.id)+'">Row '+(index<0?'—':String(index+1).padStart(3,'0'))+' →</button>';
+  }
   function room(){
     const workTabs=view==='active'?'<div class="ao-work-tabs" role="group" aria-label="Work source">'+[['orders','Customer Orders','客户订单'],['allocation','Stock Allocation','库存分配']].map(([key,en,zh])=>'<button data-active-work="'+key+'" aria-pressed="'+String(allocationFilter===(key==='allocation'))+'">'+en+'<small>'+zh+'</small></button>').join('')+'</div>':'';
     const customer=data.customers.find(row=>row.id===customerId),rows=roomRows(),suppliers=[...new Set(rows.map(row=>row.supplierId).filter(Boolean))];
-    const shown=rows.filter(row=>[row.barcode,row.name,row.orderId,row.po].join(' ').toLowerCase().includes(query.toLowerCase())&&(!supplierFilter||row.supplierId===supplierFilter||!row.procurementSource&&data.tasks.some(source=>source.customerDemandTaskId===row.id&&source.supplierId===supplierFilter))&&(view==='active'||stageFilter===''||String(stageIndex(row))===stageFilter)&&(!riskFilter||row.risk));
+    const shown=visibleRoomRows(rows);
     const track=`<section class="track" aria-label="Pending workload">${[0,1,2,3,5,6,8].map(i=>{const n=rows.filter(row=>stageIndex(row)>=0&&stageIndex(row)<=i).length;return `<div class="trackitem"><button class="circle stage-capsule ${n===0?'zero':''}" data-stage="${i}" aria-label="${stages[i][0]} ${n}">${stageIcon(i)}<span class="stage-count">${n}</span></button><span class="tracklabel"><span>${stages[i][0]}<small>${stages[i][1]}</small></span></span></div>`;}).join('')}</section>`;
     for(const root of rows.filter(row=>!row.procurementSource&&data.tasks.some(source=>source.customerDemandTaskId===row.id))){if(!selectedSources.has(root.id))selected.delete(root.id);}
     const rowMarkup=window.purchaseTaskGrid.render({rows:shown,tasks:data.tasks,customers:data.customers,suppliers:data.suppliers,selected,selectedSources,expanded:expandedTasks,active:view==='active',canMove:true,orders:poData?.orders||[],age:receivedAge,shipmentDate:window.purchaseDashboard.formatShipmentDate,quantityCells:sourceQuantityCells,drafts,costError,riskDeal,supplierIcon:dashboardIcon('customers')});
@@ -456,8 +462,18 @@ const stages=[
     }
     if(control.dataset.activeNotice){
       const key=control.dataset.activeNotice,rows=activeOrderNotices(roomRows())[key];if(!rows)return;
-      const body=key==='incoming'?window.purchaseDashboard.supplierAlertDetails(rows):'<div class="pd-supplier-alerts">'+rows.map(row=>'<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p>'+qtyDigits(row.procurement.totalCtn)+' CTN</p></div><button class="pd-alert-open" data-source-po-task="'+esc(row.id)+'">Create P.O. →</button></section>').join('')+'</div>';
+      const body=key==='incoming'?window.purchaseDashboard.supplierAlertDetails(rows,row=>activeNoticeRowButton(row,key)):'<div class="pd-supplier-alerts">'+rows.map(row=>'<section class="pd-supplier-alert-item"><div><small>'+esc(row.barcode)+'</small><strong>'+esc(row.name)+'</strong><small>'+esc(supplierName(row.supplierId))+' · '+esc(data.customers.find(c=>c.id===row.customerId)?.shortName||data.customers.find(c=>c.id===row.customerId)?.name||row.customerId)+'</small><p>'+qtyDigits(row.procurement.totalCtn)+' CTN</p></div>'+activeNoticeRowButton(row,key)+'</section>').join('')+'</div>';
       return formDialog(key==='incoming'?'Incoming Alert 收货异常':'Pending P.O. 待开采购单',company,rows.length?body:'<p>No pending work 暂无待处理事项</p>','','task');
+    }
+    if(control.dataset.activeNoticeRow&&view==='active'){
+      const row=roomRows().find(item=>item.id===control.dataset.activeNoticeRow);if(!row)return;
+      const rootId=row.customerDemandTaskId||row.id;
+      if(!visibleRoomRows(roomRows()).some(item=>!item.procurementSource&&item.id===rootId)){query='';supplierFilter='';riskFilter=false;}
+      allocationFilter=false;modal.close();render();
+      const rows=[...document.querySelectorAll('#taskRows tr[data-id],#taskRows tr[data-source-id]')];
+      const target=rows.find(el=>el.dataset.sourceId===row.id)||rows.find(el=>el.dataset.id===rootId);
+      if(target){rows.forEach(el=>el.classList.remove('highlight'));target.classList.add('highlight');target.scrollIntoView({block:'center',behavior:'instant'});setTimeout(()=>target.classList.remove('highlight'),3000);}
+      return;
     }
     if(control.dataset.activeMove){
       if(activeCustomer){showStatus('拖动产品主行左侧手柄，或点击手柄选择目的位置；供应商子行会一起移动。');return;}

@@ -43,7 +43,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
   let count=0;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/dashboard.js'),'utf8'),{window});
-  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
+  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'?feedbackRows:selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
@@ -90,7 +90,7 @@ test('Active Orders exposes customer short names, filters one customer for movem
  h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
 });
 
-test('Active priorities count saved sources rather than demand remainder and open the original source actions',()=>{
+test('Active priorities count saved sources and locate their task rows without writes',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];
  Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'},po:'PO-A',estimatedShipmentDate:'2026-10-28'});
  w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'',procurement:{totalCtn:30,revision:'B'},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
@@ -99,8 +99,8 @@ test('Active priorities count saved sources rather than demand remainder and ope
  assert.match(html,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
  assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
  assert.equal((html.match(/<th>/g)||[]).length,11);assert.equal(h.node('#taskSignals').hidden,true);
- h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="B"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
- h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="B" data-progress-index="3"/);assert.equal(h.messages.length,before);
+ h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/UNPLANNED/);
+ h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);h.click({activeNoticeRow:'B'});assert.equal(h.node('#modal').open,false);assert.match(h.node('#app').innerHTML,/data-source-id="B"/);assert.equal(h.messages.length,before);
  h.click({customer:'C'});assert.equal(h.node('#taskSignals').hidden,false);assert.doesNotMatch(h.node('#app').innerHTML,/ao-priorities|customer-shipment/);
 });
 
@@ -761,4 +761,14 @@ test('PO upload history shows saved actor time and actual filename, preserving o
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),event={id:'EV',action:'SUPPLIER_DOCUMENT_UPLOADED',result:'SAVED',actor:'LAW',time:'2026-10-16T07:00:00Z',changes:{type:'INV',number:'INV-09',fileId:'FILE-09',reason:'Supplier final invoice'}};
  const before=JSON.stringify(event),row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',state:'ACTIVE',taskIds:['TASK'],documents:[{fileId:'FILE-09',type:'INV',number:'INV-09',name:'2026-10-16 SUP INV INV-09.pdf'}],history:[event],documentStatus:'COMPLETE',termDays:30};h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poHistory:'PO'});
  const html=h.node('#poHistoryEntries').innerHTML;assert.match(html,/Date &amp; Time/);assert.match(html,/Staff 员工/);assert.match(html,/>LAW<\/td>/);assert.match(html,/2026-10-16 SUP INV INV-09\.pdf/);assert.match(html,/15:00:00/);assert.doesNotMatch(html,/Deleted|删除文件/);assert.equal(JSON.stringify(event),before);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,0);
+});
+
+test('Active notice jump targets the exact supplier child and clears only hiding filters without saving',()=>{
+ const classes=new Set(),target={dataset:{sourceId:'CHILD'},classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)},scrollIntoView(options){this.scrolled=options.block;}};
+ const h=harness(undefined,[target]),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO',procurement:{revision:'P',totalCtn:10}});w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,po:'',procurement:{revision:'P2',totalCtn:20}});
+ h.reply(w);h.click({view:'active'});h.change({id:'supplierFilter',value:'HIDDEN',dataset:{}});h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/Row 001/);const before=h.messages.length;h.click({activeNoticeRow:'CHILD'});
+ assert.equal(target.scrolled,'center');assert.ok(classes.has('highlight'));assert.match(h.node('#app').innerHTML,/data-source-id="CHILD"/);assert.equal(h.messages.length,before);
+});
+test('Dashboard receiving alert retains its original View action',()=>{
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{revision:'P',totalCtn:30},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});w.suppliers=[{id:'S',name:'SUPPLIER'}];h.reply(w);h.click({supplierShipmentAlert:'S'});assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="TASK"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-active-notice-row/);
 });

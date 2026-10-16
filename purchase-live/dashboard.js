@@ -98,7 +98,7 @@
     if(!reasons.length)add('Receiving issue — reason not recorded','收货异常，未记录具体原因');
     return reasons;
   }
-  function supplierAlertDetails(tasks){return '<div class="pd-supplier-alerts">'+supplierAlertSources(tasks).map(({task,cases,receipt,stage})=>'<section class="pd-supplier-alert-item"><div><small>'+esc(task.barcode)+'</small><strong>'+esc(task.name)+'</strong><small>'+esc(task.po||'P.O. pending')+'</small>'+supplierAlertReasons(task).map(reason=>'<p>'+phrase(reason)+'</p>').join('')+'</div><button class="pd-alert-open" data-progress-task="'+esc(task.id)+'" data-progress-index="'+stage+'" data-progress-is-source="true">View →</button></section>').join('')+'</div>';}
+  function supplierAlertDetails(tasks,rowButton){return '<div class="pd-supplier-alerts">'+supplierAlertSources(tasks).map(({task,cases,receipt,stage})=>'<section class="pd-supplier-alert-item"><div><small>'+esc(task.barcode)+'</small><strong>'+esc(task.name)+'</strong><small>'+esc(task.po||'P.O. pending')+'</small>'+supplierAlertReasons(task).map(reason=>'<p>'+phrase(reason)+'</p>').join('')+'</div>'+(rowButton?rowButton(task):'<button class="pd-alert-open" data-progress-task="'+esc(task.id)+'" data-progress-index="'+stage+'" data-progress-is-source="true">View →</button>')+'</section>').join('')+'</div>';}
   function formatShipmentDate(value){
     return String(value).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(original,year,month,day)=>{const d=new Date(Date.UTC(Number(year),Number(month)-1,Number(day)));return d.getUTCFullYear()===Number(year)&&d.getUTCMonth()===Number(month)-1&&d.getUTCDate()===Number(day)?day+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(month)-1]+' '+year:original;});
   }

@@ -614,3 +614,5 @@ body dialog.po-dialog :is(.field-title>span,.po-file-row small,.po-history-event
 body dialog.po-dialog .field :is(input,select,textarea){font-family:var(--master-font);color:var(--master-text);background:#fff;border-color:#b8ccdf}
 body dialog.po-dialog :is(.close,.btn:not(.primary):not(.danger)):not(:disabled):is(:hover,:focus-visible){background:#e7eef5;color:#173557;border-color:var(--master-blue)}
 body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:focus-visible){filter:brightness(.88)}
+
+#modal .pd-alert-open.ao-notice-row.pending{background:var(--master-orange);color:white}
