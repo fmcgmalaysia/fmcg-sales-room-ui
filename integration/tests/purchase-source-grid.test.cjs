@@ -76,3 +76,12 @@ test('partial35 against demand50 keeps saved costs and leaves remainder without 
 test('price drafts do not alter saved task-list costs and legacy assigned PO retains its amount',()=>{
  const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.procurement={totalCtn:60};f.root.po='LEGACY-PO';f.args.drafts.set('R',{changes:{lpCtn:999,disc1:.5}});assert.deepEqual(financialCells(f.render()),{cost:'10.00',amount:'600.00'});assert.equal(f.args.drafts.get('R').changes.lpCtn,999);assert.equal(f.root.lpCtn,10);
 });
+
+test('active order quantities omit unplaced chips while receipt issues and legacy room remain actionable',()=>{
+ const f=fixture(); f.root.ord=120;
+ f.args.quantityCells=()=>'<td class="order-quantity">120 | 100<button class="quantity-case pending" data-quantity-case="U" aria-label="Unplaced / 未采购 20" title="Purchase">−20</button></td><td class="received-quantity">90<button class="quantity-case pending" data-quantity-case="R" aria-label="Receiving issue / 收货异常 10" title="Warehouse">−10</button></td>';
+ const before=JSON.stringify(f.args.tasks);f.args.active=true;let html=f.render();
+ assert.doesNotMatch(html,/data-quantity-case="U"/);assert.equal((html.match(/data-quantity-case="R"/g)||[]).length,3);
+ assert.match(html,/data-waiting-for="R"/);assert.match(html,/class="order-quantity">20<\/td>/);assert.equal(JSON.stringify(f.args.tasks),before);
+ f.args.active=false;html=f.render();assert.equal((html.match(/data-quantity-case="U"/g)||[]).length,3);
+});
