@@ -36,5 +36,5 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace, activity });
   const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
   applyPurchaseProgress(workspace,activity,purchaseOrders);
-  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null })) };
+  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
 });

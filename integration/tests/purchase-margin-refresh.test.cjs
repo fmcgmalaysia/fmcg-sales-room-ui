@@ -85,7 +85,7 @@ function withSources(f, input) {
   const source = { ...clone(f.rows.get('NCTTasks/T')), _id: 'B', title: 'B', procurementSource: true, customerDemandTaskId: 'T', purchaseQtyInCtn: 0, lpCtn: 300 };
   f.rows.set('NCTTasks/B', clone(source)); input.tasks.push(source);
   input.workspace.tasks[0].procurement = { totalCtn: 60,revision:'SAVED-A' };
-  input.workspace.tasks.push({ id: 'B', procurementSource: true, customerDemandTaskId: 'T', procurement: { totalCtn: 30,revision:'SAVED-B' } });
+  input.workspace.tasks.push({ id: 'B',orderId:'ORDER',sourceLineId:'LINE',ord:0, procurementSource: true, customerDemandTaskId: 'T', procurement: { totalCtn: 30,revision:'SAVED-B' } });
   return input;
 }
 
@@ -174,4 +174,30 @@ test('Sales invoice cache refresh retains supplier children and uses their confi
  Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginRefresh,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({shipmentId:'SHIP'})});
  source=source.replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');const save=vm.runInNewContext('(function(){'+source+';return saveCustomerFulfilment;})()',bindings);
  await save({company:'NCT',staff:{},input:{action:'INVOICE'}});const revenue=40*100*3+50*100*4;assert.equal(f.rows.get('NCTOrders/O').gp,(revenue-40*240-20*120-30*300)/revenue);
+});
+
+test('partial allocation calculates each saved supplier independently including the first source sharing the mother ID',async()=>{
+ const f=fixture(),input=withSources(f,f.input());input.workspace.tasks[0].ord=120;
+ const before=clone(f.rows.get('NCTOrders/O')),result=await f.refresh(input);
+ assert.equal(result.get('T'),null);assert.equal(result.get('SOURCE:T'),.25);assert.equal(result.get('SOURCE:B'),.0625);
+ assert.deepEqual(f.rows.get('NCTOrders/O'),before);assert.equal(f.events().length,0);
+});
+
+test('incomplete or concurrently edited source cost hides only that individual source while mother stays unknown',async()=>{
+ for(const kind of ['unconfirmed','missing','changed','locked']){
+  const f=fixture(),input=withSources(f,f.input());input.workspace.tasks[0].ord=120;
+  if(kind==='unconfirmed')input.workspace.tasks[1].procurement.revision='';
+  if(kind==='missing')input.tasks[1].disc3=null;
+  if(kind==='changed')f.rows.get('NCTTasks/B').lpCtn=310;
+  if(kind==='locked')f.rows.set('NCTActivity/'+operationId('NCT','B','COST_LOCK'),{details:{requestId:'OTHER'}});
+  const result=await f.refresh(input);assert.equal(result.get('T'),null);assert.equal(result.get('SOURCE:T'),.25);assert.equal(result.get('SOURCE:B'),null);assert.equal(f.events().length,0);
+ }
+});
+
+test('individual source GP preserves its own invoiced cost and FX and does not copy the mother aggregate',async()=>{
+ const f=fixture(),input=withSources(f,withInvoice(f.input(),40));input.workspace.tasks[0].ord=120;f.setRate(4);
+ input.workspace.tasks[0].procurement.costing={totalCtn:60,amountCents:720000};
+ const result=await f.refresh(input),revenue=40*100*3+20*100*4;
+ assert.equal(result.get('T'),null);assert.equal(result.get('SOURCE:T'),(revenue-40*240-20*120)/revenue);assert.equal(result.get('SOURCE:B'),.25);assert.equal(f.events().length,0);
+ assert.equal(input.activity.at(-1).details.shipment.lines[0].costSources[0].netCostCtn,240);
 });
