@@ -1,12 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-function fixture(){
+function fixture(options={}){
  const nodes=new Map(),node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',value:'',insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector(selector){return node(key+selector);}});return nodes.get(key);};
  let keyboardFields=[];
  const document={querySelectorAll:()=>keyboardFields,activeElement:null,querySelector:selector=>selector.includes('data-allocation-extra=')?null:node(selector)},ctx={window:{},document};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),ctx);
  const task=(id,ord)=>({id,customerId:'C',barcode:'BAR-'+id,ord,ea:24,supplierId:'S',editVersion:'V1',lpPc:2,lpCtn:48,disc1:0,disc2:0,disc3:0,procurement:{totalCtn:null,revision:'',draftPlan:true}});
  const workspace={company:'NCT',customers:[{id:'C',shortName:'CUSTOMER'}],suppliers:[{id:'S',shortName:'SUPPLIER'},{id:'S2',shortName:'SUPPLIER 2'}],tasks:[task('A',100),task('B',80)]},submissions=[],messages=[],pos=[];let pending=null;
  const modal={open:true,classList:{add(){},contains:()=>true},close(){this.open=false;}};
- const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm:()=>true,handIcon:()=>''});
+ const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm:()=>true,handIcon:()=>'<svg data-hand></svg>',...options});
  const edit=(id,field,value)=>ui.edit({target:{value,dataset:{allocationField:field},closest:()=>({dataset:{allocationRow:id}})}});
  return {setKeyboard:fields=>keyboardFields=fields,node,ui,workspace,submissions,messages,pos,edit,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
 }
@@ -54,3 +54,26 @@ test('CMS JSON key reordering is not a procurement change and matching receipt c
  const f=fixture(),root=f.workspace.tasks[0];root.procurement={revision:'P25',totalCtn:25,draftPlan:true,costing:{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:25,freeCtn:0,totalCtn:25,prices:{disc3:0,lpPc:2,lpCtn:48,disc2:0,disc1:0},amountCents:120000,averageCostCtn:48}};f.ui.open('A');saved(f);
  f.edit('A','qty','35');f.ui.edit({target:{id:'allocationReason',value:'Partial procurement'}});f.ui.click({dataset:{allocationSave:'A'}});assert.equal(f.submissions.length,1);const request=f.submissions[0];root.editVersion='V2';root.procurement={revision:'P35',totalCtn:35,draftPlan:true,costing:{...request.input.costing,prices:{disc3:0,lpPc:2,lpCtn:48,disc2:0,disc1:0}}};f.ui.receipt(request,{ok:true});f.ui.receivedWorkspace();saved(f);assert.equal(f.submissions.length,1);f.edit('A','disc3','1');assert.equal(controls(f).save.className,'allocation-save needs-save');
 });
+
+const settle=()=>new Promise(resolve=>setImmediate(resolve));
+const caught=f=>f.node('[data-allocation-catch="A"]');
+const response=()=>({company:'NCT',taskId:'A',capturedAt:'2026-10-16T09:00:00Z',prices:{lpPc:4,lpCtn:96,disc1:.1,disc2:0,disc3:0}});
+test('Catch Cost disables immediately, deduplicates, replaces saved/manual prices and keeps FOC quantities without saving',async()=>{
+ let resolve,reads=0;const f=fixture({read:()=>{reads++;return new Promise(done=>resolve=done);}});f.workspace.tasks[0].procurement={totalCtn:100,revision:'P1',draftPlan:true};f.ui.open('A');f.edit('A','mode','FOC');f.edit('A','free','10');f.edit('A','disc3','3');
+ f.ui.click({dataset:{allocationCatch:'A'}});assert.equal(caught(f).disabled,true);assert.equal(caught(f).className,'allocation-hand loading');assert.match(f.node('#allocationIssue').textContent,/正在抓取/);f.ui.click({dataset:{allocationCatch:'A'}});await settle();assert.equal(reads,1);
+ resolve(response());await settle();let row=f.ui.serialize().rows[0];assert.equal(row.raw.lpCtn,'96.00');assert.equal(row.raw.disc1,'10.00');assert.equal(row.raw.disc3,'0.00');assert.equal(row.qty,'110');assert.equal(row.free,'10');assert.equal(row.paid,'100');assert.equal(row.reference.source,'POINTBASE');assert.equal(caught(f).className,'allocation-hand complete');assert.equal(caught(f).disabled,true);assert.match(f.node('#allocationIssue').textContent,/原 Net Cost RM.*新 RM/);assert.equal(f.submissions.length,0);f.ui.click({dataset:{allocationCatch:'A'}});await settle();assert.equal(reads,1);
+ f.ui.open('A');assert.equal(caught(f).className,'allocation-hand');assert.equal(caught(f).disabled,false);assert.equal(f.ui.serialize().rows[0].raw.lpCtn,'96.00');
+});
+test('Catch Cost failure keeps original inputs and allows a deliberate retry',async()=>{
+ let reads=0;const f=fixture({read:async()=>{if(++reads===1)throw Error('No cost');return response();}});f.ui.open('A');f.edit('A','disc3','1');f.ui.click({dataset:{allocationCatch:'A'}});await settle();assert.equal(caught(f).disabled,false);assert.equal(f.ui.serialize().rows[0].raw.lpCtn,'48.00');assert.match(f.node('#allocationIssue').textContent,/抓取失败/);f.ui.click({dataset:{allocationCatch:'A'}});await settle();assert.equal(reads,2);assert.equal(caught(f).className,'allocation-hand complete');
+});
+test('late reference responses cannot overwrite edits, reopened drafts, changed tasks or finance locks',async()=>{
+ for(const change of ['edit','reopen','version','finance','invoice','archive']){let resolve,locked=false;const f=fixture({read:()=>new Promise(done=>resolve=done),financeLocked:()=>locked});f.ui.open('A');f.edit('A','qty','35');f.ui.click({dataset:{allocationCatch:'A'}});await settle();
+ if(change==='edit')f.edit('A','disc3','2');if(change==='reopen')f.ui.open('A');if(change==='version')f.workspace.tasks[0].editVersion='V2';if(change==='finance')locked=true;if(change==='invoice')f.workspace.tasks[0].salesInvoiceNumber='INV';if(change==='archive')f.workspace.tasks[0].archived=true;
+ resolve(response());await settle();assert.equal(f.ui.serialize().rows[0].raw.lpCtn,'48.00',change);assert.notEqual(caught(f).className,'allocation-hand complete',change);assert.equal(f.submissions.length,0);
+ }
+});
+test('locked calculators reject edits and fetching before any reference read',async()=>{
+ for(const lock of ['finance','salesInvoiceNumber','salesInvoiceLocked','archived']){let reads=0;const f=fixture({read:async()=>{reads++;return response();},financeLocked:()=>lock==='finance'});if(lock!=='finance')f.workspace.tasks[0][lock]=true;f.ui.open('A');f.edit('A','qty','35');f.ui.click({dataset:{allocationCatch:'A'}});await settle();assert.equal(reads,0);assert.equal(caught(f).disabled,true);assert.equal(f.ui.serialize(),null);assert.match(f.node('#allocationRows').innerHTML,/data-allocation-field="lpCtn"[^>]+disabled/);}
+});
+test('Catch Cost selects fetched price calculation instead of retaining an old actual-total override',async()=>{const f=fixture({read:async()=>response()});f.ui.open('A');f.edit('A','moneySource','TOTAL');f.edit('A','amount','500');f.ui.click({dataset:{allocationCatch:'A'}});await settle();const row=f.ui.serialize().rows[0];assert.equal(row.moneySource,'PRICES');assert.equal(f.planner.calculation(row).amountCents,864000);assert.equal(f.submissions.length,0);});
