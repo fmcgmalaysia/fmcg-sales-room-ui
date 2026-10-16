@@ -1,0 +1,38 @@
+[
+  {
+    "file": "live-before-app.js",
+    "sha256": "0b2cd75a1da6675221b6b7716bc9ac282dec4aef61d95776873dca89872761d0"
+  },
+  {
+    "file": "live-before-style.css",
+    "sha256": "e4130318578aa34d90b6957c3a43f6ebc9be97701fa72ad2eb9f35a9f50223fc"
+  },
+  {
+    "file": "live-before-index.html",
+    "sha256": "f217f2fc00f6754dec6da0d3beed88fbdfc5466ab40df67532b3c96752423df6"
+  },
+  {
+    "file": "wix-page-before.js",
+    "sha256": "347fb3a60a707b10455a359e21c0f0315f6ba841402f4c8bfaa9980b72925326"
+  },
+  {
+    "file": "wix-page-after.js",
+    "sha256": "d53c33a35ffb700a032d1ddaf13ba82f25ef253023b388ac9007aa3bd41cbf6c"
+  },
+  {
+    "file": "preview-review.png",
+    "sha256": "899bbab0fbafa4462ba84d715e9b476f94db9fb5af67ab1a8859c5a5be943789"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "3b0a4a617c36bc06d69e70cdc0b074f13da2b536ef8aa2fa579e31572859c024"
+  },
+  {
+    "file": "public-review.png",
+    "sha256": "6ae49386616ebe112447417dc0eb81c7e08d4d68883c334920dc25a070a96348"
+  },
+  {
+    "file": "tests.txt",
+    "sha256": "cc8ef6abc6eb303c083599ecf33227bfa1bf982b22d23eea52573eea4408a4e4"
+  }
+]
