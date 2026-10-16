@@ -522,8 +522,9 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .po-submission-workspace .po-ledger{min-width:1200px;table-layout:fixed}
 .po-submission-workspace .po-ledger th,.po-submission-workspace .po-ledger td{font-family:var(--master-font);font-size:11px;line-height:14px;text-align:left;vertical-align:middle;padding:6px;color:var(--master-text)}
 .po-submission-workspace .po-ledger th{padding-top:6px;padding-bottom:6px;height:28px}
-.po-submission-workspace .po-ledger th:nth-child(5),.po-submission-workspace .po-ledger td.amount{text-align:right}
-.po-submission-workspace .po-ledger th:nth-child(7),.po-submission-workspace .po-payment-request{text-align:center}
+.po-submission-workspace .po-ledger th:nth-child(5),.po-submission-workspace .po-ledger td.amount{text-align:right;padding-right:22px}
+.po-submission-workspace .po-ledger :is(th,td):nth-child(6){padding-left:14px}
+.po-submission-workspace .po-ledger th:nth-child(7),.po-submission-workspace .po-payment-request{text-align:left}
 .po-submission-workspace .po-supplier{white-space:normal;overflow-wrap:anywhere;font-weight:600}
 .po-submission-workspace .po-ledger small{font-size:10px;line-height:13px;color:var(--master-muted);margin-top:1px}
 .po-purchase-for+.po-purchase-for{margin-top:3px}.po-purchase-for b{font-weight:600}.po-purchase-for small{display:block}
