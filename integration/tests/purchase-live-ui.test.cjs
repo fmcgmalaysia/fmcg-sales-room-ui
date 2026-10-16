@@ -852,3 +852,7 @@ test('Activity History merges task and PO audits once, preserves pre-PO records,
  h.change({id:'activityStaff',value:'ACCOUNT',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/Account confirmed/);assert.doesNotMatch(html,/Quantity confirmed/);
  assert.equal(h.messages.filter(m=>m.type.includes('SAVE_REQUEST')).length,0);
 });
+
+test('Activity hides numeric row-order noise while preserving ownership changes and underlying task history',()=>{
+ const h=harness(),w=workspace(),events=[{id:'MOVE1',action:'PURCHASE_ROW_MOVED',result:'SAVED',actor:'LAW',time:'2026-10-16T01:00:00Z',message:'SORT-ONLY',changes:{before:7,after:5}},{id:'MOVE2',action:'PURCHASE_ROW_MOVED',result:'SAVED',message:'NO-CHANGE',changes:{before:1,after:1}},{id:'OWNER',action:'PURCHASE_CUSTOMER_CHANGED',result:'SAVED',actor:'LAW',message:'Customer ownership updated',changes:{before:{customerId:'A'},after:{customerId:'B'}}},{id:'UNKNOWN',action:'PURCHASE_ROW_MOVED',message:'Unknown old format'}];w.tasks[0].history=events;const before=JSON.stringify(events);h.reply(w);h.click({view:'history'});const html=h.node('#app').innerHTML;assert.doesNotMatch(html,/SORT-ONLY|NO-CHANGE/);assert.match(html,/Customer ownership updated|PURCHASE CUSTOMER CHANGED/);assert.match(html,/Unknown old format/);assert.equal(JSON.stringify(events),before);h.click({path:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/SORT-ONLY/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE_REQUEST')).length,0);
+});
