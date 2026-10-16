@@ -582,3 +582,24 @@ body .po-history-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font
 .po-request-payment span{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid currentColor;border-radius:50%;font:700 16px/20px var(--master-font)}
 .po-payment-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.po-payment-form .field{margin:0}.po-payment-form input,.po-payment-form select{width:100%}.po-payment-summary{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:18px}.po-payment-summary b{display:block;margin-top:5px}
 @media(max-width:560px){.po-payment-form{grid-template-columns:1fr}}
+
+/* PO inherits the Dashboard / Active Orders presentation roles. */
+#app:has(>.po-submission-workspace){font-family:var(--master-font);font-size:11px;color:var(--master-text)}
+.po-submission-workspace{border-color:var(--master-line)}
+.po-submission-workspace .po-tabs{border-color:var(--master-line)}
+.po-submission-workspace .po-tabs button{color:var(--master-muted);font-weight:600}
+.po-submission-workspace .po-tabs button.active{color:var(--master-blue);border-color:var(--master-blue);font-weight:700}
+.po-submission-workspace .po-tabs span,.po-submission-workspace .po-tools .muted{color:var(--master-muted)}
+.po-submission-workspace .po-tools :is(input,select){height:30px;color:var(--master-text);border-color:#b8ccdf;background:#fff}
+.po-submission-workspace .po-number-link{color:var(--master-blue)}
+.po-submission-workspace .po-ledger th{background:var(--master-header);line-height:1.4}
+.po-submission-workspace .po-ledger td{border-color:#cfdfed}
+.po-submission-workspace .po-ledger tbody tr:is(:hover,:focus-within)>td{background:#e6f0fa}
+.po-submission-workspace :is(.po-tabs button,.po-number-link,.po-doc-actions button,.po-doc-help):not(:disabled):is(:hover,:focus-visible){background:#e7eef5;color:#173557;filter:none}
+.po-submission-workspace :is(.po-doc-badge,.po-request-payment,.po-term-pending):not(:disabled):is(:hover,:focus-visible){filter:brightness(.88)}
+body dialog.po-dialog{font:11px/1.4 var(--master-font);color:var(--master-text)}
+body dialog.po-dialog :is(.field label,.field-title,.po-doc-section h3){color:var(--master-text)}
+body dialog.po-dialog :is(.field-title>span,.po-file-row small,.po-history-event small){color:var(--master-muted)}
+body dialog.po-dialog .field :is(input,select,textarea){font-family:var(--master-font);color:var(--master-text);background:#fff;border-color:#b8ccdf}
+body dialog.po-dialog :is(.close,.btn:not(.primary):not(.danger)):not(:disabled):is(:hover,:focus-visible){background:#e7eef5;color:#173557;border-color:var(--master-blue)}
+body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:focus-visible){filter:brightness(.88)}
