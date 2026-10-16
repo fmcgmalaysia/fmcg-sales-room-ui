@@ -1,12 +1,8 @@
 # Purchase document service (service v1 deployed; NCT public upload verified)
 
-Unreleased candidate, 2026-10-16: `TRASH` moves a verified purchase PDF to the
-Google Drive recycle bin. Wix first checks the stored uploader staff ID and
-Finance/payment locks, journals a pending unlink, then verifies the exact Drive
-receipt before recording deletion. A lost receipt resumes the same request and
-file ID. Upload metadata and deletion audit remain in CMS. There is no permanent
-purge operation. This candidate has not been deployed or tested against a real
-Drive file; the deployment notes below describe historical verified releases.
+Release 2026-10-16: existing deployment now selects immutable version 4, adding Our PO PDF uploads and verified recoverable TRASH. See deployment-v4.json. The original deployment endpoint, owner, access and Drive scopes remain unchanged. Complete source readback and deployment receipt were recorded. Unauthenticated endpoint requests still fail before Drive access. Automated PO upload/TRASH, identity isolation and retry checks pass. Real website upload/delete acceptance with disposable user-selected files remains pending; no business file was deleted for testing.
+
+Wix enforces original-uploader staff ID and Finance/payment locks before journaling a pending unlink. It verifies the exact Drive receipt before recording deletion. Lost receipts resume the same request and file ID. Upload metadata and deletion audit remain in CMS. No permanent purge operation exists.
 
 On 2026-10-11 Google confirmed deployment version 1. See deployment-v1.json.
 Code.gs was saved and its complete editor readback matched the local source.
@@ -26,7 +22,7 @@ Create a dedicated Apps Script project owned by the authorized Workspace account
 Do not install these files in the existing Onboarding, QD or Pointbase projects.
 
 The service accepts only PDF files up to 3 MiB from the authenticated Master backend.
-NCT/GHR destinations are fixed in Code.gs. It never changes Drive sharing or deletes files.
+NCT/GHR destinations are fixed in Code.gs. It never changes Drive sharing or permanently deletes files; verified purchase files can be moved to Trash.
 Master must persist the generated file ID before upload and reuse that ID after a timeout.
 An existing file only counts as a completed retry when its company, P.O., content hash,
 file name, size, MIME type and destination all match.
