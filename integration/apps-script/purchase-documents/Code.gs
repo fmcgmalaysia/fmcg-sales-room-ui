@@ -12,6 +12,7 @@ function doPost(e) {
     if(!PURCHASE_ROOTS[input.company])throw Error('INVALID_COMPANY');
     if(input.action==='ALLOCATE')result={ok:true,fileId:Drive.Files.generateIds({count:1,space:'drive',type:'files'}).ids[0]};
     else if(input.action==='UPLOAD')result=uploadPurchasePdf_(input);
+    else if(input.action==='TRASH')result=trashPurchasePdf_(input);
     else throw Error('INVALID_ACTION');
   } catch(error) {
     const safe=['NOT_AUTHORIZED','INVALID_COMPANY','INVALID_ACTION','INVALID_DOCUMENT','INVALID_PDF','FILE_IDENTITY_CONFLICT','UPLOAD_UNCONFIRMED'];
@@ -35,5 +36,18 @@ function uploadPurchasePdf_(input) {
     catch(error){try{file=Drive.Files.get(input.fileId,{fields:FILE_FIELDS});}catch(unavailable){throw Error('UPLOAD_UNCONFIRMED');}}
     if(file.trashed||file.mimeType!=='application/pdf'||file.name!==input.name||!file.parents?.includes(folder)||Number(file.size)!==bytes.length||Object.keys(props).some(key=>file.appProperties?.[key]!==props[key]))throw Error('FILE_IDENTITY_CONFLICT');
     return {ok:true,fileId:file.id,name:file.name,size:Number(file.size),sha256:hash,company:input.company,poId:input.poId,url:file.webViewLink||null};
+  } finally {lock.releaseLock();}
+}
+
+function trashPurchasePdf_(input) {
+  if(!/^[A-Za-z0-9_-]{10,200}$/.test(input.fileId||'')||!/^\w{32}$/.test(input.poId||'')||!/^\w{64}$/.test(input.sha256||'')||!['PO','INV','CN','SO','PI','DO'].includes(input.type)||typeof input.name!=='string'||input.name.length>300)throw Error('INVALID_DOCUMENT');
+  const lock=LockService.getScriptLock();lock.waitLock(20000);
+  try {
+    let file=Drive.Files.get(input.fileId,{fields:FILE_FIELDS});
+    const props={company:input.company,poId:input.poId,sha256:input.sha256,type:input.type};
+    if(file.mimeType!=='application/pdf'||file.name!==input.name||!file.parents?.includes(PURCHASE_ROOTS[input.company])||Object.keys(props).some(key=>file.appProperties?.[key]!==props[key]))throw Error('FILE_IDENTITY_CONFLICT');
+    if(!file.trashed)file=Drive.Files.update({trashed:true},input.fileId,null,{fields:FILE_FIELDS});
+    if(file.trashed!==true)throw Error('UPLOAD_UNCONFIRMED');
+    return {ok:true,fileId:file.id,name:file.name,company:input.company,poId:input.poId,sha256:input.sha256,type:input.type,trashed:true};
   } finally {lock.releaseLock();}
 }

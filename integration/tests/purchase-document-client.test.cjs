@@ -14,3 +14,11 @@ test('wrong PO upload receipt cannot be accepted',async()=>{
  const client=createPurchaseDocumentClient({secret:async()=>'test-only-credential-12345678901234567890',request:async()=>({status:200,body:JSON.stringify({ok:true,fileId:'generated_file_123',poId:'wrong',company:'NCT'})})});
  await assert.rejects(client({action:'UPLOAD',fileId:'generated_file_123',poId:'expected',company:'NCT'}),/does not match/);
 });
+
+test('trash requires an exact confirmed receipt for this company, PO and file',async()=>{
+ const input={action:'TRASH',fileId:'generated_file_123',poId:'EXPECTED-PO',company:'NCT',sha256:'HASH',name:'saved.pdf',type:'PI'};
+ for(const mismatch of [{trashed:false},{company:'GHR'},{poId:'OTHER'},{sha256:'OTHER'},{name:'other.pdf'},{type:'PAYMENT'}]){
+  const client=createPurchaseDocumentClient({secret:async()=>'test-only-credential-12345678901234567890',request:async()=>({status:200,body:JSON.stringify({...input,ok:true,trashed:true,...mismatch})})});
+  await assert.rejects(client(input),/deletion could not be confirmed/);
+ }
+});

@@ -705,6 +705,22 @@ test('Docs help is read-only and an unconnected payment form cannot submit an un
  h.click({poRequest:'PO'});assert.match(h.node('#dialogContent').innerHTML,/id="poRequestTerm"/);assert.match(h.node('#dialogContent').innerHTML,/Connection pending/);h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.match(h.node('#dialogError').textContent,/connection is pending/);
 });
 
+test('file panel separates upload time and document date; only the uploader sees the permitted Delete action',async()=>{
+ for(const owner of ['STAFF','OTHER',null]){
+  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PI',number:'PI-1',fileId:'FILE',name:'supplier.pdf',linked:true,uploadedAt:'2026-10-16T06:05:00Z',uploadedBy:'LAW',uploadedByStaffId:owner,deleteAllowed:true,date:'2026-10-15'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
+  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],documentDeletionConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poDocs:'PO',poDocType:'PI'});const html=h.node('#dialogContent').innerHTML;
+  assert.match(html,/Uploaded: .*14:05.*LAW/);assert.match(html,/Document date: 2026-10-15/);assert.equal(/data-po-delete="PO"/.test(html),owner==='STAFF');
+  h.click({poDelete:'PO',poFile:'FILE'});
+  if(owner==='STAFF'){assert.match(h.node('#dialogContent').innerHTML,/Google Drive Trash/);h.click({controlId:'deletePurchaseDocument'});const sent=h.messages.at(-1);assert.equal(sent.input.action,'DELETE_DOCUMENT');assert.equal(sent.input.fileId,'FILE');assert.equal(sent.input.version,'V');}
+  else assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ }
+});
+
+test('legacy document date never substitutes for an unknown upload timestamp',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PI',number:'PI-1',fileId:'FILE',linked:true,date:'2026-10-15',uploadedBy:'LAW'}],history:[],documentStatus:'PROVISIONAL'};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poDocs:'PO'});assert.match(h.node('#dialogContent').innerHTML,/Uploaded: Time unavailable · LAW/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-po-delete/);
+});
+
 test('document badges open only the selected category, including existing DO and credit notes',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);const row={id:'PO',version:'PV',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'DO',number:'DO-ONE',fileId:'one'},{type:'CN',number:'CN-TWO',fileId:'two'}],history:[],documentStatus:'PROVISIONAL',termDays:21,procurementHandoff:{editable:false}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poDocs:'PO',poDocType:'DO'});assert.match(h.node('#dialogContent').innerHTML,/DO-ONE/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/CN-TWO/);h.click({poDocs:'PO',poDocType:'CN'});assert.match(h.node('#dialogContent').innerHTML,/CN-TWO/);h.click({poTerm:'PO'});assert.match(h.node('#dialogContent').innerHTML,/<option value="21" selected>21 Days/);assert.match(h.node('#dialogContent').innerHTML,/id="poTermDays" disabled/);assert.match(h.node('#dialogContent').innerHTML,/id="savePurchaseOrderMeta" disabled/);
