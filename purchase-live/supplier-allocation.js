@@ -80,7 +80,7 @@
       api.modal().classList.add('supplier-allocation-dialog');renderRows();
     }
     function rowMarkup(row,index){
-      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||api.financeLocked?.(row.taskId);
+      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||rowLocked(row);
       const supplierLocked=locked||saved?.po||saved?.procurement?.revision&&!saved.procurement.draftPlan;
       const person='<span class="allocation-person '+(saved?.procurement?.revision&&row.supplierId===saved.supplierId?'complete':'pending')+'" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="3"/><path d="M4 18v-3a6 6 0 0 1 12 0v3z"/></svg><b>'+(index+1)+'</b></span>';
       const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'><option value="">WAITING</option>'+workspace().suppliers.filter(s=>s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id)).map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>';
@@ -113,7 +113,7 @@
         const quantity=Number(row.qty),calc=calculation(row),cost=calc.averageCostCtn;
         const netLabel=element.querySelector('[data-allocation-net]');if(netLabel)netLabel.textContent=money(cost);
         const amountLabel=element.querySelector('[data-allocation-amount]');if(amountLabel)amountLabel.textContent=money(Number.isFinite(cost)?calc.amountCents/100:null);
-        const saveControl=element.querySelector('[data-allocation-save]');if(saveControl){const saved=workspace().tasks.find(item=>item.id===row.taskId),clean=saved&&!changed(row,saved),ready=Number.isFinite(cost)&&cost>0;saveControl.disabled=state.running||!ready||Boolean(saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||api.financeLocked?.(row.taskId))||clean;saveControl.textContent=clean?'已保存':'保存这项采购';saveControl.className='allocation-save'+(!clean&&ready?' needs-save':'');const poControl=element.querySelector('[data-allocation-po]');if(poControl){poControl.className='allocation-po '+(saved?.po?'complete':'pending'+(clean?'':' awaiting-save'));poControl.hidden=!saved?.po&&!clean;}}
+        const saveControl=element.querySelector('[data-allocation-save]');if(saveControl){const saved=workspace().tasks.find(item=>item.id===row.taskId),clean=saved&&!changed(row,saved),ready=Number.isFinite(cost)&&cost>0;saveControl.disabled=state.running||!ready||rowLocked(row)||clean;saveControl.textContent=clean?'已保存':'保存这项采购';saveControl.className='allocation-save'+(!clean&&ready?' needs-save':'');const poControl=element.querySelector('[data-allocation-po]');if(poControl){poControl.className='allocation-po '+(saved?.po?'complete':'pending'+(clean?'':' awaiting-save'));poControl.hidden=!saved?.po&&!clean;}}
         if(row.supplierId){assigned+=Number.isSafeInteger(quantity)?quantity:0;if(Number.isFinite(cost))amount+=calc.amountCents/100;else known=false;}
         if(row.auto&&document.activeElement!==element.querySelector('[data-allocation-field="qty"]'))element.querySelector('[data-allocation-field="qty"]').value=row.qty;
         element.hidden=Boolean(row.hidden);
