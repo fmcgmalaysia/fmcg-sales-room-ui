@@ -116,7 +116,7 @@ test('Active demand summary is display-only and omits duplicate waiting text whi
 test('Active actual receipts never open supplier costing while receipt exception actions remain available',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:90,revision:'P'},supplierId:'A',warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'RECEIPT-CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH'],owner:'WAREHOUSE'}]});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML,receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];
- assert.match(receipt,/<span class="quantity-reference receipt-problem" title="Received \/ 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
+ assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received \/ 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
  h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
 });
 
@@ -578,7 +578,7 @@ test('pre-upgrade row-order cache retains customer scope after navigating to ano
 test('Active move entry immediately exposes native drag handles for a sole customer without submitting',()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'active'});const before=h.messages.length;
  assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);h.click({activeMove:'true'});
- assert.match(h.node('#app').innerHTML,/draggable="true" title="Drag to move · 拖动排列" data-drag="TASK"/);
+ assert.match(h.node('#app').innerHTML,/draggable="true" aria-description="Drag to move · 拖动排列" data-drag="TASK"/);
  assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);assert.equal(h.messages.length,before);
  assert.match(h.node('#liveStatus').textContent,/Save/);
 });
