@@ -43,7 +43,7 @@ export const getPurchaseReferenceCost=webMethod(Permissions.SiteMember,async(com
  const workspace=await readPlannerWorkspace(company,staff),task=workspace.tasks.find(row=>row.id===taskId);
  if(!task||task.archived)throw Error('Accepted purchase task is unavailable.');
  const costs=await capturePointbaseCosts([task.barcode]),cost=costs?.[task.barcode];
- if(!cost||cost.unitBarcode!==task.barcode||cost.costCurrency!=='MYR'||cost.costStatus!=='CAPTURED'||!Number.isFinite(Date.parse(cost.capturedAt)))throw Error('POINTBASE reference is unavailable; current inputs are retained.');
+ if(!cost||cost.unitBarcode!==task.barcode||cost.costCurrency!=='MYR'||(cost.costStatus!=='CAPTURED'&&!(cost.costStatus==='ERROR'&&cost.productStatus==='ACTIVE'&&Array.isArray(cost.costIssues)&&cost.costIssues.length>0&&cost.costIssues.every(issue=>issue==='UNAVAILABLE_CBMPERCTN')&&['lpPc','lpCtn','disc1','disc2','disc3'].every(key=>typeof cost[key]==='number'&&Number.isFinite(cost[key]))))||!Number.isFinite(Date.parse(cost.capturedAt)))throw Error('POINTBASE reference is unavailable; current inputs are retained.');
  const prices=Object.fromEntries(['lpPc','lpCtn','disc1','disc2','disc3'].map(key=>[key,typeof cost[key]==='number'&&Number.isFinite(cost[key])?cost[key]:null]));
  return {company,taskId,barcode:task.barcode,capturedAt:cost.capturedAt,prices};
 });
