@@ -56,3 +56,23 @@ test('Active GP uses a red capsule only below six percent and has no Progress co
 test('active single supplier saved35 against demand50 shows mother, supplier child35 and waiting15 without creating a new source',()=>{
  const f=fixture();f.args.active=true;f.root.ord=50;f.root.procurement={revision:'P35',totalCtn:35,customerCtn:35};f.args.rows=f.args.tasks=[f.root];const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);assert.match(rows[0],/data-select-kind="demand" disabled/);assert.match(rows[1],/data-source-id="R"/);assert.match(rows[1],/data-source-po-task="R"/);assert.match(rows[2],/data-waiting-for="R"/);assert.match(rows[2],/order-quantity">15</);assert.equal(f.args.tasks.length,1);
 });
+
+function financialCells(html,active=false){const cells=html.match(/<td\b[\s\S]*?<\/td>/g);return {cost:cells[active?7:7].replace(/<[^>]*>/g,''),amount:cells[active?9:8].replace(/<[^>]*>/g,'')};}
+test('task costs use whole saved procurement including surplus, preserving customer quantity and source amounts',()=>{
+ for(const active of [false,true]){const f=fixture();f.args.active=active;f.root.procurement.expectedExtra=0;f.child.procurement={revision:'P2',totalCtn:50,expectedExtra:10};f.child.lpCtn=20;
+ const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.deepEqual(financialCells(rows[0],active),{cost:'14.55',amount:'1,600.00'});assert.deepEqual(financialCells(rows[1],active),{cost:'10.00',amount:'600.00'});assert.deepEqual(financialCells(rows[2],active),{cost:'20.00',amount:'1,000.00'});assert.match(rows[0],/已保存采购 110 CTN/);assert.equal(f.grid.totals([f.root,f.child]).customerQty,100);assert.equal(f.root.ord,100);
+ }
+});
+test('FOC average derives from saved cents and all cartons without multiplying rounded display values',()=>{
+ const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.lpCtn=90.909090909;f.root.procurement={revision:'FOC',totalCtn:110,expectedExtra:10,costing:{mode:'FOC',paidCtn:100,freeCtn:10,amountCents:1000000,averageCostCtn:90.909090909}};assert.deepEqual(financialCells(f.render()),{cost:'90.91',amount:'10,000.00'});assert.equal(f.grid.totals([f.root]).customerQty,100);
+});
+test('unplaced demand shows no reference or unsaved prices as procurement costs',()=>{
+ for(const procurement of [{totalCtn:null,revision:''},{totalCtn:60,revision:''}]){const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.procurement=procurement;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'—',amount:'—'});}
+ const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.lpCtn=null;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'—',amount:'—'});
+});
+test('partial35 against demand50 keeps saved costs and leaves remainder without an invented amount',()=>{
+ const f=fixture();f.args.active=true;f.args.rows=f.args.tasks=[f.root];f.root.ord=50;f.root.procurement={revision:'P35',totalCtn:35,expectedExtra:0};const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.deepEqual(financialCells(rows[0],true),{cost:'10.00',amount:'350.00'});assert.deepEqual(financialCells(rows[1],true),{cost:'10.00',amount:'350.00'});assert.match(rows[2],/order-quantity">15</);assert.doesNotMatch(rows[2],/350.00|10.00/);
+});
+test('price drafts do not alter saved task-list costs and legacy assigned PO retains its amount',()=>{
+ const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.procurement={totalCtn:60};f.root.po='LEGACY-PO';f.args.drafts.set('R',{changes:{lpCtn:999,disc1:.5}});assert.deepEqual(financialCells(f.render()),{cost:'10.00',amount:'600.00'});assert.equal(f.args.drafts.get('R').changes.lpCtn,999);assert.equal(f.root.lpCtn,10);
+});
