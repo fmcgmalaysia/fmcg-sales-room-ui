@@ -14,9 +14,10 @@
     "purchasePage": "version token only"
   },
   "publicVerification": {
-    "purchase": "fresh public page reloaded; authenticated workspace, orders, submitted-only Follow-up, history and activity read successfully",
+    "purchase": "Fresh public page reloaded: LAW identity, eight dashboard tasks, three preserved purchase orders, enabled Our PO upload dialog, submitted-only Follow-up empty state, closed-only History empty state and 59 real activity records; staff filter returns only LAW",
     "errors": 0,
-    "businessWritesPerformed": false
+    "businessWritesPerformed": false,
+    "account": "Existing live Account page verified same three orders and Note from Purchase with persisted reason, actor and time"
   },
   "documentService": {
     "immutableVersion": 4,
