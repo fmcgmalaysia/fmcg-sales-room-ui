@@ -31,3 +31,9 @@ test('CMS error reading staff context gives diagnostics but cannot enter any bus
 });
 
 test('unchanged PO is a definite pre-write validation result, allowing the client to release its pending lock',async()=>{const result=await endpoint(async()=>{throw Error('P.O. number has not changed.');})('NCT','ORIGINAL-REQUEST','PO',{});assert.equal(result.ok,false);assert.equal(result.error,'P.O. number has not changed.');assert.equal(result.requestId,'ORIGINAL-REQUEST');assert.notEqual(result.pending,true);});
+
+test('pre-operation CMS failure identifies only this attempt, preserving compatibility with old callers',async()=>{
+ let operations=0;const result=await endpoint(async()=>{operations++;},async()=>{throw Object.assign(Error('GridAppId PRIVATE-APP'),{code:'WDE0118'});})('NCT','REQUEST','EDIT',{});
+ assert.equal(operations,0);assert.equal(result.ok,false);assert.equal(result.pending,true);assert.equal(result.attemptNotStarted,true);assert.equal(result.requestId,'REQUEST');assert.doesNotMatch(JSON.stringify(result),/PRIVATE-APP/);
+ const uncertain=await endpoint(async()=>{throw Object.assign(Error('Lost CMS response'),{code:'WDE0118'});})('NCT','REQUEST','EDIT',{});assert.equal(uncertain.pending,true);assert.notEqual(uncertain.attemptNotStarted,true);
+});
