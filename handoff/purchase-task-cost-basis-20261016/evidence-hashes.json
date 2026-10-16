@@ -30,5 +30,13 @@
   {
     "file": "policies-after.json",
     "sha256": "c4b6a80a0f9041cd0bdce8b0063f934259b85a6be60ec8f40ff41fc5bcd816a3"
+  },
+  {
+    "file": "public-costs.png",
+    "sha256": "be8cff8ede83802b0e3bf653054bcef940f417b99d44e8ecd648e8a0b9ba5cf0"
+  },
+  {
+    "file": "preview-costs.png",
+    "sha256": "3d830e994e0b4b0f67bd63ec7958a8106e9415eda58a271260e826546469c2c2"
   }
 ]
