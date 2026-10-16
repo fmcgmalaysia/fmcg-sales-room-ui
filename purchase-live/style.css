@@ -549,3 +549,8 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 #app:has(>.po-submission-workspace)>.heading{margin:0 0 12px;min-height:50px}
 #app:has(>.po-submission-workspace)>.heading h1{margin:0;line-height:26px}
 #app:has(>.po-submission-workspace)>.heading .muted{display:block;margin-top:4px;font-size:14px;font-weight:600;line-height:20px;color:var(--master-text)}
+.po-submission-workspace button:not(:disabled){cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease}
+.po-submission-workspace button:not(:disabled):is(:hover,:focus-visible){transform:translateY(-1px);filter:brightness(.94);box-shadow:0 2px 4px #17355726}
+.po-submission-workspace button:not(:disabled):active{transform:translateY(0);box-shadow:0 1px 2px #17355726}
+.po-submission-workspace :is(.po-number-link,.po-details-link,.po-doc-actions button):not(:disabled):is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:2px}
+@media(prefers-reduced-motion:reduce){.po-submission-workspace button:not(:disabled){transition:none}.po-submission-workspace button:not(:disabled):is(:hover,:focus-visible,:active){transform:none}}
