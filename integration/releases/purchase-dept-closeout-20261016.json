@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-16",
+  "code": "bbe2aa03bc66e99dde2b296dd9dd3ee7b2bc4262",
+  "branch": "release/purchase-dept-closeout-20261016",
+  "pages": {
+    "run": 38922007376,
+    "status": "success",
+    "verifiedAssets": 34,
+    "deploymentPolicies": "original seven restored exactly"
+  },
+  "wix": {
+    "status": "published and live receipt received",
+    "backendModulesReadbackExact": 6,
+    "purchasePage": "version token only"
+  },
+  "publicVerification": {
+    "purchase": "fresh public page reloaded; authenticated workspace, orders, submitted-only Follow-up, history and activity read successfully",
+    "errors": 0,
+    "businessWritesPerformed": false
+  },
+  "documentService": {
+    "immutableVersion": 4,
+    "deploymentId": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+    "accessChanged": false
+  },
+  "tests": {
+    "total": 336,
+    "pass": 335,
+    "fail": 1,
+    "failure": "Pre-existing Sales/Buyer language assertion reproduced at db34d0e"
+  },
+  "pendingAcceptance": [
+    "Real website Our PO upload and uploader-only recoverable deletion with disposable files",
+    "Real payment request, Account Reviewing lock, CN treatment and payment proof acknowledgement with user-owned business documents"
+  ],
+  "unsupportedExtensions": [
+    "Formal cancellation/reopening",
+    "Immutable historical identity snapshots"
+  ],
+  "mainPromotion": "Pending user real-world workflow confirmation; main unchanged"
+}
