@@ -49,5 +49,14 @@
     ],
     "kept": "51425686 isolated candidate preview; original business tabs untouched"
   },
-  "mainMerged": false
+  "mainMerged": false,
+  "publicReadOnlyAcceptance": {
+    "passed": true,
+    "date": "2026-10-17",
+    "report": "purchase-live-acceptance-20261017.json",
+    "currentBuildAndRealDataVerified": true,
+    "inFlightBusinessWritesNotExecuted": true,
+    "historySlipRealClosedRowUnavailable": true,
+    "previousIndependentBlankTabIssueNotRootCaused": true
+  }
 }
