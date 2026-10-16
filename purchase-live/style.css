@@ -512,3 +512,10 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po.pending.awaiting-save{background:#fff;border:1px solid #b8cbdc;color:#3766a2}
 
 .supplier-allocation-dialog .allocation-po-cell .allocation-po[hidden]{display:none}
+
+.supplier-allocation-dialog .allocation-hand:disabled{background:#edf0f3;border-color:#d1d8df;color:#8995a2;cursor:default;opacity:1}
+.supplier-allocation-dialog .allocation-hand.loading{cursor:wait}
+.supplier-allocation-dialog .allocation-hand.complete{background:#e9f6ee;border-color:#9acbad;color:#16854b}
+.allocation-cost-spinner{width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:allocation-cost-spin .8s linear infinite}
+@keyframes allocation-cost-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.allocation-cost-spinner{animation:none}}
