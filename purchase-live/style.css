@@ -478,3 +478,5 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 /* Orange identifies the next action only after confirmed workspace readback. */
 .supplier-allocation-dialog .allocation-save.needs-save{background:#ff8a00;border-color:#ff8a00;color:#fff}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po.pending.awaiting-save{background:#fff;border:1px solid #b8cbdc;color:#3766a2}
+
+.supplier-allocation-dialog .allocation-po-cell .allocation-po[hidden]{display:none}
