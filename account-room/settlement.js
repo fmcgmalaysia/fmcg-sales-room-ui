@@ -5,7 +5,7 @@
  const money=c=>Number.isSafeInteger(c)?(c/100).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
  const date=x=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(x).map(p=>[p.type,p.value]));return `${p.year}-${p.month}-${p.day}`;};
  const toCents=x=>/^\d{1,10}(\.\d{1,2})?$/.test(x)?Number(x.split('.')[0])*100+Number((x.split('.')[1]||'').padEnd(2,'0')):null;
- const handoffLabels={REVIEW_LEGACY:'核对历史 PO',TAKE_OWNERSHIP:'接手',RETURN_PROCUREMENT:'退回采购',PAYMENT_PROCESSING:'登记开始付款',PAYMENT_UNKNOWN:'结果未知',PAYMENT_RESOLVED:'核对付款结果'};
+ const handoffLabels={REVIEW_LEGACY:'核对历史 PO',TAKE_OWNERSHIP:'Reviewing 开始审核',RETURN_PROCUREMENT:'退回采购',PAYMENT_PROCESSING:'登记开始付款',PAYMENT_UNKNOWN:'结果未知',PAYMENT_RESOLVED:'核对付款结果'};
  function handoffTools(row){
   if(!row.procurementHandoff||row.state==='HISTORY'||row.invoiceChecked)return '';
   const stage=row.procurementHandoff.stage,actions=stage==='LEGACY'?['REVIEW_LEGACY']:stage==='SUBMITTED'?['TAKE_OWNERSHIP']:stage==='OWNED'?['PAYMENT_PROCESSING','RETURN_PROCUREMENT']:stage==='RETURN_REQUESTED'?['RETURN_PROCUREMENT']:stage==='PROCESSING'?['PAYMENT_UNKNOWN','PAYMENT_RESOLVED']:stage==='UNKNOWN'?['PAYMENT_RESOLVED']:[];
@@ -25,7 +25,7 @@
    if(bank)body+='<label class="account-field"><span>已核实银行记录，没有未决付款操作</span><input name="bankClear" type="checkbox" required></label>';
    modal(row,handoffLabels[action]||'财务交接',body);
   }else if(kind==='review'){
-   const review=row.paymentHandoff?.review,declared=review?.requestedCents??row.finance?.payableCents??row.documents.filter(doc=>doc.linked&&!doc.superseded&&['PI','SO','INV'].includes(doc.type)).at(-1)?.declaredCents;
+   const review=row.paymentHandoff?.review,declared=review?.requestedCents??row.procurementHandoff?.submission?.paymentRequest?.requestedCents??row.finance?.payableCents??row.documents.filter(doc=>doc.linked&&!doc.superseded&&['PI','SO','INV'].includes(doc.type)).at(-1)?.declaredCents;
    modal(row,'Payment Review 付款资料过目','<label class="account-field"><span>Paper files 纸本文件</span><input name="paperReceived" type="checkbox" required '+(review?.paperReceived?'checked':'')+'></label><p class="document-note">确认已收到供应商文件及付款申请凭单；金额以实际付款申请文件为依据。</p><label class="account-field"><span>Stage 处理状态</span><select name="reviewStage"><option value="RECEIVED">Documents received 已收文件</option><option value="REVIEWING">Reviewing 正在过目</option></select></label><label class="account-field"><span>This instalment 本次申请 MYR</span><input name="requestedAmount" inputmode="decimal" value="'+(Number.isSafeInteger(declared)?(declared/100).toFixed(2):'')+'" required></label>');
   }else if(kind.startsWith('claim:')){
    const item=(row.quantityCases||[]).find(item=>item.id===kind.slice(6));if(!item)return;
