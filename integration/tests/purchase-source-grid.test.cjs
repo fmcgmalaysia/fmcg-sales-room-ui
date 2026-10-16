@@ -57,6 +57,19 @@ test('active single supplier saved35 against demand50 shows mother, supplier chi
  const f=fixture();f.args.active=true;f.root.ord=50;f.root.procurement={revision:'P35',totalCtn:35,customerCtn:35};f.args.rows=f.args.tasks=[f.root];const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);assert.match(rows[0],/data-select-kind="demand" disabled/);assert.match(rows[1],/data-source-id="R"/);assert.match(rows[1],/data-source-po-task="R"/);assert.match(rows[2],/data-waiting-for="R"/);assert.match(rows[2],/order-quantity">15</);assert.equal(f.args.tasks.length,1);
 });
 
+test('partial allocation shows GP on saved children only and switches to mother aggregate once fully allocated',()=>{
+ const f=fixture();f.args.active=true;f.root.ord=120;f.root.sourceGp=.25;f.child.sourceGp=.1;
+ let rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);assert.match(rows[1],/aria-label="GP 25%"/);assert.match(rows[2],/aria-label="GP 10%"/);assert.doesNotMatch(rows[3],/gp-badge/);
+ f.child.procurement.revision='';f.child.po='';rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[1],/aria-label="GP 25%"/);assert.doesNotMatch(rows[2],/gp-badge/);
+ f.child.procurement.revision='P2';f.root.ord=100;rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[0],/aria-label="GP 20%"/);for(const row of rows.slice(1))assert.doesNotMatch(row,/gp-badge/);
+});
+
+test('a single partially assigned supplier uses its own GP despite sharing the mother record ID',()=>{
+ const f=fixture();f.args.active=true;f.args.rows=f.args.tasks=[f.root];f.root.procurement.totalCtn=35;f.root.sourceGp=.125;
+ const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);assert.match(rows[1],/aria-label="GP 12.50%"/);assert.doesNotMatch(rows[2],/gp-badge/);
+ f.args.drafts.set('R',{changes:{lpCtn:20}});assert.doesNotMatch(f.render(),/gp-badge/);
+});
+
 function financialCells(html,active=false){const cells=html.match(/<td\b[\s\S]*?<\/td>/g);return {cost:cells[active?7:7].replace(/<[^>]*>/g,''),amount:cells[active?9:8].replace(/<[^>]*>/g,'')};}
 test('task costs use whole saved procurement including surplus, preserving customer quantity and source amounts',()=>{
  for(const active of [false,true]){const f=fixture();f.args.active=active;f.root.procurement.expectedExtra=0;f.child.procurement={revision:'P2',totalCtn:50,expectedExtra:10};f.child.lpCtn=20;
@@ -84,4 +97,14 @@ test('active order quantities omit unplaced chips while receipt issues and legac
  assert.doesNotMatch(html,/data-quantity-case="U"/);assert.equal((html.match(/data-quantity-case="R"/g)||[]).length,3);
  assert.match(html,/data-waiting-for="R"/);assert.match(html,/class="order-quantity">20<\/td>/);assert.equal(JSON.stringify(f.args.tasks),before);
  f.args.active=false;html=f.render();assert.equal((html.match(/data-quantity-case="U"/g)||[]).length,3);
+});
+test('unknown or unconfirmed procurement never displays a GP capsule even when an upstream GP is present',()=>{
+ for(const active of [false,true])for(const kind of ['unplanned','reference-only','missing-source-cost','partial']){
+  const f=fixture();f.args.active=active;
+  if(kind==='unplanned')for(const row of [f.root,f.child])row.procurement={totalCtn:null,revision:''};
+  if(kind==='reference-only')for(const row of [f.root,f.child])row.procurement.revision='';
+  if(kind==='missing-source-cost')f.child.disc3=null;
+  if(kind==='partial')f.root.ord=120;
+  const html=f.render();assert.doesNotMatch(html,/gp-badge/);if(!active)assert.match(html,/<b class="gp">—<\/b>/);
+ }
 });
