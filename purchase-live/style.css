@@ -372,6 +372,10 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .allocation-issue.pending{color:#805b16}
 .supplier-allocation-dialog .allocation-issue.complete{color:#16854b}
 .supplier-allocation-dialog .allocation-issue.problem{color:#c4455a}
+.supplier-allocation-dialog .dialogfoot>.actions{min-width:0;max-width:100%}
+.supplier-allocation-dialog .allocation-save-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;max-width:100%}
+.supplier-allocation-dialog .allocation-save-buttons{display:flex;gap:8px}
+.supplier-allocation-dialog .allocation-save-actions .allocation-issue{padding-top:0;max-width:720px;text-align:right;overflow-wrap:anywhere}
 #liveStatus.save-pending~dialog #dialogError{color:#805b16}
 /* Office blue hierarchy, scoped to the existing supplier allocation dialog. */
 .supplier-allocation-dialog .dialoghead{background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
