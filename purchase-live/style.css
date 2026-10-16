@@ -674,6 +674,11 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app :is(.archive-workspace,.activity-workspace) .po-tools>span{margin-left:auto}
 #app :is(.archive-workspace,.activity-workspace) .po-ledger tbody tr:hover>td{background:#e6f0fa}
 #app .archive-workspace .po-doc-badge{width:28px;height:28px;min-width:28px;font-weight:700}
+#app .archive-workspace .po-ledger :is(th,td){padding-left:8px;padding-right:8px}
+#app .archive-workspace .archive-docs{display:flex;align-items:flex-end;gap:8px}
+#app .archive-workspace .archive-docs .po-doc-badges{flex-wrap:nowrap;flex:none}
+#app .archive-workspace .archive-pay-slip{display:inline-flex;align-items:center;justify-content:center;flex:0 0 64px;width:64px;height:24px;padding:0 8px;border:1px solid var(--master-green);border-radius:5px;background:var(--master-green);color:#fff;font:inherit;font-size:10px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer}
+#app .archive-workspace .archive-pay-slip:is(:hover,:focus-visible){filter:brightness(.88)}
 #app .archive-workspace .po-doc-badge.missing{background:#b8c4d0;color:white;border:0;cursor:default;opacity:1}
 #app .history-complete{display:inline-flex;background:var(--master-green);color:white;padding:4px 8px;border-radius:12px;font-size:10px;font-weight:600}
 #app .history-date{display:flex;align-items:center;gap:4px;color:var(--master-muted);font-size:10px}
