@@ -550,7 +550,7 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 .po-submission-workspace .po-tools input{width:250px}
 #app:has(>.po-submission-workspace)>.heading{margin:0 0 12px;min-height:50px}
 #app:has(>.po-submission-workspace)>.heading h1{margin:0;line-height:26px}
-#app:has(>.po-submission-workspace)>.heading .muted{display:block;margin-top:4px;font-size:14px;font-weight:600;line-height:20px;color:var(--master-text)}
+#app:has(>.po-submission-workspace)>.heading .muted{display:block;margin-top:4px;font-size:14px;font-weight:600;line-height:20px;color:var(--master-muted)}
 .po-submission-workspace button:not(:disabled){cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease}
 .po-submission-workspace button:not(:disabled):is(:hover,:focus-visible){transform:translateY(-1px);filter:brightness(.94);box-shadow:0 2px 4px #17355726}
 .po-submission-workspace button:not(:disabled):active{transform:translateY(0);box-shadow:0 1px 2px #17355726}
