@@ -636,7 +636,7 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .payment-workspace .ledger-toolbar input{width:260px;margin:0;height:30px}
 #app .payment-workspace .ledger-toolbar .btn{min-height:30px;padding:4px 10px}
 #app .payment-workspace .ledger-count{margin-left:auto}
-#app .payment-workspace .pf-status{padding:4px 8px;gap:4px}
+#app .payment-workspace .pf-status{padding:4px 8px;gap:4px;vertical-align:middle}
 #app .payment-workspace .pf-note>span{display:block}
 #app .payment-workspace .pf-slip{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;color:#fff;text-decoration:none;vertical-align:middle}
 #app .payment-workspace .pf-slip.available{background:var(--master-green);cursor:pointer}
@@ -652,7 +652,7 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 
 #app .payment-workspace .pf-lock{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
 #app .payment-workspace .pf-chase{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:24px;height:28px;margin-left:3px;padding:0;background:transparent;border:0;color:#ffc400;cursor:pointer}
-#app .payment-workspace .pf-chase-art{display:block;width:24px;height:24px;background:url("assets/chase-lightning-v1.png") center/contain no-repeat}
+#app .payment-workspace .pf-chase-art{display:block;width:18px;height:18px;background:url("assets/chase-lightning-v1.png") center/contain no-repeat}
 #app .payment-workspace .pf-chase.sent .pf-chase-art{background:var(--master-red);mask:url("assets/chase-lightning-v1.png") center/contain no-repeat;-webkit-mask:url("assets/chase-lightning-v1.png") center/contain no-repeat}
 #app .payment-workspace .pf-chase.sent{color:var(--master-red)}
 #app .payment-workspace .pf-chase:hover{filter:brightness(.88)}
