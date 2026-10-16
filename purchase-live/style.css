@@ -656,3 +656,21 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #app .payment-workspace .pf-chase.sent .pf-chase-art{background:var(--master-red);mask:url("assets/chase-lightning-v1.png") center/contain no-repeat;-webkit-mask:url("assets/chase-lightning-v1.png") center/contain no-repeat}
 #app .payment-workspace .pf-chase.sent{color:var(--master-red)}
 #app .payment-workspace .pf-chase:hover{filter:brightness(.88)}
+
+/* History pages reuse the Purchase table and toolbar roles. */
+#app .archive-heading{margin:0 0 12px}#app .archive-heading .muted{display:block;font-size:14px;font-weight:600;color:var(--master-muted);margin-top:4px}
+#app :is(.archive-workspace,.activity-workspace) .po-ledger{table-layout:fixed;min-width:1250px}
+#app :is(.archive-workspace,.activity-workspace) .po-ledger :is(th,td){padding:6px;text-align:left;line-height:1.4;vertical-align:middle;overflow-wrap:anywhere}
+#app :is(.archive-workspace,.activity-workspace) td small{display:block;margin-top:2px;font-size:10px;color:var(--master-muted)}
+#app :is(.archive-workspace,.activity-workspace) .po-tools{padding:7px 10px;gap:8px;justify-content:flex-start;flex-wrap:wrap}
+#app :is(.archive-workspace,.activity-workspace) .po-tools :is(input,select){height:30px;font:inherit;margin:0}
+#app :is(.archive-workspace,.activity-workspace) .po-tools>input{width:260px}
+#app :is(.archive-workspace,.activity-workspace) .po-tools>span{margin-left:auto}
+#app :is(.archive-workspace,.activity-workspace) .po-ledger tbody tr:hover>td{background:#e6f0fa}
+#app .archive-workspace .po-doc-badge{width:28px;height:28px;min-width:28px;font-weight:700}
+#app .archive-workspace .po-doc-badge.missing{background:#b8c4d0;color:white;border:0;cursor:default;opacity:1}
+#app .history-complete{display:inline-flex;background:var(--master-green);color:white;padding:4px 8px;border-radius:12px;font-size:10px;font-weight:600}
+#app .history-date{display:flex;align-items:center;gap:4px;color:var(--master-muted);font-size:10px}
+#app .history-date input{width:115px}
+#app .activity-workspace .po-number-link{font-weight:700;color:var(--master-blue)}
+#app .activity-workspace .history-result{color:var(--master-muted)}

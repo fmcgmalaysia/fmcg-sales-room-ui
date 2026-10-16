@@ -833,3 +833,22 @@ test('gray Follow-up statuses offer a reason-only chase, with lock on Reviewing 
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;assert.match(html,/data-followup-chase="PO"/);assert.equal(html.includes('class="pf-lock"'),stage==='OWNED');h.click({followupChase:'PO'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<textarea/);for(const reason of ['急发货','账期已到','供应商催促','其他'])assert.ok(h.node('#dialogContent').innerHTML.includes(reason));h.node('#pfChaseReason').value='Other 其他';h.click({controlId:'sendPaymentChase'});assert.equal(h.messages.at(-1).input.action,'CHASE');assert.equal(h.messages.at(-1).input.enabled,true);assert.equal(h.messages.at(-1).input.reason,'Other 其他');assert.doesNotMatch(h.node('#app').innerHTML,/pf-chase sent/);
  }
 });
+
+test('Purchase History reads actual closure and finance totals, sorts closure dates and offers read-only documents',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);
+ const base={id:'DONE',number:'DONE-PO',state:'HISTORY',completedAt:'2026-10-15T02:00:00Z',invoiceCheck:{by:'ACCOUNT'},supplierId:'S',supplierName:'SUP',customerName:'BUYER',taskIds:['TASK'],documents:[{type:'INV',linked:true,fileId:'INV',name:'saved.pdf'}],documentStatus:'COMPLETE',history:[],finance:{payableCents:43000,paidCents:43000,cashPaidCents:43000,refundCents:0,creditAppliedCents:0,supplierCreditCents:0}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[{...base,id:'OLD',number:'OLD-PO',completedAt:'2025-09-15T00:00:00Z'},base,{...base,id:'ACTIVE',number:'ACTIVE-PO',state:'ACTIVE'}]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'pohistory'});let html=h.node('#app').innerHTML;
+ assert.match(html,/<th>Closed On<\/th><th>P.O. No.<\/th>/);assert.match(html,/430.00/);assert.match(html,/by ACCOUNT/);assert.doesNotMatch(html,/ACTIVE-PO|data-po-upload|data-po-term|data-po-chase/);assert.ok(html.indexOf('DONE-PO')<html.indexOf('OLD-PO'));
+ h.click({poDocs:'DONE',poDocType:'INV'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-po-upload/);assert.match(h.node('#dialogContent').innerHTML,/saved.pdf|INV/);
+ h.click({archiveView:'DONE'});assert.match(h.node('#dialogContent').innerHTML,/Net Amount/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<input|<select/);
+ h.change({id:'poHistoryYear',value:'2025',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/OLD-PO/);assert.doesNotMatch(html,/DONE-PO/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE_REQUEST')).length,0);
+});
+
+test('Activity History merges task and PO audits once, preserves pre-PO records, filters Malaysia dates and shows failed outcomes',async()=>{
+ const h=harness(),w=workspace(),event={id:'SHARED',action:'PURCHASE_PLAN_SAVED',result:'SAVED',actor:'LAW',time:'2026-10-15T18:00:00Z',message:'Quantity confirmed',changes:{before:30,after:25}};w.tasks[0].history=[event,{id:'PRE',action:'PURCHASE_PRICE_SAVED',result:'FAILED',actor:'BUYER',time:'2026-10-14T01:00:00Z',message:'Price rejected'}];h.reply(w);h.click({view:'po'});const req=h.messages.at(-1);
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[{id:'PO',number:'MERGED-PO',state:'ACTIVE',taskIds:['TASK'],documents:[],documentStatus:'MISSING',history:[event,{id:'ACCOUNT',action:'ACCOUNT_CHECK',result:'SAVED',actor:'ACCOUNT',time:'2026-10-16T03:00:00Z',message:'Account confirmed'}]}]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'history'});let html=h.node('#app').innerHTML;
+ assert.equal((html.match(/Quantity confirmed/g)||[]).length,1);assert.match(html,/30 → 25/);assert.match(html,/MERGED-PO/);assert.match(html,/data-path="TASK"/);assert.match(html,/FAILED/);assert.match(html,/Account confirmed/);
+ h.change({id:'activityFrom',value:'2026-10-16',dataset:{}});h.change({id:'activityTo',value:'2026-10-16',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/Quantity confirmed/);assert.doesNotMatch(html,/Price rejected/);
+ h.change({id:'activityStaff',value:'ACCOUNT',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/Account confirmed/);assert.doesNotMatch(html,/Quantity confirmed/);
+ assert.equal(h.messages.filter(m=>m.type.includes('SAVE_REQUEST')).length,0);
+});
