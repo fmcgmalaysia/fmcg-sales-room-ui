@@ -24,9 +24,9 @@ test('disabled demand selection is ignored; first source selection opens only th
 });
 test('PO submit dialog sends one complete saved version with optional urgency and no accidental term edit',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const request=h.messages.at(-1);
- const row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',amount:1000,taskIds:['TASK','OTHER'],state:'ACTIVE',documents:[],history:[],documentStatus:'MISSING',termDays:30,procurementHandoff:{stage:'LEGACY',submitted:false}};
+ const row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',amount:1000,taskIds:['TASK','OTHER'],state:'ACTIVE',status:'Pending Payment',documents:[],history:[],documentStatus:'MISSING',termDays:30,procurementHandoff:{stage:'LEGACY',submitted:false}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
- assert.match(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({poOverview:'PO'});assert.match(h.node('#dialogContent').innerHTML,/提交财务/);h.click({poHandoff:'PO',handoffAction:'SUBMIT_FINANCE'});
+ assert.doesNotMatch(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({view:'payments'});assert.match(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({poOverview:'PO'});assert.match(h.node('#dialogContent').innerHTML,/提交财务/);h.click({poHandoff:'PO',handoffAction:'SUBMIT_FINANCE'});
  assert.match(h.node('#dialogContent').innerHTML,/2 行/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poTermDays"/);
  h.node('#poChangeReason').value='Confirmed both sources';h.node('#poUrgent').checked=true;h.click({controlId:'savePurchaseOrderMeta'});
  const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.action,'SUBMIT_FINANCE');assert.equal(sent.input.version,'PV');assert.equal(sent.input.urgent,true);assert.equal(sent.input.termDays,undefined);
@@ -221,12 +221,12 @@ test('payment acknowledgement sends only the selected notice and cannot clear Fi
 test('purchase orders render persisted documents and readable history, with upload input instead of fixture controls',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
  assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
- const row={id:'POID',version:'V',number:'NCT-PO-001',taskIds:['TASK'],customerName:'BUYER',supplierId:'S',supplierShortName:'SUP',supplierName:'SUPPLIER',itemCount:1,amount:100,termDays:30,documents:[{fileId:'file_123456789',type:'INV',number:'INV001',date:'2026-10-11',uploadedBy:'LAW'}],documentStatus:'COMPLETE',state:'ACTIVE',history:[{action:'PAYMENT_TERM_CHANGED',actor:'LAW',time:'2026-10-11T01:00:00Z',changes:{before:{termDays:15},after:{termDays:30},reason:'Agreed terms'}}]};
+ const row={id:'POID',version:'V',number:'NCT-PO-001',taskIds:['TASK'],customerName:'BUYER',supplierId:'S',supplierShortName:'SUP',supplierName:'SUPPLIER',itemCount:1,amount:100,termDays:30,documents:[{fileId:'file_123456789',linked:true,type:'INV',number:'INV001',date:'2026-10-11',uploadedBy:'LAW'}],documentStatus:'COMPLETE',state:'ACTIVE',history:[{action:'PAYMENT_TERM_CHANGED',actor:'LAW',time:'2026-10-11T01:00:00Z',changes:{before:{termDays:15},after:{termDays:30},reason:'Agreed terms'}}]};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});
  await new Promise(resolve=>setImmediate(resolve));
  assert.match(h.node('#app').innerHTML,/po-doc-badge available[^>]*data-po-doc-type="INV"/);assert.match(h.node('#app').innerHTML,/BUYER/);
  h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
- h.click({poUpload:'POID',poDocType:'PI'});assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);assert.match(h.node('#dialogContent').innerHTML,/Upload SO \/ PI/);
+ h.click({poUpload:'POID',poDocType:'PI'});assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);assert.match(h.node('#dialogContent').innerHTML,/Upload PI/);
  h.click({poHistory:'POID'});const history=h.node('#poHistoryEntries').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
 });
 
@@ -675,11 +675,11 @@ test('restored legacy pending request stays uncertain even when its next attempt
  restored.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});assert.equal(restored.node('#companySelect').disabled,true);assert.equal(restored.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');
 });
 
-test('PO workspace has eight ordered columns, per-customer shipment ETA and unchanged source identity',async()=>{
+test('PO workspace has seven ordered columns, per-customer shipment ETA and unchanged source identity',async()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'Full customer',shortName:'SHORT'},{id:'D',name:'Other customer',shortName:'OTHER'}];h.reply(w);h.click({view:'po'});const req=h.messages.at(-1);
  const row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',customerIds:['C','D'],taskIds:['TASK'],supplierName:'FULL SUPPLIER SDN BHD',supplierShortName:'SUP',documents:[],history:[],documentStatus:'MISSING',termDays:null,amount:100,shipmentDates:[{customerId:'C',date:'2026-10-28'},{customerId:'D',date:'2026-11-05'}]};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));const html=h.node('#app').innerHTML;
- assert.equal(h.node('#taskSignals').hidden,true);assert.deepEqual([...html.matchAll(/<th>(.*?)<\/th>/g)].map(match=>match[1]),['Created On','P.O. No.','Supplier','Purchase For','Amount MYR','Term','Request Payment','Docs']);assert.match(html,/<td class="po-payment-request">—<\/td>/);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETA: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETA: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ assert.equal(h.node('#taskSignals').hidden,true);assert.deepEqual([...html.matchAll(/<th>(.*?)<\/th>/g)].map(match=>match[1].replace(/<button.*?<\/button>/g,'').trim()),['Created On','P.O. No.','Supplier','Purchase For','Amount MYR','Docs','Request Payment']);assert.match(html,/po-payment-ineligible">Not eligible/);assert.doesNotMatch(html,/>Details<|<th>Term/);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETA: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETA: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
 });
 
 test('term dropdown sends Cash as zero through existing versioned save with factual audit reason',async()=>{
@@ -687,6 +687,22 @@ test('term dropdown sends Cash as zero through existing versioned save with fact
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poTerm:'PO'});
  const html=h.node('#dialogContent').innerHTML;assert.match(html,/<option value="0" selected>Cash/);for(const day of [7,14,30,45,60,90])assert.ok(html.includes('value="'+day+'"'));assert.doesNotMatch(html,/<textarea/);
  h.node('#poTermDays').value='0';h.click({controlId:'savePurchaseOrderMeta'});const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.action,'TERM');assert.equal(sent.input.termDays,0);assert.equal(sent.input.version,'PV');assert.equal(sent.input.reason,'Payment term confirmed: Cash');
+});
+
+test('payment entry requires current linked Our PO and PI, SO or INV; stale and superseded documents do not qualify',async()=>{
+ const doc=(type,extra={})=>({type,fileId:type+'-FILE',linked:true,number:type+'-1',...extra});
+ for(const [documents,eligible] of [[[doc('PO')],false],[[doc('PI')],false],[[doc('PO'),doc('PI')],true],[[doc('PO'),doc('SO')],true],[[doc('PO'),doc('INV')],true],[[doc('PO',{superseded:true}),doc('PI')],false],[[doc('PO',{linked:false}),doc('PI')],false],[[doc('PO',{contentVersion:'OLD'}),doc('PI')],false]]){
+  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',contentVersion:'CURRENT',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents,history:[],documentStatus:'MISSING',termDays:null,amount:100};
+  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(/data-po-request="PO"/.test(h.node('#app').innerHTML),eligible);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ }
+});
+
+test('Docs help is read-only and an unconnected payment form cannot submit an unsupported action',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
+ h.click({controlId:'poDocsHelp'});assert.match(h.node('#dialogContent').innerHTML,/Our Purchase Order/);assert.match(h.node('#dialogContent').innerHTML,/Credit Note from Supplier/);
+ h.click({poRequest:'PO'});assert.match(h.node('#dialogContent').innerHTML,/id="poRequestTerm"/);assert.match(h.node('#dialogContent').innerHTML,/Connection pending/);h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.match(h.node('#dialogError').textContent,/connection is pending/);
 });
 
 test('document badges open only the selected category, including existing DO and credit notes',async()=>{
