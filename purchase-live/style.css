@@ -384,7 +384,7 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 .supplier-allocation-dialog .dialoghead .close{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:0;border-radius:4px;font-size:22px;line-height:1}
 .supplier-allocation-dialog .dialoghead .close:is(:hover,:focus-visible){background:#c5d9eb;color:#173557}
 /* PO number confirmation uses the same compact blue-gray workroom presentation. */
-#modal:has(#poNumber){width:700px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
+#modal:has(#poNumber){width:760px;max-width:calc(100vw - 32px);font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#203047}
 #modal:has(#poNumber) :is(button,input){font-family:inherit}
 #modal:has(#poNumber) .dialoghead{padding:10px 14px;background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
 #modal:has(#poNumber) .dialoghead>div{display:flex;flex-direction:column;gap:3px}
@@ -405,17 +405,17 @@ dialog.task-dialog.supplier-allocation-dialog .allocation-table th,dialog.task-d
 #modal:has(#poNumber) .po-confirm-totals strong{display:block;font-size:20px;line-height:26px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;color:#173557}
 #modal:has(#poNumber) .po-items td:is(.po-quantity,:last-child){font-size:12px;font-weight:800}
 #modal:has(#poNumber) #dialogError:empty{display:none}
-#modal:has(#poNumber) .po-items :is(th,td){height:auto;padding:6px;font-size:11px;line-height:16px;color:#203047}
+#modal:has(#poNumber) .po-items :is(th,td){height:auto;padding:5px 6px;font-size:11px;line-height:15px;color:#203047}
 #modal:has(#poNumber) .po-items th{background:#d2dfea;font-weight:700}
-#modal:has(#poNumber) .po-items th:nth-child(1){width:14%}
-#modal:has(#poNumber) .po-items th:nth-child(2){width:42%}
-#modal:has(#poNumber) .po-items th:nth-child(3){width:11%}
-#modal:has(#poNumber) .po-items th:nth-child(4){width:14%}
-#modal:has(#poNumber) .po-items th:nth-child(5){width:19%}
+#modal:has(#poNumber) .po-items th:nth-child(1){width:12%}
+#modal:has(#poNumber) .po-items th:nth-child(2){width:54%}
+#modal:has(#poNumber) .po-items th:nth-child(3){width:8%}
+#modal:has(#poNumber) .po-items th:nth-child(4){width:11%}
+#modal:has(#poNumber) .po-items th:nth-child(5){width:15%}
 #modal:has(#poNumber) .po-items :is(th,td):nth-child(n+3){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 #modal:has(#poNumber) .po-items .po-barcode{font-size:10px;color:#62758a}
-#modal:has(#poNumber) .po-barcode b{display:block;margin-top:2px;font-size:11px;line-height:16px;color:#173557;overflow-wrap:anywhere}
-#modal:has(#poNumber) .po-barcode small{display:block;margin-top:2px;font-size:10px;line-height:14px;color:#62758a}
+#modal:has(#poNumber) .po-barcode b{display:block;margin:0;font-size:11px;line-height:15px;color:#173557;overflow-wrap:anywhere}
+#modal:has(#poNumber) .po-barcode small{display:block;margin-top:1px;font-size:10px;line-height:13px;color:#62758a}
 #modal:has(#poNumber) .dialogfoot{padding:8px 14px;background:#f5f9fd;border-top:1px solid #cfdfed}
 #modal:has(#poNumber) .dialogfoot .btn{min-height:30px;padding:5px 10px;font-size:11px}
 #modal:has(#poNumber) .dialogfoot .btn.primary{background:#3766a2;border-color:#3766a2}
