@@ -812,3 +812,17 @@ test('Pending PO includes unassigned remainder once and excludes fulfilled or ar
  h.reply(w);h.click({view:'active'});assert.match(h.node('#app').innerHTML,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);h.click({activeNotice:'pending'});const html=h.node('#dialogContent').innerHTML;
  assert.match(html,/Unassigned 待分配/);assert.match(html,/5 CTN/);assert.equal((html.match(/pd-supplier-alert-item/g)||[]).length,1);assert.match(html,/data-active-notice-row="TASK" data-active-notice-remaining="true"/);assert.doesNotMatch(html,/data-active-notice-row="(?:FULL|ARCHIVED|EMPTY|CHILD)"/);
 });
+
+test('Pay Slip disables absent proofs, views one linked proof and preserves multiple-proof selection and notices',async()=>{
+ for(const count of [0,1,2]){
+  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);
+  const payments=Array.from({length:count},(_,i)=>({id:'PAY'+i,confirmed:true,direction:'PAYMENT',proof:{linked:true,fileId:'FILE'+i}}));
+  payments.push({confirmed:false,proof:{linked:true,fileId:'DRAFT'}},{confirmed:true,proof:{linked:false,fileId:'UNLINKED'}},{confirmed:true,direction:'REFUND',proof:{linked:true,fileId:'REFUND'}});
+  const row={id:'PO',number:'PO-1',documents:[],history:[],finance:{payments,paidCents:0},paymentHandoff:{unreadCount:1},procurementHandoff:{stage:'SUBMITTED',submission:{at:'2026-10-16T08:00:00Z',paymentRequest:{requestedCents:10000}}}};
+  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;
+  if(!count)assert.match(html,/pf-slip missing[^>]+disabled/);
+  if(count===1)assert.match(html,/pf-slip available[^>]+href="https:\/\/drive.google.com\/file\/d\/FILE0\/view"/);
+  if(count===2)assert.match(html,/pf-slip available[^>]+data-payment-proof="PO"/);
+  assert.match(html,/pf-slip-notice[^>]+data-payment-proof="PO"/);assert.doesNotMatch(html,/file\/d\/(?:DRAFT|UNLINKED|REFUND)/);
+ }
+});
