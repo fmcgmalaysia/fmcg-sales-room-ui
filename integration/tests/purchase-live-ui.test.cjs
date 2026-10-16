@@ -705,6 +705,25 @@ test('Docs help is read-only and an unconnected payment form cannot submit an un
  h.click({poRequest:'PO'});assert.match(h.node('#dialogContent').innerHTML,/id="poRequestTerm"/);assert.match(h.node('#dialogContent').innerHTML,/Connection pending/);h.click({controlId:'submitPaymentRequest'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.match(h.node('#dialogError').textContent,/connection is pending/);
 });
 
+test('payment request omits manual date and client timestamp; submits saved PO version and entered amount',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poRequest:'PO'});
+ assert.doesNotMatch(h.node('#dialogContent').innerHTML,/poRequestDate|type="date"/);assert.match(h.node('#dialogContent').innerHTML,/Submission time is recorded automatically/);
+ h.node('#poRequestAmount').value='25.00';h.node('#poRequestPurpose').value='DEPOSIT';h.node('#poRequestBasis').value='PI';h.node('#poRequestTerm').value='30';h.click({controlId:'submitPaymentRequest'});
+ const sent=h.messages.at(-1);assert.equal(sent.input.action,'REQUEST_PAYMENT');assert.equal(sent.input.requestedCents,2500);assert.equal(sent.input.version,'V');assert.equal(sent.input.requiredDate,undefined);assert.equal(sent.input.submittedAt,undefined);
+});
+
+test('submitted payment has green entry, recorded details and resubmission values; Account ownership or review prevents edits',async()=>{
+ for(const [stage,review,editable] of [['SUBMITTED',null,true],['SUBMITTED',{stage:'RECEIVED'},true],['OWNED',null,false],['SUBMITTED',{stage:'REVIEWING'},false],['PROCESSING',null,false]]){
+  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100,procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:12:00Z',by:'LAW',paymentRequest:{requestedCents:2500,purpose:'DEPOSIT',basisFileId:'PI',termDays:30}}},paymentHandoff:{review,status:'AWAITING_REVIEW'}};
+  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/po-request-payment submitted/);h.click({poRequest:'PO'});
+  let html=h.node('#dialogContent').innerHTML;assert.match(html,/Last Submitted/);assert.match(html,/16:12/);assert.match(html,/LAW/);assert.match(html,/25.00/);assert.equal(/data-po-request-edit/.test(html),editable);
+  h.click({poRequestEdit:'PO'});html=h.node('#dialogContent').innerHTML;
+  if(editable){assert.match(html,/value="25.00"/);assert.match(html,/value="DEPOSIT" selected/);}
+  else{assert.doesNotMatch(html,/id="poRequestAmount"/);h.click({controlId:'submitPaymentRequest'});assert.match(h.node('#dialogError').textContent,/locked/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);}
+ }
+});
+
 test('file panel separates upload time and document date; only the uploader sees the permitted Delete action',async()=>{
  for(const owner of ['STAFF','OTHER',null]){
   const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PI',number:'PI-1',fileId:'FILE',name:'supplier.pdf',linked:true,uploadedAt:'2026-10-16T06:05:00Z',uploadedBy:'LAW',uploadedByStaffId:owner,deleteAllowed:true,date:'2026-10-15'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100};
