@@ -474,6 +474,34 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 /* Source PO date and saved state share one line. */
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time{display:inline-block;white-space:nowrap;vertical-align:middle}
 .supplier-allocation-dialog .allocation-po-cell .allocation-po-time + .allocation-save:disabled{display:inline-block;margin-left:6px;padding:0;line-height:16px;vertical-align:middle;white-space:nowrap}
+/* Existing P.O. review follows Buyer Room's compact summary and line-item layout. */
+#modal:has(.po-review){width:1080px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);padding:0;overflow:hidden;border-radius:9px;font:11px/1.4 'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;color:#173557}
+#modal:has(.po-review) #dialogContent{display:flex;flex-direction:column;max-height:calc(100vh - 48px)}
+#modal:has(.po-review) .dialoghead{flex:none;background:#fff;border:0;padding:18px 58px 12px 28px;position:relative}
+#modal:has(.po-review) .dialoghead>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 24px;align-items:start;width:100%;min-width:0}
+#modal:has(.po-review) .dialoghead h2{font-size:20px;font-weight:800;color:#173557;margin:0}
+#modal:has(.po-review) .po-dialog-supplier{font-size:20px;font-weight:800;line-height:26px;text-align:right;overflow-wrap:anywhere}
+#modal:has(.po-review) .dialoghead .muted{grid-column:1/-1;font-size:11px;color:#61748c}
+#modal:has(.po-review) .dialoghead .close{position:absolute;top:13px;right:15px;width:30px;height:30px;padding:0;border:0;background:transparent;color:#526981;font-size:24px;line-height:1}
+#modal:has(.po-review) .dialogbody{min-height:0;overflow:auto;padding:0 28px}
+.po-review-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:8px;border-radius:7px;background:#eef4fa}
+.po-review-summary>div{position:relative;padding:8px 12px;text-align:center}
+.po-review-summary>div+div::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:1px;background:#c9d7e6}
+.po-review-summary span{display:block;color:#60738b;font-size:10px}
+.po-review-summary strong{display:block;margin-top:2px;color:#173557;font-size:14px;font-weight:760;font-variant-numeric:tabular-nums}
+.po-review-summary>div:last-child strong{color:#dd4c26}
+.po-review-table{overflow:auto;max-height:510px;border-block:1px solid #dbe4ed;scrollbar-width:thin}
+.po-review-table table{width:100%;min-width:980px;table-layout:fixed;border-collapse:collapse}
+.po-review-table :is(th,td){height:28px;padding:5px 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;font-weight:400;border:0;color:#29425f;font-variant-numeric:tabular-nums}
+.po-review-table th{height:33px;position:sticky;top:0;background:#d2dfea;color:#324d6d;font-weight:700}
+.po-review-table tbody tr:nth-child(odd){background:#f5f8fb}
+.po-review-table :is(th,td):nth-child(n+6){text-align:right}
+.po-review-table td:nth-child(6){color:#dd4c26}
+#modal:has(.po-review) .dialogfoot{flex:none;min-height:48px;padding:10px 28px;background:#fff;border:0}
+#modal:has(.po-review) .dialogfoot>.muted{display:none}
+#modal:has(.po-review) .dialogfoot .actions{margin-left:auto;gap:9px}
+#modal:has(.po-review) .dialogfoot .btn{height:32px;font-size:11px}
+@media(max-width:700px){#modal:has(.po-review){max-width:calc(100vw - 20px)}#modal:has(.po-review) .dialoghead{padding-left:16px}#modal:has(.po-review) .dialoghead>div{grid-template-columns:1fr}#modal:has(.po-review) .po-dialog-supplier{text-align:left}#modal:has(.po-review) .dialogbody{padding:0 16px}#modal:has(.po-review) .dialogfoot{padding-inline:16px}.po-review-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Orange identifies the next action only after confirmed workspace readback. */
 .supplier-allocation-dialog .allocation-save.needs-save{background:#ff8a00;border-color:#ff8a00;color:#fff}

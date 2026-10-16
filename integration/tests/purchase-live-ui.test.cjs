@@ -273,7 +273,24 @@ test('P.O. dialog hides system IDs, places an obvious input first and keeps orig
 
 test('P.O. details stay read-only and show human product references without internal IDs',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',procurement:{totalCtn:275}});h.reply(w);h.click({poView:'TASK'});
- const html=h.node('#dialogContent').innerHTML;assert.match(html,/采购单详情/);assert.match(html,/NCT-00123/);assert.match(html,/00123/);assert.doesNotMatch(html,/<small>TASK<\/small>|id="poNumber"|id="savePo"/);assert.equal(h.messages.length,1);
+ const html=h.node('#dialogContent').innerHTML;assert.match(html,/Review P.O. 采购单预览/);assert.match(html,/NCT-00123/);assert.match(html,/00123/);assert.doesNotMatch(html,/<small>TASK<\/small>|id="poNumber"|id="savePo"/);assert.equal(h.messages.length,1);
+});
+
+test('existing PO review includes its complete saved group and exact FOC amounts without changing selection or sending a save',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'},{id:'OTHER',name:'OTHER SUPPLIER'}];
+ Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',editVersion:'V1',procurement:{totalCtn:10,costing:{averageCostCtn:3.333333,amountCents:3333}}});
+ w.customers.push({id:'D',name:'SECOND CUSTOMER'});
+ w.tasks.push({...w.tasks[0],id:'SAME-PO',barcode:'FOC-ITEM',name:'FOC PRODUCT',customerId:'D',procurement:{totalCtn:110,costing:{mode:'FOC',paidCtn:100,freeCtn:10,averageCostCtn:9.090909,amountCents:100000}}});
+ w.tasks.push({...w.tasks[0],id:'OTHER-PO',po:'NCT-OTHER',name:'EXCLUDE OTHER PO'},{...w.tasks[0],id:'OTHER-SUPPLIER',supplierId:'OTHER',name:'EXCLUDE OTHER SUPPLIER'});
+ h.reply(w);h.change({dataset:{select:'OTHER-PO'},checked:true});h.click({poTask:'TASK'});
+ const html=h.node('#dialogContent').innerHTML;assert.match(html,/Review P.O./);assert.match(html,/FOC PRODUCT/);assert.match(html,/120 CTN/);assert.match(html,/MYR 1,033.33/);assert.match(html,/Paid 100 \+ FOC 10/);assert.match(html,/SECOND CUSTOMER/);assert.doesNotMatch(html,/EXCLUDE OTHER|id="savePo"|id="poNumber"/);assert.equal(h.messages.length,1);
+ h.click({controlId:'closeModal'});h.click({poView:'TASK'});assert.equal(h.node('#dialogContent').innerHTML,html);assert.equal(h.messages.length,1);
+});
+
+test('PO number edit is explicit and retains all member versions in the original association operation',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-OLD',editVersion:'V1',procurement:{totalCtn:10}});w.tasks.push({...w.tasks[0],id:'SECOND',editVersion:'V2'});h.reply(w);
+ h.click({poTask:'TASK'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="savePo"/);h.click({editPo:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/id="poNumber"/);assert.equal(h.messages.length,1);
+ h.node('#poNumber').value='NCT-NEW';h.click({controlId:'savePo'});const sent=h.messages.at(-1);assert.equal(sent.operation,'PO');assert.deepEqual(Array.from(sent.input.taskIds),['TASK','SECOND']);assert.equal(sent.input.versions.TASK,'V1');assert.equal(sent.input.versions.SECOND,'V2');assert.equal(sent.input.poNumber,'NCT-NEW');
 });
 
 test('a company prefix alone cannot create a PO or lose the current input',()=>{
