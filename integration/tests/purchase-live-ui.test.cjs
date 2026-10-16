@@ -108,7 +108,7 @@ test('stock-only supplier receipts cannot satisfy another supplier customer shor
 test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/<th>Customer<\/th>/);assert.match(html,/customer-short[^>]*>ALPHA/);assert.match(html,/customer-short[^>]*>BETA/);assert.match(html,/data-drag="TASK"/);assert.match(html,/data-drag="OTHER"/);
- h.change({dataset:{select:'TASK'},checked:true});h.change({dataset:{select:'OTHER'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/1 Items · 2 Customers · 20 CTN/);assert.equal(h.messages.length,1);
+ h.change({dataset:{select:'TASK'},checked:true});h.change({dataset:{select:'OTHER'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/1 Items · 2 Customers/);assert.match(h.node('#dialogContent').innerHTML,/<span>QTY<\/span><strong>20 CTN<\/strong>/);assert.match(h.node('#dialogContent').innerHTML,/<span>Amount<\/span><strong>MYR 233.60<\/strong>/);assert.equal(h.messages.length,1);
  h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
 });
 
