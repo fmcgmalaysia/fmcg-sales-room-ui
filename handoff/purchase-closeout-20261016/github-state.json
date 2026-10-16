@@ -1,0 +1,215 @@
+{
+  "branch": "fix/purchase-prewrite-cms-recovery-20261016",
+  "head": "3f7fee41a67b2255f080a6f433cc8b2c4d630fc3",
+  "main": "d16cd1bfd311b58e772c802f92d498e39dbb91b3",
+  "pagesRun": 38859596845,
+  "pagesSha": "8531064869b80b96ebec05884c6a9b5fdfbb5146",
+  "pagesStatus": "success",
+  "deploymentPolicies": [
+    {
+      "id": 62603322,
+      "name": "feat/master-gp-margin",
+      "type": "branch"
+    },
+    {
+      "id": 62530810,
+      "name": "feat/nct-order-submit-room6",
+      "type": "branch"
+    },
+    {
+      "id": 62596223,
+      "name": "feat/purchase-adjustment-cost",
+      "type": "branch"
+    },
+    {
+      "id": 62584139,
+      "name": "fix/purchase-approved-ux-layout",
+      "type": "branch"
+    },
+    {
+      "id": 59773235,
+      "name": "main",
+      "type": "branch"
+    },
+    {
+      "id": 62639211,
+      "name": "style/purchase-icons-spacing-feedback",
+      "type": "branch"
+    },
+    {
+      "id": 62611670,
+      "name": "style/purchase-table-track",
+      "type": "branch"
+    }
+  ],
+  "purchaseDrafts": [
+    {
+      "number": 108,
+      "title": "Recover first-attempt CMS failures without abandoning uncertain purchase saves",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/108"
+    },
+    {
+      "number": 107,
+      "title": "Allow legacy suppliers in a second partial purchase source",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/107"
+    },
+    {
+      "number": 106,
+      "title": "Use saved procurement totals for task-list costs",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/106"
+    },
+    {
+      "number": 105,
+      "title": "Apply Catch Cost directly with loading and success states",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/105"
+    },
+    {
+      "number": 104,
+      "title": "Place saved allocation feedback above Save",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/104"
+    },
+    {
+      "number": 103,
+      "title": "Route Dashboard customer Entry to filtered Active Orders",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/103"
+    },
+    {
+      "number": 102,
+      "title": "Open existing PO numbers in Buyer-style Review PO",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/102"
+    },
+    {
+      "number": 101,
+      "title": "Restore Purchase right gutter in Wix iframe layout",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/101"
+    },
+    {
+      "number": 100,
+      "title": "Fix procurement readback and verify partial Save and FOC stock",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/100"
+    },
+    {
+      "number": 99,
+      "title": "Identify affected row and supplier child in Purchase save errors",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/99"
+    },
+    {
+      "number": 98,
+      "title": "Indicate next supplier action with Save and PO colors",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/98"
+    },
+    {
+      "number": 97,
+      "title": "Use 保存这项采购 for the supplier purchase save button",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/97"
+    },
+    {
+      "number": 96,
+      "title": "Use plain Stock Allocation wording for purchase staff",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/96"
+    },
+    {
+      "number": 95,
+      "title": "Remove redundant text beneath Purchase quantities",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/95"
+    },
+    {
+      "number": 94,
+      "title": "Align supplier PO date and saved status without increasing row height",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/94"
+    },
+    {
+      "number": 93,
+      "title": "Unify MASTER workroom presentation and department headers",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/93"
+    },
+    {
+      "number": 92,
+      "title": "Reduce Purchase progress repetition and distinguish pending amber",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/92"
+    },
+    {
+      "number": 91,
+      "title": "Show mother progress summary and supplier source drill-down",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/91"
+    },
+    {
+      "number": 90,
+      "title": "Apply compact Office blue Purchase table and allocation dialog",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/90"
+    },
+    {
+      "number": 89,
+      "title": "Align Purchase supplier source rows and status colors",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/89"
+    },
+    {
+      "number": 88,
+      "title": "Define MASTER status colors and direct task handling",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/88"
+    },
+    {
+      "number": 87,
+      "title": "Show Purchase source rows and save suppliers independently",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/87"
+    },
+    {
+      "number": 86,
+      "title": "Docs: preserve Purchase room handoff and background-only work rule",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/86"
+    },
+    {
+      "number": 85,
+      "title": "MASTER: keep product drafts without blocking other supplier work",
+      "draft": true,
+      "state": "open",
+      "html_url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/85"
+    }
+  ]
+}
