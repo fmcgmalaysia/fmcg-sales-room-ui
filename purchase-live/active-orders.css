@@ -56,10 +56,10 @@
 #app .active-order-table td{color:#203047}
 #app .active-order-table .product-stack .itemname{font-size:11px;font-weight:700;color:#173557}
 #app .active-order-table .product-stack :is(.barcode,.packing){font-size:10px;font-weight:400;color:#62758a}
-#app .active-order-table .progress-node.complete{background:#087443}
+#app .active-order-table .progress-node.complete{background:#12883e}
 #app .active-order-table .progress-node:not(.complete):not(.problem){background:#ff8a00}
 #app .active-order-table .progress-node.problem{background:#c42b31}
-#app .active-order-table :is(.supplier-head.complete,.po-reference.complete){color:#087443}
+#app .active-order-table :is(.supplier-head.complete,.po-reference.complete){color:#12883e}
 #app .active-order-table .supplier-head.pending{color:#ff8a00}
 #app .active-order-table .po-reference.pending{background:#ff8a00;color:#fff;border-radius:4px}
 #app .active-order-table .qty-mismatch{background:#ff8a00!important;color:#fff!important}
@@ -73,7 +73,7 @@
 #app .active-order-table td:nth-child(11) .po-reference{text-align:right}
 #app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
 #app .active-order-table #taskRows .barcode>.gp-badge{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;font-size:9px;font-weight:600;line-height:14px;white-space:nowrap}
-#app #taskRows .gp.gp-good{background:#087443;color:#fff!important}
+#app #taskRows .gp.gp-good{background:#12883e;color:#fff!important}
 #app .active-order-table .gp-badge svg{width:9px;height:9px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table .gp-badge svg circle{fill:currentColor;stroke:none}
 #app .active-order-table .row-progress{justify-content:flex-end;gap:1.5px}
@@ -87,7 +87,7 @@
 #app .ao-progress-stages small{display:block;margin-top:3px;font-size:9px;color:#62758a}
 #app .ao-progress-stages button:is(:hover,:focus-visible)>b{background:#244d82}
 .pd-supplier-alerts .ao-stage-state{font-size:11px;font-weight:600}
-.pd-supplier-alerts .ao-stage-state.complete{color:#087443}
+.pd-supplier-alerts .ao-stage-state.complete{color:#12883e}
 .pd-supplier-alerts .ao-stage-state.pending{color:#b45a00}
 .pd-supplier-alerts .ao-stage-state.problem{color:#c42b31}
 #modal .pd-supplier-alerts .pd-alert-open[data-source-po-task]{background:#ff8a00;color:#fff}
