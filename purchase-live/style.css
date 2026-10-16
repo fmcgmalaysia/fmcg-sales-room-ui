@@ -519,3 +519,22 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .allocation-cost-spinner{width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:allocation-cost-spin .8s linear infinite}
 @keyframes allocation-cost-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.allocation-cost-spinner{animation:none}}
+.po-submission-workspace .po-ledger{min-width:980px;table-layout:fixed}
+.po-submission-workspace .po-ledger th,.po-submission-workspace .po-ledger td{font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:11px;line-height:15px;text-align:left;vertical-align:middle;padding:10px 12px}
+.po-submission-workspace .po-ledger th{padding-top:7px;padding-bottom:7px;height:30px}
+.po-submission-workspace .po-ledger th:nth-child(5),.po-submission-workspace .po-ledger td.amount{text-align:right}
+.po-submission-workspace .po-ledger th:nth-child(6),.po-submission-workspace .po-ledger td.po-term-cell{text-align:center}
+.po-submission-workspace .po-supplier{white-space:normal;overflow-wrap:anywhere;font-weight:600}
+.po-submission-workspace .po-ledger small{font-size:10px;line-height:14px;color:#63758a;margin-top:3px}
+.po-purchase-for+.po-purchase-for{margin-top:8px}.po-purchase-for b{font-weight:600}.po-purchase-for small{display:block}
+.po-details-link{display:block;border:0;background:none;font:inherit;font-size:10px;color:#63758a;padding:3px 0 0;cursor:pointer}
+.po-submission-workspace .po-term-pending{display:inline-flex;justify-content:center;align-items:center;background:#ff8a00;color:white;border:0;border-radius:5px;min-width:34px;height:30px;padding:5px}
+.po-term-pending svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.po-submission-workspace .po-term-saved{color:#173557;background:none;font:inherit;white-space:nowrap;padding:5px;border:0}
+.po-doc-badges{display:flex;gap:5px;flex-wrap:wrap}.po-doc-badge{font:inherit;font-size:10px;white-space:nowrap;border:1px solid;border-radius:5px;padding:4px 6px;cursor:pointer;background:white}
+.po-doc-badge.pending{color:#9b5700;border-color:#f0c892;background:#fff7e9}.po-doc-badge.available{color:#087443;border-color:#b7dcca;background:#eef8f2}
+.po-doc-actions{display:flex;gap:12px;margin-top:5px}.po-doc-actions button{display:inline-flex;align-items:center;gap:3px;border:0;background:none;font:inherit;font-size:10px;color:#3766a2;padding:2px 0;cursor:pointer}
+.po-doc-actions svg{height:14px;width:14px;fill:none;stroke:currentColor;stroke-width:1.6}
+dialog.po-term-dialog{width:420px;max-width:calc(100vw - 32px)}.po-term-dialog .field{display:flex;flex-direction:column;gap:8px}.po-term-dialog .field select{width:100%;height:34px;border:1px solid #b4cce1;border-radius:4px;background:white;font:inherit;padding:6px 8px}
+.po-detail-actions{width:100%}.po-detail-actions td{padding:10px;border:0}.po-detail-actions small{display:block;margin:6px 0;color:#63758a}
+body .po-term-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font-weight:800;color:#173557;margin:4px 0}
