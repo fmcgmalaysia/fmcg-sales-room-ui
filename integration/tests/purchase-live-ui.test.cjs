@@ -826,3 +826,10 @@ test('Pay Slip disables absent proofs, views one linked proof and preserves mult
   assert.match(html,/pf-slip-notice[^>]+data-payment-proof="PO"/);assert.doesNotMatch(html,/file\/d\/(?:DRAFT|UNLINKED|REFUND)/);
  }
 });
+
+test('gray Follow-up statuses offer a reason-only chase, with lock on Reviewing and no optimistic red state',async()=>{
+ for(const stage of ['SUBMITTED','OWNED']){
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',chasePayment:false,finance:{paidCents:0},procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:00:00Z',paymentRequest:{requestedCents:10000}}}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;assert.match(html,/data-followup-chase="PO"/);assert.equal(html.includes('class="pf-lock"'),stage==='OWNED');h.click({followupChase:'PO'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<textarea/);for(const reason of ['急发货','账期已到','供应商催促','其他'])assert.ok(h.node('#dialogContent').innerHTML.includes(reason));h.node('#pfChaseReason').value='Other 其他';h.click({controlId:'sendPaymentChase'});assert.equal(h.messages.at(-1).input.action,'CHASE');assert.equal(h.messages.at(-1).input.enabled,true);assert.equal(h.messages.at(-1).input.reason,'Other 其他');assert.doesNotMatch(h.node('#app').innerHTML,/pf-chase sent/);
+ }
+});
