@@ -520,7 +520,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 @keyframes allocation-cost-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.allocation-cost-spinner{animation:none}}
 .po-submission-workspace .po-ledger{min-width:1200px;table-layout:fixed}
-.po-submission-workspace .po-ledger th,.po-submission-workspace .po-ledger td{font-family:var(--master-font);font-size:11px;line-height:14px;text-align:left;vertical-align:middle;padding:6px 8px;color:var(--master-text)}
+.po-submission-workspace .po-ledger th,.po-submission-workspace .po-ledger td{font-family:var(--master-font);font-size:11px;line-height:14px;text-align:left;vertical-align:middle;padding:6px;color:var(--master-text)}
 .po-submission-workspace .po-ledger th{padding-top:6px;padding-bottom:6px;height:28px}
 .po-submission-workspace .po-ledger th:nth-child(5),.po-submission-workspace .po-ledger td.amount{text-align:right}
 .po-submission-workspace .po-ledger th:nth-child(7),.po-submission-workspace .po-payment-request{text-align:center}
