@@ -649,3 +649,28 @@ test('diagnostics follow moved product order without changing submitted edits or
 test('the original supplier record rendered as the first child is labelled as a child for source costing',()=>{
  const {h,w}=rowErrorFixture();w.tasks.push({...w.tasks[2],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});assert.match(rejectSave(h,h.messages.at(-1)),/^ROW 003 的子行/);
 });
+
+async function prewriteCmsFailure(save){
+ const backend=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8');
+ const callback=backend.slice(backend.indexOf('export const savePurchaseOperation='),backend.indexOf('export const getSupplierProfile=')).replace('export const savePurchaseOperation=','this.save=');
+ const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:async()=>{throw Object.assign(Error('CMS lookup failed'),{code:'WDE0118'});},operate:async()=>{throw Error('Must never enter an operation');},console:{warn(){}}};vm.runInNewContext(callback,context);
+ return context.save(save.company,save.requestId,save.operation,save.input);
+}
+test('first-attempt CMS lookup failure releases waiting and preserves original editable draft without refresh or receipt polling',async()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const first=h.messages.at(-1);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(first)});
+ assert.equal(h.node('#companySelect').disabled,false);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_CHECK_REQUEST').length,0);assert.match(h.node('#liveStatus').textContent,/attempt did not start/);
+ h.click({controlId:'saveEdits'});const next=h.messages.at(-1);assert.equal(next.type,'PURCHASE_SAVE_REQUEST');assert.notEqual(next.requestId,first.requestId);assert.equal(next.input.edits[0].changes.disc3,5);assert.equal(next.input.edits[0].version,'REV');
+});
+test('retry CMS lookup failure cannot clear an earlier uncertain save or permit a new request',async()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const first=h.messages.at(-1);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:false,error:'504 timeout'});const check=h.messages.at(-1);h.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:false,error:'Read failed'});await new Promise(resolve=>setImmediate(resolve));
+ h.click({controlId:'retryPendingSave'});const retry=h.messages.at(-1);assert.deepEqual(retry,first);h.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});
+ assert.equal(h.node('#companySelect').disabled,true);assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.equal(h.messages.at(-1).saveRequestId,first.requestId);const before=h.messages.length;h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
+});
+test('restored legacy pending request stays uncertain even when its next attempt cannot read CMS',async()=>{
+ const values=new Map(),storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({controlId:'saveEdits'});const first=h.messages.at(-1);
+ const key=[...values.keys()][0],cached=JSON.parse(values.get(key));delete cached.saveAttemptCount;values.set(key,JSON.stringify(cached));
+ const restored=harness(storage);restored.reply(w);const check=restored.messages.at(-1);restored.send({type:'PURCHASE_SAVE_CHECK_RESULT',requestId:check.requestId,ok:false,error:'Read failed'});await new Promise(resolve=>setImmediate(resolve));restored.click({controlId:'retryPendingSave'});const retry=restored.messages.at(-1);assert.equal(retry.requestId,first.requestId);
+ restored.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});assert.equal(restored.node('#companySelect').disabled,true);assert.equal(restored.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');
+});
