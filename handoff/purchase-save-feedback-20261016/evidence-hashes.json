@@ -1,0 +1,34 @@
+[
+  {
+    "file": "live-before-supplier-allocation.js",
+    "sha256": "6af4ec2e9eeba534446c9832486611818c1a229419a3b585758e5ef195d5fe6f"
+  },
+  {
+    "file": "live-before-style.css",
+    "sha256": "ab45061f7694d472f04fd26de5deb096dc5b95068c1c227b73a973a1bd33c7cb"
+  },
+  {
+    "file": "live-before-index.html",
+    "sha256": "5e2be82b42a567dabf637400e2b7c3a361e54a3c4ca007c3137c643b732f51be"
+  },
+  {
+    "file": "wix-page-before.js",
+    "sha256": "2d80bc7a4bfd49eac1adc682ef9fe60fcccb6a0cf1fc012c7ecb890f5eb4e63c"
+  },
+  {
+    "file": "wix-page-after.js",
+    "sha256": "72a6677b62cc1a64557d30d645c750fae4efff0546c55c07aeafae6e382a5163"
+  },
+  {
+    "file": "preview-saved.png",
+    "sha256": "e7bf7f780632504131caa53ce396468625c6df341be950b726859e7ce79ecf8d"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "3b0a4a617c36bc06d69e70cdc0b074f13da2b536ef8aa2fa579e31572859c024"
+  },
+  {
+    "file": "tests.txt",
+    "sha256": "1a332fb9866d42bc7d54a2d34c1afc9e98eaf35687bc25442c1aa4981a378144"
+  }
+]
