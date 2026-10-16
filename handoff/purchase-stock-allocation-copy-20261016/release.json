@@ -1,0 +1,36 @@
+{
+  "public": {
+    "url": "https://fmcg999.wixstudio.com/master",
+    "verification": "Pending: current user page retains supplier save mismatch warning and protected drafts. No forced refresh or cancellation. Still loaded quantity-clean-v1."
+  },
+  "deploymentPolicy": {
+    "temporary": 63222900,
+    "originalSevenExact": true,
+    "removed": true
+  },
+  "wixRecord": "e164cc43165678ea059a027ee915d021d7709387",
+  "pages": {
+    "marker": "2026-10-16-purchase-stock-copy-v1",
+    "status": "success",
+    "run": 38839070186,
+    "normalizedExactAssets": 31
+  },
+  "branch": "style/purchase-stock-allocation-copy-20261016",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/96",
+  "tests": {
+    "fail": 0,
+    "pass": 73
+  },
+  "protected": "Copy only; existing allocation task selection, customer/source identities, quantities, permission, save, journal and backend unchanged.",
+  "recovery": "9e19967fa1139a0b216ca8edd8eaa15df06db6e7",
+  "date": "2026-10-16",
+  "code": "19c712e5deba384383f800e1e2a5810fd8578e67",
+  "wix": {
+    "beforeSha256": "c6a04ee1746d1a1f928a1c492eb7c79105a9483987b75a58071d5c409a9d9ac9",
+    "publishedLiveReceipt": true,
+    "afterSha256": "bf6aac06e03211fe44510425abf153c1a052e1c45987b1274327f91b8379d972",
+    "afterReadbackExact": true,
+    "onlyTokenChanged": true,
+    "freshBeforeMatchesRepository": true
+  }
+}
