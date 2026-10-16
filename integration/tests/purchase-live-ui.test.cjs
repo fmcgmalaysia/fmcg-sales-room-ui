@@ -226,15 +226,15 @@ test('purchase orders render persisted documents and readable history, with uplo
  await new Promise(resolve=>setImmediate(resolve));
  assert.match(h.node('#app').innerHTML,/po-doc-badge available[^>]*data-po-doc-type="INV"/);assert.match(h.node('#app').innerHTML,/BUYER/);
  h.click({poDocs:'POID'});assert.match(h.node('#dialogContent').innerHTML,/INV001/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);
- h.click({poUpload:'POID'});assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);assert.match(h.node('#dialogContent').innerHTML,/Upload Supplier PDF/);
+ h.click({poUpload:'POID',poDocType:'PI'});assert.match(h.node('#dialogContent').innerHTML,/id="poDocumentFile"/);assert.match(h.node('#dialogContent').innerHTML,/Upload SO \/ PI/);
  h.click({poHistory:'POID'});const history=h.node('#poHistoryEntries').innerHTML;assert.match(history,/15 → 30/);assert.match(history,/LAW/);assert.doesNotMatch(history,/"before"|PAYMENT_TERM_CHANGED/);
 });
 
 test('PDF stays disabled after file reading hands off to the actual pending save, and a second click does not upload twice',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',termDays:null};
- h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO'});
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO',poDocType:'PI'});
  const pdf=Buffer.from('%PDF-1.4\nTEST');h.node('#poDocumentFile').files=[{size:pdf.length,arrayBuffer:async()=>pdf.buffer.slice(pdf.byteOffset,pdf.byteOffset+pdf.byteLength)}];
- h.node('#poDocumentType').value='PI';h.node('#poDocumentDate').value='2026-10-11';h.node('#poDocumentNumber').value='TEST';h.node('#poDocumentReason').value='Test only';h.click({controlId:'uploadPurchaseDocument'});await new Promise(resolve=>setImmediate(resolve));
+ h.node('#poDocumentDate').value='2026-10-11';h.node('#poDocumentNumber').value='TEST';h.click({controlId:'uploadPurchaseDocument'});await new Promise(resolve=>setImmediate(resolve));
  assert.equal(h.node('#uploadPurchaseDocument').disabled,true);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,1);h.click({controlId:'uploadPurchaseDocument'});await new Promise(resolve=>setImmediate(resolve));assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,1);
 });
 
@@ -692,4 +692,16 @@ test('term dropdown sends Cash as zero through existing versioned save with fact
 test('document badges open only the selected category, including existing DO and credit notes',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);const row={id:'PO',version:'PV',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'DO',number:'DO-ONE',fileId:'one'},{type:'CN',number:'CN-TWO',fileId:'two'}],history:[],documentStatus:'PROVISIONAL',termDays:21,procurementHandoff:{editable:false}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poDocs:'PO',poDocType:'DO'});assert.match(h.node('#dialogContent').innerHTML,/DO-ONE/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/CN-TWO/);h.click({poDocs:'PO',poDocType:'CN'});assert.match(h.node('#dialogContent').innerHTML,/CN-TWO/);h.click({poTerm:'PO'});assert.match(h.node('#dialogContent').innerHTML,/<option value="21" selected>21 Days/);assert.match(h.node('#dialogContent').innerHTML,/id="poTermDays" disabled/);assert.match(h.node('#dialogContent').innerHTML,/id="savePurchaseOrderMeta" disabled/);
+});
+
+test('direct DO upload fixes its type and records an audit without a type dropdown or free-text note',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',termDays:null};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO',poDocType:'DO'});const html=h.node('#dialogContent').innerHTML;
+ assert.match(html,/Upload DO/);assert.doesNotMatch(html,/<select|<textarea|poDocumentType|poDocumentReason/);assert.match(html,/<input type="hidden" id="poDocumentAmount"/);
+ const pdf=Buffer.from('%PDF-1.4\nTEST');h.node('#poDocumentFile').files=[{size:pdf.length,arrayBuffer:async()=>pdf.buffer.slice(pdf.byteOffset,pdf.byteOffset+pdf.byteLength)}];h.node('#poDocumentDate').value='2026-10-16';h.node('#poDocumentNumber').value='DO-123';h.node('#poDocumentType').value='INV';h.click({controlId:'uploadPurchaseDocument'});await new Promise(resolve=>setImmediate(resolve));const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.type,'DO');assert.equal(sent.input.version,'PV');assert.equal(sent.input.reason,'Uploaded DO document DO-123');
+});
+
+test('invoice upload retains mandatory amount validation and generic archive upload offers buttons',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',termDays:null};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-po-doc-type="CN"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<select/);h.click({poUpload:'PO',poDocType:'INV'});assert.match(h.node('#dialogContent').innerHTML,/input id="poDocumentAmount" inputmode/);h.node('#poDocumentAmount').value='0.00';h.click({controlId:'uploadPurchaseDocument'});assert.match(h.node('#dialogError').textContent,/MYR/);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,0);
 });
