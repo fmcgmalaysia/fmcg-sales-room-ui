@@ -17,6 +17,52 @@ function fixture(documentService){
  const staff={memberId:'M',staffId:'STF',staffName:'LAW'},base={company:'NCT',staff,requestId:'11111111-1111-4111-8111-111111111111'};
  return {workspace,records,store,operations,staff,base,fail:()=>fail=true};
 }
+async function deletionFixture(service){
+ const f=fixture(service),row=(await f.operations.list('NCT',f.staff))[0],document={fileId:'owned_document_123',name:'2026-10-11 SUP PI 001.pdf',type:'PI',number:'PI001',date:'2026-10-11',sha256:'a'.repeat(64),linked:true,uploadedAt:'2026-10-11T01:00:00Z',uploadedBy:'LAW',uploadedByStaffId:'STF'};
+ f.records.set('PurchaseOrders/'+row.id,{_id:row.id,title:row.id,company:'NCT',details:{taskIds:row.taskIds,documents:[document],audit:[]}});
+ const current=(await f.operations.list('NCT',f.staff))[0];return {...f,row:current,document,input:{id:current.id,version:current.version,action:'DELETE_DOCUMENT',fileId:document.fileId,reason:'Replace incorrect PDF'}};
+}
+
+test('only the original uploader may delete: matching names or client-supplied owner fields confer no permission',async()=>{
+ let calls=0;const f=await deletionFixture(async input=>{calls++;return {...input,ok:true,trashed:true};});
+ assert.equal(f.row.documents[0].deleteAllowed,true);
+ const other={...f.staff,staffId:'OTHER',memberId:'OTHER-MEMBER'};
+ assert.equal((await f.operations.list('NCT',other))[0].documents[0].deleteAllowed,false);
+ await assert.rejects(f.operations.save({...f.base,staff:other,input:{...f.input,uploadedByStaffId:'OTHER'}}),/original uploader/);assert.equal(calls,0);
+ const saved=f.records.get('PurchaseOrders/'+f.row.id);delete saved.details.documents[0].uploadedByStaffId;
+ const row=(await f.operations.list('NCT',f.staff))[0];await assert.rejects(f.operations.save({...f.base,input:{...f.input,version:row.version}}),/original uploader/);assert.equal(calls,0);
+});
+
+test('deletion refuses Finance references, payment records and submitted handoffs before touching Drive',async()=>{
+ for(const protection of [{finance:{payments:[{id:'BANK'}]}},{finance:{amounts:[{fileId:'owned_document_123',cents:100}]}},{paymentHandoff:{review:{version:'old'}}},{procurementHandoff:{schema:1,stage:'SUBMITTED',submission:{version:'old',byStaffId:'STF',at:'2026-10-11T01:00:00Z'}}}]){
+  let calls=0;const f=await deletionFixture(async input=>{calls++;return {...input,ok:true,trashed:true};});Object.assign(f.records.get('PurchaseOrders/'+f.row.id).details,protection);
+  const row=(await f.operations.list('NCT',f.staff))[0];assert.equal(row.documents[0].deleteAllowed,false);
+  await assert.rejects(f.operations.save({...f.base,input:{...f.input,version:row.version}}),/locked by payment or Finance/);assert.equal(calls,0);
+ }
+});
+
+test('lost Drive trash receipt leaves a recoverable pending deletion; same request completes once with uploader and deletion audit retained',async()=>{
+ let calls=0,lost=true,trashed=false;const f=await deletionFixture(async input=>{calls++;assert.equal(input.action,'TRASH');trashed=true;if(lost){lost=false;throw Error('lost Drive receipt');}return {...input,ok:true,trashed};});
+ await assert.rejects(f.operations.save({...f.base,input:f.input}),/lost Drive receipt/);assert.equal(trashed,true);
+ let row=(await f.operations.list('NCT',f.staff))[0];assert.equal(row.documents.length,0);
+ await assert.rejects(f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:{id:row.id,version:row.version,action:'TERM',termDays:30,reason:'Change terms'}}),/deletion is pending/);
+ await f.operations.save({...f.base,input:f.input});await f.operations.save({...f.base,input:f.input});assert.equal(calls,2);
+ const record=f.records.get('PurchaseOrders/'+row.id),document=record.details.documents[0];assert.equal(document.linked,false);assert.equal(document.deletion.state,'DELETED');assert.equal(document.uploadedByStaffId,'STF');assert.equal(document.uploadedAt,f.document.uploadedAt);assert.equal(record.details.documentDeletion,null);
+ row=(await f.operations.list('NCT',f.staff))[0];const logs=row.history.filter(event=>event.action==='SUPPLIER_DOCUMENT_DELETED');assert.equal(logs.length,1);assert.equal(logs[0].actor,'LAW');assert.equal(logs[0].actorStaffId,'STF');assert.equal(logs[0].changes.name,f.document.name);assert.equal(row.amount,1105);
+});
+
+test('lost CMS acknowledgement after unlink preparation retries without losing the exact file identity',async()=>{
+ let calls=0;const f=await deletionFixture(async input=>{calls++;return {...input,ok:true,trashed:true};}),update=f.store.update;let lost=true;
+ f.store.update=async(c,row)=>{const result=await update(c,row);if(lost&&row.details.documentDeletion){lost=false;throw Error('CMS acknowledgement lost');}return result;};
+ await assert.rejects(f.operations.save({...f.base,input:f.input}),/CMS acknowledgement lost/);assert.equal(calls,0);
+ await f.operations.save({...f.base,input:f.input});assert.equal(calls,1);assert.equal((await f.operations.list('NCT',f.staff))[0].history.filter(e=>e.action==='SUPPLIER_DOCUMENT_DELETED').length,1);
+});
+
+test('a mismatched trash receipt never records successful deletion',async()=>{
+ const f=await deletionFixture(async input=>({...input,ok:true,trashed:true,poId:'ANOTHER-PO'}));
+ await assert.rejects(f.operations.save({...f.base,input:f.input}),/deletion could not be confirmed/);
+ const record=f.records.get('PurchaseOrders/'+f.row.id);assert.equal(record.details.documents[0].deletion.state,'PENDING');assert.equal(record.details.audit.length,0);
+});
 test('PO amount uses supplier cartons, MYR and distinct product count; no invented payment, invoice or archive',()=>{
  const f=fixture(),row=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]})[0];
  assert.equal(row.amount,1105);assert.equal(row.itemCount,1);assert.equal(row.customerName,'CUST');assert.equal(row.currency,'MYR');

@@ -28,6 +28,7 @@ export function createPurchaseDocumentClient({request=send,secret=()=>getSecret(
     if(result?.ok!==true)throw Error(result?.error==='NOT_AUTHORIZED'?'Upload credentials do not match. Contact Admin.':'Document upload could not be confirmed. Retry the same upload.');
     if(!/^[A-Za-z0-9_-]{10,200}$/.test(result.fileId||''))throw Error('Document service returned an invalid file identity.');
     if(input.action==='UPLOAD'&&(result.fileId!==input.fileId||result.company!==input.company||result.poId!==input.poId||result.sha256!==input.sha256||result.name!==input.name))throw Error('Uploaded document receipt does not match this purchase order.');
+    if(input.action==='TRASH'&&(result.trashed!==true||result.fileId!==input.fileId||result.company!==input.company||result.poId!==input.poId||result.sha256!==input.sha256||result.name!==input.name||result.type!==input.type))throw Error('Document deletion could not be confirmed. Retry the same deletion.');
     return result;
   };
 }

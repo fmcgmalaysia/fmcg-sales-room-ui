@@ -1,5 +1,13 @@
 # Purchase document service (service v1 deployed; NCT public upload verified)
 
+Unreleased candidate, 2026-10-16: `TRASH` moves a verified purchase PDF to the
+Google Drive recycle bin. Wix first checks the stored uploader staff ID and
+Finance/payment locks, journals a pending unlink, then verifies the exact Drive
+receipt before recording deletion. A lost receipt resumes the same request and
+file ID. Upload metadata and deletion audit remain in CMS. There is no permanent
+purge operation. This candidate has not been deployed or tested against a real
+Drive file; the deployment notes below describe historical verified releases.
+
 On 2026-10-11 Google confirmed deployment version 1. See deployment-v1.json.
 Code.gs was saved and its complete editor readback matched the local source.
 Drive v3 was enabled in the editor. appsscript.json is a configuration template;
