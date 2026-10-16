@@ -26,7 +26,7 @@ test('PO submit dialog sends one complete saved version with optional urgency an
  const h=harness();h.reply(workspace());h.click({view:'po'});const request=h.messages.at(-1);
  const row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',amount:1000,taskIds:['TASK','OTHER'],state:'ACTIVE',status:'Pending Payment',documents:[],history:[],documentStatus:'MISSING',termDays:30,procurementHandoff:{stage:'LEGACY',submitted:false}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
- assert.doesNotMatch(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({view:'payments'});assert.match(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({poOverview:'PO'});assert.match(h.node('#dialogContent').innerHTML,/提交财务/);h.click({poHandoff:'PO',handoffAction:'SUBMIT_FINANCE'});
+ assert.doesNotMatch(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({view:'payments'});assert.doesNotMatch(h.node('#app').innerHTML,/data-po-overview="PO"/);h.click({poOverview:'PO'});assert.match(h.node('#dialogContent').innerHTML,/提交财务/);h.click({poHandoff:'PO',handoffAction:'SUBMIT_FINANCE'});
  assert.match(h.node('#dialogContent').innerHTML,/2 行/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poTermDays"/);
  h.node('#poChangeReason').value='Confirmed both sources';h.node('#poUrgent').checked=true;h.click({controlId:'savePurchaseOrderMeta'});
  const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.action,'SUBMIT_FINANCE');assert.equal(sent.input.version,'PV');assert.equal(sent.input.urgent,true);assert.equal(sent.input.termDays,undefined);
@@ -205,15 +205,15 @@ test('planner allocation editor sends the selected receipt and explicit customer
 });
 test('Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'payments'});const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
- const row={id:'PO',number:'NCT-PO-001',createdAt:'2026-10-11T01:00:00Z',createdBy:'LAW',supplierName:'SUPPLIER FULL NAME',supplierShortName:'SUP',customerName:'BUYER',amount:1200,status:'Paid W/T Inv',finance:{payableCents:100000,paidCents:100000,balanceCents:0,payments:[{id:'P',confirmed:true,reference:'BANK001',cents:100000,at:'2026-10-11T02:00:00Z',by:'FINANCE',proof:{fileId:'proof_123456789'}}]}};
+ const row={id:'PO',number:'NCT-PO-001',createdAt:'2026-10-11T01:00:00Z',createdBy:'LAW',supplierName:'SUPPLIER FULL NAME',supplierShortName:'SUP',customerName:'BUYER',amount:1200,status:'Paid W/T Inv',procurementHandoff:{stage:'OWNED',submission:{at:'2026-10-11T01:00:00Z',by:'LAW',paymentRequest:{requestedCents:100000,paidCents:0,cnCents:0}}},paymentHandoff:{status:'PAID'},finance:{payableCents:100000,paidCents:100000,balanceCents:0,payments:[{id:'P',confirmed:true,reference:'BANK001',cents:100000,at:'2026-10-11T02:00:00Z',by:'FINANCE',proof:{fileId:'proof_123456789'}}]}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
- const html=h.node('#app').innerHTML;assert.match(html,/NCT-PO-001/);assert.match(html,/1,000.00/);assert.match(html,/Paid W\/T Inv/);assert.doesNotMatch(html,/付款申请流程尚未连接/);
+ const html=h.node('#app').innerHTML;assert.match(html,/NCT-PO-001/);assert.match(html,/1,000.00/);assert.match(html,/>Paid</);assert.doesNotMatch(html,/付款申请流程尚未连接/);
  h.click({paymentProof:'PO'});const proof=h.node('#dialogContent').innerHTML;assert.match(proof,/BANK001/);assert.match(proof,/FINANCE/);assert.match(proof,/drive.google.com\/uc\?export=download/);assert.match(proof,/proof_123456789/);assert.doesNotMatch(proof,/type="file"|Record Payment|data-settlement/);
 });
 
 test('payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices',async()=>{
- const h=harness();h.reply(workspace());h.click({view:'payments'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'PO-1',supplierName:'SUPPLIER',finance:{paidCents:30000,payments:[{id:'P1',confirmed:true,cents:30000,reference:'BANK1',proof:{fileId:'F1'}}]},paymentHandoff:{status:'PARTLY_PAID',unreadCount:1,notices:[{paymentId:'P1',acknowledgement:null}]}};
- h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partly paid 部分付款/);assert.match(h.node('#app').innerHTML,/未确认/);
+ const h=harness();h.reply(workspace());h.click({view:'payments'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'PO-1',supplierName:'SUPPLIER',procurementHandoff:{stage:'OWNED',submission:{at:'2026-10-11T01:00:00Z',paymentRequest:{requestedCents:50000,paidCents:0,cnCents:0}}},finance:{paidCents:30000,payments:[{id:'P1',confirmed:true,cents:30000,reference:'BANK1',proof:{fileId:'F1'}}]},paymentHandoff:{status:'PARTLY_PAID',unreadCount:1,notices:[{paymentId:'P1',acknowledgement:null}]}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Payment recorded/);assert.match(h.node('#app').innerHTML,/1 new/);
  h.click({paymentProof:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-payment-ack="P1"/);h.click({paymentAck:'P1',paymentPo:'PO'});
  const saved=h.messages.at(-1);assert.equal(saved.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(saved.input.action,'ACK_PAYMENT');assert.equal(saved.input.paymentId,'P1');assert.equal(saved.input.version,'PV');assert.equal(saved.input.enabled,undefined);assert.equal(saved.input.cents,undefined);
 });
@@ -781,4 +781,13 @@ test('request amount clears on focus and formats valid input to two decimals wit
  el.value='36.5';h.event('focusout',el);assert.equal(el.value,'36.50');
  el.value='36.555';h.event('focusout',el);assert.equal(el.value,'36.555');
  el.readOnly=true;h.event('focusin',el);assert.equal(el.value,'36.555');
+});
+
+test('Follow Up includes only submitted requests, filters actionable cards and deducts later applied credit',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1);
+ const base={id:'PO',version:'V',number:'SUBMITTED-PO',supplierName:'SUPPLIER',customerName:'CUSTOMER',amount:480,documents:[],history:[],finance:{paidCents:10000,creditAppliedCents:5000},paymentHandoff:{status:'REVIEWING'},procurementHandoff:{stage:'SUBMITTED',submitted:true,submission:{at:'2026-10-16T08:00:00Z',by:'BUYER',paymentRequest:{requestedCents:43000,cnCents:5000,paidCents:0,creditAppliedCents:0}}}};
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[base,{...base,id:'NONE',number:'NEVER-SUBMITTED',procurementHandoff:{stage:'LEGACY'}},{...base,id:'WD',number:'WITHDRAWN-PO',procurementHandoff:{...base.procurementHandoff,stage:'WITHDRAWN'}},{...base,id:'RET',number:'RETURNED-PO',procurementHandoff:{...base.procurementHandoff,stage:'RETURNED'}}]}});await new Promise(resolve=>setImmediate(resolve));
+ h.click({view:'payments'});let html=h.node('#app').innerHTML;assert.match(html,/SUBMITTED-PO/);assert.match(html,/RETURNED-PO/);assert.doesNotMatch(html,/NEVER-SUBMITTED|WITHDRAWN-PO/);assert.match(html,/280\.00/);assert.match(html,/Awaiting Review/);assert.match(html,/Action Required/);assert.match(html,/In Progress/);assert.match(html,/Payment Updates/);
+ h.click({paymentFilter:'REVIEW'});html=h.node('#app').innerHTML;assert.match(html,/SUBMITTED-PO/);assert.doesNotMatch(html,/RETURNED-PO/);
+ h.click({paymentFilter:'ACTION'});html=h.node('#app').innerHTML;assert.match(html,/RETURNED-PO/);assert.doesNotMatch(html,/SUBMITTED-PO/);assert.match(html,/Needs review/);
 });

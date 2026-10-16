@@ -140,3 +140,14 @@ test('Finance cannot take ownership of FOC content changed after its save was pr
  await assert.rejects(account.save({...f.base,requestId:'66666666-6666-4666-8666-666666666666',input:{id:row.id,version:row.version,action:'TAKE_OWNERSHIP',reason:'Check all sources'}}),/changed while saving/);
  assert.equal((await f.operations.list('NCT',f.staff))[0].procurementHandoff.stage,'SUBMITTED');
 });
+
+test('CN payment request is idempotently persisted, replaced before Reviewing and rejected after Account ownership',async()=>{
+ const f=fixture(),first=(await f.operations.list('NCT',f.staff))[0];
+ f.records.set('PurchaseOrders/'+first.id,{_id:first.id,company:'NCT',details:{taskIds:first.taskIds,documents:[{fileId:'PO',type:'PO',linked:true,sha256:'po'},{fileId:'INV',type:'INV',number:'I',date:'2026-10-11',linked:true,sha256:'inv',declaredCents:48000},{fileId:'CN',type:'CN',number:'C',date:'2026-10-11',linked:true,sha256:'cn',declaredCents:5000}],audit:[]}});
+ let row=(await f.operations.list('NCT',f.staff))[0];const input={id:row.id,version:row.version,action:'REQUEST_PAYMENT',requestedCents:43000,purpose:'FULL',termDays:30,basisFileId:'INV',creditNotes:[{fileId:'CN',basisFileId:'INV',treatment:'DEDUCT'}],reason:'Pay supplier'};
+ await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});row=(await f.operations.list('NCT',f.staff))[0];assert.equal(row.procurementHandoff.stale,false);assert.equal(row.procurementHandoff.submission.paymentRequest.cnCents,5000);assert.equal(row.history.filter(e=>e.action==='PROCUREMENT_REQUEST_PAYMENT').length,1);
+ const account=createAccountSettlementOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},listOrders:(company,staff)=>f.operations.list(company,staff),now:()=>new Date('2026-10-11T03:00:00Z')});
+ await account.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:{id:row.id,version:row.version,action:'TAKE_OWNERSHIP',reason:'Reviewing'}});
+ row=(await f.operations.list('NCT',f.staff))[0];await assert.rejects(f.operations.save({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:{...input,version:row.version}}),/locked/);
+ await assert.rejects(account.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:{id:row.id,version:row.version,action:'PAYMENT_REVIEW',stage:'REVIEWING',requestedCents:43000,paperReceived:true,reason:'Checked'}}),/reconciliation/);
+});

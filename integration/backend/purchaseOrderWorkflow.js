@@ -47,7 +47,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const quantityCases=rows.flatMap(row=>row.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
     const creditTransfers=(workspace.creditTransfers||[]).filter(entry=>entry.sourceId===id||entry.targetId===id);
     const stockCases=rows.flatMap(row=>row.warehouse?.stock?.cases||[]),stockIssues=stockCases.filter(row=>row.status!=='RESOLVED');
-    const projected={id,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3,...(row.procurement?.costing?[row.procurement.costing]:[])]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,stockIssues,stockCases,creditTransfers,
+    const projected={id,paymentRequestRevision:details.paymentRequestRevision||null,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3,...(row.procurement?.costing?[row.procurement.costing]:[])]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,stockIssues,stockCases,creditTransfers,
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       shipmentDates:[...new Map(rows.map(row=>[row.orderId,{orderId:row.orderId,customerId:row.customerId,date:row.estimatedShipmentDate,updatedAt:row.shipmentDate?.at||'',updatedBy:row.shipmentDate?.by||''}])).values()],
       supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
@@ -107,7 +107,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     }});
   }
   async function save({company,staff,requestId,input}) {
-    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','DELETE_DOCUMENT','ACK_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','DELETE_DOCUMENT','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
     if(input.action==='DELETE_DOCUMENT')return deleteDocument({company,staff,requestId,input});
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
@@ -126,7 +126,12 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const reason=text(input.reason);if(!reason||reason.length>2000)throw Error('Please enter a reason.');
       let patch;
       let upload;
-      if(['SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action)){
+      if(input.action==='REQUEST_PAYMENT'){
+        const credits=row.documents.filter(doc=>doc.type==='CN'&&!doc.superseded);
+        if(rows.some(other=>other.id!==row.id&&other.documents.some(doc=>doc.type==='CN'&&!doc.superseded&&credits.some(credit=>credit.fileId===doc.fileId||credit.sha256&&credit.sha256===doc.sha256))))throw Error('Payment request CN is also linked to another PO. Account must resolve its allocation.');
+        const requestedRow={...row,termDays:input.termDays,paymentRequestRevision:requestId};
+        patch={termDays:input.termDays,paymentRequestRevision:requestId,procurementHandoff:transitionProcurementHandoff(requestedRow,before,input,{at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},'PURCHASE'),paymentHandoff:{...(before.paymentHandoff||{}),review:null}};
+      }else if(['SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action)){
         patch={procurementHandoff:transitionProcurementHandoff(row,before,input,{at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},'PURCHASE'),...(input.action==='SUBMIT_FINANCE'?{chasePayment:input.urgent===true}:{})};
       }else if(input.action==='DOCUMENT'){
         if(!row.supplierId)throw Error('Select a supplier before uploading documents.');

@@ -3,7 +3,7 @@ import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
 import { preparePurchaseClaim, purchaseClaimBlockers } from 'backend/purchaseClaimEvidence.js';
-import { paymentReviewVersion, procurementSubmissionVersion, projectProcurementHandoff, transitionProcurementHandoff } from 'backend/paymentHandoff.js';
+import { paymentRequestQuote, paymentReviewVersion, procurementSubmissionVersion, projectProcurementHandoff, transitionProcurementHandoff } from 'backend/paymentHandoff.js';
 const text=value=>String(value??'').trim();
 const cents=value=>Number.isSafeInteger(value)&&value>=0&&value<=999999999999;
 const currentDocs=row=>row.documents.filter(doc=>doc.linked===true&&!doc.superseded&&doc.fileId);
@@ -103,6 +103,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         audit.changes={before:details.finance?.amounts||[],after:finance.amounts};
       }else if(input.action==='PAYMENT_REVIEW'){
         if(details.procurementHandoff){const state=projectProcurementHandoff(row,details);if(state.stage!=='OWNED'||state.stale)throw Error('Procurement handoff requires a current Finance-owned submission before payment review.');}
+        if(details.procurementHandoff?.submission?.paymentRequest){const request=details.procurementHandoff.submission.paymentRequest,quote=paymentRequestQuote(row,request.creditNotes);if(quote.cnPending||input.requestedCents!==request.requestedCents||input.requestedCents>quote.availableCents)throw Error('Payment request CN or amount requires reconciliation or return to Purchase.');}
         if(!['RECEIVED','REVIEWING'].includes(input.stage)||input.paperReceived!==true||!cents(input.requestedCents)||input.requestedCents===0)throw Error('Confirm paper documents received, review stage and requested MYR amount.');
         if(!currentDocs(row).some(doc=>['PI','SO','INV'].includes(doc.type)))throw Error('Supplier PI / SO or Final Invoice is required before review.');
         handoff={...(details.paymentHandoff||{}),review:{stage:input.stage,requestedCents:input.requestedCents,paidAtReviewCents:row.finance?.paidCents||0,creditAtReviewCents:row.finance?.creditAppliedCents||0,paperReceived:true,version:paymentReviewVersion(row),...(details.procurementHandoff?{procurementVersion:details.procurementHandoff.submission.version}:{}),reason,...identity}};
