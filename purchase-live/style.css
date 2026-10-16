@@ -528,8 +528,8 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 .po-submission-workspace .po-ledger small{font-size:10px;line-height:13px;color:var(--master-muted);margin-top:1px}
 .po-purchase-for+.po-purchase-for{margin-top:3px}.po-purchase-for b{font-weight:600}.po-purchase-for small{display:block}
 .po-details-link{display:block;border:0;background:none;font:inherit;font-size:10px;color:#63758a;padding:3px 0 0;cursor:pointer}
-.po-submission-workspace .po-term-pending{display:inline-flex;justify-content:center;align-items:center;background:#ff8a00;color:white;border:0;border-radius:5px;min-width:34px;height:30px;padding:5px}
-.po-term-pending svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.po-submission-workspace .po-term-pending{display:inline-flex;justify-content:center;align-items:center;background:#ff8a00;color:white;border:0;border-radius:5px;width:28px;min-width:28px;height:28px;padding:4px}
+.po-term-pending svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;transition:transform .12s ease}
 .po-submission-workspace .po-term-saved{color:#173557;background:none;font:inherit;white-space:nowrap;padding:5px;border:0}
 .po-doc-badges{display:flex;gap:5px;flex-wrap:wrap}.po-doc-badge{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex:0 0 58px;width:58px;height:28px;font:inherit;font-size:10px;white-space:nowrap;border:1px solid;border-radius:5px;padding:4px;cursor:pointer;background:white}
 .po-doc-badge.pending{color:#fff;border-color:var(--master-orange);background:var(--master-orange)}.po-doc-badge.available{color:#fff;border-color:var(--master-green);background:var(--master-green)}.po-doc-badge.problem{color:#fff;border-color:var(--master-red);background:var(--master-red)}
@@ -554,3 +554,7 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 .po-submission-workspace button:not(:disabled):active{transform:translateY(0);box-shadow:0 1px 2px #17355726}
 .po-submission-workspace :is(.po-number-link,.po-details-link,.po-doc-actions button):not(:disabled):is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:2px}
 @media(prefers-reduced-motion:reduce){.po-submission-workspace button:not(:disabled){transition:none}.po-submission-workspace button:not(:disabled):is(:hover,:focus-visible,:active){transform:none}}
+.po-submission-workspace button.po-term-pending:not(:disabled):is(:hover,:focus-visible,:active){transform:none}
+.po-submission-workspace .po-term-pending:not(:disabled):is(:hover,:focus-visible) svg{transform:translateY(-1px)}
+.po-submission-workspace .po-term-pending:not(:disabled):active svg{transform:none}
+@media(prefers-reduced-motion:reduce){.po-submission-workspace .po-term-pending svg{transition:none}.po-submission-workspace .po-term-pending:not(:disabled):is(:hover,:focus-visible,:active) svg{transform:none}}
