@@ -14,7 +14,7 @@
 .purchase-tasks .source-label{padding-left:10px;color:#52677b}
 .purchase-tasks .row-progress{display:flex;justify-content:center;gap:3px;align-items:center}
 .purchase-tasks .progress-node{width:9px;height:9px;min-width:9px;border:0;border-radius:50%;padding:0;background:#b18a00;cursor:pointer}
-.purchase-tasks .progress-node.complete{background:#16854b}
+.purchase-tasks .progress-node.complete{background:#12883e}
 .purchase-tasks .progress-node.problem{background:#c4314b}
 .purchase-tasks .progress-node:focus-visible{outline:2px solid #193246;outline-offset:3px}
 .purchase-tasks .customer-short{font-weight:700;overflow-wrap:anywhere}
@@ -39,11 +39,11 @@
 .purchase-tasks .supplier-plan-link .supplier-heads{display:flex;align-items:center;gap:4px}
 .purchase-tasks .supplier-plan-link .supplier-head{display:inline-flex;vertical-align:middle;margin-right:4px}
 .purchase-tasks .source-row .supplier-plan-link>.supplier-head{display:inline-flex}
-.purchase-tasks .supplier-plan-link .supplier-head.complete{color:#16854b}
+.purchase-tasks .supplier-plan-link .supplier-head.complete{color:#12883e}
 .purchase-tasks .supplier-plan-link .supplier-head.pending{color:#b18a00}
 .purchase-tasks .supplier-plan-link .supplier-head svg{width:16px;height:16px;fill:currentColor;stroke:none}
 .purchase-tasks .po-reference.pending,.purchase-tasks .po-summary.pending{color:#806300}
-.purchase-tasks .po-reference.complete,.purchase-tasks .po-summary.complete{color:#16854b}
+.purchase-tasks .po-reference.complete,.purchase-tasks .po-summary.complete{color:#12883e}
 .purchase-tasks .po-summary{color:#63758a;font-size:11px}
 .purchase-tasks th{background:#dceaf7;color:#234768;font-size:11px}
 .purchase-tasks:not(.active-order-table) th:nth-child(5),.purchase-tasks:not(.active-order-table) th:nth-child(6),.active-order-table th:nth-child(6),.active-order-table th:nth-child(7){text-align:center}
@@ -52,7 +52,7 @@
 .active-order-heading .shipment-summary{display:none}
 .purchase-tasks .order-quantity,.purchase-tasks .received-quantity{text-align:center}
 .purchase-tasks .qty-mismatch{background:#ffe4bc!important;color:#713c00!important;border-radius:12px;padding:3px 7px}
-.purchase-tasks .receipt-complete{background:#16854b!important;color:white!important;border-radius:12px;padding:3px 7px}
+.purchase-tasks .receipt-complete{background:#12883e!important;color:white!important;border-radius:12px;padding:3px 7px}
 .purchase-tasks .receipt-problem{background:#c4455a!important;color:white!important;border-radius:12px;padding:3px 7px}
 .purchase-tasks .extra-stock{color:#52677b;display:block;font-size:11px}
 #createSelectedPo{background:#0078d4;border-color:#0078d4;color:white}
