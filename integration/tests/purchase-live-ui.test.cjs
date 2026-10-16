@@ -772,3 +772,13 @@ test('Active notice jump targets the exact supplier child and clears only hiding
 test('Dashboard receiving alert retains its original View action',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{revision:'P',totalCtn:30},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});w.suppliers=[{id:'S',name:'SUPPLIER'}];h.reply(w);h.click({supplierShipmentAlert:'S'});assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="TASK"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-active-notice-row/);
 });
+
+test('request amount clears on focus and formats valid input to two decimals without masking invalid precision',()=>{
+ const h=harness(),el={id:'poRequestAmount',value:'480.00',dataset:{}};
+ h.event('focusin',el);assert.equal(el.value,'');
+ h.event('focusout',el);assert.equal(el.value,'');
+ el.value='36';h.event('focusout',el);assert.equal(el.value,'36.00');
+ el.value='36.5';h.event('focusout',el);assert.equal(el.value,'36.50');
+ el.value='36.555';h.event('focusout',el);assert.equal(el.value,'36.555');
+ el.readOnly=true;h.event('focusin',el);assert.equal(el.value,'36.555');
+});
