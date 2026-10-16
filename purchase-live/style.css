@@ -538,3 +538,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 dialog.po-term-dialog{width:420px;max-width:calc(100vw - 32px)}.po-term-dialog .field{display:flex;flex-direction:column;gap:8px}.po-term-dialog .field select{width:100%;height:34px;border:1px solid #b4cce1;border-radius:4px;background:white;font:inherit;padding:6px 8px}
 .po-detail-actions{width:100%}.po-detail-actions td{padding:10px;border:0}.po-detail-actions small{display:block;margin:6px 0;color:#63758a}
 body .po-term-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font-weight:800;color:#173557;margin:4px 0}
+body dialog.po-upload-dialog .dialoghead .close{color:#173557;background:transparent}
+body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font-weight:800;color:#173557}
+.po-upload-dialog .dialogbody{padding-bottom:14px}.po-upload-dialog #dialogError:empty{display:none}
+.po-document-choice{display:flex;gap:8px;flex-wrap:wrap}
