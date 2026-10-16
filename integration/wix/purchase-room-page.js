@@ -77,5 +77,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261017-site-bilingual-copy-v1';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261017-purchase-history-slip-v1';
 });

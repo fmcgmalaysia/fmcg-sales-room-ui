@@ -27,8 +27,11 @@
     "salesOriginalRecoveredByUndoWithUserApproval": true,
     "salesRestoredExactOriginal": true,
     "salesAndPurchaseFullReadbacksExactOnlyPointerChanged": true,
-    "publishReceipt": false,
-    "publishErrors": "Both editors reported Failed to execute COMMAND[publish]. Reload blocked by automatic approval review because it may discard unsaved drafts; explicit reload approval requested and pending."
+    "publishReceipt": true,
+    "publishErrors": "Initial publish commands failed. User explicitly authorized reloading both editors; exact target readbacks survived reload. Both sites subsequently returned published and live receipts.",
+    "salesPublishedReceipt": "sales-published.png",
+    "purchasePublishedReceipt": "purchase-published.png",
+    "purchasePointerNowSupersededByHistorySlipRelease": true
   },
   "hashes": {
     "sales-wix-before.js": "9f6065501c13b645f134e0c2760865bbcba1a9c1fde8272c241a00fa84f18856",
