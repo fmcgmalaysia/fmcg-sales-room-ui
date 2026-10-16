@@ -19,3 +19,10 @@ test('first allocation and remaining supplier allow blank reason; saved source r
  f.state.rows[0].qty='59';assert.match(validate(f.state,f.workspace),/原因/);
  f=fixture();f.workspace.tasks[0].procurement={totalCtn:null,revision:'',draftPlan:true};f.state.reason='';f.state.rows[1].qty='50';f.state.rows.forEach(row=>row.confirmExtra=true);assert.match(validate(f.state,f.workspace),/原因/);
 });
+
+test('reference prices may be read with CBM-only missing metadata while inactive products and incomplete prices stay rejected',async()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8'),callback=source.slice(source.indexOf('export const getPurchaseReferenceCost='),source.indexOf('export const getSupplierBrandOptions=')).replace('export const getPurchaseReferenceCost=','this.read=');
+ let cost={unitBarcode:'00123',costCurrency:'MYR',costStatus:'ERROR',productStatus:'ACTIVE',costIssues:['UNAVAILABLE_CBMPERCTN'],capturedAt:'2026-10-16T03:00:00Z',lpPc:2,lpCtn:48,disc1:.1,disc2:0,disc3:0};const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},PURCHASE_COLLECTIONS:{NCT:{}},getPurchaseStaffContext:async()=>({}),readPlannerWorkspace:async()=>({tasks:[{id:'a'.repeat(32),barcode:'00123'}]}),capturePointbaseCosts:async()=>({'00123':cost})};vm.runInNewContext(callback,context);
+ const result=await context.read('NCT','a'.repeat(32));assert.equal(result.prices.lpCtn,48);assert.equal(Object.keys(result.prices).length,5);assert.equal(result.productStatus,undefined);
+ for(const patch of [{productStatus:'INACTIVE'},{costIssues:['UNAVAILABLE_CBMPERCTN','PRODUCT_INACTIVE']},{lpCtn:null},{costIssues:['UNAVAILABLE_LPCTN']},{costCurrency:'USD'}]){const previous=cost;cost={...previous,...patch};await assert.rejects(context.read('NCT','a'.repeat(32)),/unavailable/);cost=previous;}
+});

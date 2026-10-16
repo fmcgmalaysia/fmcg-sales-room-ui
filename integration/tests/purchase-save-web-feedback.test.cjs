@@ -29,3 +29,5 @@ test('CMS error reading staff context gives diagnostics but cannot enter any bus
  let calls=0;const result=await endpoint(async()=>{calls++;},async()=>{throw Object.assign(Error('CMS lookup failed'),{code:'WDE0118'});})('NCT','REQUEST','EDIT',{});
  assert.equal(calls,0);assert.equal(result.pending,true);assert.equal(result.errorCode,'WDE0118');
 });
+
+test('unchanged PO is a definite pre-write validation result, allowing the client to release its pending lock',async()=>{const result=await endpoint(async()=>{throw Error('P.O. number has not changed.');})('NCT','ORIGINAL-REQUEST','PO',{});assert.equal(result.ok,false);assert.equal(result.error,'P.O. number has not changed.');assert.equal(result.requestId,'ORIGINAL-REQUEST');assert.notEqual(result.pending,true);});

@@ -52,3 +52,7 @@ test('Active GP uses a red capsule only below six percent and has no Progress co
  f.root.gp=.059;f.args.drafts.set('R',{changes:{lpCtn:12}});assert.doesNotMatch(f.render(),/gp-low/);
  f.args.active=false;f.args.drafts.clear();f.root.gp=.01;const room=f.render();assert.doesNotMatch(room,/gp-low|aria-hidden="true">[1-7]<\/span>/);
 });
+
+test('active single supplier saved35 against demand50 shows mother, supplier child35 and waiting15 without creating a new source',()=>{
+ const f=fixture();f.args.active=true;f.root.ord=50;f.root.procurement={revision:'P35',totalCtn:35,customerCtn:35};f.args.rows=f.args.tasks=[f.root];const html=f.render(),rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);assert.match(rows[0],/data-select-kind="demand" disabled/);assert.match(rows[1],/data-source-id="R"/);assert.match(rows[1],/data-source-po-task="R"/);assert.match(rows[2],/data-waiting-for="R"/);assert.match(rows[2],/order-quantity">15</);assert.equal(f.args.tasks.length,1);
+});
