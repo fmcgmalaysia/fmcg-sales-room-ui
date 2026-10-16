@@ -247,12 +247,12 @@ test('PO history is current month only; independent history filters archived mon
  h.change({id:'poSupplier',value:'B',dataset:{}});assert.match(h.node('#app').innerHTML,/OLDER-DONE/);assert.doesNotMatch(h.node('#app').innerHTML,/CURRENT-DONE/);
 });
 
-test('Path categories show human bilingual changes without internal action strings',async()=>{
+test('PO history directly lists every saved category newest first without a filter',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
  const row={id:'PO',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],documentStatus:'MISSING',termDays:null,history:[{action:'PURCHASE_PRICE_SAVED',time:'2026-10-11T01:00:00Z',actor:'LAW',message:'PURCHASE PRICE SAVED',changes:{before:{lpCtn:20},after:{lpCtn:19}}},{action:'PAYMENT_CHASE_CHANGED',time:'2026-10-11T02:00:00Z',actor:'LAW',changes:{before:{chasePayment:false},after:{chasePayment:true},reason:'Urgent'}}]};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
  h.click({poHistory:'PO'});assert.match(h.node('#poHistoryEntries').innerHTML,/修改成本/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/PURCHASE PRICE SAVED/);
- h.change({id:'poHistoryCategory',value:'CHASE',dataset:{}});assert.match(h.node('#poHistoryEntries').innerHTML,/Urgent/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/修改成本/);
+ assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<select|poHistoryCategory/);const history=h.node('#poHistoryEntries').innerHTML;assert.match(history,/Urgent/);assert.ok(history.indexOf('Urgent')<history.indexOf('修改成本'));h.change({id:'poHistoryCategory',value:'CHASE',dataset:{}});assert.match(h.node('#poHistoryEntries').innerHTML,/修改成本/);
 });
 
 test('quiet refresh retains the PO list until the new receipt and does not erase it on failure',async()=>{
@@ -704,4 +704,10 @@ test('direct DO upload fixes its type and records an audit without a type dropdo
 test('invoice upload retains mandatory amount validation and generic archive upload offers buttons',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',termDays:null};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-po-doc-type="CN"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<select/);h.click({poUpload:'PO',poDocType:'INV'});assert.match(h.node('#dialogContent').innerHTML,/input id="poDocumentAmount" inputmode/);h.node('#poDocumentAmount').value='0.00';h.click({controlId:'uploadPurchaseDocument'});assert.match(h.node('#dialogError').textContent,/MYR/);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,0);
+});
+
+test('PO upload history shows saved actor time and actual filename, preserving original event data',async()=>{
+ const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),event={id:'EV',action:'SUPPLIER_DOCUMENT_UPLOADED',result:'SAVED',actor:'LAW',time:'2026-10-16T07:00:00Z',changes:{type:'INV',number:'INV-09',fileId:'FILE-09',reason:'Supplier final invoice'}};
+ const before=JSON.stringify(event),row={id:'PO',version:'PV',number:'NCT-PO-1',supplierName:'SUPPLIER',state:'ACTIVE',taskIds:['TASK'],documents:[{fileId:'FILE-09',type:'INV',number:'INV-09',name:'2026-10-16 SUP INV INV-09.pdf'}],history:[event],documentStatus:'COMPLETE',termDays:30};h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({poHistory:'PO'});
+ const html=h.node('#poHistoryEntries').innerHTML;assert.match(html,/Date &amp; Time/);assert.match(html,/Staff 员工/);assert.match(html,/>LAW<\/td>/);assert.match(html,/2026-10-16 SUP INV INV-09\.pdf/);assert.match(html,/15:00:00/);assert.doesNotMatch(html,/Deleted|删除文件/);assert.equal(JSON.stringify(event),before);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_ORDER_SAVE_REQUEST').length,0);
 });

@@ -558,3 +558,11 @@ body dialog.po-upload-dialog .po-dialog-supplier{font-size:20px;line-height:26px
 .po-submission-workspace .po-term-pending:not(:disabled):is(:hover,:focus-visible) svg{transform:translateY(-1px)}
 .po-submission-workspace .po-term-pending:not(:disabled):active svg{transform:none}
 @media(prefers-reduced-motion:reduce){.po-submission-workspace .po-term-pending svg{transition:none}.po-submission-workspace .po-term-pending:not(:disabled):is(:hover,:focus-visible,:active) svg{transform:none}}
+.po-history-scroll{max-height:55vh;overflow:auto}
+.po-history-table{width:100%;min-width:700px;table-layout:fixed;border-collapse:collapse}
+.po-dialog .po-history-table th,.po-dialog .po-history-table td{font:11px/16px var(--master-font);color:var(--master-text);text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid #dce5ee;overflow-wrap:anywhere}
+.po-dialog .po-history-table th{position:sticky;top:0;background:var(--master-header);font-weight:700}
+.po-history-table p{margin:0 0 3px}.po-history-table small{font-size:10px;color:var(--master-muted)}
+body dialog.po-dialog .dialoghead .close{color:#173557;background:transparent}
+dialog.po-history-dialog{width:920px;max-width:calc(100vw - 32px)}
+body .po-history-dialog .po-dialog-supplier{font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
