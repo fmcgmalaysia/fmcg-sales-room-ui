@@ -65,7 +65,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
   let count=0;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/dashboard.js'),'utf8'),{window});
-  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'?feedbackRows:selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
+  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
@@ -82,6 +82,17 @@ const workspace=()=>({ company:'NCT',staff:{staffId:'STAFF',memberId:'MEMBER',st
   customers:[{id:'C',name:'ACTUAL CUSTOMER'}],tasks:[{id:'TASK',customerId:'C',orderId:'ORDER',barcode:'00123',name:'ACTUAL PRODUCT',packing:'SIZE x16',
     ord:250,inc:null,stage:'NEW_INCOMING',lpPc:1,lpCtn:16,disc1:.1,disc2:.05,disc3:2,netCostCtn:11.68,costStatus:'ERROR',
     costErrorReason:'UNAVAILABLE_LPCTN',submittedByName:'ACTUAL SALESPERSON',history:[]}] });
+
+test('Follow Up search updates visible count, announces no matches and restores rows when cleared without business writes',async()=>{
+ const rows=['po-a alpha supplier customer','po-b beta supplier customer'].map(value=>({hidden:false,getAttribute:()=>value})),h=harness(undefined,rows);h.reply(workspace());h.click({view:'po'});const request=h.messages.at(-1);
+ const orders=rows.map((_,i)=>({id:'P'+i,number:'PO-'+i,supplierName:i?'BETA':'ALPHA',customerName:'CUSTOMER',documents:[],history:[],finance:{paidCents:0,payments:[]},procurementHandoff:{stage:'SUBMITTED',submitted:true,submission:{at:'2026-10-16T08:00:00Z',paymentRequest:{requestedCents:10000}}}}));
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});
+ assert.match(h.node('#app').innerHTML,/id="paymentSearchEmpty" hidden/);const messages=h.messages.length;
+ for(const [value,count,mask]of [[' alpha ',1,[false,true]],['no-match',0,[true,true]],['SUPPLIER',2,[false,false]],['',2,[false,false]]]){
+  h.event('input',{id:'ledgerSearch',value});assert.equal(h.node('.payment-workspace .ledger-count').textContent,count+' request'+(count===1?'':'s'));assert.equal(h.node('#paymentSearchEmpty').hidden,count>0);assert.deepEqual(rows.map(row=>row.hidden),mask);
+ }
+ assert.equal(h.messages.length,messages);h.click({view:'activity'});h.node('.payment-workspace .ledger-count').textContent='unchanged';h.event('input',{id:'ledgerSearch',value:'no-match'});assert.equal(h.node('.payment-workspace .ledger-count').textContent,'unchanged');
+});
 
 test('Dashboard customer Entry opens Active Orders filtered to that customer, preserving sources and requiring no save',()=>{
  const h=harness(),w=workspace();w.customers.push({id:'D',name:'OTHER CUSTOMER'});Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-PO-1',procurement:{totalCtn:200,revision:'P'}});w.suppliers=[{id:'S',name:'SUPPLIER'}];w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,ord:0,po:'',procurement:{totalCtn:30,revision:'P2'}},{...w.tasks[0],id:'OTHER',customerId:'D',name:'OTHER PRODUCT'});h.reply(w);
