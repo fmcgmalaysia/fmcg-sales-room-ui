@@ -675,11 +675,11 @@ test('restored legacy pending request stays uncertain even when its next attempt
  restored.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});assert.equal(restored.node('#companySelect').disabled,true);assert.equal(restored.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');
 });
 
-test('PO workspace has seven columns, per-customer shipment ETA and unchanged source identity',async()=>{
+test('PO workspace has eight ordered columns, per-customer shipment ETA and unchanged source identity',async()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'Full customer',shortName:'SHORT'},{id:'D',name:'Other customer',shortName:'OTHER'}];h.reply(w);h.click({view:'po'});const req=h.messages.at(-1);
  const row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',customerIds:['C','D'],taskIds:['TASK'],supplierName:'FULL SUPPLIER SDN BHD',supplierShortName:'SUP',documents:[],history:[],documentStatus:'MISSING',termDays:null,amount:100,shipmentDates:[{customerId:'C',date:'2026-10-28'},{customerId:'D',date:'2026-11-05'}]};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));const html=h.node('#app').innerHTML;
- assert.equal(h.node('#taskSignals').hidden,true);assert.equal((html.match(/<th>/g)||[]).length,7);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETA: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETA: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ assert.equal(h.node('#taskSignals').hidden,true);assert.deepEqual([...html.matchAll(/<th>(.*?)<\/th>/g)].map(match=>match[1]),['Created On','P.O. No.','Supplier','Purchase For','Amount MYR','Term','Request Payment','Docs']);assert.match(html,/<td class="po-payment-request">—<\/td>/);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETA: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETA: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
 });
 
 test('term dropdown sends Cash as zero through existing versioned save with factual audit reason',async()=>{
