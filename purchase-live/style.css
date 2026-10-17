@@ -719,3 +719,6 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 #app .activity-workspace .po-tools{padding:5px 8px;gap:6px;font-size:10px}
 #app .activity-workspace .po-tools :is(input,select){height:26px;font-size:10px}
 #app .activity-workspace .activity-detail-zh{color:var(--master-muted);font-size:9px}
+
+#app .pf-slip-wrap{position:relative;display:inline-flex;vertical-align:middle}
+#app .pf-slip-wrap .pf-slip-notice{position:absolute;top:-2px;right:-2px;width:9px;height:9px;min-height:0;margin:0;padding:0;border:2px solid white;border-radius:50%;background:var(--master-red)}
