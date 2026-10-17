@@ -246,7 +246,7 @@ test('Purchase Payment Follow-up reads shared paid/balance and displays proof li
 
 test('payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices',async()=>{
  const h=harness();h.reply(workspace());h.click({view:'payments'});const req=h.messages.at(-1),row={id:'PO',version:'PV',number:'PO-1',supplierName:'SUPPLIER',procurementHandoff:{stage:'OWNED',submission:{at:'2026-10-11T01:00:00Z',paymentRequest:{requestedCents:50000,paidCents:0,cnCents:0}}},finance:{paidCents:30000,payments:[{id:'P1',confirmed:true,cents:30000,reference:'BANK1',proof:{fileId:'F1'}}]},paymentHandoff:{status:'PARTLY_PAID',unreadCount:1,notices:[{paymentId:'P1',acknowledgement:null}]}};
- h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partially Paid/);assert.match(h.node('#app').innerHTML,/1 new/);
+ h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/Partially Paid/);assert.match(h.node('#app').innerHTML,/Unread payment notification/);
  h.click({paymentProof:'PO'});assert.match(h.node('#dialogContent').innerHTML,/data-payment-ack="P1"/);h.click({paymentAck:'P1',paymentPo:'PO'});
  const saved=h.messages.at(-1);assert.equal(saved.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(saved.input.action,'ACK_PAYMENT');assert.equal(saved.input.paymentId,'P1');assert.equal(saved.input.version,'PV');assert.equal(saved.input.enabled,undefined);assert.equal(saved.input.cents,undefined);
 });
