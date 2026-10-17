@@ -52,7 +52,7 @@ const sampleDocuments={
  '00129':{PO:'available',INV:'available'}
 };
 function documentButtons(r){return '<div class="account-docs">'+['PO','PI','DO','INV','CN'].map(type=>{const state=sampleDocuments[r.id]?.[type]||'pending';return '<button class="account-doc '+state+'" data-request-doc="'+r.id+'" data-doc-type="'+type+'" aria-label="'+type+' '+(state==='available'?'received':state==='problem'?'needs replacement':'not received')+' '+po(r)+'">'+type+'</button>';}).join('')+'</div>';}
-function paySlipButton(r){return '<button class="account-pay-slip '+(r.proof?'available':'pending')+'" '+(r.proof?'data-proof':'data-upload-slip')+'="'+r.id+'" aria-label="'+(r.proof?'View':'Upload')+' pay slip '+po(r)+'">'+(r.proof?'Pay Slip':'Upload Pay Slip')+'</button>';}
+function paySlipButton(r){return '<button class="account-pay-slip '+(r.proof?'available':'pending')+'" '+(r.proof?'data-proof':'data-upload-slip')+'="'+r.id+'" aria-label="'+(r.proof?'View':'Upload')+' pay slip '+po(r)+'">'+(r.proof?'Pay Slip':'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4m-4 4 4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>')+'</button>';}
 // Indicative schedules are isolated from bank balances and payment records.
 const initialPlans={
  '00124':[{date:'2026-11-16',amount:43000,source:'Cash'}],
