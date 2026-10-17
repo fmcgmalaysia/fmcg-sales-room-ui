@@ -60,3 +60,7 @@ Initial draft schedules total2830: cash1030 and loan1800. Not scheduled860, proj
 ## Compact payment review (17 Oct revision)
 
 The original request detail presentation is now a compact640px Review Payment panel: status and short edit-lock indication, INV/PI minus CN equals net, requested/paid/to-pay figures, purpose and term, direct existing document buttons, notes only when present, and collapsed action history. Submission time and staff remain available in history. All original stage-dependent action markup, review and payment event handlers remain unchanged. Only the draft detail presentation changes; no backend or production changes. Recovery1f54534.
+
+## Pay slip thumbs-up (17 Oct revision)
+
+Available pay slips now use a28px circle with a white thumbs-up outline on MASTER green#12883E; pending orange upload entry stays unchanged. The same proof entry opens a compact file card with View and Download. The included synthetic SVG fixture is labelled DEMO ONLY and explicitly not proof of payment; it contains no supplier, bank, amount or personal data. Production Drive delivery is unchanged and not integrated by this prototype. Recoveryf2c023d.
