@@ -87,7 +87,7 @@ test('payment proof upload uses Account route and lost upload response retries t
  const listOrders=async()=>{const d=records.get('PurchaseOrders/PO').details;return [{...row,version:JSON.stringify(d),supplierShortName:'SUP',...projectAccountSettlement(row,d)}];};
  const documentService=async input=>{if(input.action==='ALLOCATE'){allocated++;return {fileId:'account-proof-id-123'};}uploads.push(clone(input));if(loseUpload){loseUpload=false;throw Error('upload response lost');}return {ok:true,...input};};
  const staff={memberId:'M',staffId:'F',staffName:'LAW'},operations=createAccountSettlementOperations({store,listOrders,documentService,names:{NCT:{activity:'NCTActivity'}},now:()=>new Date('2026-10-11T03:00:00Z')});
- const req={company:'NCT',staff,requestId:'33333333-3333-4333-8333-333333333333',input:{id:'PO',version:(await listOrders())[0].version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-11',number:'BANK-001',cents:40000,base64:Buffer.from('%PDF-1.4\nTEST ONLY').toString('base64'),reason:'LOCAL TEST payment already executed'}};
+ const req={company:'NCT',staff,requestId:'33333333-3333-4333-8333-333333333333',input:{id:'PO',version:(await listOrders())[0].version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',recipientChoice:'OTHER',paymentSource:'CASH',date:'2026-10-11',number:'BANK-001',cents:40000,base64:Buffer.from('%PDF-1.4\nTEST ONLY').toString('base64'),reason:'LOCAL TEST payment already executed'}};
  await assert.rejects(operations.save(req),/response lost/);assert.equal(records.get('PurchaseOrders/PO').details.finance.payments.length,0);
  assert.equal((await operations.save(req)).ok,true);assert.equal(allocated,1);assert.equal(uploads[0].fileId,uploads[1].fileId);assert.equal(uploads[1].department,'ACCOUNT');
  const saved=records.get('PurchaseOrders/PO').details.finance;assert.equal(saved.payments.length,1);assert.equal(saved.payments[0].by,'LAW');assert.equal((await listOrders())[0].finance.paidCents,40000);
@@ -103,7 +103,7 @@ test('an actual payment after withdrawal remains recorded with its instruction e
  const store={read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,r)=>{if(records.has(c+'/'+r._id))throw Error('duplicate');records.set(c+'/'+r._id,clone(r));return clone(r);},update:async(c,r)=>{records.set(c+'/'+r._id,clone(r));return clone(r);},remove:async(c,id)=>records.delete(c+'/'+id)};
  const listOrders=async()=>{const d=records.get('PurchaseOrders/PO').details;return [{...row,version:JSON.stringify(d),supplierShortName:'SUP',...projectAccountSettlement(row,d)}];};
  const operations=createAccountSettlementOperations({store,listOrders,names:{NCT:{activity:'NCTActivity'}},documentService:async input=>input.action==='ALLOCATE'?{fileId:'actual-proof'}:{...input,ok:true}});
- await operations.save({company:'NCT',staff:{memberId:'M',staffId:'F',staffName:'LAW'},requestId:'77777777-7777-4777-8777-777777777777',input:{id:'PO',version:(await listOrders())[0].version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-14',number:'BANK-EXCEPTION',cents:40000,base64:Buffer.from('%PDF-1.4\nACTUAL').toString('base64'),reason:'Actual bank payment discovered after withdrawal'}});
+ await operations.save({company:'NCT',staff:{memberId:'M',staffId:'F',staffName:'LAW'},requestId:'77777777-7777-4777-8777-777777777777',input:{id:'PO',version:(await listOrders())[0].version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',recipientChoice:'OTHER',paymentSource:'CASH',date:'2026-10-14',number:'BANK-EXCEPTION',cents:40000,base64:Buffer.from('%PDF-1.4\nACTUAL').toString('base64'),reason:'Actual bank payment discovered after withdrawal'}});
  const saved=records.get('PurchaseOrders/PO').details;
  assert.equal(saved.procurementHandoff.stage,'WITHDRAWN');assert.equal(saved.finance.payments[0].cents,40000);
  assert.equal(saved.finance.payments[0].procurementInstruction.requiresReview,true);assert.equal(saved.finance.payments[0].procurementInstruction.version,'old-instruction');
@@ -114,4 +114,38 @@ test('final Finance check cannot hide an unresolved bank operation',()=>{
  const {row,details}=fixture();details.procurementHandoff={stage:'UNKNOWN'};
  assert.equal(projectAccountSettlement(row,details).canCheck,false);
  assert.match(projectAccountSettlement(row,details).checkBlocker,/bank payment/);
+});
+
+function proofFileHarness(){
+ const {row,details}=fixture();row.supplierId='SUP';const records=new Map([['PurchaseOrders/PO',{_id:'PO',company:'NCT',details}]]),calls=[];let seq=0,failExtra=false;
+ const supplier={title:'SUP',bankName:'EXAMPLE BANK',bankAccountNo:'0012345'};
+ const store={all:async()=>[supplier],read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,r)=>{if(records.has(c+'/'+r._id))throw Error('duplicate');records.set(c+'/'+r._id,clone(r));return r;},update:async(c,r)=>{records.set(c+'/'+r._id,clone(r));return r;},remove:async(c,id)=>records.delete(c+'/'+id)};
+ const listOrders=async()=>{const d=records.get('PurchaseOrders/PO').details;return [{...row,version:JSON.stringify(d),supplierShortName:'SAMPLE',...projectAccountSettlement(row,d)}];};
+ const documentService=async input=>{calls.push(clone(input));if(input.action==='ALLOCATE')return {fileId:'proof-file-'+(++seq)};if(failExtra&&input.name.endsWith('-2.pdf')){failExtra=false;throw Error('lost upload response');}return {...input,ok:true,trashed:input.action==='TRASH'};};
+ const operations=createAccountSettlementOperations({store,listOrders,documentService,names:{NCT:{activity:'NCTActivity'}}}),staff={memberId:'M',staffId:'F',staffName:'FINANCE',role:'ACCOUNT'};
+ const request=async(input,actor=staff)=>({company:'NCT',staff:actor,requestId:require('node:crypto').randomUUID(),input:{id:'PO',version:(await listOrders())[0].version,...input}});
+ const pdf=n=>Buffer.from('%PDF-1.4\nTEST ONLY '+n).toString('base64');
+ const input={action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-17',number:'',cents:20000,base64:pdf(1),attachments:[{base64:pdf(2)}],recipientChoice:'SUPPLIER',recipientBank:{bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo},paymentSource:'CASH',reason:''};
+ return {operations,request,input,calls,records,listOrders,supplier,failExtra:()=>failExtra=true};
+}
+test('multi-file payment preserves one amount, server bank snapshot and the same files after a lost response',async()=>{
+ const h=proofFileHarness(),req=await h.request(h.input);h.failExtra();await assert.rejects(h.operations.save(req),/lost upload/);assert.equal(h.records.get('PurchaseOrders/PO').details.finance.payments.length,0);
+ await h.operations.save(req);const p=h.records.get('PurchaseOrders/PO').details.finance.payments[0];assert.equal(p.proofs.length,2);assert.equal(p.cents,20000);assert.equal(p.reference,'');assert.equal(p.recipientBank.bankAccountNo,'0012345');assert.equal(h.calls.filter(c=>c.action==='ALLOCATE').length,2);assert.equal((await h.listOrders())[0].finance.paidCents,20000);assert.equal(JSON.stringify([...h.records.values()]).includes(h.input.base64),false);
+ h.supplier.bankAccountNo='changed';assert.equal(p.recipientBank.bankAccountNo,'0012345');
+});
+test('payment requires recipient and source, rejects a stale supplier account, and permits Other without a reason',async()=>{
+ for(const change of [{recipientChoice:''},{paymentSource:''},{recipientBank:{bankName:'EXAMPLE BANK',bankAccountNo:'wrong'}}]){const h=proofFileHarness();await assert.rejects(h.operations.save(await h.request({...h.input,...change})),/Select/);assert.equal(h.calls.filter(c=>c.action==='UPLOAD').length,0);}
+ const h=proofFileHarness();await h.operations.save(await h.request({...h.input,recipientChoice:'OTHER',recipientBank:{bankAccountNo:'client-forged'}}));assert.equal(h.records.get('PurchaseOrders/PO').details.finance.payments[0].recipientBank,null);
+});
+test('only uploader or SUPER ADMIN may trash payment proof; removing every file preserves paid amounts and audit',async()=>{
+ const h=proofFileHarness();await h.operations.save(await h.request(h.input));let p=h.records.get('PurchaseOrders/PO').details.finance.payments[0];const input={action:'PAYMENT_FILE_DELETE',paymentId:p.id,fileId:p.proofs[0].fileId};
+ await assert.rejects(h.operations.save(await h.request(input,{memberId:'X',staffId:'X',staffName:'OTHER',role:'ACCOUNT'})),/Only the uploader/);assert.equal(h.calls.filter(c=>c.action==='TRASH').length,0);
+ await h.operations.save(await h.request(input));await h.operations.save(await h.request({...input,fileId:p.proofs[1].fileId},{memberId:'A',staffId:'A',staffName:'ADMIN',role:'SUPER ADMIN'}));
+ p=h.records.get('PurchaseOrders/PO').details.finance.payments[0];assert.equal(p.deletedProofs.length,2);assert.equal((await h.listOrders())[0].finance.paidCents,20000);assert.equal(h.calls.filter(c=>c.action==='TRASH').length,2);assert.equal(h.calls.filter(c=>c.action==='TRASH').every(c=>c.department==='ACCOUNT'&&c.type==='PAYMENT'),true);
+});
+
+test('adding replacement proofs to a paid record never appends or changes the monetary payment',async()=>{
+ const h=proofFileHarness();await h.operations.save(await h.request(h.input));const payment=h.records.get('PurchaseOrders/PO').details.finance.payments[0];
+ await h.operations.save(await h.request({action:'DOCUMENT_UPLOAD',type:'PAYMENT',paymentId:payment.id,date:'2026-10-17',base64:Buffer.from('%PDF-1.4\nREPLACEMENT').toString('base64')}));
+ const payments=h.records.get('PurchaseOrders/PO').details.finance.payments;assert.equal(payments.length,1);assert.equal(payments[0].proofs.length,3);assert.equal((await h.listOrders())[0].finance.paidCents,20000);
 });

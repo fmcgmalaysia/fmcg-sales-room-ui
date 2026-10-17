@@ -33,3 +33,7 @@ test('trash cannot target a different company, PO, hash, name or department docu
 test('Our PO PDFs upload to each fixed Purchase folder and can be trashed with exact identity',()=>{
  for(const [company,folder] of [['NCT','12gCZmqioYGZyRmgW3CsWyobBBcUnCFUS'],['GHR','18w4I96N3PSCTv2Qxs_mycy-PMu-lth9w']]){const f=service(),input={...f.input,company,type:'PO',name:'2026-10-16 SUP PO 001.pdf'};assert.equal(f.run(input).ok,true);assert.equal(f.files.get(input.fileId).parents[0],folder);assert.equal(f.run({...input,action:'TRASH'}).trashed,true);}
 });
+
+test('Account proof trash requires Account routing and exact company folder, and retries safely',()=>{
+ for(const company of ['NCT','GHR']){const f=service(),input={...f.input,company,type:'PAYMENT',department:'ACCOUNT'};assert.equal(f.run(input).ok,true);assert.equal(f.run({...input,action:'TRASH',department:'PURCHASE'}).error,'INVALID_DOCUMENT');assert.equal(f.run({...input,action:'TRASH'}).trashed,true);assert.equal(f.run({...input,action:'TRASH'}).trashed,true);}
+});

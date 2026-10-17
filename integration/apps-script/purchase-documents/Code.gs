@@ -41,12 +41,13 @@ function uploadPurchasePdf_(input) {
 
 
 function trashPurchasePdf_(input) {
-  if(!/^[A-Za-z0-9_-]{10,200}$/.test(input.fileId||'')||!/^\w{32}$/.test(input.poId||'')||!/^\w{64}$/.test(input.sha256||'')||!['PO','INV','CN','SO','PI','DO'].includes(input.type)||typeof input.name!=='string'||input.name.length>300)throw Error('INVALID_DOCUMENT');
+  const payment=input.type==='PAYMENT'&&input.department==='ACCOUNT',folder=payment?ACCOUNT_ROOTS[input.company]:PURCHASE_ROOTS[input.company];
+  if(!/^[A-Za-z0-9_-]{10,200}$/.test(input.fileId||'')||!/^\w{32}$/.test(input.poId||'')||!/^\w{64}$/.test(input.sha256||'')||(!['PO','INV','CN','SO','PI','DO'].includes(input.type)&&!payment)||typeof input.name!=='string'||input.name.length>300)throw Error('INVALID_DOCUMENT');
   const lock=LockService.getScriptLock();lock.waitLock(20000);
   try {
     let file=Drive.Files.get(input.fileId,{fields:FILE_FIELDS});
     const props={company:input.company,poId:input.poId,sha256:input.sha256,type:input.type};
-    if(file.mimeType!=='application/pdf'||file.name!==input.name||!file.parents?.includes(PURCHASE_ROOTS[input.company])||Object.keys(props).some(key=>file.appProperties?.[key]!==props[key]))throw Error('FILE_IDENTITY_CONFLICT');
+    if(file.mimeType!=='application/pdf'||file.name!==input.name||!file.parents?.includes(folder)||Object.keys(props).some(key=>file.appProperties?.[key]!==props[key]))throw Error('FILE_IDENTITY_CONFLICT');
     if(!file.trashed)file=Drive.Files.update({trashed:true},input.fileId,null,{fields:FILE_FIELDS});
     if(file.trashed!==true)throw Error('UPLOAD_UNCONFIRMED');
     return {ok:true,fileId:file.id,name:file.name,company:input.company,poId:input.poId,sha256:input.sha256,type:input.type,trashed:true};

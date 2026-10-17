@@ -54,36 +54,63 @@ export function projectAccountSettlement(row,details){
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
-    let uploadBase64=null,journalInput=input;
+    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(input.action==='PAYMENT_FILE_DELETE')return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:input},prepare:async()=>{
+      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
+      if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
+      const record=await store.read('PurchaseOrders',row.id),payment=record?.details?.finance?.payments?.find(p=>p.id===input.paymentId),proof=(payment?.proofs||[payment?.proof]).find(p=>p?.fileId===input.fileId);
+      if(!documentService||!proof?.linked||payment.deletedProofs?.some(p=>p.fileId===proof.fileId))throw Error('Select an available payment file.');
+      if(proof.uploadedByStaffId!==staff.staffId&&staff.role!=='SUPER ADMIN')throw Error('Only the uploader or SUPER ADMIN can delete this file.');
+      const at=now().toISOString(),audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_PAYMENT_FILE_DELETE',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:'Payment file deleted',changes:{paymentId:payment.id,fileId:proof.fileId,name:proof.name}};
+      payment.deletedProofs=[...(payment.deletedProofs||[]),{fileId:proof.fileId,sha256:proof.sha256,at,by:staff.staffName,byStaffId:staff.staffId}];
+      record.details.audit=[...(record.details.audit||[]),audit];record.details.updatedAt=at;
+      return {record,expectedVersion:row.version,audit,trash:{action:'TRASH',department:'ACCOUNT',company,poId:row.id,fileId:proof.fileId,sha256:proof.sha256,name:proof.name,type:'PAYMENT'}};
+    },apply:async plan=>{
+      const current=await store.read('PurchaseOrders',plan.record._id);
+      if(!current?.details?.audit?.some(e=>e.id===plan.audit.id)){
+        const row=(await listOrders(company,staff)).find(r=>r.id===plan.record._id);if(row?.version!==plan.expectedVersion)throw Error('Purchase order changed while saving.');
+        const receipt=await documentService(plan.trash);
+        if(receipt?.ok!==true||receipt.trashed!==true||receipt.fileId!==plan.trash.fileId||receipt.sha256!==plan.trash.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.trash.name||receipt.type!=='PAYMENT')throw Error('Document deletion could not be confirmed. Retry the same deletion.');
+        await store.update('PurchaseOrders',plan.record);
+      }
+      return {ok:true,company,requestId,poId:plan.record._id,savedAt:plan.audit.time};
+    }});
+    let uploadBase64=null,journalInput=input,extraFiles=[];
     if(input.action==='DOCUMENT_UPLOAD'){
       if(!documentService||!['DO','PAYMENT'].includes(input.type))throw Error('Select a supplier DO or payment proof.');
       if(typeof input.base64!=='string'||input.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(input.base64))throw Error('Select a PDF up to 3 MiB.');
       const bytes=Buffer.from(input.base64,'base64');
       if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64)throw Error('Select a valid PDF up to 3 MiB.');
       uploadBase64=input.base64;journalInput={...input,base64:undefined,sha256:createHash('sha256').update(bytes).digest('hex'),size:bytes.length};
+      if(input.attachments!==undefined){
+        if(input.type!=='PAYMENT'||!Array.isArray(input.attachments)||input.attachments.length>5)throw Error('Select up to six payment PDF files.');
+        let total=bytes.length;
+        extraFiles=input.attachments.map(file=>{if(typeof file?.base64!=='string'||file.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(file.base64))throw Error('Select valid PDF files up to 3 MiB in total.');const b=Buffer.from(file.base64,'base64');total+=b.length;if(b.length<5||b.subarray(0,5).toString()!=='%PDF-'||b.toString('base64')!==file.base64||total>3*1024*1024)throw Error('Select valid PDF files up to 3 MiB in total.');return {base64:file.base64,sha256:createHash('sha256').update(b).digest('hex'),size:b.length};});
+        if(new Set([journalInput.sha256,...extraFiles.map(f=>f.sha256)]).size!==extraFiles.length+1)throw Error('This payment proof is already selected.');
+        journalInput.attachments=extraFiles.map(({sha256,size})=>({sha256,size}));
+      }
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:journalInput},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
-      const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason);
+      const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason)||(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'?'Payment recorded':'');
       if(!reason||reason.length>2000)throw Error('Enter a reason or reconciliation note.');
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
       const identity={at,by:staff.staffName,byStaffId:staff.staffId};
-      let upload=null,document=null,handoff=null,procurement=null;
+      let upload=null,document=null,handoff=null,procurement=null,extraUploads=[];
       if(['REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input.action)){
         procurement=transitionProcurementHandoff(row,details,input,identity,'ACCOUNT');
         audit.changes={before:details.procurementHandoff||null,after:procurement};
       }else if(input.action==='DOCUMENT_UPLOAD'){
         if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date||'')||!Number.isFinite(Date.parse(input.date))||new Date(input.date).toISOString().slice(0,10)!==input.date)throw Error('Enter a valid document date.');
-        const number=text(input.number);if(!number||number.length>120)throw Error('Enter the document or payment reference.');
-        if(input.type==='PAYMENT'&&(!cents(input.cents)||input.cents===0))throw Error('Enter a valid paid amount.');
+        const number=text(input.number);if((!number&&input.type!=='PAYMENT')||number.length>120)throw Error('Enter the document or payment reference.');
+        if(input.type==='PAYMENT'&&!input.paymentId&&(!cents(input.cents)||input.cents===0))throw Error('Enter a valid paid amount.');
         if(input.direction!==undefined&&!['PAYMENT','REFUND'].includes(input.direction))throw Error('Select payment or received refund.');
-        if(input.type==='PAYMENT'&&input.direction==='REFUND'){
+        if(input.type==='PAYMENT'&&!input.paymentId&&input.direction==='REFUND'){
           const current=projectAccountSettlement(row,details);
           if(!Number.isSafeInteger(current.finance.paidCents)||input.cents>current.finance.paidCents)throw Error('Refund cannot exceed actual net payment.');
         }
-        if(input.type==='PAYMENT'&&(finance.payments||[]).some(entry=>entry.reference===number&&entry.date===input.date))throw Error('This payment reference is already recorded for this purchase order.');
+        if(input.type==='PAYMENT'&&!input.paymentId&&number&&(finance.payments||[]).some(entry=>entry.reference===number&&entry.date===input.date))throw Error('This payment reference is already recorded for this purchase order.');
         if(input.type==='PAYMENT'&&(finance.payments||[]).some(entry=>entry.proof?.sha256===journalInput.sha256))throw Error('This payment proof is already recorded for this purchase order.');
         if(input.type==='DO'&&currentDocs(row).some(doc=>doc.type==='DO'&&doc.sha256===journalInput.sha256))throw Error('This DO is already linked to the purchase order.');
         const clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,120),name=`${input.date} ${clean(row.supplierShortName)} ${input.type} ${clean(number)}.pdf`;
@@ -91,8 +118,24 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,type:input.type,name,sha256:journalInput.sha256,...(input.type==='PAYMENT'?{department:'ACCOUNT'}:{})};
         document={fileId:upload.fileId,type:input.type,name,sha256:upload.sha256,size:journalInput.size,number,date:input.date,linked:true,uploadedAt:at,uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
         if(input.type==='PAYMENT'){
+          let recipientBank=null;
+          if(!input.paymentId&&input.direction!=='REFUND'){
+            if(!['SUPPLIER','OTHER'].includes(input.recipientChoice))throw Error('Select the recipient account.');
+            if(!['CASH','LOAN'].includes(input.paymentSource))throw Error('Select the payment source.');
+            if(input.recipientChoice==='SUPPLIER'){
+              const matches=(await store.all('SharedSuppliers')).filter(s=>s.title===row.supplierId),supplier=matches.length===1?matches[0]:null;
+              if(!supplier?.bankName||!supplier?.bankAccountNo||input.recipientBank?.bankName!==supplier.bankName||input.recipientBank?.bankAccountNo!==supplier.bankAccountNo)throw Error('Select the current supplier bank account after refreshing.');
+              recipientBank={bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo};
+            }
+          }
+          const proofs=[document];
+          for(const [index,file]of extraFiles.entries()){
+            if((finance.payments||[]).some(p=>(p.proofs||[p.proof]).some(proof=>proof?.sha256===file.sha256)))throw Error('This payment proof is already recorded for this purchase order.');
+            const allocatedExtra=await documentService({action:'ALLOCATE',company}),extra={...upload,fileId:allocatedExtra.fileId,sha256:file.sha256,name:name.replace(/\.pdf$/,`-${index+2}.pdf`)};
+            extraUploads.push(extra);proofs.push({...document,fileId:extra.fileId,sha256:extra.sha256,name:extra.name,size:file.size});
+          }
           const state=projectProcurementHandoff(row,details),instruction=details.procurementHandoff?{version:details.procurementHandoff.submission?.version||null,currentVersion:procurementSubmissionVersion(row),stage:state.stage,requiresReview:state.stale||!['PROCESSING','UNKNOWN'].includes(state.stage)}:null;
-          finance.payments=[...(finance.payments||[]),{id:audit.id,cents:input.cents,direction:input.direction||'PAYMENT',reference:number,date:input.date,confirmed:true,proof:document,...(instruction&&input.direction!=='REFUND'?{procurementInstruction:instruction}:{}),...identity}];
+          if(input.paymentId){const existing=(finance.payments||[]).find(p=>p.id===input.paymentId&&p.confirmed);if(!existing)throw Error('Select an existing payment record.');finance.payments=finance.payments.map(p=>p.id===existing.id?{...p,proofs:[...(p.proofs||[p.proof]),...proofs]}:p);}else finance.payments=[...(finance.payments||[]),{id:audit.id,cents:input.cents,direction:input.direction||'PAYMENT',reference:number,date:input.date,confirmed:true,proof:document,...(proofs.length>1?{proofs}:{}),...(input.direction!=='REFUND'?{recipientChoice:input.recipientChoice,recipientBank,paymentSource:input.paymentSource,noteToPurchaser:text(input.reason)}:{}),...(instruction&&input.direction!=='REFUND'?{procurementInstruction:instruction}:{}),...identity}];
         }
         audit.changes={type:input.type,fileId:upload.fileId,number,date:input.date,...(input.type==='PAYMENT'?{cents:input.cents,direction:input.direction||'PAYMENT'}:{})};
       }else if(input.action==='AMOUNTS'){
@@ -128,7 +171,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         finance.check={enabled:input.enabled,reviewVersion:state.finance.reviewVersion,...identity,reason};audit.changes={before:state.invoiceChecked,after:input.enabled,reviewVersion:state.finance.reviewVersion};
       }
       if(!procurement&&!['CHECK','PAYMENT_REVIEW'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
-      return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload};
+      return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload,extraUploads};
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.audit.id)){
@@ -137,6 +180,10 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(plan.upload){
           const receipt=await documentService({...plan.upload,base64:uploadBase64});
           if(receipt?.ok!==true||receipt.fileId!==plan.upload.fileId||receipt.sha256!==plan.upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.upload.name)throw Error('Document upload receipt mismatch.');
+        }
+        for(const [index,upload]of (plan.extraUploads||[]).entries()){
+          const receipt=await documentService({...upload,base64:extraFiles[index]?.base64});
+          if(receipt?.ok!==true||receipt.fileId!==upload.fileId||receipt.sha256!==upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==upload.name)throw Error('Document upload receipt mismatch.');
         }
         if(current)await store.update('PurchaseOrders',plan.record);else await store.insert('PurchaseOrders',plan.record);
       }
