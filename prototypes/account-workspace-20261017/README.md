@@ -64,3 +64,7 @@ The original request detail presentation is now a compact640px Review Payment pa
 ## Pay slip thumbs-up (17 Oct revision)
 
 Available pay slips now use a28px circle with a white thumbs-up outline on MASTER green#12883E; pending orange upload entry stays unchanged. The same proof entry opens a compact file card with View and Download. The included synthetic SVG fixture is labelled DEMO ONLY and explicitly not proof of payment; it contains no supplier, bank, amount or personal data. Production Drive delivery is unchanged and not integrated by this prototype. Recoveryf2c023d.
+
+## Green supplier document actions (17 Oct revision)
+
+Available green PO, PI, DO, INV and CN entries now open the same compact View/Download file-card design as Pay Slip, with the correct document type and current PO/supplier context. The synthetic document-demo.svg is labelled DEMO ONLY, not a business document, and has no financial or personal data. Missing and replacement-needed entries keep their prior messages and do not offer a fabricated file. Existing Pay Slip viewer, payment state, review handlers and production file delivery remain unchanged. Recovery85e70ba.
