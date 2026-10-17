@@ -31,10 +31,12 @@
         "task-grid.js"
       ],
       "build": "2026-10-17-purchase-closeout-v1",
-      "originalDeploymentPoliciesRestored": 7
+      "originalDeploymentPoliciesRestored": 7,
+      "freshAssetsRechecked": true
     },
-    "wix": "PENDING. New editor51425765 remains Loading after initial open and one safe reload. Wix console HttpClient-is-not-defined startup errors. No new Wix edits performed; user asked to manually refresh. Existing live Wix page remains GP source-rollup-v2.",
-    "public": "GP actual checks PASS; search/copy final public release verification pending."
+    "wix": "PASS. User restored editor in tab51425773. Fresh full Purchase code readback exactly matched the current GP baseline apart from the approved version token. Changed only gp-source-rollup-v2 to purchase-closeout-v1. Full after readback exact. Wix Congratulations published-and-live receipt captured on2026-10-17 MYT.",
+    "public": "PENDING final search/copy acceptance: formal clean reload points to purchase-closeout-v1 but iframe remains blank, no captured errors. User asked for one manual formal-page refresh. Prior actual GP read-only checks passed.",
+    "wixNormalizedSha256": "37952002d47ee3c51b758e4e82f4bf02b859a3c1d5eb176358c68c5ef47fddbe"
   },
   "accountDraft": "Separate isolated draft branch and PR163. Production Account untouched."
 }
