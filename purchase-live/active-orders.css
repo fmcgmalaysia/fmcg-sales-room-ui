@@ -72,7 +72,7 @@
 #app .active-order-table :is(th,td):is(:nth-child(6),:nth-child(9)){text-align:center!important}
 #app .active-order-table td:nth-child(11) .po-reference{text-align:right}
 #app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
-#app .active-order-table #taskRows .barcode>.gp-badge{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;font-size:9px;font-weight:600;line-height:14px;white-space:nowrap}
+#app .active-order-table #taskRows .gp-badge{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;font-size:9px;font-weight:600;line-height:14px;white-space:nowrap}
 #app #taskRows .gp.gp-good{background:#12883e;color:#fff!important}
 #app .active-order-table .gp-badge svg{width:9px;height:9px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table .gp-badge svg circle{fill:currentColor;stroke:none}
