@@ -48,13 +48,13 @@ export function projectAccountSettlement(row,details){
   const paymentCompleted=payableCents!==null&&payableCents>=0&&(balanceCents===0||creditRecognized)&&paymentRecordsValid;
   const archiveBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment / 供应商款项未结清']:[]),...(!checked?['Finance Checked required / 财务尚未核对完成']:[]),...(!row.salesInvoiceComplete?['Customer Sales Invoice required / 客户销售发票未齐']:[])];
   return {invoiceChecked:checked,invoiceCheck:check||null,reviewRequired,canCheck:blockers.length===0,checkBlocker:blockers.join('; ')||(reviewRequired?'P.O. changed after the last check / 采购内容已修改，请重新核对':''),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:!checked&&(reviewRequired||cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
-    finance:{receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
+    finance:{plan:finance.plan||[],receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
     if(input.action==='PAYMENT_FILE_DELETE')return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:input},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
@@ -93,7 +93,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:journalInput},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
-      const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason)||(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'?'Payment recorded':'');
+      const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason)||(input.action==='PLAN'?'Payment plan updated':'')||(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'?'Payment recorded':'');
       if(!reason||reason.length>2000)throw Error('Enter a reason or reconciliation note.');
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
       const identity={at,by:staff.staffName,byStaffId:staff.staffId};
@@ -111,7 +111,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
           if(!Number.isSafeInteger(current.finance.paidCents)||input.cents>current.finance.paidCents)throw Error('Refund cannot exceed actual net payment.');
         }
         if(input.type==='PAYMENT'&&!input.paymentId&&number&&(finance.payments||[]).some(entry=>entry.reference===number&&entry.date===input.date))throw Error('This payment reference is already recorded for this purchase order.');
-        if(input.type==='PAYMENT'&&(finance.payments||[]).some(entry=>entry.proof?.sha256===journalInput.sha256))throw Error('This payment proof is already recorded for this purchase order.');
+        if(input.type==='PAYMENT'&&(finance.payments||[]).some(entry=>(entry.proofs||[entry.proof]).some(proof=>proof?.sha256===journalInput.sha256)))throw Error('This payment proof is already recorded for this purchase order.');
         if(input.type==='DO'&&currentDocs(row).some(doc=>doc.type==='DO'&&doc.sha256===journalInput.sha256))throw Error('This DO is already linked to the purchase order.');
         const clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,120),name=`${input.date} ${clean(row.supplierShortName)} ${input.type} ${clean(number)}.pdf`;
         const allocated=await documentService({action:'ALLOCATE',company});
@@ -138,6 +138,13 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
           if(input.paymentId){const existing=(finance.payments||[]).find(p=>p.id===input.paymentId&&p.confirmed);if(!existing)throw Error('Select an existing payment record.');finance.payments=finance.payments.map(p=>p.id===existing.id?{...p,proofs:[...(p.proofs||[p.proof]),...proofs]}:p);}else finance.payments=[...(finance.payments||[]),{id:audit.id,cents:input.cents,direction:input.direction||'PAYMENT',reference:number,date:input.date,confirmed:true,proof:document,...(proofs.length>1?{proofs}:{}),...(input.direction!=='REFUND'?{recipientChoice:input.recipientChoice,recipientBank,paymentSource:input.paymentSource,noteToPurchaser:text(input.reason)}:{}),...(instruction&&input.direction!=='REFUND'?{procurementInstruction:instruction}:{}),...identity}];
         }
         audit.changes={type:input.type,fileId:upload.fileId,number,date:input.date,...(input.type==='PAYMENT'?{cents:input.cents,direction:input.direction||'PAYMENT'}:{})};
+      }else if(input.action==='PLAN'){
+        if(['PROCESSING','UNKNOWN'].includes(details.procurementHandoff?.stage))throw Error('Resolve bank payment processing before changing the plan.');
+        if(!Array.isArray(input.plan)||input.plan.length>2)throw Error('Enter up to two planned instalments.');
+        const request=details.procurementHandoff?.submission?.paymentRequest,balance=request?request.requestedCents-Math.max(0,(row.finance?.paidCents||0)-(request.paidCents||0))-Math.max(0,(row.finance?.creditAppliedCents||0)-(request.creditAppliedCents||0)):row.finance?.balanceCents;
+        const plan=input.plan.map(p=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')||!Number.isFinite(Date.parse(p.date))||new Date(p.date).toISOString().slice(0,10)!==p.date||!cents(p.cents)||p.cents===0||!['CASH','LOAN'].includes(p.source))throw Error('Enter a valid date, amount and source for every instalment.');return {date:p.date,cents:p.cents,source:p.source};});
+        if(plan.length&&(!Number.isSafeInteger(balance)||plan.reduce((n,p)=>n+p.cents,0)>balance))throw Error('Enter a plan within the unpaid request balance.');
+        finance.plan=plan;finance.planUpdated=identity;audit.changes={before:details.finance?.plan||[],after:plan};
       }else if(input.action==='AMOUNTS'){
         const docs=currentDocs(row).filter(doc=>['INV','CN'].includes(doc.type));
         if(!docs.length||!Array.isArray(input.amounts)||input.amounts.length!==docs.length||new Set(input.amounts.map(entry=>entry.fileId)).size!==docs.length)throw Error('Enter the amount for every current INV and CN.');
@@ -170,7 +177,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(input.enabled===state.invoiceChecked)throw Error('Financial check has not changed.');
         finance.check={enabled:input.enabled,reviewVersion:state.finance.reviewVersion,...identity,reason};audit.changes={before:state.invoiceChecked,after:input.enabled,reviewVersion:state.finance.reviewVersion};
       }
-      if(!procurement&&!['CHECK','PAYMENT_REVIEW'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
+      if(!procurement&&!['CHECK','PAYMENT_REVIEW','PLAN'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
       return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload,extraUploads};
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
