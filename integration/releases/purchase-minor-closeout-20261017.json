@@ -35,8 +35,10 @@
       "freshAssetsRechecked": true
     },
     "wix": "PASS. User restored editor in tab51425773. Fresh full Purchase code readback exactly matched the current GP baseline apart from the approved version token. Changed only gp-source-rollup-v2 to purchase-closeout-v1. Full after readback exact. Wix Congratulations published-and-live receipt captured on2026-10-17 MYT.",
-    "public": "PENDING final search/copy acceptance: formal clean reload points to purchase-closeout-v1 but iframe remains blank, no captured errors. User asked for one manual formal-page refresh. Prior actual GP read-only checks passed.",
-    "wixNormalizedSha256": "37952002d47ee3c51b758e4e82f4bf02b859a3c1d5eb176358c68c5ef47fddbe"
+    "public": "PASS on actual formal tab51425776 after user manual refresh. Correct iframe/build purchase-closeout-v1; search no-match0 requests and bilingual hint, clearing1 request; Receiving Issue REFUND/CREDIT labels have no bilingual slash, existing selected resolution/date/note retained without saving; GP unknown and partial-source/complete-mother rules verified. No real business writes.",
+    "wixNormalizedSha256": "37952002d47ee3c51b758e4e82f4bf02b859a3c1d5eb176358c68c5ef47fddbe",
+    "allFourStagesComplete": true
   },
-  "accountDraft": "Separate isolated draft branch and PR163. Production Account untouched."
+  "accountDraft": "Separate isolated draft branch and PR163. Production Account untouched.",
+  "validationNote": "Assistant read-only public acceptance; user real-world confirmation still required before main merge or a new whole-workflow verified tag."
 }
