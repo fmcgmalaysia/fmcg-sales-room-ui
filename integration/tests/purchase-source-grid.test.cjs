@@ -11,7 +11,7 @@ test('multiple sources always show both children; disabled mother does not consu
   const f=fixture();f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,3);
   assert.match(rows[0],/data-select-kind="demand" disabled/);assert.doesNotMatch(rows[0],/ checked/);assert.match(rows[1],/data-select-kind="source"[^>]*checked/);
   assert.match(rows[1],/class="row-number"><input[^>]*data-select-kind="source"/);assert.match(rows[0],/class="received-age">original-intake<\/td>/);for(const sourceRow of rows.slice(1))assert.match(sourceRow,active?/class="received-age"><\/td>/:/class="received-age">original-intake<\/td>/);assert.doesNotMatch(rows[1],/class="supplier-cell">[\s\S]*?<input/);
-  assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,active?0:7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,active?0:7);if(active){assert.match(rows[0],/class="barcode">BAR<span class="gp gp-badge gp-good"[^>]*>20%/);assert.doesNotMatch(rows[1],/gp-badge/);}else{assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);}assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
+  assert.doesNotMatch(rows[0],/progress-node|data-progress-task/);assert.equal((rows[1].match(/class="progress-node /g)||[]).length,active?0:7);assert.equal((rows[2].match(/class="progress-node /g)||[]).length,active?0:7);if(active){assert.match(rows[0],/class="barcode">BAR<span class="gp gp-badge gp-good"[^>]*>20\.00%/);assert.doesNotMatch(rows[1],/gp-badge/);}else{assert.match(rows[0],/class="gp">20.00%/);assert.match(rows[1],/class="gp"><\/b>/);}assert.match(rows[2],/data-source-po-task="B"/);assert.doesNotMatch(rows[0],/data-expand-task|data-po-task/);
   assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?11:12)));
  }
 });
@@ -59,15 +59,22 @@ test('active single supplier saved35 against demand50 shows mother, supplier chi
 
 test('partial allocation shows GP on saved children only and switches to mother aggregate once fully allocated',()=>{
  const f=fixture();f.args.active=true;f.root.ord=120;f.root.sourceGp=.25;f.child.sourceGp=.1;
- let rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);assert.match(rows[1],/aria-label="GP 25%"/);assert.match(rows[2],/aria-label="GP 10%"/);assert.doesNotMatch(rows[3],/gp-badge/);
- f.child.procurement.revision='';f.child.po='';rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[1],/aria-label="GP 25%"/);assert.doesNotMatch(rows[2],/gp-badge/);
- f.child.procurement.revision='P2';f.root.ord=100;rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[0],/aria-label="GP 20%"/);for(const row of rows.slice(1))assert.doesNotMatch(row,/gp-badge/);
+ let rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);assert.match(rows[1],/aria-label="GP 25\.00%"/);assert.match(rows[2],/aria-label="GP 10\.00%"/);assert.doesNotMatch(rows[3],/gp-badge/);
+ f.child.procurement.revision='';f.child.po='';rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[1],/aria-label="GP 25\.00%"/);assert.doesNotMatch(rows[2],/gp-badge/);
+ f.child.procurement.revision='P2';f.root.ord=100;rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.match(rows[0],/aria-label="GP 20\.00%"/);for(const row of rows.slice(1))assert.doesNotMatch(row,/gp-badge/);
 });
 
 test('a single partially assigned supplier uses its own GP despite sharing the mother record ID',()=>{
  const f=fixture();f.args.active=true;f.args.rows=f.args.tasks=[f.root];f.root.procurement.totalCtn=35;f.root.sourceGp=.125;
  const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);assert.match(rows[1],/aria-label="GP 12.50%"/);assert.doesNotMatch(rows[2],/gp-badge/);
  f.args.drafts.set('R',{changes:{lpCtn:20}});assert.doesNotMatch(f.render(),/gp-badge/);
+});
+
+test('GP capsules keep two decimals on mother and source rows including whole, fractional, zero and negative percentages',()=>{
+ for(const [gp,formatted]of [[.12,'12.00%'],[.123456,'12.35%'],[0,'0.00%'],[-.0014,'-0.14%']]){
+  const f=fixture();f.args.active=true;f.root.gp=gp;assert.ok(f.render().includes('aria-label="GP '+formatted+'"'));
+  f.root.ord=120;f.root.sourceGp=gp;f.child.sourceGp=gp;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.doesNotMatch(rows[0],/gp-badge/);for(const row of rows.slice(1,3))assert.ok(row.includes('aria-label="GP '+formatted+'"'));assert.doesNotMatch(rows[3],/gp-badge/);
+ }
 });
 
 function financialCells(html,active=false){const cells=html.match(/<td\b[\s\S]*?<\/td>/g);return {cost:cells[active?7:7].replace(/<[^>]*>/g,''),amount:cells[active?9:8].replace(/<[^>]*>/g,'')};}
