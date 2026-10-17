@@ -6,13 +6,13 @@
 
 | Page | Main responsibility | Source when implemented |
 | --- | --- | --- |
-| Dashboard 财务工作台 | New requests, purchase reminders, real problems and work in progress; direct task entry | Current procurement handoff, chase events and reconciliation blockers |
-| Payment Requests 付款申请 | Submitted requests only; request amount, purpose, submission time, customer ETA, notes, documents and payment progress | Existing shared PO submission, supplier files and financial records |
-| Creditor 供应商应付 | Final supplier INV, applicable CN, payments, refunds and applied supplier credit; separate legacy reconciliation | Existing PO finance and supplier credit records; no duplicate ledger writes |
-| Debtor 客户应收 | Customer invoices, receipts, CN and debit notes; balances separated by currency | Existing customer account ledger and linked Sales documents |
-| Bank & Cash 银行及现金 | Traceable recorded balances and transactions; forecasts separately labelled | Bank accounts and balance-entry authority still to be agreed; no bank connection added |
-| Transaction History 已结交易 | Fully reconciled closed transactions and original files; searchable immutable history | Existing archive gates, not merely the Fully Paid request state |
-| Activity History 财务活动 | Who did what, when, on which request and why | Existing audited Account actions, without routine row-order noise |
+| Dashboard | New requests, purchase reminders, real problems and work in progress; direct task entry | Current procurement handoff, chase events and reconciliation blockers |
+| Payment Requests | Submitted requests only; request amount, purpose, submission time, customer ETA, notes, documents and payment progress | Existing shared PO submission, supplier files and financial records |
+| Creditor | Final supplier INV, applicable CN, payments, refunds and applied supplier credit; separate legacy reconciliation | Existing PO finance and supplier credit records; no duplicate ledger writes |
+| Debtor | Customer invoices, receipts, CN and debit notes; balances separated by currency | Existing customer account ledger and linked Sales documents |
+| Bank & Cash | Traceable recorded balances and transactions; forecasts separately labelled | Bank accounts and balance-entry authority still to be agreed; no bank connection added |
+| Transaction History | Fully reconciled closed transactions and original files; searchable immutable history | Existing archive gates, not merely the Fully Paid request state |
+| Activity History | Who did what, when, on which request and why | Existing audited Account actions, without routine row-order noise |
 
 ## Workflow and boundaries
 
@@ -28,7 +28,7 @@ Legacy records with payments must not be silently presented as new unpaid reques
 
 ## Visual approach
 
-Reuse current Account and shared MASTER theme assets; compact 20px headings, Inter typography, blue-gray table headers and existing MASTER top bar. Green `#12883E` marks the corresponding completed item, orange a pending action, red a real unresolved problem. Waiting and Reviewing status capsules use the approved download gray. Amounts and quantities align right; request identity, supplier, customer and notes align left. Missing costs or balances are not invented as zero. Bilingual labels use spaces or two lines.
+Reuse current Account and shared MASTER theme assets; compact 20px headings, Inter typography, blue-gray table headers and existing MASTER top bar. Green `#12883E` marks the corresponding completed item, orange a pending action, red a real unresolved problem. Waiting and Reviewing status capsules use the approved download gray. Amounts and quantities align right; request identity, supplier, customer and notes align left. Missing costs or balances are not invented as zero. Account interface copy is English only, including navigation, buttons, labels, status text, dialogs, notices and accessibility labels. This is the user-approved Account exception to the general bilingual workroom rule. Business names and user-entered records must not be mechanically translated.
 
 ## Demonstrated locally
 

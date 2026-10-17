@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Account 全页面草稿 · 示例数据</title>
+  <title>Account Workspace Draft · Sample Data</title>
   <link rel="stylesheet" href="../../account-room/style.css">
   <link rel="stylesheet" href="../../master-shared/workroom-theme.css">
   <link rel="stylesheet" href="draft.css">
 </head>
 <body>
-  <aside class="draft-banner"><b>ACCOUNT DRAFT 财务全页草稿</b><span>示例数据 · 本地演示 · 不写入正式系统 · 不执行银行付款</span><button id="reset">Reset demo 重置示例</button></aside>
-  <header class="department-header"><strong class="master-brand">MASTER</strong><strong class="department-name">Account Department <small>财务部</small></strong><label><select id="company" aria-label="Company 公司"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select></label><span class="staff">ACCOUNT DEMO</span></header>
+  <aside class="draft-banner"><b>ACCOUNT DRAFT</b><span>Sample data · Local draft · No production writes · No bank transactions</span><button id="reset">Reset demo</button></aside>
+  <header class="department-header"><strong class="master-brand">MASTER</strong><strong class="department-name">Account Department</strong><label><select id="company" aria-label="Company"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select></label><span class="staff">ACCOUNT DEMO</span></header>
   <nav aria-label="Account draft pages" id="nav"></nav>
   <main id="draftApp"></main>
-  <dialog id="detail"><header class="dialog-header"><div id="detailTitle"></div><button id="close" aria-label="Close 关闭">×</button></header><div id="detailBody" class="dialog-body"></div><footer id="detailActions"></footer></dialog>
+  <dialog id="detail"><header class="dialog-header"><div id="detailTitle"></div><button id="close" aria-label="Close">×</button></header><div id="detailBody" class="dialog-body"></div><footer id="detailActions"></footer></dialog>
   <output id="notice" aria-live="polite"></output>
   <script src="draft.js"></script>
 </body>
