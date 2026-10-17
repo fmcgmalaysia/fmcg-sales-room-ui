@@ -26,7 +26,15 @@
       "completeChildren": "hidden",
       "unplanned": "hidden"
     },
-    "realBusinessWrites": false
+    "realBusinessWrites": false,
+    "publicReadOnlyChecks": [
+      "unknown cost capsules absent",
+      "partial mother hidden",
+      "first and added child own GP visible",
+      "waiting remainder hidden",
+      "fully allocated mother only",
+      "existing known-cost rows preserved"
+    ]
   },
   "release": {
     "code": "GitHub task branch synchronized; draft PR160; main unchanged",
@@ -42,7 +50,7 @@
       "originalDeploymentPoliciesRestored": 7
     },
     "wix": "Three backend modules and Purchase page exact readbacks; published-and-live receipt captured.",
-    "publicVerification": "INCOMPLETE. Existing formal page refreshed with no draft/modal/pending save; new iframe version confirmed, content remains blank with no captured error. This loading symptom also occurred before GP patch. Do not claim full publication or user acceptance."
+    "publicVerification": "PASS on existing formal Purchase tab at GP source-rollup-v2 before the minor-copy release. Three unplanned unknown-cost products have no GP; BOTANICAL mother30/25 hides GP while saved first-source15 and second-source10 each show12%; waiting5 has no GP; fully allocated CHIPSMORE shows only mother aggregate -0.14%, children hidden; Lavender12%, Kinder11.98%, Eclipse19.97% remain visible. No business writes."
   },
   "normalizedSha256": {
     "integration/backend/purchaseMarginRefresh.js": "f71d571358b656b681695db612f21c0fadcfec3a53fae3228e04e61e4a6e87b5",
