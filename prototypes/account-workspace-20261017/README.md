@@ -6,7 +6,7 @@
 
 | Page | Main responsibility | Source when implemented |
 | --- | --- | --- |
-| Dashboard | New requests, purchase reminders, real problems and work in progress; direct task entry | Current procurement handoff, chase events and reconciliation blockers |
+| Dashboard | Outstanding request value, available cash, available loan headroom and funding gap; direct request entry | Current procurement handoff, chase events and reconciliation blockers |
 | Payment Requests | Submitted requests only; request amount, purpose, submission time, customer ETA, notes, documents and payment progress | Existing shared PO submission, supplier files and financial records |
 | Creditor | Final supplier INV, applicable CN, payments, refunds and applied supplier credit; separate legacy reconciliation | Existing PO finance and supplier credit records; no duplicate ledger writes |
 | Debtor | Customer invoices, receipts, CN and debit notes; balances separated by currency | Existing customer account ledger and linked Sales documents |
@@ -40,3 +40,9 @@ Reuse current Account and shared MASTER theme assets; compact 20px headings, Int
 - Demo reset restores the initial proposal. No fetch, postMessage, storage write, real upload, CMS mutation or bank transaction is used.
 
 Still for discussion: exact page names and columns, default notification priorities, owner assignment and escalation policy, bank balance sources and permissions, debit and receipt entry ownership, final document viewer layout, and notification acknowledgement rules. This draft does not assert those production integrations are complete.
+
+## Finance allocation overview (17 Oct revision)
+
+Payment request identity combines PO number above the supplier full legal name. Dashboard, Payment Requests and Bank & Cash share one company-level funding summary, independent of list search and filters. All figures are explicitly synthetic MYR cents. Initial submitted requests6040 less paid1450 gives outstanding4590. Cash2700 minus operating reserve300 minus the identified unknown-payment reservation900 leaves1500 available. Loan limit5000 less utilized3000 leaves2000. Remaining unallocated requests3690 less available funding3500 gives funding gap190. The existing900 reservation is removed from both available cash and new allocation demand, preventing double counting. Document problems remain in obligations, expected collections are not cash, and fully paid requests contribute zero. Unknown company balances display a dash, never invented zero. Bank pages use the same funding snapshot. Production sources, bank eligibility and reservation mapping remain subject to agreement.
+
+Recovery for this isolated draft revision: ae5a654. Production Purchase baseline remains untouched.
