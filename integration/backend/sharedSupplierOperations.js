@@ -1,8 +1,8 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 const text = value => String(value ?? '').trim();
 const roles = ['Sales Representative','Sales Manager','Director','Account Dept.','Warehouse','Others'];
-const fields = ['companyName','shortName','registrationNo','address','officeTel','email','companyWebsite','collectionAddress','paymentTerm','supplierStatus','notes','salesContacts','brands'];
-const version = row => operationId(fields.map(key => [key,row?.[key] ?? null]));
+const fields = ['companyName','shortName','registrationNo','address','officeTel','email','companyWebsite','collectionAddress','paymentTerm','supplierStatus','notes','salesContacts','brands','bankName','bankAccountNo'];
+const version = row => operationId(fields.filter(key=>!['bankName','bankAccountNo'].includes(key)||text(row?.[key])).map(key => [key,row?.[key] ?? null]));
 export function createSharedSupplierOperations({store, brandOptions, now = () => new Date()}) {
   const journal = createOperationJournal({store,now});
   async function profile(supplierId) {
@@ -17,7 +17,7 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
       if(!(key in values)) continue;
       if(['salesContacts','brands'].includes(key)) continue;
       if(typeof values[key] !== 'string' || values[key].length > 4000) throw Error('Invalid supplier field.');
-      patch[key] = ['email','companyWebsite'].includes(key)?text(values[key]):text(values[key]).toUpperCase();
+      patch[key] = ['email','companyWebsite','bankAccountNo'].includes(key)?text(values[key]):text(values[key]).toUpperCase();
     }
     if(!patch.companyName) throw Error('Company Name is required.');
     if(patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) throw Error('Check supplier email.');
@@ -45,6 +45,8 @@ export function createSharedSupplierOperations({store, brandOptions, now = () =>
           if(newBrands.some(brand=>!available.has(brand))) throw Error('A selected brand is no longer in POINTBASE. Refresh brand options.');
         }
         const target=Object.fromEntries(fields.map(key=>[key,key in patch?patch[key]:(current?.[key]??null)]));
+        if((text(target.bankName)||text(target.bankAccountNo))&&(!text(target.bankName)||!text(target.bankAccountNo))) throw Error('Enter both Bank Name and Account No.');
+        if(text(target.bankName).length>160||text(target.bankAccountNo).length>64||/[\u0000-\u001f\u007f]/.test(text(target.bankName)+text(target.bankAccountNo))) throw Error('Check supplier bank details.');
         return {id:current?._id || operationId('SUPPLIER',identity),supplierId:identity,expected:current?version(current):null,patch:target,
           before:current?Object.fromEntries(fields.map(key=>[key,current[key]??null])):null,time:now().toISOString()};
       },

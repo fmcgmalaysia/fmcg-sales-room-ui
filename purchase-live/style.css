@@ -702,3 +702,5 @@ body dialog.po-dialog :is(.btn.primary,.btn.danger):not(:disabled):is(:hover,:fo
 #modal .operation-status[hidden]{display:none}#modal .operation-status strong{display:block;font-size:11px;line-height:17px;font-weight:700}#modal .operation-status small{display:block;font-size:10px;line-height:15px;margin-top:3px;color:var(--master-muted)}
 #liveStatus.complete{background:#e7f4eb;color:var(--master-green);border-bottom-color:#c4dfcc}
 .po-read-status{padding:6px 10px;margin-bottom:8px;border:1px solid #cfdfed;border-radius:4px;background:#eef5fb;color:var(--master-muted);font-size:11px}
+
+.supplier-bank-fields{border-top:1px solid #d5e1eb;margin-top:6px;padding-top:6px}.supplier-bank-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.supplier-bank-fields h3{font-size:11px;margin:4px 0}@media(max-width:600px){.supplier-bank-pair{grid-template-columns:1fr;gap:0}}
