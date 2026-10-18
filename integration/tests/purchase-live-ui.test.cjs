@@ -30,7 +30,7 @@ test('orange source PO keeps unchecked and mixed-supplier selections from accide
  w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:15,revision:'P2'}},
   {...w.tasks[0],id:'GREEN',po:'NCT-PO-EXISTING'});h.reply(w);h.click({view:'active'});
  h.change({dataset:{select:'TASK',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/已勾选行/);assert.equal(h.node('#modal').open,false);
- h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/同一供应商/);assert.match(h.node('#app').innerHTML,/2 selected/);assert.equal(h.node('#modal').open,false);
+  h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});assert.match(h.node('#liveStatus').textContent,/同一供应商/);h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/已勾选行/);assert.match(h.node('#app').innerHTML,/1 selected/);assert.equal(h.node('#modal').open,false);
  h.click({sourcePoTask:'GREEN'});assert.match(h.node('#dialogContent').innerHTML,/Review P.O./);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="savePo"/);assert.equal(h.messages.length,1);
 });
 test('clicked progress stage opens its task with explicit receiving issue instead of a false completion',()=>{
@@ -960,4 +960,23 @@ test('PDF preparation is visible before upload and rejected local files restore 
   else assert.match(h.node('#dialogError').textContent,/有效的 PDF/);
   assert.equal(h.node('#uploadPurchaseDocument').disabled,false);assert.equal(h.node('#uploadPurchaseDocument').textContent,'Upload 上传');
  }
+});
+
+
+test('first Active source selection disables incompatible checkboxes, keeps cross-customer matches and Clear restores choices',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,po:'',procurement:{revision:'P1',totalCtn:60}});
+ const source=(id,supplierId,extra={})=>({...w.tasks[0],id,supplierId,ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{revision:'P-'+id,totalCtn:20},...extra});
+ w.tasks.push(source('B','B'),{...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',supplierId:'B',ord:20,procurement:{revision:'P2',totalCtn:20}},source('UNKNOWN','B',{procurement:{totalCtn:null,revision:''}}),source('INVOICE','B',{salesInvoiceLocked:true}),source('EXISTING','B',{po:'NCT-PO-EXISTING'}));
+ const checkbox=id=>h.node('#app').innerHTML.match(new RegExp('<input[^>]+data-select="'+id+'"[^>]*>'))[0];
+ h.reply(w);h.click({view:'active'});assert.doesNotMatch(checkbox('OTHER'),/disabled/);h.change({dataset:{select:'B',selectKind:'source'},checked:true});
+ assert.match(checkbox('B'),/checked/);assert.doesNotMatch(checkbox('B'),/disabled/);assert.doesNotMatch(checkbox('OTHER'),/disabled/);for(const id of ['UNKNOWN','INVOICE','EXISTING'])assert.match(checkbox(id),/disabled/);
+ assert.match(checkbox('TASK'),/disabled/);h.change({dataset:{select:'OTHER',selectKind:'demand'},checked:true});assert.match(h.node('#app').innerHTML,/2 selected/);h.click({sourcePoTask:'B'});assert.match(h.node('#dialogContent').innerHTML,/40 CTN/);
+ h.click({controlId:'closeModal'});h.change({dataset:{select:'OTHER',selectKind:'demand'},checked:false});h.change({dataset:{select:'B',selectKind:'source'},checked:false});assert.match(h.node('#app').innerHTML,/0 selected/);assert.doesNotMatch(checkbox('EXISTING'),/disabled/);
+ h.change({dataset:{select:'B',selectKind:'source'},checked:true});h.click({controlId:'clearSelection'});assert.doesNotMatch(checkbox('OTHER'),/disabled/);assert.doesNotMatch(checkbox('EXISTING'),/disabled/);
+});
+
+test('forged or stale Active checkbox changes cannot bypass the compatibility guard and Finance locks',async()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'},{id:'B',name:'OTHER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'',procurement:{revision:'P1',totalCtn:100}});w.tasks.push({...w.tasks[0],id:'LOCKED'}, {...w.tasks[0],id:'FOREIGN',supplierId:'B'});h.reply(w);h.click({view:'active'});
+ h.click({view:'po'});const request=h.messages.findLast(m=>m.type==='PURCHASE_ORDERS_REQUEST');h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[{id:'LOCK',state:'ACTIVE',documentStatus:'Awaiting documents',supplierName:'SUPPLIER',customerName:'CUSTOMER',number:'PO-LOCK',taskIds:['LOCKED'],supplierId:'S',documents:[],history:[],procurementHandoff:{stage:'OWNED',editable:false}}]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'active'});
+ h.change({dataset:{select:'TASK',selectKind:'demand'},checked:true});for(const id of ['LOCKED','FOREIGN']){const el={dataset:{select:id,selectKind:'demand'},checked:true,disabled:false};h.change(el);assert.equal(el.checked,false);assert.match(h.node('#app').innerHTML,/1 selected/);}assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,0);
 });
