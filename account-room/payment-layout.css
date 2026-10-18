@@ -20,3 +20,4 @@ body #documents{width:640px;max-width:calc(100vw - 32px)}body #documents .dialog
 
 body .account-purchases.acc-plan :is(.acc-chase-reason,.acc-chase-meta){color:#E51B2B}.acc-chase-reason{display:block;font-weight:600}
 .acc-account-tabs{display:flex;gap:6px;margin-bottom:10px}.acc-scope-note{font-size:11px;color:#647b93;margin:8px 0}.acc-scope-note .acc-link{font-size:11px}
+body .account-purchases.acc-plan table{min-width:1320px}.acc-purchase-for+.acc-purchase-for{margin-top:6px}.acc-request-age{display:block;font-weight:600}body .account-purchases.acc-plan :is(th,td):nth-child(4){text-align:right}body .account-purchases.acc-plan :is(th,td):nth-child(8){white-space:nowrap}
