@@ -19,3 +19,4 @@ body #documents{width:640px;max-width:calc(100vw - 32px)}body #documents .dialog
 .acc-pill[data-status]{height:auto;min-height:21px;padding:4px 8px;font-size:10px;font-weight:600;line-height:13px;border-radius:12px}
 
 body .account-purchases.acc-plan :is(.acc-chase-reason,.acc-chase-meta){color:#E51B2B}.acc-chase-reason{display:block;font-weight:600}
+.acc-account-tabs{display:flex;gap:6px;margin-bottom:10px}.acc-scope-note{font-size:11px;color:#647b93;margin:8px 0}.acc-scope-note .acc-link{font-size:11px}
