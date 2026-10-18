@@ -1,0 +1,41 @@
+{
+  "runtime": "48d12823003a12f9375d60277ca97d72c5b01b9b",
+  "branch": "style/purchase-po-compact-totals-20261017",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/155",
+  "recovery": "9485d0bc1b54724cbccab74b2218e81df5dfdcfd",
+  "scope": "PO confirmation markup and scoped style only; existing selection, calculations and save unchanged",
+  "verification": {
+    "uiTests": 107,
+    "failed": 0,
+    "chromeWidth": 760,
+    "chromeHeight": 345.8,
+    "descriptionWidth": 395.29,
+    "descriptionShare": 54,
+    "rowHeights": [
+      39.8,
+      39.4
+    ],
+    "horizontalOverflow": false,
+    "sampleQty": 40,
+    "sampleAmount": 1920,
+    "totalsFont": 20
+  },
+  "pages": {
+    "run": 38929800942,
+    "sha": "48d12823003a12f9375d60277ca97d72c5b01b9b",
+    "conclusion": "success",
+    "marker": "2026-10-17-purchase-po-compact-totals-v2",
+    "threeAssetsExact": true,
+    "originalSevenPoliciesRestored": true,
+    "supersededV1Run": 38929316407
+  },
+  "wix": {
+    "fullReadbackExactOnlyPointerChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSHA256": "133f9091f27d8b496be38853387f0ad8fbade7be9d8753bd1f0b61b34b54e026",
+    "afterSHA256": "0a9c748a00f82e251b885b3eb6c35284037660f1862fa8fbe14891fef8d755fa",
+    "v1NeverPublishedToWix": true
+  },
+  "public": "Existing formal51425676 refreshed once after confirming no unsaved form. iframe src v2, but embedded region blank; no errors. Actual public new-dialog interaction NOT verified; no repeated refresh, no business transaction.",
+  "mainMerged": false
+}

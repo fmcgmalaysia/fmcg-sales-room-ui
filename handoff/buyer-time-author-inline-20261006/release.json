@@ -1,0 +1,38 @@
+{
+  "objective": "Buyer Room time and author combined in one visible column",
+  "codeCommit": "0038703567c7b02826b92a861b2a3b1719eeca8c",
+  "branch": "style/buyer-time-author-inline-room5",
+  "pullRequest": 10,
+  "marker": "2026-10-06-buyer-time-author-inline-room5-v1",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "pages": {
+    "run": 37416234161,
+    "status": "success",
+    "sourceEqualsRepository": true
+  },
+  "wix": {
+    "pageCodeUnchanged": true,
+    "pageReadbackMatchesBaseline": true,
+    "publishedAndLive": true
+  },
+  "temporaryPermissionRevoked": true,
+  "public": {
+    "account": "BERJAYA 06",
+    "mySelectionInline": "passed",
+    "orderFormInline": "passed",
+    "spacing": "passed",
+    "quantityPencilAndTotals": "visually retained",
+    "selectionCount": 8,
+    "quoteCount": 7,
+    "awaitingCount": 1,
+    "cartons": 150,
+    "total": "USD 20,838.00",
+    "errors": [],
+    "refresh": "Force refresh initially retained old iframe cache; regular reload then verified current build and both displays",
+    "actualQuantityWrites": false,
+    "actualExcelDownload": false
+  },
+  "regressionTestsPassed": 25,
+  "initialPreviewIssue": "Restored baseline before fixing display-only access to author element; corrected preview Enter/readonly/Saving check passed with no errors",
+  "userAcceptance": "pending"
+}

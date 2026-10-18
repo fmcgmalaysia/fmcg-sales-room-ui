@@ -1,0 +1,21 @@
+{
+  "status": "Published recovery; formal unsubmitted-order layout verified",
+  "codeCommit": "4f8ae7d",
+  "pullRequest": 75,
+  "recoveryOf": "335389a QTY column wrapping regression",
+  "change": "Restore original 17% QTY width and version Sales embed to avoid stale cache",
+  "pagesRun": 38508062318,
+  "pagesJob": 115670009298,
+  "pagesStatus": "Success",
+  "pagesDuration": "22s",
+  "exactPublicAssets": 11,
+  "wix": "One Sales URL token replaced, full before/after code exact, published and live",
+  "formalBuild": "2026-10-14-sales-qty-recovery-v1",
+  "formalQuantityCellWidth": 162.2375,
+  "quantityAndPencilSameRow": true,
+  "consoleErrors": [],
+  "temporaryRuleRemoved": true,
+  "originalRulesRestored": 7,
+  "actualBusinessWrites": false,
+  "mainMerged": false
+}

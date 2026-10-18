@@ -1,0 +1,20 @@
+{
+  "code": "e15aeaa",
+  "base": "78c1768",
+  "branch": "style/purchase-progress-density-20261015",
+  "build": "2026-10-15-progress-density-v1",
+  "tests": {
+    "pass": 122,
+    "fail": 0
+  },
+  "status": "candidate-not-deployed",
+  "githubPages": "not deployed",
+  "wix": "not synchronized/published",
+  "publicAcceptance": "pending",
+  "hashes": {
+    "purchase-live/task-grid.js": "f76059c7faad4653571ab6bef9d720db4fa13a95420e7d2d25e29e820d5c1825",
+    "purchase-live/task-grid.css": "2f0dea38e3b64d8fba0a852794332f89e55ed8679d8b3d4b0a6ceaead1ebfaf5",
+    "purchase-live/style.css": "1de0fa442b5b4c719378b14ffe0c1f94071044d9b3ee3bc32db9bb2b08d695f2",
+    "purchase-live/index.html": "9b67e201d067cdc8d013769293c8e00317ef0cc93a6028f596b2c15335b90afd"
+  }
+}

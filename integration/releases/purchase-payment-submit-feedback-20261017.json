@@ -1,0 +1,43 @@
+{
+  "runtime": "3af36f3abf7e438e00d05cce5073dfa42105c905",
+  "branch": "fix/purchase-payment-submit-feedback-20261017",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/156",
+  "recovery": "48d12823003a12f9375d60277ca97d72c5b01b9b",
+  "scope": "Payment request progress display only; payload, timeout, receipt check, journal retry, financial backend unchanged",
+  "tests": {
+    "passed": 158,
+    "failed": 0,
+    "cases": [
+      "duplicate submit locked",
+      "wrong receipt ignored",
+      "timeout checks original identity",
+      "pending status locked",
+      "exact retry identity retained",
+      "definite rejection restores controls/input",
+      "matching success notice only"
+    ]
+  },
+  "chromeDemo": {
+    "delaySeconds": 15,
+    "waitingVisible": true,
+    "submitDisabled": true,
+    "greenEntryOnlyAfterReceipt": true,
+    "submittedDetailsVerified": true,
+    "noRealTransaction": true
+  },
+  "pages": {
+    "run": 38931621213,
+    "conclusion": "success",
+    "threeAssetsExact": true,
+    "marker": "2026-10-17-purchase-submit-feedback-v1",
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "fullReadbackExactOnlyPointerChanged": true,
+    "publishedLiveReceipt": true,
+    "beforeSHA256": "0a9c748a00f82e251b885b3eb6c35284037660f1862fa8fbe14891fef8d755fa",
+    "afterSHA256": "8856ee74022d64ba53f366a3144d8294074b81e3ea148acb8c508338daf25b85"
+  },
+  "public": "Current user tab51425701 has oldv2 Supplier allocation form open. Do not refresh or discard input. New real financial submission not executed; public in-flight feedback acceptance remains pending.",
+  "mainMerged": false
+}

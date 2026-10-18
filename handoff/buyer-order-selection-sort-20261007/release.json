@@ -1,0 +1,59 @@
+{
+  "task": "Order Form shares My Selection order",
+  "commit": "f27b3cc80f97e6104c9e846dccb6fa685f83fcaf",
+  "branch": "fix/buyer-order-selection-sort-room5",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/23",
+  "code": {
+    "status": "Complete; one renderOrder comparator invocation changed",
+    "htmlSha256": "afedea58d190024043edafb19ec781bc2c7a71d8146c89e049d562eb28f3a2b5",
+    "wixExactReadbackSha256": "2d658fb04f4c7e1c6c895cb892cd6a8e4566f2ad6d919df27376a92ad7db4e7a",
+    "wixReadbackMatchesCandidate": true,
+    "cssUnchanged": true,
+    "qtyAndOtherHandlersUnchanged": true
+  },
+  "pages": {
+    "status": "Success; public script matched candidate",
+    "run": "37565622376",
+    "duration": "20s",
+    "marker": "2026-10-07-buyer-order-selection-sort-room5-v1",
+    "temporaryPermissionRemoved": true,
+    "allowedBranches": [
+      "main"
+    ]
+  },
+  "wix": {
+    "status": "Publish/live receipt captured; exact one-line candidate readback matched",
+    "deploymentId": "Not separately captured",
+    "nativeLayoutChanged": false
+  },
+  "public": {
+    "status": "Passed assistant real Sales Room Entry acceptance",
+    "allItems": 9,
+    "orderedItemIdsMatchExactly": true,
+    "searchItems": 2,
+    "searchRelativeOrderMatches": true,
+    "withQtyLiveItems": 0,
+    "withQtyNonemptyRelativeOrder": "Local fixture checked",
+    "rowHeight": 43,
+    "agentCustomerWrites": 0,
+    "agentOrdersSubmitted": 0,
+    "excelDownloadClicked": false,
+    "quantityObservation": "A new submitted order appeared during acceptance; existing requested quantities20/5/10 are visible in3 Track lines, total35. Draft qty is now0. Agent did not submit."
+  },
+  "limits": [
+    "Independent user acceptance not yet recorded; no main merge or new verified tag.",
+    "Initial direct page loading stalled; actual Sales Room Entry loaded correct data. Existing loading problem not repaired.",
+    "No nonempty live With Qty set after submitted order cleared draft; nonempty subset order checked in local fixture.",
+    "No backend, quote, identity, export, AppsScript, CMS or styling changes."
+  ],
+  "recovery": {
+    "parent": "c4cfbcddbc7eb27cfe297fe6a8fa3b75ef68c764",
+    "protectedTags": [
+      "verified/my-selection-sort-20261006",
+      "verified/buyer-quantity-arrows-20261006"
+    ],
+    "method": "Reverse only one sorting call and build/cache references; never deploy entire old tag"
+  },
+  "userAccepted": false,
+  "mainMerged": false
+}

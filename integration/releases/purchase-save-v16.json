@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Asia/Kuala_Lumpur",
+  "branch": "fix/purchase-save-feedback",
+  "pullRequest": 54,
+  "codeCommit": "e0d0a1566208344912d07ed7aa3918e599308b37",
+  "build": "2026-10-11-purchase-save-v16",
+  "recoveryCommit": "4e471767db4281da516f7164bc2ec40ce98980e9",
+  "pages": { "runId": "38110405593", "status": "success", "exactScriptMatch": true, "buildMarkerVerified": true },
+  "wix": { "homeBeforeExact": true, "homeAfterExact": true, "patch": "One build reference", "publishedLiveReceipt": true, "backendChanged": false },
+  "publicVerification": {
+    "url": "https://fmcg999.wixstudio.com/master",
+    "forceRefreshBuild": "20261011-purchase-save-v16",
+    "singleClickSave": true,
+    "savingButtonDisabled": true,
+    "refreshPersistsValue": true,
+    "oneAuditPerSave": true,
+    "testValueRestored": true,
+    "test": "Disposable Eclipse test task Disc2 0 to 0.10 percent at 12:07:05, restored to 0 at 12:07:47. Both single click, actor LAW. Quantity, PO, selling price unchanged.",
+    "intermittentBackendFailureReproduced": false,
+    "delayedReceiptRecovery": "Automated test only; public save replies arrived normally."
+  },
+  "automatedChecks": { "passed": 161, "failed": 0 },
+  "temporaryBranchRule": "Added for this release and removed; previous eight rules retained.",
+  "userAcceptance": "Pending; no main merge or new verified tag.",
+  "excluded": ["Purchase Order redesign", "zero capsule color", "PDF upload acceptance", "backend root-cause claim"]
+}

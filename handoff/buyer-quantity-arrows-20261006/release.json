@@ -1,0 +1,34 @@
+{
+  "objective": "QTY Up/Down row navigation",
+  "commit": "e1177f69f6a4d5d149e607fde87fda5f7ad31d19",
+  "marker": "2026-10-06-buyer-quantity-arrows-room5-v1",
+  "recoveryTag": "verified/buyer-quantity-blur-20261006",
+  "testsPassed": 31,
+  "pages": {
+    "run": 37422845931,
+    "status": "success",
+    "sourceMatches": true
+  },
+  "wix": {
+    "pageCodeUnchanged": true,
+    "readbackMatches": true,
+    "publishedLive": true
+  },
+  "public": {
+    "account": "BERJAYA 06",
+    "forceRefreshed": true,
+    "markerVerified": true,
+    "upDown": true,
+    "blurLocksOriginal50": true,
+    "lockedQty100RemainsLocked": true,
+    "skipUnquoted": true,
+    "firstLastBoundary": true,
+    "errors": [],
+    "realQuantityChanged": false,
+    "orderSubmitted": false,
+    "newValueSaving": "verified in isolated mock browser; public used original quantity"
+  },
+  "temporaryPermissionRevoked": true,
+  "pullRequest": 13,
+  "userAcceptance": "pending"
+}

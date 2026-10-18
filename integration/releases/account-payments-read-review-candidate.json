@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Asia/Kuala_Lumpur",
+  "branch": "feat/account-purchase-payments",
+  "status": "wix-draft-synchronized-awaiting-action-time-pages-branch-approval",
+  "objective": "Account Purchase Payments and Creditors from the shared PO; Checked is final transaction reconciliation, not an invoice-only check",
+  "prerequisites": "Root rules and START_HERE; v18 final handoff; Account original discussion/layout; PO workflow and current authoritative live source",
+  "freshBeforeComparison": {
+    "home": true,
+    "accountPage": true,
+    "purchaseOrderWorkflow": true,
+    "purchaseOrdersWeb": true,
+    "purchaseAccess": true,
+    "purchaseDocumentPolicy": true,
+    "publicPurchaseApp": true,
+    "publicAccountApp": true,
+    "publicAccountStyle": true
+  },
+  "recovery": "Current public v18 at 18226cb; final record 2b031aa. Scoped user-verified Send Order tag 6b545502 remains protected, not a whole Purchase acceptance.",
+  "reads": "Existing StaffMasterAccess, company orders/tasks/activity, SharedSuppliers and PurchaseOrders. No new sync, collection or supplier upload service change.",
+  "writes": "No financial approval enabled: the unpublished invoice-only candidate is blocked until authoritative warehouse and financial reconciliation are connected",
+  "permission": "ACCOUNT department or existing TOP MANAGEMENT/SUPER ADMIN, plus approved member, unique active employee binding. Purchase-only staff rejected.",
+  "freshCMS": "StaffMasterAccess has one existing TOP MANAGEMENT / LAW binding; read only, no permission or member changes",
+  "reviewInvalidation": "Canonical current files plus PO identity and financial line content. Supplier quantity/cost/file changes invalidate; non-financial row order does not.",
+  "ui": "12 compact columns, 11px, 44px rows, 30px gray-blue headers, blue bilingual compact dialogs, aligned MYR amounts; other Account tabs retained",
+  "verification": {
+    "integrationChecks": 174,
+    "localFixtureOnly": true,
+    "localChecks": [
+      "Current invoice projects into Creditors without a second write",
+      "PI and superseded invoices excluded",
+      "Legacy completion flags never approve transaction",
+      "Client-supplied receipt/payment flags rejected without PO writes",
+      "Account-only authorization, stale request and company protections"
+    ],
+    "previousInvoiceOnlyFixture": "Superseded by owner transaction-check rule; prior green-toggle fixture is not current acceptance",
+    "localBrowserChecks": [
+      "Payments renders both fixture PO rows",
+      "Creditors renders only current Final Invoice fixture",
+      "Checked disabled",
+      "GHR switch clears NCT rows"
+    ]
+  },
+  "protected": "Existing purchase Save, costs/quantity writes, intake/Buyer/Sales flows, PDF upload function and service, company folders, credentials, real PO and supplier documents unchanged",
+  "pending": [
+    "Final Invoice/CN amount entry and audit",
+    "Payment recording/proof upload into new Account roots and Purchase Payment Follow-up",
+    "DO upload support and audited CN not-applicable selection",
+    "Authoritative warehouse receipt reconciliation and final Checked/History gates",
+    "Current candidate browser verification",
+    "GitHub Pages release",
+    "Wix synchronization/publication",
+    "Real public Account acceptance"
+  ],
+  "main": "Not merged; no new verified tag",
+  "ownerDecisions": {
+    "payableBasis": "Final supplier Invoice is authoritative; PO amount is reference only; applicable CN adjustments must be reconciled",
+    "checked": "Final INV and DO plus CN or explicit finance CN-not-applicable decision; warehouse actual received quantities must exist; no unresolved short delivery or overpayment",
+    "cnNotApplicable": "Allowed; record finance staff name, ID and timestamp",
+    "creditorEntry": "Current linked Final Invoice upload",
+    "creditorExit": "Authoritative fully paid AND current transaction Checked; retain records and audit",
+    "proofFolders": "Separate Account Dept folders under the existing PURCHASE DEPT parent, alongside existing company Purchase Dept folders"
+  },
+  "accountDocumentRoots": {
+    "NCT": "1grq9bx7TcVhI3baSzpkLG0zglCuBorjA",
+    "GHR": "1hZ4qVKtNP2oc4Fj5NXbEamdIWU0RR30o",
+    "parent": "1c4utbbXIomQ4ej34h0BSLIvISVWS9QDh",
+    "verifiedCreated": "2026-10-11",
+    "serviceRoutingConnected": false
+  },
+  "codeCommit": "e639ca061074d3c8f103e4bff6980fb091c07027",
+  "wixDraft": {
+    "normalizedExact": true,
+    "published": false,
+    "hashes": {
+      "release-home-before.js": "e3b840d59034844a15925ecde943f03bcf9d1f83338c85095dfe39c5a4fb3358",
+      "release-home-after.js": "7875199dc51dd852f99351a843cf1a145a6506ca0dfd144df731fdc2ce9d83c7",
+      "release-account-before.js": "4a6252f462ba72834cabacb8edcd525d7abd0c45f6d5d77144c9c8a6453daba4",
+      "release-account-after.js": "187be3b79f671a34712bfe3fa360623be1997dbbaa068e8087fdfe15ec1a5615",
+      "release-workflow-before.js": "3cc63d35b90c3f3201e379f80592472c2a91ae107f852e36068fd98f00f39729",
+      "release-workflow-after.js": "a9d84b1b64f857de62a419cc73d338b51800b840d5c237dae022ebd556ec08b1",
+      "release-accountPurchaseReview-after.js": "2b81c6ecd24b6f0d223115945bf361992aea5960a87179610cbaf58d967e6c19",
+      "release-accountPurchase-web-after.js": "f95eef9b7adedd7ecd5d2413e9741065d38b13c4a2d2ceaa77338d7df9df9eb3"
+    }
+  },
+  "pages": {
+    "deployed": false,
+    "temporaryBranchRuleAdded": false,
+    "approvalRequested": true,
+    "priorSevenRulesUnchanged": true
+  }
+}

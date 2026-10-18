@@ -1,0 +1,47 @@
+{
+  "total_count": 7,
+  "branch_policies": [
+    {
+      "id": 62603322,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjYwMzMyMg==",
+      "name": "feat/master-gp-margin",
+      "type": "branch"
+    },
+    {
+      "id": 62530810,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjUzMDgxMA==",
+      "name": "feat/nct-order-submit-room6",
+      "type": "branch"
+    },
+    {
+      "id": 62596223,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjU5NjIyMw==",
+      "name": "feat/purchase-adjustment-cost",
+      "type": "branch"
+    },
+    {
+      "id": 62584139,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjU4NDEzOQ==",
+      "name": "fix/purchase-approved-ux-layout",
+      "type": "branch"
+    },
+    {
+      "id": 59773235,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k1OTc3MzIzNQ==",
+      "name": "main",
+      "type": "branch"
+    },
+    {
+      "id": 62639211,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjYzOTIxMQ==",
+      "name": "style/purchase-icons-spacing-feedback",
+      "type": "branch"
+    },
+    {
+      "id": 62611670,
+      "node_id": "MDE2OkdhdGVCcmFuY2hQb2xpY3k2MjYxMTY3MA==",
+      "name": "style/purchase-table-track",
+      "type": "branch"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "public": {
+    "url": "https://fmcg999.wixstudio.com/master",
+    "verification": "PASS: fresh user public tab51425439 iframe quantity-clean-v1, Active five true SCOMM tasks; all five Order Qty cells have zero small subtexts; quantity values preserved500|500,20|20,30|0,50|0,100|0; five drag handles remain. No production writes.",
+    "evidence": "evidence/public-clean-quantities.png"
+  },
+  "code": "6b9ca0f2e59d8e42e0d2074e729fd5dc91614bb2",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/95",
+  "branch": "fix/purchase-quantity-labels-20261016",
+  "date": "2026-10-16",
+  "recovery": "5f06b0b4dc68f877d3b133b8c3ec8b766ad4160e",
+  "tests": {
+    "pass": 86,
+    "fail": 0
+  },
+  "wix": {
+    "publishedAndLiveReceipt": true,
+    "completeAfterReadback": true,
+    "onlyTokenChanged": true,
+    "beforeMatchesLastPublished": true
+  },
+  "protected": "Demand/planned numbers, orange mismatch, source quantities, quantity case controls, save/drag/backend unchanged. User now explicitly removes This P.O./Extra P.O. labels, superseding earlier instruction to retain subtext.",
+  "wixRecord": "c915596f4b7cea0f67c4b8009beac8c8cd115ee7",
+  "pages": {
+    "normalizedExactAssets": 31,
+    "run": 38781479356,
+    "status": "success",
+    "marker": "2026-10-16-purchase-quantity-clean-v1"
+  },
+  "deploymentPolicy": {
+    "temporary": 63186942,
+    "removed": true,
+    "originalSevenExact": true
+  }
+}

@@ -1,0 +1,145 @@
+Browser tab: 51421525, Title: "Configure environment github-pages · fmcgmalaysia/fmcg-sales-room-ui", URL: "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments/21782900731/edit".
+1 AXWebArea Configure environment github-pages · fmcgmalaysia/fmcg-sales-room-ui, URL: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments/21782900731/edit
+	2 container
+		3 link Description: Skip to content, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments/21782900731/edit#start-of-content
+		4 container Global navigation menu
+			5 pop up button Open menu
+			6 link Description: Homepage ( g then d ), Value: github.com/
+			7 container Breadcrumbs
+				8 content list
+					9 container
+						10 link Description: fmcgmalaysia, Value: github.com/fmcgmalaysia
+					11 container
+						12 link Description: fmcg-sales-room-ui, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui
+						13 pop up button (collapsed) Switch repository ( alt shift r ), Secondary Actions: Expand
+			14 button Open quick search dialog, type / to search
+				15 text Type 
+				16 text /
+				17 text  to search
+			18 link Description: Chat with Copilot, Value: github.com/copilot
+			19 pop up button (collapsed) Description: Open Copilot…, Secondary Actions: Expand
+			20 pop up button (collapsed) Create new..., Secondary Actions: Expand
+			21 link Description: All issues, Value: github.com/issues
+			22 link Description: All pull requests, Value: github.com/pulls
+			23 link Description: All repositories, Value: github.com/repos
+			24 link Description: You have no unread notifications ( g then n ), Value: github.com/notifications
+			25 pop up button Open user navigation menu
+				26 image User avatar
+			27 heading Repository navigation, Value: 2
+				28 text Repository navigation
+			29 container Repository
+				30 content list
+					31 link Description: Code, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui
+					32 link Description: Issues, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/issues
+					33 link Description: Pull requests  (6), Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/pulls
+					34 link Description: Agents, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/agents?author=fmcgmalaysia
+					35 link Description: Actions, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/actions
+					36 link Description: Projects, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/projects
+					37 link Description: Wiki, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/wiki
+					38 link Description: Security and quality, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/security
+					39 link Description: Insights, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/pulse
+					40 link Description: Settings, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings
+	41 container
+		42 button Dismiss this message
+		43 text Deployment branch rule "fix/catalogue-brand-sort-search-room5" removed.
+	44 container repo-content-pjax-container
+		45 heading Settings: fmcgmalaysia/fmcg-sales-room-ui, Value: 1
+			46 text Settings: fmcgmalaysia/fmcg-sales-room-ui
+		47 container General settings
+			48 content list
+				49 link Description: General, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings, ID: item-a672eb89-ea7a-4cb0-937b-d655b041473f
+				50 container
+					51 heading Access, Value: 2, ID: heading-title-f245d1b5-5f31-484a-b0e8-28e652a3fe32
+						52 text Access
+					53 content list Access, ID: group-e740cf6f-87fb-4631-9e72-71190842138e
+						54 link Description: Collaborators, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/access, ID: item-9b941e1c-c786-4e9c-aaca-0726b3280a3f
+						55 button (collapsed) Moderation, ID: item-0d051317-6c80-417d-84b7-a3bcd7d22476, Secondary Actions: Expand
+				56 container
+					57 heading Code, planning, and automation, Value: 2, ID: heading-title-86520024-2bdf-4fa0-bd26-0a35f723dba7
+						58 text Code, planning, and automation
+					59 content list Code, planning, and automation, ID: group-e35b5609-8917-41bf-92b1-ec5c980ea078
+						60 button (collapsed) Rulesets, ID: repo_rules, Secondary Actions: Expand
+						61 link Description: Branches, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/branches, ID: item-c716bfe3-fc53-4c80-91b7-4bf995e00002
+						62 link Description: Tags, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/tag_protection, ID: item-e03f6d97-30ed-44ad-8a09-88483c4ad7c8
+						63 button (collapsed) Actions, ID: item-f1ac7c66-839b-4c8a-b6cd-486e98ea147f, Secondary Actions: Expand
+						64 link Description: Webhooks, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/hooks, ID: item-eff5c3ed-c91c-46b8-97a7-9e0bc4940b36
+						65 button (collapsed) Copilot, ID: item-f508912f-dee4-47d6-98b8-dd61bf2ead52, Secondary Actions: Expand
+						66 button (collapsed) Planning, ID: repo_planning, Secondary Actions: Expand
+						67 link Description: Environments, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments, ID: item-358f9ce9-15ac-4c06-8627-0bc1c6d9ecba
+						68 link Description: Codespaces, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/codespaces, ID: item-8fca06ff-c913-40be-a071-c8b5880cb472
+						69 link Description: Pages, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/pages, ID: item-feb0e01e-3ef1-4b4b-a7dd-5dfafdd83dde
+				70 container
+					71 heading Security and quality, Value: 2, ID: heading-title-b90de1e4-be81-4578-a91c-195cb16bd600
+						72 text Security and quality
+					73 content list Security and quality, ID: group-bf34165c-1f97-4529-b3bb-4f559a98c2e5
+						74 link Description: Advanced Security, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/security_analysis, ID: item-25347b86-e11d-4f96-b769-dd8341b43295
+						75 link Description: Deploy keys, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/keys, ID: item-2206e7d7-78d3-4f7a-97ff-8615e27eb8c7
+						76 button (collapsed) Secrets and variables, ID: item-d34154d5-394c-4f65-8c88-b6b99d3003bc, Secondary Actions: Expand
+				77 container
+					78 heading Integrations, Value: 2, ID: heading-title-a9df4cdb-35d7-4a8e-9657-a08c0f105bac
+						79 text Integrations
+					80 content list Integrations, ID: group-47f8d652-c422-48f1-944c-370dad010307
+						81 link Description: GitHub Apps, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/installations, ID: item-edc892e9-1cab-4220-a502-001470d7b680
+						82 link Description: Email notifications, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/notifications, ID: item-ee4805a7-18c0-4153-8625-300566cf1ea6
+		83 heading Environments / Configure github-pages, Value: 2
+			84 link Description: Environments, Value: github.com/fmcgmalaysia/fmcg-sales-room-ui/settings/environments
+			85 text  / Configure 
+			86 text github-pages
+		87 container
+			88 heading Deployment protection rules, Value: 3
+				89 text Deployment protection rules
+			90 text Configure reviewers, timers, and custom rules that must pass before deployments to this environment can proceed.
+			91 checkbox (settable, integer) Description: Required reviewers, Value: 0, ID: use-approval-gate
+			92 text Specify people or teams that may approve workflow runs when they access this environment.
+			93 checkbox (settable, integer) Description: Wait timer, Value: 0, ID: use-wait-gate
+			94 text Set an amount of time to wait before allowing deployments to proceed.
+			95 text Enable custom rules with GitHub Apps  Preview
+			96 link Description: Learn about existing apps, Value: docs.github.com/actions/deployment/protecting-deployments/configuring-custom-deployment-protection-rules#using-existing-custom-deployment-protection-rules
+			97 text  or 
+			98 link Description: create your own protection rules, Value: docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment#custom-deployment-protection-rules
+			99 text  so you can deploy with confidence.
+			100 checkbox (settable, integer) Description: Allow administrators to bypass configured protection rules, Value: 1, ID: gates-admin-bypass-allowed
+			101 button Save protection rules
+		102 heading Deployment branches and tags, Value: 3
+			103 text Deployment branches and tags
+		104 text Limit which branches and tags can deploy to this environment based on rules or naming patterns.
+		105 pop up button (collapsed) Selected branches and tags, ID: action-menu-b07459f1-7d60-4208-9546-66b04d213bac-button, Secondary Actions: Expand
+		106 text 1 branch and 0 tags allowed
+		107 text main Currently applies to 1 branch
+		108 pop up button (collapsed) Edit, Secondary Actions: Expand
+		109 button Remove
+		110 button (collapsed) Add deployment branch or tag rule, Secondary Actions: Expand
+		111 container
+			112 heading Environment secrets, Value: 2, ID: environment-secrets
+				113 text Environment secrets
+			114 text Secrets are encrypted environment variables. They are accessible only by GitHub Actions in the context of this environment by using the 
+			115 link Description: secret context, Value: docs.github.com/actions/learn-github-actions/contexts#secrets-context
+			116 text . This environment has no secrets.
+			117 button Add environment secret
+		118 container
+			119 heading Environment variables, Value: 2, ID: environment-variables
+				120 text Environment variables
+			121 text Variables are used for non-sensitive configuration data. They are accessible only by GitHub Actions in the context of this environment by using the 
+			122 link Description: variable context, Value: docs.github.com/actions/learn-github-actions/contexts#vars-context
+			123 text . This environment has no variables.
+			124 button Add environment variable
+	125 container
+		126 heading Footer, Value: 2
+			127 text Footer
+		128 link Description: GitHub Homepage, Value: github.com/
+		129 text © 2026 GitHub, Inc.
+		130 container Footer
+			131 heading Footer navigation, Value: 3, ID: sr-footer-heading
+				132 text Footer navigation
+			133 content list Footer navigation
+				134 link Description: Terms, Value: docs.github.com/site-policy/github-terms/github-terms-of-service
+				135 link Description: Privacy, Value: docs.github.com/site-policy/privacy-policies/github-privacy-statement
+				136 link Description: Security, Value: github.com/security
+				137 link Description: Status, Value: githubstatus.com/
+				138 link Description: Community, Value: github.community/
+				139 link Description: Docs, Value: docs.github.com/
+				140 link Description: Contact, Value: support.github.com/?tags=dotcom-footer
+				141 button Manage cookies
+				142 button Do not share my personal information
+
+The focused UI element is 42 button Dismiss this message

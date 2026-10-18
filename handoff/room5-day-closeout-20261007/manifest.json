@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-07",
+  "timezone": "Asia/Kuala_Lumpur",
+  "capturedAtUtc": "2026-10-07T11:56:14Z",
+  "recordType": "archive-not-user-verified",
+  "functionalCode": "a1f2b4973b813974c2ca2c1304401f680ae6a453",
+  "releaseRecord": "862ad6b",
+  "pagesCode": "7053ebda270f183e3dd1fd7227093f8c86a492a9",
+  "pagesMarker": "2026-10-07-history-product-identifiers-room5-v1",
+  "pagesRun": 37598512517,
+  "pagesJob": 112716866684,
+  "wixBuild": "Success2026-10-07 17:44:52 MYT",
+  "wixDeploymentId": null,
+  "wixExactReadback": "5livefiles archived; mainPage/bothBackends/popup matched repository;globalCSS original687chars",
+  "tests": 46,
+  "publicVerification": {
+    "buyerQuantity": 1033,
+    "salesQuantity": 1033,
+    "originalQuantity": 30,
+    "increments": [
+      1000,
+      1,
+      2
+    ],
+    "historyRows": 3,
+    "activeLineCount": 15,
+    "requestReplay": "One same-ID recovery; quantity counted once",
+    "historyLayout": "1316clientWidth==scrollWidth",
+    "stability": "Wix generic request/500 occurred; root cause unknown; independent acceptance pending"
+  },
+  "excel": "paused by user; no delivery changes or successful real file claim",
+  "main": "d16cd1bfd311b58e772c802f92d498e39dbb91b3",
+  "mainMerged": false,
+  "temporaryAccess": "main-only confirmed",
+  "files": {
+    ".gitattributes": {
+      "bytes": 7,
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    "live/buyer-page.js": {
+      "bytes": 13388,
+      "sha256": "e523348a53185997383876b9e9856efbd39e34015f3f5dd07225eb3c3c1c41e5"
+    },
+    "live/catalogueAuth.web.js": {
+      "bytes": 68158,
+      "sha256": "27fd22c9388fb809f54f3db53858bc3f9d6f1c579b0bf426a691a401e6af640e"
+    },
+    "live/global.css": {
+      "bytes": 687,
+      "sha256": "ca704b343437bface432d2c9ce2d316467384d37020218714c7c8c67d1322a44"
+    },
+    "live/onboarding.web.js": {
+      "bytes": 99787,
+      "sha256": "864cef16d25ed044ce4816945e3783c88da45844219fa88f919e755d7d9b4fd5"
+    },
+    "live/order-received-lightbox.js": {
+      "bytes": 855,
+      "sha256": "32d794a43211aec603d6c0d5e87eb464ff67cd7035370c290571cdc2aec8e29f"
+    },
+    "READ_FIRST.txt": {
+      "bytes": 795,
+      "sha256": "e06b7ac9abb3695980b17bf097d1ea4c2d27ad21c1ff9bf31620b0644161766f"
+    },
+    "REPORT.txt": {
+      "bytes": 10338,
+      "sha256": "aad87bcdc39813ebd5b28f25c04e4d2af8da993759632bc77d1c62f0d541bac0"
+    }
+  }
+}

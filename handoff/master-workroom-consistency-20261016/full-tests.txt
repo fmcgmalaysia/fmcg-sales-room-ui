@@ -1,0 +1,2436 @@
+TAP version 13
+# Subtest: Account requires an approved matched active personal staff account; Purchase does not gain finance authority
+ok 1 - Account requires an approved matched active personal staff account; Purchase does not gain finance authority
+  ---
+  duration_ms: 1.2617
+  type: 'test'
+  ...
+# Subtest: Final Invoice creates a creditor but upload and legacy flags cannot make Files green
+ok 2 - Final Invoice creates a creditor but upload and legacy flags cannot make Files green
+  ---
+  duration_ms: 7.596
+  type: 'test'
+  ...
+# Subtest: PI and superseded invoices do not create a creditor; current Final Invoice does without a second sync
+ok 3 - PI and superseded invoices do not create a creditor; current Final Invoice does without a second sync
+  ---
+  duration_ms: 1.085
+  type: 'test'
+  ...
+# Subtest: no invoice, stale version and wrong company are rejected
+ok 4 - no invoice, stale version and wrong company are rejected
+  ---
+  duration_ms: 1.5954
+  type: 'test'
+  ...
+# Subtest: a procurement price change after Finance Checked restores risk until Finance reviews the new version
+ok 5 - a procurement price change after Finance Checked restores risk until Finance reviews the new version
+  ---
+  duration_ms: 2.3664
+  type: 'test'
+  ...
+# Subtest: prepayment remains visible without final invoice; refund proof reduces cash exposure
+ok 6 - prepayment remains visible without final invoice; refund proof reduces cash exposure
+  ---
+  duration_ms: 0.3509
+  type: 'test'
+  ...
+# Subtest: CN already reflected in reduced Final Invoice is not deducted twice
+ok 7 - CN already reflected in reduced Final Invoice is not deducted twice
+  ---
+  duration_ms: 0.3
+  type: 'test'
+  ...
+# Subtest: short received goods plus CN remain high risk until financial check; approved credit survives partial consumption
+ok 8 - short received goods plus CN remain high risk until financial check; approved credit survives partial consumption
+  ---
+  duration_ms: 0.8219
+  type: 'test'
+  ...
+# Subtest: invoice upload alone cannot approve, remove creditor, or archive; legacy flags ignored
+ok 9 - invoice upload alone cannot approve, remove creditor, or archive; legacy flags ignored
+  ---
+  duration_ms: 0.2667
+  type: 'test'
+  ...
+# Subtest: partial payments sum only confirmed records; PO reference does not determine payable
+ok 10 - partial payments sum only confirmed records; PO reference does not determine payable
+  ---
+  duration_ms: 0.2602
+  type: 'test'
+  ...
+# Subtest: Checked requires receipts and DO; overpayment, unresolved issues and missing CN decision block
+ok 11 - Checked requires receipts and DO; overpayment, unresolved issues and missing CN decision block
+  ---
+  duration_ms: 0.4423
+  type: 'test'
+  ...
+# Subtest: CN reduces payable, audit-bound check makes Files green; Sales Invoice and settled payment gate History
+ok 12 - CN reduces payable, audit-bound check makes Files green; Sales Invoice and settled payment gate History
+  ---
+  duration_ms: 0.3727
+  type: 'test'
+  ...
+# Subtest: new or replaced invoice invalidates amount mapping and check; malformed payment never proves paid
+ok 13 - new or replaced invoice invalidates amount mapping and check; malformed payment never proves paid
+  ---
+  duration_ms: 0.228
+  type: 'test'
+  ...
+# Subtest: shared PO requires a real locked customer invoice for final History, not a bare CMS number
+ok 14 - shared PO requires a real locked customer invoice for final History, not a bare CMS number
+  ---
+  duration_ms: 4.5343
+  type: 'test'
+  ...
+# Subtest: financial action audits server employee, survives lost acknowledgement without duplicate and rejects stale/forged flags
+ok 15 - financial action audits server employee, survives lost acknowledgement without duplicate and rejects stale/forged flags
+  ---
+  duration_ms: 3.8816
+  type: 'test'
+  ...
+# Subtest: payment proof upload uses Account route and lost upload response retries the identical file and one monetary record
+ok 16 - payment proof upload uses Account route and lost upload response retries the identical file and one monetary record
+  ---
+  duration_ms: 2.8271
+  type: 'test'
+  ...
+# Subtest: shared PO waits until every physically received source carton has a customer invoice
+ok 17 - shared PO waits until every physically received source carton has a customer invoice
+  ---
+  duration_ms: 0.4437
+  type: 'test'
+  ...
+# Subtest: an actual payment after withdrawal remains recorded with its instruction exception
+ok 18 - an actual payment after withdrawal remains recorded with its instruction exception
+  ---
+  duration_ms: 1.5597
+  type: 'test'
+  ...
+# Subtest: final Finance check cannot hide an unresolved bank operation
+ok 19 - final Finance check cannot hide an unresolved bank operation
+  ---
+  duration_ms: 0.2407
+  type: 'test'
+  ...
+# Subtest: central patch changes only the new authenticated dispatcher branch
+ok 20 - central patch changes only the new authenticated dispatcher branch
+  ---
+  duration_ms: 0.6802
+  type: 'test'
+  ...
+# Subtest: all protected central actions preserve their exact version16 dispatch and payload
+ok 21 - all protected central actions preserve their exact version16 dispatch and payload
+  ---
+  duration_ms: 10.0346
+  type: 'test'
+  ...
+# Subtest: unauthorized cost requests cannot reach POINTBASE; authorized requests use only the new module
+ok 22 - unauthorized cost requests cannot reach POINTBASE; authorized requests use only the new module
+  ---
+  duration_ms: 1.2752
+  type: 'test'
+  ...
+# Subtest: Debit Note adds receivable without creating inventory or shipment; CN and receipt offset independently
+ok 23 - Debit Note adds receivable without creating inventory or shipment; CN and receipt offset independently
+  ---
+  duration_ms: 18.8825
+  type: 'test'
+  ...
+# Subtest: currencies remain separate; pre-invoice receipt remains visible as customer credit
+ok 24 - currencies remain separate; pre-invoice receipt remains visible as customer credit
+  ---
+  duration_ms: 1.7507
+  type: 'test'
+  ...
+# Subtest: duplicate identity or PDF, invalid date, wrong customer and forged permission rejected
+ok 25 - duplicate identity or PDF, invalid date, wrong customer and forged permission rejected
+  ---
+  duration_ms: 2.7427
+  type: 'test'
+  ...
+# Subtest: unmatched Sales Invoice upload cannot create an extra receivable
+ok 26 - unmatched Sales Invoice upload cannot create an extra receivable
+  ---
+  duration_ms: 0.4049
+  type: 'test'
+  ...
+# Subtest: lost acknowledgement retries same receipt without duplicate upload or ledger entry
+ok 27 - lost acknowledgement retries same receipt without duplicate upload or ledger entry
+  ---
+  duration_ms: 0.8799
+  type: 'test'
+  ...
+# Subtest: mismatched Drive confirmation cannot post money to Debtor
+ok 28 - mismatched Drive confirmation cannot post money to Debtor
+  ---
+  duration_ms: 0.626
+  type: 'test'
+  ...
+# Subtest: completed customer cartons require real dispatch plus each source supplier financial closure
+ok 29 - completed customer cartons require real dispatch plus each source supplier financial closure
+  ---
+  duration_ms: 4.0432
+  type: 'test'
+  ...
+# Subtest: customer completion exposes invoice/quantity only, never supplier identity or costs
+ok 30 - customer completion exposes invoice/quantity only, never supplier identity or costs
+  ---
+  duration_ms: 0.4484
+  type: 'test'
+  ...
+# Subtest: partial invoice reserves allocated cartons, freezes only its FX and does not require supplier payment
+ok 31 - partial invoice reserves allocated cartons, freezes only its FX and does not require supplier payment
+  ---
+  duration_ms: 13.2147
+  type: 'test'
+  ...
+# Subtest: allocation overdraw, wrong customer, reused invoice and role spoof are rejected
+ok 32 - allocation overdraw, wrong customer, reused invoice and role spoof are rejected
+  ---
+  duration_ms: 5.3917
+  type: 'test'
+  ...
+# Subtest: pending cancellation releases reservation but an invoice cannot be cancelled without correction
+ok 33 - pending cancellation releases reservation but an invoice cannot be cancelled without correction
+  ---
+  duration_ms: 3.8497
+  type: 'test'
+  ...
+# Subtest: lost shipment acknowledgement retries one event and does not reserve twice
+ok 34 - lost shipment acknowledgement retries one event and does not reserve twice
+  ---
+  duration_ms: 1.0846
+  type: 'test'
+  ...
+# Subtest: one invoice creates one customer debtor entry, unaffected by supplier CN and repeated reads
+ok 35 - one invoice creates one customer debtor entry, unaffected by supplier CN and repeated reads
+  ---
+  duration_ms: 8.4943
+  type: 'test'
+  ...
+# Subtest: invalid invoice dates and missing dispatch reference do not change shipment state
+ok 36 - invalid invoice dates and missing dispatch reference do not change shipment state
+  ---
+  duration_ms: 3.5678
+  type: 'test'
+  ...
+# Subtest: dispatch cannot rewrite locked line cost or exchange rate
+ok 37 - dispatch cannot rewrite locked line cost or exchange rate
+  ---
+  duration_ms: 2.3408
+  type: 'test'
+  ...
+# Subtest: Sales attaches a matching PDF without posting the Support invoice twice
+ok 38 - Sales attaches a matching PDF without posting the Support invoice twice
+  ---
+  duration_ms: 13.3192
+  type: 'test'
+  ...
+# Subtest: customer display lookup requires the existing Master credential before accessing customers
+ok 39 - customer display lookup requires the existing Master credential before accessing customers
+  ---
+  duration_ms: 3.43
+  type: 'test'
+  ...
+# Subtest: short name lookup returns only requested identity and name, preserving source data and omitting contact information
+ok 40 - short name lookup returns only requested identity and name, preserving source data and omitting contact information
+  ---
+  duration_ms: 2.899
+  type: 'test'
+  ...
+# Subtest: malformed IDs and duplicates do not query; missing or ambiguous customer never gets a guessed name
+ok 41 - malformed IDs and duplicates do not query; missing or ambiguous customer never gets a guessed name
+  ---
+  duration_ms: 13.3046
+  type: 'test'
+  ...
+# Subtest: source HTTP patch preserves all existing routes and FX handler exactly
+ok 42 - source HTTP patch preserves all existing routes and FX handler exactly
+  ---
+  duration_ms: 121.8488
+  type: 'test'
+  ...
+# Subtest: Master names lookup follows staff authorization and requests only the visible PO customer identities; failure preserves orders
+ok 43 - Master names lookup follows staff authorization and requests only the visible PO customer identities; failure preserves orders
+  ---
+  duration_ms: 4.2677
+  type: 'test'
+  ...
+# Subtest: post-receipt stock issues remain red in each department and identify who blocks closure
+ok 44 - post-receipt stock issues remain red in each department and identify who blocks closure
+  ---
+  duration_ms: 1.9978
+  type: 'test'
+  ...
+# Subtest: customer stop and reading never clear supplier risk; only verified financial closure clears it
+ok 45 - customer stop and reading never clear supplier risk; only verified financial closure clears it
+  ---
+  duration_ms: 0.5163
+  type: 'test'
+  ...
+# Subtest: duplicate problems count one affected task and preserve each reason and blocked department
+ok 46 - duplicate problems count one affected task and preserve each reason and blocked department
+  ---
+  duration_ms: 0.5576
+  type: 'test'
+  ...
+# Subtest: prepayment appears in work queue before final invoice and short closure does not falsely wait for full receipt
+ok 47 - prepayment appears in work queue before final invoice and short closure does not falsely wait for full receipt
+  ---
+  duration_ms: 0.4529
+  type: 'test'
+  ...
+# Subtest: warehouse issue points to Purchase until planner records supplier decision
+ok 48 - warehouse issue points to Purchase until planner records supplier decision
+  ---
+  duration_ms: 0.3226
+  type: 'test'
+  ...
+# Subtest: margin uses MYR per transaction currency unit and changes with current Admin FX
+ok 49 - margin uses MYR per transaction currency unit and changes with current Admin FX
+  ---
+  duration_ms: 1.2779
+  type: 'test'
+  ...
+# Subtest: missing/zero selling price, FX, EA and cost remain unavailable; explicit zero cost is valid
+ok 50 - missing/zero selling price, FX, EA and cost remain unavailable; explicit zero cost is valid
+  ---
+  duration_ms: 0.3662
+  type: 'test'
+  ...
+# Subtest: Disc3 is a MYR carton amount and sequential discounts keep full precision until presentation
+ok 51 - Disc3 is a MYR carton amount and sequential discounts keep full precision until presentation
+  ---
+  duration_ms: 0.2671
+  type: 'test'
+  ...
+# Subtest: NCT and GHR quantity reads stay isolated even when source IDs match
+ok 52 - NCT and GHR quantity reads stay isolated even when source IDs match
+  ---
+  duration_ms: 3.2307
+  type: 'test'
+  ...
+# Subtest: only authenticated Master requests can read current Admin rates
+ok 53 - only authenticated Master requests can read current Admin rates
+  ---
+  duration_ms: 3.5969
+  type: 'test'
+  ...
+# Subtest: missing/inactive/duplicate rates and non-unit MYR cannot silently fall back
+ok 54 - missing/inactive/duplicate rates and non-unit MYR cannot silently fall back
+  ---
+  duration_ms: 7.1272
+  type: 'test'
+  ...
+# Subtest: invalid currency payloads never query financial records
+ok 55 - invalid currency payloads never query financial records
+  ---
+  duration_ms: 8.766
+  type: 'test'
+  ...
+# Subtest: payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance
+not ok 56 - payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance
+  ---
+  duration_ms: 101.3185
+  type: 'test'
+  location: 'C:\\FMCG-WIX-LOCAL\\worktrees\\nct-order-submit-room6-20261009\\integration\\tests\\master-workflow-scenarios.test.cjs:87:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'INSTALLMENT_PAID'
+    - 'PAID'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'PAID'
+  actual: 'INSTALLMENT_PAID'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\FMCG-WIX-LOCAL\worktrees\nct-order-submit-room6-20261009\integration\tests\master-workflow-scenarios.test.cjs:93:63)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes
+ok 57 - A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes
+  ---
+  duration_ms: 162.9838
+  type: 'test'
+  ...
+# Subtest: NCT: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close
+ok 58 - NCT: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close
+  ---
+  duration_ms: 145.9839
+  type: 'test'
+  ...
+# Subtest: GHR: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close
+ok 59 - GHR: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close
+  ---
+  duration_ms: 137.7082
+  type: 'test'
+  ...
+# Subtest: 100 prepaid / 90 received: stop waiting never clears liability; CN and actual refund need Finance Checked
+ok 60 - 100 prepaid / 90 received: stop waiting never clears liability; CN and actual refund need Finance Checked
+  ---
+  duration_ms: 141.951
+  type: 'test'
+  ...
+# Subtest: short first delivery and later replacement preserve the first partial invoice and clear risk only after reconciliation
+ok 61 - short first delivery and later replacement preserve the first partial invoice and clear risk only after reconciliation
+  ---
+  duration_ms: 183.9691
+  type: 'test'
+  ...
+# Subtest: credit-term supplier does not block customer dispatch but remains active until final payment
+ok 62 - credit-term supplier does not block customer dispatch but remains active until final payment
+  ---
+  duration_ms: 153.1223
+  type: 'test'
+  ...
+# Subtest: CN kept for next purchase remains a supplier credit and never becomes customer Debtor credit
+ok 63 - CN kept for next purchase remains a supplier credit and never becomes customer Debtor credit
+  ---
+  duration_ms: 142.3461
+  type: 'test'
+  ...
+# Subtest: 500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170
+ok 64 - 500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170
+  ---
+  duration_ms: 424.3439
+  type: 'test'
+  ...
+# Subtest: supplier replacement received in two batches restores usable stock without rewriting the original receipt
+ok 65 - supplier replacement received in two batches restores usable stock without rewriting the original receipt
+  ---
+  duration_ms: 34.6347
+  type: 'test'
+  ...
+# Subtest: a supplier refund below lost stock cost stays red until Admin approves the unrecovered difference
+ok 66 - a supplier refund below lost stock cost stays red until Admin approves the unrecovered difference
+  ---
+  duration_ms: 42.4689
+  type: 'test'
+  ...
+# Subtest: releasing an incorrect quarantine blocks supplier replacement from creating extra usable stock
+ok 67 - releasing an incorrect quarantine blocks supplier replacement from creating extra usable stock
+  ---
+  duration_ms: 32.267
+  type: 'test'
+  ...
+# Subtest: awaiting supplier response records a persistent stock issue without inventing return instructions
+ok 68 - awaiting supplier response records a persistent stock issue without inventing return instructions
+  ---
+  duration_ms: 23.0947
+  type: 'test'
+  ...
+# Subtest: Sales split revisions retain audit history and do not grant Support or another customer planning rights
+ok 69 - Sales split revisions retain audit history and do not grant Support or another customer planning rights
+  ---
+  duration_ms: 20.3954
+  type: 'test'
+  ...
+# Subtest: NCT: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs
+ok 70 - NCT: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs
+  ---
+  duration_ms: 72.0869
+  type: 'test'
+  ...
+# Subtest: GHR: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs
+ok 71 - GHR: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs
+  ---
+  duration_ms: 73.9129
+  type: 'test'
+  ...
+# Subtest: actual source adapter and receiver cores preserve 100->250, MYR, original staff and one complete receipt
+ok 72 - actual source adapter and receiver cores preserve 100->250, MYR, original staff and one complete receipt
+  ---
+  duration_ms: 25.4317
+  type: 'test'
+  ...
+# Subtest: reply lost after Master commit replays the exact request with one capture and no duplicate records
+ok 73 - reply lost after Master commit replays the exact request with one capture and no duplicate records
+  ---
+  duration_ms: 8.2275
+  type: 'test'
+  ...
+# Subtest: wrong cross-site credential cannot write Master or declare the source submitted
+ok 74 - wrong cross-site credential cannot write Master or declare the source submitted
+  ---
+  duration_ms: 2.9806
+  type: 'test'
+  ...
+# Subtest: failed source save after complete receipt resumes with exactly one final source audit
+ok 75 - failed source save after complete receipt resumes with exactly one final source audit
+  ---
+  duration_ms: 5.4381
+  type: 'test'
+  ...
+# Subtest: source becomes submitted only after complete Master acknowledgement and audit
+ok 76 - source becomes submitted only after complete Master acknowledgement and audit
+  ---
+  duration_ms: 8.9825
+  type: 'test'
+  ...
+# Subtest: ambiguous network failure preserves the lock and EXACT request for retry
+ok 77 - ambiguous network failure preserves the lock and EXACT request for retry
+  ---
+  duration_ms: 2.708
+  type: 'test'
+  ...
+# Subtest: partial or wrong Master receipt cannot produce source success
+ok 78 - partial or wrong Master receipt cannot produce source success
+  ---
+  duration_ms: 1.1136
+  type: 'test'
+  ...
+# Subtest: failed source finalization resumes using receipt replay without re-preparing costs or quantities
+ok 79 - failed source finalization resumes using receipt replay without re-preparing costs or quantities
+  ---
+  duration_ms: 2.1658
+  type: 'test'
+  ...
+# Subtest: completed replay returns saved receipt without sending again, but rechecks authorization
+ok 80 - completed replay returns saved receipt without sending again, but rechecks authorization
+  ---
+  duration_ms: 3.4091
+  type: 'test'
+  ...
+# Subtest: preparation failure makes no network request and releases only its own lock
+ok 81 - preparation failure makes no network request and releases only its own lock
+  ---
+  duration_ms: 0.5544
+  type: 'test'
+  ...
+# Subtest: existing Buyer addition or Sales mutation locks cannot be stolen or released
+ok 82 - existing Buyer addition or Sales mutation locks cannot be stolen or released
+  ---
+  duration_ms: 0.4485
+  type: 'test'
+  ...
+# Subtest: unauthorized customer cannot acquire a lock or access cost delivery
+ok 83 - unauthorized customer cannot acquire a lock or access cost delivery
+  ---
+  duration_ms: 0.3539
+  type: 'test'
+  ...
+# Subtest: GHR uncertain delivery retries its exact snapshot and rejects changing company
+ok 84 - GHR uncertain delivery retries its exact snapshot and rejects changing company
+  ---
+  duration_ms: 1.3755
+  type: 'test'
+  ...
+# Subtest: a receipt from the wrong company never marks GHR submitted
+ok 85 - a receipt from the wrong company never marks GHR submitted
+  ---
+  duration_ms: 0.9853
+  type: 'test'
+  ...
+# Subtest: GHR intake writes only its company collections and survives partial-write retry
+ok 86 - GHR intake writes only its company collections and survives partial-write retry
+  ---
+  duration_ms: 13.9541
+  type: 'test'
+  ...
+# Subtest: one source line creates one order row, one task and complete immutable receipt history
+ok 87 - one source line creates one order row, one task and complete immutable receipt history
+  ---
+  duration_ms: 1.6985
+  type: 'test'
+  ...
+# Subtest: duplicate delivery uses accepted cost and never duplicates rows or history
+ok 88 - duplicate delivery uses accepted cost and never duplicates rows or history
+  ---
+  duration_ms: 2.6896
+  type: 'test'
+  ...
+# Subtest: task write failure cannot acknowledge success; retry resumes from saved capture
+ok 89 - task write failure cannot acknowledge success; retry resumes from saved capture
+  ---
+  duration_ms: 2.3001
+  type: 'test'
+  ...
+# Subtest: cost history persistence is required before acknowledging a complete receipt
+ok 90 - cost history persistence is required before acknowledging a complete receipt
+  ---
+  duration_ms: 1.859
+  type: 'test'
+  ...
+# Subtest: replayed intake preserves procurement manual prices, supplier and row ordering
+ok 91 - replayed intake preserves procurement manual prices, supplier and row ordering
+  ---
+  duration_ms: 2.2484
+  type: 'test'
+  ...
+# Subtest: different quantity or receiving company cannot overwrite accepted intake
+ok 92 - different quantity or receiving company cannot overwrite accepted intake
+  ---
+  duration_ms: 1.8188
+  type: 'test'
+  ...
+# Subtest: cost-service outage still accepts the order with unavailable costs and durable failure history
+ok 93 - cost-service outage still accepts the order with unavailable costs and durable failure history
+  ---
+  duration_ms: 1.7025
+  type: 'test'
+  ...
+# Subtest: missing or malformed per-barcode result accepts the line with explicit cost failure, never zero cost
+ok 94 - missing or malformed per-barcode result accepts the line with explicit cost failure, never zero cost
+  ---
+  duration_ms: 3.151
+  type: 'test'
+  ...
+# Subtest: same barcode in distinct source lines remains two independent tasks
+ok 95 - same barcode in distinct source lines remains two independent tasks
+  ---
+  duration_ms: 1.8676
+  type: 'test'
+  ...
+# Subtest: duplicate source line or invalid date is rejected before any data or cost access
+ok 96 - duplicate source line or invalid date is rejected before any data or cost access
+  ---
+  duration_ms: 0.972
+  type: 'test'
+  ...
+# Subtest: unauthorized calls cannot read orders, fetch costs or parse business payloads
+ok 97 - unauthorized calls cannot read orders, fetch costs or parse business payloads
+  ---
+  duration_ms: 2.5708
+  type: 'test'
+  ...
+# Subtest: missing server credential disables endpoint rather than accepting an empty token
+ok 98 - missing server credential disables endpoint rather than accepting an empty token
+  ---
+  duration_ms: 0.293
+  type: 'test'
+  ...
+# Subtest: header names are case insensitive but multiple Authorization keys are rejected
+ok 99 - header names are case insensitive but multiple Authorization keys are rejected
+  ---
+  duration_ms: 1.1047
+  type: 'test'
+  ...
+# Subtest: malformed authenticated JSON gives an explicit failure with no database access
+ok 100 - malformed authenticated JSON gives an explicit failure with no database access
+  ---
+  duration_ms: 0.3848
+  type: 'test'
+  ...
+# Subtest: maps current 250 cartons while preserving original 100 and its history
+ok 101 - maps current 250 cartons while preserving original 100 and its history
+  ---
+  duration_ms: 1.9421
+  type: 'test'
+  ...
+# Subtest: uses locked EA and selling price per piece without importing selling price per carton
+ok 102 - uses locked EA and selling price per piece without importing selling price per carton
+  ---
+  duration_ms: 0.3786
+  type: 'test'
+  ...
+# Subtest: does not guess missing locked EA or replace it with current catalogue data
+ok 103 - does not guess missing locked EA or replace it with current catalogue data
+  ---
+  duration_ms: 0.837
+  type: 'test'
+  ...
+# Subtest: requires the current Admin FX registry instead of sheet or default rates
+ok 104 - requires the current Admin FX registry instead of sheet or default rates
+  ---
+  duration_ms: 0.314
+  type: 'test'
+  ...
+# Subtest: refuses receipt-only, incomplete or already transferred orders
+ok 105 - refuses receipt-only, incomplete or already transferred orders
+  ---
+  duration_ms: 0.4616
+  type: 'test'
+  ...
+# Subtest: source line identity and currency cannot be mixed between orders
+ok 106 - source line identity and currency cannot be mixed between orders
+  ---
+  duration_ms: 0.3263
+  type: 'test'
+  ...
+# Subtest: GHR feedback requires a GHR receipt and retains quantities
+ok 107 - GHR feedback requires a GHR receipt and retains quantities
+  ---
+  duration_ms: 34.6343
+  type: 'test'
+  ...
+# Subtest: one click starts one correlated NCT request and gives immediate waiting feedback
+ok 108 - one click starts one correlated NCT request and gives immediate waiting feedback
+  ---
+  duration_ms: 3.4487
+  type: 'test'
+  ...
+# Subtest: submit failure keeps the order, quantities and visible actionable error
+ok 109 - submit failure keeps the order, quantities and visible actionable error
+  ---
+  duration_ms: 1.3836
+  type: 'test'
+  ...
+# Subtest: success requires the Master receipt and preserves cost-error feedback for Purchase
+ok 110 - success requires the Master receipt and preserves cost-error feedback for Purchase
+  ---
+  duration_ms: 1.8864
+  type: 'test'
+  ...
+# Subtest: an ok flag without a complete receipt cannot display success
+ok 111 - an ok flag without a complete receipt cannot display success
+  ---
+  duration_ms: 1.9272
+  type: 'test'
+  ...
+# Subtest: timeout checks the saved receipt without resubmitting, then leaves explicit uncertainty if no response arrives
+ok 112 - timeout checks the saved receipt without resubmitting, then leaves explicit uncertainty if no response arrives
+  ---
+  duration_ms: 2.449
+  type: 'test'
+  ...
+# Subtest: a 504 followed by a stored complete receipt displays success without a second write request
+ok 113 - a 504 followed by a stored complete receipt displays success without a second write request
+  ---
+  duration_ms: 2.5903
+  type: 'test'
+  ...
+# Subtest: stale response or another opened order cannot replace the current review
+ok 114 - stale response or another opened order cannot replace the current review
+  ---
+  duration_ms: 1.8784
+  type: 'test'
+  ...
+# Subtest: waiting modal immediately blocks dismissal and unload, terminal result releases it
+ok 115 - waiting modal immediately blocks dismissal and unload, terminal result releases it
+  ---
+  duration_ms: 2.2631
+  type: 'test'
+  ...
+# Subtest: receipt lookup retains the modal and cannot create a second submission
+ok 116 - receipt lookup retains the modal and cannot create a second submission
+  ---
+  duration_ms: 2.3396
+  type: 'test'
+  ...
+# Subtest: only uninvoiced cartons follow current Admin rate; locked slices retain actual source cost
+ok 117 - only uninvoiced cartons follow current Admin rate; locked slices retain actual source cost
+  ---
+  duration_ms: 2.2182
+  type: 'test'
+  ...
+# Subtest: fully invoiced margin survives unavailable Admin FX; missing or excess quantities reject
+ok 118 - fully invoiced margin survives unavailable Admin FX; missing or excess quantities reject
+  ---
+  duration_ms: 0.4607
+  type: 'test'
+  ...
+# Subtest: supplier invoice due date drives alerts only while a known balance remains unpaid
+ok 119 - supplier invoice due date drives alerts only while a known balance remains unpaid
+  ---
+  duration_ms: 5.571
+  type: 'test'
+  ...
+# Subtest: changed cost or replacement documents invalidate paper review without acknowledging any proof
+ok 120 - changed cost or replacement documents invalidate paper review without acknowledging any proof
+  ---
+  duration_ms: 0.4796
+  type: 'test'
+  ...
+# Subtest: paying a requested deposit does not mark the whole PO paid or invent a final balance
+ok 121 - paying a requested deposit does not mark the whole PO paid or invent a final balance
+  ---
+  duration_ms: 0.3746
+  type: 'test'
+  ...
+# Subtest: a second instalment excludes earlier deposits; final invoice remains the whole-order authority
+ok 122 - a second instalment excludes earlier deposits; final invoice remains the whole-order authority
+  ---
+  duration_ms: 0.6089
+  type: 'test'
+  ...
+# Subtest: 15 received cartons are explicitly split 10 / 5 across customers, once, with staff audit
+ok 123 - 15 received cartons are explicitly split 10 / 5 across customers, once, with staff audit
+  ---
+  duration_ms: 8.8375
+  type: 'test'
+  ...
+# Subtest: over-allocation, incompatible product, stale version and invoiced changes are rejected
+ok 124 - over-allocation, incompatible product, stale version and invoiced changes are rejected
+  ---
+  duration_ms: 2.3381
+  type: 'test'
+  ...
+# Subtest: allocation revision replaces the prior split without duplicating stock and guards revision forks
+ok 125 - allocation revision replaces the prior split without duplicating stock and guards revision forks
+  ---
+  duration_ms: 2.8522
+  type: 'test'
+  ...
+# Subtest: allocated stock is not a supplier physical receipt on the receiving customer task
+ok 126 - allocated stock is not a supplier physical receipt on the receiving customer task
+  ---
+  duration_ms: 12.4558
+  type: 'test'
+  ...
+# Subtest: brand mode reads only header and brand cells, deduplicates all three tabs and never reads costs or writes
+ok 127 - brand mode reads only header and brand cells, deduplicates all three tabs and never reads costs or writes
+  ---
+  duration_ms: 3.7903
+  type: 'test'
+  ...
+# Subtest: missing brand header fails explicitly instead of returning a partial brand list
+ok 128 - missing brand header fails explicitly instead of returning a partial brand list
+  ---
+  duration_ms: 1.6042
+  type: 'test'
+  ...
+# Subtest: Apps Script output redirect is fetched with GET and without forwarded secret or request body
+ok 129 - Apps Script output redirect is fetched with GET and without forwarded secret or request body
+  ---
+  duration_ms: 1.8787
+  type: 'test'
+  ...
+# Subtest: unexpected redirect cannot transmit any secret to another host
+ok 130 - unexpected redirect cannot transmit any secret to another host
+  ---
+  duration_ms: 0.8953
+  type: 'test'
+  ...
+# Subtest: authentication failure and malformed response retain actionable sanitized codes
+ok 131 - authentication failure and malformed response retain actionable sanitized codes
+  ---
+  duration_ms: 0.6601
+  type: 'test'
+  ...
+# Subtest: MYR costs retain fraction discounts and cash Disc3; source net result is preserved
+ok 132 - MYR costs retain fraction discounts and cash Disc3; source net result is preserved
+  ---
+  duration_ms: 9.2122
+  type: 'test'
+  ...
+# Subtest: reads complete rows only for submitted barcodes and captures duplicate requests once
+ok 133 - reads complete rows only for submitted barcodes and captures duplicate requests once
+  ---
+  duration_ms: 5.7935
+  type: 'test'
+  ...
+# Subtest: not found stays unavailable, never zero
+ok 134 - not found stays unavailable, never zero
+  ---
+  duration_ms: 2.8862
+  type: 'test'
+  ...
+# Subtest: same barcode in two source tabs is rejected without choosing a supplier cost
+ok 135 - same barcode in two source tabs is rejected without choosing a supplier cost
+  ---
+  duration_ms: 2.9202
+  type: 'test'
+  ...
+# Subtest: a failed source tab cannot be misreported as a successful unique match
+ok 136 - a failed source tab cannot be misreported as a successful unique match
+  ---
+  duration_ms: 2.0009
+  type: 'test'
+  ...
+# Subtest: discontinued row retains costs and product status but remains an exception
+ok 137 - discontinued row retains costs and product status but remains an exception
+  ---
+  duration_ms: 3.4465
+  type: 'test'
+  ...
+# Subtest: missing cost and invalid percentage do not become usable numeric prices
+ok 138 - missing cost and invalid percentage do not become usable numeric prices
+  ---
+  duration_ms: 2.8594
+  type: 'test'
+  ...
+# Subtest: blank discounts differ from valid zero discounts
+ok 139 - blank discounts differ from valid zero discounts
+  ---
+  duration_ms: 5.5794
+  type: 'test'
+  ...
+# Subtest: invalid CBM and source formula errors remain visible exceptions
+ok 140 - invalid CBM and source formula errors remain visible exceptions
+  ---
+  duration_ms: 3.6248
+  type: 'test'
+  ...
+# Subtest: numeric source barcode is rejected instead of losing leading-zero identity
+ok 141 - numeric source barcode is rejected instead of losing leading-zero identity
+  ---
+  duration_ms: 2.1759
+  type: 'test'
+  ...
+# Subtest: duplicate or missing cost headers fail closed; no index guessing
+ok 142 - duplicate or missing cost headers fail closed; no index guessing
+  ---
+  duration_ms: 3.1082
+  type: 'test'
+  ...
+# Subtest: raw percentage fractions and display percentage text have the same interpretation
+ok 143 - raw percentage fractions and display percentage text have the same interpretation
+  ---
+  duration_ms: 5.0422
+  type: 'test'
+  ...
+# Subtest: whole PO submission freezes one version; withdrawal preserves original submission and audit identity
+ok 144 - whole PO submission freezes one version; withdrawal preserves original submission and audit identity
+  ---
+  duration_ms: 3.3693
+  type: 'test'
+  ...
+# Subtest: Finance ownership prevents unilateral withdrawal; return requires explicit bank reconciliation
+ok 145 - Finance ownership prevents unilateral withdrawal; return requires explicit bank reconciliation
+  ---
+  duration_ms: 0.6787
+  type: 'test'
+  ...
+# Subtest: unknown bank outcome remains frozen even when return requested; only reconciled result releases processing
+ok 146 - unknown bank outcome remains frozen even when return requested; only reconciled result releases processing
+  ---
+  duration_ms: 3.418
+  type: 'test'
+  ...
+# Subtest: supplier, terms, membership, FOC content and documents bind submission; viewing and chasing do not
+ok 147 - supplier, terms, membership, FOC content and documents bind submission; viewing and chasing do not
+  ---
+  duration_ms: 0.7417
+  type: 'test'
+  ...
+# Subtest: incomplete and cross-role submissions are refused; legacy Finance instruction is not silently adopted
+ok 148 - incomplete and cross-role submissions are refused; legacy Finance instruction is not silently adopted
+  ---
+  duration_ms: 0.6107
+  type: 'test'
+  ...
+# Subtest: a final invoice does not authorize repeating an already-paid instalment
+ok 149 - a final invoice does not authorize repeating an already-paid instalment
+  ---
+  duration_ms: 0.5014
+  type: 'test'
+  ...
+# Subtest: FOC total updates immediately; quantity history contains saved events only and no supplier agreement is fabricated
+ok 150 - FOC total updates immediately; quantity history contains saved events only and no supplier agreement is fabricated
+  ---
+  duration_ms: 11.0991
+  type: 'test'
+  ...
+# Subtest: two supplier portions may cover one customer demand without changing its quantity or saved baseline
+ok 151 - two supplier portions may cover one customer demand without changing its quantity or saved baseline
+  ---
+  duration_ms: 5.3418
+  type: 'test'
+  ...
+# Subtest: unedited displayed discounts retain their exact saved floating-point value and do not create a false price change
+ok 152 - unedited displayed discounts retain their exact saved floating-point value and do not create a false price change
+  ---
+  duration_ms: 0.5023
+  type: 'test'
+  ...
+# Subtest: unselected remainder stays a draft and is excluded from submission validation and client demand
+ok 153 - unselected remainder stays a draft and is excluded from submission validation and client demand
+  ---
+  duration_ms: 0.4069
+  type: 'test'
+  ...
+# Subtest: invalid or blank input, negative cost, excessive discounts and missing reason cannot enter an application batch
+ok 154 - invalid or blank input, negative cost, excessive discounts and missing reason cannot enter an application batch
+  ---
+  duration_ms: 1.3205
+  type: 'test'
+  ...
+# Subtest: existing PO supplier and invoice locks remain enforced while source quantities can only stay above actual receipts
+ok 155 - existing PO supplier and invoice locks remain enforced while source quantities can only stay above actual receipts
+  ---
+  duration_ms: 0.805
+  type: 'test'
+  ...
+# Subtest: stale versions and unknown suppliers cannot silently overwrite live source values
+ok 156 - stale versions and unknown suppliers cannot silently overwrite live source values
+  ---
+  duration_ms: 0.3236
+  type: 'test'
+  ...
+# Subtest: supplier surplus defaults to expected stock and leaves customer demand unchanged
+ok 157 - supplier surplus defaults to expected stock and leaves customer demand unchanged
+  ---
+  duration_ms: 0.3026
+  type: 'test'
+  ...
+# Subtest: confirmed portions remain in totals and unresolved remainder stays available for explicit continuation
+ok 158 - confirmed portions remain in totals and unresolved remainder stays available for explicit continuation
+  ---
+  duration_ms: 0.2818
+  type: 'test'
+  ...
+# Subtest: reference endpoint authenticates and validates accepted task before POINTBASE; response exposes only five reference fields
+ok 159 - reference endpoint authenticates and validates accepted task before POINTBASE; response exposes only five reference fields
+  ---
+  duration_ms: 3.3644
+  type: 'test'
+  ...
+# Subtest: first allocation and remaining supplier allow blank reason; saved source revisions and surplus require it
+ok 160 - first allocation and remaining supplier allow blank reason; saved source revisions and surplus require it
+  ---
+  duration_ms: 2.1294
+  type: 'test'
+  ...
+# Subtest: same product saves B first through PLAN, retains invalid A, restores unknown request and later adds A only
+ok 161 - same product saves B first through PLAN, retains invalid A, restores unknown request and later adds A only
+  ---
+  duration_ms: 16.5374
+  type: 'test'
+  ...
+# Subtest: single-source save validates B against saved A, not the invalid A draft; saved revision/receipt guards persist
+ok 162 - single-source save validates B against saved A, not the invalid A draft; saved revision/receipt guards persist
+  ---
+  duration_ms: 7.0194
+  type: 'test'
+  ...
+# Subtest: two product drafts survive repeated navigation and cache restore without any implicit save
+ok 163 - two product drafts survive repeated navigation and cache restore without any implicit save
+  ---
+  duration_ms: 8.2071
+  type: 'test'
+  ...
+# Subtest: saving B submits only B and preserves A; in-flight identity cannot be switched or duplicated
+ok 164 - saving B submits only B and preserves A; in-flight identity cannot be switched or duplicated
+  ---
+  duration_ms: 4.2657
+  type: 'test'
+  ...
+# Subtest: cancel only the current product; parked drafts remain restorable and foreign-company cache is ignored
+ok 165 - cancel only the current product; parked drafts remain restorable and foreign-company cache is ignored
+  ---
+  duration_ms: 8.2918
+  type: 'test'
+  ...
+# Subtest: compact WAITING hides prices; 60 + 20 preserves demand100, creates waiting20, and submits only two selected suppliers
+ok 166 - compact WAITING hides prices; 60 + 20 preserves demand100, creates waiting20, and submits only two selected suppliers
+  ---
+  duration_ms: 20.1656
+  type: 'test'
+  ...
+# Subtest: short receipt cannot clear from upload or cash balance alone; it needs an explicit audited claim mapping
+ok 167 - short receipt cannot clear from upload or cash balance alone; it needs an explicit audited claim mapping
+  ---
+  duration_ms: 2.2723
+  type: 'test'
+  ...
+# Subtest: a CN or refund cannot be counted again for another shortage or quarantined-stock claim
+ok 168 - a CN or refund cannot be counted again for another shortage or quarantined-stock claim
+  ---
+  duration_ms: 1.0316
+  type: 'test'
+  ...
+# Subtest: claim cannot change Purchase resolution, exceed proof or reuse stale receiving quantities
+ok 169 - claim cannot change Purchase resolution, exceed proof or reuse stale receiving quantities
+  ---
+  duration_ms: 1.7856
+  type: 'test'
+  ...
+# Subtest: multiple actual refunds can cover one CN, and future credit needs no invented refund
+ok 170 - multiple actual refunds can cover one CN, and future credit needs no invented refund
+  ---
+  duration_ms: 0.4262
+  type: 'test'
+  ...
+# Subtest: one task retry fills initial unavailable values and preserves original failure and procurement fields
+ok 171 - one task retry fills initial unavailable values and preserves original failure and procurement fields
+  ---
+  duration_ms: 10.0409
+  type: 'test'
+  ...
+# Subtest: existing and explicitly manual prices are retained even when a new reference is fetched
+ok 172 - existing and explicitly manual prices are retained even when a new reference is fetched
+  ---
+  duration_ms: 2.3109
+  type: 'test'
+  ...
+# Subtest: customer invoice lock rejects before cost service or any history writes
+ok 173 - customer invoice lock rejects before cost service or any history writes
+  ---
+  duration_ms: 0.8753
+  type: 'test'
+  ...
+# Subtest: incomplete intake cannot be repaired through cost retry
+ok 174 - incomplete intake cannot be repaired through cost retry
+  ---
+  duration_ms: 0.3844
+  type: 'test'
+  ...
+# Subtest: one work item retains every distinct reason and category counts remain overlapping
+ok 175 - one work item retains every distinct reason and category counts remain overlapping
+  ---
+  duration_ms: 46.258
+  type: 'test'
+  ...
+# Subtest: category and search filters retain original entry identity, supplier and customer matching
+ok 176 - category and search filters retain original entry identity, supplier and customer matching
+  ---
+  duration_ms: 6.2806
+  type: 'test'
+  ...
+# Subtest: PO payment notice stays PO scoped without invented quantity or customer-source identity
+ok 177 - PO payment notice stays PO scoped without invented quantity or customer-source identity
+  ---
+  duration_ms: 9.4253
+  type: 'test'
+  ...
+# Subtest: empty/error states retain directories and escape product data; no fake payment-request metric
+ok 178 - empty/error states retain directories and escape product data; no fake payment-request metric
+  ---
+  duration_ms: 6.2467
+  type: 'test'
+  ...
+# Subtest: duplicate urgency and feedback classification retains one action without dropping either category
+ok 179 - duplicate urgency and feedback classification retains one action without dropping either category
+  ---
+  duration_ms: 5.0426
+  type: 'test'
+  ...
+# Subtest: saved PO and confirmed physical receipt are green only for their corresponding facts; pending work stays pending
+ok 180 - saved PO and confirmed physical receipt are green only for their corresponding facts; pending work stays pending
+  ---
+  duration_ms: 5.5063
+  type: 'test'
+  ...
+# Subtest: missing PO and partial or unconfirmed receiving remain orange and retain original task-specific action identifiers
+ok 181 - missing PO and partial or unconfirmed receiving remain orange and retain original task-specific action identifiers
+  ---
+  duration_ms: 5.4584
+  type: 'test'
+  ...
+# Subtest: explicit receiving or open stock problems override a numerically full receipt and resolved marker
+ok 182 - explicit receiving or open stock problems override a numerically full receipt and resolved marker
+  ---
+  duration_ms: 6.8876
+  type: 'test'
+  ...
+# Subtest: initial view focuses on queue, directories stay open, and details require explicit selection
+ok 183 - initial view focuses on queue, directories stay open, and details require explicit selection
+  ---
+  duration_ms: 6.008
+  type: 'test'
+  ...
+# Subtest: three display queues partition source identities, prioritize explicit issues, and retain original actions
+ok 184 - three display queues partition source identities, prioritize explicit issues, and retain original actions
+  ---
+  duration_ms: 11.0392
+  type: 'test'
+  ...
+# Subtest: shipment dates use English day month year without timezone conversion and retain invalid or missing values
+ok 185 - shipment dates use English day month year without timezone conversion and retain invalid or missing values
+  ---
+  duration_ms: 5.6375
+  type: 'test'
+  ...
+# Subtest: action list omits generic progress and normal waiting, keeps explicit blockers, and trusts confirmed physical receipt
+ok 186 - action list omits generic progress and normal waiting, keeps explicit blockers, and trusts confirmed physical receipt
+  ---
+  duration_ms: 6.4765
+  type: 'test'
+  ...
+# Subtest: priority uses explicit issues, valid shipment dates, then received timestamps; missing dates last
+ok 187 - priority uses explicit issues, valid shipment dates, then received timestamps; missing dates last
+  ---
+  duration_ms: 7.1691
+  type: 'test'
+  ...
+# Subtest: missing supplier and PO are separate actionable labels and route through existing source controls
+ok 188 - missing supplier and PO are separate actionable labels and route through existing source controls
+  ---
+  duration_ms: 6.0375
+  type: 'test'
+  ...
+# Subtest: explicit warehouse issue remains visible even without a quantity-case signal and opens original source progress
+ok 189 - explicit warehouse issue remains visible even without a quantity-case signal and opens original source progress
+  ---
+  duration_ms: 8.5913
+  type: 'test'
+  ...
+# Subtest: supplier shipment alerts count affected sources, not low margin or normal waiting, and exclude resolved or dispatched records
+ok 190 - supplier shipment alerts count affected sources, not low margin or normal waiting, and exclude resolved or dispatched records
+  ---
+  duration_ms: 5.2121
+  type: 'test'
+  ...
+# Subtest: supplier alert details retain exact source receiving or dispatch entry and escape product data
+ok 191 - supplier alert details retain exact source receiving or dispatch entry and escape product data
+  ---
+  duration_ms: 5.4569
+  type: 'test'
+  ...
+# Subtest: shipment warning names measured shortage and never interprets refund as a physical return
+ok 192 - shipment warning names measured shortage and never interprets refund as a physical return
+  ---
+  duration_ms: 4.8465
+  type: 'test'
+  ...
+# Subtest: physical return, pending return and replacement quantities are distinct from the original wrong-item quantity
+ok 193 - physical return, pending return and replacement quantities are distinct from the original wrong-item quantity
+  ---
+  duration_ms: 4.6943
+  type: 'test'
+  ...
+# Subtest: Apps Script output redirect never receives the shared secret or PDF
+ok 194 - Apps Script output redirect never receives the shared secret or PDF
+  ---
+  duration_ms: 1.6965
+  type: 'test'
+  ...
+# Subtest: untrusted redirect is rejected before it receives data
+ok 195 - untrusted redirect is rejected before it receives data
+  ---
+  duration_ms: 0.8347
+  type: 'test'
+  ...
+# Subtest: wrong PO upload receipt cannot be accepted
+ok 196 - wrong PO upload receipt cannot be accepted
+  ---
+  duration_ms: 0.45
+  type: 'test'
+  ...
+# Subtest: file destination is fixed by company and document name keeps date/supplier/type/number
+ok 197 - file destination is fixed by company and document name keeps date/supplier/type/number
+  ---
+  duration_ms: 5.8407
+  type: 'test'
+  ...
+# Subtest: only linked current documents affect red/orange/green and CN cannot pretend to be an invoice
+ok 198 - only linked current documents affect red/orange/green and CN cannot pretend to be an invoice
+  ---
+  duration_ms: 0.4085
+  type: 'test'
+  ...
+# Subtest: term date uses an actual invoice date, handles month boundary and refuses invalid dates
+ok 199 - term date uses an actual invoice date, handles month boundary and refuses invalid dates
+  ---
+  duration_ms: 0.3467
+  type: 'test'
+  ...
+# Subtest: shared History requires receipt, payment, Account verification and collected documents together
+ok 200 - shared History requires receipt, payment, Account verification and collected documents together
+  ---
+  duration_ms: 0.3136
+  type: 'test'
+  ...
+# Subtest: unauthorized or invalid-company upload cannot call Google Drive
+ok 201 - unauthorized or invalid-company upload cannot call Google Drive
+  ---
+  duration_ms: 4.2465
+  type: 'test'
+  ...
+# Subtest: upload fixes company folder and retry reuses the generated file ID without a duplicate
+ok 202 - upload fixes company folder and retry reuses the generated file ID without a duplicate
+  ---
+  duration_ms: 2.9291
+  type: 'test'
+  ...
+# Subtest: corrupt PDF or hash cannot create a file; changed metadata cannot hijack an existing ID
+ok 203 - corrupt PDF or hash cannot create a file; changed metadata cannot hijack an existing ID
+  ---
+  duration_ms: 2.7365
+  type: 'test'
+  ...
+# Subtest: payment proofs require Account routing and fixed company Account roots; DO retains Purchase routing
+ok 204 - payment proofs require Account routing and fixed company Account roots; DO retains Purchase routing
+  ---
+  duration_ms: 7.959
+  type: 'test'
+  ...
+# Subtest: Sales PDFs route only to fixed Sales folders and retain company isolation
+ok 205 - Sales PDFs route only to fixed Sales folders and retain company isolation
+  ---
+  duration_ms: 14.8664
+  type: 'test'
+  ...
+# Subtest: clicked progress stage opens its task with explicit receiving issue instead of a false completion
+ok 206 - clicked progress stage opens its task with explicit receiving issue instead of a false completion
+  ---
+  duration_ms: 56.2734
+  type: 'test'
+  ...
+# Subtest: mother progress names the blocked source and drills into only that source without submitting writes
+ok 207 - mother progress names the blocked source and drills into only that source without submitting writes
+  ---
+  duration_ms: 6.6894
+  type: 'test'
+  ...
+# Subtest: disabled demand selection is ignored; first source selection opens only that PO and mixed suppliers remain blocked
+ok 208 - disabled demand selection is ignored; first source selection opens only that PO and mixed suppliers remain blocked
+  ---
+  duration_ms: 19.9362
+  type: 'test'
+  ...
+# Subtest: PO submit dialog sends one complete saved version with optional urgency and no accidental term edit
+ok 209 - PO submit dialog sends one complete saved version with optional urgency and no accidental term edit
+  ---
+  duration_ms: 21.2785
+  type: 'test'
+  ...
+# Subtest: stock-only supplier receipts cannot satisfy another supplier customer shortage
+ok 210 - stock-only supplier receipts cannot satisfy another supplier customer shortage
+  ---
+  duration_ms: 6.9702
+  type: 'test'
+  ...
+# Subtest: Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes
+ok 211 - Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes
+  ---
+  duration_ms: 11.6449
+  type: 'test'
+  ...
+# Subtest: Active priorities count saved sources rather than demand remainder and open the original source actions
+ok 212 - Active priorities count saved sources rather than demand remainder and open the original source actions
+  ---
+  duration_ms: 9.2784
+  type: 'test'
+  ...
+# Subtest: Active demand summary is display-only and omits duplicate waiting text while retaining remainder and source actions
+ok 213 - Active demand summary is display-only and omits duplicate waiting text while retaining remainder and source actions
+  ---
+  duration_ms: 7.7219
+  type: 'test'
+  ...
+# Subtest: Active actual receipts never open supplier costing while receipt exception actions remain available
+ok 214 - Active actual receipts never open supplier costing while receipt exception actions remain available
+  ---
+  duration_ms: 7.5699
+  type: 'test'
+  ...
+# Subtest: Active removes progress chrome and ignores the hidden room stage filter without changing room behavior
+ok 215 - Active removes progress chrome and ignores the hidden room stage filter without changing room behavior
+  ---
+  duration_ms: 7.1445
+  type: 'test'
+  ...
+# Subtest: Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column
+ok 216 - Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column
+  ---
+  duration_ms: 12.262
+  type: 'test'
+  ...
+# Subtest: Active child rows are always visible with a noninteractive branch marker in each customer cell
+ok 217 - Active child rows are always visible with a noninteractive branch marker in each customer cell
+  ---
+  duration_ms: 11.6948
+  type: 'test'
+  ...
+# Subtest: Active move entry selects a customer and preserves the original grouped move and cancel without saving
+ok 218 - Active move entry selects a customer and preserves the original grouped move and cancel without saving
+  ---
+  duration_ms: 14.0501
+  type: 'test'
+  ...
+# Subtest: cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt
+ok 219 - cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt
+  ---
+  duration_ms: 10.8815
+  type: 'test'
+  ...
+# Subtest: supplier sources keep ordered and physical received quantities separate and add a priced PO once
+ok 220 - supplier sources keep ordered and physical received quantities separate and add a priced PO once
+  ---
+  duration_ms: 12.5162
+  type: 'test'
+  ...
+# Subtest: additional source plan uses remaining customer capacity instead of its zero demand field
+ok 221 - additional source plan uses remaining customer capacity instead of its zero demand field
+  ---
+  duration_ms: 9.9798
+  type: 'test'
+  ...
+# Subtest: separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk
+ok 222 - separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk
+  ---
+  duration_ms: 9.45
+  type: 'test'
+  ...
+# Subtest: planner allocation editor sends the selected receipt and explicit customer quantities with a reason
+ok 223 - planner allocation editor sends the selected receipt and explicit customer quantities with a reason
+  ---
+  duration_ms: 8.9818
+  type: 'test'
+  ...
+# Subtest: Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls
+ok 224 - Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls
+  ---
+  duration_ms: 20.7882
+  type: 'test'
+  ...
+# Subtest: payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices
+ok 225 - payment acknowledgement sends only the selected notice and cannot clear Finance or other payment notices
+  ---
+  duration_ms: 11.9612
+  type: 'test'
+  ...
+# Subtest: purchase orders render persisted documents and readable history, with upload input instead of fixture controls
+ok 226 - purchase orders render persisted documents and readable history, with upload input instead of fixture controls
+  ---
+  duration_ms: 9.155
+  type: 'test'
+  ...
+# Subtest: PDF stays disabled after file reading hands off to the actual pending save, and a second click does not upload twice
+ok 227 - PDF stays disabled after file reading hands off to the actual pending save, and a second click does not upload twice
+  ---
+  duration_ms: 8.372
+  type: 'test'
+  ...
+# Subtest: PO history is current month only; independent history filters archived month, supplier and document number
+ok 228 - PO history is current month only; independent history filters archived month, supplier and document number
+  ---
+  duration_ms: 10.6549
+  type: 'test'
+  ...
+# Subtest: Path categories show human bilingual changes without internal action strings
+ok 229 - Path categories show human bilingual changes without internal action strings
+  ---
+  duration_ms: 9.0521
+  type: 'test'
+  ...
+# Subtest: quiet refresh retains the PO list until the new receipt and does not erase it on failure
+ok 230 - quiet refresh retains the PO list until the new receipt and does not erase it on failure
+  ---
+  duration_ms: 7.9426
+  type: 'test'
+  ...
+# Subtest: GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero
+ok 231 - GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero
+  ---
+  duration_ms: 39.8373
+  type: 'test'
+  ...
+# Subtest: P.O. dialog hides system IDs, places an obvious input first and keeps original association payload
+ok 232 - P.O. dialog hides system IDs, places an obvious input first and keeps original association payload
+  ---
+  duration_ms: 8.7136
+  type: 'test'
+  ...
+# Subtest: P.O. details stay read-only and show human product references without internal IDs
+ok 233 - P.O. details stay read-only and show human product references without internal IDs
+  ---
+  duration_ms: 7.7456
+  type: 'test'
+  ...
+# Subtest: a company prefix alone cannot create a PO or lose the current input
+ok 234 - a company prefix alone cannot create a PO or lose the current input
+  ---
+  duration_ms: 8.8699
+  type: 'test'
+  ...
+# Subtest: supplier plan confirms excess and keeps customer qty out of its write payload
+ok 235 - supplier plan confirms excess and keeps customer qty out of its write payload
+  ---
+  duration_ms: 6.3671
+  type: 'test'
+  ...
+# Subtest: supplier quantity editor restores saved source and makes customer versus kept stock explicit
+ok 236 - supplier quantity editor restores saved source and makes customer versus kept stock explicit
+  ---
+  duration_ms: 6.3018
+  type: 'test'
+  ...
+# Subtest: unchanged supplier quantities and unconfirmed P.O. changes give local feedback without failed backend requests
+ok 237 - unchanged supplier quantities and unconfirmed P.O. changes give local feedback without failed backend requests
+  ---
+  duration_ms: 5.7273
+  type: 'test'
+  ...
+# Subtest: shared expected-stock view includes all company customers and disables allocation before receipt
+ok 238 - shared expected-stock view includes all company customers and disables allocation before receipt
+  ---
+  duration_ms: 8.4296
+  type: 'test'
+  ...
+# Subtest: live page starts empty, requests real Master data and never seeds demo business records
+ok 239 - live page starts empty, requests real Master data and never seeds demo business records
+  ---
+  duration_ms: 7.4927
+  type: 'test'
+  ...
+# Subtest: customer entry displays actual quantity and opens a cost exception with actual salesperson
+ok 240 - customer entry displays actual quantity and opens a cost exception with actual salesperson
+  ---
+  duration_ms: 7.4868
+  type: 'test'
+  ...
+# Subtest: late response from prior company cannot mix NCT and GHR data
+ok 241 - late response from prior company cannot mix NCT and GHR data
+  ---
+  duration_ms: 5.1803
+  type: 'test'
+  ...
+# Subtest: read failure and timeout show explicit feedback without inventing zero records
+ok 242 - read failure and timeout show explicit feedback without inventing zero records
+  ---
+  duration_ms: 8.6691
+  type: 'test'
+  ...
+# Subtest: compact Dashboard keeps both directories and supplier entry while replacing duplicated summary cards with a queue
+ok 243 - compact Dashboard keeps both directories and supplier entry while replacing duplicated summary cards with a queue
+  ---
+  duration_ms: 5.7671
+  type: 'test'
+  ...
+# Subtest: compact Purchase Room keeps track, drag controls and new read-only columns without business writes
+ok 244 - compact Purchase Room keeps track, drag controls and new read-only columns without business writes
+  ---
+  duration_ms: 13.105
+  type: 'test'
+  ...
+# Subtest: actual Save uses draft revision and keeps inputs after failed or ambiguous results
+ok 245 - actual Save uses draft revision and keeps inputs after failed or ambiguous results
+  ---
+  duration_ms: 7.5873
+  type: 'test'
+  ...
+# Subtest: one click stays busy, blocks duplicate submission and resolves a lost response from the original receipt
+ok 246 - one click stays busy, blocks duplicate submission and resolves a lost response from the original receipt
+  ---
+  duration_ms: 11.9722
+  type: 'test'
+  ...
+# Subtest: unconfirmed CMS save keeps original identity and identifies affected tasks throughout receipt checks
+ok 247 - unconfirmed CMS save keeps original identity and identifies affected tasks throughout receipt checks
+  ---
+  duration_ms: 10.0564
+  type: 'test'
+  ...
+# Subtest: receipt checks stop after three pending results and explicit retry preserves the original save identity
+ok 248 - receipt checks stop after three pending results and explicit retry preserves the original save identity
+  ---
+  duration_ms: 12.437
+  type: 'test'
+  ...
+# Subtest: supplier dialog retains approved company/short-name pair, tabs and all six contact roles without demo brands
+ok 249 - supplier dialog retains approved company/short-name pair, tabs and all six contact roles without demo brands
+  ---
+  duration_ms: 9.2602
+  type: 'test'
+  ...
+# Subtest: row editor keeps barcode first, omits received quantity and gates changes on a saved supplier
+ok 250 - row editor keeps barcode first, omits received quantity and gates changes on a saved supplier
+  ---
+  duration_ms: 9.2284
+  type: 'test'
+  ...
+# Subtest: separate four-digit quantities preserve the legacy warehouse value and edited demand marker
+ok 251 - separate four-digit quantities preserve the legacy warehouse value and edited demand marker
+  ---
+  duration_ms: 8.7415
+  type: 'test'
+  ...
+# Subtest: reload checks the existing save identity and restores only the same staff member draft
+ok 252 - reload checks the existing save identity and restores only the same staff member draft
+  ---
+  duration_ms: 22.2012
+  type: 'test'
+  ...
+# Subtest: partial price input survives redraw and cannot submit a stale numeric value
+ok 253 - partial price input survives redraw and cannot submit a stale numeric value
+  ---
+  duration_ms: 10.314
+  type: 'test'
+  ...
+# Subtest: cost calculator sends source amounts and internal note, not a client calculated price or quantity edit
+ok 254 - cost calculator sends source amounts and internal note, not a client calculated price or quantity edit
+  ---
+  duration_ms: 9.7475
+  type: 'test'
+  ...
+# Subtest: history icon keeps the actual history dialog and progress capsules keep existing counts without writes
+ok 255 - history icon keeps the actual history dialog and progress capsules keep existing counts without writes
+  ---
+  duration_ms: 9.1573
+  type: 'test'
+  ...
+# Subtest: CBM alone does not flag a complete cost; financial cost errors remain visible
+ok 256 - CBM alone does not flag a complete cost; financial cost errors remain visible
+  ---
+  duration_ms: 30.218
+  type: 'test'
+  ...
+# Subtest: Risk Deal threshold uses valid saved GP; six percent and unknown GP are not flagged
+ok 257 - Risk Deal threshold uses valid saved GP; six percent and unknown GP are not flagged
+  ---
+  duration_ms: 37.4426
+  type: 'test'
+  ...
+# Subtest: Save is hidden when clean and allocation is a same-room read-only filter
+ok 258 - Save is hidden when clean and allocation is a same-room read-only filter
+  ---
+  duration_ms: 5.489
+  type: 'test'
+  ...
+# Subtest: negative net cost is explained before a write and known failed save frees editing without losing input
+ok 259 - negative net cost is explained before a write and known failed save frees editing without losing input
+  ---
+  duration_ms: 5.9424
+  type: 'test'
+  ...
+# Subtest: drag feedback marks grip, source and exact insertion target while keeping original save ordering
+ok 260 - drag feedback marks grip, source and exact insertion target while keeping original save ordering
+  ---
+  duration_ms: 6.4753
+  type: 'test'
+  ...
+# Subtest: department financial signals read without rebuilding unsaved task rows
+ok 261 - department financial signals read without rebuilding unsaved task rows
+  ---
+  duration_ms: 10.7101
+  type: 'test'
+  ...
+# Subtest: pending save permits department navigation, customer filtering and read-only history without resubmitting
+ok 262 - pending save permits department navigation, customer filtering and read-only history without resubmitting
+  ---
+  duration_ms: 9.0066
+  type: 'test'
+  ...
+# Subtest: late confirmation clears only submitted edits, retains unrelated drafts and stays on the viewed department
+ok 263 - late confirmation clears only submitted edits, retains unrelated drafts and stays on the viewed department
+  ---
+  duration_ms: 8.6777
+  type: 'test'
+  ...
+# Subtest: an unsaved row order remains scoped to its original customer while browsing another customer
+ok 264 - an unsaved row order remains scoped to its original customer while browsing another customer
+  ---
+  duration_ms: 9.0406
+  type: 'test'
+  ...
+# Subtest: late receipt from an earlier save cannot resolve or retry a later operation
+ok 265 - late receipt from an earlier save cannot resolve or retry a later operation
+  ---
+  duration_ms: 23.2986
+  type: 'test'
+  ...
+# Subtest: restored pending submission exposes original values and supports browsing without creating a save
+ok 266 - restored pending submission exposes original values and supports browsing without creating a save
+  ---
+  duration_ms: 10.2656
+  type: 'test'
+  ...
+# Subtest: pending dialog unlock after a known rejection preserves fields that were already disabled
+ok 267 - pending dialog unlock after a known rejection preserves fields that were already disabled
+  ---
+  duration_ms: 5.5897
+  type: 'test'
+  ...
+# Subtest: pre-upgrade row-order cache retains customer scope after navigating to another customer
+ok 268 - pre-upgrade row-order cache retains customer scope after navigating to another customer
+  ---
+  duration_ms: 5.5673
+  type: 'test'
+  ...
+# Subtest: Active move entry immediately exposes native drag handles for a sole customer without submitting
+ok 269 - Active move entry immediately exposes native drag handles for a sole customer without submitting
+  ---
+  duration_ms: 5.2758
+  type: 'test'
+  ...
+# Subtest: All Customers keeps native handles across navigation and drags a complete group with a customer-scoped Save
+ok 270 - All Customers keeps native handles across navigation and drags a complete group with a customer-scoped Save
+  ---
+  duration_ms: 12.6709
+  type: 'test'
+  ...
+# Subtest: All Customers rejects cross-customer drop and protects an existing customer sort draft
+ok 271 - All Customers rejects cross-customer drop and protects an existing customer sort draft
+  ---
+  duration_ms: 6.4047
+  type: 'test'
+  ...
+# Subtest: Clicking a persistent handle in All Customers opens the original destination dialog for its customer
+ok 272 - Clicking a persistent handle in All Customers opens the original destination dialog for its customer
+  ---
+  duration_ms: 5.4933
+  type: 'test'
+  ...
+# Subtest: Active work tabs separate work content from filters and retain a row-order draft and supplier filter
+ok 273 - Active work tabs separate work content from filters and retain a row-order draft and supplier filter
+  ---
+  duration_ms: 7.9835
+  type: 'test'
+  ...
+# Subtest: Active work tabs allow read-only browsing during a pending Save without resubmitting
+ok 274 - Active work tabs allow read-only browsing during a pending Save without resubmitting
+  ---
+  duration_ms: 5.7461
+  type: 'test'
+  ...
+# Subtest: open GP uses latest Admin FX, persists only margin/FX cache, audits recalculation and skips unchanged reads
+ok 275 - open GP uses latest Admin FX, persists only margin/FX cache, audits recalculation and skips unchanged reads
+  ---
+  duration_ms: 11.766
+  type: 'test'
+  ...
+# Subtest: missing current rate/cost never exposes the previous cached margin or substitutes zero
+ok 276 - missing current rate/cost never exposes the previous cached margin or substitutes zero
+  ---
+  duration_ms: 0.7994
+  type: 'test'
+  ...
+# Subtest: saved invoice snapshot is read-only, bare invoice without financial lock fails closed
+ok 277 - saved invoice snapshot is read-only, bare invoice without financial lock fails closed
+  ---
+  duration_ms: 0.4351
+  type: 'test'
+  ...
+# Subtest: concurrent cost save, invoice or quote changes cannot be overwritten by margin refresh
+ok 278 - concurrent cost save, invoice or quote changes cannot be overwritten by margin refresh
+  ---
+  duration_ms: 1.621
+  type: 'test'
+  ...
+# Subtest: lost cache write leaves no held task lock and the next refresh repairs GP without editing quantity
+ok 279 - lost cache write leaves no held task lock and the next refresh repairs GP without editing quantity
+  ---
+  duration_ms: 2.1469
+  type: 'test'
+  ...
+# Subtest: failed GP lock cleanup cannot take the procurement save lock or fail the whole workspace
+ok 280 - failed GP lock cleanup cannot take the procurement save lock or fail the whole workspace
+  ---
+  duration_ms: 0.7821
+  type: 'test'
+  ...
+# Subtest: multiple suppliers contribute weighted open cost while demand and each supplier price remain unchanged
+ok 281 - multiple suppliers contribute weighted open cost while demand and each supplier price remain unchanged
+  ---
+  duration_ms: 1.0095
+  type: 'test'
+  ...
+# Subtest: supplier surplus stays out of the customer weighted GP cost
+ok 282 - supplier surplus stays out of the customer weighted GP cost
+  ---
+  duration_ms: 0.7238
+  type: 'test'
+  ...
+# Subtest: partial invoice preserves its source snapshot and weights only remaining supplier cartons at current FX
+ok 283 - partial invoice preserves its source snapshot and weights only remaining supplier cartons at current FX
+  ---
+  duration_ms: 2.006
+  type: 'test'
+  ...
+# Subtest: missing or concurrently edited secondary supplier cost cannot expose an inaccurate GP
+ok 284 - missing or concurrently edited secondary supplier cost cannot expose an inaccurate GP
+  ---
+  duration_ms: 1.175
+  type: 'test'
+  ...
+# Subtest: partial invoice writes CMS invoice summary and weighted GP without locking the remaining quantity
+ok 285 - partial invoice writes CMS invoice summary and weighted GP without locking the remaining quantity
+  ---
+  duration_ms: 1.6231
+  type: 'test'
+  ...
+# Subtest: fully invoiced GP and invoice summary cache do not require a current FX service response
+ok 286 - fully invoiced GP and invoice summary cache do not require a current FX service response
+  ---
+  duration_ms: 0.9878
+  type: 'test'
+  ...
+# Subtest: first confirmed B uses existing root PLAN once, opens its PO, and later A adds a distinct source without changing B
+ok 287 - first confirmed B uses existing root PLAN once, opens its PO, and later A adds a distinct source without changing B
+  ---
+  duration_ms: 130.6285
+  type: 'test'
+  ...
+# Subtest: customer demand rejects Purchase, Account, Warehouse, Top Management and forged client role before any write
+ok 288 - customer demand rejects Purchase, Account, Warehouse, Top Management and forged client role before any write
+  ---
+  duration_ms: 4.4714
+  type: 'test'
+  ...
+# Subtest: Super Admin demand audit records verified role and workspace capability; Purchase retains planning access
+ok 289 - Super Admin demand audit records verified role and workspace capability; Purchase retains planning access
+  ---
+  duration_ms: 10.2692
+  type: 'test'
+  ...
+# Subtest: supplier can be cleared before commitment, with audit and unchanged quantities/prices; committed suppliers stay locked
+ok 290 - supplier can be cleared before commitment, with audit and unchanged quantities/prices; committed suppliers stay locked
+  ---
+  duration_ms: 10.8577
+  type: 'test'
+  ...
+# Subtest: submitted PO blocks price, plan and merging a new member, while row ordering remains available
+ok 291 - submitted PO blocks price, plan and merging a new member, while row ordering remains available
+  ---
+  duration_ms: 7.7618
+  type: 'test'
+  ...
+# Subtest: calculator PO revisions audit quantity without asserting supplier agreement; stronger locks still reject
+ok 292 - calculator PO revisions audit quantity without asserting supplier agreement; stronger locks still reject
+  ---
+  duration_ms: 19.8517
+  type: 'test'
+  ...
+# Subtest: Finance freeze appearing after preparation blocks all task writes at application
+ok 293 - Finance freeze appearing after preparation blocks all task writes at application
+  ---
+  duration_ms: 1.7631
+  type: 'test'
+  ...
+# Subtest: FOC amount, original inputs, shares, PO cents and retries stay consistent across suppliers
+ok 294 - FOC amount, original inputs, shares, PO cents and retries stay consistent across suppliers
+  ---
+  duration_ms: 73.2608
+  type: 'test'
+  ...
+# Subtest: editing B preserves C stock-only shares even when the customer remainder changes
+ok 295 - editing B preserves C stock-only shares even when the customer remainder changes
+  ---
+  duration_ms: 45.7032
+  type: 'test'
+  ...
+# Subtest: discounted FOC and negotiated total retain cents without rounded-average multiplication
+ok 296 - discounted FOC and negotiated total retain cents without rounded-average multiplication
+  ---
+  duration_ms: 2.2964
+  type: 'test'
+  ...
+# Subtest: FOC lost write acknowledgement and partial source audit resume the exact prepared request
+ok 297 - FOC lost write acknowledgement and partial source audit resume the exact prepared request
+  ---
+  duration_ms: 40.8322
+  type: 'test'
+  ...
+# Subtest: one plan save commits supplier, quantity and price together and retries without duplicate audits
+ok 298 - one plan save commits supplier, quantity and price together and retries without duplicate audits
+  ---
+  duration_ms: 7.7175
+  type: 'test'
+  ...
+# Subtest: a new draft plan can change supplier before PO confirmation, while a confirmed PO remains locked
+ok 299 - a new draft plan can change supplier before PO confirmation, while a confirmed PO remains locked
+  ---
+  duration_ms: 17.4233
+  type: 'test'
+  ...
+# Subtest: unassigned supplier source plans become separate Account POs only when assigned and preserve customer demand
+ok 300 - unassigned supplier source plans become separate Account POs only when assigned and preserve customer demand
+  ---
+  duration_ms: 87.7574
+  type: 'test'
+  ...
+# Subtest: manual prices derive cartons, preserve original/source quote, audit once and replay saved result
+ok 301 - manual prices derive cartons, preserve original/source quote, audit once and replay saved result
+  ---
+  duration_ms: 2.2428
+  type: 'test'
+  ...
+# Subtest: partial multirow save resumes exact prepared changes without losing later edits
+ok 302 - partial multirow save resumes exact prepared changes without losing later edits
+  ---
+  duration_ms: 2.6106
+  type: 'test'
+  ...
+# Subtest: P.O. validates one supplier/customer and records stage and identities without changing quantities
+ok 303 - P.O. validates one supplier/customer and records stage and identities without changing quantities
+  ---
+  duration_ms: 2.8071
+  type: 'test'
+  ...
+# Subtest: PO metadata associations cannot split or merge and a bare prefix cannot be saved
+ok 304 - PO metadata associations cannot split or merge and a bare prefix cannot be saved
+  ---
+  duration_ms: 5.2161
+  type: 'test'
+  ...
+# Subtest: special quantity writes remain disabled until allocation rules are confirmed
+ok 305 - special quantity writes remain disabled until allocation rules are confirmed
+  ---
+  duration_ms: 1.3777
+  type: 'test'
+  ...
+# Subtest: reorder accepts only complete current customer set and cannot modify Sales ordering
+ok 306 - reorder accepts only complete current customer set and cannot modify Sales ordering
+  ---
+  duration_ms: 2.6567
+  type: 'test'
+  ...
+# Subtest: invoice lock, stale edit, unaccepted task and foreign company reject before task writes
+ok 307 - invoice lock, stale edit, unaccepted task and foreign company reject before task writes
+  ---
+  duration_ms: 3.4742
+  type: 'test'
+  ...
+# Subtest: quantity requires supplier and reason, only reduces, preserves received/source/quote and replays once
+ok 308 - quantity requires supplier and reason, only reduces, preserves received/source/quote and replays once
+  ---
+  duration_ms: 9.2997
+  type: 'test'
+  ...
+# Subtest: quantity retry finishes missing history after a lost write response
+ok 309 - quantity retry finishes missing history after a lost write response
+  ---
+  duration_ms: 2.9491
+  type: 'test'
+  ...
+# Subtest: another decrease cannot pass an unfinished prior quantity save
+ok 310 - another decrease cannot pass an unfinished prior quantity save
+  ---
+  duration_ms: 3.4449
+  type: 'test'
+  ...
+# Subtest: average cost applies unrounded amount once, zeros discounts and audits employee/time without quantity changes
+ok 311 - average cost applies unrounded amount once, zeros discounts and audits employee/time without quantity changes
+  ---
+  duration_ms: 2.404
+  type: 'test'
+  ...
+# Subtest: average cost refuses missing supplier, invalid amount/cartons and missing EA before business writes
+ok 312 - average cost refuses missing supplier, invalid amount/cartons and missing EA before business writes
+  ---
+  duration_ms: 6.0102
+  type: 'test'
+  ...
+# Subtest: average cost lost response retries exact calculation and invoice blocks cost changes
+ok 313 - average cost lost response retries exact calculation and invoice blocks cost changes
+  ---
+  duration_ms: 2.6502
+  type: 'test'
+  ...
+# Subtest: supplier extras do not increase customer commitment or create available stock; plan is audited once
+ok 314 - supplier extras do not increase customer commitment or create available stock; plan is audited once
+  ---
+  duration_ms: 2.8626
+  type: 'test'
+  ...
+# Subtest: customer reduction after P.O. retains supplier total and increases expected surplus only
+ok 315 - customer reduction after P.O. retains supplier total and increases expected surplus only
+  ---
+  duration_ms: 7.4035
+  type: 'test'
+  ...
+# Subtest: procurement safeguards require supplier, explicit extra type/confirmation and current company identities
+ok 316 - procurement safeguards require supplier, explicit extra type/confirmation and current company identities
+  ---
+  duration_ms: 8.7753
+  type: 'test'
+  ...
+# Subtest: zero quantity and reduction below received cartons cannot masquerade as ordinary reduction
+ok 317 - zero quantity and reduction below received cartons cannot masquerade as ordinary reduction
+  ---
+  duration_ms: 1.3856
+  type: 'test'
+  ...
+# Subtest: lost plan-audit write blocks competing saves and resumes the exact original operation
+ok 318 - lost plan-audit write blocks competing saves and resumes the exact original operation
+  ---
+  duration_ms: 2.5633
+  type: 'test'
+  ...
+# Subtest: plan revisions reject branched history instead of displaying invented available inventory
+ok 319 - plan revisions reject branched history instead of displaying invented available inventory
+  ---
+  duration_ms: 1.3481
+  type: 'test'
+  ...
+# Subtest: negative net cost rejects before preparing or changing any business fields
+ok 320 - negative net cost rejects before preparing or changing any business fields
+  ---
+  duration_ms: 1.0457
+  type: 'test'
+  ...
+# Subtest: calculator first allocation and new remaining source save without a reason; revisions still require one and retry stays exact
+ok 321 - calculator first allocation and new remaining source save without a reason; revisions still require one and retry stays exact
+  ---
+  duration_ms: 27.4568
+  type: 'test'
+  ...
+# Subtest: blank reason never exempts legacy planning, initial surplus or additional stock procurement
+ok 322 - blank reason never exempts legacy planning, initial surplus or additional stock procurement
+  ---
+  duration_ms: 24.8868
+  type: 'test'
+  ...
+# Subtest: calculator surplus automatically projects as expected stock without a checkbox or a customer-demand increase
+ok 323 - calculator surplus automatically projects as expected stock without a checkbox or a customer-demand increase
+  ---
+  duration_ms: 42.0356
+  type: 'test'
+  ...
+# Subtest: one supplier PO includes multiple customers without combining their task identities
+ok 324 - one supplier PO includes multiple customers without combining their task identities
+  ---
+  duration_ms: 32.3001
+  type: 'test'
+  ...
+# Subtest: PO amount uses supplier cartons, MYR and distinct product count; no invented payment, invoice or archive
+ok 325 - PO amount uses supplier cartons, MYR and distinct product count; no invented payment, invoice or archive
+  ---
+  duration_ms: 1.1077
+  type: 'test'
+  ...
+# Subtest: chase persists once, retains staff/time/reason and stable identity across a full PO rename
+ok 326 - chase persists once, retains staff/time/reason and stable identity across a full PO rename
+  ---
+  duration_ms: 6.6879
+  type: 'test'
+  ...
+# Subtest: lost acknowledgement resumes identical save without duplicate audit; stale and foreign company inputs fail
+ok 327 - lost acknowledgement resumes identical save without duplicate audit; stale and foreign company inputs fail
+  ---
+  duration_ms: 5.0855
+  type: 'test'
+  ...
+# Subtest: saved PO cannot silently split its document/payment identity across new numbers
+ok 328 - saved PO cannot silently split its document/payment identity across new numbers
+  ---
+  duration_ms: 1.8461
+  type: 'test'
+  ...
+# Subtest: a lost upload receipt retries one file; no PDF bytes are written to CMS and no premature green status
+ok 329 - a lost upload receipt retries one file; no PDF bytes are written to CMS and no premature green status
+  ---
+  duration_ms: 5.648
+  type: 'test'
+  ...
+# Subtest: corrupt PDF is rejected before storage or Drive access
+ok 330 - corrupt PDF is rejected before storage or Drive access
+  ---
+  duration_ms: 0.8566
+  type: 'test'
+  ...
+# Subtest: submission lost receipt retries once; Finance ownership defeats a stale Purchase withdrawal
+ok 331 - submission lost receipt retries once; Finance ownership defeats a stale Purchase withdrawal
+  ---
+  duration_ms: 14.9039
+  type: 'test'
+  ...
+# Subtest: a saved FOC quantity changing between preparation and application prevents stale PO submission
+ok 332 - a saved FOC quantity changing between preparation and application prevents stale PO submission
+  ---
+  duration_ms: 3.4455
+  type: 'test'
+  ...
+# Subtest: Finance cannot take ownership of FOC content changed after its save was prepared
+ok 333 - Finance cannot take ownership of FOC content changed after its save was prepared
+  ---
+  duration_ms: 4.8819
+  type: 'test'
+  ...
+# Subtest: progress uses current document and review facts without changing stored quantities
+ok 334 - progress uses current document and review facts without changing stored quantities
+  ---
+  duration_ms: 3.6603
+  type: 'test'
+  ...
+# Subtest: credit terms and real receipts advance operational work independently of unpaid supplier liability
+ok 335 - credit terms and real receipts advance operational work independently of unpaid supplier liability
+  ---
+  duration_ms: 0.7374
+  type: 'test'
+  ...
+# Subtest: additional supplier source follows its allocated invoice portions and never archives before dispatch and finance check
+ok 336 - additional supplier source follows its allocated invoice portions and never archives before dispatch and finance check
+  ---
+  duration_ms: 11.3883
+  type: 'test'
+  ...
+# Subtest: Purchase projection joins actual legacy keys and exposes no selling price, FX or source snapshots
+ok 337 - Purchase projection joins actual legacy keys and exposes no selling price, FX or source snapshots
+  ---
+  duration_ms: 13.4135
+  type: 'test'
+  ...
+# Subtest: partially persisted intake has no visible orders or tasks before receipt commit
+ok 338 - partially persisted intake has no visible orders or tasks before receipt commit
+  ---
+  duration_ms: 0.5098
+  type: 'test'
+  ...
+# Subtest: unrelated financial activity cannot leak through the Purchase task history
+ok 339 - unrelated financial activity cannot leak through the Purchase task history
+  ---
+  duration_ms: 0.7746
+  type: 'test'
+  ...
+# Subtest: incomplete accepted receipt is a visible error, not an empty successful workspace
+ok 340 - incomplete accepted receipt is a visible error, not an empty successful workspace
+  ---
+  duration_ms: 1.1921
+  type: 'test'
+  ...
+# Subtest: company mapping uses actual GHR collection IDs and rejects untrusted company names
+ok 341 - company mapping uses actual GHR collection IDs and rejects untrusted company names
+  ---
+  duration_ms: 0.3278
+  type: 'test'
+  ...
+# Subtest: shared suppliers retain the native primary Supplier ID and verified name fields
+ok 342 - shared suppliers retain the native primary Supplier ID and verified name fields
+  ---
+  duration_ms: 0.7653
+  type: 'test'
+  ...
+# Subtest: Master access requires approved actual member and exactly one active staff binding
+ok 343 - Master access requires approved actual member and exactly one active staff binding
+  ---
+  duration_ms: 0.6844
+  type: 'test'
+  ...
+# Subtest: TOP MANAGEMENT can enter Purchase without department tags but still requires a complete active member binding
+ok 344 - TOP MANAGEMENT can enter Purchase without department tags but still requires a complete active member binding
+  ---
+  duration_ms: 0.4572
+  type: 'test'
+  ...
+# Subtest: unplaced ten and supplier short receipt ten stay independent with owner and employee audit
+ok 345 - unplaced ten and supplier short receipt ten stay independent with owner and employee audit
+  ---
+  duration_ms: 20.1365
+  type: 'test'
+  ...
+# Subtest: ordinary partial delivery has no high-risk receipt case
+ok 346 - ordinary partial delivery has no high-risk receipt case
+  ---
+  duration_ms: 0.5614
+  type: 'test'
+  ...
+# Subtest: replenishment updates physical cartons but retains the financial review case
+ok 347 - replenishment updates physical cartons but retains the financial review case
+  ---
+  duration_ms: 2.6121
+  type: 'test'
+  ...
+# Subtest: reducing supplier plan after shortage cannot erase supplier liability
+ok 348 - reducing supplier plan after shortage cannot erase supplier liability
+  ---
+  duration_ms: 1.0591
+  type: 'test'
+  ...
+# Subtest: a fresh sourcing change reopens the unplaced case and stale saves are rejected
+ok 349 - a fresh sourcing change reopens the unplaced case and stale saves are rejected
+  ---
+  duration_ms: 4.6432
+  type: 'test'
+  ...
+# Subtest: quantity decisions cannot be submitted by another department or with another company identity
+ok 350 - quantity decisions cannot be submitted by another department or with another company identity
+  ---
+  duration_ms: 1.0267
+  type: 'test'
+  ...
+# Subtest: quantity projection follows the decrease chain even with equal timestamps and returns only customer-safe values
+ok 351 - quantity projection follows the decrease chain even with equal timestamps and returns only customer-safe values
+  ---
+  duration_ms: 9.8569
+  type: 'test'
+  ...
+# Subtest: foreign customer, missing accepted receipt and partial quantity save reject rather than show stale values
+ok 352 - foreign customer, missing accepted receipt and partial quantity save reject rather than show stale values
+  ---
+  duration_ms: 0.8487
+  type: 'test'
+  ...
+# Subtest: same barcode on unrelated tasks cannot cross customer or source line boundaries
+ok 353 - same barcode on unrelated tasks cannot cross customer or source line boundaries
+  ---
+  duration_ms: 0.4294
+  type: 'test'
+  ...
+# Subtest: source projection keeps original ordered qty and quote while both views receive current committed qty and reason
+ok 354 - source projection keeps original ordered qty and quote while both views receive current committed qty and reason
+  ---
+  duration_ms: 2.2751
+  type: 'test'
+  ...
+# Subtest: warehouse reply exposes only allocated customer cartons and source displays completion without changing price
+ok 355 - warehouse reply exposes only allocated customer cartons and source displays completion without changing price
+  ---
+  duration_ms: 1.9895
+  type: 'test'
+  ...
+# Subtest: customer feedback copies only safe fields and never changes demand, receipt or completion
+ok 356 - customer feedback copies only safe fields and never changes demand, receipt or completion
+  ---
+  duration_ms: 0.7048
+  type: 'test'
+  ...
+# Subtest: Sales and Buyer render escaped customer feedback without internal supplier details
+not ok 357 - Sales and Buyer render escaped customer feedback without internal supplier details
+  ---
+  duration_ms: 10.1695
+  type: 'test'
+  location: 'C:\\FMCG-WIX-LOCAL\\worktrees\\nct-order-submit-room6-20261009\\integration\\tests\\purchase-quantity-projection.test.cjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /等待补货/. Input:
+
+    '<small class="customer-fulfilment"><b>Awaiting balance</b> · 2026-10-15<br>&lt;script&gt;unsafe&lt;/script&gt;</small>'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<small class="customer-fulfilment"><b>Awaiting balance</b> · 2026-10-15<br>&lt;script&gt;unsafe&lt;/script&gt;</small>'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (C:\FMCG-WIX-LOCAL\worktrees\nct-order-submit-room6-20261009\integration\tests\purchase-quantity-projection.test.cjs:27:484)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: partial invoice completion preserves original demand and carries only validated history quantities
+ok 358 - partial invoice completion preserves original demand and carries only validated history quantities
+  ---
+  duration_ms: 1.2805
+  type: 'test'
+  ...
+# Subtest: known pre-write negative-cost rejection returns actionable feedback instead of a Wix masked exception
+ok 359 - known pre-write negative-cost rejection returns actionable feedback instead of a Wix masked exception
+  ---
+  duration_ms: 3.5108
+  type: 'test'
+  ...
+# Subtest: PO identity and prefix rejections return actionable feedback without exposing unknown errors
+ok 360 - PO identity and prefix rejections return actionable feedback without exposing unknown errors
+  ---
+  duration_ms: 5.3524
+  type: 'test'
+  ...
+# Subtest: unknown failures and authorization failures remain unconfirmed; successful saves retain their receipt
+ok 361 - unknown failures and authorization failures remain unconfirmed; successful saves retain their receipt
+  ---
+  duration_ms: 4.8795
+  type: 'test'
+  ...
+# Subtest: pre-write cost, plan and reorder validation reaches the caller with its exact cause
+ok 362 - pre-write cost, plan and reorder validation reaches the caller with its exact cause
+  ---
+  duration_ms: 10.1609
+  type: 'test'
+  ...
+# Subtest: CMS instance failure is identified without exposing instance IDs or claiming no write happened
+ok 363 - CMS instance failure is identified without exposing instance IDs or claiming no write happened
+  ---
+  duration_ms: 5.9405
+  type: 'test'
+  ...
+# Subtest: errors during apply and operation lock failures still propagate for receipt reconciliation
+ok 364 - errors during apply and operation lock failures still propagate for receipt reconciliation
+  ---
+  duration_ms: 6.6622
+  type: 'test'
+  ...
+# Subtest: CMS error reading staff context gives diagnostics but cannot enter any business operation
+ok 365 - CMS error reading staff context gives diagnostics but cannot enter any business operation
+  ---
+  duration_ms: 1.2776
+  type: 'test'
+  ...
+# Subtest: stop waiting retains original demand and records persistent supplier financial responsibility
+ok 366 - stop waiting retains original demand and records persistent supplier financial responsibility
+  ---
+  duration_ms: 11.8048
+  type: 'test'
+  ...
+# Subtest: replenishment requires valid date, customer update is mandatory, and stale quantities reject
+ok 367 - replenishment requires valid date, customer update is mandatory, and stale quantities reject
+  ---
+  duration_ms: 4.2811
+  type: 'test'
+  ...
+# Subtest: multiple sources always show both children; disabled mother does not consume the first source selection
+ok 368 - multiple sources always show both children; disabled mother does not consume the first source selection
+  ---
+  duration_ms: 55.008
+  type: 'test'
+  ...
+# Subtest: two saved supplier heads plus one remainder head do not invent a third source, amount or PO
+ok 369 - two saved supplier heads plus one remainder head do not invent a third source, amount or PO
+  ---
+  duration_ms: 11.541
+  type: 'test'
+  ...
+# Subtest: unconfirmed and unsaved supplier choices stay orange; PO color follows saved association only
+ok 370 - unconfirmed and unsaved supplier choices stay orange; PO color follows saved association only
+  ---
+  duration_ms: 5.2464
+  type: 'test'
+  ...
+# Subtest: ordinary partial receipt stays waiting; explicit review problems override a completed check
+ok 371 - ordinary partial receipt stays waiting; explicit review problems override a completed check
+  ---
+  duration_ms: 3.2996
+  type: 'test'
+  ...
+# Subtest: mother progress waits for every source and unplaced demand while preserving source completion and problem priority
+ok 372 - mother progress waits for every source and unplaced demand while preserving source completion and problem priority
+  ---
+  duration_ms: 11.1898
+  type: 'test'
+  ...
+# Subtest: one supplier has no duplicate child and keeps the normal checkbox and PO entry
+ok 373 - one supplier has no duplicate child and keeps the normal checkbox and PO entry
+  ---
+  duration_ms: 4.4666
+  type: 'test'
+  ...
+# Subtest: Active GP uses a red capsule only below six percent and has no Progress column
+ok 374 - Active GP uses a red capsule only below six percent and has no Progress column
+  ---
+  duration_ms: 14.9792
+  type: 'test'
+  ...
+# Subtest: single click immediately shows bilingual loading and suppresses repeated reads
+ok 375 - single click immediately shows bilingual loading and suppresses repeated reads
+  ---
+  duration_ms: 3.2086
+  type: 'test'
+  ...
+# Subtest: successful read restores buttons and removes loading status
+ok 376 - successful read restores buttons and removes loading status
+  ---
+  duration_ms: 1.7158
+  type: 'test'
+  ...
+# Subtest: failed read gives visible error and permits a new attempt
+ok 377 - failed read gives visible error and permits a new attempt
+  ---
+  duration_ms: 2.1446
+  type: 'test'
+  ...
+# Subtest: NCT/GHR date amendments preserve immutable task quantities, costs and original intake date
+ok 378 - NCT/GHR date amendments preserve immutable task quantities, costs and original intake date
+  ---
+  duration_ms: 17.3223
+  type: 'test'
+  ...
+# Subtest: lost acknowledgement retries exactly one amendment; altered same-ID replay is rejected
+ok 379 - lost acknowledgement retries exactly one amendment; altered same-ID replay is rejected
+  ---
+  duration_ms: 3.4983
+  type: 'test'
+  ...
+# Subtest: concurrent stale date and spoofed customer/submission/department cannot change the record
+ok 380 - concurrent stale date and spoofed customer/submission/department cannot change the record
+  ---
+  duration_ms: 3.1924
+  type: 'test'
+  ...
+# Subtest: partial dispatch may adjust the remaining date; fully dispatched and stopped-short orders lock it
+ok 381 - partial dispatch may adjust the remaining date; fully dispatched and stopped-short orders lock it
+  ---
+  duration_ms: 1.6487
+  type: 'test'
+  ...
+# Subtest: invalid dates and forked amendment history reject; explicit clearing keeps audit identity
+ok 382 - invalid dates and forked amendment history reject; explicit clearing keeps audit identity
+  ---
+  duration_ms: 2.0819
+  type: 'test'
+  ...
+# Subtest: customer projection adds only checked shipment metadata and keeps source snapshot unchanged
+ok 383 - customer projection adds only checked shipment metadata and keeps source snapshot unchanged
+  ---
+  duration_ms: 3.3864
+  type: 'test'
+  ...
+# Subtest: cross-customer merged PO retains each order date without changing its finance content version or amount
+ok 384 - cross-customer merged PO retains each order date without changing its finance content version or amount
+  ---
+  duration_ms: 51.9088
+  type: 'test'
+  ...
+# Subtest: supplier save normalizes company and roles, preserves email/URL, and replays one actual record
+ok 385 - supplier save normalizes company and roles, preserves email/URL, and replays one actual record
+  ---
+  duration_ms: 9.7132
+  type: 'test'
+  ...
+# Subtest: lost response resumes inserted supplier without duplication and only then records success
+ok 386 - lost response resumes inserted supplier without duplication and only then records success
+  ---
+  duration_ms: 3.8617
+  type: 'test'
+  ...
+# Subtest: stale revision and reused save identity cannot overwrite subsequent profile changes
+ok 387 - stale revision and reused save identity cannot overwrite subsequent profile changes
+  ---
+  duration_ms: 3.2336
+  type: 'test'
+  ...
+# Subtest: unknown brand/role/arbitrary fields are rejected without creating a supplier
+ok 388 - unknown brand/role/arbitrary fields are rejected without creating a supplier
+  ---
+  duration_ms: 1.5629
+  type: 'test'
+  ...
+# Subtest: stock workspace permissions come from authenticated staff records, never browser role claims
+ok 389 - stock workspace permissions come from authenticated staff records, never browser role claims
+  ---
+  duration_ms: 2.34
+  type: 'test'
+  ...
+# Subtest: supplier credit is consumed once and partial remainder stays available
+ok 390 - supplier credit is consumed once and partial remainder stays available
+  ---
+  duration_ms: 10.2296
+  type: 'test'
+  ...
+# Subtest: credit cannot cross supplier/company, exceed available balance or bypass finance check
+ok 391 - credit cannot cross supplier/company, exceed available balance or bypass finance check
+  ---
+  duration_ms: 3.4661
+  type: 'test'
+  ...
+# Subtest: warehouse customer view preserves planner sequence and allocation without original quantity or cost exposure
+ok 392 - warehouse customer view preserves planner sequence and allocation without original quantity or cost exposure
+  ---
+  duration_ms: 2.7945
+  type: 'test'
+  ...
+# Subtest: two deliveries accumulate once; customer allocation remains pending and physical excess stays separate
+ok 393 - two deliveries accumulate once; customer allocation remains pending and physical excess stays separate
+  ---
+  duration_ms: 10.7216
+  type: 'test'
+  ...
+# Subtest: lost receipt acknowledgement replays same identity without doubled cartons
+ok 394 - lost receipt acknowledgement replays same identity without doubled cartons
+  ---
+  duration_ms: 2.062
+  type: 'test'
+  ...
+# Subtest: shortage requires reason, over-receipt and foreign PO are rejected
+ok 395 - shortage requires reason, over-receipt and foreign PO are rejected
+  ---
+  duration_ms: 1.5669
+  type: 'test'
+  ...
+# Subtest: rejected cartons are never accepted stock; replacement must explicitly resolve problem
+ok 396 - rejected cartons are never accepted stock; replacement must explicitly resolve problem
+  ---
+  duration_ms: 1.8659
+  type: 'test'
+  ...
+# Subtest: stale browser form cannot overwrite a new receipt
+ok 397 - stale browser form cannot overwrite a new receipt
+  ---
+  duration_ms: 1.0635
+  type: 'test'
+  ...
+# Subtest: warehouse rejects ambiguous audit chain and unauthorized purchaser
+ok 398 - warehouse rejects ambiguous audit chain and unauthorized purchaser
+  ---
+  duration_ms: 0.4953
+  type: 'test'
+  ...
+1..398
+# tests 398
+# suites 0
+# pass 396
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2592.6801

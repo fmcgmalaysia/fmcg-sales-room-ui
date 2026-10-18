@@ -1,0 +1,100 @@
+[
+  {
+    "view": "dashboard",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [
+          {
+            "display": "block",
+            "font": "20px",
+            "text": "Purchase Dashboard",
+            "weight": "800"
+          },
+          {
+            "display": "block",
+            "font": "20px",
+            "text": "采购工作台",
+            "weight": "800"
+          }
+        ],
+        "font": "20px",
+        "text": "Purchase Dashboard\n采购工作台",
+        "weight": "800"
+      }
+    ]
+  },
+  {
+    "view": "active",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [
+          {
+            "display": "inline",
+            "font": "20px",
+            "text": "所有客户采购任务",
+            "weight": "800"
+          }
+        ],
+        "font": "20px",
+        "text": "Active Orders所有客户采购任务",
+        "weight": "800"
+      }
+    ]
+  },
+  {
+    "view": "po",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [],
+        "font": "20px",
+        "text": "Purchase Order 采购单",
+        "weight": "800"
+      }
+    ]
+  },
+  {
+    "view": "payments",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [],
+        "font": "20px",
+        "text": "Payment Follow-up 付款跟进",
+        "weight": "800"
+      }
+    ]
+  },
+  {
+    "view": "pohistory",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [],
+        "font": "20px",
+        "text": "Purchase History 采购历史",
+        "weight": "800"
+      }
+    ]
+  },
+  {
+    "view": "history",
+    "grips": 0,
+    "header": "rgb(210, 223, 234)",
+    "title": [
+      {
+        "children": [],
+        "font": "20px",
+        "text": "Activity History 活动历史",
+        "weight": "800"
+      }
+    ]
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "department": "purchase",
+    "normalizedExact": true,
+    "sha256": "007134d5f7ee0bc9f6e177ec9d14aeb85f6faa1c88baaf3145c22b56df31aedc"
+  },
+  {
+    "department": "account",
+    "normalizedExact": true,
+    "sha256": "aca97dbb9e44d492171a256c575b852943810a334fa59451c56c568e63a831ea"
+  },
+  {
+    "department": "warehouse",
+    "normalizedExact": true,
+    "sha256": "f001595f3ef9b26e64810945201be457362f7f4c21b2d3f206e75291e5cfa1e9"
+  },
+  {
+    "department": "support",
+    "normalizedExact": true,
+    "sha256": "a0f21a88f73cad9fdbcff3e03f5ffc66de55a364fef692976f52e6e4ac309ab3"
+  }
+]

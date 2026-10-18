@@ -1,0 +1,45 @@
+{
+  "tests": {
+    "fail": 0,
+    "pass": 84
+  },
+  "date": "2026-10-16",
+  "protected": "Only two per-source button string occurrences changed. Validation, PLAN/ADD_SOURCE, payloads, data and existing unresolved saved-workspace mismatch unchanged. Footer and success messages unchanged.",
+  "deploymentPolicy": {
+    "originalSevenExact": true,
+    "temporary": 63223421,
+    "removed": true
+  },
+  "pages": {
+    "run": 38839769990,
+    "marker": "2026-10-16-purchase-save-item-v1",
+    "normalizedExactAssets": 31,
+    "status": "success"
+  },
+  "public": {
+    "verification": "Pending: real user page read-only inspected, iframe still stock-copy-v1 and new label0. Protected supplier draft not force refreshed.",
+    "url": "https://fmcg999.wixstudio.com/master"
+  },
+  "recovery": "42b64dc7ce585bec5d3a44fe6455d4a8e409def3",
+  "wix": {
+    "fullAfterReadback": true,
+    "onlyVersionTokenChanged": true,
+    "freshBeforeMatchesRepository": true,
+    "publishedLiveReceipt": true
+  },
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/97",
+  "wixRecord": "76de2a294c38f39104bf311ca782ab2d3650f732",
+  "preview": {
+    "overflow": false,
+    "oldLabelCountAfter": 0,
+    "newLabelCount": 1,
+    "cellWidth": 136.3,
+    "isolatedSampleOnly": true,
+    "buttonWidth": 77.6,
+    "label": "Purchase 优化候选 · 保存按钮",
+    "url": "http://127.0.0.1:8916/handoff/purchase-save-label-20261016/preview.html?layout=v3&view=active&poformat=1",
+    "tab": "51425496"
+  },
+  "branch": "copy/purchase-save-item-label-20261016",
+  "code": "dfca1beedc27eeaaec754a08e280a0802ac5a4cf"
+}
