@@ -43,3 +43,10 @@ Continuation checkpoint:
 - Apps Script Code.gs two local changes read back exact; TaskChatState.gs/TaskChatStore.gs saved. Active existing deployment updated successfully to immutable version 7 at 21:57 MYT, same deployment ID AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU, same Execute as Me and Anyone settings. Existing token validation retained.
 - Exact saved copies and deployment-v7.png retained in root handoff/task-chat-storage-20261018. No real messages or business writes submitted.
 - GitHub PR191 exists. Pending: branch-specific Pages authorization, Pages marker verification, Wix publication, public four-department and authorized message acceptance. No complete-release claim.
+
+## Release stages, 2026-10-18 22:02 MYT
+- Code e3dd7a2 pushed PR191; focused 26 tests pass.
+- User explicitly authorized temporary branch allowlist. Pages run39134011250 success; temporary policy removed; original seven exact. Four HTML plus actual referenced assets:38 exact, zero mismatches (root assets-after.json).
+- Wix Studio confirmed published and live; receipt root wix-publish.png. Apps Script immutable version7 same deployment remains active.
+- Public Finance loaded task-chat-drive-v1, LAW Account, three actual POs, green fixed P buttons and latest incoming only. NCT-PO-000001 chat reads legacy test message and existing payment-proof/document/receiving timeline. Three Finance quick replies bilingual confirmed. Screenshot finance-live-chat.png. No new real test message submitted.
+- Purchase/Warehouse/Support one tool refresh each still about:blank. User asked to manually refresh existing three tabs; response pending. No new windows. Do not claim complete release or merge main. Functional new-send/receipts and live Support routing acceptance remain outstanding.
