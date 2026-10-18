@@ -28,7 +28,6 @@
   }
   if(department==='ACCOUNT')for(const po of orders.filter(po=>po.state!=='HISTORY'||po.finance?.supplierCreditCents>0)){
    const title=po.number+' · '+po.supplierName;
-   if(po.chasePayment)add(po.id,'todo',title,'ACCOUNT',['PURCHASE'],'settle','Payment requested 采购正在催款');
    if(po.paymentHandoff?.reviewStale)add(po.id,'urgent',title,'ACCOUNT',['PURCHASE'],'settle','Payment documents changed 付款文件已变更，必须重新过目');
    if(po.paymentHandoff?.paymentDue){add(po.id,'urgent',title,'ACCOUNT',['PURCHASE'],'settle','Supplier payment due 供应商款项已到期');add(po.id,'todo',title,'ACCOUNT',['PURCHASE'],'settle','Payment due today or overdue 今天应付款或已逾期');}
    if(po.creditorActive||po.prepaymentPending)add(po.id,'partial',title,'ACCOUNT',[],'settle','Payment or reconciliation open 付款或对账尚未完成');

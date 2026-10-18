@@ -30,7 +30,6 @@ export const getDepartmentMessages=webMethod(Permissions.SiteMember,async(compan
  return projectDepartmentMessages({company,department,staff,orders,activity:context.activity});
 });
 export const saveDepartmentMessage=webMethod(Permissions.SiteMember,async(company,department,requestId,input)=>{
- const staff=await messageStaffContext();
- try{return await saveMessage({company,department,staff,requestId,input});}
- catch(error){const message=String(error?.message||''),safe=message.startsWith('Message ');return {ok:false,requestId,retryable:!safe,error:safe?message:'Message save is unconfirmed. Retry the same save.'};}
+ await messageStaffContext();
+ return {ok:false,requestId,retryable:false,error:'Message service changed. Refresh and check conversation history before sending again. 留言服务已更新，请刷新并核对历史记录后再发送。'};
 });

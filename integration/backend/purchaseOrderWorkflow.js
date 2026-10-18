@@ -110,6 +110,11 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
   }
   async function save({company,staff,requestId,input}) {
     if(!names[company]||!input||!['DOCUMENT_ISSUE_RESPONSE','CHASE','TERM','DOCUMENT','DELETE_DOCUMENT','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(input.action==='CHASE'){
+      const key=operationId(company+'/PURCHASE',requestId,staff?.memberId);
+      const prior=await store.read(names[company].activity,operationId(key,'RESULT')),prepared=await store.read(names[company].activity,key);
+      if(!prior&&!prepared)throw Error('Please use Messages to contact Account. The old payment reminder has been retired.');
+    }
     if(input.action==='DELETE_DOCUMENT')return deleteDocument({company,staff,requestId,input});
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){

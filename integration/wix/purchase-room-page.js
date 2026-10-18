@@ -1,3 +1,4 @@
+import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getPurchaseOrders, savePurchaseOrder } from 'backend/purchaseOrders.web';
@@ -9,6 +10,7 @@ $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'PURCHASE',result=>room.postMessage(result)))return;
     if(message.type==='PURCHASE_REFERENCE_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||typeof message.taskId!=='string'||message.taskId.length>100)return;
       try{const result=await getPurchaseReferenceCost(message.company,message.taskId);room.postMessage({type:'PURCHASE_REFERENCE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}

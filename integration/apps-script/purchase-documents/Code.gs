@@ -14,10 +14,11 @@ function doPost(e) {
     else if(input.action==='UPLOAD')result=uploadPurchasePdf_(input);
     else if(input.action==='TRASH')result=trashPurchasePdf_(input);
     else if(input.action==='PHOTO_UPLOAD')result=uploadWarehousePhoto_(input);
+    else if(['CHAT_OPERATION','CHAT_SUMMARIES'].includes(input.action))result=taskChatService_(input);
     else throw Error('INVALID_ACTION');
   } catch(error) {
     const safe=['NOT_AUTHORIZED','INVALID_COMPANY','INVALID_ACTION','INVALID_DOCUMENT','INVALID_PDF','FILE_IDENTITY_CONFLICT','UPLOAD_UNCONFIRMED'];
-    result={ok:false,error:safe.includes(error.message)?error.message:'DOCUMENT_SERVICE_UNAVAILABLE'};
+    result={ok:false,error:safe.includes(error.message)||/^CHAT_[A-Z_]+$/.test(error.message)?error.message:'DOCUMENT_SERVICE_UNAVAILABLE'};
   }
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
