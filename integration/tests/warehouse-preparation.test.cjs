@@ -9,7 +9,7 @@ function fixture(){
  return{records,tasks,store,context,save,staff,call,uploads,lose:()=>lost=true,loseUpload:()=>uploadLost=true};
 }
 test('packing and partial loading preserve original quantities and never create dispatch or money',async()=>{
- const f=fixture(),before=JSON.stringify(f.tasks);await f.call({action:'PACK'});let items=projectPreparation(await f.context());assert.equal(items[0].prepared,true);assert.equal(items[0].readyStock,null);assert.equal(preparationSummary('T',await f.context()).packedQty,100);
+ const f=fixture(),before=JSON.stringify(f.tasks);await f.call({action:'PACK'});let items=projectPreparation(await f.context());assert.equal(items[0].prepared,true);assert.equal(items[0].readyStock,0);assert.equal(preparationSummary('T',await f.context()).packedQty,100);
  await assert.rejects(f.call({action:'LOAD',loaded:90}),/explain partial/);await f.call({action:'LOAD',loaded:90,note:'Waiting for balance'});assert.equal(projectPreparation(await f.context())[0].status,'PARTIAL');await f.call({action:'LOAD',loaded:100});assert.equal(projectPreparation(await f.context())[0].status,'LOADED');assert.equal(JSON.stringify(f.tasks),before);assert.equal((await f.context()).activity.some(e=>e.action==='CUSTOMER_SHIPMENT_CHANGED'),false);
 });
 test('allocation, preparation, stale quantities, actor permission and company isolation are enforced',async()=>{
