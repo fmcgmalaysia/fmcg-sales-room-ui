@@ -1,0 +1,35 @@
+{
+  "objective": "AVATA Verify & Activate repair",
+  "customerId": "CUS-261019-4051EC",
+  "qdId": "1XnusQ_mXxqH623t0Akdn_XHr5gTij_6-t53kpCLkQnw",
+  "templateId": "1f2pT-KYlNTYT62ZAvHEqy0uVvV6rrnnmI_bmbVynpLU",
+  "recoveryId": "1IEW0e6WWfljgvPeps587TeL_Npi0gSJJ68FKTRRRnPE",
+  "errors": [
+    "QD SETUP sheet missing",
+    "WIX QUOTATION row count changed",
+    "WIX QUOTATION data validation changed"
+  ],
+  "before": {
+    "rows": 2999,
+    "validations": 2994,
+    "formulas": 7
+  },
+  "template": {
+    "rows": 3001,
+    "validations": 2996,
+    "formulas": 7
+  },
+  "repair": "Restore missing QD SETUP; insert two rows before blank final row (zero-based index 2998), inheriting preceding structure; original formulas automatically expand to row 3001.",
+  "after": {
+    "rows": 3001,
+    "validations": 2996,
+    "formulaAndValidationExactTemplateMatch": true,
+    "existingNonFormulaValuesChanged": 0
+  },
+  "central": {
+    "projectId": "1aJlWdNFtuBhLIWMvC8UiBKeb-CKqAP2U6VH102V52kM8FdE1YJ1sibhv",
+    "deploymentVersion": 18,
+    "codeUnchanged": true
+  },
+  "verification": "PUBLIC PASS: AVATA READY, customer ACTIVE, KEVIN PRIMARY active, Last Verified 2026-10-19 01:10:57 GMT+0800; success Quotation Desk Activated. Customer Access Is Now Active."
+}
