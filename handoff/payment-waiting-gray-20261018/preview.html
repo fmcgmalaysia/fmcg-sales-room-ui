@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Waiting status · Local candidate</title>
+<style>body{margin:0;font:11px 'Segoe UI',Arial;color:#203047}header{padding:10px 24px;background:#fff0d6}iframe{border:0;width:100%;height:calc(100vh - 36px)}</style>
+<header>LOCAL CANDIDATE · Waiting status correction · Sample data · No production writes</header>
+<iframe title="Account status preview" src="../../account-room/index.html"></iframe>
+<script>
+const frame=document.querySelector('iframe');
+const row=(id,stage,paid=0)=>({id,version:'PREVIEW',company:'NCT',state:'ACTIVE',supplierId:'PREVIEW-SUP',number:'NCT-PO-'+id,supplierName:'EXAMPLE SUPPLIER SDN BHD',customerName:'SAMPLE',createdAt:'2026-10-18T00:00:00Z',createdBy:'PREVIEW',documents:[],history:[],procurementHandoff:{stage,submission:{at:'2026-10-18T00:00:00Z',by:'PREVIEW',paymentRequest:{requestedCents:10000,paidCents:0,creditAppliedCents:0}}},finance:{payableCents:10000,paidCents:paid,balanceCents:10000-paid,payments:[]}});
+window.addEventListener('message',event=>{if(event.source!==frame.contentWindow||event.origin!==location.origin)return;const m=event.data||{};if(m.type==='ACCOUNT_ORDERS_REQUEST')event.source.postMessage({type:'ACCOUNT_ORDERS_RESULT',company:'NCT',requestId:m.requestId,ok:true,result:{company:'NCT',staff:{staffName:'PREVIEW'},orders:[row('REVIEW','LEGACY'),row('WAITING','SUBMITTED'),row('DOCS','OWNED'),row('PROCESSING','PROCESSING'),row('PAID','OWNED',10000)],readAt:new Date().toISOString()}},location.origin);});
+</script></html>
