@@ -35,3 +35,11 @@ Continuation checkpoint:
 - Focused tests: 26 pass. Full suite: 619 tests, 616 pass, the same three baseline failures. No new failure.
 - Same Chrome candidate tab now shows task-chat-full.html with current repository HTML/assets and synthetic three-department data. Purchase PO/Follow-up, Finance overview and Warehouse delivery P/S controls reviewed. Follow-up has no lightning/History column. Corrected stale Docs-header alignment after column merge. Warehouse phone view retains collapsible Menu. No real messages or business operations submitted.
 - Next: finish backend-only CMS schema after editor refresh; validate new notifications against actual backend, preserve exact deployment files/hashes, then publish under four-stage rules. Current branch still needs push/PR and its own Pages allowlist authorization. No release completion claim.
+
+## Live preparation and backend deployment, 2026-10-18 21:57 MYT
+- CMS DepartmentChatIndex schema completed: title/company/taskKind/taskId/manifestId Text, departmentKeys Tags, details Object. Advanced permissions persisted with all non-admin roles unchecked; zero rows.
+- Four new backend modules and public/taskChatBridge.js saved and read back exact. Existing purchaseDocumentClient exports appended; stockExceptions legacy save retired; purchaseOrderWorkflow CHASE guard read back exact.
+- Purchase, Account, Warehouse and Support entries minimally patched and fully read back exact. Finance insertion mismatch was undone to exact original before reapplying verified individual patches. All are Wix drafts, NOT published.
+- Apps Script Code.gs two local changes read back exact; TaskChatState.gs/TaskChatStore.gs saved. Active existing deployment updated successfully to immutable version 7 at 21:57 MYT, same deployment ID AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU, same Execute as Me and Anyone settings. Existing token validation retained.
+- Exact saved copies and deployment-v7.png retained in root handoff/task-chat-storage-20261018. No real messages or business writes submitted.
+- GitHub PR191 exists. Pending: branch-specific Pages authorization, Pages marker verification, Wix publication, public four-department and authorized message acceptance. No complete-release claim.
