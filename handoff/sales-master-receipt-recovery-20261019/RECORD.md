@@ -17,3 +17,6 @@ CMS NCT Activity fc25164b5cd86e04ee0a4b1f6e8111c9, COST_CAPTURE for L002, barcod
 ## Deployment progress
 Candidate 031b1a4, PR198. Pages run 39144900946 succeeded; public build 2026-10-19-sales-receipt-recovery-v1 verified. Temporary branch policy removed and exact original seven restored. Both MASTER and SOURCE Wix Studio returned published/live receipts; exact draft readbacks retained. Formal Sales recovery acceptance pending: tool refresh left the embedded frame blank; requested manual refresh of the existing Sales tab.
 
+
+## Public acceptance — 2026-10-19
+User manually refreshed the existing Sales Room. Verified its iframe and build marker are 2026-10-19-sales-receipt-recovery-v1. Opened the same original order through Review only; did not click Submit. The recovered detail retained 7 products, 922 CTN and MYR 120,057.84. Order Management badge disappeared; Return to Order List showed: No Confirmed Buyer Orders Require Action. Current Purchase P.O. NCT-PO-888888 remained displayed with HONG LEA, MYR 17,613.18. No Purchase reload or edit performed. No relevant Sales console errors observed. Screenshot: private handoff/sales-management-recovered.png. Four release stages now satisfied for the reported pending-management fault. User real-world confirmation remains required before a verified baseline or main merge.
