@@ -5,10 +5,10 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';};
 const companyValue=()=>document.querySelector('#companySelect,#company')?.value||'NCT';
 const key=t=>[t.kind,t.taskId,t.peer,t.legacyOnly?'old':'new'].join('|');
-let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve();
+let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,pageState='loading',listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve();
 const requests=new Map(),drafts=new Map(),seen=new Set();
 const dialog=document.createElement('dialog');dialog.className='tc-dialog';dialog.setAttribute('aria-label',copy('Messages','留言'));document.body.append(dialog);
-const nav=document.createElement('button');nav.type='button';nav.className='tc-nav';nav.setAttribute('aria-label',copy('Messages','留言'));nav.innerHTML='<span aria-hidden="true">•••</span>';document.querySelector('nav')?.append(nav);
+const nav=document.createElement('button');nav.type='button';nav.className='tc-nav';nav.setAttribute('aria-label',copy('Messages','留言'));nav.innerHTML='<span aria-hidden="true">•••</span>'; // Task-row buttons remain the visible message entry points.
 function draftKey(){return [company,department,staffId,current?key(current):''].join('|');}
 function remember(){const text=dialog.querySelector('textarea');if(current&&text)drafts.set(draftKey(),{body:text.value,replyTo});}
 function notice(text){const el=dialog.querySelector('.tc-notice');if(el)el.textContent=text;}
@@ -54,7 +54,7 @@ function presets(){
  if(department==='SUPPORT')return ['Please confirm the actual loaded quantity. 请确认实际装货数量。','Please confirm whether loading is complete. 请确认是否已完成装货。'];
  return ['Please confirm the receiving status. 请确认收货进度。','Please check the goods and advise. 请核对货物并回复。'];
 }
-function startThread(t){remember();current=t;pageBusy=false;pageToken++;messages=[];before=null;pageReadOnly=!!t.legacyOnly;replyTo=drafts.get(draftKey())?.replyTo||null;renderThread();loadPage();}
+function startThread(t){remember();current=t;pageBusy=false;pageToken++;messages=[];before=null;pageState='loading';pageReadOnly=!!t.legacyOnly;replyTo=drafts.get(draftKey())?.replyTo||null;renderThread();loadPage();}
 function receipt(m){const rows=m.receipts||[];return rows.some(r=>r.kind==='ACK')?copy('Acknowledged','已确认收到'):rows.some(r=>r.kind==='READ')?copy('Read','已读'):copy('Sent','已发送');}
 function bubble(m){const own=m.from===department,ack=(m.receipts||[]).some(r=>r.kind==='ACK'&&r.department===department&&r.byStaffId===staffId);return '<article class="tc-bubble '+(own?'out':'in')+'" data-tc-message="'+esc(m.id)+'"><small>'+esc(m.by)+' · '+esc(code[m.from]||m.from)+'</small>'+(m.replyTo?'<small class="tc-reply-marker">'+esc(copy('Reply','回复'))+'</small>':'')+'<p>'+esc(m.body)+'</p><div class="tc-meta"><time>'+esc(time(m.at))+'</time>'+(own?'<span>'+esc(receipt(m))+'</span>':'')+'</div>'+(!own&&m.requiresAck&&!ack&&!pageReadOnly?'<button data-tc-ack="'+esc(m.id)+'">'+esc(copy('Acknowledge','确认收到'))+'</button>':'')+(!pageReadOnly&&!m.legacy?'<button class="tc-reply" data-tc-reply="'+esc(m.id)+'">'+esc(copy('Reply','回复'))+'</button>':'')+'</article>';}
 function renderThread(){
@@ -65,14 +65,14 @@ function renderThread(){
 function renderBubbles(){
  const box=dialog.querySelector('.tc-bubbles');if(!box)return;
  const updates=(current.updates||[]).map(u=>({...u,system:true})),items=[...messages,...updates].sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
- box.innerHTML=items.map(m=>m.system?'<div class="tc-system" '+(m.notify&&m.from===current.peer?'data-tc-system="'+esc(m.id)+'"':'')+'>'+esc(m.body+(english?'':m.bodyZh?' '+m.bodyZh:''))+' <time>'+esc(time(m.at))+'</time></div>':bubble(m)).join('');observeRead();
+ box.innerHTML=items.map(m=>m.system?'<div class="tc-system" '+(m.notify&&m.from===current.peer?'data-tc-system="'+esc(m.id)+'"':'')+'>'+esc(m.body+(english?'':m.bodyZh?' '+m.bodyZh:''))+' <time>'+esc(time(m.at))+'</time></div>':bubble(m)).join('')||(pageState==='loading'?'<p class="tc-empty" role="status">'+esc(copy('Loading messages…','正在读取留言…'))+'</p>':pageState==='error'?'<p class="tc-empty" role="status">'+esc(copy('Messages could not be loaded.','留言读取失败。'))+'</p>':'<p class="tc-empty" role="status">'+esc(copy('No messages yet.','暂无留言。'))+'</p>');observeRead();
 }
 async function loadPage(earlier=false){
  if(pageBusy||!current)return;pageBusy=true;const gen=generation,token=++pageToken,identity=key(current),oldHeight=dialog.querySelector('.tc-history')?.scrollHeight||0;
  try{const result=await request('PAGE',{input:{kind:current.kind,taskId:current.taskId,peer:current.peer,legacyOnly:!!current.legacyOnly,before:earlier?before:null}});if(gen!==generation||token!==pageToken||!current||key(current)!==identity)return;
   const map=new Map((earlier?messages:[]).map(m=>[m.id,m]));for(const m of result.messages||[])map.set(m.id,m);messages=[...map.values()].sort((a,b)=>String(a.at).localeCompare(String(b.at))||(a.sequence||0)-(b.sequence||0));before=result.before;pageReadOnly=!!result.readOnly;if(result.summary){Object.assign(current,result.summary);merge([current]);paintCells();}current.updates=result.updates||[];
-  remember();renderThread();const history=dialog.querySelector('.tc-history');history.scrollTop=earlier?history.scrollHeight-oldHeight:history.scrollHeight;
- }catch(error){if(gen===generation&&token===pageToken)notice(error.message);}finally{if(token===pageToken)pageBusy=false;}
+  pageState='ready';remember();renderThread();const history=dialog.querySelector('.tc-history');history.scrollTop=earlier?history.scrollHeight-oldHeight:history.scrollHeight;
+ }catch(error){if(gen===generation&&token===pageToken){pageState='error';renderBubbles();notice(error.message);}}finally{if(token===pageToken)pageBusy=false;}
 }
 function setBusy(){dialog.querySelectorAll('[data-tc-send],textarea,[data-tc-ack],[data-tc-back],[data-tc-preset]').forEach(el=>el.disabled=!!pending);const b=dialog.querySelector('[data-tc-send]');if(b)b.textContent=pending?copy('Saving…','保存中…'):'Send';}
 async function savePending(){
