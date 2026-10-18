@@ -863,7 +863,7 @@ test('Follow Up uses requested columns, Malaysian calendar dates, real Account n
  const waiting={...base,id:'WAIT',number:'WAIT-PO',finance:{paidCents:0},paymentHandoff:{},procurementHandoff:{...base.procurementHandoff,stage:'SUBMITTED',submission:{...base.procurementHandoff.submission,at:new Date(now-86400000).toISOString()}}};
  const problem={...waiting,id:'BAD',number:'BAD-PO',procurementHandoff:{...waiting.procurementHandoff,stage:'RETURNED',submission:{...waiting.procurementHandoff.submission,at:new Date(now-2*86400000).toISOString()}}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[base,waiting,problem]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;
- assert.match(html,/<th>Requested<\/th><th>P.O. No.<\/th><th>Supplier<\/th><th>Purchase For<\/th><th>Amount MYR<\/th><th>Status<\/th><th><span class="pf-slip-heading">Pay Slip<\/span><\/th><th>Note from Acc.<\/th><th>History<\/th>/);
+ assert.match(html,/<th>Requested<\/th><th>P.O. No.<\/th><th>Supplier<\/th><th>Purchase For<\/th><th>Amount MYR<\/th><th>Status<\/th><th><span class="pf-slip-heading">Pay Slip<\/span><\/th><th>Message<\/th><th>History<\/th>/);
  for(const text of ['Today','Yesterday','2 Days ago','Fully Paid','Waiting for Acc. response','Problem','Used verified credit balance'])assert.ok(html.includes(text),text);
  assert.doesNotMatch(html,/Private purchase action/);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({paymentFilter:'UPDATES'});assert.match(h.node('#app').innerHTML,/FULL-PO/);assert.doesNotMatch(h.node('#app').innerHTML,/WAIT-PO|BAD-PO/);

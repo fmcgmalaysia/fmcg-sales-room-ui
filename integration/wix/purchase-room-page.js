@@ -1,5 +1,5 @@
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
-import { getStockExceptions, saveStockException } from 'backend/stockExceptions.web';
+import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getPurchaseOrders, savePurchaseOrder } from 'backend/purchaseOrders.web';
 import { retryPurchaseTaskCost } from 'backend/purchaseCostRetry.web';
 import { savePurchaseOperation, getSupplierProfile, getSupplierBrandOptions, saveSupplierProfile, getPurchaseSaveResult, getPurchaseReferenceCost } from 'backend/purchaseOperations.web';
@@ -13,6 +13,12 @@ $w.onReady(() => {
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||typeof message.taskId!=='string'||message.taskId.length>100)return;
       try{const result=await getPurchaseReferenceCost(message.company,message.taskId);room.postMessage({type:'PURCHASE_REFERENCE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type:'PURCHASE_REFERENCE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Reference cost could not be read; inputs retained.'});}return;
+    }
+    if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
+      if(!['NCT','GHR'].includes(message.company)||message.department!=='PURCHASE'||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+      const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
+      try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
     }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
@@ -77,5 +83,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261018-document-issue-feedback-v1';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261018-department-messages-v1';
 });

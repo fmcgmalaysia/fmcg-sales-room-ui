@@ -1,5 +1,5 @@
 import { getCustomerFulfilment } from 'backend/customerFulfilment.web';
-import { getStockExceptions, saveStockException } from 'backend/stockExceptions.web';
+import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
@@ -7,6 +7,12 @@ $w.onReady(() => {
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
+      if(!['NCT','GHR'].includes(message.company)||message.department!=='ACCOUNT'||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+      const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
+      try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
+    }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';
@@ -28,5 +34,5 @@ $w.onReady(() => {
       room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
     }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261018-supplier-account-closeout-v1';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261018-department-messages-v1';
 });
