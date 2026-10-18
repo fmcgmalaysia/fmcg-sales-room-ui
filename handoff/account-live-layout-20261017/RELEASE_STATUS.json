@@ -1,0 +1,63 @@
+{
+  "runtime": "e5b2c9bd9765584ab4a48a582e206db436658a04",
+  "branch": "feat/account-live-layout-20261017",
+  "pullRequest": 173,
+  "code": {
+    "status": "complete",
+    "focusedChecks": 152,
+    "fullSuite": {
+      "passed": 523,
+      "total": 526,
+      "baselineFailures": 3
+    }
+  },
+  "pages": {
+    "status": "verified",
+    "runId": 39003174566,
+    "assetsMatched": 25,
+    "builds": [
+      {
+        "path": "purchase-live/index.html",
+        "build": "2026-10-17-purchase-closeout-v1"
+      },
+      {
+        "path": "account-room/index.html",
+        "build": "2026-10-17-account-payment-plan-v1"
+      }
+    ],
+    "permissionRestored": true,
+    "remainingPolicyCount": 7
+  },
+  "wix": {
+    "status": "drafts synchronized and read back on 2026-10-17; fresh publish receipt pending",
+    "candidateComponents": 6,
+    "editorStatus": "new editor still Loading after one clean reload on 2026-10-18"
+  },
+  "public": {
+    "status": "incomplete",
+    "accountPointer": "20261017-account-payment-plan-v1",
+    "accountVisible": "embedded content empty after one clean reload",
+    "consoleErrors": 0,
+    "manualRefreshRequested": true
+  },
+  "documentService": {
+    "project": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+    "savedCode": "document-service-candidate.gs",
+    "sha256": "7b6f6220f7134394d40e184aab7cb91996796cbbc8a1cd424bfa75e6533285fb",
+    "version": 5,
+    "deployment": "AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+    "previousVersion": 4,
+    "receipt": "Deployment successfully updated. Version 5 on Oct 17, 2026, 12:26 PM",
+    "businessVerification": "pending"
+  },
+  "supplierSchema": {
+    "collection": "SharedSuppliers",
+    "addedTextFields": [
+      "bankName",
+      "bankAccountNo"
+    ],
+    "exampleBankDataWritten": false
+  },
+  "mainMerged": false,
+  "businessWritesPerformed": false
+}
