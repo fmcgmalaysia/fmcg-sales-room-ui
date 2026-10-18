@@ -6,7 +6,7 @@ const { createHash } = require('node:crypto');
 const copy = value => JSON.parse(JSON.stringify(value));
 const adapterSource = fs.readFileSync(path.join(__dirname, '../../backend/nctSalesIntake.js'), 'utf8')
   .replace(/^import .+;\r?\n/gm, '').replace('export async function submitNctSalesOrder', 'async function submitNctSalesOrder');
-async function setup() {
+async function setup(destination='NCT') {
   const { createNctSubmissionDelivery } = await require('./load-nct-delivery.cjs')();
   const { createNctReceiver } = await import('../backend/nctReceiver.js');
   const rows = new Map(), master = new Map(), requests = [];
@@ -50,7 +50,7 @@ async function setup() {
   const submit = new Function('wixData', 'fetch', 'getSecret', 'createHash', 'createNctSubmissionDelivery',
     adapterSource + '\nreturn submitNctSalesOrder;')(wixData, fetch,
     async name => { assert.equal(name, 'MASTER_INTAKE_SHARED_SECRET'); return fault === 'wrongKey' ? 'WRONG' : 'LOCAL-TEST-ONLY'; }, createHash, createNctSubmissionDelivery);
-  const args = { orderId: 'ORDER', staff: { staffId: 'STAFF', staffName: 'ORIGINAL NAME', loginEmail: 'staff@example.test' },
+  const args = { orderId: 'ORDER', destination, staff: { staffId: 'STAFF', staffName: 'ORIGINAL NAME', loginEmail: 'staff@example.test' },
     authorizeCustomer: async id => { assert.equal(id, 'CUSTOMER'); authorized++; },
     readPayloadRows: async collection => [...rows.entries()].filter(([key]) => key.startsWith(collection + '/'))
       .map(([, record]) => ({ record: copy(record), data: JSON.parse(record.payload) })),
@@ -58,7 +58,7 @@ async function setup() {
       if (fault === 'sourceSave') throw Error('Source save failed');
       const record = rows.get(collection + '/' + title); rows.set(collection + '/' + title, { ...record, payload: JSON.stringify(payload) });
     } };
-  return { run: () => submit(args), fault: value => { fault = value; }, master, rows,
+  return { run: () => submit(args), reconcile: () => submit({ ...args, reconcileOnly: true }), fault: value => { fault = value; }, master, rows,
     state: () => ({ order: JSON.parse(rows.get('WixBuyerOrders/ORDER').payload), captures, authorized, requests: copy(requests) }) };
 }
 test('actual source adapter and receiver cores preserve 100->250, MYR, original staff and one complete receipt', async () => {
@@ -84,4 +84,30 @@ test('failed source save after complete receipt resumes with exactly one final s
   f.fault(''); await f.run(); assert.equal(f.state().captures, 1); assert.equal(f.master.size, 5);
   const events = [...f.rows].filter(([key, row]) => key.startsWith('WixOrderAudit/') && JSON.parse(row.payload).action === 'ORDER_SUBMITTED');
   assert.equal(events.length, 1);
+});
+
+test('504 recovery reads MASTER receipt, finalizes Sales and removes management eligibility without re-delivery', async () => {
+  const f=await setup();f.fault('lostReply');await assert.rejects(f.run(),/receipt is not confirmed/);
+  const before=JSON.stringify([...f.master]);f.fault('');const receipt=await f.reconcile(),s=f.state();
+  assert.equal(receipt.ok,true);assert.equal(s.order.status,'SUBMITTED TO NCT');assert.equal(s.order.destination,'NCT');
+  assert.equal(s.requests.length,2);assert.equal(s.requests[1].action,'READ_RECEIPT');assert.deepEqual(s.requests[1].submission,s.requests[0]);
+  assert.equal(s.captures,1);assert.equal(JSON.stringify([...f.master]),before);assert.equal(f.rows.has('WixOrderAudit/ORDER-LOCK-ORDER'),false);
+  const audit=[...f.rows.values()].map(r=>JSON.parse(r.payload||'{}')).filter(d=>d.action==='ORDER_SUBMITTED');assert.equal(audit.length,1);
+  await f.reconcile();assert.equal(f.state().requests.length,2);
+});
+
+test('receipt check of a never-submitted order creates no locks, requests or MASTER records',async()=>{
+  const f=await setup();assert.equal(await f.reconcile(),null);assert.equal(f.state().requests.length,0);assert.equal(f.master.size,0);assert.equal(f.rows.has('WixOrderAudit/ORDER-LOCK-ORDER'),false);
+});
+
+test('pending MASTER receipt retains original source lock and never completes or inserts intake',async()=>{
+  const f=await setup();f.fault('wrongKey');await assert.rejects(f.run(),/receipt is not confirmed/);f.fault('');const before=JSON.stringify([...f.rows]);assert.equal(await f.reconcile(),null);assert.equal(JSON.stringify([...f.rows]),before);assert.equal(f.master.size,0);assert.equal(f.state().captures,0);
+});
+
+test('failed recovery source save can be retried with one audit and no MASTER changes',async()=>{
+  const f=await setup();f.fault('lostReply');await assert.rejects(f.run());const before=JSON.stringify([...f.master]);f.fault('sourceSave');await assert.rejects(f.reconcile(),/Source save failed/);f.fault('');await f.reconcile();assert.equal(JSON.stringify([...f.master]),before);assert.equal(f.state().order.destination,'NCT');assert.equal([...f.rows.values()].map(r=>JSON.parse(r.payload||'{}')).filter(d=>d.action==='ORDER_SUBMITTED').length,1);
+});
+
+test('GHR receipt recovery preserves receiving company and its original tasks',async()=>{
+  const f=await setup('GHR');f.fault('lostReply');await assert.rejects(f.run());const before=JSON.stringify([...f.master]);f.fault('');const receipt=await f.reconcile();assert.equal(receipt.destination,'GHR');assert.equal(f.state().order.destination,'GHR');assert.equal(JSON.stringify([...f.master]),before);assert.ok([...f.master.keys()].every(k=>/^NCT(?:Orders1|Tasks1|Activity1)\//.test(k)));
 });

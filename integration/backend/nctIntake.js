@@ -153,3 +153,26 @@ export function createNctIntake({ store, captureCosts, now = () => new Date() })
       costErrorTaskCount: body.lines.filter(line => costs[line.unitBarcode].costStatus === 'ERROR').length };
   };
 }
+
+/** Read the immutable receipt only. Never capture costs, insert rows or resume intake. */
+export function createNctReceiptReader({ store }) {
+  return async body => {
+    validate(body);
+    const names = COMPANY_COLLECTIONS[body.destination], base = [SOURCE_SITE, body.orderId], payloadHash = digest(body);
+    const [prepared, accepted] = await Promise.all([
+      store.read(names.activity, recordId(...base, 'PREPARED')),
+      store.read(names.activity, recordId(...base, 'ACCEPTED'))
+    ]);
+    if (!accepted) return { ok: false, pending: true, orderId: body.orderId, destination: body.destination };
+    const expectedTasks = body.lines.map(line => recordId(...base, line.sourceLineId, 'TASK'));
+    if (!prepared || prepared.action !== 'INTAKE_PREPARED' || prepared.details?.payloadHash !== payloadHash ||
+        prepared.details.submissionId !== body.submissionId || accepted.action !== 'ORDER_RECEIVED' ||
+        accepted.result !== 'ACCEPTED' || accepted.description !== body.orderId ||
+        accepted.details?.payloadHash !== payloadHash || accepted.details.submissionId !== body.submissionId ||
+        JSON.stringify(accepted.details.taskIds) !== JSON.stringify(expectedTasks) ||
+        !Number.isFinite(Date.parse(prepared.details.receivedAt))) throw new Error('Master receipt identity conflict.');
+    return { ok: true, destination: body.destination, orderId: body.orderId, submissionId: body.submissionId,
+      receiptId: accepted._id, masterReceivedAt: prepared.details.receivedAt, taskIds: expectedTasks,
+      costErrorTaskCount: body.lines.filter(line => prepared.details.costs?.[line.unitBarcode]?.costStatus === 'ERROR').length };
+  };
+}

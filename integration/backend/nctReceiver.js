@@ -1,9 +1,10 @@
 import { timingSafeEqual } from 'crypto';
-import { createNctIntake } from './nctIntake.js';
+import { createNctIntake, createNctReceiptReader } from './nctIntake.js';
 
 /** Backend-only authentication. Credentials never enter iframe messages or browser HTML. */
 export function createNctReceiver({ store, getIntakeSecret, captureCosts }) {
   const receive = createNctIntake({ store, captureCosts });
+  const readReceipt = createNctReceiptReader({ store });
   return async function handle(request) {
     let secret;
     try { secret = await getIntakeSecret(); }
@@ -19,7 +20,7 @@ export function createNctReceiver({ store, getIntakeSecret, captureCosts }) {
     let body;
     try { body = await request.body.json(); }
     catch (error) { return { status: 400, body: { ok: false, error: 'Invalid intake request.' } }; }
-    try { return { status: 200, body: await receive(body) }; }
+    try { return { status: 200, body: body?.action === 'READ_RECEIPT' ? await readReceipt(body.submission) : await receive(body) }; }
     catch (error) { return { status: 503, body: { ok: false, error: 'Master did not acknowledge a complete receipt. Keep the Sales order unsubmitted.' } }; }
   };
 }
