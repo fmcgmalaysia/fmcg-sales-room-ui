@@ -29,16 +29,33 @@
     "remainingPolicyCount": 7
   },
   "wix": {
-    "status": "drafts synchronized and read back on 2026-10-17; fresh publish receipt pending",
+    "status": "published and live",
+    "freshReadbackDate": "2026-10-18 MYT",
     "candidateComponents": 6,
-    "editorStatus": "new editor still Loading after one clean reload on 2026-10-18"
+    "allReadbacksMatch": true,
+    "receipt": "This site is published and live online.",
+    "receiptEvidence": "root private handoff/purchase-account-closeout-20261017/wix-published-20261018.png"
   },
   "public": {
-    "status": "incomplete",
+    "status": "verified",
+    "date": "2026-10-18 MYT",
     "accountPointer": "20261017-account-payment-plan-v1",
-    "accountVisible": "embedded content empty after one clean reload",
+    "purchasePointer": "20261017-purchase-closeout-v1",
+    "accountViews": 7,
+    "purchaseViews": 6,
+    "checks": [
+      "Authenticated real Account data and unset funding labels",
+      "Real green document View and Download entries",
+      "Mandatory payment amount, date, source, recipient choice and multiple-file input; optional reference and purchaser note",
+      "Enter blurs decimal amount field",
+      "Supplier bank fields present in real Add Supplier dialog",
+      "Purchase headings 20px 800; Requested 8%, Note 16%",
+      "Activity Details bilingual, 10px cells and approximately 34px rows",
+      "Search no-match 0 requests and explicit empty state",
+      "One existing payment notification acknowledged; red dot absent after fresh server reread; request and balance unchanged"
+    ],
     "consoleErrors": 0,
-    "manualRefreshRequested": true
+    "realPaymentUploadAndTrashPerformed": false
   },
   "documentService": {
     "project": "1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
@@ -59,5 +76,9 @@
     "exampleBankDataWritten": false
   },
   "mainMerged": false,
-  "businessWritesPerformed": false
+  "businessWritesPerformed": [
+    "One existing payment notification acknowledgement only"
+  ],
+  "financialWritesPerformed": false,
+  "userFinancialAcceptance": false
 }
