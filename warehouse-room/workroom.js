@@ -44,7 +44,7 @@ function picker(){let picker=$('whCustomerPicker');if(!picker){picker=document.c
 function openCbm(id){
  if(saving||pending)return;const item=data.deliveryTasks.find(i=>i.id===id);if(!item||validCbm(item.cbmPerCtn))return;
  cbmRequest={type:'WAREHOUSE_CBM_REQUEST',company,taskId:item.taskId,requestId:crypto.randomUUID()};
- modal(item.name,'Update CBM 更新体积','<p>'+esc(item.barcode)+'</p><p>CBM: —</p><p class="wh-help">Ask Super Admin to update POINTBASE, then fetch CBM.<br>请先通知管理员补齐 POINTBASE，再抓取 CBM。</p>','Fetch CBM 抓取体积',fetchCbm);dialog.classList.add('wh-cbm');
+ modal(item.name,'Update CBM 更新体积','<p>'+esc(item.barcode)+'</p><p id="whCbmValue">CBM: —</p><p class="wh-help">Ask Super Admin to update POINTBASE, then fetch CBM.<br>请先通知管理员补齐 POINTBASE，再抓取 CBM。</p>','Fetch CBM 抓取体积',fetchCbm);dialog.classList.add('wh-cbm');
 }
 function fetchCbm(){
  if(saving||!cbmRequest)return;saving=true;setBusy();error('');$('whInfo').textContent='Fetching… 抓取中…';parent.postMessage(cbmRequest,'*');clearTimeout(cbmTimer);
@@ -55,7 +55,7 @@ window.addEventListener('message',e=>{
  clearTimeout(cbmTimer);saving=false;setBusy();
  if(m.ok&&m.result?.ok&&validCbm(m.result.cbmPerCtn)){
   data.deliveryTasks.filter(i=>i.taskId===cbmRequest.taskId).forEach(i=>{if(!validCbm(i.cbmPerCtn))i.cbmPerCtn=m.result.cbmPerCtn;});
-  $('whInfo').textContent='CBM: '+m.result.cbmPerCtn+' · Saved 已保存';error('');$('whSave').hidden=true;cbmRequest=null;callbacks.render();
+  $('whCbmValue').textContent='CBM: '+m.result.cbmPerCtn;$('whInfo').textContent='Saved 已保存';dialog.querySelector('footer [data-wh-close]').textContent='Close 关闭';error('');$('whSave').hidden=true;cbmRequest=null;callbacks.render();
  }else{error(m.error||'CBM is still unavailable. CBM 仍然缺失。');$('whInfo').textContent='';}
 });
 function review(id){const r=data.orders.find(r=>r.id===id);modal(r.supplierName,'Review PO 采购单预览','<p>'+esc(r.number)+' · '+esc(r.fullCustomerName||r.customerName)+'</p><p class="wh-help">Read-only current P.O. Confirm any revision with Purchase before unloading.<br>当前采购单只读。卸货前如发现变更，请先向采购确认。</p>'+r.lines.map(l=>'<div class="wh-review-line"><span><small>'+esc(l.barcode)+'</small><b>'+esc(l.name)+'</b><small>'+esc(l.packing)+'</small></span><strong>'+l.planned+' CTN</strong></div>').join(''));}
