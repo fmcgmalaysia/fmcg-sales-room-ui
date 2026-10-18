@@ -10,6 +10,7 @@ const finite = value => typeof value === 'number' && Number.isFinite(value);
 const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 const groupKey = row => JSON.stringify([row.supplierId,row.po]);
 export function purchaseDocumentDeleteBlocker(row,details,document,staff){
+  if(row.supplierAccount?.closed)return 'This document is locked by a closed supplier account. Ask Finance to reopen it.';
   if(!document?.uploadedByStaffId||document.uploadedByStaffId!==staff?.staffId)return 'Only the original uploader can delete this document.';
   if(document.linked!==true||document.superseded||document.deletion)return 'This document is not available for deletion.';
   if(row.state==='HISTORY'||row.invoiceChecked||details.paymentHandoff?.review||(details.finance?.payments||[]).length||(details.finance?.amounts||[]).some(entry=>entry.fileId===document.fileId)||details.procurementHandoff&&!['WITHDRAWN','RETURNED'].includes(details.procurementHandoff.stage))return 'This document is locked by payment or Finance records.';
@@ -123,6 +124,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const rows=await list(company,staff),row=rows.find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       const current=await store.read(PURCHASE_ORDER_COLLECTION,row.id),before=current?.details||{};
+      if(row.supplierAccount?.closed&&input.action!=='ACK_PAYMENT')throw Error('Purchase order changed. Ask Finance to reopen the closed supplier account before editing.');
       if(before.documentDeletion)throw Error('A document deletion is pending. Retry the original deletion.');
       const reason=text(input.reason);if(!reason||reason.length>2000)throw Error('Please enter a reason.');
       let patch;

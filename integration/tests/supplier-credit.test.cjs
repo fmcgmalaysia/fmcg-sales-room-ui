@@ -19,3 +19,4 @@ test('credit cannot cross supplier/company, exceed available balance or bypass f
   const f=fixture();change(f);await assert.rejects(f.apply({...f.base,input:f.input}));assert.equal(readCreditTransfers([...f.records.values()]).length,0);
  }
 });
+test('closed targets require reopening; a closed verified credit source remains usable',async()=>{const f=fixture();f.target.supplierAccount={closed:true};await assert.rejects(f.apply({...f.base,input:f.input}),/Reopen account/);f.target.supplierAccount.closed=false;f.source.supplierAccount={closed:true};await f.apply({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:f.input});assert.equal((await f.listOrders())[0].finance.supplierCreditCents,6000);});

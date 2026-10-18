@@ -13,6 +13,7 @@ export function createSupplierCreditOperations({store,names,listOrders,now=()=>n
    const rows=await listOrders(company,staff),source=rows.find(row=>row.id===input.sourceId),target=rows.find(row=>row.id===input.id),reason=String(input.reason||'').trim();
    if(!source||!target||source.company!==company||target.company!==company||source.id===target.id||!source.supplierId||source.supplierId!==target.supplierId)throw Error('Credit must stay with the same supplier and company.');
    if(source.version!==input.sourceVersion||target.version!==input.version)throw Error('Supplier credit or purchase order changed. Refresh before applying.');
+   if(target.supplierAccount?.closed)throw Error('Select Reopen account before applying credit to a closed supplier account.');
    if(!source.invoiceChecked||!Number.isSafeInteger(input.cents)||input.cents<=0||input.cents>source.finance.supplierCreditCents)throw Error('Select an available finance-checked supplier credit.');
    if(!Number.isSafeInteger(target.finance.balanceCents)||input.cents>target.finance.balanceCents)throw Error('Credit cannot exceed the confirmed invoice balance.');
    if(!reason||reason.length>2000)throw Error('Enter a credit application reason.');
