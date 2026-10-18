@@ -1,5 +1,5 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
-import { allocatedTo } from 'backend/plannerAllocation.js';
+import { allocatedTo, readAllocations } from 'backend/plannerAllocation.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
 
 const text=value=>String(value??'').trim();
@@ -26,7 +26,7 @@ export function readWarehouseReceipts(poId,activity){
     if(!event.title||!Array.isArray(detail.lines)||!detail.lines.length||new Set(detail.lines.map(line=>line.taskId)).size!==detail.lines.length||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Warehouse receipt identity requires review.');
     for(const entry of detail.lines){
       const prior=lines.get(entry.taskId)||{accepted:0,rejected:0};
-      if(!entry.taskId||!entry.orderId||!entry.sourceLineId||!quantity(entry.accepted)||!quantity(entry.rejected)||entry.accepted<prior.accepted||entry.rejected<prior.rejected||entry.beforeAccepted!==prior.accepted||entry.beforeRejected!==prior.rejected)throw Error('Warehouse receipt quantities require review.');
+      if(!entry.taskId||!entry.orderId||!entry.sourceLineId||!quantity(entry.accepted)||!quantity(entry.rejected)||((entry.accepted<prior.accepted||entry.rejected<prior.rejected)&&!(entry.kind==='CORRECTION'&&text(entry.reason)))||entry.beforeAccepted!==prior.accepted||entry.beforeRejected!==prior.rejected)throw Error('Warehouse receipt quantities require review.');
       if(prior.orderId&&(entry.orderId!==prior.orderId||entry.sourceLineId!==prior.sourceLineId))throw Error('Warehouse receipt source changed.');
       lines.set(entry.taskId,{...entry,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName});
     }
@@ -63,23 +63,31 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     });
     if(receipt.lines.some(line=>!po.taskIds.includes(line.taskId)))throw Error('Received task no longer belongs to this purchase order.');
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;
-    return {id:po.id,company,number:po.number,shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
+    return {id:po.id,company,number:po.number,correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.version,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,documents:po.documents,stockCases:po.stockCases||[]};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
   });
 }
 
 export function createWarehouseOperations({store,names,readOrders,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||input?.action!=='RECEIVE'||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300)throw Error('Select a purchase order and enter this delivery.');
+    if(!names[company]||!['RECEIVE','CORRECT'].includes(input?.action)||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300)throw Error('Select a purchase order and enter this delivery.');
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{warehouse:input},prepare:async()=>{
       const po=(await readOrders(company,staff)).find(row=>row.id===input.id);
       if(!po||po.version!==input.version)throw Error('Purchase order or receipts changed. Refresh before saving; your input is retained.');
+      const correcting=input.action==='CORRECT',activity=correcting?await store.all(names[company].activity):[];
+      if(correcting&&(!po.revision||po.correctionAllowed===false))throw Error('Warehouse receipt is financially locked or has no saved delivery. Ask Finance to review before correction.');
       if(new Set(input.lines.map(line=>line.taskId)).size!==input.lines.length)throw Error('A receipt line was repeated.');
       const changes=input.lines.map(entry=>{
         const line=po.lines.find(line=>line.taskId===entry.taskId),reason=text(entry.reason),kind=entry.kind;
+        if(correcting){
+          if(!line||!quantity(entry.accepted)||!quantity(entry.rejected)||entry.accepted>line.planned||!reason||reason.length>1000)throw Error('Warehouse enter corrected cumulative cartons and a correction reason.');
+          const position=stockPosition(line.taskId,entry.accepted,activity),allocated=readAllocations(activity).find(row=>row.sourceTaskId===line.taskId)?.targets.reduce((n,row)=>n+row.quantity,0)||0;
+          if(allocated>position.usableReceived)throw Error('Warehouse correction is below allocated stock. Ask Purchase to correct allocation first.');
+          return {taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,planned:line.planned,beforeAccepted:line.accepted,beforeRejected:line.rejected,accepted:entry.accepted,rejected:entry.rejected,kind:'CORRECTION',issue:line.issue||entry.accepted<line.planned||entry.rejected>0,reason};
+        }
         if(!line||!quantity(entry.accepted)||!quantity(entry.rejected)||(entry.accepted+entry.rejected===0&&!['SHORT','DAMAGED','WRONG','OTHER'].includes(kind)))throw Error('Enter whole cartons received or rejected for each changed line.');
         if(entry.accepted>line.remaining)throw Error('Accepted cartons exceed the approved purchase quantity. Ask Purchase to confirm the extra quantity first.');
         if(!['DELIVERY','PARTIAL','SHORT','DAMAGED','WRONG','OTHER'].includes(kind))throw Error('Select a delivery result.');

@@ -13,6 +13,7 @@ function doPost(e) {
     if(input.action==='ALLOCATE')result={ok:true,fileId:Drive.Files.generateIds({count:1,space:'drive',type:'files'}).ids[0]};
     else if(input.action==='UPLOAD')result=uploadPurchasePdf_(input);
     else if(input.action==='TRASH')result=trashPurchasePdf_(input);
+    else if(input.action==='PHOTO_UPLOAD')result=uploadWarehousePhoto_(input);
     else throw Error('INVALID_ACTION');
   } catch(error) {
     const safe=['NOT_AUTHORIZED','INVALID_COMPANY','INVALID_ACTION','INVALID_DOCUMENT','INVALID_PDF','FILE_IDENTITY_CONFLICT','UPLOAD_UNCONFIRMED'];

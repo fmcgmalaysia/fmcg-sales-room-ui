@@ -1,0 +1,19 @@
+# Warehouse workroom candidate — 2026-10-18
+
+Scope: complete Incoming/Delivery desktop and mobile views, compact receipt/preparation/loading controls, supplier DO read-only viewer, customer pending-line filter, optional photo evidence in the user-selected company folders, and customer-safe readiness projection. Recovery runtime b1e02fd; documentation e172ff8. Main untouched.
+
+Fresh live sources were preserved and compared before edits: Warehouse page, receiving core/web, customer readiness, fulfilment service, quantity projection, document client, messages, progress, Source masterQuantityProjection and Apps Script Code.gs. Full originals and current readbacks remain in the private root handoff. No whole existing Wix or Apps Script file was replaced. New preparation and photo modules are isolated additions.
+
+Preparation/loading events use the existing company activity journal and lock. Packing confirms a whole existing task/batch; loading records cumulative physical cartons. They never post invoices, alter task allocation, receive stock, move money or confirm actual dispatch. Original invoice-gated dispatch remains accessible. Changed task/plan/allocation invalidates readiness; loaded stale/orphaned batches stay visible for supervised review. Already-dispatched tasks are protected against physical-state amendments. Ready Stock is unset, displayed as a dash.
+
+Receipt correction appends an audited revision with a mandatory reason; allocated usable stock and financially locked receipts remain protected. Original incremental receiving is retained. User-facing completion of an approved short delivery follows the existing final financial receipt resolution without modifying the original PO quantity.
+
+Photo evidence: 3 images per save, compressed client JPEG up to650KiB each, server total2MiB, MIME/signature/SHA-256 validation; IDs allocated with company identity and stored in the prepared operation before upload. Same-request retry preserves IDs. Fixed NCT/GHR warehouse roots, existing secret/endpoint/sharing/access unchanged. No production photo or packing record is fabricated for acceptance.
+
+Apps Script project 1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO: Code.gs one routing branch plus new WarehousePhotos.gs, complete readbacks exact. Existing deployment AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU updated to immutable version6, confirmed18Oct16:55 MYT. Existing owner/access unchanged; live photo persistence acceptance remains distinct from module tests.
+
+Authorized real message acceptance completed: exactly one explicitly marked test message on NCT-PO-000001, Purchase to Account and Warehouse; read and explicit acknowledgement observed. Same authenticated management actor across rooms, not multi-user identity acceptance. Original finance balance and receipt issue unchanged.
+
+Validation:588 tests,585 pass, same3 pre-existing failures (customer-short-name test binding, installment state expectation, English feedback expectation).17 dedicated receipt/preparation/photo tests pass. Customer-safe readiness mapping test passes. Chrome isolated real-frontend candidate:390px layout, compact packing/loading dialogs, mandatory partial reason, selected compressed photo preview, packing confirmation/time, partial loading180of200, customer pending bubbles2/1. No real business quantities changed. Shared messages remain separate human/system events; Purchase and Finance cache-bust only the changed shared script.
+
+Release status: code candidate only; Pages not deployed, MASTER and Source Wix candidate readbacks in progress, public acceptance pending. Do not call published until all four release stages pass. Temporary Pages branch permission requires separate explicit approval and must be removed immediately after deployment. No main merge or broad user-verified checkpoint is inferred.
