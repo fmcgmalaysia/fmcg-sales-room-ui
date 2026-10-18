@@ -47,19 +47,24 @@ export function projectAccountSettlement(row,details){
   const reviewRequired=check?.enabled===true&&check.reviewVersion!==reviewVersion;
   const checked=blockers.length===0&&check?.enabled===true&&check.reviewVersion===reviewVersion&&Boolean(check.byStaffId&&check.at);
   const paymentCompleted=payableCents!==null&&payableCents>=0&&(balanceCents===0||creditRecognized)&&paymentRecordsValid;
+  const closeBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment']:[]),...(payments.some(p=>p.confirmed!==true)?['Confirm every payment result']:[]),...(payments.some(p=>!(p.proofs||[p.proof]).some(f=>f?.linked&&f.fileId&&f.sha256&&!(p.deletedProofs||[]).some(d=>d.fileId===f.fileId)))?['Restore payment or refund proof']:[])].map(value=>value.replace(/\s\/\s(?=[\u3400-\u9fff]).*$/,''));
+  const closure=finance.closure,closed=closure?.enabled===true&&Boolean(closure.byStaffId&&closure.at);
+  const supplierAccount={closed,canClose:!closed&&closeBlockers.length===0,blockers:closeBlockers,closure:closure||null,reviewRequired:closed&&(closeBlockers.length>0||closure.reviewVersion!==reviewVersion)};
   const archiveBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment / 供应商款项未结清']:[]),...(!checked?['Finance Checked required / 财务尚未核对完成']:[]),...(!row.salesInvoiceComplete?['Customer Sales Invoice required / 客户销售发票未齐']:[])];
-  return {invoiceChecked:checked,invoiceCheck:check||null,reviewRequired,canCheck:blockers.length===0,checkBlocker:blockers.join('; ')||(reviewRequired?'P.O. changed after the last check / 采购内容已修改，请重新核对':''),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:documentIssues.some(issue=>issue.status!=='RESOLVED')||!checked&&(reviewRequired||cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
+  if(!closure&&archiveBlockers.length===0){supplierAccount.closed=true;supplierAccount.canClose=false;supplierAccount.legacy=true;}
+  return {supplierAccount,invoiceChecked:checked,invoiceCheck:check||null,reviewRequired,canCheck:blockers.length===0,checkBlocker:blockers.join('; ')||(reviewRequired?'P.O. changed after the last check / 采购内容已修改，请重新核对':''),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:documentIssues.some(issue=>issue.status!=='RESOLVED')||!checked&&(reviewRequired||cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
     documentIssues,finance:{plan:finance.plan||[],receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(!names[company]||!['CLOSE_ACCOUNT','REOPEN_ACCOUNT','DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
     if(input.action==='PAYMENT_FILE_DELETE')return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:input},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       const record=await store.read('PurchaseOrders',row.id),payment=record?.details?.finance?.payments?.find(p=>p.id===input.paymentId),proof=(payment?.proofs||[payment?.proof]).find(p=>p?.fileId===input.fileId);
+      if(projectAccountSettlement(row,record?.details||{}).supplierAccount.closed)throw Error('Select Reopen account before changing a closed supplier account.');
       if(!documentService||!proof?.linked||payment.deletedProofs?.some(p=>p.fileId===proof.fileId))throw Error('Select an available payment file.');
       if(proof.uploadedByStaffId!==staff.staffId&&staff.role!=='SUPER ADMIN')throw Error('Only the uploader or SUPER ADMIN can delete this file.');
       const at=now().toISOString(),audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_PAYMENT_FILE_DELETE',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:'Payment file deleted',changes:{paymentId:payment.id,fileId:proof.fileId,name:proof.name}};
@@ -99,7 +104,15 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
       const identity={at,by:staff.staffName,byStaffId:staff.staffId};
       let upload=null,document=null,handoff=null,procurement=null,extraUploads=[],issuePatch=null;
-      if(['DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW'].includes(input.action)){
+      if(projectAccountSettlement(row,details).supplierAccount.closed&&input.action!=='REOPEN_ACCOUNT')throw Error('Select Reopen account before changing a closed supplier account.');
+      if(input.action==='CLOSE_ACCOUNT'||input.action==='REOPEN_ACCOUNT'){
+        const state=projectAccountSettlement(row,details),closing=input.action==='CLOSE_ACCOUNT';
+        if(closing&&!state.supplierAccount.canClose)throw Error('Select and resolve these items before Job Done: '+state.supplierAccount.blockers.join('; '));
+        if(!closing&&!state.supplierAccount.closed)throw Error('Select a closed supplier account to reopen.');
+        finance.closure={enabled:closing,reviewVersion:state.finance.reviewVersion,...identity,reason,...(closing?{snapshot:{payableCents:state.finance.payableCents,paidCents:state.finance.paidCents,balanceCents:state.finance.balanceCents,supplierCreditCents:state.finance.supplierCreditCents,documentIds:currentDocs(row).map(d=>d.fileId)}}:{})};
+        finance.check={enabled:closing,reviewVersion:state.finance.reviewVersion,...identity,reason};
+        audit.changes={before:state.supplierAccount.closure,after:finance.closure};
+      }else if(['DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW'].includes(input.action)){
         if(row.state==='HISTORY')throw Error('Select an open purchase order.');
         const issues=details.documentIssues||[];
         if(input.action==='DOCUMENT_ISSUE_REPORT'){
@@ -197,7 +210,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         if(input.enabled===state.invoiceChecked)throw Error('Financial check has not changed.');
         finance.check={enabled:input.enabled,reviewVersion:state.finance.reviewVersion,...identity,reason};audit.changes={before:state.invoiceChecked,after:input.enabled,reviewVersion:state.finance.reviewVersion};
       }
-      if(!procurement&&!['CHECK','PAYMENT_REVIEW','PLAN'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
+      if(!procurement&&!['CLOSE_ACCOUNT','REOPEN_ACCOUNT','CHECK','PAYMENT_REVIEW','PLAN'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
       return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),...(issuePatch||{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload,extraUploads};
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
