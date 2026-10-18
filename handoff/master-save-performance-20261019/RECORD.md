@@ -1,0 +1,19 @@
+# MASTER Save performance investigation — 2026-10-19
+
+Authorization: user explicitly permits testing every page and retaining marked fake data for later deletion. No actual payment or dispatch performed. No production business code changed in this investigation.
+
+Existing release closeout: zero Ready Stock candidate 7fc5c8e, Wix pointer8a259b1, release record7a3251d; Pages39149160757 success, original seven policies restored, Wix published/live. Public Warehouse frame remains blank after tool refresh, manual refresh requested. AVATA repair evidence archived independently in docs/avata-verify-repair-20261019 at60e16b9. No claim that all prior work is complete.
+
+Public tests:
+- Purchase-to-Finance message [PERF TEST 20261019-P01] sent once and visibly received by Finance. Saving still visible at10343ms; Sent observed by22961ms. Observation bounds include automation overhead; exact duration unavailable.
+- Finance-to-Purchase message [PERF TEST 20261019-F01] sent once. Composer cleared after confirmed SAVE at10216ms including automation overhead. At that moment Send remained disabled while history reload ran. Send enabled was observed at18791ms (upper observation bound, not exact reload duration).
+- Purchase supplier PLAN [PERF TEST 20261019-Q01], taska24f0d732b9a2189dee798eff8e589df, barcode4710363521543. Existing demand22 retained; supplierHONG LEA,22ctn, Supplier Deliver, authoritative reference cost6.65pc/79.80ctn/disc10%+3.5%, calculated69.31ctn. No P.O. created, no supplier order sent, no receipt/payment. Requestb7e95f96-1f2b-4af2-aec8-53d588a47dd7 exceeded26.278s and showed HTTP504. Later UI showed source saved and a P.O. entry, with stale504 text remaining. No retry submitted. This does not establish an exact final CMS receipt timestamp or independent CMS inspection.
+- Seven Finance navigation views render without observed relevant error; transition observation0.38–1.02s includes tool overhead and is not backend timing. Support currently has no shipment requests; invoice save not tested.
+
+Further writes paused after504. Purchase Cancel invoked ordinary confirmation to discard remaining draft, explicitly retaining confirmed sources. Browser subsequently reports stale accessibility capture; user asked to handle any visible confirmation and refresh existing Warehouse. Do not repeat Q01 or claim the full page/save test matrix completed.
+
+Code evidence (repository, not newly read deployed backend timings): single-task PLAN local trace through current purchase-operations fixture invokes26 store operations, excluding staff checks and frontend rereads. Existing operation journal and per-task locks are safety mechanisms; do not remove them to make save appear faster. Chat SAVE resolves full company context, reads PurchaseOrders and chat history/index, ensures index, calls private Drive Apps Script, and updates CMS index. Client then awaits PAGE reload and also refreshes summaries. Chat store gives PAGE the same ScriptLock used for writes; whether this accounts for production delay is unmeasured. Purchase polls workspace every10seconds and chat refreshes every30seconds; contention contribution unmeasured.
+
+Next isolated objective: capture relevant live backend/Apps Script states and add scoped server phase timing only if necessary; measure staff/context/lock/read/write/Drive/cache and post-save refresh separately. Preserve authorization, idempotency, task locks, receipts, company isolation, existing stock/cost rules, Drive authority and CMS index layout. Do not combine with UI redesign, storage migration or remove recovery protections. Upload and remaining Warehouse/Support save tests still outstanding.
+
+Private screenshots, detailed timestamps and test identifiers are in root handoff/master-save-performance-20261019. No main merge or new user-verified baseline claim.
