@@ -4,13 +4,20 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(process.env.PURCHASE_UI_BASELINE || path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
+
+test('Self Collect marks only its saved supplier head and preserves visible child supplier names',()=>{
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{revision:'P1',totalCtn:60,transportMode:'SELF_COLLECT'}});
+ w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{revision:'P2',totalCtn:30,transportMode:'SUPPLIER_DELIVER'}});
+ h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML;
+ assert.equal((html.match(/class="supplier-head complete" data-self-collect="true"/g)||[]).length,1);assert.match(html,/>FIRST<\/button>/);assert.match(html,/>SECOND<\/button>/);
+});
 test('each checked orange source PO opens the same cross-row selection without a top PO control',()=>{
  for(const clicked of ['TASK','OTHER-CHILD']){
   const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SAME SUPPLIER'},{id:'B',name:'OTHER SUPPLIER'}];
-  Object.assign(w.tasks[0],{supplierId:'S',po:'',editVersion:'V1',procurement:{totalCtn:20,revision:'P1'}});
-  w.tasks.push({...w.tasks[0],id:'SIBLING',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:10,revision:'P2'}},
-   {...w.tasks[0],id:'OTHER',supplierId:'B',procurement:{totalCtn:40,revision:'P3'}},
-   {...w.tasks[0],id:'OTHER-CHILD',ord:0,procurementSource:true,customerDemandTaskId:'OTHER',editVersion:'V2',procurement:{totalCtn:15,revision:'P4'}});
+  Object.assign(w.tasks[0],{supplierId:'S',po:'',editVersion:'V1',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:20,revision:'P1'}});
+  w.tasks.push({...w.tasks[0],id:'SIBLING',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10,revision:'P2'}},
+   {...w.tasks[0],id:'OTHER',supplierId:'B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:40,revision:'P3'}},
+   {...w.tasks[0],id:'OTHER-CHILD',ord:0,procurementSource:true,customerDemandTaskId:'OTHER',editVersion:'V2',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:15,revision:'P4'}});
   h.reply(w);h.click({view:'active'});for(const id of ['TASK','OTHER-CHILD'])h.change({dataset:{select:id,selectKind:'source'},checked:true});
   assert.doesNotMatch(h.node('#app').innerHTML,/id="createSelectedPo"/);
   h.click({sourcePoTask:clicked});assert.match(h.node('#dialogContent').innerHTML,/35 CTN/);
@@ -19,8 +26,8 @@ test('each checked orange source PO opens the same cross-row selection without a
  }
 });
 test('orange source PO keeps unchecked and mixed-supplier selections from accidental merging; green PO still reviews',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',po:'',procurement:{totalCtn:20,revision:'P1'}});
- w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:15,revision:'P2'}},
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',po:'',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:20,revision:'P1'}});
+ w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:15,revision:'P2'}},
   {...w.tasks[0],id:'GREEN',po:'NCT-PO-EXISTING'});h.reply(w);h.click({view:'active'});
  h.change({dataset:{select:'TASK',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/已勾选行/);assert.equal(h.node('#modal').open,false);
  h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});h.click({sourcePoTask:'CHILD'});assert.match(h.node('#liveStatus').textContent,/同一供应商/);assert.match(h.node('#app').innerHTML,/2 selected/);assert.equal(h.node('#modal').open,false);
@@ -32,13 +39,13 @@ test('clicked progress stage opens its task with explicit receiving issue instea
 });
 
 test('mother progress names the blocked source and drills into only that source without submitting writes',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,po:'PO-A',procurement:{totalCtn:60,revision:'P1'}});w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,po:'',procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:30,revision:'P2'}});h.reply(w);const before=h.messages.length;
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,po:'PO-A',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P1'}});w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,po:'',procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'P2'}});h.reply(w);const before=h.messages.length;
  h.click({progressTask:'TASK',progressIndex:'0',progressIsSource:'false'});let html=h.node('#dialogContent').innerHTML;assert.match(html,/current-progress pending/);assert.match(html,/FIRST/);assert.match(html,/SECOND/);assert.match(html,/data-progress-task="CHILD" data-progress-index="0" data-progress-is-source="true"/);assert.match(html,/待安排需求/);assert.match(html,/data-plan-task="TASK"/);
  h.click({progressTask:'CHILD',progressIndex:'0',progressIsSource:'true'});html=h.node('#dialogContent').innerHTML;assert.match(html,/SECOND · P.O./);assert.match(html,/data-source-po-task="CHILD"/);assert.doesNotMatch(html,/FIRST|Sources \/ 来源明细/);assert.equal(h.messages.length,before);
  h.click({progressTask:'TASK',progressIndex:'0',progressIsSource:'true'});assert.match(h.node('#dialogContent').innerHTML,/current-progress complete/);assert.match(h.node('#dialogContent').innerHTML,/data-po-view="TASK"/);
 });
 test('disabled demand selection is ignored; first source selection opens only that PO and mixed suppliers remain blocked',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:60,revision:'P1'}});w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:40,revision:'P2'}});h.reply(w);h.click({customer:'C'});
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P1'}});w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:40,revision:'P2'}});h.reply(w);h.click({customer:'C'});
  h.change({dataset:{select:'TASK',selectKind:'demand'},checked:true,disabled:true});assert.match(h.node('#app').innerHTML,/0 selected/);
  h.change({dataset:{select:'TASK',selectKind:'source'},checked:true});assert.match(h.node('#app').innerHTML,/1 selected/);h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/60 CTN/);
  h.change({dataset:{select:'CHILD',selectKind:'source'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#liveStatus').textContent,/同一供应商/);
@@ -95,7 +102,7 @@ test('Follow Up search updates visible count, announces no matches and restores 
 });
 
 test('Dashboard customer Entry opens Active Orders filtered to that customer, preserving sources and requiring no save',()=>{
- const h=harness(),w=workspace();w.customers.push({id:'D',name:'OTHER CUSTOMER'});Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-PO-1',procurement:{totalCtn:200,revision:'P'}});w.suppliers=[{id:'S',name:'SUPPLIER'}];w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,ord:0,po:'',procurement:{totalCtn:30,revision:'P2'}},{...w.tasks[0],id:'OTHER',customerId:'D',name:'OTHER PRODUCT'});h.reply(w);
+ const h=harness(),w=workspace();w.customers.push({id:'D',name:'OTHER CUSTOMER'});Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-PO-1',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:200,revision:'P'}});w.suppliers=[{id:'S',name:'SUPPLIER'}];w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,ord:0,po:'',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'P2'}},{...w.tasks[0],id:'OTHER',customerId:'D',name:'OTHER PRODUCT'});h.reply(w);
  assert.match(h.node('#app').innerHTML,/class="room-entry" data-dashboard-entry="true" data-customer="C"/);
  h.click({customer:'C',dashboardEntry:'true'});const html=h.node('#app').innerHTML;assert.match(html,/active-order-heading/);assert.match(html,/<option value="C" selected/);assert.match(html,/data-source-id="CHILD"/);assert.doesNotMatch(html,/OTHER PRODUCT|class="roomhead"|<th>Progress<\/th>/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
  h.click({poTask:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/Review P.O./);
@@ -109,15 +116,15 @@ test('Dashboard Entry preserves another customer price draft and saves it with i
 
 test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
  const h=harness(),w=workspace();
- Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});
- w.tasks.push({...w.tasks[0],id:'STOCK',customerDemandTaskId:'TASK',procurementSource:true,ord:0,procurement:{totalCtn:50,customerCtn:0,expectedExtra:50},warehouse:{accepted:50,hasPhysicalReceipt:true}});
+ Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});
+ w.tasks.push({...w.tasks[0],id:'STOCK',customerDemandTaskId:'TASK',procurementSource:true,ord:0,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:50,customerCtn:0,expectedExtra:50},warehouse:{accepted:50,hasPhysicalReceipt:true}});
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;
  assert.match(html,/received-quantity[\s\S]*?>60<\/button>/);
  assert.match(html,/Stock rcv 库存实收 \+50/);
 });
 
 test('Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes',()=>{
- const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});
+ const h=harness(),w=workspace();w.customers=[{id:'C',name:'CUSTOMER ONE',shortName:'ALPHA'},{id:'D',name:'CUSTOMER TWO',shortName:'BETA'}];w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10},ord:10});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D'});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/<th>Customer<\/th>/);assert.match(html,/customer-short[^>]*>ALPHA/);assert.match(html,/customer-short[^>]*>BETA/);assert.match(html,/data-drag="TASK"/);assert.match(html,/data-drag="OTHER"/);
  h.change({dataset:{select:'TASK'},checked:true});h.change({dataset:{select:'OTHER'},checked:true});h.click({controlId:'createSelectedPo'});assert.match(h.node('#dialogContent').innerHTML,/1 Items · 2 Customers/);assert.match(h.node('#dialogContent').innerHTML,/<span>QTY<\/span><strong>20 CTN<\/strong>/);assert.match(h.node('#dialogContent').innerHTML,/<span>Amount<\/span><strong>MYR 233.60<\/strong>/);assert.equal(h.messages.length,1);
  h.change({id:'activeCustomer',value:'C',dataset:{}});html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK"/);assert.doesNotMatch(html,/data-id="OTHER"/);
@@ -125,9 +132,9 @@ test('Active Orders exposes customer short names, filters one customer for movem
 
 test('Active priorities count saved sources and locate their task rows without writes',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];
- Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'},po:'PO-A',estimatedShipmentDate:'2026-10-28'});
- w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'',procurement:{totalCtn:30,revision:'B'},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
- w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{totalCtn:null,revision:''}});
+ Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'},po:'PO-A',estimatedShipmentDate:'2026-10-28'});
+ w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'B'},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
+ w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:null,revision:''}});
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.match(html,/data-active-notice="pending"[\s\S]*?<b>3<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
  assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
@@ -138,8 +145,8 @@ test('Active priorities count saved sources and locate their task rows without w
 });
 
 test('Active demand summary is display-only and omits duplicate waiting text while retaining remainder and source actions',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:60,revision:'P'},supplierId:'A'});
- w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0,supplierId:'B',procurement:{totalCtn:30,revision:'B'}});
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'},supplierId:'A'});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0,supplierId:'B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'B'}});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;const mother=html.match(/<tr data-id="TASK"[\s\S]*?<\/tr>/)[0],order=mother.match(/<td class="order-quantity">[\s\S]*?<\/td>/)[0];
  assert.match(order,/<span class="quantity-reference/);assert.match(order,/100 \| <span class="qty-mismatch">90<\/span>/);assert.doesNotMatch(order,/<button|data-sources|WAITING/);
  for(const cell of html.match(/<td class="order-quantity">[\s\S]*?<\/td>/g)||[])assert.doesNotMatch(cell,/This P\.O\.|Extra P\.O\.|本单|补采购/);assert.doesNotMatch(html,/waiting-demand/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/class="order-quantity">10<\/td>/);assert.match(html,/data-plan-task="TASK"/);assert.match(html,/data-plan-source="SOURCE"/);
@@ -147,14 +154,14 @@ test('Active demand summary is display-only and omits duplicate waiting text whi
 });
 
 test('Active actual receipts never open supplier costing while receipt exception actions remain available',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{totalCtn:90,revision:'P'},supplierId:'A',warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'RECEIPT-CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH'],owner:'WAREHOUSE'}]});
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:90,revision:'P'},supplierId:'A',warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'RECEIPT-CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH'],owner:'WAREHOUSE'}]});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML,receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];
  assert.match(receipt,/<span class="quantity-reference receipt-problem" aria-description="Received 实收">80<\/span>/);assert.doesNotMatch(receipt,/data-sources/);assert.match(receipt,/data-quantity-case="RECEIPT-CASE"/);assert.match(receipt,/>−10<\/button>/);
  h.click({customer:'C'});html=h.node('#app').innerHTML;receipt=html.match(/<td class="received-quantity">[\s\S]*?<\/td>/)[0];assert.match(receipt,/<button class="quantity-reference receipt-problem" data-sources="TASK">80<\/button>/);
 });
 
 test('Active removes progress chrome and ignores the hidden room stage filter without changing room behavior',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',procurement:{totalCtn:90,revision:'P'},warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true}});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:90,revision:'P'},warehouse:{accepted:80,hasPhysicalReceipt:true,issue:true}});
  h.reply(w);h.click({customer:'C'});h.change({id:'stageFilter',value:'999',dataset:{}});assert.match(h.node('#app').innerHTML,/No matching tasks/);
  h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.doesNotMatch(html,/ao-progress-overview|data-active-progress|row-progress|progress-node|<th>Progress<\/th>/);assert.match(html,/<select id="stageFilter" hidden>/);assert.match(html,/data-id="TASK"/);
@@ -162,8 +169,8 @@ test('Active removes progress chrome and ignores the hidden room stage filter wi
 });
 
 test('Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',name:'ITEM $& & $1',ord:100,gp:.12,procurement:{totalCtn:60,revision:'P'},warehouse:{accepted:60,hasPhysicalReceipt:true}});
- w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:40,revision:'B'},warehouse:{accepted:30,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'ISSUE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',name:'ITEM $& & $1',ord:100,gp:.12,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'},warehouse:{accepted:60,hasPhysicalReceipt:true}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:40,revision:'B'},warehouse:{accepted:30,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'ISSUE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});
  w.tasks.push({...w.tasks[0],id:'LOW',gp:.03,ord:60});h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,rows=html.match(/<tr (?:data-id|data-source-id)=[\s\S]*?<\/tr>/g);
  assert.match(html,/<th>Order Qty<\/th><th>Supplier<\/th><th>Net Cost<\/th><th>Rcv Qty<\/th><th>Line Cost<\/th><th>Our P.O.<\/th>/);assert.doesNotMatch(html,/<th>GP<\/th>|risk-deal/);assert.ok(html.includes('ITEM $&amp; &amp; $1'));
  assert.match(rows[0],/class="barcode">00123<span class="gp gp-badge gp-good"[^>]*>12\.00%<\/span>/);assert.match(html,/class="gp gp-badge gp-low"[^>]*><svg[^]*?<\/svg>3\.00%<\/span>/);
@@ -172,8 +179,8 @@ test('Active reordered columns retain source actions and show green or red GP be
 });
 
 test('Active child rows are always visible with a noninteractive branch marker in each customer cell',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{totalCtn:60,revision:'P'}});
- w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{totalCtn:30,revision:'B'}});w.tasks.push({...w.tasks[0],id:'OTHER'});w.tasks.push({...w.tasks[1],id:'OTHER-SOURCE',customerDemandTaskId:'OTHER'});
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'B'}});w.tasks.push({...w.tasks[0],id:'OTHER'});w.tasks.push({...w.tasks[1],id:'OTHER-SOURCE',customerDemandTaskId:'OTHER'});
  h.reply(w);h.click({view:'active'});const before=h.messages.length;let html=h.node('#app').innerHTML;assert.doesNotMatch(html,/ao-source-toggle|data-toggle-sources|aria-expanded/);
  const rows=html.match(/<tr\b[\s\S]*?<\/tr>/g);for(const row of rows.filter(row=>/data-source-id|data-waiting-for/.test(row))){assert.match(row,/<span class="ao-child-marker" role="img"/);const cell=row.match(/<td\b[\s\S]*?<\/td>/g)[3];assert.match(cell,/ao-child-marker/);assert.doesNotMatch(cell,/<button/);}
  h.change({dataset:{select:'SOURCE',selectKind:'source'},checked:true});html=h.node('#app').innerHTML;assert.match(html,/data-source-id="SOURCE"[^]*?data-select-kind="source"[^>]*checked/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/data-source-id="OTHER-SOURCE"/);assert.match(html,/1 selected/);assert.equal(h.messages.length,before);
@@ -181,7 +188,7 @@ test('Active child rows are always visible with a noninteractive branch marker i
 });
 
 test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{totalCtn:60,revision:'P'}});
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'}});
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'D-TASK',customerId:'D'});
  h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});assert.match(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);
  h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);
@@ -191,47 +198,47 @@ test('Active move entry selects a customer and preserves the original grouped mo
 });
 
 test('cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt',()=>{
- const h=harness(),w=workspace();w.sourcesVersion='S1';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{totalCtn:null,revision:''}});
+ const h=harness(),w=workspace();w.sourcesVersion='S1';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:null,revision:''}});
  h.reply(w);h.click({customer:'C'});h.click({planTask:'TASK'});
  for(const [id,value] of Object.entries({planSupplier:'S',planTotal:'200',planReason:'First supplier quotation','planPrice-lpPc':'3','planPrice-lpCtn':'48','planPrice-disc1':'2','planPrice-disc2':'0','planPrice-disc3':'0'}))h.node('#'+id).value=value;
- h.click({controlId:'saveSupplierPlan'});const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.totalCtn,200);assert.equal(request.input.prices.lpCtn,48);assert.equal(request.input.prices.disc1,.02);assert.equal(request.input.supplierId,'S');
- const count=h.messages.length;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.length,count);
+ (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.totalCtn,200);assert.equal(request.input.prices.lpCtn,48);assert.equal(request.input.prices.disc1,.02);assert.equal(request.input.supplierId,'S');
+ const count=h.messages.length;(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));assert.equal(h.messages.length,count);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{ok:true,requestId:request.requestId}});
- Object.assign(w.tasks[0],{procurement:{totalCtn:200,revision:'P'},sourcing:{orderedCtn:200,unplacedCtn:50}});h.reply(w);
+ Object.assign(w.tasks[0],{procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:200,revision:'P'},sourcing:{orderedCtn:200,unplacedCtn:50}});h.reply(w);
  assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/Remaining 尚需采购 50/);assert.match(h.node('#dialogContent').innerHTML,/id="sourceQty"[^>]*value="50"/);assert.match(h.node('#dialogContent').innerHTML,/data-source-po-task="TASK"/);
 });
 
 test('supplier sources keep ordered and physical received quantities separate and add a priced PO once',()=>{
  const h=harness(),w=workspace();w.sourcesVersion='SV';w.suppliers=[{id:'A',name:'Supplier A'},{id:'B',name:'Supplier B'}];
- Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
- w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
+ Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
+ w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
  h.reply(w);h.click({customer:'C'});let html=h.node('#app').innerHTML;
  assert.match(html,/200 \| <span class="qty-mismatch">190<\/span>/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
  h.click({sources:'SOURCE-B'});assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-A/);assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-B/);
  for(const [id,value] of Object.entries({sourceSupplier:'B',sourceQty:'10','sourcePrice-lpPc':'7.5','sourcePrice-lpCtn':'120','sourcePrice-disc1':'0','sourcePrice-disc2':'0','sourcePrice-disc3':'0',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
- h.click({controlId:'saveAdditionalSource'});const request=h.messages.at(-1);
+ (h.node('#sourceTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveAdditionalSource'}));const request=h.messages.at(-1);
  assert.equal(request.operation,'ADD_SOURCE');assert.equal(request.input.parentTaskId,'TASK');assert.equal(request.input.version,'SV');assert.equal(request.input.quantity,10);assert.equal(request.input.prices.lpCtn,120);assert.equal(request.input.prices.lpPc,7.5);assert.equal(request.input.prices.disc1,0);assert.equal(request.input.prices.disc2,0);assert.equal(request.input.prices.disc3,0);
- const count=h.messages.length;h.click({controlId:'saveAdditionalSource'});assert.equal(h.messages.length,count,'duplicate click while saving cannot create another source');
+ const count=h.messages.length;(h.node('#sourceTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveAdditionalSource'}));assert.equal(h.messages.length,count,'duplicate click while saving cannot create another source');
 });
 
 test('additional source plan uses remaining customer capacity instead of its zero demand field',()=>{
- const h=harness(),w=workspace();w.staff.canEditCustomerDemand=true;Object.assign(w.tasks[0],{ord:200,po:'NCT-PO-A',supplierId:'A',procurement:{totalCtn:180,revision:'PA'}});
- w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'NCT-PO-B',procurement:{totalCtn:10,revision:'PB'},editVersion:'VB'});
+ const h=harness(),w=workspace();w.staff.canEditCustomerDemand=true;Object.assign(w.tasks[0],{ord:200,po:'NCT-PO-A',supplierId:'A',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180,revision:'PA'}});
+ w.tasks.push({...w.tasks[0],id:'B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'NCT-PO-B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10,revision:'PB'},editVersion:'VB'});
  h.reply(w);h.click({qty:'B'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="saveTaskQty"/);h.click({controlId:'editSupplierPlan'});
  assert.match(h.node('#dialogContent').innerHTML,/可供客户数量<\/span><b>20 CTN/);
  h.node('#planTotal').value='15';h.node('#planReason').value='Five more now available';h.node('#planExtraKind').value='';h.node('#planConfirmExtra').checked=false;h.node('#planSupplierConfirmed').checked=true;
- h.click({controlId:'saveSupplierPlan'});const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,15);assert.equal(request.input.confirmExtra,false);
+ (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,15);assert.equal(request.input.confirmExtra,false);
 });
 
 test('separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk',()=>{
- const h=harness(),w=workspace();w.quantityCasesVersion='CASES';Object.assign(w.tasks[0],{po:'PO-A',ord:200,inc:180,procurement:{totalCtn:180},quantityCases:[{id:'UNPLACED',kind:'UNPLACED',quantity:10,status:'RESOLVED',decision:{customerDecision:'STOP',by:'PLANNER',at:'2026-10-12T03:00:00Z'}},{id:'RECEIPT',kind:'RECEIPT',quantity:10,status:'OPEN',financeRequired:true,owner:'PURCHASE'}]});
+ const h=harness(),w=workspace();w.quantityCasesVersion='CASES';Object.assign(w.tasks[0],{po:'PO-A',ord:200,inc:180,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180},quantityCases:[{id:'UNPLACED',kind:'UNPLACED',quantity:10,status:'RESOLVED',decision:{customerDecision:'STOP',by:'PLANNER',at:'2026-10-12T03:00:00Z'}},{id:'RECEIPT',kind:'RECEIPT',quantity:10,status:'OPEN',financeRequired:true,owner:'PURCHASE'}]});
  h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;assert.match(html,/quantity-case resolved[^>]*data-quantity-case="UNPLACED"/);assert.match(html,/quantity-case financial[^>]*data-quantity-case="RECEIPT"/);
  h.click({quantityCase:'RECEIPT'});assert.match(h.node('#dialogContent').innerHTML,/Receiving Issue/);assert.match(h.node('#dialogContent').innerHTML,/内部原因不会传给客户/);
  h.node('#caseCustomer').value='STOP';h.node('#caseSupplier').value='REFUND';h.node('#caseDate').value='';h.node('#caseReason').value='Supplier short delivered';h.node('#caseMessage').value='Available quantity is confirmed';h.click({controlId:'saveQuantityCase'});
  const request=h.messages.at(-1);assert.equal(request.operation,'QUANTITY_CASE');assert.equal(request.input.id,'RECEIPT');assert.equal(request.input.version,'CASES');assert.equal(request.input.customerDecision,'STOP');assert.equal(request.input.supplierDecision,'REFUND');assert.equal(request.input.enabled,undefined,'Purchase cannot send Finance clearance');
 });
 test('planner allocation editor sends the selected receipt and explicit customer quantities with a reason',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{transportMode:'SUPPLIER_DELIVER',availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
  h.reply(w);h.click({view:'stock'});assert.match(h.node('#app').innerHTML,/data-allocate="TASK"/);h.click({allocate:'TASK'});
  assert.match(h.node('#dialogContent').innerHTML,/ACTUAL CUSTOMER/);h.node('#allocateQty0').value='80';h.node('#allocationReason').value='Hold ten cartons';h.click({controlId:'saveAllocation'});
  const request=h.messages.at(-1);assert.equal(request.operation,'ALLOCATE');assert.equal(request.input.version,'AV');assert.equal(request.input.targets[0].quantity,80);assert.equal(request.input.sourceTaskId,'TASK');assert.equal(request.input.reason,'Hold ten cartons');
@@ -311,22 +318,22 @@ test('GP is a read-only two-decimal percentage; missing and unsaved values never
 });
 
 test('P.O. dialog hides system IDs, places an obvious input first and keeps original association payload',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{totalCtn:275}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:275}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
  const html=h.node('#dialogContent').innerHTML;assert.match(html,/创建采购单/);assert.match(html,/po-number-entry/);assert.match(html,/po-items/);assert.doesNotMatch(html,/<small>TASK<\/small>|每行任务 ID/);
  assert.ok(html.indexOf('id="poNumber"')<html.indexOf('class="rowlist po-items"'));assert.match(html,/275/);
  h.node('#poNumber').value='NCT-00123';h.click({controlId:'savePo'});const request=h.messages.at(-1);assert.equal(request.operation,'PO');assert.deepEqual(Array.from(request.input.taskIds),['TASK']);assert.equal(request.input.versions.TASK,'REV');assert.equal(request.input.poNumber,'NCT-00123');
 });
 
 test('P.O. details stay read-only and show human product references without internal IDs',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',procurement:{totalCtn:275}});h.reply(w);h.click({poView:'TASK'});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:275}});h.reply(w);h.click({poView:'TASK'});
  const html=h.node('#dialogContent').innerHTML;assert.match(html,/Review P.O. 采购单预览/);assert.match(html,/NCT-00123/);assert.match(html,/00123/);assert.doesNotMatch(html,/<small>TASK<\/small>|id="poNumber"|id="savePo"/);assert.equal(h.messages.length,1);
 });
 
 test('existing PO review includes its complete saved group and exact FOC amounts without changing selection or sending a save',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'},{id:'OTHER',name:'OTHER SUPPLIER'}];
- Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',editVersion:'V1',procurement:{totalCtn:10,costing:{averageCostCtn:3.333333,amountCents:3333}}});
+ Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-00123',editVersion:'V1',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10,costing:{averageCostCtn:3.333333,amountCents:3333}}});
  w.customers.push({id:'D',name:'SECOND CUSTOMER'});
- w.tasks.push({...w.tasks[0],id:'SAME-PO',barcode:'FOC-ITEM',name:'FOC PRODUCT',customerId:'D',procurement:{totalCtn:110,costing:{mode:'FOC',paidCtn:100,freeCtn:10,averageCostCtn:9.090909,amountCents:100000}}});
+ w.tasks.push({...w.tasks[0],id:'SAME-PO',barcode:'FOC-ITEM',name:'FOC PRODUCT',customerId:'D',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:110,costing:{mode:'FOC',paidCtn:100,freeCtn:10,averageCostCtn:9.090909,amountCents:100000}}});
  w.tasks.push({...w.tasks[0],id:'OTHER-PO',po:'NCT-OTHER',name:'EXCLUDE OTHER PO'},{...w.tasks[0],id:'OTHER-SUPPLIER',supplierId:'OTHER',name:'EXCLUDE OTHER SUPPLIER'});
  h.reply(w);h.change({dataset:{select:'OTHER-PO'},checked:true});h.click({poTask:'TASK'});
  const html=h.node('#dialogContent').innerHTML;assert.match(html,/Review P.O./);assert.match(html,/FOC PRODUCT/);assert.match(html,/120 CTN/);assert.match(html,/MYR 1,033.33/);assert.match(html,/Paid 100 \+ FOC 10/);assert.match(html,/SECOND CUSTOMER/);assert.doesNotMatch(html,/EXCLUDE OTHER|id="savePo"|id="poNumber"/);assert.equal(h.messages.length,1);
@@ -334,26 +341,26 @@ test('existing PO review includes its complete saved group and exact FOC amounts
 });
 
 test('PO number edit is explicit and retains all member versions in the original association operation',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-OLD',editVersion:'V1',procurement:{totalCtn:10}});w.tasks.push({...w.tasks[0],id:'SECOND',editVersion:'V2'});h.reply(w);
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'NCT-OLD',editVersion:'V1',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10}});w.tasks.push({...w.tasks[0],id:'SECOND',editVersion:'V2'});h.reply(w);
  h.click({poTask:'TASK'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="savePo"/);h.click({editPo:'TASK'});assert.match(h.node('#dialogContent').innerHTML,/id="poNumber"/);assert.equal(h.messages.length,1);
  h.node('#poNumber').value='NCT-NEW';h.click({controlId:'savePo'});const sent=h.messages.at(-1);assert.equal(sent.operation,'PO');assert.deepEqual(Array.from(sent.input.taskIds),['TASK','SECOND']);assert.equal(sent.input.versions.TASK,'V1');assert.equal(sent.input.versions.SECOND,'V2');assert.equal(sent.input.poNumber,'NCT-NEW');
 });
 
 test('a company prefix alone cannot create a PO or lose the current input',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{totalCtn:250}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',editVersion:'REV',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:250}});h.reply(w);h.event('click',{closest:selector=>selector==='input[data-po-reference]'?{dataset:{poReference:'TASK'}}:null});
  h.node('#poNumber').value='NCT-PO-';h.click({controlId:'savePo'});assert.equal(h.messages.length,1);assert.match(h.node('#dialogError').textContent,/采购单号码/);assert.equal(h.node('#poNumber').value,'NCT-PO-');
 });
 
 test('supplier plan confirms excess and keeps customer qty out of its write payload',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];w.tasks[0].supplierId='S';w.tasks[0].editVersion='V';w.tasks[0].procurement={revision:'',totalCtn:null};h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
  h.node('#planTotal').value='275';h.node('#planReason').value='Supplier bonus';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=false;
- h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.filter(m=>m.operation==='PLAN').length,0);
- h.node('#planConfirmExtra').checked=true;h.click({controlId:'saveSupplierPlan'});const saved=h.messages.at(-1);assert.equal(saved.operation,'PLAN');assert.equal(saved.input.totalCtn,275);assert.equal(saved.input.quantity,undefined);assert.equal(saved.input.receivedQtyInCtn,undefined);
- h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).requestId,saved.requestId);
+ (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));assert.equal(h.messages.filter(m=>m.operation==='PLAN').length,0);
+ h.node('#planConfirmExtra').checked=true;(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));const saved=h.messages.at(-1);assert.equal(saved.operation,'PLAN');assert.equal(saved.input.totalCtn,275);assert.equal(saved.input.quantity,undefined);assert.equal(saved.input.receivedQtyInCtn,undefined);
+ (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));assert.equal(h.messages.at(-1).requestId,saved.requestId);
 });
 
 test('supplier quantity editor restores saved source and makes customer versus kept stock explicit',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:90,supplierId:'S',procurement:{revision:'P1',totalCtn:100,extraKind:'FREE_GOODS'}});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:90,supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P1',totalCtn:100,extraKind:'FREE_GOODS'}});
  h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
  assert.equal(h.node('#planExtraKind').value,'FREE_GOODS');
  h.node('#planTotal').value='100';h.event('input',{id:'planTotal'});
@@ -365,17 +372,17 @@ test('supplier quantity editor restores saved source and makes customer versus k
 });
 
 test('unchanged supplier quantities and unconfirmed P.O. changes give local feedback without failed backend requests',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO-1',procurement:{revision:'P1',totalCtn:250,extraKind:''}});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO-1',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P1',totalCtn:250,extraKind:''}});
  h.reply(w);h.click({taskEdit:'TASK'});h.click({controlId:'editSupplierPlan'});
- h.node('#planTotal').value='250';h.node('#planReason').value='Same quantity';h.click({controlId:'saveSupplierPlan'});
+ h.node('#planTotal').value='250';h.node('#planReason').value='Same quantity';(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));
  assert.match(h.node('#dialogError').textContent,/没有变化/);assert.equal(h.messages.length,1);
- h.node('#planTotal').value='275';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=true;h.node('#planSupplierConfirmed').checked=false;h.click({controlId:'saveSupplierPlan'});
+ h.node('#planTotal').value='275';h.node('#planExtraKind').value='FREE_GOODS';h.node('#planConfirmExtra').checked=true;h.node('#planSupplierConfirmed').checked=false;(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));
  assert.match(h.node('#dialogError').textContent,/P.O./);assert.equal(h.messages.length,1);
- h.node('#planSupplierConfirmed').checked=true;h.click({controlId:'saveSupplierPlan'});assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
+ h.node('#planSupplierConfirmed').checked=true;(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
 });
 
 test('shared expected-stock view includes all company customers and disables allocation before receipt',()=>{
- const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
+ const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{transportMode:'SUPPLIER_DELIVER',expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
  const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" data-allocate="[^"]+" disabled>Allocate/);assert.equal([...html.matchAll(/<button[^>]*data-allocate[^>]*>/g)].every(match=>match[0].includes("disabled")),true);
 });
 test('live page starts empty, requests real Master data and never seeds demo business records',()=>{
@@ -598,9 +605,9 @@ test('restored pending submission exposes original values and supports browsing 
 
 
 test('pending dialog unlock after a known rejection preserves fields that were already disabled',()=>{
- const supplier={dataset:{},disabled:true},reason={dataset:{},disabled:false},h=harness(undefined,[],null,[supplier,reason]),w=workspace();w.sourcesVersion='V';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{totalCtn:100,revision:'P',draftPlan:true}});h.reply(w);h.click({customer:'C'});h.click({planTask:'TASK'});
+ const supplier={dataset:{},disabled:true},reason={dataset:{},disabled:false},h=harness(undefined,[],null,[supplier,reason]),w=workspace();w.sourcesVersion='V';w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',ea:16,editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:100,revision:'P',draftPlan:true}});h.reply(w);h.click({customer:'C'});h.click({planTask:'TASK'});
  for(const [id,value]of Object.entries({planSupplier:'S',planTotal:'100',planReason:'Price updated','planPrice-lpPc':'3','planPrice-lpCtn':'48','planPrice-disc1':'0','planPrice-disc2':'0','planPrice-disc3':'0'}))h.node('#'+id).value=value;
- h.click({controlId:'saveSupplierPlan'});const save=h.messages.at(-1);assert.equal(reason.disabled,true);h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,requestId:save.requestId,error:'Check supplier costs and discounts.'}});assert.equal(supplier.disabled,true);assert.equal(reason.disabled,false);
+ (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));const save=h.messages.at(-1);assert.equal(reason.disabled,true);h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:false,requestId:save.requestId,error:'Check supplier costs and discounts.'}});assert.equal(supplier.disabled,true);assert.equal(reason.disabled,false);
 });
 
 test('pre-upgrade row-order cache retains customer scope after navigating to another customer',()=>{
@@ -646,7 +653,7 @@ test('Clicking a persistent handle in All Customers opens the original destinati
 
 
 test('Active work tabs separate work content from filters and retain a row-order draft and supplier filter',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S1',name:'FIRST SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S1',editVersion:'V',procurement:{expectedExtra:10,totalCtn:20,revision:'P'}});w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({view:'active'});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S1',name:'FIRST SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S1',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',expectedExtra:10,totalCtn:20,revision:'P'}});w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({view:'active'});
  let html=h.node('#app').innerHTML;assert.match(html,/data-active-work="orders" aria-pressed="true"/);assert.match(html,/data-active-work="allocation" aria-pressed="false"/);assert.match(html,/id="allocationFilter" aria-label="Work source" hidden/);assert.match(html,/All Customers 全部客户/);assert.match(html,/All Suppliers 全部供应商/);
  h.change({id:'supplierFilter',value:'S1',dataset:{}});h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});const before=h.messages.length;
  h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Awaiting warehouse/);assert.match(html,/disabled>Allocate/);assert.match(html,/class="save-group" (?!hidden)/);assert.ok(!html.includes('Sales / Buyer'));
@@ -665,9 +672,9 @@ test('failed main-row edit identifies ROW 003 while preserving actual backend er
  const {h,w}=rowErrorFixture();h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1),text=rejectSave(h,save);assert.match(text,/^ROW 003 · Barcode 00123/);assert.doesNotMatch(text,/的子行/);assert.ok(text.includes('Select an active supplier.'));assert.ok(text.includes(save.requestId));assert.equal(save.input.edits[0].taskId,'TASK');
 });
 test('new supplier failure identifies parent ROW 003 child even though no child task ID exists yet',()=>{
- const {h,w}=rowErrorFixture();Object.assign(w.tasks[2],{supplierId:'S',po:'PO1',procurement:{revision:'P1',totalCtn:200},sourcing:{unplacedCtn:50}});w.suppliers=[{id:'S',name:'Supplier'}];h.reply(w);h.click({customer:'C'});h.click({sources:'TASK'});
+ const {h,w}=rowErrorFixture();Object.assign(w.tasks[2],{supplierId:'S',po:'PO1',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P1',totalCtn:200},sourcing:{unplacedCtn:50}});w.suppliers=[{id:'S',name:'Supplier'}];h.reply(w);h.click({customer:'C'});h.click({sources:'TASK'});
  for(const [id,value] of Object.entries({sourceSupplier:'S',sourceQty:'10','sourcePrice-lpPc':'1','sourcePrice-lpCtn':'16','sourcePrice-disc1':'0','sourcePrice-disc2':'0','sourcePrice-disc3':'0',sourceReason:'Test'}))h.node('#'+id).value=value;
- h.click({controlId:'saveAdditionalSource'});const save=h.messages.at(-1);assert.equal(save.operation,'ADD_SOURCE');assert.match(rejectSave(h,save),/^ROW 003 的子行 · Barcode 00123/);assert.equal(save.input.parentTaskId,'TASK');
+ (h.node('#sourceTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveAdditionalSource'}));const save=h.messages.at(-1);assert.equal(save.operation,'ADD_SOURCE');assert.match(rejectSave(h,save),/^ROW 003 的子行 · Barcode 00123/);assert.equal(save.input.parentTaskId,'TASK');
 });
 test('existing supplier child reports the parent row rather than counting child rows as products',()=>{
  const {h,w}=rowErrorFixture();w.tasks.splice(1,0,{...w.tasks[2],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'CHILD',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.match(rejectSave(h,save),/^ROW 003 的子行/);
@@ -822,12 +829,12 @@ test('PO upload history shows saved actor time and actual filename, preserving o
 
 test('Active notice jump targets the exact supplier child and clears only hiding filters without saving',()=>{
  const classes=new Set(),target={dataset:{sourceId:'CHILD'},classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)},scrollIntoView(options){this.scrolled=options.block;}};
- const h=harness(undefined,[target]),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO',procurement:{revision:'P',totalCtn:10}});w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,po:'',procurement:{revision:'P2',totalCtn:20}});
+ const h=harness(undefined,[target]),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'PO',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P',totalCtn:10}});w.tasks.push({...w.tasks[0],id:'CHILD',customerDemandTaskId:'TASK',procurementSource:true,po:'',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P2',totalCtn:20}});
  h.reply(w);h.click({view:'active'});h.change({id:'supplierFilter',value:'HIDDEN',dataset:{}});h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/Row 001/);const before=h.messages.length;h.click({activeNoticeRow:'CHILD'});
  assert.equal(target.scrolled,'center');assert.ok(classes.has('highlight'));assert.match(h.node('#app').innerHTML,/data-source-id="CHILD"/);assert.equal(h.messages.length,before);
 });
 test('Dashboard receiving alert retains its original View action',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{revision:'P',totalCtn:30},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});w.suppliers=[{id:'S',name:'SUPPLIER'}];h.reply(w);h.click({supplierShipmentAlert:'S'});assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="TASK"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-active-notice-row/);
+ const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',revision:'P',totalCtn:30},warehouse:{accepted:20,hasPhysicalReceipt:true,issue:true},quantityCases:[{id:'CASE',kind:'RECEIPT',quantity:10,status:'OPEN',blocks:['DISPATCH']}]});w.suppliers=[{id:'S',name:'SUPPLIER'}];h.reply(w);h.click({supplierShipmentAlert:'S'});assert.match(h.node('#dialogContent').innerHTML,/data-progress-task="TASK"/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/data-active-notice-row/);
 });
 
 test('request amount clears on focus and formats valid input to two decimals without masking invalid precision',()=>{
@@ -864,8 +871,8 @@ test('Follow Up uses requested columns, Malaysian calendar dates, real Account n
 });
 
 test('Pending PO includes unassigned remainder once and excludes fulfilled or archived demands',()=>{
- const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:30,po:'PO-A',supplierId:'S',procurement:{totalCtn:15,revision:'P'}});
- w.tasks.push({...w.tasks[0],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'PO-B',procurement:{totalCtn:10,revision:'C'}},{...w.tasks[0],id:'FULL',ord:20,procurement:{totalCtn:25,expectedExtra:5,revision:'F'}},{...w.tasks[0],id:'ARCHIVED',archived:true,ord:100,procurement:{totalCtn:0}},{...w.tasks[0],id:'EMPTY',ord:0,procurement:{totalCtn:0}});
+ const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUP'}];Object.assign(w.tasks[0],{ord:30,po:'PO-A',supplierId:'S',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:15,revision:'P'}});
+ w.tasks.push({...w.tasks[0],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK',ord:0,po:'PO-B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10,revision:'C'}},{...w.tasks[0],id:'FULL',ord:20,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:25,expectedExtra:5,revision:'F'}},{...w.tasks[0],id:'ARCHIVED',archived:true,ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:0}},{...w.tasks[0],id:'EMPTY',ord:0,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:0}});
  h.reply(w);h.click({view:'active'});assert.match(h.node('#app').innerHTML,/data-active-notice="pending"[\s\S]*?<b>1<\/b>/);h.click({activeNotice:'pending'});const html=h.node('#dialogContent').innerHTML;
  assert.match(html,/Unassigned 待分配/);assert.match(html,/5 CTN/);assert.equal((html.match(/pd-supplier-alert-item/g)||[]).length,1);assert.match(html,/data-active-notice-row="TASK" data-active-notice-remaining="true"/);assert.doesNotMatch(html,/data-active-notice-row="(?:FULL|ARCHIVED|EMPTY|CHILD)"/);
 });

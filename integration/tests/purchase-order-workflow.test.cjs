@@ -2,6 +2,18 @@ const test=require('node:test'),assert=require('node:assert/strict'),load=requir
 const {projectPurchaseOrders,createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
 const {createAccountSettlementOperations}=load('accountSettlement.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
+
+test('Self Collect is scoped to the exact PO group and changes its review version while legacy hashes stay exact',()=>{
+ const f=fixture(),{operationId}=load('purchaseOperationJournal.js');
+ const before=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]})[0];
+ assert.equal(before.selfCollect,false);
+ assert.equal(before.version,operationId(null,['T1','T2'],['V1','V2'],[undefined,undefined],[],[]));
+ f.workspace.tasks[1].procurement.transportMode='SELF_COLLECT';
+ const mixed=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]})[0];assert.equal(mixed.selfCollect,true);assert.notEqual(mixed.version,before.version);assert.equal(mixed.contentVersion,before.contentVersion);assert.equal(mixed.amount,before.amount);
+ f.workspace.tasks[1].po='NCT-PO-OTHER';
+ const separated=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]});assert.equal(separated.find(row=>row.number==='NCT-PO-001').selfCollect,false);assert.equal(separated.find(row=>row.number==='NCT-PO-OTHER').selfCollect,true);
+ f.workspace.tasks[1].procurement.transportMode='SUPPLIER_DELIVER';assert.ok(projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]}).every(row=>!row.selfCollect));
+});
 test('one supplier PO includes multiple customers without combining their task identities',()=>{
  const f=fixture();f.workspace.customers.push({id:'B',name:'SECOND CUSTOMER',shortName:'SECOND'});f.workspace.tasks[1].customerId='B';
  const rows=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]});

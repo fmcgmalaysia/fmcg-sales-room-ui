@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function fixture(){
  const nodes=new Map(),node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',textContent:'',value:'',insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector(selector){return node(key+selector);}});return nodes.get(key);};
  const document={activeElement:null,querySelector:selector=>selector.includes('data-allocation-extra=')?null:node(selector)},ctx={window:{},document};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),ctx);
- const task=(id,ord)=>({id,customerId:'C',barcode:'BAR-'+id,ord,ea:24,supplierId:'S',editVersion:'V1',lpPc:2,lpCtn:48,disc1:0,disc2:0,disc3:0,procurement:{totalCtn:null,revision:'',draftPlan:true}});
+ const task=(id,ord)=>({id,customerId:'C',barcode:'BAR-'+id,ord,ea:24,supplierId:'S',editVersion:'V1',lpPc:2,lpCtn:48,disc1:0,disc2:0,disc3:0,procurement:{totalCtn:null,revision:'',draftPlan:true,transportMode:'SUPPLIER_DELIVER'}});
  const workspace={company:'NCT',customers:[{id:'C',shortName:'CUSTOMER'}],suppliers:[{id:'S',shortName:'SUPPLIER'},{id:'S2',shortName:'SUPPLIER 2'}],tasks:[task('A',100),task('B',80)]},submissions=[],messages=[],pos=[];let pending=null;
  const modal={open:true,classList:{add(){},contains:()=>true},close(){this.open=false;}};
  const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm:()=>true,handIcon:()=>''});
@@ -11,9 +11,9 @@ function fixture(){
 }
 
 function twoSources(f,saved=false){
- const root=f.workspace.tasks[0];root.procurement=saved?{revision:'P1',totalCtn:40,draftPlan:true}:{revision:'',totalCtn:null,draftPlan:true};
+ const root=f.workspace.tasks[0];root.procurement=saved?{revision:'P1',totalCtn:40,draftPlan:true,transportMode:'SUPPLIER_DELIVER'}:{revision:'',totalCtn:null,draftPlan:true,transportMode:'SUPPLIER_DELIVER'};
  f.ui.open('A');const cache=f.ui.serialize()||{company:'NCT',rootId:'A',counter:1,reason:'',rows:[f.planner.rowDraft(root,'A')],dirty:true,running:false,current:null};
- cache.rows=cache.rows.filter(row=>row.taskId);const b=f.planner.rowDraft(null,'second');Object.assign(b,{supplierId:'S2',qty:'30',paid:'30',raw:{lpPc:'2.00',lpCtn:'48.00',disc1:'0.00',disc2:'0.00',disc3:'0.00'},originalRaw:{},manual:[]});cache.rows.push(b);cache.dirty=true;f.ui.restore(cache);f.ui.open('A');return root;
+ cache.rows=cache.rows.filter(row=>row.taskId);const b=f.planner.rowDraft(null,'second');Object.assign(b,{supplierId:'S2',transportMode:'SUPPLIER_DELIVER',qty:'30',paid:'30',raw:{lpPc:'2.00',lpCtn:'48.00',disc1:'0.00',disc2:'0.00',disc3:'0.00'},originalRaw:{},manual:[]});cache.rows.push(b);cache.dirty=true;f.ui.restore(cache);f.ui.open('A');return root;
 }
 test('same product saves B first through PLAN, retains invalid A, restores unknown request and later adds A only',()=>{
  const f=fixture(),root=twoSources(f);f.edit('A','qty','bad');const before=f.ui.serialize().rows.find(row=>row.key==='A');
@@ -21,7 +21,7 @@ test('same product saves B first through PLAN, retains invalid A, restores unkno
  f.ui.click({dataset:{allocationSave:'second'}});assert.equal(f.submissions.length,1);
  f.ui.rejected(request,'Receipt pending',false);assert.equal(f.edit('A','qty','should not change'),false);assert.equal(f.ui.serialize().rows.find(row=>row.key==='A').qty,before.qty);f.ui.click({dataset:{allocationSave:'second'}});assert.equal(f.submissions.length,1);
  const cache=f.ui.serialize(),g=fixture();g.setPending(request);g.ui.restore(cache);g.ui.click({dataset:{allocationSave:'second'}});assert.equal(g.submissions.length,0);
- root.supplierId='S2';root.editVersion='V2';root.procurement={revision:'P2',totalCtn:30,draftPlan:true,costing:request.input.costing};f.ui.receipt(request,{ok:true});f.ui.receivedWorkspace();
+ root.supplierId='S2';root.editVersion='V2';root.procurement={revision:'P2',totalCtn:30,draftPlan:true,transportMode:'SUPPLIER_DELIVER',costing:request.input.costing};f.ui.receipt(request,{ok:true});f.ui.receivedWorkspace();
  const saved=f.ui.serialize();const a=saved.rows.find(row=>row.key==='A'),b=saved.rows.find(row=>row.key==='second');assert.equal(a.taskId,null);assert.equal(a.qty,before.qty);assert.deepEqual(a.raw,before.raw);assert.equal(b.taskId,'A');assert.equal(f.ui.dirty(),true);assert.equal(saved.saveKey,null);assert.match(saved.issue,/此来源已保存/);assert.equal(f.submissions.length,1);
  assert.equal(f.ui.sourceDirty('A'),false);f.ui.click({dataset:{allocationPo:'second'}});assert.deepEqual(f.pos,['A']);
  f.edit('A','qty','40');f.ui.click({dataset:{allocationSave:'A'}});assert.equal(f.submissions.length,2);assert.equal(f.submissions[1].operation,'ADD_SOURCE');assert.equal(f.submissions[1].input.supplierId,'S');assert.equal(f.submissions[1].input.quantity,40);assert.equal(root.ord,100);
@@ -43,7 +43,7 @@ test('saving B submits only B and preserves A; in-flight identity cannot be swit
  const f=fixture();f.ui.open('A');f.edit('A','qty','60');f.ui.open('B');f.edit('B','qty','30');f.ui.click({id:'applySupplierAllocation',dataset:{}});
  assert.equal(f.submissions.length,1);const request=f.submissions[0];assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,30);
  f.ui.open('A');assert.equal(f.ui.serialize().rootId,'B');assert.equal(f.ui.serialize().parkedDrafts[0].rows[0].qty,'60');f.ui.click({id:'applySupplierAllocation',dataset:{}});assert.equal(f.submissions.length,1);
- const b=f.workspace.tasks[1];b.editVersion='V2';b.procurement={totalCtn:30,revision:'P2',draftPlan:true,costing:request.input.costing};f.ui.receipt(request,{ok:true});f.ui.receivedWorkspace();f.ui.open('A');
+ const b=f.workspace.tasks[1];b.editVersion='V2';b.procurement={totalCtn:30,revision:'P2',draftPlan:true,transportMode:'SUPPLIER_DELIVER',costing:request.input.costing};f.ui.receipt(request,{ok:true});f.ui.receivedWorkspace();f.ui.open('A');
  assert.equal(f.ui.serialize().rows[0].qty,'60');assert.equal(f.submissions.length,1);assert.equal(f.workspace.tasks[0].procurement.totalCtn,null);
 });
 

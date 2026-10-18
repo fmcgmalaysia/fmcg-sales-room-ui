@@ -79,6 +79,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         const supplierId=input.supplierId===undefined?task.supplierId:input.supplierId,patch={};
+        if(!['SUPPLIER_DELIVER','SELF_COLLECT'].includes(input.transportMode))throw Error('Select Supplier Deliver or Self Collect before saving.');
         if(plan.costing&&!input.costing)throw Error('Retain the original procurement costing inputs when editing this plan.');
         const costing=input.costing?calculatePlanCosting(input.costing,input.totalCtn,order.orderId):null;
         if(!supplierId||!s.suppliers.some(row=>row.title===supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select an active supplier before saving the purchase plan.');
@@ -93,7 +94,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if((!reason&&(!costing||plan.revision||task.ourPoNumber))||reason.length>2000)throw Error('A procurement reason is required.');
-        if(input.totalCtn===plan.totalCtn&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
+        if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
@@ -104,7 +105,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
         if(allocation){updates[0].sharesRevision=allocation.beforeRevision;updates[0].sharesRootId=demandTask.title;events.push({taskId:task.title,shareRootId:demandTask.title,action:'PURCHASE_SOURCE_SHARES_SAVED',beforeRevision:allocation.beforeRevision,shares:allocation.shares,reason});}
-        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
+        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);

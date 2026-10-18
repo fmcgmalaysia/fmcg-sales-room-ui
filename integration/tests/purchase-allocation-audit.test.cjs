@@ -14,7 +14,7 @@ test('FOC total updates immediately; quantity history contains saved events only
  }};
  const ctx={window:{},document};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),ctx);
  const prices={lpPc:4,lpCtn:96,disc1:0,disc2:0,disc3:0};
- const task={id:'ROOT',supplierId:'A',po:'PO-1',customerId:'C',ord:300,ea:24,editVersion:'V1',...prices,procurement:{totalCtn:200,revision:'P1',draftPlan:false,costing:{schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:200,freeCtn:0,prices,amountCents:1920000}},history:[
+ const task={id:'ROOT',supplierId:'A',po:'PO-1',customerId:'C',ord:300,ea:24,editVersion:'V1',...prices,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:200,revision:'P1',draftPlan:false,costing:{schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:200,freeCtn:0,prices,amountCents:1920000}},history:[
   {action:'PURCHASE_PLAN_SAVED',result:'SAVED',time:'2026-10-15T02:00:00Z',actor:'LAW',changes:{before:500,after:300}},
   {action:'PURCHASE_PLAN_SAVED',result:'PENDING',time:'2026-10-15T03:00:00Z',actor:'NOT-SAVED',changes:{before:300,after:250}}
  ]};

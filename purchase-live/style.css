@@ -223,7 +223,7 @@ dialog.po-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;font:14px va
 .po-payment-proof{width:48px;height:20px;padding:0;border:0;border-radius:12px;background:#EFF6FF;color:#2563EB;font-weight:700}
 
 /* Supplier allocation only: compact desktop rows; other dialogs and departments keep their baseline. */
-dialog.task-dialog.supplier-allocation-dialog{width:min(1080px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
+dialog.task-dialog.supplier-allocation-dialog{width:min(1360px,calc(100vw - 32px));overflow-x:hidden;max-height:calc(100dvh - 28px);font-family:Inter,'Segoe UI',Arial,sans-serif;font-size:11px}
 .supplier-allocation-dialog .dialoghead{padding:9px 12px;background:#193246;color:white}
 .supplier-allocation-dialog .dialoghead h2{font:700 15px/20px Inter,'Segoe UI',Arial,sans-serif;color:white;margin:0 0 2px}
 .supplier-allocation-dialog .dialoghead .muted,.supplier-allocation-dialog .dialoghead button{color:white;font-size:11px}
@@ -724,4 +724,11 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 #app .pf-slip-wrap .pf-slip-notice{position:absolute;top:-2px;right:-2px;width:9px;height:9px;min-height:0;margin:0;padding:0;border:2px solid white;border-radius:50%;background:var(--master-red)}
 
 /* Waiting for Account is neutral; other pending actions retain orange. */
-.payment-workspace .pf-status.waiting[data-status="Waiting for Acc. response"]{background:#b8c4d0;color:#fff}
+.payment-workspace .pf-status.waiting[data-status="Waiting for Acc. response"]{background:#6b7785;color:#fff}
+
+/* Self Collect dots overlay the existing supplier marks without changing spacing. */
+.supplier-head[data-self-collect],.allocation-person[data-self-collect]{position:relative}
+.supplier-head[data-self-collect]::after,.allocation-person[data-self-collect]::after{content:"";position:absolute;top:0;right:0;width:5px;height:5px;border-radius:50%;background:#E51B2B;pointer-events:none}
+.allocation-person[data-self-collect]::after{left:10px;right:auto}
+.supplier-allocation-dialog .allocation-transport select{font-size:11px;padding-left:3px;padding-right:2px}
+.supplier-allocation-dialog .allocation-table th:nth-last-child(3),.supplier-allocation-dialog #allocationRows>tr>td.amount:nth-last-child(3){padding-right:8px}
