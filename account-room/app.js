@@ -1,7 +1,7 @@
 /* Account layout preview: no business data, payment requests, or authentication writes. */
 (()=>{
  const app=document.querySelector('#app'),company=document.querySelector('#company'),documents=document.querySelector('#documents');
- let view='payments';
+ let view='dashboard';
  const fileIcon='<svg viewBox="0 0 24 28" aria-hidden="true"><path d="M4 2h10l6 6v18H4zM14 2v7h6M8 14h8M8 19h8"/></svg>';
  const folderIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h7l2 3h9v12H3z"/></svg>';
  const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

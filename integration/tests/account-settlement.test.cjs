@@ -149,3 +149,19 @@ test('adding replacement proofs to a paid record never appends or changes the mo
  await h.operations.save(await h.request({action:'DOCUMENT_UPLOAD',type:'PAYMENT',paymentId:payment.id,date:'2026-10-17',base64:Buffer.from('%PDF-1.4\nREPLACEMENT').toString('base64')}));
  const payments=h.records.get('PurchaseOrders/PO').details.finance.payments;assert.equal(payments.length,1);assert.equal(payments[0].proofs.length,3);assert.equal((await h.listOrders())[0].finance.paidCents,20000);
 });
+
+
+test('planning two instalments preserves payment money and reconciliation state',async()=>{
+ const h=proofFileHarness(),before=(await h.listOrders())[0].finance;
+ const plan=[{date:'2026-10-18',cents:30000,source:'CASH'},{date:'2026-10-20',cents:70000,source:'LOAN'}];
+ await h.operations.save(await h.request({action:'PLAN',plan}));
+ const after=(await h.listOrders())[0].finance;assert.deepEqual(after.plan,plan);assert.equal(after.paidCents,before.paidCents);assert.equal(after.balanceCents,before.balanceCents);assert.equal(after.reviewVersion,before.reviewVersion);assert.equal(h.calls.length,0);
+ await h.operations.save(await h.request({action:'PLAN',plan:[]}));assert.deepEqual((await h.listOrders())[0].finance.plan,[]);
+});
+test('planning rejects incomplete instalments, excess balance and unresolved bank operations',async()=>{
+ for(const plan of [[{date:'2026-02-30',cents:100,source:'CASH'}],[{date:'2026-10-18',cents:100001,source:'CASH'}],[{date:'2026-10-18',cents:100,source:''}]]){const h=proofFileHarness();await assert.rejects(h.operations.save(await h.request({action:'PLAN',plan})),/Enter/);}
+ const h=proofFileHarness();h.records.get('PurchaseOrders/PO').details.procurementHandoff={stage:'UNKNOWN'};await assert.rejects(h.operations.save(await h.request({action:'PLAN',plan:[]})),/Resolve bank/);
+});
+test('a prior secondary proof cannot be recorded again as a new primary proof',async()=>{
+ const h=proofFileHarness();await h.operations.save(await h.request(h.input));await assert.rejects(h.operations.save(await h.request({...h.input,base64:h.input.attachments[0].base64,attachments:[]})),/already recorded/);assert.equal((await h.listOrders())[0].finance.paidCents,20000);
+});
