@@ -1,0 +1,13 @@
+# Department mobile header and quantity alignment — 2026-10-18
+
+Scope: presentation-only patch for Purchase, Account and Warehouse. Mobile menu defaults closed, expands the existing navigation buttons and closes after choosing a page or Escape. At <=600px the existing header controls occupy three rows: brand/menu, department/employee, company selector. Desktop navigation and existing company/auth/business handlers remain intact. Quantity pairs in Purchase and Warehouse use equal tracks around a centered divider; the left number aligns right and the right number/capsule aligns left.
+
+Recovery: annotated `verified/department-ui-before-20261018` at 5893693, preserving deployed runtime 1d83c01. Three complete Wix page entries freshly read and exactly compared after line-ending normalization. All 35 deployed static assets freshly compared exactly before editing. Exact live originals and before-row evidence are private under `C:/FMCG-WIX-LOCAL/handoff/department-ui-release-20261018/`.
+
+Protected structure: task-grid.js unchanged; multi-supplier roots/source rows/remainder, quantity cases, supplier heads, PO timestamps, selection/move handlers, receiving/preparation/loading/payment/closeout and downloads remain unchanged. Purchase app changes only quantity-pair markup. Warehouse workroom changes only quantity-pair markup. New shared mobile assets are included in three entry documents; quantity style only in Purchase/Warehouse. The corresponding Wix changes are one version token per page.
+
+Verification: 36 focused business checks pass. Full suite 592: 589 pass, same three documented baseline failures. Two existing quantity tests now check visible values independently of inline markup and retain mismatch-state assertions. Current production frontend fixture includes multi-supplier parent, two source rows, remainder, receipt case, supplier heads and PO timestamp; actual Chrome verifies all retained. All three 390px menu page selections auto-collapse, header has no local overflow; desktop navigation restored. No real business save or message submitted.
+
+Not included: candidate chat redesign/storage, new P/S routing, legacy lightning retirement and other payment/message table changes. Current message backend creates event/journal rows per message/receipt; it must not be reused for the user's rejected storage model. These remain separate approved work awaiting a concrete storage implementation. No history/flags are deleted in this patch.
+
+Release: code prepared; Pages pending; Wix pending; public verification pending. Main untouched. Do not describe this as a complete publication until all four stages pass.
