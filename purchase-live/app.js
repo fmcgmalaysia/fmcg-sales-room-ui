@@ -118,7 +118,7 @@
     if (result?.company !== company || !Array.isArray(result.tasks) || !Array.isArray(result.customers) || !Array.isArray(result.suppliers)) {
       showStatus('Master 回执格式不完整，未显示任何资料。', true); return;
     }
-    data = result;if(!quiet)poData=null;draftKey='fmcg-purchase-draft-v1/'+company+'/'+result.staff.staffId+'/'+result.staff.memberId;restoreDraft(); document.querySelector('#session').textContent = result.staff.staffName + ' / Purchase';
+    data = result;if(!quiet)poData=null;draftKey='fmcg-purchase-draft-v1/'+company+'/'+result.staff.staffId+'/'+result.staff.memberId;restoreDraft(); document.querySelector('#session').textContent = result.staff.staffName;
     if(costRetry){const outcome=data.tasks.find(row=>row.id===costRetry.taskId)?.history.find(event=>event.action==='COST_RETRY_RESULT'&&event.requestId===costRetry.requestId)?.retryOutcome;
       if(outcome){costRetry=null;document.querySelector('#companySelect').disabled=false;modal.close();}
     }

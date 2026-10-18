@@ -1,0 +1,3 @@
+# Staff name only header
+Match image3. Remove only Purchase and Account suffix from staff display; Warehouse/Support already name-only and unchanged. Company selector, identity binding, staff IDs, department permissions, handlers and business flow preserved. Two JS single-expression copy edits, two HTML build/script queries, two Wix room.src markers.
+Recovery:e92f35a deployed/recordcd49437 PR194; existing annotated verified/department-ui-before-20261018 retained. Fresh live twoJS exact before edits, originals saved root staff-name-only-20261018. Syntax bothpass; existing Chrome candidate Purchase LAW and Finance ANN verified. CSS/layout unchanged. Not deployed, fresh Wix markers and branch-specific Pages approval pending. No new business writes/messages.
