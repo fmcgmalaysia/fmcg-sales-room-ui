@@ -7,6 +7,8 @@ import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { projectWarehouseCustomerReadiness } from 'backend/warehouseCustomerReadiness.js';
 import { projectPreparation, createPreparationOperations } from 'backend/warehousePreparation.js';
+import { warehouseCbm, createWarehouseCbmCapture } from 'backend/warehouseCbm.js';
+import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
@@ -20,7 +22,7 @@ async function readWarehouseData(company,staff){
   const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
   const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
-  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:projectPreparation({...workspace,activity})};
+  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,activity):null};})};
 }
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
@@ -46,3 +48,6 @@ export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(com
  try{return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});}
  catch(error){const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
 });
+
+const captureCbm=createWarehouseCbmCapture({store,names:PURCHASE_COLLECTIONS,readData:readWarehouseData,captureCosts:capturePointbaseCosts});
+export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext()}));
