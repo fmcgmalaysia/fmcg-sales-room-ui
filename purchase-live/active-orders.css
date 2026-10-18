@@ -9,9 +9,9 @@
 #app .ao-priority{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 238px;width:238px;min-width:238px;height:70px;padding:9px 14px;border:1px solid #b8ccdf;border-radius:5px;background:#fff;color:#203047;text-align:left;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s}
 #app .ao-priority small{display:block;margin-top:2px;color:inherit;font-size:11px;line-height:15px;font-weight:400}
 #app .ao-priority b{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:2px 6px;border:1px solid transparent;border-radius:14px;background:#e7eef5;color:#173557;font-size:12px;line-height:20px}
-#app .ao-priority.pending.has-work{background:#ff8a00;border-color:#ff8a00;color:#fff}
-#app .ao-priority.incoming.has-work{background:#c42b31;border-color:#c42b31;color:#fff}
-#app .ao-priority.has-work b{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);color:#fff}
+#app .ao-priority.pending.has-work{background:#F58A00;border-color:#F58A00;color:#fff}
+#app .ao-priority.incoming.has-work{background:#E51B2B;border-color:#E51B2B;color:#fff}
+#app .ao-priority.has-work b{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);color:inherit}
 #app .ao-priority:hover{transform:translateY(-1px);box-shadow:0 3px 8px #17355726}
 #app .ao-priority:focus-visible{outline:2px solid #3766a2;outline-offset:3px}
 #app .active-order-table .customer-shipment{margin-top:4px;font-size:10px;line-height:14px;font-weight:400;white-space:nowrap;color:#536b84}
@@ -32,7 +32,7 @@
 #app:has(>.active-order-heading) #stageFilter{width:200px}
 #app>.active-order-heading h1{font-size:20px;font-weight:800;line-height:26px;color:#203047}
 #app>.active-order-heading .muted{color:#536b84;font-size:10px}
-#app>.active-order-heading .room-counts b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:50%;background:#ff8a00;color:#fff;font-size:11px;font-weight:700}
+#app>.active-order-heading .room-counts b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:50%;background:#F58A00;color:#fff;font-size:11px;font-weight:700}
 #app>.active-order-heading .room-counts b+b{background:#e7eef5;color:#173557}
 #app:has(> .active-order-heading) .tools :is(input,select){font-size:11px;color:#203047;border-color:#b8ccdf}
 #app .active-order-table th{background:#d2dfea;color:#203047;font-size:11px;font-weight:700}
@@ -56,13 +56,13 @@
 #app .active-order-table td{color:#203047}
 #app .active-order-table .product-stack .itemname{font-size:11px;font-weight:700;color:#173557}
 #app .active-order-table .product-stack :is(.barcode,.packing){font-size:10px;font-weight:400;color:#62758a}
-#app .active-order-table .progress-node.complete{background:#12883e}
-#app .active-order-table .progress-node:not(.complete):not(.problem){background:#ff8a00}
-#app .active-order-table .progress-node.problem{background:#c42b31}
-#app .active-order-table :is(.supplier-head.complete,.po-reference.complete){color:#12883e}
-#app .active-order-table .supplier-head.pending{color:#ff8a00}
-#app .active-order-table .po-reference.pending{background:#ff8a00;color:#fff;border-radius:4px}
-#app .active-order-table .qty-mismatch{background:#ff8a00!important;color:#fff!important}
+#app .active-order-table .progress-node.complete{background:#2563EB;color:#fff}
+#app .active-order-table .progress-node:not(.complete):not(.problem){background:#F58A00}
+#app .active-order-table .progress-node.problem{background:#E51B2B;color:#fff}
+#app .active-order-table :is(.supplier-head.complete,.po-reference.complete){color:#2563EB}
+#app .active-order-table .supplier-head.pending{color:#F58A00}
+#app .active-order-table .po-reference.pending{background:#F58A00;color:#fff;border-radius:4px}
+#app .active-order-table .qty-mismatch{background:#F58A00!important;color:#fff!important}
 #app .active-order-table .order-quantity>span.quantity-reference{cursor:default;text-decoration:none}
 #app .active-order-table .received-quantity>:is(span.quantity-reference,.quantity-case){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:34px;padding:0 6px;font-family:inherit;font-size:11px;font-weight:600;line-height:14px;vertical-align:middle}
 #app .active-order-table .received-quantity>span.quantity-reference{border:1px solid transparent;cursor:default;text-decoration:none}
@@ -71,9 +71,9 @@
 #app .active-order-table :is(th,td):nth-child(7){text-align:left!important}
 #app .active-order-table :is(th,td):is(:nth-child(6),:nth-child(9)){text-align:center!important}
 #app .active-order-table td:nth-child(11) .po-reference{text-align:right}
-#app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#c42b31;color:#fff!important;line-height:14px}
+#app #taskRows .gp.gp-low{display:inline-block;padding:3px 7px;border-radius:12px;background:#E51B2B;color:#fff!important;line-height:14px}
 #app .active-order-table #taskRows .gp-badge{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;font-size:9px;font-weight:600;line-height:14px;white-space:nowrap}
-#app #taskRows .gp.gp-good{background:#12883e;color:#fff!important}
+#app #taskRows .gp.gp-good{background:#2563EB;color:#fff!important}
 #app .active-order-table .gp-badge svg{width:9px;height:9px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #app .active-order-table .gp-badge svg circle{fill:currentColor;stroke:none}
 #app .active-order-table .row-progress{justify-content:flex-end;gap:1.5px}
@@ -87,13 +87,13 @@
 #app .ao-progress-stages small{display:block;margin-top:3px;font-size:9px;color:#62758a}
 #app .ao-progress-stages button:is(:hover,:focus-visible)>b{background:#244d82}
 .pd-supplier-alerts .ao-stage-state{font-size:11px;font-weight:600}
-.pd-supplier-alerts .ao-stage-state.complete{color:#12883e}
+.pd-supplier-alerts .ao-stage-state.complete{color:#2563EB}
 .pd-supplier-alerts .ao-stage-state.pending{color:#b45a00}
-.pd-supplier-alerts .ao-stage-state.problem{color:#c42b31}
-#modal .pd-supplier-alerts .pd-alert-open[data-source-po-task]{background:#ff8a00;color:#fff}
+.pd-supplier-alerts .ao-stage-state.problem{color:#E51B2B}
+#modal .pd-supplier-alerts .pd-alert-open[data-source-po-task]{background:#F58A00;color:#fff}
 body:has(#app>.active-order-heading) #taskSignals .task-signal{font-family:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;background:#fff;border-color:#c5d5e5;color:#203047;font-size:11px}
 body:has(#app>.active-order-heading) #taskSignals .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#e7eef5;color:#173557;font-size:12px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
-body:has(#app>.active-order-heading) #taskSignals .task-signal.has-work b{background:#ff8a00;color:#fff}
-body:has(#app>.active-order-heading) #taskSignals .task-signal.urgent.has-work b{background:#c42b31;color:#fff}
+body:has(#app>.active-order-heading) #taskSignals .task-signal.has-work b{background:#F58A00;color:#fff}
+body:has(#app>.active-order-heading) #taskSignals .task-signal.urgent.has-work b{background:#E51B2B;color:#fff}
 body:has(#app>.active-order-heading) #taskSignals .task-signal b::before{content:none}
 body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-visible){border-color:#376aa5;background:#f2f6fb}

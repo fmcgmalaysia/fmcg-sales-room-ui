@@ -3,7 +3,7 @@
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
 @font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:800;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype')}
-:root{--master-font:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;--master-text:#203047;--master-blue:#3766a2;--master-header:#d2dfea;--master-muted:#536b84;--master-line:#bccbd9;--master-orange:#ff8a00;--master-red:#c42b31;--master-green:#12883e;--blue:#3766a2;--border:#bccbd9;--muted:#536b84}
+:root{--master-font:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;--master-text:#203047;--master-blue:#3766a2;--master-header:#d2dfea;--master-muted:#536b84;--master-line:#bccbd9;--master-orange:#F58A00;--master-red:#E51B2B;--master-green:#2563EB;--blue:#3766a2;--border:#bccbd9;--muted:#536b84}
 :root{--workbench-font:var(--master-font);--workbench-text:var(--master-text);--workbench-secondary:var(--master-muted);--workbench-blue:var(--master-blue);--workbench-red:var(--master-red);--workbench-bg:#f3f6f9;--workbench-border:var(--master-line);--workbench-head:var(--master-header)}
 body{font-family:var(--master-font);font-size:11px;color:var(--master-text);background:#f3f6f9}
 :root body :is(button,input,select,textarea){font-family:var(--master-font)}
@@ -33,13 +33,13 @@ body .task-signal.has-work b{background:var(--master-orange);color:#fff}
 body .task-signal:is(.urgent,.feedback).has-work b{background:var(--master-red);color:#fff}
 body .task-signal b::before{content:none!important}
 body .account-icon.complete,body .stock-green{color:var(--master-green)}
-body .account-icon.missing,body .stock-red{color:var(--master-red)}
+body .account-icon.missing{color:var(--master-orange)}body .stock-red{color:var(--master-red)}
 body .account-check.on{background:var(--master-green)}
 body .warehouse-table .item-count{background:var(--master-orange);color:#fff}
 body .warehouse-table .item-count.done{background:var(--master-green);color:#fff}
 body :is(.customer-readiness,#customerQty) .item-count{background:var(--master-orange);color:#fff}
-body :is(.customer-readiness,#customerQty) .item-count.done{background:var(--master-green)}
-body .status:is(.WAITING,.PARTIAL){color:#b85c00}
+body :is(.customer-readiness,#customerQty) .item-count.done{background:var(--master-green);color:#fff}
+body .status:is(.WAITING,.PARTIAL){color:#F58A00}
 body .status.ISSUE{color:var(--master-red)}
 body .status.COMPLETE{color:var(--master-green)}
 body .warehouse-track{padding:10px 12px;gap:12px}
@@ -48,8 +48,8 @@ body .warehouse-track .track-capsule{min-width:0;height:auto;gap:6px;border-radi
 body .warehouse-track .track-capsule svg{width:18px;height:18px}
 body .warehouse-track .track-capsule b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e7eef5;color:#173557;font-size:12px;line-height:1}
 body .warehouse-track .track-item:not([data-count="0"]) b{background:var(--master-orange);color:#fff}
-body .warehouse-track .track-item.ISSUE:not([data-count="0"]) b{background:var(--master-red)}
-body .warehouse-track .track-item.COMPLETE:not([data-count="0"]) b{background:var(--master-green)}
+body .warehouse-track .track-item.ISSUE:not([data-count="0"]) b{background:var(--master-red);color:#fff}
+body .warehouse-track .track-item.COMPLETE:not([data-count="0"]) b{background:var(--master-green);color:#fff}
 body .warehouse-track .track-item p{margin:0;font-size:11px;line-height:15px}
 body .warehouse-track .track-item small{font-size:10px;line-height:14px}
 body .support-table .dot{color:var(--master-orange)}
