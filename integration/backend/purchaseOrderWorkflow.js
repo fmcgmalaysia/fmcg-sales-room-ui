@@ -13,6 +13,7 @@ export function purchaseDocumentDeleteBlocker(row,details,document,staff){
   if(!document?.uploadedByStaffId||document.uploadedByStaffId!==staff?.staffId)return 'Only the original uploader can delete this document.';
   if(document.linked!==true||document.superseded||document.deletion)return 'This document is not available for deletion.';
   if(row.state==='HISTORY'||row.invoiceChecked||details.paymentHandoff?.review||(details.finance?.payments||[]).length||(details.finance?.amounts||[]).some(entry=>entry.fileId===document.fileId)||details.procurementHandoff&&!['WITHDRAWN','RETURNED'].includes(details.procurementHandoff.stage))return 'This document is locked by payment or Finance records.';
+  if((details.documentIssues||[]).some(issue=>issue.status!=='RESOLVED'&&issue.fileId===document.fileId))return 'This document is locked by an unresolved Finance issue.';
   if(details.documentDeletion)return 'A document deletion is pending. Retry the original deletion.';
   if(!document.fileId||!document.sha256||!document.name)return 'Document identity is incomplete. Contact Admin.';
   return '';
@@ -107,7 +108,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     }});
   }
   async function save({company,staff,requestId,input}) {
-    if(!names[company]||!input||!['CHASE','TERM','DOCUMENT','DELETE_DOCUMENT','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
+    if(!names[company]||!input||!['DOCUMENT_ISSUE_RESPONSE','CHASE','TERM','DOCUMENT','DELETE_DOCUMENT','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN'].includes(input.action))throw Error('Unsupported purchase order action.');
     if(input.action==='DELETE_DOCUMENT')return deleteDocument({company,staff,requestId,input});
     let payload=null,journalInput=input;
     if(input.action==='DOCUMENT'){
@@ -116,7 +117,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const bytes=Buffer.from(input.base64,'base64');
       if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64)throw Error('Select a valid PDF up to 3 MiB.');
       payload=input.base64;
-      journalInput={id:input.id,version:input.version,action:'DOCUMENT',type:input.type,date:input.date,number:text(input.number),reason:text(input.reason),declaredCents:input.declaredCents,sha256:createHash('sha256').update(bytes).digest('hex'),size:bytes.length};
+      journalInput={id:input.id,version:input.version,action:'DOCUMENT',type:input.type,date:input.date,number:text(input.number),reason:text(input.reason),declaredCents:input.declaredCents,sha256:createHash('sha256').update(bytes).digest('hex'),size:bytes.length,...(input.issueId?{issueId:input.issueId}:{})};
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{purchaseOrder:journalInput},prepare:async()=>{
       const rows=await list(company,staff),row=rows.find(row=>row.id===input.id);
@@ -126,7 +127,11 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const reason=text(input.reason);if(!reason||reason.length>2000)throw Error('Please enter a reason.');
       let patch;
       let upload;
-      if(input.action==='REQUEST_PAYMENT'){
+      if(input.action==='DOCUMENT_ISSUE_RESPONSE'){
+        const issue=(before.documentIssues||[]).find(item=>item.id===input.issueId);
+        if(row.state==='HISTORY'||!issue||issue.status!=='OPEN'||!row.documents.some(doc=>doc.fileId===issue.fileId&&doc.sha256===issue.sha256&&!doc.superseded))throw Error('Purchase order changed. Select an open document issue.');
+        patch={documentIssues:before.documentIssues.map(item=>item.id===issue.id?{...item,status:'AWAITING_REVIEW',response:{reason,at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId}}:item)};
+      }else if(input.action==='REQUEST_PAYMENT'){
         const credits=row.documents.filter(doc=>doc.type==='CN'&&!doc.superseded);
         if(rows.some(other=>other.id!==row.id&&other.documents.some(doc=>doc.type==='CN'&&!doc.superseded&&credits.some(credit=>credit.fileId===doc.fileId||credit.sha256&&credit.sha256===doc.sha256))))throw Error('Payment request CN is also linked to another PO. Account must resolve its allocation.');
         const requestedRow={...row,termDays:input.termDays,paymentRequestRevision:requestId};
@@ -135,13 +140,16 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         patch={procurementHandoff:transitionProcurementHandoff(row,before,input,{at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},'PURCHASE'),...(input.action==='SUBMIT_FINANCE'?{chasePayment:input.urgent===true}:{})};
       }else if(input.action==='DOCUMENT'){
         if(!row.supplierId)throw Error('Select a supplier before uploading documents.');
+        const issue=input.issueId?(before.documentIssues||[]).find(item=>item.id===input.issueId):null;
+        if(input.issueId&&(row.state==='HISTORY'||!issue||issue.status!=='OPEN'||issue.type!==input.type||!row.documents.some(doc=>doc.fileId===issue.fileId&&doc.sha256===issue.sha256&&!doc.superseded)))throw Error('Purchase order changed. Select an open issue for this document type.');
         if(['INV','CN'].includes(input.type)&&(!Number.isSafeInteger(input.declaredCents)||input.declaredCents<=0||input.declaredCents>999999999999))throw Error('Enter the supplier document amount in MYR.');
         const name=purchaseDocumentName({date:input.date,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
         if((before.documents||[]).some(doc=>doc.linked&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
         const allocated=await documentService({action:'ALLOCATE',company});
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,name,type:input.type,sha256:journalInput.sha256};
         const document={fileId:allocated.fileId,name,type:input.type,number:text(input.number),date:input.date,size:journalInput.size,sha256:journalInput.sha256,linked:true,...(Number.isSafeInteger(input.declaredCents)?{declaredCents:input.declaredCents}:{}),uploadedAt:now().toISOString(),uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
-        patch={documents:[...(before.documents||[]),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{})};
+        if(issue){document.superseded=true;document.pendingIssueId=issue.id;}
+        patch={documents:[...(before.documents||[]),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{}),...(issue?{documentIssues:before.documentIssues.map(item=>item.id===issue.id?{...item,status:'AWAITING_REVIEW',response:{reason,fileId:document.fileId,sha256:document.sha256,at:document.uploadedAt,by:staff.staffName,byStaffId:staff.staffId}}:item)}:{})};
       } else if(input.action==='ACK_PAYMENT'){
         const payment=row.finance.payments.find(payment=>payment.id===input.paymentId&&payment.confirmed&&payment.direction!=='REFUND'&&payment.proof?.linked);
         if(!payment)throw Error('Select an actual payment notification.');
@@ -161,6 +169,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,name:upload.name,reason}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
       if('procurementHandoff' in patch&&patch.procurementHandoff)event.action='PROCUREMENT_'+input.action;
+      if(input.action==='DOCUMENT_ISSUE_RESPONSE')event.action='SUPPLIER_DOCUMENT_ISSUE_RESPONSE';
       return {record,expected:current?operationId(current):null,expectedVersion:row.version,expectedBasis:procurementSubmissionVersion(row),event,...(upload?{upload}:{})};
     },apply:async plan=>{
       const current=await store.read(PURCHASE_ORDER_COLLECTION,plan.record._id);

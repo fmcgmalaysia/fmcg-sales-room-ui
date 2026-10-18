@@ -732,3 +732,6 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 .allocation-person[data-self-collect]::after{left:10px;right:auto}
 .supplier-allocation-dialog .allocation-transport select{font-size:11px;padding-left:3px;padding-right:2px}
 .supplier-allocation-dialog .allocation-table th:nth-last-child(3),.supplier-allocation-dialog #allocationRows>tr>td.amount:nth-last-child(3){padding-right:8px}
+
+/* Confirmed supplier document issues; existing controls and spacing retained. */
+.po-document-issue{border-left:3px solid #E51B2B;background:#fff5f6;padding:10px;margin:8px 0;color:#9b1823}.po-document-issue p{margin:6px 0}.po-document-issue small,.po-document-issue-note small{display:block}.po-issue-actions{display:flex;gap:8px;margin:8px 0}.po-document-issue-note{margin-top:6px;color:#E51B2B}.po-document-issue-note button{color:inherit;text-align:left;padding:0;border:0;background:none;font:inherit;cursor:pointer}

@@ -17,7 +17,14 @@
  }
  function edit(row,kind){
   if(pending)return;let body;
-  if(kind.startsWith('handoff:')){
+  if(kind.startsWith('document-report:')){
+   const file=row.documents.find(d=>d.fileId===kind.slice(16)&&d.linked&&!d.superseded);if(!file)return;
+   modal(row,'Report Document Issue','<p><b>'+esc(file.type+' · '+(file.number||file.name))+'</b></p>'+window.accountPaymentLayout.issueHelp());
+   const note=dialog.querySelector('[name="reason"]');note.previousElementSibling.textContent='Issue';note.placeholder='Describe what Purchase needs to correct.';
+  }else if(kind.startsWith('document-review:')){
+   const [,id,outcome]=kind.split(':'),issue=(row.documentIssues||[]).find(i=>i.id===id);if(!issue)return;
+   modal(row,outcome==='ACCEPT'?'Confirm Issue Resolved':'Return for Correction','<p>'+esc(issue.type+' · '+issue.reason)+'</p><p>Purchase: '+esc(issue.response?.reason||'')+'</p><p class="document-note">'+(outcome==='ACCEPT'?'Confirm you have checked the response and any replacement file. Existing payment amounts remain recorded.':'Explain what Purchase still needs to correct.')+'</p>');
+  }else if(kind.startsWith('handoff:')){
    const action=kind.slice(8),bank=['REVIEW_LEGACY','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_RESOLVED'].includes(action);
    body='<p>'+esc(row.number)+' · PO MYR '+money(Math.round(row.amount*100))+'</p>';
    if(action==='PAYMENT_PROCESSING')body+='<p>Record payment processing. Purchase remains locked; no bank transfer is executed.</p>';
@@ -66,7 +73,9 @@
  async function submit(){
   if(pending){send();return;}const row=JSON.parse(dialog.dataset.settlementRow),kind=dialog.dataset.settlementKind,form=document.querySelector('#settlementForm');
   if(!form.reportValidity())return;const values=new FormData(form),input={id:row.id,version:row.version,reason:String(values.get('reason')||'').trim()};
-  if(kind.startsWith('handoff:')){Object.assign(input,{action:kind.slice(8),bankClear:values.get('bankClear')==='on',...(kind==='handoff:PAYMENT_RESOLVED'?{outcome:values.get('bankOutcome'),paymentId:values.get('paymentId')}:{})});}
+  if(kind.startsWith('document-report:')){const file=row.documents.find(d=>d.fileId===kind.slice(16));Object.assign(input,{action:'DOCUMENT_ISSUE_REPORT',fileId:file?.fileId,sha256:file?.sha256});}
+  else if(kind.startsWith('document-review:')){const [,issueId,outcome]=kind.split(':');Object.assign(input,{action:'DOCUMENT_ISSUE_REVIEW',issueId,outcome});}
+  else if(kind.startsWith('handoff:')){Object.assign(input,{action:kind.slice(8),bankClear:values.get('bankClear')==='on',...(kind==='handoff:PAYMENT_RESOLVED'?{outcome:values.get('bankOutcome'),paymentId:values.get('paymentId')}:{})});}
   else if(kind==='review'){Object.assign(input,{action:'PAYMENT_REVIEW',stage:values.get('reviewStage'),paperReceived:values.get('paperReceived')==='on',requestedCents:toCents(String(values.get('requestedAmount')).trim())});}
   else if(kind.startsWith('claim:')){
    const item=row.quantityCases.find(item=>item.id===kind.slice(6));
