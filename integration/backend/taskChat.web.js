@@ -47,5 +47,5 @@ export const saveTaskChat=webMethod(Permissions.SiteMember,async(company,departm
  const staff=await staffContext(department);
  if(!input||JSON.stringify(input).length>12000)throw Error('Chat save request is invalid.');
  try{return await service.save({company,department,staff,requestId,input});}
- catch(error){const message=String(error?.message||''),safe=message.startsWith('Chat ')||/^CHAT_[A-Z_]+$/.test(message);return {ok:false,company,department,requestId,retryable:!/^CHAT_(INVALID_|REQUEST_REUSED|FILE_CONFLICT|IDENTITY_CONFLICT|CAPACITY_REVIEW_REQUIRED)/.test(message)&&!/^Chat (task is not available|department|action|message must|legacy message)/.test(message),error:safe?message:'Chat save is unconfirmed. Retry the same request.'};}
+ catch(error){const message=String(error?.message||''),safe=message.startsWith('Chat ')||/^CHAT_[A-Z_]+$/.test(message);return {ok:false,company,department,requestId,retryable:!/^CHAT_(INVALID_|REQUEST_REUSED|FILE_CONFLICT|IDENTITY_CONFLICT|ROOT_CONFLICT|PAGE_CONFLICT|SEQUENCE_CONFLICT|CAPACITY_REVIEW_REQUIRED)/.test(message)&&!/^Chat (task is not available|department|action|message must|legacy message|index identity)/.test(message),error:safe?message:'Chat save is unconfirmed. Retry the same request.'};}
 });

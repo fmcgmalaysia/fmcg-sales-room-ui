@@ -9,6 +9,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
  function select(model,input,department){const task=model.tasks.find(t=>t.kind===input.kind&&t.id===input.taskId);if(!task)fail('task is not available in this company.');const pair=taskChatPair(department,input.peer);if(!task.peers.includes(input.peer))fail('department is not permitted on this task.');return {task,pair};}
  const actor=(staff,department)=>({memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,department});
  const envelope=(company,department,staff,task,pair)=>({company,kind:task.kind,taskId:storageTask(task),pair,actor:actor(staff,department)});
+ const updates=(task,department,peer)=>(task.updates||[]).filter(e=>!e.from||e.from===department||e.from===peer);
  async function ensureIndex(company,task){
   const id=indexId(company,task),valid=row=>row&&row.company===company&&row.taskKind===task.kind&&row.taskId===task.id;
   const existing=await index.read(id);if(existing){if(!valid(existing))fail('index identity requires review.');return;}
@@ -35,7 +36,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
   const value={sequence:0,unread:0,lastIncoming:null,...result?.summary,staffId:staff.staffId};
   const old=legacy(task,department,peer,value),incoming=old.filter(m=>m.to.includes(department)),oldLast=incoming.at(-1);
   const unread=old.filter(m=>m.to.includes(department)&&m.byStaffId!==staff.staffId&&!m.receipts.some(r=>r.byStaffId===staff.staffId&&r.department===department)).length;
-  return {kind:task.kind,taskId:task.id,sourceTaskId:task.sourceTaskId||null,peer,pair:taskChatPair(department,peer),number:task.number,title:task.title,closed:!!task.closed,sequence:value.sequence,updatedAt:value.updatedAt||old.at(-1)?.at||null,unread:value.unread+unread,lastIncoming:value.lastIncoming||oldLast||null,updates:task.updates||[]};
+  return {kind:task.kind,taskId:task.id,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],peer,pair:taskChatPair(department,peer),number:task.number,title:task.title,closed:!!task.closed,sequence:value.sequence,updatedAt:[value.updatedAt,old.at(-1)?.at,...updates(task,department,peer).map(e=>e.at)].filter(Boolean).sort().at(-1)||null,unread:value.unread+unread+updates(task,department,peer).filter(e=>e.notify&&e.from===peer&&(!value.systemReadAt||e.at>value.systemReadAt)).length,lastIncoming:value.lastIncoming||oldLast||null,updates:updates(task,department,peer)};
  }
  return {
   async list({company,department,staff,historyCursor=null}){
@@ -56,15 +57,18 @@ export function createTaskChatService({drive,index,resolve,hash}){
    let next=core.beforeSequence?'N:'+core.beforeSequence:null;
    if(!next&&messages.length<20){const end=before?.startsWith('L:')?Number(before.slice(2)):previous.length;if(end<0||end>previous.length)fail('history cursor is invalid.');const start=Math.max(0,end-(20-messages.length));messages.unshift(...previous.slice(start,end));next=start?'L:'+start:null;}
    else if(!next&&previous.length)next='L:'+previous.length;
-   return {company,department,kind:task.kind,taskId:task.id,peer:input.peer,messages,before:next,summary:summary(task,input.peer,department,staff,core),updates:task.updates||[]};
+   return {company,department,kind:task.kind,taskId:task.id,peer:input.peer,messages,before:next,summary:summary(task,input.peer,department,staff,core),updates:updates(task,department,input.peer)};
   },
   async save({company,department,staff,requestId,input}){
    const model=await resolve({company,department,staff,taskRef:{kind:input.kind,id:input.taskId}}),{task,pair}=select(model,input,department);
    let operation=input.action;
-   if(!['SEND','READ','ACK','LEGACY_READ','LEGACY_ACK'].includes(operation))fail('action is not supported.');
+   if(!['SEND','READ','ACK','LEGACY_READ','LEGACY_ACK','SYSTEM_READ'].includes(operation))fail('action is not supported.');
    const payload={...envelope(company,department,staff,task,pair),action:'CHAT_OPERATION',operation,requestId};
    if(operation==='SEND'){if(typeof input.body!=='string'||input.body.trim().length<1||input.body.trim().length>2000||typeof input.requiresAck!=='boolean')fail('message must contain 1–2000 characters.');Object.assign(payload,{body:input.body,requiresAck:input.requiresAck,baseSequence:input.baseSequence,replyTo:input.replyTo||null});}
-   else if(operation.startsWith('LEGACY_')){
+   else if(operation==='SYSTEM_READ'){
+    const update=updates(task,department,input.peer).find(e=>e.id===input.messageId&&e.from===input.peer&&e.notify===true);
+    if(!update)fail('notification is not addressed to this department.');payload.at=update.at;
+   }else if(operation.startsWith('LEGACY_')){
     const old=legacy(task,department,input.peer,{}).find(m=>m.id===input.messageId&&m.to.includes(department));if(!old||operation==='LEGACY_ACK'&&!old.requiresAck)fail('legacy message is not addressed to this department.');
     Object.assign(payload,operation==='LEGACY_READ'?{at:old.at}:{messageId:old.id});
    }else Object.assign(payload,{sequence:input.sequence,...(operation==='ACK'?{messageId:input.messageId}:{})});

@@ -1,6 +1,7 @@
 /* Private chat files only. PDF/photo folders, delivery and permissions are untouched. */
 function taskChatService_(input){
- const lock=LockService.getScriptLock();lock.waitLock(20000);
+ const readOnly=input.action==='CHAT_SUMMARIES'||input.action==='CHAT_OPERATION'&&input.operation==='SUMMARY';
+ const lock=readOnly?null:LockService.getScriptLock();if(lock)lock.waitLock(20000);
  try{
   const hash=value=>Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(value)).map(n=>('0'+((n+256)%256).toString(16)).slice(-2)).join('');
   const properties=PropertiesService.getScriptProperties(),scriptId=ScriptApp.getScriptId(),roots={};
@@ -12,7 +13,7 @@ function taskChatService_(input){
    const files=Drive.Files.list({q:"trashed = false and mimeType = 'application/vnd.google-apps.folder' and appProperties has { key='service' and value='TASK_CHAT_V1' } and appProperties has { key='company' and value='"+company+"' } and appProperties has { key='script' and value='"+scriptId+"' }",fields:'files(id)',pageSize:2}).files||[];
    if(files.length>1)throw Error('CHAT_ROOT_CONFLICT');id=files[0]?.id;
    if(!id&&create)id=Drive.Files.create({name:'FMCG Department Chats · '+company,mimeType:'application/vnd.google-apps.folder',appProperties:{service:'TASK_CHAT_V1',company,script:scriptId}},null,{fields:'id'}).id;
-   if(id){properties.setProperty(property,id);roots[company]=id;}return id||null;
+   if(id){if(!readOnly)properties.setProperty(property,id);roots[company]=id;}return id||null;
   }
   function run(request){
    let folder=root(request.company,false),headId=null;
@@ -47,5 +48,5 @@ function taskChatService_(input){
   }
   if(input.action!=='CHAT_OPERATION')throw Error('CHAT_INVALID_OPERATION');
   return run(input);
- }finally{lock.releaseLock();}
+ }finally{if(lock)lock.releaseLock();}
 }

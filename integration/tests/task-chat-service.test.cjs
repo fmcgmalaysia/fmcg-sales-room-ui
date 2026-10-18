@@ -46,3 +46,20 @@ test('first index failure stops before any Drive message is written',async()=>{
  const f=fixture();f.failIndex();await assert.rejects(f.operations.save({...f.base,requestId:f.uuid(72),input:{...f.input,action:'SEND',body:'Not yet saved',requiresAck:false,baseSequence:0}}),/Index outage/);
  assert.equal(f.pages.size,0);assert.equal(f.heads.size,0);assert.equal(f.indices.size,0);
 });
+
+test('payment-proof notifications have personal read cursors without copied messages or extra CMS rows',async()=>{
+ const f=fixture();f.records[0].legacy=[];f.records[0].updates=[{id:'PROOF',at:'2026-10-18T12:00:00.000Z',from:'ACCOUNT',notify:true,body:'Payment proof uploaded'}];
+ assert.equal((await f.operations.list(f.base)).threads[0].unread,1);
+ assert.equal((await f.operations.list({...f.base,department:'WAREHOUSE',staff:f.warehouse})).threads[0].unread,0);
+ await assert.rejects(f.operations.save({...f.base,requestId:f.uuid(91),input:{...f.input,action:'SYSTEM_READ',messageId:'FORGED'}}),/notification/);
+ await f.operations.save({...f.base,requestId:f.uuid(92),input:{...f.input,action:'SYSTEM_READ',messageId:'PROOF'}});
+ assert.equal((await f.operations.list(f.base)).threads[0].unread,0);
+ assert.equal((await f.operations.list({...f.base,staff:{...f.staff,staffId:'P2',memberId:'P2'}})).threads[0].unread,1);
+ assert.equal(f.indices.size,1);assert.equal(f.pages.size,0);assert.equal(f.records[0].updates.length,1);
+});
+
+test('Support receives every source task identity for a split delivery batch',async()=>{
+ const f=fixture();f.records[1].sourceTaskId='DEMAND';f.records[1].sourceTaskIds=['DEMAND','SPLIT'];
+ const list=await f.operations.list({...f.base,department:'SUPPORT',staff:f.support});
+ assert.deepEqual(list.threads[0].sourceTaskIds,['DEMAND','SPLIT']);
+});

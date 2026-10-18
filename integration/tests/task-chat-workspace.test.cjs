@@ -15,3 +15,9 @@ test('legacy Warehouse/Finance conversations remain a read-only archive and neve
  const message={id:'M',from:'WAREHOUSE',to:['ACCOUNT'],body:'Earlier chat'},base={company:'NCT',department:'ACCOUNT',orders:[{company:'NCT',id:'P',number:'PO',supplierName:'S'}],delivery:[],legacy:{threads:[{id:'P',messages:[message],updates:[{body:'Payment reminder updated'},{body:'Payment or document recorded'}]}]}};
  const result=build(base);assert.deepEqual(result.tasks[0].peers,['PURCHASE']);assert.equal(result.legacyArchive[0].legacyOnly,true);assert.equal(result.legacyArchive[0].messages[0].body,'Earlier chat');assert.equal(result.tasks[0].updates.length,1);
 });
+
+test('delivery timeline reads existing packing and loading facts without changing the business state',()=>{
+ const delivery=[{id:'BATCH',taskId:'DEMAND',sourceTaskIds:['DEMAND','SPLIT'],barcode:'123',batch:'D1',history:[{at:'2026-10-18T10:00:00.000Z',by:'Storekeeper',action:'PACK',loaded:0},{at:'2026-10-18T11:00:00.000Z',by:'Storekeeper',action:'LOAD',loaded:450,note:'30 remain'}]}],before=JSON.stringify(delivery);
+ const result=build({company:'NCT',department:'SUPPORT',orders:[],delivery});
+ assert.deepEqual(result.tasks[0].sourceTaskIds,['DEMAND','SPLIT']);assert.equal(result.tasks[0].updates.length,2);assert.equal(result.tasks[0].updates[1].body,'Loading recorded · 450');assert.equal(result.tasks[0].updates[1].bodyZh,'装货已记录');assert.equal(JSON.stringify(delivery),before);
+});

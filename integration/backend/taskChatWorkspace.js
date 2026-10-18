@@ -14,13 +14,14 @@ export function buildTaskChatWorkspace({company,department,orders,delivery,legac
   const original=(legacy?.threads||[]).find(t=>t.id===po.id);
   const updates=(original?.updates||[]).filter(e=>!['Payment reminder updated'].includes(e.body)).map(e=>{
    const audit=(po.history||[]).find(a=>a.id===e.id);
-   return audit?.action==='ACCOUNT_DOCUMENT_UPLOAD'&&audit.changes?.type==='PAYMENT'?{...e,body:'Payment proof uploaded',bodyZh:'付款证明已上传'}:e;
+   return audit?.action==='ACCOUNT_DOCUMENT_UPLOAD'&&audit.changes?.type==='PAYMENT'?{...e,from:'ACCOUNT',notify:true,body:'Payment proof uploaded',bodyZh:'付款证明已上传'}:e;
   });
   tasks.push({kind:'PO',id:po.id,number:po.number,title:po.supplierName,closed:po.supplierAccount?.closed===true,peers:peers.PO[department],legacy:original?.messages||[],updates});
   for(const peer of ['PURCHASE','ACCOUNT','WAREHOUSE'].filter(p=>p!==department&&!peers.PO[department].includes(p))){const messages=(original?.messages||[]).filter(m=>m.from===peer&&m.to.includes(department)||m.from===department&&m.to.includes(peer));if(messages.length)legacyArchive.push({kind:'PO',taskId:po.id,number:po.number,title:po.supplierName,peer,legacyOnly:true,closed:true,messages});}
  }
  if(peers.DELIVERY[department])for(const item of delivery){
-  const updates=(item.updates||[]).map(e=>({...e}));
+  const labels={PACK:['Packing confirmed','备货已确认'],LOAD:['Loading recorded','装货已记录'],UNPACK:['Packing reversed','备货已撤回'],PHOTOS:['Warehouse photos added','货仓照片已补充']};
+  const updates=(item.history||[]).filter(e=>labels[e.action]).map(e=>({id:JSON.stringify([item.id,e.at,e.action,e.by]),kind:'SYSTEM',at:e.at,by:e.by,from:'WAREHOUSE',notify:e.action==='PACK'||e.action==='LOAD'||e.action==='UNPACK',body:labels[e.action][0]+(e.action==='LOAD'?' · '+e.loaded:''),bodyZh:labels[e.action][1],note:e.note||''}));
   tasks.push({kind:'DELIVERY',id:item.id,sourceTaskId:item.taskId,sourceTaskIds:item.sourceTaskIds||[item.taskId],number:[item.barcode,item.batch].filter(Boolean).join(' · '),title:item.customerName||item.name,closed:!!item.dispatched,peers:peers.DELIVERY[department],legacy:[],updates});
  }
  for(const row of indexHistory){

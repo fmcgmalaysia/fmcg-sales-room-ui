@@ -28,7 +28,7 @@ function taskChatRun_(store,input,hash,clock){
  function readPage(number){const page=store.page(key,pair,number);if(page&&(page.schema!==1||page.key!==key||page.pair!==pair||page.number!==number||!Array.isArray(page.messages)||page.messages.length>TASK_CHAT_PAGE_SIZE))fail('PAGE_CONFLICT');return page;}
  function summary(){
   const cursor=thread.cursors[actorKey],received=total(thread.totals,actor.department,actor.staffId);
-  return {pair,sequence:thread.sequence,updatedAt:thread.updatedAt,lastIncoming:copy(thread.lastIncoming[actor.department]||null),unread:Math.max(0,received-(cursor?.received||0)),cursor:cursor?.sequence||0,legacyReadAt:cursor?.legacyAt||null,legacyAcknowledgements:copy(thread.legacyAcknowledgements?.[actorKey]||{})};
+  return {pair,sequence:thread.sequence,updatedAt:thread.updatedAt,lastIncoming:copy(thread.lastIncoming[actor.department]||null),unread:Math.max(0,received-(cursor?.received||0)),cursor:cursor?.sequence||0,legacyReadAt:cursor?.legacyAt||null,systemReadAt:cursor?.systemAt||null,legacyAcknowledgements:copy(thread.legacyAcknowledgements?.[actorKey]||{})};
  }
  const result=extra=>({ok:true,company:input.company,kind:input.kind,taskId:input.taskId,revision:head.revision,summary:summary(),...extra});
  function decorate(message){
@@ -57,10 +57,10 @@ function taskChatRun_(store,input,hash,clock){
   return result({messages:messages.reverse().map(decorate),beforeSequence:next>0?next+1:null});
  }
  if(!/^[a-f0-9-]{36}$/i.test(input.requestId||''))fail('INVALID_REQUEST');
- if(input.operation==='LEGACY_READ'){
+ if(input.operation==='LEGACY_READ'||input.operation==='SYSTEM_READ'){
   if(typeof input.at!=='string'||!Number.isFinite(Date.parse(input.at))||new Date(input.at).toISOString()!==input.at)fail('INVALID_CURSOR');
-  const cursor=thread.cursors[actorKey]||{sequence:0,received:0};if(cursor.legacyAt&&cursor.legacyAt>=input.at)return result({unchanged:true});
-  thread.cursors[actorKey]={...cursor,legacyAt:input.at};commitHead();return result({});
+  const field=input.operation==='SYSTEM_READ'?'systemAt':'legacyAt',cursor=thread.cursors[actorKey]||{sequence:0,received:0};if(cursor[field]&&cursor[field]>=input.at)return result({unchanged:true});
+  thread.cursors[actorKey]={...cursor,[field]:input.at};commitHead();return result({});
  }
  if(input.operation==='LEGACY_ACK'){
   if(!/^\w{32,64}$/.test(input.messageId||''))fail('INVALID_ACK');

@@ -65,7 +65,7 @@ function renderThread(){
 function renderBubbles(){
  const box=dialog.querySelector('.tc-bubbles');if(!box)return;
  const updates=(current.updates||[]).map(u=>({...u,system:true})),items=[...messages,...updates].sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
- box.innerHTML=items.map(m=>m.system?'<div class="tc-system">'+esc(m.body+(english?'':m.bodyZh?' '+m.bodyZh:''))+' <time>'+esc(time(m.at))+'</time></div>':bubble(m)).join('');observeRead();
+ box.innerHTML=items.map(m=>m.system?'<div class="tc-system" '+(m.notify&&m.from===current.peer?'data-tc-system="'+esc(m.id)+'"':'')+'>'+esc(m.body+(english?'':m.bodyZh?' '+m.bodyZh:''))+' <time>'+esc(time(m.at))+'</time></div>':bubble(m)).join('');observeRead();
 }
 async function loadPage(earlier=false){
  if(pageBusy||!current)return;pageBusy=true;const gen=generation,token=++pageToken,identity=key(current),oldHeight=dialog.querySelector('.tc-history')?.scrollHeight||0;
@@ -84,10 +84,10 @@ async function savePending(){
 function enqueue(input){if(pending||!current||pageReadOnly)return;remember();pending={id:crypto.randomUUID(),draftKey:draftKey(),input:{kind:current.kind,taskId:current.taskId,peer:current.peer,...input},inFlight:false};savePending();}
 function observeRead(){
  observer?.disconnect();if(!current||pageReadOnly)return;const identity=key(current),gen=generation;
- observer=new IntersectionObserver(entries=>{if(document.visibilityState!=='visible'||!dialog.open)return;for(const e of entries){if(!e.isIntersecting)continue;const m=messages.find(m=>m.id===e.target.dataset.tcMessage);if(!m||m.from===department||seen.has(company+'|'+identity+'|'+m.id)||m.byStaffId===staffId)continue;
-  seen.add(company+'|'+identity+'|'+m.id);const input={kind:current.kind,taskId:current.taskId,peer:current.peer,...(m.legacy?{action:'LEGACY_READ',messageId:m.id}:{action:'READ',sequence:m.sequence})};
+ observer=new IntersectionObserver(entries=>{if(document.visibilityState!=='visible'||!dialog.open)return;for(const e of entries){if(!e.isIntersecting||e.intersectionRatio<1)continue;const systemId=e.target.dataset.tcSystem,m=systemId?(current.updates||[]).find(m=>m.id===systemId):messages.find(m=>m.id===e.target.dataset.tcMessage);if(!m||m.from===department||seen.has(company+'|'+identity+'|'+m.id)||m.byStaffId===staffId)continue;
+  seen.add(company+'|'+identity+'|'+m.id);const input={kind:current.kind,taskId:current.taskId,peer:current.peer,...(systemId?{action:'SYSTEM_READ',messageId:m.id}:m.legacy?{action:'LEGACY_READ',messageId:m.id}:{action:'READ',sequence:m.sequence})};
   readQueue=readQueue.then(async()=>{if(gen!==generation)return;try{await request('SAVE',{input});refresh();}catch(_){seen.delete(company+'|'+identity+'|'+m.id);}});
- }},{root:dialog.querySelector('.tc-history'),threshold:1});dialog.querySelectorAll('[data-tc-message]').forEach(el=>observer.observe(el));
+ }},{root:dialog.querySelector('.tc-history'),threshold:1});dialog.querySelectorAll('[data-tc-message],[data-tc-system]').forEach(el=>observer.observe(el));
 }
 function close(){if(pending){notice(copy('Confirm the pending save before closing.','请先确认待保存留言。'));return;}remember();observer?.disconnect();dialog.close();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});dialog.addEventListener('input',remember);
