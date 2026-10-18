@@ -11,3 +11,6 @@ Validation: 28 focused Warehouse checks pass. Broader affected suite: 57/58 pass
 Wix isolated preparation and page pointer drafts read back exactly. Initial semantic editor selection returned to the page model; unique-match guard stopped further edit. Page readback remained candidate-exact, preparation remained original-exact; then native current-editor replacements applied and full preparation readback matched candidate. No abnormal draft published.
 
 Release pending: GitHub Pages, Wix publish receipt, real Warehouse refresh and 95-carton acceptance. No main merge or user-verified baseline claim.
+
+Release progress: user authorized temporary branch deployment. Pages run39146499178 succeeded; public warehouse index and workroom script match e311d74 exactly. Temporary policy removed and original seven policies restored exactly. Wix isolated preparation/page drafts matched candidate, followed by published/live receipt. Current formal Warehouse force refresh underway; do not claim completion before real95 acceptance.
+Formal Warehouse currently about:blank after one tool refresh. Manual refresh of existing Warehouse tab requested; stage4 pending. No duplicate receipt or other business operation performed.
