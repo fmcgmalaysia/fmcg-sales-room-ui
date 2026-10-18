@@ -1,0 +1,42 @@
+[
+  {
+    "file": "wix-before.js",
+    "sha256": "f49f4ef31a4a52fc5a9cf3b8f13597a7defa5cddc889c6928458e8b68ceb78cd"
+  },
+  {
+    "file": "wix-after.js",
+    "sha256": "ffe2d3e609308d25a090c3b07a4c77c98146cb3528431c3b13aafb021971cbc1"
+  },
+  {
+    "file": "tests.txt",
+    "sha256": "68e2353e864fa85be77b3ce5082025d6375382390e9f5bd46c79e99927d9c7e9"
+  },
+  {
+    "file": "restoration-tests.txt",
+    "sha256": "3d44e44a7496b608fe8313091061d7490d03a0588f49f1046ce7d1a082955719"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "3b0a4a617c36bc06d69e70cdc0b074f13da2b536ef8aa2fa579e31572859c024"
+  },
+  {
+    "file": "pages-assets-verification.json",
+    "sha256": "ad1558bef670f563627eb5c3958a8fabddfe039dfb7e0a3e335c81f7e15a40d5"
+  },
+  {
+    "file": "policies-before.json",
+    "sha256": "c4b6a80a0f9041cd0bdce8b0063f934259b85a6be60ec8f40ff41fc5bcd816a3"
+  },
+  {
+    "file": "policies-after.json",
+    "sha256": "c4b6a80a0f9041cd0bdce8b0063f934259b85a6be60ec8f40ff41fc5bcd816a3"
+  },
+  {
+    "file": "public-costs.png",
+    "sha256": "be8cff8ede83802b0e3bf653054bcef940f417b99d44e8ecd648e8a0b9ba5cf0"
+  },
+  {
+    "file": "preview-costs.png",
+    "sha256": "3d830e994e0b4b0f67bd63ec7958a8106e9415eda58a271260e826546469c2c2"
+  }
+]

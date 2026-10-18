@@ -24,7 +24,7 @@ test('Track Orders uses the lorry navigation icon', () => {
 });
 
 test('Track Orders build includes buyer-owned reductions', () => {
-  assert.match(html, /2026-10-04-selection-same-site-download-v98/);
+  assert.match(html, /2026-10-05-sales-quantity-history-room5-v1/);
   assert.match(html, /Reduce \/ Cancel Requested Qty/);
 });
 
@@ -67,6 +67,11 @@ test('Track row hover clearly connects the row to its pencil action', () => {
 
 test('Track values only count committed quantity in rows and dashboard totals', () => {
   assert.match(html, /amount=committed===null&&!completed\?null:qty\*ctn/);
-  assert.match(html, /activeCommittedQty=row=>row\.committed===null\?0:Math\.max\(0,row\.committed-completedLineQty\(row\.line\)\)/);
+  const expression = html.match(/activeCommittedQty=(row=>.*?),committedCbm=/)[1];
+  const activeQuantity = new Function('completedLineQty', 'num', 'return (' + expression + ')')(line => line.completedQtyCtn || 0, value => Number(value) || 0);
+  assert.equal(activeQuantity({ committed: null, line: {} }), 0);
+  assert.equal(activeQuantity({ committed: 200, line: {} }), 200);
+  assert.equal(activeQuantity({ committed: 200, line: { completedQtyCtn: 170, closedUnfulfilledQtyCtn: 10 } }), 20);
+  assert.equal(activeQuantity({ committed: 200, line: { completedQtyCtn: 190, closedUnfulfilledQtyCtn: 10 } }), 0);
   assert.match(html, /committedValue=rows\.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\),0\)/);
 });

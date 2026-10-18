@@ -1,0 +1,71 @@
+{
+  "task": "Repair the ordinary Buyer Room native Download Excel button",
+  "verifiedAt": "2026-10-07 00:07 Asia/Kuala_Lumpur",
+  "acceptance": "Assistant real public-entry verification passed; awaiting user hands-on confirmation",
+  "temporaryTestQuery": false,
+  "account": "BERJAYA 07",
+  "ordinaryUrl": "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261006-2034B6",
+  "code": {
+    "scope": "Three files; existing customer authorization and Excel content generator retained",
+    "wixPageNormalizedSha256": "0f8dbff8109e70e281896fac00f72862cafa7d8c1c3c8f3a5faa924c90fc6131",
+    "wixAuthNormalizedSha256": "7cf6f64f038d3193b1ad3a0a1ecbede7325e024ebbde6e9293515688763557e4",
+    "mediaReadback": "media-readback.js; final verified exact candidate after correcting missing import",
+    "beforeSnapshots": [
+      "page-before.js",
+      "catalogueAuth-before.js",
+      "media-before.js"
+    ],
+    "lineLevelChanges": "patches.json",
+    "sharedOrderFunctions": "Unchanged; verified by local comparison and ordinary public Order Form inspection",
+    "wixMediaNormalizedSha256": "9710eb1dd146e4b1b87024d20e52dec35932889b0b72fed4d1766afa88451969"
+  },
+  "githubPages": {
+    "status": "Unchanged; no deployment required for this Wix-only fix",
+    "publicMarkerVerified": "2026-10-06-buyer-native-selection-download-room5-v1"
+  },
+  "wixStudio": {
+    "status": "Publish-and-live receipt captured",
+    "latestBuild": "Success, 2026-10-06 23:55:35",
+    "receipt": "publish-receipt.txt and wix-publish.png",
+    "successfulDeploymentId": "Not captured"
+  },
+  "publicVerification": {
+    "status": "Passed on ordinary public entry, without excelProbe",
+    "products": 9,
+    "currency": "SGD",
+    "barcodeSetMatches": true,
+    "allNineUnitPricesMatch": true,
+    "downloadsSucceeded": 2,
+    "firstFile": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-10-06.xlsx",
+    "afterRefreshFile": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-10-06 (1).xlsx",
+    "byteIdentical": true,
+    "bytes": 11161,
+    "sha256": "1883018b67dc95f040acd89ff32f821ac6892179129288a80842892c65164bbd",
+    "zipIntegrity": "Passed",
+    "sameStoredFileAfterRefresh": true,
+    "priorQuantities": [
+      20,
+      5,
+      10
+    ],
+    "priorQuantitiesUnchanged": true,
+    "customerDataWritesByAssistant": 0,
+    "ordersSubmitted": 0,
+    "backendPrivateGuard": "Actual ordinary download path requires getFileInfo(...).isPrivate === true before issuing URL",
+    "environmentIssue": "Original controlled tab lost debugger attachment; fresh tab in same Chrome successfully verified ordinary URL",
+    "screenshot": "normal-public-success.png",
+    "independentCustomerMemberLoginTest": "Not performed; existing resolveBuyerContext retained unchanged"
+  },
+  "checks": {
+    "local": "check-download.mjs passed: private upload, 100 mock refreshes reuse file, fresh tokens, changed quotes replace version, failed signing preserves prior file, private guard, unauthorized gate, unchanged order backend",
+    "liveRefreshesTested": 1,
+    "liveHundredRefreshTest": "Not performed"
+  },
+  "limits": [
+    "User confirmation is required before declaring final task closeout or creating a real-customer verified baseline tag.",
+    "No main merge; no Apps Script, template, CMS schema or quotation-publication changes.",
+    "File updates are prepared from current selection/quotation content when the ordinary page requests preparation; this does not add a PUBLISH hook.",
+    "The existing Excel filename date convention is retained.",
+    "Private customer XLSX and page screenshots remain local; only code, checks and non-token evidence metadata are versioned."
+  ]
+}

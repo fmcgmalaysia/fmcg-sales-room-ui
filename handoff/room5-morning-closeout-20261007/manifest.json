@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-07",
+  "sortCodeCommit": "f27b3cc80f97e6104c9e846dccb6fa685f83fcaf",
+  "temporaryPermission": "revoked; main-only",
+  "scope": "records only; no production change",
+  "schema": 1,
+  "reportSha256": "27c8b40db6c24a06fc230d504cc7913c97c78712d1bf6f7dea9365b9e9d12f37",
+  "sourceCommit": "0404d09052f5a172d98ff09489b4e9d62b3bfd8c",
+  "mainMerged": false,
+  "userAcceptance": "pending"
+}

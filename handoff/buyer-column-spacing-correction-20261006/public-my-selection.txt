@@ -1,0 +1,152 @@
+- region "top of page" [active]
+- link "Built on Wix Studio":
+  - /url: //wix.com/studio
+  - text: Built on
+  - img "Wix Studio"
+- main:
+  - iframe [name="htmlComp-iframe"]:
+    - banner:
+      - button "Return to your Catalogue":
+        - img "fmcgMalaysia.com"
+      - strong: BUYER ROOM
+      - button "Notifications":
+      - generic: B
+      - strong: BERJAYA 06
+      - generic: LAW
+    - complementary:
+      - navigation:
+        - button "My Selection":
+          - text: My Selection
+        - button "Order Form":
+          - text: Order Form
+        - button "Track Orders":
+          - text: Track Orders
+        - button "Completed Orders":
+          - text: Completed Orders
+        - button "Documents":
+          - text: Documents
+        - button "Account":
+          - text: Account
+    - main:
+      - heading "My Selection" [level=1]
+      - generic: "8"
+      - generic: Products
+      - generic: "1"
+      - generic: Awaiting Quotation
+      - generic: Transaction Currency
+      - generic: USD
+      - link "Open Catalogue in a new tab":
+        - /url: https://fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F
+        - generic: Add More Items
+      - strong: Admin Access · 管理员访问
+      - text: You are operating this customer account with Admin authority. All changes are recorded under your Admin identity.
+      - generic: ADMIN
+      - tablist "Filter My Selection":
+        - tab "All 8" [selected]
+        - tab "Food 8"
+        - tab "Non-food 0"
+        - tab "Removed 0"
+      - searchbox "Search selection by product, brand or barcode"
+      - button "Download Excel":
+        - text: Download Excel
+      - generic: Showing 8 of 8 products
+      - button "How selection limits and V.I.P quotations work":
+      - generic: "8"
+      - text: of
+      - generic: "100"
+      - text: selected
+      - generic: Barcode
+      - generic: Image
+      - generic: Descriptions
+      - generic: Normal Price
+      - generic: V.I.P Price
+      - generic: Added Time
+      - generic: Last Quoted
+      - generic "Remove":
+      - generic: "7622201422929"
+      - img "CADBURY DAIRY MILK BITES 50G - ALMOND"
+      - generic "CADBURY DAIRY MILK BITES 50G - ALMOND"
+      - generic: 50G x 24
+      - generic: "- NIL -"
+      - text: USD 0.98
+      - generic: "|"
+      - text: "23.52"
+      - generic: 05-10-26 11:02pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "8901233025001"
+      - img "CADBURY ZIP X20 BAR - CHOCOLATE"
+      - generic "CADBURY ZIP X20 BAR - CHOCOLATE"
+      - generic: 160G x 16
+      - generic: "- NIL -"
+      - text: USD 2.31
+      - generic: "|"
+      - text: "36.96"
+      - generic: 05-10-26 11:02pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "59800511261"
+      - img "KITKAT COOKIES CRUMBLE"
+      - generic "KITKAT COOKIES CRUMBLE"
+      - generic: 120G x 6 x 15 out
+      - generic: "- NIL -"
+      - text: USD 2.11
+      - generic: "|"
+      - text: "189.90"
+      - generic: 05-10-26 11:02pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "9556001284860"
+      - img "KITKAT 2 FINGERS MULTI-PACK 18"
+      - generic "KITKAT 2 FINGERS MULTI-PACK 18"
+      - generic: (15G x 18) x 24
+      - generic: "- NIL -"
+      - text: USD 5.09
+      - generic: "|"
+      - text: "122.16"
+      - generic: 05-10-26 11:02pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "8935001708988"
+      - img "MENTOS GUM (PURE) - FRESH"
+      - generic "MENTOS GUM (PURE) - FRESH"
+      - generic: 29G x 10 x 12 out
+      - generic: "- NIL -"
+      - generic: Waiting
+      - generic: 06-10-26 12:39pm by LAW
+      - generic: Waiting
+      - button "Remove×"
+      - generic: "9557062321778"
+      - img "MISTER POTATO CRISPS - SWEET POTATO"
+      - generic "MISTER POTATO CRISPS - SWEET POTATO"
+      - generic: 40G x 20
+      - generic: "- NIL -"
+      - text: USD 0.55
+      - generic: "|"
+      - text: "11.00"
+      - generic: 05-10-26 11:03pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "9557062343107"
+      - generic: ▧
+      - generic "MISTER POTATO CRISPS - SOUR CREAM & ONION"
+      - generic: 85G x 14
+      - generic: "- NIL -"
+      - text: USD 0.70
+      - generic: "|"
+      - text: "9.80"
+      - generic: 05-10-26 11:03pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+      - generic: "9556023663407"
+      - img "ORIENTAL SUPER RING (CAN)"
+      - generic "ORIENTAL SUPER RING (CAN)"
+      - generic: 80G x 12
+      - generic: "- NIL -"
+      - text: USD 1.09
+      - generic: "|"
+      - text: "13.08"
+      - generic: 05-10-26 11:03pm by LAW
+      - generic: 05-10-26 11:05pm
+      - button "Remove×"
+- region "bottom of page"

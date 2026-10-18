@@ -1,0 +1,48 @@
+--- buyer-room/wix/buyer-room-page.js
++++ buyer-room/wix/buyer-room-page.js
+@@ -1,5 +1,4 @@
+ import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+-import { getTestXlsxDownloadUrl } from 'backend/xlsxTest.web';
+ import wixLocationFrontend from 'wix-location-frontend';
+ import wixWindowFrontend from 'wix-window-frontend';
+ import { session } from 'wix-storage-frontend';
+@@ -35,31 +34,6 @@
+   }
+ 
+   async function prepareSelectionDownload(force = false) {
+-    if (assistCustomerId === 'CUS-261006-2034B6' && wixLocationFrontend.query?.excelProbe === 'xlsxTest') {
+-      if (selectionDownloadUrl) return;
+-      if (downloadPreparation) return downloadPreparation;
+-      downloadPreparation = (async () => {
+-        downloadButton.label = 'Preparing Excel test...';
+-        downloadButton.show();
+-        try {
+-          const result = await getTestXlsxDownloadUrl();
+-          if (!result?.ok) throw new Error((result?.step || 'response') + ': ' + (result?.message || 'No response'));
+-          selectionDownloadUrl = result.url;
+-          activeDownloadExpiresAt = Number(result.expiresAt);
+-          downloadButton.link = result.url;
+-          downloadButton.target = '_self';
+-          downloadButton.label = 'Download Excel Test';
+-          updateDownloadButtonVisibility();
+-          console.log('Excel fixed-file probe ready', { sizeInBytes: result.sizeInBytes, isPrivate: result.isPrivate });
+-        } catch (error) {
+-          downloadButton.label = 'Excel: ' + (error?.message || String(error));
+-          downloadButton.disable();
+-          console.error('Excel fixed-file probe failed', error);
+-          frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Excel test: ' + (error?.message || String(error)) });
+-        }
+-      })();
+-      return downloadPreparation;
+-    }
+     if (!force && selectionDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+       updateDownloadButtonVisibility();
+       return;
+@@ -82,7 +56,6 @@
+   }
+ 
+   downloadButton.onClick(() => {
+-    if (assistCustomerId === 'CUS-261006-2034B6' && wixLocationFrontend.query?.excelProbe === 'xlsxTest') return;
+     if (!selectionDownloadUrl || activeDownloadExpiresAt <= Date.now()) {
+       console.warn('Excel link expired. Please click again after it is prepared.');
+       prepareSelectionDownload(true);

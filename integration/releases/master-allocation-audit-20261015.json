@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-allocation-audit-20261015",
+  "status": "Compact approved-layout candidate complete; full Wix v2 page readback exact; visual confirmation and publication pending",
+  "base": "4be59f9492039ad2e98c1f0e9800001a38054eb4",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "changes": [
+    "Compact 00.00 / 00.00% inputs; 1080px dialog accommodates the requested final PO column without a new numeric limit",
+    "Remove supplier acknowledgement checkbox and never silently submit supplierConfirmed=true",
+    "Display saved quantity audit with time, actor, source context and before/after quantities",
+    "Refresh FOC detail total immediately when paid or free quantity changes",
+    "Restore FOC detail indentation, readonly quantity presentation, aligned header and separate right-aligned amount summary",
+    "Remove amount-basis dropdown and ellipsis column; move existing PO entry/time into final column and align source controls"
+  ],
+  "validation": {
+    "targetedChecksPassed": 103,
+    "realSave": false,
+    "visualVerification": false,
+    "focusedBackendChecksPassed": 34,
+    "compactLayoutUserAccepted": false,
+    "liveFrontendBaselineMatched": "4056068786cefd37d6f02742508c76762d9ea364",
+    "browserControl": "Policy stop remains; no desktop automation attempted for compact refinement"
+  },
+  "pendingBackend": {
+    "file": "integration/backend/purchaseOperations.js",
+    "freshLiveCaptureRequired": false,
+    "scope": "Remove acknowledgement requirement for validated costing calculator plans; retain legacy entry-point behavior and all stronger locks",
+    "before": "if(task.ourPoNumber&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');",
+    "after": "if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');",
+    "appliedInStudio": true,
+    "fullReadbackExact": true,
+    "readbackCharacters": 26637
+  },
+  "protected": [
+    "finance handoff",
+    "actual receipts",
+    "customer invoice locks",
+    "original save journal and retries",
+    "Sales first Catch Cost",
+    "FMCGMALAYSIA components"
+  ],
+  "pagesDeployed": false,
+  "wixChanged": true,
+  "publicAcceptance": false,
+  "mainMerged": false,
+  "pageBridge": {
+    "originalReadbackExact": true,
+    "version": "20261015-allocation-audit-v2",
+    "changedTokenOnly": true,
+    "newReadbackPending": false,
+    "fullReadbackExact": true,
+    "readbackCharacters": 6980,
+    "readbackSHA256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9"
+  }
+}

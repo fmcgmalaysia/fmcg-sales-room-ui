@@ -1,0 +1,18 @@
+{
+  "status": "Published; public read/layout passed; real transaction acceptance pending",
+  "codeCommit": "58d3b69f522f5193c12bba8bbf7eb7ef25da9a86",
+  "branch": "style/buyer-track-received-progress",
+  "pullRequests": [66,67,68],
+  "build": "2026-10-13-buyer-order-track-compact-v1",
+  "githubPages": {"status":"Success","run":"38410670285","job":"115341847120","duration":"39 seconds","publicAssetsExact":["buyer-room.html","index.html","purchase-live/index.html","purchase-live/app.js","purchase-live/task-grid.js"]},
+  "wix": {"site":"FMCGMALAYSIA","receipt":"This site is published and live online.","components":["Buyer Room page","catalogueAuth.web.js"],"isolatedReplacements":7,"completeReadback":"Normalized LF/trimEnd exact to GitHub candidate after fresh before-code comparison","releaseOrder":"Compatible backend/bridge published before Pages"},
+  "publicVerification": {"refreshed":true,"customer":"SCOMMERCE PTE. LTD.","selectionRows":42,"zeroInputs":42,"visibleZeroDigits":0,"zeroVisibleEditStamps":0,"activeRequests":3,"priceHeader":"MYR / Ctn","numericAlignment":"right","packingFontWeight":500,"expiry":"single line","numberedDots":6,"imagePreview":"Existing My Selection hover; observed286x286","pageErrors":[],"realBusinessWrites":false,"publicPositivePOSubmission":"Not attempted; user to test"},
+  "recovery": {"previousProductionCode":"b097a0706ab1725e6fad640b51da474dd23646ad","previousRecord":"4e4af28","copies":"C:/FMCG-WIX-LOCAL/handoff/buyer-order-track-compact-20261013","protectedSubmissionTag":"verified/send-order-addition-user-tests-20261009"},
+  "validation": {"targetedPassed":57,"fullLegacySuiteGreen":false,"longNamePreview":"407px available/534px content; nowrap + ellipsis + full title","clearedDraftPreview":"Qty/edit time/amount/CBM empty after save"},
+  "temporaryRuleRemoved":true,
+  "originalDeploymentRulesRestored":7,
+  "mainMerged":false,
+  "newVerifiedTag":false,
+  "knownLimit":"Sales-opened My Selection Excel download restriction remains outside this release; direct Buyer entry works.",
+  "evidence":"C:/FMCG-WIX-LOCAL/handoff/buyer-order-track-compact-20261013"
+}

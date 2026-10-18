@@ -1,0 +1,60 @@
+{
+  "status": "Deployed; interface checks passed; final Sales Progress acceptance blocked by Wix read/authorization errors",
+  "branch": "release/sales-buyer-closeout-20261014",
+  "recoveryCode": "4f8ae7d",
+  "scope": [
+    "Warm amber Review loading bar, existing loading and failure/retry handling preserved",
+    "Warehouse expiry tooltip provided upon customer request, Sales bilingual and Buyer English only",
+    "Buyer-only Wix Head pure CSS makes outer scrolling automatic; retain real inner scrolling and original global CSS",
+    "Consolidate GitHub release records for today's Sales and Buyer changes"
+  ],
+  "salesBuild": "2026-10-14-sales-buyer-closeout-v1",
+  "buyerBuild": "2026-10-14-buyer-closeout-v1",
+  "wixScope": "Two page URL tokens and Buyer-only Head style; original global CSS restored",
+  "globalCssMirror": "integration/wix/source-global.css",
+  "validation": {
+    "salesChecksPassed": 17,
+    "buyerChecksPassed": 28,
+    "originalGlobalCssExactBefore": true,
+    "qtyRecoveryPreserved": true,
+    "actualBusinessWrites": false
+  },
+  "publication": {
+    "pagesVerified": true,
+    "wixPublished": true,
+    "formalVerified": false,
+    "temporaryRuleRemoved": true,
+    "buyerInterfaceVerified": true,
+    "originalRulesRestored": 7
+  },
+  "deferredByUser": "Warehouse expiry data source integration",
+  "userAcceptancePending": "Actual submission waiting/receipt workflow and post-transfer shipment-date save",
+  "mainMerged": false,
+  "codeCommit": "9aa8fc3",
+  "pullRequest": 76,
+  "pagesRun": 38509279625,
+  "pagesJob": 115673813239,
+  "globalCssOriginalRestored": true,
+  "headCssMirror": "integration/wix/buyer-outer-scroll-head.html",
+  "headCssScope": "Buyer Room only; Essential; Head; no scripts or external resources",
+  "publicChecks": {
+    "amberLoading": true,
+    "expiryBuyerEnglish": true,
+    "qtySameRow": true,
+    "qtyCellWidth": 162.2375,
+    "buyerOuterOverflow": "auto",
+    "buyerOuterClientAndScroll": 735,
+    "buyerInnerClient": 704,
+    "buyerInnerScroll": 728,
+    "salesAndCatalogueHeadStyleAbsent": true,
+    "adminOriginal": true,
+    "salesProgressRead": "Unable to load progress after repeated read-only retries"
+  },
+  "remainingBlocker": {
+    "message": "This member is not authorized in STAFF MASTER.",
+    "source": "backend/onboarding.web.js:1854",
+    "additionalObservedError": "WDE0118 GridAppId not found in instance",
+    "cause": "Not yet established; do not assume staff registration is absent or alter permissions",
+    "nextAction": "User re-login requested; rerun public progress check before full acceptance"
+  }
+}

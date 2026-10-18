@@ -1,0 +1,54 @@
+SCOPED SUCCESS CHECKPOINT — 2026-10-06
+
+WHAT WORKED
+Read one existing simulation XLSX with mediaManager.getFileInfo, obtain a fresh
+10-minute getDownloadUrl(info.fileUrl, 10, null, null), bind the native Wix
+#downloadExcelButton.link before its click, and let native navigation download.
+The real downloaded 4132-byte XLSX exactly matches the prior successful copy.
+Hash: 538ef70ccb38de04d1c91ee706ad276585e782b6aac375bb0d619f0570ffd03c.
+
+IDENTITY
+The success test used SiteMember plus an explicit StaffMaster check for one
+ACTIVE ADMIN/SUPER ADMIN employee. Visitors and ordinary customer members are
+rejected. This test gate is NOT an approved production customer-export gate.
+The test file is public simulation data, not a private customer quotation.
+
+CODE MAP
+buyer-page-success.js: exact page code used for the successful click.
+xlsxTest-success.web.js: exact successful test backend module.
+buyer-page-before.js / buyer-page-restored.js: byte-identical original page.
+catalogueAuth-unchanged.web.js: shared backend, unchanged throughout the test.
+xlsxTest-disabled.web.js: current archived module with no frontend export.
+The page forward/reverse patches describe ONLY the three test additions.
+They are reference artifacts; they must NOT be used to overwrite whole Wix files.
+
+REPRODUCE ONLY WITH AN AUTHORIZED TEST
+1. Read project rules and inspect the currently live page and backend first.
+2. Capture both live and repository code. Compare the included hashes; if the
+   live version has evolved, adapt only the three narrow test edits by review.
+3. Reuse the existing native button ID and the existing simulation file.
+4. Use the exact scoped success module and page additions, with explicit approval
+   for the fixed-file test gate. No quote/order/customer writes are required.
+5. Read back changes before Wix Publish; verify public code is running.
+6. Enter the BERJAYA 07 test URL, wait for Download Excel Test, then click once.
+   A success alert or HTTP 200 alone is insufficient. Check the actual saved file,
+   4132 bytes, SHA256, byte equality and XLSX structure. Do not reuse stored tokens.
+7. Reverse only the temporary page edits; disable the module export; read back
+   exact restoration; obtain Wix receipt and inspect normal public workspace.
+8. Confirm existing quantities 20/5/10 and total 35 CTN are unchanged without
+   editing quantities or submitting an order.
+
+RECOVERY WARNING
+This tag identifies evidence for a fixed-file mechanism, not a whole-site release.
+Never deploy the entire tag checkout or overwrite today's Buyer Room from these
+snapshots. The original production My Selection download was not fixed by this
+simulation test. Real customer-file ownership, private-file delivery and the
+approved PUBLISH file lifecycle require their own narrowly scoped implementation.
+
+EVIDENCE BOUNDARY
+User acknowledged the agent's successful test; independent user hands-on testing
+is not claimed. Wix receipt screenshots and public screenshots are retained locally
+with hashes in manifest.json, not uploaded with customer page contents.
+Signed tokens are excluded. Successful Wix deployment ID was not captured.
+Apps Script, templates, CMS schema and GitHub Pages were unchanged.
+No main merge or new website publication is part of this archival closeout.

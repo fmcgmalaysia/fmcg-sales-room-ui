@@ -1,0 +1,38 @@
+{
+  "status": "IN_PROGRESS_NOT_END_TO_END_PASSED",
+  "date": "2026-10-12",
+  "productionCode": "41936c8",
+  "build": "2026-10-12-master-workflow-v1",
+  "fixture": {"company":"NCT","po":"NCT-PO-TEST-CLOSEOUT","taskId":"b8b1c83f-35bc-494f-9162-46972a09f253","orderId":"test-settlement-20261011","sourceSalesOrderExists":false,"testOnly":true},
+  "passed": [
+    "Corrected pre-existing disposable fixture title to actual Wix _id and updated its accepted receipt references; generated intake already uses matching identity. Old failed audit preserved.",
+    "Supplier plan 10 cartons saved once through public Purchase UI.",
+    "Downloads PDF 2024 June Price Increase Letter 260324.pdf selected using authorized native file picker and uploaded as test PI for MYR 100. Supplier file status PROVISIONAL, not green.",
+    "Purchase chase request saved. Account paper-received/reviewing saved and Purchase displayed Reviewing with chase cleared.",
+    "Account recorded simulated MYR 50 payment with uploaded PDF. No bank transfer. Public Account displayed Partly paid / Prepayment; Creditor retained the PO.",
+    "Purchase Payment Follow-up displayed 1 unacknowledged notice, amount and View/Download links; acknowledgment saved.",
+    "Payment PDF opened successfully in Drive under current admin account.",
+    "Stale Warehouse receipt rejected after concurrent PO payment update, retaining user input. Refreshed form then saved 9 accepted of 10, SHORT, reason.",
+    "Purchase displayed Order Qty 10|10 and Rcv Qty 9 with -1 receiving issue. Account displayed financial risk. Warehouse displayed receiving issue.",
+    "Purchase selected Stop waiting and CN future deduction with separate external/internal notes. Risk remained unresolved.",
+    "Account attempt to close shortage without CN evidence was rejected: Assign supplier CN amounts to the shortage case.",
+    "Purchase allocated all 9 accepted cartons to isolated test customer; unallocated changed from 9 to 0.",
+    "Warehouse Customer Readiness displayed test customer 10|9 and No further delivery with only the external customer message. Internal CN reason was not exposed in that row.",
+    "Support loaded successfully under LAW and listed test customer, with no shipment requests. This does not prove invoice posting."
+  ],
+  "currentState": {"ordered":10,"received":9,"allocated":9,"paidMYR":50,"finalInvoiceUploaded":false,"cnUploaded":false,"doUploaded":false,"shortage":1,"resolution":"CREDIT","checked":false,"history":false,"realMoneyTransferred":false},
+  "findings": [
+    {"priority":"HIGH","finding":"Drive payment PDF viewer says Private to only me. Current administrator view passed; ordinary department employee access has not passed. Do not broaden sharing without action-time approval."},
+    {"priority":"HIGH","finding":"Purchase track Waiting for Payment shows 0 while this test PO is only partly paid MYR 50 of PI MYR 100. Investigate stage count semantics; no code patch yet."},
+    {"priority":"MEDIUM","finding":"Purchase Dashboard customer/supplier Risk cells remain dash while universal Urgent shows 1 receiving issue. Risk signals need coherent definition."},
+    {"priority":"MEDIUM","finding":"Account Payment Review is hidden inside Files modal; direct row action would be easier to discover."},
+    {"priority":"MEDIUM","finding":"Original malformed fixture save surfaced generic Wix error while checking receipt; eventually re-enabled. Improve diagnostic clarity, not proven permanently stuck."},
+    {"priority":"MEDIUM","finding":"Customer Short Name read warning persists on Purchase and Account; saved names retained."},
+    {"priority":"MEDIUM","finding":"Customer-specific Re-Allocation view includes other customers' supplier stock. Determine intended global stock visibility and label clearly."},
+    {"priority":"MEDIUM","finding":"Warehouse Receiving Issue overview shows 1 but universal Urgent, Needs feedback and Blocked each show 0 after procurement CREDIT decision while finance risk remains open. Check owner and blocked-department queue semantics; do not silently hide unresolved downstream dependency."}
+  ],
+  "pending": ["Final INV/CN/DO upload and amount verification","second payment and duplicate-proof rejection","CN settlement and carry-forward","Checked/History safeguards","ordinary employee PDF View/Download authorization","dedicated source Sales submission to shipment request; current CMS fixture cannot prove source Sales/Buyer end-to-end","Support invoice upload and Debtor","scenario2 acceptance list remains pending"],
+  "interruption": "Native UI temporarily blocked by Windows low-battery prompt. Final Invoice form prepared but not submitted. User warned to connect power.",
+  "evidenceDirectory": "C:/FMCG-WIX-LOCAL/handoff/master-demand-protection-20261012",
+  "protected": "Existing MASTER TEST 02 orders untouched. No production code edits or new publication in this test pass."
+}

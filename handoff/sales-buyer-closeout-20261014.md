@@ -1,0 +1,19 @@
+# Sales and Buyer closeout — 14 October 2026
+
+The user requested completion and publication of today's remaining work. The candidate preserves the formally restored QTY layout in `4f8ae7d`, adds the previously requested amber loading colour and corrected Goods Expiry help, and removes the forced empty Wix outer scrollbar on Buyer Room only. Buyer retains its real internal scrollbar. Original global CSS rules and all business handlers remain intact.
+
+The existing global CSS was read from Wix Studio and matched the preserved repository snapshot in `handoff/room5-day-closeout-20261007/live/global.css`. The current candidate mirror is `integration/wix/source-global.css`. Wix formal verification showed that global CSS is scoped inside the page container and cannot reach the outer body. The ineffective rule was withdrawn and the original global CSS fully restored. The user explicitly approved `integration/wix/buyer-outer-scroll-head.html`, a pure style snippet placed in Wix Head and applied only to Buyer Room. It changes `overflow-y` to `auto` only when the body contains the Buyer embed. No scripts or external assets are included. No iframe height, downloads, authentication, storage, quantities, expiry data, or backend mechanism changes.
+
+Earlier published work: My Customers stability and copy, editable review P.O. and shipment planning with existing locks, post-transfer Sales date permission and departmental read projections, six-stage progress, compact descriptions and typography, English green Buyer design, Sales/Buyer menu icons, preserved Administration, immediate Review loading, and distinct active-customer progress badge. See the existing release JSON files for exact scope and public verification.
+
+Recovery record: `integration/releases/sales-review-qty-alignment-20261014.json`. Initial recovery without a new embed version left the public browser on the stale 104px layout. A new Sales URL token resolved that cache; the formal unsubmitted order then had a 162.2375px QTY cell with quantity and pencil on one row.
+
+Validation: 17 Sales loading/edit/submission checks and 28 Buyer compact/history/zero/draft checks passed. The release remains a candidate until GitHub Pages, Wix live synchronization, and fresh public checks all pass. Deployment permission must be scoped to this release branch and removed afterwards. No main merge before user real acceptance.
+
+Warehouse expiry source integration remains deferred by the user. Actual submission and post-transfer shipment-date saving remain user acceptance steps; this closeout does not write business data. Historical Excel work remains outside this release.
+
+## Deployed state and acceptance blocker
+
+Application code `9aa8fc3` reached Pages run `38509279625`, job `115673813239`; all eleven public resources matched Git blobs. Both Wix URL tokens were isolated replacements with full exact readbacks, followed by published/live receipts. The Buyer-only Head style was separately approved and applied; the ineffective scoped rule was removed and original global CSS restored. Formal Buyer outer client/scroll are both735px and overflow is auto; inner client704px/scroll728px retains the real scrollbar. Sales and Catalogue have no injected Head style. Amber loading and QTY162.2375px same-row controls passed formal checks; Buyer expiry title is correct.
+
+Full final acceptance is NOT complete: formal Sales Order Progress repeatedly returned a Wix server read error. Live logs recorded STAFF MASTER authorization rejection in `backend/onboarding.web.js:1854` and WDE0118 data-instance errors. The exact causal link is unconfirmed. No backend, staff records, role checks, or business data were modified. User re-login was requested before a repeat check. No full-release success claim or main merge until this blocker is resolved. Detailed private evidence remains in the local task handoff folder; records and code are synchronized to GitHub.

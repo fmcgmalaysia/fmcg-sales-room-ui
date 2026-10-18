@@ -1,0 +1,14 @@
+2026-10-05 21:37 Asia/Kuala_Lumpur — released for user acceptance testing
+
+Code version: a28cefc4a7e9fa1ea01ec7b5893929dc82494c77, fix/sales-order-quantity-history-room5.
+GitHub Pages: run 37317531712, success, 38 seconds. Buyer build-version meta and Sales document comment both verified as 2026-10-05-sales-quantity-history-room5-v1. Temporary branch deployment rule removed; only main remains allowed.
+Wix Studio: four exact current sources captured and matched prior recovery snapshots before writes. Nine isolated code hunks synchronized through editor Find/Replace; all four complete readbacks match repository after line-ending normalization. Studio confirmed: This site is published and live online.
+Public verification: real Buyer and Sales pages reloaded. Buyer Track Orders has lock guidance, Current Status/Edit History, and no customer quantity pencil. Sales order review exposes authorized quantity editing. BERJAYA 05 two-line test request (02:23pm) NIPS changed 15 to 16, then restored to 15; quoted price USD 33.84 and original requested quantity 15 preserved. Buyer history refreshed without reloading and showed LAW, before/after quantities and 09:36pm/09:37pm timestamps. Both captured public error-log lists were empty. No new request, transfer or deletion performed. Two genuine test audit records remain intentionally.
+
+Evidence directory: C:/FMCG-WIX-LOCAL/handoff/ROOM5-readonly-20261005/submitted-order-lock-baseline/
+release-recheck-{buyer,sales,auth,onboarding}.js: fresh pre-write sources.
+synced-{buyer,sales,auth,onboarding}.js plus synced-source-hashes.json: full readbacks.
+pages-run-result.txt, deployment-permission-restored.txt, wix-publish-success.txt/png.
+public-sales-save-16.txt, public-buyer-auto-history-16.txt, public-sales-restored-15.txt/png, public-buyer-restored-history.txt, public-buyer-current-status.txt/png, public-error-log.json.
+
+99 local tests passed before release. This is publication evidence, not user acceptance. User will instruct further testing; draft PR remains unmerged and main unchanged. No new verified tag yet. Recovery remains room5-order-edit-baseline.txt; reverting code does not erase test audit data. PO Number and new Proforma design remain separate and unimplemented.

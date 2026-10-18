@@ -1,0 +1,26 @@
+[
+  {
+    "file": "wix-page-before.js",
+    "sha256": "347fb3a60a707b10455a359e21c0f0315f6ba841402f4c8bfaa9980b72925326"
+  },
+  {
+    "file": "wix-page-after.js",
+    "sha256": "347fb3a60a707b10455a359e21c0f0315f6ba841402f4c8bfaa9980b72925326"
+  },
+  {
+    "file": "editor-before.png",
+    "sha256": "61d26015a1edafeaba6e0f66b3fa9ffb7a119616bdeaae213c8a8cfd51aaa088"
+  },
+  {
+    "file": "editor-after.png",
+    "sha256": "7680c256453754c77cb1ec9b2aa7df9fb2d2706cc401ef7dc1a5e53c20ed8f0b"
+  },
+  {
+    "file": "publish-receipt.png",
+    "sha256": "cf923adeb2f35ec51e89ee4c0d8c64a0746ac362f870a61b7b413e89bad746c8"
+  },
+  {
+    "file": "public-after.png",
+    "sha256": "bb2a90dfd6df91280585eded749b50e7fcbac892ae9899af172358a8c352491f"
+  }
+]

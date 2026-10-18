@@ -1,0 +1,50 @@
+{
+  "objective": "Only restore HTML Sales Room Entry opening Buyer Room in a new tab",
+  "commit": "563feb9",
+  "branch": "fix/entry-buyer-download-room5",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/20",
+  "code": {
+    "status": "Complete; original window.open _blank restored; no native component added",
+    "htmlHash": "6d3771adb800085a4b0681aec74ef450409799a57f1acae0dca2b7d3580ddc53",
+    "wixPageHash": "a91a25d94fb12a701893e6ceeec7a5c36fb661595cb3c70fdc5688ee5a70c9b1",
+    "changes": "Three HTML lines and one Wix embed-version reference; no Excel or backend edits"
+  },
+  "pages": {
+    "status": "Success",
+    "run": "37501555267",
+    "publicMarker": "2026-10-07-entry-new-tab-restored-room5-v1",
+    "actualScriptMatch": true,
+    "temporaryBranchPermissionRemoved": true,
+    "allowedBranches": [
+      "main"
+    ]
+  },
+  "wix": {
+    "status": "Published/live receipt captured; exact candidate readback matched",
+    "receipt": "wix-publish.txt",
+    "successfulDeploymentId": "Not captured",
+    "buildTimestamp": "Not captured"
+  },
+  "public": {
+    "status": "Passed assistant one-click Entry verification",
+    "salesTab": "51422254",
+    "buyerTab": "51422264",
+    "originalSalesUrl": "https://fmcg999.wixstudio.com/fmcgmalaysia/sales-room",
+    "newBuyerUrl": "https://download-files.wixmp.com/ugd/808975_a34229b494534ddbbfafa81bb6d6463f.xlsx?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvYmoiOltbeyJwYXRoIjoiL3VnZC84MDg5NzVfYTM0MjI5YjQ5NDUzNGRkYmJmYWZhODFiYjZkNjQ2M2YueGxzeCJ9XV0sImRpcyI6eyJmaWxlbmFtZSI6ImZtY2dtYWxheXNpYS5jb20tTXktU2VsZWN0aW9uLTIwMjYtMTAtMDYueGxzeCIsInR5cGUiOiJhdHRhY2htZW50In0sImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImV4cCI6MTc5MTMwNzM2MSwianRpIjoiYTg4YjdiYjAtNzFlYi00MjkyLWExNWEtOGY0YmJmYjExNmEzIiwiaWF0IjoxNzkxMzA2NzYxLCJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiJ9.1rP0BjU-SO_rUerEPL2LtHjQ4i1eesr1otDOdHlUZ08",
+    "distinctNewTab": true,
+    "customer": "BERJAYA 07 SDN BHD",
+    "staff": "LAW",
+    "currency": "SGD",
+    "products": 9,
+    "excelTested": false,
+    "customerWrites": 0,
+    "ordersSubmitted": 0
+  },
+  "recovery": {
+    "beforeHtml": "index-before.html",
+    "beforeWix": "sales-page-before.js"
+  },
+  "userAccepted": false,
+  "mainMerged": false,
+  "userVerifiedTag": false
+}

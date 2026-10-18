@@ -1,0 +1,1 @@
+User correction: change only two row hover selectors from#EDF5F0 to#EDF2F7, plus build/cache version. Keep waiting badge green, Track translateY(-1px), pencil scale(1.05), no shadows. HTML original patches.json describes v1; final code703123f and exact v2 readback are authoritative for this release. No data, event or backend change.
