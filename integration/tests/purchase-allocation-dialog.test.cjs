@@ -1,8 +1,17 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const context={window:{}};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/supplier-allocation.js'),'utf8'),context);
 const {validate,values,rowDraft,changed,net}=context.window.purchaseSupplierAllocation;
-const parent=()=>({id:'ROOT',supplierId:'A',editVersion:'V1',ord:100,ea:24,lpPc:3,lpCtn:72,disc1:.1,disc2:.035000000000000003,disc3:0,procurement:{totalCtn:60,revision:'P1',draftPlan:true}});
-function fixture(){const task=parent(),workspace={company:'NCT',suppliers:[{id:'A'},{id:'B'}],tasks:[task]},first=rowDraft(task,'ROOT'),second=rowDraft(null,'new');Object.assign(second,{supplierId:'B',qty:'40',raw:{lpPc:'4',lpCtn:'96',disc1:'0',disc2:'0',disc3:'0'}});return {workspace,state:{rootId:'ROOT',reason:'Confirm supplier split',rows:[first,second]}};}
+
+test('Transport has no inferred default, is mandatory for a changed source, and is retained independently per source',()=>{
+ const f=fixture();assert.equal(rowDraft(null,'NEW').transportMode,'');
+ f.state.rows[1].transportMode='';assert.match(validate(f.state,f.workspace),/Transport/);
+ f.state.rows[1].transportMode='SELF_COLLECT';assert.equal(validate(f.state,f.workspace),'');assert.equal(f.state.rows[0].transportMode,'SUPPLIER_DELIVER');
+ delete f.workspace.tasks[0].procurement.transportMode;f.state.rows[0]=rowDraft(f.workspace.tasks[0],'ROOT');assert.equal(changed(f.state.rows[0],f.workspace.tasks[0]),false);assert.equal(validate(f.state,f.workspace),'');
+ f.state.rows[0].qty='59';assert.match(validate(f.state,f.workspace),/Transport/);
+ f.state.rows[0].transportMode='SUPPLIER_DELIVER';assert.equal(validate(f.state,f.workspace),'');
+});
+const parent=()=>({id:'ROOT',supplierId:'A',editVersion:'V1',ord:100,ea:24,lpPc:3,lpCtn:72,disc1:.1,disc2:.035000000000000003,disc3:0,procurement:{totalCtn:60,revision:'P1',draftPlan:true,transportMode:'SUPPLIER_DELIVER'}});
+function fixture(){const task=parent(),workspace={company:'NCT',suppliers:[{id:'A'},{id:'B'}],tasks:[task]},first=rowDraft(task,'ROOT'),second=rowDraft(null,'new');Object.assign(second,{supplierId:'B',transportMode:'SUPPLIER_DELIVER',qty:'40',raw:{lpPc:'4',lpCtn:'96',disc1:'0',disc2:'0',disc3:'0'}});return {workspace,state:{rootId:'ROOT',reason:'Confirm supplier split',rows:[first,second]}};}
 test('two supplier portions may cover one customer demand without changing its quantity or saved baseline',()=>{const f=fixture(),before=JSON.stringify(f.workspace);assert.equal(validate(f.state,f.workspace),'');assert.equal(JSON.stringify(f.workspace),before);assert.equal(net(values(f.state.rows[1])),96);});
 test('unedited displayed discounts retain their exact saved floating-point value and do not create a false price change',()=>{const f=fixture();assert.equal(values(f.state.rows[0]).disc2,.035000000000000003);assert.equal(changed(f.state.rows[0],f.workspace.tasks[0]),false);f.state.rows[0].raw.disc2='4';assert.equal(values(f.state.rows[0]).disc2,.04);assert.equal(changed(f.state.rows[0],f.workspace.tasks[0]),true);});
 test('unselected remainder stays a draft and is excluded from submission validation and client demand',()=>{const f=fixture();f.state.rows[1].supplierId='';f.state.rows[1].raw.lpCtn='';assert.equal(validate(f.state,f.workspace),'');assert.equal(f.workspace.tasks[0].ord,100);});
@@ -14,10 +23,10 @@ test('confirmed portions remain in totals and unresolved remainder stays availab
 test('reference endpoint authenticates and validates accepted task before POINTBASE; response exposes only five reference fields',async()=>{const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8'),callback=source.slice(source.indexOf('export const getPurchaseReferenceCost='),source.indexOf('export const getSupplierBrandOptions=')).replace('export const getPurchaseReferenceCost=','this.read=');let requests=0,allowed=true,accepted=true;const taskId='a'.repeat(32),ctx={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},PURCHASE_COLLECTIONS:{NCT:{}},getPurchaseStaffContext:async()=>{if(!allowed)throw Error('Denied');return{};},readPlannerWorkspace:async()=>({tasks:accepted?[{id:taskId,barcode:'00123'}]:[]}),capturePointbaseCosts:async()=>{requests++;return {'00123':{unitBarcode:'00123',costCurrency:'MYR',costStatus:'CAPTURED',capturedAt:'2026-10-14T08:00:00Z',lpPc:2,lpCtn:48,disc1:.1,disc2:0,disc3:0,secret:'NO'}};}};vm.runInNewContext(callback,ctx);allowed=false;await assert.rejects(ctx.read('NCT',taskId),/Denied/);assert.equal(requests,0);allowed=true;accepted=false;await assert.rejects(ctx.read('NCT',taskId),/unavailable/);assert.equal(requests,0);accepted=true;const result=await ctx.read('NCT',taskId);assert.equal(requests,1);assert.equal(result.prices.lpCtn,48);assert.doesNotMatch(JSON.stringify(result),/secret|NO/);assert.equal(Object.keys(result.prices).length,5);});
 
 test('first allocation and remaining supplier allow blank reason; saved source revisions and surplus require it',()=>{
- let f=fixture();f.workspace.tasks[0].procurement={totalCtn:null,revision:'',draftPlan:true};f.state.reason='';assert.equal(validate(f.state,f.workspace),'');
+ let f=fixture();f.workspace.tasks[0].procurement={totalCtn:null,revision:'',draftPlan:true,transportMode:'SUPPLIER_DELIVER'};f.state.reason='';assert.equal(validate(f.state,f.workspace),'');
  f=fixture();f.state.reason='';assert.equal(validate(f.state,f.workspace),'');
  f.state.rows[0].qty='59';assert.match(validate(f.state,f.workspace),/原因/);
- f=fixture();f.workspace.tasks[0].procurement={totalCtn:null,revision:'',draftPlan:true};f.state.reason='';f.state.rows[1].qty='50';f.state.rows.forEach(row=>row.confirmExtra=true);assert.match(validate(f.state,f.workspace),/原因/);
+ f=fixture();f.workspace.tasks[0].procurement={totalCtn:null,revision:'',draftPlan:true,transportMode:'SUPPLIER_DELIVER'};f.state.reason='';f.state.rows[1].qty='50';f.state.rows.forEach(row=>row.confirmExtra=true);assert.match(validate(f.state,f.workspace),/原因/);
 });
 
 test('reference prices may be read with CBM-only missing metadata while inactive products and incomplete prices stay rejected',async()=>{

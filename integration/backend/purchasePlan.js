@@ -8,9 +8,10 @@ export function readPurchasePlan(task, activity) {
     const event=next[0],details=event.details;
     if(event.description!==task.description||event.image!==task.imageAltText||!event.title||!Number.isSafeInteger(details.totalCtn)||details.totalCtn<1||details.totalCtn>9999)throw Error('Procurement plan identity or quantity requires review.');
     if(details.extraCtn!==undefined&&(!Number.isSafeInteger(details.extraCtn)||details.extraCtn<0||details.extraCtn>details.totalCtn))throw Error('Procurement stock quantity requires review.');
+    if(details.transportMode!==undefined&&!['SUPPLIER_DELIVER','SELF_COLLECT'].includes(details.transportMode))throw Error('Procurement transport history requires review.');
     revision=event.title;totalCtn=details.totalCtn;last=event;pending.splice(pending.indexOf(event),1);
   }
-  return {revision,totalCtn,costing:last?.details?.costing||null,draftPlan:last?.details?.draftPlan===true,extraCtn:Number.isSafeInteger(last?.details?.extraCtn)?last.details.extraCtn:null,extraKind:last?.details?.extraKind||'',supplierId:last?.details?.supplierId||'',updatedAt:last?.activityTime||null,updatedBy:last?.initiatedByStaffName||'',confirmedAt:last?.details?.supplierConfirmed===true?last.activityTime:null,confirmedBy:last?.details?.supplierConfirmed===true?last.initiatedByStaffName:''};
+  return {revision,totalCtn,transportMode:last?.details?.transportMode||'',costing:last?.details?.costing||null,draftPlan:last?.details?.draftPlan===true,extraCtn:Number.isSafeInteger(last?.details?.extraCtn)?last.details.extraCtn:null,extraKind:last?.details?.extraKind||'',supplierId:last?.details?.supplierId||'',updatedAt:last?.activityTime||null,updatedBy:last?.initiatedByStaffName||'',confirmedAt:last?.details?.supplierConfirmed===true?last.activityTime:null,confirmedBy:last?.details?.supplierConfirmed===true?last.initiatedByStaffName:''};
 }
 
 // The plan revision owns the original inputs; legacy task prices are a derived average.

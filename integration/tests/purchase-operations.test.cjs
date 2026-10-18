@@ -2,15 +2,39 @@ const test=require('node:test'),assert=require('node:assert/strict'),load=requir
 const {createPurchaseOperations}=load('purchaseOperations.js'),{taskEditVersion}=load('purchaseTaskIdentity.js'),{projectPurchaseWorkspace}=load('purchaseProjection.js');
 const copy=value=>JSON.parse(JSON.stringify(value));
 
+test('transport is mandatory for each new PLAN and ADD_SOURCE; invalid choices leave business records untouched',async()=>{
+ for(const transportMode of [undefined,'','SELF','SUPPLIER_DELIVER ']){
+  const f=fixture(),before=copy([...f.rows]);
+  await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:100,reason:'Supplier agreed',transportMode}}),/Select Supplier Deliver or Self Collect/);
+  assert.deepEqual(copy([...f.rows]),before);
+ }
+ const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:100,reason:'First source',transportMode:'SUPPLIER_DELIVER'}});
+ const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
+ for(const transportMode of [undefined,'','TRUCK']){const before=copy([...f.rows]);await assert.rejects(add({...f.base,requestId:'22222222-2222-4222-8222-222222222222',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:20,supplierId:'S',draftPlan:true,transportMode,reason:'Second source',prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}}}),/Select Supplier Deliver or Self Collect/);assert.deepEqual(copy([...f.rows]),before);}
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:20,supplierId:'S',draftPlan:true,transportMode:'SELF_COLLECT',reason:'Second source',prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}}};const result=await add(request);await add(request);assert.equal(f.workspace().tasks.find(row=>row.id===result.sourceTaskId).procurement.transportMode,'SELF_COLLECT');assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.transportMode,'SUPPLIER_DELIVER');assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,1);
+});
+
+test('a transport-only revision is durable, idempotent and version guarded without changing quantities or prices',async()=>{
+ const f=fixture();assert.equal(f.workspace().tasks[0].procurement.transportMode,'');
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:100,reason:'Initial plan',transportMode:'SUPPLIER_DELIVER'}});
+ const saved=f.workspace().tasks.find(row=>row.id===f.id),before=copy(f.task()),input={taskId:f.id,version:saved.editVersion,planRevision:saved.procurement.revision,totalCtn:100,reason:'Self collection agreed',transportMode:'SELF_COLLECT'};
+ const request={...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input};
+ await f.operate(request);await f.operate(request);
+ assert.deepEqual(f.task(),before);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.transportMode,'SELF_COLLECT');
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,2);
+ await assert.rejects(f.operate({...request,requestId:'33333333-3333-4333-8333-333333333333',input:{...input,transportMode:'SUPPLIER_DELIVER'}}),/plan changed/);
+ const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED'&&row.details.transportMode==='SELF_COLLECT');assert.equal(event.details.reason,'Self collection agreed');assert.equal(event.initiatedByStaffId,'STF');
+});
+
 test('first confirmed B uses existing root PLAN once, opens its PO, and later A adds a distinct source without changing B',async()=>{
  const f=fixture(),{createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js'),{projectWarehouseOrders}=load('warehouseReceiving.js');
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
  const cost=qty=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:qty,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}});
- const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',supplierId:'B',totalCtn:30,draftPlan:true,reason:'',costing:cost(30)}};
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',supplierId:'B',totalCtn:30,draftPlan:true,reason:'',costing:cost(30)}};
  await f.operate(first);await f.operate(first);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
  await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'NCT-PO-B'}});
  const b=copy(f.task()),add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const added=await add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:40,supplierId:'S',poNumber:'',costing:cost(40),reason:''}});
+ const added=await add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:40,supplierId:'S',poNumber:'',costing:cost(40),reason:''}});
  assert.notEqual(added.sourceTaskId,f.id);assert.deepEqual(f.task(),b);const workspace=f.workspace(),root=workspace.tasks.find(row=>row.id===f.id);assert.equal(root.ord,250);assert.equal(root.sourcing.orderedCtn,70);assert.equal(root.sourcing.unplacedCtn,180);
  const orders=projectPurchaseOrders({company:'NCT',workspace,records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks:workspace.tasks,activity:[...f.rows.values()].filter(row=>row.action)});assert.equal(warehouse.length,1);assert.deepEqual(copy(warehouse[0].lines.map(line=>line.taskId)),[f.id]);assert.equal(warehouse[0].lines[0].planned,30);
 });
@@ -26,7 +50,7 @@ test('customer demand rejects Purchase, Account, Warehouse, Top Management and f
 test('Super Admin demand audit records verified role and workspace capability; Purchase retains planning access',async()=>{
  const f=fixture();await f.operate({...f.base,operation:'QTY',input:{taskId:f.id,version:taskEditVersion(f.task()),quantity:240,reason:'Customer requested 240'}});
  const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_QTY_REDUCED');assert.equal(event.details.authorizedRole,'SUPER ADMIN');assert.equal(f.workspace().staff.canEditCustomerDemand,true);
- await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',staff:{...f.base.staff,role:'PURCHASE'},operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:240,reason:'Supplier confirmed'}});
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',staff:{...f.base.staff,role:'PURCHASE'},operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:240,reason:'Supplier confirmed'}});
  assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.totalCtn,240);
 });
 test('supplier can be cleared before commitment, with audit and unchanged quantities/prices; committed suppliers stay locked',async()=>{
@@ -34,7 +58,7 @@ test('supplier can be cleared before commitment, with audit and unchanged quanti
  await f.operate({...f.base,operation:'EDIT',input});await f.operate({...f.base,operation:'EDIT',input});
  assert.equal(f.task().supplierId,'');for(const key of ['purchaseQtyInCtn','lpPc','lpCtn','disc1','disc2','disc3'])assert.equal(f.task()[key],before[key]);
  assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PRICE_SAVED').length,1);
- for(const operation of ['PO','PLAN']){const g=fixture();await g.operate({...g.base,operation,input:operation==='PO'?{taskIds:[g.id],versions:g.versions(),poNumber:'PO-1'}:{taskId:g.id,version:taskEditVersion(g.task()),planRevision:'',totalCtn:250,reason:'Confirmed'}});
+ for(const operation of ['PO','PLAN']){const g=fixture();await g.operate({...g.base,operation,input:operation==='PO'?{taskIds:[g.id],versions:g.versions(),poNumber:'PO-1'}:{taskId:g.id,version:taskEditVersion(g.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:250,reason:'Confirmed'}});
  await assert.rejects(g.operate({...g.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'EDIT',input:{edits:[{taskId:g.id,version:taskEditVersion(g.task()),changes:{supplierId:''}}]}}),/locked/);}
 });
 function fixture(){const rows=new Map(),id='a'.repeat(32),second='b'.repeat(32);let failAfter=0,writes=0;
@@ -55,7 +79,7 @@ test('submitted PO blocks price, plan and merging a new member, while row orderi
  for(const operation of ['EDIT','PLAN','PO']){
   const f=fixture();f.task().ourPoNumber='NCT-PO-1';f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'SUBMITTED'}}});
   const before=copy(f.task());
-  const input=operation==='EDIT'?{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}]}:operation==='PLAN'?{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:240,supplierConfirmed:true,reason:'Revision'}:{taskIds:[f.second],versions:f.versions(),poNumber:'NCT-PO-1'};
+  const input=operation==='EDIT'?{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}]}:operation==='PLAN'?{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:240,supplierConfirmed:true,reason:'Revision'}:{taskIds:[f.second],versions:f.versions(),poNumber:'NCT-PO-1'};
   await assert.rejects(f.operate({...f.base,operation,input}),/Procurement handoff has locked/);assert.deepEqual(f.task(),before);
  }
  const f=fixture();f.rows.set('PurchaseOrders/P',{_id:'P',company:'NCT',details:{taskIds:[f.id],procurementHandoff:{schema:1,stage:'OWNED'}}});
@@ -64,7 +88,7 @@ test('submitted PO blocks price, plan and merging a new member, while row orderi
 
 test('calculator PO revisions audit quantity without asserting supplier agreement; stronger locks still reject',async()=>{
  const make=async()=>{const f=fixture();await f.operate({...f.base,operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'PO-AUDIT'}});return f;};
- const input=f=>({taskId:f.id,version:taskEditVersion(f.task()),planRevision:f.workspace().tasks.find(row=>row.id===f.id).procurement.revision,totalCtn:220,reason:'Revised supplier quantity',costing:{schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:200,freeCtn:20,prices:{lpPc:6.25,lpCtn:100,disc1:0,disc2:0,disc3:0}}});
+ const input=f=>({taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:f.workspace().tasks.find(row=>row.id===f.id).procurement.revision,totalCtn:220,reason:'Revised supplier quantity',costing:{schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:200,freeCtn:20,prices:{lpPc:6.25,lpCtn:100,disc1:0,disc2:0,disc3:0}}});
  const f=await make(),request={...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:input(f)};
  await f.operate(request);await f.operate(request);
  const revision=f.workspace().tasks.find(row=>row.id===f.id),events=[...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED'&&row.details.before===250);
@@ -84,13 +108,13 @@ test('FOC amount, original inputs, shares, PO cents and retries stay consistent 
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js'),{projectWarehouseOrders}=load('warehouseReceiving.js');
  const f=fixture();f.task().purchaseQtyInCtn=100;f.rows.get('NCTOrders/O0').orderQtyInCtn=100;f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
  const cost=(paid,free,lpCtn,disc1=0)=>({schema:1,mode:free?'FOC':'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:free,prices:{lpPc:lpCtn/16,lpCtn,disc1,disc2:0,disc3:0},manualFields:['lpCtn']});
- await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60,0,100),draftPlan:true,reason:'A supply'}});
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:60,costing:cost(60,0,100),draftPlan:true,reason:'A supply'}});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:44,supplierId:'B',poNumber:'',costing:cost(40,4,100),confirmExtra:true,reason:'B 40 plus 4 FOC'}};
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:44,supplierId:'B',poNumber:'',costing:cost(40,4,100),confirmExtra:true,reason:'B 40 plus 4 FOC'}};
  const result=await add(request);await add(request);let row=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
  assert.equal(row.procurement.costing.amountCents,400000);assert.equal(row.procurement.expectedExtra,4);assert.equal(row.procurement.customerCtn,40);assert.equal(row.procurement.availableCtn,null);assert.equal(row.lpCtn,4000/44);assert.equal(f.task().purchaseQtyInCtn,100);
  await assert.rejects(f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'EDIT',input:{edits:[{taskId:row.id,version:row.editVersion,changes:{lpCtn:1}}]}}),/calculator/);
- const update={...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:row.id,version:row.editVersion,planRevision:row.procurement.revision,totalCtn:33,costing:cost(30,3,100),reason:'B smaller'}};
+ const update={...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:row.id,version:row.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:row.procurement.revision,totalCtn:33,costing:cost(30,3,100),reason:'B smaller'}};
  await f.operate(update);await f.operate(update);row=f.workspace().tasks.find(row=>row.id===row.id);
  const ws=f.workspace(),b=ws.tasks.find(item=>item.id===result.sourceTaskId),a=ws.tasks.find(item=>item.id===f.id);assert.equal(a.procurement.customerCtn,60);assert.equal(a.procurement.costing.amountCents,600000);assert.equal(b.procurement.customerCtn,33);assert.equal(a.sourcing.unplacedCtn,7);
  const poWs={...ws,tasks:ws.tasks.filter(item=>item.id===result.sourceTaskId).map(item=>({...item,po:'NCT-PO-FOC'}))};const po=projectPurchaseOrders({company:'NCT',workspace:poWs,records:[]})[0];assert.equal(po.amount,3000);
@@ -102,12 +126,12 @@ test('editing B preserves C stock-only shares even when the customer remainder c
  f.task().purchaseQtyInCtn=100;f.rows.get('NCTOrders/O0').orderQtyInCtn=100;
  for(const id of ['B','C'])f.rows.set('SharedSuppliers/'+id,{_id:id,title:id,companyName:id,supplierStatus:'ACTIVE'});
  const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
- await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:'A customer allocation'}});
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:'A customer allocation'}});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const addSource=async(supplier,quantity,requestId)=>add({...f.base,requestId,staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity,supplierId:supplier,poNumber:'',costing:cost(quantity),confirmExtra:true,reason:'Explicit stock surplus'}});
+ const addSource=async(supplier,quantity,requestId)=>add({...f.base,requestId,staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity,supplierId:supplier,poNumber:'',costing:cost(quantity),confirmExtra:true,reason:'Explicit stock surplus'}});
  const b=await addSource('B',50,'33333333-3333-4333-8333-333333333333'),c=await addSource('C',5,'44444444-4444-4444-8444-444444444444');
  const cBefore=f.workspace().tasks.find(row=>row.id===c.sourceTaskId),bBefore=f.workspace().tasks.find(row=>row.id===b.sourceTaskId);
- await f.operate({...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:bBefore.id,version:bBefore.editVersion,planRevision:bBefore.procurement.revision,totalCtn:40,costing:cost(40),reason:'B removes only its surplus'}});
+ await f.operate({...f.base,requestId:'55555555-5555-4555-8555-555555555555',operation:'PLAN',input:{taskId:bBefore.id,version:bBefore.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:bBefore.procurement.revision,totalCtn:40,costing:cost(40),reason:'B removes only its surplus'}});
  const ws=f.workspace(),cAfter=ws.tasks.find(row=>row.id===c.sourceTaskId);
  assert.equal(cAfter.procurement.customerCtn,0);assert.equal(cAfter.procurement.expectedExtra,5);assert.deepEqual(cAfter.procurement.costing,cBefore.procurement.costing);
  assert.equal(ws.tasks.find(row=>row.id===b.sourceTaskId).procurement.customerCtn,40);assert.equal(ws.tasks.find(row=>row.id===f.id).procurement.customerCtn,60);
@@ -123,44 +147,44 @@ test('discounted FOC and negotiated total retain cents without rounded-average m
 
 test('FOC lost write acknowledgement and partial source audit resume the exact prepared request',async()=>{
  const f=fixture(),costing={schema:1,mode:'FOC',moneySource:'PRICES',paidCtn:10,freeCtn:1,prices:{lpPc:100/16,lpCtn:100,disc1:.1,disc2:0,disc3:0}};
- const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:11,costing,draftPlan:true,reason:'Ten plus one'}};
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:11,costing,draftPlan:true,reason:'Ten plus one'}};
  f.fail(1);await assert.rejects(f.operate(first),/response lost/);await f.operate(first);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.costing.amountCents,90000);
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
  let fail=true;const insert=f.store.insert;f.store.insert=async(c,row)=>{if(fail&&row.action==='PURCHASE_SOURCE_ADDED'){fail=false;throw Error('lost source audit');}return insert(c,row);};
- const input={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:11,supplierId:'B',poNumber:'',costing,reason:'Second ten plus one'}};
+ const input={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:11,supplierId:'B',poNumber:'',costing,reason:'Second ten plus one'}};
  await assert.rejects(add(input),/lost source audit/);assert.throws(()=>f.workspace(),/confirmation/);const result=await add(input);assert.equal(f.workspace().tasks.find(row=>row.id===result.sourceTaskId).procurement.costing.amountCents,90000);
 });
 
 test('one plan save commits supplier, quantity and price together and retries without duplicate audits',async()=>{
  const f=fixture();f.task().supplierId='';
- const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:200,supplierId:'S',prices:{lpPc:3,lpCtn:48,disc1:.02,disc2:0,disc3:0},reason:'Supplier quoted 200 cartons'};
+ const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:200,supplierId:'S',prices:{lpPc:3,lpCtn:48,disc1:.02,disc2:0,disc3:0},reason:'Supplier quoted 200 cartons'};
  await f.operate({...f.base,operation:'PLAN',input});await f.operate({...f.base,operation:'PLAN',input});
  assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(f.task().supplierId,'S');assert.equal(f.task().lpCtn,48);
  const row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.procurement.totalCtn,200);assert.equal(row.netCostCtn,47.04);
  assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
- const next={...input,version:taskEditVersion(f.task()),planRevision:row.procurement.revision,prices:{...input.prices,lpCtn:50}};
+ const next={...input,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:row.procurement.revision,prices:{...input.prices,lpCtn:50}};
  await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:next});assert.equal(f.task().lpCtn,50);
 });
 
 test('a new draft plan can change supplier before PO confirmation, while a confirmed PO remains locked',async()=>{
  const f=fixture();f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
- const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:200,draftPlan:true,reason:'Compare supplier quotation'};
+ const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:200,draftPlan:true,reason:'Compare supplier quotation'};
  await f.operate({...f.base,operation:'PLAN',input});let row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.procurement.draftPlan,true);
- await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...input,version:row.editVersion,planRevision:row.procurement.revision,supplierId:'B'}});assert.equal(f.task().supplierId,'B');
+ await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...input,version:row.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:row.procurement.revision,supplierId:'B'}});assert.equal(f.task().supplierId,'B');
  await f.operate({...f.base,requestId:'33333333-3333-4333-8333-333333333333',operation:'PO',input:{taskIds:[f.id],versions:{[f.id]:taskEditVersion(f.task())},poNumber:'NCT-PO-002'}});
- row=f.workspace().tasks.find(row=>row.id===f.id);await assert.rejects(f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'PLAN',input:{...input,version:row.editVersion,planRevision:row.procurement.revision,supplierId:'S',supplierConfirmed:true}}),/locked/);
+ row=f.workspace().tasks.find(row=>row.id===f.id);await assert.rejects(f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'PLAN',input:{...input,version:row.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:row.procurement.revision,supplierId:'S',supplierConfirmed:true}}),/locked/);
 });
 
 test('unassigned supplier source plans become separate Account POs only when assigned and preserve customer demand',async()=>{
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{createPurchaseOrderOperations}=load('purchaseOrderWorkflow.js');
- const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:100,reason:'First supplier plan'}});
+ const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:100,reason:'First supplier plan'}});
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SUPPLIER B',supplierStatus:'ACTIVE'});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:150,supplierId:'B',poNumber:'',prices:{lpPc:4,lpCtn:64,disc1:0,disc2:0,disc3:0},reason:'Second supplier plan'}};
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:150,supplierId:'B',poNumber:'',prices:{lpPc:4,lpCtn:64,disc1:0,disc2:0,disc3:0},reason:'Second supplier plan'}};
  const result=await add(request);assert.deepEqual(await add(request),result);
  const sourceRow=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
- await f.operate({...f.base,requestId:'66666666-6666-4666-8666-666666666666',operation:'PLAN',input:{taskId:result.sourceTaskId,version:sourceRow.editVersion,planRevision:sourceRow.procurement.revision,totalCtn:170,extraKind:'PAID_EXTRA',confirmExtra:true,reason:'Buy twenty extra for stock'}});
+ await f.operate({...f.base,requestId:'66666666-6666-4666-8666-666666666666',operation:'PLAN',input:{taskId:result.sourceTaskId,version:sourceRow.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:sourceRow.procurement.revision,totalCtn:170,extraKind:'PAID_EXTRA',confirmExtra:true,reason:'Buy twenty extra for stock'}});
  const planned=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);assert.equal(planned.procurement.expectedExtra,20);assert.equal(planned.procurement.availableCtn,null);
  const poOps=createPurchaseOrderOperations({store:f.store,readWorkspace:async()=>f.workspace(),names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT}});
  assert.equal((await poOps.list('NCT',f.base.staff)).length,0);
@@ -209,7 +233,7 @@ test('average cost lost response retries exact calculation and invoice blocks co
 });
 
 test('supplier extras do not increase customer commitment or create available stock; plan is audited once',async()=>{
- const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Buy ten get one'};
+ const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Buy ten get one'};
  await f.operate({...f.base,operation:'PLAN',input});await f.operate({...f.base,operation:'PLAN',input});
  assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(f.rows.get('NCTOrders/O0').orderQtyInCtn,250);assert.equal(f.task().receivedQtyInCtn,undefined);
  const row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.procurement.totalCtn,275);assert.equal(row.procurement.expectedExtra,25);assert.equal(row.procurement.availableCtn,null);assert.equal(row.procurement.allocationEnabled,false);
@@ -221,15 +245,15 @@ test('customer reduction after P.O. retains supplier total and increases expecte
  const f=fixture();await f.operate({...f.base,operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'PO-1'}});
  await f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'QTY',input:{taskId:f.id,version:taskEditVersion(f.task()),quantity:240,reason:'Customer commitment reduced'}});
  const row=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(row.ord,240);assert.equal(row.procurement.totalCtn,250);assert.equal(row.procurement.expectedExtra,10);
- const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:row.procurement.revision,totalCtn:240,reason:'Supplier accepted reduction'};
+ const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:row.procurement.revision,totalCtn:240,reason:'Supplier accepted reduction'};
  await assert.rejects(f.operate({...f.base,requestId:'33333333-3333-4333-8333-333333333333',operation:'PLAN',input}),/supplier has agreed/);
  await f.operate({...f.base,requestId:'44444444-4444-4444-8444-444444444444',operation:'PLAN',input:{...input,supplierConfirmed:true}});
  assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.expectedExtra,0);
 });
 
 test('procurement safeguards require supplier, explicit extra type/confirmation and current company identities',async()=>{
- for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:0},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
- const f=fixture();f.task().supplierId='';await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:250,reason:'Plan'}}),/supplier/);
+ for(const patch of [{confirmExtra:false},{extraKind:''},{totalCtn:0},{totalCtn:10000},{totalCtn:250.5},{reason:''}]){const f=fixture();await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer',...patch}}));assert.equal(f.workspace().tasks[0].procurement.totalCtn,null);}
+ const f=fixture();f.task().supplierId='';await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:250,reason:'Plan'}}),/supplier/);
  await assert.rejects(f.operate({...f.base,company:'GHR',operation:'PLAN',input:{taskId:f.id}}),/accepted/);
 });
 
@@ -240,7 +264,7 @@ test('zero quantity and reduction below received cartons cannot masquerade as or
 test('lost plan-audit write blocks competing saves and resumes the exact original operation',async()=>{
  const f=fixture(),insert=f.store.insert;let lose=true;
  f.store.insert=async(c,row)=>{if(row.action==='PURCHASE_PLAN_SAVED'&&lose){lose=false;throw Error('response lost');}return insert(c,row);};
- const input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer'};
+ const input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer'};
  await assert.rejects(f.operate({...f.base,operation:'PLAN',input}),/response lost/);
  await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...input,totalCtn:280}}),/pending/);
  await f.operate({...f.base,operation:'PLAN',input});assert.equal(f.workspace().tasks.find(row=>row.id===f.id).procurement.totalCtn,275);
@@ -248,7 +272,7 @@ test('lost plan-audit write blocks competing saves and resumes the exact origina
 });
 
 test('plan revisions reject branched history instead of displaying invented available inventory',async()=>{
- const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer'};
+ const f=fixture(),input={taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:275,extraKind:'FREE_GOODS',confirmExtra:true,reason:'Offer'};
  await f.operate({...f.base,operation:'PLAN',input});const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');f.rows.set('NCTActivity/FORK',{...copy(event),_id:'FORK',title:'FORK'});
  assert.throws(()=>f.workspace(),/history requires review/);
 });
@@ -258,15 +282,15 @@ test('negative net cost rejects before preparing or changing any business fields
 test('calculator first allocation and new remaining source save without a reason; revisions still require one and retry stays exact',async()=>{
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),f=fixture();
  const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
- const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:''}};
+ const first={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:60,costing:cost(60),draftPlan:true,reason:''}};
  await f.operate(first);await f.operate(first);
  assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PLAN_SAVED').length,1);
  const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');assert.equal(event.details.reason,'');assert.equal(event.initiatedByStaffName,'LAW');assert.ok(event.activityTime);
  let saved=f.workspace().tasks.find(row=>row.id===f.id),before=copy(f.task());
- await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...first.input,version:saved.editVersion,planRevision:saved.procurement.revision,totalCtn:50,costing:cost(50)}}),/reason/);assert.deepEqual(f.task(),before);
+ await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'PLAN',input:{...first.input,version:saved.editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:saved.procurement.revision,totalCtn:50,costing:cost(50)}}),/reason/);assert.deepEqual(f.task(),before);
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:190,supplierId:'B',poNumber:'',costing:cost(190),reason:''}};
+ const request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:190,supplierId:'B',poNumber:'',costing:cost(190),reason:''}};
  const result=await add(request);await add(request);saved=f.workspace().tasks.find(row=>row.id===result.sourceTaskId);
  assert.equal(saved.procurement.totalCtn,190);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).sourcing.unplacedCtn,0);
  assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,1);
@@ -275,24 +299,24 @@ test('calculator first allocation and new remaining source save without a reason
 
 test('blank reason never exempts legacy planning, initial surplus or additional stock procurement',async()=>{
  const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
- for(const legacy of [true,false]){const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:legacy?60:260,...(!legacy?{costing:cost(260)}:{}),draftPlan:true,confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);}
+ for(const legacy of [true,false]){const f=fixture(),before=copy(f.task());await assert.rejects(f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:legacy?60:260,...(!legacy?{costing:cost(260)}:{}),draftPlan:true,confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);}
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),f=fixture();
- await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:250,costing:cost(250),draftPlan:true,reason:''}});
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:250,costing:cost(250),draftPlan:true,reason:''}});
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});const before=copy(f.task());
- await assert.rejects(add({...f.base,requestId:'44444444-4444-4444-8444-444444444444',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,0);
+ await assert.rejects(add({...f.base,requestId:'44444444-4444-4444-8444-444444444444',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),confirmExtra:true,reason:''}}),/reason/);assert.deepEqual(f.task(),before);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,0);
 });
 
 test('calculator surplus automatically projects as expected stock without a checkbox or a customer-demand increase',async()=>{
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js'),{projectWarehouseOrders}=load('warehouseReceiving.js'),{projectPurchaseOrders}=load('purchaseOrderWorkflow.js');
  const f=fixture(),cost=(paid,free=0)=>({schema:1,mode:free?'FOC':'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:free,prices:{lpPc:100/16,lpCtn:100,disc1:0,disc2:0,disc3:0}});
- const request={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:260,costing:cost(250,10),draftPlan:true,reason:'Buy250 get10'}};
+ const request={...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:260,costing:cost(250,10),draftPlan:true,reason:'Buy250 get10'}};
  await f.operate(request);await f.operate(request);let row=f.workspace().tasks.find(row=>row.id===f.id);
  assert.equal(row.ord,250);assert.equal(f.task().purchaseQtyInCtn,250);assert.equal(row.procurement.expectedExtra,10);assert.equal(row.procurement.customerCtn,250);assert.equal(row.procurement.availableCtn,null);
  const event=[...f.rows.values()].find(row=>row.action==='PURCHASE_PLAN_SAVED');assert.equal(event.details.extraKind,'PROCUREMENT_SURPLUS');assert.equal(event.details.extraCtn,10);assert.equal(event.initiatedByStaffName,'LAW');assert.equal(event.details.reason,'Buy250 get10');
  f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'B',supplierStatus:'ACTIVE'});
  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});
- const added=await add({...f.base,requestId:'66666666-6666-4666-8666-666666666666',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:5,supplierId:'B',poNumber:'',costing:cost(5),reason:'Additional stock purchase'}});
+ const added=await add({...f.base,requestId:'66666666-6666-4666-8666-666666666666',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:5,supplierId:'B',poNumber:'',costing:cost(5),reason:'Additional stock purchase'}});
  const ws=f.workspace(),source=ws.tasks.find(row=>row.id===added.sourceTaskId);row=ws.tasks.find(row=>row.id===f.id);
  assert.equal(row.ord,250);assert.equal(source.procurement.expectedExtra,5);assert.equal(source.procurement.customerCtn,0);assert.equal(source.procurement.availableCtn,null);assert.equal(row.sourcing.orderedCtn,265);
  const tasks=ws.tasks.filter(t=>t.id===f.id||t.id===source.id).map(t=>({...t,po:'NCT-PO-STOCK-'+t.supplierId})),orders=projectPurchaseOrders({company:'NCT',workspace:{...ws,tasks},records:[]}),warehouse=projectWarehouseOrders({company:'NCT',purchaseOrders:orders,tasks,activity:[]});
@@ -305,17 +329,17 @@ test('second supplier with legacy empty status saves10 while5 remain, preserving
  for(const status of [undefined,null,'','   ','ACTIVE',' active ']){
   const f=fixture();f.task().purchaseQtyInCtn=30;f.rows.get('NCTOrders/O0').orderQtyInCtn=30;
   const cost=paid=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:paid,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}});
-  await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:15,costing:cost(15),draftPlan:true,reason:''}});
+  await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:15,costing:cost(15),draftPlan:true,reason:''}});
   const first=copy(f.task());f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SECOND SUPPLIER',supplierStatus:status});
-  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()}),request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),reason:''}};
+  const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()}),request={...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:cost(10),reason:''}};
   const result=await add(request);assert.deepEqual(await add(request),result);assert.deepEqual(f.task(),first);const workspace=f.workspace(),source=workspace.tasks.find(row=>row.id===result.sourceTaskId);assert.equal(source.procurement.totalCtn,10);assert.equal(source.po,'');assert.equal(workspace.tasks.find(row=>row.id===f.id).ord,30);assert.equal(workspace.tasks.find(row=>row.id===f.id).sourcing.unplacedCtn,5);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_SOURCE_ADDED').length,1);assert.equal(f.rows.get('SharedSuppliers/B').supplierStatus,status);
  }
 });
 test('second supplier rejects inactive, unknown statuses and nonexistent supplier without creating a source',async()=>{
  const {createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js');
  for(const status of ['INACTIVE',' inactive ','SUSPENDED','BLOCKED','MISSING']){
-  const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:'',totalCtn:15,reason:'First supplier'}});
+  const f=fixture();await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:15,reason:'First supplier'}});
   if(status!=='MISSING')f.rows.set('SharedSuppliers/B',{_id:'B',title:'B',companyName:'SECOND',supplierStatus:status});
-  const before=copy([...f.rows]);const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});await assert.rejects(add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:10,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}},reason:''}}),/Select an active supplier/);assert.deepEqual(copy([...f.rows]),before);
+  const before=copy([...f.rows]);const add=createPurchaseSourceOperations({store:f.store,names:{NCT:load('purchaseProjection.js').PURCHASE_COLLECTIONS.NCT},readWorkspace:async()=>f.workspace()});await assert.rejects(add({...f.base,requestId:'33333333-3333-4333-8333-333333333333',staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',draftPlan:true,parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),quantity:10,supplierId:'B',poNumber:'',costing:{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:10,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}},reason:''}}),/Select an active supplier/);assert.deepEqual(copy([...f.rows]),before);
  }
 });
