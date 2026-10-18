@@ -1,0 +1,17 @@
+# Account note and waiting-status readability
+
+User request: waiting pills are too dark; Self Collect truck should be an outline icon; active Purchase payment chases should show their reason and timestamp in red in Account. User also asks for responsive guarantees and the future Payment Plan, Accounts Payable, warehouse-exception and Job Done lifecycle.
+
+Framework: root AGENTS, START_HERE, current fixed-header acceptance and Account production record, workroom standard, current note renderer, CHASE audit write and settlement/warehouse projections inspected. Fresh seven public frontend files and two full Wix entries match the checkout. Immediate recovery is runtime bd0ce45, record87b3433, PR177/178; existing limited verified purchase tags retained. No main development or merge.
+
+Presentation patch: two waiting labels use medium gray #8B98A8 with unchanged white text and21px geometry; Purchase Follow-up uses the same waiting tone. Self Collect keeps explicit green #12883E and17px geometry but uses fill-none,1.7px rounded stroke truck. Account renders active chase reason and existing server-saved timestamp in red #E51B2B. Four known bilingual dropdown values display as English; free-text business notes remain escaped and unchanged. The timestamp is labelled Sent because it records the server CHASE save, not an invented delivery/read acknowledgement. Previous inactive reminder history is retained with ordinary tone. No backend, finance, receipt, archive, permission, storage, download or native Wix layout changes.
+
+Chrome candidate: existing current preview reused after confirming no open form; prior transport allocation form is preserved in its original separate tab. New isolated fixture shows English Urgent shipment, red actor/saved time, clearer truck and lighter pills. Samples only, no CMS writes.
+
+Validation:121 focused checks pass; full534 checks531pass with the same three known baseline failures. Existing source escaping, latest successful event, failed-event exclusion and transport-before-note ordering retained. Computed preview confirms fill none/stroke green/17px, gray139152168/white/21px, active reason/time red2292743.
+
+Responsive audit is read-only: at approximately1024px outer viewport, Account inner nav width1009px/content1069px/overflow visible; wide table has its existing controlled horizontal scroll. At640px existing mobile nav overflow auto applies. Header/nav offsets stay aligned49px. Therefore arbitrary screen-size perfection is not claimed; intermediate-width navigation needs a separate minimal correction. No header mechanism changed by this patch.
+
+Workflow findings and recommendations are not implemented here: current Payment Plan uses ACTIVE orders and overlaps Accounts Payable; current backend derives HISTORY from reconciliation/check/receiving/customer-invoice conditions and has no separate Job Done event. Transaction History already lists payment records directly. Recommend defining partial versus confirmed-short delivery, supplier remedy and financial reconciliation, then explicit final close; do not hide an unpaid plan merely because an invoice enters Accounts Payable.
+
+Release pending: code candidate, Pages not deployed, Wix pointers not yet synchronized and no public acceptance of this patch.
