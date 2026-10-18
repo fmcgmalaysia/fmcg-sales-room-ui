@@ -574,14 +574,33 @@ export const getSalesRoomConfirmedOrders = webMethod(
   }
 );
 
+export const checkSalesRoomOrderReceipt = webMethod(
+  Permissions.SiteMember,
+  async (orderId) => {
+    const staff = await requireAuthorizedStaffContext();
+    const receipt = await submitNctSalesOrder({ orderId: normalize(orderId), staff, reconcileOnly: true,
+      authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
+      readPayloadRows: readAllPayloadRows, putPayload });
+    return Object.freeze({ ok: true, receipt });
+  }
+);
+
 export const getSalesRoomOrderDetail = webMethod(
   Permissions.SiteMember,
   async (orderId) => {
     const staff = await requireAuthorizedStaffContext();
-    const orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+    let orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
       .find((entry) => normalize(entry.data.orderId) === normalize(orderId));
     if (!orderEntry) throw new Error('Order was not found.');
     await findAuthorizedCustomer(orderEntry.data.customerId, staff);
+    if (!orderEntry.data.masterReceipt) {
+      const receipt = await submitNctSalesOrder({ orderId: normalize(orderId), staff, reconcileOnly: true,
+        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
+        readPayloadRows: readAllPayloadRows, putPayload });
+      if (receipt) orderEntry = (await readPayloadRows(BUYER_ORDER_COLLECTION))
+        .find(entry => normalize(entry.data.orderId) === normalize(orderId));
+      if (!orderEntry) throw new Error('Order was not found after receipt recovery.');
+    }
     const lines = (await readPayloadRows(BUYER_LINE_COLLECTION))
       .map((entry) => entry.data)
       .filter((line) => normalize(line.orderId) === normalize(orderId) && !line.addedToOrderId)

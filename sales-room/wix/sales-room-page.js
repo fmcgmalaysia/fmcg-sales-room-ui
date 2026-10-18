@@ -1,5 +1,5 @@
 import { salesRoomShipment } from 'backend/onboarding.web';
-import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
+import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web';
 import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web';
 import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web';
@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261017-site-bilingual-copy-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261019-sales-receipt-recovery-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -492,7 +492,11 @@ $w.onReady(function () {
     }
 
     if (message.type === 'SALES_ROOM_ORDER_DETAIL_REQUEST') {
-      try { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_DETAIL', ...(await getSalesRoomOrderDetail(message.orderId || '')) }); }
+      try {
+        const checked = await checkSalesRoomOrderReceipt(message.orderId || '');
+        if (checked.receipt) salesRoom.postMessage({ type: 'SALES_ROOM_CONFIRMED_ORDERS', ...(await getSalesRoomConfirmedOrders()) });
+        salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_DETAIL', ...(await getSalesRoomOrderDetail(message.orderId || '')) });
+      }
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_DETAIL', ok: false, error: error?.message || 'Order detail could not be loaded.' }); }
       return;
     }
@@ -529,9 +533,9 @@ $w.onReady(function () {
     }
     if (message.type === 'SALES_ROOM_NCT_RECEIPT_REQUEST') {
       try {
-        const detail = await getSalesRoomOrderDetail(message.orderId || '');
+        const detail = await checkSalesRoomOrderReceipt(message.orderId || '');
         salesRoom.postMessage({ type: 'SALES_ROOM_NCT_RECEIPT_RESULT', requestId: message.requestId,
-          orderId: message.orderId, ok: true, receipt: detail.order?.masterReceipt || null });
+          orderId: message.orderId, ok: true, receipt: detail.receipt || null });
       } catch (error) {
         salesRoom.postMessage({ type: 'SALES_ROOM_NCT_RECEIPT_RESULT', requestId: message.requestId,
           orderId: message.orderId, ok: false, error: error?.message || 'Receipt could not be checked.' });

@@ -17,8 +17,8 @@ function verifiedReceipt(receipt, body) {
  * The adapter uses the existing ORDER-LOCK key so Buyer additions and Sales edits are blocked
  * while an uncertain delivery is outstanding. It never replaces another workflow's lock.
  */
-export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, now = () => new Date() }) {
-  return async function submit({ orderId, staff, authorizeCustomer, destination = 'NCT' }) {
+export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, lookupReceipt, now = () => new Date() }) {
+  return async function submit({ orderId, staff, authorizeCustomer, destination = 'NCT', reconcileOnly = false }) {
     if (!['NCT', 'GHR'].includes(destination)) throw new Error('Invalid receiving company.');
     const initial = await store.readOrder(orderId);
     if (!initial || initial.data.orderId !== orderId || initial.data.receiptOnly) throw new Error('Open the active order, not its addition receipt.');
@@ -30,6 +30,19 @@ export function createNctSubmissionDelivery({ store, loadSnapshot, deliver, now 
       return receipt;
     }
     if (initial.data.destination || initial.data.submittedAt) throw new Error('Order has already been transferred.');
+    if (reconcileOnly) {
+      const saved = await store.readLock(orderId), body = saved?.preparedBody;
+      if (!body) return null;
+      if (saved.source !== 'NCT MASTER INTAKE' || saved.orderId !== orderId || saved.customerId !== initial.data.customerId ||
+          body.orderId !== orderId || body.customerId !== initial.data.customerId || body.destination !== destination) throw new Error('Prepared submission identity conflict.');
+      const found = await lookupReceipt(clone(body));
+      if (found?.ok === false && found.pending === true) return null;
+      const receipt = verifiedReceipt(found, body);
+      await store.writeAcceptedAuditOnce(body, receipt);
+      await store.saveTransferred(orderId, body, receipt);
+      await store.releaseOwnLock(orderId, body.submissionId);
+      return receipt;
+    }
     let lock, created = false;
     const proposal = { action: 'ORDER_MUTATION_LOCK', source: 'NCT MASTER INTAKE',
       orderId, customerId: initial.data.customerId, at: now().toISOString(), preparedBody: null };

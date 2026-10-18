@@ -21,7 +21,7 @@ async function ownLock(id) {
   return { record, value: data(record) };
 }
 
-export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, readPayloadRows, putPayload, lockedOrderEntry, initialError, destination = 'NCT' }) {
+export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, readPayloadRows, putPayload, lockedOrderEntry, initialError, destination = 'NCT', reconcileOnly = false }) {
   const id = text(orderId);
   if (!id || !text(staff?.staffId) || !text(staff.staffName)) throw new Error('Verified order and staff are required.');
   let firstRead = true;
@@ -93,7 +93,24 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         nctSubmissionBody: body, masterReceipt: receipt });
     }
   };
+  if (reconcileOnly) {
+    const current = await store.readOrder(id);
+    if (!current) throw new Error('Order was not found.');
+    await authorizeCustomer(current.data.customerId);
+    const held = await store.readLock(id), body = current.data.nctSubmissionBody || held?.preparedBody;
+    if (!body) return null;
+    destination = body.destination;
+  }
   const submit = createNctSubmissionDelivery({ store,
+    async lookupReceipt(body) {
+      const secret = await getSecret('MASTER_INTAKE_SHARED_SECRET');
+      if (!secret) throw new Error('Master intake credential is not configured.');
+      const result = await fetch(MASTER_ENDPOINT, { method: 'post', headers: {
+        'Content-Type': 'application/json', Authorization: 'Bearer ' + secret
+      }, body: JSON.stringify({ action: 'READ_RECEIPT', submission: body }) });
+      if (!result.ok) throw new Error('Master receipt could not be checked. Keep this same order.');
+      return result.json();
+    },
     async loadSnapshot(order) {
       const currency = text(order.currency).toUpperCase();
       const [rateResult, lineRows, auditRows] = await Promise.all([
@@ -121,7 +138,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
     const current = await ownLock(id), order = await store.readOrder(id);
     if (!(current.value?.source === 'NCT MASTER INTAKE' && current.value.preparedBody) && !order?.data.masterReceipt) throw initialError;
   }
-  try { return await submit({ orderId: id, staff, authorizeCustomer, destination }); }
+  try { return await submit({ orderId: id, staff, authorizeCustomer, destination, reconcileOnly }); }
   catch (error) {
     if (lockedOrderEntry) {
       try { error.keepOrderMutationLock = Boolean((await ownLock(id)).value?.preparedBody); }
