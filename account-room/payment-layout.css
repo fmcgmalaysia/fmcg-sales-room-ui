@@ -10,3 +10,6 @@ body #documents{width:640px;max-width:calc(100vw - 32px)}body #documents .dialog
 
 /* Finance prioritizes amounts; the existing signal handler remains available. */
 #taskSignals{display:none!important}
+
+/* Only the two waiting labels use the existing neutral download gray. */
+.acc-pill.gray:is([data-status="Awaiting Review"],[data-status="Waiting for Acc. response"]){background:#b8c4d0;color:#fff}
