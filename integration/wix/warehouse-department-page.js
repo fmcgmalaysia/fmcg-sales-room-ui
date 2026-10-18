@@ -1,11 +1,16 @@
 import { getCustomerFulfilment, saveCustomerShipment } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
-import { getWarehouseOrders, saveWarehouseReceipt } from 'backend/warehouseReceiving.web';
+import { getWarehouseOrders, saveWarehouseReceipt, saveWarehousePreparation } from 'backend/warehouseReceiving.web';
 import { authentication } from 'wix-members-frontend';
 $w.onReady(()=>{
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(message.type==='WAREHOUSE_PREPARATION_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>3100000)return;
+      try{const result=await saveWarehousePreparation(message.company,message.requestId,message.input);room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Warehouse save is unconfirmed.'});}return;
+    }
     if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||message.department!=='WAREHOUSE'||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
@@ -31,5 +36,5 @@ $w.onReady(()=>{
     try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261018-department-messages-v1';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261018-warehouse-workroom-v2';
 });

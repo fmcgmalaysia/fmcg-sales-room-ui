@@ -44,3 +44,14 @@ test('warehouse rejects ambiguous audit chain and unauthorized purchaser',()=>{
  const member={_id:'M',loginEmail:'a@example.com',status:'APPROVED'},records=[{title:'S',description:'M',staffName:'HIA',staffEmail:'a@example.com',staffStatus:'ACTIVE',departments:['PURCHASE']}];
  assert.throws(()=>requireWarehouseStaff(member,records),/not authorized/);records[0].departments=['WAREHOUSE'];assert.equal(requireWarehouseStaff(member,records).staffId,'S');
 });
+
+test('receipt corrections append history and cannot undercut allocated stock or financial closure',async()=>{
+ const f=fixture();await f.operations.save({...f.base,input:await f.input(100,'DELIVERY')});
+ const next=async()=>({...await f.input(90),action:'CORRECT',lines:[{taskId:'T',accepted:90,rejected:0,reason:'Physical recount correction'}]});
+ await f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:await next()});let row=(await f.readOrders('NCT'))[0];assert.equal(row.lines[0].accepted,90);assert.equal(row.status,'ISSUE');assert.equal(row.history.length,2);assert.equal(row.history[0].lines[0].accepted,100);
+ await f.store.insert('NCTActivity',{_id:'A',title:'A',imageAltText:'T',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-18T00:00:00Z',details:{beforeRevision:'',targets:[{taskId:'CUSTOMER-TASK',quantity:90}]}});
+ const correction=await next();correction.lines[0].accepted=80;
+ await assert.rejects(f.operations.save({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:correction}),/below allocated/);
+ f.po.invoiceChecked=true;const locked=await next();await assert.rejects(f.operations.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:locked}),/financially locked/);
+ assert.equal((await f.readOrders('NCT'))[0].lines[0].accepted,90);
+});
