@@ -1,3 +1,4 @@
+import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getCustomerFulfilment, saveCustomerShipment } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getWarehouseOrders, saveWarehouseReceipt, saveWarehousePreparation } from 'backend/warehouseReceiving.web';
@@ -6,6 +7,7 @@ $w.onReady(()=>{
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'WAREHOUSE',result=>room.postMessage(result)))return;
     if(message.type==='WAREHOUSE_PREPARATION_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>3100000)return;
       try{const result=await saveWarehousePreparation(message.company,message.requestId,message.input);room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
@@ -36,5 +38,5 @@ $w.onReady(()=>{
     try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261018-department-mobile-qty-v1';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261018-task-chat-drive-v1';
 });

@@ -1,3 +1,4 @@
+import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getCustomerFulfilment } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
@@ -7,6 +8,7 @@ $w.onReady(() => {
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'ACCOUNT',result=>room.postMessage(result)))return;
     if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||message.department!=='ACCOUNT'||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='DEPARTMENT_MESSAGES_REQUEST'?'DEPARTMENT_MESSAGES_RESULT':'DEPARTMENT_MESSAGE_SAVE_RESULT';
@@ -34,5 +36,5 @@ $w.onReady(() => {
       room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
     }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261018-department-mobile-qty-v1';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261018-task-chat-drive-v1';
 });

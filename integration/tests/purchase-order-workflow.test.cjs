@@ -81,12 +81,12 @@ test('PO amount uses supplier cartons, MYR and distinct product count; no invent
  assert.equal(row.createdBy,'LAW');assert.equal(row.canArchive,false);assert.equal(row.documentStatus,'MISSING');assert.equal(row.dueDate,null);assert.equal(row.state,'ACTIVE');
  f.workspace.tasks[0].lpCtn=null;assert.equal(projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]})[0].amount,null);
 });
-test('chase persists once, retains staff/time/reason and stable identity across a full PO rename',async()=>{
- const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0],input={id:row.id,version:row.version,action:'CHASE',enabled:true,reason:'Supplier waiting for payment'};
+test('term persists once, retains staff/time/reason and stable identity across a full PO rename',async()=>{
+ const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0],input={id:row.id,version:row.version,action:'TERM',termDays:30,reason:'Supplier agreed term'};
  await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});
  for(const task of f.workspace.tasks)task.po='NCT-PO-002';
- const saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(saved.id,row.id);assert.equal(saved.chasePayment,true);assert.equal(saved.number,'NCT-PO-002');
- const audit=saved.history.filter(e=>e.action==='PAYMENT_CHASE_CHANGED');assert.equal(audit.length,1);assert.equal(audit[0].actor,'LAW');assert.equal(audit[0].time,'2026-10-11T02:00:00.000Z');
+ const saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(saved.id,row.id);assert.equal(saved.termDays,30);assert.equal(saved.number,'NCT-PO-002');
+ const audit=saved.history.filter(e=>e.action==='PAYMENT_TERM_CHANGED');assert.equal(audit.length,1);assert.equal(audit[0].actor,'LAW');assert.equal(audit[0].time,'2026-10-11T02:00:00.000Z');
  assert.equal(f.workspace.tasks[0].ord,90);assert.equal(f.workspace.tasks[0].procurement.totalCtn,100);
 });
 test('lost acknowledgement resumes identical save without duplicate audit; stale and foreign company inputs fail',async()=>{
@@ -97,7 +97,7 @@ test('lost acknowledgement resumes identical save without duplicate audit; stale
  await assert.rejects(f.operations.list('GHR',f.staff),/Select/);
 });
 test('saved PO cannot silently split its document/payment identity across new numbers',async()=>{
- const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0];await f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'CHASE',enabled:true,reason:'Urgent'}});
+ const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0];await f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'TERM',termDays:30,reason:'Agreed term'}});
  f.workspace.tasks[1].po='NCT-PO-002';await assert.rejects(f.operations.list('NCT',f.staff),/split/);
 });
 test('a lost upload receipt retries one file; no PDF bytes are written to CMS and no premature green status',async()=>{
@@ -162,4 +162,13 @@ test('CN payment request is idempotently persisted, replaced before Reviewing an
  await account.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:{id:row.id,version:row.version,action:'TAKE_OWNERSHIP',reason:'Reviewing'}});
  row=(await f.operations.list('NCT',f.staff))[0];await assert.rejects(f.operations.save({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:{...input,version:row.version}}),/locked/);
  await assert.rejects(account.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:{id:row.id,version:row.version,action:'PAYMENT_REVIEW',stage:'REVIEWING',requestedCents:43000,paperReceived:true,reason:'Checked'}}),/reconciliation/);
+});
+
+test('retired CHASE rejects new actions without writes but returns an existing exact receipt',async()=>{
+ const f=fixture(),row=(await f.operations.list('NCT',f.staff))[0],input={id:row.id,version:row.version,action:'CHASE',enabled:true,reason:'Earlier reminder'};
+ await assert.rejects(f.operations.save({...f.base,input}),/use Messages/);assert.equal(f.records.size,0);
+ const {operationId}=load('purchaseOperationJournal.js'),key=operationId('NCT/PURCHASE',f.base.requestId,f.staff.memberId),id=operationId(key,'RESULT'),outcome={ok:true,legacy:true};
+ f.records.set('NCTActivity/'+id,{_id:id,details:{digest:operationId({purchaseOrder:input}),outcome}});
+ assert.deepEqual(await f.operations.save({...f.base,input}),outcome);assert.equal(f.records.size,1);
+ await assert.rejects(f.operations.save({...f.base,input:{...input,reason:'Changed reminder'}}),/different changes/);
 });

@@ -33,3 +33,7 @@ export function createPurchaseDocumentClient({request=send,secret=()=>getSecret(
   };
 }
 export const requestPurchaseDocument=createPurchaseDocumentClient();
+
+// Backend-only reuse; existing document validation and upload behavior are unchanged.
+export const requestPrivateDriveTransport=send;
+export const PRIVATE_DRIVE_ENDPOINT=ENDPOINT;
