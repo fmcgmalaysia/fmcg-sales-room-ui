@@ -23,11 +23,12 @@ export function projectAccountSettlement(row,details){
   const refundCents=paymentRecordsValid?confirmedPayments.filter(entry=>entry.direction==='REFUND').reduce((n,entry)=>n+entry.cents,0):null;
   const creditAppliedCents=(row.creditTransfers||[]).filter(entry=>entry.targetId===row.id).reduce((sum,entry)=>sum+entry.cents,0),creditUsedCents=(row.creditTransfers||[]).filter(entry=>entry.sourceId===row.id).reduce((sum,entry)=>sum+entry.cents,0);
   const paidCents=paymentRecordsValid?cashPaidCents-refundCents:null,originalBalance=payableCents!==null&&paidCents!==null?payableCents-paidCents-creditAppliedCents:null,balanceCents=originalBalance===null?null:originalBalance+creditUsedCents;
-  const reviewVersion=settlementVersion(row,finance),credit=finance.creditRecognition;
+  const documentIssues=details.documentIssues||row.documentIssues||[],reviewVersion=settlementVersion(row,finance),credit=finance.creditRecognition;
   const creditRecognized=Boolean(credits.length&&originalBalance<0&&credit?.reviewVersion===reviewVersion&&credit.cents===-originalBalance&&creditUsedCents<=credit.cents&&credit.byStaffId&&credit.at);
   const supplierCreditCents=creditRecognized?credit.cents-creditUsedCents:0;
   const receiptResolved=row.warehouse?.complete&&!row.warehouse.issues||Array.isArray(row.receiptLines)&&row.receiptLines.length>0&&row.receiptLines.every(line=>line.hasReceipt&&(line.accepted===line.planned&&!line.issue||['REFUND','CREDIT'].includes(line.decision?.supplierDecision)&&line.decision?.customerDecision!=='PENDING'));
   const blockers=[];
+  if(documentIssues.some(issue=>issue.status!=='RESOLVED'))blockers.push('Select and resolve reported document issues before final check');
   if(['PROCESSING','UNKNOWN'].includes(details.procurementHandoff?.stage))blockers.push('Resolve bank payment processing / 核对未决银行付款');
   blockers.push(...purchaseClaimBlockers(row,finance));
   if(row.stockIssues?.length)blockers.push('Resolve quarantined stock / 隔离库存需完成损耗或供应商索赔核对');
@@ -47,14 +48,14 @@ export function projectAccountSettlement(row,details){
   const checked=blockers.length===0&&check?.enabled===true&&check.reviewVersion===reviewVersion&&Boolean(check.byStaffId&&check.at);
   const paymentCompleted=payableCents!==null&&payableCents>=0&&(balanceCents===0||creditRecognized)&&paymentRecordsValid;
   const archiveBlockers=[...blockers,...(!paymentCompleted?['Complete supplier payment / 供应商款项未结清']:[]),...(!checked?['Finance Checked required / 财务尚未核对完成']:[]),...(!row.salesInvoiceComplete?['Customer Sales Invoice required / 客户销售发票未齐']:[])];
-  return {invoiceChecked:checked,invoiceCheck:check||null,reviewRequired,canCheck:blockers.length===0,checkBlocker:blockers.join('; ')||(reviewRequired?'P.O. changed after the last check / 采购内容已修改，请重新核对':''),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:!checked&&(reviewRequired||cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
-    finance:{plan:finance.plan||[],receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
+  return {invoiceChecked:checked,invoiceCheck:check||null,reviewRequired,canCheck:blockers.length===0,checkBlocker:blockers.join('; ')||(reviewRequired?'P.O. changed after the last check / 采购内容已修改，请重新核对':''),creditorActive:(invoices.length>0||cashPaidCents>0)&&!(paymentCompleted&&checked),prepaymentPending:cashPaidCents>0&&!invoices.length,financialRisk:documentIssues.some(issue=>issue.status!=='RESOLVED')||!checked&&(reviewRequired||cashPaidCents>0&&row.warehouse?.issues||balanceCents<0||Boolean(row.shortageIssues?.length)||Boolean(row.stockIssues?.length)),documentStatus:purchaseDocumentState(row.documents,checked),
+    documentIssues,finance:{plan:finance.plan||[],receiptResolved:Boolean(receiptResolved),stockLossCents:(row.stockCases||[]).reduce((sum,item)=>{const approval=item.resolution?.financeApproval;return sum+(approval?.outcome==='LOSS'?approval.cents:approval?.unrecoveredCents||0);},0),amounts,quantityClaims:finance.quantityClaims||[],payments:validPayments,cnNotApplicable:finance.cnNotApplicable||null,payableCents,cashPaidCents,refundCents,paidCents,balanceCents,creditAppliedCents,creditUsedCents,supplierCreditCents,creditRecognition:credit||null,paymentCompleted,reviewVersion},
     paymentCompleted,status:paymentCompleted?(checked?'Completed':'Paid W/T Inv'):paidCents>0&&!invoices.length?'Paid W/T Inv':'Pending Payment',canArchive:archiveBlockers.length===0,archiveBlockers,state:archiveBlockers.length===0?'HISTORY':'ACTIVE',completedAt:archiveBlockers.length===0?check.at:null};
 }
 export function createAccountSettlementOperations({store,names,listOrders,documentService,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
   return {save:async({company,staff,requestId,input})=>{
-    if(!names[company]||!['AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
+    if(!names[company]||!['DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
     if(input.action==='PAYMENT_FILE_DELETE')return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:input},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
@@ -97,8 +98,27 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       if(!reason||reason.length>2000)throw Error('Enter a reason or reconciliation note.');
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
       const identity={at,by:staff.staffName,byStaffId:staff.staffId};
-      let upload=null,document=null,handoff=null,procurement=null,extraUploads=[];
-      if(['REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input.action)){
+      let upload=null,document=null,handoff=null,procurement=null,extraUploads=[],issuePatch=null;
+      if(['DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW'].includes(input.action)){
+        if(row.state==='HISTORY')throw Error('Select an open purchase order.');
+        const issues=details.documentIssues||[];
+        if(input.action==='DOCUMENT_ISSUE_REPORT'){
+          const file=currentDocs(row).find(doc=>doc.fileId===input.fileId&&doc.sha256===input.sha256);
+          if(!file||!['PO','PI','SO','DO','INV','CN'].includes(file.type)||!file.sha256)throw Error('Select a current supplier document.');
+          if(issues.some(issue=>issue.fileId===file.fileId&&issue.status!=='RESOLVED'))throw Error('Select the existing document issue.');
+          const issue={id:audit.id,fileId:file.fileId,sha256:file.sha256,type:file.type,number:file.number,status:'OPEN',reason,reported:identity};
+          issuePatch={documentIssues:[...issues,issue]};audit.changes={issueId:issue.id,fileId:file.fileId,type:file.type,status:'OPEN'};
+        }else{
+          const issue=issues.find(item=>item.id===input.issueId),file=currentDocs(row).find(doc=>doc.fileId===issue?.fileId&&doc.sha256===issue?.sha256);
+          if(!issue||!file||issue.status!=='AWAITING_REVIEW'||!issue.response?.byStaffId||!['ACCEPT','REJECT'].includes(input.outcome))throw Error('Select a current Purchase response for review.');
+          const correction=issue.response.fileId?(details.documents||[]).find(doc=>doc.fileId===issue.response.fileId&&doc.sha256===issue.response.sha256&&doc.linked&&doc.pendingIssueId===issue.id&&doc.superseded===true&&doc.type===file.type):null;
+          if(issue.response.fileId&&!correction)throw Error('Select the current replacement document.');
+          if(input.outcome==='ACCEPT'&&correction&&['PROCESSING','UNKNOWN'].includes(details.procurementHandoff?.stage))throw Error('Resolve bank payment processing before accepting a replacement.');
+          const status=input.outcome==='ACCEPT'?'RESOLVED':'OPEN';
+          issuePatch={documentIssues:issues.map(item=>item.id===issue.id?{...item,status,review:{outcome:input.outcome,reason,...identity}}:item),...(input.outcome==='ACCEPT'&&correction?{documents:details.documents.map(doc=>doc.fileId===file.fileId?{...doc,superseded:true,supersededBy:correction.fileId}:doc.fileId===correction.fileId?{...doc,superseded:false,pendingIssueId:null,replacesFileId:file.fileId}:doc)}:{})};
+          audit.changes={issueId:issue.id,fileId:file.fileId,type:file.type,status,outcome:input.outcome,correctionFileId:correction?.fileId||null};
+        }
+      }else if(['REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input.action)){
         procurement=transitionProcurementHandoff(row,details,input,identity,'ACCOUNT');
         audit.changes={before:details.procurementHandoff||null,after:procurement};
       }else if(input.action==='DOCUMENT_UPLOAD'){
@@ -178,7 +198,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
         finance.check={enabled:input.enabled,reviewVersion:state.finance.reviewVersion,...identity,reason};audit.changes={before:state.invoiceChecked,after:input.enabled,reviewVersion:state.finance.reviewVersion};
       }
       if(!procurement&&!['CHECK','PAYMENT_REVIEW','PLAN'].includes(input.action))finance.check={...(finance.check||{}),enabled:false};
-      return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload,extraUploads};
+      return {expected:record?operationId(record):null,expectedVersion:row.version,...(procurement||handoff?{expectedBasis:procurementSubmissionVersion(row)}:{}),record:{...(record||{}),_id:row.id,title:row.id,company,details:{...details,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,finance,...(procurement?{procurementHandoff:procurement}:{}),...(handoff?{paymentHandoff:handoff,chasePayment:false}:{}),...(document&&input.type==='PAYMENT'&&input.direction!=='REFUND'?{chasePayment:false}:{}),...(document&&input.type==='DO'?{documents:[...(details.documents||[]),document]}:{}),...(issuePatch||{}),updatedAt:at,audit:[...(details.audit||[]),audit]}},audit,upload,extraUploads};
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.audit.id)){
