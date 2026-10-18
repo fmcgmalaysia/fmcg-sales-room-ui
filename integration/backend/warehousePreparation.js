@@ -22,9 +22,28 @@ export function readPreparation(activity){
  return states;
 }
 
+// Read physical stock for this customer demand; do not post or change allocations.
+function readyStockFor(task,context,shipments){
+ const dispatched=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines);
+ const shippedFrom=(sourceId,targetId)=>dispatched.filter(l=>l.taskId===targetId).flatMap(l=>l.sources).filter(s=>s.sourceTaskId===sourceId).reduce((n,s)=>n+s.quantity,0);
+ const total=context.tasks.reduce((sum,source)=>{
+  if(!source.warehouse?.hasPhysicalReceipt)return sum;
+  const physical=source.warehouse.stock?.availablePhysical;
+  if(!Number.isSafeInteger(physical)||physical<0)return sum;
+  const targets=(context.allocations||[]).find(a=>a.sourceTaskId===source.id)?.targets||[];
+  const heldElsewhere=targets.filter(t=>t.taskId!==task.id).reduce((n,t)=>n+Math.max(0,t.quantity-shippedFrom(source.id,t.taskId)),0);
+  const available=Math.max(0,physical-heldElsewhere),own=source.id===task.id||source.customerDemandTaskId===task.id;
+  const incoming=Math.max(0,(targets.find(t=>t.taskId===task.id)?.quantity||0)-shippedFrom(source.id,task.id));
+  return sum+(own?available:Math.min(available,incoming));
+ },0);
+ const sent=dispatched.filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0);
+ return Math.min(total,Math.max(0,task.ord-sent));
+}
+
 export function projectPreparation(context){
  const plans=readShipmentPlans(context.activity),states=readPreparation(context.activity),shipments=readCustomerShipments(context.activity),customers=new Map((context.customers||[]).map(c=>[c.id,c.name])),items=[];
  for(const task of context.tasks.filter(t=>!t.archived&&!t.specialPurchase&&!t.procurementSource)){
+  const readyStock=readyStockFor(task,context,shipments);
   const goal=task.shortage?.customerDecision==='STOP'?(task.inc||0):task.ord;
   if(!qty(goal)||!goal)continue;
   const plan=plans.find(p=>p.customerId===task.customerId&&p.orderId===task.orderId&&p.batches.some(b=>b.lines.some(l=>l.taskId===task.id)));
@@ -33,7 +52,7 @@ export function projectPreparation(context){
   for(const batch of batches){
    const id=operationId(context.company,task.id,batch.key),saved=states.get(id),signature=operationId(task.id,task.orderId,task.sourceLineId,goal,batch.quantity,batch.planRevision),valid=!planMismatch&&saved?.signature===signature;
    const dispatched=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines).filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0);
-   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,readyStock:null,allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
+   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,readyStock,allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
   }
  }
  for(const [id,s] of states)if(s.loaded>0&&!items.some(i=>i.id===id))items.push({...s,revision:s.revision,customerName:customers.get(s.customerId)||s.customerId,readyStock:null,allocated:0,prepared:false,stale:true,orphaned:true,dispatched:0,history:[]});
