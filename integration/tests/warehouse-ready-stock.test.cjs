@@ -17,14 +17,14 @@ test('stock allocated elsewhere is not displayed twice, and external allocated s
  const rows=projectPreparation(c);assert.equal(rows[0].readyStock,65);assert.equal(rows[1].readyStock,30);
  c.tasks[0].warehouse.stock.availablePhysical=20;assert.equal(projectPreparation(c)[0].readyStock,0);assert.equal(projectPreparation(c)[1].readyStock,20);
 });
-test('warehouse cards and delivery table show one received product and preserve active loading exceptions',()=>{
+test('warehouse retains full demand list while showing 95 received and zero for unreceived goods',()=>{
  const elements={search:{value:''},whCompanyCaption:{}},dialog={addEventListener(){}};
  const sandbox={window:{addEventListener(){},departmentMessages:{cell:()=>''}},document:{getElementById:id=>elements[id],createElement:()=>dialog,body:{appendChild(){}}},sessionStorage:{getItem:()=>null},console};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../../warehouse-room/workroom.js'),'utf8'),sandbox);
  const api=sandbox.window.warehouseWorkroom,rows=projectPreparation(context([demand('T',{warehouse:physical(95)}),demand('WAIT')]));
  api.setData({orders:[],deliveryTasks:rows},'NCT',{});
- assert.match(api.cards('customers'),/Pending Packing[\s\S]*?<strong>1<\/strong>/);
- let html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 1/);assert.match(html,/data-label="Ready Stock"><b>95<\/b>/);assert.doesNotMatch(html,/ITEM WAIT/);
+ assert.match(api.cards('customers'),/Pending Packing[\s\S]*?<strong>2<\/strong>/);
+ let html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 2/);assert.match(html,/data-label="Ready Stock"><b>95<\/b>/);assert.match(html,/ITEM WAIT/);assert.match(html,/data-label="Ready Stock"><b>0<\/b>/);
  api.setData({orders:[],deliveryTasks:[...rows,{...rows[1],id:'LOADED',loaded:10,stale:true}]},'NCT',{});
- html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 2/);assert.match(html,/Task changed; review required/);
+ html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 3/);assert.match(html,/Task changed; review required/);
 });
