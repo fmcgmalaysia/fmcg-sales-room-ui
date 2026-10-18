@@ -148,7 +148,7 @@ test('Active demand summary is display-only and omits duplicate waiting text whi
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'},supplierId:'A'});
  w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0,supplierId:'B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:30,revision:'B'}});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;const mother=html.match(/<tr data-id="TASK"[\s\S]*?<\/tr>/)[0],order=mother.match(/<td class="order-quantity">[\s\S]*?<\/td>/)[0];
- assert.match(order,/<span class="quantity-reference/);assert.match(order,/100 \| <span class="qty-mismatch">90<\/span>/);assert.doesNotMatch(order,/<button|data-sources|WAITING/);
+ assert.match(order,/<span class="quantity-reference/);assert.match(order.replace(/<[^>]*>/g,''),/100\s*\|\s*90/);assert.match(order,/class="qty-mismatch">90<\/span>/);assert.doesNotMatch(order,/<button|data-sources|WAITING/);
  for(const cell of html.match(/<td class="order-quantity">[\s\S]*?<\/td>/g)||[])assert.doesNotMatch(cell,/This P\.O\.|Extra P\.O\.|本单|补采购/);assert.doesNotMatch(html,/waiting-demand/);assert.match(html,/data-waiting-for="TASK"/);assert.match(html,/class="order-quantity">10<\/td>/);assert.match(html,/data-plan-task="TASK"/);assert.match(html,/data-plan-source="SOURCE"/);
  h.click({customer:'C'});html=h.node('#app').innerHTML;assert.match(html,/waiting-demand">WAITING 10 CTN/);assert.match(html,/data-sources="TASK" aria-label="Supplier sources/);
 });
@@ -213,7 +213,7 @@ test('supplier sources keep ordered and physical received quantities separate an
  Object.assign(w.tasks[0],{ea:16,ord:200,inc:150,po:'NCT-PO-A',supplierId:'A',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180},warehouse:{accepted:170,hasPhysicalReceipt:true,issue:true},sourcing:{orderedCtn:190,receivedCtn:180,hasReceipt:true,unplacedCtn:10}});
  w.tasks.push({...w.tasks[0],id:'SOURCE-B',procurementSource:true,customerDemandTaskId:'TASK',ord:0,inc:0,po:'NCT-PO-B',supplierId:'B',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:10},warehouse:{accepted:10,hasPhysicalReceipt:true,issue:false},sourcing:undefined});
  h.reply(w);h.click({customer:'C'});let html=h.node('#app').innerHTML;
- assert.match(html,/200 \| <span class="qty-mismatch">190<\/span>/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
+ assert.match(html.replace(/<[^>]*>/g,''),/200\s*\|\s*190/);assert.match(html,/class="qty-mismatch">190<\/span>/);assert.match(html,/received-quantity[\s\S]*?>180<\/button>/);assert.match(html,/data-shortage="TASK"/);
  h.click({sources:'SOURCE-B'});assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-A/);assert.match(h.node('#dialogContent').innerHTML,/NCT-PO-B/);
  for(const [id,value] of Object.entries({sourceSupplier:'B',sourceQty:'10','sourcePrice-lpPc':'7.5','sourcePrice-lpCtn':'120','sourcePrice-disc1':'0','sourcePrice-disc2':'0','sourcePrice-disc3':'0',sourceReason:'Supply remaining cartons'}))h.node('#'+id).value=value;
  (h.node('#sourceTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveAdditionalSource'}));const request=h.messages.at(-1);
