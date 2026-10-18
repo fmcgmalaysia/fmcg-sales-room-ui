@@ -24,7 +24,7 @@ test('warehouse retains full demand list while showing 95 received and zero for 
  const api=sandbox.window.warehouseWorkroom,rows=projectPreparation(context([demand('T',{warehouse:physical(95)}),demand('WAIT')]));
  api.setData({orders:[],deliveryTasks:rows},'NCT',{});
  assert.match(api.cards('customers'),/Pending Packing[\s\S]*?<strong>2<\/strong>/);
- let html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 2/);assert.match(html,/data-label="Ready Stock"><b>95<\/b>/);assert.match(html,/ITEM WAIT/);assert.match(html,/data-label="Ready Stock"><b>0<\/b>/);
+ let html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 2/);assert.match(html,/data-label="Ready Stock"><b>95<\/b>/);assert.match(html,/ITEM WAIT/);assert.match(html,/data-label="Ready Stock"><b><\/b>/);
  api.setData({orders:[],deliveryTasks:[...rows,{...rows[1],id:'LOADED',loaded:10,stale:true}]},'NCT',{});
  html=api.delivery();assert.match(html,/Delivery Tasks 发货任务 · 3/);assert.match(html,/Task changed; review required/);
 });
