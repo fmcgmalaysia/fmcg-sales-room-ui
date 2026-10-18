@@ -13,7 +13,7 @@
  function purchaseNote(row){const transport=row.selfCollect===true?'<span class="acc-self-collect"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17h4V5H2v12h3M14 9h4l4 4v4h-3"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>Self Collect</span>':'';return transport+((row.documentIssues||[]).length?documentReplyNotes(row):'');}
  function documentReplyNotes(row){return (row.documentIssues||[]).filter(i=>i.status==='AWAITING_REVIEW'&&i.response).map(i=>'<button class="acc-link acc-chase-reason" data-account-document="'+esc(row.id)+'" data-document-type="'+esc(i.type==='SO'?'PI':i.type)+'">⚠ '+esc(i.type)+' · '+esc(i.response.reason)+'</button><small>'+esc(i.response.by)+' · '+esc(stamp(i.response.at))+'</small>').join('');}
  function render(){if(!['dashboard','payments','history','creditor','bank','activity'].includes(view))return;
-  document.querySelector('.staff').textContent=data?data.staff.staffName+' · Account':'Verifying staff…';
+  document.querySelector('.staff').textContent=data?data.staff.staffName:'Verifying staff…';
   document.querySelector('.preview').textContent=data?'Master CMS · '+stamp(data.readAt):'Master CMS';
   window.masterTaskSignals?.mount(document.querySelector('#taskSignals'),'ACCOUNT',{orders:data?.orders||[]},entry=>{if(save||window.accountSettlement.busy())return;const row=data?.orders.find(row=>row.id===entry.id);if(row)files(row);});
   app.innerHTML=window.accountPaymentLayout.render({view,company,data,rows:rows(),search,supplier,filter,historyMonth,stamp,purchaseNote,error});
