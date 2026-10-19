@@ -1,7 +1,7 @@
 /* Supplier planning dialog. Saves use the existing serial PLAN / ADD_SOURCE journal. */
 (() => {
   const priceKeys=['lpPc','lpCtn','disc1','disc2','disc3'];
-  const displayPrice=(value,key)=>Number.isFinite(value)?(key==='disc1'||key==='disc2'?value*100:value).toFixed(2):'0.00';
+  const displayPrice=(value,key)=>Number.isFinite(value)?(key==='disc1'||key==='disc2'?value*100:value).toFixed(2):'';
   const copy=value=>JSON.parse(JSON.stringify(value));
   const net=prices=>priceKeys.every(key=>Number.isFinite(prices[key]))?prices.lpCtn*(1-prices.disc1)*(1-prices.disc2)-prices.disc3:null;
   function values(row){return Object.fromEntries(priceKeys.map(key=>[key,row.originalRaw?.[key]===row.raw[key]&&Number.isFinite(row.originalPrices?.[key])?row.originalPrices[key]:row.originalRaw?.[key]===row.raw[key]&&!row.edited?.includes(key)?NaN:row.raw[key]===''?NaN:Number(row.raw[key])/(key==='disc1'||key==='disc2'?100:1)]));}
@@ -92,7 +92,7 @@
       const po=(saved?.procurement?.revision?'<button type="button" class="allocation-po '+(saved.po?'complete':'pending'+(clean?'':' awaiting-save'))+'" data-allocation-po="'+esc(row.key)+'" '+(state.running?'disabled':'')+' '+(!saved.po&&!clean?'hidden':'')+'>'+esc(saved.po||'P.O.')+'</button>'+(saved.po&&poTime?'<small class="allocation-po-time">'+esc(api.shortTime?.(poTime)||poTime)+'</small>':''):row.supplierId?'<button type="button" class="allocation-po pending awaiting-save" data-allocation-po="'+esc(row.key)+'" disabled hidden>P.O.</button>':'')+save;
       const transport=row.supplierId?'<select data-allocation-field="transportMode" aria-label="Supplier '+(index+1)+' Transport" required '+(locked?'disabled':'')+'><option value="">Select Transport</option><option value="SUPPLIER_DELIVER" '+(row.transportMode==='SUPPLIER_DELIVER'?'selected':'')+'>Supplier Deliver</option><option value="SELF_COLLECT" '+(row.transportMode==='SELF_COLLECT'?'selected':'')+'>Self Collect</option></select>':'';
       const quantity='<div class="allocation-number"><input type="text" inputmode="numeric" data-allocation-field="qty" value="'+esc(row.qty)+'" '+(locked?'disabled':'')+' '+(!row.supplierId||row.mode==='FOC'?'readonly':'')+' aria-label="Supplier '+(index+1)+' quantity"></div>';
-      const prices=row.supplierId?priceKeys.map(key=>'<td><div class="allocation-number"><input type="text" inputmode="decimal" data-allocation-field="'+key+'" value="'+esc(row.raw[key])+'" '+(locked?'disabled':'')+' aria-label="Supplier '+(index+1)+' '+key+'">'+(['disc1','disc2'].includes(key)?'<span>%</span>':'')+'</div></td>').join('')+'<td class="amount"><b data-allocation-net>—</b></td><td class="allocation-catch"><button type="button" class="allocation-hand" data-allocation-catch="'+esc(row.key)+'" '+(locked?'disabled':'')+' aria-label="Catch Cost reference '+(index+1)+'" aria-description="获取参考价">'+api.handIcon()+'</button></td><td class="amount"><b data-allocation-amount>—</b></td>':'<td colspan="8" class="allocation-waiting-space"></td>';
+      const prices=row.supplierId||row.taskId===state.rootId?priceKeys.map(key=>'<td><div class="allocation-number"><input type="text" inputmode="decimal" data-allocation-field="'+key+'" value="'+esc(row.raw[key])+'" '+(locked||!row.supplierId?'disabled':'')+' aria-label="Supplier '+(index+1)+' '+key+'">'+(['disc1','disc2'].includes(key)?'<span>%</span>':'')+'</div></td>').join('')+'<td class="amount"><b data-allocation-net>—</b></td><td class="allocation-catch"><button type="button" class="allocation-hand" data-allocation-catch="'+esc(row.key)+'" '+(locked?'disabled':'')+' aria-label="Catch Cost reference '+(index+1)+'" aria-description="获取参考价">'+api.handIcon()+'</button></td><td class="amount"><b data-allocation-amount>—</b></td>':'<td colspan="8" class="allocation-waiting-space"></td>';
       const input=(field,value,label)=>'<label>'+label+'<input type="text" inputmode="'+(field==='amount'?'decimal':'numeric')+'" data-allocation-field="'+field+'" value="'+esc(value)+'" '+(locked?'disabled':'')+'></label>';
       const detail=row.supplierId&&(row.mode==='FOC'||row.moneySource==='TOTAL')?'<tr data-allocation-row="'+esc(row.key)+'" class="allocation-detail"><td></td><td colspan="13"><div class="allocation-detail-fields">'+(row.mode==='FOC'?input('paid',row.paid,'付费 CTN')+'<span>＋</span>'+input('free',row.free,'赠送 CTN')+'<span data-allocation-total>= '+esc(row.qty)+' CTN</span>':'')+(row.moneySource==='TOTAL'?input('amount',row.amount,'实际总额 MYR'):'')+'</div></td></tr>':'';
       return '<tr data-allocation-row="'+esc(row.key)+'" class="'+(!row.supplierId?'allocation-waiting':'')+'" '+(row.hidden?'hidden':'')+'><td>'+person+'</td><td>'+supplier+'</td><td>'+method+'</td><td>'+quantity+'</td>'+prices+'<td class="allocation-transport">'+transport+'</td><td class="allocation-po-cell">'+po+'</td></tr>'+detail;
@@ -135,7 +135,7 @@
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
       if(rowLocked(row))return true;
       const name=field.dataset.allocationField;if(name)row.pendingReference=null;
-      if(name==='supplierId'){row.supplierId=field.value;row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]='0.00';row.originalRaw[price]='0.00';row.originalPrices[price]=price.startsWith('disc')?0:null;}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
+      if(name==='supplierId'){const retainInitial=row.taskId===state.rootId&&!row.supplierId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.revision;row.supplierId=field.value;if(!retainInitial){row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]=price.startsWith('disc')?'0.00':'';row.originalRaw[price]=row.raw[price];row.originalPrices[price]=price.startsWith('disc')?0:null;}}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
       else if(name==='transportMode')row.transportMode=field.value;
       else if(name==='qty'){row.qty=field.value;row.auto=false;}
       else if(name==='mode'){if(field.value==='NORMAL'&&row.mode==='FOC'&&!api.confirm('全部 '+row.qty+' CTN 改为付费采购？')){field.value=row.mode;return true;}row.mode=field.value;row.paid=row.qty;row.free='0';row.auto=false;}
@@ -197,13 +197,13 @@
     function paintReferences(){
       if(!state||!api.modal().open||!api.modal().classList.contains('supplier-allocation-dialog'))return;
       for(const row of state.rows){const button=document.querySelector('[data-allocation-catch="'+row.key+'"]');if(!button)continue;const done=caughtRows.has(row.key),loading=referenceRequest?.session===referenceSession&&referenceRequest.key===row.key;
-        button.disabled=state.running||Boolean(state.current)||api.savePending()||rowLocked(row)||Boolean(referenceRequest)||done;
+        button.disabled=state.running||Boolean(state.current)||api.savePending()||rowLocked(row)||!row.supplierId||Boolean(referenceRequest)||done;
         button.className='allocation-hand'+(loading?' loading':done?' complete':'');button.ariaDescription=loading?'正在抓取成本…':done?'成本已填入计算器':'抓取成本';button.setAttribute?.('aria-busy',loading?'true':'false');
         button.innerHTML=loading?'<span class="allocation-cost-spinner" aria-hidden="true"></span>':done?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10zM7 10l5-7c1-1 3 0 3 2l-1 5h5a2 2 0 0 1 2 2l-2 7a3 3 0 0 1-3 2H7"/></svg>':api.handIcon();
       }
     }
     function reference(key){
-      const row=state?.rows.find(item=>item.key===key);if(!row||state.running||state.current||api.savePending()||referenceRequest||caughtRows.has(key)||rowLocked(row)||!api.modal().open)return;
+      const row=state?.rows.find(item=>item.key===key);if(!row||state.running||state.current||api.savePending()||referenceRequest||caughtRows.has(key)||rowLocked(row)||!row.supplierId||!api.modal().open)return;
       const context=state,session=referenceSession,manual=referenceContext(row),before=calculation(row).averageCostCtn,request={key,session};referenceRequest=request;state.issueTone='pending';state.issue='正在抓取成本，请稍候…';
       const showIssue=()=>{const node=document.querySelector('#allocationIssue');if(node){node.className='allocation-issue '+state.issueTone;node.textContent=state.issue;}api.status(state.issue,state.issueTone==='problem');};
       showIssue();paintReferences();
