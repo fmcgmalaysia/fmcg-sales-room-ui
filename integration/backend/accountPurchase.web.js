@@ -8,6 +8,7 @@ import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { createAccountSettlementOperations } from 'backend/accountSettlement.js';
 import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+import { queryAccountReadModel } from 'backend/accountReadQuery.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -35,6 +36,12 @@ export const getAccountPurchaseOrders=webMethod(Permissions.SiteMember,async com
   try{names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='部分客户 Short Name 尚未填写。';}
   catch(_){customerNamesError='客户 Short Name 暂时无法读取，保留已保存名称。';}
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},orders:rows.map(row=>({...row,supplierBank:(()=>{const s=suppliers.find(s=>s.title===row.supplierId);return s?.bankName&&s?.bankAccountNo?{bankName:s.bankName,bankAccountNo:s.bankAccountNo}:null;})(),canDeletePaymentFiles:(row.finance?.payments||[]).flatMap(p=>(p.proofs||[p.proof]).filter(f=>f&&(f.uploadedByStaffId===staff.staffId||staff.role==='SUPER ADMIN')).map(f=>f.fileId)),customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,paymentConnected:true,warehouseConnected:true,invoiceReviewConnected:true,readAt:new Date().toISOString()};
+});
+export const queryAccountPurchaseOrders=webMethod(Permissions.SiteMember,async(company,input)=>{
+  const staff=await accountStaff(),rows=await orders.list(company,staff),suppliers=await store.all('SharedSuppliers');let names=[];
+  try{names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);}catch(_){}
+  const decorated=rows.map(row=>({...row,supplierBank:(()=>{const supplier=suppliers.find(item=>item.title===row.supplierId);return supplier?.bankName&&supplier?.bankAccountNo?{bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo}:null;})(),canDeletePaymentFiles:(row.finance?.payments||[]).flatMap(payment=>(payment.proofs||[payment.proof]).filter(file=>file&&(file.uploadedByStaffId===staff.staffId||staff.role==='SUPER ADMIN')).map(file=>file.fileId)),customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')}));
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},...queryAccountReadModel(decorated,input),readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();

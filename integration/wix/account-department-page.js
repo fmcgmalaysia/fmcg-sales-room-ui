@@ -1,7 +1,7 @@
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getCustomerFulfilment } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
-import { getAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
+import { getAccountPurchaseOrders, queryAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
@@ -28,6 +28,11 @@ $w.onReady(() => {
     if(message.type==='ACCOUNT_CUSTOMER_LEDGER_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
       try{const result=await getCustomerFulfilment(message.company);room.postMessage({type:'ACCOUNT_CUSTOMER_LEDGER_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}catch(error){room.postMessage({type:'ACCOUNT_CUSTOMER_LEDGER_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Customer ledger could not be loaded.'});}return;
+    }
+    if(message.type==='ACCOUNT_QUERY_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||!message.input||JSON.stringify(message.input).length>5000)return;
+      try{const result=await queryAccountPurchaseOrders(message.company,message.input);room.postMessage({type:'ACCOUNT_QUERY_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type:'ACCOUNT_QUERY_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Account records could not be loaded.'});}return;
     }
     if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST','ACCOUNT_SETTLEMENT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='ACCOUNT_SETTLEMENT_REQUEST'&&message.input?.action==='DOCUMENT_UPLOAD'?4250000:200000))return;
     const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':message.type==='ACCOUNT_SETTLEMENT_REQUEST'?'ACCOUNT_SETTLEMENT_RESULT':'ACCOUNT_CHECK_RESULT';
