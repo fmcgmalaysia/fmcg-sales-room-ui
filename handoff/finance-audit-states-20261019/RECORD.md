@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v10`; Wix pointer `20261019-finance-audit-v10`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v11`; Wix pointer `20261019-finance-audit-v11`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -48,4 +48,6 @@ All Finance PO, PI, DO, INV and CN document dialogs now omit Download while reta
 
 The Active and History tabs now display their full task-row totals for the current company. Supplier Account History is intentionally cumulative, not limited to the current month: it shows every returned P.O. whose supplier audit is closed. Search and Supplier filters continue to affect the separate visible `records` count without changing the tab totals or storage rules.
 
-Focused verification is now 52 of 52 tests. The fixtures verify `500 | 480`, no `-20`, the mapped Purchase resolution, the exact nine-column widths, reserved `9999 | 9999` capacity, and the absence of Download from every Finance DOCS popup and correction card. Chrome local synthetic preview measured the Warehouse header, cell and separator at the exact same center coordinate, with zero-pixel alignment error. The narrowed document dialog measured 520 px wide with no horizontal overflow, no Download text, and retained View and Report Issue. The red capsule, compact popover and automatic dismissal remain intact.
+Supplier Accounts now presents two non-interactive blue dashboard cards on the right of the title. They summarize the currently displayed task rows: Task and distinct Involved Suppliers in the first card, then Total Amount and confirmed Partially Paid value for rows that still have an outstanding balance in the second. Unknown payable bases render as `—` instead of a misleading zero. The cards do not add navigation, writes or business-state changes.
+
+Focused verification is now 53 of 53 tests. The fixtures verify `500 | 480`, no `-20`, the mapped Purchase resolution, the exact nine-column widths, reserved `9999 | 9999` capacity, the absence of Download from every Finance DOCS popup and correction card, and the dashboard-card totals for a partial-payment example. Chrome local synthetic preview measured the Warehouse header, cell and separator at the exact same center coordinate, with zero-pixel alignment error. The narrowed document dialog measured 520 px wide with no horizontal overflow, no Download text, and retained View and Report Issue. The two dashboard cards measured 190 px by 86.8 px each, shared one aligned row, used the approved blue `#2563EB`, contained no link or button, and did not overlap the title area. The red capsule, compact popover and automatic dismissal remain intact.
