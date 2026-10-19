@@ -37,7 +37,7 @@ export function readShipmentPlans(activity){
  }
  return [...plans.values()];
 }
-export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord,row.archived]),readShipmentPlans(context.activity),readCustomerShipments(context.activity),context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED').map(event=>event.title).sort());}
+export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord,row.requested,row.archived]),readShipmentPlans(context.activity),readCustomerShipments(context.activity),context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED').map(event=>event.title).sort());}
 // Plans express customer intent only: they never allocate stock, reserve cartons or post receivables.
 export function createShipmentPlanOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
@@ -57,7 +57,7 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
     const lines=batch.lines.map(entry=>{const task=tasks.find(row=>row.id===entry.taskId);if(!task||!Number.isSafeInteger(entry.quantity)||entry.quantity<=0||entry.quantity>9999)throw Error('Select order lines and positive whole cartons.');totals.set(task.id,(totals.get(task.id)||0)+entry.quantity);return {taskId:task.id,quantity:entry.quantity};});
     return {sequence:index+1,label:text(batch.label),date:batch.date||null,lines};
    });
-   for(const [taskId,total] of totals)if(total!==tasks.find(row=>row.id===taskId).ord)throw Error('Split batches must preserve the selected line original customer quantity.');
+   for(const [taskId,total] of totals){const task=tasks.find(row=>row.id===taskId);if(total!==(task.requested??task.ord))throw Error('Split batches must preserve the selected line original customer quantity.');}
    const id=operationId(company,customerId,orderId,'SHIPMENT_PLAN'),prior=readShipmentPlans(context.activity).find(row=>row.id===id),at=now().toISOString();
    if(prior?.batches.some(batch=>batch.lines.some(line=>!totals.has(line.taskId))))throw Error('Select all previously planned products before revising this order split.');
    for(const taskId of totals.keys()){

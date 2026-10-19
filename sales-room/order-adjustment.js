@@ -33,7 +33,7 @@
   if(action==='READ'){
    const result=message.result,line=result?.lines?.find(line=>line.orderId===selection.orderId&&line.sourceLineId===selection.lineId);
    if(!line||line.requested<2){status('This line cannot be split 此行无法拆单');dialog.querySelector('[data-save]').disabled=true;return;}
-   data={line,version:result.planVersion,plan:result.plans.find(plan=>plan.orderId===selection.orderId)};render();
+   data={line:{...line,requested:line.originalRequested??line.requested},version:result.planVersion,plan:result.plans.find(plan=>plan.orderId===selection.orderId)};render();
   }else{dialog.close();window.customerShipmentBatches.notify(selection.company);window.dispatchEvent(new CustomEvent('sales-order-split-saved',{detail:{customerId:selection.customerId}}));}
  });
 })();
