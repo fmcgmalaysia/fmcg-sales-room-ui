@@ -29,11 +29,12 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
     all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders'))
   ]);
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });
-  let customerNames=[],customerNamesError='';
-  try { customerNames=await readCustomerShortNames(workspace.customers.map(row=>row.id)); }
-  catch (_) { customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。'; }
+  let customerNamesError='';
+  const [customerNames,margins]=await Promise.all([
+    readCustomerShortNames(workspace.customers.map(row=>row.id)).catch(()=>{customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。';return [];}),
+    refreshMargins({ company, names: ids, orders, tasks, workspace, activity })
+  ]);
   workspace.customers=workspace.customers.map(row=>({...row,shortName:customerNames.find(item=>item.customerId===row.id)?.shortName||''}));
-  const margins = await refreshMargins({ company, names: ids, orders, tasks, workspace, activity });
   const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
   applyPurchaseProgress(workspace,activity,purchaseOrders);
   return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };

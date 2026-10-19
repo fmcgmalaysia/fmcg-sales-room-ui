@@ -62,6 +62,7 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
       const resultId=row.procurementSource?'SOURCE:'+row.id:row.id;
       results.set(resultId, gp);
       if(row.procurementSource){
+        if(gp===null)continue;
         try{const current=await store.read(names.tasks,task._id),currentOrder=await store.read(names.orders,order._id);
           if(!current||taskEditVersion(current)!==taskEditVersion(task)||!currentOrder||currentOrder.sellingPricePc!==order.sellingPricePc||currentOrder.orderId!==order.orderId||currentOrder.transactionCurrency!==order.transactionCurrency||String(currentOrder.salesInvoiceNumber||'')!==String(order.salesInvoiceNumber||'')||await store.read(names.activity,operationId(company,task.title,'COST_LOCK')))results.set(resultId,null);
         }catch(_){results.set(resultId,null);}

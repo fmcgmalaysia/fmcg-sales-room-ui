@@ -201,3 +201,16 @@ test('individual source GP preserves its own invoiced cost and FX and does not c
  assert.equal(result.get('T'),null);assert.equal(result.get('SOURCE:T'),(revenue-40*240-20*120)/revenue);assert.equal(result.get('SOURCE:B'),.25);assert.equal(f.events().length,0);
  assert.equal(input.activity.at(-1).details.shipment.lines[0].costSources[0].netCostCtn,240);
 });
+
+test('unknown source margins avoid redundant CMS reads without exposing cached values or changing records',async()=>{
+ for(const kind of ['unplanned','missing-cost','missing-rate']){
+  const f=fixture(),input=f.input(),before=clone([...f.rows]),calls=[];
+  if(kind==='unplanned')input.workspace.tasks[0].procurement={totalCtn:null,revision:''};
+  if(kind==='missing-cost')input.tasks[0].disc3=null;
+  const store={...f.store,read:async(...args)=>{calls.push(args);return f.store.read(...args);}};
+  const refresh=createPurchaseMarginRefresh({store,readRates:async()=>kind==='missing-rate'?[]:[{currency:'SGD',rateToMyr:3.2}]});
+  const result=await refresh(input);
+  assert.equal(result.get('T'),null);assert.equal(result.get('SOURCE:T'),null);
+  assert.deepEqual(calls,[]);assert.deepEqual(clone([...f.rows]),before);
+ }
+});

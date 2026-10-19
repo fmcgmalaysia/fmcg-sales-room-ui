@@ -1,0 +1,15 @@
+# Purchase workspace reread latency — 2026-10-19
+
+Objective: shorten the actual post-save workspace read without optimistic success, removing receipts or changing saving/storage mechanisms. The preceding diagnostic9fcc414/PR201 is publicly verified; two PLAN samples measured6.65–7.23s server execution and15.2–15.6s UI completion observations including automation overhead. This patch targets part of the subsequent reread, not the6–7s business-save path.
+
+Fresh live source comparison: purchaseWorkspace.web.js and purchaseMarginRefresh.js copied through native Wix editor readback and exactly matched repository after newline normalization. Private before copies in root handoff/master-save-performance-20261019. Recovery parent9278562 preserves currently deployed source; existing annotated verified/department-ui-before-20261018 retained. No user-frozen baseline promotion.
+
+Minimal two-file patch:
+- Skip source-margin consistency rereads only when the computed result is already null. That branch previously could only retain or replace null with null and never wrote records. Valid source margins still execute the exact original freshness and cost-lock checks. No change to cached fields, FX authority or invoice snapshots.
+- Start independent customer-short-name and margin reads concurrently, and await both before returning the same workspace. Short-name errors retain the existing warning. Margin failures still reject the workspace. Staff authorization and initial collection reads precede both calls, unchanged.
+
+Consumers inspected: Purchase getPurchaseWorkspace and customerFulfilmentService invoice-cache refresh. All task/PO IDs, quantities, events, company isolation, invoice rules, locks, current FX reads, authoritative results and UI handlers unchanged. No schema, storage, Apps Script or permission changes.
+
+Validation:89 focused regression checks pass across margins, multi-supplier cost weighting, partial/fully locked invoices, Sales invoice cache, customer fulfilment, Purchase operations and save-error/receipt handling. New checks assert unavailable margin has zero needless store reads and no mutations, independent reads overlap but results wait for both, short-name failure behavior and margin failure propagation. Additional historical customer-short-names suite4/5 passes with its existing PURCHASE_DOCUMENT_TYPES missing mock binding failure; its test and all consumed source files are unchanged from9278562. Not repaired in this performance task. Whitespace check passes.
+
+Candidate only: no Pages deployment, Wix writes, public optimization acceptance or speed improvement claim. Next acceptance uses the marked existing test PO; compare successful PLAN server receipt vs full UI completion, restore test supplier quantity22, verify original888888100|95 and valid margins remain intact. Full upload/Support save coverage remains outstanding. Deployment requires this new branch's separate Pages policy authorization.
