@@ -15,6 +15,16 @@ function twoSources(f,saved=false){
  f.ui.open('A');const cache=f.ui.serialize()||{company:'NCT',rootId:'A',counter:1,reason:'',rows:[f.planner.rowDraft(root,'A')],dirty:true,running:false,current:null};
  cache.rows=cache.rows.filter(row=>row.taskId);const b=f.planner.rowDraft(null,'second');Object.assign(b,{supplierId:'S2',transportMode:'SUPPLIER_DELIVER',qty:'30',paid:'30',raw:{lpPc:'2.00',lpCtn:'48.00',disc1:'0.00',disc2:'0.00',disc3:'0.00'},originalRaw:{},manual:[]});cache.rows.push(b);cache.dirty=true;f.ui.restore(cache);f.ui.open('A');return root;
 }
+
+test('initial barcode reference survives first supplier choice, but a new split and supplier replacement require their own cost',()=>{
+ const f=fixture(),root=f.workspace.tasks[0];root.supplierId='';root.disc1=.123456;
+ f.ui.open('A');f.edit('A','qty','100');let row=f.ui.serialize().rows[0];assert.equal(row.originalPrices.lpCtn,48);
+ f.edit('A','supplierId','S');row=f.ui.serialize().rows[0];assert.equal(row.originalPrices.lpCtn,48);assert.equal(row.originalPrices.disc1,.123456);
+ f.edit('A','qty','60');const split=f.ui.serialize().rows.find(item=>!item.taskId);assert.ok(split);assert.equal(split.originalPrices.lpCtn,null);
+ f.edit(split.key,'supplierId','S2');assert.equal(f.ui.serialize().rows.find(item=>item.key===split.key).originalPrices.lpCtn,null);
+ f.edit('A','supplierId','');f.edit('A','supplierId','S2');assert.equal(f.ui.serialize().rows[0].originalPrices.lpCtn,null);
+ assert.equal(f.submissions.length,0);assert.equal(root.supplierId,'');assert.equal(root.lpCtn,48);
+});
 test('same product saves B first through PLAN, retains invalid A, restores unknown request and later adds A only',()=>{
  const f=fixture(),root=twoSources(f);f.edit('A','qty','bad');const before=f.ui.serialize().rows.find(row=>row.key==='A');
  f.ui.click({dataset:{allocationSave:'second'}});assert.equal(f.submissions.length,1);const request=f.submissions[0];assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'A');assert.equal(request.input.supplierId,'S2');assert.equal(request.allocationInitializeRoot,true);

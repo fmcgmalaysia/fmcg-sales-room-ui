@@ -390,12 +390,11 @@ test('live page starts empty, requests real Master data and never seeds demo bus
   assert.doesNotMatch(h.node('#app').innerHTML,/AVATA|Supplier A|CORN FLAKES/);
   h.reply(workspace());assert.match(h.node('#app').innerHTML,/ACTUAL CUSTOMER/);assert.equal(h.node('#session').textContent,'ACTUAL STAFF / Purchase');
 });
-test('customer entry displays actual quantity and opens a cost exception with actual salesperson',()=>{
-  const h=harness();h.reply(workspace());h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ACTUAL PRODUCT/);
-  assert.match(h.node('#app').innerHTML,/250/);assert.match(h.node('#app').innerHTML,/Cost Error/);
-  h.click({cost:'TASK'});assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/ACTUAL SALESPERSON/);
-  assert.match(h.node('#dialogContent').innerHTML,/UNAVAILABLE_LPCTN/);
+test('customer entry preserves actual quantity without an independent Cost Error route',()=>{
+ const h=harness();h.reply(workspace());h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ACTUAL PRODUCT/);assert.match(h.node('#app').innerHTML,/250/);assert.doesNotMatch(h.node('#app').innerHTML,/Cost Error|data-cost=/);
+ h.click({cost:'TASK'});assert.notEqual(h.node('#modal').open,true);assert.equal(h.messages.length,1);
 });
+
 test('late response from prior company cannot mix NCT and GHR data',()=>{
   const h=harness(),old=h.messages[0];h.switchCompany('GHR');h.reply(workspace(),old);
   assert.doesNotMatch(h.node('#app').innerHTML,/ACTUAL CUSTOMER/);assert.equal(h.node('#workspaceCompany').textContent,'GHR');
@@ -421,7 +420,7 @@ test('compact Purchase Room keeps track, drag controls and new read-only columns
   assert.deepEqual(labels.slice(1),['Row','Since','Description','Order Qty','Rcv Qty','Supplier','Net Cost','Line Cost','Our P.O.','GP','Progress']);
   assert.equal(labels.length,12);
   assert.match(html,/width:29%/);
-  assert.match(html,/data-cost="TASK"/);
+  assert.doesNotMatch(html,/data-cost="TASK"/);
   assert.match(html,/250/);
   assert.equal(h.messages.length,1,'layout restoration must not trigger any business writes');
 });
@@ -531,7 +530,7 @@ test('history icon keeps the actual history dialog and progress capsules keep ex
  assert.match(h.node('#dialogContent').innerHTML,/LAW/);assert.equal(h.messages.length,1);
 });
 
-test('CBM alone does not flag a complete cost; financial cost errors remain visible',()=>{for(const [reason,lpCtn,shown] of [['UNAVAILABLE_CBMPERCTN',16,false],['UNAVAILABLE_CBMPERCTN',null,true],['UNAVAILABLE_CBMPERCTN; UNAVAILABLE_LPCTN',16,true],['POINTBASE_SERVICE_UNAVAILABLE',16,true]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{costErrorReason:reason,lpCtn});h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('data-cost="TASK"'),shown);assert.equal(h.messages.length,1);}});
+test('cost metadata never creates an independent Cost Error badge or triggers a write',()=>{for(const [reason,lpCtn] of [['UNAVAILABLE_CBMPERCTN',16],['UNAVAILABLE_CBMPERCTN',null],['UNAVAILABLE_CBMPERCTN; UNAVAILABLE_LPCTN',16],['POINTBASE_SERVICE_UNAVAILABLE',16]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{costErrorReason:reason,lpCtn});h.reply(w);h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/data-cost=|Cost Error/);assert.equal(h.messages.length,1);}});
 test('Risk Deal threshold uses valid saved GP; six percent and unknown GP are not flagged',()=>{for(const [gp,shown] of [[.0599,true],[.06,false],[-.1,true],[0,true],[null,false],[undefined,false]]){const h=harness(),w=workspace();w.tasks[0].gp=gp;h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('class="risk-deal"'),shown);assert.doesNotMatch(h.node('#app').innerHTML,/id="riskFilter"/);}});
 test('Save is hidden when clean and allocation is a same-room read-only filter',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Awaiting warehouse/);assert.match(h.node('#app').innerHTML,/disabled>Allocate/);assert.match(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.messages.length,1);});
 
