@@ -9,6 +9,7 @@ import { createAccountSettlementOperations } from 'backend/accountSettlement.js'
 import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { queryAccountReadModel } from 'backend/accountReadQuery.js';
+import { buildAccountReadIndex } from 'backend/accountReadIndex.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -45,6 +46,10 @@ export const queryAccountPurchaseOrders=webMethod(Permissions.SiteMember,async(c
   const pageSuppliers=new Set(pageRows.map(row=>row.supplierId));
   const creditSources=decorated.filter(row=>pageSuppliers.has(row.supplierId)&&row.invoiceChecked&&row.finance?.supplierCreditCents>0&&!pageRows.some(item=>item.id===row.id));
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},...result,creditSources,readAt:new Date().toISOString()};
+});
+export const planAccountReadIndex=webMethod(Permissions.SiteMember,async company=>{
+  const staff=await accountStaff(),rows=await orders.list(company,staff),plan=buildAccountReadIndex({company,rows});
+  return {company:plan.company,generation:plan.generation,schemaVersion:plan.schemaVersion,counts:plan.counts,recordCount:plan.records.length,contentHash:plan.contentHash,readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
