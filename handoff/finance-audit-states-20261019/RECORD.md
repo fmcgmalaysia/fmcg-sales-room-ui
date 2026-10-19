@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v4`; Wix pointer `20261019-finance-audit-v4`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v5`; Wix pointer `20261019-finance-audit-v5`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -29,6 +29,8 @@ Changed frontend files:
 Focused verification: 49 of 49 Finance tests pass, including explicit gray, orange, red, CN-restored orange and completed blue-outline cases. JavaScript syntax and diff whitespace checks pass. Chrome local synthetic preview verified all Audit states. No production records were read or written during this candidate verification.
 
 The final Audit controls are 48 px wide by 28 px high with 4 px corners, matching the Docs button height. This applies to gray, orange, red and completed blue-outline check states.
+
+The completed blue check uses an open-circle checkmark whose tick extends toward the upper right, matching the user's supplied shape while remaining a repository-native SVG and retaining the rectangular button dimensions.
 
 ## Warehouse column follow-up
 

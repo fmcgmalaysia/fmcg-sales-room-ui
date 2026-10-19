@@ -7,7 +7,7 @@
  const toCents=x=>/^\d{1,10}(\.\d{1,2})?$/.test(x)?Number(x.split('.')[0])*100+Number((x.split('.')[1]||'').padEnd(2,'0')):null;
  const closed=row=>window.accountPaymentLayout.isClosed(row);
  function closureTools(row){const account=row.supplierAccount;if(!account)return '';const record=account.closure;
-  const thumb='<span class="acc-audit-thumb static"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>';
+  const thumb='<span class="acc-audit-thumb static"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.3"/><path d="m9 11 3 3L22 4"/></svg></span>';
   if(account.closed)return '<section class="acc-closure">'+thumb+'<div><h3>Audit complete</h3><p>'+esc(record?.by||row.invoiceCheck?.by||'Finance')+' · '+esc(record?.at?new Date(record.at).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur'}):'Previously checked')+'</p>'+(account.reviewRequired?'<p class="acc-chase-reason">New changes require review.</p><button data-settlement="reopen-account" data-po="'+esc(row.id)+'">Reopen</button>':'')+'<button class="acc-link" data-account-path="'+esc(row.id)+'">History</button></div></section>';
   return '<section class="acc-closure"><h3>'+ (account.blockers.length?account.blockers.length+' items remaining':'Ready to complete')+'</h3>'+(account.blockers.length?'<ul>'+account.blockers.map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'<p>Payment, documents and receiving are reconciled.</p><button class="acc-complete-audit" data-settlement="close-account" data-po="'+esc(row.id)+'">Complete Audit</button>')+'<button class="acc-link" data-account-path="'+esc(row.id)+'">History</button></section>';
  }
