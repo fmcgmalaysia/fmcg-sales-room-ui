@@ -11,3 +11,5 @@ Minimum patch: inside getPurchaseReferenceCost only, copy the fetched snapshot a
 Recoveryb96d319 / runtime69e1ec7; limited annotated verified/department-ui-before-20261018 retains its prior scope. 38focused allocation/reference/retry tests pass. New actual-shape test fails before patch and passes after; source unchanged and explicit price/invalid EA/missing cost/inactive/currency guards covered. Public success not yet established.
 
 Release candidate only: no Pages deployment, Wix publication or real public success yet. No main merge or new user-frozen tag. Existing user Purchase draft is not touched. Next steps: minimal Wix line replacement/readback, GitHub PR, separately authorize new branch Pages deployment, all four release stages, actual reference-only Catch Cost in an agent-owned acceptance page without PLAN/save.
+
+Candidate61eb271/PR205 pushed. Wix single replacement saved in draft only; full after-readback exact to repository. No publish clicked. Temporary Pages branch permission required before release. Public getReference success remains unverified; user's existing Chrome draft untouched.
