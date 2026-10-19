@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v5`; Wix pointer `20261019-finance-audit-v5`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v6`; Wix pointer `20261019-finance-audit-v6`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -36,8 +36,8 @@ The completed blue check uses an open-circle checkmark whose tick extends toward
 
 The same local candidate now labels the former `Receiving` column as `Warehouse`. It displays planned and received cartons as `planned | received`, without a separate negative-difference badge or the old `of ... CTN` sentence. An unresolved receiving or stock issue renders only the received value as a red capsule. Clicking that capsule opens a small auto-dismiss popover reading `Purchaser Resolution: ...`, sourced directly from the existing Purchase `receiptLines[].decision.supplierDecision`. No new data field, synchronization, writer, or resolution action was added.
 
-Before Wix synchronization, the user corrected the abnormal received capsule height. It now uses the existing Purchase quantity-capsule dimensions: 13 px text, 4 px by 6 px padding, 14 px radius and 36 px minimum width. Local computed height is 26.85 px rather than the earlier fixed 22 px.
+Before Wix synchronization, the user corrected the abnormal received capsule height. A fresh read of the actual public Purchase `95` capsule established the authoritative dimensions: 34 px minimum width, 19 px height, 11 px text, 14 px line height, 6 px horizontal padding and 12 px radius. Finance now uses those exact values rather than the earlier approximation.
 
-Clicking the abnormal received capsule retains the native auto-dismiss popover but presents it above and to the right of the capsule as a compact WhatsApp-style light-green chat bubble (`#d9fdd3`) with black text and a small pointer aimed back at the capsule. The stored Purchase resolution source and mappings are unchanged.
+Clicking the abnormal received capsule retains the native auto-dismiss popover but presents it above and to the right of the capsule as a compact WhatsApp-style light-green chat bubble (`#d9fdd3`) with black text and a small pointer aimed back at the capsule. Its content-sized width and visible overflow prevent either scrollbar. The stored Purchase resolution source and mappings are unchanged.
 
 Focused verification is now 48 of 48 tests. The added fixture verifies `500 | 480`, no `-20`, the `Warehouse` header, and the mapped Purchase resolution. Chrome local synthetic preview verified the red capsule, compact popover, and automatic dismissal after clicking elsewhere.
