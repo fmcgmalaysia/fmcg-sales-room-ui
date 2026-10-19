@@ -11,3 +11,5 @@ Pages run 39149160757 succeeded. Public workroom.js and index.html match source 
 Wix only entry token changed to 20261019-warehouse-zero-stock-v1. Complete readback matched expected isolated change. Wix confirms site published and live.
 
 Public verification INCOMPLETE: existing Warehouse tab51426415 force refresh resulted in about:blank embedded frame. User manual refresh requested, no answer yet. Do not claim complete publication. No stock records changed by this visual patch.
+
+Final public verification 2026-10-19: user manually refreshed existing Warehouse tab51426415. Formal new version loaded with LAW; Delivery Tasks7 and Pending Packing7. Ready Stock DOM values exactly ['', '', '', '', '95', '', '']; all seven rows, task quantities, S chat buttons and missing-CBM capsule retained. Incoming100|95 and issue retained before navigating. Screenshot/root private public-after.png. All four release stages complete; no business logic or stock writes. This supersedes pending public verification above.
