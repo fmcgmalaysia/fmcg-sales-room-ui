@@ -1,8 +1,9 @@
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getCustomerFulfilment } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
-import { getAccountPurchaseOrders, queryAccountPurchaseOrders, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
+import { getAccountPurchaseOrders, queryAccountPurchaseOrders, planAccountReadIndex, maintainAccountReadIndex, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
+import wixLocationFrontend from 'wix-location-frontend';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
   const room=$w('#html1');
@@ -34,6 +35,12 @@ $w.onReady(() => {
       try{const result=await queryAccountPurchaseOrders(message.company,message.input);room.postMessage({type:'ACCOUNT_QUERY_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type:'ACCOUNT_QUERY_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Account records could not be loaded.'});}return;
     }
+    if(['ACCOUNT_INDEX_PLAN_REQUEST','ACCOUNT_INDEX_MAINTAIN_REQUEST'].includes(message.type)){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>1000)return;
+      const type=message.type==='ACCOUNT_INDEX_PLAN_REQUEST'?'ACCOUNT_INDEX_PLAN_RESULT':'ACCOUNT_INDEX_MAINTAIN_RESULT';
+      try{const result=message.type==='ACCOUNT_INDEX_PLAN_REQUEST'?await planAccountReadIndex(message.company):await maintainAccountReadIndex(message.company,message.action,message.generation);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Account read index request could not be confirmed.'});}return;
+    }
     if(!['ACCOUNT_ORDERS_REQUEST','ACCOUNT_CHECK_REQUEST','ACCOUNT_SETTLEMENT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='ACCOUNT_SETTLEMENT_REQUEST'&&message.input?.action==='DOCUMENT_UPLOAD'?4250000:200000))return;
     const type=message.type==='ACCOUNT_ORDERS_REQUEST'?'ACCOUNT_ORDERS_RESULT':message.type==='ACCOUNT_SETTLEMENT_REQUEST'?'ACCOUNT_SETTLEMENT_RESULT':'ACCOUNT_CHECK_RESULT';
     try{
@@ -41,5 +48,7 @@ $w.onReady(() => {
       room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
     }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261019-finance-account-query-v1';
+  const maintenanceAction=String(wixLocationFrontend.query.accountIndexAction||'').toUpperCase(),maintenanceCompany=String(wixLocationFrontend.query.accountIndexCompany||'').toUpperCase(),maintenanceGeneration=String(wixLocationFrontend.query.accountIndexGeneration||'').toLowerCase();
+  const maintenance=['PLAN','STAGE','ACTIVATE'].includes(maintenanceAction)&&['NCT','GHR'].includes(maintenanceCompany)?`&accountIndexAction=${maintenanceAction}&accountIndexCompany=${maintenanceCompany}${maintenanceAction==='ACTIVATE'&&/^[a-f0-9]{32}$/.test(maintenanceGeneration)?`&accountIndexGeneration=${maintenanceGeneration}`:''}`:'';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261019-finance-account-query-v1'+maintenance;
 });
