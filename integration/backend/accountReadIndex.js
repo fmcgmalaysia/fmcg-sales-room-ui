@@ -12,6 +12,7 @@ const canonical=value=>{
   return value;
 };
 const digest=value=>createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
+export const accountReadIndexControlId=company=>digest(['ACCOUNT_READ_INDEX_CONTROL',text(company)]).slice(0,32);
 const recordId=(company,generation,kind,sourceId)=>digest(['ACCOUNT_READ_INDEX',company,generation,kind,sourceId]).slice(0,32);
 const closed=row=>row.supplierAccount?row.supplierAccount.closed===true:row.state==='HISTORY';
 const caseDate=row=>iso(closed(row)?row.supplierAccount?.closure?.at||row.completedAt:row.updatedAt||row.createdAt);
@@ -66,4 +67,30 @@ export function compareAccountReadIndex(expected,actualRecords){
   const extra=[...actualById.keys()].filter(id=>!expectedById.has(id));
   const changed=[...expectedById.keys()].filter(id=>actualById.has(id)&&digest(comparable(expectedById.get(id)))!==digest(comparable(actualById.get(id))));
   return {ok:missing.length===0&&extra.length===0&&changed.length===0,generation:expected.generation,expected:expected.records.length,actual:actualById.size,missing,extra,changed};
+}
+
+const summary=plan=>({company:plan.company,generation:plan.generation,schemaVersion:plan.schemaVersion,counts:plan.counts,recordCount:plan.records.length,contentHash:plan.contentHash});
+export function createAccountReadIndexOperations({store,readRows,now=()=>new Date()}){
+  if(!store?.read||!store?.listGeneration||!store?.insertBatch||!store?.upsert||typeof readRows!=='function')throw Error('Account read index operations require an index store and authority reader.');
+  const build=async company=>buildAccountReadIndex({company,rows:await readRows(company)});
+  const inspect=async plan=>compareAccountReadIndex(plan,await store.listGeneration(ACCOUNT_READ_INDEX_COLLECTION,plan.company,plan.generation));
+  return {
+    async plan(company){const expected=await build(company);return {...summary(expected),comparison:await inspect(expected),activeGeneration:(await store.read(ACCOUNT_READ_INDEX_COLLECTION,accountReadIndexControlId(company)))?.activeGeneration||null};},
+    async stage(company){
+      const expected=await build(company),existing=await store.listGeneration(ACCOUNT_READ_INDEX_COLLECTION,expected.company,expected.generation),known=new Map(existing.map(record=>[record._id,record])),missing=expected.records.filter(record=>!known.has(record._id));
+      for(let index=0;index<missing.length;index+=500)await store.insertBatch(ACCOUNT_READ_INDEX_COLLECTION,missing.slice(index,index+500));
+      const comparison=await inspect(expected);
+      if(!comparison.ok)throw Error(`Account read index verification failed: ${comparison.missing.length} missing, ${comparison.extra.length} extra, ${comparison.changed.length} changed.`);
+      return {...summary(expected),comparison,staged:true};
+    },
+    async activate(company,generation){
+      const expected=await build(company);
+      if(expected.generation!==generation)throw Error('Authority records changed after staging. Build and verify a new Account read index generation.');
+      const comparison=await inspect(expected);
+      if(!comparison.ok)throw Error('Account read index does not match authority records. Activation stopped.');
+      const id=accountReadIndexControlId(company),prior=await store.read(ACCOUNT_READ_INDEX_COLLECTION,id),activatedAt=now().toISOString(),record={...(prior||{}),_id:id,title:`${company} Account Read Index Control`,company:expected.company,kind:'CONTROL',activeGeneration:expected.generation,contentHash:expected.contentHash,schemaVersion:expected.schemaVersion,counts:expected.counts,activatedAt};
+      await store.upsert(ACCOUNT_READ_INDEX_COLLECTION,record);
+      return {...summary(expected),comparison,activeGeneration:expected.generation,activatedAt};
+    }
+  };
 }

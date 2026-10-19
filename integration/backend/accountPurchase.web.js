@@ -9,11 +9,14 @@ import { createAccountSettlementOperations } from 'backend/accountSettlement.js'
 import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { queryAccountReadModel } from 'backend/accountReadQuery.js';
-import { buildAccountReadIndex } from 'backend/accountReadIndex.js';
+import { ACCOUNT_READ_INDEX_COLLECTION, createAccountReadIndexOperations } from 'backend/accountReadIndex.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
   async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
   async read(collection,id){const page=await wixData.query(collection).eq('_id',id).limit(2).find(options);if(page.items.length>1)throw Error('Duplicate purchase order record.');return page.items[0]||null;},
+  async listGeneration(collection,company,generation){let page=await wixData.query(collection).eq('company',company).eq('generation',generation).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
+  insertBatch:(collection,rows)=>wixData.bulkInsert(collection,rows,{suppressAuth:true}),
+  upsert:(collection,row)=>wixData.save(collection,row,{suppressAuth:true}),
   insert:(collection,row)=>wixData.insert(collection,row,{suppressAuth:true}),
   update:(collection,row)=>wixData.update(collection,row,{suppressAuth:true}),
   remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
@@ -27,6 +30,7 @@ const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,rea
 const reviews=createAccountReviewOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list});
 const settlements=createAccountSettlementOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list,documentService:requestPurchaseDocument});
 const applySupplierCredit=createSupplierCreditOperations({store,names:PURCHASE_COLLECTIONS,listOrders:orders.list});
+const accountIndex=staff=>createAccountReadIndexOperations({store,readRows:company=>orders.list(company,staff)});
 export const saveAccountSettlement=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
   try{return input?.action==='APPLY_CREDIT'?await applySupplierCredit({company,staff,requestId,input}):await settlements.save({company,staff,requestId,input});}
@@ -48,8 +52,15 @@ export const queryAccountPurchaseOrders=webMethod(Permissions.SiteMember,async(c
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},...result,creditSources,readAt:new Date().toISOString()};
 });
 export const planAccountReadIndex=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await accountStaff(),rows=await orders.list(company,staff),plan=buildAccountReadIndex({company,rows});
-  return {company:plan.company,generation:plan.generation,schemaVersion:plan.schemaVersion,counts:plan.counts,recordCount:plan.records.length,contentHash:plan.contentHash,readAt:new Date().toISOString()};
+  const staff=await accountStaff(),plan=await accountIndex(staff).plan(company);
+  return {...plan,collection:ACCOUNT_READ_INDEX_COLLECTION,readAt:new Date().toISOString()};
+});
+export const maintainAccountReadIndex=webMethod(Permissions.SiteMember,async(company,action,generation='')=>{
+  const staff=await accountStaff();
+  if(staff.role!=='SUPER ADMIN')throw Error('Only SUPER ADMIN can maintain the Account read index.');
+  if(action==='STAGE')return accountIndex(staff).stage(company);
+  if(action==='ACTIVATE')return accountIndex(staff).activate(company,generation);
+  throw Error('Select an Account read index maintenance action.');
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
