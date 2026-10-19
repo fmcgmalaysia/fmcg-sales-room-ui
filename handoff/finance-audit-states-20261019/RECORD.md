@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v6`; Wix pointer `20261019-finance-audit-v6`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v7`; Wix pointer `20261019-finance-audit-v7`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -28,9 +28,11 @@ Changed frontend files:
 
 Focused verification: 49 of 49 Finance tests pass, including explicit gray, orange, red, CN-restored orange and completed blue-outline cases. JavaScript syntax and diff whitespace checks pass. Chrome local synthetic preview verified all Audit states. No production records were read or written during this candidate verification.
 
-The final Audit controls are 48 px wide by 28 px high with 4 px corners, matching the Docs button height. This applies to gray, orange, red and completed blue-outline check states.
+The gray, orange and red Audit controls are 48 px wide by 28 px high with 4 px corners, matching the Docs button height. The completed check retains a 48 by 28 px click target but has no rectangular border or fill.
 
 The completed blue check uses an open-circle checkmark whose tick extends toward the upper right, matching the user's supplied shape while remaining a repository-native SVG and retaining the rectangular button dimensions.
+
+All enabled Account buttons now move upward by one pixel on hover and compress slightly on active press. Disabled buttons remain still, and the animation is disabled when the operating system requests reduced motion.
 
 ## Warehouse column follow-up
 

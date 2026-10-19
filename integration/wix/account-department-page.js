@@ -36,5 +36,5 @@ $w.onReady(() => {
       room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});
     }catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Account request could not be confirmed.'});}
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261019-finance-audit-v6';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261019-finance-audit-v7';
 });

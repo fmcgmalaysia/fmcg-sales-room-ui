@@ -36,4 +36,7 @@ body .account-purchases.acc-plan button[data-settlement="plan"]{color:#2563EB;te
 .acc-account-action{width:48px;height:28px;min-height:28px;border-radius:4px;padding:0 8px;font-size:10px}
 .acc-audit-thumb{width:48px;height:28px;min-height:28px;border-radius:4px;padding:4px 12px}
 .acc-audit-thumb svg{width:18px;height:18px}
+.acc-audit-thumb{border:0;background:transparent}
 .acc-audit-thumb.static{flex:0 0 48px}
+body button:not(:disabled){transition:transform .12s ease}body button:not(:disabled):hover{transform:translateY(-1px)}body button:not(:disabled):active{transform:translateY(0) scale(.98)}
+@media(prefers-reduced-motion:reduce){body button:not(:disabled){transition:none}body button:not(:disabled):hover,body button:not(:disabled):active{transform:none}}
