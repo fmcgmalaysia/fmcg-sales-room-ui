@@ -26,3 +26,6 @@ body .account-purchases.acc-plan button[data-settlement="plan"]{color:#2563EB;te
 
 .acc-closure{padding:10px 12px;margin-bottom:12px;border:1px solid #c8d9e5;border-radius:4px;background:#f4f8fc}.acc-closure h3{margin:0 0 6px;font-size:12px}.acc-closure p{margin:6px 0}.acc-closure ul{margin:6px 0 10px;padding-left:18px;line-height:1.6}.acc-closure small{display:block;margin-top:8px;color:#657d96}.acc-closure button:disabled{background:#8b98a8;border-color:#8b98a8;color:white;cursor:default}
 .acc-closure .acc-chase-reason{color:#E51B2B}
+
+/* Unified supplier work list: attention moves to the existing action entry. */
+.acc-account-action{border:0;border-radius:4px;padding:6px 8px;font-size:10px;font-weight:600;color:#fff;cursor:pointer}.acc-account-action.orange{background:#F58A00}.acc-account-action.red{background:#E51B2B}.acc-account-action.blue{background:#2563EB}body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(8){white-space:normal;text-align:left}body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(7){text-align:center}body .account-purchases.acc-plan .acc-request-due{color:#173557;font-weight:600}body .account-purchases.acc-plan .acc-action-note{color:#E51B2B}
