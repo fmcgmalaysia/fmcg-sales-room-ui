@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization: build `2026-10-19-finance-audit-v1`; Wix pointer `20261019-finance-audit-v1`.
+Release marker prepared after user authorization and advanced after the final capsule-height correction: build `2026-10-19-finance-audit-v2`; Wix pointer `20261019-finance-audit-v2`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -31,5 +31,7 @@ Focused verification: 49 of 49 Finance tests pass, including explicit gray, oran
 ## Warehouse column follow-up
 
 The same local candidate now labels the former `Receiving` column as `Warehouse`. It displays planned and received cartons as `planned | received`, without a separate negative-difference badge or the old `of ... CTN` sentence. An unresolved receiving or stock issue renders only the received value as a red capsule. Clicking that capsule opens a small auto-dismiss popover reading `Purchaser Resolution: ...`, sourced directly from the existing Purchase `receiptLines[].decision.supplierDecision`. No new data field, synchronization, writer, or resolution action was added.
+
+Before Wix synchronization, the user corrected the abnormal received capsule height. It now uses the existing Purchase quantity-capsule dimensions: 13 px text, 4 px by 6 px padding, 14 px radius and 36 px minimum width. Local computed height is 26.85 px rather than the earlier fixed 22 px.
 
 Focused verification is now 48 of 48 tests. The added fixture verifies `500 | 480`, no `-20`, the `Warehouse` header, and the mapped Purchase resolution. Chrome local synthetic preview verified the red capsule, compact popover, and automatic dismissal after clicking elsewhere.
