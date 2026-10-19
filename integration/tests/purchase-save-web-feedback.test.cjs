@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8');
 const callback=source.slice(source.indexOf('export const savePurchaseOperation='),source.indexOf('export const getSupplierProfile=')).replace('export const savePurchaseOperation=','this.save=');
-function endpoint(operate,auth=async()=>({staffId:'STAFF',staffName:'LAW',memberId:'MEMBER'})){const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:auth,operate,console:{warn(){}}};vm.runInNewContext(callback,context);return context.save;}
+function endpoint(operate,auth=async()=>({staffId:'STAFF',staffName:'LAW',memberId:'MEMBER'}),info){const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:auth,operate,console:{warn(){},info}};vm.runInNewContext(callback,context);return context.save;}
 test('known pre-write negative-cost rejection returns actionable feedback instead of a Wix masked exception',async()=>{const result=await endpoint(async()=>{throw Error('Net cost cannot be negative.');})('NCT','REQUEST','EDIT',{});assert.equal(result.ok,false);assert.equal(result.requestId,'REQUEST');assert.equal(result.error,'Net cost cannot be negative.');});
 test('PO identity and prefix rejections return actionable feedback without exposing unknown errors',async()=>{for(const message of ['Enter the P.O. number after the company prefix.','This P.O. has saved records. Select all its tasks when changing its number.','Two purchase orders with saved records cannot be merged.']){const result=await endpoint(async()=>{throw Error(message);})('NCT','REQUEST','PO',{});assert.equal(result.ok,false);assert.equal(result.error,message);}});
 test('unknown failures and authorization failures remain unconfirmed; successful saves retain their receipt',async()=>{await assert.rejects(endpoint(async()=>{throw Error('Response lost');})('NCT','REQUEST','EDIT',{}),/Response lost/);await assert.rejects(endpoint(async()=>{},async()=>{throw Error('Access denied');})('NCT','REQUEST','EDIT',{}),/Access denied/);const receipt={ok:true,requestId:'REQUEST'};assert.equal(await endpoint(async()=>receipt)('NCT','REQUEST','EDIT',{}),receipt);});
@@ -36,4 +36,16 @@ test('pre-operation CMS failure identifies only this attempt, preserving compati
  let operations=0;const result=await endpoint(async()=>{operations++;},async()=>{throw Object.assign(Error('GridAppId PRIVATE-APP'),{code:'WDE0118'});})('NCT','REQUEST','EDIT',{});
  assert.equal(operations,0);assert.equal(result.ok,false);assert.equal(result.pending,true);assert.equal(result.attemptNotStarted,true);assert.equal(result.requestId,'REQUEST');assert.doesNotMatch(JSON.stringify(result),/PRIVATE-APP/);
  const uncertain=await endpoint(async()=>{throw Object.assign(Error('Lost CMS response'),{code:'WDE0118'});})('NCT','REQUEST','EDIT',{});assert.equal(uncertain.pending,true);assert.notEqual(uncertain.attemptNotStarted,true);
+});
+
+
+test('timing diagnostics cannot change saved receipts or original failures, even when logging throws',async()=>{
+ const receipt={ok:true,requestId:'R'},logFailure=()=>{throw Error('Logger unavailable');};
+ assert.equal(await endpoint(async()=>receipt,undefined,logFailure)('NCT','R','PLAN',{}),receipt);
+ const original=Error('Original save failure');await assert.rejects(endpoint(async()=>{throw original;},undefined,logFailure)('NCT','R','PLAN',{}),e=>e===original);
+});
+test('save phase timings omit customer input and keep failure before staff authorization observable',async()=>{
+ const entries=[];let operations=0;
+ await assert.rejects(endpoint(async()=>{operations++;},async()=>{throw Error('Access denied');},(...args)=>entries.push(args))('NCT','R','PLAN',{privateInput:'must-not-log'}),/Access denied/);
+ assert.equal(operations,0);assert.equal(entries.length,1);assert.equal(entries[0][1].operationMs,null);assert.equal(entries[0][1].threw,true);assert.ok(entries[0][1].totalMs>=0);assert.doesNotMatch(JSON.stringify(entries),/must-not-log/);
 });
