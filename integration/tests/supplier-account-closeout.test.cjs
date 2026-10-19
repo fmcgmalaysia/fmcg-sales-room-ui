@@ -21,6 +21,17 @@ test('missing documents, shortage, quarantine, unpaid money, bank unknown and un
   const f=setup();mutate(f);assert.equal((await f.listOrders())[0].supplierAccount.canClose,false);await assert.rejects(f.save('CLOSE_ACCOUNT'),/resolve these items/);assert.equal(f.details.finance.closure,undefined);
  }
 });
+
+test('each required receiving, final invoice, CN decision and amount check independently blocks direct Job Done',async()=>{
+ for(const mutate of [
+  f=>{f.row.documents=f.row.documents.filter(d=>d.type!=='INV');},
+  f=>{f.details.finance.amounts=[];},
+  f=>{delete f.details.finance.cnNotApplicable;},
+  f=>{f.row.documents.push({fileId:'CN',type:'CN',sha256:'cn',linked:true});},
+  f=>{f.row.warehouse={complete:false,issues:true,receivedCtn:95};f.row.receiptLines=[{hasReceipt:true,planned:100,accepted:95,issue:true}];},
+  f=>{f.row.warehouse={complete:false,issues:false,receivedCtn:0};f.row.receiptLines=[{hasReceipt:false,planned:100,accepted:0,issue:false}];}
+ ]){const f=setup();mutate(f);const before=JSON.stringify(f.records.get('PurchaseOrders/PO'));assert.equal((await f.listOrders())[0].supplierAccount.canClose,false);await assert.rejects(f.save('CLOSE_ACCOUNT'),/resolve these items/);assert.equal(JSON.stringify(f.records.get('PurchaseOrders/PO')),before);}
+});
 test('Closed stays Closed after a new warehouse issue, exposes review warning, requires reason to reopen',async()=>{
  const f=setup();await f.save('CLOSE_ACCOUNT');f.row.warehouse.issues=true;f.row.warehouse.complete=false;
  let row=(await f.listOrders())[0];assert.equal(row.supplierAccount.closed,true);assert.equal(row.supplierAccount.reviewRequired,true);
