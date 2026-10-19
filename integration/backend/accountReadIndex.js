@@ -20,6 +20,7 @@ const casePayload=row=>{
   const payload=clone(row),history=Array.isArray(payload.history)?payload.history:[];
   delete payload.history;
   delete payload.canDeletePaymentFiles;
+  delete payload.readAt;
   return {payload,history};
 };
 const searchable=(...values)=>values.flat(Infinity).map(text).filter(Boolean).join(' ').toLowerCase();
