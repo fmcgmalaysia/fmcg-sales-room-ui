@@ -42,6 +42,7 @@ body button:not(:disabled){cursor:pointer;transition:transform .12s ease,filter 
 body :is(.acc-po,.acc-link):not(:disabled):is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:2px}
 @media(prefers-reduced-motion:reduce){body button:not(:disabled){transition:none}body button:not(:disabled):is(:hover,:focus-visible,:active){transform:none}}
 body .account-purchases.acc-plan table.acc-unified{min-width:1480px}
+@media(min-width:1200px){body .account-purchases.acc-plan table.acc-unified{min-width:100%}.acc-unified col:nth-child(1){width:6.75%!important}.acc-unified col:nth-child(2),.acc-unified col:nth-child(3){width:13.85%!important}.acc-unified col:nth-child(4){width:9.8%!important}.acc-unified col:nth-child(5){width:8.8%!important}.acc-unified col:nth-child(6){width:11.5%!important}.acc-unified col:nth-child(7),.acc-unified col:nth-child(9){width:5.4%!important}.acc-unified col:nth-child(8){width:24.65%!important}}
 body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(5),body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(6){text-align:center}
 body .account-purchases.acc-plan .acc-unified .acc-docs{justify-content:center}
 .acc-warehouse-qty{display:grid;grid-template-columns:minmax(38px,1fr) 10px minmax(38px,1fr);align-items:center;width:100%;gap:0}

@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v12`; Wix pointer `20261019-finance-audit-v12`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v13`; Wix pointer `20261019-finance-audit-v13`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -53,3 +53,5 @@ Supplier Accounts now presents two non-interactive blue dashboard cards on the r
 Focused verification is now 53 of 53 tests. The fixtures verify `500 | 480`, no `-20`, the mapped Purchase resolution, the exact nine-column widths, reserved `9999 | 9999` capacity, the absence of Download from every Finance DOCS popup and correction card, and the dashboard-card totals for a partial-payment example. Chrome local synthetic preview measured the Warehouse header, cell and separator at the exact same center coordinate, with zero-pixel alignment error. The narrowed document dialog measured 520 px wide with no horizontal overflow, no Download text, and retained View and Report Issue. The two dashboard cards measured 190 px by 86.8 px each, shared one aligned row, used the approved blue `#2563EB`, contained no link or button, and did not overlap the title area. The red capsule, compact popover and automatic dismissal remain intact.
 
 The corrected completed-Audit preview measured a 22 by 22 px SVG inside the unchanged 48 by 28 px target. Its round arc is 3.2 px, its extended tick is 4.8 px, its computed color is exactly `#2563EB`, and it has no border or fill.
+
+The desktop Supplier Accounts table now scales the same nine approved column proportions to the available panel width. This removes the accidental 9 px overflow that produced a full bottom scrollbar at a 1471 px content width while retaining the 1480 px scrollable layout below the 1200 px desktop breakpoint. No column was removed and the Warehouse four-digit reservation remains centered.
