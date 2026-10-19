@@ -44,7 +44,7 @@ export function queryAccountReadModel(rows,input={}){
   if(!Array.isArray(rows)||!validViews.has(input.view))throw Error('Select an Account query view.');
   const needle=text(input.search).toLowerCase(),supplierId=text(input.supplierId),from=date(input.dateFrom),to=date(input.dateTo);
   if(input.dateFrom&&!from||input.dateTo&&!to||from&&to&&from>to)throw Error('Select a valid Account date range.');
-  const scoped=rows.filter(row=>(!supplierId||row.supplierId===supplierId)&&contains(row,needle));
+  const supplierScoped=rows.filter(row=>!supplierId||row.supplierId===supplierId),scoped=supplierScoped.filter(row=>contains(row,needle));
   const activeTotal=scoped.filter(row=>!isClosed(row)).length,completedTotal=scoped.filter(isClosed).length;
   const suppliers=[...new Map(scoped.filter(row=>row.supplierId).map(row=>[row.supplierId,{id:row.supplierId,name:row.supplierName}])).values()].sort((a,b)=>text(a.name).localeCompare(text(b.name)));
   if(input.view==='SUPPLIER_ACTIVE'||input.view==='SUPPLIER_COMPLETED'){
@@ -53,9 +53,9 @@ export function queryAccountReadModel(rows,input={}){
     return {view:input.view,...page(filtered.map(row=>({...row,_querySortAt:supplierDate(row),_queryKey:text(row.id)})),input),summary:supplierSummary(filtered),counts:{active:activeTotal,completed:completedTotal},suppliers};
   }
   if(input.view==='TRANSACTIONS'){
-    const items=scoped.flatMap(row=>(row.finance?.payments||[]).map((payment,index)=>({poId:row.id,poNumber:row.number,supplierId:row.supplierId,supplierName:row.supplierName,supplierBank:row.supplierBank||null,payment,_querySortAt:date(payment.at||payment.date),_queryKey:text(payment.id)||row.id+':'+index}))).filter(item=>inRange(item._querySortAt,from,to));
+    const items=supplierScoped.flatMap(row=>(row.finance?.payments||[]).map((payment,index)=>({row,payment,_querySortAt:date(payment.at||payment.date),_queryKey:text(payment.id)||row.id+':'+index}))).filter(item=>(!needle||contains(item.row,needle)||[item.payment.id,item.payment.reference,item.payment.by,item.payment.paymentSource].some(value=>text(value).toLowerCase().includes(needle)))&&inRange(item._querySortAt,from,to));
     return {view:input.view,...page(items,input),counts:{active:activeTotal,completed:completedTotal},suppliers};
   }
-  const items=scoped.flatMap(row=>(row.history||[]).map((event,index)=>({poId:row.id,poNumber:row.number,supplierId:row.supplierId,supplierName:row.supplierName,event,_querySortAt:date(event.time),_queryKey:text(event.id)||row.id+':'+index}))).filter(item=>inRange(item._querySortAt,from,to));
+  const items=supplierScoped.flatMap(row=>(row.history||[]).map((event,index)=>({poId:row.id,poNumber:row.number,supplierId:row.supplierId,supplierName:row.supplierName,event,_querySortAt:date(event.time),_queryKey:text(event.id)||row.id+':'+index}))).filter(item=>(!needle||contains(item,needle)||[item.poNumber,item.supplierName,item.event.action,item.event.actor,item.event.message].some(value=>text(value).toLowerCase().includes(needle)))&&inRange(item._querySortAt,from,to));
   return {view:input.view,...page(items,input),counts:{active:activeTotal,completed:completedTotal},suppliers};
 }

@@ -41,7 +41,10 @@ export const queryAccountPurchaseOrders=webMethod(Permissions.SiteMember,async(c
   const staff=await accountStaff(),rows=await orders.list(company,staff),suppliers=await store.all('SharedSuppliers');let names=[];
   try{names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);}catch(_){}
   const decorated=rows.map(row=>({...row,supplierBank:(()=>{const supplier=suppliers.find(item=>item.title===row.supplierId);return supplier?.bankName&&supplier?.bankAccountNo?{bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo}:null;})(),canDeletePaymentFiles:(row.finance?.payments||[]).flatMap(payment=>(payment.proofs||[payment.proof]).filter(file=>file&&(file.uploadedByStaffId===staff.staffId||staff.role==='SUPER ADMIN')).map(file=>file.fileId)),customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')}));
-  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},...queryAccountReadModel(decorated,input),readAt:new Date().toISOString()};
+  const result=queryAccountReadModel(decorated,input),pageRows=result.view==='TRANSACTIONS'?result.items.map(item=>item.row):result.view.startsWith('SUPPLIER_')?result.items:[];
+  const pageSuppliers=new Set(pageRows.map(row=>row.supplierId));
+  const creditSources=decorated.filter(row=>pageSuppliers.has(row.supplierId)&&row.invoiceChecked&&row.finance?.supplierCreditCents>0&&!pageRows.some(item=>item.id===row.id));
+  return {company,staff:{staffId:staff.staffId,staffName:staff.staffName,role:staff.role},...result,creditSources,readAt:new Date().toISOString()};
 });
 export const saveAccountInvoiceCheck=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await accountStaff();
