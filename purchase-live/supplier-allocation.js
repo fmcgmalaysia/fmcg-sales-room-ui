@@ -135,7 +135,7 @@
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
       if(rowLocked(row))return true;
       const name=field.dataset.allocationField;if(name)row.pendingReference=null;
-      if(name==='supplierId'){const retainInitial=row.taskId===state.rootId&&!row.supplierId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.revision;row.supplierId=field.value;if(!retainInitial){row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]='0.00';row.originalRaw[price]='0.00';row.originalPrices[price]=price.startsWith('disc')?0:null;}}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
+      if(name==='supplierId'){const retainInitial=row.taskId===state.rootId&&!row.supplierId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.revision;row.supplierId=field.value;if(!retainInitial){row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]=price.startsWith('disc')?'0.00':'';row.originalRaw[price]=row.raw[price];row.originalPrices[price]=price.startsWith('disc')?0:null;}}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
       else if(name==='transportMode')row.transportMode=field.value;
       else if(name==='qty'){row.qty=field.value;row.auto=false;}
       else if(name==='mode'){if(field.value==='NORMAL'&&row.mode==='FOC'&&!api.confirm('全部 '+row.qty+' CTN 改为付费采购？')){field.value=row.mode;return true;}row.mode=field.value;row.paid=row.qty;row.free='0';row.auto=false;}
