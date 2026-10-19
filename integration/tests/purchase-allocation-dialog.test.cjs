@@ -35,3 +35,12 @@ test('reference prices may be read with CBM-only missing metadata while inactive
  const result=await context.read('NCT','a'.repeat(32));assert.equal(result.prices.lpCtn,48);assert.equal(Object.keys(result.prices).length,5);assert.equal(result.productStatus,undefined);
  for(const patch of [{productStatus:'INACTIVE'},{costIssues:['UNAVAILABLE_CBMPERCTN','PRODUCT_INACTIVE']},{lpCtn:null},{costIssues:['UNAVAILABLE_LPCTN']},{costCurrency:'USD'}]){const previous=cost;cost={...previous,...patch};await assert.rejects(context.read('NCT','a'.repeat(32)),/unavailable/);cost=previous;}
 });
+
+test('A&W reference derives absent unit cost from carton cost and EA while retaining source values and rejection guards',async()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8'),callback=source.slice(source.indexOf('export const getPurchaseReferenceCost='),source.indexOf('export const getSupplierBrandOptions=')).replace('export const getPurchaseReferenceCost=','this.read=');
+ const original={unitBarcode:'9555589200293',costCurrency:'MYR',costStatus:'ERROR',productStatus:'ACTIVE',costIssues:['UNAVAILABLE_CBMPERCTN'],capturedAt:'2026-10-19T02:00:00Z',eaPerCtn:24,lpPc:null,lpCtn:44.4,disc1:0,disc2:0,disc3:0};let cost={...original};
+ const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},PURCHASE_COLLECTIONS:{NCT:{}},getPurchaseStaffContext:async()=>({}),readPlannerWorkspace:async()=>({tasks:[{id:'a'.repeat(32),barcode:original.unitBarcode}]}),capturePointbaseCosts:async()=>({[original.unitBarcode]:cost})};vm.runInNewContext(callback,context);
+ const result=await context.read('NCT','a'.repeat(32));assert.equal(result.prices.lpPc,44.4/24);assert.equal(result.prices.lpPc.toFixed(2),'1.85');assert.equal(result.prices.lpCtn,44.4);assert.equal(cost.lpPc,null,'do not mutate POINTBASE capture');
+ cost={...original,lpPc:2};assert.equal((await context.read('NCT','a'.repeat(32))).prices.lpPc,2,'explicit per-piece reference stays authoritative');
+ for(const patch of [{eaPerCtn:0},{eaPerCtn:2.5},{eaPerCtn:null},{lpCtn:null},{costIssues:['UNAVAILABLE_CBMPERCTN','PRODUCT_INACTIVE']},{productStatus:'INACTIVE'},{costCurrency:'USD'}]){cost={...original,...patch};await assert.rejects(context.read('NCT','a'.repeat(32)),/unavailable/);}
+});
