@@ -2,7 +2,7 @@
 
 Status: local candidate only. Not pushed, deployed, synchronized to Wix, or published.
 
-Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v7`; Wix pointer `20261019-finance-audit-v7`.
+Release marker prepared after user authorization and advanced after the final visual corrections: build `2026-10-19-finance-audit-v8`; Wix pointer `20261019-finance-audit-v8`.
 
 Recovery point: published `8da03d8` (`8da03d86e931748b8394d4d6202ecaf045e96ba2`).
 
@@ -32,7 +32,7 @@ The gray, orange and red Audit controls are 48 px wide by 28 px high with 4 px c
 
 The completed blue check uses an open-circle checkmark whose tick extends toward the upper right, matching the user's supplied shape while remaining a repository-native SVG and retaining the rectangular button dimensions.
 
-All enabled Account buttons now move upward by one pixel on hover and compress slightly on active press. Disabled buttons remain still, and the animation is disabled when the operating system requests reduced motion.
+All enabled Finance buttons now use the exact Purchase interaction recipe: one-pixel lift, slight brightness change and a compact shadow on hover or keyboard focus, followed by the Purchase pressed state. Finance text-entry buttons underline on hover or focus. Disabled controls remain unchanged, and reduced-motion users retain a stationary interface.
 
 ## Warehouse column follow-up
 
@@ -42,4 +42,6 @@ Before Wix synchronization, the user corrected the abnormal received capsule hei
 
 Clicking the abnormal received capsule retains the native auto-dismiss popover but presents it above and to the right of the capsule as a compact WhatsApp-style light-green chat bubble (`#d9fdd3`) with black text and a small pointer aimed back at the capsule. Its content-sized width and visible overflow prevent either scrollbar. The stored Purchase resolution source and mappings are unchanged.
 
-Focused verification is now 48 of 48 tests. The added fixture verifies `500 | 480`, no `-20`, the `Warehouse` header, and the mapped Purchase resolution. Chrome local synthetic preview verified the red capsule, compact popover, and automatic dismissal after clicking elsewhere.
+The Supplier Accounts table now uses balanced explicit widths for all nine columns. Warehouse reserves equal left and right halves around a fixed center separator: the planned value is right-aligned, the received value is left-aligned, and either side accommodates `9999`. The separator is centered under the `Warehouse` header. Docs, Pay Slip and Audit remain centered while Message retains a dedicated readable width. This is layout-only; row values and state logic are unchanged.
+
+Focused verification is now 51 of 51 tests. The fixtures verify `500 | 480`, no `-20`, the mapped Purchase resolution, the exact nine-column widths, and reserved `9999 | 9999` capacity. Chrome local synthetic preview measured the Warehouse header, cell and separator at the exact same center coordinate, with zero-pixel alignment error. The red capsule, compact popover and automatic dismissal remain intact.

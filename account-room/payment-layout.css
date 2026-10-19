@@ -38,5 +38,13 @@ body .account-purchases.acc-plan button[data-settlement="plan"]{color:#2563EB;te
 .acc-audit-thumb svg{width:18px;height:18px}
 .acc-audit-thumb{border:0;background:transparent}
 .acc-audit-thumb.static{flex:0 0 48px}
-body button:not(:disabled){transition:transform .12s ease}body button:not(:disabled):hover{transform:translateY(-1px)}body button:not(:disabled):active{transform:translateY(0) scale(.98)}
-@media(prefers-reduced-motion:reduce){body button:not(:disabled){transition:none}body button:not(:disabled):hover,body button:not(:disabled):active{transform:none}}
+body button:not(:disabled){cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease}body button:not(:disabled):is(:hover,:focus-visible){transform:translateY(-1px);filter:brightness(.94);box-shadow:0 2px 4px #17355726}body button:not(:disabled):active{transform:translateY(0);box-shadow:0 1px 2px #17355726}
+body :is(.acc-po,.acc-link):not(:disabled):is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:2px}
+@media(prefers-reduced-motion:reduce){body button:not(:disabled){transition:none}body button:not(:disabled):is(:hover,:focus-visible,:active){transform:none}}
+body .account-purchases.acc-plan table.acc-unified{min-width:1480px}
+body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(5),body .account-purchases.acc-plan .acc-unified :is(th,td):nth-child(6){text-align:center}
+body .account-purchases.acc-plan .acc-unified .acc-docs{justify-content:center}
+.acc-warehouse-qty{display:grid;grid-template-columns:minmax(38px,1fr) 10px minmax(38px,1fr);align-items:center;width:100%;gap:0}
+.acc-warehouse-qty>span:first-child{text-align:right;padding-right:6px}
+.acc-warehouse-qty>span[aria-hidden="true"]{text-align:center}
+.acc-warehouse-qty>.acc-warehouse-received{justify-self:start;margin-left:6px}
