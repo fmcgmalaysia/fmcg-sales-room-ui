@@ -24,6 +24,8 @@ const casePayload=row=>{
 };
 const searchable=(...values)=>values.flat(Infinity).map(text).filter(Boolean).join(' ').toLowerCase();
 const safeSourceId=(value,fallback)=>text(value)||digest(fallback).slice(0,24);
+const transactionRow=(row,payment)=>({id:row.id,number:row.number,supplierId:row.supplierId,supplierName:row.supplierName,customerId:row.customerId,customerName:row.customerName,customerIds:clone(row.customerIds||[]),customers:clone(row.customers||[]),finance:{payments:[clone(payment)]}});
+const withinItemLimit=record=>{if(JSON.stringify(record).length>450000)throw Error(`Account read index ${record.kind} record exceeds the safe Wix item size.`);return record;};
 const rowBase=({company,generation,kind,sourceId,row,sortAt,searchText})=>({
   _id:recordId(company,generation,kind,sourceId),
   title:`${kind} ${row.number||row.id||sourceId}`,
@@ -45,14 +47,14 @@ export function buildAccountReadIndex({company,rows}){
     const commonSearch=[row.number,row.supplierName,row.customerName,(row.customers||[]).map(item=>item.name),(row.documents||[]).map(item=>item.number)];
     const sourceId=text(row.id);
     if(!sourceId)throw Error('Account read index cannot include a case without an id.');
-    records.push({...rowBase({company:text(company),generation,kind:'CASE',sourceId,row,sortAt:caseDate(row),searchText:searchable(commonSearch)}),status:closed(row)?'COMPLETED':'ACTIVE',payableCents:Number.isSafeInteger(row.finance?.payableCents)?row.finance.payableCents:null,paidCents:Number.isSafeInteger(row.finance?.paidCents)?row.finance.paidCents:null,balanceCents:Number.isSafeInteger(row.finance?.balanceCents)?row.finance.balanceCents:null,partiallyPaidCents:Number.isSafeInteger(row.finance?.paidCents)&&row.finance.paidCents>0&&Number.isSafeInteger(row.finance?.balanceCents)&&row.finance.balanceCents>0?row.finance.paidCents:0,payload});
+    records.push(withinItemLimit({...rowBase({company:text(company),generation,kind:'CASE',sourceId,row,sortAt:caseDate(row),searchText:searchable(commonSearch)}),status:closed(row)?'COMPLETED':'ACTIVE',payableCents:Number.isSafeInteger(row.finance?.payableCents)?row.finance.payableCents:null,paidCents:Number.isSafeInteger(row.finance?.paidCents)?row.finance.paidCents:null,balanceCents:Number.isSafeInteger(row.finance?.balanceCents)?row.finance.balanceCents:null,partiallyPaidCents:Number.isSafeInteger(row.finance?.paidCents)&&row.finance.paidCents>0&&Number.isSafeInteger(row.finance?.balanceCents)&&row.finance.balanceCents>0?row.finance.paidCents:0,invoiceChecked:row.invoiceChecked===true,supplierCreditCents:Number.isSafeInteger(row.finance?.supplierCreditCents)?row.finance.supplierCreditCents:0,payload}));
     (row.finance?.payments||[]).forEach((payment,index)=>{
       const paymentId=safeSourceId(payment.id,[sourceId,'PAYMENT',index,payment]);
-      records.push({...rowBase({company:text(company),generation,kind:'TRANSACTION',sourceId:`${sourceId}:${paymentId}`,row,sortAt:iso(payment.at||payment.date),searchText:searchable(commonSearch,paymentId,payment.reference,payment.by,payment.paymentSource)}),paymentId,payload:{payment:clone(payment),row:payload}});
+      records.push(withinItemLimit({...rowBase({company:text(company),generation,kind:'TRANSACTION',sourceId:`${sourceId}:${paymentId}`,row,sortAt:iso(payment.at||payment.date),searchText:searchable(commonSearch,paymentId,payment.reference,payment.by,payment.paymentSource)}),paymentId,payload:{payment:clone(payment),row:transactionRow(row,payment)}}));
     });
     history.forEach((event,index)=>{
       const eventId=safeSourceId(event.id,[sourceId,'AUDIT',index,event]);
-      records.push({...rowBase({company:text(company),generation,kind:'AUDIT',sourceId:`${sourceId}:${eventId}`,row,sortAt:iso(event.time),searchText:searchable(commonSearch,eventId,event.action,event.actor,event.message)}),eventId,payload:{event:clone(event)}});
+      records.push(withinItemLimit({...rowBase({company:text(company),generation,kind:'AUDIT',sourceId:`${sourceId}:${eventId}`,row,sortAt:iso(event.time),searchText:searchable(commonSearch,eventId,event.action,event.actor,event.message)}),eventId,payload:{event:clone(event)}}));
     });
   }
   records.sort((a,b)=>a.kind.localeCompare(b.kind)||a.sourceId.localeCompare(b.sourceId));
