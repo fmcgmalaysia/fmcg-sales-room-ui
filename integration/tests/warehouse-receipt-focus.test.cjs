@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function fixture(){
  const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',classList:{toggle(){}},handlers:{},addEventListener(name,handler){this.handlers[name]=handler;},querySelectorAll(){return [];}});return nodes.get(id);};
  const messages=[],parent={postMessage:value=>messages.push(value)},window={addEventListener(){}};
- vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../warehouse-room/app.js'),'utf8'),{document:{getElementById:node,querySelector:node,querySelectorAll:()=>[]},window,parent,crypto:{randomUUID:()=> 'REQUEST'},setTimeout(){},clearTimeout(){},Intl,Date});
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../warehouse-room/app.js'),'utf8'),{document:{getElementById:node,querySelector:node,querySelectorAll:()=>[]},window,parent,crypto:{randomUUID:()=> 'REQUEST'},setTimeout(){},setInterval(){},clearTimeout(){},Intl,Date});
  const input=value=>({value,disabled:false,readOnly:false,dataset:{},validity:{badInput:false},matches:()=>true});
  return {input,focus:field=>node('entryLines').handlers.focusin({target:field}),blur:field=>node('entryLines').handlers.focusout({target:field}),messages};
 }

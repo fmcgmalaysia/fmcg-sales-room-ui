@@ -1,4 +1,5 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 const text=value=>String(value??'').trim();
 const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 // Order dates remain immutable intake snapshots; later Sales amendments are read from this journal.
@@ -36,7 +37,7 @@ export function readShipmentPlans(activity){
  }
  return [...plans.values()];
 }
-export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord]),readShipmentPlans(context.activity));}
+export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord,row.requested,row.archived]),readShipmentPlans(context.activity),readCustomerShipments(context.activity),context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED').map(event=>event.title).sort());}
 // Plans express customer intent only: they never allocate stock, reserve cartons or post receivables.
 export function createShipmentPlanOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
@@ -56,9 +57,17 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
     const lines=batch.lines.map(entry=>{const task=tasks.find(row=>row.id===entry.taskId);if(!task||!Number.isSafeInteger(entry.quantity)||entry.quantity<=0||entry.quantity>9999)throw Error('Select order lines and positive whole cartons.');totals.set(task.id,(totals.get(task.id)||0)+entry.quantity);return {taskId:task.id,quantity:entry.quantity};});
     return {sequence:index+1,label:text(batch.label),date:batch.date||null,lines};
    });
-   for(const [taskId,total] of totals)if(total!==tasks.find(row=>row.id===taskId).ord)throw Error('Split batches must preserve the selected line original customer quantity.');
+   for(const [taskId,total] of totals){const task=tasks.find(row=>row.id===taskId);if(total!==(task.requested??task.ord))throw Error('Split batches must preserve the selected line original customer quantity.');}
    const id=operationId(company,customerId,orderId,'SHIPMENT_PLAN'),prior=readShipmentPlans(context.activity).find(row=>row.id===id),at=now().toISOString();
    if(prior?.batches.some(batch=>batch.lines.some(line=>!totals.has(line.taskId))))throw Error('Select all previously planned products before revising this order split.');
+   for(const taskId of totals.keys()){
+    const entries=list=>(list||[]).flatMap(batch=>{const line=batch.lines.find(line=>line.taskId===taskId);return line?[{label:batch.label,date:batch.date||null,quantity:line.quantity}]:[];});
+    if(operationId(entries(prior?.batches))===operationId(entries(batches)))continue;
+    if(readCustomerShipments(context.activity).some(shipment=>shipment.status!=='CANCELLED'&&shipment.lines.some(line=>line.taskId===taskId)))throw Error('Shipment already selected or invoiced. Resolve the shipment before changing its split.');
+    const preparation=context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED'&&event.details?.state?.taskId===taskId);
+    const latest=preparation.filter(event=>!preparation.some(next=>next.details?.beforeRevision===event.title));
+    if(new Set(latest.map(event=>event.details.state.id)).size!==latest.length||latest.some(event=>event.details.state.prepared||event.details.state.loaded>0))throw Error('Warehouse preparation must be reversed before changing this split.');
+   }
    const plan={id,company,customerId,orderId,batches,reason,at,by:staff.staffName,byStaffId:staff.staffId};
    const eventId=operationId(company,requestId,staff.memberId,'SHIPMENT_PLAN_EVENT');
    return {version,event:{_id:eventId,title:eventId,description:id,image:customerId,action:'CUSTOMER_SHIPMENT_PLAN_SAVED',result:'SAVED',activityTime:at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:reason,details:{beforeRevision:prior?.revision||'',plan}}};

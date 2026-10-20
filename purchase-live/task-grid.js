@@ -24,7 +24,7 @@
     return progress(rows,orders).map((done,i)=>(i===3&&receiptProblem||i===1&&reviewProblem)?'problem':done?'complete':'pending');
   }
   function summaryProgressStates(root,rows,orders){return progressStates(rows,orders).map(state=>totals(rows).customerQty<root.ord&&state==='complete'?'pending':state);}
-  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon}) {
+  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon,shipmentPlans=[]}) {
     const roots = rows.filter(row=>!row.procurementSource), name = id=>suppliers.find(row=>row.id===id)?.shortName || suppliers.find(row=>row.id===id)?.name || 'Select Supplier 选择供应商';
     const shortName = row=>customers.find(item=>item.id===row.customerId)?.shortName || customers.find(item=>item.id===row.customerId)?.name || row.customerId;
     const person=(state,source)=>'<span class="supplier-head '+state+'" '+(source?.procurement?.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="4"/><path d="M2 19v-3a8 7 0 0 1 16 0v3z"/></svg></span>';
@@ -57,7 +57,24 @@
       const remaining=Math.max(0,row.ord-totals(sources(row,tasks).map(item=>({...item,...drafts.get(item.id)?.changes}))).customerQty);if(!remaining)return '';
       return activeColumns('<tr class="source-row waiting-row" data-waiting-for="'+escape(row.id)+'"><td></td><td></td><td></td>'+(active?'<td class="customer-child">'+childMarker+'</td>':'')+'<td class="product-stack"><span class="source-label">待安排需求</span></td><td class="order-quantity">'+quantity(remaining)+'</td><td class="received-quantity">—</td><td class="supplier-cell"><button class="supplier-plan-link" data-plan-task="'+escape(row.id)+'" aria-label="Arrange remaining demand '+escape(row.barcode)+'" '+(row.archived?'disabled':'')+'>'+person('pending')+'</button></td><td></td><td></td><td></td><td></td><td></td></tr>');
     }
-    return roots.map((row,index)=>line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'')).join('');
+    function splitRows(row,index,plan){
+      const batches=plan.batches.flatMap(batch=>{const entry=batch.lines.find(entry=>entry.taskId===row.id);return entry?[{...batch,quantity:entry.quantity}]:[];});
+      if(batches.length<2)return null;
+      const original=line(row,index,null,0),cells=original.match(/<td\b[\s\S]*?<\/td>/g),group=sources(row,tasks),sum=totals(group),received=group.reduce((n,source)=>n+(source.warehouse?.stock?.usableReceived??source.warehouse?.accepted??0),0);
+      let offset=0;
+      return batches.map((batch,batchIndex)=>{
+        const copy=[...cells],take=total=>Math.min(batch.quantity,Math.max(0,total-offset));
+        copy[0]='<td></td>';copy[1]='<td class="row-number">'+String(index+1).padStart(3,'0')+'-'+batch.sequence+'</td>';
+        copy[2]='<td class="received-age">'+escape(age(row.masterReceivedAt))+(batchIndex?'<small><button class="split-origin-link" data-split-origin="'+escape(plan.id)+'" data-split-task="'+escape(row.id)+'">Split Row</button></small>':'')+'</td>';
+        copy[4]=copy[4].replace('</td>','<small class="split-batch-label">'+escape(batch.label)+'</small></td>');
+        copy[5]='<td class="order-quantity"><span class="qty-pair">'+batch.quantity+' | '+take(sum.customerQty)+'</span></td>';
+        copy[7]='<td class="amount net-cost-cell">—</td>';copy[8]='<td class="received-quantity">'+(group.some(source=>source.warehouse?.hasPhysicalReceipt)?take(Math.min(received,row.ord)):'—')+'</td>';copy[9]='<td class="amount">—</td>';
+        offset+=batch.quantity;
+        const html='<tr class="split-demand-row" data-split-parent="'+escape(row.id)+'" data-split-batch="'+escape(plan.id+'|'+batch.sequence)+'">'+copy.join('')+'</tr>';
+        return html+(batchIndex===0&&group.some(source=>source.procurement?.totalCtn>0)?group.map((source,i)=>line(source,index,row,i)).join(''):'');
+      }).join('');
+    }
+    return roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('');
   }
   window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
 })();
