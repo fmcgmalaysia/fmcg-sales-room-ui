@@ -1,0 +1,38 @@
+{
+  "site": "Master",
+  "siteId": "8a6752d7-e5bb-42cc-aca7-77346a8e97a6",
+  "pageName": "Stock Control",
+  "pageSlug": "stock-control",
+  "htmlElement": "html1",
+  "normalization": "UTF8 SHA256 after CRLF to LF",
+  "completeEditorReadback": true,
+  "publishedLiveReceipt": true,
+  "publishReceiptText": "Congratulations This site is published and live online.",
+  "publicVerificationComplete": true,
+  "publicEvidence": {
+    "stockUrl": "https://fmcg999.wixstudio.com/master/stock-control?company=NCT",
+    "warehouseUrl": "https://fmcg999.wixstudio.com/master/warehouse-department",
+    "method": "Fresh IAB public page, clean reload, actual read-only source dialog, company switch and Warehouse Delivery Tasks comparison. No real business Save.",
+    "staff": "LAW",
+    "nctStock": [{"barcode":"4710363521543","onHand":1,"reservedUsable":1,"available":0,"isolated":0},{"barcode":"4901301424921","onHand":95,"reservedUsable":95,"available":0,"isolated":0}],
+    "ghrStockProducts": 0,
+    "warehouseDeliveryRows": 11,
+    "warehouseReadyQuantitiesMatched": [1,95],
+    "sourceDialogPo": "NCT-PO-888888",
+    "sourceDialogReserved": 95,
+    "relevantConsoleErrors": [],
+    "physicalCountVerified": false,
+    "userBusinessAcceptance": false
+  },
+  "businessWrites": false,
+  "deployment": { "sha": "fefc42e7aa0821b5d2c9974541b3f46321213654", "runId": 39517489005, "temporaryPolicyId": 63773484, "temporaryPolicyRemoved": true, "originalSevenExact": true, "pagesVerified": true, "assetsExact": 10, "marker": "2026-10-21-stock-control-v1" },
+  "hashes": {
+    "integration/backend/stockPhysicalProjection.js": "64d3d88593ee030a1fcfb75195683a1a4e8dc7a227f5b3fa21c441a782c48344",
+    "integration/backend/stockCardProjection.js": "1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300",
+    "integration/backend/stockControlService.js": "c6e146aa74677b8b44589c116ea5209b62dd5551cbee74e3bcc712bd3105449d",
+    "integration/backend/stockControl.web.js": "bc6805fd2328f8988b1cdfb0419f901bc3e75629250decfd03e4c032341904f7",
+    "integration/backend/warehousePreparation.js": "968dcef6aced32fcfd21a91c409aa5061063bd69d60b47ee2687d577c1c77fe4",
+    "integration/wix/stock-control-page.js": "8d9af81bb30d49ab9cd7ce9a1c1b90b8409d0bbaf6aedf5d5843200a2b795338",
+    "integration/wix/warehouse-department-page.js": "d38425446dbc4c01ef58b86c88140fd48a5da2df345fc32b8ba606c0f910e91e"
+  }
+}

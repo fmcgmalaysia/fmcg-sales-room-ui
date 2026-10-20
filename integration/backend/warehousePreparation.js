@@ -36,7 +36,10 @@ function readyStockFor(task,context,shipments,onlySourceId){
   const heldElsewhere=targets.filter(t=>t.taskId!==task.id).reduce((n,t)=>n+Math.max(0,t.quantity-shippedFrom(source.id,t.taskId)),0);
   const available=Math.max(0,physical-heldElsewhere),own=source.id===task.id||source.customerDemandTaskId===task.id;
   const incoming=Math.max(0,(targets.find(t=>t.taskId===task.id)?.quantity||0)-shippedFrom(source.id,task.id));
-  return sum+(own?available:Math.min(available,incoming));
+  const share=source.procurement?.customerCtn,totalCtn=source.procurement?.totalCtn;
+  const knownShare=Number.isSafeInteger(share)&&share>=0&&Number.isSafeInteger(totalCtn)&&totalCtn>=share;
+  const ownLimit=targets.some(t=>t.taskId===task.id)?incoming:knownShare?Math.max(0,share-shippedFrom(source.id,task.id)):available;
+  return sum+(own?Math.min(available,ownLimit):Math.min(available,incoming));
  },0);
  const sent=dispatched.filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0);
  return Math.min(total,Math.max(0,(task.salesCommittedQty??task.ord)-sent));
