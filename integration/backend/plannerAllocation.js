@@ -4,7 +4,7 @@ import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 export function readAllocations(activity){
-  const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED'),sources=new Map();
+  const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED').concat(activity.filter(event=>event.action==='SALES_ORDER_ADJUSTMENT_SAVED'&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
   while(pending.length){
     const candidates=pending.filter(event=>(sources.get(event.imageAltText)?.revision||'')===event.details?.beforeRevision);
     if(!candidates.length||new Set(candidates.map(event=>event.imageAltText)).size!==candidates.length)throw Error('Allocation history requires review.');

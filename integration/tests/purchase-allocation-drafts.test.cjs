@@ -16,6 +16,13 @@ function twoSources(f,saved=false){
  cache.rows=cache.rows.filter(row=>row.taskId);const b=f.planner.rowDraft(null,'second');Object.assign(b,{supplierId:'S2',transportMode:'SUPPLIER_DELIVER',qty:'30',paid:'30',raw:{lpPc:'2.00',lpCtn:'48.00',disc1:'0.00',disc2:'0.00',disc3:'0.00'},originalRaw:{},manual:[]});cache.rows.push(b);cache.dirty=true;f.ui.restore(cache);f.ui.open('A');return root;
 }
 
+test('same product batches retain separate drafts, saved PO totals are read-only and new supply carries selected batch',()=>{
+ const f=fixture(),root=f.workspace.tasks[0];root.ord=550;root.procurement={revision:'P1',totalCtn:400,draftPlan:false,transportMode:'SUPPLIER_DELIVER'};root.po='NCT-PO-ORIGINAL';root.batchAllocationVersion='BV';root.batchEntitlements=[{id:'PLAN|1',label:'This shipment',quantity:350,metrics:{committed:300},sources:[{id:'A',quantity:300}]},{id:'PLAN|2',label:'Next shipment',quantity:200,metrics:{committed:100},sources:[{id:'A',quantity:100}]}];
+ f.ui.open('A','PLAN|1');assert.equal(f.edit('A','qty','999'),true);assert.equal(f.ui.serialize(),null);f.edit('draft-1','supplierId','S');f.edit('draft-1','qty','30');f.ui.open('A','PLAN|2');f.edit('draft-1','supplierId','S2');f.edit('draft-1','qty','70');let cache=f.ui.serialize();assert.equal(cache.rows.find(row=>row.key==='draft-1').qty,'70');assert.equal(cache.parkedDrafts[0].rows.find(row=>row.key==='draft-1').qty,'30');
+ const g=fixture();g.workspace.tasks[0]=root;g.ui.restore(JSON.parse(JSON.stringify(cache)));g.ui.open('A','PLAN|1');cache=g.ui.serialize();assert.equal(cache.batchId,'PLAN|1');assert.equal(cache.rows.find(row=>row.key==='draft-1').qty,'30');assert.equal(cache.rows.find(row=>row.taskId==='A').qty,'400');
+ for(const [key,value] of Object.entries({lpPc:'2',lpCtn:'48',disc1:'0',disc2:'0',disc3:'0',transportMode:'SUPPLIER_DELIVER'}))g.edit('draft-1',key,value);g.ui.click({dataset:{allocationSave:'draft-1'}});assert.equal(g.submissions.length,1);assert.equal(g.submissions[0].operation,'ADD_SOURCE');assert.equal(g.submissions[0].input.quantity,30);assert.equal(g.submissions[0].input.shipmentBatchId,'PLAN|1');assert.equal(g.submissions[0].input.shipmentBatchVersion,'BV');assert.equal(root.procurement.totalCtn,400);
+});
+
 test('initial barcode reference survives first supplier choice, but a new split and supplier replacement require their own cost',()=>{
  const f=fixture(),root=f.workspace.tasks[0];root.supplierId='';root.disc1=.123456;
  f.ui.open('A');f.edit('A','qty','100');let row=f.ui.serialize().rows[0];assert.equal(row.originalPrices.lpCtn,48);

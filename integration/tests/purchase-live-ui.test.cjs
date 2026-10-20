@@ -9,7 +9,7 @@ test('Self Collect marks only its saved supplier head and preserves visible chil
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'FIRST'},{id:'B',name:'SECOND'}];Object.assign(w.tasks[0],{supplierId:'S',ord:100,procurement:{revision:'P1',totalCtn:60,transportMode:'SELF_COLLECT'}});
  w.tasks.push({...w.tasks[0],id:'CHILD',supplierId:'B',ord:0,procurementSource:true,customerDemandTaskId:'TASK',procurement:{revision:'P2',totalCtn:30,transportMode:'SUPPLIER_DELIVER'}});
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML;
- assert.equal((html.match(/class="supplier-head complete" data-self-collect="true"/g)||[]).length,1);assert.match(html,/>FIRST<\/button>/);assert.match(html,/>SECOND<\/button>/);
+ assert.equal((html.match(/class="supplier-head complete" data-self-collect="true"/g)||[]).length,2);assert.match(html,/>FIRST<\/button>/);assert.match(html,/>SECOND<\/button>/);const child=(html.match(/<tr[^>]*data-source-id="CHILD"[\s\S]*?<\/tr>/)||[])[0];assert.ok(child);assert.doesNotMatch(child,/data-self-collect="true"/);assert.match(child,/supplier-head complete/);
 });
 test('each checked orange source PO opens the same cross-row selection without a top PO control',()=>{
  for(const clicked of ['TASK','OTHER-CHILD']){

@@ -29,7 +29,7 @@ export function createSalesShipmentDateOperations({store,names,readContext,now=(
  };
 }
 export function readShipmentPlans(activity){
- const pending=activity.filter(row=>row.action==='CUSTOMER_SHIPMENT_PLAN_SAVED'&&row.result==='SAVED'),plans=new Map();
+ const pending=activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SALES_ORDER_ADJUSTMENT_SAVED'].includes(row.action)&&row.result==='SAVED'),plans=new Map();
  while(pending.length){
   const next=pending.filter(row=>(plans.get(row.description)?.revision||'')===row.details?.beforeRevision);
   if(!next.length||new Set(next.map(row=>row.description)).size!==next.length)throw Error('Shipment plan history requires review.');
@@ -59,6 +59,14 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
    });
    for(const [taskId,total] of totals){const task=tasks.find(row=>row.id===taskId);if(total!==(task.requested??task.ord))throw Error('Split batches must preserve the selected line original customer quantity.');}
    const id=operationId(company,customerId,orderId,'SHIPMENT_PLAN'),prior=readShipmentPlans(context.activity).find(row=>row.id===id),at=now().toISOString();
+   // Once quantities carry batch entitlements, legacy PLAN must not erase or renumber them.
+   for(const previous of prior?.batches||[]){
+    for(const line of previous.lines.filter(line=>line.coverage)){
+     const batch=batches.find(batch=>batch.label===previous.label&&batch.date===previous.date),current=batch?.lines.find(row=>row.taskId===line.taskId);
+     if(!current||current.quantity!==line.quantity||batch.sequence!==previous.sequence)throw Error('Use Order Adjustment to change an allocated shipment batch.');
+     Object.assign(current,{coverage:line.coverage,sourceCoverage:line.sourceCoverage,stockCoverage:line.stockCoverage});
+    }
+   }
    if(prior?.batches.some(batch=>batch.lines.some(line=>!totals.has(line.taskId))))throw Error('Select all previously planned products before revising this order split.');
    for(const taskId of totals.keys()){
     const entries=list=>(list||[]).flatMap(batch=>{const line=batch.lines.find(line=>line.taskId===taskId);return line?[{label:batch.label,date:batch.date||null,quantity:line.quantity}]:[];});
@@ -68,7 +76,7 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
     const latest=preparation.filter(event=>!preparation.some(next=>next.details?.beforeRevision===event.title));
     if(new Set(latest.map(event=>event.details.state.id)).size!==latest.length||latest.some(event=>event.details.state.prepared||event.details.state.loaded>0))throw Error('Warehouse preparation must be reversed before changing this split.');
    }
-   const plan={id,company,customerId,orderId,batches,reason,at,by:staff.staffName,byStaffId:staff.staffId};
+   const plan={id,company,customerId,orderId,batches,...(prior?.sourceBaselines?{sourceBaselines:prior.sourceBaselines}:{}),reason,at,by:staff.staffName,byStaffId:staff.staffId};
    const eventId=operationId(company,requestId,staff.memberId,'SHIPMENT_PLAN_EVENT');
    return {version,event:{_id:eventId,title:eventId,description:id,image:customerId,action:'CUSTOMER_SHIPMENT_PLAN_SAVED',result:'SAVED',activityTime:at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:reason,details:{beforeRevision:prior?.revision||'',plan}}};
   },apply:async plan=>{const existing=await store.read(names[company].activity,plan.event._id);if(!existing){if(shipmentPlanVersion(await readContext(company,staff))!==plan.version)throw Error('Shipment plan changed while saving.');await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Shipment plan receipt conflict.');return {ok:true,company,requestId,planId:plan.event.description};}});

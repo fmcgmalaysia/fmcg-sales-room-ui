@@ -4,6 +4,7 @@ import { customerCompletion } from 'backend/customerCompletionProjection.js';
 import { readSalesShipmentDate, shipmentDateLocked, readShipmentPlans } from 'backend/customerShipmentPlan.js';
 import { readShortage } from 'backend/purchaseShortage.js';
 import { preparationSummary } from 'backend/warehousePreparation.js';
+import { resolveBatchEntitlements } from 'backend/shipmentBatchAllocation.js';
 export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity,purchaseOrders=[],workspace=null}) {
   if(typeof customerId!=='string'||!customerId||!Array.isArray(requests)||!requests.length||requests.length>100)throw Error('Invalid quantity request.');
   if(activity.some(event=>event.action==='PURCHASE_QUANTITY_CASE_DECIDED'&&event.result==='SAVED')&&!workspace)throw Error('Current quantity case feedback is required.');
@@ -26,11 +27,14 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
         quantity=detail.after;remaining.splice(remaining.indexOf(event),1);
       }
       if(!Number.isSafeInteger(quantity)||quantity<0||task.purchaseQtyInCtn!==quantity)throw Error('Quantity save is still being confirmed.');
+      const adjusted=workspace?.tasks.find(row=>row.id===task.title),demandAdjustment=adjusted?.salesDemandRevision?{quantity:adjusted.requested,revision:adjusted.salesDemandRevision,original:order.orderQtyInCtn}:null;
+      if(demandAdjustment)quantity=adjusted.salesCommittedQty;
       const warehouse=readWarehouseTask(task,activity),decision=workspace?.tasks.find(row=>row.id===task.title)?.shortage||readShortage(task.title,activity),completion=customerCompletion(task.title,activity,purchaseOrders);if(completion&&(completion.invoicedQty>quantity||completion.invoicedQty>(warehouse?.customerReceived||0)))throw Error('Invoice quantities require review.');
       const preparation=workspace?preparationSummary(task.title,{...workspace,activity}):null;
       const shipmentPlan=readShipmentPlans(activity).find(plan=>plan.customerId===customerId&&plan.orderId===request.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===task.title)));
-      const shipmentBatches=shipmentPlan?shipmentPlan.batches.flatMap(batch=>{const line=batch.lines.find(line=>line.taskId===task.title);return line?[{id:shipmentPlan.id+'|'+batch.sequence,label:batch.label,quantity:line.quantity,at:shipmentPlan.at,by:shipmentPlan.by}]:[];}):[];
-      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===(warehouse?.customerReceived||0)?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.allocationAt||warehouse.at}:{})});
+      const entitlements=adjusted?.batchEntitlements||(shipmentPlan?resolveBatchEntitlements(shipmentPlan,task.title,{committed:quantity,received:warehouse?.customerReceived||0}):[]);
+      const shipmentBatches=entitlements.map(row=>({id:row.id,label:row.label,quantity:row.quantity,metrics:row.metrics,at:shipmentPlan.at,by:shipmentPlan.by}));
+      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===(warehouse?.customerReceived||0)?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.allocationAt||warehouse.at}:{})});
     }
     const ownedOrders=orders.filter(row=>row.title===request.orderId&&row.customerId===customerId&&row.submissionId===request.submissionId);const date=readSalesShipmentDate(request.orderId,customerId,request.submissionId,ownedOrders[0]?.estimatedShipmentDate,activity);
     output.push({orderId:request.orderId,submissionId:request.submissionId,lines,shipmentDate:{...date,locked:workspace?shipmentDateLocked(workspace.tasks.filter(row=>row.orderId===request.orderId&&row.customerId===customerId)):false}});

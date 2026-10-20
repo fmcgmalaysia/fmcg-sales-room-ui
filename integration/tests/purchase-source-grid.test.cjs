@@ -18,7 +18,7 @@ test('multiple sources always show both children; disabled mother does not consu
 test('two saved supplier heads plus one remainder head do not invent a third source, amount or PO',()=>{
  for(const active of [false,true]){
   const f=fixture();f.root.ord=120;f.args.active=active;const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.equal(rows.length,4);
-  assert.equal((rows[0].match(/supplier-head complete/g)||[]).length,2);assert.equal((rows[0].match(/supplier-head pending/g)||[]).length,1);assert.doesNotMatch(rows[0],/2 Suppliers|SUPPLIER A|SUPPLIER B/);
+  assert.equal((rows[0].match(/supplier-head complete/g)||[]).length,2);assert.equal((rows[0].match(/supplier-head pending/g)||[]).length,1);assert.doesNotMatch(rows[0],/2 Suppliers/);assert.match(rows[0],/SUPPLIER A/);assert.match(rows[0],/SUPPLIER B/);
   assert.match(rows[1],/SUPPLIER A/);assert.match(rows[2],/SUPPLIER B/);assert.match(rows[3],/data-waiting-for="R"/);assert.match(rows[3],/class="order-quantity">20<\/td>/);assert.match(rows[3],/data-plan-task="R"/);assert.doesNotMatch(rows[3],/data-select|data-source-id|data-po-task|data-source-po-task|1,000|600/);assert.equal(f.args.tasks.length,2);
   assert.ok(rows.every(row=>(row.match(/<td\b/g)||[]).length===(active?11:12)));
  }
