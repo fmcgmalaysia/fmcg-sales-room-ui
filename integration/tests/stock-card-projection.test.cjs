@@ -48,7 +48,8 @@ test('40 reserved then 5 quarantined: 35 usable, shortfall 5; does not silently 
     activityTime: at, details: { company: 'NCT', quantity: 5, kind: 'INTERNAL_DAMAGE', reason: 'Counted damage' } };
   const row = projectStockCard(context([task('A', { warehouse: received(40) })],
     [allocation([{ taskId: 'A', quantity: 40 }]), issue])).items[0];
-  assert.equal(row.usableOnHand, 35); assert.equal(row.reserved, 40); assert.equal(row.shortage, 5); assert.equal(row.available, null);
+  assert.equal(row.usableOnHand, 35); assert.equal(row.reserved, 40); assert.equal(row.shortage, 5); assert.equal(row.available, 0);
+  assert.equal(row.reservedUsable, 35); assert.equal(row.reviewRequired, true);
   assert.equal(row.onHand, 40); assert.equal(row.isolated, 5);
 });
 

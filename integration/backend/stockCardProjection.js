@@ -87,6 +87,8 @@ export function projectStockCard(context) {
     }
     const cached = source.warehouse.stock?.availablePhysical;
     if (cached !== undefined && cached !== stock.availablePhysical) issues.push('STOCK_SNAPSHOT_MISMATCH');
+    const reservationKnown = issues.every(code => code === 'RESERVED_STOCK_SHORTAGE');
+    const available = !issues.length ? unassigned : issues.every(code => code === 'RESERVED_STOCK_SHORTAGE') ? 0 : null;
     const row = { sourceTaskId: source.id, customerDemandTaskId: source.customerDemandTaskId || source.id,
       po: source.po || '', received: stock.received, replacementReceived: stock.replacementReceived,
       dispatched: stock.shipped, excluded: stock.excluded, unresolvedHeld: stock.held,
@@ -94,8 +96,8 @@ export function projectStockCard(context) {
       onHand: physical.onHand, isolated: physical.isolated, returned: physical.returned,
       ownershipBasis: allocation ? 'PLANNER_ALLOCATION' : canResolveSource ? 'PURCHASE_CUSTOMER_SHARE' : 'REVIEW_REQUIRED',
       outstandingClaims: reserved,
-      reservedUsable: issues.length ? null : Math.min(reserved, stock.availablePhysical),
-      available: issues.length ? null : unassigned, issues: [...new Set(issues)] };
+      reservedUsable: reservationKnown ? Math.min(reserved, stock.availablePhysical) : null,
+      available, issues: [...new Set(issues)] };
     if (!groups.has(key)) groups.set(key, { key: JSON.stringify([context.company, key]), company: context.company,
       barcode: source.barcode, name: source.name || '', packing: source.packing, ea: source.ea, sources: [], incoming: 0 });
     groups.get(key).sources.push(row);

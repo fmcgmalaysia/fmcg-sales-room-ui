@@ -1,5 +1,21 @@
 # Stock Card read model — 2026-10-20
 
+## Stock Control implementation continuation — 2026-10-21
+
+After the user challenged the lack of operational Stock Card progress, work returned to this branch. New actual-data components now exist: `stockControlService.js`, `stockControl.web.js`, `integration/wix/stock-control-page.js`, and `warehouse-room/stock-control.html` / `stock-control.css` / `stock-control-app.js`. These are separate from the earlier synthetic preview. They provide an authenticated read-only dedicated page and server reader, not sample-data fallback. No existing live Warehouse/Purchase/Support file was edited.
+
+The reader uses existing `requireWarehouseStaff`, `readFulfilmentContext` and receipt/allocation/dispatch authorities. It permits the existing Warehouse, SUPER ADMIN and TOP MANAGEMENT identities; Support alone is denied. Raw procurement/financial snapshots never leave the server. Server filtering and versioned product pagination are included; unknown balances remain visible and are not advertised as free stock. Archived sources with physical leftovers remain visible. Source details show actual PO/source identity and outstanding customer claims. Known shortage40/usable35/isolation5 now reports onHand40, reservedUsable35, free0, isolated5, with an explicit shortage5/review flag. Outstanding demand40 is retained separately.
+
+The dedicated frontend has company selection, actual-data read requests, filters, source details, last successful read, pagination, same-request/result matching and stale-company response rejection. Failed reads retain the last successful same-company view and show an error. Company changes clear prior company data. No automatic refresh overwrites an open source dialog. No simulated quantities, save controls or adjustment permissions are present in this operational page. The new Wix page entry expects the existing `html1` convention but has NOT been installed into Wix.
+
+Latest focused set: 34 offline checks across Stock Control service (7 new authorization/paging/privacy cases), Stock Card projection, physical stock and save safety; frontend syntax passes. This is not public-page or actual deployed-server acceptance. No new collection/schema/business writes or deployment permissions were created.
+
+Remaining before production: fresh complete relevant Wix readback; compare current protected components; install the new backend files and dedicated Wix page with a minimal Warehouse navigation entry; verify existing Ready calculations against the shared source policy; then complete authorized publishing and real public reads. Current browser observations still exposed the Source editor and did not establish a complete Master backend readback; do not claim the earlier geometry/timeouts are fixed. Existing receipt/dispatch and Sales split paths remain untouched.
+
+Important unfinished scope: the server reader presently replays existing full history via `readFulfilmentContext`. Product pagination limits product count only; it is not a scalable current-balance checkpoint and does not bound one product's source count. Persistent current balances/checkpoint recovery, historical replay cost measurement, physical-disposal evidence, opening-stock reconciliation, real stock counting/approval/adjustment, and Purchase stock-first allocation remain unfinished. Those must not be described as solved by this read-only page. No competing stock ledger or read-triggered balance writes were introduced to disguise these gaps.
+
+Support PR216 remains separately committed and pushed with the user's exact-Loaded correction. A separate checkout at `C:/FMCG-WIX-LOCAL/worktrees/support-invoice-workbench-20261021` preserves its reviewable files while this checkout continues Stock Control; no Support code was merged into this stock branch.
+
 ## Current continuation — 2026-10-21
 
 User approved beginning the implementation after the final architecture review. This continuation changes only the unintegrated Stock Card candidate and adds an isolated local preview. No production consumer, existing Warehouse/Purchase business module, Wix draft, schema, business record, deployment policy or main branch was changed.
