@@ -47,35 +47,40 @@
   function create(api){
     let state=null,referenceRequest=null,referenceSession={};
     const caughtRows=new Set();
-    const rowLocked=row=>{const saved=workspace().tasks.find(item=>item.id===row.taskId);return Boolean(saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||saved?.financeSubmitted||api.financeLocked?.(row.taskId));};
+    const rowLocked=row=>{const saved=workspace().tasks.find(item=>item.id===row.taskId);return Boolean(state?.batchId&&saved?.procurement?.totalCtn>0||saved?.archived||saved?.salesInvoiceLocked||saved?.salesInvoiceNumber||saved?.financeSubmitted||api.financeLocked?.(row.taskId));};
     const parkedDrafts=new Map();
     const esc=api.esc,money=api.num;
     const workspace=()=>api.workspace();
     const rootTask=()=>workspace()?.tasks.find(row=>row.id===state?.rootId);
+    const draftKey=context=>context.rootId+(context.batchId?'|'+context.batchId:'');
+    const batchTask=()=>rootTask()?.batchEntitlements?.find(row=>row.id===state?.batchId);
+    const pendingBatch=()=>Math.max(0,(batchTask()?.quantity||0)-(batchTask()?.sources||[]).reduce((sum,row)=>sum+row.quantity,0));
     function remainingRow(){
       const root=rootTask();if(!root||state.running)return;
-      const filled=state.rows.filter(row=>row.supplierId||row.taskId),sum=filled.reduce((n,row)=>n+(Number(row.qty)||0),0),remaining=Math.max(0,root.ord-sum);
+      const filled=state.rows.filter(row=>row.supplierId||row.taskId),sum=filled.reduce((n,row)=>n+(Number(row.qty)||0),0),remaining=state.batchId?Math.max(0,pendingBatch()-filled.filter(row=>!row.taskId).reduce((n,row)=>n+(Number(row.qty)||0),0)-filled.filter(row=>row.taskId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.totalCtn).reduce((n,row)=>n+(Number(row.qty)||0),0)):Math.max(0,root.ord-sum);
       let empty=state.rows.find(row=>!row.taskId&&!row.supplierId&&row.auto);
       if(remaining>0&&!empty){empty={...rowDraft(null,'draft-'+(++state.counter)),qty:String(remaining),auto:true};state.rows.push(empty);}
       if(empty){empty.qty=String(remaining);empty.hidden=remaining===0;}
     }
-    function open(id){
+    function open(id,batchId=''){
       const data=workspace(),source=data.tasks.find(row=>row.id===id),root=source?.procurementSource?data.tasks.find(row=>row.id===source.customerDemandTaskId):source;
       if(!root)return;
-      if(state&&state.rootId!==root.id){
+      if(batchId&&!root.batchEntitlements?.some(row=>row.id===batchId)){api.status('Shipment batch changed 请刷新后重新核对批次。',true);return;}
+      const key=draftKey({rootId:root.id,batchId});
+      if(state&&draftKey(state)!==key){
         if(state.running||state.current||api.savePending()){api.status('保存结果尚未确认；可继续浏览，请先核对原保存再编辑其他分单。',true);return;}
-        if(state.dirty){parkedDrafts.set(state.rootId,state);const task=data.tasks.find(item=>item.id===state.rootId);api.status((api.rowLabel?.(state.rootId)||state.rowLabel||'产品')+' · '+(task?.barcode||state.rootId)+' 有未完成草稿，已保留；可继续处理其他任务。');}
-        state=parkedDrafts.get(root.id)||null;parkedDrafts.delete(root.id);
+        if(state.dirty){parkedDrafts.set(draftKey(state),state);const task=data.tasks.find(item=>item.id===state.rootId);api.status((api.rowLabel?.(state.rootId)||state.rowLabel||'产品')+' · '+(task?.barcode||state.rootId)+' 有未完成草稿，已保留；可继续处理其他任务。');}
+        state=parkedDrafts.get(key)||null;parkedDrafts.delete(key);
       }
-      if(!state&&parkedDrafts.has(root.id)){state=parkedDrafts.get(root.id);parkedDrafts.delete(root.id);}
-      if(!state||state.rootId!==root.id||!state.dirty&&!state.running){const sources=[root,...data.tasks.filter(row=>row.customerDemandTaskId===root.id)];state={company:data.company,rootId:root.id,counter:0,reason:'',rows:sources.map(row=>rowDraft(row,row.id)),dirty:false,running:false,current:null,issue:'',reopen:true};}
+      if(!state&&parkedDrafts.has(key)){state=parkedDrafts.get(key);parkedDrafts.delete(key);}
+      if(!state||draftKey(state)!==key||!state.dirty&&!state.running){const sources=[root,...data.tasks.filter(row=>row.customerDemandTaskId===root.id)];state={company:data.company,rootId:root.id,batchId,batchVersion:root.batchAllocationVersion,counter:0,reason:'',rows:sources.map(row=>rowDraft(row,row.id)),dirty:false,running:false,current:null,issue:'',reopen:true};if(batchId){for(const row of state.rows){const saved=data.tasks.find(task=>task.id===row.taskId);if(saved?.procurement?.totalCtn>0)row.status='saved';else {row.qty=String(pendingBatch());row.paid=row.qty;}}}}
       referenceSession={};caughtRows.clear();if(state.issue==='正在抓取成本，请稍候…'){state.issue='';state.issueTone='';}
       state.rowLabel=api.rowLabel?.(root.id)||state.rowLabel||'';state.reopen=true;remainingRow();render();api.cache();
     }
     function render(){
       const root=rootTask();if(!root||!state)return;
       const customer=workspace().customers.find(row=>row.id===root.customerId);
-      api.dialog('供应商分单',(customer?.shortName||customer?.name||root.customerId)+' · '+(root.transactionCurrency||''),
+      api.dialog('供应商分单',(customer?.shortName||customer?.name||root.customerId)+' · '+(root.transactionCurrency||'')+(state.batchId?' · '+batchTask().label+' · Pending 待采购 '+pendingBatch()+' CTN · Saved supplier totals 已存供应商总数只读':''),
         '<section class="supplier-allocation"><div class="allocation-product"><div class="allocation-product-title"><span class="allocation-product-barcode">'+esc(root.barcode)+'</span><strong aria-description="'+esc(root.name)+'">'+esc(root.name)+'</strong><span class="allocation-product-packing">'+esc(root.packing)+'</span></div><div>需求<strong>'+esc(root.ord)+' CTN</strong></div></div><div class="allocation-scroll"><table class="allocation-table"><colgroup><col style="width:3%"><col style="width:16%"><col style="width:6%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:8%"><col style="width:11%"><col style="width:11%"></colgroup><thead><tr><th></th><th>供应商</th><th>方式</th><th>CTN</th>'+[['LP/Pc','MYR'],['LP/Ctn','MYR'],['Disc.1','%'],['Disc.2','%'],['Disc.3','MYR'],['Net Cost','MYR/CTN'],['Catch Cost',''],['Amount','MYR']].map(([label,unit])=>'<th>'+label+'<small>'+unit+'</small></th>').join('')+'<th>Transport</th><th>PO</th></tr></thead><tbody id="allocationRows"></tbody></table></div><div class="allocation-confirmations" id="allocationConfirmations"></div><div id="allocationSummary" class="allocation-summary" aria-live="polite"></div><label class="allocation-reason"><span id="allocationReasonLabel">原因（选填）</span><input id="allocationReason" maxlength="2000" value="'+esc(state.reason)+'"></label><div id="allocationHistory" class="allocation-history"></div></section>',
         '<div class="allocation-save-actions"><div id="allocationIssue" class="allocation-issue '+(state.running||state.current?'pending':state.issueTone||'')+'" role="status">'+esc(state.issue)+'</div><div class="allocation-save-buttons"><button class="btn" id="discardSupplierAllocation" '+(state.running?'disabled':'')+'>Cancel</button><button class="btn primary" id="applySupplierAllocation" '+(state.running?'disabled':'')+'>Save</button></div></div>','task');
       api.modal().classList.add('supplier-allocation-dialog');renderRows();
@@ -84,7 +89,7 @@
       const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||rowLocked(row);
       const supplierLocked=locked||saved?.po||saved?.procurement?.revision&&!saved.procurement.draftPlan;
       const person='<span class="allocation-person '+(saved?.procurement?.revision&&row.supplierId===saved.supplierId?'complete':'pending')+'" '+(row.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="3"/><path d="M4 18v-3a6 6 0 0 1 12 0v3z"/></svg><b>'+(index+1)+'</b></span>';
-      const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'><option value="">WAITING</option>'+workspace().suppliers.filter(s=>s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id)).map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>';
+      const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'><option value="">WAITING</option>'+workspace().suppliers.filter(s=>state.batchId||s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id)).map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>';
       const method=row.supplierId?'<select data-allocation-field="mode" '+(locked?'disabled':'')+' aria-label="Supplier '+(index+1)+' costing mode"><option value="NORMAL" '+(row.mode!=='FOC'?'selected':'')+'>普通</option><option value="FOC" '+(row.mode==='FOC'?'selected':'')+'>FOC</option></select>':'<span class="allocation-waiting-label">WAITING</span>';
       const clean=saved&&!changed(row,saved),ready=['SUPPLIER_DELIVER','SELF_COLLECT'].includes(row.transportMode)&&Number.isFinite(calculation(row).averageCostCtn)&&calculation(row).averageCostCtn>0;
       const poTime=(saved?.history||[]).find(event=>event.action==='PURCHASE_PO_ASSIGNED'&&event.result==='SAVED')?.time;
@@ -124,7 +129,8 @@
       for(const row of state.rows){const extra=document.querySelector('[data-allocation-extra="'+row.key+'"]');if(extra)extra.hidden=assigned<=rootTask().ord;}
       const reasonLabel=document.querySelector('#allocationReasonLabel');if(reasonLabel)reasonLabel.textContent=needsReason(state,workspace())?'原因 *':'原因（选填）';
       const stockNote=document.querySelector('#allocationStockNote');if(stockNote){stockNote.hidden=assigned<=rootTask().ord;stockNote.textContent='预计余货 '+Math.max(0,assigned-rootTask().ord)+' CTN → 库存';}
-      document.querySelector('#allocationSummary').innerHTML='<span>草稿预览 · 已安排 <b>'+assigned+' CTN</b> · 待安排 <b>'+Math.max(0,rootTask().ord-assigned)+' CTN</b>'+(assigned>rootTask().ord?' · 额外库存 <b>'+(assigned-rootTask().ord)+' CTN</b>':'')+'</span><span class="allocation-summary-amount">合计 MYR <strong>'+esc(known?money(amount):'—')+'</strong></span>';
+      const batch=batchTask(),batchAdded=state.batchId?state.rows.filter(row=>!row.taskId&&row.supplierId).reduce((sum,row)=>sum+(Number(row.qty)||0),0):0;
+      document.querySelector('#allocationSummary').innerHTML=(state.batchId?'<span>本批草稿 · 待采购 <b>'+pendingBatch()+' CTN</b> · 新增安排 <b>'+batchAdded+' CTN</b> · 尚待安排 <b>'+Math.max(0,pendingBatch()-batchAdded)+' CTN</b></span>':'<span>草稿预览 · 已安排 <b>'+assigned+' CTN</b> · 待安排 <b>'+Math.max(0,rootTask().ord-assigned)+' CTN</b>'+(assigned>rootTask().ord?' · 额外库存 <b>'+(assigned-rootTask().ord)+' CTN</b>':'')+'</span>')+'<span class="allocation-summary-amount">'+(state.batchId?'全部来源合计':'合计')+' MYR <strong>'+esc(known?money(amount):'—')+'</strong></span>';
     }
     function edit(event){
       if(!state||state.running||state.current||api.savePending()||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
@@ -172,6 +178,7 @@
       if(!row.taskId&&!root.procurement?.totalCtn&&!initializeRoot){pause('首个采购来源已有变化或保护记录；草稿保留，请核对后再保存。');return;}
       const saved=workspace().tasks.find(item=>item.id===row.taskId)||(initializeRoot?root:null),taskId=row.taskId||(initializeRoot?root.id:null),input=taskId?{taskId,version:initializeRoot?root.editVersion:row.version,planRevision:saved.procurement?.revision||'',totalCtn:Number(row.qty),reason:state.reason,extraKind:row.extraKind,supplierId:row.supplierId,prices:values(row),draftPlan:!saved.po}:{parentTaskId:state.rootId,version:workspace().sourcesVersion,supplierId:row.supplierId,poNumber:'',draftPlan:true,quantity:Number(row.qty),prices:values(row),reason:state.reason};
       input.costing=calculation(row);input.transportMode=row.transportMode;
+      if(state.batchId){input.shipmentBatchId=state.batchId;input.shipmentBatchVersion=state.batchVersion;}
       state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId,...(initializeRoot?{allocationInitializeRoot:true}:{})});
     }
     function pause(message){state.issueTone='problem';state.running=false;state.current=null;state.issue=message;state.reopen=true;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))render();api.status(message,true);}
@@ -188,6 +195,7 @@
     function receivedWorkspace(){
       if(!state||state.company!==workspace()?.company)return;
       for(const row of state.rows.filter(row=>row.status==='saved')){const saved=workspace().tasks.find(task=>task.id===row.taskId);if(!saved){pause('成功回执的采购来源未读回；停止后续提交，请核对。');return;}if(changed(row,saved)){pause('已确认来源的最新资料与本次提交不一致；停止后续提交，草稿保留。');return;}row.version=saved.editVersion;}
+      if(state.batchId&&!state.current)state.batchVersion=rootTask().batchAllocationVersion;
       if(state.saveKey&&!state.current&&state.rows.some(row=>row.key===state.saveKey&&row.status==='saved')){state.running=false;state.saveKey=null;state.dirty=state.rows.some(row=>row.supplierId&&(!row.taskId||changed(row,workspace().tasks.find(saved=>saved.id===row.taskId))));state.issue=state.dirty?'此来源已保存 · 其他草稿保留':'此来源已保存';state.issueTone='complete';api.cache();if(state.reopen&&api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();state.reopen=false;return;}
       if(state.running){next();return;}
       if(state.reopen&&!api.savePending()){state.reopen=false;if(api.modal().classList.contains('supplier-allocation-dialog'))render();}
@@ -229,8 +237,8 @@
     function serialize(){const parked=[...parkedDrafts.values()].filter(item=>item.dirty||item.running).map(item=>copy(item));if(state?.dirty||state?.running)return {...copy(state),parkedDrafts:parked};return parked.length?{company:api.company(),parkedDrafts:parked}:null;}
     function restore(saved){
       if(!saved||saved.company!==api.company())return;
-      for(const item of saved.parkedDrafts||[]){if(item.company!==api.company()||!Array.isArray(item.rows)||!item.rootId)continue;const draft=copy(item);draft.running=false;draft.current=null;draft.reopen=true;parkedDrafts.set(draft.rootId,draft);}
-      if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(state.rootId);state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issueTone='pending';state.issue='Draft restored 草稿已恢复；请核对后明确应用，不自动重发。';}
+      for(const item of saved.parkedDrafts||[]){if(item.company!==api.company()||!Array.isArray(item.rows)||!item.rootId)continue;const draft=copy(item);draft.running=false;draft.current=null;draft.reopen=true;parkedDrafts.set(draftKey(draft),draft);}
+      if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(draftKey(state));state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issueTone='pending';state.issue='Draft restored 草稿已恢复；请核对后明确应用，不自动重发。';}
     }
     return {open,click,edit,format,keyDown,receipt,rejected,receivedWorkspace,serialize,restore,sourceDirty:id=>[state,...parkedDrafts.values()].some(context=>context?.dirty&&context.rows.some(row=>row.taskId===id&&changed(row,workspace().tasks.find(saved=>saved.id===id)))),dirty:()=>Boolean(state?.dirty||state?.running||[...parkedDrafts.values()].some(item=>item.dirty||item.running))};
   }

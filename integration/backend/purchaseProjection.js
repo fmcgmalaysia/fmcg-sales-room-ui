@@ -8,6 +8,8 @@ import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
 import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback } from 'backend/purchaseQuantityCases.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
+import { readSalesDemand } from 'backend/salesOrderAdjustment.js';
+import { resolveBatchEntitlements, preferredSourceBatch, purchaseBatchVersion, resolveBatchStock, allocateBatchSources, batchEntries } from 'backend/shipmentBatchAllocation.js';
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 const text = value => String(value ?? '').trim();
@@ -56,11 +58,12 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
     const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
     const shipmentDate=readSalesShipmentDate(task.description,order.customerId,order.submissionId,order.estimatedShipmentDate,activity);
+    const salesDemand=!task.procurementSource&&!task.specialPurchase?readSalesDemand(task.title,order.orderQtyInCtn,activity):null;
     rows.push({
       procurementSource:task.procurementSource===true,customerDemandTaskId:task.procurementSource?task.customerDemandTaskId:null,
       id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
       customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
-      ea: number(order.orderId), ord: number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):number(order.orderQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
+      ea: number(order.orderId), ord: salesDemand?.revision?salesDemand.requested:number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):salesDemand?.requested??number(order.orderQtyInCtn), salesDemandRevision:salesDemand?.revision||'',originalCommitment:number(task.purchaseQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
       procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.extraCtn??(procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn)),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
       warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,stock:warehouse.stock,updatedAt:warehouse.at}:null,
       supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
@@ -101,6 +104,12 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     for(const source of sources.filter(row=>row.procurementSource)){source.procurement.expectedExtra=Math.min(extra,source.procurement.extraCtn||0);extra-=source.procurement.expectedExtra;}
     root.procurement.expectedExtra=extra;
   }
+  for(const root of rows.filter(row=>row.salesDemandRevision)){
+    const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);let remaining=root.requested,planned=0;
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id))),baseline=plan?.sourceBaselines?.find(row=>row.taskId===root.id),matrix=plan?allocateBatchSources(batchEntries(plan,root.id),sources.map(source=>{const held=baseline?.sources.find(row=>row.id===source.id),total=source.procurement.totalCtn||0,customer=Math.max(0,total-(source.procurement.expectedExtra||0));return {id:source.id,quantity:held?Math.min(customer,held.customerCtn+Math.max(0,total-held.totalCtn)):customer,batchId:preferredSourceBatch(source.id,activity)};})):null;
+    for(const source of sources){const customer=matrix?matrix.reduce((sum,batch)=>sum+(batch.find(row=>row.id===source.id)?.quantity||0),0):Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));const kept=Math.min(customer,remaining);remaining-=kept;planned+=kept;source.procurement.customerCtn=kept;source.procurement.expectedExtra=(source.procurement.totalCtn||0)-kept;}
+    root.salesCommittedQty=Math.min(root.requested,sources.some(row=>row.procurement.totalCtn>0)?planned:root.originalCommitment);root.sourcing.unplacedCtn=Math.max(0,root.requested-planned);
+  }
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
   for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   const quantityCases=projectQuantityCases({company,tasks:rows},activity);
@@ -113,8 +122,18 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     }
   }
   for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
+  for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    if(plan){const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id).map(row=>({id:row.id,quantity:Math.max(0,(row.procurement.totalCtn||0)-(row.procurement.expectedExtra||0)),batchId:preferredSourceBatch(row.id,activity)}));root.batchEntitlements=resolveBatchEntitlements(plan,root.id,{committed:root.salesCommittedQty??root.ord,received:Math.max(0,root.inc||0)},sources);}
+  }
   rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
     a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
+  for(const root of rows.filter(row=>row.batchEntitlements)){
+    const plan=readShipmentPlans(activity).find(plan=>plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    const stock=allocations.flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===root.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,activity)}]:[];});
+    if(stock.length&&root.batchEntitlements.some(row=>row.coverage)){const received=resolveBatchStock(plan,root.id,stock);root.batchEntitlements.forEach((row,index)=>{row.metrics.received=Math.min(row.metrics.committed,received[index]);});}
+    root.batchAllocationVersion=purchaseBatchVersion({tasks:rows},root);
+  }
   return {
     company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),

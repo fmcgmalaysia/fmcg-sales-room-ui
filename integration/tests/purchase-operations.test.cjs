@@ -2,6 +2,30 @@ const test=require('node:test'),assert=require('node:assert/strict'),load=requir
 const {createPurchaseOperations}=load('purchaseOperations.js'),{taskEditVersion}=load('purchaseTaskIdentity.js'),{projectPurchaseWorkspace}=load('purchaseProjection.js');
 const copy=value=>JSON.parse(JSON.stringify(value));
 
+test('splitting an unplaced order preserves its initial commitment while both procurement batches remain pending',async()=>{
+ const f=fixture(),{createSalesOrderAdjustmentOperations,salesAdjustmentVersion}=load('salesOrderAdjustment.js'),{readShipmentPlans,shipmentPlanVersion}=load('customerShipmentPlan.js'),context=async()=>({...f.workspace(),activity:await f.store.all('NCTActivity')}),adjust=createSalesOrderAdjustmentOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},readContext:context,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});
+ await adjust({...f.base,staff:{...f.base.staff,customerId:'C',canSelectShipment:true},input:{action:'ADJUST',customerId:'C',orderId:'ORDER',taskId:f.id,batchId:'',mode:'SPLIT',quantity:150,version:salesAdjustmentVersion(await context(),shipmentPlanVersion)}});
+ const root=f.workspace().tasks.find(row=>row.id===f.id);assert.equal(root.salesCommittedQty,250);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.committed)),[150,100]);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.sources.reduce((sum,source)=>sum+source.quantity,0))),[0,0]);
+});
+
+test('real Sales adjustment and Purchase source journals refill only the selected batch, preserving original PO',async()=>{
+ const f=fixture(),{createSalesOrderAdjustmentOperations,salesAdjustmentVersion}=load('salesOrderAdjustment.js'),{readShipmentPlans,shipmentPlanVersion}=load('customerShipmentPlan.js'),{createPurchaseSourceOperations,purchaseSourcesVersion}=load('purchaseSources.js');let serial=10;
+ const cost=qty=>({schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:qty,freeCtn:0,prices:{lpPc:1,lpCtn:16,disc1:0,disc2:0,disc3:0}}),rid=()=>String(++serial).padStart(8,'0')+'-1111-4111-8111-111111111111';
+ await f.operate({...f.base,operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),transportMode:'SUPPLIER_DELIVER',planRevision:'',totalCtn:250,reason:'Original supplier',costing:cost(250)}});
+ await f.operate({...f.base,requestId:rid(),operation:'PO',input:{taskIds:[f.id],versions:f.versions(),poNumber:'NCT-PO-ORIGINAL'}});const original=copy(f.task());
+ const activity=()=>[...f.rows].filter(([key])=>key.startsWith('NCTActivity/')).map(([,row])=>row),context=async()=>({...f.workspace(),activity:activity()}),adjust=createSalesOrderAdjustmentOperations({store:f.store,names:{NCT:{activity:'NCTActivity'}},readContext:context,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});
+ async function change(mode,quantity,batchId=''){return adjust({...f.base,requestId:rid(),staff:{...f.base.staff,customerId:'C',canSelectShipment:true},input:{action:'ADJUST',customerId:'C',orderId:'ORDER',taskId:f.id,mode,quantity,batchId,version:salesAdjustmentVersion(await context(),shipmentPlanVersion)}});}
+ await change('SPLIT',150);const plan=readShipmentPlans(activity())[0];await change('INCREASE',50,plan.id+'|1');await change('INCREASE',30,plan.id+'|2');
+ const add=createPurchaseSourceOperations({store:f.store,names:{NCT:{orders:'NCTOrders',tasks:'NCTTasks',activity:'NCTActivity'}},readWorkspace:async()=>f.workspace()});
+ async function replenish(batch,quantity){const root=f.workspace().tasks.find(row=>row.id===f.id);return add({...f.base,requestId:rid(),staff:{...f.base.staff,canAddPurchaseSource:true},input:{action:'ADD_SOURCE',parentTaskId:f.id,version:purchaseSourcesVersion(f.workspace()),supplierId:'S',poNumber:'',draftPlan:true,transportMode:'SUPPLIER_DELIVER',quantity,costing:cost(quantity),reason:'Selected batch supply',shipmentBatchId:plan.id+'|'+batch,shipmentBatchVersion:root.batchAllocationVersion}});}
+ await assert.rejects(replenish(2,31),/pending quantity/);const second=await replenish(2,30);let root=f.workspace().tasks.find(row=>row.id===f.id);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.committed)),[150,130]);assert.equal(activity().find(row=>row.action==='PURCHASE_SOURCE_ADDED'&&row.imageAltText===second.sourceTaskId).details.shipmentBatchId,plan.id+'|2');
+ await change('REDUCE',10,plan.id+'|2');root=f.workspace().tasks.find(row=>row.id===f.id);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.committed)),[150,120]);assert.equal(root.sourcing.unplacedCtn,50);
+ await replenish(1,50);root=f.workspace().tasks.find(row=>row.id===f.id);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.committed)),[200,120]);assert.deepEqual(f.task(),original);assert.equal(root.ord,320);
+ for(const [id,sourceTaskId,quantity] of [['OLD',f.id,250],['NEW',second.sourceTaskId,20]])f.rows.set('NCTActivity/'+id,{_id:id,title:id,imageAltText:sourceTaskId,action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-20T06:00:00Z',details:{beforeRevision:'',targets:[{taskId:f.id,quantity}]}});
+ root=f.workspace().tasks.find(row=>row.id===f.id);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.received)),[150,120]);
+ await change('REDUCE',10,plan.id+'|2');root=f.workspace().tasks.find(row=>row.id===f.id);assert.deepEqual(copy(root.batchEntitlements.map(row=>row.metrics.received)),[150,110]);assert.equal(f.workspace().allocations.find(row=>row.sourceTaskId===second.sourceTaskId).targets[0].quantity,10);assert.equal(f.workspace().allocations.find(row=>row.sourceTaskId===f.id).targets[0].quantity,250);assert.deepEqual(f.task(),original);
+});
+
 test('transport is mandatory for each new PLAN and ADD_SOURCE; invalid choices leave business records untouched',async()=>{
  for(const transportMode of [undefined,'','SELF','SUPPLIER_DELIVER ']){
   const f=fixture(),before=copy([...f.rows]);

@@ -1,0 +1,10 @@
+{
+  "code": {"functionalCommit":"c68c89080aa24ef70c8731347bae16095f3ab10e","deployedCommit":"9bdd9757a1e18b6da91302beb7a7498dfbac7e6b","pullRequest":208},
+  "pages": {"run":39395780043,"state":"success","changedResourcesExact":10,"markersExact":4,"marker":"2026-10-20-order-adjustment-v1"},
+  "wix": {"master":"published-live receipt captured","source":"published-live receipt captured","draftComponentsFullReadbackExact":17},
+  "public": {"purchase":"PASS live build, existing80+20batch dialogs and blue/orange supplier heads, no saves","warehouse":"PASS live build, original incoming POs, two80+20delivery rows, no saves","sales":"WAITING_FOR_USER_MEMBER_LOGIN","buyer":"WAITING_FOR_USER_MEMBER_LOGIN"},
+  "security": {"temporaryPolicyId":63683460,"removed":true,"originalSevenExact":true},
+  "businessWritesDuringAcceptance":false,
+  "overall":"PUBLIC_SOURCE_ACCEPTANCE_PENDING",
+  "mainMerged":false
+}

@@ -3,6 +3,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
 const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
 const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
 const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
@@ -96,6 +97,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if((!reason&&(!costing||plan.revision||task.ourPoNumber))||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
+        const batchContext=checkPurchaseBatch(s.workspace,demandTask.title,input,input.totalCtn-(plan.totalCtn||0));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
         const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
@@ -104,8 +106,9 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         edit(task,patch);
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
+        if(batchContext){updates[0].shipmentBatch=batchContext;updates[0].shipmentBatchRoot=demandTask.title;}
         if(allocation){updates[0].sharesRevision=allocation.beforeRevision;updates[0].sharesRootId=demandTask.title;events.push({taskId:task.title,shareRootId:demandTask.title,action:'PURCHASE_SOURCE_SHARES_SAVED',beforeRevision:allocation.beforeRevision,shares:allocation.shares,reason});}
-        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
+        events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(batchContext||{}),...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         requireSettledPlan(task);
@@ -181,6 +184,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           if(change.planRevision!==undefined){
             const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
             if(!await store.read(names.activity,eventId)){
+              if(change.shipmentBatch)checkPurchaseBatch((await state(company,staff)).workspace,change.shipmentBatchRoot,change.shipmentBatch,event.totalCtn-(event.before||0));
               if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity)).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
             }
           }

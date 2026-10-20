@@ -3,6 +3,7 @@ import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
+import { allocateBatchMetric, resolveBatchStock, preferredSourceBatch } from 'backend/shipmentBatchAllocation.js';
 
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -23,10 +24,11 @@ export function readPreparation(activity){
 }
 
 // Read physical stock for this customer demand; do not post or change allocations.
-function readyStockFor(task,context,shipments){
+function readyStockFor(task,context,shipments,onlySourceId){
  const dispatched=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines);
  const shippedFrom=(sourceId,targetId)=>dispatched.filter(l=>l.taskId===targetId).flatMap(l=>l.sources).filter(s=>s.sourceTaskId===sourceId).reduce((n,s)=>n+s.quantity,0);
  const total=context.tasks.reduce((sum,source)=>{
+  if(onlySourceId&&source.id!==onlySourceId)return sum;
   if(!source.warehouse?.hasPhysicalReceipt)return sum;
   const physical=source.warehouse.stock?.availablePhysical;
   if(!Number.isSafeInteger(physical)||physical<0)return sum;
@@ -37,7 +39,7 @@ function readyStockFor(task,context,shipments){
   return sum+(own?available:Math.min(available,incoming));
  },0);
  const sent=dispatched.filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0);
- return Math.min(total,Math.max(0,task.ord-sent));
+ return Math.min(total,Math.max(0,(task.salesCommittedQty??task.ord)-sent));
 }
 
 export function projectPreparation(context){
@@ -47,18 +49,21 @@ export function projectPreparation(context){
   const goal=task.shortage?.customerDecision==='STOP'?(task.inc||0):task.ord;
   if(!qty(goal)||!goal)continue;
   const plan=plans.find(p=>p.customerId===task.customerId&&p.orderId===task.orderId&&p.batches.some(b=>b.lines.some(l=>l.taskId===task.id)));
-  const batches=plan?plan.batches.flatMap(b=>{const l=b.lines.find(l=>l.taskId===task.id);return l?[{key:plan.id+'|'+b.sequence,label:b.label,date:b.date,quantity:l.quantity,planRevision:plan.revision}]:[]}):[{key:'WHOLE',label:'',date:task.estimatedShipmentDate,quantity:goal,planRevision:''}];
+  const batches=plan?plan.batches.flatMap(b=>{const l=b.lines.find(l=>l.taskId===task.id);return l?[{key:plan.id+'|'+b.sequence,label:b.label,date:b.date,quantity:l.quantity,coverage:l.coverage,planRevision:plan.revision}]:[]}):[{key:'WHOLE',label:'',date:task.estimatedShipmentDate,quantity:goal,planRevision:''}];
+  const anchored=batches.some(batch=>batch.coverage),stockSources=anchored?(context.allocations||[]).flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===task.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity)}]:[];}):[];
+  const readyByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id))}))):allocateBatchMetric(batches,Math.min(readyStock,task.inc||0),'received')):null,allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;
   const planTotal=batches.reduce((n,b)=>n+b.quantity,0),planMismatch=planTotal!==goal&&(!plan||task.shortage?.customerDecision==='STOP'||planTotal!==(task.requested??goal));
   let batchOffset=0;
-  for(const batch of batches){
+  for(const [batchIndex,batch] of batches.entries()){
    const id=operationId(context.company,task.id,batch.key),saved=states.get(id),signature=operationId(task.id,task.orderId,task.sourceLineId,goal,batch.quantity,batch.planRevision),valid=!planMismatch&&saved?.signature===signature;
    const sent=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines).filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0),batchStart=batchOffset;
    const dispatched=Math.min(batch.quantity,Math.max(0,sent-batchStart));batchOffset+=batch.quantity;
-   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,readyStock:Math.min(Math.max(0,batch.quantity-dispatched),Math.max(0,readyStock-Math.max(0,batchStart-sent))),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
+   const batchAllocated=allocatedByBatch?allocatedByBatch[batchIndex]:null;
+   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,batchAllocated,readyStock:readyByBatch?Math.max(0,readyByBatch[batchIndex]-dispatched):Math.min(Math.max(0,batch.quantity-dispatched),Math.max(0,readyStock-Math.max(0,batchStart-sent))),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
   }
  }
  for(const [id,s] of states)if(s.loaded>0&&!items.some(i=>i.id===id))items.push({...s,revision:s.revision,customerName:customers.get(s.customerId)||s.customerId,readyStock:null,allocated:0,prepared:false,stale:true,orphaned:true,dispatched:0,history:[]});
- return items.map(item=>{const stockChanged=items.filter(i=>i.taskId===item.taskId&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0)>item.allocated;return {...item,prepared:item.prepared&&!stockChanged,stale:item.stale||stockChanged,version:operationId(item.signature,item.revision,item.allocated,item.dispatched),status:item.stale||stockChanged?'ISSUE':item.loaded===item.quantity?'LOADED':item.loaded>0?'PARTIAL':item.prepared?'READY':'PENDING'};});
+ return items.map(item=>{const stockChanged=items.filter(i=>i.taskId===item.taskId&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0)>item.allocated;return {...item,prepared:item.prepared&&!stockChanged,stale:item.stale||stockChanged,version:(item.batchAllocated===null?operationId(item.signature,item.revision,item.allocated,item.dispatched):operationId(item.signature,item.revision,item.allocated,item.dispatched,item.batchAllocated)),status:item.stale||stockChanged?'ISSUE':item.loaded===item.quantity?'LOADED':item.loaded>0?'PARTIAL':item.prepared?'READY':'PENDING'};});
 }
 
 export function preparationSummary(taskId,context){
@@ -92,12 +97,14 @@ export function createPreparationOperations({store,names,readContext,documentSer
    if(note.length>1000)throw Error('Warehouse note is too long.');
    let prepared=item.prepared,loaded=item.loaded,preparedAt=item.preparedAt,loadedAt=item.loadedAt;
    if(input.action==='PACK'){
+    if(item.batchAllocated!==null&&item.quantity>item.batchAllocated)throw Error('This shipment batch has insufficient allocated cartons. Ask Purchase to arrange its pending quantity.');
     const other=items.filter(i=>i.taskId===item.taskId&&i.id!==item.id&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0);
     if(item.allocated<other+item.quantity)throw Error('Warehouse allocated goods are insufficient. Ask Purchase to confirm stock allocation.');
     prepared=true;preparedAt=at;
    }
    if(input.action==='UNPACK'){if(item.loaded>0||!note)throw Error('Warehouse unload first and provide a correction reason before reversing preparation.');prepared=false;preparedAt=null;}
    if(input.action==='LOAD'){
+    if(item.batchAllocated!==null&&input.loaded>item.batchAllocated)throw Error('Loaded cartons exceed this shipment batch allocation.');
     if(!prepared||!qty(input.loaded)||input.loaded>item.quantity)throw Error('Warehouse prepare this batch first and enter valid loaded cartons.');
     if((input.loaded<item.quantity||input.loaded<loaded)&&!note)throw Error('Warehouse explain partial loading or a quantity correction.');
     const other=items.filter(i=>i.taskId===item.taskId&&i.id!==item.id).reduce((n,i)=>n+i.loaded,0);
