@@ -4,6 +4,8 @@
 
 User approved beginning the implementation after the final architecture review. This continuation changes only the unintegrated Stock Card candidate and adds an isolated local preview. No production consumer, existing Warehouse/Purchase business module, Wix draft, schema, business record, deployment policy or main branch was changed.
 
+Candidate code d071f16 was committed and successfully pushed to the existing feat/stock-card-read-model-20261020 branch / draft PR215. The push advanced 9c265a7 to d071f16. Historical b8054ab below describes the preceding first-stage candidate, not this continuation.
+
 Candidate now distinguishes total physically held and isolated quantities from the existing usable-stock calculation. Actual supplier returns reduce physically held isolated goods. A financial settlement with remaining goods and no physical removal evidence produces `onHand:null` and `isolated:null`, not an invented disappearance or zero. This gate is conservative for legacy settled cases; a future physical-removal action needs its own approved implementation and cannot be inferred from loss approval.
 
 Where the projected procurement source has a valid customer share, the candidate derives its original customer's receipt-backed outstanding claim from that share; explicitly recorded planner allocation remains primary. Unknown shares and conflicting explicit release remain review-required. Incoming claims never create physical stock, dispatch is deducted once, and archived FOC/excess sources are retained. This candidate does NOT yet replace the separate production Warehouse own-source Ready calculation. The shared source policy still needs fresh live comparison and integration before claiming one production authority.
