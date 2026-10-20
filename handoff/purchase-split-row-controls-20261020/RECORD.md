@@ -20,4 +20,25 @@ Final integration suite728 total724 pass, same four historical failures as docum
 
 ## Current release state
 
-Code candidate complete; Git push/PR, Pages, new Wix synchronization/publish and real public verification pending. No temporary publishing rule has yet been added. Do not claim published. No real order/message/PO/payment/warehouse write was performed. Ready Stock remains discussion only.
+Runtime3fd4aa084a01e16a66c127cf47fe41a7dc30ccd2 (functional d55f1c0 plus whitespace-only correction) pushed, draft PR214 attached, base Sales messaging branch. Pages run39438451959 SUCCESS. Four build markers2026-10-20-split-controls-v1 and14 public resources exact, including unchanged Sales/Buyer/message assets. Temporary policy63718382 removed immediately after run success; original seven exact. Pages verifier initially treated PowerShell line-array -notmatch output as a boolean; corrected the diagnostic only, then completed exact manifest; no redispatch.
+
+Wix new purchaseDisplayOrder module complete readback exact; purchaseOperations six isolated hunks normalizedSHA a97380aef434120d59de8b4e2a0444ed28d800e8589bc918b540d14095f87039; purchaseProjection two isolated hunks c37debc748144bdeb96f32cdf5d9c2458151f261981f4322fc3668eb520bb4ed. Four entry version-only full readbacks exact: Purchase806ef1fbde191eecf40fb938da5bb00853010c72673c96d4c64f7448db34153c; Account77597d7cdd159afd932ef591e7b9498331eeaeaeba1e22b3b07e81df0dd6aee8; Warehouse5871a754a4ed728fec202dd66cca7cafbc97dcf3dc4bb7b7196e99c13e72ecd5; Support2a657377db5d04661f071c80651b977231ddd2997665fce191c557e9ea8eb770. First Purchase page switch still exposed prior projection editor; baseline guard stopped without writing, next fresh read matched original843b3a exact. Not a real live-versus-repository conflict and no whole-file overwrite.
+
+Publish was invoked once via native Publish button and is awaiting Wix completion receipt. Public stage not yet checked for this runtime; do not claim published until receipt and public QA. No real order/message/PO/payment/warehouse write was performed. Ready Stock remains discussion only. Browser reconnected from Chrome5 to6; same tabs retained, no new browser workaround or login attempt.
+
+### Public verification and native publish inconsistency
+
+Wix returned native “Your site can’t be published / temporary technical issue” after first attempt; screenshot private wix-publish-temporary-error.png. Despite this, clean public IAB10 Account and Purchase show new split-controls-v1 pointers, LAW and actual records; Purchase exposes new display-row metadata (11 mother handles, 010/011 split80/20). Thus runtime is observable but a successful native publication receipt remains mandatory. No production Save performed. Account actual PO computed#2563EB/600. Split Move dialog opened/closed without Apply/Save and selection cleared. Public inspection found its customer-local Before Row numbers could conflict with global table numbering; removed the misleading destination numbers, retaining product/quantity/batch labels. One copy-only app hunk plus app cache token v2; local actual-browser QA and eight display/save tests rerun and passed. No business logic or backend revision for this correction.
+
+## Ready Stock decision — discussion only, not implemented
+
+Current warehousePreparation.readyStockFor already reads physical warehouse receipts and stock.availablePhysical, deducts allocations held for other customer demand, accounts for actual dispatch and caps the customer's remaining commitment. It is not an Incoming+stock calculation or a blank placeholder. The future Stock Card pool must keep this distinct from general free inventory.
+
+- Incoming is ordered/not received; never counts as Ready or Available.
+- Physical usable on-hand excludes dispatched, quarantine, damage and unavailable quantities, using authoritative receiving/stock events, not procurement estimates.
+- Purchase available-to-allocate = usable on-hand minus outstanding customer allocations/reservations, counting overlapping reservation categories once. Finance approval affects valuation/correction authority; newly quarantined stock must stop allocation immediately.
+- Warehouse row Ready Qty = this delivery demand's assigned usable physically received stock, capped by its remaining delivery quantity. Its own reservation must not be subtracted again. Do not show the global free pool as every row's ready quantity.
+- Deferred next-shipment stock remains reserved for that customer, not automatically free. Cancellation releases the cancelled unshipped allocation; cartons become free only if actually received and usable. Changing shipment display rows alone never creates stock or duplicates receipts.
+- Product pool identity must include company and real product/packing identity; lots/expiry/status remain distinguishable where necessary. Avoid double-deducting dispatched cartons or the same Support invoice reservation.
+
+This record does not add Stock Card CMS, change warehouse formulas, stock authority, allocation, valuation or user data. Separate user-approved Stock Card work must establish authoritative balances/reservations and acceptance examples before implementation.
