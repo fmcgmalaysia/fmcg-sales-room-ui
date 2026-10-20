@@ -17,6 +17,29 @@ test('stock allocated elsewhere is not displayed twice, and external allocated s
  const rows=projectPreparation(c);assert.equal(rows[0].readyStock,65);assert.equal(rows[1].readyStock,30);
  c.tasks[0].warehouse.stock.availablePhysical=20;assert.equal(projectPreparation(c)[0].readyStock,0);assert.equal(projectPreparation(c)[1].readyStock,20);
 });
+
+test('known customer share keeps received FOC or excess out of customer Ready Stock',()=>{
+ const c=context([demand('T',{ea:12,procurement:{customerCtn:80,totalCtn:100},warehouse:physical(100)})]);
+ const before=JSON.stringify(c),stock=load('stockCardProjection.js').projectStockCard(c).items[0];
+ assert.equal(projectPreparation(c)[0].readyStock,80);
+ assert.equal(stock.reservedUsable,80);assert.equal(stock.available,20);
+ assert.equal(JSON.stringify(c),before);
+});
+
+test('own-source explicit customer allocation caps Ready Stock instead of exposing all physical goods',()=>{
+ const c=context([demand('T',{procurement:{customerCtn:40,totalCtn:100},warehouse:physical(100)})]);
+ c.allocations=[{sourceTaskId:'T',targets:[{taskId:'T',quantity:40}]}];
+ assert.equal(projectPreparation(c)[0].readyStock,40);
+ c.tasks[0].warehouse.stock.availablePhysical=35;
+ assert.equal(projectPreparation(c)[0].readyStock,35);
+});
+
+test('known customer share zero remains free stock and partial receipt never exceeds physical stock',()=>{
+ const c=context([demand('T',{procurement:{customerCtn:0,totalCtn:100},warehouse:physical(20)})]);
+ assert.equal(projectPreparation(c)[0].readyStock,0);
+ c.tasks[0].procurement.customerCtn=80;
+ assert.equal(projectPreparation(c)[0].readyStock,20);
+});
 test('warehouse retains full demand list while showing 95 received and zero for unreceived goods',()=>{
  const elements={search:{value:''},whCompanyCaption:{}},dialog={addEventListener(){}};
  const sandbox={window:{addEventListener(){},departmentMessages:{cell:()=>''}},document:{getElementById:id=>elements[id],createElement:()=>dialog,body:{appendChild(){}}},sessionStorage:{getItem:()=>null},console};

@@ -1,6 +1,7 @@
 // Dedicated Stock Control page, using the site's existing html1 embed convention.
 import { getWarehouseStockControl } from 'backend/stockControl.web';
 import { authentication } from 'wix-members-frontend';
+import wixLocationFrontend from 'wix-location-frontend';
 
 $w.onReady(() => {
   const room = $w('#html1');
@@ -21,5 +22,6 @@ $w.onReady(() => {
         ok: false, error: error?.message || 'Stock could not be read. Please retry. 库存读取未完成，请重试。' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/stock-control.html?v=20261021-stock-control-v1';
+  const company = ['NCT', 'GHR'].includes(wixLocationFrontend.query.company) ? wixLocationFrontend.query.company : 'NCT';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/stock-control.html?v=20261021-stock-control-v1&company=' + company;
 });

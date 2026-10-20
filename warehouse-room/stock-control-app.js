@@ -9,7 +9,9 @@
     ALLOCATION_TARGET_REQUIRES_REVIEW: 'Customer or product identity requires review 客户或产品身份需核对',
     SHIPMENT_EXCEEDS_ALLOCATION: 'Shipment exceeds recorded customer allocation 发货超过已记录分配',
     STOCK_SNAPSHOT_MISMATCH: 'Stock quantities require reconciliation 库存数量需核对' };
-  let company = 'NCT', data = null, requestId = '', pending = null, timer = null, searchTimer = null;
+  const initialCompany = new URLSearchParams(location.search).get('company');
+  let company = ['NCT', 'GHR'].includes(initialCompany) ? initialCompany : 'NCT', data = null, requestId = '', pending = null, timer = null, searchTimer = null;
+  $('company').value = company;
   let cursor = null, previous = [];
   function notice(message, error = false) { $('notice').textContent = message; $('notice').classList.toggle('error', error); }
   function paging() {
