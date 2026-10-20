@@ -87,8 +87,8 @@ test('FOC average derives from saved cents and all cartons without multiplying r
  const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.lpCtn=90.909090909;f.root.procurement={revision:'FOC',totalCtn:110,expectedExtra:10,costing:{mode:'FOC',paidCtn:100,freeCtn:10,amountCents:1000000,averageCostCtn:90.909090909}};assert.deepEqual(financialCells(f.render()),{cost:'90.91',amount:'10,000.00'});assert.equal(f.grid.totals([f.root]).customerQty,100);
 });
 test('unplaced demand shows no reference or unsaved prices as procurement costs',()=>{
- for(const procurement of [{totalCtn:null,revision:''},{totalCtn:60,revision:''}]){const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.procurement=procurement;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'—',amount:'—'});}
- const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.lpCtn=null;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'—',amount:'—'});
+ for(const procurement of [{totalCtn:null,revision:''},{totalCtn:60,revision:''}]){const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.procurement=procurement;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'',amount:''});}
+ const f=fixture();f.args.rows=f.args.tasks=[f.root];f.root.lpCtn=null;f.root.netCostCtn=88;assert.deepEqual(financialCells(f.render()),{cost:'',amount:''});
 });
 test('partial35 against demand50 keeps saved costs and leaves remainder without an invented amount',()=>{
  const f=fixture();f.args.active=true;f.args.rows=f.args.tasks=[f.root];f.root.ord=50;f.root.procurement={revision:'P35',totalCtn:35,expectedExtra:0};const rows=f.render().match(/<tr\b[\s\S]*?<\/tr>/g);assert.deepEqual(financialCells(rows[0],true),{cost:'10.00',amount:'350.00'});assert.deepEqual(financialCells(rows[1],true),{cost:'10.00',amount:'350.00'});assert.match(rows[2],/order-quantity">15</);assert.doesNotMatch(rows[2],/350.00|10.00/);
@@ -112,6 +112,6 @@ test('unknown or unconfirmed procurement never displays a GP capsule even when a
   if(kind==='reference-only')for(const row of [f.root,f.child])row.procurement.revision='';
   if(kind==='missing-source-cost')f.child.disc3=null;
   if(kind==='partial')f.root.ord=120;
-  const html=f.render();assert.doesNotMatch(html,/gp-badge/);if(!active)assert.match(html,/<b class="gp">—<\/b>/);
+  const html=f.render();assert.doesNotMatch(html,/gp-badge/);if(!active)assert.match(html,/<b class="gp"><\/b>/);
  }
 });
