@@ -56,12 +56,12 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         }
         if(input.taskIds){const current=s.workspace.tasks.filter(row=>row.customerId===input.customerId&&!row.archived);
           if(!Array.isArray(input.taskIds)||input.taskIds.length!==current.length||new Set(input.taskIds).size!==current.length||current.some(row=>!input.taskIds.includes(row.id)))throw Error('Row order must include every active task for this customer.');
-          input.taskIds.forEach((id,index)=>{const {task}=verified(id);if(input.versions?.[id]!==taskEditVersion(task))throw Error('Row order changed. Refresh before saving.');edit(task,{rowPosition:index+1});events.push({taskId:id,action:'PURCHASE_ROW_MOVED',before:task.rowPosition,after:index+1});});}
+          input.taskIds.forEach((id,index)=>{const {task}=verified(id);if(input.versions?.[id]!==taskEditVersion(task))throw Error('Row order changed. Refresh before saving.');edit(task,{rowPosition:index+1});});}
       } else if(operation==='REORDER') {
         const current=s.workspace.tasks.filter(row=>row.customerId===input.customerId&&!row.archived);
         if(!Array.isArray(input.taskIds)||input.taskIds.length!==current.length||new Set(input.taskIds).size!==current.length||current.some(row=>!input.taskIds.includes(row.id)))throw Error('Row order must include every active task for this customer.');
         if(current.some(row=>input.versions?.[row.id]!==taskEditVersion(s.tasks.find(task=>task.title===row.id))))throw Error('Row order changed. Refresh before saving.');
-        input.taskIds.forEach((id,index)=>{const {task}=verified(id);edit(task,{rowPosition:index+1});events.push({taskId:id,action:'PURCHASE_ROW_MOVED',before:task.rowPosition,after:index+1});});
+        input.taskIds.forEach((id,index)=>{const {task}=verified(id);edit(task,{rowPosition:index+1});});
       } else if(operation==='AVERAGE_COST') {
         const {task,order}=verified(input.taskId),note=String(input.note||'').trim();
         if(readPurchasePlan(task,s.activity).costing)throw Error('Edit this supplier through the allocation calculator to preserve its costing inputs.');

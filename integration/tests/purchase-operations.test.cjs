@@ -232,6 +232,57 @@ test('PO metadata associations cannot split or merge and a bare prefix cannot be
 });
 test('special quantity writes remain disabled until allocation rules are confirmed',async()=>{const f=fixture();await assert.rejects(f.operate({...f.base,operation:'SPECIAL',input:{parentTaskId:f.id,version:taskEditVersion(f.task()),extraQty:20,reason:'Offer'}}),/awaiting confirmation/);assert.equal(f.workspace().tasks.length,2);});
 test('reorder accepts only complete current customer set and cannot modify Sales ordering',async()=>{const f=fixture();await f.operate({...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}});assert.equal(f.workspace().tasks[0].id,f.second);assert.equal(f.rows.get('NCTOrders/O0').sourceLineId,'L0');});
+
+test('reorder persists positions with only two recovery receipts and exact replay adds no rows',async()=>{
+ const f=fixture(),before=copy([...f.rows]),request={...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
+ const first=await f.operate(request),saved=copy([...f.rows]);assert.deepEqual(copy(await f.operate(request)),copy(first));assert.deepEqual(copy([...f.rows]),saved);
+ assert.equal(f.task().rowPosition,2);assert.equal(f.task(f.second).rowPosition,1);
+ for(const id of [f.id,f.second])assert.deepEqual({...f.task(id),rowPosition:before.find(([key])=>key==='NCTTasks/'+id)[1].rowPosition},before.find(([key])=>key==='NCTTasks/'+id)[1]);
+ assert.deepEqual(copy([...f.rows.values()].filter(row=>row.action?.startsWith('PURCHASE_')).map(row=>row.action)).sort(),['PURCHASE_OPERATION_PREPARED','PURCHASE_OPERATION_RESULT']);
+ assert.equal(f.rows.size-before.length,2);assert.deepEqual(copy([...f.rows].filter(([key])=>key.startsWith('NCTOrders/'))),before.filter(([key])=>key.startsWith('NCTOrders/')));
+});
+
+test('combined price edit and reorder preserves price audit without row-move events',async()=>{
+ const f=fixture(),request={...f.base,operation:'EDIT',input:{edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}],customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
+ await f.operate(request);await f.operate(request);assert.equal(f.task().rowPosition,2);assert.equal(f.task().lpCtn,20);
+ const events=[...f.rows.values()].filter(row=>row.action?.startsWith('PURCHASE_'));
+ assert.deepEqual(copy(events.map(row=>row.action)).sort(),['PURCHASE_OPERATION_PREPARED','PURCHASE_OPERATION_RESULT','PURCHASE_PRICE_SAVED']);
+ assert.equal(events.find(row=>row.action==='PURCHASE_PRICE_SAVED').details.after.lpCtn,20);
+});
+
+test('reorder resumes after a lost first-row response without audit fanout or leaked locks',async()=>{
+ const f=fixture(),request={...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
+ f.fail(1);await assert.rejects(f.operate(request),/response lost/);await f.operate(request);
+ assert.equal(f.task().rowPosition,2);assert.equal(f.task(f.second).rowPosition,1);assert.equal(f.rows.size,8);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_ROW_MOVED').length,0);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_OPERATION_RESULT').length,1);
+});
+
+test('reorder rejects stale, incomplete and foreign customer input before retained receipts or task changes',async()=>{
+ for(const kind of ['stale','incomplete','foreign']){
+  const f=fixture(),before=copy([...f.rows]),input={customerId:'C',taskIds:[f.second,f.id],versions:f.versions()};
+  if(kind==='stale')input.versions[f.id]='stale';if(kind==='incomplete')input.taskIds=[f.id];if(kind==='foreign')input.customerId='OTHER';
+  await assert.rejects(f.operate({...f.base,operation:'REORDER',input}),/Row order/);assert.deepEqual(copy([...f.rows]),before);
+ }
+});
+
+test('an old prepared reorder still completes its original events exactly once',async()=>{
+ const f=fixture(),insert=f.store.insert,request={...f.base,operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
+ f.store.insert=async(c,row)=>{if(row.action==='PURCHASE_OPERATION_PREPARED')row.details.plan.events=[f.second,f.id].map((taskId,index)=>({taskId,action:'PURCHASE_ROW_MOVED',before:f.task(taskId).rowPosition,after:index+1}));return insert(c,row);};
+ f.fail(1);await assert.rejects(f.operate(request),/response lost/);await f.operate(request);const before=copy([...f.rows]);await f.operate(request);
+ assert.deepEqual(copy([...f.rows]),before);assert.equal(f.task().rowPosition,2);assert.equal(f.task(f.second).rowPosition,1);
+ assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_ROW_MOVED').length,2);
+});
+
+test('GHR reordering retains only its own receipts and leaves NCT business records untouched',async()=>{
+ const f=fixture();for(const [key,value] of [...f.rows])if(key.startsWith('NCT'))f.rows.set(key.replace(/^NCT(Tasks|Orders|Activity)\//,(_,kind)=>'NCT'+kind+'1/'),copy(value));
+ const original=copy([...f.rows].filter(([key])=>/^NCT(?:Tasks|Orders|Activity)\//.test(key)));
+ const request={...f.base,company:'GHR',operation:'REORDER',input:{customerId:'C',taskIds:[f.second,f.id],versions:f.versions()}};
+ await f.operate(request);await f.operate(request);
+ assert.equal(f.rows.get('NCTTasks1/'+f.id).rowPosition,2);assert.equal(f.rows.get('NCTTasks1/'+f.second).rowPosition,1);
+ assert.deepEqual(copy([...f.rows].filter(([key])=>/^NCT(?:Tasks|Orders|Activity)\//.test(key))),original);
+ assert.deepEqual(copy([...f.rows].filter(([key,row])=>key.startsWith('NCTActivity1/')&&row.action!=='ORDER_RECEIVED').map(([,row])=>row.action)).sort(),['PURCHASE_OPERATION_PREPARED','PURCHASE_OPERATION_RESULT']);
+});
 test('invoice lock, stale edit, unaccepted task and foreign company reject before task writes',async()=>{const f=fixture(),input={edits:[{taskId:f.id,version:taskEditVersion(f.task()),changes:{lpCtn:20}}]};f.rows.get('NCTOrders/O0').salesInvoiceNumber='INV';await assert.rejects(f.operate({...f.base,operation:'EDIT',input}),/locked/);f.rows.get('NCTOrders/O0').salesInvoiceNumber='';f.task().disc3=4;await assert.rejects(f.operate({...f.base,requestId:'22222222-2222-4222-8222-222222222222',operation:'EDIT',input}),/changed/);await assert.rejects(f.operate({...f.base,company:'GHR',operation:'EDIT',input}),/accepted/);assert.equal(f.task().lpCtn,16);});
 
 test('quantity requires supplier and reason, only reduces, preserves received/source/quote and replays once',async()=>{const f=fixture();f.task().receivedQtyInCtn=80;const run=(quantity,reason='Supplier stock shortage',requestId=f.base.requestId)=>f.operate({...f.base,requestId,operation:'QTY',input:{taskId:f.id,version:taskEditVersion(f.task()),quantity,reason}});f.task().supplierId='';await assert.rejects(run(90),/supplier/);f.task().supplierId='S';await assert.rejects(run(90,''),/reason/);await assert.rejects(run(251),/reduced/);const input={taskId:f.id,version:taskEditVersion(f.task()),quantity:90,reason:'Supplier stock shortage'};await f.operate({...f.base,operation:'QTY',input});await f.operate({...f.base,operation:'QTY',input});assert.equal(f.task().purchaseQtyInCtn,90);assert.equal(f.task().receivedQtyInCtn,80);assert.equal(f.rows.get('NCTOrders/O0').orderQtyInCtn,250);assert.equal(f.rows.get('NCTOrders/O0').sellingPricePc,14.66);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_QTY_REDUCED').length,1);assert.equal(f.workspace().tasks.find(row=>row.id===f.id).qtyEdited,true);await assert.rejects(run(95,'More stock','22222222-2222-4222-8222-222222222222'),/reduced/);await run(80,'Further shortage','33333333-3333-4333-8333-333333333333');assert.equal(f.task().purchaseQtyInCtn,80);});
