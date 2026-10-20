@@ -46,4 +46,10 @@ This is a candidate, not a completed publication. User approval to begin optimiz
 
 ## Work-method notes
 
+## Authorized release preparation
+
+User explicitly approved publication, deferred real business testing until Stock Card is complete, then explicitly approved the temporary Pages permission for fix/activity-row-history-20261020. Repeat native-editor readback immediately before synchronization still matches pre-patch SHA256 47f3ed0142e740cf0add88a3ec28fd6750c07385c467d8b8bc4a3d6db1609a76 with exactly two target appends. Backend-only release uses handoff/activity-row-history-20261020/build.json as its Pages marker; existing frontend and four Wix entry pointers are unchanged. No new behavioral code or test rerun in release preparation. Publication and public smoke verification remain pending until receipts are captured. Source-site Wix publication is not needed for an unchanged Source site.
+
+## Earlier work-method notes
+
 Reused prior Activity dependency findings and project-framework reads; repeated exact module reads only for fresh live comparison, bounded patch context or truncated output. One broad combined tool result was truncated. A Windows rg wildcard-path mistake and two guessed missing documentation paths were corrected with exact scoped paths; no unchanged blind retry. Browser module selection was initially blocked by an existing CMS overlay; closed the overlay without editing data, then verified the selected file before copying. No hidden editor/runtime state or credentials used.
