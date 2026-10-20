@@ -42,3 +42,11 @@ Current warehousePreparation.readyStockFor already reads physical warehouse rece
 - Product pool identity must include company and real product/packing identity; lots/expiry/status remain distinguishable where necessary. Avoid double-deducting dispatched cartons or the same Support invoice reservation.
 
 This record does not add Stock Card CMS, change warehouse formulas, stock authority, allocation, valuation or user data. Separate user-approved Stock Card work must establish authoritative balances/reservations and acceptance examples before implementation.
+
+### Final static runtime and public checks
+
+Copy correction runtime c9bd6d68216c4fd564fd682d448876761e461839, Pages39439531661 SUCCESS. Only two changed static resources app.js/index.html freshly compared exact; other twelve unchanged from prior14-asset exact manifest. Temporary63719322 removed/original seven exact. No third Pages dispatch or main merge.
+
+Second native Wix Publish after the recorded temporary failure returned “Congratulations This site is published and live online”; private master-published-live-first.png. Public Purchase first showed app query v1 despite updated Pages index, revealing cached iframe HTML; a version-only Purchase Wix entry v1→v2 was necessary. Fresh minimal one-line full readback normalized5378a2a62eac919ffd4ed38be24b6d36bbf66bc91ff0216381c903cb2b4a9147 exact. New native Publish of this cache entry is pending receipt; do not confuse its pending state with prior success. Backend and other three entries unchanged.
+
+Public IAB10 read-only QA: Account newpointer/LAW/3 records and computed PO#2563EB/600; Purchase newpointer/LAW/11 independent mother handles and split010/011 80/20, original source not duplicated; split Move opened/closed without Apply/Save. Follow-up grey tag SPAN, one eligible Editable opens original amount input without Save. Submitted PO summary zero inputs, footer display:none, bilingual Follow-up directions. Warehouse newpointer/LAW/11 delivery tasks and exact existing camera SVG; Support newpointer/LAW/no shipment requests. Private screenshots account-public.png,purchase-public.png,purchase-move-public.png,payment-readonly-public.png,warehouse-public.png,support-public.png. The first move screenshot predates cache correction; final v2 entry public verification still required.
