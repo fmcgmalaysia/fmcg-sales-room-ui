@@ -1,5 +1,6 @@
 // Explicit procurement projection. Never return original order rows or intake snapshots.
 import { readSalesShipmentDate } from 'backend/customerShipmentPlan.js';
+import { projectPurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan, readPurchaseShares } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
@@ -140,6 +141,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
     shipmentPlans: readShipmentPlans(activity),
+    purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
     paymentRequestsConnected: false
   };
 }

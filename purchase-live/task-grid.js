@@ -24,7 +24,7 @@
     return progress(rows,orders).map((done,i)=>(i===3&&receiptProblem||i===1&&reviewProblem)?'problem':done?'complete':'pending');
   }
   function summaryProgressStates(root,rows,orders){return progressStates(rows,orders).map(state=>totals(rows).customerQty<root.ord&&state==='complete'?'pending':state);}
-  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon,shipmentPlans=[]}) {
+  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon,shipmentPlans=[],purchaseDisplayOrder={},displayDraft=null,selectedDisplayRows=new Set()}) {
     const roots = rows.filter(row=>!row.procurementSource), name = id=>suppliers.find(row=>row.id===id)?.shortName || suppliers.find(row=>row.id===id)?.name || 'Select Supplier 选择供应商';
     const shortName = row=>customers.find(item=>item.id===row.customerId)?.shortName || customers.find(item=>item.id===row.customerId)?.name || row.customerId;
     const person=(state,source)=>'<span class="supplier-head '+state+'" '+(source?.procurement?.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="4"/><path d="M2 19v-3a8 7 0 0 1 16 0v3z"/></svg></span>';
@@ -76,7 +76,8 @@
         return html+(batchIndex===0&&group.some(source=>source.procurement?.totalCtn>0)?group.map((source,i)=>line(source,index,row,i)).join(''):'');
       }).join('');
     }
-    return roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
+    const markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
+    return active&&window.purchaseDisplayRows&&Object.keys(purchaseDisplayOrder).length?window.purchaseDisplayRows.decorate(markup,{tasks,shipmentPlans,purchaseDisplayOrder,draft:displayDraft,selected:selectedDisplayRows,canMove}):markup;
   }
   window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
 })();

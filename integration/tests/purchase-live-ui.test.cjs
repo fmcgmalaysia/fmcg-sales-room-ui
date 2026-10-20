@@ -307,14 +307,14 @@ test('quiet refresh retains the PO list until the new receipt and does not erase
 });
 
 test('GP is a read-only two-decimal percentage; missing and unsaved values never pretend to be zero',()=>{
- for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,'—'],[undefined,'—']]){
+ for(const [gp,shown] of [[.125,'12.50%'],[-.2,'-20.00%'],[0,'0.00%'],[null,''],[undefined,'']]){
   const h=harness(),w=workspace();w.tasks[0].gp=gp;w.tasks[0].procurement={totalCtn:w.tasks[0].ord,revision:'SAVED-COST'};h.reply(w);h.click({customer:'C'});
   assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],shown);
   assert.equal(h.messages.length,1);
  }
  const h=harness(),w=workspace();w.tasks[0].gp=.125;h.reply(w);h.click({customer:'C'});
  h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'5'});h.click({customer:'C'});
- assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],'—');
+ assert.equal(h.node('#app').innerHTML.match(/<b class="gp">([^<]*)<\/b>/)[1],'');
 });
 
 test('P.O. dialog hides system IDs, places an obvious input first and keeps original association payload',()=>{
@@ -776,12 +776,13 @@ test('payment request omits manual date and client timestamp; submits saved PO v
  const sent=h.messages.at(-1);assert.equal(sent.input.action,'REQUEST_PAYMENT');assert.equal(sent.input.requestedCents,2500);assert.equal(sent.input.version,'V');assert.equal(sent.input.requiredDate,undefined);assert.equal(sent.input.submittedAt,undefined);
 });
 
-test('submitted payment has green entry, recorded details and resubmission values; Account ownership or review prevents edits',async()=>{
- for(const [stage,review,editable] of [['SUBMITTED',null,true],['SUBMITTED',{stage:'RECEIVED'},true],['OWNED',null,false],['SUBMITTED',{stage:'REVIEWING'},false],['PROCESSING',null,false]]){
+test('submitted payment is read-only in PO; eligible Follow-up alone edits and any Account review locks it',async()=>{
+ for(const [stage,review,editable] of [['SUBMITTED',null,true],['SUBMITTED',{stage:'RECEIVED'},false],['OWNED',null,false],['SUBMITTED',{stage:'REVIEWING'},false],['PROCESSING',null,false]]){
   const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100,procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:12:00Z',by:'LAW',paymentRequest:{requestedCents:2500,purpose:'DEPOSIT',basisFileId:'PI',termDays:30}}},paymentHandoff:{review,status:'AWAITING_REVIEW'}};
   h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/po-request-payment submitted/);h.click({poRequest:'PO'});
-  let html=h.node('#dialogContent').innerHTML;assert.match(html,/Last Submitted/);assert.match(html,/16:12/);assert.match(html,/LAW/);assert.match(html,/25.00/);assert.equal(/data-po-request-edit/.test(html),editable);
-  h.click({poRequestEdit:'PO'});html=h.node('#dialogContent').innerHTML;
+  let html=h.node('#dialogContent').innerHTML;assert.match(html,/Last Submitted/);assert.match(html,/16:12/);assert.match(html,/LAW/);assert.match(html,/25.00/);assert.equal(/data-po-request-edit/.test(html),false);assert.match(html,editable?/Payment Follow-up/:/locked/);
+  h.click({poRequestEdit:'PO'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poRequestAmount"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+  h.click({view:'payments'});assert.equal(/class="pf-editable"/.test(h.node('#app').innerHTML),editable);h.click({poRequestEdit:'PO'});html=h.node('#dialogContent').innerHTML;
   if(editable){assert.match(html,/value="25.00"/);assert.match(html,/value="DEPOSIT" selected/);}
   else{assert.doesNotMatch(html,/id="poRequestAmount"/);h.click({controlId:'submitPaymentRequest'});assert.match(h.node('#dialogError').textContent,/locked/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);}
  }
@@ -893,7 +894,7 @@ test('Pay Slip disables absent proofs, views one linked proof and preserves mult
 test('Follow-up retires the lightning entry while retaining Reviewing lock and original waiting status',async()=>{
  for(const stage of ['SUBMITTED','OWNED']){
  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',chasePayment:false,finance:{paidCents:0},procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:00:00Z',paymentRequest:{requestedCents:10000}}}};
- h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;assert.doesNotMatch(html,/data-followup-chase|pf-chase|pf-history/);assert.equal(html.includes('class="pf-lock"'),stage==='OWNED');assert.match(html,/<th>Message<\/th>/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;assert.doesNotMatch(html,/data-followup-chase|pf-chase|pf-history/);assert.equal(html.includes('class="pf-editable"'),false);assert.match(html,/<span class="pf-status waiting"/);assert.doesNotMatch(html,/<button class="pf-status waiting"/);assert.match(html,/<th>Message<\/th>/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
  }
 });
 
