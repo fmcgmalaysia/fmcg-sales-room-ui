@@ -23,19 +23,24 @@
         || !/^[A-Z]{3}$/.test(source.currency || '')) issues.push('IDENTITY_INCOMPLETE');
       if (![source.taskQty, source.loadedQty, source.invoicedQty, source.pendingInvoiceQty].every(whole)
         || source.loadedQty > source.taskQty) issues.push('QUANTITY_REQUIRES_REVIEW');
-      const used = source.invoicedQty + source.pendingInvoiceQty;
-      if (whole(used) && whole(source.loadedQty) && used > source.loadedQty) issues.push('LOADED_BELOW_INVOICE_COVERAGE');
+      const issued = whole(source.invoicedQty) && source.invoicedQty > 0;
+      const pending = whole(source.pendingInvoiceQty) && source.pendingInvoiceQty > 0;
+      // One loading row is invoiced at its full Loaded snapshot. A changed
+      // snapshot requires invoice correction; it never creates a billable delta.
+      if (issued && source.invoicedQty !== source.loadedQty) issues.push('LOADED_DIFFERS_FROM_ISSUED_INVOICE');
+      if (pending && source.pendingInvoiceQty !== source.loadedQty) issues.push('LOADED_DIFFERS_FROM_PENDING_INVOICE');
+      if (issued && pending) issues.push('MULTIPLE_INVOICE_COVERAGE_REQUIRES_REVIEW');
       if (source.stale === true || source.orphaned === true) issues.push('WAREHOUSE_TASK_CHANGED');
       if (source.loadedConfirmed !== true && source.loadedQty > 0) issues.push('LOADING_NOT_CONFIRMED');
-      const invoiceQty = issues.length ? null : source.loadedQty - used;
-      const selectable = !issues.length && invoiceQty > 0;
+      const invoiceQty = issues.length ? null : source.loadedQty;
+      const selectable = !issues.length && invoiceQty > 0 && !issued && !pending;
       const cbmMicro = selectable ? metric(source.cbmPerCtn, invoiceQty, 1000000) : null;
       const netWeightGrams = selectable ? metric(source.netWeightKgPerCtn, invoiceQty, 1000) : null;
       const amountCents = selectable && whole(source.sellingPriceCtnCents) && source.sellingPriceCtnCents > 0
         && Number.isSafeInteger(invoiceQty * source.sellingPriceCtnCents) ? invoiceQty * source.sellingPriceCtnCents : null;
       const missing = selectable ? [cbmMicro === null && 'CBM', netWeightGrams === null && 'NET_WEIGHT', amountCents === null && 'PRICE'].filter(Boolean) : [];
       const status = issues.length ? 'REVIEW' : source.loadedQty === 0 ? 'WAIT_LOADING'
-        : invoiceQty === 0 ? source.pendingInvoiceQty > 0 ? 'INVOICE_PENDING' : 'INVOICED'
+        : issued ? 'INVOICED' : pending ? 'INVOICE_PENDING'
           : missing.length ? 'NEEDS_DATA' : 'READY';
       return { ...source, invoiceQty, selectable, cbmMicro, netWeightGrams, amountCents, missing, issues, status, mergeKey: mergeKey(source) };
     });

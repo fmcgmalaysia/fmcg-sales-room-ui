@@ -2,21 +2,21 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const { projectRows, buildDraft } = require('../../support-room/invoice-draft-model.js');
 const source = (id, extra = {}) => ({ id, taskId: 'SOURCE', company: 'NCT', customerId: '168', customerName: '168 LTD',
   invoicePartyKey: 'BILL-168', currency: 'USD', shipmentGroup: 'CONTAINER-A', warehouseVersion: 'LOAD-1', invoiceCoverageVersion: 'INV-1',
-  taskQty: 100, loadedQty: 80, invoicedQty: 20, pendingInvoiceQty: 0, loadedConfirmed: true,
+  taskQty: 100, loadedQty: 80, invoicedQty: 0, pendingInvoiceQty: 0, loadedConfirmed: true,
   cbmPerCtn: 0.0118, netWeightKgPerCtn: 8.4, sellingPriceCtnCents: 1008, ...extra });
 const rows = (...values) => projectRows({ company: 'NCT', rows: values });
 const versions = values => Object.fromEntries(values.flatMap(row => [[row.id, row.warehouseVersion], [row.id + ':invoice', row.invoiceCoverageVersion]]));
 
-test('invoice uses confirmed loaded less issued and pending coverage, never requested or received', () => {
-  const row = rows(source('A', { requestedQty: 500, receivedQty: 400, pendingInvoiceQty: 5 }))[0];
-  assert.equal(row.invoiceQty, 55); assert.equal(row.amountCents, 55440);
-  assert.equal(row.cbmMicro, 649000); assert.equal(row.netWeightGrams, 462000);
+test('invoice quantity equals the confirmed container Loaded, never requested, received or a delta', () => {
+  const row = rows(source('A', { requestedQty: 500, receivedQty: 400 }))[0];
+  assert.equal(row.invoiceQty, 80); assert.equal(row.amountCents, 80640);
+  assert.equal(row.cbmMicro, 944000); assert.equal(row.netWeightGrams, 672000);
 });
 test('independent delivery batches of the same source may share one invoice without merging identities', () => {
   const values = rows(source('BATCH-1'), source('BATCH-2', { loadedQty: 20, invoicedQty: 0, taskQty: 20 }));
   const result = buildDraft(values, values.map(row => row.id), versions(values));
-  assert.equal(result.quantity, 80); assert.equal(result.lines.length, 2);
-  assert.equal(result.amountCents, 80640); assert.equal(result.cbmMicro, 944000); assert.equal(result.netWeightGrams, 672000);
+  assert.equal(result.quantity, 100); assert.equal(result.lines.length, 2);
+  assert.equal(result.amountCents, 100800); assert.equal(result.cbmMicro, 1180000); assert.equal(result.netWeightGrams, 840000);
 });
 test('unloaded, stale, unconfirmed and over-invoiced loading rows cannot be selected', () => {
   for (const extra of [{ loadedQty: 0, invoicedQty: 0 }, { stale: true }, { loadedConfirmed: false }, { invoicedQty: 81 }]) {
@@ -25,10 +25,12 @@ test('unloaded, stale, unconfirmed and over-invoiced loading rows cannot be sele
     assert.throws(() => buildDraft(values, ['A'], versions(values)), /eligible/);
   }
 });
-test('already fully invoiced loading does not become eligible until loading actually increases', () => {
-  assert.equal(rows(source('A', { loadedQty: 20 }))[0].invoiceQty, 0);
-  assert.equal(rows(source('A', { loadedQty: 20 }))[0].status, 'INVOICED');
-  assert.equal(rows(source('A', { loadedQty: 30 }))[0].invoiceQty, 10);
+test('an issued loading row is locked; increased loading requires correction rather than a new delta invoice', () => {
+  const issued = rows(source('A', { loadedQty: 80, invoicedQty: 80 }))[0];
+  assert.equal(issued.invoiceQty, 80); assert.equal(issued.status, 'INVOICED'); assert.equal(issued.selectable, false);
+  const changed = rows(source('A', { loadedQty: 100, invoicedQty: 80 }));
+  assert.equal(changed[0].invoiceQty, null); assert.equal(changed[0].status, 'REVIEW');
+  assert.throws(() => buildDraft(changed, ['A'], versions(changed)), /eligible/);
 });
 test('customer, bill-to, currency and shipment cannot silently mix on one invoice', () => {
   for (const extra of [{ customerId: 'OTHER' }, { invoicePartyKey: 'OTHER' }, { currency: 'MYR' }, { shipmentGroup: 'NEXT' }]) {
@@ -41,7 +43,7 @@ test('missing CBM or net weight is unknown, blocks complete preview and is never
   const values = rows(source('A'), source('B', { netWeightKgPerCtn: null }));
   const result = buildDraft(values, ['A', 'B'], versions(values));
   assert.equal(result.netWeightGrams, null); assert.equal(result.canPreview, false);
-  assert.deepEqual(result.missing, ['NET_WEIGHT']); assert.equal(result.quantity, 120);
+  assert.deepEqual(result.missing, ['NET_WEIGHT']); assert.equal(result.quantity, 160);
 });
 test('changed loading or invoice coverage invalidates the original checkbox selection', () => {
   const original = rows(source('A')), captured = versions(original);
@@ -62,10 +64,18 @@ test('missing invoice coverage version cannot be accepted as an unchanged empty 
   assert.throws(() => buildDraft(values, ['A'], versions(values)), /eligible/);
 });
 
-test('pending invoice coverage reduces eligibility before a second employee can bill those cartons', () => {
-  const values = rows(source('A', { loadedQty: 80, invoicedQty: 20, pendingInvoiceQty: 60 }));
-  assert.equal(values[0].invoiceQty, 0); assert.equal(values[0].status, 'INVOICE_PENDING');
+test('a pending invoice locks the full loading row against a second invoice', () => {
+  const values = rows(source('A', { loadedQty: 80, invoicedQty: 0, pendingInvoiceQty: 80 }));
+  assert.equal(values[0].invoiceQty, 80); assert.equal(values[0].status, 'INVOICE_PENDING');
   assert.throws(() => buildDraft(values, ['A'], versions(values)), /eligible/);
+});
+
+test('legacy partial invoices and changed pending loading snapshots require review, never subtraction', () => {
+  for (const extra of [{ invoicedQty: 20 }, { pendingInvoiceQty: 20 }, { loadedQty: 60, invoicedQty: 80 }]) {
+    const values = rows(source('A', extra));
+    assert.equal(values[0].invoiceQty, null); assert.equal(values[0].status, 'REVIEW');
+    assert.throws(() => buildDraft(values, ['A'], versions(values)), /eligible/);
+  }
 });
 
 test('building a preview leaves loading evidence and previous invoice coverage untouched', () => {

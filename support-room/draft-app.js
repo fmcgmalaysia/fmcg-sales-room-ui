@@ -9,7 +9,7 @@
   const dim = (value, scale, decimals) => value === null ? '<span class="missing">Missing 待补充</span>' : f(value / scale, decimals);
   const base = (id, extra = {}) => ({ id, taskId: id, company: 'NCT', customerId: '168', customerName: '168 LTD',
     invoicePartyKey: 'BILL-168', currency: 'USD', shipmentGroup: 'SHIPMENT-168-A', warehouseVersion: 'LOAD-' + id,
-    invoiceCoverageVersion: 'INVOICE-' + id, taskQty: 100, loadedQty: 80, invoicedQty: 20, pendingInvoiceQty: 0,
+    invoiceCoverageVersion: 'INVOICE-' + id, taskQty: 100, loadedQty: 80, invoicedQty: 0, pendingInvoiceQty: 0,
     loadedConfirmed: true, cbmPerCtn: 0.0118, netWeightKgPerCtn: 8.4, sellingPriceCtnCents: 1008,
     barcode: '9556404007035', name: '7 UP (CAN)', packing: '320ML × 24', batch: 'This shipment 本次发货',
     loadedAt: '21 Oct 2026 08:12', loadedBy: 'LAW', ...extra });
@@ -78,15 +78,14 @@
         + '<td>' + String(index).padStart(3, '0') + '</td><td>' + esc(row.loadedAt || '') + (row.loadedAt ? '<small>by ' + esc(row.loadedBy) + '</small>' : '') + '</td>'
         + '<td><span class="customer-name">' + esc(row.customerName) + '</span><small>' + esc(row.shipmentGroup) + '</small></td>'
         + '<td class="description"><span class="code">' + esc(row.barcode) + '</span><strong>' + esc(row.name) + '</strong><small>' + esc(row.packing) + '</small><small>' + esc(row.batch) + '</small></td>'
-        + '<td class="num qty">' + row.loadedQty + '</td><td class="num qty">' + row.invoicedQty + (row.pendingInvoiceQty ? '<small>Pending ' + row.pendingInvoiceQty + '</small>' : '') + '</td>'
-        + '<td class="num qty">' + (row.invoiceQty === null ? '<span class="missing">Review 待核对</span>' : row.invoiceQty > 0 ? '<span class="to-invoice">' + row.invoiceQty + '</span>' : '0') + '</td>'
+        + '<td class="num qty">' + row.loadedQty + '</td>'
         + '<td class="num">' + money(row.sellingPriceCtnCents, row.currency) + '</td>'
-        + '<td class="num">' + (row.invoiceQty > 0 ? money(row.amountCents, row.currency) : '') + '</td>'
-        + '<td class="num">' + (row.invoiceQty > 0 ? dim(row.cbmMicro, 1000000, 4) : '') + '</td>'
-        + '<td class="num">' + (row.invoiceQty > 0 ? dim(row.netWeightGrams, 1000, 2) : '') + '</td>'
+        + '<td class="num">' + (row.selectable ? money(row.amountCents, row.currency) : '') + '</td>'
+        + '<td class="num">' + (row.selectable ? dim(row.cbmMicro, 1000000, 4) : '') + '</td>'
+        + '<td class="num">' + (row.selectable ? dim(row.netWeightGrams, 1000, 2) : '') + '</td>'
         + '<td><span class="passive ' + statusClass(row) + '">' + esc(statusLabel(row)) + '</span>' + action + '</td>'
         + '<td class="messages"><button data-peer="SALES" data-id="' + esc(row.id) + '" aria-label="Contact Sales">S</button><button data-peer="WAREHOUSE" data-id="' + esc(row.id) + '" aria-label="Contact Warehouse">W</button></td></tr>';
-    }).join('') || '<tr><td colspan="14">No matching tasks 没有符合条件的任务</td></tr>';
+    }).join('') || '<tr><td colspan="12">No matching tasks 没有符合条件的任务</td></tr>';
     $('row-count').textContent = visible.length + ' rows 行';
     const eligible = visible.filter(row => row.selectable && compatible(row));
     $('select-all').checked = eligible.length > 0 && eligible.every(row => selected.has(row.id));
@@ -117,7 +116,7 @@
   function openInvoice() {
     try { draft = selectedDraft(); } catch (error) { $('notice').textContent = error.message; return; }
     $('invoice-customer').textContent = draft.customerName;
-    $('invoice-context').textContent = draft.company + ' · ' + draft.currency + ' · ' + draft.shipmentGroup;
+      $('invoice-context').textContent = draft.company + ' · ' + draft.currency + ' · ' + draft.shipmentGroup;
     $('invoice-lines').innerHTML = lineRows(draft.lines, draft.currency);
     $('invoice-totals').innerHTML = totalsMarkup(draft);
     $('invoice-warning').textContent = draft.canPreview ? '' : 'Complete the missing '+draft.missing.join(', ')+' before preparing an invoice. 请先补齐缺失资料。';
