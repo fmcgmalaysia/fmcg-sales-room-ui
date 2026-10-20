@@ -1,5 +1,9 @@
 # PR207 continuation — 2026-10-20 MYT
 
+## USER ACCEPTED — supersedes all pending instructions below
+
+On2026-10-20 MYT, after discussion of Requested Qty splitting and the next acceptance steps, the user explicitly stated “已经帮你测试了，完美” (tested personally; perfect). Freeze deployed runtime e93006cede80484ef0d4ffb787d0a47c12b428ba as the user-verified Sales split workflow. Do not repeat login polling, deployment, test writes or code edits. Annotated recovery tag verified/sales-requested-split-20261020 is being preserved at that runtime. Actual user test account, quantities and individual per-department steps were not specified in this confirmation; do not invent detailed evidence or claim all unrelated workflows verified. Earlier automated Source visual/dialog checks remained login-blocked; record user acceptance separately rather than falsely claiming agent completion of those checks. The background heartbeat requested-qty-pr207 is stopped (PAUSED). Main remains unchanged; the exact runtime and ten deployed Wix source hashes are frozen in VERIFIED.json.
+
 ## CURRENT OVERRIDE — 00:39MYT Oct20
 
 The queued run succeeded. Pages11/11 changed frontend assets match e93006c after LF normalization, including all4build markers. Temporary policy63597512 REMOVED; original seven exact restoration verified. Do not remove it again, recreate it, dispatch or republish code.
