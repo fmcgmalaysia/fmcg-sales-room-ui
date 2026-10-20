@@ -1,5 +1,7 @@
 // Task-authorized chat orchestration. Drive is the message authority; CMS is one task index/cache.
-const pairs=['ACCOUNT:PURCHASE','PURCHASE:WAREHOUSE','SUPPORT:WAREHOUSE'];
+const pairs=['ACCOUNT:PURCHASE','PURCHASE:WAREHOUSE','SUPPORT:WAREHOUSE','PURCHASE:SALES','SALES:SUPPORT','SALES:WAREHOUSE'];
+const salesContext=task=>task.kind==='DELIVERY'?{customerId:task.customerId||null,orderId:task.orderId||null,sourceLineId:task.sourceLineId||null,batchId:task.batchId||null}:{};
+const departmentKeys=task=>task.kind==='PO'?['PURCHASE','ACCOUNT','WAREHOUSE']:['PURCHASE','WAREHOUSE','SUPPORT','SALES'];
 const clone=value=>JSON.parse(JSON.stringify(value));
 export function taskChatPair(department,peer){const pair=[department,peer].sort().join(':');if(!pairs.includes(pair))throw Error('Chat departments are not permitted to converse.');return pair;}
 export function createTaskChatService({drive,index,resolve,hash}){
@@ -14,14 +16,14 @@ export function createTaskChatService({drive,index,resolve,hash}){
   const id=indexId(company,task),valid=row=>row&&row.company===company&&row.taskKind===task.kind&&row.taskId===task.id;
   const existing=await index.read(id);if(existing){if(!valid(existing))fail('index identity requires review.');return;}
   // Establish discoverability before the first Drive write, including a lost browser session.
-  const row={_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:null,departmentKeys:task.kind==='PO'?['PURCHASE','ACCOUNT','WAREHOUSE']:['PURCHASE','WAREHOUSE','SUPPORT'],details:{task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[]},summaries:{},authority:'DRIVE_V1'}};
+  const row={_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:null,departmentKeys:departmentKeys(task),details:{task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task)},summaries:{},authority:'DRIVE_V1'}};
   try{await index.insert(row);}catch(error){if(!valid(await index.read(id)))throw error;}
  }
  async function cache(company,task,result){
   if(!result.fileId)return;
   const id=indexId(company,task),existing=await index.read(id);
   if(existing&&(existing.company!==company||existing.taskKind!==task.kind||existing.taskId!==task.id||existing.manifestId&&existing.manifestId!==result.fileId))fail('index identity requires review.');
-  const row={...(existing||{}),_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:result.fileId,departmentKeys:task.kind==='PO'?['PURCHASE','ACCOUNT','WAREHOUSE']:['PURCHASE','WAREHOUSE','SUPPORT'],details:{...(existing?.details||{}),task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[]},summaries:{...(existing?.details?.summaries||{}),[result.summary.pair]:{revision:result.revision,updatedAt:result.summary.updatedAt,lastIncoming:result.summary.lastIncoming}},authority:'DRIVE_V1'}};
+  const row={...(existing||{}),_id:id,title:task.number||task.title||task.id,company,taskKind:task.kind,taskId:task.id,manifestId:result.fileId,departmentKeys:departmentKeys(task),details:{...(existing?.details||{}),task:{number:task.number,title:task.title,closed:!!task.closed,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task)},summaries:{...(existing?.details?.summaries||{}),[result.summary.pair]:{revision:result.revision,updatedAt:result.summary.updatedAt,lastIncoming:result.summary.lastIncoming}},authority:'DRIVE_V1'}};
   // Summary cache may lag a competing response. List never treats it as message authority.
   if(existing)await index.update(row);else try{await index.insert(row);}catch(error){const raced=await index.read(id);if(!raced||raced.company!==company||raced.taskKind!==task.kind||raced.taskId!==task.id||raced.manifestId!==row.manifestId)throw error;}
  }
@@ -36,7 +38,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
   const value={sequence:0,unread:0,lastIncoming:null,...result?.summary,staffId:staff.staffId};
   const old=legacy(task,department,peer,value),incoming=old.filter(m=>m.to.includes(department)),oldLast=incoming.at(-1);
   const unread=old.filter(m=>m.to.includes(department)&&m.byStaffId!==staff.staffId&&!m.receipts.some(r=>r.byStaffId===staff.staffId&&r.department===department)).length;
-  return {kind:task.kind,taskId:task.id,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],peer,pair:taskChatPair(department,peer),number:task.number,title:task.title,closed:!!task.closed,sequence:value.sequence,updatedAt:[value.updatedAt,old.at(-1)?.at,...updates(task,department,peer).map(e=>e.at)].filter(Boolean).sort().at(-1)||null,unread:value.unread+unread+updates(task,department,peer).filter(e=>e.notify&&e.from===peer&&(!value.systemReadAt||e.at>value.systemReadAt)).length,lastIncoming:value.lastIncoming||oldLast||null,updates:updates(task,department,peer)};
+  return {kind:task.kind,taskId:task.id,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task),peer,pair:taskChatPair(department,peer),number:task.number,title:task.title,closed:!!task.closed,sequence:value.sequence,updatedAt:[value.updatedAt,old.at(-1)?.at,...updates(task,department,peer).map(e=>e.at)].filter(Boolean).sort().at(-1)||null,unread:value.unread+unread+updates(task,department,peer).filter(e=>e.notify&&e.from===peer&&(!value.systemReadAt||e.at>value.systemReadAt)).length,lastIncoming:value.lastIncoming||oldLast||null,updates:updates(task,department,peer)};
  }
  return {
   async list({company,department,staff,historyCursor=null}){

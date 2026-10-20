@@ -1,14 +1,15 @@
 (()=>{'use strict';
 const department=document.querySelector('nav[aria-label="Account navigation"]')?'ACCOUNT':document.querySelector('nav[aria-label="Warehouse navigation"]')?'WAREHOUSE':document.title.includes('Support')?'SUPPORT':'PURCHASE';
-const english=department==='ACCOUNT',copy=(en,zh)=>english?en:en+' '+zh,code={ACCOUNT:'ACC',PURCHASE:'P',WAREHOUSE:'W',SUPPORT:'S'};
+const english=department==='ACCOUNT',copy=(en,zh)=>english?en:en+' '+zh,code={ACCOUNT:'ACC',PURCHASE:'P',WAREHOUSE:'W',SUPPORT:'S',SALES:'SALES'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';};
 const companyValue=()=>document.querySelector('#companySelect,#company')?.value||'NCT';
 const key=t=>[t.kind,t.taskId,t.peer,t.legacyOnly?'old':'new'].join('|');
-let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,pageState='loading',listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve();
+let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,pageState='loading',listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve(),listPeer=null;
 const requests=new Map(),drafts=new Map(),seen=new Set();
 const dialog=document.createElement('dialog');dialog.className='tc-dialog';dialog.setAttribute('aria-label',copy('Messages','留言'));document.body.append(dialog);
 const nav=document.createElement('button');nav.type='button';nav.className='tc-nav';nav.setAttribute('aria-label',copy('Messages','留言'));nav.innerHTML='<span aria-hidden="true">•••</span>'; // Task-row buttons remain the visible message entry points.
+const salesInbox=document.createElement('button');salesInbox.type='button';salesInbox.className='tc-peer tc-sales-inbox';salesInbox.hidden=true;salesInbox.onclick=()=>{if(!pending&&!document.querySelector('dialog[open]')){renderList(null,'SALES');dialog.showModal();}};
 function draftKey(){return [company,department,staffId,current?key(current):''].join('|');}
 function remember(){const text=dialog.querySelector('textarea');if(current&&text)drafts.set(draftKey(),{body:text.value,replyTo});}
 function notice(text){const el=dialog.querySelector('.tc-notice');if(el)el.textContent=text;}
@@ -23,7 +24,7 @@ async function refresh(older=false){
  try{const result=await request('LIST',{historyCursor:older?nextHistory:null});if(gen!==generation)return;
   if(result.company!==company||result.department!==department||!Array.isArray(result.threads))throw Error(copy('Message identity could not be confirmed.','留言身份尚未确认。'));
   if(staffId&&staffId!==result.staff?.staffId){threads=[];current=null;messages=[];dialog.close();}staffId=result.staff?.staffId||'';
-  merge([...result.threads,...(result.legacyArchive||[])]);nextHistory=result.nextHistory;paintCells();if(dialog.open&&!current)renderList();
+  merge([...result.threads,...(result.legacyArchive||[])]);nextHistory=result.nextHistory;paintCells();if(dialog.open&&!current)renderList(undefined,listPeer);
  }catch(error){if(gen===generation)notice(error.message);}finally{if(gen===generation)listBusy=false;}
 }
 function badge(n){return n?'<span class="tc-badge">'+(n>99?'99+':n)+'</span>':'';}
@@ -35,10 +36,12 @@ function paintCells(){
   el.innerHTML='<span class="tc-snippet">'+esc(latest?.body||'—')+'</span><span class="tc-actions">'+(found.length>1&&ids?'<button class="tc-peer" data-tc-source-list="'+esc(JSON.stringify(ids))+'">W'+badge(found.reduce((n,t)=>n+(t.unread||0),0))+'</button>':found.map(button).join(''))+'</span>';
  });
  nav.innerHTML='<span aria-hidden="true">•••</span>'+badge(threads.reduce((n,t)=>n+(t.unread||0),0));
+ const sales=threads.filter(t=>t.peer==='SALES'&&(t.sequence||t.unread||t.lastIncoming));salesInbox.hidden=!sales.length;salesInbox.innerHTML=esc(copy('Sales messages','销售留言'))+badge(sales.reduce((n,t)=>n+(t.unread||0),0));const host=document.querySelector('main');if(host&&!host.contains(salesInbox))host.prepend(salesInbox);
 }
 function header(title,subtitle){return '<header><button type="button" data-tc-back aria-label="Back">‹</button><div><strong>'+esc(title)+'</strong><small>'+esc(subtitle)+'</small></div><button type="button" data-tc-close aria-label="Close">×</button></header>';}
-function renderList(sourceIds){
- observer?.disconnect();remember();current=null;replyTo=null;const rows=threads.filter(t=>(!sourceIds||sourceIds.some(id=>(t.sourceTaskIds||[t.sourceTaskId]).includes(id)))&&(t.updatedAt||t.lastIncoming||t.unread||sourceIds));
+function renderList(sourceIds,onlyPeer=null){
+ listPeer=onlyPeer;
+ observer?.disconnect();remember();current=null;replyTo=null;const rows=threads.filter(t=>(!onlyPeer||t.peer===onlyPeer)&&(!sourceIds||sourceIds.some(id=>(t.sourceTaskIds||[t.sourceTaskId]).includes(id)))&&(t.updatedAt||t.lastIncoming||t.unread||sourceIds));
  rows.sort((a,b)=>(b.unread||0)-(a.unread||0)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
  dialog.innerHTML=header(copy('Messages','留言'),company)+'<div class="tc-history tc-list">'+rows.map(t=>'<button class="tc-thread" data-tc-key="'+esc(key(t))+'"><strong>'+esc(t.number)+' · '+esc(code[t.peer])+badge(t.unread)+'</strong><small>'+esc(t.title)+(t.legacyOnly?' · '+esc(copy('History only','仅供查阅')):'')+'</small><span>'+esc(t.lastIncoming?.body||'—')+'</span></button>').join('')+(rows.length?'':'<p>'+esc(copy('No conversations yet. Open a task to start.','暂无对话，请从任务打开留言。'))+'</p>')+(nextHistory?'<button data-tc-more-threads>'+esc(copy('Earlier conversations','更早对话'))+'</button>':'')+'</div><div class="tc-notice" role="status"></div><footer><button data-tc-refresh>'+esc(copy('Refresh','刷新'))+'</button></footer>';
 }
@@ -47,6 +50,11 @@ function open(taskId,peer,kind='PO'){
  remember();if(taskId){current=threads.find(t=>t.taskId===taskId&&t.kind===kind&&t.peer===(peer||(department==='PURCHASE'?'ACCOUNT':'PURCHASE'))&&!t.legacyOnly);if(!current){renderList();notice(copy('Task messages are loading. Please retry.','正在读取任务留言，请重试。'));refresh();}else startThread(current);}else renderList();if(!dialog.open)dialog.showModal();
 }
 function presets(){
+ if(current?.peer==='SALES'){
+  if(department==='PURCHASE')return ['We are still sourcing the goods. Please wait. 正在找货中，请耐心等待。','The target price cannot be met and may result in a loss. 价格无法满足需求，可能导致亏损。','The market is short of stock. Please choose to wait or split into a later shipment. 市场缺货，请选择继续等待或拆单，下次发货。'];
+  if(department==='WAREHOUSE')return ['Please check the confirmed available quantity. 请核对已确认可发货数量。','The goods are being prepared. 货物正在备货中。','Please confirm the shipment instructions. 请确认发货指示。'];
+  return ['Please confirm which shipment should be invoiced. 请确认本次应开票的发货批次。','The customer documents are being prepared. 正在准备客户文件。'];
+ }
  if(department==='ACCOUNT')return ['Please upload the supplier invoice before payment. 付款前请补交供应商发票。','Please confirm the bank account details. 请确认收款银行资料。','We are reviewing this payment request. 我们正在审核这笔付款申请。'];
  if(department==='PURCHASE'&&current?.peer==='ACCOUNT')return ['Please confirm the expected payment date. 请确认预计付款日期。','Supplier documents have been uploaded. Please review. 供应商文件已上传，请审核。','The supplier is awaiting payment. Please advise. 供应商正在等待付款，请告知进度。'];
  if(department==='WAREHOUSE'&&current?.peer==='SUPPORT')return ['Please check the actual loaded quantity before invoicing. 请按实际装货数量核对开票。','Please confirm the delivery instructions. 请确认发货指示。'];
@@ -59,7 +67,7 @@ function receipt(m){const rows=m.receipts||[];return rows.some(r=>r.kind==='ACK'
 function bubble(m){const own=m.from===department,ack=(m.receipts||[]).some(r=>r.kind==='ACK'&&r.department===department&&r.byStaffId===staffId);return '<article class="tc-bubble '+(own?'out':'in')+'" data-tc-message="'+esc(m.id)+'"><small>'+esc(m.by)+' · '+esc(code[m.from]||m.from)+'</small>'+(m.replyTo?'<small class="tc-reply-marker">'+esc(copy('Reply','回复'))+'</small>':'')+'<p>'+esc(m.body)+'</p><div class="tc-meta"><time>'+esc(time(m.at))+'</time>'+(own?'<span>'+esc(receipt(m))+'</span>':'')+'</div>'+(!own&&m.requiresAck&&!ack&&!pageReadOnly?'<button data-tc-ack="'+esc(m.id)+'">'+esc(copy('Acknowledge','确认收到'))+'</button>':'')+(!pageReadOnly&&!m.legacy?'<button class="tc-reply" data-tc-reply="'+esc(m.id)+'">'+esc(copy('Reply','回复'))+'</button>':'')+'</article>';}
 function renderThread(){
  observer?.disconnect();const draft=drafts.get(draftKey())?.body||'';
- dialog.innerHTML=header(current.number||current.title,({PURCHASE:'Purchase Dept.',ACCOUNT:'Finance Dept.',WAREHOUSE:'Warehouse',SUPPORT:'Support'}[current.peer])+' · '+company)+'<div class="tc-history">'+(before?'<button data-tc-earlier>'+esc(copy('Earlier messages','更早留言'))+'</button>':'')+'<div class="tc-bubbles"></div></div><div class="tc-notice" role="status"></div>'+(pageReadOnly?'<footer>'+esc(copy('History only','历史记录仅供查阅'))+'</footer>':'<footer><details class="tc-presets"><summary>'+esc(copy('Quick replies','预设留言'))+'</summary>'+presets().map((p,i)=>'<button type="button" data-tc-preset="'+i+'">'+esc(p)+'</button>').join('')+'</details><div class="tc-reply-context" '+(replyTo?'':'hidden')+'>'+esc(copy('Reply selected','已选择回复'))+' <button data-tc-cancel-reply>×</button></div><div class="tc-compose"><textarea maxlength="2000" rows="2" aria-label="'+esc(copy('Message','留言'))+'" placeholder="'+esc(copy('Type a message…','输入留言…'))+'">'+esc(draft)+'</textarea><button class="tc-send" data-tc-send>Send</button></div></footer>');
+ dialog.innerHTML=header(current.number||current.title,({PURCHASE:'Purchase Dept.',ACCOUNT:'Finance Dept.',WAREHOUSE:'Warehouse',SUPPORT:'Support',SALES:'Sales Dept.'}[current.peer])+' · '+company+(current.peer==='SALES'?' · '+current.title+' · '+(current.orderId||''):''))+'<div class="tc-history">'+(before?'<button data-tc-earlier>'+esc(copy('Earlier messages','更早留言'))+'</button>':'')+'<div class="tc-bubbles"></div></div><div class="tc-notice" role="status"></div>'+(pageReadOnly?'<footer>'+esc(copy('History only','历史记录仅供查阅'))+'</footer>':'<footer><details class="tc-presets"><summary>'+esc(copy('Quick replies','预设留言'))+'</summary>'+presets().map((p,i)=>'<button type="button" data-tc-preset="'+i+'">'+esc(p)+'</button>').join('')+'</details><div class="tc-reply-context" '+(replyTo?'':'hidden')+'>'+esc(copy('Reply selected','已选择回复'))+' <button data-tc-cancel-reply>×</button></div><div class="tc-compose"><textarea maxlength="2000" rows="2" aria-label="'+esc(copy('Message','留言'))+'" placeholder="'+esc(copy('Type a message…','输入留言…'))+'">'+esc(draft)+'</textarea><button class="tc-send" data-tc-send>Send</button></div></footer>');
  renderBubbles();setBusy();
 }
 function renderBubbles(){
