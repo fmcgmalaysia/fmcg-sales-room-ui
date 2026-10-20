@@ -1,5 +1,11 @@
 # Work efficiency supplement — 2026-10-20
 
+## Completed documentation synchronization
+
+Rules commit bb093011983835b0592cab8331d1af0849331db6 pushed and remote SHA verified. Draft PR209: https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/209, base feat/sales-order-adjustment-actions-20261020 at f5edcdd; GitHub returned exactly three changed documentation files, 63 additions, zero deletions. No main merge. This record-only closeout is a subsequent commit on the same branch.
+
+Validation passed: inverse-section comparison reproduces the original parent AGENTS.md SHA256; all seven numbered rules match the repository entry; staged whitespace check passed and only the three named documentation files were committed. The local parent supplement is active. GitHub rules are versioned on this draft branch, not merged into main. No website/runtime/data changes or business tests were performed. A sandbox network/DNS failure prevented the first push; one authorized network escalation succeeded, not an unchanged blind retry. START_HERE.md, historical records and existing automations were left untouched. Actual Credit savings remain UNKNOWN pending future measurements.
+
 User authorization: after the read-only credit-consumption audit and narrow proposal, the user delegated the decision and supported necessary optimization. Selected scope is documentation/rules only; no business implementation, deployment, automation edits or historical document cleanup.
 
 Starting checkout: C:/FMCG-WIX-LOCAL/worktrees/nct-order-submit-room6-20261009. Base f5edcdd08d7f75b80594e82119242705f7d2ef30 on feat/sales-order-adjustment-actions-20261020. New branch docs/work-efficiency-20261020. Use the existing task branch as PR base so the diff is documentation only; do not merge its unverified business ancestry into main. Existing user-verified recovery tag verified/sales-requested-split-20261020 is unchanged. Production runtime 9bdd975 and pending user acceptance remain outside this task.
