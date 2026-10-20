@@ -11,12 +11,14 @@
     "draftAfterLfSha256": "1428fb2b20886362a57f9a0a106c9feec328a07c56614675bd4f6c7b9675c5f8",
     "draftAfterExact": true,
     "publishClicked": true,
-    "publishedLiveReceipt": false,
+    "publishedLiveReceipt": true,
     "editorReloads": 1,
-    "state": "Loading after publish remained disabled with Autosave off and network errors",
-    "postReloadDraftReadback": "pending"
+    "state": "User recovered editor; fresh exact candidate readback followed by native published-live receipt",
+    "postReloadDraftReadback": "exact candidate, 27284 CRLF characters, same LF SHA256",
+    "receiptEvidence": "Private root handoff/activity-row-history-20261020/wix-published-live.png"
   },
-  "publicVerification": "pending Wix publish receipt; no business Save permitted for this acceptance",
+  "publicVerification": "Clean in-app public Purchase reloaded after publishing; LAW authenticated, Active Orders has 11 data rows, Move rows entry retained, no captured page errors; no reorder or Save executed",
+  "realBusinessAcceptance": "deferred by user until Stock Card and full-system testing",
   "mainMerged": false,
-  "complete": false
+  "complete": true
 }

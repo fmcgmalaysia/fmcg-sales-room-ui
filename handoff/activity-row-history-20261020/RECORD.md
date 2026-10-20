@@ -1,5 +1,17 @@
 # Activity row-history reduction — 2026-10-20
 
+## Final publication status
+
+Publication complete for the isolated MOVE ROW retention patch. Runtime d109090db6ffc82494e2ec35044deaadfb2c59b4; functional commit d690720; build marker 2026-10-20-activity-row-history-v1. Pages39411470119 succeeded, six relevant public resources exact. Temporary63696353 already deleted and original seven exact. No deployment or permission re-created during editor recovery.
+
+User reported Master editor recovered. Backend & Public file tree opened purchaseOperations.js; cleared-clipboard full readback remained exactly the candidate, 27,284 CRLF characters, LF SHA256 1428fb2b20886362a57f9a0a106c9feec328a07c56614675bd4f6c7b9675c5f8. No further code edits. One resumed Publish returned native Congratulations / This site is published and live online. Private receipt screenshot root handoff/activity-row-history-20261020/wix-published-live.png. The first shortcut used while locating the file entered Wix Preview; returned via Edit Site without editing or running a business action.
+
+Former in-app tab8 had been cleaned up between turns. A new hidden in-app tab9 opened the real public /master URL; after initial loading, LAW and Purchase Dashboard appeared. This clean page was reloaded once after the publishing receipt, Active Orders opened read-only, and table contained12 rows including header (11 data rows), original task quantities and Move rows entry. Captured error log empty. Private screenshot root handoff/activity-row-history-20261020/purchase-public.png. The page is retained as the release result, not a form to refresh later without checking.
+
+No real reorder, Save, payment, receipt, message or business-data cleanup was performed. User explicitly defers behavioral/full-system acceptance until Stock Card. Four publication stages have evidence; this does not claim a real-CMS row-count saving measurement or user-verified golden-path promotion. Existing six new regression scenarios and prior full-suite results are reused, not rerun for documentation. Source site unchanged; no Source publish, main merge or heartbeat restart.
+
+The historical pending paragraphs below describe intermediate states and are superseded by this final status and RELEASE_STATUS.json. Remaining Activity candidates and broader Stock Card/Sales backlog remain open; completion of PR210 does not close them.
+
 ## Scope and authority
 
 User authorized beginning the discussed evidence-led reduction of meaningless Activity growth. This first isolated patch stops new per-task PURCHASE_ROW_MOVED events from EDIT-with-order and REORDER. Sorting, task version checks, company/customer/invoice restrictions, price audits and operation recovery remain unchanged. No old CMS rows, migration, archive, new storage, permissions or automatic monitors are included. Other candidates remain investigation findings, not implemented improvements.
