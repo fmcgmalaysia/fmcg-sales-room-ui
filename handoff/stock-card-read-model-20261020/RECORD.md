@@ -1,5 +1,25 @@
 # Stock Card read model — 2026-10-20
 
+## Current continuation — 2026-10-21
+
+User approved beginning the implementation after the final architecture review. This continuation changes only the unintegrated Stock Card candidate and adds an isolated local preview. No production consumer, existing Warehouse/Purchase business module, Wix draft, schema, business record, deployment policy or main branch was changed.
+
+Candidate now distinguishes total physically held and isolated quantities from the existing usable-stock calculation. Actual supplier returns reduce physically held isolated goods. A financial settlement with remaining goods and no physical removal evidence produces `onHand:null` and `isolated:null`, not an invented disappearance or zero. This gate is conservative for legacy settled cases; a future physical-removal action needs its own approved implementation and cannot be inferred from loss approval.
+
+Where the projected procurement source has a valid customer share, the candidate derives its original customer's receipt-backed outstanding claim from that share; explicitly recorded planner allocation remains primary. Unknown shares and conflicting explicit release remain review-required. Incoming claims never create physical stock, dispatch is deducted once, and archived FOC/excess sources are retained. This candidate does NOT yet replace the separate production Warehouse own-source Ready calculation. The shared source policy still needs fresh live comparison and integration before claiming one production authority.
+
+New `stockPhysicalProjection.js` and seven focused physical-count tests; four additional integrated scenarios cover historical FOC20 plus B200, partial receipt80 against plan200, source-share dispatch preserving free20, and customer-share reduction releasing50 without changing receipt200. Latest affected run: 27/27 pass across physical projection, Stock Card projection and existing save-safety tests. These are offline synthetic checks, not a live concurrency or business acceptance test. Preview JavaScript syntax passes, and the three embedded examples are checked against the actual candidate projection via `node integration/tests/serve-stock-control-preview.cjs --check`.
+
+Isolated preview: `warehouse-room/stock-control-preview.html`, explicitly labelled example data/local candidate. Shows product totals, sources, customer claims, filters and an unsaved count-difference dialog; submission is disabled. It is self-contained for local file opening. Local serving helper under integration/tests is diagnostic only and has no CMS connection. No visual or browser interaction acceptance is claimed.
+
+Fresh Windows UI read identified the existing Master Purchase entry pointing to `20261020-split-controls-v2`. Full backend text comparison remains incomplete: UI input returned `coordinate input geometry is unavailable`, then after target re-observation/activation a backend-tab click returned an out-of-window coordinate. No editor text was entered, no refresh or publish occurred. Further production edits must wait for reliable fresh full readback. The inspected Source editor was not modified or treated as Master evidence.
+
+Preview serving diagnostics: sandbox local HTTP read was denied by socket permissions; a local read outside that sandbox timed out, and a second server launch correctly reported port in use. The original diagnostic server was stopped through its own exec session. Do not report a working browser preview URL or successful visual QA from those attempts. Filename lookup mistakes were corrected to actual `stockExceptionResolution.js`; no production source was edited while live readback was incomplete.
+
+Next tasks, in order: (1) complete fresh relevant Master live readback and preserve comparison; (2) unify production own-source entitlement with planner allocations without rewriting PO/receipts/splits; (3) cover physical disposal and existing settled-case ambiguity; (4) authenticated read-only Stock Control view; (5) versioned current-balance/checkpoint design with no per-department movement copies; (6) Purchase stock-first reservation, then stock counts/adjustment permissions. No change to current Admin/Finance approval policy is implied. Product master migration, historical Activity deletion/archival and valuation are not implemented here.
+
+Release: candidate code only; Pages not deployed, Wix untouched, public Stock Control unavailable. Current UI is reviewable source/example only. Actual Credits UNKNOWN.
+
 ## Current state
 
 Local first-stage candidate only. Branch feat/stock-card-read-model-20261020 starts from 5e3205632f525e35b6c1ea031662fe28cf82d9db, the PR214 release record. No existing production file changed; no Wix synchronization, deployment, CMS schema/data write, permission change or main merge. The user is independently testing PR214. Do not treat this candidate as a production Stock Card.

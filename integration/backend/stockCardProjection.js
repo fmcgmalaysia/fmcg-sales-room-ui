@@ -1,6 +1,7 @@
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
+import { projectPhysicalStock } from 'backend/stockPhysicalProjection.js';
 
 const quantity = value => Number.isSafeInteger(value) && value >= 0;
 const identity = task => {
@@ -31,10 +32,21 @@ export function projectStockCard(context) {
     if (source.warehouse?.hasPhysicalReceipt !== true) continue;
     const key = identity(source);
     const stock = stockPosition(source.id, source.warehouse.accepted, context.activity);
-    const issues = [];
+    const physical = projectPhysicalStock(stock);
+    const issues = [...physical.issues];
     if (stock.cases.some(row => row.company !== context.company)) throw Error('Stock exception company mismatch.');
     const allocation = allocations.find(row => row.sourceTaskId === source.id);
     const claims = new Map((allocation?.targets || []).map(row => [row.taskId, row.quantity]));
+    const ownerId = source.customerDemandTaskId || source.id;
+    const owner = tasks.get(ownerId);
+    const share = source.procurement?.customerCtn;
+    const knownShare = quantity(share) && quantity(source.procurement?.totalCtn) && share <= source.procurement.totalCtn;
+    const canResolveSource = !allocation && knownShare && (share === 0 ||
+      owner && !owner.procurementSource && !owner.specialPurchase && identity(owner) === key);
+    // Use saved customer shares for ordinary own-source receipts. A missing
+    // planner event is not permission to advertise all received cartons as free.
+    // Cap the lifetime claim at actual receipts, while preserving damage shortfalls.
+    if (canResolveSource && share > 0) claims.set(ownerId, Math.min(share, stock.received + stock.replacementReceived));
     const dispatched = new Map(), shipmentHeld = new Map();
     for (const shipment of shipments.filter(row => row.status !== 'CANCELLED')) {
       for (const line of shipment.lines) {
@@ -63,12 +75,9 @@ export function projectStockCard(context) {
     if (shortage) issues.push('RESERVED_STOCK_SHORTAGE');
     // An absent explicit allocation is not evidence that customer-specific goods are free.
     // Keep this reconciliation gate until source ownership is explicitly established.
-    if (!allocation && stock.availablePhysical > 0) issues.push('OWNERSHIP_NOT_CONFIRMED');
-    const ownerId = source.customerDemandTaskId || source.id;
-    const owner = tasks.get(ownerId);
+    if (!allocation && !canResolveSource && stock.availablePhysical > 0) issues.push('OWNERSHIP_NOT_CONFIRMED');
     if (!source.specialPurchase && unassigned > 0) {
       const demand = owner?.requested ?? owner?.ord;
-      const share = source.procurement?.customerCtn;
       const ownerSent = dispatched.get(ownerId) || 0;
       const ownRemaining = Math.max(0, (claims.get(ownerId) || 0) - ownerSent);
       // Empty targets alone do not release the existing Warehouse own-source entitlement.
@@ -82,6 +91,10 @@ export function projectStockCard(context) {
       po: source.po || '', received: stock.received, replacementReceived: stock.replacementReceived,
       dispatched: stock.shipped, excluded: stock.excluded, unresolvedHeld: stock.held,
       usableOnHand: stock.availablePhysical, reserved, unassigned, shortage, reservations,
+      onHand: physical.onHand, isolated: physical.isolated, returned: physical.returned,
+      ownershipBasis: allocation ? 'PLANNER_ALLOCATION' : canResolveSource ? 'PURCHASE_CUSTOMER_SHARE' : 'REVIEW_REQUIRED',
+      outstandingClaims: reserved,
+      reservedUsable: issues.length ? null : Math.min(reserved, stock.availablePhysical),
       available: issues.length ? null : unassigned, issues: [...new Set(issues)] };
     if (!groups.has(key)) groups.set(key, { key: JSON.stringify([context.company, key]), company: context.company,
       barcode: source.barcode, name: source.name || '', packing: source.packing, ea: source.ea, sources: [], incoming: 0 });
@@ -95,7 +108,10 @@ export function projectStockCard(context) {
   }
   const items = [...groups.values()].map(group => {
     const sum = field => group.sources.reduce((total, source) => total + source[field], 0);
+    const knownSum = field => group.sources.some(source => source[field] === null) ? null : sum(field);
     return { ...group, received: sum('received'), dispatched: sum('dispatched'), usableOnHand: sum('usableOnHand'),
+      onHand: knownSum('onHand'), isolated: knownSum('isolated'), returned: sum('returned'),
+      outstandingClaims: sum('outstandingClaims'), reservedUsable: knownSum('reservedUsable'),
       reserved: sum('reserved'), shortage: sum('shortage'), unassigned: sum('unassigned'),
       available: group.sources.some(source => source.available === null) ? null : sum('available'),
       reviewRequired: group.sources.some(source => source.issues.length > 0) };

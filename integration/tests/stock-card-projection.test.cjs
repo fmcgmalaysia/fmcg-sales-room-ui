@@ -49,6 +49,41 @@ test('40 reserved then 5 quarantined: 35 usable, shortfall 5; does not silently 
   const row = projectStockCard(context([task('A', { warehouse: received(40) })],
     [allocation([{ taskId: 'A', quantity: 40 }]), issue])).items[0];
   assert.equal(row.usableOnHand, 35); assert.equal(row.reserved, 40); assert.equal(row.shortage, 5); assert.equal(row.available, null);
+  assert.equal(row.onHand, 40); assert.equal(row.isolated, 5);
+});
+
+test('old FOC stock 20 and B receipt 200: 220 present, B owns 200, only 20 free', () => {
+  const foc = task('FOC', { specialPurchase: true, ord: 0, requested: 0,
+    procurement: { totalCtn: 20, customerCtn: 0 }, warehouse: received(20), archived: true });
+  const b = task('B', { ord: 200, requested: 200,
+    procurement: { totalCtn: 200, customerCtn: 200 }, warehouse: received(200) });
+  const row = projectStockCard(context([foc, b])).items[0];
+  assert.equal(row.onHand, 220); assert.equal(row.reservedUsable, 200);
+  assert.equal(row.available, 20); assert.equal(row.isolated, 0);
+  assert.equal(row.sources.find(source => source.sourceTaskId === 'FOC').available, 20);
+  assert.equal(row.sources.find(source => source.sourceTaskId === 'B').available, 0);
+});
+
+test('partial receipt against saved customer share only reserves actual receipts', () => {
+  const row = projectStockCard(context([task('B', { ord: 200, requested: 200,
+    procurement: { totalCtn: 200, customerCtn: 200 }, warehouse: received(80) })])).items[0];
+  assert.equal(row.onHand, 80); assert.equal(row.reservedUsable, 80);
+  assert.equal(row.incoming, 120); assert.equal(row.available, 0);
+});
+
+test('source share dispatch preserves extra cartons and does not need a duplicate allocation event', () => {
+  const row = projectStockCard(context([task('A', {
+    procurement: { totalCtn: 120, customerCtn: 100 }, warehouse: received(120)
+  })], shipmentChain('DISPATCHED'))).items[0];
+  assert.equal(row.onHand, 80); assert.equal(row.reservedUsable, 60); assert.equal(row.available, 20);
+});
+
+test('customer share decrease releases physical stock without changing the original receipt', () => {
+  const source = task('A', { ord: 150, requested: 150,
+    procurement: { totalCtn: 200, customerCtn: 150 }, warehouse: received(200) });
+  const row = projectStockCard(context([source])).items[0];
+  assert.equal(row.received, 200); assert.equal(row.onHand, 200);
+  assert.equal(row.reservedUsable, 150); assert.equal(row.available, 50);
 });
 test('transferred stock is not another physical receipt; split shipment display rows do not multiply sources', () => {
   const rows = [task('A', { warehouse: received(120), batchEntitlements: [{ quantity: 60 }, { quantity: 40 }] }),
