@@ -40,6 +40,8 @@ Six added tests cover retained-row count/idempotent replay and non-position pres
 - Wix Studio: inspected only, not synchronized or published.
 - Public page: not exercised for this patch; no real reorder/price/business test writes.
 
+Functional commit d6907203a6f358df7354eaec531d5132421ed83d pushed and remote tracking SHA verified. Draft PR210 https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/210 was created and attached; GitHub reports exactly three changed files, 100 additions and two deletions, base 2298312. Tracked working tree clean after the functional commit. Initial sandbox push failed with getaddrinfo thread error; one authorized network escalation succeeded. This closeout-only addition follows the functional commit and does not change runtime or require rerunning tests.
+
 This is a candidate, not a completed publication. User approval to begin optimization does not itself supply a new Pages deployment-policy exception. No temporary permissions added; main untouched; PR207 heartbeat remains paused.
 
 ## Work-method notes
