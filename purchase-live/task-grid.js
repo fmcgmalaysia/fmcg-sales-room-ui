@@ -76,7 +76,7 @@
         return html+(batchIndex===0&&group.some(source=>source.procurement?.totalCtn>0)?group.map((source,i)=>line(source,index,row,i)).join(''):'');
       }).join('');
     }
-    return roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('');
+    return roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
   }
   window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
 })();
