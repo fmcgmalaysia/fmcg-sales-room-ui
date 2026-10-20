@@ -2,7 +2,7 @@
 (() => {
   const app = document.querySelector('#app'), status = document.querySelector('#liveStatus'), modal = document.querySelector('#modal');
   let company = 'NCT', view = 'dashboard', customerId = '', data = null, pending = null, query = '', costRetry = null;
-  
+
   const selectedDisplayRows=new Set();
   let displaySequenceDraft=null,displayOrderVersion=null,displayDragKey=null;
   const displayRows=()=>window.purchaseDisplayRows;
