@@ -4,6 +4,8 @@
 
 Local first-stage candidate only. Branch feat/stock-card-read-model-20261020 starts from 5e3205632f525e35b6c1ea031662fe28cf82d9db, the PR214 release record. No existing production file changed; no Wix synchronization, deployment, CMS schema/data write, permission change or main merge. The user is independently testing PR214. Do not treat this candidate as a production Stock Card.
 
+Code commit b8054ab54cdd2fcc2c59ffb14d5c88f0986aa0f8 pushed to the existing repository. Draft PR215: https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/215 (base PR214 branch), attached to this chat. Default network sandbox push failed at DNS/thread startup; authorized network escalation succeeded. gh was unavailable; existing GitHub connector created the draft after correcting the required repository_full_name argument. No Pages dispatch or temporary policy was needed.
+
 Approved objective: establish Stock Card sources/save safety, then an initially read-only Warehouse/Finance view before Purchase stock-first reservations. No synthetic production orders are required yet. Existing root AGENTS and efficiency supplement apply. Relevant framework was reused from this ongoing task; fresh reads were limited to current rules, current release override and demonstrated stock/save dependencies.
 
 Recovery: existing annotated verified/sales-requested-split-20261020 remains the protected split checkpoint; exact preceding runtime c9bd6d6, Wix entry fcc7d66 and release record 5e32056 remain untouched. Do not restore an older global tag over later protected work.
