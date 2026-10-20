@@ -1,0 +1,7 @@
+{
+  "build": "2026-10-20-activity-row-history-v1",
+  "functionalCommit": "d6907203a6f358df7354eaec531d5132421ed83d",
+  "scope": "Stop new per-task PURCHASE_ROW_MOVED events; preserve operation receipts and legacy recovery",
+  "wixModule": "purchaseOperations.js",
+  "frontendChanged": false
+}
