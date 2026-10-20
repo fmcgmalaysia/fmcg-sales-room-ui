@@ -43,4 +43,4 @@ UI access limits: user refreshed Wix and explicitly permitted necessary screen u
 
 ## Release status
 
-Code: isolated Support draft only. GitHub: pending synchronization of this continuation. Pages: not deployed. Wix: unchanged. Public Support: existing version unchanged; the new draft has no public verification. Actual task Credit usage UNKNOWN.
+Code: isolated Support draft 29a4a22f1021511267171a705e28e952339733a9. GitHub push succeeded and draft PR216 was created and read back open/unmerged against the Stock Card candidate branch: https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/216 . PR216 is attached to the chat. Eleven offline checks and both script syntax checks passed. The local file browser open was queued by Codex, which is not evidence of successful rendering or visual acceptance. Pages: not deployed. Wix: unchanged. Public Support: existing version unchanged; the new draft has no public verification. Actual task Credit usage UNKNOWN.
