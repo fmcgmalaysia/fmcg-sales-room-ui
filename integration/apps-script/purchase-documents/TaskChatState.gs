@@ -2,14 +2,14 @@
  * Store pages contain bodies; the task head contains only summaries and personal cursors.
  * A page is committed before its head so a lost head write can be recovered on retry. */
 const TASK_CHAT_PAGE_SIZE=24; // 24 message identities + 4 private file properties stay below Drive's 30/app limit.
-const TASK_CHAT_PAIRS=['ACCOUNT:PURCHASE','PURCHASE:WAREHOUSE','SUPPORT:WAREHOUSE'];
+const TASK_CHAT_PAIRS=['ACCOUNT:PURCHASE','PURCHASE:WAREHOUSE','SUPPORT:WAREHOUSE','PURCHASE:SALES','SALES:SUPPORT','SALES:WAREHOUSE'];
 function taskChatRun_(store,input,hash,clock){
  const fail=message=>{throw Error('CHAT_'+message);},copy=value=>JSON.parse(JSON.stringify(value));
- const departments=['PURCHASE','ACCOUNT','WAREHOUSE','SUPPORT'];
+ const departments=['PURCHASE','ACCOUNT','WAREHOUSE','SUPPORT','SALES'];
  const actor=input.actor||{},pair=String(input.pair||''),members=pair.split(':');
  if(!['NCT','GHR'].includes(input.company)||!['PO','DELIVERY'].includes(input.kind)||!/^\w{32,64}$/.test(input.taskId||''))fail('INVALID_TASK');
  if(!TASK_CHAT_PAIRS.includes(pair)||!members.includes(actor.department)||!departments.includes(actor.department))fail('INVALID_PAIR');
- if(input.kind==='PO'&&pair==='SUPPORT:WAREHOUSE'||input.kind==='DELIVERY'&&pair==='ACCOUNT:PURCHASE')fail('INVALID_PAIR');
+ if(input.kind==='PO'&&(pair==='SUPPORT:WAREHOUSE'||members.includes('SALES'))||input.kind==='DELIVERY'&&pair==='ACCOUNT:PURCHASE')fail('INVALID_PAIR');
  if(![actor.memberId,actor.staffId,actor.staffName].every(value=>typeof value==='string'&&value.length>0&&value.length<=200))fail('INVALID_ACTOR');
  const key=hash([input.company,input.kind,input.taskId]),actorKey=actor.department+':'+actor.staffId,now=clock();
  let head=store.head(key)||{schema:1,company:input.company,kind:input.kind,taskId:input.taskId,revision:0,conversations:{}};

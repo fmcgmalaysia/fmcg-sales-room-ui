@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261020-order-adjustment-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261020-sales-messages-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
@@ -475,6 +475,12 @@ $w.onReady(function () {
     if(message.type==='SALES_ROOM_SHIPMENT_REQUEST'){
       try{const result=await salesRoomShipment(message.customerId,message.company,message.action,message.requestId,message.input);salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:true,result});}
       catch(error){salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:false,error:error?.message||'Shipment request could not be confirmed.'});}return;
+    }
+    if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)){
+      if(message.department!=='SALES'||!['NCT','GHR'].includes(message.company)||typeof message.customerId!=='string'||!message.customerId||message.customerId.length>100||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>16000)return;
+      const operation=message.type.slice('TASK_CHAT_'.length,-'_REQUEST'.length),envelope={type:'TASK_CHAT_'+operation+'_RESULT',requestId:message.requestId,company:message.company,customerId:message.customerId,department:'SALES'};
+      try{const result=await salesRoomShipment(message.customerId,message.company,'CHAT_'+operation,message.requestId,operation==='LIST'?{historyCursor:message.historyCursor||null}:message.input);salesRoom.postMessage({...envelope,ok:true,result});}
+      catch(error){salesRoom.postMessage({...envelope,ok:false,error:error?.message||'Chat request is unconfirmed. Please retry.'});}return;
     }
     if (message.type === 'SALES_ROOM_ORDER_PROGRESS_REQUEST') {
       const customerId = String(message.customerId || '').trim();
