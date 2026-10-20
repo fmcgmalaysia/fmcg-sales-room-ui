@@ -1,5 +1,9 @@
 # Order Adjustment actions — 2026-10-20
 
+## Current release continuation
+
+Functional candidate c68c89080aa24ef70c8731347bae16095f3ab10e pushed; draft PR208 attached, base is prior task branch, main untouched. User paused, no further code/publish writes performed while paused; user then said 可以继续. Exact new-branch temporary Pages permission explicitly approved in this chat. All17Wix draft components now synchronized through line-level Find/Replace for existing files and complete code only for two new modules. Independent full readback with a cleared clipboard verifies all17exact, including four version-only page entries; see wix-draft-verification.json. A Wix-created duplicate .js suffix on the new module was renamed to correct salesOrderAdjustment.js before final verification; no abnormal draft published. Editor file-switch transitions were checked rather than overwritten. Two sites remain UNPUBLISHED at this point. Original7Pages rules freshly rechecked exact; latest prior run39281200633 successful; no new deployment started yet.
+
 Scope: approved compact two-page bilingual Increase, Split Shipment and Cancel Partial Qty. Adjust only the clicked customer batch; preserve the other batch, original intake, supplier PO, procurement total/cost and physical receipts. Purchase shows assigned blue person +supplier name, orange pending person, and saves new procurement to the selected batch. Existing invoice/reservation/prepared/load safeguards remain; no authentication, download, collection schema or business-data cleanup changes.
 
 Recovery: runtime e93006cede80484ef0d4ffb787d0a47c12b428ba, annotated verified/sales-requested-split-20261020, acceptance “已经帮你测试了，完美”. Branch feat/sales-order-adjustment-actions-20261020 starts at4559f26; main untouched. Earlier superseded sequential attempt was reverted before expanded user approval and is not this candidate.
