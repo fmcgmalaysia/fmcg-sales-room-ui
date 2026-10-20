@@ -1,0 +1,46 @@
+# Support invoice workbench draft — 2026-10-21 MYT
+
+## Current scope and recovery
+
+The user authorized preparing Support while unavailable Wix operations are blocked, and requested a Purchase-style task list, checkbox merging into an invoice, CBM and net weight, and shipment quantities based on Warehouse Loaded. This is a separate design-draft branch `feat/support-invoice-workbench-20261021`, based on Stock Card record `2d0a15d`. PR215's committed work remains intact. Existing protected runtime c9bd6d6 / Purchase entry split-controls-v2 and all production Support files are untouched; original split verified tag remains present. No whole-system rollback is intended.
+
+No existing production file changed. New candidate files are `support-room/draft.html`, `draft.css`, `draft-app.js`, `invoice-draft-model.js`, plus offline tests and this record. The draft is self-contained apart from relative scripts/styles and an optional font. It opens as a local file without a preview server. All quantities, names, prices, dimensions and invoice examples are synthetic and explicitly labelled. It cannot save, issue, dispatch, chat, generate an official PDF, or write CMS/local storage. Real `support-room/index.html`, `app.js`, `style.css`, and Wix/backend remain unchanged.
+
+## Current-system evidence
+
+- Existing Support app lists REQUESTED shipments, then records an invoice via FULFILMENT_SAVE_REQUEST / INVOICE. Existing `customerFulfilment.js` invoices the selected shipment lines; it does not compare their quantity with Warehouse Loaded. It freezes invoice pricing/FX/source costs, then requires an INVOICED shipment for DISPATCH. Those protections must survive future integration.
+- Warehouse preparation records per-delivery/batch `id`, taskId, loaded, signature, revision/version and stale/orphan status. Its LOAD handler limits quantities to allocation and requires a reason for reduction/partial load. Loading is not actual stock dispatch.
+- `customerShipmentLedger.js` currently requires distinct taskIds inside a shipment. Two independent delivery batches can still share one original taskId, so merging those display rows into one real invoice needs an explicit batch coverage mapping. Do not simply send duplicate taskIds or manufacture a second receipt. Invoice/dispatch snapshots must remain stable.
+- Current fulfilment read output does not expose preparation version, delivery batch invoice coverage, CBM or net weight. Purchase projection has cbmPerCtn but no netWeightKgPerCtn. A targeted weight-field search of the inspected business modules found no usable mapping. This is a known interface gap, not proof the original product source has no weight data. Never infer net weight from pack labels, litres, carton weight or selling price.
+- Existing preparation LOAD handler blocks correction after dispatch, but the inspected handler has no invoice-coverage check. The future Loaded-based invoice release must add the appropriate protection so corrections cannot reduce loading below issued/pending invoice coverage. This draft does not modify that behavior.
+
+## Candidate rules
+
+One row represents an independent Warehouse delivery batch, not a supplier purchase source. Checkbox selection creates one invoice draft only for matching company, customer, invoice party, currency and shipment group. Different order lines and duplicate products may remain independent lines under one invoice. The first selection establishes context; incompatible rows are disabled, select-all selects compatible visible rows, filtering retains selections, and company switching asks before clearing them.
+
+Invoice quantity = confirmed cumulative Loaded - issued invoice coverage - pending invoice coverage, for the exact delivery batch. REQUESTED/RCV/planned demand is never substituted. Zero remaining, unconfirmed, stale/orphaned, malformed, or loading-below-invoice rows are not selectable. Loading and coverage versions are captured at selection and rechecked when building a draft. This is offline validation only: real concurrency must use the existing server operation journal and fresh authenticated state.
+
+CBM and net weight are calculated from the invoice quantity and verified per-carton dimensions; amounts use integer cents, CBM integer millionths, net weight integer grams. Missing dimensions/prices stay unknown and block the complete invoice preview. They never become zero in a total. Printed draft quantities are read-only; changes belong to Warehouse. A partially loaded batch may invoice its confirmed loaded quantity; subsequent increased loading makes only the uninvoiced increment eligible.
+
+UI: compact Purchase-style blue-grey task table, independent row numbers, Since/customer/product, Loaded/Invoiced/Invoice Qty, price/amount, CBM/Net Weight, passive pale states and blue real preview actions. Top filters and three action cards, sticky selected totals, a compact bilingual invoice dialog, read-only invoice preview/history, Sales/Warehouse contextual chat-entry concepts. Invoice issue submission and actual chat sending remain absent. No Account chat or unnecessary repeated activity is added.
+
+## Validation and limitations
+
+11 offline domain checks cover loaded-minus-issued/pending, separate batches sharing a source, status/quantity rejection, additional loading, merge incompatibilities, missing dimensions, changed versions, duplicate identities, missing coverage version, pending double-invoice prevention, and unchanged inputs. Script syntax and staged whitespace checks are required before commit. No new production tests are needed for this isolated draft because no production consumer imports it. No visual browser pass is claimed without actual observation.
+
+UI access limits: user refreshed Wix and explicitly permitted necessary screen use while asleep, new-tab recovery, and stopping after two failures. First refreshed-state capture timed out; a new tab could be created, but selecting the existing Master tab returned geometry unavailable. Following the user's subsequent refresh, input was stopped by the helper's user-input guard; the required state capture timed out again. Browser interaction then stopped. No field was typed, no editor was changed, no publish occurred, and no unsaved form was refreshed. Do not repeatedly wake the user or claim refreshing fixed the automation connection.
+
+## Next concrete integration work
+
+1. Obtain complete fresh Master source readback and compare with the preserved repo before touching production files.
+2. Resolve Stock Card own-source versus explicit allocation and physical isolation/removal gaps; PR215 remains candidate only.
+3. Establish one authenticated Support projection joining delivery batches and invoice coverage; no browser-only authorization or synthetic missing batch identities.
+4. Map verified CBM/net weight with explicit units and preserve invoice dimension snapshots. Confirm invoice party/shipment grouping from actual business identifiers.
+5. Make invoice creation reserve the exact loaded batch quantities under the shared company journal; reject stale selection, duplicated invoice numbers, repeated request over-allocation, and incompatible groups. Preserve cost/FX snapshots, downstream debtor accounting, and source allocation/dispatch history. Keep same-request retry after partial cache update.
+6. Prevent incompatible loading reductions once invoiced/pending. Support must not post physical stock deduction; only actual dispatch does that.
+7. Decide the smallest compatibility patch for merging delivery batches under the current unique-task shipment ledger; do not replace that protected ledger wholesale.
+8. Then connect the UI, regress protected Sales/Purchase/Warehouse/Account consumers, obtain actual user invoice acceptance, and complete four-stage publishing. No Pages branch permission for this Support branch is currently granted; the older precise permissions do not transfer.
+
+## Release status
+
+Code: isolated Support draft only. GitHub: pending synchronization of this continuation. Pages: not deployed. Wix: unchanged. Public Support: existing version unchanged; the new draft has no public verification. Actual task Credit usage UNKNOWN.
