@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-20",
+  "runtimeCommit": "d109090db6ffc82494e2ec35044deaadfb2c59b4",
+  "functionalCommit": "d6907203a6f358df7354eaec531d5132421ed83d",
+  "buildMarker": "2026-10-20-activity-row-history-v1",
+  "pages": {"run": 39411470119, "conclusion": "success", "exactResources": 6},
+  "permissions": {"temporaryPolicyRemoved": 63696353, "originalSevenExact": true},
+  "wix": {
+    "module": "purchaseOperations.js",
+    "freshBeforeLfSha256": "47f3ed0142e740cf0add88a3ec28fd6750c07385c467d8b8bc4a3d6db1609a76",
+    "draftAfterLfSha256": "1428fb2b20886362a57f9a0a106c9feec328a07c56614675bd4f6c7b9675c5f8",
+    "draftAfterExact": true,
+    "publishClicked": true,
+    "publishedLiveReceipt": false,
+    "editorReloads": 1,
+    "state": "Loading after publish remained disabled with Autosave off and network errors",
+    "postReloadDraftReadback": "pending"
+  },
+  "publicVerification": "pending Wix publish receipt; no business Save permitted for this acceptance",
+  "mainMerged": false,
+  "complete": false
+}
