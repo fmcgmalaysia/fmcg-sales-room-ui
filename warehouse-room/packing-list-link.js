@@ -1,7 +1,7 @@
 // One same-window Outgoing pane; existing execution evidence remains separate by identity.
 (() => {
  // A Pages release must not switch an older Wix entry before its bridge is live.
- if(new URLSearchParams(location.search).get('v')!=='20261021-packing-v1')return;
+ if(!['20261021-packing-v1','20261021-packing-company-v1'].includes(new URLSearchParams(location.search).get('v')))return;
  let frame=null,legacy=null,company='',busy=false;
  const requests=new Set(),origin=location.origin;let parentOrigin='';
  try{const ref=new URL(document.referrer);if(['fmcg999.wixstudio.com','fmcg999-master.editor.wix.com'].includes(ref.hostname))parentOrigin=ref.origin;}catch(_){}
