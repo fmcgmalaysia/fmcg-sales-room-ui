@@ -1,4 +1,15 @@
-CURRENT 2026-10-21 — G0 OFFLINE PROOF COMPLETE; SAFETY GATE NOT PASSED
+CURRENT 2026-10-21 — ASTRA REVIEW RECORDED; G0 PRODUCTION GATE STILL OPEN
+
+Latest review: ASTRA_REVIEW.txt supersedes the earlier next-action paragraph below.
+Direction selected: server-enforced conditional writes for every mutable commit row and
+conditional lock release with fresh execution identity. CMS condition parameters appear
+in official docs, but actual complete contract/site adapter remains unverified. No claim
+that Wix lacks the capability, and no claim that an ordinary PATCH provides the guarantee.
+Sol may proceed with isolated adapter contract verification/proof and pure model work.
+Do not connect the new balances to production until the documented gates pass.
+This review adds documentation only; no new test run, production changes or deployment.
+
+Previous G0 record (preserved)
 
 User continued on Sol Medium after Astra architecture specification. Current branch
 feat/stock-current-state-protocol-20261021 based on d447185. Existing runtime32b812c,
