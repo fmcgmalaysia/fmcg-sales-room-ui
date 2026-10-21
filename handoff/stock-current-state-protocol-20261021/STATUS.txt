@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after9ee5411: SHORTAGE_CURRENT_PREPARATION.txt. Original authenticated
+shortage validation now uses current cumulative ownership view and creates original event
++product checkpoint. STOP/CREDIT never cancel demand/release reservations/clear borrowing.
+Original+new5pass251.1758ms. Actual shortage gateway/version UI, all other writers/reads,
+capacity/recovery/migration/ACTIVE and four-stage release remain OPEN/OFF.
+
 CURRENT HEARTBEAT afterc8814ea: RECOVERY_ADMIN_READ.txt. Added standalone Admin-only
 read candidate and query-only exact-ID SDK store; no mutation/retry/lock release. Reports
 exclude original input/customer payload; simulated Admin+inspector14pass178.5686ms.

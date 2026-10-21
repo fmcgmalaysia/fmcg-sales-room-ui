@@ -1,0 +1,27 @@
+CURRENT after9ee5411 — original shortage/current ownership preparation candidate
+
+createShortageStockPreparation retains original approved member/Purchase role checks,
+same-barrier authoritative PO/context, exact current product rows and original cumulative
+allocation compatibility view. Then unchanged createShortageOperations prepares original
+decision/event through a private in-memory journal; no legacy apply or business write.
+Browser staff ignored, no new entitlement. Current cumulative owned+actual dispatched
+quantities replace stale task.inc for shortageVersion/shortCtn; no synthetic allocation event.
+
+Original WAIT/STOP/PENDING and REPLENISH/REFUND/CREDIT/PENDING remain independent decisions,
+with original reason/customer update/date/version validation and persistent financeRequired.
+One original decision event plus current product checkpoint forms conditional plan. No
+customer demand/source planned/physical/claims/borrowing mutation. STOP is NOT Sales
+cancellation. CREDIT/REFUND is NOT physical return, debt repayment or reservation release.
+
+Evidence: original purchase-shortage2 + new3 tests pass5fail0 251.1758ms. Actual auth/PO/
+allocation/shortage projectors/parsers used, deliberate old inc999 vs current90 gives
+short10 of100. Approved borrower with20 physical borrowed retains full20 replacement
+promise after STOP/CREDIT, future PO100 and source claims70+20 unchanged. Stale version,
+invalid replenishment date, missing customer update and unauthorized members refuse.
+Original DB unchanged. Prior candidate274/recovery14 results retained, not rerun/summed.
+
+OPEN: actual shortage gateway and UI version view still need deployment wiring/admission;
+all co-writers must be fenced before captured original apply-time checks can rely on common
+barrier. No legacy event/receipt migration shortcut. Production source/permissions/data,
+Pages/Wix remain unchanged. Remaining writer/read/capacity/lifecycle/operational recovery/
+migration/shadow/ACTIVE/UI/four-stage release gates still open.
