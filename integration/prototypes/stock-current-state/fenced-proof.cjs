@@ -4,12 +4,13 @@
 // compareAndSet/compareAndRemove MUST test their condition atomically at mutation time.
 const { randomUUID } = require('node:crypto');
 const { hash } = require('./commit-proof.cjs');
+const { planCollections } = require('./domain-scope.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
 const canonical = value => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID }) {
+function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, domainWrites = false }) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Invalid company');
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store[method] !== 'function') throw Error('Conditional storage required');
@@ -17,7 +18,7 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID }) 
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const scope = company + '/PURCHASE', lockId = hash(scope, 'LOCK');
   const controlId = hash(company, 'STOCK_CONTROL');
-  const allowed = new Set([journal, 'StockPositions', 'StockClaims', 'StockProducts']);
+  const allowed = new Set(planCollections(company, domainWrites));
   const initial = () => ({ _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' });
   const readControl = async () => {
     const row = await store.read(journal, controlId);

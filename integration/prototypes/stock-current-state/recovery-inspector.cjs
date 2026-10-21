@@ -1,18 +1,19 @@
 'use strict';
 
 const { hash } = require('./commit-proof.cjs');
+const { planCollections } = require('./domain-scope.cjs');
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
 const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 // Private, read-only incident classification. No lock deletion/stealing, inverse writes,
 // automatic retry or new save identity. Server administrator auth must wrap any endpoint.
-async function inspectStockRecovery({ store, company, requestId, memberId, input }) {
+async function inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites = false }) {
   if (typeof store?.read !== 'function' || !['NCT', 'GHR'].includes(company)
     || !/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId) throw Error('Known original request identity required');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const key = hash(company + '/PURCHASE', requestId, memberId), digest = hash(input);
   const lockId = hash(company + '/PURCHASE', 'LOCK'), controlId = hash(company, 'STOCK_CONTROL'), resultId = hash(key, 'RESULT');
-  const allowed = new Set([journal, 'StockPositions', 'StockClaims', 'StockProducts']);
+  const allowed = new Set(planCollections(company, domainWrites));
   const control = await store.read(journal, controlId), lock = await store.read(journal, lockId);
   if (!control || control._id !== controlId || control.company !== company || !control._version
     || !Number.isSafeInteger(control.generation) || control.generation < 0

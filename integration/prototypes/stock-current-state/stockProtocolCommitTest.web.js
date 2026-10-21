@@ -119,6 +119,24 @@ function createIsolatedProtocolStore({ store, namespace }) {
 return createIsolatedProtocolStore;
 })();
 
+const domainScopeFactory = (() => {
+
+// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
+// This changes no CMS/employee permission; optional conditional domain plans only.
+function domainCollections(company) {
+  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
+  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
+  throw Error('Known company domain scope required');
+}
+function planCollections(company, domainWrites = false) {
+  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
+  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
+    ...(domainWrites ? domainCollections(company) : [])];
+}
+return { domainCollections, planCollections };
+})();
+const { planCollections } = domainScopeFactory;
+
 const stockProtocolFactory = (() => {
 
 // OFFLINE CONTRACT PROOF. No Wix adapter, authorization endpoint or production imports.
@@ -130,7 +148,7 @@ const canonical = value => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID }) {
+function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, domainWrites = false }) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Invalid company');
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store[method] !== 'function') throw Error('Conditional storage required');
@@ -138,7 +156,7 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID }) 
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const scope = company + '/PURCHASE', lockId = hash(scope, 'LOCK');
   const controlId = hash(company, 'STOCK_CONTROL');
-  const allowed = new Set([journal, 'StockPositions', 'StockClaims', 'StockProducts']);
+  const allowed = new Set(planCollections(company, domainWrites));
   const initial = () => ({ _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' });
   const readControl = async () => {
     const row = await store.read(journal, controlId);

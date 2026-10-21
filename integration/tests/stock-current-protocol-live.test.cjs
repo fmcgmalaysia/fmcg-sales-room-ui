@@ -88,9 +88,13 @@ test('generated live proof embeds unchanged algorithm, adapter and isolation map
     const expected = read(file).replace(/^'use strict';\r?\n/, '')
       .replace(new RegExp('module\\.exports = \\{ ' + exported + ' \\};\\s*$'), '')
       .replace("const { randomUUID } = require('node:crypto');", '')
-      .replace("const { hash } = require('./commit-proof.cjs');", '');
+      .replace("const { hash } = require('./commit-proof.cjs');", '')
+      .replace("const { planCollections } = require('./domain-scope.cjs');", '');
     assert.equal(compact(actual), compact(expected));
   }
   assert.equal((bundle.match(/webMethod\(Permissions\.Admin/g) || []).length, 3);
+  const scopeBody = bundle.split('const domainScopeFactory = (() => {')[1].split('return { domainCollections, planCollections };')[0];
+  const scopeExpected = read('domain-scope.cjs').replace(/^'use strict';\r?\n/, '').replace(/module\.exports = \{ domainCollections, planCollections \};\s*$/, '');
+  assert.equal(compact(scopeBody), compact(scopeExpected));
   assert.ok(compact(bundle).includes(compact(read('protocol-live-harness.txt'))));
 });

@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after81aeac5: SERVER_ADMISSION.txt. Added candidate server-only
+LEGACY/SHADOW/ACTIVE/MAINTENANCE admission and required-writer/build/client-generation
+gate (default coverage empty, no activation). Optional domainWrites false by default;
+true adds ONLY exact company Orders/Tasks plus company-scoped PurchaseOrders, still
+conditional/company/version checked.67affectedchecks345.6829ms. Embedded isolated proof
+candidate updated after equality failure; NO live sync/retest/deletion, older live evidence
+not relabeled as this version. Actual production wiring/migration/capacity/recovery/UI OPEN.
+
 TEST EVIDENCE CORRECTION after00e3c11: several targeted commands named nonexistent
 stock-current-preview.test.cjs; Node silently omitted it. Their reported pass totals
 are actual OTHER tests, NOT preview coverage. Actual file stock-current-preview-build
