@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after30d9ac3: PACKING_CURRENT_HOLDS.txt. Current claims now supply
+candidate packing Ready; original non-photo prepare maps list+hold checkpoint once.
+Complete40of50 releases only packing hold10, not customer reservation/physical quantity;
+Loaded never deducts.44affectedpass356.7324ms. Real service/auth/photo protocol/new list
+departure, all writer/read/capacity/recovery/migration/UI/release remain OPEN/OFF.
+
 CURRENT HEARTBEAT after4d1fa72: PURCHASE_SOURCE_COMPOSITION.txt. Original authenticated
 ADD_SOURCE prepare/task/events now compose with current source/share guard. Confirmed PO
 adds no receipt, unconfirmed draft stays nonphysical, FOC customer share excludes surplus.

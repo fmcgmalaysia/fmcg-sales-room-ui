@@ -238,4 +238,9 @@ function prepareProcurementTransition({ state, after, rows, event, generation })
   const next = { ...copy(after), revision: state.revision + 1 };
   return { state: next, plan: mapTransition({ before: state, after: next, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, transferId };
+function preparePackingHoldTransition({ state, rows, event, generation, packingHolds }) {
+  const after = { ...copy(state), revision: state.revision + 1, packingHolds: copy(packingHolds) };
+  // validate(after) in mapper enforces per-task held <= actual usable ownership.
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, preparePackingHoldTransition, transferId };
