@@ -1,0 +1,15 @@
+{
+  "runtime": "09a9023f1cdc5c4528d423267c9a98ff3aa37df4",
+  "branch": "feat/warehouse-stock-tab-20261021",
+  "pullRequest": 217,
+  "marker": "2026-10-21-stock-tab-v1",
+  "pages": {"runId":39523865038,"success":true,"verifiedRealAssets":12,"normalization":"UTF8, CRLF to LF"},
+  "permission": {"temporaryPolicyId":63777692,"removed":true,"originalSevenExact":true},
+  "wix": {"site":"Master","page":"Warehouse Department","completeReadbackExact":true,"entryLfSha256":"fb4f66066f7013c8cefca86fdfd193d32b295f45ac487db94f637ad977477895","publishedLiveReceipt":true,"receiptKind":"Official Wix Site History, not a success popup","publishedRevision":141,"publishedAtLocal":"2026-10-21 08:53 MYT","receiptText":"Published by site owner","historyUrl":"https://manage.wix.com/dashboard/f80870fd-a3d8-47c0-9917-1bfd9c16ea44/site-history","firstAttempt":"Editor displayed temporary technical error despite published history and actual live entry","secondAttempt":"Returned to idle; latest saved revision142 at08:56, no additional code changes. No third publish."},
+  "public": {"url":"https://fmcg999.wixstudio.com/master/warehouse-department","staff":"LAW","newEntryTokenObserved":true,"sameWindowStockObserved":true,"nct":[{"barcode":"4710363521543","onHand":1,"reserved":1,"available":0,"isolated":0},{"barcode":"4901301424921","onHand":95,"reserved":95,"available":0,"isolated":0}],"sourcePo":"NCT-PO-888888","sourceCustomerClaim":95,"ghrProducts":0,"deliveryRowsAfterReturningToNct":11,"splitQuantities":[80,20],"cleanReloadStarted":true,"postReloadVerificationComplete":true,"relevantConsoleErrors":[],"evidenceImages":["PUBLIC_STOCK.jpg","WIX_PUBLISHED_HISTORY.jpg"]},
+  "businessWrites":false,
+  "support":"Separate UI draft only. Real invoice issue disabled.",
+  "userBusinessAcceptance":false,
+  "releaseComplete":true,
+  "actualCredits":"UNKNOWN"
+}
