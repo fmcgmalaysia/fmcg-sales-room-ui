@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION after67ae8bd: CURRENT_ALLOCATION_VIEW.txt. Current ownership+
+actual shipped quantities now form original cumulative allocation VIEW with real old
+revision chain, not fake stored events. Original Sales prepare maps implicit source
+cancellation into one original event/current plan; split300+200 then firstreduce50
+releasesA50 only even with no old saved allocations. Final12relatedpass177.2689ms.
+Actual gateway/client version wiring and all remaining release gates still unfinished/OFF.
+
 CURRENT HEARTBEAT 2026-10-22 after19c3826: FREE_QUARANTINE.txt. Candidate free-stock
 quarantine maps original exception + source/product balance into same plan. OnHand and
 claims unchanged; available decreases/isolated increases. Reserved-stock loss attribution,
