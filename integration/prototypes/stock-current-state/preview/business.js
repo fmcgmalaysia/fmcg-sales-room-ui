@@ -295,7 +295,18 @@ function dispatchReserved(before, input) {
     }
   });
 }
-return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand,
+function quarantineFree(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    if (!source || !positive(input.quantity) || !['INTERNAL_DAMAGE', 'WRONG_ITEM', 'SHORT_EXPIRY'].includes(input.kind)
+      || !String(input.reason || '').trim()) throw Error('Original stock exception required');
+    // Only unassigned free quantity can be moved without choosing a customer's loss.
+    // Reserved/held/borrowed attribution needs its own reviewed exception workflow.
+    if (input.quantity > source.available) throw Error('Exception affects reserved stock; customer attribution review required');
+    source.available -= input.quantity; source.isolated += input.quantity;
+  });
+}
+return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
 
 })();

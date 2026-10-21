@@ -1,0 +1,47 @@
+2026-10-22 — supported free-stock quarantine slice, not complete exception integration
+
+Recovery production d447185; previous candidate19c3826. Actual production stock exception
+reporting remains unchanged. No live reads/writes, CMS tests, deletion, schema or release.
+
+Original evidence
+inventoryExceptions.js quarantine preserves accepted receipts, reduces usable stock;
+stockPosition also accounts for resolutions, supplier returns/replacements and dispatched
+shipments. Original reporting authorizes canReportStockException, requires physical
+receipt/PO/supplier, version, positive quantity/type/reason and unshipped physical ceiling.
+This round reuses original function/parser in in-memory tests; no condition was copied
+into a real endpoint or modified in live code.
+
+Candidate implemented
+quarantineFree transition accepts original type/positive quantity/reason, exact source.
+Only free amount may move to isolated. OnHand, received, customer claims, original PO
+and borrowing relationships stay unchanged. Quarantined quantity is not allocatable.
+prepareFreeQuarantine binds ORIGINAL STOCK_EXCEPTION_REPORTED event/company/order/
+sourceLine/source task to original per-row current-state fenced plan. One original case
+event and current source/product changes, no separate receipt/guessed owner/journal blob.
+
+Explicit unsupported boundary
+If damaged/expiry quantity would consume customer-reserved stock, this candidate refuses
+with attribution-review requirement. Original case may concern reserved/held/borrowed
+goods in reality; refusing this candidate is NOT claiming warehouse can ignore/report no
+damage. It is a release blocker until isolated customer attribution/replacement policy is
+implemented. Do NOT wire it as the sole live reporting route or hide physical anomalies.
+No deterministic choice of customer loss invented, no removal of borrowing promise or
+packing protections. Existing StockClaims.isolatedAttributed!=0 and unknown migration
+attribution still not supported by current borrowing plan. Supplier return, replacement,
+finance release/write-off and receipt provenance counters still need integration; original
+source onHand+dispatch==accepted equation only handles current supported no-return slice.
+
+Evidence
+4new tests143.8802ms; after same-model preview regeneration,58affected tests330.6104ms,
+0fail (free-quarantine/borrowing/borrow-plan/allocation/Sales-demand/dispatch/preview).
+Fixture100onHand/80reserved/20free -> exception10 ->100onHand/80reserved/10free/10isolated;
+original usable stock90 matches. Over-free quarantine refuses instead of guessing customer
+loss. Original unauthorized/stale/over-physical reporting blocked. Plan preserves original
+case details, changes no claims, and cannot allocate isolated cartons. Overlapping runs
+not summed. Actual Credit/cache/token numbers UNKNOWN.
+One targeted guessed test filename was absent; switched to rg file/content discovery,
+located original factory use in master-workflow-scenarios.test.cjs; no blind retry.
+
+All-writer/current read, actual endpoints/auth, capacity/lifecycle, admin recovery and
+real migration/shadow gates remain unfinished. Four statuses: isolated candidate code;
+Pages unchanged; Wix unchanged; public new borrowing/current-state workflow unavailable.

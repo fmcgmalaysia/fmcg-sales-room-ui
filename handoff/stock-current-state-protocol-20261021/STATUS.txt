@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 after19c3826: FREE_QUARANTINE.txt. Candidate free-stock
+quarantine maps original exception + source/product balance into same plan. OnHand and
+claims unchanged; available decreases/isolated increases. Reserved-stock loss attribution,
+supplier return/replacement/resolution paths remain unfinished, not guessed.4new checks
+143.8802ms; final affected58pass330.6104ms. No production change or invoice/ACTIVE enable.
+
 CURRENT HEARTBEAT 2026-10-22 afterd9c4350: RECOVERY_INSPECTOR.txt. Added private
 READ-ONLY recovery classifier: exact request/control/lock/prepared/result and bounded
 before/after images, no payload export/TTL stealing/deletion/mutation.8checks pass

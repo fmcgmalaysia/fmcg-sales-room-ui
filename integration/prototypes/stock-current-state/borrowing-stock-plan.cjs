@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -181,4 +181,12 @@ function prepareShipmentDispatch({ state, rows, event, priorShipment, generation
   const { after } = dispatchReserved(state, { expectedRevision: state.revision, lines: shipment.lines });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, transferId };
+function prepareFreeQuarantine({ state, rows, event, generation }) {
+  checkEvent(event, state.company, 'STOCK_EXCEPTION_REPORTED');
+  const source = state.sources.find(s => s.id === event.imageAltText);
+  if (!source || event.description !== source.orderId || event.image !== source.sourceLineId) throw Error('Original quarantine source identity mismatch');
+  const { after } = quarantineFree(state, { expectedRevision: state.revision, sourceId: source.id,
+    quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, transferId };
