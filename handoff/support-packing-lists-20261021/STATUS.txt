@@ -1,5 +1,7 @@
 CURRENT 2026-10-21 — implementation candidate; NOT released or production-connected
 
+GitHub candidate b39a08f7ae8fc9173368e4038469ee873c84bbbd pushed on the task branch. Draft PR219 https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/219 created against the existing Support preview branch9bf14ab and attached to this chat. No deployment or merge. Record update only follows this code commit.
+
 FINAL CHECK UPDATE: browser bundle/source consistency plus changed persistence adapter5 checks pass; four additional tests invoke the actual Sales adjustment, planner allocation (including first allocation), legacy Warehouse preparation and legacy shipment factories and confirm occupied products cannot be changed/reserved through those entrypoints. Syntax/whitespace checks pass. These focused checks follow the recorded full820/816 run; the full suite was not rerun just for a new summary. No visual screenshot or public feature acceptance. Existing user-confirmed recovery tag verified/sales-requested-split-20261020 was identified; it does not establish acceptance of this new packing feature.
 
 Objective approved after workflow review: Support creates/edits a draft, sends one shared packing list to Warehouse Outgoing, Warehouse records packed/loaded quantities and explicitly completes loading, unloaded quantities return to To Arrange. Customer demand and physical stock are not cancelled or deducted by completion. One effective invoice per list is deferred integration; no real invoice issue is enabled.
