@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+Continuation after8fc3ab3: SDK-shaped full save fault matrix expanded to eight boundaries
+times before-write failure/lost reply/delayed mutation. Every retry preserves quantities,
+pending blocks mixed reads/new requests, completed requests reuse original receipt, late
+old writes fail after generation2. Lock acquisition lost reply blocks; lost release can
+replay committed result when absent. Latest affected file30/30pass,0fail,209.9292ms.
+This is SDK-mock transport fault injection, NOT an actual Wix timeout experiment.
+RECOVERY_RUNBOOK.txt records conservative classification and missing admin tooling.
+Only isolated tests/documentation changed this continuation; production remains untouched.
+
 Official @wix/data1.0.528 installed with explicit approval, isolated Admin-only draft.
 Actual conditional update rejected wrong/stale V0; correct V0 succeeded; exactly one
 of two V1 contenders succeeded. Retained fixture now17/V2-B. Conditional lock deletion
