@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 aftera45c2b6: WAREHOUSE_AUTHORITY.txt. Isolated real
+Warehouse auth/PO/receipt validators now compose with shared original product facts and
+exact current product reads, all products inside ONE barrier. Fenced prepare integration
+test receives two products once/replays without duplicate event or context reads.36focused
+tests pass341.0478ms. Shared candidate fact/reader helpers replace duplicated candidate
+logic only; production untouched. Actual endpoints must authenticate EVERY invocation,
+including replay, and all original writers must share fence before ACTIVE. Production
+scale, exception coverage, recovery/migration/UI/release gates remain open; ACTIVE OFF.
+
 CURRENT HEARTBEAT 2026-10-22 afterd4f7d9b: WAREHOUSE_RECEIPT_BRIDGE.txt. Isolated
 bridge executes unchanged original Warehouse prepare against private scratch journal;
 never receives a real write/delete store. Existing PO/reason/finance/allocation guards
