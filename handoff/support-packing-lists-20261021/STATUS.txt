@@ -1,4 +1,14 @@
-CURRENT OVERRIDE 2026-10-21 — resumed after user network pause; candidate integration saved; NOT released
+CURRENT OVERRIDE 2026-10-21 — a98001b deployed to Pages; Wix publication and public acceptance still pending
+
+Release update superseding implementation-only paragraphs below: user explicitly approved this branch's temporary publishing permission and asked to finish then publish, with real business testing afterwards. Runtime a98001bd02de94e2431b152ff4d5ab0935f7f80f pushed to PR219. Pages Actions39586509274 completed successfully. All23 changed runtime resources plus2 unchanged accepted typography stylesheets were fetched and exactly compared with this commit (LF-normalized). Temporary rule63824713 removed immediately; original seven rules exact restored. No repeated dispatch/main merge/Drive permission changes/business writes.
+
+Fresh Wix comparison before synchronization: original Warehouse entry SHA fb4f66066f7013c8cefca86fdfd193d32b295f45ac487db94f637ad977477895; four edited consumers still exact to preserved originals below. Existing customerFulfilmentService, purchaseDocumentClient, purchaseOperationJournal and purchaseProjection freshly read and repository-exact. Eight new files created (7backend including web method,1public bridge). Four consumers changed using2–3 isolated replacements each, not whole-file overwrite. Support/Warehouse entry imports, fixed-role route and runtime URL minimally patched. All14 complete editor readbacks match a98001b resources. Accepted typography untouched.
+
+One Publish click issued. No official success receipt yet; editor Publish remains disabled. Existing console contains disconnect/Failed-to-fetch/save-failure/DeferredTimeoutError at10:36UTC, earlier than this click, so those logs do NOT prove the cause of the current wait. Read-only site history after one refresh still lists latest Saved17:29MYT and old Published09:16MYT; no new published version observed. Original editor51426657 preserved with exact code. New recovery editor51426763 opened once for read-only persistence check, currently Loading. Do not claim Wix publication or force-save/repeatedly dispatch. All exact content is in runtime commit plus current original-editor memory; server persistence remains to be confirmed. Public new functionality not accepted yet.
+
+No automated or actual new packing save/photo/chat/invoice/stock test write has been made. Code test result839/835 with same4baseline failures remains unchanged; no gratuitous rerun during publishing.
+
+EARLIER IMPLEMENTATION OVERRIDE
 
 This override supersedes the initial unconnected-candidate descriptions below. Local client transport, fixed-role Wix routing candidates and same-window Warehouse Outgoing host are now implemented. No Wix code, Pages release, CMS business record, Drive upload or real chat message was written by this task. PR219 remains draft; main untouched.
 
