@@ -1,5 +1,9 @@
 # Support invoice workbench draft — 2026-10-21 MYT
 
+## User-verified typography checkpoint — 2026-10-21
+
+User inspected the local draft and explicitly requested preserving its excellent font. This verifies typography only, NOT invoice behavior or production readiness. Exact code checkpoint cb7b358; draft.css SHA256 (raw bytes) 3C329A5A65FD86A2B0CC60FB010884BD401F9160DA2BC8FBF6E931A1086D4E95. Preserve the Support Inter font-face source, variable weights100–900, fallback stack 'Support Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif and inherited control typography. Current body11px/1.35 is the accepted compact reference. Do not replace it with a new department theme/font while integrating the workbench. Annotated verified/support-draft-font-20261021 records this narrow acceptance. No production code or functionality is frozen by that font-only tag.
+
 ## User clarification — exact Loaded, no subtraction
 
 The user explicitly clarified that Loaded is the quantity physically inside the container and Support must invoice exactly that quantity. The initial draft's subtraction/partial-invoice policy was an assistant assumption and is withdrawn. The candidate now sets invoiceQty directly to the container delivery row's confirmed Loaded. Any issued or pending invoice locks that row; changing Loaded away from the invoice snapshot requires supervised correction, never automatic delta invoicing. The main table has one Loaded Qty column rather than Loaded/Invoiced/remainder columns. CBM, net weight and amount use the full Loaded quantity. Twelve revised offline checks and script syntax checks pass. This changes only the isolated draft; no production invoice or Warehouse handler was changed.
