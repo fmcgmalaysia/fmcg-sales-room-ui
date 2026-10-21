@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 afterd9c4350: RECOVERY_INSPECTOR.txt. Added private
+READ-ONLY recovery classifier: exact request/control/lock/prepared/result and bounded
+before/after images, no payload export/TTL stealing/deletion/mutation.8checks pass
+119.908ms after adding exact prepared-version token check. Actual admin endpoint, stuck
+execution termination proof/authorized release and production rehearsal still unfinished.
+No old deletion permission reused; all writer/capacity/migration/UI/release gates stay open.
+
 CURRENT HEARTBEAT 2026-10-22 after464aa9b: CURRENT_DISPATCH.txt. Candidate immutable
 INVOICED->DISPATCHED event maps all changed products into ONE fenced plan; consumes only
 this invoice's exact task/source holds, keeps other holds and borrowing debt. Loaded or
