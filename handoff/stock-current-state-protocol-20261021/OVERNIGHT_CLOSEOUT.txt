@@ -1,5 +1,15 @@
 CURRENT OVERRIDE — 2026-10-22 — candidate work synchronized; NOT PRODUCTION COMPLETE
 
+CONFIRMED GITHUB UPDATE: functional candidate7b216ddda4f40d4bbc1d3cfa55e803059db1a8a9
+pushed successfully. Draft PR220 created/attached:
+https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/220
+Base exactd447185 on feat/support-packing-lists-20261021; main untouched. This closing
+commit additionally fixes zero-take claim insertion: shortage/rejected-only delivery no
+longer creates an empty physical source/repayment claim. Related36tests pass226.8564ms;
+12plan+22model+2preview. Browser bundle rebuilt from exact same model. Previous broad
+162run retained; do not sum repeated36as new coverage. Final closing commit ID is in
+Git history and final push output; no additional feature deployment inferred.
+
 User asked to continue while resting, sync GitHub, publish when complete and audit all
 remaining work before stopping. Existing authorization reused; no repeated user questions.
 This record distinguishes actual work from a release promise. Do not report this inventory/

@@ -213,3 +213,13 @@ test('original correction event reopens repaid relationship with its exact rever
   assert.equal(m.rows().product.onHand, 120);
   assert.equal(m.rows().claims.find(c => c.positionId === f.positionId('S-A') && c.taskId === 'B').reservedUsable, 20);
 });
+test('short/rejected-only receipt does not create an empty source or zero repayment claim', async () => {
+  const f = fixture(), m = await memory(f), approved = prepareBorrowApproval(f);
+  await m.protocol.commit({ requestId: uuid(1), memberId: 'P1', input: f.input, prepare: async () => approved.plan });
+  const event = receipt(approved.state, 0); event.details.lines[0].kind = 'SHORT'; event.details.lines[0].rejected = 5;
+  const result = prepareBorrowingReceipt({ state: approved.state, rows: m.rows(), event, generation: 1 });
+  assert.equal(result.plan.writes.some(w => w.collection === 'StockPositions'), false);
+  assert.equal(result.plan.writes.some(w => w.collection === 'StockClaims'), false);
+  assert.equal(result.plan.writes.some(w => w.after.action === 'STOCK_TRANSFER_CURRENT'), false);
+  assert.equal(Object.hasOwn(result.state.sources[0].claims, 'B'), false);
+});

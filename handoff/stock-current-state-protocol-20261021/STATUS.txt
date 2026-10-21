@@ -1,5 +1,8 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+LATEST GITHUB: draftPR220 created/attached;7b216dd synced, plus closing zero-quantity
+guard documented in OVERNIGHT_CLOSEOUT.txt. Candidate remains NOT PRODUCTION COMPLETE.
+
 CURRENT OVERNIGHT OVERRIDE 2026-10-22: read OVERNIGHT_CLOSEOUT.txt first. Unused-return
 and correction candidates plus same-model local simulator added; halo resolves on actual
 repayment/approved unused return and reopens on correction.162candidate checks+2preview

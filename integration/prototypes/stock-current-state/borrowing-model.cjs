@@ -108,14 +108,14 @@ function receive(before, input) {
     source.onHand += left;
     for (const relation of state.relations.filter(r => r.replacementSourceId === source.id).sort((a, b) => a.sequence - b.sequence)) {
       const take = Math.min(left, remaining(relation));
-      source.claims[relation.lenderTaskId] = (source.claims[relation.lenderTaskId] || 0) + take;
+      if (take) source.claims[relation.lenderTaskId] = (source.claims[relation.lenderTaskId] || 0) + take;
       relation.repaid += take;
       left -= take;
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
     const need = owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id);
     const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need);
-    source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
+    if (own) source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
     source.available += left - own;
   });
 }
@@ -160,7 +160,7 @@ function correctAccepted(before, input) {
     const removeClaim = (taskId, max) => {
       const take = Math.min(reduction, source.claims[taskId] || 0, max);
       if (take && state.packingHolds.heldByTask[taskId] > 0) throw Error('Packing task holds corrected allocation');
-      source.claims[taskId] = (source.claims[taskId] || 0) - take;
+      if (take) source.claims[taskId] = (source.claims[taskId] || 0) - take;
       reduction -= take; return take;
     };
     removeClaim(source.ownerTaskId, Number.MAX_SAFE_INTEGER);
