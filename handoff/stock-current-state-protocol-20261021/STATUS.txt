@@ -1,0 +1,53 @@
+CURRENT 2026-10-21 — G0 OFFLINE PROOF COMPLETE; SAFETY GATE NOT PASSED
+
+User continued on Sol Medium after Astra architecture specification. Current branch
+feat/stock-current-state-protocol-20261021 based on d447185. Existing runtime32b812c,
+PR219 release, all business code/CMS/permissions remain unchanged. No production import
+uses this proof. No deployment, GitHub push or PR was performed.
+
+New local files
+integration/prototypes/stock-current-state/commit-proof.cjs
+integration/prototypes/stock-current-state/README.txt
+integration/tests/stock-current-commit-proof.test.cjs
+This STATUS.txt. All data in new files is synthetic.
+
+Authoritative local Astra task specification
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/IMPLEMENTATION_SPEC.txt
+Section5 requires a stop/Astra review if uncertain late writes cannot be contained.
+
+Single command actually run
+node --test integration/tests/stock-current-commit-proof.test.cjs integration/tests/stock-card-save-safety.test.cjs
+Result31tests/31pass/0fail; duration299.7564ms as reported by Node.
+Breakdown6existing safety tests +24ordinary new checks +1successful counterexample
+reproducer. Do NOT report31safety checks passed or G0passed. No full suite rerun.
+
+Verified local cases
+Duplicate requests/digest mismatch; same-company competition for last20;16 injected
+before/after failures across PREPARED/pending/business/source/claim/summary/RESULT/generation;
+RESULT-existing finalization; old prepared generation rejection; read generation change;
+permanent unknown lock protection; company isolation; lock-release failure; existing
+production lock hash identity preserved.
+
+Critical result
+Delayed UPDATE after an unknown request outcome can overwrite a later committed source
+while product summary and commit generation remain newer. Reproducer asserts source210
+versus summary220 at generation2. Thus after-image equality and before/after control reads
+alone are insufficient under that storage failure schedule.
+
+Scope distinction
+Candidate-protocol limitation CONFIRMED under an explicitly simulated store schedule.
+Whether Wix actually permits this timing UNKNOWN. Existing deployed corruption NOT OBSERVED.
+There is no live test collection or permission approved for this proof, and none was created.
+No new platform request-limit/index/latency claim was made. Actual Credits UNKNOWN.
+
+Next action
+Explicitly notify user to switch to Astra. Ask Astra to inspect only the specification,
+the three proof files and this result, then choose a justified completion guarantee,
+conditional-write/fencing approach, immutable publication or conservative unresolved-save
+policy. Do not continue production implementation or silently redesign on Sol while this
+gate is open. No repeated full project scan needed. Return to Sol only after revised
+protocol and concrete failure acceptance are established.
+
+Recovery
+Only new isolated files were added; existing tracked business files must match d447185.
+No data rollback needed because no CMS writes occurred. Do not delete user untracked files.
