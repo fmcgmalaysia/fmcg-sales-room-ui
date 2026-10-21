@@ -21,7 +21,7 @@ function createCurrentQuery({ items, company }) {
   const base = collection => items.query(collection).eq('company', company).eq('status', 'ACTIVE');
   async function run(collection, query, args, matches, order = ['_id']) {
     const page = await query.ascending(...order).skip(args.page * args.pageSize).limit(args.pageSize)
-      .find({ consistentRead: true });
+      .find({ consistentRead: true, returnTotalCount: true });
     if (!Array.isArray(page?.items) || page.items.length > args.pageSize || !count(page.totalCount)
       || page.totalCount < page.items.length) throw Error('Invalid current page response');
     const ids = new Set();

@@ -1,5 +1,24 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+Continuation afterb9abb28: actual SDK adapter and query exercised via new Admin-only
+stockProtocolAdapterTest.web.js DRAFT. Previous diagnostic fresh read exact before action;
+old functions left unchanged. New code embeds candidate adapter/query exactly ignoring
+whitespace, full editor clipboard readback exact to submitted source. No production imports.
+One-shot verifyStockSdkAdapter created exactly4synthetic rows (ADAPTER-c61f7e82-S/C/P/Q),
+advanced source/claim/product V0->V1 and removed obsolete field, then STOPPED on query
+validation (Invalid current page response). Did NOT reset/re-run the mutation entry.
+Wix official find/totalCount docs established returnTotalCount:true is required; new mock
+now omits count without it. Candidate fixed only that option. Read-only inspect function
+returned passed:true, default totalCount type undefined, explicitCount2. Source/product
+onHand19/reserved9/available10, claim9, second product null preserved; both product pages,
+source and claim pages correct. Evidence selected fields: LIVE_ADAPTER_RESULT.json.
+All4new and2original synthetic records remain. No lock create/delete or business mutation
+this continuation. No Publish, Pages dispatch, main merge, schema/index installation or ACTIVE.
+Changed query tests7/7pass,143.1881ms. Bundle/admin guard tests2/2pass,128.1909ms;
+generated ESM diagnostic syntax check passed. Existing unchanged suites not rerun.
+This proves adapter read/insert/patch/removeField and scoped query route on installed SDK,
+not full live commit protocol, timeout safety, production indexes or latency guarantees.
+
 Continuation after08a13b6: isolated current-query.cjs implements SDK-shaped product,
 source and claim pages with company/status filters, stable server sort/offset/limit,
 strong reads, explicit display field projection and generation/pending barrier.

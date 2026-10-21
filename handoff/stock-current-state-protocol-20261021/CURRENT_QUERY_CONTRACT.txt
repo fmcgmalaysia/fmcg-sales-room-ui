@@ -1,5 +1,14 @@
 Current inventory read candidate — 2026-10-21 — NOT DEPLOYED
 
+Actual SDK continuation: installed1.0.528 defaults totalCount to undefined. Explicit
+find({consistentRead:true,returnTotalCount:true}) is required and now used. Exact embedded
+candidate query passed isolated live source/claim/two-product pagination with null values
+preserved. No production index or large-volume performance test was run. First mutation
+probe stopped at missing totalCount after its updates; continued read-only, never reset.
+Latest changed query7/7pass143.1881ms; bundle equality/Admin2/2pass128.1909ms.
+Reference: https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-query/find
+See LIVE_ADAPTER_RESULT.json and STATUS.txt for actual versus simulated boundaries.
+
 Files: current-query.cjs plus stock-current-query.test.cjs; no production imports.
 Repository company is fixed at construction after existing employee authorization.
 Product page: StockProducts company+ACTIVE, optional barcode/name/packing contains OR

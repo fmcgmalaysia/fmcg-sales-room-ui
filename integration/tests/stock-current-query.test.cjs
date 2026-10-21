@@ -18,7 +18,7 @@ function fixture(rows = []) {
         calls.push({ collection, order, offset, size, options });
         const selected = rows.filter(row => row.collection === collection && q.matches(row))
           .sort((a, b) => { for (const field of order) { const d = String(a[field]).localeCompare(String(b[field])); if (d) return d; } return 0; });
-        return { items: selected.slice(offset, offset + size), totalCount: selected.length };
+        return { items: selected.slice(offset, offset + size), totalCount: options.returnTotalCount ? selected.length : undefined };
       }
     }; return q;
   } };
@@ -35,7 +35,7 @@ test('product page filters company/status before pagination and returns stored f
   const page = await readProductPage({ protocol, repository: f.repository, company: 'NCT', page: 2, pageSize: 25 });
   assert.equal(page.rows.items.length, 25); assert.equal(page.rows.totalCount, 160);
   assert.equal(page.rows.items[0]._id, '0050'); assert.equal(page.rows.items[0].onHand, 1050);
-  assert.deepEqual(f.calls, [{ collection: 'StockProducts', order: ['barcode', '_id'], offset: 50, size: 25, options: { consistentRead: true } }]);
+  assert.deepEqual(f.calls, [{ collection: 'StockProducts', order: ['barcode', '_id'], offset: 50, size: 25, options: { consistentRead: true, returnTotalCount: true } }]);
 });
 test('search OR stays inside company and active filters; null/zero remain distinct', async () => {
   const f = fixture([product('A', { name: 'Chocolate', available: null, isolated: 0, secretCost: 99, stockCommitVersion: 'PRIVATE' }),
