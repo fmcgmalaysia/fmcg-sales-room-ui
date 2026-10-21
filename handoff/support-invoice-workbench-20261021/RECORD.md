@@ -1,5 +1,11 @@
 # Support invoice workbench draft — 2026-10-21 MYT
 
+## Compact layout continuation — still an isolated candidate
+
+User asked to optimize pages before publishing and explicitly preserve this draft's font. Added draft-compact.css, loaded after the original stylesheet, for49px desktop header,44px nav, tighter spacing, same-size bilingual main title and680px invoice dialog. Removed the separate stock-preview navigation from Support because Warehouse owns Stock Control. No original draft.css edit: raw SHA256 remains3C329A5A65FD86A2B0CC60FB010884BD401F9160DA2BC8FBF6E931A1086D4E95. No font-family/face override is present in compact CSS. Two typography/scope tests plus original12 domain tests all pass.
+
+This is source/offline verification, NOT visual acceptance. Browser URL policy rejected observation of the already-open local file; do not work around that gate by raw browser/native control or by mirroring the same blocked Support page into another browser surface. User may inspect the local file themselves. Real data, batch invoice coverage, verified net weight, journal-integrated Save and loading-after-invoice locks remain unfinished. Two essential questions are pending: Warehouse-owned shipment batch grouping and actual weight field/source. Do not publish fixture data or claim invoice integration complete. No Wix or Pages changes from this Support continuation.
+
 ## User-verified typography checkpoint — 2026-10-21
 
 User inspected the local draft and explicitly requested preserving its excellent font. This verifies typography only, NOT invoice behavior or production readiness. Exact code checkpoint cb7b358; draft.css SHA256 (raw bytes) 3C329A5A65FD86A2B0CC60FB010884BD401F9160DA2BC8FBF6E931A1086D4E95. Preserve the Support Inter font-face source, variable weights100–900, fallback stack 'Support Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif and inherited control typography. Current body11px/1.35 is the accepted compact reference. Do not replace it with a new department theme/font while integrating the workbench. Annotated verified/support-draft-font-20261021 records this narrow acceptance. No production code or functionality is frozen by that font-only tag.
