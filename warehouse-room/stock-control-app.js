@@ -1,6 +1,8 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const embedded = new URLSearchParams(location.search).get('embedded') === 'warehouse';
+  if (embedded) document.documentElement.classList.add('warehouse-embedded');
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const amount = value => value === null ? '<span class="unknown">Review Required 待核对</span>' : Number.isSafeInteger(value) && value >= 0 ? value.toLocaleString('en-GB') : '<span class="unknown">Review Required 待核对</span>';
   const issueLabels = { OWNERSHIP_NOT_CONFIRMED: 'Customer allocation requires review 客户分配需核对',
@@ -13,6 +15,14 @@
   let company = ['NCT', 'GHR'].includes(initialCompany) ? initialCompany : 'NCT', data = null, requestId = '', pending = null, timer = null, searchTimer = null;
   $('company').value = company;
   let cursor = null, previous = [];
+  function layout() {
+    if (embedded) parent.postMessage({ type: 'STOCK_CONTROL_LAYOUT', company,
+      height: document.body.scrollHeight, busy: $('source-dialog').open }, location.origin === 'null' ? '*' : location.origin);
+  }
+  if (embedded) {
+    new ResizeObserver(layout).observe(document.body);
+    $('source-dialog').addEventListener('close', layout);
+  }
   function notice(message, error = false) { $('notice').textContent = message; $('notice').classList.toggle('error', error); }
   function paging() {
     $('previous').disabled = !!pending || !previous.length;
@@ -60,12 +70,13 @@
     const issues = [...new Set(row.sources.flatMap(source => source.issues))];
     $('source-review').textContent = issues.map(code => issueLabels[code] || code).join('\n');
     $('source-dialog').showModal();
+    layout();
   }
   $('stock-rows').onclick = event => { const button = event.target.closest('[data-key]'); if (!button) return;
     const row = data?.items.find(item => item.key === button.dataset.key); if (row) showSources(row); };
   $('close-source').onclick = $('done-source').onclick = () => $('source-dialog').close();
   $('refresh').onclick = () => { clearTimeout(searchTimer); request(); };
-  $('login').onclick = () => parent.postMessage({ type: 'WAREHOUSE_LOGIN_REQUEST' }, '*');
+  $('login').onclick = () => parent.postMessage({ type: 'WAREHOUSE_LOGIN_REQUEST', company }, '*');
   $('next').onclick = () => { if (data?.nextCursor) request(data.nextCursor, [...previous, cursor]); };
   $('previous').onclick = () => { if (previous.length) request(previous[previous.length - 1], previous.slice(0, -1)); };
   $('search').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => request(), 400); };
@@ -77,6 +88,7 @@
   window.addEventListener('message', event => {
     if (event.source !== parent) return;
     const message = event.data || {};
+    if (embedded && message.type === 'STOCK_CONTROL_REFRESH' && message.company === company) { request(); return; }
     if (message.type === 'WAREHOUSE_LOGIN_RESULT') { if (message.ok) request(); return; }
     if (message.type !== 'STOCK_CONTROL_READ_RESULT' || message.company !== company || message.requestId !== pending?.id) return;
     clearTimeout(timer); const current = pending; pending = null;
@@ -89,6 +101,7 @@
     const at = new Date(result.readAt);
     $('read-at').textContent = Number.isFinite(at.getTime()) ? 'Master CMS · ' + new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at) : '';
     notice(''); render();
+    layout();
   });
   render(); request();
 })();
