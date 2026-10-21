@@ -1,4 +1,32 @@
-CURRENT 2026-10-21 — SOL ISOLATED IMPLEMENTATION; SDK APPROVAL PENDING; G0 STILL OPEN
+CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
+
+Official @wix/data1.0.528 installed with explicit approval, isolated Admin-only draft.
+Actual conditional update rejected wrong/stale V0; correct V0 succeeded; exactly one
+of two V1 contenders succeeded. Retained fixture now17/V2-B. Conditional lock deletion
+rejected wrong and old attempt identities; current attempt succeeded and exact query
+confirmed absence. Only explicitly authorized LOCK-SPT-798e1664-2f75-42e4-b199-f7e0d4bc2317
+was permanently deleted. Both original synthetic fixtures retained; no business writes.
+Exact returned evidence: LIVE_SDK_RESULTS.json. No actual timeout/late-network schedule
+was induced; basic platform primitives passing does not finish G0 or prove transactions.
+
+Candidate sdk-conditional-store.cjs maps _version to stockCommitVersion, exact bounded
+strong reads, scoped conditional patch/delete. Not imported by production or live-tested
+as a complete adapter. Canonical object comparison avoids property-order false conflict.
+Latest affected test command: node --test integration/tests/stock-current-sdk-store.test.cjs integration/tests/stock-current-fenced-proof.test.cjs
+26/26 passed,0failed,duration184.28ms (21protocol+5adapter). Unchanged model9/9 reused.
+No Pages dispatch, Publish, main merge or production collection creation. Remaining:
+full actual adapter contract, recovery runbook/platform limits and G1/G2 writer coverage.
+
+Earlier SDK installation state (superseded; retained for audit)
+
+User explicitly authorized adding official @wix/data solely for isolated testing. Wix
+Package Manager confirmed Installed version1.0.528. New Admin-only stockProtocolSdkTest.web.js
+saved as DRAFT with complete fresh clipboard readback exact to local candidate. No page
+imports or business module edits; no Publish/Pages operation. Built-in backend function
+test verifyStockSdkCondition started ONCE against retained synthetic fixture, result pending.
+Do not rerun blindly: it advances fixture20/V0 on success and refuses automatic reset.
+
+Earlier implementation record (preserved)
 
 Latest progress: SOL_IMPLEMENTATION.txt. New conditional offline proof21/21 and pure
 conversion/read contract9/9 pass. User authorized independent StockProtocolTest and Admin

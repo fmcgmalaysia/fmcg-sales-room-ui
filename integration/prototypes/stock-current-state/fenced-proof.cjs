@@ -5,7 +5,9 @@
 const { randomUUID } = require('node:crypto');
 const { hash } = require('./commit-proof.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const canonical = value => Array.isArray(value) ? value.map(canonical)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID }) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Invalid company');

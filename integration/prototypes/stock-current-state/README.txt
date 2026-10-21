@@ -8,7 +8,13 @@ Neither module is imported by production. Original unsafe counterexample below i
 stockProtocolTest.web.js is an authorized Wix DRAFT Admin diagnostic for StockProtocolTest;
 its two retained rows are synthetic. Both old-wrapper patch probes failed INVALID_ARGUMENT,
 not a version condition. Current official SDK has a different supported conditional API.
-stockProtocolSdkTest.web.js is prepared LOCAL ONLY pending @wix/data dependency approval.
+stockProtocolSdkTest.web.js is now an exact-readback Wix DRAFT, Admin only, using approved
+@wix/data1.0.528. Actual conditional updates and conditional lock release passed; two
+fixtures remain, exactly one separately authorized disposable lock was deleted.
+sdk-conditional-store.cjs is an isolated injected adapter candidate (5tests pass), not
+production wiring. Protocol21tests pass; canonical property comparison ignores key order.
+See LIVE_SDK_RESULTS.json in the handoff for actual returned evidence. Full adapter/live
+recovery/writer coverage remains incomplete; ACTIVE stays off. Do not rerun fixtures.
 See handoff/stock-current-state-protocol-20261021/SOL_IMPLEMENTATION.txt for exact results.
 
 Purpose

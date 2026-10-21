@@ -1,4 +1,26 @@
-2026-10-21 — isolated implementation progress after 17a4991
+2026-10-21 — continuation after dd2fc36
+
+Approved official @wix/data installed in Master version1.0.528. Own diagnostic source
+fresh clipboard readback exact; no page imports, no Publish. Initial Filter expression
+rejected both wrong and correct conditions without advancing fixture. Official SDK
+conditionOptions/createFilter source inspected, then plain WQL condition used successfully.
+This is evidence of this installed route, not a claim that every Filter SDK is broken.
+Actual wrong/stale conditions reject WDE0193; current condition and one concurrent
+contender succeed. Separate approved lock probe rejects wrong/old release, accepts current
+release; exact strong query returns absent. Only approved disposable lock permanently
+deleted, original two fixtures retained. Exact results in LIVE_SDK_RESULTS.json.
+
+Isolated sdk-conditional-store.cjs added: explicit company/collection scope, strong exact
+read, unique insert, atomic version patch and attempt-token remove. _version maps to
+stockCommitVersion; system metadata excluded from owned images. No silent error-to-missing
+fallback. Caller must retain original employee authorization. Complete adapter not yet
+executed against Wix; simulated SDK tests are not substituted for that check.
+Canonical image comparison now ignores object key order; no business source changed.
+Affected command ran: node --test integration/tests/stock-current-sdk-store.test.cjs integration/tests/stock-current-fenced-proof.test.cjs
+Result26/26pass,0fail,duration184.28ms. Model9/9 earlier result reused unchanged.
+ACTIVE off; platform primitives pass, whole G0/integration/migration/release not complete.
+
+Earlier implementation progress after 17a4991 (historical)
 
 New offline protocol: integration/prototypes/stock-current-state/fenced-proof.cjs
 Injectable atomic version conditions on every mutable row/control, and exact execution
