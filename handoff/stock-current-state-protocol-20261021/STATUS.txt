@@ -1,5 +1,10 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+USER DISPLAY OVERRIDE 2026-10-22: TRANSFER_PERSON.txt replaces triangle with original
+person+halo for BOTH parties while any relation remains unresolved. Remove halo only
+after all linked relations resolve; existing orange/blue state logic remains. Isolated
+SVG helper/tests only, production task-grid/allocation files unchanged; no UI publish.
+
 CURRENT continuation after07f374e: BORROWING_SAVE_PLAN.txt records isolated per-row
 transfer approval/receipt plans using the existing conditional protocol. Individual
 positions/claims/product and one updated current transfer row share original receipt
