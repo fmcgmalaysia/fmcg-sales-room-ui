@@ -26,6 +26,7 @@ async function act(list,action,extra={}){
 }
 function filtered(rows){const query=$('search').value.trim().toLowerCase(),customer=$('customer').value;return rows.filter(row=>(!customer||row.customerId===customer)&&(!query||JSON.stringify(row).toLowerCase().includes(query)));}
 function render(){
+ $('company-name').textContent=company==='NCT'?'North Cape Trading Sdn. Bhd.':'Global HR';
  $('department').innerHTML=actor==='SUPPORT'?'Support Department <small>支持部</small>':'Warehouse Department <small>货仓部</small>';
  $('unarranged-tab').hidden=actor!=='SUPPORT';$('unarranged-tab').classList.toggle('active',view==='unarranged');$('lists-tab').classList.toggle('active',view==='lists');$('lists-tab').textContent=actor==='SUPPORT'?'Packing Lists 备货单':'Outgoing 发货任务';
  $('title').innerHTML=view==='unarranged'?'To Arrange <small>待安排发货</small>':actor==='SUPPORT'?'Packing Lists <small>备货单</small>':'Outgoing <small>发货任务</small>';
