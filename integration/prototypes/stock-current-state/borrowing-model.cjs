@@ -31,6 +31,7 @@ function validate(state) {
   for (const source of state.sources) {
     if (!source.id || sources.has(source.id) || !tasks.has(source.ownerTaskId) || !source.poId
       || source.poValid !== true || stockKey(source) !== key || source.reviewRequired !== false
+      || !['OWNER_DEMAND', 'EXPLICIT_ONLY'].includes(source.receiptPolicy)
       || !['planned', 'accepted', 'onHand', 'isolated', 'available'].every(k => count(source[k]))
       || source.accepted > source.planned || !source.claims) throw Error('Source identity or balance conflict');
     for (const [taskId, qty] of Object.entries(source.claims)) {
@@ -111,7 +112,7 @@ function receive(before, input) {
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
     const need = owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id);
-    const own = Math.min(left, need);
+    const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need);
     source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
     source.available += left - own;
   });

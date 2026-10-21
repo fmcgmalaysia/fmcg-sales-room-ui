@@ -1,5 +1,17 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after07f374e: BORROWING_SAVE_PLAN.txt records isolated per-row
+transfer approval/receipt plans using the existing conditional protocol. Individual
+positions/claims/product and one updated current transfer row share original receipt
+event/plan; no product-wide CMS blob. Interrupted replacement blocks reads/new requests,
+same prepared plan resumes/replays once. New bounded SDK-shaped current-row reader
+includes closed stableIDs, exact decoding and count/scope guards.9/9new plan/reader tests
+pass135.6447ms; changed business model18/18 result reused from202.208ms focused run.
+Manual EXPLICIT_ONLY receipt policy preserved. All production/live sources unchanged;
+actual authority resolver/all-writer integration, exceptions, production relation lifecycle
+and scale/index review remain unfinished. Candidate closed-relation30cap is NOT final
+production capacity. ACTIVE off, no publishing/GitHub push.
+
 CURRENT continuation after996d3ab: PACKING_HOLD_BRIDGE.txt supersedes earlier universal
 SOURCE_CONFIRMED requirement. Existing task-total packing guards suffice conservatively:
 borrow approval requires lender+borrower task holds0; implicit receipt claim reductions

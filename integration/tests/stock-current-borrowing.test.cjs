@@ -6,7 +6,7 @@ function fixture() {
     packingHolds: { company: 'NCT', complete: true, scope: 'TASK_TOTAL', version: 'H0', heldByTask: { A: 0, B: 0, C: 0 } },
     tasks: ['A', 'B', 'C'].map(id => ({ ...identity, id, customerId: 'CUSTOMER-' + id, requested: 100, dispatched: 0 })),
     sources: ['A', 'B', 'C'].map(id => ({ ...identity, id: 'S-' + id, ownerTaskId: id, poId: 'PO-' + id,
-      poValid: true, reviewRequired: false, planned: 100, accepted: id === 'A' ? 0 : 100,
+      poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', planned: 100, accepted: id === 'A' ? 0 : 100,
       onHand: id === 'A' ? 0 : 100, isolated: 0, available: 0, claims: { [id]: id === 'A' ? 0 : 100 } })), relations: [] };
 }
 const approval = (state, extra = {}) => ({ expectedRevision: state.revision, id: 'REL-1', quantity: 30,
@@ -155,4 +155,11 @@ test('ordinary accepted receipt can repay lender while its other stock is in pac
   assert.equal(after.relations[0].repaid, 20);
   assert.equal(after.packingHolds.heldByTask.B, 70);
   assert.equal(taskCoverage(after, 'B').reservedUsable, 90);
+});
+test('explicit allocation policy repays bound quantity but does not autoexpand owner claims', () => {
+  const s = fixture(); source(s, 'A').receiptPolicy = 'EXPLICIT_ONLY';
+  const after = recv(borrow(s), 100);
+  assert.equal(source(after, 'A').claims.B, 30);
+  assert.equal(source(after, 'A').claims.A, 0);
+  assert.equal(source(after, 'A').available, 70);
 });
