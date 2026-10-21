@@ -1,5 +1,9 @@
 G0 stock commit protocol proof — OFFLINE ONLY — NOT PRODUCTION READY
 
+Read candidate continuation: current-query.cjs provides bounded company-scoped SDK-shaped
+product/source/claim queries;7new tests pass. No production imports or live index changes.
+See handoff CURRENT_QUERY_CONTRACT.txt for limits; mock paging is not measured Wix speed.
+
 2026-10-21 continuation
 fenced-proof.cjs is the revised injected conditional-store protocol (21new checks pass).
 current-model.cjs converts a complete legacy projection once, preserving current/lifetime

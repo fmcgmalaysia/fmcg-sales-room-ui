@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+Continuation after08a13b6: isolated current-query.cjs implements SDK-shaped product,
+source and claim pages with company/status filters, stable server sort/offset/limit,
+strong reads, explicit display field projection and generation/pending barrier.
+7/7changed-file tests pass,144.4375ms. No Activity dependency, no partial-page sum used
+as product total; null/0 stay distinct; errors not converted to empty inventory.
+CURRENT_QUERY_CONTRACT.txt records index requirements and UNKNOWN actual search/offset
+performance. No actual schema/index creation, live adapter integration or production switch.
+
 Continuation after8fc3ab3: SDK-shaped full save fault matrix expanded to eight boundaries
 times before-write failure/lost reply/delayed mutation. Every retry preserves quantities,
 pending blocks mixed reads/new requests, completed requests reuse original receipt, late

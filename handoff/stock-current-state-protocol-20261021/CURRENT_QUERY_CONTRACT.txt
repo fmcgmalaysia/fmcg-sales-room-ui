@@ -1,0 +1,49 @@
+Current inventory read candidate — 2026-10-21 — NOT DEPLOYED
+
+Files: current-query.cjs plus stock-current-query.test.cjs; no production imports.
+Repository company is fixed at construction after existing employee authorization.
+Product page: StockProducts company+ACTIVE, optional barcode/name/packing contains OR
+inside that scope; ascending barcode,_id; server offset+limit<=100; strong find.
+Source detail: StockPositions company+ACTIVE+exact stockKey, stable _id pagination.
+Claim detail: StockClaims company+ACTIVE+exact positionId OR exact taskId (not both).
+All are enclosed by the existing pending/generation readSnapshot barrier. A detail page
+does NOT compute an aggregate total from its partial rows. Source quantity=0/CLOSED
+remains stored but is not returned by ACTIVE-only queries; this is not row deletion.
+Permission and network errors propagate; malformed response/scope/duplicate IDs reject.
+Display projection preserves null/0 and strips incidental fields, internal commit versions
+and possible cost data. This is not a replacement for department-specific authorization.
+
+Schema/index deployment requirements (not created or measured)
+StockProducts: company,status,barcode,_id for base list; actual SDK/index support must be
+checked before installation. contains search across three fields may require a different
+index/search strategy and its database cost is UNKNOWN; no speed guarantee is made.
+StockPositions: company,status,stockKey,_id; company,sourceTaskId for exact writer lookup.
+StockClaims: company,status,positionId,_id and company,status,taskId,_id.
+All immutable ownership keys must retain barcode+packing+ea identity and company scope.
+Stored product totals remain maintained by the SAME fenced write plan as source/claims.
+stockCommitVersion is required for every mutable row; generation is a read barrier, not
+a substitute for atomic write version. CMS admin manual balance edits are not supported.
+Permissions must be private; no new direct frontend read/write privilege is implied.
+
+Limits of this phase
+Offset pages are individually consistent under the barrier; browsing page2 after another
+save is not a frozen multi-page snapshot/export. UI must display returned generation.
+Queries return bounded rows but totalCount/search/large-offset DB work is NOT proven
+constant-time. No Activity API exists in this module, not a claim the rest of Purchase
+or Support has stopped historical reads. No permanent 6000 catalogue placeholder rows.
+
+Evidence
+Changed-file test run: node --test integration/tests/stock-current-query.test.cjs
+Latest7/7pass,0fail,duration144.4375ms. Initial6 passed before adding explicit one-call
+barcode/ID ordering test and making sort independent of chaining semantics.
+Fixture160 products verifies server page2/25 returns25 after scope; fixture2000 sources
+verifies20 rows and totalCount2000, not a fake20-source product total. In-memory fixture
+itself scans/sorts its array to emulate the server; that is not a Wix performance test.
+SDK documented methods checked from Wix primary docs:
+https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-query/ascending
+https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/query-data-items
+
+Remaining before activation
+Actual installed SDK read/query/index compatibility, full save adapter verification,
+platform limits/recovery tool, all writer integration and focused Astra review; then fresh
+live comparison, maintenance migration, shadow parity and approved production switch.
