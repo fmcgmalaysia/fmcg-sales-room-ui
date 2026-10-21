@@ -9,10 +9,11 @@ function guardProcurementStock({ before, after }) {
   validate(before); validate(after);
   if (stockKey(before) !== stockKey(after) || before.revision !== after.revision
     || !same(before.relations, after.relations) || !same(before.packingHolds, after.packingHolds)) throw Error('Procurement cannot rewrite stock generation, transfers or packing instructions');
+  if (before.tasks.length !== after.tasks.length) throw Error('Procurement cannot create customer demand');
   const changedSources = [];
   for (const task of before.tasks) {
     const next = after.tasks.find(t => t.id === task.id);
-    if (!next || ['customerId', 'orderId', 'sourceLineId', 'dispatched'].some(k => next[k] !== task[k])) throw Error('Procurement cannot remove or retarget customer stock provenance');
+    if (!next || ['customerId', 'orderId', 'sourceLineId', 'requested', 'dispatched'].some(k => next[k] !== task[k])) throw Error('Procurement cannot remove or retarget customer stock provenance');
   }
   for (const source of before.sources) {
     const next = after.sources.find(s => s.id === source.id);

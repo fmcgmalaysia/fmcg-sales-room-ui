@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after9942abf: PURCHASE_STOCK_COMPOSITION.txt. Private Purchase auth,
+original before/after projectors and exact current rows now compose task/event/stock plan;
+in-memory interruption/recovery/replay passed. Found shared original/new lock collision;
+only exact own new-format lock omitted from read-only copied validation tables, never
+real removal. Foreign/legacy/changed locks block.53affectedpass481.8744ms. Real endpoints,
+all co-writers/apply-only guards/capacity/recovery/migration/UI/release remain OPEN/OFF.
+
 CURRENT HEARTBEAT after1cf4cb1: PROCUREMENT_STOCK_GUARD.txt. Added isolated procurement
 before/after stock/share/borrow-promise guard and exact original-domain projection overlay.
 Known zero-share confirmed PO with no customer task supports free-only receipt; unknown

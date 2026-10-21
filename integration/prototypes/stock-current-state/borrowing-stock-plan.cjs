@@ -5,6 +5,7 @@
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
 const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = require('./borrowing-model.cjs');
+const { guardProcurementStock } = require('./procurement-stock-guard.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -61,7 +62,7 @@ function mapTransition({ before, after, rows, event, generation }) {
       const base = old || { _id: id, schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing,
         ea: before.ea, name: before.name || '', sourceKind: 'PURCHASE_SOURCE', sourceId: source.id, sourceTaskId: source.id,
         poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
-      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), receiptAccepted: next.accepted,
+      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId, receiptAccepted: next.accepted,
         replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
@@ -232,4 +233,9 @@ function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution
   const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText, quantity: caseEvent.details.quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, transferId };
+function prepareProcurementTransition({ state, after, rows, event, generation }) {
+  guardProcurementStock({ before: state, after });
+  const next = { ...copy(after), revision: state.revision + 1 };
+  return { state: next, plan: mapTransition({ before: state, after: next, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, transferId };
