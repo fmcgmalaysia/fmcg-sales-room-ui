@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterc8814ea: RECOVERY_ADMIN_READ.txt. Added standalone Admin-only
+read candidate and query-only exact-ID SDK store; no mutation/retry/lock release. Reports
+exclude original input/customer payload; simulated Admin+inspector14pass178.5686ms.
+Not installed/live verified; operational termination/release/rehearsal and all actual
+writer/read/capacity/migration/UI/four-stage release gates remain OPEN/OFF.
+
 CURRENT HEARTBEAT after938fe50: PACKING_SERVER_PREPARATION.txt. Original authenticated
 packing context/PO/current reads now feed private non-photo read/save preparation. Same
 list SEND->START conditional replay passed, no physical deduction. Found/fixed shared

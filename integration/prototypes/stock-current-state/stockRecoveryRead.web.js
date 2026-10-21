@@ -1,0 +1,127 @@
+import { items } from '@wix/data';
+import { webMethod, Permissions } from 'wix-web-module';
+import { createHash } from 'crypto';
+import { Buffer } from 'buffer';
+const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
+const { planCollections } = (() => {
+// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
+// This changes no CMS/employee permission; optional conditional domain plans only.
+function domainCollections(company) {
+  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
+  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
+  throw Error('Known company domain scope required');
+}
+function planCollections(company, domainWrites = false) {
+  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
+  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
+    ...(domainWrites ? domainCollections(company) : [])];
+}
+return { domainCollections, planCollections };
+})();
+const { createRecoveryReadStore } = (() => {
+const copy = value => JSON.parse(JSON.stringify(value));
+// Deliberately QUERY-ONLY. Returned capability has no insert/update/CAS/remove.
+// Only for the Wix Admin inspection boundary, not a business writer fallback.
+function createRecoveryReadStore({ items, company }) {
+  if (typeof items?.query !== 'function' || !['NCT', 'GHR'].includes(company)) throw Error('Private recovery read scope required');
+  const allowed = new Set(planCollections(company, true)), metadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId']);
+  return { read: async (collection, id) => {
+    if (!allowed.has(collection) || typeof id !== 'string' || !id || id.length > 128) throw Error('Private recovery exact scope violation');
+    const page = await items.query(collection).eq('_id', id).limit(2).find({ consistentRead: true });
+    if (!Array.isArray(page?.items) || page.items.length > 1) throw Error('Ambiguous recovery record');
+    const row = page.items[0]; if (!row) return null;
+    if (row._id !== id || row.company !== company) throw Error('Recovery record identity conflict');
+    const result = Object.fromEntries(Object.entries(row).filter(([k]) => !metadata.has(k) && k !== 'stockCommitVersion').map(([k, v]) => [k, copy(v)]));
+    if (Object.hasOwn(row, 'stockCommitVersion')) result._version = row.stockCommitVersion;
+    return result;
+  } };
+}
+return { createRecoveryReadStore };
+})();
+const { inspectStockRecovery } = (() => {
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
+const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+// Private, read-only incident classification. No lock deletion/stealing, inverse writes,
+// automatic retry or new save identity. Server administrator auth must wrap any endpoint.
+async function inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites = false }) {
+  if (typeof store?.read !== 'function' || !['NCT', 'GHR'].includes(company)
+    || !/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId) throw Error('Known original request identity required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const key = hash(company + '/PURCHASE', requestId, memberId), digest = hash(input);
+  const lockId = hash(company + '/PURCHASE', 'LOCK'), controlId = hash(company, 'STOCK_CONTROL'), resultId = hash(key, 'RESULT');
+  const allowed = new Set(planCollections(company, domainWrites));
+  const control = await store.read(journal, controlId), lock = await store.read(journal, lockId);
+  if (!control || control._id !== controlId || control.company !== company || !control._version
+    || !Number.isSafeInteger(control.generation) || control.generation < 0
+    || control.pending && (!control.pending.key || !control.pending.digest)) throw Error('Inventory control unavailable or invalid');
+  const prepared = await store.read(journal, key), result = await store.read(journal, resultId);
+  const packet = { company, operationId: key, generation: control.generation, controlVersion: control._version,
+    pendingOperation: control.pending?.key || null, lockOwner: lock?.owner || null, lockAttempt: lock?.attempt || null,
+    prepared: !!prepared, result: !!result, images: [] };
+  let status;
+  if (lock && (lock._id !== lockId || lock.company !== company || !lock.owner || !lock.attempt)) status = 'REVIEW_INVALID_LOCK';
+  if (!status && (prepared && (prepared._id !== key || prepared.company !== company || prepared.digest !== digest)
+    || result && (result._id !== resultId || result.company !== company || result.digest !== digest)
+    || control.pending?.key === key && control.pending.digest !== digest)) status = 'REVIEW_REQUEST_IDENTITY_CONFLICT';
+  if (!status && prepared) {
+    const plan = prepared.plan;
+    if (!Number.isSafeInteger(prepared.baseGeneration) || prepared.baseGeneration < 0
+      || !Array.isArray(plan?.writes) || !plan.writes.length || plan.writes.length > 30 || Buffer.byteLength(JSON.stringify(plan)) > 180000) status = 'REVIEW_INVALID_PREPARED_PLAN';
+    else {
+      const seen = new Set();
+      for (const change of plan.writes) {
+        const id = change.after?._id, identity = change.collection + ':' + id;
+        if (!allowed.has(change.collection) || !id || seen.has(identity) || change.after.company !== company
+          || change.after._version !== hash(key, change.collection, id)
+          || change.before && (change.before._id !== id || change.before.company !== company || !change.before._version || change.before._version === change.after._version)
+          || change.collection === journal && [lockId, controlId, key, resultId].includes(id)) { status = 'REVIEW_INVALID_PREPARED_PLAN'; break; }
+        seen.add(identity);
+        if (result && !control.pending && control.generation > result.baseGeneration + 1) {
+          packet.images.push({ collection: change.collection, id, version: null, image: 'LATER_GENERATION_NOT_RECHECKED' });
+          continue;
+        }
+        const current = await store.read(change.collection, id);
+        packet.images.push({ collection: change.collection, id, version: current?._version || null,
+          image: same(current, change.after) ? 'AFTER' : same(current, change.before) ? 'BEFORE' : 'CONFLICT' });
+      }
+    }
+  }
+  // A diagnostic is not a snapshot if an execution changed either guard while reading.
+  const afterControl = await store.read(journal, controlId), afterLock = await store.read(journal, lockId);
+  if (!same(control, afterControl) || !same(lock, afterLock)) status = 'CHANGED_RECHECK_LATER';
+  if (!status && lock) status = 'LOCK_PRESENT_STAY_BLOCKED';
+  if (!status && control.pending && control.pending.key !== key) status = 'OTHER_OPERATION_PENDING';
+  if (!status && packet.images.some(i => i.image === 'CONFLICT')) status = 'REVIEW_IMAGE_CONFLICT';
+  if (!status && result) {
+    if (!Number.isSafeInteger(result.baseGeneration) || result.baseGeneration < 0 || !result.outcome?.ok
+      || result.outcome.operationId !== key || result.outcome.generation !== result.baseGeneration + 1
+      || prepared && prepared.baseGeneration !== result.baseGeneration) status = 'REVIEW_INVALID_RESULT';
+    else if (control.pending) status = control.generation === result.baseGeneration && prepared
+      && packet.images.every(i => i.image === 'AFTER') ? 'SAME_REQUEST_FINALIZE_RESULT' : 'REVIEW_RESULT_BARRIER';
+    else status = control.generation >= result.baseGeneration + 1 ? 'CONFIRMED_RESULT' : 'REVIEW_RESULT_GENERATION';
+  }
+  if (!status && control.pending && !prepared) status = 'REVIEW_MISSING_PREPARED_PLAN';
+  if (!status && prepared) {
+    if (prepared.baseGeneration !== control.generation) status = 'REVIEW_PREPARED_GENERATION';
+    else if (control.pending) status = 'SAME_REQUEST_RESUME_PREPARED';
+    else status = packet.images.every(i => i.image === 'BEFORE') ? 'SAME_REQUEST_PREPARED_NOT_APPLIED' : 'REVIEW_MISSING_BARRIER';
+  }
+  if (!status) status = 'NO_RECEIPT_NOT_CONFIRMED';
+  return { ...packet, status, fingerprint: hash(packet, status) };
+}
+return { inspectStockRecovery };
+})();
+// Administrator-only READ: no deletes, retries, uploads, mode changes or business saves.
+export const inspectStockSave = webMethod(Permissions.Admin, async request => {
+  try {
+    if (!request || Object.keys(request).some(k => !['company', 'requestId', 'memberId', 'input'].includes(k))
+      || typeof request.memberId !== 'string' || request.memberId.length > 128 || !Object.hasOwn(request, 'input')
+      || Buffer.byteLength(JSON.stringify(request), 'utf8') > 180000) throw Error('Bounded original save identity required');
+    const { company, requestId, memberId, input } = request;
+    const store = createRecoveryReadStore({ items, company });
+    return { ok: true, report: await inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites: true }) };
+  } catch (_) {
+    return { ok: false, error: 'Inventory recovery inspection unavailable. No recovery performed.' };
+  }
+});
