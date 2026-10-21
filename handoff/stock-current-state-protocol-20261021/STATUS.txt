@@ -1,5 +1,21 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION after9d43c5d: complete isolated commit harness prepared/tested and
+run in actual Wix. User expressly approved at most3permanent conditional removals of
+PROTOCOL-70c1b2:NCTActivity:1cbdee1c74664528d2874f12e56c301d in StockProtocolTest.
+New Admin-only stockProtocolCommitTest.web.js DRAFT embeds exact algorithm/adapter plus
+namespace mapping; full fresh clipboard readback exact to submitted code.3stages invoked
+once each: interrupted passed (pending blocks mixed stock read); resumed passed (same
+persisted plan, no reprepare, generation1); replayed passed (same result, no new quantity
+or generation change). All three own locks conditionally removed, final absent; approval
+fully used.7new synthetic records retained, existing6untouched. LIVE_COMMIT_RESULT.json
+and FULL_PROTOCOL_PROBE.txt record precise scope/results. Not a true network-timeout
+experiment, cross-physical-table test or production activation. No Publish/Pages/main.
+New local harness/mapping/bundle tests3/3pass137.8457ms; syntax check passed. Production
+directories still exactd447185. Next safe implementation: scoped inventory writer plans,
+starting receive/correct, while preserving existing authorization and cumulative semantics.
+Before any production file edit: fresh live/repo comparison; no blanket G0/ACTIVE claim.
+
 Continuation afterb9abb28: actual SDK adapter and query exercised via new Admin-only
 stockProtocolAdapterTest.web.js DRAFT. Previous diagnostic fresh read exact before action;
 old functions left unchanged. New code embeds candidate adapter/query exactly ignoring

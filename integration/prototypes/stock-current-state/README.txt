@@ -1,5 +1,11 @@
 G0 stock commit protocol proof — OFFLINE ONLY — NOT PRODUCTION READY
 
+2026-10-21 actual SDK continuation: stockProtocolCommitTest.web.js is an isolated Admin
+DRAFT diagnostic. Exactly3approved lock-release cycles and interrupted/resumed/replayed
+Wix stages passed in StockProtocolTest. Business collections are not used; no production
+imports/activation. See handoff FULL_PROTOCOL_PROBE.txt/LIVE_COMMIT_RESULT.json. Actual
+application failure recovery is evidenced, not all network timeout or platform limits.
+
 Read candidate continuation: current-query.cjs provides bounded company-scoped SDK-shaped
 product/source/claim queries;7new tests pass. No production imports or live index changes.
 See handoff CURRENT_QUERY_CONTRACT.txt for limits; mock paging is not measured Wix speed.
