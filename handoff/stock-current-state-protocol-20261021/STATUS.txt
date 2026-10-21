@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after6c261d5: SHADOW_SOURCE_CUSTOMER_PARITY.txt. Added exact source+
+customer+product diagnostic comparator and complete paginated private current snapshot
+reader, no daily history fallback/mutations. Equal totals/wrong customers fail; null stays
+review;18checks440.7504ms. Offline1000-source comparator is NOT production capacity proof.
+All actual writer/read/capacity/lifecycle/recovery/migration/UI/release gates remain open.
+
 CURRENT HEARTBEAT afterb021dea: BOOTSTRAP_PREFLIGHT.txt. Pure maintenance-window preflight
 blocks locks/pending/unconfirmed saves/current-target overwrite, resolves actual source PO
 IDs and produces private converter images/checkpoint only. No migration/ACTIVE. Fixed
