@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -165,4 +165,20 @@ function prepareSalesDemand({ state, rows, event, generation }) {
     requested: d.requested, mode: d.mode, allocations: d.allocations });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, transferId };
+function prepareShipmentDispatch({ state, rows, event, priorShipment, generation }) {
+  const shipment = event?.details?.shipment;
+  if (!event || event.action !== 'CUSTOMER_SHIPMENT_CHANGED' || event.result !== 'SAVED' || !event._id || event.title !== event._id
+    || !event.initiatedByStaffId || !event.activityTime || shipment?.status !== 'DISPATCHED' || shipment.company !== state.company
+    || event.description !== shipment.id || event.image !== shipment.customerId || !shipment.dispatch?.reference
+    || priorShipment?.status !== 'INVOICED' || priorShipment.company !== state.company || priorShipment.id !== shipment.id
+    || priorShipment.customerId !== shipment.customerId || priorShipment.revision !== event.details.beforeRevision
+    || !priorShipment.invoice?.number || !same(priorShipment.invoice, shipment.invoice) || !same(priorShipment.lines, shipment.lines)) throw Error('Original invoiced dispatch transition required');
+  for (const line of shipment.lines) {
+    const task = state.tasks.find(t => t.id === line.taskId);
+    if (!task || task.customerId !== shipment.customerId || task.orderId !== line.orderId || task.sourceLineId !== line.sourceLineId
+      || line.barcode !== state.barcode || line.packing !== state.packing) throw Error('Dispatch task identity conflict');
+  }
+  const { after } = dispatchReserved(state, { expectedRevision: state.revision, lines: shipment.lines });
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, transferId };

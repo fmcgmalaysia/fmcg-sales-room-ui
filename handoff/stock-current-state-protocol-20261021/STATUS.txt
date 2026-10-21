@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 after464aa9b: CURRENT_DISPATCH.txt. Candidate immutable
+INVOICED->DISPATCHED event maps all changed products into ONE fenced plan; consumes only
+this invoice's exact task/source holds, keeps other holds and borrowing debt. Loaded or
+invoice alone cannot deduct.12original+new tests208.4876ms; affected54pass352.7895ms.
+This is existing shipment-ledger compatibility, NOT completed new packing-list outflow
+or enabled Support invoice. Actual auth/dispatch endpoint, new packing-list lifecycle,
+all-writer/current-read/capacity/recovery/migration/UI/release remain open; production OFF.
+
 CURRENT HEARTBEAT 2026-10-22 after7fbee19: SALES_CURRENT_DEMAND.txt. Original Sales
 validation seam plus current demand/release transition/plan added. Split preserves total,
 increase only demand; reduction releases exact original saved source allocations, not

@@ -274,7 +274,28 @@ function adjustDemand(before, input) {
     // infer a release from an aggregate requested delta or steal another batch's stock.
   });
 }
-return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, adjustDemand,
+function dispatchReserved(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    if (!Array.isArray(input.lines) || !input.lines.length || new Set(input.lines.map(l => l.taskId)).size !== input.lines.length) throw Error('Distinct validated shipment lines required');
+    for (const line of input.lines) {
+      const task = state.tasks.find(t => t.id === line.taskId);
+      if (!task || !positive(line.quantity) || !Array.isArray(line.sources) || !line.sources.length
+        || new Set(line.sources.map(s => s.sourceTaskId)).size !== line.sources.length
+        || line.sources.some(s => !positive(s.quantity)) || sum(line.sources.map(s => s.quantity)) !== line.quantity
+        || state.packingHolds.heldByTask[task.id] < line.quantity) throw Error('Confirmed shipment reservation required');
+      // Consume THIS invoice reservation only; other active instructions stay held.
+      state.packingHolds.heldByTask[task.id] -= line.quantity;
+      for (const portion of line.sources) {
+        const source = state.sources.find(s => s.id === portion.sourceTaskId);
+        if (!source || portion.quantity > (source.claims[task.id] || 0)) throw Error('Dispatch exceeds source customer ownership');
+        source.claims[task.id] -= portion.quantity; source.onHand -= portion.quantity;
+        source.dispatchedByTask = { ...(source.dispatchedByTask || {}), [task.id]: (source.dispatchedByTask?.[task.id] || 0) + portion.quantity };
+      }
+      task.dispatched += line.quantity;
+    }
+  });
+}
+return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
 
 })();
