@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 after7fbee19: SALES_CURRENT_DEMAND.txt. Original Sales
+validation seam plus current demand/release transition/plan added. Split preserves total,
+increase only demand; reduction releases exact original saved source allocations, not
+aggregate guessing/other batch stock. Borrowing/packing/dispatched protections retained.
+12original+new checks250.208ms; final affected50pass308.3389ms. Real cross-site Sales
+authority, implicit-source release without saved allocation evidence, full writer/read/
+capacity/recovery/migration/UI/release gates remain unfinished. No production change/OFF.
+
 CURRENT HEARTBEAT 2026-10-22 after8f8aa81: ALLOCATION_AUTHORITY.txt. Candidate ordinary
 allocation now rejects ALL customer claim reductions, including release-then-assign
 bypass; only free-stock assignment here. Original Purchase permission+allocation/PO

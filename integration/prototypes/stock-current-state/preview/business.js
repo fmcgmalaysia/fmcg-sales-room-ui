@@ -242,7 +242,39 @@ function allocateCumulative(before, input) {
     source.receiptPolicy = 'EXPLICIT_ONLY';
   });
 }
-return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch,
+function adjustDemand(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const task = state.tasks.find(t => t.id === input.taskId);
+    if (!task || !['INCREASE', 'SPLIT', 'REDUCE'].includes(input.mode) || !positive(input.requested)
+      || input.requested > 9999 || input.beforeRequested !== task.requested || !Array.isArray(input.allocations)
+      || new Set(input.allocations.map(a => a.sourceTaskId)).size !== input.allocations.length
+      || (input.mode === 'INCREASE' ? input.requested <= task.requested : input.mode === 'SPLIT' ? input.requested !== task.requested : input.requested >= task.requested)
+      || input.mode !== 'REDUCE' && input.allocations.length) throw Error('Validated demand adjustment required');
+    for (const change of input.allocations) {
+      const source = state.sources.find(s => s.id === change.sourceTaskId);
+      if (!source || !Array.isArray(change.targets) || new Set(change.targets.map(t => t.taskId)).size !== change.targets.length) throw Error('Distinct cancellation source allocation required');
+      const prior = cumulativeTargets(before, source.id), targets = new Map(change.targets.map(t => [t.taskId, t.quantity]));
+      for (const [id, quantity] of targets) {
+        if (!count(quantity) || !state.tasks.some(t => t.id === id)) throw Error('Known cancellation allocation required');
+      }
+      const ids = new Set([...prior.map(t => t.taskId), ...targets.keys()]);
+      for (const id of ids) {
+        if (id !== task.id && (targets.get(id) || 0) !== (prior.find(t => t.taskId === id)?.quantity || 0)) throw Error('Cancellation cannot alter another customer allocation');
+      }
+      const shipped = source.dispatchedByTask?.[task.id] || 0, current = source.claims[task.id] || 0;
+      const cumulative = targets.get(task.id) || 0, release = current + shipped - cumulative;
+      if (release < 0 || release > current) throw Error('Cancellation cannot create stock or remove dispatched provenance');
+      if (release && state.packingHolds.heldByTask[task.id] > 0) throw Error('Packing task holds cancellation');
+      if (release && state.relations.some(r => remaining(r) > 0 && [r.lenderSourceId, r.replacementSourceId].includes(source.id)
+        && [r.borrowerTaskId, r.lenderTaskId].includes(task.id))) throw Error('Resolve borrowing before releasing linked customer stock');
+      if (release) { source.claims[task.id] = current - release; source.available += release; source.receiptPolicy = 'EXPLICIT_ONLY'; }
+    }
+    task.requested = input.requested;
+    // Missing implicit/batch ownership evidence fails final coverage validation; never
+    // infer a release from an aggregate requested delta or steal another batch's stock.
+  });
+}
+return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, adjustDemand,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
 
 })();
