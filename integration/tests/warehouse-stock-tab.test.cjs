@@ -10,6 +10,10 @@ test('stock view mounts in existing tables, hides duplicate controls and returni
  const f=fixture();f.choose('stock');assert.deepEqual(f.renders,['NCT']);assert.equal(f.node('.filters').hidden,true);assert.equal(f.node('.title-row').hidden,true);
  f.choose('customers');assert.equal(f.node('.filters').hidden,false);assert.equal(f.node('.title-row').hidden,false);assert.equal(f.sent.some(m=>/SAVE|RECEIPT_REQUEST/.test(m.type)),false);
 });
+test('Warehouse layout styles cannot override the stock view hidden controls',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../../warehouse-room/style.css'),'utf8');
+ assert.match(css,/\.title-row\[hidden\],#track\[hidden\],\.filters\[hidden\],#taskSignals\[hidden\]\{display:none!important\}/);
+});
 test('open receiving and stock detail protect same-window tab/company transitions',()=>{
  const f=fixture();f.node('entry').open=true;f.choose('stock');assert.equal(f.renders.length,0);f.node('entry').open=false;f.choose('stock');f.state.busy=true;
  f.node('company').value='GHR';f.node('company').onchange();assert.equal(f.node('company').value,'NCT');f.choose('history');assert.equal(f.node('.filters').hidden,true);
