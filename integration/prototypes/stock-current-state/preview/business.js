@@ -208,8 +208,39 @@ function cumulativeTargets(state, sourceId) {
   return [...ids].sort().map(taskId => ({ taskId,
     quantity: sum([source.claims[taskId] || 0, source.dispatchedByTask?.[taskId] || 0]) })).filter(t => t.quantity > 0);
 }
+function allocateCumulative(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    if (!source || !Array.isArray(input.targets) || !String(input.reason || '').trim()
+      || new Set(input.targets.map(t => t.taskId)).size !== input.targets.length) throw Error('Validated cumulative allocation required');
+    const next = {};
+    for (const target of input.targets) {
+      const shipped = source.dispatchedByTask?.[target.taskId] || 0;
+      if (!state.tasks.some(t => t.id === target.taskId) || !count(target.quantity) || target.quantity < shipped) throw Error('Allocation cannot remove dispatched provenance');
+      next[target.taskId] = target.quantity - shipped;
+    }
+    for (const [taskId, shipped] of Object.entries(source.dispatchedByTask || {})) {
+      if (shipped && !Object.hasOwn(next, taskId)) throw Error('Dispatched allocation target must remain');
+    }
+    const ids = new Set([...Object.keys(source.claims), ...Object.keys(next)]);
+    for (const taskId of ids) {
+      if ((next[taskId] || 0) < (source.claims[taskId] || 0)) {
+        // Existing task-total packing evidence cannot prove source-specific release.
+        if (state.packingHolds.heldByTask[taskId] > 0) throw Error('Packing task holds allocation');
+        if (state.relations.some(r => remaining(r) > 0
+          && [r.lenderSourceId, r.replacementSourceId].includes(source.id)
+          && [r.borrowerTaskId, r.lenderTaskId].includes(taskId))) throw Error('Outstanding borrowing allocation requires dedicated transfer return or repayment');
+      }
+    }
+    const reserved = sum(Object.values(next));
+    if (reserved > source.onHand - source.isolated) throw Error('Allocation exceeds usable physical stock');
+    source.claims = next;
+    source.available = source.onHand - source.isolated - reserved;
+    source.receiptPolicy = 'EXPLICIT_ONLY';
+  });
+}
 return { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch,
-  procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
+  allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
 
 })();
 window.TransferPerson = (() => {

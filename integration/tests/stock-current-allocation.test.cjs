@@ -1,0 +1,78 @@
+const test = require('node:test'), assert = require('node:assert/strict'), load = require('./load-master-module.cjs');
+const { createPlannerAllocationOperations, allocationVersion } = load('plannerAllocation.js');
+const { validateOriginalAllocation } = require('../prototypes/stock-current-state/original-allocation-validation.cjs');
+const { allocateCumulative, dispatch, approveBorrow } = require('../prototypes/stock-current-state/borrowing-model.cjs');
+const { prepareCurrentAllocation } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
+const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
+const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
+const copy = value => JSON.parse(JSON.stringify(value));
+function fixture() {
+  const identity = { company: 'NCT', barcode: '001', packing: '12', ea: 12 };
+  const tasks = ['A', 'B'].map(id => ({ ...identity, id, customerId: id, orderId: 'O' + id, sourceLineId: 'L' + id,
+    ord: 10, requested: 10, dispatched: 0, po: 'PO-' + id, supplierId: 'SUP', warehouse: { accepted: id === 'A' ? 15 : 0 } }));
+  const workspace = { company: 'NCT', tasks }, activity = [];
+  const input = () => ({ action: 'ALLOCATE', sourceTaskId: 'A', version: allocationVersion(workspace, activity),
+    targets: [{ taskId: 'A', quantity: 10 }, { taskId: 'B', quantity: 5 }], reason: 'Allocate received stock' });
+  const args = { createPlannerAllocationOperations, company: 'NCT', staff: { memberId: 'M', staffId: 'P', staffName: 'LAW' },
+    requestId: '11111111-1111-4111-8111-111111111111', workspace, activity, now: () => new Date('2026-10-22T03:00:00Z') };
+  const state = { ...identity, complete: true, revision: 0, tasks,
+    packingHolds: { company: 'NCT', complete: true, scope: 'TASK_TOTAL', version: 'H0', heldByTask: { A: 0, B: 0 } },
+    sources: ['A', 'B'].map(id => ({ ...identity, id, ownerTaskId: id, poId: 'PO-' + id, orderId: 'O' + id, sourceLineId: 'L' + id,
+      poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', ownerShare: 10, planned: id === 'A' ? 15 : 10,
+      accepted: id === 'A' ? 15 : 0, onHand: id === 'A' ? 15 : 0, isolated: 0, available: id === 'A' ? 5 : 0,
+      claims: id === 'A' ? { A: 10 } : {} })), relations: [] };
+  return { identity, workspace, activity, input, args, state };
+}
+test('original allocation validator preserves original event and no business mutations', async () => {
+  const f = fixture(), before = JSON.stringify(f.workspace);
+  const prepared = await validateOriginalAllocation({ ...f.args, input: f.input() });
+  assert.equal(prepared.event.action, 'PLANNER_ALLOCATION_SAVED');
+  assert.equal(prepared.event.initiatedByStaffId, 'P'); assert.equal(prepared.event.details.targets[1].quantity, 5);
+  assert.equal(f.activity.length, 0); assert.equal(JSON.stringify(f.workspace), before);
+});
+test('original stale/demand/product/invoice/usable quantity guards remain active', async () => {
+  for (const mutate of [f => { f.workspace.tasks[0].warehouse.accepted = 14; }, f => { f.workspace.tasks[1].barcode = 'OTHER'; },
+    f => { f.workspace.tasks[1].salesInvoiceNumber = 'INV'; }, f => { f.workspace.tasks[1].ord = 4; }]) {
+    const f = fixture(); mutate(f); await assert.rejects(validateOriginalAllocation({ ...f.args, input: f.input() }));
+  }
+  const f = fixture(), input = f.input(); input.version = 'OLD'; await assert.rejects(validateOriginalAllocation({ ...f.args, input }), /changed/);
+});
+test('cumulative targets subtract dispatched cartons, preserving source provenance and physical balance', () => {
+  const f = fixture(), shipped = dispatch(f.state, { expectedRevision: 0, taskId: 'A', sourceId: 'A', quantity: 4 }).after;
+  const result = allocateCumulative(shipped, { expectedRevision: 1, sourceId: 'A', reason: 'Allocate free stock',
+    targets: [{ taskId: 'A', quantity: 10 }, { taskId: 'B', quantity: 5 }] }).after;
+  assert.equal(result.sources[0].claims.A, 6); assert.equal(result.sources[0].claims.B, 5);
+  assert.equal(result.sources[0].onHand, 11); assert.equal(result.sources[0].dispatchedByTask.A, 4);
+  assert.equal(result.sources[0].available, 0); assert.equal(result.sources[0].receiptPolicy, 'EXPLICIT_ONLY');
+  assert.throws(() => allocateCumulative(shipped, { expectedRevision: 1, sourceId: 'A', reason: 'Wrong', targets: [{ taskId: 'A', quantity: 3 }] }), /dispatched/);
+});
+test('allocation cannot erase active borrowing claims or its promised future replacement', () => {
+  const f = fixture(), borrowed = approveBorrow(f.state, { expectedRevision: 0, id: 'R', lenderSourceId: 'A', replacementSourceId: 'B',
+    borrowerTaskId: 'B', quantity: 3, approvedBy: 'P', reason: 'Fill container' }).after;
+  const before = JSON.stringify(borrowed);
+  assert.throws(() => allocateCumulative(borrowed, { expectedRevision: 1, sourceId: 'A', reason: 'Bypass return',
+    targets: [{ taskId: 'A', quantity: 10 }] }), /Outstanding borrowing/);
+  assert.equal(JSON.stringify(borrowed), before); assert.equal(borrowed.relations[0].repaid, 0);
+});
+test('packing-held claim reductions and isolated physical quantities cannot be reallocated', () => {
+  const f = fixture(); f.state.packingHolds.heldByTask.A = 2;
+  assert.throws(() => allocateCumulative(f.state, { expectedRevision: 0, sourceId: 'A', reason: 'Move', targets: [{ taskId: 'A', quantity: 9 }] }), /Packing/);
+  f.state.packingHolds.heldByTask.A = 0; f.state.sources[0].available = 3; f.state.sources[0].isolated = 2;
+  assert.throws(() => allocateCumulative(f.state, { expectedRevision: 0, sourceId: 'A', reason: 'Move', targets: [{ taskId: 'A', quantity: 10 }, { taskId: 'B', quantity: 5 }] }), /usable/);
+});
+test('validated original allocation maps to same event and exact current claims, never stock receipt', async () => {
+  const f = fixture(), validated = await validateOriginalAllocation({ ...f.args, input: f.input() });
+  const key = stockKey(f.identity), pid = hash('NCT', key, 'PURCHASE_SOURCE', 'A');
+  const base = { _version: 'V0', schemaVersion: 1, company: 'NCT', stockKey: key, revision: 0, checkpointGeneration: 0, status: 'ACTIVE', reviewCodes: [] };
+  const rows = { complete: true, transfers: [], positions: [{ ...base, _id: pid, sourceKind: 'PURCHASE_SOURCE', sourceTaskId: 'A', sourceId: 'A', poId: 'PO-A',
+    receiptAccepted: 15, replacementReceived: 0, dispatched: 0, onHand: 15, available: 5, isolated: 0, reservedUsable: 10 }],
+    claims: [{ ...base, _id: hash('NCT', pid, 'A'), positionId: pid, taskId: 'A', customerId: 'A', orderId: 'OA', sourceLineId: 'LA', reservedUsable: 10, isolatedAttributed: 0 }],
+    product: { ...base, _id: hash('NCT', key), onHand: 15, available: 5, isolated: 0, reservedUsable: 10, reviewRequired: false } };
+  const result = prepareCurrentAllocation({ state: f.state, rows, event: validated.event, generation: 0 });
+  assert.deepEqual(result.plan.writes[0].after.details, validated.event.details);
+  assert.equal(result.plan.writes.some(w => w.after.action === 'WAREHOUSE_RECEIPT_SAVED'), false);
+  assert.equal(result.plan.writes.find(w => w.collection === 'StockProducts').after.onHand, 15);
+  assert.equal(result.plan.writes.find(w => w.collection === 'StockClaims' && w.after.taskId === 'B').after.reservedUsable, 5);
+  const bad = copy(validated.event); bad.details.accepted = 999;
+  assert.throws(() => prepareCurrentAllocation({ state: f.state, rows, event: bad, generation: 0 }), /authority/);
+});

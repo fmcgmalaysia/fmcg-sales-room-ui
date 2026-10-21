@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 aftercf35464: CURRENT_ALLOCATION.txt. Isolated original
+allocation validation plus cumulative-to-current claim transition/plan added. Dispatched
+provenance retained; task-held reductions and active relation claim reductions refuse.
+Original allocation event retained without fake receipt or new stock.10focused original+
+new checks pass265.9195ms; changed model/plan/authority/preview run56pass417.5326ms.
+Actual allocation endpoint and old arbitrary cross-customer redistribution versus new
+borrowing-policy gate remain unresolved; do not enable adapter as unrestricted route.
+Production unchanged, all-writer/capacity/recovery/migration/release still open, ACTIVE OFF.
+
 CURRENT HEARTBEAT 2026-10-22 aftera45c2b6: WAREHOUSE_AUTHORITY.txt. Isolated real
 Warehouse auth/PO/receipt validators now compose with shared original product facts and
 exact current product reads, all products inside ONE barrier. Fenced prepare integration

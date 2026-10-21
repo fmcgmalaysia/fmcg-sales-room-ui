@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -139,4 +139,20 @@ function prepareBorrowReturn({ state, rows, input, event, generation }) {
   const { after } = returnUnusedBorrow(state, input);
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, transferId };
+function prepareCurrentAllocation({ state, rows, event, generation }) {
+  // Legacy original allocation details do not contain company. Server authority must
+  // bind the workspace company; preserve original event details without adding fields.
+  if (!event || event.action !== 'PLANNER_ALLOCATION_SAVED' || event.result !== 'SAVED'
+    || !event._id || event._id !== event.title || !event.initiatedByStaffId || !event.activityTime
+    || event.details?.sourceTaskId !== event.imageAltText) throw Error('Original validated allocation event required');
+  const source = state.sources.find(s => s.id === event.details.sourceTaskId);
+  if (!source || source.accepted !== event.details.accepted || event.description !== source.orderId) throw Error('Allocation source authority mismatch');
+  for (const target of event.details.targets || []) {
+    const task = state.tasks.find(t => t.id === target.taskId);
+    if (!task || target.orderId !== task.orderId || target.sourceLineId !== task.sourceLineId || target.customerId !== task.customerId) throw Error('Allocation demand authority mismatch');
+  }
+  const { after } = allocateCumulative(state, { expectedRevision: state.revision, sourceId: source.id,
+    targets: event.details.targets, reason: event.details.reason });
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, transferId };
