@@ -7,7 +7,7 @@ export function requirePackingStaff(member,records,department){
  if(!['SUPPORT','WAREHOUSE'].includes(department)||!member?._id||member.status!=='APPROVED'||!member.loginEmail)throw Error('Sign in with an approved Master staff account.');
  const matches=records.filter(row=>String(row.staffEmail||'').trim().toLowerCase()===member.loginEmail.trim().toLowerCase()),row=matches.length===1?matches[0]:null;
  if(!row||row.description!==member._id||String(row.staffStatus).toUpperCase()!=='ACTIVE'||!row.title||!row.staffName)throw Error('Master staff access is not configured.');
- if(String(row.role).toUpperCase()!=='SUPER ADMIN'&&!(row.departments||[]).map(value=>String(value).toUpperCase()).includes(department))throw Error('This packing department is not authorized.');
+ if(String(row.role).toUpperCase()!=='SUPER ADMIN'&&!(department==='WAREHOUSE'&&String(row.role).trim().toUpperCase()==='TOP MANAGEMENT')&&!(row.departments||[]).map(value=>String(value).toUpperCase()).includes(department))throw Error('This packing department is not authorized.');
  return {memberId:member._id,staffId:row.title,staffName:row.staffName,packingDepartment:department};
 }
 export function projectPackingContext(context){
