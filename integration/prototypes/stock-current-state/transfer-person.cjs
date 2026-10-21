@@ -10,9 +10,10 @@ function transferPerson({ taskId, relations, variant = 'TASK_GRID' }) {
   if (typeof taskId !== 'string' || !taskId || !Array.isArray(relations) || !Object.hasOwn(shapes, variant)) throw Error('Verified person display context required');
   for (const r of relations) {
     if (!r.id || !r.borrowerTaskId || !r.lenderTaskId || !Number.isSafeInteger(r.quantity) || r.quantity <= 0
-      || !Number.isSafeInteger(r.repaid) || r.repaid < 0 || r.repaid > r.quantity) throw Error('Transfer display requires known quantities');
+      || !Number.isSafeInteger(r.repaid) || r.repaid < 0 || !Number.isSafeInteger(r.returned ?? 0) || (r.returned || 0) < 0
+      || r.repaid + (r.returned || 0) > r.quantity) throw Error('Transfer display requires known quantities');
   }
-  const halo = relations.some(r => (r.borrowerTaskId === taskId || r.lenderTaskId === taskId) && r.repaid < r.quantity);
+  const halo = relations.some(r => (r.borrowerTaskId === taskId || r.lenderTaskId === taskId) && r.repaid + (r.returned || 0) < r.quantity);
   // Expanded canvas retains original body coordinates and scale, adding room above.
   // currentColor inherits the existing orange/blue state; no gradient, triangle or badge.
   const svg = halo

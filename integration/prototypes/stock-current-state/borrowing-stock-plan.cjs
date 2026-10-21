@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -89,14 +89,14 @@ function mapTransition({ before, after, rows, event, generation }) {
     if (old) {
       consumedTransfers.add(id);
       if (old.company !== company || !old._version || !count(old.revision) || old.stockKey !== key
-        || old.action !== 'STOCK_TRANSFER_CURRENT' || old.status !== (prior?.repaid === prior?.quantity ? 'CLOSED' : 'ACTIVE')
+        || old.action !== 'STOCK_TRANSFER_CURRENT' || old.status !== (prior && relationRemaining(prior) === 0 ? 'CLOSED' : 'ACTIVE')
         || !same(old.details?.relation, prior)) throw Error('Transfer snapshot conflict');
     } else if (prior) throw Error('Transfer snapshot missing');
     if (same(prior, relation)) continue;
     writes.push({ collection: journal, before: copy(old), after: { ...(old || {}), _id: id, title: relation.id,
       company, stockKey: key, description: relation.id, action: 'STOCK_TRANSFER_CURRENT', result: 'SAVED',
       revision: (old?.revision || 0) + 1, activityTime: event.activityTime, checkpointGeneration: generation + 1,
-      status: relation.repaid === relation.quantity ? 'CLOSED' : 'ACTIVE', details: { relation: copy(relation) } } });
+      status: relationRemaining(relation) === 0 ? 'CLOSED' : 'ACTIVE', details: { relation: copy(relation) } } });
   }
   if (consumedPositions.size !== positions.size || consumedClaims.size !== claims.size || consumedTransfers.size !== transfers.size) throw Error('Snapshot contains unrelated stock rows');
   const totals = summary(after);
@@ -124,11 +124,19 @@ function prepareBorrowingReceipt({ state, rows, event, generation }) {
     if (!source || source.poId !== event.description || source.accepted !== line.beforeAccepted
       || !source.orderId || !source.sourceLineId || line.orderId !== source.orderId || line.sourceLineId !== source.sourceLineId
       || source.planned !== line.planned || !count(line.beforeRejected) || !count(line.rejected)
-      || line.rejected < line.beforeRejected || !['DELIVERY', 'PARTIAL', 'SHORT', 'DAMAGED', 'WRONG', 'OTHER'].includes(line.kind)) throw Error('Original accepted receipt context mismatch');
-    after = receive(after, { expectedRevision: after.revision, sourceId: source.id, cumulativeAccepted: line.accepted }).after;
+      || line.kind !== 'CORRECTION' && line.rejected < line.beforeRejected
+      || !['DELIVERY', 'PARTIAL', 'SHORT', 'DAMAGED', 'WRONG', 'OTHER', 'CORRECTION'].includes(line.kind)) throw Error('Original accepted receipt context mismatch');
+    const input = { expectedRevision: after.revision, sourceId: source.id, cumulativeAccepted: line.accepted, reason: line.reason };
+    after = (line.kind === 'CORRECTION' ? correctAccepted(after, input) : receive(after, input)).after;
   }
   // One product revision per atomic PO save, including multiple source lines.
   after.revision = state.revision + 1;
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowingReceipt, transferId };
+function prepareBorrowReturn({ state, rows, input, event, generation }) {
+  checkEvent(event, state.company, 'STOCK_TRANSFER_RETURNED');
+  if (event.initiatedByStaffId !== input.approvedBy || !same(event.details.return, input)) throw Error('Return approval event mismatch');
+  const { after } = returnUnusedBorrow(state, input);
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, transferId };

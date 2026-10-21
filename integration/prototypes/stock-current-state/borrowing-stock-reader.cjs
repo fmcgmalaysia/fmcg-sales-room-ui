@@ -4,7 +4,7 @@
 // must retain existing permission/PO/packing/finance checks. No production imports.
 const { stockKey } = require('./current-model.cjs');
 const { hash } = require('./commit-proof.cjs');
-const { prepareBorrowApproval, prepareBorrowingReceipt } = require('./borrowing-stock-plan.cjs');
+const { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt } = require('./borrowing-stock-plan.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 function createBorrowingStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
@@ -13,7 +13,7 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     const metrics = { exactReads: 0, queries: 0 };
     const snapshot = await protocol.readSnapshot(async () => {
       const authority = await readAuthority();
-      if (!authority?.state || authority.state.company !== company || !['APPROVE', 'RECEIVE'].includes(authority.kind)) throw Error('Verified borrowing authority required');
+      if (!authority?.state || authority.state.company !== company || !['APPROVE', 'RETURN', 'RECEIVE'].includes(authority.kind)) throw Error('Verified borrowing authority required');
       const key = stockKey(authority.state), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       async function exact(collection, id) {
         metrics.exactReads++;
@@ -46,7 +46,8 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     });
     const { authority, rows } = snapshot.rows;
     const args = { state: authority.state, rows, event: authority.event, generation: snapshot.generation };
-    const result = authority.kind === 'APPROVE' ? prepareBorrowApproval({ ...args, input: authority.input }) : prepareBorrowingReceipt(args);
+    const result = authority.kind === 'RECEIVE' ? prepareBorrowingReceipt(args)
+      : (authority.kind === 'APPROVE' ? prepareBorrowApproval : prepareBorrowReturn)({ ...args, input: authority.input });
     return { ...result, generation: snapshot.generation, metrics };
   };
 }

@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT OVERNIGHT OVERRIDE 2026-10-22: read OVERNIGHT_CLOSEOUT.txt first. Unused-return
+and correction candidates plus same-model local simulator added; halo resolves on actual
+repayment/approved unused return and reopens on correction.162candidate checks+2preview
+checks+32protected checks passed (separate reported runs). GitHub branch initially pushed;
+final commit/PR status recorded in closeout after confirmation. Actual production authority,
+all-writer coverage, capacity/recovery/migration and UI integration remain UNFINISHED.
+No Pages/Wix publish/ACTIVE; formal borrowing is NOT available for real testing yet.
+Master editor works; no false tool-connectivity excuse. No repeated CMS tests or deletes.
+
 USER DISPLAY OVERRIDE 2026-10-22: TRANSFER_PERSON.txt replaces triangle with original
 person+halo for BOTH parties while any relation remains unresolved. Remove halo only
 after all linked relations resolve; existing orange/blue state logic remains. Isolated

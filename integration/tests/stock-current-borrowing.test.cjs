@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-const { validate, approveBorrow, receive, dispatch, procurementOutstanding, taskCoverage, cumulativeTargets } = require('../prototypes/stock-current-state/borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, procurementOutstanding, taskCoverage, cumulativeTargets } = require('../prototypes/stock-current-state/borrowing-model.cjs');
 const identity = { company: 'NCT', barcode: '0001', packing: '24x1', ea: 24 };
 function fixture() {
   return { ...identity, complete: true, revision: 0,
@@ -162,4 +162,32 @@ test('explicit allocation policy repays bound quantity but does not autoexpand o
   assert.equal(source(after, 'A').claims.B, 30);
   assert.equal(source(after, 'A').claims.A, 0);
   assert.equal(source(after, 'A').available, 70);
+});
+test('unused borrowing can be returned with approval without pretending it was received repayment', () => {
+  const s = borrow(fixture());
+  const after = returnUnusedBorrow(s, { expectedRevision: s.revision, relationId: 'REL-1', quantity: 30,
+    approvedBy: 'P1', reason: 'Packing not needed' }).after;
+  assert.equal(source(after, 'B').claims.B, 100); assert.equal(source(after, 'B').claims.A, 0);
+  assert.equal(after.relations[0].returned, 30); assert.equal(after.relations[0].repaid, 0);
+  assert.deepEqual(procurementOutstanding(after, 'B'), []);
+  assert.equal(source(recv(after, 100), 'A').claims.A, 100);
+});
+test('already shipped or held borrowing cannot be undone by removing the relationship', () => {
+  const s = send(borrow(fixture()), 'A', 'S-B', 1);
+  assert.throws(() => returnUnusedBorrow(s, { expectedRevision: s.revision, relationId: 'REL-1', quantity: 29,
+    approvedBy: 'P1', reason: 'Cancel' }), /already used/);
+});
+test('receipt correction reopens only reversed repayments after free and owner stock are exhausted', () => {
+  const s = recv(borrow(fixture()), 100);
+  const after = correctAccepted(s, { expectedRevision: s.revision, sourceId: 'S-A', cumulativeAccepted: 20, reason: 'Correction' }).after;
+  assert.equal(source(after, 'A').claims.A, 0); assert.equal(source(after, 'A').claims.B, 20);
+  assert.equal(after.relations[0].repaid, 20); assert.equal(procurementOutstanding(after, 'B')[0].remaining, 10);
+  assert.equal(source(after, 'A').onHand, 20);
+  assert.equal(recv(after, 100).relations[0].repaid, 30);
+});
+test('correction protects packing and actual dispatched provenance', () => {
+  let s = recv(borrow(fixture()), 100); s.packingHolds.heldByTask.B = 1;
+  assert.throws(() => correctAccepted(s, { expectedRevision: s.revision, sourceId: 'S-A', cumulativeAccepted: 20, reason: 'Correction' }), /Packing/);
+  s = send(recv(borrow(fixture()), 100), 'B', 'S-A', 30);
+  assert.throws(() => correctAccepted(s, { expectedRevision: s.revision, sourceId: 'S-A', cumulativeAccepted: 20, reason: 'Correction' }), /shipped/);
 });

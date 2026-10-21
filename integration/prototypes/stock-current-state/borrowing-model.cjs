@@ -13,7 +13,7 @@ const sum = values => {
   return result;
 };
 const reserved = (state, taskId) => sum(state.sources.map(s => s.claims[taskId] || 0));
-const remaining = relation => relation.quantity - relation.repaid;
+const remaining = relation => relation.quantity - relation.repaid - (relation.returned || 0);
 const outgoing = (state, sourceId) => sum(state.relations.filter(r => r.replacementSourceId === sourceId).map(remaining));
 const incoming = (state, taskId) => sum(state.relations.filter(r => r.lenderTaskId === taskId).map(remaining));
 function validate(state) {
@@ -48,7 +48,9 @@ function validate(state) {
     const from = sources.get(relation.lenderSourceId), future = sources.get(relation.replacementSourceId);
     if (!relation.id || ids.has(relation.id) || !positive(relation.sequence) || sequences.has(relation.sequence)
       || !from || !future || from.id === future.id || !positive(relation.quantity) || !count(relation.repaid)
-      || relation.repaid > relation.quantity || !relation.approvedBy || !relation.reason
+      || !count(relation.returned ?? 0) || relation.repaid + (relation.returned || 0) > relation.quantity
+      || relation.returned > 0 && (!relation.returnReason || !relation.returnApprovedBy)
+      || !relation.approvedBy || !relation.reason
       || from.ownerTaskId !== relation.lenderTaskId || future.ownerTaskId !== relation.borrowerTaskId
       || relation.borrowerTaskId === relation.lenderTaskId
       || tasks.get(relation.borrowerTaskId).customerId === tasks.get(relation.lenderTaskId).customerId) throw Error('Borrowing relation conflict');
@@ -92,7 +94,7 @@ function approveBorrow(before, input) {
     donor.claims[borrower.id] = (donor.claims[borrower.id] || 0) + input.quantity;
     const sequence = Math.max(0, ...state.relations.map(r => r.sequence)) + 1;
     state.relations.push({ id: input.id, sequence, lenderSourceId: donor.id, replacementSourceId: future.id,
-      lenderTaskId: lender, borrowerTaskId: borrower.id, quantity: input.quantity, repaid: 0,
+      lenderTaskId: lender, borrowerTaskId: borrower.id, quantity: input.quantity, repaid: 0, returned: 0,
       approvedBy: input.approvedBy, reason: input.reason });
   });
 }
@@ -129,6 +131,49 @@ function dispatch(before, input) {
     task.dispatched += input.quantity;
   });
 }
+function returnUnusedBorrow(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const r = state.relations.find(r => r.id === input.relationId);
+    if (!r || !positive(input.quantity) || input.quantity > remaining(r)
+      || !String(input.approvedBy || '').trim() || !String(input.reason || '').trim()) throw Error('Approved unused borrowing return required');
+    const source = state.sources.find(s => s.id === r.lenderSourceId);
+    // Conservative: do not guess which relationship supplied already shipped cartons.
+    if ((source.dispatchedByTask?.[r.borrowerTaskId] || 0) > 0
+      || state.packingHolds.heldByTask[r.borrowerTaskId] > 0 || state.packingHolds.heldByTask[r.lenderTaskId] > 0
+      || (source.claims[r.borrowerTaskId] || 0) < input.quantity) throw Error('Borrowed stock already used or held');
+    source.claims[r.borrowerTaskId] -= input.quantity;
+    source.claims[r.lenderTaskId] = (source.claims[r.lenderTaskId] || 0) + input.quantity;
+    r.returned = (r.returned || 0) + input.quantity;
+    r.returnApprovedBy = input.approvedBy; r.returnReason = input.reason;
+  });
+}
+function correctAccepted(before, input) {
+  if (!String(input.reason || '').trim()) throw Error('Receipt correction reason required');
+  const prior = before.sources.find(s => s.id === input.sourceId);
+  if (!prior || !count(input.cumulativeAccepted)) throw Error('Receipt correction basis required');
+  if (input.cumulativeAccepted >= prior.accepted) return receive(before, input);
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    let reduction = source.accepted - input.cumulativeAccepted;
+    const free = Math.min(reduction, source.available);
+    source.available -= free; reduction -= free;
+    const removeClaim = (taskId, max) => {
+      const take = Math.min(reduction, source.claims[taskId] || 0, max);
+      if (take && state.packingHolds.heldByTask[taskId] > 0) throw Error('Packing task holds corrected allocation');
+      source.claims[taskId] = (source.claims[taskId] || 0) - take;
+      reduction -= take; return take;
+    };
+    removeClaim(source.ownerTaskId, Number.MAX_SAFE_INTEGER);
+    // Reverse most recently approved repayments first; original supplier PO never changes.
+    for (const r of state.relations.filter(r => r.replacementSourceId === source.id).sort((a, b) => b.sequence - a.sequence)) {
+      const take = removeClaim(r.lenderTaskId, r.repaid);
+      r.repaid -= take;
+    }
+    if (reduction) throw Error('Correction would consume shipped, isolated or unrelated allocations');
+    source.onHand -= source.accepted - input.cumulativeAccepted;
+    source.accepted = input.cumulativeAccepted;
+  });
+}
 function procurementOutstanding(state, taskId) {
   validate(state);
   return state.relations.filter(r => remaining(r) > 0 && [r.borrowerTaskId, r.lenderTaskId].includes(taskId))
@@ -155,4 +200,5 @@ function cumulativeTargets(state, sourceId) {
   return [...ids].sort().map(taskId => ({ taskId,
     quantity: sum([source.claims[taskId] || 0, source.dispatchedByTask?.[taskId] || 0]) })).filter(t => t.quantity > 0);
 }
-module.exports = { validate, approveBorrow, receive, dispatch, procurementOutstanding, taskCoverage, cumulativeTargets };
+module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch,
+  procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };

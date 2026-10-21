@@ -25,3 +25,7 @@ test('preserves actual existing body paths and inherits original colour without 
 test('unknown repayment quantity cannot silently remove the halo', () => {
   assert.throws(() => transferPerson({ taskId: 'A', relations: [{ ...relation, repaid: null }] }), /known quantities/);
 });
+test('approved unused return closes halo without claiming receipt, corrected repayment restores halo', () => {
+  assert.equal(transferPerson({ taskId: 'A', relations: [{ ...relation, returned: 30 }] }).halo, false);
+  assert.equal(transferPerson({ taskId: 'A', relations: [{ ...relation, repaid: 20 }] }).halo, true);
+});

@@ -2,7 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
 const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { createFencedProof } = require('../prototypes/stock-current-state/fenced-proof.cjs');
-const { prepareBorrowApproval, prepareBorrowingReceipt, transferId } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
+const { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, transferId } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
 const { createBorrowingStockReader } = require('../prototypes/stock-current-state/borrowing-stock-reader.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const identity = { company: 'NCT', barcode: '1', packing: '24x1', ea: 24 };
@@ -109,7 +109,7 @@ test('stale or incomplete physical rows, inconsistent claims and business event 
     const f = fixture(); mutate(f); assert.throws(() => prepareBorrowApproval(f));
   }
 });
-test('receipt binds original PO, source identity and accepted basis; corrections use their separate protected path', () => {
+test('receipt binds original PO, source identity and accepted basis; corrections require reasons', () => {
   const f = fixture(), approved = prepareBorrowApproval(f);
   // Materialize exact rows from approval without a database for this pure rejection test.
   const rows = copy(f.rows);
@@ -122,9 +122,9 @@ test('receipt binds original PO, source identity and accepted basis; corrections
     }
   }
   for (const mutate of [e => { e.description = 'OTHER'; }, e => { e.details.lines[0].sourceLineId = 'OTHER'; },
-    e => { e.details.lines[0].beforeAccepted = 1; }, e => { e.details.lines[0].kind = 'CORRECTION'; }]) {
+    e => { e.details.lines[0].beforeAccepted = 1; }, e => { e.details.lines[0].kind = 'CORRECTION'; e.details.lines[0].reason = ''; }]) {
     const event = receipt(approved.state, 20); mutate(event);
-    assert.throws(() => prepareBorrowingReceipt({ state: approved.state, rows, event, generation: 1 }), /context mismatch/);
+    assert.throws(() => prepareBorrowingReceipt({ state: approved.state, rows, event, generation: 1 }), /context mismatch|reason required/);
   }
 });
 test('transfer record identity stays stable and unbounded state is not silently chunked', () => {
@@ -187,4 +187,29 @@ test('bounded reader rejects overflow/missing count, preserves errors and never 
   await assert.rejects(blocked(), /pending/); assert.equal(authorityCalled, false);
   await assert.rejects(createBorrowingStockReader({ company: 'NCT', items: queryItems(m, []), store: { read: async () => { throw Error('Read denied'); } },
     protocol: m.protocol, readAuthority: async () => ({ kind: 'APPROVE', ...f }) })(), /Read denied/);
+});
+test('approved unused return restores claims and closes the same relationship in one conditional plan', async () => {
+  const f = fixture(), m = await memory(f), approved = prepareBorrowApproval(f);
+  await m.protocol.commit({ requestId: uuid(1), memberId: 'P1', input: f.input, prepare: async () => approved.plan });
+  const input = { expectedRevision: 1, relationId: 'REL-1', quantity: 30, approvedBy: 'P1', reason: 'Customer changed packing' };
+  const event = { _id: 'RETURN-1', title: 'RETURN-1', action: 'STOCK_TRANSFER_RETURNED', result: 'SAVED',
+    activityTime: '2026-10-22T00:02:00.000Z', initiatedByStaffId: 'P1', details: { company: 'NCT', return: input } };
+  const result = prepareBorrowReturn({ state: approved.state, rows: m.rows(), input, event, generation: 1 });
+  await m.protocol.commit({ requestId: uuid(2), memberId: 'P1', input, prepare: async () => result.plan });
+  assert.equal(m.rows().transfers.length, 1); assert.equal(m.rows().transfers[0].status, 'CLOSED');
+  assert.equal(m.rows().transfers[0].details.relation.returned, 30);
+  assert.equal(m.rows().product.onHand, 100);
+  assert.equal(m.rows().claims.find(c => c.taskId === 'B').reservedUsable, 100);
+});
+test('original correction event reopens repaid relationship with its exact reversed physical claims', async () => {
+  const f = fixture(), m = await memory(f), approved = prepareBorrowApproval(f);
+  await m.protocol.commit({ requestId: uuid(1), memberId: 'P1', input: f.input, prepare: async () => approved.plan });
+  const receivedEvent = receipt(approved.state, 100), received = prepareBorrowingReceipt({ state: approved.state, rows: m.rows(), event: receivedEvent, generation: 1 });
+  await m.protocol.commit({ requestId: uuid(2), memberId: 'WH1', input: receivedEvent.details, prepare: async () => received.plan });
+  const event = receipt(received.state, 20, 3); event.details.lines[0].kind = 'CORRECTION'; event.details.lines[0].reason = 'Approved original receipt correction';
+  const corrected = prepareBorrowingReceipt({ state: received.state, rows: m.rows(), event, generation: 2 });
+  await m.protocol.commit({ requestId: uuid(3), memberId: 'WH1', input: event.details, prepare: async () => corrected.plan });
+  assert.equal(m.rows().transfers[0].status, 'ACTIVE'); assert.equal(m.rows().transfers[0].details.relation.repaid, 20);
+  assert.equal(m.rows().product.onHand, 120);
+  assert.equal(m.rows().claims.find(c => c.positionId === f.positionId('S-A') && c.taskId === 'B').reservedUsable, 20);
 });
