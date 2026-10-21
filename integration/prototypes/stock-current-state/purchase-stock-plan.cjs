@@ -21,7 +21,13 @@ function preparePurchaseStock({ company, domainPlan, products, generation }) {
     const key = stockKey(product.state);
     if (product.state.company !== company || stockKey(product.after) !== key || keys.has(key)) throw Error('Distinct same-company Purchase product coverage required');
     keys.add(key);
-    const present = id => [product.state, product.after].some(s => s.tasks.some(t => t.id === id) || s.sources.some(t => t.id === id));
+    const drafts = product.unconfirmedSourceIds || [];
+    if (!Array.isArray(drafts) || new Set(drafts).size !== drafts.length || drafts.some(id => {
+      const row = domainPlan.writes.find(w => w.collection === tasks && w.after._id === id)?.after;
+      return !row?.procurementSource || row.ourPoNumber || !originalEvents.some(w => w.after.imageAltText === id
+        && w.after.action === 'PURCHASE_PLAN_SAVED' && w.after.details?.draftPlan === true);
+    })) throw Error('Original unconfirmed source coverage required');
+    const present = id => drafts.includes(id) || [product.state, product.after].some(s => s.tasks.some(t => t.id === id) || s.sources.some(t => t.id === id));
     const covered = taskIds.filter(present);
     if (!covered.length) throw Error('Unrelated Purchase product snapshot');
     for (const id of covered) coverage.set(id, coverage.get(id) + 1);

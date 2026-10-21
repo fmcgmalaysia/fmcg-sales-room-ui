@@ -9,11 +9,12 @@ const { originalProductState } = require('./original-product-state.cjs');
 const { readCurrentProduct } = require('./current-product-reader.cjs');
 const { preparePurchaseStock } = require('./purchase-stock-plan.cjs');
 const { hash } = require('./commit-proof.cjs');
+const { validateOriginalSource, prepareSourceDomain } = require('./original-source-validation.cjs');
 // Server-owned adapter candidate, intended as fenced commit.prepare. It is not a
 // gateway, does not apply a legacy save, and cannot certify unconnected co-writers.
 function createPurchaseStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePurchaseStaff, readTables, protocol, items, store,
-    createPurchaseOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
+    createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, now } = deps;
   if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readTables,
     createPurchaseOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
@@ -24,7 +25,8 @@ function createPurchaseStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
-    const trusted = { company, staff, requestId: request.requestId, operation: request.operation, input: request.input };
+    const trusted = { company, staff: request.operation === 'ADD_SOURCE' ? { ...staff, canAddPurchaseSource: true } : staff,
+      requestId: request.requestId, operation: request.operation, input: request.input };
     const metrics = { queries: 0, exactReads: 0 };
     const snapshot = await protocol.readSnapshot(async () => {
       let tables = await readTables(company, staff);
@@ -38,12 +40,15 @@ function createPurchaseStockPreparation(deps) {
           || lock.action || lock.details || JSON.stringify(current) !== JSON.stringify(lock)) throw Error('Purchase preparation lock is not owned by this request');
         tables = { ...tables, [journal]: tables[journal].filter(row => row._id !== lockId) };
       }
-      const validated = await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
-      const domainPlan = preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId });
       const beforeContext = { ...projectPurchaseWorkspace({ company, staff, orders: tables[orders], tasks: tables[tasks], activity: tables[journal], suppliers: tables.SharedSuppliers }), activity: tables[journal] };
+      const source = request.operation === 'ADD_SOURCE';
+      const validated = source ? await validateOriginalSource({ createPurchaseSourceOperations, request: trusted, tables, workspace: beforeContext, now })
+        : await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
+      const domainPlan = source ? prepareSourceDomain({ validated, request: trusted, tables })
+        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId });
       const afterContext = projectDomainAfter({ company, staff, tables, plan: domainPlan, projectPurchaseWorkspace });
       const identities = new Map();
-      for (const update of validated.updates) {
+      for (const update of source ? [{ id: validated.task._id }] : validated.updates) {
         const found = [beforeContext, afterContext].flatMap(context => context.tasks.filter(t => t.id === update.id));
         if (!found.length) throw Error('Purchase changed task missing from original projection');
         const identity = { company, barcode: found[0].barcode, packing: found[0].packing, ea: found[0].ea }, key = stockKey(identity);
@@ -57,7 +62,10 @@ function createPurchaseStockPreparation(deps) {
           readAllocations, readCustomerShipments, readPackingLists, packingHeld });
         const before = builder(beforeContext), after = builder(afterContext);
         const rows = await readCurrentProduct({ company, identity, items, store, metrics });
-        products.push({ state: before.buildState(rows), after: after.buildState(rows), rows });
+        const unconfirmedSourceIds = afterContext.tasks.filter(t => t.procurementSource && !t.po && t.procurement?.draftPlan
+          && stockKey({ company, barcode: t.barcode, packing: t.packing, ea: t.ea }) === stockKey(identity))
+          .map(t => t.id).filter(id => domainPlan.writes.some(w => w.collection === tasks && w.after._id === id));
+        products.push({ state: before.buildState(rows), after: after.buildState(rows), rows, unconfirmedSourceIds });
       }
       return { domainPlan, products };
     });

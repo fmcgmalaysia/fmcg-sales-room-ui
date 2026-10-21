@@ -37,7 +37,7 @@ test('unreceived existing source PO change updates exact position identity but n
 test('missing, duplicate, unrelated or foreign products cannot bypass complete task coverage', () => {
   for (const mutate of [f => { f.products = []; }, f => { f.products.push(copy(f.products[0])); },
     f => { f.domainPlan.writes[0].after._id = 'OTHER'; }, f => { f.products[0].state.company = 'GHR'; },
-    f => { f.domainPlan.writes.push(copy(f.domainPlan.writes[1])); }]) {
+    f => { f.domainPlan.writes.push(copy(f.domainPlan.writes[1])); }, f => { f.products[0].unconfirmedSourceIds = ['T']; }]) {
     const f = fixture(); mutate(f); assert.throws(() => preparePurchaseStock(f));
   }
 });

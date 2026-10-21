@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after4d1fa72: PURCHASE_SOURCE_COMPOSITION.txt. Original authenticated
+ADD_SOURCE prepare/task/events now compose with current source/share guard. Confirmed PO
+adds no receipt, unconfirmed draft stays nonphysical, FOC customer share excludes surplus.
+Unknown saved share still refuses. Original+affected74pass961.9044ms. Actual gateways/all
+co-writers/apply-only guards, capacity/recovery/migration/UI/four-stage release still OPEN.
+
 CURRENT HEARTBEAT after9942abf: PURCHASE_STOCK_COMPOSITION.txt. Private Purchase auth,
 original before/after projectors and exact current rows now compose task/event/stock plan;
 in-memory interruption/recovery/replay passed. Found shared original/new lock collision;
