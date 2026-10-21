@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+TEST EVIDENCE CORRECTION after00e3c11: several targeted commands named nonexistent
+stock-current-preview.test.cjs; Node silently omitted it. Their reported pass totals
+are actual OTHER tests, NOT preview coverage. Actual file stock-current-preview-build
+.test.cjs now run explicitly:2pass105.2008ms. Previous rg-enumerated full230 run DID
+include correct file. Final free-case6pass123.9822ms + actual preview2 above are separate
+checks, not a rerun of full230. Use rg --files discovery, never guessed test filenames.
+
 CURRENT CONTINUATION afterbc4f82a: FREE_CASE_RELEASE.txt. Whole stock-current candidate
 suite230pass975.1661ms before last slice. Added original two-person Admin+Finance RELEASED
 case -> free quantity plan; LOSS/financial settlement cannot use release path.6focused

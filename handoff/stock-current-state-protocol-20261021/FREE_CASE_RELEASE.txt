@@ -28,3 +28,10 @@ Existing gateway/task writers still legacy and unfenced; do NOT enable half inve
 G3 focused design/code review and all release gates remain mandatory, not overridden by
 230 local checks. Four statuses: candidate code only; Pages unchanged; Wix unchanged;
 new public inventory/borrowing unavailable/unverified. Existing production unchanged.
+
+Evidence correction after00e3c11: targeted command used nonexistent preview filename;
+Node skipped it silently, so final6pass123.9822ms was free-quarantine ONLY, not preview.
+Correct stock-current-preview-build.test.cjs explicitly executed2pass105.2008ms. Earlier
+rg-enumerated full230 included correct preview file. Older focused totals remain actual
+reported totals but any accompanying claim they covered preview is superseded by this
+correction. Do not infer coverage from process exit alone; discover exact test paths.
