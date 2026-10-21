@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="build" content="2026-10-21-stock-control-v1"><title>Stock Control · Warehouse</title><link rel="stylesheet" href="stock-control.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="build" content="2026-10-21-stock-tab-v1"><title>Stock Control · Warehouse</title><link rel="stylesheet" href="stock-control.css"><link rel="stylesheet" href="stock-control-embedded.css?v=20261021-stock-tab-v1"></head>
 <body><header><strong>MASTER</strong><span>Warehouse Department <small>货仓部</small></span><select id="company" aria-label="Company 公司"><option value="NCT">North Cape Trading · NCT</option><option value="GHR">Global HR · GHR</option></select><b id="staff"></b></header>
 <nav aria-label="Stock navigation"><b>Stock Control 库存管理</b><span id="read-at"></span></nav>
 <main><div class="heading"><div><h1>Stock Control 库存管理</h1><p>Goods physically held, including customer reservations and isolation 仓库在手货物，包含客户预留及隔离货</p></div><div><button id="login">Sign in 登入</button><button id="refresh" class="primary">Refresh 刷新</button></div></div>
@@ -12,4 +12,4 @@
 <p class="footnote">Incoming P.O.s are excluded from On Hand. Unknown quantities are shown as Review Required, never as zero. 在途采购不计入在手数量；未知数量显示待核对，不计作0。</p>
 </main>
 <dialog id="source-dialog"><div class="dialog-heading"><div><h2 id="source-name"></h2><p id="source-product"></p></div><button id="close-source" aria-label="Close">×</button></div><div class="dialog-body"><div id="source-summary" class="source-summary"></div><div class="frame"><table class="sources"><thead><tr><th>Source 来源</th><th class="num">On Hand 在手</th><th>Customer Reservation 客户预留</th><th class="num">Available 自由</th><th class="num">Isolated 隔离</th></tr></thead><tbody id="sources"></tbody></table></div><p id="source-review" class="review-notes"></p><p class="footnote">Customer claims may exceed usable stock when a shortage exists. A claim is not extra physical stock. 缺货时客户需求可能超过可用实物，需求数量不重复计入在手货物。</p></div><footer><button id="done-source">Close 关闭</button></footer></dialog>
-<script src="stock-control-app.js"></script></body></html>
+<script src="stock-control-app.js?v=20261021-stock-tab-v1"></script></body></html>
