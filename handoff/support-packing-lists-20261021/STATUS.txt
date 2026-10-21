@@ -1,0 +1,47 @@
+CURRENT 2026-10-21 — implementation candidate; NOT released or production-connected
+
+FINAL CHECK UPDATE: browser bundle/source consistency plus changed persistence adapter5 checks pass; four additional tests invoke the actual Sales adjustment, planner allocation (including first allocation), legacy Warehouse preparation and legacy shipment factories and confirm occupied products cannot be changed/reserved through those entrypoints. Syntax/whitespace checks pass. These focused checks follow the recorded full820/816 run; the full suite was not rerun just for a new summary. No visual screenshot or public feature acceptance. Existing user-confirmed recovery tag verified/sales-requested-split-20261020 was identified; it does not establish acceptance of this new packing feature.
+
+Objective approved after workflow review: Support creates/edits a draft, sends one shared packing list to Warehouse Outgoing, Warehouse records packed/loaded quantities and explicitly completes loading, unloaded quantities return to To Arrange. Customer demand and physical stock are not cancelled or deducted by completion. One effective invoice per list is deferred integration; no real invoice issue is enabled.
+
+Actual checkout: C:/FMCG-WIX-LOCAL/worktrees/nct-order-submit-room6-20261009
+Branch: feat/support-packing-lists-20261021
+Recovery source: 9bf14abe92daf4d6d6875701fa9114a06aa83e23 (Support release record); deployed runtime96fdf7792620dbe64469a52921e7d1eb1fa2c72e; Warehouse09a9023 remains embedded. User-confirmed font tag verified/support-draft-font-20261021 remains narrowly scoped to font. No new business verified tag or main merge.
+
+Completed candidate code:
+- Shared pure packing model: draft/send/start/progress, proposed change/accept/reject, explicit completion/reopen, unstarted cancel. Same list ID across department views. No invoice/dispatch/stock posting.
+- Completed list holds only its Loaded, releasing only unloaded scheduling occupancy. Planned/packed/loaded/unloaded evidence retained, including already packed leftover cartons.
+- Draft does not hold stock; send requires current usable customer stock. Two drafts can overlap but second send cannot double-book. Pending change conservatively holds the larger old/new quantity. Reducing or removing packed/loaded goods needs actual Warehouse correction before acknowledgement.
+- Current-record persistence adapter reuses company PURCHASE operation journal: same-request retry and current revision checks, one mutable current document/list, no copied department tasks, maximum300 lines and200KB list snapshot. Existing immutable journal PREPARED/RESULT receipts remain necessary and consume additional CMS rows; this is NOT one total CMS row per list nor a completed history-compaction solution.
+- New authenticated packing context/service/web method and public Wix bridge files are prepared, but no existing Wix page routes call them yet. No production packing records exist from this task.
+- Four minimal shared-consumer guards are implemented locally: Sales reduction/split, Purchase allocation reduction (including first explicit allocation), legacy Warehouse preparation, legacy shipment/invoice entry. Packing revisions invalidate prepared legacy writes even if original quantities did not change. Without any packing records, original version values are unchanged.
+- New context uses recorded physical customer Ready Stock, flags legacy selected/invoiced or prepared/loaded tasks for explicit handling, never silently adopts them. Unknown CBM and net weight remain null; POINTBASE U is not connected by this task.
+- Isolated local candidate support-room/packing-workbench.html uses the accepted untouched draft.css/draft-compact.css, a Support/Warehouse example-view selector, same in-memory lists, customer/company separation and compact dialogs. It contains conspicuous synthetic-data labels and no network/storage/real save. Browser bundle mechanically generated from sole backend model; classic scripts allow user file-open without module CORS. Refresh resets examples.
+
+Live comparison performed before editing the four shared backend files. Complete editor clipboard originals retained in current browser session packingLiveBefore; normalized LF SHA256 matched repository:
+plannerAllocation.js 1e3035e9e2fb97a941a8e4ecd57449fb96148b67cc53147c355eebc74d6115e1
+salesOrderAdjustment.js b8d964fa5a9563998f91343ba05e178428402ddd31db6bb2d4cf7ec5fdc2677b
+warehousePreparation.js 968dcef6aced32fcfd21a91c409aa5061063bd69d60b47ee2687d577c1c77fe4
+customerFulfilment.js f06eefb394d2a7da3f666c41a6c254f55767837cd3c0ee879232d1eb5410c44a
+Support page complete fresh read1647 CRLF chars matched original release entry. No Wix source changed or Publish clicked. Existing editor prior transient Publish warning dismissed only; official preceding revision143 remains evidence of previous release, not this candidate.
+
+Verification:
+- 47 focused packing/guards + original allocation/fulfilment/Sales adjustment/preparation tests pass.
+- Four additional context/auth/physical-stock/legacy-preparation tests pass.
+- Earlier32 packing/operations + existing Support typography/invoice-draft checks pass.
+- Full integration run820 tests,816 pass, same4 known baseline failures: customer-short-names missing PURCHASE_DOCUMENT_TYPES fixture; master-workflow INSTALLMENT_PAID vs PAID; purchase-live-ui old staff suffix; purchase-quantity-projection old bilingual fixture. Do not report full suite green. No full rerun merely for summary.
+- Browser bundle consistency check and200KB adapter addition require final focused checks after this record.
+- Syntax and whitespace checks passed before final addition; repeat only changed-file checks.
+
+Concrete browser limitation:
+Chrome automatic opening of new local candidate rejected by URL policy: only http/https allowed. Requested user open the exact file manually; user replied opened, and Chrome inventory confirms tab51426759 Support Packing List Candidate at exact local path. A direct read of that user-opened same Chrome tab is also denied by the file-protocol observation gate. Do not use localhost/rehost, raw CDP/native screenshots, another browser surface or indirect execution to bypass this refusal. No actual screenshot or browser interaction acceptance claimed. User may provide their own visual/test feedback.
+
+Remaining work before enabling production:
+1. User-supplied candidate visual/test feedback (tool cannot inspect file page under current policy).
+2. Wire real client transport to authenticated packing API; current candidate is deliberately in-memory. Integrate Warehouse same-window Outgoing and Support routes with exact fresh live comparisons. Determine handling of any existing real prepared/loaded tasks before replacing their entry; preserve photos and existing accepted execution evidence.
+3. Actual consumer-factory guard cases are now covered by packing-consumer-integration.test.cjs. Test the read model against real source shapes and reconcile any additional source-level changes that can affect new holds before enabling writes.
+4. Fresh read of unchanged dependency modules and complete affected release checks; minimally sync new modules/isolated existing imports and routes. Current file fingerprints above are pre-edit evidence, not perpetual authorization to skip fresh release reads.
+5. Only when concrete code/visual candidate is ready, request exact branch-specific temporary Pages permission. No permission has been requested/granted for this branch. No dispatch, permission mutation, Wix sync, business write or main merge occurred.
+6. Four release statuses remain: code candidate only; Pages old runtime; Wix old published revision; public new feature not verified.
+
+Do not call phase1 complete, real Support integrated, Warehouse tasks migrated, or published based on these tests. Actual Credits UNKNOWN. Unrelated pre-existing untracked files preserved and excluded from commits.

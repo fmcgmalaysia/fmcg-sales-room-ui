@@ -1,4 +1,5 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { requirePackingReleased, packingGuardVersion } from 'backend/packingListGuards.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { resolveBatchEntitlements, allocateBatchSources, batchEntries, preferredSourceBatch, stockBatchEntries } from 'backend/shipmentBatchAllocation.js';
 export const SALES_ADJUSTMENT_ACTION='SALES_ORDER_ADJUSTMENT_SAVED';
@@ -17,7 +18,7 @@ export function readSalesDemand(taskId,original,activity){
  }
  return {requested,revision};
 }
-export function salesAdjustmentVersion(context,planVersion){return operationId(planVersion(context),context.allocations||[],context.tasks.map(row=>[row.id,row.editVersion,row.procurement?.revision,row.procurement?.totalCtn,row.inc]));}
+export function salesAdjustmentVersion(context,planVersion){return packingGuardVersion(context,operationId(planVersion(context),context.allocations||[],context.tasks.map(row=>[row.id,row.editVersion,row.procurement?.revision,row.procurement?.totalCtn,row.inc])));}
 export function createSalesOrderAdjustmentOperations({store,names,readContext,readPlans,planVersion,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
@@ -25,6 +26,7 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{salesOrderAdjustment:input},prepare:async()=>{
    const context=await readContext(company,staff),task=context.tasks.find(row=>row.id===input.taskId&&row.customerId===input.customerId&&row.orderId===input.orderId&&!row.procurementSource&&!row.specialPurchase&&!row.archived);
    if(context.company!==company||!task)throw Error('Select an active customer order line.');
+   if(input.mode!=='INCREASE')requirePackingReleased(context,[task.id]);
    if(salesAdjustmentVersion(context,planVersion)!==input.version)throw Error('Order or stock changed. Refresh before saving.');
    const total=task.requested??task.ord,prior=readPlans(context.activity).find(plan=>plan.customerId===task.customerId&&plan.orderId===task.orderId);
    if(!qty(total)||!qty(input.quantity))throw Error('Enter whole cartons between 1 and 9999.');
