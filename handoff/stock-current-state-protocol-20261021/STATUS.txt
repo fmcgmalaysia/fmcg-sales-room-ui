@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after1a9e4ed: PURCHASE_DOMAIN.txt. Original Purchase prepare now
+captured against complete read-only company snapshot; new mapper retains original task
+patch/business event IDs/details under exact migrated task versions. Invoice/handoff/
+existing cost-lock checks retained.4newpass204.4635ms; original+new53pass783.8772ms.
+No production wiring: all cost/task co-writers, source/share stock guard and display-order
+adapter still required. Domain mapping alone is NOT quantity integration or ACTIVE.
+
 CURRENT HEARTBEAT after81aeac5: SERVER_ADMISSION.txt. Added candidate server-only
 LEGACY/SHADOW/ACTIVE/MAINTENANCE admission and required-writer/build/client-generation
 gate (default coverage empty, no activation). Optional domainWrites false by default;
