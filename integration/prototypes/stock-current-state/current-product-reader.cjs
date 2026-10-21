@@ -10,7 +10,9 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
   if (!['NCT', 'GHR'].includes(company) || identity.company !== company) throw Error('Current product company required');
   async function exact(collection, id) {
     metrics.exactReads++;
-    return copy(await store.read(collection, id));
+    const row = await store.read(collection, id);
+    if (row && row._id !== id) throw Error('Current exact row identity conflict');
+    return copy(row);
   }
   async function completeRows(collection, max, action) {
     let q = items.query(collection).eq('company', company).eq('stockKey', key);
@@ -34,6 +36,9 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
   const claims = await completeRows('StockClaims', 60);
   const transfers = await completeRows(journal, 30, 'STOCK_TRANSFER_CURRENT');
   const product = await exact('StockProducts', hash(company, key));
+  const knownRows = [...positions, ...claims, ...transfers, ...(product ? [product] : [])];
+  if (knownRows.some(row => row.company !== company || row.stockKey !== key || !row._version || row.reviewRequired === true || row.reviewCodes?.length)
+    || !product && (positions.length || claims.length || transfers.length)) throw Error('Current product requires review; no legacy quantity fallback');
   return { complete: true, positions, claims, transfers, product };
 }
 module.exports = { readCurrentProduct };

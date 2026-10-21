@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after938fe50: PACKING_SERVER_PREPARATION.txt. Original authenticated
+packing context/PO/current reads now feed private non-photo read/save preparation. Same
+list SEND->START conditional replay passed, no physical deduction. Found/fixed shared
+current read review-row hole; unknown/unversioned/orphaned/foreign rows refuse, never
+legacy fallback. Full candidate274pass1286.9561ms. Real gateways/photos/packing outflow,
+all writers/reads/capacity/recovery/migration/UI/four-stage release remain OPEN/OFF.
+
 CURRENT HEARTBEAT after30d9ac3: PACKING_CURRENT_HOLDS.txt. Current claims now supply
 candidate packing Ready; original non-photo prepare maps list+hold checkpoint once.
 Complete40of50 releases only packing hold10, not customer reservation/physical quantity;
