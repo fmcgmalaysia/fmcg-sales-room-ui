@@ -9,7 +9,7 @@
   render(container,selectedCompany,legacyHtml=''){
    if(!['NCT','GHR'].includes(selectedCompany))return;
    if(!frame?.isConnected||company!==selectedCompany){
-    company=selectedCompany;busy=false;requests.clear();frame=document.createElement('iframe');frame.title='Outgoing 发货任务';frame.src='../support-room/packing-workbench.html?v=20261021-packing-v1&live=1&department=WAREHOUSE&embedded=warehouse&company='+company;frame.style.cssText='display:block;width:100%;height:560px;border:0;background:transparent';legacy=document.createElement('details');container.replaceChildren(frame,legacy);
+    company=selectedCompany;busy=false;requests.clear();frame=document.createElement('iframe');frame.title='Outgoing 发货任务';frame.src='../support-room/packing-workbench.html?v=20261021-packing-company-v1&live=1&department=WAREHOUSE&embedded=warehouse&company='+company;frame.style.cssText='display:block;width:100%;height:560px;border:0;background:transparent';legacy=document.createElement('details');container.replaceChildren(frame,legacy);
    }
    legacy.hidden=!legacyHtml;legacy.innerHTML='<summary>Existing packing evidence 既有备货记录</summary><p>These records retain their original photos and loading history. Support must resolve existing execution before arranging this product again. 保留原照片与装货记录；重新安排同一产品前须先处理既有执行。</p>'+legacyHtml;legacy.inert=busy;
   },
