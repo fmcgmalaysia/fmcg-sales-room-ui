@@ -45,7 +45,8 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
       for (const field of ['onHand', 'isolated', 'reservedUsable', 'available']) {
         if (!nullableCount(source[field])) throw Error('Invalid current quantity');
       }
-      if (![source.received, source.replacementReceived, source.dispatched].every(count)) throw Error('Cumulative source basis required');
+      if (![source.received, source.replacementReceived, source.dispatched, source.returned].every(count)) throw Error('Cumulative source basis required');
+      if (count(source.onHand) && source.onHand + source.dispatched + source.returned !== source.received + source.replacementReceived) throw Error('Physical source movement conflict');
       if ([source.onHand, source.isolated, source.reservedUsable, source.available].every(count)
         && source.onHand !== source.isolated + source.reservedUsable + source.available) throw Error('Physical balance conflict');
       const positionId = hash(company, key, 'PURCHASE_SOURCE', task.id);
@@ -71,7 +72,7 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
       const position = { _id: positionId, schemaVersion: 1, company, stockKey: key,
         barcode: item.barcode, name: item.name || '', packing: item.packing, ea: item.ea,
         sourceKind: 'PURCHASE_SOURCE', sourceId: task.id, sourceTaskId: task.id, poId: task.poId, poNumber: source.po || '',
-        receiptAccepted: source.received, replacementReceived: source.replacementReceived, dispatched: source.dispatched,
+        receiptAccepted: source.received, replacementReceived: source.replacementReceived, supplierReturned: source.returned, dispatched: source.dispatched,
         onHand: source.onHand, isolated: source.isolated, reservedUsable: source.reservedUsable,
         available: source.available, reviewCodes: [...new Set(issueCodes)], revision: 0,
         checkpointGeneration: generation,

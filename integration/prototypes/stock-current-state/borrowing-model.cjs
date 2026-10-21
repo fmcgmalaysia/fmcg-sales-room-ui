@@ -42,7 +42,9 @@ function validate(state) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Dispatch provenance conflict');
     }
     if (source.onHand !== sum([source.available, source.isolated, ...Object.values(source.claims)])) throw Error('Physical balance conflict');
-    if (sum([source.onHand, ...Object.values(source.dispatchedByTask || {})]) !== source.accepted) throw Error('Receipt/dispatch provenance conflict');
+    if (!count(source.replacementReceived ?? 0) || !count(source.supplierReturned ?? 0)
+      || sum([source.onHand, source.supplierReturned || 0, ...Object.values(source.dispatchedByTask || {})])
+        !== sum([source.accepted, source.replacementReceived || 0])) throw Error('Receipt/dispatch provenance conflict');
     sources.set(source.id, source);
   }
   for (const relation of state.relations) {
@@ -301,5 +303,19 @@ function quarantineFree(before, input) {
     source.available -= input.quantity; source.isolated += input.quantity;
   });
 }
-module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree,
+function freeCaseMovement(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    if (!source || !positive(input.quantity) || !['RETURN', 'REPLACEMENT'].includes(input.action)) throw Error('Validated free-case physical movement required');
+    if (input.action === 'RETURN') {
+      if (input.quantity > source.isolated) throw Error('Supplier return exceeds isolated stock');
+      source.isolated -= input.quantity; source.onHand -= input.quantity;
+      source.supplierReturned = (source.supplierReturned || 0) + input.quantity;
+    } else {
+      source.onHand += input.quantity; source.available += input.quantity;
+      source.replacementReceived = (source.replacementReceived || 0) + input.quantity;
+    }
+  });
+}
+module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, freeCaseMovement,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };

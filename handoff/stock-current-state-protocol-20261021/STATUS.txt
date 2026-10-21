@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION aftere6ccf89: FREE_CASE_MOVEMENTS.txt. Added separate cumulative
+replacementReceived/supplierReturned physical counters to model/current row mapping and
+conversion. Proven FREE-attributed exception supports original approved RETURN/REPLACEMENT
+append-only resolution event in same plan.5focused170.3012ms; affected76pass411.4532ms.
+Old isolated goods remain onHand until actual return; original accepted/claims unchanged.
+Reserved/unknown attribution, finance release/unknown-disposal, all actual endpoints/writers,
+production capacity/recovery/migration/UI/four-stage release remain unfinished/ACTIVE OFF.
+
 CURRENT CONTINUATION after67ae8bd: CURRENT_ALLOCATION_VIEW.txt. Current ownership+
 actual shipped quantities now form original cumulative allocation VIEW with real old
 revision chain, not fake stored events. Original Sales prepare maps implicit source

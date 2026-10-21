@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -51,7 +51,8 @@ function mapTransition({ before, after, rows, event, generation }) {
     if (old) {
       consumedPositions.add(id); checkRow(old, company, id, key);
       if (old.sourceTaskId !== source.id || old.poId !== source.poId || old.receiptAccepted !== source.accepted
-        || old.replacementReceived !== 0 || old.dispatched !== total(Object.values(source.dispatchedByTask || {}))
+        || old.replacementReceived !== (source.replacementReceived || 0) || (old.supplierReturned ?? 0) !== (source.supplierReturned || 0)
+        || old.dispatched !== total(Object.values(source.dispatchedByTask || {}))
         || old.onHand !== source.onHand || old.isolated !== source.isolated
         || old.available !== source.available || old.reservedUsable !== sumClaims(source)) throw Error('Source snapshot conflict');
     } else if (source.accepted !== 0 || source.onHand !== 0 || sumClaims(source) !== 0) throw Error('Source snapshot missing');
@@ -59,8 +60,9 @@ function mapTransition({ before, after, rows, event, generation }) {
     if (positionChanged) {
       const base = old || { _id: id, schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing,
         ea: before.ea, name: before.name || '', sourceKind: 'PURCHASE_SOURCE', sourceId: source.id, sourceTaskId: source.id,
-        poId: source.poId, replacementReceived: 0, reviewCodes: [] };
+        poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
       writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), receiptAccepted: next.accepted,
+        replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
         checkpointGeneration: generation + 1, status: next.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
@@ -187,6 +189,30 @@ function prepareFreeQuarantine({ state, rows, event, generation }) {
   if (!source || event.description !== source.orderId || event.image !== source.sourceLineId) throw Error('Original quarantine source identity mismatch');
   const { after } = quarantineFree(state, { expectedRevision: state.revision, sourceId: source.id,
     quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
+  const plan = mapTransition({ before: state, after, rows, event, generation });
+  plan.writes[0].after.stockAttribution = 'FREE';
+  plan.writes[0].after.stockKey = stockKey(state);
+  return { state: after, plan };
+}
+function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolution, generation }) {
+  const d = event?.details, previous = priorResolution || {}, next = d?.state, action = d?.action;
+  if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || !event._id || event._id !== event.title
+    || !event.initiatedByStaffId || !event.activityTime || !['RETURN', 'REPLACEMENT'].includes(action)
+    || caseEvent?.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED' || caseEvent._id !== caseEvent.title
+    || caseEvent.stockAttribution !== 'FREE' || caseEvent.stockKey !== stockKey(state) || caseEvent.company !== state.company
+    || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
+    || d.beforeRevision !== (previous.revision || '') || previous.financeApproval || next.financeApproval || next.adminApproval
+    || !next.decision || next.decision.value === 'PENDING'
+    || action === 'RETURN' && next.decision.disposition !== 'RETURN'
+    || action === 'REPLACEMENT' && next.decision.value !== 'REPLACE') throw Error('Original approved free-case movement required');
+  const field = action === 'RETURN' ? 'returns' : 'replacements';
+  const oldEntries = previous[field] || [], newEntries = next[field];
+  const oldFixed = copy(previous), newFixed = copy(next); delete oldFixed.revision; delete oldFixed[field]; delete newFixed[field];
+  if (!Array.isArray(newEntries) || newEntries.length !== oldEntries.length + 1 || !same(oldEntries, newEntries.slice(0, -1))
+    || !same(oldFixed, newFixed) || newEntries.some(e => !count(e.quantity) || !e.quantity || !e.reference)
+    || total(newEntries.map(e => e.quantity)) > caseEvent.details.quantity) throw Error('Immutable case movement history required');
+  const { after } = freeCaseMovement(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText,
+    action, quantity: newEntries.at(-1).quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, transferId };
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, transferId };

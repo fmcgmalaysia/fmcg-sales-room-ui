@@ -48,6 +48,17 @@ test('quarantine preserves physical totals and does not guess claim-level usable
   assert.equal(r.products[0].reservedUsable, 35); assert.equal(r.claims[0].reservedUsable, null);
   assert.equal(r.claims[0].isolatedAttributed, null); assert.equal(r.activationReady, false);
 });
+test('conversion retains separate supplier-return and replacement counters without deleting old isolated goods', () => {
+  const report = { title: 'ISSUE', imageAltText: 'FOC', action: 'STOCK_EXCEPTION_REPORTED', result: 'SAVED',
+    initiatedByStaffId: 'W', activityTime: '2026-10-20T00:00:00Z',
+    details: { company: 'NCT', quantity: 10, kind: 'WRONG_ITEM', reason: 'Supplier confirmed' } };
+  const resolution = { title: 'RES', description: 'ISSUE', action: 'STOCK_EXCEPTION_RESOLUTION_SAVED', result: 'SAVED',
+    initiatedByStaffId: 'W', activityTime: '2026-10-20T01:00:00Z', details: { beforeRevision: '', state: { caseId: 'ISSUE',
+      decision: { value: 'REPLACE', disposition: 'RETURN' }, returns: [{ quantity: 5 }], replacements: [{ quantity: 5 }] } } };
+  const result = convert([task('FOC', 100, 0)], [report, resolution]);
+  assert.deepEqual([result.positions[0].receiptAccepted, result.positions[0].replacementReceived, result.positions[0].supplierReturned,
+    result.positions[0].onHand, result.positions[0].isolated, result.positions[0].available], [100, 5, 5, 100, 5, 95]);
+});
 test('packing and company identity stay separate; row overflow and duplicate sources reject', () => {
   assert.notEqual(stockKey({ ...task('A', 1, 0), company: 'NCT' }), stockKey({ ...task('A', 1, 0), company: 'GHR' }));
   const r = convert([task('A', 1, 0), task('B', 1, 0, { packing: '24x1', ea: 24 })]);

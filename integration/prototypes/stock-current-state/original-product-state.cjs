@@ -49,7 +49,8 @@ function originalProductState({ company, context, orders, identity, readAllocati
           if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable)) throw Error('Known unique current claims required');
           claims[c.taskId] = c.reservedUsable;
         }
-        return { ...s, onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
+        return { ...s, replacementReceived: p?.replacementReceived ?? 0, supplierReturned: p?.supplierReturned ?? 0,
+          onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
       }), relations: rows.transfers.map(r => clone(r.details.relation)) };
   } };
 }
