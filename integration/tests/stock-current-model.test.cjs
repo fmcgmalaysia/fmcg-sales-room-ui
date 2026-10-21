@@ -59,6 +59,15 @@ test('conversion retains separate supplier-return and replacement counters witho
   assert.deepEqual([result.positions[0].receiptAccepted, result.positions[0].replacementReceived, result.positions[0].supplierReturned,
     result.positions[0].onHand, result.positions[0].isolated, result.positions[0].available], [100, 5, 5, 100, 5, 95]);
 });
+
+test('known usable reservation does not certify unknown isolated ownership as activation-ready', () => {
+  const tasks = [task('B', 10, 3)], snapshot = { company: 'NCT', items: [{ company: 'NCT', barcode: '0001', packing: '12x1', ea: 12,
+    onHand: 10, isolated: 2, reservedUsable: 3, available: 5, sources: [{ sourceTaskId: 'B', received: 10, replacementReceived: 0,
+      dispatched: 0, returned: 0, onHand: 10, isolated: 2, reservedUsable: 3, available: 5, issues: [], reservations: [{ taskId: 'B', remaining: 3 }] }] }] };
+  const converted = convertProjectedStock({ snapshot, tasks, generation: 0 });
+  assert.equal(converted.claims[0].reservedUsable, 3); assert.equal(converted.claims[0].isolatedAttributed, null);
+  assert.equal(converted.products[0].reviewRequired, true); assert.equal(converted.activationReady, false);
+});
 test('packing and company identity stay separate; row overflow and duplicate sources reject', () => {
   assert.notEqual(stockKey({ ...task('A', 1, 0), company: 'NCT' }), stockKey({ ...task('A', 1, 0), company: 'GHR' }));
   const r = convert([task('A', 1, 0), task('B', 1, 0, { packing: '24x1', ea: 24 })]);

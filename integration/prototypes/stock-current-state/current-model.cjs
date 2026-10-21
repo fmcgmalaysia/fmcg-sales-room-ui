@@ -53,7 +53,9 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
       const issueCodes = [...new Set(source.issues)], targets = new Set();
       const reservationTotal = total(source.reservations, 'remaining');
       const exactClaims = count(source.reservedUsable) && reservationTotal === source.reservedUsable;
+      const unknownIsolatedOwner = source.isolated !== 0 && source.reservations.length > 0;
       if (!exactClaims && source.reservations.length) issueCodes.push('CLAIM_USABLE_ATTRIBUTION_REQUIRES_REVIEW');
+      if (unknownIsolatedOwner) issueCodes.push('ISOLATED_CLAIM_ATTRIBUTION_REQUIRES_REVIEW');
       for (const reservation of source.reservations) {
         const target = taskMap.get(reservation.taskId);
         if (!target || targets.has(target.id) || stockKey({ ...target, company }) !== key
@@ -65,7 +67,8 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
           reservedUsable: exactClaims ? reservation.remaining : null,
           // Existing projection does not identify whose quarantined cartons these are.
           isolatedAttributed: source.isolated === 0 ? 0 : null,
-          reviewCodes: exactClaims ? [] : ['CLAIM_USABLE_ATTRIBUTION_REQUIRES_REVIEW'],
+          reviewCodes: [...(!exactClaims ? ['CLAIM_USABLE_ATTRIBUTION_REQUIRES_REVIEW'] : []),
+            ...(unknownIsolatedOwner ? ['ISOLATED_CLAIM_ATTRIBUTION_REQUIRES_REVIEW'] : [])],
           revision: 0, checkpointGeneration: generation, status: exactClaims && reservation.remaining === 0 ? 'CLOSED' : 'ACTIVE' });
       }
       if (!source.reservations.length && source.reservedUsable !== 0 && source.reservedUsable !== null) throw Error('Missing ownership claims');
