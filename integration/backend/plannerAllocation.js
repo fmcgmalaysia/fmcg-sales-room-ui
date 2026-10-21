@@ -1,4 +1,5 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { requirePackingReleased, requirePackingAllocationRetained, packingGuardVersion } from 'backend/packingListGuards.js';
 
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
@@ -22,7 +23,7 @@ export function allocatedTo(taskId,activity){
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
-  return operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity));
+  return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity)));
 }
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
@@ -48,6 +49,8 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
         return {taskId:target.id,orderId:target.orderId,sourceLineId:target.sourceLineId,customerId:target.customerId,quantity:entry.quantity};
       });
       for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&reservedFor(entry.taskId)>0)throw Error('Reserved or invoiced cartons cannot be removed.');if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
+      if(!old)requirePackingReleased({...workspace,activity},[source.customerDemandTaskId||source.id]);
+      requirePackingAllocationRetained({...workspace,activity},old?.targets,targets);
       const stock=stockPosition(source.id,source.warehouse.accepted,activity);
       if(targets.reduce((total,row)=>total+row.quantity,0)>stock.usableReceived)throw Error('Allocate no more than usable received cartons; quarantined stock cannot be allocated.');
       if(operationId(targets)===operationId(old?.targets||[]))throw Error('Allocation has not changed.');

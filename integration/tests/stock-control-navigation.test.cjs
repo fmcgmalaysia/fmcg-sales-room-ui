@@ -47,7 +47,7 @@ test('new Wix entry validates company before selecting its stock iframe; request
 test('Warehouse Wix bridge adds only bounded stock reads and preserves original order routing',async()=>{
  const source=fs.readFileSync(path.join(root,'integration/wix/warehouse-department-page.js'),'utf8').replace(/^import .*;\r?$/gm,'');
  let handler;const sent=[],calls=[],room={onMessage:fn=>handler=fn,postMessage:m=>sent.push(m)},$w=()=>room;$w.onReady=fn=>fn();
- vm.runInNewContext(source,{$w,getWarehouseStockControl:async(company,input)=>{calls.push([company,input]);return {company,items:[]};},getWarehouseOrders:async company=>({company,orders:[]})});
+ vm.runInNewContext(source,{$w,handlePackingList:async()=>false,getWarehouseStockControl:async(company,input)=>{calls.push([company,input]);return {company,items:[]};},getWarehouseOrders:async company=>({company,orders:[]})});
  const message={type:'STOCK_CONTROL_READ_REQUEST',company:'GHR',requestId:'READ',input:{filter:'ON_HAND'}};
  for(const invalid of [{...message,company:'OTHER'},{...message,requestId:''},{...message,input:{search:'x'.repeat(2000)}}])await handler({data:invalid});
  assert.equal(calls.length,0);await handler({data:message});assert.equal(calls.length,1);assert.equal(sent[0].type,'STOCK_CONTROL_READ_RESULT');assert.equal(sent[0].company,'GHR');assert.equal(sent[0].ok,true);

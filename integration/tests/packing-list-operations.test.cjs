@@ -1,0 +1,32 @@
+const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
+const {createPackingListOperations,readPackingLists,packingVersion,projectPackingWorkroom,PACKING_CURRENT}=load('packingListOperations.js');
+const clone=value=>JSON.parse(JSON.stringify(value));
+function fixture(documentService){const records=new Map();let lost=false,sequence=0,sourceVersion='SOURCE-1';
+ const store={all:async c=>[...records].filter(([key])=>key.startsWith(c+'/')).map(([,value])=>clone(value)),read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,row)=>{if(records.has(c+'/'+row._id))throw Error('duplicate');records.set(c+'/'+row._id,clone(row));if(lost&&row.action===PACKING_CURRENT){lost=false;throw Error('lost result');}return clone(row);},update:async(c,row)=>{records.set(c+'/'+row._id,clone(row));if(lost&&row.action===PACKING_CURRENT){lost=false;throw Error('lost result');}return clone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
+ const staff={memberId:'M',staffId:'S',staffName:'Support',packingDepartment:'SUPPORT'},warehouse={memberId:'W',staffId:'WS',staffName:'Warehouse',packingDepartment:'WAREHOUSE'};
+ const context=async(company='NCT')=>({company,sourceVersion,tasks:[{taskId:'T',company,customerId:'C',currency:'USD',remaining:50,ready:50}],lists:readPackingLists(await store.all(company==='NCT'?'N':'G'),company)});
+ const save=createPackingListOperations({store,names:{NCT:{activity:'N'},GHR:{activity:'G'}},readContext:context,documentService,now:()=>new Date('2026-10-21T11:00:00Z')});
+ const request=async(input,actor=staff)=>({company:'NCT',staff:actor,requestId:String(++sequence).padStart(8,'0')+'-1111-4111-8111-111111111111',input:{version:packingVersion(await context()),...input}});
+ const create=async()=>save(await request({action:'CREATE',customerId:'C',currency:'USD',lines:[{taskId:'T',quantity:50}]}));
+ return{records,store,context,save,request,create,staff,warehouse,lose:()=>lost=true,changeSource:()=>sourceVersion='SOURCE-2'};
+}
+test('same current record progresses through departments and drafts stay private',async()=>{const f=fixture(),draft=await f.create();let c=await f.context();assert.equal(projectPackingWorkroom(c,'WAREHOUSE').lists.length,0);const list=c.lists[0];await f.save(await f.request({action:'SEND',id:draft.id,revision:list.revision}));c=await f.context();assert.equal(projectPackingWorkroom(c,'WAREHOUSE').lists[0].id,draft.id);await f.save(await f.request({action:'START',id:draft.id,revision:c.lists[0].revision},f.warehouse));assert.equal((await f.context()).lists[0].status,'PROCESSING');assert.equal((await f.store.all('N')).filter(row=>row.action===PACKING_CURRENT).length,1);});
+test('lost save result resumes same identity and never duplicates the list',async()=>{const f=fixture(),request=await f.request({action:'CREATE',customerId:'C',currency:'USD',lines:[{taskId:'T',quantity:50}]});f.lose();await assert.rejects(f.save(request),/lost result/);const one=await f.save(request),two=await f.save(request);assert.equal(one.id,two.id);assert.equal((await f.context()).lists.length,1);await assert.rejects(f.save({...request,input:{...request.input,customerId:'OTHER'}}),/different changes/);});
+test('stale concurrent send cannot book the final fifty twice',async()=>{const f=fixture();await f.create();await f.create();const lists=(await f.context()).lists;const one=await f.request({action:'SEND',id:lists[0].id,revision:lists[0].revision}),two=await f.request({action:'SEND',id:lists[1].id,revision:lists[1].revision});await f.save(one);await assert.rejects(f.save(two),/changed/);assert.equal((await f.context()).lists.filter(list=>list.status==='SENT').length,1);});
+test('company isolation, existing source changes and verified staff are enforced',async()=>{const f=fixture(),draft=await f.create(),list=(await f.context()).lists[0];const request=await f.request({action:'SEND',id:draft.id,revision:list.revision});f.changeSource();await assert.rejects(f.save(request),/changed/);await assert.rejects(f.save({...request,company:'GHR'}),/changed/);await assert.rejects(f.save({...request,staff:{}}),/not authorized/);assert.equal((await f.context('GHR')).lists.length,0);});
+const bytes=Buffer.from([255,216,255,1,2,3,4,5,6,7,8,9,10,11,12]);
+const photo={mimeType:'image/jpeg',base64:bytes.toString('base64'),sha256:require('node:crypto').createHash('sha256').update(bytes).digest('hex')};
+async function progress(f){await f.create();for(const action of ['SEND','START','PROGRESS']){const list=(await f.context()).lists[0];await f.save(await f.request({action,id:list.id,revision:list.revision,...(action==='PROGRESS'?{lines:[{taskId:'T',packed:50,loaded:40,reason:'Container full'}]}:{})},action==='SEND'?f.staff:f.warehouse));}}
+test('photo retry keeps allocated identity and excludes image bytes from CMS receipts',async()=>{
+ const calls=[];let lost=true;const f=fixture(async input=>{calls.push(clone(input));if(input.action==='ALLOCATE')return {fileId:'PRIVATE-FILE'};if(lost){lost=false;throw Error('upload reply lost');}const {base64,...receipt}=input;return {...receipt,ok:true};});await progress(f);
+ const list=(await f.context()).lists[0],request=await f.request({action:'PHOTOS',id:list.id,revision:list.revision,taskId:'T',photoStage:'LOADING',photos:[photo]},f.warehouse);
+ await assert.rejects(f.save(request),/reply lost/);const saved=await f.save(request);await f.save(request);
+ assert.equal(calls.filter(call=>call.action==='ALLOCATE').length,1);assert.equal(calls.filter(call=>call.action==='PHOTO_UPLOAD').length,2);assert.equal(calls.at(-1).fileId,'PRIVATE-FILE');
+ assert.equal((await f.context()).lists[0].lines[0].photos.length,1);assert.equal(saved.status,'PROCESSING');assert.equal(JSON.stringify([...f.records.values()]).includes(photo.base64),false);
+});
+test('invalid photo role, content and physical stage fail before external allocation',async()=>{
+ const calls=[],f=fixture(async input=>{calls.push(input);return {fileId:'F'};});await f.create();const list=(await f.context()).lists[0],input={action:'PHOTOS',id:list.id,revision:list.revision,taskId:'T',photoStage:'LOADING',photos:[photo]};
+ await assert.rejects(f.save(await f.request(input)),/not authorized/);
+ await assert.rejects(f.save(await f.request({...input,photos:[{...photo,sha256:'0'.repeat(64)}]},f.warehouse)),/content/);
+ await assert.rejects(f.save(await f.request(input,f.warehouse)),/confirm packed/);assert.equal(calls.length,0);
+});

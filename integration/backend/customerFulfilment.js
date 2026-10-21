@@ -1,4 +1,5 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { requirePackingReleased, packingGuardVersion } from 'backend/packingListGuards.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
@@ -7,7 +8,7 @@ const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 const cents=value=>Number.isSafeInteger(value)&&value>0&&value<=999999999999;
 import { FULFILMENT_ACTION, readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
-export function shipmentVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity));}
+export function shipmentVersion(context){return packingGuardVersion(context,operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity)));}
 export function createCustomerFulfilmentOperations({store,names,readContext,readRates,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
@@ -44,6 +45,7 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
     }
     if(input.action==='DISPATCH'){if(current.status!=='INVOICED')throw Error('Sales Invoice is required before dispatch.');if(!text(input.reference)||text(input.reference).length>120)throw Error('Dispatch reference is required (maximum 120 characters).');shipment.status='DISPATCHED';shipment.dispatch={at,by:staff.staffName,byStaffId:staff.staffId,reference:text(input.reference),reason};}
    }
+   if(input.action!=='CANCEL')requirePackingReleased(context,shipment.lines.map(line=>line.taskId));
    if(staff.customerId&&staff.customerId!==shipment.customerId)throw Error('Shipment customer is not authorized.');
    if(input.action!=='CANCEL')for(const sourceId of new Set(shipment.lines.flatMap(line=>line.sources).map(source=>source.sourceTaskId))){
     const affected=readStockExceptions(context.activity).some(item=>item.sourceTaskId===sourceId);
