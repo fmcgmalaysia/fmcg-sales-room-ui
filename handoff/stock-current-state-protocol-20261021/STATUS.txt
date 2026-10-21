@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT 2026-10-22: borrowing-model.cjs is an isolated complete-product calculation,
+not a production CMS blob or authorization endpoint. Transfer binds actual donor claims
+and borrower-specific future PO capacity; accepted receipts repay by approval sequence;
+dispatch preserves obligations/provenance; all-source customer coverage prevents double
+fulfilment; cumulativeTargets retains shipped quantities for legacy allocation contract.
+15/15focused checks pass168.2515ms. BORROWING_MODEL.txt states constraints and actual
+remaining integration work. Production untouched, ACTIVE off. Existing per-source implicit
+receipt algorithm must NOT be used unchanged alongside these transfer relationships.
+
 CURRENT CONTINUATION after8222628: isolated receipt-stock-reader.cjs prepares exact
 position/product/complete source-claim snapshots behind pending/generation barrier.
 CLOSED rows retained in writer query, shared product cached; exact verified store handles

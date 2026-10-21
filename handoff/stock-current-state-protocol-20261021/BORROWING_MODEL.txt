@@ -1,0 +1,70 @@
+Borrowing business calculation candidate — 2026-10-22 — NOT WIRED OR RELEASED
+
+Scope and recovery
+Parent recovery2dc1fbd. New isolated borrowing-model.cjs and focused tests only.
+Production business sources, Wix/CMS, permissions and Pages untouched. This product-wide
+object is a PURE TEST SNAPSHOT, not a proposed single CMS row containing tasks/history.
+Existing position/claim/product records remain the intended physical current model.
+No assertion that borrowing/G2 or the whole inventory work is complete.
+
+Implemented behavior
+Approve a transfer of lender-owned usable physical claims while reserving a specific
+borrower PO source's unreceived capacity. Matching company/barcode/packing/ea, distinct
+customer/task/source identities, positive quantity and approval evidence required.
+Proof input assumes trusted complete source holds and valid PO authority. Strings such
+as approvedBy and booleans such as complete/poValid are NOT real authorization.
+Caller must execute existing employee, PO, invoice, packing and stock validators.
+Borrower having a PO alone is insufficient: uncommitted future capacity and uncovered
+customer demand both cap approval. Source onHand and original receipt/planned counters
+do not change when ownership transfers. Source identities survive same-number PO.
+
+Receipt is cumulative accepted quantity. It first repays bound relationships in approval
+sequence, then fills owner demand after all-source dispatch/current claims/other incoming
+replacement promises. Residual legitimate accepted stock remains available. Rejected or
+isolated cartons do not enter this accepted-receipt transition. Unapproved overdelivery
+rejected, not inventoried. Correction is deliberately not implemented here; downward
+cumulative values reject rather than invent inverse allocation after dispatch.
+The source acceptance update, claims and repayment changes are ONE pure after-state.
+Production must translate that state into ONE existing fenced commit with the original
+receipt event; separate commits/second receive endpoint are prohibited.
+
+Dispatch preserves source-to-customer provenance and does not clear outstanding transfer.
+taskCoverage exposes quantity completion separately from transfer obligations, never sets
+the shared archived flag or bypasses existing invoice/financial completion requirements.
+cumulativeTargets preserves shipped quantities in legacy lifetime allocations. Current
+remaining claims alone cannot replace plannerAllocation.targets.
+
+Guards/limits
+Existing source-confirmed hold gap remains: packingListGuards currently has task-total
+holds, not a universally verified source split. Model assumes complete trusted source
+hold evidence and blocks borrower-held changes; it is not an implemented hold resolver.
+Do not wire to production by relabelling task-total holds or passing browser assertions.
+No indefinite borrowing chains of unreceived entitlements: donor must own actual source
+claim; already borrowed claims cannot themselves serve as a new donor-owned source.
+Outstanding relationship coverage blocks silent lender demand cancellation or borrower
+PO capacity reduction. Explicit cancellation/reassignment/correction operations, immutable
+authorization evidence, live row mapping and automatic-receipt integration remain pending.
+Pure expectedRevision is NOT database concurrency control. Existing conditional commit
+and durable same-request result replay remain mandatory; cumulative receipt replay only
+proves quantity idempotence, and pure revision may advance on zero-delta receipt.
+
+Evidence
+node --test integration/tests/stock-current-borrowing.test.cjs
+Latest15/15pass,0fail,168.2515ms. Reuses earlier unrelated suites, no broad rerun.
+Includes12borrow-quantity/dispatch combinations with5cumulative receipt steps each (60
+enumerated transitions in ONE test), not60additional independent test cases.
+Cases: immutable input, physical conservation, partial/full replacement, fully shipped
+borrower retaining obligation, samePO distinctsource, future-capacity competition, stale
+revision/duplicate relation, cumulative repeat, invalid PO/company/spec/unknown, holds,
+isolation/overdelivery, cancelled demand/reduced PO/correction rejection, other incoming
+promises, display separation and legacy lifetime allocation provenance.
+Memory calculations only; no real Wix borrowing/receiving, network recovery or release.
+
+Next dependent work
+Map a bounded authoritative snapshot and delta to existing position/claim/product rows
+plus a bounded current transfer record; select persistence based on exact existing journal
+consumers. Reconcile task-total packing guards conservatively using existing actual data.
+Integrate original receipt preparation and financial checks without enabling a second
+ownership algorithm. Implement controlled corrections/cancellation and exceptions; verify
+cross-source global coverage. Fresh live-versus-repo capture before any business edit.
+Then original inventory writer coverage/activation gates and public verification still apply.
