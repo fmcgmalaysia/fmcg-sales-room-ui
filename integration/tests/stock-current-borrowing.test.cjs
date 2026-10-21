@@ -3,10 +3,11 @@ const { validate, approveBorrow, receive, dispatch, procurementOutstanding, task
 const identity = { company: 'NCT', barcode: '0001', packing: '24x1', ea: 24 };
 function fixture() {
   return { ...identity, complete: true, revision: 0,
+    packingHolds: { company: 'NCT', complete: true, scope: 'TASK_TOTAL', version: 'H0', heldByTask: { A: 0, B: 0, C: 0 } },
     tasks: ['A', 'B', 'C'].map(id => ({ ...identity, id, customerId: 'CUSTOMER-' + id, requested: 100, dispatched: 0 })),
     sources: ['A', 'B', 'C'].map(id => ({ ...identity, id: 'S-' + id, ownerTaskId: id, poId: 'PO-' + id,
       poValid: true, reviewRequired: false, planned: 100, accepted: id === 'A' ? 0 : 100,
-      onHand: id === 'A' ? 0 : 100, isolated: 0, available: 0, claims: { [id]: id === 'A' ? 0 : 100 }, held: {} })), relations: [] };
+      onHand: id === 'A' ? 0 : 100, isolated: 0, available: 0, claims: { [id]: id === 'A' ? 0 : 100 } })), relations: [] };
 }
 const approval = (state, extra = {}) => ({ expectedRevision: state.revision, id: 'REL-1', quantity: 30,
   lenderSourceId: 'S-B', replacementSourceId: 'S-A', borrowerTaskId: 'A', approvedBy: 'PURCHASER-1', reason: 'Fill container', ...extra });
@@ -80,9 +81,9 @@ test('missing PO, company/spec mismatch, unknown balance and incomplete snapshot
   }
 });
 test('packing held donor and borrower remain blocked by conservative first-version guards', () => {
-  let s = fixture(); source(s, 'B').held.B = 80;
-  assert.throws(() => borrow(s), /Insufficient/);
-  s = fixture(); source(s, 'B').claims = { B: 90, A: 10 }; source(s, 'B').held.A = 10;
+  let s = fixture(); s.packingHolds.heldByTask.B = 80;
+  assert.throws(() => borrow(s), /Packing task holds/);
+  s = fixture(); source(s, 'B').claims = { B: 90, A: 10 }; s.packingHolds.heldByTask.A = 10;
   assert.throws(() => borrow(s), /unheld/);
 });
 test('isolation cannot be borrowed and overdelivery cannot be counted', () => {
@@ -139,4 +140,19 @@ test('enumerated receipt schedules conserve stock and per-customer total coverag
       }
     }
   }
+});
+test('global lender packing hold blocks transfer even when another source could hold all cartons', () => {
+  const s = fixture();
+  source(s, 'B').claims.B = 70; source(s, 'B').available = 30;
+  s.sources.push({ ...structuredClone(source(s, 'B')), id: 'S-B2', accepted: 30, onHand: 30,
+    available: 0, claims: { B: 30 } });
+  s.packingHolds.heldByTask.B = 10;
+  assert.throws(() => borrow(s), /Packing task holds/);
+});
+test('ordinary accepted receipt can repay lender while its other stock is in packing', () => {
+  const s = borrow(fixture()); s.packingHolds.heldByTask.B = 70;
+  const after = recv(s, 20);
+  assert.equal(after.relations[0].repaid, 20);
+  assert.equal(after.packingHolds.heldByTask.B, 70);
+  assert.equal(taskCoverage(after, 'B').reservedUsable, 90);
 });

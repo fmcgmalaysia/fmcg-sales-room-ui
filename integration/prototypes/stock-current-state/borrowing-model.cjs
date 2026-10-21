@@ -20,6 +20,9 @@ function validate(state) {
   if (state.complete !== true || !count(state.revision) || !Array.isArray(state.tasks)
     || !Array.isArray(state.sources) || !Array.isArray(state.relations)) throw Error('Complete snapshot required');
   const key = stockKey(state), tasks = new Map(), sources = new Map(), ids = new Set(), sequences = new Set();
+  if (state.packingHolds?.complete !== true || state.packingHolds.company !== state.company
+    || state.packingHolds.scope !== 'TASK_TOTAL' || !state.packingHolds.version
+    || !state.packingHolds.heldByTask || Array.isArray(state.packingHolds.heldByTask)) throw Error('Verified task packing snapshot required');
   for (const task of state.tasks) {
     if (!task.id || tasks.has(task.id) || !task.customerId || !count(task.requested) || !count(task.dispatched)
       || task.dispatched > task.requested || stockKey(task) !== key) throw Error('Task identity or demand conflict');
@@ -29,12 +32,9 @@ function validate(state) {
     if (!source.id || sources.has(source.id) || !tasks.has(source.ownerTaskId) || !source.poId
       || source.poValid !== true || stockKey(source) !== key || source.reviewRequired !== false
       || !['planned', 'accepted', 'onHand', 'isolated', 'available'].every(k => count(source[k]))
-      || source.accepted > source.planned || !source.claims || !source.held) throw Error('Source identity or balance conflict');
+      || source.accepted > source.planned || !source.claims) throw Error('Source identity or balance conflict');
     for (const [taskId, qty] of Object.entries(source.claims)) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Claim conflict');
-    }
-    for (const [taskId, qty] of Object.entries(source.held)) {
-      if (!count(qty) || qty > (source.claims[taskId] || 0)) throw Error('Confirmed source hold required');
     }
     for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Dispatch provenance conflict');
@@ -54,6 +54,8 @@ function validate(state) {
     ids.add(relation.id); sequences.add(relation.sequence);
   }
   for (const task of state.tasks) {
+    if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
+      || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
     if (sum(state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)) !== task.dispatched) throw Error('Task dispatch provenance conflict');
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
   }
@@ -79,9 +81,10 @@ function approveBorrow(before, input) {
     const future = state.sources.find(s => s.id === input.replacementSourceId);
     const borrower = state.tasks.find(t => t.id === input.borrowerTaskId);
     if (!donor || !future || !borrower || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
-      || sum(state.sources.map(s => s.held[borrower.id] || 0)) !== 0) throw Error('Eligible unheld borrower required');
+      || state.packingHolds.heldByTask[borrower.id] !== 0) throw Error('Eligible unheld borrower required');
     const lender = donor.ownerTaskId;
-    if (input.quantity > (donor.claims[lender] || 0) - (donor.held[lender] || 0)
+    if (state.packingHolds.heldByTask[lender] !== 0) throw Error('Packing task holds lender allocation');
+    if (input.quantity > (donor.claims[lender] || 0)
       || input.quantity > future.planned - future.accepted - outgoing(state, future.id)
       || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id)) throw Error('Insufficient eligible stock, demand or future supply');
     donor.claims[lender] -= input.quantity;
@@ -117,7 +120,7 @@ function dispatch(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId), task = state.tasks.find(t => t.id === input.taskId);
     if (!source || !task || !positive(input.quantity) || input.quantity > (source.claims[task.id] || 0)
-      || (source.held[task.id] || 0) !== 0) throw Error('Validated dispatch source required');
+      || state.packingHolds.heldByTask[task.id] !== 0) throw Error('Validated dispatch source required');
     source.claims[task.id] -= input.quantity;
     source.onHand -= input.quantity;
     source.dispatchedByTask = { ...(source.dispatchedByTask || {}),

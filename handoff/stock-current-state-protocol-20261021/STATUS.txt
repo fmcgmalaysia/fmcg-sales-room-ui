@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after996d3ab: PACKING_HOLD_BRIDGE.txt supersedes earlier universal
+SOURCE_CONFIRMED requirement. Existing task-total packing guards suffice conservatively:
+borrow approval requires lender+borrower task holds0; implicit receipt claim reductions
+block if affected task held; monotonic receipts/automatic repayment can proceed.
+New snapshot helper reuses exact production list parser/held rules, no source split or
+new locks/storage. Receipt reader supports explicitly scoped TASK_TOTAL separately from
+source evidence.45/45focused tests pass343.1636ms. Production untouched/ACTIVE off;
+original authorized receipt adapter and persisted transfer/repayment plans remain pending.
+
 CURRENT 2026-10-22: borrowing-model.cjs is an isolated complete-product calculation,
 not a production CMS blob or authorization endpoint. Transfer binds actual donor claims
 and borrower-specific future PO capacity; accepted receipts repay by approval sequence;

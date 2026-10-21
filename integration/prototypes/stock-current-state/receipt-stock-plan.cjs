@@ -15,7 +15,7 @@ function knownBalance(row) {
     || row.reviewCodes?.length || !['ACTIVE', 'CLOSED'].includes(row.status)) throw Error('Known current balance required');
 }
 function planReceiptStockLine({ company, line, sourceTask, ownership, position = null, claims = [], product = null,
-  generation, holdsVerified, heldByTask = {} }) {
+  generation, holdsVerified, heldByTask = {}, taskHoldTotals = null }) {
   const key = stockKey({ ...sourceTask, company });
   if (!count(generation) || generation === Number.MAX_SAFE_INTEGER || holdsVerified !== true
     || !line || line.taskId !== sourceTask.id || line.orderId !== sourceTask.orderId
@@ -57,6 +57,11 @@ function planReceiptStockLine({ company, line, sourceTask, ownership, position =
   }
   const delta = line.accepted - line.beforeAccepted;
   if (!ownership || !['PURCHASE_CUSTOMER_SHARE', 'PLANNER_ALLOCATION'].includes(ownership.kind)) throw Error('Ownership basis required');
+  if (taskHoldTotals !== null) {
+    const affected = new Set([...claims.map(claim => claim.taskId), ...(ownership.owner?.id ? [ownership.owner.id] : [])]);
+    if (!taskHoldTotals || typeof taskHoldTotals !== 'object' || Array.isArray(taskHoldTotals)
+      || [...affected].some(id => !Object.hasOwn(taskHoldTotals, id) || !count(taskHoldTotals[id]))) throw Error('Complete task hold totals required');
+  }
   let deltaReserved = 0, claimChange = null;
   if (ownership.kind === 'PURCHASE_CUSTOMER_SHARE') {
     const share = ownership.customerShare, owner = ownership.owner;
@@ -72,6 +77,9 @@ function planReceiptStockLine({ company, line, sourceTask, ownership, position =
       if ((beforeClaim?.reservedUsable || 0) !== expectedBefore || beforeClaim && beforeClaim.customerId !== owner.customerId) throw Error('Implicit claim basis changed');
       const afterReserved = Math.max(0, Math.min(share, line.accepted + replacement) - dispatched - isolatedAttributed);
       if (afterReserved < (heldByTask[owner.id] || 0)) throw Error('Correction below held stock');
+      // Global task holds are not source quantities. Preserve the existing broad guard
+      // only when this operation actually reduces this customer's source allocation.
+      if (afterReserved < expectedBefore && taskHoldTotals?.[owner.id] > 0) throw Error('Packing task holds this allocation; resolve packing before reduction');
       deltaReserved = afterReserved - expectedBefore;
       if (deltaReserved !== 0) {
         const after = { ...(beforeClaim || { _id: hash(company, positionId, owner.id), schemaVersion: 1, company,

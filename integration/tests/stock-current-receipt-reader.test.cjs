@@ -74,6 +74,22 @@ test('global task holds cannot be relabeled as source-specific confirmation', as
   const f = fixture(); f.authority.sources[0].holds.scope = 'TASK_TOTAL';
   await assert.rejects(createReceiptStockReader(f.deps)(), /Confirmed source holds/); assert.equal(f.calls.length, 0);
 });
+test('verified global task holds permit monotonic receipt without inventing source allocation', async () => {
+  const f = fixture();
+  f.authority.sources[0].holds = { complete: true, company: 'NCT', scope: 'TASK_TOTAL', version: 'H1', heldByTask: { B: 80 } };
+  const result = await createReceiptStockReader(f.deps)();
+  assert.equal(result.plan.writes.find(write => write.collection === 'StockClaims').after.reservedUsable, 20);
+  // Task may have other-source80 held, while this source currently has zero.
+});
+test('global task evidence missing an affected task or wrong company rejects', async () => {
+  for (const holds of [
+    { complete: true, company: 'NCT', scope: 'TASK_TOTAL', version: 'H1', heldByTask: {} },
+    { complete: true, company: 'GHR', scope: 'TASK_TOTAL', version: 'H1', heldByTask: { B: 0 } }
+  ]) {
+    const f = fixture(); f.authority.sources[0].holds = holds;
+    await assert.rejects(createReceiptStockReader(f.deps)(), /hold/);
+  }
+});
 test('permission/read errors and vanished claims stop instead of becoming free inventory', async () => {
   const f = fixture();
   await assert.rejects(createReceiptStockReader({ ...f.deps, store: { read: async () => { throw Error('Permission unavailable'); } } })(), /Permission unavailable/);

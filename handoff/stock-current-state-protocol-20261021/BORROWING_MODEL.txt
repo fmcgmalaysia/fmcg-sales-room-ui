@@ -1,5 +1,9 @@
 Borrowing business calculation candidate — 2026-10-22 — NOT WIRED OR RELEASED
 
+CONTINUATION: PACKING_HOLD_BRIDGE.txt supersedes the source-confirmed hold requirement
+below. Model now uses complete TASK_TOTAL packing snapshot and conservatively blocks
+both lender/borrower with held tasks. Source-specific split is no longer required here.
+
 Scope and recovery
 Parent recovery2dc1fbd. New isolated borrowing-model.cjs and focused tests only.
 Production business sources, Wix/CMS, permissions and Pages untouched. This product-wide

@@ -33,7 +33,8 @@ function createReceiptStockReader({ company, items, store, protocol, readReceipt
       for (const source of authority.sources) {
         const { sourceTask, ownership, holds } = source;
         if (sourceTask?.company !== company || !sourceTask.id || holds?.complete !== true
-          || holds.scope !== 'SOURCE_CONFIRMED' || holds.sourceTaskId !== sourceTask.id
+          || !['SOURCE_CONFIRMED', 'TASK_TOTAL'].includes(holds.scope)
+          || (holds.scope === 'SOURCE_CONFIRMED' ? holds.sourceTaskId !== sourceTask.id : holds.company !== company || !holds.version)
           || !holds.heldByTask || typeof holds.heldByTask !== 'object' || Array.isArray(holds.heldByTask)) throw Error('Confirmed source holds required');
         const key = stockKey({ ...sourceTask, company }), positionId = hash(company, key, 'PURCHASE_SOURCE', sourceTask.id);
         const position = await exact('StockPositions', positionId), product = await exact('StockProducts', hash(company, key));
@@ -54,7 +55,8 @@ function createReceiptStockReader({ company, items, store, protocol, readReceipt
           claims.push(claim);
         }
         contexts.push({ sourceTask: copy(sourceTask), ownership: copy(ownership), position, product, claims,
-          holdsVerified: true, heldByTask: copy(holds.heldByTask) });
+          holdsVerified: true, heldByTask: holds.scope === 'SOURCE_CONFIRMED' ? copy(holds.heldByTask) : {},
+          taskHoldTotals: holds.scope === 'TASK_TOTAL' ? copy(holds.heldByTask) : null });
       }
       return { event: copy(authority.event), contexts };
     });

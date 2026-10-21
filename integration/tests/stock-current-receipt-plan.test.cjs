@@ -21,6 +21,16 @@ function fixture({ accepted = 80, share = 200, extra = false } = {}) {
 }
 const after = (plan, collection) => plan.writes.find(row => row.collection === collection)?.after;
 
+test('task-total packing does not block added stock but conservatively blocks claim reduction', () => {
+  const args = fixture();
+  const growing = planReceiptStockLine({ ...args, taskHoldTotals: { B: 150 } });
+  assert.equal(after(growing, 'StockClaims').reservedUsable, 100);
+  const correction = { ...args, line: { ...args.line, accepted: 70, kind: 'CORRECTION', reason: 'Count correction' } };
+  assert.throws(() => planReceiptStockLine({ ...correction, taskHoldTotals: { B: 1 } }), /Packing task/);
+  const unheld = planReceiptStockLine({ ...correction, taskHoldTotals: { B: 0 } });
+  assert.equal(after(unheld, 'StockClaims').reservedUsable, 70);
+});
+
 test('partial receipt adds only20 to source/customer/product and leaves old free20 alone', () => {
   const args = fixture({ extra: true }), original = JSON.stringify(args), plan = planReceiptStockLine(args);
   assert.equal(JSON.stringify(args), original);
