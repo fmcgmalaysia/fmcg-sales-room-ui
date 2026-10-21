@@ -1,0 +1,65 @@
+2026-10-22 — isolated original receipt validation and multi-product save composition
+
+Objective: preserve original Warehouse receipt validations and full original PO receipt,
+while preparing current stock and automatic borrowing replacement in ONE fenced plan.
+Recovery: unchanged protected baseline d447185; previous candidate d4f7d9b. No production
+files, live Wix, CMS, schema, permissions, deployment or business data changed.
+
+Files added
+integration/prototypes/stock-current-state/original-receipt-validation.cjs
+integration/prototypes/stock-current-state/warehouse-receipt-plan.cjs
+integration/tests/stock-current-original-receipt.test.cjs
+integration/tests/stock-current-warehouse-plan.test.cjs
+
+Original validation compatibility bridge
+- Uses injected ORIGINAL createWarehouseOperations, not copied receipt conditions.
+- Executes against a per-call private scratch journal; it accepts NO real store/write
+  capability. Company/order/activity snapshots are inputs from future server composition.
+- Captures original PREPARED plan and stops via private sentinel BEFORE legacy apply.
+  Scratch LOCK is removed only in memory; no actual CMS deletion or lock authorization used.
+- Every unexpected collection/action, unexpected apply/read sequence or missing boundary
+  fails closed. Original prepare failure propagates; successful event exactly matches an
+  original save with identical clock/input/context. Original staff auth remains required
+  BEFORE loading server context; helper itself does not grant employee authorization.
+- Tests retain original stale PO, duplicate/foreign source, over-approved quantity, partial
+  reason, rejection, issue-resolution, original allocated correction floor and finance lock.
+- This is an isolated compatibility seam, not permission to ship journal interception as
+  the final production adapter. Focused integration review must choose/review the actual
+  minimal live seam after fresh compare; legacy apply must NOT also run after fenced save.
+
+Multi-product composition
+- Complete snapshots for all changed source products must come from the SAME read barrier.
+- Every original receipt line must map to exactly one product; duplicate/unrelated/missing
+  product snapshots refuse the entire save. No per-product commit or partial PO receipt.
+- Existing per-product receipt/repayment planner is reused; only one full original event
+  is retained. Each affected product increments revision once, same global generation.
+- Combined existing proof bound30writes/180000bytes is checked after composition; oversized
+  saves fail before writes. This is NOT established production capacity. No silent chunking.
+- Injected failure on second product: pending barrier blocks stock reads; same request
+  resumes prepared plan and subsequent replay yields one receipt, correct200 total cartons.
+
+Evidence
+node --test integration/tests/stock-current-original-receipt.test.cjs
+  integration/tests/warehouse-receiving.test.cjs
+13pass0fail205.4478ms.
+node --test integration/tests/stock-current-warehouse-plan.test.cjs
+  integration/tests/stock-current-original-receipt.test.cjs
+  integration/tests/stock-current-borrow-plan.test.cjs
+21pass0fail229.0358ms. Overlapping tests are not additional unique coverage.
+One read attempt used root-relative checkout files incorrectly and failed; corrected cwd
+once without changing operation. No whole-project scan, unchanged suite rerun or UI retry.
+Token/cache/actual Credit UNKNOWN; no unmeasured cost claim.
+
+Remaining next implementation dependencies
+Authenticated Warehouse context builder must call existing requireWarehouseStaff, use
+same original PO/task/activity snapshot, assemble ALL changed products inside barrier,
+revalidate original expectedVersion under fenced company lock, and retain original event
+once. Current Purchase authority builder is not Warehouse permission. Existing quantity
+and allocation readers must be replaced by reviewed current-state counterparts at ACTIVE,
+not run as competing authorities. All original correction locks still apply; the bridge
+does not solve original allocation ledger/current borrowing reconciliation by itself.
+All-writer coverage, exception lifecycle/capacity/indexes, real recovery/migration/shadow,
+actual UI/halo integration and four-stage release remain as OVERNIGHT_CLOSEOUT specifies.
+
+Four statuses: isolated code candidate only; Pages unchanged; Wix unchanged; formal public
+borrowing workflow unavailable/unverified. Not ready to ask user for real borrowing tests.

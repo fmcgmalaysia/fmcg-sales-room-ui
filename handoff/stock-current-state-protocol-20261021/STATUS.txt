@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 afterd4f7d9b: WAREHOUSE_RECEIPT_BRIDGE.txt. Isolated
+bridge executes unchanged original Warehouse prepare against private scratch journal;
+never receives a real write/delete store. Existing PO/reason/finance/allocation guards
+retained; event equals original save. New multi-product composer retains ONE full PO
+receipt and one fenced plan, with complete/disjoint product coverage. Interrupted second
+product blocks reads and resumes/replays original plan once.21focused checks passed
+229.0358ms; earlier13original+bridge checks205.4478ms overlap, do not sum. Not a real
+Warehouse authority endpoint: authenticated context/read barrier/version recheck and
+all-writer/capacity/recovery gates remain open. Production unchanged; ACTIVE OFF.
+
 CURRENT HEARTBEAT 2026-10-22 after5b49750: BORROWING_AUTHORITY.txt. New isolated Purchase
 authority factory reuses ORIGINAL staff auth/PO/shipments/packing parsers; browser actor
 spoof ignored, exact current rows assembled inside barrier, legacy shipment holds retained.
