@@ -1,5 +1,9 @@
 G0 stock commit protocol proof — OFFLINE ONLY — NOT PRODUCTION READY
 
+Receipt continuation: receipt-stock-plan.cjs plans cumulative receipt DIFFERENCES and
+coalesces receipt+source/claim/product changes, no live entry.16new receipt tests pass;
+converter9and existing warehouse7 pass. See handoff RECEIPT_ADAPTER.txt for exact limits.
+
 2026-10-21 actual SDK continuation: stockProtocolCommitTest.web.js is an isolated Admin
 DRAFT diagnostic. Exactly3approved lock-release cycles and interrupted/resumed/replayed
 Wix stages passed in StockProtocolTest. Business collections are not used; no production

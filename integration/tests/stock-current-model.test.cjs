@@ -68,6 +68,8 @@ test('dispatched40 converts lifetime allocation100 to current claim60 without mu
   }));
   const r = convert([task('B', 120, 100, { archived: true })], [allocation, ...events]);
   assert.equal(r.products[0].onHand, 80); assert.equal(r.products[0].available, 20);
+  assert.equal(r.positions[0].receiptAccepted, 120); assert.equal(r.positions[0].dispatched, 40);
+  assert.equal(r.positions[0].replacementReceived, 0);
   assert.equal(r.claims[0].reservedUsable, 60); assert.equal(allocation.details.targets[0].quantity, 100);
 });
 test('product pagination calls bounded repository only and rejects cross-company output', async () => {

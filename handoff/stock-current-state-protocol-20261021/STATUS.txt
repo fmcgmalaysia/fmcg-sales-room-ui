@@ -1,5 +1,17 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION afteree49d55: receipt-stock-plan.cjs now prepares isolated RECEIVE/
+CORRECT balance deltas and composes full original receipt+balances in one fenced plan.
+No protected business file/live code changed. Same-product sources coalesce one summary;
+first receipts do not duplicate products; rejected-only creates no normal stock; original
+manual allocation preserved; holds/unknown/stale basis reject. Candidate conversion now
+retains receiptAccepted/replacementReceived/dispatched lifetime bases distinct from current
+onHand. Latest receipt16/16pass138.0149ms; model9/9pass132.7407ms; original Warehouse7/7
+passed in initial affected25check run307.5853ms, not rerun unchanged.32distinct checks,
+not actual Wix receiving or completed entry integration. RECEIPT_ADAPTER.txt details bounds.
+Next: bounded writer snapshot/ownership/holds reads and remaining allocation/demand
+writers; original PO/finance/auth guards still require actual wiring before activation.
+
 CURRENT CONTINUATION after9d43c5d: complete isolated commit harness prepared/tested and
 run in actual Wix. User expressly approved at most3permanent conditional removals of
 PROTOCOL-70c1b2:NCTActivity:1cbdee1c74664528d2874f12e56c301d in StockProtocolTest.
