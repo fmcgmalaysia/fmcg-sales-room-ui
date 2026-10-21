@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 after5b49750: BORROWING_AUTHORITY.txt. New isolated Purchase
+authority factory reuses ORIGINAL staff auth/PO/shipments/packing parsers; browser actor
+spoof ignored, exact current rows assembled inside barrier, legacy shipment holds retained.
+Saved ownerShare now caps future promises and autoallocation (FOC not silently reassigned).
+Found converter display-PO/internal-PO mismatch; pure conversion now requires resolved
+task.poId and preserves separatepoNumber.45affected authority/model/plan/preview checks
+pass276.7792ms; converter+receipt27pass176.5161ms. Production remains unchanged/ACTIVEOFF.
+Original Warehouse validation adapter and all-writer/mode/recovery/scale gates still open.
+
 OVERNIGHT CONTINUATION ACTIVE: user asked continued work while resting. Thread heartbeat
 id automation created successfully, every15minutes, same-chat implementation continuation
 through PR220. Quiet except completion/new necessary human action; stop it after full

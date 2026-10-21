@@ -13,8 +13,10 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     const metrics = { exactReads: 0, queries: 0 };
     const snapshot = await protocol.readSnapshot(async () => {
       const authority = await readAuthority();
-      if (!authority?.state || authority.state.company !== company || !['APPROVE', 'RETURN', 'RECEIVE'].includes(authority.kind)) throw Error('Verified borrowing authority required');
-      const key = stockKey(authority.state), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+      const identity = authority?.identity || authority?.state;
+      if (!identity || identity.company !== company || !['APPROVE', 'RETURN', 'RECEIVE'].includes(authority.kind)
+        || !authority.state && typeof authority.buildState !== 'function') throw Error('Verified borrowing authority required');
+      const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       async function exact(collection, id) {
         metrics.exactReads++;
         return copy(await store.read(collection, id));
@@ -42,7 +44,9 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
       const claims = await completeRows('StockClaims', 60);
       const transfers = await completeRows(journal, 30, 'STOCK_TRANSFER_CURRENT');
       const product = await exact('StockProducts', hash(company, key));
-      return { authority, rows: { complete: true, positions, claims, transfers, product } };
+      const rows = { complete: true, positions, claims, transfers, product };
+      if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
+      return { authority, rows };
     });
     const { authority, rows } = snapshot.rows;
     const args = { state: authority.state, rows, event: authority.event, generation: snapshot.generation };

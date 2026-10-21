@@ -5,13 +5,13 @@ const { convertProjectedStock } = require('../prototypes/stock-current-state/cur
 const { planReceiptStockLine, composeReceiptStockPlan } = require('../prototypes/stock-current-state/receipt-stock-plan.cjs');
 const { createFencedProof } = require('../prototypes/stock-current-state/fenced-proof.cjs');
 const task = (id, accepted, share, extra = {}) => ({ id, company: 'NCT', customerId: id, orderId: 'O-' + id, sourceLineId: 'L-' + id,
-  barcode: '0001', name: 'TEST', packing: '12x1', ea: 12, ord: share, requested: share, po: 'PO-' + id,
+  barcode: '0001', name: 'TEST', packing: '12x1', ea: 12, ord: share, requested: share, po: 'PO-' + id, poId: 'PO-ID-' + id,
   procurement: { totalCtn: 200, customerCtn: share }, warehouse: { hasPhysicalReceipt: true, accepted }, ...extra });
 function fixture({ accepted = 80, share = 200, extra = false } = {}) {
   const source = task('B', accepted, share), tasks = [source, ...(extra ? [task('FOC', 20, 0, { specialPurchase: true })] : [])];
   const converted = convertProjectedStock({ snapshot: projectStockCard({ company: 'NCT', tasks, activity: [] }), tasks, generation: 0 });
   for (const row of [...converted.positions, ...converted.claims, ...converted.products]) row._version = 'V0';
-  const args = { company: 'NCT', sourceTask: { ...source, poId: source.po },
+  const args = { company: 'NCT', sourceTask: { ...source, poId: source.poId },
     ownership: { kind: 'PURCHASE_CUSTOMER_SHARE', customerShare: share, owner: source },
     position: converted.positions.find(row => row.sourceTaskId === 'B'), claims: converted.claims.filter(row => row.taskId === 'B'),
     product: converted.products[0], generation: 0, holdsVerified: true, heldByTask: {},

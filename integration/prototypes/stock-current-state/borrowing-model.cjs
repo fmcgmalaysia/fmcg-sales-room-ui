@@ -33,6 +33,7 @@ function validate(state) {
       || source.poValid !== true || stockKey(source) !== key || source.reviewRequired !== false
       || !['OWNER_DEMAND', 'EXPLICIT_ONLY'].includes(source.receiptPolicy)
       || !['planned', 'accepted', 'onHand', 'isolated', 'available'].every(k => count(source[k]))
+      || !count(source.ownerShare) || source.ownerShare > source.planned
       || source.accepted > source.planned || !source.claims) throw Error('Source identity or balance conflict');
     for (const [taskId, qty] of Object.entries(source.claims)) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Claim conflict');
@@ -63,7 +64,7 @@ function validate(state) {
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
   }
   for (const source of state.sources) {
-    if (outgoing(state, source.id) > source.planned - source.accepted) throw Error('Future supply already committed');
+    if (outgoing(state, source.id) > Math.max(0, source.ownerShare - source.accepted)) throw Error('Future supply already committed');
   }
   return state;
 }
@@ -88,7 +89,7 @@ function approveBorrow(before, input) {
     const lender = donor.ownerTaskId;
     if (state.packingHolds.heldByTask[lender] !== 0) throw Error('Packing task holds lender allocation');
     if (input.quantity > (donor.claims[lender] || 0)
-      || input.quantity > future.planned - future.accepted - outgoing(state, future.id)
+      || input.quantity > Math.max(0, future.ownerShare - future.accepted) - outgoing(state, future.id)
       || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id)) throw Error('Insufficient eligible stock, demand or future supply');
     donor.claims[lender] -= input.quantity;
     donor.claims[borrower.id] = (donor.claims[borrower.id] || 0) + input.quantity;
@@ -114,7 +115,9 @@ function receive(before, input) {
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
     const need = owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id);
-    const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need);
+    const repaidFromSource = sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
+    const ownCapacity = Math.max(0, source.ownerShare - repaidFromSource - (source.claims[owner.id] || 0) - (source.dispatchedByTask?.[owner.id] || 0));
+    const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need, ownCapacity);
     if (own) source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
     source.available += left - own;
   });

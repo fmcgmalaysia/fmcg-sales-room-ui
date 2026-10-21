@@ -3,7 +3,7 @@ const load = require('./load-master-module.cjs');
 const { projectStockCard } = load('stockCardProjection.js');
 const { stockKey, convertProjectedStock, readProductPage } = require('../prototypes/stock-current-state/current-model.cjs');
 const task = (id, accepted, share, extra = {}) => ({ id, customerId: id, barcode: '0001', name: 'TEST',
-  packing: '12x1', ea: 12, ord: share, requested: share, po: 'PO-' + id,
+  packing: '12x1', ea: 12, ord: share, requested: share, po: 'PO-' + id, poId: 'PO-ID-' + id,
   procurement: { totalCtn: accepted, customerCtn: share },
   warehouse: { hasPhysicalReceipt: true, accepted }, ...extra });
 function convert(tasks, activity = [], company = 'NCT') {
@@ -22,6 +22,11 @@ test('empty stock does not create catalogue placeholder rows; unreceived demand 
   assert.deepEqual(convert([]).products, []);
   const r = convert([task('A', 100, 100, { warehouse: { hasPhysicalReceipt: false, accepted: 0 } })]);
   assert.equal(r.positions.length, 0); assert.equal(r.products.length, 0);
+});
+test('migration requires resolved internal PO identity and preserves separate display number', () => {
+  const result = convert([task('B', 10, 10)]);
+  assert.equal(result.positions[0].poId, 'PO-ID-B'); assert.equal(result.positions[0].poNumber, 'PO-B');
+  assert.throws(() => convert([task('B', 10, 10, { poId: undefined })]), /Resolved purchase order ID/);
 });
 test('partial receipt reserves actual80 rather than customer demand200', () => {
   const r = convert([task('B', 80, 200, { procurement: { totalCtn: 200, customerCtn: 200 } })]);

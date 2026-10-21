@@ -6,7 +6,7 @@ function fixture() {
     packingHolds: { company: 'NCT', complete: true, scope: 'TASK_TOTAL', version: 'H0', heldByTask: { A: 0, B: 0, C: 0 } },
     tasks: ['A', 'B', 'C'].map(id => ({ ...identity, id, customerId: 'CUSTOMER-' + id, requested: 100, dispatched: 0 })),
     sources: ['A', 'B', 'C'].map(id => ({ ...identity, id: 'S-' + id, ownerTaskId: id, poId: 'PO-' + id,
-      poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', planned: 100, accepted: id === 'A' ? 0 : 100,
+      poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', ownerShare: 100, planned: 100, accepted: id === 'A' ? 0 : 100,
       onHand: id === 'A' ? 0 : 100, isolated: 0, available: 0, claims: { [id]: id === 'A' ? 0 : 100 } })), relations: [] };
 }
 const approval = (state, extra = {}) => ({ expectedRevision: state.revision, id: 'REL-1', quantity: 30,
@@ -93,7 +93,7 @@ test('isolation cannot be borrowed and overdelivery cannot be counted', () => {
 });
 test('demand cancellation or PO reduction cannot silently erase replacement obligations', () => {
   const s = borrow(fixture());
-  const reducedPo = structuredClone(s); source(reducedPo, 'A').planned = 29;
+  const reducedPo = structuredClone(s); source(reducedPo, 'A').planned = 29; source(reducedPo, 'A').ownerShare = 29;
   assert.throws(() => validate(reducedPo), /Future supply/);
   const cancelledLender = structuredClone(s); cancelledLender.tasks.find(t => t.id === 'B').requested = 70;
   assert.throws(() => validate(cancelledLender), /coverage/);
@@ -190,4 +190,13 @@ test('correction protects packing and actual dispatched provenance', () => {
   assert.throws(() => correctAccepted(s, { expectedRevision: s.revision, sourceId: 'S-A', cumulativeAccepted: 20, reason: 'Correction' }), /Packing/);
   s = send(recv(borrow(fixture()), 100), 'B', 'S-A', 30);
   assert.throws(() => correctAccepted(s, { expectedRevision: s.revision, sourceId: 'S-A', cumulativeAccepted: 20, reason: 'Correction' }), /shipped/);
+});
+test('FOC/unassigned PO share is neither promised for borrowing nor silently assigned on receipt', () => {
+  const s = fixture(); source(s, 'A').ownerShare = 80;
+  assert.throws(() => borrow(s, { quantity: 81 }), /Insufficient/);
+  const after = recv(borrow(s), 100);
+  assert.equal(source(after, 'A').claims.B, 30);
+  assert.equal(source(after, 'A').claims.A, 50);
+  assert.equal(source(after, 'A').available, 20);
+  assert.equal(taskCoverage(after, 'A').uncovered, 20);
 });

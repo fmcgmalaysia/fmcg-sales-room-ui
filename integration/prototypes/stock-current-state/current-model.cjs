@@ -40,6 +40,7 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
       const task = taskMap.get(source.sourceTaskId);
       if (!task || seenSources.has(task.id) || stockKey({ ...task, company }) !== key
         || !Array.isArray(source.reservations) || !Array.isArray(source.issues)) throw Error('Source identity conflict');
+      if (typeof task.poId !== 'string' || !task.poId) throw Error('Resolved purchase order ID required');
       seenSources.add(task.id);
       for (const field of ['onHand', 'isolated', 'reservedUsable', 'available']) {
         if (!nullableCount(source[field])) throw Error('Invalid current quantity');
@@ -69,7 +70,7 @@ function convertProjectedStock({ snapshot, tasks, generation }) {
       if (!source.reservations.length && source.reservedUsable !== 0 && source.reservedUsable !== null) throw Error('Missing ownership claims');
       const position = { _id: positionId, schemaVersion: 1, company, stockKey: key,
         barcode: item.barcode, name: item.name || '', packing: item.packing, ea: item.ea,
-        sourceKind: 'PURCHASE_SOURCE', sourceId: task.id, sourceTaskId: task.id, poId: source.po || '',
+        sourceKind: 'PURCHASE_SOURCE', sourceId: task.id, sourceTaskId: task.id, poId: task.poId, poNumber: source.po || '',
         receiptAccepted: source.received, replacementReceived: source.replacementReceived, dispatched: source.dispatched,
         onHand: source.onHand, isolated: source.isolated, reservedUsable: source.reservedUsable,
         available: source.available, reviewCodes: [...new Set(issueCodes)], revision: 0,

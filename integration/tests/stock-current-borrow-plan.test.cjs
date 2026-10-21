@@ -14,7 +14,7 @@ function fixture() {
     tasks: ['A', 'B'].map(id => ({ ...identity, id, customerId: 'CUSTOMER-' + id, requested: 100, dispatched: 0,
       orderId: 'O-' + id, sourceLineId: 'L-' + id })),
     sources: ['A', 'B'].map(id => ({ ...identity, id: 'S-' + id, ownerTaskId: id, poId: 'PO-' + id, orderId: 'O-' + id,
-      sourceLineId: 'SL-' + id, poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', planned: 100, accepted: id === 'B' ? 100 : 0,
+      sourceLineId: 'SL-' + id, poValid: true, reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', ownerShare: 100, planned: 100, accepted: id === 'B' ? 100 : 0,
       onHand: id === 'B' ? 100 : 0, isolated: 0, available: 0, claims: { [id]: id === 'B' ? 100 : 0 } })), relations: [] };
   const base = { company: 'NCT', stockKey: key, revision: 0, checkpointGeneration: 0, status: 'ACTIVE', _version: 'V0', reviewCodes: [] };
   const rows = { complete: true,

@@ -7,7 +7,7 @@ function reset() {
     packingHolds: { company: 'NCT', complete: true, scope: 'TASK_TOTAL', version: 'DEMO', heldByTask: { A: 0, B: 0 } },
     tasks: ['A', 'B'].map(id => ({ ...identity, id, customerId: 'DEMO-' + id, requested: 100, dispatched: 0 })),
     sources: ['A', 'B'].map(id => ({ ...identity, id: 'S-' + id, ownerTaskId: id, poId: 'DEMO-PO-' + id, poValid: true,
-      reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', planned: 100, accepted: id === 'B' ? 100 : 0,
+      reviewRequired: false, receiptPolicy: 'OWNER_DEMAND', ownerShare: 100, planned: 100, accepted: id === 'B' ? 100 : 0,
       onHand: id === 'B' ? 100 : 0, isolated: 0, available: 0, claims: { [id]: id === 'B' ? 100 : 0 } })), relations: [] };
   nextRelation = 1; $('status').textContent = ''; render();
 }
