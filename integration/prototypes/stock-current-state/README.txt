@@ -1,5 +1,16 @@
 G0 stock commit protocol proof — OFFLINE ONLY — NOT PRODUCTION READY
 
+2026-10-21 continuation
+fenced-proof.cjs is the revised injected conditional-store protocol (21new checks pass).
+current-model.cjs converts a complete legacy projection once, preserving current/lifetime
+quantity boundaries, then defines a bounded current-product repository read (9checks pass).
+Neither module is imported by production. Original unsafe counterexample below is retained.
+stockProtocolTest.web.js is an authorized Wix DRAFT Admin diagnostic for StockProtocolTest;
+its two retained rows are synthetic. Both old-wrapper patch probes failed INVALID_ARGUMENT,
+not a version condition. Current official SDK has a different supported conditional API.
+stockProtocolSdkTest.web.js is prepared LOCAL ONLY pending @wix/data dependency approval.
+See handoff/stock-current-state-protocol-20261021/SOL_IMPLEMENTATION.txt for exact results.
+
 Purpose
 Exercise the proposed current-state commit steps without editing the existing company
 journal, Wix adapter, runtime imports, CMS, permissions or deployed websites.

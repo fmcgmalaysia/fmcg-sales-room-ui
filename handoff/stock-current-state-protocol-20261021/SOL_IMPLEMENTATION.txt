@@ -1,0 +1,79 @@
+2026-10-21 — isolated implementation progress after 17a4991
+
+New offline protocol: integration/prototypes/stock-current-state/fenced-proof.cjs
+Injectable atomic version conditions on every mutable row/control, and exact execution
+token on lock release. No production imports or authentication endpoint.
+Actual command: node --test integration/tests/stock-current-fenced-proof.test.cjs
+Result 21/21 pass, duration221.9269ms. Eight delayed mutation points and eight lost-reply
+points, lock-release identity, pending/read rejection, competition and company isolation.
+These tests assume storage evaluates conditions atomically; they do not prove Wix does.
+Old unsafe counterexample remains unchanged. Old31-test result is reused, not rerun.
+
+Pure migration candidate: current-model.cjs and stock-current-model.test.cjs
+Actual command: node --test integration/tests/stock-current-model.test.cjs
+Result7/7 pass, duration193.3594ms. Existing projection converted once, not invoked for
+daily read. Source/claim/product identities preserve company/barcode/packing/EA; source
+and product quantities must match original projection. Unknown stays null. Ambiguous
+quarantine attribution blocks activation instead of guessing a customer claim. No empty
+catalogue products. Product read repository contract filters/sorts/pages before returning.
+This is a candidate, not complete G1: no live schemas/indexes/query adapter/writer coverage.
+After adding the large-product-total and post-dispatch cumulative/current compatibility
+cases, re-ran ONLY this changed test file:9/9pass, duration190.2961ms. Thus latest new
+offline results are21protocol+9model tests. No unchanged suite was rerun for a summary.
+
+User explicitly authorized independent StockProtocolTest and administrator-only test entry.
+Actual Master CMS collection created with exact ID StockProtocolTest. Changed ONLY its
+permissions: Everyone/Members/ItemCreator/Collaborators all four actions unchecked;
+Admin checked/disabled. Saved successfully; editor separately showed Private.
+Original business collections and permissions not changed. No production stock tables
+created. No Publish click, Pages dispatch, branch permission change or main merge.
+
+New Wix DRAFT backend stockProtocolTest.web.js matches isolated local prototype.
+No page imports it. Two functions use Permissions.Admin. Only test collection is writable.
+Through built-in backend function tester, inspectStockProtocol confirmed runtime exports
+dataV2.items.patchDataItem/removeDataItem/bulkPatchDataItems; wixData.patch is undefined.
+Two bounded parameter probes created exactly two synthetic rows, both retained:
+SPT-6f8a94ac-5af1-4201-8a94-df935ce34bf0
+SPT-bc37b68f-c353-4d82-849a-3c67a34619aa
+Each read back quantity20, stockVersionV0. Both failed INVALID_ARGUMENT on empty
+patch.fieldModifications; neither is a conditional-safety pass. First tried REST-shaped
+patch option, second direct fieldModifications; no blind repeated mutation requests.
+
+Root cause subsequently found in official Wix-published Velo declaration:
+https://unpkg.com/@wix/wix-code-types@2.0.14811/dist/types/beta/common/wix-data.v2.d.ts
+Legacy patchDataItem(dataItemId,options) expects patchSet.fieldUpdates; its options and
+RemoveDataItemOptions do not declare condition. Runtime existence is NOT compatibility.
+Do not keep probing alternate old-wrapper parameter spellings or assume condition is sent.
+This does not prove all Wix CMS APIs lack conditions.
+Fresh clipboard readback of the owned diagnostic file confirmed the direct-parameter
+correction exactly; the repeated error was not treated as proof of a version conflict.
+
+Supported current SDK direction verified by official package dependency/type source:
+https://unpkg.com/@wix/data@1.0.529/package.json
+https://unpkg.com/@wix/wix-data-items-common@1.0.335/dist/types/api/WixDataPatch.d.ts
+https://unpkg.com/@wix/wix-data-items-common@1.0.335/dist/types/api/WixDataRemoveOptionsBuilder.d.ts
+Public patch.run options include condition:WixDataFilterInput; RemoveOptionsBuilder has
+withCondition(FilterExpression). SDK request Condition contains filter. Atomic behavior
+and exact stale/mismatch response still require actual testing, not just type declarations.
+Official package files were only read; no external JS was executed/installed locally.
+
+Prepared stockProtocolSdkTest.web.js is LOCAL ONLY pending package approval/install.
+It reuses second retained row, first checks quantity20/V0; wrong-condition, correct-condition,
+stale-version and concurrent contenders. No deletes, no fixture reset, no arbitrary caller
+ID/collection/quantity. Invoking after it advances the fixture must abort, not silently rerun.
+User question pending whether @wix/data official dependency may be added to Wix solely for
+this isolated test. Current editor Packages&Apps shows install prompt, no installed list.
+
+Remaining: supported SDK actual condition test, explicit versioned store adapter, conditional
+lock release validation and recovery runbook. G0 production gate remains OPEN. Keep ACTIVE
+off. Do not request another Astra debate merely for ordinary SDK installation/parameter work.
+Fresh business live/repo comparison still required before any protected production changes.
+
+Efficiency/limits
+Official REST child property condition.filter was read through a background docs tab.
+One PowerShell START_HERE read mistakenly used checkout (file absent); root copy already
+read earlier, not re-scanned. Native editor navigation initially opened Help; closed it and
+located actual plus button. One stale AX click and one ambiguous locator were resolved from
+current DOM, not blindly retried. Source readback confirmed single-line parameter fix exact.
+Several official package declarations differ between old and current SDK; evidence above
+records that compatibility boundary. Actual Credits UNKNOWN; no claimed savings percentage.

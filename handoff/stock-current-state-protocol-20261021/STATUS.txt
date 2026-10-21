@@ -1,4 +1,16 @@
-CURRENT 2026-10-21 — ASTRA REVIEW RECORDED; G0 PRODUCTION GATE STILL OPEN
+CURRENT 2026-10-21 — SOL ISOLATED IMPLEMENTATION; SDK APPROVAL PENDING; G0 STILL OPEN
+
+Latest progress: SOL_IMPLEMENTATION.txt. New conditional offline proof21/21 and pure
+conversion/read contract9/9 pass. User authorized independent StockProtocolTest and Admin
+entry; collection created/private/Admin-only, two synthetic rows retained20/V0. New Wix
+DRAFT stockProtocolTest.web.js only; no protected business edits or Publish. Live legacy
+wrapper probes failed parameter validation, not safety tests. Official Velo types explain
+old patchSet API lacks condition. Official current SDK declares conditional patch/remove.
+Separate @wix/data dependency approval question pending; do not install until answered.
+Prepared stockProtocolSdkTest.web.js remains local-only; run once against retained row
+after approved SDK setup. No automatic fixture reset or deletion. ACTIVE remains off.
+
+Earlier review (preserved)
 
 Latest review: ASTRA_REVIEW.txt supersedes the earlier next-action paragraph below.
 Direction selected: server-enforced conditional writes for every mutable commit row and
