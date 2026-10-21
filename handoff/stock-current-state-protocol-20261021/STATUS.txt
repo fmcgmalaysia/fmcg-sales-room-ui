@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION after8222628: isolated receipt-stock-reader.cjs prepares exact
+position/product/complete source-claim snapshots behind pending/generation barrier.
+CLOSED rows retained in writer query, shared product cached; exact verified store handles
+normalization.6/6new tests pass146.5305ms. Existing Warehouse/packing code only read, no
+production edit, CMS call or release. RECEIPT_SNAPSHOT.txt records actual integration gap:
+existing packing hold is task-wide, not confirmed per-source; a SOURCE_CONFIRMED input
+contract is not an implemented resolver. Do not silently allocate task holds among POs,
+add a second packing mechanism or claim full receipt integration. Uncertain release stops.
+Current reader14source/30claim proof bounds not final production capacity; ACTIVE off.
+
 CURRENT CONTINUATION afteree49d55: receipt-stock-plan.cjs now prepares isolated RECEIVE/
 CORRECT balance deltas and composes full original receipt+balances in one fenced plan.
 No protected business file/live code changed. Same-product sources coalesce one summary;
