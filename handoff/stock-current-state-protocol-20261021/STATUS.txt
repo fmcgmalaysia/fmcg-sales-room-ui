@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT CONTINUATION afterbc4f82a: FREE_CASE_RELEASE.txt. Whole stock-current candidate
+suite230pass975.1661ms before last slice. Added original two-person Admin+Finance RELEASED
+case -> free quantity plan; LOSS/financial settlement cannot use release path.6focused
+pass128.0378ms. Real protected sources unchanged. Actual writer wiring, reserved/unknown
+exception attribution, production scale/lifecycle/lock recovery, migration/UI/release are
+still OPEN. Active same-chat heartbeat continues; no duplicate or automatic model change.
+
 CURRENT CONTINUATION aftere6ccf89: FREE_CASE_MOVEMENTS.txt. Added separate cumulative
 replacementReceived/supplierReturned physical counters to model/current row mapping and
 conversion. Proven FREE-attributed exception supports original approved RETURN/REPLACEMENT

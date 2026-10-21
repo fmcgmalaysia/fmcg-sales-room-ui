@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = require('./borrowing-model.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -215,4 +215,21 @@ function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolutio
     action, quantity: newEntries.at(-1).quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
-module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, transferId };
+function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution, generation }) {
+  const next = event?.details?.state, previous = priorResolution, approval = next?.financeApproval;
+  if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || event._id !== event.title || !event._id
+    || !event.activityTime || !event.initiatedByStaffId || event.details.action !== 'CLOSE'
+    || caseEvent?.stockAttribution !== 'FREE' || caseEvent.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED'
+    || caseEvent.company !== state.company || caseEvent.stockKey !== stockKey(state) || caseEvent._id !== caseEvent.title
+    || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
+    || !previous || previous.financeApproval || event.details.beforeRevision !== previous.revision
+    || previous.adminApproval?.outcome !== 'RELEASED' || previous.adminApproval.quantity !== caseEvent.details.quantity
+    || approval?.outcome !== 'RELEASED' || approval.byStaffId !== event.initiatedByStaffId
+    || approval.byStaffId === previous.adminApproval.byStaffId || !previous.adminApproval.byStaffId
+    || (previous.returns || []).length || (previous.replacements || []).length) throw Error('Original separate Admin and Finance release approval required');
+  const oldFixed = copy(previous), newFixed = copy(next); delete oldFixed.revision; delete newFixed.financeApproval;
+  if (!same(oldFixed, newFixed)) throw Error('Release must preserve original case approval facts');
+  const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText, quantity: caseEvent.details.quantity });
+  return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
+}
+module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, transferId };

@@ -2,7 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), load 
 const { createStockExceptionOperations, stockExceptionVersion, stockPosition, readStockExceptions } = load('inventoryExceptions.js');
 const { createStockResolutionOperations, stockResolutionVersion } = load('stockExceptionResolution.js');
 const { quarantineFree, allocateCumulative } = require('../prototypes/stock-current-state/borrowing-model.cjs');
-const { prepareFreeQuarantine, prepareFreeCaseMovement } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
+const { prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
 const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
 const copy = v => JSON.parse(JSON.stringify(v));
@@ -97,4 +97,25 @@ test('original approved replacement does not remove unreturned old goods; actual
   assert.throws(() => prepareFreeCaseMovement({ state, rows: currentRows(state), caseEvent: unproven, priorResolution: returned.before, event: returned.event, generation: 2 }), /approved free-case/);
   const rewritten = copy(returned.event); rewritten.details.state.decision.supplierReference = 'REWRITTEN';
   assert.throws(() => prepareFreeCaseMovement({ state, rows: currentRows(state), caseEvent, priorResolution: returned.before, event: rewritten, generation: 2 }), /Immutable/);
+});
+test('isolated free stock releases only after original separate Admin and Finance approvals', async () => {
+  const f = fixture(); await f.save(f.request);
+  const original = [...f.records.values()].find(r => r.action === 'STOCK_EXCEPTION_REPORTED');
+  const quarantined = prepareFreeQuarantine({ state: f.state, rows: currentRows(f.state), event: original, generation: 0 });
+  const caseEvent = quarantined.plan.writes[0].after; f.records.set(caseEvent._id, caseEvent);
+  const context = async () => ({ ...f.context, activity: [...f.records.values()] }), orders = [{ id: 'PO-ID', version: 'PV', taskIds: ['T'] }];
+  const store = { read: async (c, id) => copy(f.records.get(id) || null), insert: async (c, row) => { if (f.records.has(row._id)) throw Error('Duplicate'); f.records.set(row._id, copy(row)); return row; }, remove: async (c, id) => f.records.delete(id) };
+  const save = createStockResolutionOperations({ store, names: { NCT: { activity: 'NCTActivity' } }, readContext: context, listOrders: async () => orders, now: () => new Date('2026-10-22T08:30:00Z') });
+  await save({ company: 'NCT', requestId: '22222222-1111-4111-8111-111111111111', staff: { memberId: 'ADMIN', staffId: 'A', staffName: 'ADMIN', canApproveStockLoss: true },
+    input: { id: caseEvent.title, action: 'APPROVE_RELEASE', reason: 'Inspection cleared', version: stockResolutionVersion(await context(), orders) } });
+  const priorResolution = readStockExceptions((await context()).activity)[0].resolution;
+  const close = { company: 'NCT', requestId: '33333333-1111-4111-8111-111111111111', staff: { memberId: 'FINANCE', staffId: 'F', staffName: 'FINANCE', canCloseStockException: true },
+    input: { id: caseEvent.title, action: 'CLOSE', outcome: 'RELEASED', reason: 'Independent verification', version: stockResolutionVersion(await context(), orders) } };
+  await assert.rejects(save({ ...close, staff: { ...close.staff, staffId: 'A' } }), /different Finance/);
+  await save(close);
+  const event = [...f.records.values()].filter(r => r.action === 'STOCK_EXCEPTION_RESOLUTION_SAVED').at(-1);
+  const result = prepareFreeCaseRelease({ state: quarantined.state, rows: currentRows(quarantined.state), caseEvent, priorResolution, event, generation: 1 });
+  assert.deepEqual([result.state.sources[0].onHand, result.state.sources[0].isolated, result.state.sources[0].available], [100, 0, 20]);
+  const loss = copy(event); loss.details.state.financeApproval.outcome = 'LOSS';
+  assert.throws(() => prepareFreeCaseRelease({ state: quarantined.state, rows: currentRows(quarantined.state), caseEvent, priorResolution, event: loss, generation: 1 }), /release approval/);
 });

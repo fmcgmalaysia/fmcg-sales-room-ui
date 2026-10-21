@@ -317,5 +317,12 @@ function freeCaseMovement(before, input) {
     }
   });
 }
-module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, freeCaseMovement,
+function releaseFreeCase(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    if (!source || !positive(input.quantity) || input.quantity > source.isolated) throw Error('Approved isolated release quantity required');
+    source.isolated -= input.quantity; source.available += input.quantity;
+  });
+}
+module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, freeCaseMovement, releaseFreeCase,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };

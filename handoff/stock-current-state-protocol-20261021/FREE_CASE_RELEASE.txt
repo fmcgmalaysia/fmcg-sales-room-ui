@@ -1,0 +1,30 @@
+2026-10-22 — free-attributed isolated stock release, original separate approval chain
+
+Protected production d447185 unchanged; previous candidatebc4f82a. User renewed request
+to continue all work and release, not permission to waive four-stage/authority/gates.
+New releaseFreeCase pure transition and prepareFreeCaseRelease plan accept ONLY original
+FREE-attributed case, exact product/company/source/case/revision, original Admin RELEASED
+quantity matching full case, unchanged earlier facts, no prior physical return/replacement,
+then original Finance RELEASED by a DIFFERENT employee. Increases free/decreases isolated;
+physical onHand/accepted/customer claims unchanged. Wrong financial outcome fails.
+
+Test executes ORIGINAL createStockResolutionOperations APPROVE_RELEASE then CLOSE using
+local synthetic records; same staff cannot close, separate Finance can. Original case10
+returns100onHand/0isolated/20free, not new received stock. No real financial action or
+real invoice enabled. Candidate is not staff auth/public endpoint; actual callers must
+retain original authenticated department permissions and common current fence.
+
+Evidence: full stock-current candidate suite230/230pass975.1661ms before this slice,
+needed once because shared model/mapper changes spanned candidate consumers. Added release
+check; affected free-quarantine6/6pass128.0378ms, no unchanged full rerun. Bundle regenerated
+from same model and focused preview check run after. Actual Credit/cache/token UNKNOWN.
+Original production diff remains empty. No Wix/Pages/CMS/schema/permission modification.
+
+OPEN: reserved/unknown isolated attribution and physical-location REVIEW, Finance outcomes
+other than RELEASED, all true production writers and current compatibility consumers,
+whole-product proof14source/30relation limits (not production capacity), source lifecycle,
+admin stuck-lock termination and exact authorized recovery, migration/shadow/real UI/halo.
+Existing gateway/task writers still legacy and unfenced; do NOT enable half inventory.
+G3 focused design/code review and all release gates remain mandatory, not overridden by
+230 local checks. Four statuses: candidate code only; Pages unchanged; Wix unchanged;
+new public inventory/borrowing unavailable/unverified. Existing production unchanged.
