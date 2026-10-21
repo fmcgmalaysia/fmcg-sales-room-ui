@@ -34,7 +34,8 @@ function validate(state) {
     tasks.set(task.id, task);
   }
   for (const source of state.sources) {
-    if (!source.id || sources.has(source.id) || !tasks.has(source.ownerTaskId) || !source.poId
+    const freeOnly = source.ownerTaskId === null && source.ownerShare === 0 && source.receiptPolicy === 'EXPLICIT_ONLY';
+    if (!source.id || sources.has(source.id) || !tasks.has(source.ownerTaskId) && !freeOnly || !source.poId
       || source.poValid !== true || stockKey(source) !== key || source.reviewRequired !== false
       || !['OWNER_DEMAND', 'EXPLICIT_ONLY'].includes(source.receiptPolicy)
       || !['planned', 'accepted', 'onHand', 'isolated', 'available'].every(k => count(source[k]))
@@ -59,6 +60,7 @@ function validate(state) {
       || !count(relation.returned ?? 0) || relation.repaid + (relation.returned || 0) > relation.quantity
       || relation.returned > 0 && (!relation.returnReason || !relation.returnApprovedBy)
       || !relation.approvedBy || !relation.reason
+      || !tasks.has(relation.lenderTaskId) || !tasks.has(relation.borrowerTaskId)
       || from.ownerTaskId !== relation.lenderTaskId || future.ownerTaskId !== relation.borrowerTaskId
       || relation.borrowerTaskId === relation.lenderTaskId
       || tasks.get(relation.borrowerTaskId).customerId === tasks.get(relation.lenderTaskId).customerId) throw Error('Borrowing relation conflict');
@@ -91,7 +93,7 @@ function approveBorrow(before, input) {
     const donor = state.sources.find(s => s.id === input.lenderSourceId);
     const future = state.sources.find(s => s.id === input.replacementSourceId);
     const borrower = state.tasks.find(t => t.id === input.borrowerTaskId);
-    if (!donor || !future || !borrower || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
+    if (!donor || !future || !borrower || !state.tasks.some(t => t.id === donor.ownerTaskId) || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
       || state.packingHolds.heldByTask[borrower.id] !== 0) throw Error('Eligible unheld borrower required');
     const lender = donor.ownerTaskId;
     if (state.packingHolds.heldByTask[lender] !== 0) throw Error('Packing task holds lender allocation');
@@ -121,9 +123,9 @@ function receive(before, input) {
       left -= take;
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
-    const need = owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id);
+    const need = owner ? owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id) : 0;
     const repaidFromSource = sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
-    const ownCapacity = Math.max(0, source.ownerShare - repaidFromSource - (source.claims[owner.id] || 0) - (source.dispatchedByTask?.[owner.id] || 0));
+    const ownCapacity = owner ? Math.max(0, source.ownerShare - repaidFromSource - (source.claims[owner.id] || 0) - (source.dispatchedByTask?.[owner.id] || 0)) : 0;
     const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need, ownCapacity);
     if (own) source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
     source.available += left - own;

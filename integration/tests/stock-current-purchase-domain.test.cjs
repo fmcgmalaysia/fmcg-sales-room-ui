@@ -5,6 +5,7 @@ const { projectPurchaseWorkspace } = load('purchaseProjection.js');
 const { operationId } = load('purchaseOperationJournal.js');
 const { validateOriginalPurchase } = require('../prototypes/stock-current-state/original-purchase-validation.cjs');
 const { preparePurchaseDomain } = require('../prototypes/stock-current-state/purchase-domain-plan.cjs');
+const { projectDomainAfter } = require('../prototypes/stock-current-state/domain-after-snapshot.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
 const source = fs.readFileSync(require.resolve('./purchase-operations.test.cjs'), 'utf8');
 const fixture = vm.runInNewContext('(' + source.slice(source.indexOf('function fixture(){'), source.indexOf("\ntest('submitted PO blocks")) + ')', { Map, copy, createPurchaseOperations, taskEditVersion, projectPurchaseWorkspace });
@@ -40,6 +41,20 @@ test('original submitted handoff and invoice still block before captured Purchas
     const request = { ...f.base, operation: 'EDIT', input: { edits: [{ taskId: f.id, version: taskEditVersion(f.task()), changes: { lpCtn: 20 } }] } };
     await assert.rejects(validateOriginalPurchase({ createPurchaseOperations, request, tables: await snapshots(f), now: () => new Date() }), /locked/);
   }
+});
+
+test('exact domain after-images feed the original Purchase projector without saving or fabricating receipts', async () => {
+  const f = fixture(); f.task().company = 'NCT'; f.task()._version = 'T0';
+  const tables = await snapshots(f), unchanged = JSON.stringify(tables);
+  const request = { ...f.base, operation: 'EDIT', input: { edits: [{ taskId: f.id, version: taskEditVersion(f.task()), changes: { lpCtn: 20 } }] } };
+  const validated = await validateOriginalPurchase({ createPurchaseOperations, request, tables, now: () => new Date('2026-10-22T09:00:00Z') });
+  const plan = preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId });
+  const projected = projectDomainAfter({ company: 'NCT', staff: request.staff, tables, plan, projectPurchaseWorkspace });
+  const task = projected.tasks.find(t => t.id === f.id);
+  assert.equal(task.lpCtn, 20); assert.equal(task.warehouse?.hasPhysicalReceipt === true, false);
+  assert.equal(projected.activity.filter(e => e.action === 'PURCHASE_PRICE_SAVED').length, 1);
+  assert.equal(JSON.stringify(tables), unchanged);
+  assert.equal(JSON.stringify([...f.rows]).includes('PURCHASE_PRICE_SAVED'), false);
 });
 test('domain mapping refuses existing cost lock, protocol patch injection and unsupported display order', async () => {
   const f = fixture(); f.task().company = 'NCT'; f.task()._version = 'T0';

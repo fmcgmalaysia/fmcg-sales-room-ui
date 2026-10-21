@@ -19,9 +19,10 @@ function originalProductState({ company, context, orders, identity, readAllocati
   if (shipments.some(s => s.company !== company)) throw Error('Shipment company conflict');
   const sources = candidates.map(source => {
     const po = orders.filter(p => p.company === company && p.taskIds.includes(source.id));
-    const ownerTaskId = source.customerDemandTaskId || source.id;
-    if (source.specialPurchase || po.length !== 1 || po[0].number !== source.po || source.procurement.draftPlan
-      || !demands.some(t => t.id === ownerTaskId) || !count(source.procurement.customerCtn)
+    const candidateOwner = source.customerDemandTaskId || source.id;
+    const ownerTaskId = demands.some(t => t.id === candidateOwner) ? candidateOwner : null;
+    if (po.length !== 1 || po[0].number !== source.po || source.procurement.draftPlan
+      || ownerTaskId === null && source.procurement.customerCtn !== 0 || !count(source.procurement.customerCtn)
       || source.procurement.customerCtn > source.procurement.totalCtn
       || source.warehouse && source.warehouse.hasPhysicalReceipt !== true && source.warehouse.accepted > 0) throw Error('Confirmed source PO and customer share required');
     const dispatchedByTask = {};
@@ -30,7 +31,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
       if (n) dispatchedByTask[line.taskId] = (dispatchedByTask[line.taskId] || 0) + n;
     }
     return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, orderId: source.orderId, sourceLineId: source.sourceLineId,
-      poValid: true, reviewRequired: false, receiptPolicy: allocations.some(a => a.sourceTaskId === source.id) ? 'EXPLICIT_ONLY' : 'OWNER_DEMAND',
+      poValid: true, reviewRequired: false, receiptPolicy: ownerTaskId === null || allocations.some(a => a.sourceTaskId === source.id) ? 'EXPLICIT_ONLY' : 'OWNER_DEMAND',
       ownerShare: source.procurement.customerCtn, planned: source.procurement.totalCtn,
       accepted: source.warehouse?.hasPhysicalReceipt === true ? source.warehouse.accepted : 0, dispatchedByTask };
   });
