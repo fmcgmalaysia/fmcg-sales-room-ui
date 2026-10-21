@@ -15,8 +15,10 @@ export function projectPackingContext(context){
  const tasks=context.tasks.filter(task=>!task.procurementSource&&!task.specialPurchase&&!task.archived).map(task=>{
   const rows=preparation.filter(row=>row.taskId===task.id),sent=shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines).filter(line=>line.taskId===task.id).reduce((sum,line)=>sum+line.quantity,0);
   const legacy=shipments.some(row=>row.status!=='CANCELLED'&&row.status!=='DISPATCHED'&&row.lines.some(line=>line.taskId===task.id));
+  const related=context.tasks.filter(source=>source.id===task.id||source.customerDemandTaskId===task.id||(context.allocations||[]).some(allocation=>allocation.sourceTaskId===source.id&&allocation.targets.some(target=>target.taskId===task.id&&target.quantity>0)));
+  const unknownPhysical=related.some(source=>source.warehouse?.hasPhysicalReceipt===true&&(!Number.isSafeInteger(source.warehouse.stock?.availablePhysical)||source.warehouse.stock.availablePhysical<0));
   const remaining=Math.max(0,(task.requested??task.ord)-sent),ready=rows.reduce((sum,row)=>sum+(Number.isSafeInteger(row.readyStock)?row.readyStock:0),0);
-  return {taskId:task.id,company:context.company,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,currency:task.transactionCurrency,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',remaining,ready:Math.min(remaining,ready),cbm:null,weight:null,review:legacy||rows.some(row=>row.stale||row.orphaned||row.prepared||row.loaded>0)};
+  return {taskId:task.id,company:context.company,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,currency:task.transactionCurrency,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',remaining,ready:Math.min(remaining,ready),cbm:null,weight:null,chatContexts:rows.filter(row=>!row.orphaned).map(row=>({id:row.id,label:row.batch||row.name})),review:unknownPhysical||legacy||rows.some(row=>row.stale||row.orphaned||row.prepared||row.loaded>0)};
  });
  return {company:context.company,tasks,lists:readPackingLists(context.activity,context.company),sourceVersion:operationId(context.tasks,context.allocations||[],preparation,shipments),readAt:new Date().toISOString()};
 }

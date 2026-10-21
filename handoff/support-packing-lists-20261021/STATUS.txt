@@ -1,4 +1,20 @@
-CURRENT 2026-10-21 — implementation candidate; NOT released or production-connected
+CURRENT OVERRIDE 2026-10-21 — resumed after user network pause; candidate integration saved; NOT released
+
+This override supersedes the initial unconnected-candidate descriptions below. Local client transport, fixed-role Wix routing candidates and same-window Warehouse Outgoing host are now implemented. No Wix code, Pages release, CMS business record, Drive upload or real chat message was written by this task. PR219 remains draft; main untouched.
+
+Latest verification: full839 tests /835 pass /4 fail,5947.7649ms. Exactly the previously recorded baseline failures remain (customer-short-names fixture, payment status fixture, old staff suffix fixture, old bilingual quantity fixture). The extra intermediate stock-navigation fixture failure was caused by its missing mock for the new imported packing handler; the fixture now delegates non-packing messages and verifies original stock/order routes. No production behavior was changed to make the test pass.
+
+Photo checks confirm same-request retry retains one allocated file ID, CMS receipts contain metadata not raw image bytes, invalid role/hash/physical stage rejects before external allocation, pending-change acknowledgement preserves new photos, and removed products retain bounded retired photo evidence. New photos use existing private document transport, not new Drive sharing. Current document remains bounded200KB,30photos/line,300retired lines; operation receipts still consume additional rows. No history compaction claim.
+
+Existing shared chat gets only an additive busy-state getter. Fixed Warehouse nested chat relay rejects other departments/companies. Old executed Warehouse tasks remain separately labelled evidence with original controls; unexecuted demands are not silently copied into new packing lists. Quantity/model checks35pass and packing/chat/host checks46pass before the final full run. Unknown physical availability displays Review, not usable zero. Accepted Support font files remain unchanged.
+
+Resume-time Wix snapshot confirms Master editor still on Warehouse code with original stock-control route and no new packing imports. Embedded editor preview shows a DNS error after the user's temporary network interruption; no refresh or mutation attempted. Earlier fresh live/repository fingerprints remain captured below; release still requires complete fresh comparison of unchanged service dependencies and existing edited components before synchronization.
+
+Remaining gates: user candidate visual feedback (local file observation is policy-blocked; no bypass); exact branch-specific temporary Pages authorization requested once asynchronously after code checks; fresh live comparison and minimal synchronization; deployment/exact resources; Wix official published-live receipt; actual public read-only visual acceptance. No claim of publication or real invoice integration. CBM/net weight are still UNKNOWN in the new live context, not synthetic production values. Invoice issuance, dispatch posting and customer borrowing remain later scoped integration.
+
+Recovery source9bf14ab; current production Support96fdf77/Warehouse09a9023 unchanged. Existing user verified sales-requested-split tag and narrowly scoped Support font tag preserved. Unrelated files remain excluded. Actual Credits UNKNOWN.
+
+HISTORICAL INITIAL RECORD — descriptions below predate the integrated local candidate
 
 GitHub candidate b39a08f7ae8fc9173368e4038469ee873c84bbbd pushed on the task branch. Draft PR219 https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/219 created against the existing Support preview branch9bf14ab and attached to this chat. No deployment or merge. Record update only follows this code commit.
 

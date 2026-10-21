@@ -23,7 +23,7 @@ function planLines(input,list,context){
   const task=available.find(task=>task.taskId===entry.taskId),previous=list.lines?.find(line=>line.taskId===entry.taskId);
   if(!task||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||!quantity(entry.quantity)||entry.quantity===0)fail('Choose valid quantities for one company, customer and currency.');
   if(entry.quantity>task.unarranged)fail('Quantity exceeds unarranged customer demand.');
-  return {taskId:task.taskId,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',quantity:entry.quantity,packed:previous?.packed||0,loaded:previous?.loaded||0,reason:previous?.reason||''};
+  return {taskId:task.taskId,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',quantity:entry.quantity,packed:previous?.packed||0,loaded:previous?.loaded||0,reason:previous?.reason||'',photos:copy(previous?.photos||[])};
  });
 }
 function checkSupply(list,context,lines=list.lines){
@@ -42,7 +42,7 @@ export function changePackingList({list,input,context,actor,id,revision,at}){
  const next=list?copy(list):null;
  if(input.action==='CREATE'){
   if(list||!id||!['NCT','GHR'].includes(input.company)||!input.customerId||!input.currency)fail('Packing draft identity is required.');
-  const draft={id,company:input.company,customerId:input.customerId,currency:input.currency,status:'DRAFT',lines:[],createdAt:at,revision};
+  const draft={id,company:input.company,customerId:input.customerId,customerName:context.tasks.find(task=>task.customerId===input.customerId)?.customerName||input.customerId,currency:input.currency,status:'DRAFT',lines:[],createdAt:at,revision};
   draft.lines=planLines(input.lines,draft,context);return draft;
  }
  if(!next||next.revision!==input.revision)fail('Packing list changed. Refresh before saving.');
@@ -62,6 +62,8 @@ export function changePackingList({list,input,context,actor,id,revision,at}){
   if(next.status!=='PROCESSING'||!next.change||!reason(input.reason))fail('A pending change and Warehouse acknowledgement are required.');
   checkSupply(next,context,next.change.lines);checkExecuted(next.change.lines);
   if(next.lines.some(line=>!next.change.lines.some(entry=>entry.taskId===line.taskId)&&(line.packed||line.loaded)))fail('Warehouse must confirm physical removal before deleting a product.');
+  const retired=next.lines.filter(line=>!next.change.lines.some(entry=>entry.taskId===line.taskId)&&line.photos?.length).map(line=>({...copy(line),retiredAt:at}));
+  if(retired.length){next.retiredLines=[...(next.retiredLines||[]),...retired];if(next.retiredLines.length>300)fail('Warehouse evidence history is full. Contact Admin.');}
   next.lines=next.change.lines;next.lastChange={reason:next.change.reason,acknowledgement:input.reason.trim(),at};delete next.change;
  }else if(input.action==='REJECT_CHANGE'){
   if(next.status!=='PROCESSING'||!next.change||!reason(input.reason))fail('Explain the rejected change.');
@@ -77,6 +79,12 @@ export function changePackingList({list,input,context,actor,id,revision,at}){
   });
   // A proposed change keeps old quantities until Warehouse acknowledges it.
   if(next.change)next.change.lines=next.change.lines.map(line=>{const current=next.lines.find(entry=>entry.taskId===line.taskId);return {...line,packed:current?.packed||0,loaded:current?.loaded||0};});
+ }else if(input.action==='PHOTOS'){
+  const line=next.lines.find(line=>line.taskId===input.taskId);
+  if(!['PROCESSING','COMPLETED'].includes(next.status)||!line||!['PACKING','LOADING'].includes(input.photoStage)||!Array.isArray(input.attachments)||!input.attachments.length||input.attachments.length>3||input.photoStage==='PACKING'&&!line.packed||input.photoStage==='LOADING'&&!line.loaded)fail('Warehouse confirm packed or loaded cartons before saving this evidence.');
+  if(input.attachments.some(photo=>!photo.fileId||!photo.sha256||photo.stage!==input.photoStage))fail('Warehouse photo identity requires review.');
+  line.photos=[...(line.photos||[]),...copy(input.attachments)];if(line.photos.length>30)fail('Warehouse photo history is full. Contact Admin.');
+  const pending=next.change?.lines.find(entry=>entry.taskId===line.taskId);if(pending)pending.photos=copy(line.photos);
  }else if(input.action==='COMPLETE'){
   if(next.status!=='PROCESSING'||next.change)fail('Resolve changes before confirming loading complete.');
   checkSupply(next,context);
