@@ -5,12 +5,22 @@ const { allocateCumulative, dispatch, approveBorrow } = require('../prototypes/s
 const { prepareCurrentAllocation } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
 const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
+const { createAllocationAuthority } = require('../prototypes/stock-current-state/allocation-authority.cjs');
+const { createBorrowingStockReader } = require('../prototypes/stock-current-state/borrowing-stock-reader.cjs');
+const { requirePurchaseStaff } = load('purchaseProjection.js');
+const { projectPurchaseOrders } = load('purchaseOrderWorkflow.js');
+const { readAllocations } = load('plannerAllocation.js');
+const { readCustomerShipments } = load('customerShipmentLedger.js');
+const { readPackingLists } = load('packingListOperations.js');
+const { packingHeld } = load('packingListModel.js');
 const copy = value => JSON.parse(JSON.stringify(value));
 function fixture() {
   const identity = { company: 'NCT', barcode: '001', packing: '12', ea: 12 };
   const tasks = ['A', 'B'].map(id => ({ ...identity, id, customerId: id, orderId: 'O' + id, sourceLineId: 'L' + id,
-    ord: 10, requested: 10, dispatched: 0, po: 'PO-' + id, supplierId: 'SUP', warehouse: { accepted: id === 'A' ? 15 : 0 } }));
-  const workspace = { company: 'NCT', tasks }, activity = [];
+    ord: 10, requested: 10, dispatched: 0, po: 'PO-' + id, supplierId: 'SUP',
+    lpCtn: 10, lpPc: 10 / 12, disc1: 0, disc2: 0, disc3: 0, history: [],
+    procurement: { totalCtn: id === 'A' ? 15 : 10, customerCtn: 10 }, warehouse: { hasPhysicalReceipt: true, accepted: id === 'A' ? 15 : 0 } }));
+  const activity = [], workspace = { company: 'NCT', tasks, activity, suppliers: [{ id: 'SUP', name: 'Supplier' }], customers: ['A', 'B'].map(id => ({ id, name: id })) };
   const input = () => ({ action: 'ALLOCATE', sourceTaskId: 'A', version: allocationVersion(workspace, activity),
     targets: [{ taskId: 'A', quantity: 10 }, { taskId: 'B', quantity: 5 }], reason: 'Allocate received stock' });
   const args = { createPlannerAllocationOperations, company: 'NCT', staff: { memberId: 'M', staffId: 'P', staffName: 'LAW' },
@@ -23,6 +33,34 @@ function fixture() {
       claims: id === 'A' ? { A: 10 } : {} })), relations: [] };
   return { identity, workspace, activity, input, args, state };
 }
+function authorityFixture() {
+  const f = fixture(), calls = { context: 0, staff: 0 };
+  const member = { _id: 'M', loginEmail: 'purchase@example.test', status: 'APPROVED' };
+  const employee = { title: 'P', description: 'M', staffName: 'LAW', staffEmail: member.loginEmail, staffStatus: 'ACTIVE', departments: ['PURCHASE'] };
+  const deps = { readMember: async () => member, readStaffRecords: async () => { calls.staff++; return [employee]; }, requirePurchaseStaff,
+    readContext: async (company, staff) => { calls.context++; assert.equal(staff.memberId, 'M'); return f.workspace; }, readPurchaseRecords: async () => [],
+    projectPurchaseOrders, createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, now: f.args.now };
+  return { ...f, deps, calls, member, employee, request: () => ({ company: 'NCT', requestId: f.args.requestId, input: f.input() }) };
+}
+test('free-stock allocation authority uses original Purchase identity and ignores browser actor', async () => {
+  const f = authorityFixture(), request = f.request(); request.input.approvedBy = 'FORGED';
+  const result = await createAllocationAuthority(f.deps)(request);
+  assert.equal(result.kind, 'ALLOCATE'); assert.equal(result.memberId, 'M'); assert.equal(result.event.initiatedByStaffId, 'P');
+  assert.deepEqual(f.calls, { context: 1, staff: 1 });
+  const state = result.buildState({ positions: [], claims: [], transfers: [], product: null });
+  assert.equal(state.sources[0].accepted, 15); assert.equal(state.sources[0].ownerShare, 10);
+  assert.notEqual(state.sources[0].poId, 'PO-A'); assert.equal(f.activity.length, 0);
+});
+test('allocation authority refuses unauthorized and pending members before business context', async () => {
+  for (const department of ['WAREHOUSE', 'SUPPORT', 'PLANNER']) {
+    const f = authorityFixture();
+    await assert.rejects(createAllocationAuthority({ ...f.deps, readStaffRecords: async () => [{ ...f.employee, departments: [department] }] })(f.request()), /not authorized/);
+    assert.equal(f.calls.context, 0);
+  }
+  const f = authorityFixture();
+  await assert.rejects(createAllocationAuthority({ ...f.deps, readMember: async () => ({ ...f.member, status: 'PENDING' }) })(f.request()));
+  assert.deepEqual(f.calls, { context: 0, staff: 0 });
+});
 test('original allocation validator preserves original event and no business mutations', async () => {
   const f = fixture(), before = JSON.stringify(f.workspace);
   const prepared = await validateOriginalAllocation({ ...f.args, input: f.input() });
@@ -60,6 +98,13 @@ test('packing-held claim reductions and isolated physical quantities cannot be r
   f.state.packingHolds.heldByTask.A = 0; f.state.sources[0].available = 3; f.state.sources[0].isolated = 2;
   assert.throws(() => allocateCumulative(f.state, { expectedRevision: 0, sourceId: 'A', reason: 'Move', targets: [{ taskId: 'A', quantity: 10 }, { taskId: 'B', quantity: 5 }] }), /usable/);
 });
+test('ordinary assignment cannot move reservations directly or first release them to fake free stock', () => {
+  const f = fixture(), before = JSON.stringify(f.state);
+  for (const targets of [[{ taskId: 'A', quantity: 7 }, { taskId: 'B', quantity: 8 }], [{ taskId: 'A', quantity: 7 }], []]) {
+    assert.throws(() => allocateCumulative(f.state, { expectedRevision: 0, sourceId: 'A', reason: 'Bypass', targets }), /reservation release/);
+  }
+  assert.equal(JSON.stringify(f.state), before);
+});
 test('validated original allocation maps to same event and exact current claims, never stock receipt', async () => {
   const f = fixture(), validated = await validateOriginalAllocation({ ...f.args, input: f.input() });
   const key = stockKey(f.identity), pid = hash('NCT', key, 'PURCHASE_SOURCE', 'A');
@@ -69,6 +114,19 @@ test('validated original allocation maps to same event and exact current claims,
     claims: [{ ...base, _id: hash('NCT', pid, 'A'), positionId: pid, taskId: 'A', customerId: 'A', orderId: 'OA', sourceLineId: 'LA', reservedUsable: 10, isolatedAttributed: 0 }],
     product: { ...base, _id: hash('NCT', key), onHand: 15, available: 5, isolated: 0, reservedUsable: 10, reviewRequired: false } };
   const result = prepareCurrentAllocation({ state: f.state, rows, event: validated.event, generation: 0 });
+  const collections = { StockPositions: rows.positions, StockClaims: rows.claims, StockProducts: [rows.product], NCTActivity: [] };
+  let inside = false;
+  const items = { query: collection => {
+    const filters = [], q = { eq: (k, v) => { filters.push([k, v]); return q; }, ascending: () => q, limit: () => q,
+      find: async () => { assert.equal(inside, true); const list = collections[collection].filter(r => filters.every(([k, v]) => r[k] === v)); return { items: list, totalCount: list.length }; } };
+    return q;
+  } };
+  const read = createBorrowingStockReader({ company: 'NCT', items,
+    store: { read: async (c, id) => collections[c].find(r => r._id === id) || null },
+    protocol: { readSnapshot: async fn => { inside = true; try { return { generation: 0, rows: await fn() }; } finally { inside = false; } } },
+    readAuthority: async () => { assert.equal(inside, true); return { kind: 'ALLOCATE', identity: f.identity, event: validated.event,
+      buildState: () => f.state }; } });
+  assert.deepEqual((await read()).plan, result.plan);
   assert.deepEqual(result.plan.writes[0].after.details, validated.event.details);
   assert.equal(result.plan.writes.some(w => w.after.action === 'WAREHOUSE_RECEIPT_SAVED'), false);
   assert.equal(result.plan.writes.find(w => w.collection === 'StockProducts').after.onHand, 15);

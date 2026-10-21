@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT 2026-10-22 after8f8aa81: ALLOCATION_AUTHORITY.txt. Candidate ordinary
+allocation now rejects ALL customer claim reductions, including release-then-assign
+bypass; only free-stock assignment here. Original Purchase permission+allocation/PO
+validators compose with shared product facts; reader supports same-barrier ALLOCATE
+plans.9allocation checks159.0841ms; final affected52pass285.8812ms. First fixture lacked
+customers for original PO projector; fixed fixture, no production fallback added.
+Actual endpoint/legacy-writer routing, cancellation release/exception/dispatch coverage,
+capacity/recovery/migration/UI and release remain unfinished. Production unchanged/OFF.
+
 CURRENT HEARTBEAT 2026-10-22 aftercf35464: CURRENT_ALLOCATION.txt. Isolated original
 allocation validation plus cumulative-to-current claim transition/plan added. Dispatched
 provenance retained; task-held reductions and active relation claim reductions refuse.

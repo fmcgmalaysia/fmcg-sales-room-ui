@@ -230,6 +230,9 @@ function allocateCumulative(before, input) {
         if (state.relations.some(r => remaining(r) > 0
           && [r.lenderSourceId, r.replacementSourceId].includes(source.id)
           && [r.borrowerTaskId, r.lenderTaskId].includes(taskId))) throw Error('Outstanding borrowing allocation requires dedicated transfer return or repayment');
+        // No release-then-reassign bypass of the both-PO borrowing approval rule.
+        // Customer cancellation/approved release needs its own fact-bound transition.
+        throw Error('Customer reservation release requires borrowing or approved cancellation workflow');
       }
     }
     const reserved = sum(Object.values(next));

@@ -3,7 +3,7 @@
 // Bounded current-row preparation candidate. Authority callback is SERVER-owned and
 // must retain existing permission/PO/packing/finance checks. No production imports.
 const { readCurrentProduct } = require('./current-product-reader.cjs');
-const { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt } = require('./borrowing-stock-plan.cjs');
+const { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation } = require('./borrowing-stock-plan.cjs');
 function createBorrowingStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
     || typeof protocol?.readSnapshot !== 'function' || typeof readAuthority !== 'function') throw Error('Server borrowing dependencies required');
@@ -12,7 +12,7 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     const snapshot = await protocol.readSnapshot(async () => {
       const authority = await readAuthority();
       const identity = authority?.identity || authority?.state;
-      if (!identity || identity.company !== company || !['APPROVE', 'RETURN', 'RECEIVE'].includes(authority.kind)
+      if (!identity || identity.company !== company || !['APPROVE', 'RETURN', 'RECEIVE', 'ALLOCATE'].includes(authority.kind)
         || !authority.state && typeof authority.buildState !== 'function') throw Error('Verified borrowing authority required');
       const rows = await readCurrentProduct({ company, identity, items, store, metrics });
       if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
@@ -20,7 +20,7 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     });
     const { authority, rows } = snapshot.rows;
     const args = { state: authority.state, rows, event: authority.event, generation: snapshot.generation };
-    const result = authority.kind === 'RECEIVE' ? prepareBorrowingReceipt(args)
+    const result = authority.kind === 'ALLOCATE' ? prepareCurrentAllocation(args) : authority.kind === 'RECEIVE' ? prepareBorrowingReceipt(args)
       : (authority.kind === 'APPROVE' ? prepareBorrowApproval : prepareBorrowReturn)({ ...args, input: authority.input });
     return { ...result, generation: snapshot.generation, metrics };
   };
