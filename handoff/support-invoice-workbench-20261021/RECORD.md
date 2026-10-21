@@ -1,10 +1,16 @@
 # Support invoice workbench draft — 2026-10-21 MYT
 
+## Current user decision — page only, real invoicing deferred
+
+User answered the pending questions: finish the Support page first and do NOT enable real invoicing. Shipment/container grouping and invoice integration are deferred, not blockers for the UI-only draft. Preserve the accepted typography, exact Loaded display, compact layout and explicit non-operational preview; no invoice issue, business Save or CMS writes are authorized in this phase.
+
+User identified net weight in POINTBASE column U, sheet gid1666933373: https://docs.google.com/spreadsheets/d/12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg/edit?gid=1666933373#gid=1666933373 . This is a user-reported source, NOT a verified mapping. Header, unit, product join key and per-piece/per-carton basis remain unverified. Do not estimate from packaging or treat missing weight as zero. Inspect only the necessary header/sample ranges before future real-data wiring; do not scan the full catalogue for this UI phase.
+
 ## Compact layout continuation — still an isolated candidate
 
 User asked to optimize pages before publishing and explicitly preserve this draft's font. Added draft-compact.css, loaded after the original stylesheet, for49px desktop header,44px nav, tighter spacing, same-size bilingual main title and680px invoice dialog. Removed the separate stock-preview navigation from Support because Warehouse owns Stock Control. No original draft.css edit: raw SHA256 remains3C329A5A65FD86A2B0CC60FB010884BD401F9160DA2BC8FBF6E931A1086D4E95. No font-family/face override is present in compact CSS. Two typography/scope tests plus original12 domain tests all pass.
 
-This is source/offline verification, NOT visual acceptance. Browser URL policy rejected observation of the already-open local file; do not work around that gate by raw browser/native control or by mirroring the same blocked Support page into another browser surface. User may inspect the local file themselves. Real data, batch invoice coverage, verified net weight, journal-integrated Save and loading-after-invoice locks remain unfinished. Two essential questions are pending: Warehouse-owned shipment batch grouping and actual weight field/source. Do not publish fixture data or claim invoice integration complete. No Wix or Pages changes from this Support continuation.
+This is source/offline verification, NOT visual acceptance. Browser URL policy rejected observation of the already-open local file; do not work around that gate by raw browser/native control or by mirroring the same blocked Support page into another browser surface. User may inspect the local file themselves. Real data, batch invoice coverage, verified net weight, journal-integrated Save and loading-after-invoice locks remain unfinished and are explicitly deferred by the current user decision above. Do not publish fixture data or claim invoice integration complete. No Wix or Pages changes from this Support continuation.
 
 ## User-verified typography checkpoint — 2026-10-21
 
