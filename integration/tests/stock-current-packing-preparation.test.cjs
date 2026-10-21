@@ -66,12 +66,13 @@ test('pending barrier, changed stored list and unknown current stock never fall 
 });
 
 test('incomplete, review-marked or foreign current rows refuse rather than produce usable quantity', async () => {
-  for (const variant of ['missingProduct', 'foreign', 'reviewPosition', 'reviewCodes', 'version']) {
+  for (const variant of ['missingProduct', 'foreign', 'reviewPosition', 'reviewCodes', 'version', 'silentNull']) {
     const f = fixture(), productId = 'StockProducts:' + hash('NCT', stockKey(f.context.tasks[0])), product = f.db.get(productId);
     if (variant === 'missingProduct') f.db.delete(productId);
     if (variant === 'foreign') product.company = 'GHR';
     if (variant === 'reviewCodes') product.reviewCodes = ['UNRECONCILED'];
     if (variant === 'version') delete product._version;
+    if (variant === 'silentNull') product.available = null;
     if (variant === 'reviewPosition') [...f.db.entries()].find(([id]) => id.startsWith('StockPositions:'))[1].reviewRequired = true;
     await assert.rejects(createPackingStockPreparation(f.deps).read(f.request), /review|conflict/i);
   }

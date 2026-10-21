@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterd0116d9: WAREHOUSE_CURRENT_READY.txt. Original Warehouse Ready
+adapter uses current physical/claims with cumulative progress + exact old dispatch proof;
+unchanged signatures preserved, borrowingA30/B70 then actual dispatch20 ->A10/B70. Shared
+reader rejects unflagged nulls. Full candidate307pass1515.0491ms; original13pass166.1608ms.
+Actual scoped gateway/writers/photos/capacity/recovery/migration/UI/release remain OPEN/OFF.
+
 CURRENT HEARTBEAT after6c261d5: SHADOW_SOURCE_CUSTOMER_PARITY.txt. Added exact source+
 customer+product diagnostic comparator and complete paginated private current snapshot
 reader, no daily history fallback/mutations. Equal totals/wrong customers fail; null stays

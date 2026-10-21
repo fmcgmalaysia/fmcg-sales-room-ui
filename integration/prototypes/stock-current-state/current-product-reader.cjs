@@ -37,7 +37,8 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
   const transfers = await completeRows(journal, 30, 'STOCK_TRANSFER_CURRENT');
   const product = await exact('StockProducts', hash(company, key));
   const knownRows = [...positions, ...claims, ...transfers, ...(product ? [product] : [])];
-  if (knownRows.some(row => row.company !== company || row.stockKey !== key || !row._version || row.reviewRequired === true || row.reviewCodes?.length)
+  if (knownRows.some(row => row.company !== company || row.stockKey !== key || !row._version || row.reviewRequired === true || row.reviewCodes?.length
+      || ['onHand', 'isolated', 'available', 'reservedUsable', 'isolatedAttributed'].some(k => row[k] === null))
     || !product && (positions.length || claims.length || transfers.length)) throw Error('Current product requires review; no legacy quantity fallback');
   return { complete: true, positions, claims, transfers, product };
 }
