@@ -1,5 +1,22 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 HUMAN APPROVED RESERVED DAMAGE RULE: RESERVED_DAMAGE_RULE.txt.
+User explicitly confirmed: Warehouse records damage/isolation; customer requested
+quantity unchanged, shortage shown; Purchase decides replacement or approves eligible
+borrowing; Warehouse never takes another customer's goods. Prior pending question
+below is RESOLVED by this later approval. Implementation NOT yet complete; free-only
+guard remains until correctly attributed claim/case/packing transitions are tested.
+Fresh bounded dependency read confirmed isolatedAttributed currently hard-zero in
+mapper, builder drops attribution, and packing held<=usable invariant would reject
+a50held/10damaged case. Do NOT just remove free-only check or infer cancellation.
+Keep current fence/PO/auth/debt/halo rules; no new authoritative ledger or automaticPO.
+Approved implementation must cover recorded damage AFTER packing/Loaded without
+deadlocking physical corrections, and preserve borrowing promises. Ambiguous shared
+source/customer attribution is NOT permission for Warehouse to decide allocations.
+Independent original intake/PO/split composition + G3 work can continue while these
+bounded edge conditions are resolved.690e68a durable UI milestone confirmed pushed
+PR220;1019offlinepass unchanged. No live write/release/new platform permission now.
+
 2026-10-23 ORIGINAL STOCK DIALOG DURABLE UI: ORIGINAL_STOCK_EXCEPTION_DURABLE_UI.txt.
 Three department original shared dialog/forms preserved via one mechanical overlay;
 own actor/company exact request durable before network, finite phase correlation,
