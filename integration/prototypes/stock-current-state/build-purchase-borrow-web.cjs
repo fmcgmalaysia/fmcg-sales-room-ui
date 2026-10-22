@@ -7,7 +7,9 @@ const source = `import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import { items } from '@wix/data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
-import { requirePurchaseStaff, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
+import { requirePurchaseStaff, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
+import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
+import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { createPurchaseOperations } from 'backend/purchaseOperations.js';
 import { createPurchaseSourceOperations } from 'backend/purchaseSources.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
@@ -22,7 +24,7 @@ import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway, createCurrentPurchaseTables, createCurrentPurchaseTaskGateway } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway, createCurrentPurchaseTables, createCurrentPurchaseTaskGateway, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
 // Deliberately empty until actual ALL-writer verification and production permission,
 // schemas, initialization, shadow and capacity acceptance. Browser cannot set this.
 const writerCoverage = Object.freeze({});
@@ -71,6 +73,17 @@ async function privateGateway(company, taskCommands = false) {
     const readTables = createCurrentPurchaseTables({ company, store, readOriginalTable: collection => fulfilmentStore.all(collection) });
     return createCurrentPurchaseTaskGateway({ company, items, store, protocol: guardedProtocol, coverage: writerCoverage,
       currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION, authorityDependencies: { ...authorityDependencies,
+        createPurchaseMarginRefresh, readRates: readCurrentAdminFx,
+        readMarginContext: async (selectedCompany, staff, control) => {
+          if(selectedCompany!==company||PURCHASE_CURRENT_PROJECTION_VERSION!==2)throw Error('Paired original current margin context required');
+          const tables=await readTables(company,staff),names=company==='NCT'?{orders:'NCTOrders',tasks:'NCTTasks',activity:'NCTActivity'}:{orders:'NCTOrders1',tasks:'NCTTasks1',activity:'NCTActivity1'};
+          const originalArguments={company,staff,orders:tables[names.orders],tasks:tables[names.tasks],activity:tables[names.activity],suppliers:tables.SharedSuppliers};
+          const context={...projectPurchaseWorkspace(originalArguments),activity:tables[names.activity]};
+          const current=await readCurrentPurchaseProjection({...authorityDependencies,company,context,staff,control,items,store,originalArguments,
+            projectPurchaseWorkspace,currentProjectionVersion:PURCHASE_CURRENT_PROJECTION_VERSION,
+            readPurchaseRecords:async()=>tables.PurchaseOrders});
+          return {tables,workspace:current.workspace};
+        },
         readTables, createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace,
         createPlannerAllocationOperations, allocationViewVersion: ALLOCATION_CURRENT_VIEW_VERSION,
         createShortageOperations, createQuantityCaseOperations, projectQuantityCases,

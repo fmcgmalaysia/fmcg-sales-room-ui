@@ -1,7 +1,7 @@
 /* Candidate-only recovery shell. No fake workspace, inventory reads, cache scans,
    cache writes, UUID generation, legacy receipts or force-unlock capability. */
 (() => {
-  const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','BORROW_APPROVE','BORROW_RETURN']);
+  const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','BORROW_APPROVE','BORROW_RETURN']);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function validRequest(request, company) {
     return request && request.type === 'PURCHASE_SAVE_REQUEST' && request.company === company

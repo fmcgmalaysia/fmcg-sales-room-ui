@@ -3,6 +3,7 @@ const {createRequire}=require('node:module'),load=require('./load-master-module.
 const {createCurrentPurchaseTaskGateway}=require('../prototypes/stock-current-state/current-purchase-task-gateway.cjs');
 const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const {createSdkConditionalStore}=require('../prototypes/stock-current-state/sdk-conditional-store.cjs');
+const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
 const folder=path.join(__dirname,'../prototypes/stock-current-state'),fixtureFile=require.resolve('./stock-current-purchase-reorder.test.cjs'),copy=x=>JSON.parse(JSON.stringify(x));
 const original=vm.runInNewContext(fs.readFileSync(fixtureFile,'utf8').replace("const test = require('node:test')",'const test = () => {}')+';combinedFixture;',
@@ -22,6 +23,11 @@ async function root(coverage=false,paired=true,decisionFixture=null){
       'projectPurchaseOrders','readAllocations','readCustomerShipments','readPackingLists','packingHeld'].map(k=>[k,f.deps[k]])),
     readPreparation:load('warehousePreparation.js').readPreparation,projectPreparation:load('warehousePreparation.js').projectPreparation,
     PURCHASE_CURRENT_DISPLAY_ORDER_VERSION:paired?2:undefined,planCollections,createCurrentPurchaseTables,createCurrentPurchaseTaskGateway,
+    PURCHASE_CURRENT_PROJECTION_VERSION:paired?2:undefined,readCurrentPurchaseProjection,
+    projectPurchaseWorkspace:load('../prototypes/stock-current-state/purchaseProjection.candidate.js',{
+      'purchaseDisplayOrder.js':load('../prototypes/stock-current-state/purchaseDisplayOrder.candidate.js')}).projectPurchaseWorkspace,
+    createPurchaseMarginRefresh:load('purchaseMarginRefresh.js').createPurchaseMarginRefresh,
+    readCurrentAdminFx:async currencies=>currencies.map(currency=>({currency,rateToMyr:1,updatedAt:'2026-10-22T08:30:00.000Z'})),
     createPlannerAllocationOperations:load('../prototypes/stock-current-state/plannerAllocation.candidate.js').createPlannerAllocationOperations,
     ALLOCATION_CURRENT_VIEW_VERSION:2,createShortageOperations:load('purchaseShortage.js').createShortageOperations,
     ...load('purchaseQuantityCases.js'),
@@ -64,6 +70,25 @@ test('actual-import root routes independent REORDER through paired original disp
  assert.equal(f.f.task().rowPosition,2);assert.equal(f.f.task().lpCtn,16);
  assert.deepEqual(await f.api.savePurchaseTasksCurrent('NCT',request),result);
  assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
+});
+
+test('actual-import task root composes ORIGINAL GP refresh with authenticated CURRENT projection and same-request receipt',async()=>{
+  const f=await root(true),request={...f.request,operation:'MARGIN_REFRESH',input:{taskId:f.f.id}},before=JSON.stringify(f.f.task());
+  let result,attempts=0;do{result=await f.api.savePurchaseTasksCurrent('NCT',request);assert.ok(attempts++<30);}while(result.pending);
+  assert.equal(result.ok,true);assert.equal(result.marginReceipt.taskId,f.f.id);assert.equal(result.stockGeneration,1);
+  assert.equal(JSON.stringify(f.f.task()),before,'reference refresh must not change procurement, receipt or current task counters');
+  assert.deepEqual(await f.api.savePurchaseTasksCurrent('NCT',request),result);
+  assert.equal([...f.db.values()].filter(row=>row.action==='MARGIN_REFERENCE_RESULT').length,1);
+  assert.equal(f.calls[0],'AUTH');assert.equal(JSON.stringify(result).includes('sellingPrice'),false);
+});
+
+test('current margin root refuses empty coverage or unpaired projection without legacy workspace/cache side effects',async()=>{
+  for(const[coverage,paired]of[[false,true],[true,false]]){
+    const f=await root(coverage,paired),request={...f.request,operation:'MARGIN_REFRESH',input:{taskId:f.f.id}};
+    const result=await f.api.savePurchaseTasksCurrent('NCT',request);assert.equal(result.ok,false);
+    assert.equal([...f.db.values()].some(row=>row.action==='GP_RECALCULATED'||row.action==='MARGIN_REFERENCE_RESULT'),false);
+    assert.equal(f.calls.includes('NCTOrders'),false);
+  }
 });
 for(const operation of ['QUANTITY_CASE','SHORTAGE'])test(`actual-import root routes original ${operation} decision without releasing physical reservations or borrowing debt`,async()=>{
   const filename=require.resolve(operation==='QUANTITY_CASE'?'./stock-current-quantity-case.test.cjs':'./stock-current-shortage-save.test.cjs'),

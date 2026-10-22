@@ -14,6 +14,7 @@ const entries = {
   createCurrentStockExceptionSave: 'current-stock-exception-save.cjs',
   createCurrentStockResolutionSave: 'current-stock-resolution-save.cjs',
   createCurrentCostReferenceSave: 'current-cost-reference-save.cjs',
+  createCurrentMarginReferenceSave: 'current-margin-reference-save.cjs',
   createCurrentPurchaseOrderRecordSave: 'current-order-record-save.cjs',
   createCurrentAccountOrderRecordSave: 'current-order-record-save.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',

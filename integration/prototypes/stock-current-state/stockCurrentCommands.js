@@ -2832,11 +2832,12 @@ function createCurrentPurchaseTables({ company, readOriginalTable, store }) {
 module.exports = { createCurrentPurchaseTables };
 
 },
-// current-purchase-task-gateway.cjs sha256:21946fed7df2cd02445184e1fea75fb065ac1dad7b68091138e488d2bc099f68
+// current-purchase-task-gateway.cjs sha256:191d5bdac141119ca1f51467ff3761438bcc5623bdbf9a72d9612a18985f246b
 "current-purchase-task-gateway.cjs": (load, module) => {
 'use strict';
 const { createCurrentPurchaseSave, createCurrentAllocationSave, createCurrentShortageSave, createCurrentQuantityCaseSave } = load("current-department-saves.cjs");
 const { createCurrentPurchaseReorderSave } = load("current-purchase-reorder-save.cjs");
+const { createCurrentMarginReferenceSave } = load("current-margin-reference-save.cjs");
 // Current-only authenticated root binding. Unsupported/missing metadata cannot
 // reach an old unfenced writer through this gateway. No browser coverage/actor.
 function createCurrentPurchaseTaskGateway(dependencies) {
@@ -2844,7 +2845,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
   if (!['NCT','GHR'].includes(company)) throw Error('Private current Purchase company required');
   return async (requestCompany, request) => {
     if (requestCompany !== company || !request || request.company !== undefined && request.company !== company
-      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE'].includes(request.operation)
+      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH'].includes(request.operation)
       || JSON.stringify(request).length > 200000) throw Error('Supported bounded current Purchase task request required');
     if ((request.operation === 'REORDER' || request.operation === 'EDIT' && request.input?.displayRows !== undefined)
       && (dependencies.currentDisplayOrderVersion !== 2 || dependencies.authorityDependencies?.currentDisplayOrderVersion !== 2)) {
@@ -2855,12 +2856,183 @@ function createCurrentPurchaseTaskGateway(dependencies) {
     const execute = request.operation === 'REORDER' ? createCurrentPurchaseReorderSave(dependencies)
       : request.operation === 'ALLOCATE' ? createCurrentAllocationSave(dependencies)
       : request.operation === 'SHORTAGE' ? createCurrentShortageSave(dependencies)
+      : request.operation === 'MARGIN_REFRESH' ? createCurrentMarginReferenceSave(dependencies)
       : request.operation === 'QUANTITY_CASE' ? createCurrentQuantityCaseSave(dependencies) : createCurrentPurchaseSave(dependencies);
     return execute({ requestId:request.requestId,operation:request.operation,input:request.operation === 'ADD_SOURCE' ? { ...request.input,action:'ADD_SOURCE' } : request.input,
       stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration });
   };
 }
 module.exports = { createCurrentPurchaseTaskGateway };
+
+},
+// current-margin-reference-save.cjs sha256:60686d0b2bad310fb4e6216cf45f6e31bf761a2d8f5e082edad06fcf316fe5a5
+"current-margin-reference-save.cjs": (load, module) => {
+'use strict';
+
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { prepareMarginReferenceGroup } = load("margin-reference-plan.cjs");
+const { domainCollections } = load("domain-scope.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy=value=>JSON.parse(JSON.stringify(value));
+// Private ORIGINAL Purchase cache co-writer. Does not start automatic refreshes,
+// expose rates/prices, replace GP formulas or install an endpoint. A workspace
+// orchestrator must retain this request BEFORE calling it, including after reload.
+function createCurrentMarginReferenceSave({ company, store, protocol, coverage, authorityDependencies:d }) {
+  if (!['NCT','GHR'].includes(company) || protocol?.planFormat!=='SEGMENTED_V2' || typeof store?.read!=='function'
+    || [d?.readMember,d?.readStaffRecords,d?.requirePurchaseStaff,d?.readMarginContext,d?.createPurchaseMarginRefresh,d?.readRates,d?.now]
+      .some(fn=>typeof fn!=='function')) throw Error('Private original margin reference dependencies required');
+  const [orders,tasks]=domainCollections(company),journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+  function validateResults(results, allowed) {
+    if (!Array.isArray(results) || new Set(results.map(row=>row?.[0])).size!==results.length
+      || results.some(row=>!Array.isArray(row)||row.length!==2||!allowed.has(row[0])
+        || row[1]!==null&&(typeof row[1]!=='number'||!Number.isFinite(row[1])))) throw Error('Known original margin results required');
+  }
+  return async request=>{
+    if (!request?.input || Object.keys(request.input).some(key=>key!=='taskId') || typeof request.input.taskId!=='string'
+      || !request.input.taskId || request.input.taskId.length>128) throw Error('Exact original margin demand required');
+    let staff;
+    const result=await createCurrentStockSave({company,writer:'MARGIN_REFERENCE',protocol,coverage,
+      authenticate:async()=>{
+        const member=await d.readMember();
+        if (!member?._id||!member.loginEmail||member.status!=='APPROVED')d.requirePurchaseStaff(member,[]);
+        staff={...d.requirePurchaseStaff(member,await d.readStaffRecords()),memberId:member._id};
+        return {memberId:staff.memberId};
+      },prepare:async command=>{
+        if (command.memberId!==staff.memberId)throw Error('Margin actor changed');
+        const snapshot=await protocol.readSnapshot(async control=>{
+          const context=await d.readMarginContext(company,staff,control),workspace=context?.workspace;
+          if (workspace?.company!==company||workspace.stockAllocationView!=='CURRENT_V2'
+            || workspace.staff?.staffId!==staff.staffId||workspace.staff?.memberId!==staff.memberId
+            || !context.tables||[orders,tasks,journal].some(collection=>!Array.isArray(context.tables[collection]))) throw Error('Original authenticated current margin workspace required');
+          const group=workspace.tasks?.filter(row=>row.id===command.input.taskId&&!row.procurementSource);
+          if (group?.length!==1)throw Error('Exact original margin demand group required');
+          const members=workspace.tasks.filter(row=>row.id===command.input.taskId||row.customerDemandTaskId===command.input.taskId);
+          const allowed=new Set([command.input.taskId,...members.map(row=>'SOURCE:'+row.id)]);
+          const prepared=await prepareMarginReferenceGroup({company,targetTaskId:command.input.taskId,
+            tables:Object.fromEntries([orders,tasks,journal].map(collection=>[collection,context.tables[collection]])),workspace,
+            createPurchaseMarginRefresh:d.createPurchaseMarginRefresh,readRates:d.readRates,now:d.now});
+          validateResults(prepared.results,allowed);
+          const id=hash(company,command.input.taskId,command.requestId,staff.memberId,'MARGIN_RESULT');
+          const instant=new Date(prepared.plan.writes.find(write=>write.after.action==='GP_RECALCULATED')?.after.activityTime||d.now());
+          if (!Number.isFinite(instant.getTime()))throw Error('Original margin receipt time required');
+          const at=instant.toISOString();
+          // Stable, immutable per-request receipt retains ORIGINAL calculation
+          // results for replay. Only explicit refresh saves create it; ordinary
+          // unchanged reads must not call this save merely to create a receipt.
+          const receipt={_id:id,title:id,company,description:group[0].orderId,image:group[0].sourceLineId,
+            imageAltText:command.input.taskId,action:'MARGIN_REFERENCE_RESULT',result:'RECORDED',actorType:'SYSTEM',activityTime:at,
+            initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,
+            details:{requestId:command.requestId,actorMemberId:staff.memberId,baseGeneration:control.generation,
+              targetTaskId:command.input.taskId,allowedResultIds:[...allowed],results:copy(prepared.results)}};
+          return {writes:[...prepared.plan.writes,{collection:journal,before:null,after:receipt}]};
+        });
+        return {plan:snapshot.rows,generation:snapshot.generation,memberId:staff.memberId};
+      }})(request);
+    if (result.ok!==true)return result;
+    const id=hash(company,request.input.taskId,request.requestId,staff.memberId,'MARGIN_RESULT');
+    const event=(await protocol.readSnapshot(()=>store.read(journal,id))).rows,detail=event?.details;
+    const key=hash(company+'/PURCHASE',request.requestId,staff.memberId);
+    if (event?.company!==company||event._id!==id||event.title!==id||event._version!==hash(key,journal,id)
+      || event.action!=='MARGIN_REFERENCE_RESULT'||event.result!=='RECORDED'||event.imageAltText!==request.input.taskId
+      || event.initiatedByStaffId!==staff.staffId||detail?.actorMemberId!==staff.memberId||detail.requestId!==request.requestId
+      || detail.targetTaskId!==request.input.taskId||detail.baseGeneration+1!==result.stockGeneration
+      || !Array.isArray(detail.allowedResultIds)||new Set(detail.allowedResultIds).size!==detail.allowedResultIds.length
+      || !detail.allowedResultIds.includes(request.input.taskId))throw Error('Committed original margin receipt requires review');
+    validateResults(detail.results,new Set(detail.allowedResultIds));
+    // These are the RECEIPT's values, not a claim that later current GP stayed
+    // unchanged. Re-read an authorized fresh workspace before updating live UI.
+    return {...result,marginReceipt:{taskId:request.input.taskId,generation:result.stockGeneration,results:copy(detail.results)}};
+  };
+}
+module.exports={createCurrentMarginReferenceSave};
+
+},
+// margin-reference-plan.cjs sha256:61f04be3d92eb25f0d39621842fcbd06672f805f88a2004a3f1ba5bc7c7b1db2
+"margin-reference-plan.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+const cacheFields = new Set(['gp', 'adminFxSource', 'salesInvoiceSummary']);
+
+// Private composition of ORIGINAL margin refresh, not an authenticated gateway or
+// replacement GP formula. Results requiring a write must not be exposed as committed
+// before the common fence succeeds. No legacy GP lock is ever deleted in real storage.
+async function prepareMarginReference({ createPurchaseMarginRefresh, company, tables, workspace, readRates, now }) {
+  const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const allowed = new Set([orders, tasks, journal]);
+  if (typeof createPurchaseMarginRefresh !== 'function' || typeof readRates !== 'function' || typeof now !== 'function'
+    || workspace?.company !== company || !Array.isArray(workspace.tasks) || !tables
+    || Object.keys(tables).some(c => !allowed.has(c)) || [...allowed].some(c => !Array.isArray(tables[c]))) throw Error('Complete private margin context required');
+  const initial = new Map(), overlay = new Map(), writes = new Map(), privateLocks = new Set(), audits = new Map(), updated = new Set();
+  let violation;
+  function refuse(message) { violation ||= new Error(message); throw violation; }
+  for (const c of allowed) for (const row of tables[c]) {
+    const key = c + ':' + row._id;
+    if (!row._id || initial.has(key) || row.company && row.company !== company
+      || c !== journal && (row.company !== company || !row._version)) throw Error('Exact migrated margin snapshot required');
+    initial.set(key, copy(row)); overlay.set(key, copy(row));
+  }
+  const scope = c => { if (!allowed.has(c)) refuse('Margin context scope violation'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(overlay.get(c + ':' + id) || null); },
+    insert: async (c, row) => {
+      scope(c); const key = c + ':' + row._id;
+      if (c !== journal || !row._id || row._id !== row.title || overlay.has(key)) refuse('Unexpected margin insert');
+      if (row.action === undefined) {
+        const task = tables[tasks].find(t => hash(company, t.title, 'GP_LOCK') === row._id);
+        if (!task || row.description !== task.description || row.details?.actorMemberId !== 'SYSTEM_GP' || !row.details.requestId) refuse('Unexpected margin lock');
+        privateLocks.add(key);
+      } else {
+        const task = tables[tasks].find(t => t.title === row.imageAltText);
+        if (row.action !== 'GP_RECALCULATED' || row.result !== 'CALCULATED' || row.actorType !== 'SYSTEM' || !task
+          || row.description !== task.description || row.image !== task.imageAltText
+          || !privateLocks.has(journal + ':' + hash(company, task.title, 'GP_LOCK'))
+          || !Number.isFinite(row.details?.after?.gp)) refuse('Unexpected margin audit');
+        audits.set(key, copy(row)); writes.set(key, { collection: c, before: null, after: { ...copy(row), company } });
+      }
+      overlay.set(key, copy(row)); return copy(row);
+    },
+    update: async (c, row) => {
+      scope(c); const key = c + ':' + row._id, before = initial.get(key);
+      if (c !== orders || !before || before.company !== company || !before._version) refuse('Only exact margin order cache may change');
+      const fixed = value => Object.fromEntries(Object.entries(value).filter(([field]) => !cacheFields.has(field)));
+      if (!same(fixed(before), fixed(row))) refuse('Margin cannot change price, identity, invoice lock or quantity');
+      const matches = [...audits.entries()].filter(([, event]) => event.description === before.title && event.image === before.sourceLineId
+        && event.details.after.gp === row.gp && event.details.after.rateToMyr === row.adminFxSource);
+      if (matches.length !== 1 || updated.has(matches[0][0])) refuse('Exact preceding margin evidence required');
+      updated.add(matches[0][0]); overlay.set(key, copy(row)); writes.set(key, { collection: c, before: copy(before), after: copy(row) }); return copy(row);
+    },
+    remove: async (c, id) => {
+      scope(c); const key = c + ':' + id;
+      if (c !== journal || !privateLocks.has(key)) refuse('Only newly simulated margin lock may be removed');
+      overlay.delete(key); privateLocks.delete(key);
+    }
+  };
+  const results = await createPurchaseMarginRefresh({ store, readRates, now })({ company, names: { orders, tasks, activity: journal },
+    orders: copy(tables[orders]), tasks: copy(tables[tasks]), activity: copy(tables[journal]), workspace: copy(workspace) });
+  // ORIGINAL refresh intentionally catches cache failures. A rejected adapter write
+  // must still invalidate the WHOLE private plan, never publish orphan audit evidence.
+  if (violation) throw violation;
+  if (privateLocks.size || audits.size !== updated.size || typeof results?.entries !== 'function'
+    || writes.size > 30 || Buffer.byteLength(JSON.stringify({ writes: [...writes.values()] })) > 180000) throw Error('Complete bounded margin plan required');
+  return { plan: { writes: [...writes.values()] }, results: [...results.entries()], mustCommit: writes.size > 0,
+    activationReady: false, blockers: ['ORIGINAL_AUTH_READ_GATEWAY_REQUIRED', 'PRODUCTION_MARGIN_CAPACITY_REQUIRED'] };
+}
+// The ORIGINAL cache already saves each demand line independently. Preserve that
+// boundary for a busy workroom instead of turning its entire read into one giant
+// transaction. A group MUST retain all original supplier children of its mother.
+async function prepareMarginReferenceGroup(args) {
+  const target = args.workspace?.tasks?.filter(t => t.id === args.targetTaskId && !t.procurementSource);
+  if (target?.length !== 1) throw Error('Exact original margin demand group required');
+  const tasks = args.workspace.tasks.filter(t => t.id === args.targetTaskId || t.customerDemandTaskId === args.targetTaskId);
+  return prepareMarginReference({ ...args, workspace: { ...args.workspace, tasks } });
+}
+module.exports = { prepareMarginReference, prepareMarginReferenceGroup };
 
 },
 // current-purchase-save-router.cjs sha256:f705661cfe9924d69c9f8080a0d4eb6355712445f68ba2f768381265725640bf
@@ -3807,7 +3979,7 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
 module.exports = { createBorrowCurrentQuery };
 
 },
-// purchase-current-projection.cjs sha256:5e2ed316dbcbbcabdbb4240dda4d53fa9f2a6156b9335a3864929ad62c98b4ed
+// purchase-current-projection.cjs sha256:5179d243dd3a25cc09de036e3bda2ed7f1fc5bb551c4ecd9ddcd2b397d4d7dcd
 "purchase-current-projection.cjs": (load, module) => {
 'use strict';
 
@@ -3853,7 +4025,7 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
   projectPurchaseWorkspace, currentProjectionVersion, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
   readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
   metrics={queries:0,exactReads:0} }) {
-  if (control?.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
+  if (!['NCT','GHR'].includes(company) || !control || control.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
     || control.transferIndexVersion !== 2 || !control.writerBuild || !Number.isSafeInteger(control.generation) || control.generation < 0
     || context?.company !== company || !staff?.staffId || !staff.memberId || originalArguments?.company !== company
     || currentProjectionVersion !== 2 || typeof projectPurchaseWorkspace !== 'function' || typeof readCurrentTaskRows !== 'function'
@@ -5079,6 +5251,7 @@ export const createCurrentShortageSave = load("current-department-saves.cjs").cr
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;
 export const createCurrentStockResolutionSave = load("current-stock-resolution-save.cjs").createCurrentStockResolutionSave;
 export const createCurrentCostReferenceSave = load("current-cost-reference-save.cjs").createCurrentCostReferenceSave;
+export const createCurrentMarginReferenceSave = load("current-margin-reference-save.cjs").createCurrentMarginReferenceSave;
 export const createCurrentPurchaseOrderRecordSave = load("current-order-record-save.cjs").createCurrentPurchaseOrderRecordSave;
 export const createCurrentAccountOrderRecordSave = load("current-order-record-save.cjs").createCurrentAccountOrderRecordSave;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;

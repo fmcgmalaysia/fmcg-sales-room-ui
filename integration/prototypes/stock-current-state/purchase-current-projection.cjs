@@ -42,7 +42,7 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
   projectPurchaseWorkspace, currentProjectionVersion, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
   readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
   metrics={queries:0,exactReads:0} }) {
-  if (control?.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
+  if (!['NCT','GHR'].includes(company) || !control || control.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
     || control.transferIndexVersion !== 2 || !control.writerBuild || !Number.isSafeInteger(control.generation) || control.generation < 0
     || context?.company !== company || !staff?.staffId || !staff.memberId || originalArguments?.company !== company
     || currentProjectionVersion !== 2 || typeof projectPurchaseWorkspace !== 'function' || typeof readCurrentTaskRows !== 'function'

@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL GP CO-WRITER: PURCHASE_CURRENT_MARGIN_SAVE.txt. ORIGINAL GP
+formula/audit/cache now concrete common-fenced MARGIN_REFERENCE save; actual-import
+Purchase task root routes MARGIN_REFRESH using original auth + paired current context,
+same UUID/plan/receipt, no source/task/stock mutation.710currentpass0fail6819.2485ms,
+78modules35exports. Actual workspace orchestration MUST retain request before invoking
+this save; no auto-refresh hookup yet, no per-unchanged-read save. UI actual entry/
+remaining writers/files/recovery/capacity/native/init/cutover/shadow/fourrelease OPEN.
+Production exact, no install/live data mutation/publication; ACTIVE OFF.
+
 2026-10-22 CURRENT PURCHASE CALCULATOR: PURCHASE_CURRENT_PROJECTION.txt. Scoped
 current read now feeds paired ORIGINAL Purchase calculator BEFORE split/batch metrics,
 instead of overwriting final display. Actual borrow30 => A30/B70 with B receipt100/PO
