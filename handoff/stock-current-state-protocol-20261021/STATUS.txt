@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST DISPATCH: WAREHOUSE_DISPATCH_CURRENT_BINDING.txt. Original
+Warehouse physical dispatch + same-view read now concrete current candidates;
+actual20 outflow changes onHand50->30 + task counter0->20 once, original invoice
+unchanged. Borrower departure preserves ACTIVE20 repayment debt.520tests pass0fail
+5132.8945ms, runtime58modules20exports. All code still candidate. Actual gateways/
+otherco-writers/relays/UI/reload/schema+SDKorder/capacity/init/routing/shadow/fourrelease
+OPEN, ACTIVE OFF. Continue; no production write or publication, Support invoice OFF.
+
 2026-10-22 LATEST PROTOCOL REPAIR: BUSINESS_JSON_ORDER_FIX.txt. Actual original
 dispatch offline test exposed canonical plan serialization breaking legacy source/
 invoice JSON-order hashes. Feature work paused; minimum2line codec repair preserves

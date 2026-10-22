@@ -3556,6 +3556,211 @@ function prepareSalesShipmentHolds({ company, event, priorShipment, products, ge
 module.exports = { prepareSalesShipmentHolds };
 
 },
+// current-warehouse-dispatch-save.cjs sha256:c42613e519b6f75c80117fd78655e7302a0eea38cfec4f245fe80de31386a52f
+"current-warehouse-dispatch-save.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { readCurrentWarehouseShipmentWorkspace } = load("warehouse-shipment-workspace.cjs");
+const { validateOriginalShipment } = load("original-shipment-validation.cjs");
+const { prepareWarehouseDispatch } = load("warehouse-dispatch-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+// PRIVATE original fulfilment staffContext callback, not browser permissions.
+function createCurrentWarehouseDispatchSave({ company, items, store, protocol, coverage, authenticateOriginalWarehouse,
+  readContext, createCustomerFulfilmentOperations, currentAllocationVersion, now = () => new Date(), ...dependencies }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || currentAllocationVersion !== 2
+    || typeof authenticateOriginalWarehouse !== 'function' || typeof readContext !== 'function'
+    || typeof createCustomerFulfilmentOperations !== 'function') throw Error('Private original Warehouse dispatch dependencies required');
+  return async request => {
+    let staff;
+    const result = await createCurrentStockSave({ company, writer: 'SHIPMENT', protocol, coverage,
+      authenticate: async () => {
+        staff = await authenticateOriginalWarehouse(company);
+        if (!staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
+          || request?.input?.action !== 'DISPATCH') throw Error('Original Warehouse dispatch grant required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        const metrics = { exactReads: 0, queries: 0 };
+        const snapshot = await protocol.readSnapshot(async control => {
+          const current = await readCurrentWarehouseShipmentWorkspace({ ...dependencies, company, items, store, staff, control,
+            context: await readContext(company, staff), metrics });
+          const validated = await validateOriginalShipment({ company, staff, requestId: command.requestId, input: command.input,
+            context: current.context, createCustomerFulfilmentOperations, currentAllocationVersion, now });
+          const shipment = validated.event.details.shipment, ids = new Set(shipment.lines.map(l => l.taskId));
+          const products = [...current.products.values()].filter(p => p.state.tasks.some(t => ids.has(t.id)));
+          const taskRows = products.flatMap(p => p.rows.taskRows.filter(t => ids.has(t._id)));
+          return prepareWarehouseDispatch({ event: validated.event,
+            priorShipment: dependencies.readCustomerShipments(current.context.activity).find(s => s.id === shipment.id),
+            products, taskRows, generation: control.generation, planFormat: 'SEGMENTED_V2' });
+        });
+        return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+      } })(request);
+    if (result.ok !== true) return result;
+    const snapshot = await protocol.readSnapshot(() => store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', hash(company, request.requestId, staff.memberId, 'SHIPMENT_EVENT')));
+    const event = snapshot.rows;
+    if (!event?._version || event.company !== company || event.action !== 'CUSTOMER_SHIPMENT_CHANGED' || event.result !== 'SAVED'
+      || event.initiatedByStaffId !== staff.staffId || event.details?.shipment?.status !== 'DISPATCHED'
+      || event.details.shipment.id !== request.input.id) throw Error('Committed physical dispatch receipt unconfirmed');
+    return { ...result, company, shipmentId: event.details.shipment.id, status: 'DISPATCHED' };
+  };
+}
+function createCurrentWarehouseShipmentRead({ company, protocol, authenticateOriginalWarehouse, readContext,
+  readOriginalCustomerFulfilment, currentFulfilmentVersion, ...dependencies }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || currentFulfilmentVersion !== 2
+    || [authenticateOriginalWarehouse, readContext, readOriginalCustomerFulfilment].some(fn => typeof fn !== 'function')) throw Error('Private original Warehouse shipment read dependencies required');
+  return async requestCompany => {
+    if (requestCompany !== company) throw Error('Warehouse shipment read company conflict');
+    const staff = await authenticateOriginalWarehouse(company);
+    const snapshot = await protocol.readSnapshot(async control => {
+      const current = await readCurrentWarehouseShipmentWorkspace({ ...dependencies, company, protocol, control, staff, context: await readContext(company, staff) });
+      // Original public gateway still applies its original financial redaction.
+      const result = await readOriginalCustomerFulfilment(company, staff, '', current.context);
+      if (result?.company !== company) throw Error('Original Warehouse shipment response company changed');
+      return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
+    });
+    return snapshot.rows;
+  };
+}
+module.exports = { createCurrentWarehouseDispatchSave, createCurrentWarehouseShipmentRead };
+
+},
+// warehouse-shipment-workspace.cjs sha256:a65427c28ad34f4c7907be273c2c74618fde31684659e24b598dcdbd0ec0ed1f
+"warehouse-shipment-workspace.cjs": (load, module) => {
+'use strict';
+const { stockKey } = load("current-model.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+const { copy } = load("segmented-plan.cjs");
+// PRIVATE original company fulfilment context, not a source Sales customer scope.
+// Same selected set must feed its original READ/version and DISPATCH validation.
+async function readCurrentWarehouseShipmentWorkspace({ company, staff, context, control, items, store,
+  readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders, readAllocations, readCustomerShipments,
+  readPackingLists, packingHeld, readPreparation, projectPreparation, metrics = { exactReads: 0, queries: 0 } }) {
+  if (!['NCT', 'GHR'].includes(company) || !staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
+    || context?.company !== company || control?.company !== company || control.mode !== 'ACTIVE' || control.pending
+    || control.schemaVersion !== 1 || !Number.isSafeInteger(control.generation) || control.generation < 0
+    || control.transferIndexVersion !== 2 || typeof control.writerBuild !== 'string' || !control.writerBuild
+    || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+    || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Private original Warehouse shipment context required');
+  const shipments = readCustomerShipments(context.activity);
+  if (shipments.some(s => s.company !== company)) throw Error('Shipment company context conflict');
+  const retained = new Set(shipments.filter(s => ['REQUESTED', 'INVOICED'].includes(s.status)).flatMap(s => s.lines.map(l => l.taskId)));
+  const selected = context.tasks.filter(t => !t.procurementSource && !t.specialPurchase && (!t.archived || retained.has(t.id)));
+  if ([...retained].some(id => !selected.some(t => t.id === id))) throw Error('Original outstanding shipment task missing');
+  const groups = new Map();
+  for (const task of selected) {
+    const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea }, key = stockKey(identity);
+    if (!groups.has(key)) groups.set(key, { identity, taskIds: [] }); groups.get(key).taskIds.push(task.id);
+  }
+  const records = groups.size ? await readPurchaseRecords(company, staff) : [];
+  const orders = groups.size ? projectPurchaseOrders({ company, workspace: context, records }) : [];
+  const prior = readAllocations(context.activity), products = new Map(), tasks = new Map(), sources = new Set(), allocations = [];
+  for (const [key, group] of groups) {
+    const builder = originalProductState({ company, context, orders, identity: group.identity, readAllocations: () => prior,
+      readCustomerShipments: () => shipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+    const explicitSources = [...new Set(shipments.filter(s => ['REQUESTED', 'INVOICED'].includes(s.status))
+      .flatMap(s => s.lines.filter(l => group.taskIds.includes(l.taskId)).flatMap(l => l.sources.map(p => p.sourceTaskId))))];
+    const rows = await readScopedCurrentProduct({ company, identity: group.identity, items, store, metrics,
+      transferIndexVersion: control.transferIndexVersion, sourceTaskIds: explicitSources, demandTaskIds: group.taskIds });
+    if (!rows.product) throw Error('Warehouse shipment product checkpoint missing');
+    rows.taskRows = await readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+    const state = builder.buildState(rows), view = currentAllocationContext({ state, context, readAllocations: () => prior });
+    for (const task of state.tasks) {
+      if (tasks.has(task.id)) throw Error('Warehouse shipment task product ambiguous'); tasks.set(task.id, view.tasks.find(t => t.id === task.id));
+    }
+    for (const source of state.sources) {
+      if (sources.has(source.id)) throw Error('Warehouse shipment source product ambiguous'); sources.add(source.id);
+      allocations.push(view.allocations.find(a => a.sourceTaskId === source.id));
+    }
+    products.set(key, { state, rows });
+  }
+  return { context: { ...copy(context), stockAllocationView: 'CURRENT_V2', tasks: context.tasks.map(t => copy(tasks.get(t.id) || t)),
+    allocations: [...prior.filter(a => !sources.has(a.sourceTaskId)), ...allocations] }, products, metrics };
+}
+module.exports = { readCurrentWarehouseShipmentWorkspace };
+
+},
+// warehouse-dispatch-plan.cjs sha256:24f90ee9a182facbb54b1778967ace45da49280a894428f457806a92733e9dfc
+"warehouse-dispatch-plan.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { prepareShipmentDispatch } = load("borrowing-stock-plan.cjs");
+const { appendTaskDispatchCheckpoints } = load("task-dispatch-checkpoint.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+function prepareWarehouseDispatch({ event, priorShipment, products, generation, taskRows, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server dispatch plan format required');
+  const shipment = event?.details?.shipment;
+  if (!Array.isArray(shipment?.lines) || !shipment.lines.length || !Array.isArray(priorShipment?.lines)
+    || !Array.isArray(products) || !products.length) throw Error('Complete original dispatch and products required');
+  const keys = new Set(), consumed = new Set(), states = [], writes = [];
+  for (const { state, rows } of products) {
+    const key = stockKey(state);
+    if (keys.has(key)) throw Error('Duplicate dispatch product'); keys.add(key);
+    const lines = shipment.lines.filter(l => state.tasks.some(t => t.id === l.taskId));
+    if (!lines.length) throw Error('Unrelated dispatch product');
+    for (const line of lines) { if (consumed.has(line.taskId)) throw Error('Ambiguous dispatch task'); consumed.add(line.taskId); }
+    const scoped = { ...copy(event), details: { ...copy(event.details), shipment: { ...copy(shipment), lines: copy(lines) } } };
+    const prior = { ...copy(priorShipment), lines: priorShipment.lines.filter(l => consumed.has(l.taskId) && lines.some(n => n.taskId === l.taskId)) };
+    const result = prepareShipmentDispatch({ state, rows, event: scoped, priorShipment: prior, generation });
+    states.push(result.state);
+    writes.push(...result.plan.writes.filter(w => w.after.action !== 'CUSTOMER_SHIPMENT_CHANGED'));
+  }
+  if (new Set(shipment.lines.map(l => l.taskId)).size !== shipment.lines.length || consumed.size !== shipment.lines.length
+    || new Set(priorShipment.lines.map(l => l.taskId)).size !== shipment.lines.length
+    || priorShipment.lines.some(l => !consumed.has(l.taskId))) throw Error('Incomplete dispatch product coverage');
+  writes.unshift({ collection: shipment.company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', before: null, after: { ...copy(event), company: shipment.company } });
+  const plan = planFormat === 'SEGMENTED_V2' ? appendTaskDispatchCheckpoints({ company: shipment.company, plan: { writes }, products, states, taskRows, generation }) : { writes };
+  if (planFormat !== 'SEGMENTED_V2' && products.some(p => p.state.lifecycleVersion === 2)) throw Error('Current dispatch must retain task checkpoints');
+  if (new Set(plan.writes.map(w => w.collection + ':' + w.after._id)).size !== plan.writes.length
+    || plan.writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify(plan)) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Combined dispatch exceeds atomic proof bound');
+  return { states, plan };
+}
+module.exports = { prepareWarehouseDispatch };
+
+},
+// task-dispatch-checkpoint.cjs sha256:75c8094f9dc48fb26d2d69a12aff273b3ecc83861e47838c5177d6e6472fe45d
+"task-dispatch-checkpoint.cjs": (load, module) => {
+'use strict';
+
+const { same, copy } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+// Exact normalized domain rows from private store, never projected/browser tasks.
+// Caller includes this plan in the SAME stock fence; does not write separately.
+function appendTaskDispatchCheckpoints({ company, plan, products, states, taskRows, generation }) {
+  if (!['NCT', 'GHR'].includes(company) || !Array.isArray(plan?.writes) || !Array.isArray(products)
+    || !Array.isArray(states) || states.length !== products.length || !Array.isArray(taskRows)
+    || !count(generation) || !count(generation + 1)) throw Error('Private dispatch checkpoint context required');
+  const collection = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1', result = copy(plan);
+  const exact = new Map(taskRows.map(row => [row._id, row]));
+  if (exact.size !== taskRows.length) throw Error('Duplicate exact dispatch task');
+  const consumed = new Set();
+  for (let index = 0; index < products.length; index++) {
+    const before = products[index].state, after = states[index];
+    if (before?.lifecycleVersion !== 2 || after?.lifecycleVersion !== 2 || before.company !== company || after.company !== company
+      || before.tasks.length !== after.tasks.length) throw Error('Dispatch lifecycle checkpoint required');
+    for (const task of before.tasks) {
+      const next = after.tasks.find(t => t.id === task.id);
+      if (!next || !count(task.dispatched) || !count(next.dispatched) || next.dispatched < task.dispatched) throw Error('Dispatch task identity/cumulative conflict');
+      if (next.dispatched === task.dispatched) continue;
+      const row = exact.get(task.id);
+      if (!row || consumed.has(task.id) || row.company !== company || !row._version || row.stockCounterSchema !== 2
+        || row.stockDispatchedCumulative !== task.dispatched || !count(row.stockCounterGeneration) || row.stockCounterGeneration > generation) throw Error('Exact task dispatch checkpoint stale');
+      consumed.add(task.id);
+      const existing = result.writes.find(w => w.collection === collection && w.after._id === task.id);
+      if (existing && !same(existing.before, row)) throw Error('Dispatch task writer conflict');
+      const checkpoint = { stockCounterSchema: 2, stockDispatchedCumulative: next.dispatched, stockCounterGeneration: generation + 1 };
+      if (existing) Object.assign(existing.after, checkpoint);
+      else result.writes.push({ collection, before: copy(row), after: { ...copy(row), ...checkpoint } });
+    }
+  }
+  if (consumed.size !== exact.size) throw Error('Unrelated exact dispatch task rows');
+  return result;
+}
+module.exports = { appendTaskDispatchCheckpoints };
+
+},
 // sales-gateway-current.cjs sha256:8ab8f99386452754e32ea7c0d11f66b51bb842dde0d0e751d3aaa1b13a0063bb
 "sales-gateway-current.cjs": (load, module) => {
 'use strict';
@@ -3610,4 +3815,6 @@ export const projectCurrentWarehouseReady = load("current-warehouse-ready-contex
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
 export const createCurrentSalesShipmentSave = load("current-sales-shipment-save.cjs").createCurrentSalesShipmentSave;
+export const createCurrentWarehouseDispatchSave = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseDispatchSave;
+export const createCurrentWarehouseShipmentRead = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseShipmentRead;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;
