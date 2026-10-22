@@ -1,17 +1,26 @@
 'use strict';
-const { createCurrentPurchaseSave } = require('./current-department-saves.cjs');
+const { createCurrentPurchaseSave, createCurrentAllocationSave, createCurrentShortageSave, createCurrentQuantityCaseSave } = require('./current-department-saves.cjs');
 const { createCurrentPurchaseReorderSave } = require('./current-purchase-reorder-save.cjs');
 // Current-only authenticated root binding. Unsupported/missing metadata cannot
 // reach an old unfenced writer through this gateway. No browser coverage/actor.
 function createCurrentPurchaseTaskGateway(dependencies) {
   const { company } = dependencies;
   if (!['NCT','GHR'].includes(company)) throw Error('Private current Purchase company required');
-  const save = createCurrentPurchaseSave(dependencies), reorder = createCurrentPurchaseReorderSave(dependencies);
   return async (requestCompany, request) => {
     if (requestCompany !== company || !request || request.company !== undefined && request.company !== company
-      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER'].includes(request.operation)
+      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE'].includes(request.operation)
       || JSON.stringify(request).length > 200000) throw Error('Supported bounded current Purchase task request required');
-    return (request.operation === 'REORDER' ? reorder : save)({ requestId:request.requestId,operation:request.operation,input:request.input,
+    if ((request.operation === 'REORDER' || request.operation === 'EDIT' && request.input?.displayRows !== undefined)
+      && (dependencies.currentDisplayOrderVersion !== 2 || dependencies.authorityDependencies?.currentDisplayOrderVersion !== 2)) {
+      throw Error('Paired original current display calculator required');
+    }
+    // Construct only the selected ORIGINAL authority. A shortage read must not
+    // require a separate price/sort workspace or run another department command.
+    const execute = request.operation === 'REORDER' ? createCurrentPurchaseReorderSave(dependencies)
+      : request.operation === 'ALLOCATE' ? createCurrentAllocationSave(dependencies)
+      : request.operation === 'SHORTAGE' ? createCurrentShortageSave(dependencies)
+      : request.operation === 'QUANTITY_CASE' ? createCurrentQuantityCaseSave(dependencies) : createCurrentPurchaseSave(dependencies);
+    return execute({ requestId:request.requestId,operation:request.operation,input:request.operation === 'ADD_SOURCE' ? { ...request.input,action:'ADD_SOURCE' } : request.input,
       stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration });
   };
 }

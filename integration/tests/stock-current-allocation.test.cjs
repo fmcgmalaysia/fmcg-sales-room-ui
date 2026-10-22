@@ -152,11 +152,19 @@ test('concrete v2 allocation authenticates original Purchase, allocates only fre
     authorityDependencies: { ...f.deps, createPlannerAllocationOperations: candidate.createPlannerAllocationOperations, allocationViewVersion: candidate.ALLOCATION_CURRENT_VIEW_VERSION } });
   const request = { requestId: f.args.requestId, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 1, input: { action: 'ALLOCATE', sourceTaskId: 'A',
     version: candidate.allocationVersion(workspace, f.activity), targets: [{ taskId: 'A', quantity: 7 }, { taskId: 'B', quantity: 8 }], reason: 'Assign free stock' } };
+  const gateway = require('../prototypes/stock-current-state/current-purchase-task-gateway.cjs').createCurrentPurchaseTaskGateway({ company:'NCT',items,store,protocol,coverage,
+    authorityDependencies:{...f.deps,createPlannerAllocationOperations:candidate.createPlannerAllocationOperations,allocationViewVersion:candidate.ALLOCATION_CURRENT_VIEW_VERSION} });
+  assert.equal((await gateway('NCT',{...request,operation:'ALLOCATE',approvedBy:'FORGED'})).stockGeneration,2);
   assert.equal((await save(request)).stockGeneration, 2); await save(request);
   assert.equal(db.get('StockProducts/' + hash('NCT', key)).onHand, 15); assert.equal(db.get('StockProducts/' + hash('NCT', key)).available, 0);
   assert.equal(db.get('StockClaims/' + hash('NCT', positionId, 'B')).reservedUsable, 8);
   assert.equal(db.get('NCTActivity/' + hash('NCT', 'STOCK_TRANSFER_CURRENT', 'R')).details.relation.repaid, 0);
   assert.equal([...db.values()].filter(row => row.action === 'PLANNER_ALLOCATION_SAVED').length, 1);
+  const afterState=allocateCumulative(borrowed,{expectedRevision:1,sourceId:'A',targets:request.input.targets,reason:request.input.reason}).after,
+    nextContext=currentAllocationContext({state:afterState,context:f.workspace,readAllocations}),beforeUnauthorized=JSON.stringify([...db].filter(([key])=>key.startsWith('Stock')));
+  await assert.rejects(gateway('NCT',{...request,operation:'ALLOCATE',requestId:'22222222-2222-4222-8222-222222222222',stockGeneration:2,
+    input:{...request.input,version:candidate.allocationVersion(nextContext,f.activity),targets:[{taskId:'A',quantity:5},{taskId:'B',quantity:10}]}}),/Outstanding borrowing allocation requires dedicated transfer return or repayment/);
+  assert.equal(JSON.stringify([...db].filter(([key])=>key.startsWith('Stock'))),beforeUnauthorized);
 });
 test('packing-held claim reductions and isolated physical quantities cannot be reallocated', () => {
   const f = fixture(); f.state.packingHolds.heldByTask.A = 2;

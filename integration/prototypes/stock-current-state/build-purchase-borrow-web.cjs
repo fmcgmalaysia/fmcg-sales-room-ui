@@ -14,7 +14,9 @@ import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { PURCHASE_CURRENT_DISPLAY_ORDER_VERSION } from 'backend/purchaseDisplayOrder.js';
 import { fulfilmentStore, readFulfilmentContext } from 'backend/customerFulfilmentService.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
-import { readAllocations } from 'backend/plannerAllocation.js';
+import { readAllocations, createPlannerAllocationOperations, ALLOCATION_CURRENT_VIEW_VERSION } from 'backend/plannerAllocation.js';
+import { createShortageOperations } from 'backend/purchaseShortage.js';
+import { createQuantityCaseOperations, projectQuantityCases } from 'backend/purchaseQuantityCases.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
@@ -70,6 +72,8 @@ async function privateGateway(company, taskCommands = false) {
     return createCurrentPurchaseTaskGateway({ company, items, store, protocol: guardedProtocol, coverage: writerCoverage,
       currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION, authorityDependencies: { ...authorityDependencies,
         readTables, createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace,
+        createPlannerAllocationOperations, allocationViewVersion: ALLOCATION_CURRENT_VIEW_VERSION,
+        createShortageOperations, createQuantityCaseOperations, projectQuantityCases,
         currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION } });
   }
   return createCurrentPurchaseBorrowGateway({ company, items, store, protocol: guardedProtocol,

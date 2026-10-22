@@ -7,23 +7,27 @@ const {planCollections}=require('../prototypes/stock-current-state/domain-scope.
 const folder=path.join(__dirname,'../prototypes/stock-current-state'),fixtureFile=require.resolve('./stock-current-purchase-reorder.test.cjs'),copy=x=>JSON.parse(JSON.stringify(x));
 const original=vm.runInNewContext(fs.readFileSync(fixtureFile,'utf8').replace("const test = require('node:test')",'const test = () => {}')+';combinedFixture;',
   {require:createRequire(fixtureFile),__dirname:path.dirname(fixtureFile),Map,Buffer});
-async function root(coverage=false,paired=true){
-  const f=await original(),calls=[],wrapped=[];
+async function root(coverage=false,paired=true,decisionFixture=null){
+  const f=decisionFixture||await original(),calls=[],wrapped=[];
   for(const [key,row]of f.db)if(key.startsWith('NCTOrders/'))Object.assign(row,{company:'NCT',_version:row._version||'MIGRATED_ORDER'});
   const forbidden=()=>{throw Error('No SDK calls during listed-row normalization');},codec=createSdkConditionalStore({company:'NCT',items:{query:forbidden,insert:forbidden,patch:forbidden,remove:forbidden},
     collections:planCollections('NCT',true),dateTimeFields:{NCTActivity:['activityTime']}});
   const native={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{wrapped.push(permission);return fn;},currentMember:{getMember:()=>f.deps.readMember()},items:f.deps.items,
     getPurchaseStaffContext:async()=>{calls.push('AUTH');const member=await f.deps.readMember();return{...f.deps.requirePurchaseStaff(member,await f.deps.readStaffRecords()),memberId:member._id};},
     fulfilmentStore:{all:async collection=>{calls.push(collection);if(collection==='StaffMasterAccess')return f.deps.readStaffRecords();
-      return(await f.f.store.all(collection)).map(row=>{const raw=copy(row);if(raw._version){raw.stockCommitVersion=raw._version;delete raw._version;}
+      const listed=f.f?await f.f.store.all(collection):[...f.db].filter(([key])=>key.startsWith(collection+':')).map(([,row])=>row);
+      return listed.map(row=>{const raw=copy(row);if(raw._version){raw.stockCommitVersion=raw._version;delete raw._version;}
         if(raw.activityTime)raw.activityTime=new Date(raw.activityTime);raw._updatedDate=new Date('2026-10-22T00:00:00Z');return raw;});}},
     ...Object.fromEntries(['requirePurchaseStaff','projectPurchaseWorkspace','createPurchaseOperations','createPurchaseSourceOperations','taskEditVersion','operationId',
       'projectPurchaseOrders','readAllocations','readCustomerShipments','readPackingLists','packingHeld'].map(k=>[k,f.deps[k]])),
     readPreparation:load('warehousePreparation.js').readPreparation,projectPreparation:load('warehousePreparation.js').projectPreparation,
     PURCHASE_CURRENT_DISPLAY_ORDER_VERSION:paired?2:undefined,planCollections,createCurrentPurchaseTables,createCurrentPurchaseTaskGateway,
-    readFulfilmentContext:async()=>{throw Error('Task-only root must use original table preparation, not a second company context scan');},
+    createPlannerAllocationOperations:load('../prototypes/stock-current-state/plannerAllocation.candidate.js').createPlannerAllocationOperations,
+    ALLOCATION_CURRENT_VIEW_VERSION:2,createShortageOperations:load('purchaseShortage.js').createShortageOperations,
+    ...load('purchaseQuantityCases.js'),
+    readFulfilmentContext:decisionFixture?f.deps.readContext:async()=>{throw Error('Task-only root must use original table preparation, not a second company context scan');},
     createSdkConditionalStore:args=>{assert.equal(args.company,'NCT');calls.push('SDK');return{...f.deps.store,normalizeListedRow:codec.normalizeListedRow};},
-    createSegmentedFencedProof:args=>{assert.equal(args.domainWrites,true);return f.protocol;}};
+    createSegmentedFencedProof:args=>{assert.equal(args.domainWrites,true);return f.protocol||f.deps.protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentBorrow.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(w=>[w,{verified:true,build:'TEST'}])))+');');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return {savePurchaseTasksCurrent};})()',native);
@@ -60,4 +64,18 @@ test('actual-import root routes independent REORDER through paired original disp
  assert.equal(f.f.task().rowPosition,2);assert.equal(f.f.task().lpCtn,16);
  assert.deepEqual(await f.api.savePurchaseTasksCurrent('NCT',request),result);
  assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
+});
+for(const operation of ['QUANTITY_CASE','SHORTAGE'])test(`actual-import root routes original ${operation} decision without releasing physical reservations or borrowing debt`,async()=>{
+  const filename=require.resolve(operation==='QUANTITY_CASE'?'./stock-current-quantity-case.test.cjs':'./stock-current-shortage-save.test.cjs'),
+    name=operation==='QUANTITY_CASE'?'currentFixture':'fixture',
+    build=vm.runInNewContext(fs.readFileSync(filename,'utf8').replace("const test = require('node:test')",'const test = () => {}')+';'+name+';',
+      {require:createRequire(filename),Map,Buffer}),f=await build(true);
+  for(const task of f.context.tasks)f.db.set('NCTTasks:'+task.id,{_id:task.id,title:task.id,company:'NCT',_version:'TASK0',description:task.orderId,imageAltText:task.sourceLineId,
+    stockCounterSchema:2,stockCounterGeneration:0,stockDispatchedCumulative:0});
+  const api=await root(true,true,f),request={...(operation==='QUANTITY_CASE'?f.request('RECEIPT'):f.request),operation},
+    balances=JSON.stringify([...f.db].filter(([key,row])=>key.startsWith('StockPositions:')||key.startsWith('StockClaims:')||row.action==='STOCK_TRANSFER_CURRENT'));
+  let result,attempts=0;do{result=await api.api.savePurchaseTasksCurrent('NCT',request);assert.ok(attempts++<20);}while(result.pending);
+  assert.equal(result.ok,true);assert.equal(result.stockGeneration,1);assert.equal(JSON.stringify([...f.db].filter(([key,row])=>key.startsWith('StockPositions:')||key.startsWith('StockClaims:')||row.action==='STOCK_TRANSFER_CURRENT')),balances);
+  assert.deepEqual(await api.api.savePurchaseTasksCurrent('NCT',request),result);
+  assert.equal(api.calls[0],'AUTH');assert.equal(api.calls.includes('NCTOrders'),false);
 });
