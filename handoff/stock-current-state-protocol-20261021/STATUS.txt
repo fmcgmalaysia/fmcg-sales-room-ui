@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 PURCHASE PREPARATION ACTOR: PURCHASE_PREPARATION_ADMISSION_ACTOR.txt.
+Three wrappers dropped serverstaffId before original repeated Purchase auth; six
+actual-root/v2 counterexamples. Forward trusted field and compare before tables/
+context in task/source/quantity/shortage preparation, no quantity/PO/borrow policy
+change.29affectedpass1020.6771ms; FULL1157pass0fail28814.2022ms. Runtime104/install
+38/94 rebuilt,20writer flagsUNVERIFIED. Protected originalsd447185/no native/UI/CMS/
+Pages/Wix writes.3dbcf91 priorincrement confirmedPUSHED. Both exact native-test and
+support-contact consents PENDING/no repeat/run/send. All migration/native/G3/cutover
+gatesOPEN. Next bounded independent audit: packing/Loaded authority/claims/holds.
+
 2026-10-23 RECEIPT/ALLOCATION ADMISSION ACTOR: RECEIPT_ALLOCATION_ADMISSION_ACTOR.txt.
 Exact offline both-company RECEIVE/CORRECT roots proved ok:false after committed
 stock under same-member staff drift; v1/v2 allocation also admitted differentstaff.

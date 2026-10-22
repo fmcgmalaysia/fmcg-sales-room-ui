@@ -86,7 +86,7 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
       if (request.operation === 'QTY' && actor.role !== 'SUPER ADMIN') throw Error('Only Super Admin may change customer demand.');
       return actor;
     },
-      prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
@@ -135,7 +135,7 @@ function createCurrentQuantityCaseSave({ company, items, store, protocol, covera
     let actor;
     const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
       authenticate: async () => { actor = await authorize(); return actor; },
-      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, input: command.input }) })(request);
     if (result.ok !== true) return result;
     const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'QUANTITY_CASE_DECISION')));
@@ -154,7 +154,7 @@ function createCurrentShortageSave({ company, items, store, protocol, coverage, 
     let actor;
     const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
       authenticate: async () => { actor = await authorize(); return actor; },
-      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, input: command.input }) })(request);
     if (result.ok !== true) return result;
     const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'SHORTAGE')));

@@ -49,6 +49,7 @@ function createShortageStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id }, metrics = { queries: 0, exactReads: 0 };
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Shortage decision identity changed');
     const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff), task = context?.tasks?.find(t => t.id === request.input.taskId);
       if (context?.company !== company || !task) throw Error('Original shortage task unavailable');

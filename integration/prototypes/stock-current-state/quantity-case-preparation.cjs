@@ -51,6 +51,7 @@ function createQuantityCasePreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id, canDecideQuantityCase: true };
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Quantity decision identity changed');
     const metrics = { queries: 0, exactReads: 0 };
     const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff);

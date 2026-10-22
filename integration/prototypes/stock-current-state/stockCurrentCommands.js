@@ -91,7 +91,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:d569b12287f29d9a8c48ae5758b3d899f9da6b4520410f4aa47f2063c372b5d5
+// current-department-saves.cjs sha256:8847110b1afa1a5bdd1f24c138674d8a0e6d79b14a94c360f9848c5282088592
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -181,7 +181,7 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
       if (request.operation === 'QTY' && actor.role !== 'SUPER ADMIN') throw Error('Only Super Admin may change customer demand.');
       return actor;
     },
-      prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
@@ -230,7 +230,7 @@ function createCurrentQuantityCaseSave({ company, items, store, protocol, covera
     let actor;
     const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
       authenticate: async () => { actor = await authorize(); return actor; },
-      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, input: command.input }) })(request);
     if (result.ok !== true) return result;
     const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'QUANTITY_CASE_DECISION')));
@@ -249,7 +249,7 @@ function createCurrentShortageSave({ company, items, store, protocol, coverage, 
     let actor;
     const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
       authenticate: async () => { actor = await authorize(); return actor; },
-      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+      prepare: command => prepare({ company, requestId: command.requestId, staffId: command.staffId, input: command.input }) })(request);
     if (result.ok !== true) return result;
     const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'SHORTAGE')));
@@ -2314,7 +2314,7 @@ function currentAllocationContext({ state, context, readAllocations }) {
 module.exports = { currentAllocationContext };
 
 },
-// purchase-stock-preparation.cjs sha256:e4c89a5919599fb7d8b89d413a1e0789d7a7c732d5c86b36039d1737c3f42693
+// purchase-stock-preparation.cjs sha256:9a9fb849f6e8b9d049f22f9a016163d3cb7428ba9171195b6061bd3dc5bdb539
 "purchase-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -2347,6 +2347,8 @@ function createPurchaseStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Private current-save admission identity, not an input/browser approval.
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Purchase preparation identity changed');
     const trusted = { company, staff: request.operation === 'ADD_SOURCE' ? { ...staff, canAddPurchaseSource: true } : staff,
       requestId: request.requestId, operation: request.operation, input: request.input };
     const metrics = { queries: 0, exactReads: 0 };
@@ -2665,7 +2667,7 @@ function prepareSourceDomain({ validated, request, tables }) {
 module.exports = { validateOriginalSource, prepareSourceDomain };
 
 },
-// quantity-case-preparation.cjs sha256:70c48cef4f149dae3a00ff75cb8c1b34c8bb2eb22b0326592d351f8de5b10fb7
+// quantity-case-preparation.cjs sha256:44fee935fa254ae585a0101734da938246b0e0b21c537e556e2fdfea8a071d68
 "quantity-case-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -2720,6 +2722,7 @@ function createQuantityCasePreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id, canDecideQuantityCase: true };
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Quantity decision identity changed');
     const metrics = { queries: 0, exactReads: 0 };
     const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff);
@@ -2752,7 +2755,7 @@ function createQuantityCasePreparation(deps) {
 module.exports = { validateOriginalQuantityCase, createQuantityCasePreparation };
 
 },
-// shortage-stock-preparation.cjs sha256:6dad0dba421e14f99a54d8d970e1c2139df00853e55dedeaf914a2f550bfc8c6
+// shortage-stock-preparation.cjs sha256:e1f59d1da65e9e2032184edd2e92ad43fe51752740d4e9c664e9b80ff13ec74d
 "shortage-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -2805,6 +2808,7 @@ function createShortageStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id }, metrics = { queries: 0, exactReads: 0 };
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Shortage decision identity changed');
     const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff), task = context?.tasks?.find(t => t.id === request.input.taskId);
       if (context?.company !== company || !task) throw Error('Original shortage task unavailable');

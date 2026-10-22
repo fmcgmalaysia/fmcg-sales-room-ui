@@ -29,6 +29,8 @@ function createPurchaseStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Private current-save admission identity, not an input/browser approval.
+    if (request.staffId !== undefined && request.staffId !== staff.staffId) throw Error('Purchase preparation identity changed');
     const trusted = { company, staff: request.operation === 'ADD_SOURCE' ? { ...staff, canAddPurchaseSource: true } : staff,
       requestId: request.requestId, operation: request.operation, input: request.input };
     const metrics = { queries: 0, exactReads: 0 };
