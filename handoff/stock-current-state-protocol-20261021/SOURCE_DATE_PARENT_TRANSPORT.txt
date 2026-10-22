@@ -22,8 +22,12 @@ transport; it is NOT proof of native auth or native Source order lock behavior.
 Evidence: ALL current838pass0fail17733.9321ms. Focused Source parent/root + original
 shipment-date18pass0fail759.4475ms. Generator syntax/--check exact; parent differs one
 argument; backend prefix/suffix outside planning method exact. Native production
-Source parent/onboarding/customerShipmentPlan diff againstd447185 empty. Git whitespace
-check passed. Original pre-transfer fixture first omitted record.title/normalizeEmail;
+Source parent/onboarding/customerShipmentPlan diff againstd447185 empty. Earlier tracked
+diff whitespace check passed; staging NEW full generated parent then reported inherited
+line134 six-space blank line. Original/candidate line134 readback exact6chars. It is not
+new functional whitespace and was intentionally preserved by exact Source overlay;
+do not claim the final staged whitespace check passed. Original pre-transfer fixture
+first omitted record.title/normalizeEmail;
 fixed only synthetic fixture, no production guard changes. Credit UNKNOWN.
 
 NEXT date BROWSER controller must obtain original authenticated current READ metadata,
