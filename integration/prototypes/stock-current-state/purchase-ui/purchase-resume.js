@@ -2,7 +2,7 @@
    No fake workspace, inventory reads, cache scans, legacy receipts or unlock. */
 (() => {
   const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','BORROW_APPROVE','BORROW_RETURN','COST_REFERENCE']);
-  const orderActions = new Set(['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE']);
+  const orderActions = new Set(['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE','DOCUMENT','DELETE_DOCUMENT']);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function validRequest(request, company) {
     const order=request?.type==='PURCHASE_ORDER_SAVE_REQUEST', identified=order||request?.operation==='COST_REFERENCE';
@@ -14,8 +14,10 @@
       && (!identified||request.stockIdentity&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200))
       && (request.operation!=='COST_REFERENCE'||/^[a-f0-9]{32}$/.test(request.input.taskId||'')&&Object.keys(request.input).length===1)
       && (!order||['id','version'].every(key=>typeof request.input[key]==='string'&&request.input[key]&&request.input[key].length<=200))
+      && (!order||request.input.action!=='DOCUMENT'||typeof request.input.base64==='string'&&request.input.base64.length<=4194304&&/^JVBERi[0-3][A-Za-z0-9+/]*={0,2}$/.test(request.input.base64))
+      && (!order||request.input.action!=='DELETE_DOCUMENT'||typeof request.input.fileId==='string'&&request.input.fileId&&request.input.fileId.length<=200)
       && Object.keys(request).every(key => ['type','company','requestId',...(order?[]:['operation']),'input','stockProtocol','stockBuild','stockGeneration',...(identified?['stockIdentity']:[])].includes(key))
-      && JSON.stringify(request).length <= (request.operation?.startsWith('BORROW_') ? 6000 : 200000);
+      && JSON.stringify(request).length <= (order&&request.input.action==='DOCUMENT'?4400000:request.operation?.startsWith('BORROW_') ? 6000 : 200000);
   }
   function mount({ company, host, read, send, receipt, lockCompany, esc, autoRequest = null, expectedStaff = null }) {
     let disposed = false, request = null, staff = null, retry = null, state = null, serial = 0, inFlight = false, completed = false, orderContinuations = 0;

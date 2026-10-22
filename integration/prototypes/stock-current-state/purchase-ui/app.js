@@ -90,7 +90,7 @@
     request();showStatus('Reference cost unavailable; failure recorded, original data unchanged. 参考成本未取得，失败已记录，原资料保持不变。 '+result.error,true);return true;
   }
   let currentOrderProgressOwner=null,currentOrderContinuations=0;
-  const currentOrderActions=['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE'];
+  const currentOrderActions=['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE','DOCUMENT','DELETE_DOCUMENT'];
   function currentOrderMetadata(kind,args){
     if(kind!=='PURCHASE_ORDER_SAVE_REQUEST'||data?.stockCurrent?.stockProtocol!==1&&poData?.stockCurrent?.stockProtocol!==1)return null;
     const meta=poData?.stockCurrent,row=poData?.orders?.find(row=>row.id===args?.input?.id);
@@ -98,7 +98,7 @@
       ||meta.stockBuild!==data.stockCurrent.stockBuild||!Number.isSafeInteger(meta.stockGeneration)||meta.stockGeneration<0||meta.stockGeneration<data.stockCurrent.stockGeneration
       ||!data.staff?.staffId||!data.staff?.memberId||meta.stockIdentity?.staffId!==data.staff.staffId||meta.stockIdentity?.memberId!==data.staff.memberId
       ||!row||row.version!==args.input.version||!currentOrderActions.includes(args.input.action)){
-      showStatus('Original purchase order save not started. Refresh its data; file operations are not connected yet. 原采购单保存未开始，请刷新资料；文件操作尚未接入。',true);return false;
+      showStatus('Original purchase order save not started. Refresh and review its data. 原采购单保存未开始，请刷新并核对资料。',true);return false;
     }
     return {stockProtocol:1,stockBuild:meta.stockBuild,stockGeneration:meta.stockGeneration,stockIdentity:{staffId:meta.stockIdentity.staffId,memberId:meta.stockIdentity.memberId}};
   }

@@ -12,7 +12,7 @@ web = once(web, 'const accountIndex=staff=>', `async function accountAuthorityRo
 }
 function accountCurrentRequest(requestId,input,stockCurrent){
   if(!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
-    ||JSON.stringify({input,stockCurrent}).length>200000)throw Error('Original current shared Account request unconfirmed');
+    ||JSON.stringify({input,stockCurrent}).length>(input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Original current shared Account request unconfirmed');
   return{requestId,input,...stockCurrent};
 }
 const accountIndex=staff=>`);
@@ -40,13 +40,14 @@ import { fulfilmentStore } from 'backend/customerFulfilmentService.js';
 import { createPurchaseOrderOperations, projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { createAccountSettlementOperations } from 'backend/accountSettlement.js';
 import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave, createCurrentOrderFileSave, createOrderFileFencedStore } from 'backend/stockCurrentCommands.js';
 // No new employee roles, bank action, invoice issue, endpoint or activation.
 const writerCoverage=Object.freeze({});
 const requiredWriters=Object.freeze(${JSON.stringify(WRITERS)});
@@ -88,11 +89,18 @@ export async function createCurrentAccountPurchase(company){
     readOrders:async(selected,staff)=>readRows(selected,staff,await protocol.readControl()),createAccountSettlementOperations,createAccountReviewOperations,createSupplierCreditOperations,now:()=>new Date()};
   const recordSave=createCurrentAccountOrderRecordSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
   const auxiliarySave=createCurrentAccountAuxiliarySave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
+  const fileSave=createCurrentOrderFileSave({company,department:'ACCOUNT',store,coverage:writerCoverage,createAccountSettlementOperations,
+    authenticateOriginal:originalAccountStaff,now:()=>new Date(),
+    readOriginalContext:async(selected,staff)=>{if(selected!==company)throw Error('Original Account file company conflict');const tables=await readTables(company,staff);
+      return{rows:await readRows(selected,staff,await protocol.readControl()),records:tables.PurchaseOrders,suppliers:tables.SharedSuppliers};},
+    allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original Account allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
+    createFileProtocol:({request,staff})=>({...createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'ACCOUNT',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true}),readSnapshot:protocol.readSnapshot})});
   return{mode:'ACTIVE',save:request=>{
-    if(!request?.stockIdentity||JSON.stringify(request).length>200000)throw Error('Original identified shared Account request required');
+    if(!request?.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Original identified shared Account request required');
+    if(['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action))return fileSave(request);
     if(['INVOICE_CHECK','APPLY_CREDIT'].includes(request.input?.action))return auxiliarySave(request);
     if(recordActions.includes(request.input?.action))return recordSave(request);
-    throw Error('Original shared Account file action not connected');
+    throw Error('Original shared Account action required');
   },list:async expectedStaff=>{
     const staff=await originalAccountStaff();if(staff.staffId!==expectedStaff?.staffId||staff.memberId!==expectedStaff?.memberId)throw Error('Original shared Account read actor changed');
     const snapshot=await protocol.readSnapshot(async control=>({rows:await readRows(company,staff,control),stockCurrent:{stockProtocol:1,stockBuild:control.writerBuild,
@@ -106,4 +114,4 @@ for (const [name, text] of Object.entries({ 'accountPurchase.web.candidate.js': 
   if (process.argv.includes('--check')) { if (fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== text) throw Error('Original shared Account candidate differs: ' + name); }
   else fs.writeFileSync(target, text);
 }
-process.stdout.write('Original shared Account web/private current non-file root ' + (process.argv.includes('--check') ? 'verified' : 'built') + '; not installed\n');
+process.stdout.write('Original shared Account web/private current record/file root ' + (process.argv.includes('--check') ? 'verified' : 'built') + '; not installed\n');

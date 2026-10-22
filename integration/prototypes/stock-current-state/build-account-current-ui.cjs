@@ -31,7 +31,7 @@ panel = once(panel, '    const message=event.data||{};', `    const message=even
     }
     if(['ACCOUNT_SETTLEMENT_REQUEST','ACCOUNT_CHECK_REQUEST'].includes(message.type)&&message.stockProtocol!==undefined){
       const type=message.type==='ACCOUNT_CHECK_REQUEST'?'ACCOUNT_CHECK_RESULT':'ACCOUNT_SETTLEMENT_RESULT';
-      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||message.stockProtocol!==1||!Number.isSafeInteger(message.stockSegment)||message.stockSegment<1||message.stockSegment>1000000||JSON.stringify(message).length>200000)throw Error('Invalid original current Account request');
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||message.stockProtocol!==1||!Number.isSafeInteger(message.stockSegment)||message.stockSegment<1||message.stockSegment>1000000||JSON.stringify(message).length>(message.input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Invalid original current Account request');
         const metadata={stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity};
         const result=await(message.type==='ACCOUNT_CHECK_REQUEST'?saveAccountInvoiceCheck:saveAccountSettlement)(message.company,message.requestId,message.input,metadata);room.postMessage({type,company:message.company,requestId:message.requestId,stockSegment:message.stockSegment,ok:true,result});
       }catch(_){room.postMessage({type,company:message.company,requestId:message.requestId,stockSegment:message.stockSegment,ok:false,error:'Original save unconfirmed; retain and retry the same request.'});}return;

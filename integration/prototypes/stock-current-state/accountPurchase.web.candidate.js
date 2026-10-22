@@ -38,7 +38,7 @@ async function accountAuthorityRows(company,staff){
 }
 function accountCurrentRequest(requestId,input,stockCurrent){
   if(!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
-    ||JSON.stringify({input,stockCurrent}).length>200000)throw Error('Original current shared Account request unconfirmed');
+    ||JSON.stringify({input,stockCurrent}).length>(input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Original current shared Account request unconfirmed');
   return{requestId,input,...stockCurrent};
 }
 const accountIndex=staff=>createAccountReadIndexOperations({store,readRows:async company=>(await accountAuthorityRows(company,staff)).rows});

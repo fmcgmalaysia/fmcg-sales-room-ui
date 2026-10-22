@@ -1,5 +1,5 @@
 'use strict';
-// Original PO metadata/read binding only. File operations remain a release gate.
+// Original PO metadata/read/file binding. Activation and native acceptance OFF.
 const fs = require('node:fs'), path = require('node:path'), { WRITERS } = require('./stock-admission.cjs');
 const root = path.resolve(__dirname, '../../..');
 function once(source, before, after) { if (source.split(before).length !== 2) throw Error('Exact original PO web anchor changed'); return source.replace(before, () => after); }
@@ -10,20 +10,21 @@ web = once(web, '  const staff=await getPurchaseStaffContext(),rows=await orders
 web = once(web, 'return {company,orders:rows.map(', 'return {company,...(currentRead?{stockCurrent:currentRead.stockCurrent}:{}),orders:rows.map(');
 web = once(web, 'async(company,requestId,input)=>{', 'async(company,requestId,input,stockCurrent)=>{');
 web = once(web, '  try{return await orders.save({company,requestId,input,staff});}',
-  "  try{const current=await createCurrentPurchaseOrders(company);\n    if(current?.mode==='LEGACY'&&stockCurrent===undefined)return await orders.save({company,requestId,input,staff});\n    if(current?.mode!=='ACTIVE'||!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))||JSON.stringify({input,stockCurrent}).length>200000)throw Error('Current purchase order save unconfirmed');\n    return await current.save({requestId,input,...stockCurrent});}");
+  "  try{const current=await createCurrentPurchaseOrders(company);\n    if(current?.mode==='LEGACY'&&stockCurrent===undefined)return await orders.save({company,requestId,input,staff});\n    if(current?.mode!=='ACTIVE'||!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))||JSON.stringify({input,stockCurrent}).length>(input?.action==='DOCUMENT'?4400000:200000))throw Error('Current purchase order save unconfirmed');\n    return await current.save({requestId,input,...stockCurrent});}");
 const source = `import { items } from '@wix/data';
 import { currentMember } from 'wix-members-backend';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { requirePurchaseStaff, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
 import { fulfilmentStore } from 'backend/customerFulfilmentService.js';
 import { createPurchaseOrderOperations, projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentPurchaseOrderRecordSave } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentPurchaseOrderRecordSave, createCurrentOrderFileSave, createOrderFileFencedStore, createPurchaseDeleteProtocol } from 'backend/stockCurrentCommands.js';
 // No public endpoint, new role or financial policy. Empty coverage prevents ACTIVE.
 const writerCoverage = Object.freeze({});
 const requiredWriters = Object.freeze(${JSON.stringify(WRITERS)});
@@ -66,8 +67,18 @@ export async function createCurrentPurchaseOrders(company) {
   const dependencies={readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),requirePurchaseStaff,
     createPurchaseOrderOperations,readPurchaseRecords:readRecords,readContext:async(selected,staff)=>readContext(selected,staff,await protocol.readControl()),now:()=>new Date()};
   const save=createCurrentPurchaseOrderRecordSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
+  const fileSave=createCurrentOrderFileSave({company,department:'PURCHASE',store,coverage:writerCoverage,createPurchaseOrderOperations,
+    authenticateOriginal:()=>getPurchaseStaffContext(),now:()=>new Date(),
+    readOriginalContext:async(selected,staff)=>({context:await readContext(selected,staff,await protocol.readControl()),records:await readRecords(selected)}),
+    allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original file allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
+    createFileProtocol:({request,staff})=>{const file=request.input.action==='DELETE_DOCUMENT'
+      ?createPurchaseDeleteProtocol({company,request,staff,store,documentService:requestPurchaseDocument})
+      :createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'PURCHASE',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true});
+      return{...file,readSnapshot:protocol.readSnapshot};}});
   return{mode:'ACTIVE',save:request=>{
-    if(!request||!request.stockIdentity||!actions.includes(request.input?.action)||JSON.stringify(request).length>200000)throw Error('Original identified non-file purchase order action required; file operation not connected');return save(request);
+    if(!request||!request.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT'?4400000:200000))throw Error('Original identified purchase order request required');
+    if(['DOCUMENT','DELETE_DOCUMENT'].includes(request.input?.action))return fileSave(request);
+    if(!actions.includes(request.input?.action))throw Error('Original purchase order action required');return save(request);
   },list:async expectedStaff=>{
     const staff=await getPurchaseStaffContext();
     if(staff.staffId!==expectedStaff?.staffId||staff.memberId!==expectedStaff?.memberId)throw Error('Original PO read actor changed');

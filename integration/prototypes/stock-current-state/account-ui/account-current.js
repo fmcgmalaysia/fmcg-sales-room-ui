@@ -1,7 +1,11 @@
 /* Candidate only. One original Account pending command, not a business-record
    mirror or payment queue. Server original Account auth remains the authority. */
 (() => {
-  const actions = new Set(['CLOSE_ACCOUNT','REOPEN_ACCOUNT','DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED','APPLY_CREDIT','INVOICE_CHECK']);
+  const actions = new Set(['CLOSE_ACCOUNT','REOPEN_ACCOUNT','DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED','APPLY_CREDIT','INVOICE_CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE']);
+  const pdf = value => typeof value === 'string' && value.length <= 4194304 && /^JVBERi[0-3][A-Za-z0-9+/]*={0,2}$/.test(value);
+  const fileInput = input => input.action === 'DOCUMENT_UPLOAD' ? ['DO','PAYMENT'].includes(input.type) && pdf(input.base64)
+    && (input.attachments === undefined || input.type === 'PAYMENT' && Array.isArray(input.attachments) && input.attachments.length <= 5 && input.attachments.every(file => pdf(file?.base64)))
+    : input.action !== 'PAYMENT_FILE_DELETE' || ['paymentId','fileId'].every(field => typeof input[field] === 'string' && input[field] && input[field].length <= 200);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b), copy = value => JSON.parse(JSON.stringify(value));
   let context = null, knownLegacy = false, state = null, auth = null, blocked = '', panel = null;
   const company = () => document.querySelector('#company')?.value;
@@ -10,11 +14,11 @@
   function valid(request) {
     return request && ['ACCOUNT_SETTLEMENT_REQUEST','ACCOUNT_CHECK_REQUEST'].includes(request.type) && ['NCT','GHR'].includes(request.company)
       && /^[a-f0-9-]{36}$/i.test(request.requestId || '') && request.input && !Array.isArray(request.input) && typeof request.input === 'object'
-      && actions.has(request.input.action) && (request.type === 'ACCOUNT_CHECK_REQUEST' ? request.input.action === 'INVOICE_CHECK' : request.input.action !== 'INVOICE_CHECK')
+      && actions.has(request.input.action) && fileInput(request.input) && (request.type === 'ACCOUNT_CHECK_REQUEST' ? request.input.action === 'INVOICE_CHECK' : request.input.action !== 'INVOICE_CHECK')
       && ['id','version'].every(field => typeof request.input[field] === 'string' && request.input[field] && request.input[field].length <= 200)
       && request.stockProtocol === 1 && typeof request.stockBuild === 'string' && request.stockBuild && Number.isSafeInteger(request.stockGeneration) && request.stockGeneration >= 0
       && identity(request.stockIdentity) && Object.keys(request).every(field => ['type','company','requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(field))
-      && JSON.stringify(request).length <= 200000;
+      && JSON.stringify(request).length <= (request.input.action === 'DOCUMENT_UPLOAD' ? 4400000 : 200000);
   }
   function lock() { if (state || blocked) { const select = document.querySelector('#company'); if (select) select.disabled = true; } }
   function mount() {
@@ -54,7 +58,7 @@
     if (!context?.meta) { if (knownLegacy) return request; throw Error('Refresh the original Account records before saving.'); }
     if (request.company !== context.company || request.company !== company()) throw Error('Original Account company changed.');
     const result = copy({ ...request,stockProtocol:1,stockBuild:context.meta.stockBuild,stockGeneration:context.meta.stockGeneration,stockIdentity:context.staff });
-    if (!valid(result)) throw Error('Original current action unavailable. File operations are not connected yet.');
+    if (!valid(result)) throw Error('Original current action unavailable. Refresh and review the original request.');
     const raw = sessionStorage.getItem(key(result.company,result.stockIdentity)); if (raw !== null) throw Error('Original saved request requires review before another save.');
     return result;
   }

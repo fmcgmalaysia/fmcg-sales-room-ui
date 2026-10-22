@@ -34,7 +34,7 @@ export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,re
   const staff=await getPurchaseStaffContext();
   try{const current=await createCurrentPurchaseOrders(company);
     if(current?.mode==='LEGACY'&&stockCurrent===undefined)return await orders.save({company,requestId,input,staff});
-    if(current?.mode!=='ACTIVE'||!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))||JSON.stringify({input,stockCurrent}).length>200000)throw Error('Current purchase order save unconfirmed');
+    if(current?.mode!=='ACTIVE'||!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))||JSON.stringify({input,stockCurrent}).length>(input?.action==='DOCUMENT'?4400000:200000))throw Error('Current purchase order save unconfirmed');
     return await current.save({requestId,input,...stockCurrent});}
   catch(error){
     const message=String(error?.message||'');

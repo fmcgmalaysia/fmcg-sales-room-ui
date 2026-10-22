@@ -4,13 +4,14 @@ import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { requirePurchaseStaff, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
 import { fulfilmentStore } from 'backend/customerFulfilmentService.js';
 import { createPurchaseOrderOperations, projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentPurchaseOrderRecordSave } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentPurchaseOrderRecordSave, createCurrentOrderFileSave, createOrderFileFencedStore, createPurchaseDeleteProtocol } from 'backend/stockCurrentCommands.js';
 // No public endpoint, new role or financial policy. Empty coverage prevents ACTIVE.
 const writerCoverage = Object.freeze({});
 const requiredWriters = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
@@ -53,8 +54,18 @@ export async function createCurrentPurchaseOrders(company) {
   const dependencies={readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),requirePurchaseStaff,
     createPurchaseOrderOperations,readPurchaseRecords:readRecords,readContext:async(selected,staff)=>readContext(selected,staff,await protocol.readControl()),now:()=>new Date()};
   const save=createCurrentPurchaseOrderRecordSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
+  const fileSave=createCurrentOrderFileSave({company,department:'PURCHASE',store,coverage:writerCoverage,createPurchaseOrderOperations,
+    authenticateOriginal:()=>getPurchaseStaffContext(),now:()=>new Date(),
+    readOriginalContext:async(selected,staff)=>({context:await readContext(selected,staff,await protocol.readControl()),records:await readRecords(selected)}),
+    allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original file allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
+    createFileProtocol:({request,staff})=>{const file=request.input.action==='DELETE_DOCUMENT'
+      ?createPurchaseDeleteProtocol({company,request,staff,store,documentService:requestPurchaseDocument})
+      :createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'PURCHASE',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true});
+      return{...file,readSnapshot:protocol.readSnapshot};}});
   return{mode:'ACTIVE',save:request=>{
-    if(!request||!request.stockIdentity||!actions.includes(request.input?.action)||JSON.stringify(request).length>200000)throw Error('Original identified non-file purchase order action required; file operation not connected');return save(request);
+    if(!request||!request.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT'?4400000:200000))throw Error('Original identified purchase order request required');
+    if(['DOCUMENT','DELETE_DOCUMENT'].includes(request.input?.action))return fileSave(request);
+    if(!actions.includes(request.input?.action))throw Error('Original purchase order action required');return save(request);
   },list:async expectedStaff=>{
     const staff=await getPurchaseStaffContext();
     if(staff.staffId!==expectedStaff?.staffId||staff.memberId!==expectedStaff?.memberId)throw Error('Original PO read actor changed');

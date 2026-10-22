@@ -30,14 +30,14 @@ test('original PO dialog uses its own newer server generation/actor and durably 
   f.start(); assert.equal(f.saved().length, 1);
 });
 
-test('unconfirmed PO metadata, changed staff/build/generation and current file/retired actions never start a save', async () => {
+test('unconfirmed PO metadata, changed staff/build/generation and retired actions never start a save', async () => {
   for (const metadata of [null, { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: -1 },
     { stockProtocol: 1, stockBuild: 'OLD', stockGeneration: 2, stockIdentity: { staffId: 'STAFF', memberId: 'MEMBER' } },
     { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 2, stockIdentity: { staffId: 'OTHER', memberId: 'MEMBER' } }]) {
     const f = await fixture({ metadata }); f.start(); assert.equal(f.saved().length, 0); assert.equal(f.db.has(f.key), false); assert.match(f.h.node('#liveStatus').textContent, /not started/);
   }
   const f = await fixture(); f.h.click({ poHandoff: f.row.id, handoffAction: 'CHASE' }); f.h.node('#poChangeReason').value = 'Original action'; f.h.click({ controlId: 'savePurchaseOrderMeta' });
-  assert.equal(f.saved().length, 0); assert.match(f.h.node('#liveStatus').textContent, /file operations are not connected/);
+  assert.equal(f.saved().length, 0); assert.match(f.h.node('#liveStatus').textContent, /not started/);
 });
 
 test('failed initial storage sends nothing; unknown/wrong PO receipts retain the exact request and cleanup is read-confirmed', async () => {
@@ -63,7 +63,7 @@ test('late pending after timeout cannot auto-send; normal phase continuation is 
   assert.match(f.h.node('#liveStatus').textContent, /paused/); assert.deepEqual(JSON.parse(f.db.get(f.key)).savePending, request);
 });
 
-test('PO recovery requires original actor, allowed non-file action, strict final receipt and explicit first retry', async () => {
+test('PO recovery requires original actor, valid original action/file, strict final receipt and explicit first retry', async () => {
   const req = { type: 'PURCHASE_ORDER_SAVE_REQUEST', company: 'NCT', requestId: '11111111-2222-4333-8444-555555555555', input: { id: 'PO', version: 'PV', action: 'TERM', termDays: 30, reason: 'Original' },
     stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 2, stockIdentity: { staffId: 'STAFF', memberId: 'MEMBER' } };
   const key = 'fmcg-purchase-draft-v1/NCT/STAFF/MEMBER';
@@ -74,6 +74,28 @@ test('PO recovery requires original actor, allowed non-file action, strict final
   const result = { ok: true, company: 'NCT', poId: 'PO', requestId: req.requestId, stockGeneration: 3 };
   f.reply({ ...result, poId: 'OTHER' }); assert.equal(f.receipts.length, 0); f.section().button.click(); f.reply(result); assert.equal(f.receipts.length, 1);
   assert.ok(JSON.parse(f.db.get(key)).savePending, 'receipt alone cannot clear original cache before workspace reconciliation');
+});
+
+test('original Purchase PDF upload UI/parent/web/root accepts original full file body, caches before send and never uses legacy writer',async()=>{
+ const backend=await rootFixture({generated:true}),listed=await backend.api.getPurchaseOrders('NCT'),f=await fixture({listed:copy(listed),staff:{staffId:'P',memberId:'M',staffName:'Purchase'}});
+ let receive;const room={onMessage:fn=>receive=fn,postMessage:message=>f.h.send(message)},$w=()=>room;$w.onReady=fn=>fn();
+ vm.runInNewContext(fs.readFileSync(path.join(folder,'purchase-room-page.candidate.js'),'utf8').replace(/^import[^\n]+\n/gm,''),{$w,savePurchaseOrder:backend.api.savePurchaseOrder,authentication:{}});
+ const bytes=Buffer.from('%PDF-1.4\n'+'P'.repeat(210000));f.h.click({poUpload:f.row.id,poDocType:'PI'});f.h.node('#poDocumentFile').files=[{size:bytes.length,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)}];
+ f.h.node('#poDocumentDate').value='2026-10-22';f.h.node('#poDocumentNumber').value='PI-UI';f.h.node('#poDocumentAmount').value='';f.h.click({controlId:'uploadPurchaseDocument'});await flush();
+ const request=copy(f.saved()[0]);assert.ok(request);assert.equal(request.input.base64,bytes.toString('base64'));assert.deepEqual(JSON.parse(f.db.get(f.key)).savePending,request);
+ let index=0;for(let i=0;i<30;i++){await receive({data:f.saved()[index++]});if(f.h.messages.at(-1).type==='PURCHASE_WORKSPACE_REQUEST')break;f.h.timers.at(-1)();}
+ assert.equal(f.h.messages.at(-1).type,'PURCHASE_WORKSPACE_REQUEST');assert.equal(f.db.has(f.key),false);assert.equal(backend.fileCommands.filter(command=>command.action==='UPLOAD').length,1);
+ assert.equal(backend.calls.includes('LEGACY_SAVE'),false);assert.equal(backend.db.get('PurchaseOrders:'+f.row.id).details.documents.filter(doc=>doc.number==='PI-UI').length,1);
+});
+
+test('original Purchase full PDF and deletion requests recover only same complete cached command after fresh actor authorization',async()=>{
+ const payload=Buffer.from('%PDF-1.4\n'+'R'.repeat(210000)).toString('base64'),key='fmcg-purchase-draft-v1/NCT/STAFF/MEMBER';
+ for(const input of [{id:'PO',version:'PV',action:'DOCUMENT',type:'PI',base64:payload,number:'PI1',date:'2026-10-22',reason:'Original file'},
+  {id:'PO',version:'PV',action:'DELETE_DOCUMENT',fileId:'original_file_identity',reason:'Original uploader deletion'}]){
+  const request={type:'PURCHASE_ORDER_SAVE_REQUEST',company:'NCT',requestId:'11111111-2222-4333-8444-555555555555',input,stockProtocol:1,stockBuild:'TEST',stockGeneration:2,stockIdentity:{staffId:'STAFF',memberId:'MEMBER'}};
+  const f=recoveryFixture();f.db.set(key,JSON.stringify({savePending:request}));await f.authorize();assert.equal(f.sent.length,0);f.section().button.click();assert.deepEqual(copy(f.sent[0]),request);
+  f.reply({ok:true,company:'NCT',poId:'PO',requestId:request.requestId,stockGeneration:3});assert.equal(f.receipts.length,1);assert.deepEqual(JSON.parse(f.db.get(key)).savePending,request);
+ }
 });
 
 test('actual original PO UI/parent/web/private save finishes once without stock mutations or old-writer fallback', async () => {

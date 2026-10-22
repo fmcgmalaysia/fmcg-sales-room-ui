@@ -6,13 +6,14 @@ import { fulfilmentStore } from 'backend/customerFulfilmentService.js';
 import { createPurchaseOrderOperations, projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { createAccountSettlementOperations } from 'backend/accountSettlement.js';
 import { createSupplierCreditOperations } from 'backend/supplierCredit.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseTables, readCurrentPurchaseProjection, createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave, createCurrentOrderFileSave, createOrderFileFencedStore } from 'backend/stockCurrentCommands.js';
 // No new employee roles, bank action, invoice issue, endpoint or activation.
 const writerCoverage=Object.freeze({});
 const requiredWriters=Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
@@ -54,11 +55,18 @@ export async function createCurrentAccountPurchase(company){
     readOrders:async(selected,staff)=>readRows(selected,staff,await protocol.readControl()),createAccountSettlementOperations,createAccountReviewOperations,createSupplierCreditOperations,now:()=>new Date()};
   const recordSave=createCurrentAccountOrderRecordSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
   const auxiliarySave=createCurrentAccountAuxiliarySave({company,store,protocol,coverage:writerCoverage,authorityDependencies:dependencies});
+  const fileSave=createCurrentOrderFileSave({company,department:'ACCOUNT',store,coverage:writerCoverage,createAccountSettlementOperations,
+    authenticateOriginal:originalAccountStaff,now:()=>new Date(),
+    readOriginalContext:async(selected,staff)=>{if(selected!==company)throw Error('Original Account file company conflict');const tables=await readTables(company,staff);
+      return{rows:await readRows(selected,staff,await protocol.readControl()),records:tables.PurchaseOrders,suppliers:tables.SharedSuppliers};},
+    allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original Account allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
+    createFileProtocol:({request,staff})=>({...createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'ACCOUNT',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true}),readSnapshot:protocol.readSnapshot})});
   return{mode:'ACTIVE',save:request=>{
-    if(!request?.stockIdentity||JSON.stringify(request).length>200000)throw Error('Original identified shared Account request required');
+    if(!request?.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Original identified shared Account request required');
+    if(['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action))return fileSave(request);
     if(['INVOICE_CHECK','APPLY_CREDIT'].includes(request.input?.action))return auxiliarySave(request);
     if(recordActions.includes(request.input?.action))return recordSave(request);
-    throw Error('Original shared Account file action not connected');
+    throw Error('Original shared Account action required');
   },list:async expectedStaff=>{
     const staff=await originalAccountStaff();if(staff.staffId!==expectedStaff?.staffId||staff.memberId!==expectedStaff?.memberId)throw Error('Original shared Account read actor changed');
     const snapshot=await protocol.readSnapshot(async control=>({rows:await readRows(company,staff,control),stockCurrent:{stockProtocol:1,stockBuild:control.writerBuild,

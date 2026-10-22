@@ -2,6 +2,8 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { createRequire } = require('node:module'), { execFileSync } = require('node:child_process'), load = require('./load-master-module.cjs');
 const { createCurrentAccountOrderRecordSave, createCurrentPurchaseOrderRecordSave } = require('../prototypes/stock-current-state/current-order-record-save.cjs');
 const { createCurrentAccountAuxiliarySave } = require('../prototypes/stock-current-state/current-account-auxiliary-save.cjs');
+const {createCurrentOrderFileSave}=require('../prototypes/stock-current-state/current-order-file-save.cjs'),{createOrderFileFencedStore}=require('../prototypes/stock-current-state/order-file-fenced-store.cjs');
+const {createSegmentedFencedProof}=require('../prototypes/stock-current-state/segmented-fenced-proof.cjs');
 const { createCurrentPurchaseTables } = require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const { planCollections } = require('../prototypes/stock-current-state/domain-scope.cjs'), { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs'), copy = value => JSON.parse(JSON.stringify(value));
@@ -9,7 +11,8 @@ const filename = require.resolve('./stock-current-order-record-save.test.cjs');
 const original = vm.runInNewContext(fs.readFileSync(filename, 'utf8').replace("const test = require('node:test')", 'const test = () => {}') + ';fixture;', { require: createRequire(filename), Map, Buffer });
 const folder = path.join(__dirname, '../prototypes/stock-current-state');
 async function fixture({ company = 'NCT', coverage = true, generated = false, credit = false } = {}) {
-  const f = await original(company, 'ACCOUNT'), calls = [], journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', orders = company === 'NCT' ? 'NCTOrders' : 'NCTOrders1', tasks = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1';
+  const f = await original(company, 'ACCOUNT'), calls = [],fileCommands=[], journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', orders = company === 'NCT' ? 'NCTOrders' : 'NCTOrders1', tasks = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1';let slots=0;
+  const requestPurchaseDocument=async command=>{fileCommands.push(copy(command));return command.action==='ALLOCATE'?{ok:true,fileId:'Account_File_Slot_'+String(++slots).padStart(4,'0')}:{ok:true,...command,...(command.action==='TRASH'?{trashed:true}:{})};};
   const modules = Object.assign({}, ...['purchaseOrderWorkflow.js','accountPurchaseReview.js','accountSettlement.js','supplierCredit.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js','accountReadQuery.js'].map(name => load(name)));
   const records = () => [...f.db].filter(([key]) => key.startsWith('PurchaseOrders:')).map(([, row]) => copy(row));
   const context = () => ({ ...copy(f.context), creditTransfers: modules.readCreditTransfers([...f.db].filter(([key]) => key.startsWith(journal + ':')).map(([, row]) => copy(row))) });
@@ -36,19 +39,19 @@ async function fixture({ company = 'NCT', coverage = true, generated = false, cr
   const tables = { [orders]: [{ _id: 'O', title: 'O', company, _version: 'O0' }], [tasks]: [...f.db].filter(([key]) => key.startsWith(tasks + ':')).map(([, row]) => copy(row)), SharedSuppliers: [{ _id: 'S', title: 'S', bankName: 'BANK', bankAccountNo: 'ORIGINAL' }] };
   const all = async collection => { if (collection === 'StaffMasterAccess') return [f.employee]; if (Object.hasOwn(tables, collection)) return copy(tables[collection]); if ([journal,'PurchaseOrders'].includes(collection)) return [...f.db].filter(([key]) => key.startsWith(collection + ':')).map(([, row]) => copy(row)); throw Error('Unexpected Account root table'); };
   const auth = (member, records) => { calls.push('AUTH'); return modules.requireAccountStaff(member, records); };
-  let capabilities = { createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave, createCurrentPurchaseTables };
-  if (generated) capabilities = vm.runInNewContext(fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8').replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({createCurrentAccountOrderRecordSave,createCurrentAccountAuxiliarySave,createCurrentPurchaseTables});', { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
+  let capabilities = { createCurrentAccountOrderRecordSave, createCurrentAccountAuxiliarySave, createCurrentPurchaseTables,createCurrentOrderFileSave,createOrderFileFencedStore };
+  if (generated) capabilities = vm.runInNewContext(fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8').replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({createCurrentAccountOrderRecordSave,createCurrentAccountAuxiliarySave,createCurrentPurchaseTables,createCurrentOrderFileSave,createOrderFileFencedStore});', { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
   let native = fs.readFileSync(path.join(folder, 'stockCurrentAccountPurchase.js'), 'utf8');
   if (coverage) native = native.replace('const writerCoverage=Object.freeze({});', 'const writerCoverage=Object.freeze(' + JSON.stringify(Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }]))) + ');');
   const createCurrentAccountPurchase = vm.runInNewContext(native.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';createCurrentAccountPurchase;', {
-    ...modules, ...capabilities, requireAccountStaff: auth, items: {}, currentMember: { getMember: async () => f.member }, PURCHASE_CURRENT_PROJECTION_VERSION: 2,
+    ...modules, ...capabilities,requestPurchaseDocument, requireAccountStaff: auth, items: {}, currentMember: { getMember: async () => f.member }, PURCHASE_CURRENT_PROJECTION_VERSION: 2,
     fulfilmentStore: { all, read: async (collection, id) => { calls.push('CONTROL'); const row = await f.store.read(collection, id); return row ? { ...row, stockCommitVersion: row._version } : null; } }, operationId: hash, planCollections,
     projectPurchaseWorkspace: args => { assert.equal(args.company, company); calls.push('ORIGINAL_CONTEXT'); return { ...context(), staff: args.staff }; },
     // Current stock/provenance mathematics remains in its real projector suite;
     // this fixture exercises ORIGINAL PO/financial projectors and native routing.
     readCurrentPurchaseProjection: async args => { calls.push('CURRENT_PROJECTION'); assert.equal(args.currentProjectionVersion, 2); assert.equal(args.control.mode, 'ACTIVE');
       assert.equal((await args.readCurrentTaskRows(company, f.context.tasks.map(row => row.id))).length, f.context.tasks.length); return { workspace: args.context }; },
-    createSdkConditionalStore: config => { assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'], [orders]: ['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; }, createSegmentedFencedProof: () => f.protocol
+    createSdkConditionalStore: config => { assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'], [orders]: ['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; }, createSegmentedFencedProof: config=>config.store===f.store?f.protocol:createSegmentedFencedProof({...config,stepsPerInvocation:1})
   });
   let privateError;
   const api = vm.runInNewContext(fs.readFileSync(path.join(folder, 'accountPurchase.web.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({saveAccountSettlement,saveAccountInvoiceCheck,getAccountPurchaseOrders,queryAccountPurchaseOrders,planAccountReadIndex,maintainAccountReadIndex});', {
@@ -63,7 +66,7 @@ async function fixture({ company = 'NCT', coverage = true, generated = false, cr
   const metadata = { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0, stockIdentity: { staffId: 'A', memberId: 'M' } };
   const send = (input = f.request.input, meta = metadata, requestId = f.request.requestId) => (input.action === 'INVOICE_CHECK' ? api.saveAccountInvoiceCheck : api.saveAccountSettlement)(company, requestId, input, meta);
   async function finish(input = f.request.input, meta = metadata, requestId = f.request.requestId) { for (let i = 0; i < 25; i++) { const result = await send(input, meta, requestId); if (!result.pending) { assert.equal(result.ok, true, privateError?.stack || result.error); return copy(result); } } throw Error('Still pending'); }
-  return { ...f, api, send, finish, metadata, calls, rows, records, authorityContext: context, tables, createCurrentAccountPurchase, control: () => f.db.get(journal + ':' + f.protocol.ids.controlId) };
+  return { ...f, api, send, finish, metadata, calls,fileCommands, rows, records, authorityContext: context, tables, createCurrentAccountPurchase, control: () => f.db.get(journal + ':' + f.protocol.ids.controlId) };
 }
 
 test('original shared Account web/root builds exactly and original Account auth precedes control or private records', async () => {
@@ -105,13 +108,29 @@ test('actual current root supplier credit uses original financial projector/ledg
   assert.equal(f.calls.some(call => call.startsWith('LEGACY_')), false);
 });
 
-test('unpaired modes, missing coverage/actor, stale version and files refuse without old writer fallback', async () => {
+test('unpaired modes, missing coverage/actor, stale version and invalid files refuse without old writer fallback', async () => {
   const f = await fixture(); for (const mode of ['SHADOW','MAINTENANCE']) { f.control().mode = mode; assert.equal((await f.send()).ok, false); await assert.rejects(f.api.getAccountPurchaseOrders('NCT')); }
   f.control().mode = 'ACTIVE'; for (const meta of [null, { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 }, { ...f.metadata, stockIdentity: { staffId: 'OTHER', memberId: 'M' } }]) assert.equal((await f.send(f.request.input, meta)).ok, false);
   for (const action of ['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE']) assert.equal((await f.send({ ...f.request.input, action })).ok, false);
   assert.equal((await f.api.saveAccountSettlement('NCT', f.request.requestId, { ...f.request.input, action: 'INVOICE_CHECK' }, f.metadata)).ok, false, 'distinct original endpoint may not adopt legacy review');
   assert.equal((await f.send({ ...f.request.input, version: 'OLD' })).ok, false); assert.equal(f.calls.some(call => call.startsWith('LEGACY_')), false);
   const g = await fixture({ coverage: false }); assert.equal((await g.send()).ok, false); await assert.rejects(g.api.queryAccountPurchaseOrders('NCT', { view: 'SUPPLIER_ACTIVE' }), /co-writers/); assert.equal(g.calls.includes('CURRENT_PROJECTION'), false);
+});
+
+test('actual original Account web/private root supports original multi-proof payment then exact proof trash with original financial/stock invariants',async()=>{
+ for(const company of ['NCT','GHR']){
+  const f=await fixture({company,generated:true}),listed=await f.api.getAccountPurchaseOrders(company),row=listed.orders[0],before=JSON.stringify([...f.db].filter(([key])=>/^(Stock|NCTTasks|NCTOrders)/.test(key)));
+  const input={id:row.id,version:row.version,action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-22',number:'PAY-NEW',reason:'Original payment proof',cents:12300,paymentSource:'CASH',recipientChoice:'SUPPLIER',recipientBank:row.supplierBank,
+   base64:Buffer.from('%PDF-1.4\n'+'A'.repeat(210000)).toString('base64'),attachments:[{base64:Buffer.from('%PDF-1.4\nsecond').toString('base64')}]};
+  const done=await f.finish(input,listed.stockCurrent);assert.equal(done.stockGeneration,1);assert.equal(f.fileCommands.filter(command=>command.action==='UPLOAD').length,2);
+  const fresh=await f.api.getAccountPurchaseOrders(company),payment=fresh.orders[0].finance.payments[0];assert.equal(payment.cents,12300);assert.equal(payment.proofs.length,2);
+  assert.deepEqual(copy(payment.recipientBank),{bankName:'BANK',bankAccountNo:'ORIGINAL'});assert.equal(payment.paymentSource,'CASH');
+  const deletion={id:row.id,version:fresh.orders[0].version,action:'PAYMENT_FILE_DELETE',paymentId:payment.id,fileId:payment.proofs[0].fileId},requestId='22222222-2222-4222-8222-222222222222';
+  const removed=await f.finish(deletion,fresh.stockCurrent,requestId);assert.equal(removed.stockGeneration,2);assert.equal(f.fileCommands.filter(command=>command.action==='TRASH').length,1);
+  assert.equal((await f.send(deletion,fresh.stockCurrent,requestId)).stockGeneration,2);assert.equal(f.fileCommands.filter(command=>command.action==='TRASH').length,1);
+  const record=f.db.get('PurchaseOrders:'+row.id);assert.equal(record.details.audit.length,2);assert.equal(record.details.finance.payments.length,1);assert.equal(record.details.finance.payments[0].cents,12300);
+  assert.equal(JSON.stringify([...f.db].filter(([key])=>/^(Stock|NCTTasks|NCTOrders)/.test(key))),before);assert.equal(f.calls.some(call=>call.startsWith('LEGACY_')),false);
+ }
 });
 
 test('native interrupted Account record resumes same request, pending reads refuse and revoked replay is not authorized', async () => {

@@ -3,7 +3,7 @@
 module.exports = function overlay(source) {
   const once = (before, after) => { if (source.split(before).length !== 2) throw Error('Exact current PO UI anchor changed: ' + before.slice(0, 80)); source = source.replace(before, () => after); };
   const helpers = `  let currentOrderProgressOwner=null,currentOrderContinuations=0;
-  const currentOrderActions=['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE'];
+  const currentOrderActions=['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE','DOCUMENT','DELETE_DOCUMENT'];
   function currentOrderMetadata(kind,args){
     if(kind!=='PURCHASE_ORDER_SAVE_REQUEST'||data?.stockCurrent?.stockProtocol!==1&&poData?.stockCurrent?.stockProtocol!==1)return null;
     const meta=poData?.stockCurrent,row=poData?.orders?.find(row=>row.id===args?.input?.id);
@@ -11,7 +11,7 @@ module.exports = function overlay(source) {
       ||meta.stockBuild!==data.stockCurrent.stockBuild||!Number.isSafeInteger(meta.stockGeneration)||meta.stockGeneration<0||meta.stockGeneration<data.stockCurrent.stockGeneration
       ||!data.staff?.staffId||!data.staff?.memberId||meta.stockIdentity?.staffId!==data.staff.staffId||meta.stockIdentity?.memberId!==data.staff.memberId
       ||!row||row.version!==args.input.version||!currentOrderActions.includes(args.input.action)){
-      showStatus('Original purchase order save not started. Refresh its data; file operations are not connected yet. 原采购单保存未开始，请刷新资料；文件操作尚未接入。',true);return false;
+      showStatus('Original purchase order save not started. Refresh and review its data. 原采购单保存未开始，请刷新并核对资料。',true);return false;
     }
     return {stockProtocol:1,stockBuild:meta.stockBuild,stockGeneration:meta.stockGeneration,stockIdentity:{staffId:meta.stockIdentity.staffId,memberId:meta.stockIdentity.memberId}};
   }

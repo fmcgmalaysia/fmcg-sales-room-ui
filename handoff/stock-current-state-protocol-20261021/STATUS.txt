@@ -1,5 +1,18 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ORIGINAL FILE ROOTS/DURABLE UI: ORIGINAL_FILE_ROOTS_DURABLE_UI.txt. Actual
+original Purchase/Account file web/private roots plus original dialogs/parent/cache/
+recovery now paired OFFLINE. Whole PDF/attachments retained before network, original
+3MiB total/6proof limits, no200k file truncation, same UUID/actor/slot/fence; original
+Purchase delete staged completion retained. New6 composition/file UI cases, FULL999
+pass0fail19842.3776ms; final internal denial-copy/build-description change followed
+affected36pass1083.1435ms. Runtime103/53 unchanged. Node/VM/mock ONLY, NOT native/
+Chrome/real provider. Original live directories unchanged. NEXT consolidate actual
+writer/root/read evidence and remaining composition/Loaded tests, operational recovery,
+native schema/index/permissions/Date/capacity/lifecycle, migration/shadow/cutover/review/
+fourrelease. Coverage EMPTY/ACTIVE OFF; realinvoice/exit OFF. Production unchanged;
+cee819e preceding milestone confirmed pushed PR220. No new user business choice now.
+
 2026-10-22 ORIGINAL PURCHASE FILE DELETE: PURCHASE_FILE_DELETE_STAGED.txt. Original
 unlink→trash→final audit/time now private paired SAME segmented coordinator/fence,
 no codec/coordinator replacement or duplicate plan row identity. Original completion

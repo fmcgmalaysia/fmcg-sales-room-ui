@@ -2,6 +2,8 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { createRequire } = require('node:module'), { execFileSync } = require('node:child_process'), load = require('./load-master-module.cjs');
 const { createCurrentPurchaseOrderRecordSave } = require('../prototypes/stock-current-state/current-order-record-save.cjs');
 const { createCurrentPurchaseTables } = require('../prototypes/stock-current-state/current-purchase-tables.cjs');
+const {createCurrentOrderFileSave}=require('../prototypes/stock-current-state/current-order-file-save.cjs'),{createOrderFileFencedStore}=require('../prototypes/stock-current-state/order-file-fenced-store.cjs');
+const {createPurchaseDeleteProtocol}=require('../prototypes/stock-current-state/purchase-delete-protocol.cjs'),{createSegmentedFencedProof}=require('../prototypes/stock-current-state/segmented-fenced-proof.cjs');
 const { planCollections } = require('../prototypes/stock-current-state/domain-scope.cjs');
 const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
@@ -9,7 +11,8 @@ const file = require.resolve('./stock-current-order-record-save.test.cjs');
 const original = vm.runInNewContext(fs.readFileSync(file, 'utf8').replace("const test = require('node:test')", 'const test = () => {}') + ';fixture;', { require: createRequire(file), Map, Buffer });
 const folder = path.join(__dirname, '../prototypes/stock-current-state'), copy = value => JSON.parse(JSON.stringify(value));
 async function fixture({ company = 'NCT', saved = true, coverage = true, generated = false } = {}) {
-  const f = await original(company, 'PURCHASE', saved), calls = [];
+  const f = await original(company, 'PURCHASE', saved), calls = [],fileCommands=[];let slots=0;
+  const requestPurchaseDocument=async command=>{fileCommands.push(copy(command));return command.action==='ALLOCATE'?{ok:true,fileId:'Root_File_Slot_'+String(++slots).padStart(4,'0')}:{ok:true,...command,...(command.action==='TRASH'?{trashed:true}:{})};};
   const orders = company === 'NCT' ? 'NCTOrders' : 'NCTOrders1', tasks = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1', journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   f.db.set(tasks + ':T', { _id: 'T', company, _version: 'T0', title: 'T', stockCounterSchema: 2, stockDispatchedCumulative: 30, stockCounterGeneration: 0, ourPoNumber: 'PO1' });
   const tables = { [orders]: [{ _id: 'O', company, _version: 'O0', title: 'O' }], [tasks]: [await f.store.read(tasks, 'T')], SharedSuppliers: [] };
@@ -23,17 +26,19 @@ async function fixture({ company = 'NCT', saved = true, coverage = true, generat
   };
   const authorize = async () => { calls.push('AUTH'); return { ...f.deps.requirePurchaseStaff(f.member, [f.employee]), memberId: f.member._id }; };
   let createSave = createCurrentPurchaseOrderRecordSave, createTables = createCurrentPurchaseTables;
+  let files={createCurrentOrderFileSave,createOrderFileFencedStore,createPurchaseDeleteProtocol};
   if (generated) {
     const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
-    const api = vm.runInNewContext(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({createCurrentPurchaseOrderRecordSave,createCurrentPurchaseTables});',
+    const api = vm.runInNewContext(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({createCurrentPurchaseOrderRecordSave,createCurrentPurchaseTables,createCurrentOrderFileSave,createOrderFileFencedStore,createPurchaseDeleteProtocol});',
       { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
     createSave = api.createCurrentPurchaseOrderRecordSave; createTables = api.createCurrentPurchaseTables;
+    files={createCurrentOrderFileSave:api.createCurrentOrderFileSave,createOrderFileFencedStore:api.createOrderFileFencedStore,createPurchaseDeleteProtocol:api.createPurchaseDeleteProtocol};
   }
   let native = fs.readFileSync(path.join(folder, 'stockCurrentPurchaseOrders.js'), 'utf8');
   if (coverage) native = native.replace('const writerCoverage = Object.freeze({});', 'const writerCoverage = Object.freeze(' + JSON.stringify(Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }]))) + ');');
   const modules = Object.assign({}, ...['purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'].map(name => load(name)));
   const createCurrentPurchaseOrders = vm.runInNewContext(native.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';createCurrentPurchaseOrders;', {
-    ...modules, items: {}, currentMember: { getMember: async () => f.member }, getPurchaseStaffContext: authorize,
+    ...modules,...files,requestPurchaseDocument, items: {}, currentMember: { getMember: async () => f.member }, getPurchaseStaffContext: authorize,
     requirePurchaseStaff: f.deps.requirePurchaseStaff, PURCHASE_CURRENT_PROJECTION_VERSION: 2,
     projectPurchaseWorkspace: args => { calls.push('ORIGINAL_CONTEXT'); assert.equal(args.company, company); assert.equal(args.staff.memberId, 'M'); return { ...copy(f.context), staff: args.staff }; },
     // Projection mathematics has its independent actual-projector/borrow/split
@@ -50,7 +55,7 @@ async function fixture({ company = 'NCT', saved = true, coverage = true, generat
         throw Error('Unexpected root table'); } }, operationId: hash, planCollections, createCurrentPurchaseOrderRecordSave: createSave, createCurrentPurchaseTables: createTables,
     createSdkConditionalStore: config => { assert.equal(config.company, company); assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'],
       [orders]: ['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; },
-    createSegmentedFencedProof: () => f.protocol
+    createSegmentedFencedProof: config => config.store===f.store?f.protocol:createSegmentedFencedProof({...config,stepsPerInvocation:1})
   });
   let privateError;
   const web = fs.readFileSync(path.join(folder, 'purchaseOrders.web.candidate.js'), 'utf8');
@@ -63,9 +68,9 @@ async function fixture({ company = 'NCT', saved = true, coverage = true, generat
     readCustomerShortNames: async () => [{ customerId: 'C', shortName: 'SHORT' }]
   });
   const metadata = { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0, stockIdentity: { staffId: 'P', memberId: 'M' } };
-  const send = (input = f.request.input, meta = metadata) => api.savePurchaseOrder(company, f.request.requestId, input, meta);
-  async function finish() { for (let i = 0; i < 20; i++) { const result = await send(); if (!result.pending) { assert.equal(result.ok, true, privateError?.stack || result.error); return result; } } throw Error('Still pending'); }
-  return { ...f, api, send, finish, metadata, createCurrentPurchaseOrders, calls, tables, tasks, orders, journal,
+  const send = (input = f.request.input, meta = metadata,requestId=f.request.requestId) => api.savePurchaseOrder(company,requestId,input,meta);
+  async function finish(input=f.request.input,meta=metadata,requestId=f.request.requestId) { for (let i = 0; i < 20; i++) { const result = await send(input,meta,requestId); if (!result.pending) { assert.equal(result.ok, true, privateError?.stack || result.error); return result; } } throw Error('Still pending'); }
+  return { ...f, api, send, finish, metadata, createCurrentPurchaseOrders, calls, tables, tasks, orders, journal,fileCommands,
     control: () => f.db.get(journal + ':' + f.protocol.ids.controlId) };
 }
 
@@ -95,7 +100,7 @@ test('both original companies preserve original PO documents/read flags/audit an
   }
 });
 
-test('missing metadata/coverage, stale version, wrong identity, closed modes and file actions do not call old save', async () => {
+test('missing metadata/coverage, stale version, wrong identity, closed modes and invalid file actions do not call old save', async () => {
   const f = await fixture(); for (const mode of ['MAINTENANCE','SHADOW']) { f.control().mode = mode; assert.equal((await f.send()).ok, false); await assert.rejects(f.api.getPurchaseOrders('NCT')); }
   f.control().mode = 'ACTIVE'; assert.equal((await f.send(f.request.input, null)).ok, false);
   assert.equal((await f.send(f.request.input, { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 })).ok, false);
@@ -125,4 +130,18 @@ test('original new metadata record inserted once, pending-deletion policy kept a
   g.control().mode = 'LEGACY'; assert.equal((await g.send()).ok, false);
   assert.equal((await g.api.savePurchaseOrder('NCT', g.request.requestId, g.request.input)).ok, true);
   assert.equal(g.calls.filter(call => call === 'LEGACY_SAVE').length, 1); assert.deepEqual(copy((await g.api.getPurchaseOrders('NCT')).orders), []);
+});
+
+test('actual original Purchase web/private root routes PDF above non-file cap and original staged deletion with no legacy or stock mutation',async()=>{
+ for(const company of ['NCT','GHR']){
+  const f=await fixture({company,generated:true}),listed=await f.api.getPurchaseOrders(company),before=JSON.stringify([...f.db].filter(([key])=>/^(Stock|NCTTasks|NCTOrders)/.test(key)));
+  const input={id:listed.orders[0].id,version:listed.orders[0].version,action:'DOCUMENT',type:'PI',date:'2026-10-22',number:'PI-NEW',reason:'Original supplier file',base64:Buffer.from('%PDF-1.4\n'+'X'.repeat(210000)).toString('base64')};
+  const upload=await f.finish(input,listed.stockCurrent);assert.equal(upload.stockGeneration,1);assert.equal(f.fileCommands.filter(command=>command.action==='ALLOCATE').length,1);
+  const fresh=await f.api.getPurchaseOrders(company),row=fresh.orders[0],doc=row.documents.find(doc=>doc.number==='PI-NEW');assert.ok(doc);assert.equal(doc.deleteAllowed,true);
+  const deletion={id:row.id,version:row.version,action:'DELETE_DOCUMENT',fileId:doc.fileId,reason:'Supplier replaced file'},requestId='22222222-2222-4222-8222-222222222222';
+  const done=await f.finish(deletion,fresh.stockCurrent,requestId);assert.equal(done.stockGeneration,2);assert.equal(f.fileCommands.filter(command=>command.action==='TRASH').length,1);
+  assert.equal((await f.send(deletion,fresh.stockCurrent,requestId)).stockGeneration,2);assert.equal(f.fileCommands.filter(command=>command.action==='TRASH').length,1);
+  const record=f.db.get('PurchaseOrders:'+row.id);assert.equal(record.details.audit.length,2);assert.equal(record.details.documentDeletion,null);assert.equal(record.details.documents.find(doc=>doc.number==='PI-NEW').deletion.state,'DELETED');
+  assert.equal(JSON.stringify([...f.db].filter(([key])=>/^(Stock|NCTTasks|NCTOrders)/.test(key))),before);assert.equal(f.calls.some(call=>call.startsWith('LEGACY_')),false);
+ }
 });
