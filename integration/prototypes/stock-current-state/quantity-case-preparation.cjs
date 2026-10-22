@@ -2,6 +2,7 @@
 
 const { originalProductState } = require('./original-product-state.cjs');
 const { readCurrentProduct } = require('./current-product-reader.cjs');
+const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { prepareProcurementTransition } = require('./borrowing-stock-plan.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
 async function validateOriginalQuantityCase({ createQuantityCaseOperations, company, staff, requestId, input, context, now }) {
@@ -43,13 +44,15 @@ function createQuantityCasePreparation(deps) {
     projectPurchaseOrders, createQuantityCaseOperations, projectQuantityCases, readAllocations, readCustomerShipments, readPackingLists,
     packingHeld, now].some(f => typeof f !== 'function') || typeof protocol?.readSnapshot !== 'function'
     || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server quantity decision dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private v2 quantity task checkpoint reader required');
   return async request => {
     if (request?.company !== company || request.input?.action !== 'DECIDE' || typeof request.input.id !== 'string' || !request.input.id) throw Error('Known company quantity decision required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id, canDecideQuantityCase: true };
     const metrics = { queries: 0, exactReads: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff);
       if (context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)) throw Error('Original quantity company context required');
       const selected = projectQuantityCases(context, context.activity).filter(row => row.id === request.input.id);
@@ -60,7 +63,14 @@ function createQuantityCasePreparation(deps) {
       const orders = projectPurchaseOrders({ company, workspace: context, records: await readPurchaseRecords(company, staff) });
       const builder = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists,
         packingHeld, readPreparation, projectPreparation });
-      const rows = await readCurrentProduct({ company, identity, items, store, metrics }), state = builder.buildState(rows);
+      const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+        transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id], demandTaskIds: [item.customerDemandTaskId] })
+        : await readCurrentProduct({ company, identity, items, store, metrics });
+      if (current) {
+        if (!rows.product) throw Error('Current quantity product checkpoint required');
+        rows.taskRows = await deps.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+      }
+      const state = builder.buildState(rows);
       const validated = await validateOriginalQuantityCase({ createQuantityCaseOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
       if (validated.event.initiatedByStaffId !== staff.staffId || validated.event.description !== item.customerDemandTaskId
         || validated.event.imageAltText !== item.taskId || validated.event.details.caseId !== item.id) throw Error('Original quantity decision event conflict');

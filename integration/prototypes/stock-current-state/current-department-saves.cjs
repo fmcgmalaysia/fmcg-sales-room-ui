@@ -6,6 +6,8 @@ const { createBorrowingAuthority } = require('./borrowing-authority.cjs');
 const { createBorrowingStockReader } = require('./borrowing-stock-reader.cjs');
 const { createAllocationAuthority } = require('./allocation-authority.cjs');
 const { createPurchaseStockPreparation } = require('./purchase-stock-preparation.cjs');
+const { createQuantityCasePreparation } = require('./quantity-case-preparation.cjs');
+const { hash } = require('./commit-proof.cjs');
 const { domainCollections } = require('./domain-scope.cjs');
 
 function authenticate(deps, requireStaff) {
@@ -75,4 +77,23 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
     return { ...result, company, sourceTaskId, parentTaskId: request.input.parentTaskId };
   };
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave };
+function createCurrentQuantityCaseSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current quantity v2 protocol required');
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const prepare = createQuantityCasePreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
+  return async request => {
+    let actor;
+    const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
+      authenticate: async () => { actor = await authorize(); return actor; },
+      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+    if (result.ok !== true) return result;
+    const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'QUANTITY_CASE_DECISION')));
+    const event = receipt.rows;
+    if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
+      || event.action !== 'PURCHASE_QUANTITY_CASE_DECIDED' || event.initiatedByStaffId !== actor.staffId
+      || event.details?.caseId !== request.input.id) throw Error('Committed quantity decision receipt requires review');
+    return { ...result, company, caseId: event.details.caseId };
+  };
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave, createCurrentQuantityCaseSave };

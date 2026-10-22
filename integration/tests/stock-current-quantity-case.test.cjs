@@ -91,3 +91,65 @@ test('same decision common fence replay advances once, no physical release or du
   assert.equal([...f.db.values()].filter(row => row.action === 'PURCHASE_QUANTITY_CASE_DECIDED').length, 1);
   assert.equal([...f.db.entries()].find(([id]) => id.startsWith('StockProducts:'))[1].onHand, 90);
 });
+
+async function currentFixture(borrowed = false) {
+  const f = fixture(borrowed), store = { ...f.deps.store };
+  store.insert = async (c, row) => { if (f.db.has(c + ':' + row._id)) throw Error('Duplicate'); f.db.set(c + ':' + row._id, copy(row)); };
+  store.compareAndSet = async (c, id, version, row) => { if (f.db.get(c + ':' + id)?._version !== version) throw Error('Conflict'); f.db.set(c + ':' + id, copy(row)); };
+  store.compareAndRemove = async (c, id, attempt) => { if (f.db.get(c + ':' + id)?.attempt !== attempt) throw Error('Attempt'); f.db.delete(c + ':' + id); };
+  const { createSegmentedFencedProof } = require('../prototypes/stock-current-state/segmented-fenced-proof.cjs');
+  const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
+  const protocol = createSegmentedFencedProof({ store, stepsPerInvocation: 1 }); await protocol.initialize();
+  Object.assign(f.db.get('NCTActivity:' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', transferIndexVersion: 2 });
+  for (const [address, row] of f.db) {
+    if (address.startsWith('StockProducts:')) Object.assign(row, { lifecycleVersion: 2, nextBorrowSequence: borrowed ? 2 : 1 });
+    if (address.startsWith('StockPositions:')) row.borrowRepaidCumulative = 0;
+    if (address.startsWith('StockClaims:')) row.dispatchedCumulative = 0;
+    if (row.action === 'STOCK_TRANSFER_CURRENT') { const r = row.details.relation; Object.assign(row, {
+      participantTaskIds: [r.borrowerTaskId, r.lenderTaskId], lenderSourceId: r.lenderSourceId, replacementSourceId: r.replacementSourceId, repaidQuantity: r.repaid }); }
+  }
+  // These CLOSED records are deliberately outside this operational authority.
+  // A full historical product read would incorrectly pull them into this save.
+  const product = [...f.db.values()].find(r => r.lifecycleVersion === 2);
+  for (let i = 0; i < 15; i++) f.db.set('StockPositions:CLOSED-' + i, { _id: 'CLOSED-' + i, company: 'NCT', stockKey: product.stockKey, status: 'CLOSED' });
+  const items = { query: c => { const filters = []; let limit = 50; const q = {
+    eq: (k, v) => { filters.push(row => row[k] === v); return q; }, gt: (k, v) => { filters.push(row => row[k] > v); return q; },
+    ascending: () => q, limit: n => { limit = n; return q; }, find: async () => {
+      const rows = [...f.db.entries()].filter(([address, row]) => address.startsWith(c + ':') && filters.every(fn => fn(row)))
+        .map(([, row]) => copy(row)).sort((a, b) => a._id.localeCompare(b._id)); return { items: rows.slice(0, limit), totalCount: rows.length }; } }; return q; } };
+  Object.assign(f.deps, { store, protocol, items, readCurrentTaskRows: async (_company, ids) => ids.map(id => ({ _id: id, company: 'NCT', _version: 'TASK0',
+    description: 'O' + id, imageAltText: 'L' + id, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 })) });
+  const save = require('../prototypes/stock-current-state/current-department-saves.cjs').createCurrentQuantityCaseSave({ company: 'NCT', store, protocol, items,
+    authorityDependencies: f.deps, coverage: Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }])) });
+  return { ...f, save, request: kind => ({ ...f.request(kind), stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 }) };
+}
+
+test('concrete v2 shortage decision excludes lifetime CLOSED sources and preserves physical stock and borrowing after STOP/CREDIT', async () => {
+  for (const borrowed of [false, true]) {
+    const f = await currentFixture(borrowed), request = f.request('RECEIPT');
+    const balances = JSON.stringify([...f.db].filter(([id, r]) => /^(StockPositions|StockClaims):/.test(id) || r.action === 'STOCK_TRANSFER_CURRENT'));
+    let result = await f.save(request), attempts = 1; assert.equal(result.pending, true);
+    while (result.pending && attempts++ < 15) result = await f.save(request);
+    assert.equal(result.ok, true); assert.equal(result.caseId, request.input.id); assert.equal(result.stockGeneration, 1);
+    assert.equal((await f.save(request)).caseId, result.caseId);
+    assert.equal(f.counts().contextReads, 1);
+    assert.equal(JSON.stringify([...f.db].filter(([id, r]) => /^(StockPositions|StockClaims):/.test(id) || r.action === 'STOCK_TRANSFER_CURRENT')), balances);
+    assert.equal([...f.db.values()].filter(r => r.action === 'PURCHASE_QUANTITY_CASE_DECIDED').length, 1);
+    if (borrowed) assert.equal(relationRemaining([...f.db.values()].find(r => r.action === 'STOCK_TRANSFER_CURRENT').details.relation), 20);
+  }
+});
+
+test('v2 shortage decision refuses missing raw task checkpoints and reauthorizes a completed replay', async () => {
+  const f = await currentFixture(); f.deps.readCurrentTaskRows = async () => [];
+  // The constructed service captured its private reader; construct a new service to
+  // test missing dependency output, not a browser replacement of that dependency.
+  const { createQuantityCasePreparation } = require('../prototypes/stock-current-state/quantity-case-preparation.cjs');
+  await assert.rejects(createQuantityCasePreparation(f.deps)(f.request('RECEIPT')), /Complete exact current task/);
+  const g = await currentFixture(), request = g.request('RECEIPT'); let result;
+  do { result = await g.save(request); } while (result.pending);
+  // Authentication callbacks are captured privately; change the original member's
+  // status instead, which the captured readMember callback returns freshly.
+  const member = await g.deps.readMember(); member.status = 'PENDING';
+  await assert.rejects(g.save(request));
+  assert.equal([...g.db.values()].filter(r => r.action === 'PURCHASE_QUANTITY_CASE_DECIDED').length, 1);
+});

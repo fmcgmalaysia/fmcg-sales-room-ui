@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST QUANTITY: QUANTITY_CASE_CURRENT_BINDING.txt. Concrete original
+Purchase shortage decision current save + scoped v2 preparation, retaining actual
+original Purchase permission and case/version/feedback rules. STOP/CREDIT preserves
+physical balances and ACTIVE20 borrowing debt,15unrelatedCLOSEDsources excluded.
+529tests pass0fail5595.5008ms, runtime61modules22exports. Original production exact
+d447185, ACTIVE OFF. Remaining actual gateways/read/relays/UI/reload/schema/capacity/
+init/routing/shadow/fourrelease OPEN. No production modification or publication.
+
 2026-10-22 LATEST SALES ARRANGEMENT: SALES_ARRANGEMENT_CURRENT_BINDING.txt. Concrete
 original PLAN/ORDER_DATE current saves + private gateway route; original SELECT/CANCEL/
 PLAN UI same-request progress overlay added. Both companies original date/plan receipts,
