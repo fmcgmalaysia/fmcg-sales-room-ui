@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 COST REFERENCE: COST_REFERENCE_CURRENT_BINDING.txt. Concrete original
+Purchase retry reference gateway candidate now common-fenced, original price/manual/
+invoice/receipt guards and task stock counters preserved. Interrupted APPLY reuses
+durable capture once, no TTL takeover. Cost-only snapshot541tests pass0fail5449.5932ms,
+runtime66modules26exports. Actual install/remainingwriters/UI/schema/capacity/init/
+routing/shadow/fourrelease remain OPEN. ACTIVE OFF, no production changes/publication.
+
 2026-10-22 LATEST FREE CASES: FREE_STOCK_CASE_CURRENT_BINDING.txt. Actual original
 Stock staff quarantine/decision/return/replacement/release now private current save
 candidates for explicitly FREE-attributed cases. Physical stock/receipts separate,

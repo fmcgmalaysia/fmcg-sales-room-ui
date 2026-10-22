@@ -9,6 +9,7 @@ const entries = {
   createCurrentShortageSave: 'current-department-saves.cjs',
   createCurrentStockExceptionSave: 'current-stock-exception-save.cjs',
   createCurrentStockResolutionSave: 'current-stock-resolution-save.cjs',
+  createCurrentCostReferenceSave: 'current-cost-reference-save.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',
   createPurchaseTransferWorkspace: 'purchase-transfer-workspace.cjs', createBorrowCurrentQuery: 'borrow-current-query.cjs',
   createPurchaseBorrowOptions: 'purchase-borrow-options.cjs',
