@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'crypto';
 import { Buffer as StockRuntimeBuffer } from 'buffer';
+const Buffer = StockRuntimeBuffer;
 // Candidate-only backend runtime. Original gateway authentication and verified
 // all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.
 const factories = {
@@ -3862,7 +3863,7 @@ async function uploadPackingPhotoSlot({company,staff,requestId,input,plan,index,
 module.exports={captureOriginalPackingPhotoPlan,assertPackingPhotoUploads,uploadPackingPhotoSlot};
 
 },
-// current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
+// current-stock-exception-save.cjs sha256:fc2aa1a6887cf1aadf8201a0cd5a19c5dc05636b0181407716c5291a85a9fc3b
 "current-stock-exception-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -3920,7 +3921,7 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
         if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') d.requireStockStaff(member, []);
         staff = d.requireStockStaff(member, await d.readStaffRecords());
         if (staff?.memberId !== member._id || staff.canReportStockException !== true || request?.input?.action !== 'QUARANTINE') throw Error('Original stock quarantine permission required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Stock exception actor changed');
         const metrics = { queries: 0, exactReads: 0 };
@@ -3958,7 +3959,7 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
 module.exports = { validateOriginalStockException, createCurrentStockExceptionSave };
 
 },
-// current-stock-resolution-save.cjs sha256:e0815bf5868ea37a40749d704dc20bf6a49a0949bc02d7c50189e95b684f8150
+// current-stock-resolution-save.cjs sha256:466121adb415c180d5c2d8dc52fa8c1599cb6aa6b3c746b012712f9ea4a74871
 "current-stock-resolution-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -4015,7 +4016,7 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
         staff = d.requireStockStaff(member, await d.readStaffRecords());
         const permission = permissions[request?.input?.action];
         if (staff?.memberId !== member._id || !permission || staff[permission] !== true) throw Error('Original stock resolution permission required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Stock resolution actor changed');
         const metrics = { queries: 0, exactReads: 0 };

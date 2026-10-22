@@ -53,7 +53,7 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
         staff = d.requireStockStaff(member, await d.readStaffRecords());
         const permission = permissions[request?.input?.action];
         if (staff?.memberId !== member._id || !permission || staff[permission] !== true) throw Error('Original stock resolution permission required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Stock resolution actor changed');
         const metrics = { queries: 0, exactReads: 0 };

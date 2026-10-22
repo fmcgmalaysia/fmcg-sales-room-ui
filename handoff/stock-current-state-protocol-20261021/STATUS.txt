@@ -1,5 +1,32 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ORIGINAL STOCK EXCEPTION ROOT: ORIGINAL_STOCK_EXCEPTION_ROOT.txt. New
+reproducible minimum original web seams/private root for current stock exception/
+resolution and guarded message reads, original roles/validators/public endpoints/
+disabled message send preserved. Same original control/generation; no unsafe fallback.
+Original accepted display retained, current source physical display exact even CLOSED.
+Original staffID now part of exception/resolution authenticated request identity.
+Generated no-ambient-Buffer root test found runtime unbound Buffer use; ONE explicit
+alias to existing import fixed, algorithms/coordinator unchanged. Full1010pass0fail
+41271.3814ms; afterward added one CLOSED/reserved root test, focused7pass1456.2643ms.
+Runtime103/53 reproducible. Node/VM/mock ONLY, no native/browser/production write.
+NEXT CONCRETE: master-shared/stock-exceptions.js ORIGINAL common dialog still sends
+no current metadata and retains only in-memory pending. Bind same original dialog
+to own actor/company cache, bounded progress, explicit reload recovery/final+fresh
+read confirmation, preserving forms/English Account. Parent current branches need
+metadata/segment relay. Builders to extend minimally: build-purchase-borrow-panel.cjs
+(purchase-room-page.candidate.js/purchase-ui index), build-account-current-ui.cjs
+(account-department-page.candidate.js/account-ui index), Warehouse parent/index
+builder discover exact via rg BEFORE reading (do not guess path). Keep original
+STOCK_READ_REQUEST/STOCK_SAVE_REQUEST endpoints, no replacement dialog/permission.
+Common source head was read but one combined output truncated; tail65+ read; re-read
+missing exact middle when doing UI. Root control identity-only read now available via
+getStockExceptions(company,{contextOnly:true}), no actionable stock/cache scans.
+All coverage EMPTY/ACTIVE OFF; invoice/physical exit OFF. G3/raw intake→PO→split
+composition/native/recovery/capacity/lifecycle/migration/shadow/cutover/review/
+fourrelease still open.5d7a972 preceding composed milestone confirmed pushed PR220.
+No new user business choice or permission needed for next offline UI work.
+
 2026-10-23 SHARED RECEIPT/PACKING/BORROW COMPOSITION: RECEIPT_PACKING_BORROW_COMPOSITION.txt.
 One mock SDK/database, actual generated Warehouse/Packing/Purchase borrowing roots,
 real candidate coordinator, original validators. Starts approved PO tasks/zero stock:

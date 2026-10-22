@@ -73,6 +73,7 @@ const factories = [...sources.entries()].map(([name, source]) => {
   return '// ' + name + ' sha256:' + digest + '\n' + JSON.stringify(name) + ': (load, module) => {\n' + source + '\n}';
 });
 const out = ["import { createHash, randomBytes } from 'crypto';","import { Buffer as StockRuntimeBuffer } from 'buffer';",
+  'const Buffer = StockRuntimeBuffer;',
   '// Candidate-only backend runtime. Original gateway authentication and verified',
   '// all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.',
   'const factories = {\n' + factories.join(',\n') + '\n};',

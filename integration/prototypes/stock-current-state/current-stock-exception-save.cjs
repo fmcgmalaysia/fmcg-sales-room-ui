@@ -54,7 +54,7 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
         if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') d.requireStockStaff(member, []);
         staff = d.requireStockStaff(member, await d.readStaffRecords());
         if (staff?.memberId !== member._id || staff.canReportStockException !== true || request?.input?.action !== 'QUARANTINE') throw Error('Original stock quarantine permission required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Stock exception actor changed');
         const metrics = { queries: 0, exactReads: 0 };
