@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterffca1e0: LEGACY_WAREHOUSE_SAVE.txt. Original authenticated non-photo
+Warehouse PACK/LOAD/UNPACK prepare now composes current Ready + original event/checkpoint;
+no stock/claim movement, mutual guards and original versions/reasons retained.22affected
+pass401.3241ms; added checkpoint interruption/replay case, new6pass180.7392ms (overlap).
+Actual gateways/all writers/photos/capacity/recovery/migration/UI/release remain OPEN/OFF.
+
 CURRENT HEARTBEAT after7efe607: LEGACY_PREPARATION_OWNERSHIP_GUARD.txt. Found candidate
 omitted old Warehouse prep/loaded guard; original parser now blocks ownership removal
 without inventing double invoice holds. Exact original batch/signature/full dispatch can
