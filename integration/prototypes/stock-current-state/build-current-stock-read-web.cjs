@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('node:fs'), path = require('node:path');
+const { WRITERS } = require('./stock-admission.cjs');
 function body(file, imports = []) {
   let source = fs.readFileSync(path.join(__dirname, file), 'utf8').replace(/^'use strict';\r?\n/, '');
   for (const line of imports) source = source.replace(line, '');
@@ -14,9 +15,12 @@ const out = [
   "import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';",
   "import { createHash } from 'crypto';",
   "const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);",
+  'const WRITERS = Object.freeze(' + JSON.stringify(WRITERS) + ');',
+  '// CLOSED until all native writer/cutover acceptance gates pass; no browser grant.',
+  'const writerCoverage = Object.freeze({});',
   'const { stockKey } = (() => {\n' + body('current-model.cjs', ["const { hash } = require('./commit-proof.cjs');"]) + '\n})();',
   'const { createCurrentQuery } = (() => {\n' + body('current-query.cjs') + '\n})();',
-  'const { createCurrentReadBarrier } = (() => {\n' + body('current-read-barrier.cjs', ["const { hash } = require('./commit-proof.cjs');"]) + '\n})();',
+  'const { createCurrentReadBarrier } = (() => {\n' + body('current-read-barrier.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { WRITERS } = require('./stock-admission.cjs');"]) + '\n})();',
   'const { createCurrentStockControlService } = (() => {\n' + body('stock-control-current-service.cjs', ["const { hash } = require('./commit-proof.cjs');",
     "const { stockKey } = require('./current-model.cjs');", "const { createCurrentQuery } = require('./current-query.cjs');"]) + '\n})();',
   "const transferId = (company, id) => hash(company, 'STOCK_TRANSFER_CURRENT', id);",
@@ -43,7 +47,7 @@ const out = [
   'async function read(company, input, detail) {',
   '  try {',
   "    if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded stock request required');",
-  '    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items });',
+  '    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items, coverage: writerCoverage });',
   '    const service = createCurrentStockControlService({ company, items, protocol, requireWarehouseStaff,',
   "      readMember: () => currentMember.getMember({ fieldsets: ['FULL'] }), readStaffRecords: staffRecords, now: () => new Date() });",
   '    const result = await service[detail ? \'detail\' : \'read\'](company, input);',
@@ -62,7 +66,7 @@ const out = [
   'export const getPurchaseStockTransfersCurrent = webMethod(Permissions.SiteMember, async (company, input) => {',
   '  try {',
   "    if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded relation request required');",
-  '    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items });',
+  '    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items, coverage: writerCoverage });',
   '    const query = createBorrowCurrentQuery({ company, items, protocol, authenticate: getPurchaseStaffContext });',
   '    return { ok: true, ...await query(company, input) };',
   "  } catch (_) { return { ok: false, error: 'Borrowing relationships unconfirmed. Refresh and review. 借货关系尚未确认，请刷新核对。' }; }",

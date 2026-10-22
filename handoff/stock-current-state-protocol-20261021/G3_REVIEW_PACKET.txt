@@ -1,5 +1,29 @@
 2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
 
+LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- BORROW_ADMISSION_ACTOR_SNAPSHOT.txt, RECEIPT_ALLOCATION_ADMISSION_ACTOR.txt,
+  PURCHASE_PREPARATION_ADMISSION_ACTOR.txt: actual-root same-member staff reissue
+  counterexamples; trusted admitted staff now forwarded/compared before business
+  preparation. Some old ok:false/receipt errors occurred AFTER fixture stock commit.
+- PACKING_EARLY_ADMISSION_IDENTITY.txt: existing packing late guard already prevented
+  domain commit; new early guard also prevents wrong-request photo ID allocation/
+  context reads. Do not misstate its old behavior as a committed-stock bypass.
+- CURRENT_READ_WRITER_COVERAGE_GATE.txt: actual native read-wrapper candidate formerly
+  accepted ACTIVE alone. New defaultEMPTY server coverage gates all current list/
+  detail/relation reads, writerBuild included in exact before/after snapshot. New
+  read tests6counterexamples,25affectedpass. FULL1166pass0fail27660.2358ms includes
+  unsafe witnesses; not native safety, capacity, G3 pass or activation authority.
+- CMS actual total item maximum10000 known; native execution/RPM/whole300business
+  prepare/commit/recovery remainUNKNOWN. See NATIVE_STORAGE_QUOTA_AND_FOOTPRINT.txt
+  and ITEM_QUOTA_RECOVERY_MATRIX.txt; arithmetic/fake quota are not native acceptance.
+- INIT/TYPE three-row exact test consent and generic Wix support contact consent
+  are PENDING. Do not repeat questions, run probes or contact Wix without human reply.
+  Migration APPLY still explicitly NOT IMPLEMENTED. Native/old-execution drain/G3/
+  schema/capacity/recovery/shadow/cutover/public release gates are not complete.
+- Packing ownership/hold review found no basis to change existing max pending hold/
+  customer remainder/Loaded-not-dispatch rules. Preserve spec136/150 extension boundary:
+  no unrelated invoice, physical exit or slice-cancellation redesign for Loaded test.
+
 Review one objective: existing system current stock + Purchase borrowing/automatic
 repayment + customer split + original person halo, initial human test through Loaded.
 Real Support invoicing/physical exit OFF. Do not design finance features, a replacement

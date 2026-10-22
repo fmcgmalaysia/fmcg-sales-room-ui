@@ -3,16 +3,17 @@ const { execFileSync } = require('node:child_process'), { createHash } = require
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs'), { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { requireWarehouseStaff } = load('warehouseReceiving.js');
 const { requirePurchaseStaff } = load('purchaseProjection.js');
+const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
-function fixture() {
+function fixture(coverage = true) {
   const company = 'NCT', key = stockKey({ company, barcode: '1', packing: '12', ea: 12 }), controlId = hash(company, 'STOCK_CONTROL'), calls = [], permissions = [];
-  const control = { _id: controlId, company, stockCommitVersion: 'C0', generation: 0, pending: null, mode: 'ACTIVE', schemaVersion: 1 };
+  const control = { _id: controlId, company, stockCommitVersion: 'C0', generation: 0, pending: null, mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' };
   const member = { _id: 'M', status: 'APPROVED', loginEmail: 'w@example.test' }, staff = { title: 'W', description: 'M', staffEmail: member.loginEmail,
     staffName: 'Warehouse', staffStatus: 'ACTIVE', departments: ['WAREHOUSE'] };
   const data = { StaffMasterAccess: [staff], NCTActivity: [control], StockProducts: [{ _id: hash(company, key), company, stockKey: key, barcode: '1', packing: '12', ea: 12,
     name: 'Item', status: 'ACTIVE', revision: 0, checkpointGeneration: 0, reviewRequired: false, onHand: 20, isolated: 0, available: 20, reservedUsable: 0,
     secretPlan: { unsafe: 'PRIVATE' }, netCostCtn: 999 }], StockPositions: [], StockClaims: [] };
-  let changeDuringRead = false;
+  let changeDuringRead = false, changeBuildDuringRead = false;
   const wixData = { query: collection => {
     let predicates = [], sort = [], offset = 0, size = 50, fields = [];
     const q = { eq(k, v) { fields.push([k, v]); predicates.push(row => Array.isArray(row[k]) ? row[k].includes(v) : row[k] === v); return q; },
@@ -24,18 +25,45 @@ function fixture() {
         const selected = (data[collection] || []).filter(q.matches).sort((a, b) => { for (const k of sort) { const n = String(a[k]).localeCompare(String(b[k])); if (n) return n; } return 0; });
         const result = { items: copy(selected.slice(offset, offset + size)), totalCount: selected.length, hasNext: () => false };
         if (changeDuringRead && collection === 'StockProducts') { control.stockCommitVersion = 'C1'; control.generation = 1; changeDuringRead = false; }
+        if (changeBuildDuringRead && collection === 'StockProducts') { control.writerBuild = 'OTHER'; changeBuildDuringRead = false; }
         return result;
       } }; return q;
   } };
   const file = path.join(__dirname, '../prototypes/stock-current-state/stockCurrentRead.web.js');
-  const source = fs.readFileSync(file, 'utf8').replace(/^import[^\n]+\r?\n/gm, '').replace(/^export /gm, '');
+  let source = fs.readFileSync(file, 'utf8').replace(/^import[^\n]+\r?\n/gm, '').replace(/^export /gm, '');
+  if (coverage !== false) source = source.replace('const writerCoverage = Object.freeze({});', 'const writerCoverage = Object.freeze('
+    + JSON.stringify(coverage === true ? Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }])) : coverage) + ');');
   const api = vm.runInNewContext('(function(){' + source + '\nreturn {getWarehouseStockControlCurrent,getWarehouseStockSourcesCurrent,getPurchaseStockTransfersCurrent};})()', {
     wixData, currentMember: { getMember: async () => member }, requireWarehouseStaff, readCustomerShortNames: async () => [], createHash, Date, JSON, Object, Array, Number, String, Set, Map, WeakMap,
     getPurchaseStaffContext: async () => ({ ...requirePurchaseStaff(member, [staff]), memberId: member._id }),
     webMethod: (permission, fn) => { permissions.push(permission); return fn; }, Permissions: { SiteMember: 'MEMBER' }
   });
-  return { api, data, calls, control, member, staff, permissions, controlId, change: () => changeDuringRead = true };
+  return { api, data, calls, control, member, staff, permissions, controlId, change: () => changeDuringRead = true, changeBuild: () => changeBuildDuringRead = true };
 }
+
+for (const variant of ['defaultClosed', 'missingWriter', 'wrongBuild', 'missingBuild']) test(`actual current read root rejects ${variant} before stock quantities despite ACTIVE/browser flags`, async () => {
+  const coverage = Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }]));
+  if (variant === 'missingWriter') delete coverage.RECEIPT;
+  if (variant === 'wrongBuild') coverage.BORROWING.build = 'OTHER';
+  const f = fixture(variant === 'defaultClosed' ? false : coverage);
+  if (variant === 'missingBuild') delete f.control.writerBuild;
+  const flags = { canRead: true, verified: true, writerCoverage: coverage };
+  assert.equal((await f.api.getWarehouseStockControlCurrent('NCT', flags)).ok, false);
+  assert.equal((await f.api.getWarehouseStockSourcesCurrent('NCT', { ...flags, kind: 'positions', stockKey: f.data.StockProducts[0].stockKey })).ok, false);
+  assert.equal(f.calls.some(call => call.collection.startsWith('Stock')), false);
+});
+
+test('actual relation root stays closed with no verified writers even when ACTIVE/index metadata is present', async () => {
+  const f = fixture(false); f.staff.departments = ['PURCHASE']; f.control.transferIndexVersion = 1;
+  assert.equal((await f.api.getPurchaseStockTransfersCurrent('NCT', { taskId: 'A', verified: true })).ok, false);
+  assert.equal(f.calls.some(call => call.fields.some(([field]) => field === 'participantTaskIds')), false);
+});
+
+test('current read barrier includes writer build in the same snapshot, not just mode/generation/version', async () => {
+  const f = fixture(); f.changeBuild();
+  assert.equal((await f.api.getWarehouseStockControlCurrent('NCT', {})).ok, false);
+  assert.equal(f.control.generation, 0); assert.equal(f.control.stockCommitVersion, 'C0');
+});
 
 test('generated gateway matches source and exposes only original staff-guarded SiteMember reads', () => {
   assert.match(execFileSync(process.execPath, [path.join(__dirname, '../prototypes/stock-current-state/build-current-stock-read-web.cjs'), '--check'], { encoding: 'utf8' }), /matches exact source/);

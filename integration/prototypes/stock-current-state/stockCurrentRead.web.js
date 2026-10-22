@@ -6,6 +6,9 @@ import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { createHash } from 'crypto';
 const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
+const WRITERS = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
+// CLOSED until all native writer/cutover acceptance gates pass; no browser grant.
+const writerCoverage = Object.freeze({});
 const { stockKey } = (() => {
 // Pure candidate model. No history reads, CMS mutations, routes or production imports.
 
@@ -201,7 +204,7 @@ const { createCurrentReadBarrier } = (() => {
 const copy = value => JSON.parse(JSON.stringify(value));
 // Query-only control barrier for the actual Warehouse current-read gateway.
 // No initialization, mode changes, lock release or business write capability.
-function createCurrentReadBarrier({ company, items }) {
+function createCurrentReadBarrier({ company, items, coverage = {} }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function') throw Error('Current read scope required');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', id = hash(company, 'STOCK_CONTROL');
   async function readControl() {
@@ -213,10 +216,15 @@ function createCurrentReadBarrier({ company, items }) {
       || !['LEGACY', 'SHADOW', 'ACTIVE', 'MAINTENANCE'].includes(row.mode)
       || row.pending !== null && (!row.pending || typeof row.pending.key !== 'string' || typeof row.pending.digest !== 'string')) throw Error('Current inventory control requires review');
     return { _id: id, company, _version: row.stockCommitVersion, generation: row.generation, mode: row.mode,
-      schemaVersion: row.schemaVersion, transferIndexVersion: row.transferIndexVersion ?? null, pending: copy(row.pending) };
+      schemaVersion: row.schemaVersion, writerBuild: row.writerBuild ?? null,
+      transferIndexVersion: row.transferIndexVersion ?? null, pending: copy(row.pending) };
   }
   async function readSnapshot(readRows) {
     const before = await readControl(); if (before.pending) throw Error('Inventory pending');
+    // ACTIVE alone is not evidence that every existing stock writer is fenced.
+    // This map is supplied only by server construction, never the read request.
+    if (before.mode !== 'ACTIVE' || typeof before.writerBuild !== 'string' || !before.writerBuild
+      || WRITERS.some(writer => coverage?.[writer]?.verified !== true || coverage[writer].build !== before.writerBuild)) throw Error('Inventory writer coverage incomplete; current reads unavailable');
     const rows = await readRows(copy(before)), after = await readControl();
     if (after.pending || JSON.stringify(before) !== JSON.stringify(after)) throw Error('Inventory changed during read');
     return { generation: after.generation, rows };
@@ -415,7 +423,7 @@ async function staffRecords() {
 async function read(company, input, detail) {
   try {
     if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded stock request required');
-    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items });
+    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items, coverage: writerCoverage });
     const service = createCurrentStockControlService({ company, items, protocol, requireWarehouseStaff,
       readMember: () => currentMember.getMember({ fieldsets: ['FULL'] }), readStaffRecords: staffRecords, now: () => new Date() });
     const result = await service[detail ? 'detail' : 'read'](company, input);
@@ -434,7 +442,7 @@ export const getWarehouseStockSourcesCurrent = webMethod(Permissions.SiteMember,
 export const getPurchaseStockTransfersCurrent = webMethod(Permissions.SiteMember, async (company, input) => {
   try {
     if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded relation request required');
-    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items });
+    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items, coverage: writerCoverage });
     const query = createBorrowCurrentQuery({ company, items, protocol, authenticate: getPurchaseStaffContext });
     return { ok: true, ...await query(company, input) };
   } catch (_) { return { ok: false, error: 'Borrowing relationships unconfirmed. Refresh and review. 借货关系尚未确认，请刷新核对。' }; }
