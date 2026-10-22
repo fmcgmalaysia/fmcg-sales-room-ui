@@ -58,7 +58,7 @@ async function setup(destination='NCT') {
       if (fault === 'sourceSave') throw Error('Source save failed');
       const record = rows.get(collection + '/' + title); rows.set(collection + '/' + title, { ...record, payload: JSON.stringify(payload) });
     } };
-  return { run: () => submit(args), reconcile: () => submit({ ...args, reconcileOnly: true }), fault: value => { fault = value; }, master, rows,
+  return { run: () => submit(args), runDestination: destination => submit({ ...args, destination }), reconcile: () => submit({ ...args, reconcileOnly: true }), fault: value => { fault = value; }, master, rows,
     state: () => ({ order: JSON.parse(rows.get('WixBuyerOrders/ORDER').payload), captures, authorized, requests: copy(requests) }) };
 }
 test('actual source adapter and receiver cores preserve 100->250, MYR, original staff and one complete receipt', async () => {
@@ -110,4 +110,25 @@ test('failed recovery source save can be retried with one audit and no MASTER ch
 
 test('GHR receipt recovery preserves receiving company and its original tasks',async()=>{
   const f=await setup('GHR');f.fault('lostReply');await assert.rejects(f.run());const before=JSON.stringify([...f.master]);f.fault('');const receipt=await f.reconcile();assert.equal(receipt.destination,'GHR');assert.equal(f.state().order.destination,'GHR');assert.equal(JSON.stringify([...f.master]),before);assert.ok([...f.master.keys()].every(k=>/^NCT(?:Orders1|Tasks1|Activity1)\//.test(k)));
+});
+
+test('original source order lock admits only one simultaneous receiving company before any delivery', async () => {
+  const f = await setup();
+  const results = await Promise.allSettled([f.runDestination('NCT'), f.runDestination('GHR')]);
+  assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+  const state = f.state(); assert.equal(state.requests.length, 1);
+  assert.equal(state.requests[0].destination, state.order.destination); assert.equal(state.captures, 1);
+  const prefixes = new Set([...f.master.keys()].map(key => key.split('/')[0]));
+  assert.equal(prefixes.has('NCTTasks') && prefixes.has('NCTTasks1'), false);
+  assert.equal(f.master.size, 5);
+});
+
+test('unconfirmed source snapshot cannot be retried to another receiving company', async () => {
+  for (const first of ['NCT', 'GHR']) {
+    const f = await setup(first); f.fault('lostReply'); await assert.rejects(f.run());
+    const before = JSON.stringify([...f.master]); f.fault('');
+    await assert.rejects(f.runDestination(first === 'NCT' ? 'GHR' : 'NCT'), /Prepared submission identity conflict/);
+    assert.equal(f.state().requests.length, 1); assert.equal(JSON.stringify([...f.master]), before);
+    await f.run(); assert.equal(f.state().requests[1].destination, first); assert.equal(f.state().captures, 1);
+  }
 });
