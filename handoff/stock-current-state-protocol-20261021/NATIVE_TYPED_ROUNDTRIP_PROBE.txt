@@ -1,0 +1,77 @@
+2026-10-23 — one retained synthetic typed roundtrip candidate, NOT live evidence
+
+Purpose: use the EXACT existing sdk-field-codec + sdk-conditional-store at the
+real native boundary, not another replacement/mock business writer. No original
+business collection or stock state touched. Prior schema-readback configuration
+and SDK version-equality evidence reused; actual typed storage remains UNKNOWN.
+
+Candidate source:
+ native-typed-roundtrip-probe.cjs
+ build-typed-roundtrip-probe.cjs
+ stockProtocolTypedRoundtrip.web.js (standalone NEW Permissions.Admin wrapper)
+ stock-current-native-typed-probe.test.cjs
+All under integration/prototypes/stock-current-state except test under tests.
+Wrapper mechanically embeds exact codec/store, isolated from production38targets.
+No runtime/gateway/SDK business module or install graph change.
+
+Fresh exact scope required before native install/run:
+ StockProtocolTest ONLY,1NEW fixed retained synthetic ID:
+ SPT-TYPE-bebf13e4-dd59-4240-9390-97fc106a66b0
+ Maximum9queries,1insert,1conditional patch. No record/lock deletion, replay,
+ reset, auto retry, arbitrary company/table/IDs/fields, schema or ACL mutation.
+ Patch removes ONLY obsoleteFlag from this very same new TYPE fixture; fixture
+ itself stays. This explicit FIELD removal must be included in test consent.
+ Native items.remove is not forwarded: shared adapter gets only a throwing stub.
+ Confirmation input ONE_RETAINED_TYPED_SYNTHETIC_ROW_NO_DELETE is accidental-run
+ guard, NOT authorization. A fixed occupied ID stops before writes; any timeout/
+ unknown result retains the fixture without rollback, cleanup or a second run.
+
+Exact fixed typed data and checks:
+ - Top-level activityTime/lastCostCaptureTime/estimatedShipmentDate/
+   masterReceivedTime/salesSubmissionTime: SDK Date from canonical ISO.
+ - Same-looking ISO in message and nested details remains STRING.
+ - participantTaskIds remains ordered STRING ARRAY; nested quantities[0,24].
+ - Leading-zero barcode095500001 and supplierPoNumber000123 remain TEXT.
+ - quantity24->0 is a real number, reviewRequired false->true BOOLEAN.
+ - estimatedShipmentDate Date->explicitNULL; omission is NOT silently accepted.
+ - Existing obsoleteFlag true is explicitly removed on V0->V1 patch.
+ - Native insert/read/hasSome batch/CAS/readback run through exact shared adapter.
+ - Direct bounded raw reads independently check actual native Date and nondate
+   types; canonical JSON alone could hide wrong Date-looking TEXT conversions.
+ - Invalid February30 outbound date must refuse BEFORE another native mutation.
+ Final report only stage/checks/attempt counts; no payload/IDs/provider errors.
+ originalBusinessCollectionsAccepted, productionCapacityAccepted, activationReady
+ ALWAYS false. Positive result is not real domain schema/employee permissions/
+ compound indexes/300line/recovery/initialization or legacy termination proof.
+ No field schema is created/changed by this test. Undefined fields/native behavior
+ must be reported honestly; no automatic field repair or enum inference.
+
+Verification actually run:
+ Initial7newtests6pass1fail214.4782ms: static no-remove regex incorrectly matched
+ the intentionally unchanged shared adapter's compareAndRemove implementation.
+ Corrected proof boundary: exact adapter retained, invoking probe cannot forward
+ native remove; added executable throwing-stub/foreign table/ID denial witness.
+ No production guard weakened or adapter edited. Final8new+5existing Date codec/
+ adapter tests13pass0fail292.1875ms. Generated --check passes, VM Admin wrapper
+ exercised using same mock provider. NOT an actual Wix execution.
+ Prior FULL1071 remains retained, not a new combined full-suite total.
+ Original production paths equald447185; actual Credits UNKNOWN.
+
+CONSOLIDATED CURRENT ISOLATED TEST REQUEST:
+ This TYPE test plus NATIVE_INITIALIZATION_PROBE.txt (two INIT rows) = exactly
+3new retained StockProtocolTest rows, <=19queries/3inserts/8patchattempts across
+ TWO distinct Admin functions invoked ONCE EACH. No row or lock deletion; only
+ new TYPE obsoleteFlag removal. Existing13records untouched; old lock deletion
+ grants NOT renewed/reused. No current business CMS/permission/Publish operation.
+ New INIT IDs:
+ SPT-INIT-3c82f6a5-58d4-46ef-ae09-1dd52bc460f1
+ SPT-INIT-58eb46cb-1ebf-48bc-b416-936bb23793c0
+ Any missing/failed/unknown scope stops that test; do not dispatch a second time.
+ Ask ONE precise user confirmation while continuing unaffected offline review.
+ Do not include early blanket production ACL/Pages permissions in this request.
+
+Remaining native setup/migration/recovery/security-sensitive permissions will
+ still require exact action-time handling when ready; this grant cannot substitute
+ for them. LEGACY_ADMISSION_RACE_WITNESS and all-writer quiescence gate remain OPEN.
+ Existing schema/index readonly review1f2b508 confirmed PUSHED PR220. No computer
+ interaction, new data, live code change or release performed this turn.

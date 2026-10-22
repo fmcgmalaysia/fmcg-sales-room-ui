@@ -89,6 +89,10 @@ candidate (10reads/2inserts/7patchattempts maximum) and11new offline tests. No f
 mutation grant or native test claimed; missing-version/date conjunction still unknown.
 Do not equate WQL exists:false with strict missing/null or synthetic date proof with
 whole-company writer quiescence/ABA/migration recovery. Not in production packet.
+NATIVE_TYPED_ROUNDTRIP_PROBE.txt adds1fixed retained-row exact shared codec/adapter
+value test.13affectedpass; NOT native evidence. Current consolidated request is ONLY
+3new SCPT rows/2Admin functions once/<=19queries+3inserts+8patchattempts, new TYPE
+obsoleteFlag removal only, no record/lock delete or production ACL/Pages grant.
 Consolidate truly missing platform permission questions after reviewable probe ready.
 Do not repeat unchanged tests/23UIcaptures or claim publication. GitHub push/Pages/
 Wix published-live/public verification/user Loaded acceptance remain distinct.

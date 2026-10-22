@@ -1,5 +1,18 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 SHARED-ADAPTER TYPED PROBE READY OFFLINE: NATIVE_TYPED_ROUNDTRIP_PROBE.txt.
+New standalone Admin wrapper,1fixed retained SCPT TYPE row,<=9queries/1insert/1CAS.
+Exact shared codec/store,5nativeDate fields vs text/nested strings, array/leading0/
+real0/boolean/null and remove only newfixture obsoleteFlag. Native remove capability
+not forwarded; throwing stub. Final8new+5existing typed13pass0fail292.1875ms, --check
+exact; initial static regex false positive fixed with explicit capability test, no
+business guard change. No live install/run/data/schema/ACL/Publish this turn.
+Ready ONE consolidated consent for2INIT+1TYPE new retained SCPT rows, <=19queries/
+3inserts/8patchattempts,2Admin functions once each; no record/lock deletion, existing13
+untouched. TypedFIELD removal explicitly included. Consent not yet obtained.
+1f2b508 native setup reviewer/read-only evidence confirmed PUSHED PR220. All production
+gates remain OPEN; no native types/300capacity/drain/recovery/cutover claim.
+
 2026-10-23 ADDITIVE NATIVE SETUP REVIEW READY: NATIVE_SETUP_REVIEW.txt.
 Pure unused schema/index reviewer for3newprivate+6existing additive scopes, no SDK/
 installer/mode authority.14affectedpass0fail1366.8077ms (10new+4install); actual scoped/
