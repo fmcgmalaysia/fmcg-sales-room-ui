@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 SOURCE DATE PARENT: SOURCE_DATE_PARENT_TRANSPORT.txt. Original Source
+method/parent optional current metadata and bounded same-UUID pending receipts; old
+six-arg/pre-transfer guards unchanged. Actual bearer/private root one-date-event replay
+without stock/PO/qty change.838currentpass0fail17733.9321ms; focused originaldate/Source
+parent/root18pass759.4475ms. Node/VM only. Browser date metadata/own-cache controller
+STILL OPEN; this seam alone cannot be deployed. DOCUMENT/otherwriter/native/recovery/
+capacity/cutover/shadow/Loaded-endtoend/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF.
+
 2026-10-22 SOURCE SALES DURABLE CLIENT: SOURCE_SALES_DURABLE_UI.txt. Actual original
 ADJUST/SELECT/CANCEL/PLAN own-tab full request/view before network; fresh original
 cached-customer auth, original widget routing, exact retry, strict final/cache cleanup,

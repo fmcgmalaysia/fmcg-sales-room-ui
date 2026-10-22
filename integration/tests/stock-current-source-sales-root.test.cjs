@@ -62,6 +62,17 @@ test('source root also preserves original SELECT/CANCEL reservations and PLAN in
  assert.equal([...f.db.values()].filter(row=>row.sourceTaskId==='U'&&row.onHand===10).length,1);
  assert.equal([...f.db.values()].some(row=>row.details?.shipment?.status==='INVOICED'||row.details?.shipment?.status==='DISPATCHED'),false);
 });
+
+test('actual source bearer root accepts original date/version with current metadata and replays one date event without quantity or PO mutation',async()=>{
+ const f=await fixture();f.db.set('NCTActivity/ORIGINAL_INTAKE',{_id:'ORIGINAL_INTAKE',title:'ORIGINAL_INTAKE',company:'NCT',_version:'R0',description:'O',action:'ORDER_RECEIVED',result:'ACCEPTED',details:{submissionId:'SUB',taskIds:['T']}});
+ const initial=await f.send(body('READ'));assert.equal(initial.status,200,initial.body.error);
+ const immutable=JSON.stringify([...f.db].filter(([key])=>/^(StockProducts|StockPositions|StockClaims|PurchaseOrders|NCTTasks|NCTOrders)\//.test(key)));
+ const request=body('ORDER_DATE',{orderId:'O',submissionId:'SUB',date:'2026-11-01',version:'',stockCurrent:initial.body.result.stockCurrent});
+ const saved=await f.send(request);assert.equal(saved.status,200,saved.body.error);assert.equal(saved.body.result.date,'2026-11-01');assert.equal(saved.body.result.orderId,'O');assert.equal(saved.body.result.customerId,'C');assert.equal(saved.body.result.stockGeneration,2);
+ assert.deepEqual(copy((await f.send(request)).body.result),copy(saved.body.result));assert.equal([...f.db.values()].filter(row=>row.action==='SALES_SHIPMENT_DATE_SAVED').length,1);
+ assert.equal(JSON.stringify([...f.db].filter(([key])=>/^(StockProducts|StockPositions|StockClaims|PurchaseOrders|NCTTasks|NCTOrders)\//.test(key))),immutable);
+ const changed=await f.send({...request,input:{...request.input,date:'2026-11-02'}});assert.equal(changed.status,400);assert.equal(f.calls.includes('LEGACY_SAVE'),false);
+});
 test('default source gateway validates bearer before control/data, never falls back on missing/maintenance/current metadata or unconnected document',async()=>{
  const f=await fixture();assert.equal((await f.send(body('READ'),false)).status,401);assert.deepEqual(f.calls,['BEARER']);
  const control=f.db.get('NCTActivity/'+f.deps.protocol.ids.controlId);

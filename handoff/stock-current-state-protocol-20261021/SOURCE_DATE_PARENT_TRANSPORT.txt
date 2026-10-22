@@ -1,0 +1,37 @@
+2026-10-22 — ORIGINAL SOURCE DATE PARENT/BACKEND CURRENT TRANSPORT
+Recovery0394e85/PR220. Productiond447185/runtime32b812c unchanged; candidate only.
+First user acceptance ends Loaded, invoice/physical departure OFF.
+
+Original Source planning web method accepts optional seventh current-stock metadata;
+existing parent forwards this only through same original method. Original staff auth,
+customer authorization, Source order mutation lock, date/PO/revision checks, routed
+submission identity, and original pre-transfer Source save/rollback remain unchanged.
+For routed date only, optional metadata reaches original Master bearer gateway; no
+new web grant, public route, staff substitute or server-created generation binding.
+Bounded exact same-UUID BEFORE/APPLY/VERIFY continuation is returned as PENDING, not
+success. Current final requires original order/customer/company/date/UUID/revision and
+advanced stock generation before reporting saved. Original six-argument/legacy output
+unchanged. No Source business write for transferred-date branch.
+
+Actual Source bearer/private current root date test now saves and replays exactly one
+original date event, rejects changed same UUID, preserves all stock/product/claim/PO/
+task/order rows. Synthetic original intake fixture, not real business data/native
+acceptance. Separate original Source method VM test mocks authority/Source lock/Master
+transport; it is NOT proof of native auth or native Source order lock behavior.
+
+Evidence: ALL current838pass0fail17733.9321ms. Focused Source parent/root + original
+shipment-date18pass0fail759.4475ms. Generator syntax/--check exact; parent differs one
+argument; backend prefix/suffix outside planning method exact. Native production
+Source parent/onboarding/customerShipmentPlan diff againstd447185 empty. Git whitespace
+check passed. Original pre-transfer fixture first omitted record.title/normalizeEmail;
+fixed only synthetic fixture, no production guard changes. Credit UNKNOWN.
+
+NEXT date BROWSER controller must obtain original authenticated current READ metadata,
+retain full date request/view before send, share company cache with adjustment/shipment,
+and recover same UUID/identity behind pending. This parent/backend seam alone does NOT
+connect old browser controls, and must NOT be installed or considered ready by itself.
+Preserved DOCUMENT same-fence file writer, remaining intake/order/other native writers,
+schemas/SDK/index/native authority verification, unknown-lock recovery, capacity/
+lifecycle, quiescent cutover/shadow parity, Loaded end-to-end and four release gates OPEN.
+Coverage EMPTY; ACTIVE OFF. Code incomplete; Pages unchanged; Wix not installed/published;
+new public inventory/borrowing unavailable/unverified. No release or new permission.
