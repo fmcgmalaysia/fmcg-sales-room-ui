@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterebea186: PURCHASE_PO_RECORD_CURRENT_PLAN.txt. Original non-file
+Purchase PO metadata prepare maps exact versioned PO image+embedded audit only. Payment
+request/CN/Reviewing rules retained; no file/stock/task edits.40new+originalpass302.3609ms.
+File protocol/legacy replay/actual gateway and all remaining release gates OPEN/OFF;
+original financial scenario mismatch still recorded, not declared fixed.
+
 CURRENT HEARTBEAT after6f6ce99: QUANTITY_CASE_CURRENT_PREPARATION.txt. Original Purchase
 member/case/PO/source authority now composes DECIDE event+current checkpoint only;
 UNPLACED vs RECEIPT liability separate, STOP/CREDIT does not cancel/release/repay.

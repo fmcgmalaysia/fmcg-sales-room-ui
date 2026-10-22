@@ -1,0 +1,40 @@
+2026-10-22 continuation afterebea186 — Purchase PO metadata co-writer
+
+Scope/evidence
+- Reused current framework/records. Read original purchaseOrderWorkflow save/apply,
+  purchaseOrders.web authenticated wrapper and original PO/payment/handoff tests.
+- No production code changed; recovery remains d447185/runtime32b812c.
+- purchase-order-record-plan.cjs privately captures exact ORIGINAL non-file prepare:
+  TERM, ACK_PAYMENT, REQUEST_PAYMENT, SUBMIT_FINANCE, WITHDRAW_FINANCE, REQUEST_RETURN,
+  DOCUMENT_ISSUE_RESPONSE. Real authenticated Purchase gateway supplies staff/context;
+  this function itself is NOT an authentication endpoint.
+- Single original PurchaseOrders image with embedded original audit becomes conditional
+  domain write. Existing target requires company/version and exact original hash/version;
+  new original generated PO metadata may insert once. Common fence generation serializes
+  it with stock/domain writers, no stock/product/task/physical quantity write needed.
+- Only action-specific original detail fields and original audit/creation/task metadata
+  may change. Unrelated documents/finance/top-level identity fields preserved.
+- Original source/FOC/submission basis returned for real gateway integration; source
+  facts must remain fenced, and all original apply-time rechecks preserved before live.
+- DOCUMENT/DELETE_DOCUMENT and new/retired CHASE not executed here. External allocation,
+  upload, trash, fixed file identity and uncertain side-effect recovery are NOT replaced.
+  Read-only exact legacy CHASE/result replay compatibility remains an actual-gateway
+  requirement, not falsely claimed implemented by this non-file adapter.
+
+Evidence
+- New5 + original PO/payment/procurement/payment-handoff35:40pass,0fail,302.3609ms.
+- NCT/GHR/new/migrated TERM, exact audit and original documents unchanged; original
+  REQUEST_PAYMENT100000 with actual INV basis then Account ownership refuses repeat.
+- Stale term/reason, pending deletion, missing version/foreign record and injected
+  unrelated finance mutation refuse before any real/domain write.
+- Common fence commit/replay: one PO record audit, generation1, demand100 unchanged.
+- Original file/credit/financial tests passing here use in-memory mocks, not real Drive
+  authorization or evidence the new file protocol is integrated. No live deletes made.
+- Separate original scenario PAID vs INSTALLMENT_PAID mismatch remains recorded; this
+  affected set does NOT erase it or establish whole-system regression acceptance.
+
+Four states
+Candidate code only; Pages NOT deployed; Wix NOT synchronized/published; public page
+NOT verified. ACTIVE OFF, Support real invoice OFF. Actual gateway/all writer/read/
+file/photo/recovery/routing/capacity/lifecycle/schema/metadata/migration/shadow/UI/halo/
+focused review and original financial test classification gates remain OPEN.
