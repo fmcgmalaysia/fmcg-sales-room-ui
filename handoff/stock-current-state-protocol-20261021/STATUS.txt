@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT afterb49419a: ASTRA_PRODUCTION_DECISION.txt. User selected Astra High focused
+review then returned Sol High; explicit implementation authorized. Original valid10PO
+lines ->31writes refused;300lines ->901images513614/555614UTF8bytes;15CLOSEDsources block.
+3boundarytests pass652.1391ms PROVE blockers, not capacity success. Keep business/3CMS/
+SDKfencing; implement segmented manifest+same-request bounded phases, scoped current
+working sets/delta summaries, source cumulative repayments and product sequence. No
+TTLunlock or automatic deletes. Next codec first; do NOT simply raise proof caps or
+resume unrelated finance/UI prototypes. All actual release stages remain OPEN/OFF.
+
 CURRENT continuation after7125470: CURRENT_COMMAND_RUNTIME.txt. Mechanical Wix-format
 backend command runtime now bundles21exact current modules, excludes obsolete unsafe
 protocol, no public route/elevation/mode change. Original department dependencies still
