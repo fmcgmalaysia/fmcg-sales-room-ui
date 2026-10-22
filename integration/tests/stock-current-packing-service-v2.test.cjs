@@ -27,12 +27,13 @@ async function fixture() {
     description: 'O', imageAltText: 'L', stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: 0 })) };
   const service = createCurrentPackingService({ company: 'NCT', store, items: deps.items, protocol, authorityDependencies: deps,
     coverage: Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }])) });
-  return { ...f, deps, protocol, service };
+  return { ...f, deps, store, protocol, service };
 }
 test('Support sends and Warehouse accepts the same current packing task without touching physical balances', async () => {
   const f = await fixture(), beforePhysical = [...f.db.entries()].filter(([key]) => key.startsWith('StockPositions:')).map(([, row]) => JSON.stringify(row));
   const read = await f.service.read({ department: 'SUPPORT' }); assert.equal(read.tasks[0].ready, 50);
   assert.equal(read.stockCurrent.stockGeneration, 0);
+  assert.equal(read.staff.staffId,'S');assert.equal(read.staff.memberId,'M');assert.equal(read.department,'SUPPORT');
   const request = { department: 'SUPPORT', requestId: f.request.requestId, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0,
     input: { action: 'SEND', id: 'LIST', revision: 'REV0', version: read.version } };
   assert.equal((await f.service.save(request)).stockGeneration, 1); await f.service.save(request);
@@ -46,6 +47,15 @@ test('Support sends and Warehouse accepts the same current packing task without 
   assert.equal((await f.service.read({ department: 'WAREHOUSE' })).lists[0].status, 'PROCESSING');
   assert.deepEqual([...f.db.entries()].filter(([key]) => key.startsWith('StockPositions:')).map(([, row]) => JSON.stringify(row)), beforePhysical);
   assert.equal([...f.db.values()].find(row => row.action === 'SUPPORT_PACKING_LIST_CURRENT').details.list.invoiceId, undefined);
+});
+test('packing expected staff/member is bound to immutable request, not just the authenticated member',async()=>{
+ const f=await fixture(),read=await f.service.read({department:'SUPPORT'}),request={department:'SUPPORT',requestId:f.request.requestId,stockProtocol:1,stockBuild:'TEST',stockGeneration:0,
+  stockIdentity:{staffId:'S',memberId:'M'},input:{action:'SEND',id:'LIST',revision:'REV0',version:read.version}};
+ assert.equal((await f.service.save(request)).ok,true);
+ f.deps.readStaffRecords=async()=>[{title:'S2',description:'M',staffEmail:'support@example.test',staffName:'Replacement',staffStatus:'ACTIVE',departments:['SUPPORT','WAREHOUSE']}];
+ await assert.rejects(f.service.save(request),/identity/);
+ await assert.rejects(f.service.save({...request,stockIdentity:{staffId:'S2',memberId:'M'}}),/identity/);
+ assert.equal((await f.protocol.readControl()).generation,1);
 });
 test('wrong department, file operations and missing current checkpoints cannot invoke legacy packing writer', async () => {
   const f = await fixture(); await assert.rejects(f.service.read({ department: 'PURCHASE' }), /department/);

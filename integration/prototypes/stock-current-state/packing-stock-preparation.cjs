@@ -66,10 +66,11 @@ function createPackingStockPreparation(deps) {
         ...(validated.record.details.list.change?.lines || [])].map(l => l.taskId));
       return { validated, currentRecord, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
     });
-    if (!save) return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+    const originalStaff={memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,packingDepartment:staff.packingDepartment};
+    if (!save) return { ...snapshot.rows, staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
     return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
       planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
-      memberId: staff.memberId, generation: snapshot.generation, metrics };
+      staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
   }
   return { read: request => load(request, false), prepare: request => load(request, true) };
 }

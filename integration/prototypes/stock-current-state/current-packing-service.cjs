@@ -2,30 +2,39 @@
 const { createCurrentStockSave } = require('./current-stock-save.cjs');
 const { createPackingStockPreparation } = require('./packing-stock-preparation.cjs');
 const { hash } = require('./commit-proof.cjs');
+const { WRITERS } = require('./stock-admission.cjs');
 // Private existing packing gateways only. PHOTOS/file protocol and real invoice/
 // dispatch remain separate protected flows, not enabled by this non-file service.
 function createCurrentPackingService({ company, items, store, protocol, coverage, authorityDependencies: deps }) {
   if (protocol?.planFormat !== 'SEGMENTED_V2' || !['NCT', 'GHR'].includes(company)
     || typeof deps?.projectPackingWorkroom !== 'function') throw Error('Current packing v2 scope/original public projector required');
-  const prepare = createPackingStockPreparation({ ...deps, company, items, store, protocol });
+  const guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(control=>{
+    if(!control.writerBuild||WRITERS.some(writer=>coverage?.[writer]?.verified!==true||coverage[writer].build!==control.writerBuild))throw Error('Inventory writer coverage incomplete; packing activation blocked');
+    return read(control);
+  })};
+  const prepare = createPackingStockPreparation({ ...deps, company, items, store, protocol:guardedProtocol });
   function department(value) { if (!['SUPPORT', 'WAREHOUSE'].includes(value)) throw Error('Original packing department required'); return value; }
   return {
     read: async request => {
       const result = await prepare.read({ company, department: department(request?.department) });
-      return { ...deps.projectPackingWorkroom(result.context, request.department), stockCurrent: result.stockCurrent };
+      return { ...deps.projectPackingWorkroom(result.context, request.department), staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
     },
     save: async request => {
       const originalDepartment = department(request?.department);
       let actor;
-      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol, coverage,
+      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:guardedProtocol, coverage,
         authenticate: async () => {
           const member = await deps.readMember();
           if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePackingStaff(member, [], originalDepartment);
           actor = { ...deps.requirePackingStaff(member, await deps.readStaffRecords(), originalDepartment), memberId: member._id };
           return actor;
-        }, prepare: command => prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details }) })({
+        }, prepare: async command => {
+          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
+          if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
+          return prepared;
+        } })({
         requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild, stockGeneration: request.stockGeneration,
-        input: { department: originalDepartment, details: request.input } });
+        ...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{}),input: { department: originalDepartment, details: request.input } });
       if (result.ok !== true) return result;
       const id = request.input.action === 'CREATE' ? hash(company, request.requestId, actor.memberId, 'PACKING') : request.input.id;
       await protocol.readSnapshot(async () => {

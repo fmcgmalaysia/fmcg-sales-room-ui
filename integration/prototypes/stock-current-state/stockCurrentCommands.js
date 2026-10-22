@@ -4983,36 +4983,45 @@ function createPurchaseBorrowReturnOptions({ company, items, store, protocol, au
 module.exports = { quoteUnusedBorrowReturn, createPurchaseBorrowReturnOptions };
 
 },
-// current-packing-service.cjs sha256:7a44248693f4bd637b8a35c29a1f5611652535271d991fd81a6d4f2d34ab99b6
+// current-packing-service.cjs sha256:86ac44e5d015b0e096bac004b8fd4b64935786b69c5a3752686296a14f690cf3
 "current-packing-service.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
 const { createPackingStockPreparation } = load("packing-stock-preparation.cjs");
 const { hash } = load("commit-proof.cjs");
+const { WRITERS } = load("stock-admission.cjs");
 // Private existing packing gateways only. PHOTOS/file protocol and real invoice/
 // dispatch remain separate protected flows, not enabled by this non-file service.
 function createCurrentPackingService({ company, items, store, protocol, coverage, authorityDependencies: deps }) {
   if (protocol?.planFormat !== 'SEGMENTED_V2' || !['NCT', 'GHR'].includes(company)
     || typeof deps?.projectPackingWorkroom !== 'function') throw Error('Current packing v2 scope/original public projector required');
-  const prepare = createPackingStockPreparation({ ...deps, company, items, store, protocol });
+  const guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(control=>{
+    if(!control.writerBuild||WRITERS.some(writer=>coverage?.[writer]?.verified!==true||coverage[writer].build!==control.writerBuild))throw Error('Inventory writer coverage incomplete; packing activation blocked');
+    return read(control);
+  })};
+  const prepare = createPackingStockPreparation({ ...deps, company, items, store, protocol:guardedProtocol });
   function department(value) { if (!['SUPPORT', 'WAREHOUSE'].includes(value)) throw Error('Original packing department required'); return value; }
   return {
     read: async request => {
       const result = await prepare.read({ company, department: department(request?.department) });
-      return { ...deps.projectPackingWorkroom(result.context, request.department), stockCurrent: result.stockCurrent };
+      return { ...deps.projectPackingWorkroom(result.context, request.department), staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
     },
     save: async request => {
       const originalDepartment = department(request?.department);
       let actor;
-      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol, coverage,
+      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:guardedProtocol, coverage,
         authenticate: async () => {
           const member = await deps.readMember();
           if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePackingStaff(member, [], originalDepartment);
           actor = { ...deps.requirePackingStaff(member, await deps.readStaffRecords(), originalDepartment), memberId: member._id };
           return actor;
-        }, prepare: command => prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details }) })({
+        }, prepare: async command => {
+          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
+          if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
+          return prepared;
+        } })({
         requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild, stockGeneration: request.stockGeneration,
-        input: { department: originalDepartment, details: request.input } });
+        ...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{}),input: { department: originalDepartment, details: request.input } });
       if (result.ok !== true) return result;
       const id = request.input.action === 'CREATE' ? hash(company, request.requestId, actor.memberId, 'PACKING') : request.input.id;
       await protocol.readSnapshot(async () => {
@@ -5030,7 +5039,7 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
 module.exports = { createCurrentPackingService };
 
 },
-// packing-stock-preparation.cjs sha256:cccee03e09adc88ac42102ece8e276a214cdc573bb86dff51201c1f228118cc5
+// packing-stock-preparation.cjs sha256:938051c26934a681b7a4109e51c9fb5dbb532a31b45c6041d6d188c1d7a453e8
 "packing-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -5100,10 +5109,11 @@ function createPackingStockPreparation(deps) {
         ...(validated.record.details.list.change?.lines || [])].map(l => l.taskId));
       return { validated, currentRecord, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
     });
-    if (!save) return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+    const originalStaff={memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,packingDepartment:staff.packingDepartment};
+    if (!save) return { ...snapshot.rows, staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
     return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
       planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
-      memberId: staff.memberId, generation: snapshot.generation, metrics };
+      staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
   }
   return { read: request => load(request, false), prepare: request => load(request, true) };
 }
