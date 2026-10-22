@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2885fd4 typed probe confirmed PUSHED existing PR220. ONE consolidated async consent
+question has now been sent for the exact2INIT+1TYPE retained SCPT fixtures; PENDING,
+not approved. Do NOT ask again or run either function before an actual matching
+human reply. New TYPE obsoleteFlag FIELD removal was explicitly stated; no record/
+lock deletion grant requested. Continue unaffected review, no native mutation yet.
+
 2026-10-23 SHARED-ADAPTER TYPED PROBE READY OFFLINE: NATIVE_TYPED_ROUNDTRIP_PROBE.txt.
 New standalone Admin wrapper,1fixed retained SCPT TYPE row,<=9queries/1insert/1CAS.
 Exact shared codec/store,5nativeDate fields vs text/nested strings, array/leading0/

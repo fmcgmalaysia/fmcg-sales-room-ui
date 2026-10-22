@@ -75,3 +75,8 @@ Remaining native setup/migration/recovery/security-sensitive permissions will
  for them. LEGACY_ADMISSION_RACE_WITNESS and all-writer quiescence gate remain OPEN.
  Existing schema/index readonly review1f2b508 confirmed PUSHED PR220. No computer
  interaction, new data, live code change or release performed this turn.
+
+2885fd4 code/test/scope packet confirmed PUSHED. Consolidated async consent request
+now SENT once, reply PENDING. Do not repeat or infer consent from another heartbeat.
+Both native functions remain NOT INSTALLED/NOT EXECUTED, no new fixture exists from
+this turn. Preserve original13records and all business data.
