@@ -22,7 +22,7 @@ async function inspectSegmentedStockRecovery({ store, company, requestId, member
   const packet = { company, operationId: key, generation: control.generation, controlVersion: control._version,
     pendingOperation: control.pending?.key || null, lockOwner: lock?.owner || null, lockAttempt: lock?.attempt || null,
     prepared: !!manifest, result: !!result, images: [], totalRecords: 0, offset, nextCursor: null,
-    completeInspection: false, recoveryPerformed: false };
+    completeInspection: false, receiptVerified: false, currentImagesVerified: false, recoveryPerformed: false };
   let status, plan;
   if (lock && (lock._id !== lockId || lock.company !== company || !lock.owner || !lock.attempt)) status = 'REVIEW_INVALID_LOCK';
   if (!status && manifest) {
@@ -66,9 +66,19 @@ async function inspectSegmentedStockRecovery({ store, company, requestId, member
     if (!plan || result.company !== company || result._id !== resultId || result.digest !== digest || result.stockOperationProtocol !== 2
       || !count(result.baseGeneration) || result.baseGeneration !== manifest.baseGeneration || result.outcome?.ok !== true
       || result.outcome.operationId !== key || result.outcome.generation !== result.baseGeneration + 1) status = 'REVIEW_INVALID_RESULT';
-    else if (control.pending) status = control.generation === result.baseGeneration && control.pending.phase === 'FINALIZE'
-      ? 'SAME_REQUEST_RECHECK_RESULT' : 'REVIEW_RESULT_BARRIER';
-    else status = control.generation >= result.outcome.generation ? 'CONFIRMED_RESULT' : 'REVIEW_RESULT_GENERATION';
+    else {
+      packet.receiptVerified = true;
+      const allAfter = packet.images.every(i => ['AFTER','FILE_DELETE_COMPLETED'].includes(i.image));
+      // A durable receipt is not proof that today's inspected rows still match.
+      // Exact BEFORE is a valid resume image only BEFORE a RESULT exists.
+      if ((control.pending || control.generation === result.outcome.generation) && !allAfter) status = 'REVIEW_RESULT_IMAGES';
+      else if (control.pending) status = control.generation !== result.baseGeneration || control.pending.phase !== 'FINALIZE'
+        ? 'REVIEW_RESULT_BARRIER' : !packet.completeInspection ? 'PAGED_RESULT_INSPECTION_ONLY' : 'SAME_REQUEST_RECHECK_RESULT';
+      else status = control.generation < result.outcome.generation ? 'REVIEW_RESULT_GENERATION'
+        : control.generation === result.outcome.generation && !packet.completeInspection ? 'PAGED_RESULT_INSPECTION_ONLY' : 'CONFIRMED_RESULT';
+      packet.currentImagesVerified = packet.completeInspection && allAfter
+        && ['CONFIRMED_RESULT','SAME_REQUEST_RECHECK_RESULT'].includes(status);
+    }
   }
   if (!status && control.pending && !manifest) status = 'REVIEW_MISSING_PREPARED_PLAN';
   if (!status && plan) {

@@ -291,7 +291,7 @@
       "source": "stockRecoveryRead.web.js",
       "target": "stockRecoveryRead.web.js",
       "kind": "NEW",
-      "sha256": "9708c656c41dd4a1c583e58992d2eb73616455a8db26a046ca7edc455251b13d",
+      "sha256": "1357ca0efde6363f7868e0292752d52b4e389a04b2d884aaf1430c4575ffc280",
       "beforeSha256": null
     },
     {
@@ -1747,7 +1747,7 @@
       "system": "MASTER",
       "target": "stockRecoveryRead.web.js",
       "source": "integration/prototypes/stock-current-state/stockRecoveryRead.web.js",
-      "sha256": "9708c656c41dd4a1c583e58992d2eb73616455a8db26a046ca7edc455251b13d",
+      "sha256": "1357ca0efde6363f7868e0292752d52b4e389a04b2d884aaf1430c4575ffc280",
       "exports": [
         "inspectStockSave"
       ],

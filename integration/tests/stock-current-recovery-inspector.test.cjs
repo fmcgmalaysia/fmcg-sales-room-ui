@@ -73,3 +73,14 @@ test('prepared plan may not touch control/lock or foreign collections during rec
   prepared.plan.writes[0].collection = 'Staff';
   assert.equal((await f.inspect()).status, 'REVIEW_INVALID_PREPARED_PLAN');
 });
+
+test('v1 completed receipt cannot hide an exact BEFORE image or missing retained plan',async()=>{
+  for(const kind of ['before','missing']){
+    const f=await fixture();await f.protocol.commit(f.command);
+    if(kind==='before')f.db.delete('StockPositions:A');
+    else f.db.delete('NCTActivity:'+hash('NCT/PURCHASE',f.identity.requestId,'M'));
+    const before=JSON.stringify([...f.db]),report=await f.inspect();
+    assert.equal(report.status,kind==='before'?'REVIEW_RESULT_IMAGES':'REVIEW_INVALID_RESULT');
+    assert.equal(report.currentImagesVerified,false);assert.equal(JSON.stringify([...f.db]),before);
+  }
+});

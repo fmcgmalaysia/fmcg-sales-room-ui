@@ -23,7 +23,7 @@ async function inspectStockRecovery({ store, company, requestId, memberId, input
   if (prepared?.stockOperationProtocol === 2) return inspectSegmentedStockRecovery({ store, company, requestId, memberId, input, domainWrites, pageSize, cursor });
   const packet = { company, operationId: key, generation: control.generation, controlVersion: control._version,
     pendingOperation: control.pending?.key || null, lockOwner: lock?.owner || null, lockAttempt: lock?.attempt || null,
-    prepared: !!prepared, result: !!result, images: [] };
+    prepared: !!prepared, result: !!result, images: [], receiptVerified: false, currentImagesVerified: false, recoveryPerformed: false };
   let status;
   if (lock && (lock._id !== lockId || lock.company !== company || !lock.owner || !lock.attempt)) status = 'REVIEW_INVALID_LOCK';
   if (!status && (prepared && (prepared._id !== key || prepared.company !== company || prepared.digest !== digest)
@@ -59,12 +59,17 @@ async function inspectStockRecovery({ store, company, requestId, memberId, input
   if (!status && control.pending && control.pending.key !== key) status = 'OTHER_OPERATION_PENDING';
   if (!status && packet.images.some(i => i.image === 'CONFLICT')) status = 'REVIEW_IMAGE_CONFLICT';
   if (!status && result) {
-    if (!Number.isSafeInteger(result.baseGeneration) || result.baseGeneration < 0 || !result.outcome?.ok
+    if (!prepared || !Number.isSafeInteger(result.baseGeneration) || result.baseGeneration < 0 || result.outcome?.ok !== true
       || result.outcome.operationId !== key || result.outcome.generation !== result.baseGeneration + 1
       || prepared && prepared.baseGeneration !== result.baseGeneration) status = 'REVIEW_INVALID_RESULT';
-    else if (control.pending) status = control.generation === result.baseGeneration && prepared
-      && packet.images.every(i => i.image === 'AFTER') ? 'SAME_REQUEST_FINALIZE_RESULT' : 'REVIEW_RESULT_BARRIER';
-    else status = control.generation >= result.baseGeneration + 1 ? 'CONFIRMED_RESULT' : 'REVIEW_RESULT_GENERATION';
+    else {
+      packet.receiptVerified = true;
+      const allAfter = packet.images.every(i => i.image === 'AFTER');
+      if ((control.pending || control.generation === result.outcome.generation) && !allAfter) status = 'REVIEW_RESULT_IMAGES';
+      else if (control.pending) status = control.generation === result.baseGeneration ? 'SAME_REQUEST_FINALIZE_RESULT' : 'REVIEW_RESULT_BARRIER';
+      else status = control.generation >= result.baseGeneration + 1 ? 'CONFIRMED_RESULT' : 'REVIEW_RESULT_GENERATION';
+      packet.currentImagesVerified = allAfter && ['CONFIRMED_RESULT','SAME_REQUEST_FINALIZE_RESULT'].includes(status);
+    }
   }
   if (!status && control.pending && !prepared) status = 'REVIEW_MISSING_PREPARED_PLAN';
   if (!status && prepared) {

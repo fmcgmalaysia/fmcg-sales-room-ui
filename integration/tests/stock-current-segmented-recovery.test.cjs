@@ -46,3 +46,52 @@ test('missing fragment, conflicting current image and unknown lock stay blocked;
     assert.equal(report.recoveryPerformed, false); assert.equal(JSON.stringify([...f.rows]), before);
   }
 });
+
+async function finish(f){
+  for(let attempt=0;attempt<200;attempt++)if((await f.protocol.commit(f.command)).ok)return;
+  assert.fail('Bounded fixture did not complete');
+}
+test('a valid RESULT cannot confirm a same-generation row reverted to its exact BEFORE image',async()=>{
+  for(const pending of [false,true]){
+    const f=await fixture();await finish(f);
+    const manifest=[...f.rows.values()].find(row=>row.action==='STOCK_PLAN_MANIFEST');
+    f.rows.set('StockPositions/S0',{_id:'S0',company:'NCT',_version:'V0',onHand:100});
+    if(pending){const control=f.rows.get(f.protocol.ids.journal+'/'+f.protocol.ids.controlId);control.generation=0;
+      control.pending={key:manifest._id,digest:manifest.digest,planHash:manifest.planHash,phase:'FINALIZE',cursor:3,count:3};}
+    const before=JSON.stringify([...f.rows]),report=await f.inspect();
+    assert.equal(report.images[0].image,'BEFORE');assert.equal(report.status,'REVIEW_RESULT_IMAGES');
+    assert.equal(report.currentImagesVerified,false);assert.equal(report.recoveryPerformed,false);
+    assert.equal(JSON.stringify([...f.rows]),before);
+  }
+});
+test('completed RESULT on a partial diagnostic page is not whole-operation verification',async()=>{
+  const f=await fixture(51);await finish(f);const before=JSON.stringify([...f.rows]);
+  const page=await f.inspect({pageSize:25});
+  assert.equal(page.status,'PAGED_RESULT_INSPECTION_ONLY');assert.equal(page.receiptVerified,true);
+  assert.equal(page.currentImagesVerified,false);assert.equal(page.completeInspection,false);
+  const next=await f.inspect({pageSize:25,cursor:page.nextCursor});
+  assert.equal(next.status,'PAGED_RESULT_INSPECTION_ONLY');assert.equal(next.currentImagesVerified,false);
+  assert.equal(JSON.stringify([...f.rows]),before);
+});
+test('pending RESULT publication also requires whole-page image verification before recommending original finalization',async()=>{
+  const f=await fixture(3);await finish(f);
+  const manifest=[...f.rows.values()].find(row=>row.action==='STOCK_PLAN_MANIFEST'),control=f.rows.get(f.protocol.ids.journal+'/'+f.protocol.ids.controlId);
+  control.generation=0;control.pending={key:manifest._id,digest:manifest.digest,planHash:manifest.planHash,phase:'FINALIZE',cursor:3,count:3};
+  const before=JSON.stringify([...f.rows]),page=await f.inspect({pageSize:1});
+  assert.equal(page.status,'PAGED_RESULT_INSPECTION_ONLY');assert.equal(page.currentImagesVerified,false);
+  const complete=await f.inspect();assert.equal(complete.status,'SAME_REQUEST_RECHECK_RESULT');
+  assert.equal(complete.receiptVerified,true);assert.equal(complete.currentImagesVerified,true);
+  assert.equal(JSON.stringify([...f.rows]),before);
+});
+test('latest whole result images and later-generation receipt-only evidence remain explicitly distinct',async()=>{
+  const f=await fixture();await finish(f);
+  const current=await f.inspect();assert.equal(current.status,'CONFIRMED_RESULT');
+  assert.equal(current.receiptVerified,true);assert.equal(current.currentImagesVerified,true);
+  const before=await f.store.read('StockPositions','S0');
+  const command={requestId:'22222222-2222-4222-8222-222222222222',memberId:'M',input:{next:1},
+    prepare:async()=>({writes:[{collection:'StockPositions',before,after:{...before,onHand:120}}]})};
+  for(let i=0;i<20;i++)if((await f.protocol.commit(command)).ok)break;
+  const old=await f.inspect();assert.equal(old.status,'CONFIRMED_RESULT');
+  assert.equal(old.receiptVerified,true);assert.equal(old.currentImagesVerified,false);
+  assert.ok(old.images.every(row=>row.image==='LATER_GENERATION_NOT_RECHECKED'));
+});

@@ -120,6 +120,30 @@ test('scope corruption and provider errors fail without exposing raw diagnostics
   const g = fixture(); g.admin(); g.items.query = () => { throw Error('PRIVATE_PROVIDER_DIAGNOSTIC'); };
   const failure = await g.api.inspectStockSave(g.request); assert.equal(failure.ok, false); assert.equal(JSON.stringify(failure).includes('PRIVATE_PROVIDER'), false);
 });
+
+test('actual Admin bundle distinguishes valid receipt, partial page and corrupt same-generation images without writes',async()=>{
+  const f=fixture();f.admin();
+  const codec=require('../prototypes/stock-current-state/segmented-plan.cjs').createSegmentedPlanCodec({company:'NCT',domainWrites:true});
+  const encoded=codec.encode({...f.request,key:f.key,digest:f.digest,baseGeneration:0,attempt:'A',plan:{writes:['ONE','TWO'].map(id=>({
+    collection:'NCTTasks',before:null,after:{_id:id,company:'NCT',secret:'PRIVATE_IMAGE'}}))}});
+  for(const row of [encoded.manifest,...encoded.fragments])f.put('NCTActivity',row);
+  const plan=codec.decode({manifest:encoded.manifest,fragments:encoded.fragments,key:f.key,digest:f.digest,memberId:f.request.memberId,requestId:f.request.requestId});
+  for(const change of plan.writes)f.put(change.collection,change.after);
+  f.put('NCTActivity',{_id:f.resultId,company:'NCT',stockOperationProtocol:2,digest:f.digest,baseGeneration:0,outcome:{ok:true,operationId:f.key,generation:1}});
+  f.put('NCTActivity',{_id:f.controlId,company:'NCT',generation:1,stockCommitVersion:'C1',pending:null});
+  const before=JSON.stringify([...f.db]);
+  const page=await f.api.inspectStockSave({...f.request,pageSize:1});
+  assert.equal(page.ok,true);assert.equal(page.report.status,'PAGED_RESULT_INSPECTION_ONLY');
+  assert.equal(page.report.receiptVerified,true);assert.equal(page.report.currentImagesVerified,false);
+  const complete=await f.api.inspectStockSave(f.request);assert.equal(complete.report.status,'CONFIRMED_RESULT');
+  assert.equal(complete.report.currentImagesVerified,true);assert.equal(JSON.stringify([...f.db]),before);
+  // Deliberate local corruption, not a native delete or an authorized repair.
+  f.db.delete('NCTTasks:TWO');const corrupt=JSON.stringify([...f.db]);
+  const report=await f.api.inspectStockSave(f.request);
+  assert.equal(report.report.status,'REVIEW_RESULT_IMAGES');assert.equal(report.report.currentImagesVerified,false);
+  assert.equal(report.report.recoveryPerformed,false);assert.equal(JSON.stringify([...f.db]),corrupt);
+  assert.equal(JSON.stringify(report).includes('PRIVATE_IMAGE'),false);assert.equal(JSON.stringify(report).includes('NOT_FOR_REPORT'),false);
+});
 test('standalone recovery bundle contains exact current inspector and query-only store bodies', () => {
   const bundle = fs.readFileSync(require.resolve('../prototypes/stock-current-state/stockRecoveryRead.web.js'), 'utf8');
   for (const [file, imports] of [['recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');", "const { inspectSegmentedStockRecovery } = require('./segmented-recovery-inspector.cjs');"]],

@@ -1,5 +1,17 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 RECOVERY RESULT/IMAGE MISCLASSIFICATION FIXED OFFLINE:
+RECOVERY_RECEIPT_IMAGE_SEPARATION.txt. Existing v1/v2 diagnostics could confirm RESULT
+despite exactBEFORE/current generation or uninspected pages; v1 also missingplan.
+Minimum readonly guards + separate receiptVerified/currentImagesVerified now reject
+those states, preserve later-generation historical receipt and finalfile semantics.
+38affectedpass0fail908.8182ms, generatedAdminprivacy/exactbundle/manifest tested.
+No business runtime/source/lock/permission/native/Publish change; originals d447185.
+Prior FULL1123 belongs805334b and is NOT an updated full total for this increment.
+805334b identity-chain confirmed PUSHED PR220. Native two-probe grant still PENDING,
+do not repeat/run. CoverageEMPTY/ACTIVEOFF, all native/recovery/cutover/release gates
+still OPEN; diagnostic status never grants operational repair or release authority.
+
 2026-10-23 PURCHASE EXPECTED IDENTITY CHAIN CLOSED OFFLINE:
 PURCHASE_EXPECTED_IDENTITY_CHAIN.txt. Actual-root counterexample15tests10pass5fail
 proved expected staff dropped by Purchase task/borrow wrappers and page relay; generic
