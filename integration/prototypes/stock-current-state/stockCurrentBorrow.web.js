@@ -16,9 +16,9 @@ import { createSdkConditionalStore, createSegmentedFencedProof, planCollections,
 // schemas, initialization, shadow and capacity acceptance. Browser cannot set this.
 const writerCoverage = Object.freeze({});
 const requiredWriters = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
-// Only this field has a recorded fresh CMS type inspection. Other company schemas
-// remain a release gate; do not guess from field names or auto-create collections.
-const verifiedDateFields = Object.freeze({ NCTActivity: ['activityTime'] });
+// Both company journal activityTime fields were inspected in MASTER CMS. Other
+// fields/collections and actual SDK roundtrips remain gates; never infer types.
+const verifiedDateFields = Object.freeze({ NCTActivity: ['activityTime'], NCTActivity1: ['activityTime'] });
 async function privateGateway(company) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Known Purchase company required');
   await getPurchaseStaffContext(); // Original authorization BEFORE any stock data.

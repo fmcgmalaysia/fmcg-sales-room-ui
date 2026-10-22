@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 GHR DATE: GHR_JOURNAL_SCHEMA.txt. Fresh MASTER GHR Activity field
+activityTime verified Date and Time then Cancel, no schema/data edits. Candidate
+root now supplies exact DateTime codec for BOTH journals. Empty writer coverage
+still closed, original reauthorization retained; no actual SDK roundtrip claimed.
+Focused6pass0fail353.2131ms; original production untouched, all release gates OPEN.
+
 2026-10-22 OUTSTANDING VIEW: PURCHASE_OUTSTANDING_VIEW.txt. Separate Purchase-only
 company debt view uses current ACTIVE relations, no task archived filter; both
 archived parties remain visible. Exact25row paging, unknown/error != zero, original

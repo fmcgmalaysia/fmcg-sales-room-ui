@@ -20,8 +20,10 @@ async function root(verifiedMockCoverage = false) {
     readFulfilmentContext: async (company, staff) => { calls.push('CONTEXT'); return f.deps.readContext(company, staff); },
     ...Object.fromEntries(['requirePurchaseStaff','projectPurchaseOrders','readAllocations','readCustomerShipments','readPackingLists','packingHeld','readPreparation'].map(k => [k, f.deps[k]])),
     readPreparation: load('warehousePreparation.js').readPreparation, projectPreparation: load('warehousePreparation.js').projectPreparation, operationId, planCollections,
-    createSdkConditionalStore: args => { calls.push('SDK'); assert.equal(args.company, 'NCT'); assert.deepEqual(copy(args.collections), planCollections('NCT', true));
-      assert.deepEqual(copy(args.dateTimeFields), { NCTActivity: ['activityTime'] }); return f.store; },
+    createSdkConditionalStore: args => { calls.push('SDK:'+args.company); assert.ok(['NCT','GHR'].includes(args.company));
+      assert.deepEqual(copy(args.collections), planCollections(args.company, true));
+      const journal = args.company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+      assert.deepEqual(copy(args.dateTimeFields), { [journal]: ['activityTime'] }); return f.store; },
     createSegmentedFencedProof: args => { assert.equal(args.store, f.store); assert.equal(args.domainWrites, true); return f.protocol; },
     createCurrentPurchaseBorrowGateway };
   let source = fs.readFileSync(path.join(folder, 'stockCurrentBorrow.web.js'), 'utf8');
@@ -77,10 +79,12 @@ test('root and existing relay can drive actual scoped borrow plan with same requ
   assert.equal([...f.db.values()].filter(r => r.action === 'STOCK_TRANSFER_CURRENT').length, 1);
 });
 
-test('unapproved member, foreign company, unverified GHR schema and oversize messages cannot read stock or save', async () => {
+test('unapproved member, foreign company, unverified writer coverage and oversize messages cannot read stock or save', async () => {
   const f = await root(); assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('OTHER', { borrowerTaskId: 'A' })).ok, false);
   assert.equal(f.calls.length, 0);
-  assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('GHR', { borrowerTaskId: 'A' })).ok, false); assert.deepEqual(f.calls, ['AUTH']);
+  assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('GHR', { borrowerTaskId: 'A' })).ok, false);
+  assert.deepEqual(f.calls, ['AUTH','SDK:GHR','StaffMasterAccess']);
+  assert.equal(f.calls.includes('CONTEXT'), false, 'verified field type does not authorize stock access before all-writer coverage');
   f.calls.length = 0; f.deps.readMember = async () => ({ _id: 'M1', status: 'PENDING' });
   assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' })).ok, false); assert.deepEqual(f.calls, ['AUTH']);
   f.calls.length = 0; assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'X'.repeat(6001) })).ok, false);
