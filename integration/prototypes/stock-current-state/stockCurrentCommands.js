@@ -6235,7 +6235,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
 module.exports = { dispatchCurrentSalesGateway };
 
 },
-// current-order-intake.cjs sha256:1f5bb48b43e924088c9eae2e791f5431abea40b446dab72242b753599387b299
+// current-order-intake.cjs sha256:a75380d8ac17df4d208801e67a5edb71205984e9b3eb8109a82c0f72fa84790c
 "current-order-intake.cjs": (load, module) => {
 'use strict';
 
@@ -6330,7 +6330,8 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
     if (result?.ok === false && result.pending === true && result.requestId === identity.requestId
       && ['BEFORE', 'APPLY', 'VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
       && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0 && result.completedCount >= 0 && result.completedCount <= result.totalRecords) {
-      return { ok: false, pending: true, orderId: input.orderId, destination: company };
+      return { ok: false, pending: true, orderId: input.orderId, destination: company, submissionId: input.submissionId,
+        phase: result.phase, completedCount: result.completedCount, totalRecords: result.totalRecords };
     }
     if (result?.ok !== true || !Number.isSafeInteger(result.generation) || result.generation < 1) throw Error('Current intake commit unconfirmed');
     const receipt = await readReceipt(input);

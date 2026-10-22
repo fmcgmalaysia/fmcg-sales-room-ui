@@ -62,7 +62,12 @@ async function fixture({ company = 'NCT', steps = 20, coverage = true, generated
     for (let i = 0; i < 300; i++) {
       const response = await send(input); assert.equal(response.status, 200, response.body.error);
       if (response.body.ok === true) return copy(response.body);
-      assert.deepEqual(copy(response.body), { ok: false, pending: true, orderId: input.orderId, destination: company });
+      assert.deepEqual(Object.keys(response.body).sort(), ['ok','pending','orderId','destination','submissionId','phase','completedCount','totalRecords'].sort());
+      assert.equal(response.body.ok, false); assert.equal(response.body.pending, true); assert.equal(response.body.orderId, input.orderId);
+      assert.equal(response.body.destination, company); assert.equal(response.body.submissionId, input.submissionId);
+      assert.ok(['BEFORE','APPLY','VERIFY'].includes(response.body.phase)); assert.ok(Number.isSafeInteger(response.body.completedCount));
+      assert.ok(Number.isSafeInteger(response.body.totalRecords)); assert.ok(response.body.totalRecords > 0);
+      assert.ok(response.body.completedCount >= 0 && response.body.completedCount <= response.body.totalRecords);
     }
     throw Error('Intake did not finish');
   }

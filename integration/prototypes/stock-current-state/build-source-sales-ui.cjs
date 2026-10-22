@@ -12,6 +12,7 @@ const document='<script src="sales-room/customer-documents.js?v=20261017-site-bi
 if(html.split(document).length!==2)throw Error('Exact original customer document script anchor changed');
 html=html.replace(document,'<script src="sales-room/customer-documents.js?v=20261022-current-sales-v1"></script>');
 html=require('./source-sales-date-ui-overlay.cjs')(html);
+html=require('./source-intake-progress-ui.cjs')(html);
 html=html.replace('<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script>','<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/current-dates.js?v=20261022-current-sales-v1"></script>');
 for(const script of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(script[1].trim())new Function(script[1]);
 const files={'index.html':html,'current-requests.js':read('integration/prototypes/stock-current-state/source-sales-current-requests.js'),'current-dates.js':read('integration/prototypes/stock-current-state/source-sales-dates.js'),'order-adjustment.js':read('integration/prototypes/stock-current-state/sales-order-adjustment.candidate.js'),'shipment-ui.js':read('integration/prototypes/stock-current-state/sales-shipment-ui.candidate.js'),'customer-documents.js':read('integration/prototypes/stock-current-state/customer-documents.candidate.js')};

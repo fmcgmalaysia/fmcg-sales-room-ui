@@ -91,7 +91,8 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
     if (result?.ok === false && result.pending === true && result.requestId === identity.requestId
       && ['BEFORE', 'APPLY', 'VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
       && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0 && result.completedCount >= 0 && result.completedCount <= result.totalRecords) {
-      return { ok: false, pending: true, orderId: input.orderId, destination: company };
+      return { ok: false, pending: true, orderId: input.orderId, destination: company, submissionId: input.submissionId,
+        phase: result.phase, completedCount: result.completedCount, totalRecords: result.totalRecords };
     }
     if (result?.ok !== true || !Number.isSafeInteger(result.generation) || result.generation < 1) throw Error('Current intake commit unconfirmed');
     const receipt = await readReceipt(input);

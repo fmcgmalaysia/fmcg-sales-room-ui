@@ -13,6 +13,7 @@ backend=once(backend,"return {ok:true,orderId:normalize(orderId),message:'Shipme
 let page=load('sales-room/wix/sales-room-page.js');
 page=once(page,"message.requestId || '', message.expectedShipmentRevision);","message.requestId || '', message.expectedShipmentRevision, message.stockCurrent);");
 const outputs={'source-onboarding.candidate.js':backend,'source-sales-room-page.candidate.js':page};
+outputs['source-onboarding.candidate.js']=require('./source-intake-progress-backend.cjs').onboarding(backend);
 for(const[name,source]of Object.entries(outputs)){
  new Function(source.replace(/^import[\s\S]*?from\s+['"][^'"]+['"];?/gm,'').replace(/^export /gm,''));
  const target=path.join(__dirname,name);if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==source)throw Error('Source order-date overlay differs: '+name);}else fs.writeFileSync(target,source);

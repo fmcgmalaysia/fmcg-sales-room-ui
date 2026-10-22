@@ -1082,17 +1082,24 @@ function checkNctReceipt(pending){
   window.parent.postMessage({type:'SALES_ROOM_NCT_RECEIPT_REQUEST',orderId:pending.order.orderId,requestId:pending.receiptRequestId},'*');
   const checkId=pending.receiptRequestId;setTimeout(()=>{if(pendingNctSubmit===pending&&pending.receiptRequestId===checkId){pending.receiptRequestId=null;checkNctReceipt(pending);}},12000);
 }
+function sendOriginalNctPhase(pending){
+  if(pendingNctSubmit!==pending)return;
+  const serial=(pending.segmentSerial||0)+1;pending.segmentSerial=serial;pending.phase='SUBMIT';
+  // This is only a transport correlation ID. MASTER command identity and Source
+  // immutable submission/order lock remain exactly the original server identities.
+  pending.transportRequestId=serial===1?pending.requestId:pending.requestId+'-phase-'+serial;
+  window.parent.postMessage({type:'SALES_ROOM_SUBMIT_ORDER',orderId:pending.order.orderId,destination:pending.destination,requestId:pending.transportRequestId},'*');
+  setTimeout(()=>{if(pendingNctSubmit!==pending||pending.segmentSerial!==serial||pending.phase!=='SUBMIT')return;
+    if(document.getElementById('orderDetailArea')?.dataset.nctOrderId!==pending.order.orderId)return;checkNctReceipt(pending);
+  },45000);
+}
 function submitOrderToNct(order,destination='NCT'){
   if(pendingNctSubmit||!['NCT','GHR'].includes(destination))return;
   const requestId=crypto.randomUUID();pendingNctSubmit={order,destination,requestId,phase:'SUBMIT',checks:0};
   const status=document.getElementById('salesQtyStatus');if(status)status.textContent='Submitting to '+destination+' and checking costs…';
   salesQtyBusy(true);document.querySelectorAll('.submit-menu').forEach(menu=>menu.classList.remove('show'));
   showNctSubmissionFeedback('Submitting to '+destination+' · 正在交单','Sending this order and waiting for the Master receipt. 正在发送订单并等待接收回执。',order.orderId,null,true);
-  window.parent.postMessage({type:'SALES_ROOM_SUBMIT_ORDER',orderId:order.orderId,destination,requestId},'*');
-  setTimeout(()=>{if(pendingNctSubmit?.requestId!==requestId||pendingNctSubmit.phase!=='SUBMIT')return;
-    if(document.getElementById('orderDetailArea')?.dataset.nctOrderId!==order.orderId)return;
-    checkNctReceipt(pendingNctSubmit);
-  },45000);
+  sendOriginalNctPhase(pendingNctSubmit);
 }
 window.addEventListener('message',event=>{
   const message=event.data||{};if(event.source!==window.parent)return;
@@ -1104,9 +1111,23 @@ window.addEventListener('message',event=>{
   }
   if(message.type!=='SALES_ROOM_ORDER_ACTION_RESULT'||!['SUBMIT_NCT','SUBMIT_GHR'].includes(message.action))return;
   event.stopImmediatePropagation();
-  if(!pendingNctSubmit||message.requestId!==pendingNctSubmit.requestId||message.orderId!==pendingNctSubmit.order.orderId)return;
+  if(!pendingNctSubmit||message.requestId!==(pendingNctSubmit.transportRequestId||pendingNctSubmit.requestId)||message.orderId!==pendingNctSubmit.order.orderId)return;
   const pending=pendingNctSubmit,order=pending.order;
   if(document.getElementById('orderDetailArea')?.dataset.nctOrderId!==order.orderId)return;
+  if(message.pending===true){
+    if(pending.phase!=='SUBMIT')return;
+    const valid=message.ok===false&&message.destination===pending.destination&&message.submissionId===pending.destination+'-'+order.orderId
+      &&['BEFORE','APPLY','VERIFY'].includes(message.phase)&&Number.isSafeInteger(message.completedCount)&&Number.isSafeInteger(message.totalRecords)
+      &&message.totalRecords>0&&message.completedCount>=0&&message.completedCount<=message.totalRecords;
+    if(!valid){pending.error='Master intake progress is unconfirmed. Original order retained.';checkNctReceipt(pending);return;}
+    pending.continuations=(pending.continuations||0)+1;
+    if(pending.continuations>64){pending.error='Automatic progress paused. Retry only this same order.';finishNctUncertainty(pending);return;}
+    pending.phase='CONTINUE';salesQtyBusy(true);
+    const text='Master receiving 正在接收订单 · '+message.phase+' · '+message.completedCount+' / '+message.totalRecords;
+    const status=document.getElementById('salesQtyStatus');if(status)status.textContent=text;
+    showNctSubmissionFeedback('Submitting to '+pending.destination+' · 正在交单',text,order.orderId,null,true);
+    const serial=pending.segmentSerial;setTimeout(()=>{if(pendingNctSubmit===pending&&pending.segmentSerial===serial&&pending.phase==='CONTINUE')sendOriginalNctPhase(pending);},250);return;
+  }
   salesQtyBusy(false);const status=document.getElementById('salesQtyStatus');
   if(!message.ok||!message.receiptId||message.destination!==pending.destination||!Number.isFinite(Date.parse(message.masterReceivedAt))){
     if(/504|timeout|timed.out|network|receipt.*not.confirmed/i.test(String(message.error||''))){pending.error=message.error;checkNctReceipt(pending);return;}

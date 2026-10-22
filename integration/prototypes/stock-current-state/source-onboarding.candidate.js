@@ -804,6 +804,14 @@ async function withSalesOrderMutation(orderId, staff, action) {
   }
 }
 
+function originalIntakeProgress(error,orderId,target){
+  const progress=error?.stockIntakeProgress;
+  if(progress?.ok!==false||progress.pending!==true||progress.orderId!==normalize(orderId)||progress.destination!==target||progress.submissionId!==target+'-'+normalize(orderId)
+    ||!['BEFORE','APPLY','VERIFY'].includes(progress.phase)||!Number.isSafeInteger(progress.completedCount)||!Number.isSafeInteger(progress.totalRecords)
+    ||progress.totalRecords<=0||progress.completedCount<0||progress.completedCount>progress.totalRecords)return null;
+  return Object.freeze({ok:false,pending:true,orderId:normalize(orderId),destination:target,submissionId:progress.submissionId,
+    phase:progress.phase,completedCount:progress.completedCount,totalRecords:progress.totalRecords});
+}
 export const submitSalesRoomOrder = webMethod(
   Permissions.SiteMember,
   async (orderId, destination) => {
@@ -819,8 +827,9 @@ export const submitSalesRoomOrder = webMethod(
         receipt = await withSalesOrderMutation(orderId, staff,
           orderEntry => { entered = true; return submitNctSalesOrder({ ...input, lockedOrderEntry: orderEntry }); });
       } catch (error) {
-        if (entered) throw error;
-        receipt = await submitNctSalesOrder({ ...input, initialError: error });
+        if (entered) {const progress=originalIntakeProgress(error,orderId,target);if(progress)return progress;throw error;}
+        try {receipt = await submitNctSalesOrder({ ...input, initialError: error });}
+        catch(retryError){const progress=originalIntakeProgress(retryError,orderId,target);if(progress)return progress;throw retryError;}
       }
       return Object.freeze({ ...receipt, status: 'SUBMITTED TO ' + target });
     }

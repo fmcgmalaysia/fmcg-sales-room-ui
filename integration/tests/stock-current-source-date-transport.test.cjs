@@ -23,7 +23,8 @@ test('Source parent forwards optional current metadata only through original exi
  assert.equal(candidate.replace("message.requestId || '', message.expectedShipmentRevision, message.stockCurrent);","message.requestId || '', message.expectedShipmentRevision);"),original);
  const backend=fs.readFileSync(path.join(folder,'source-onboarding.candidate.js'),'utf8'),prior=fs.readFileSync(path.join(root,'sales-room/wix/onboarding.web.js'),'utf8').replace(/\r\n/g,'\n');
  assert.equal(backend.slice(0,backend.indexOf('export const saveSalesRoomOrderPlanning')),prior.slice(0,prior.indexOf('export const saveSalesRoomOrderPlanning')));
- assert.equal(backend.slice(backend.indexOf('\nasync function withSalesOrderMutation')),prior.slice(prior.indexOf('\nasync function withSalesOrderMutation')));
+ const intake=require(path.join(folder,'source-intake-progress-backend.cjs')).onboarding(prior);
+ assert.equal(backend.slice(backend.indexOf('\nasync function withSalesOrderMutation')),intake.slice(intake.indexOf('\nasync function withSalesOrderMutation')));
 });
 test('original source staff/customer/PO/revision/date guards run before optional current forwarding, with no Source business write',async()=>{
  const f=fixture(),reply=await f.save(...f.args,meta);assert.equal(reply.ok,true);assert.equal(reply.stockGeneration,4);assert.equal(reply.company,'NCT');assert.equal(reply.shipmentDateRevision,'R');
