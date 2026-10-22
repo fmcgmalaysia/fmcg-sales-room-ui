@@ -72,3 +72,26 @@ Code: isolated diagnostic increment implemented/tested; overall release not comp
 GitHub Pages: unchanged, no dispatch. Wix: unchanged this turn, no sync/Publish.
 Public: current inventory/borrowing workflow unavailable/unverified. ACTIVE and real
 invoice/physical exit OFF. Continue existing PR220; no main merge or automation pause.
+
+eae231e confirmed pushed to existing branch/PR220. No tracked source changes left.
+
+Bounded next native prerequisite research (not an implemented migration or test run)
+Official SDK patch.run exposes condition; prior native version-equality tests stay
+valid. Official WQL docs say exists:false matches absent OR valueless/null fields,
+so it is NOT an exact JavaScript own-property absence condition. A safe legacy
+initialization candidate must privately reject ambiguous company/version inputs,
+bind the exact fresh native _updatedDate plus known company/presence/version conditions,
+and prove stale date/competing initialization refusal with retained synthetic records.
+Wix updates _updatedDate on item mutation, but whether this conjunction is supported
+by installed SDK/native CMS condition has NOT been measured. Do not migrate original
+tasks, substitute ordinary read-then-write, or assume missing-version CAS works.
+Potential isolated proof scope:2fixed new synthetic StockProtocolTest rows, Admin-only,
+small field patches and readbacks, no delete/reset/replay/business/CMS schema/permissions/
+Publish. No such new write grant was requested or received/executed this turn. Prepare
+the exact test/code before consolidating necessary authority; old limited test records
+and exhausted lock-delete grants do not cover it. No need re-run existing readonly50IDs.
+Primary sources checked:
+https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-patch/run
+https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language
+REST patch/query whole pages again exceeded4MiB web reader limit; no repeat/bypass.
+This is not a platform inability claim. No secondary article used as implementation proof.

@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+eae231e lifecycle shadow increment confirmed PUSHED existing PR220. Further bounded
+initialization research: Wix WQL exists:false also matches null, not strict JS absence;
+do not claim it proves safe unversioned-task bootstrap. SDK patch.run docs still expose
+condition, native version-equality proved previously, but missing-version + native
+_updatedDate conjunction UNKNOWN. No new test fixture/write/lock/delete authorized or
+executed this turn. Next candidate probe must be fixed isolated Admin-only/2retained
+synthetic rows/no deletion; prepare code first, consolidate actual missing authority
+with other native gates when reviewable. Do not infer permission from old7row/lock tests.
+
 2026-10-23 INITIAL V2 SHADOW GAP CLOSED OFFLINE: LIFECYCLE_SHADOW_PARITY.txt.
 Retained counterexamples prove legacy physical-only shadow accepts bad borrow repayment,
 claim dispatch/highwater/lifecycle and truthy nonstring version metadata. New private
