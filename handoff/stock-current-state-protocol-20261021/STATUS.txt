@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 REFERENCE COST DURABLE UI/FAILURE AUDIT: COST_REFERENCE_DURABLE_UI.txt.
+Original button/parent/web/root uses existing Purchase request cache/tracker/resume;
+own auth+identity, same UUID/phase, finite progress, strict result/cache cleanup, known
+failure not success. Original ATTEMPT+FAILED audit under same fence; no task/stock/PO
+changes/provider recapture on replay.894currentpass0fail19253.6354ms; UI7pass567.2221ms;
+original4costretry pass111.529ms. Runtime96/49. Node/VM/mock ONLY, not native/browser.
+NEXT remaining original shared record/file roots and Source large-order phase UX;
+native/recovery/capacity/lifecycle/cutover/shadow/Loaded-endtoend/review/fourrelease OPEN.
+Coverage EMPTY/ACTIVE OFF. First user test ends Loaded; invoice/exit OFF. No new finance.
+
 2026-10-22 ORIGINAL COST REFERENCE ROOT: COST_REFERENCE_ACTUAL_ROOT.txt. Original
 SiteMember/authorizer/retry preserved, optional metadata/private default current root,
 exact-ID plus original bounded-query context; no full journal scan. Same fence and

@@ -69,3 +69,51 @@ test('original incomplete/invoice locks, Purchase authority and expired legacy l
   const j = await fixture(); await finish(j); j.member.status = 'PENDING'; await assert.rejects(j.save(j.request));
   assert.equal(j.captures(), 1);
 });
+
+test('known read-only provider failure retains original failure audit once, no task/order/stock mutation or false success', async () => {
+  for (const company of ['NCT', 'GHR']) {
+    const f = await fixture(company); let attempts = 0;
+    f.deps.captureCosts = async () => { attempts++; throw Object.assign(Error('Private provider detail must not escape'), { code: 'POINTBASE_SERVICE_UNAVAILABLE' }); };
+    const before = JSON.stringify([...f.db].filter(([key]) => key.startsWith(f.orders + ':') || key.startsWith(f.tasks + ':') || key.startsWith('Stock')));
+    const result = await finish(f);
+    assert.equal(result.ok, false); assert.equal(result.stockFinal, true); assert.equal(result.error, 'POINTBASE_SERVICE_UNAVAILABLE');
+    assert.equal(result.stockGeneration, 1); assert.equal(attempts, 1);
+    assert.equal(JSON.stringify([...f.db].filter(([key]) => key.startsWith(f.orders + ':') || key.startsWith(f.tasks + ':') || key.startsWith('Stock'))), before);
+    assert.equal([...f.db.values()].filter(row => row.action === 'COST_RETRY_ATTEMPT').length, 1);
+    const failures = [...f.db.values()].filter(row => row.action === 'COST_RETRY_RESULT');
+    assert.equal(failures.length, 1); assert.equal(failures[0].result, 'FAILED'); assert.equal(failures[0].details.outcome.ok, false);
+    assert.equal(JSON.stringify(failures).includes('Private provider detail'), false);
+    assert.deepEqual(copy(await f.save(f.request)), copy(result)); assert.equal(attempts, 1);
+    f.member.status = 'PENDING'; await assert.rejects(f.save(f.request)); assert.equal(attempts, 1);
+  }
+});
+
+test('lost failed-audit persistence resumes same original failure receipt, never calls provider again', async () => {
+  const f = await fixture(); let attempts = 0, interrupted = false;
+  f.deps.captureCosts = async () => { attempts++; throw Error('Private unknown network error'); };
+  const insert = f.store.insert;
+  f.store.insert = async (collection, row) => {
+    if (row.action === 'COST_RETRY_RESULT' && !interrupted) { interrupted = true; throw Error('Failure audit interrupted'); }
+    return insert(collection, row);
+  };
+  for (let i = 0; i < 20; i++) {
+    try { const result = await f.save(f.request); assert.equal(result.pending, true); }
+    catch (error) { assert.match(error.message, /Failure audit interrupted/); break; }
+  }
+  assert.equal(interrupted, true); await assert.rejects(f.protocol.readSnapshot(() => null), /pending/);
+  const result = await finish(f); assert.equal(result.ok, false); assert.equal(result.stockFinal, true);
+  assert.equal(result.error, 'COST_RETRY_SAVE_FAILED'); assert.equal(attempts, 1);
+  assert.equal([...f.db.values()].filter(row => row.action === 'COST_RETRY_RESULT').length, 1);
+});
+
+test('invalid provider payload is an original terminal audit but internal validation failures are never promoted', async () => {
+  const f = await fixture(); f.deps.captureCosts = async () => ({});
+  const failed = await finish(f); assert.equal(failed.ok, false); assert.equal(failed.error, 'POINTBASE_RESULT_INVALID'); assert.equal(failed.stockFinal, true);
+  const g = await fixture(), original = g.deps.createPurchaseCostRetry;
+  g.deps.createPurchaseCostRetry = dependencies => async request => {
+    await original(dependencies)(request); throw Error('Private invariant after a successful task simulation');
+  };
+  const before = JSON.stringify([...g.db]); await assert.rejects(g.save(g.request), /Private invariant/);
+  assert.equal(JSON.stringify([...g.db]), before); assert.equal(g.captures(), 1);
+  assert.equal([...g.db.values()].some(row => row.action === 'COST_RETRY_RESULT'), false);
+});

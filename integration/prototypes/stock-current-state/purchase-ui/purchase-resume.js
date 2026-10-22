@@ -1,7 +1,7 @@
 /* Candidate-only original-request recovery and durable internal GP staging.
    No fake workspace, inventory reads, cache scans, legacy receipts or unlock. */
 (() => {
-  const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','BORROW_APPROVE','BORROW_RETURN']);
+  const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','BORROW_APPROVE','BORROW_RETURN','COST_REFERENCE']);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function validRequest(request, company) {
     return request && request.type === 'PURCHASE_SAVE_REQUEST' && request.company === company
@@ -9,7 +9,9 @@
       && request.input && typeof request.input === 'object' && !Array.isArray(request.input)
       && request.stockProtocol === 1 && typeof request.stockBuild === 'string' && request.stockBuild.length > 0
       && Number.isSafeInteger(request.stockGeneration) && request.stockGeneration >= 0
-      && Object.keys(request).every(key => ['type','company','requestId','operation','input','stockProtocol','stockBuild','stockGeneration'].includes(key))
+      && (request.operation!=='COST_REFERENCE'||/^[a-f0-9]{32}$/.test(request.input.taskId||'')&&Object.keys(request.input).length===1
+        &&request.stockIdentity&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200))
+      && Object.keys(request).every(key => ['type','company','requestId','operation','input','stockProtocol','stockBuild','stockGeneration',...(request.operation==='COST_REFERENCE'?['stockIdentity']:[])].includes(key))
       && JSON.stringify(request).length <= (request.operation.startsWith('BORROW_') ? 6000 : 200000);
   }
   function mount({ company, host, read, send, receipt, lockCompany, esc, autoRequest = null, expectedStaff = null }) {
@@ -41,7 +43,10 @@
       if (!alive() || completed || !request || event.source !== window.parent) return;
       const message = event.data || {}, result = message.result;
       if (message.type !== 'PURCHASE_SAVE_RESULT' || message.company !== company || message.requestId !== request.requestId) return;
-      if (message.ok && result?.ok === true && result.requestId === request.requestId
+      const failedCost=request.operation==='COST_REFERENCE'&&result?.ok===false&&result.stockFinal===true&&result.pending!==true
+        &&result.company===company&&result.taskId===request.input.taskId&&/^(POINTBASE_[A-Z0-9_]+|COST_RETRY_SAVE_FAILED)$/.test(result.error||'');
+      if (message.ok && (result?.ok === true || failedCost) && result.requestId === request.requestId
+        && (request.operation!=='COST_REFERENCE'||result.company===company&&result.taskId===request.input.taskId&&result.pending!==true)
         && Number.isSafeInteger(result.stockGeneration) && result.stockGeneration > request.stockGeneration) {
         completed = true; inFlight = false; retry.disabled = true;
         text('Save confirmed. Reloading original workspace. 保存已确认，正在重新读取原工作台。');
@@ -67,6 +72,7 @@
       staff = context.staff;
       const cached = JSON.parse(sessionStorage.getItem('fmcg-purchase-draft-v1/'+company+'/'+staff.staffId+'/'+staff.memberId) || 'null');
       if (!validRequest(cached?.savePending, company)) return;
+      if(cached.savePending.operation==='COST_REFERENCE'&&(cached.savePending.stockIdentity.staffId!==staff.staffId||cached.savePending.stockIdentity.memberId!==staff.memberId))return;
       request = JSON.parse(JSON.stringify(cached.savePending));
       const section = document.createElement('section'); section.className = 'notice';
       section.innerHTML = '<h3>Resume original save 继续原保存</h3><p>'+esc(staff.staffName)+' · '+esc(request.operation)

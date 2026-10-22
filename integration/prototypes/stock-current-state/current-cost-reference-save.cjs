@@ -22,8 +22,8 @@ function createCurrentCostReferenceSave({ company, store, protocol, coverage, au
         const snapshot = await protocol.readSnapshot(async () => {
           const prepared = await prepareCostReference({ createPurchaseCostRetry: d.createPurchaseCostRetry,
             request: { company, taskId: command.input.taskId, requestId: command.requestId, staff },
-            tables: await d.readCostTables(company, command.input.taskId, staff, command.requestId), captureCosts: d.captureCosts, now: d.now });
-          if (prepared.outcome?.ok !== true || prepared.outcome.requestId !== command.requestId || prepared.outcome.company !== company
+            tables: await d.readCostTables(company, command.input.taskId, staff, command.requestId), captureCosts: d.captureCosts, now: d.now, recordProviderFailure: true });
+          if ((prepared.outcome?.ok !== true && !(prepared.outcome?.ok === false && prepared.recordedFailure === true)) || prepared.outcome.requestId !== command.requestId || prepared.outcome.company !== company
             || prepared.outcome.taskId !== command.input.taskId) throw Error('Original cost retry receipt identity conflict');
           if (!prepared.plan.writes.length) throw Error('Prior legacy cost receipt requires reconciliation before current save');
           return prepared.plan;
@@ -36,12 +36,13 @@ function createCurrentCostReferenceSave({ company, store, protocol, coverage, au
       hash(company, request.input.taskId, request.requestId, staff.memberId, 'RESULT')));
     const event = receipt.rows, outcome = event?.details?.outcome;
     if (!event?._version || event.company !== company || event._id !== event.title || event.action !== 'COST_RETRY_RESULT'
-      || event.result !== 'RECORDED' || event.initiatedByStaffId !== staff.staffId || event.imageAltText !== request.input.taskId
+      || event.result !== (outcome?.ok === true ? 'RECORDED' : 'FAILED') || event.initiatedByStaffId !== staff.staffId || event.imageAltText !== request.input.taskId
       || event.details?.actorMemberId !== staff.memberId || event.details.requestId !== request.requestId
-      || outcome?.ok !== true || outcome.company !== company || outcome.taskId !== request.input.taskId || outcome.requestId !== request.requestId) {
+      || ![true,false].includes(outcome?.ok) || outcome.ok === false && !/^(POINTBASE_[A-Z0-9_]+|COST_RETRY_SAVE_FAILED)$/.test(outcome.error || '')
+      || outcome.company !== company || outcome.taskId !== request.input.taskId || outcome.requestId !== request.requestId) {
       throw Error('Committed cost reference receipt requires review');
     }
-    return { ...outcome, ...result };
+    return { ...result, ...outcome, ...(outcome.ok === false ? { stockFinal: true } : {}) };
   };
 }
 module.exports = { createCurrentCostReferenceSave };

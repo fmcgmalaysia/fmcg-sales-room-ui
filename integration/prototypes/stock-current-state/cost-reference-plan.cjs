@@ -12,7 +12,7 @@ const events = new Set(['COST_RETRY_LOCK', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAP
 // Trusted server composition only, NOT browser admission/auth or a live store.
 // Run the ORIGINAL reference-only workflow against a private overlay. Collect its
 // exact final writes for the common fence; never run its TTL lock deletion live.
-async function prepareCostReference({ createPurchaseCostRetry, request, tables, captureCosts, now }) {
+async function prepareCostReference({ createPurchaseCostRetry, request, tables, captureCosts, now, recordProviderFailure = false }) {
   const {Buffer}=require('node:buffer');
   const company = request?.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const allowed = new Set([orders, tasks, journal]);
@@ -61,10 +61,38 @@ async function prepareCostReference({ createPurchaseCostRetry, request, tables, 
       overlay.delete(key); privateLocks.delete(key);
     }
   };
-  // Failed original executions are not promoted into successful plans. Their
-  // error/audit orchestration remains an explicit integration requirement.
-  const outcome = await createPurchaseCostRetry({ store, captureCosts, now })(copy(request));
+  if (typeof recordProviderFailure !== 'boolean') throw Error('Private cost failure policy required');
+  let outcome, providerFailed = false, providerInvalid = false, recordedFailure = false;
+  const capture = async barcodes => {
+    let map;
+    try { map = await captureCosts(barcodes); }
+    catch (error) { providerFailed = true; throw error; }
+    // Same original result contract. This is only evidence for a read-only
+    // provider failure; it never replaces original validation or fabricates cost.
+    const order = [...initial.values()].find(row => row.title === target.description && row.sourceLineId === target.imageAltText);
+    const cost = map?.[order?.description];
+    providerInvalid = !cost || cost.unitBarcode !== order?.description || cost.costCurrency !== 'MYR'
+      || !['CAPTURED', 'ERROR'].includes(cost.costStatus) || !Array.isArray(cost.costIssues) || !Number.isFinite(Date.parse(cost.capturedAt));
+    return map;
+  };
+  try { outcome = await createPurchaseCostRetry({ store, captureCosts: capture, now })(copy(request)); }
+  catch (error) {
+    // Preserve only the ORIGINAL known provider-failure attempt/result. A failed
+    // task/row validation or private storage invariant must not become a terminal
+    // business receipt, and no partially simulated task/order writes may escape.
+    const resultId = hash(company, request.taskId, request.requestId, request.staff?.memberId, 'RESULT');
+    const attemptId = hash(company, request.taskId, request.requestId, request.staff?.memberId, 'ATTEMPT');
+    const failure = writes.get(journal + ':' + resultId)?.after;
+    const attempt = writes.get(journal + ':' + attemptId)?.after;
+    const expectedCode = /^POINTBASE_[A-Z0-9_]+$/.test(String(error?.code || error?.message || ''))
+      ? String(error.code || error.message) : 'COST_RETRY_SAVE_FAILED';
+    const expected = { ok: false, requestId: request.requestId, company, taskId: request.taskId, error: expectedCode };
+    if (!recordProviderFailure || !(providerFailed || providerInvalid && error?.message === 'POINTBASE_RESULT_INVALID')
+      || privateLocks.size || writes.size !== 2 || attempt?.action !== 'COST_RETRY_ATTEMPT' || attempt.result !== 'REQUESTED'
+      || failure?.action !== 'COST_RETRY_RESULT' || failure.result !== 'FAILED' || !same(failure.details?.outcome, expected)) throw error;
+    outcome = expected; recordedFailure = true;
+  }
   if (privateLocks.size || writes.size > 30 || Buffer.byteLength(JSON.stringify([...writes.values()])) > 180000) throw Error('Cost reference atomic boundary exceeded');
-  return { plan: { writes: [...writes.values()] }, outcome: copy(outcome), replay: writes.size === 0 };
+  return { plan: { writes: [...writes.values()] }, outcome: copy(outcome), replay: writes.size === 0, ...(recordedFailure ? { recordedFailure: true } : {}) };
 }
 module.exports = { prepareCostReference };

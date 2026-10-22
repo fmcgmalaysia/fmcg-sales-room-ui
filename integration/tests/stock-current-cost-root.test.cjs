@@ -9,7 +9,7 @@ const file = require.resolve('./stock-current-cost-save.test.cjs');
 const base = vm.runInNewContext(fs.readFileSync(file, 'utf8').replace("const test = require('node:test')", 'const test = () => {}') + ';fixture;',
   { require: createRequire(file), Map, Buffer });
 const folder = path.join(__dirname, '../prototypes/stock-current-state'), copy = value => JSON.parse(JSON.stringify(value));
-async function fixture({ company = 'NCT', coverage = true, generated = false } = {}) {
+async function fixture({ company = 'NCT', coverage = true, generated = false, captureCosts } = {}) {
   const f = await base(company), calls = [], queryCalls = [];
   f.store.normalizeListedRow = (collection, row) => { assert.equal(row.company, company); assert.ok(row._version); return copy(row); };
   const items = { query: collection => {
@@ -30,7 +30,7 @@ async function fixture({ company = 'NCT', coverage = true, generated = false } =
   const createCurrentCostReference = vm.runInNewContext(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';createCurrentCostReference;', {
     items, currentMember: { getMember: async () => f.member }, getPurchaseStaffContext: authorize,
     requirePurchaseStaff: f.deps.requirePurchaseStaff, createPurchaseCostRetry: load('purchaseCostRetry.js').createPurchaseCostRetry,
-    capturePointbaseCosts: f.deps.captureCosts, operationId: hash, planCollections, createCurrentCostReferenceSave: save, createCurrentCostTables: tables,
+    capturePointbaseCosts: captureCosts || f.deps.captureCosts, operationId: hash, planCollections, createCurrentCostReferenceSave: save, createCurrentCostTables: tables,
     fulfilmentStore: { read: async (c, id) => { calls.push('CONTROL'); const row = await f.store.read(c, id); return row ? { ...row, stockCommitVersion: row._version } : null; },
       all: async collection => { assert.equal(collection, 'StaffMasterAccess', 'never scan company journals for one cost task'); return [f.employee]; } },
     createSdkConditionalStore: config => {

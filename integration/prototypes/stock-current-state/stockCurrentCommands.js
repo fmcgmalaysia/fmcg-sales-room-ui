@@ -4070,7 +4070,7 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
 module.exports = { validateOriginalStockResolution, createCurrentStockResolutionSave };
 
 },
-// current-cost-reference-save.cjs sha256:7c3185a6a786fa2bffbf80fef5ab54c8d61b09cfe61367ebbf5f40cff4f24809
+// current-cost-reference-save.cjs sha256:e7c93ac4db70a43fc568a94d5a21d11018894a2edcb4df8566fe99617fffacdb
 "current-cost-reference-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -4096,8 +4096,8 @@ function createCurrentCostReferenceSave({ company, store, protocol, coverage, au
         const snapshot = await protocol.readSnapshot(async () => {
           const prepared = await prepareCostReference({ createPurchaseCostRetry: d.createPurchaseCostRetry,
             request: { company, taskId: command.input.taskId, requestId: command.requestId, staff },
-            tables: await d.readCostTables(company, command.input.taskId, staff, command.requestId), captureCosts: d.captureCosts, now: d.now });
-          if (prepared.outcome?.ok !== true || prepared.outcome.requestId !== command.requestId || prepared.outcome.company !== company
+            tables: await d.readCostTables(company, command.input.taskId, staff, command.requestId), captureCosts: d.captureCosts, now: d.now, recordProviderFailure: true });
+          if ((prepared.outcome?.ok !== true && !(prepared.outcome?.ok === false && prepared.recordedFailure === true)) || prepared.outcome.requestId !== command.requestId || prepared.outcome.company !== company
             || prepared.outcome.taskId !== command.input.taskId) throw Error('Original cost retry receipt identity conflict');
           if (!prepared.plan.writes.length) throw Error('Prior legacy cost receipt requires reconciliation before current save');
           return prepared.plan;
@@ -4110,18 +4110,19 @@ function createCurrentCostReferenceSave({ company, store, protocol, coverage, au
       hash(company, request.input.taskId, request.requestId, staff.memberId, 'RESULT')));
     const event = receipt.rows, outcome = event?.details?.outcome;
     if (!event?._version || event.company !== company || event._id !== event.title || event.action !== 'COST_RETRY_RESULT'
-      || event.result !== 'RECORDED' || event.initiatedByStaffId !== staff.staffId || event.imageAltText !== request.input.taskId
+      || event.result !== (outcome?.ok === true ? 'RECORDED' : 'FAILED') || event.initiatedByStaffId !== staff.staffId || event.imageAltText !== request.input.taskId
       || event.details?.actorMemberId !== staff.memberId || event.details.requestId !== request.requestId
-      || outcome?.ok !== true || outcome.company !== company || outcome.taskId !== request.input.taskId || outcome.requestId !== request.requestId) {
+      || ![true,false].includes(outcome?.ok) || outcome.ok === false && !/^(POINTBASE_[A-Z0-9_]+|COST_RETRY_SAVE_FAILED)$/.test(outcome.error || '')
+      || outcome.company !== company || outcome.taskId !== request.input.taskId || outcome.requestId !== request.requestId) {
       throw Error('Committed cost reference receipt requires review');
     }
-    return { ...outcome, ...result };
+    return { ...result, ...outcome, ...(outcome.ok === false ? { stockFinal: true } : {}) };
   };
 }
 module.exports = { createCurrentCostReferenceSave };
 
 },
-// cost-reference-plan.cjs sha256:2ed25da7709e691c9a1f4ebf923c73d857ec44dd6bae883fbef224610c3f5e54
+// cost-reference-plan.cjs sha256:3885d1f7bef4dfe47f118bf905f9e0d4015fca3b96c4056c5c377141449eb803
 "cost-reference-plan.cjs": (load, module) => {
 'use strict';
 
@@ -4137,7 +4138,7 @@ const events = new Set(['COST_RETRY_LOCK', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAP
 // Trusted server composition only, NOT browser admission/auth or a live store.
 // Run the ORIGINAL reference-only workflow against a private overlay. Collect its
 // exact final writes for the common fence; never run its TTL lock deletion live.
-async function prepareCostReference({ createPurchaseCostRetry, request, tables, captureCosts, now }) {
+async function prepareCostReference({ createPurchaseCostRetry, request, tables, captureCosts, now, recordProviderFailure = false }) {
   const Buffer=StockRuntimeBuffer;
   const company = request?.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const allowed = new Set([orders, tasks, journal]);
@@ -4186,11 +4187,39 @@ async function prepareCostReference({ createPurchaseCostRetry, request, tables, 
       overlay.delete(key); privateLocks.delete(key);
     }
   };
-  // Failed original executions are not promoted into successful plans. Their
-  // error/audit orchestration remains an explicit integration requirement.
-  const outcome = await createPurchaseCostRetry({ store, captureCosts, now })(copy(request));
+  if (typeof recordProviderFailure !== 'boolean') throw Error('Private cost failure policy required');
+  let outcome, providerFailed = false, providerInvalid = false, recordedFailure = false;
+  const capture = async barcodes => {
+    let map;
+    try { map = await captureCosts(barcodes); }
+    catch (error) { providerFailed = true; throw error; }
+    // Same original result contract. This is only evidence for a read-only
+    // provider failure; it never replaces original validation or fabricates cost.
+    const order = [...initial.values()].find(row => row.title === target.description && row.sourceLineId === target.imageAltText);
+    const cost = map?.[order?.description];
+    providerInvalid = !cost || cost.unitBarcode !== order?.description || cost.costCurrency !== 'MYR'
+      || !['CAPTURED', 'ERROR'].includes(cost.costStatus) || !Array.isArray(cost.costIssues) || !Number.isFinite(Date.parse(cost.capturedAt));
+    return map;
+  };
+  try { outcome = await createPurchaseCostRetry({ store, captureCosts: capture, now })(copy(request)); }
+  catch (error) {
+    // Preserve only the ORIGINAL known provider-failure attempt/result. A failed
+    // task/row validation or private storage invariant must not become a terminal
+    // business receipt, and no partially simulated task/order writes may escape.
+    const resultId = hash(company, request.taskId, request.requestId, request.staff?.memberId, 'RESULT');
+    const attemptId = hash(company, request.taskId, request.requestId, request.staff?.memberId, 'ATTEMPT');
+    const failure = writes.get(journal + ':' + resultId)?.after;
+    const attempt = writes.get(journal + ':' + attemptId)?.after;
+    const expectedCode = /^POINTBASE_[A-Z0-9_]+$/.test(String(error?.code || error?.message || ''))
+      ? String(error.code || error.message) : 'COST_RETRY_SAVE_FAILED';
+    const expected = { ok: false, requestId: request.requestId, company, taskId: request.taskId, error: expectedCode };
+    if (!recordProviderFailure || !(providerFailed || providerInvalid && error?.message === 'POINTBASE_RESULT_INVALID')
+      || privateLocks.size || writes.size !== 2 || attempt?.action !== 'COST_RETRY_ATTEMPT' || attempt.result !== 'REQUESTED'
+      || failure?.action !== 'COST_RETRY_RESULT' || failure.result !== 'FAILED' || !same(failure.details?.outcome, expected)) throw error;
+    outcome = expected; recordedFailure = true;
+  }
   if (privateLocks.size || writes.size > 30 || Buffer.byteLength(JSON.stringify([...writes.values()])) > 180000) throw Error('Cost reference atomic boundary exceeded');
-  return { plan: { writes: [...writes.values()] }, outcome: copy(outcome), replay: writes.size === 0 };
+  return { plan: { writes: [...writes.values()] }, outcome: copy(outcome), replay: writes.size === 0, ...(recordedFailure ? { recordedFailure: true } : {}) };
 }
 module.exports = { prepareCostReference };
 
