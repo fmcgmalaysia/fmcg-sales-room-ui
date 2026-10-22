@@ -1,7 +1,7 @@
 'use strict';
 
 const WRITERS = Object.freeze(['RECEIPT', 'ALLOCATION', 'SALES_DEMAND', 'PURCHASE_SOURCE', 'PURCHASE_PLAN', 'PURCHASE_TASK',
-  'STOCK_EXCEPTION', 'STOCK_RESOLUTION', 'PACKING', 'WAREHOUSE_PREPARATION', 'SHIPMENT', 'ORDER_INTAKE', 'ORDER_UPDATE']);
+  'STOCK_EXCEPTION', 'STOCK_RESOLUTION', 'PACKING', 'WAREHOUSE_PREPARATION', 'SHIPMENT', 'ORDER_INTAKE', 'ORDER_UPDATE', 'COST_REFERENCE']);
 // Server construction only. Never accept coverage/mode/company/build from browser.
 // Permission checks remain in original authenticated gateways; this grants none.
 function createStockAdmission({ company, readControl, coverage = {} }) {

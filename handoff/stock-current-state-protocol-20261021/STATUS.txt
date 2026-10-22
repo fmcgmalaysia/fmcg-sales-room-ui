@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterc69f73c: COST_REFERENCE_COWRITER.txt. Confirmed original reference
+refresh whole-row task/order writes; mandatory admission now14 categories including
+COST_REFERENCE. Original private overlay produces versioned reference-only plan, refuses
+old TTL lock takeover and protects non-cost fields.15affectedpass323.092ms. Actual cost
+gateway/failure audit, other writer/photo/capacity/recovery/migration/UI/release OPEN/OFF.
+
 CURRENT HEARTBEAT afterffca1e0: LEGACY_WAREHOUSE_SAVE.txt. Original authenticated non-photo
 Warehouse PACK/LOAD/UNPACK prepare now composes current Ready + original event/checkpoint;
 no stock/claim movement, mutual guards and original versions/reasons retained.22affected

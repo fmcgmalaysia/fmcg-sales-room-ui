@@ -41,6 +41,14 @@ test('pending, maintenance, cached old client and stale generation cannot mutate
   control.pending = null; control.mode = 'MAINTENANCE'; await assert.rejects(admission({ writer: 'RECEIPT' }), /maintenance/);
   await assert.rejects(admission({ writer: 'UNREGISTERED' }), /Unknown inventory writer/);
 });
+
+test('reference-price whole-row task/order writer cannot be omitted just because stock quantities do not change', async () => {
+  assert.equal(WRITERS.includes('COST_REFERENCE'), true);
+  const control = { company: 'NCT', _version: 'V', generation: 0, schemaVersion: 1, mode: 'ACTIVE', writerBuild: 'BUILD' };
+  const coverage = Object.fromEntries(WRITERS.filter(name => name !== 'COST_REFERENCE').map(name => [name, { verified: true, build: 'BUILD' }]));
+  const admit = createStockAdmission({ company: 'NCT', readControl: async () => control, coverage });
+  await assert.rejects(admit({ writer: 'RECEIPT', request: { stockProtocol: 1, stockGeneration: 0, stockBuild: 'BUILD' } }), /coverage incomplete/);
+});
 test('opted-in company task + inventory changes commit/replay together; recovery sees same private scope', async () => {
   const db = new Map(), before = { _id: 'TASK', company: 'NCT', _version: 'T0', quantity: 10 }; db.set('NCTTasks:TASK', before);
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null), insert: async (c, r) => { if (db.has(c + ':' + r._id)) throw Error('Duplicate'); db.set(c + ':' + r._id, copy(r)); return copy(r); },
