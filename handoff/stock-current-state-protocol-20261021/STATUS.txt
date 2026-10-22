@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after6f6ce99: QUANTITY_CASE_CURRENT_PREPARATION.txt. Original Purchase
+member/case/PO/source authority now composes DECIDE event+current checkpoint only;
+UNPLACED vs RECEIPT liability separate, STOP/CREDIT does not cancel/release/repay.
+15new+relatedpass289.9382ms. Baseline financial test failure remains recorded; actual
+integration/capacity/recovery/migration/UI/four-stage release still OPEN/OFF.
+
 CURRENT HEARTBEAT aftere887d62: SHIPMENT_ARRANGEMENT_CURRENT_PLAN.txt. Original Sales date/
 batch prepare maps original event only; new5passed in43-test expanded set.42pass/1FAIL
 1439.3258ms: original PI handoff expectedPAID, actualINSTALLMENT_PAID. Original test+
