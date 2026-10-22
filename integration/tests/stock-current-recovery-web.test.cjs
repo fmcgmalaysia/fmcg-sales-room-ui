@@ -124,7 +124,8 @@ test('standalone recovery bundle contains exact current inspector and query-only
   const bundle = fs.readFileSync(require.resolve('../prototypes/stock-current-state/stockRecoveryRead.web.js'), 'utf8');
   for (const [file, imports] of [['recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');", "const { inspectSegmentedStockRecovery } = require('./segmented-recovery-inspector.cjs');"]],
     ['segmented-plan.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');"]],
-    ['segmented-recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { createSegmentedPlanCodec, same } = require('./segmented-plan.cjs');"]],
+    ['purchase-delete-images.cjs', ["const {hash}=require('./commit-proof.cjs');", "const {copy,same}=require('./segmented-plan.cjs');"]],
+    ['segmented-recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { createSegmentedPlanCodec, same } = require('./segmented-plan.cjs');", "const { classifyPurchaseDeletionImage } = require('./purchase-delete-images.cjs');"]],
     ['sdk-field-codec.cjs', []],
     ['recovery-read-store.cjs', ["const { planCollections } = require('./domain-scope.cjs');", "const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');"]]]) {
     let source = fs.readFileSync(require.resolve('../prototypes/stock-current-state/' + file), 'utf8').replace(/^'use strict';\r?\n/, '');

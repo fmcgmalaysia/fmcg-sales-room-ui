@@ -1,0 +1,79 @@
+2026-10-22 ORIGINAL PURCHASE FILE DELETION — PRIVATE CANDIDATE ONLY
+
+Recovery and objective
+cb0c4c5 file protocol milestone confirmed pushed to draftPR220 before this work.
+Preserve original Purchase DELETE_DOCUMENT's unlink→trash→final audit/completion
+time, including interrupted same-request recovery. No new finance, permissions,
+file provider, stock authority, collection or production source edits. Reused
+same framework/spec and actual original delete capture from previous milestone.
+Original production runtime32b812c/baselined447185 unchanged.
+
+Smallest supported staging path
+- Existing segmented coordinator and codec are UNCHANGED; no duplicate row identity
+  or generalized intermediate-image protocol was added. Existing common company
+  barrier/lock/admission/manifest/bounded phases/conditional storage remain.
+- Original prepared deletion contract is retained with the PO before-image and
+  exact pending-unlink after-image, including documentDeletion + linked:false +
+  PENDING. This is explicitly a file completion plan, not a completed deletion.
+- purchase-delete-protocol.cjs supplies its PRIVATE final validation hook to the
+  SAME coordinator. Only while durable FINALIZE/count1/cursor1 and exact own attempt,
+  company/build/generation/digest/manifest it performs original TRASH, verifies the
+  receipt, rechecks full fence and pending row, and conditionally writes final row.
+  RESULT and generation publication occur only after that exact final row verifies.
+- Completion audit/time are computed AFTER the successful external receipt, as in
+  original apply. Once durable, identical completion is recognized, not recomputed.
+  No extra file-confirmation CMS row, blind inverse, cleanup deletion or lock theft.
+- Ordinary coordinator result shortcut is additionally guarded for this private
+  file operation: an early/corrupt RESULT without completed physical-file image
+  cannot clear the pending barrier. Legitimate later-generation replays retain the
+  original immutable audit identity. Wrong file protocol pairing refuses before save.
+- Pure purchase-delete-images.cjs reconstructs exact pending/final images. Recovery
+  bundles ONLY this pure classifier, not the file service/writer/protocol. Admin
+  recovery remains query-only and reports PENDING_UNLINK/FILE_DELETE_COMPLETED;
+  premature result or conflicting image requires review, never unlocks.
+- Current private order-file saver now supports original Purchase DELETE only with
+  that paired protocol; all original uploader/finance/closed/version/reason guards
+  still execute in original prepare. No real external calls or business mutations.
+
+Adjacent same-identity safeguard
+Previously noted non-file pre-migration audit concern is now guarded at original
+Purchase/Account preparation: same-ID original audit without current protocol receipt
+requires review before plan/write, not duplicate or inferred success. Only two line-
+level checks, no policy change. Existing completed CURRENT replay still uses original
+receipt/audit. Original LEGACY production flow unchanged.
+
+Evidence — NODE / VM / MOCK ONLY
+- New8 staged tests: NCT/GHR original two-write order, pending before trash, exact
+  whole ORIGINAL result comparison except conditional version, actual post-trash
+  completion time, original audit/metadata/task preservation, zero new file slots.
+- Lost/mismatched trash reply, interrupted unlink and completion CAS, lost final CMS
+  acknowledgment, lost generation transition, renamed staff, changed/revoked actor,
+  changed request, competing writer, late owner/checkpoint/record callbacks, early
+  forged result, malformed final state, generated runtime; all preserve same plan.
+- Read-only recovery identifies pending/completed file stages; does not import or
+  grant mutation/file callbacks. Existing901-row paged inspection still passes.
+- New2 non-file identity tests prove no audit duplication/adoption/generation change.
+- Related39pass0fail985.9625ms; recovery/file/runtime33pass0fail699.2306ms at respective
+  intermediate snapshots. Exact-original final comparison then15pass378.2493ms.
+- First full993 had1 fixture failure: old Reviewing-lock test reused first request
+  ID after changing payload. Assigned a NEW request ID for that distinct operation;
+  original locked-error assertion remains. New same-ID rejection tests retained.
+  Focused18pass286.845ms. Earlier two fixture issues (cross-realm deep comparison,
+  wrong pairing's specific denial wording) corrected without weakening guards.
+- FINAL complete current suite993pass0fail19852.9174ms. Runtime103modules53exports;
+  read-only recovery bundle regenerated from exact pure/query-only sources.
+- Protected production directories still matchd447185. No browser/native Wix data,
+  Drive operation, lock deletion, new grants, main merge or deployment. Credit UNKNOWN.
+
+Next concrete dependency
+Connect ORIGINAL Purchase/Account web/private file roots, parent/browser complete
+durable file bodies with original PDF limits (not200k non-file cap), and exact file
+protocol choice; real current file roots still refuse today. Then native schema/
+index/permission/Date roundtrip, operational recovery/platform capacity/lifecycle,
+migration/shadow/cutover, complete Loaded + borrow/repayment/halo/customer-split
+regression, focused review and four release stages. Coverage EMPTY/ACTIVE OFF.
+Real Support invoice and physical exit OFF. No user business choice required now.
+
+Release statuses: code incomplete private candidate; Pages unchanged; Wix not
+installed/published; public new inventory/borrowing unverified. Not ready for real
+borrowing test or a publication claim.

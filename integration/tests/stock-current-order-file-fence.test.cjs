@@ -64,7 +64,8 @@ test('changed payload, staff ID, coverage, stale original version or invalid ban
  const stale=await fixture();stale.request.input.version='OLD';await assert.rejects(stale.save(stale.request),/changed/);assert.equal(stale.counts().allocations,0);
  const invalid=await fixture({department:'ACCOUNT',multi:true});invalid.request.input.recipientBank.bankAccountNo='WRONG';await assert.rejects(invalid.save(invalid.request),/bank account/);assert.equal(invalid.counts().allocations,0);
  const closed=await fixture();closed.deps.coverage.RECEIPT.verified=false;await assert.rejects(closed.save(closed.request),/coverage/);assert.equal(closed.counts().allocations,0);
- const deletion=await fixture();deletion.request.input.action='DELETE_DOCUMENT';await assert.rejects(deletion.save(deletion.request),/staged/);assert.equal(deletion.counts().allocations,0);
+ const deletion=await fixture();deletion.request.input.action='DELETE_DOCUMENT';await assert.rejects(deletion.save(deletion.request),/file fence/);
+ await assert.rejects(createCurrentOrderFileSave({...deletion.deps,createFileProtocol:()=>deletion.original})(deletion.request),/staged/);assert.equal(deletion.counts().allocations,0);
 });
 
 test('late external callbacks after owner/checkpoint change cannot write metadata or release another execution lock',async()=>{

@@ -17,6 +17,7 @@ async function prepareAccountOrderRecord({ company, staff, requestId, input, row
     || rows.some(row => row.company !== company) || new Set(rows.map(row => row.id)).size !== rows.length
     || typeof createAccountSettlementOperations !== 'function' || typeof now !== 'function'
     || before && (before._id !== input.id || before.company !== company || !before._version)) throw Error('Original non-file Account order snapshot required');
+  if (before?.details?.audit?.some(event => event.id === hash(company,requestId,staff.memberId,'FINANCE'))) throw Error('Preexisting original Account audit without current receipt requires review');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private Account record boundary');
   let captured, reads = 0;
   const store = {

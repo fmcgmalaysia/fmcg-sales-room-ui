@@ -19,7 +19,7 @@ async function legacy(args){
  const store={all:async c=>c==='PurchaseOrders'?[...db].filter(([key])=>key.startsWith(c+':')).map(([,row])=>copy(row)):c==='SharedSuppliers'?copy(args.suppliers):(()=>{throw Error('Scope');})(),
   read:async(c,id)=>copy(db.get(c+':'+id)||null),insert:async(c,row)=>{if(db.has(c+':'+row._id))throw Error('Duplicate');db.set(c+':'+row._id,copy(row));if(c==='PurchaseOrders')writes.push(copy(row));return copy(row);},
   update:async(c,row)=>{db.set(c+':'+row._id,copy(row));if(c==='PurchaseOrders')writes.push(copy(row));return copy(row);},remove:async(c,id)=>db.delete(c+':'+id)};
- const documentService=async command=>{effects.push(copy(command));if(command.action==='ALLOCATE')return{ok:true,fileId:args.slots[allocation++]};return{ok:true,...command,base64:undefined,...(command.action==='TRASH'?{trashed:true}:{})};};
+ const documentService=async command=>{effects.push(copy(command));if(command.action==='ALLOCATE')return{ok:true,fileId:args.slots[allocation++]};await args.afterEffect?.(command);return{ok:true,...command,base64:undefined,...(command.action==='TRASH'?{trashed:true}:{})};};
  const shared={store,documentService,now:args.now,names:{[args.company]:{activity:journal}}},operations=args.department==='PURCHASE'?createPurchaseOrderOperations({...shared,readWorkspace:async()=>copy(args.context)}):createAccountSettlementOperations({...shared,listOrders:async()=>copy(args.rows)});
  const result=await operations.save({company:args.company,staff:args.staff,requestId:args.requestId,input:args.input});
  return{result,record:db.get('PurchaseOrders:'+args.input.id),effects,writes};

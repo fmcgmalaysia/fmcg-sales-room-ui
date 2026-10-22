@@ -4288,7 +4288,7 @@ const createCurrentAccountOrderRecordSave = dependencies => createOrderRecordSav
 module.exports = { createCurrentPurchaseOrderRecordSave, createCurrentAccountOrderRecordSave };
 
 },
-// purchase-order-record-plan.cjs sha256:be3b923a8d859960c4db7ef4d5aa507be26d83304d9b412225d9cb09ae56fd62
+// purchase-order-record-plan.cjs sha256:de527bd5d196647e36e087cc647981e08fcd5b3275db6a1ced1c03f57bf0edf6
 "purchase-order-record-plan.cjs": (load, module) => {
 'use strict';
 
@@ -4307,6 +4307,7 @@ async function preparePurchaseOrderRecord({ company, staff, requestId, input, co
     || !Array.isArray(records) || !Object.hasOwn(patches, input?.action) || typeof createPurchaseOrderOperations !== 'function'
     || typeof now !== 'function') throw Error('Original non-file Purchase order context required');
   if (records.some(r => r.company !== company || !r._id) || new Set(records.map(r => r._id)).size !== records.length) throw Error('Exact company PO records required');
+  if (records.find(row => row._id === input.id)?.details?.audit?.some(event => event.id === hash(company,requestId,staff.memberId,'PO_AUDIT'))) throw Error('Preexisting original PO audit without current receipt requires review');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private PO record prepare boundary');
   let captured, reads = 0;
   const scope = c => { if (![journal, 'PurchaseOrders'].includes(c)) throw Error('PO record scope violation'); };
@@ -4346,7 +4347,7 @@ async function preparePurchaseOrderRecord({ company, staff, requestId, input, co
 module.exports = { preparePurchaseOrderRecord };
 
 },
-// account-order-record-plan.cjs sha256:ad21e1c106cbd1dcc3625c00ca5f5dc4b7c96eb08719eadfcdc19597b547c686
+// account-order-record-plan.cjs sha256:fa06e79004328593ac0300e4aae966b3a8f50557b320e949467adf39bd10086a
 "account-order-record-plan.cjs": (load, module) => {
 'use strict';
 
@@ -4367,6 +4368,7 @@ async function prepareAccountOrderRecord({ company, staff, requestId, input, row
     || rows.some(row => row.company !== company) || new Set(rows.map(row => row.id)).size !== rows.length
     || typeof createAccountSettlementOperations !== 'function' || typeof now !== 'function'
     || before && (before._id !== input.id || before.company !== company || !before._version)) throw Error('Original non-file Account order snapshot required');
+  if (before?.details?.audit?.some(event => event.id === hash(company,requestId,staff.memberId,'FINANCE'))) throw Error('Preexisting original Account audit without current receipt requires review');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private Account record boundary');
   let captured, reads = 0;
   const store = {
@@ -4538,11 +4540,12 @@ async function prepareAccountOriginalAuxiliary({ company, staff, requestId, inpu
 module.exports = { prepareAccountOriginalAuxiliary };
 
 },
-// current-order-file-save.cjs sha256:c702afc28d4a4292e14d84aa8844bbada5536b06a7f3252e2d1ac5d9d60fa20e
+// current-order-file-save.cjs sha256:fab6b6b0497e3f0460b43dcff7690dfbbd970fa4a51f068cc53cab278a5228d2
 "current-order-file-save.cjs": (load, module) => {
 'use strict';
 const {createCurrentStockSave}=load("current-stock-save.cjs"),{prepareOriginalOrderFileWrite,captureOriginalOrderFilePlan}=load("original-order-file-plan.cjs");
 const {hash}=load("commit-proof.cjs");
+const {prepareOriginalPurchaseDeletionWrite}=load("purchase-delete-protocol.cjs");
 // Original gateway role checks and same company protocol supplied privately. No
 // web endpoint, real file action, bank instruction, or stock activation here.
 function createCurrentOrderFileSave({company,department,store,coverage,authenticateOriginal,readOriginalContext,createFileProtocol,allocateDocumentSlot,
@@ -4556,24 +4559,26 @@ function createCurrentOrderFileSave({company,department,store,coverage,authentic
    if(!current?.staffId||!current.memberId||!current.staffName||request?.stockIdentity?.staffId!==current.staffId||request.stockIdentity.memberId!==current.memberId
     ||staff&&(staff.staffId!==current.staffId||staff.memberId!==current.memberId))throw Error('Original order file actor required');staff=current;return{staffId:staff.staffId,memberId:staff.memberId};};
   await authenticate();
-  if(!(purchase?request.input?.action==='DOCUMENT':['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action)))throw Error('Original staged Purchase deletion not connected');
+  if(!(purchase?['DOCUMENT','DELETE_DOCUMENT'].includes(request.input?.action):['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action)))throw Error('Original order file action required');
+  const deleting=purchase&&request.input.action==='DELETE_DOCUMENT';
   const protocol=createFileProtocol({request,staff});
   if(protocol?.planFormat!=='SEGMENTED_V2'||typeof protocol.readSnapshot!=='function')throw Error('Original paired order file protocol required');
+  if(deleting&&protocol.originalPurchaseDeletion!==true)throw Error('Original staged Purchase deletion protocol required');
   const result=await createCurrentStockSave({company,writer:purchase?'PURCHASE_ORDER_RECORD':'ACCOUNT_PURCHASE_RECORD',protocol,coverage,authenticate,prepare:async command=>{
    const snapshot=await protocol.readSnapshot(async()=>{
-    const context=await readOriginalContext(company,staff),at=now().toISOString(),upload=command.input.action!=='PAYMENT_FILE_DELETE',count=upload?1+(!purchase&&Array.isArray(command.input.attachments)?command.input.attachments.length:0):0;
+    const context=await readOriginalContext(company,staff),at=now().toISOString(),upload=!['PAYMENT_FILE_DELETE','DELETE_DOCUMENT'].includes(command.input.action),count=upload?1+(!purchase&&Array.isArray(command.input.attachments)?command.input.attachments.length:0):0;
     const args={...context,company,department,staff,requestId:command.requestId,input:command.input,now:()=>new Date(at),createPurchaseOrderOperations,createAccountSettlementOperations};
     const placeholders=Array.from({length:Math.min(count,7)},(_,index)=>'ORIGINAL_VALIDATION_SLOT_'+index);
     await captureOriginalOrderFilePlan({...args,slots:placeholders});
     const slots=[];for(let index=0;index<count;index++)slots.push(await allocateDocumentSlot(company));
-    return prepareOriginalOrderFileWrite({...args,slots});
+    return deleting?prepareOriginalPurchaseDeletionWrite({...args,slots}):prepareOriginalOrderFileWrite({...args,slots});
    });return{memberId:staff.memberId,generation:snapshot.generation,plan:snapshot.rows};
   }})(request);
   if(result.ok!==true)return result;
   const snapshot=await protocol.readSnapshot(()=>store.read('PurchaseOrders',request.input.id)),row=snapshot.rows;
-  const auditId=hash(company,request.requestId,staff.memberId,purchase?'PO_AUDIT':'FINANCE'),matches=(row?.details?.audit||[]).filter(event=>event.id===auditId),audit=matches[0];
+  const auditId=hash(company,request.requestId,staff.memberId,purchase?(deleting?'PO_DELETE_AUDIT':'PO_AUDIT'):'FINANCE'),matches=(row?.details?.audit||[]).filter(event=>event.id===auditId),audit=matches[0];
   if(!row?._version||row.company!==company||row._id!==request.input.id||row.title!==row._id||matches.length!==1||audit.actorStaffId!==staff.staffId
-   ||audit.action!==(purchase?'SUPPLIER_DOCUMENT_UPLOADED':'ACCOUNT_'+request.input.action)||audit.result!=='SAVED'||!Number.isFinite(Date.parse(audit.time)))throw Error('Original committed order file receipt requires review');
+   ||audit.action!==(purchase?(deleting?'SUPPLIER_DOCUMENT_DELETED':'SUPPLIER_DOCUMENT_UPLOADED'):'ACCOUNT_'+request.input.action)||audit.result!=='SAVED'||!Number.isFinite(Date.parse(audit.time)))throw Error('Original committed order file receipt requires review');
   return{...result,company,poId:row._id,savedAt:audit.time};
  };
 }
@@ -4682,6 +4687,252 @@ async function prepareOriginalOrderFileWrite(args) {
     orderFile:{ department:args.department,uploads:captured.uploads,trash:captured.trash } }] };
 }
 module.exports = { captureOriginalOrderFilePlan,prepareOriginalOrderFileWrite };
+
+},
+// purchase-delete-protocol.cjs sha256:ca2893619cc8f37bd45f8a405d0aaf693a31fc90d1b7543e0dddcd1067c7f854
+"purchase-delete-protocol.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs"),{copy,same,createSegmentedPlanCodec}=load("segmented-plan.cjs");
+const {createSegmentedFencedProof}=load("segmented-fenced-proof.cjs"),{captureOriginalOrderFilePlan}=load("original-order-file-plan.cjs");
+const {pendingImage,finalImage,deletionPlan,classifyPurchaseDeletionImage}=load("purchase-delete-images.cjs");
+async function prepareOriginalPurchaseDeletionWrite(args){
+ if(args.department!=='PURCHASE'||args.input?.action!=='DELETE_DOCUMENT')throw Error('Original Purchase deletion required');
+ const captured=await captureOriginalOrderFilePlan({...args,slots:[]});
+ return{writes:[{collection:'PurchaseOrders',before:captured.before,after:pendingImage(captured.before,captured.prepared,args.requestId),
+  purchaseDeletion:{requestId:args.requestId,prepared:captured.prepared}}]};
+}
+// Existing segmented coordinator, same company lock/manifest/admission. Its private
+// final validation hook completes ORIGINAL unlink→trash→final audit under FINALIZE.
+// No duplicate plan identity, second authority/collection or inverse rollback.
+function createPurchaseDeleteProtocol({company,staff,request,store,documentService,now=()=>new Date(),codecPolicy={},stepsPerInvocation=20}){
+ if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||request?.input?.action!=='DELETE_DOCUMENT'
+  ||request.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
+  ||typeof request.stockBuild!=='string'||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
+  ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||typeof documentService!=='function'||typeof now!=='function')throw Error('Private original Purchase staged deletion required');
+ const base=createSegmentedFencedProof({company,store,domainWrites:true,codecPolicy,stepsPerInvocation}),codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true});
+ const {journal,lockId,controlId}=base.ids,key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:'PURCHASE_ORDER_RECORD',input:request.input,
+  stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
+ async function complete(originalPlan){
+  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
+   ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='FINALIZE'||control.pending.cursor!==1||control.pending.count!==1
+   ||manifest?.digest!==digest||manifest.baseGeneration!==request.stockGeneration||manifest.planHash!==control.pending.planHash||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Original Purchase deletion FINALIZE fence required');
+  if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>32)throw Error('Bounded original deletion manifest required');
+  const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
+  const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
+  if(plan.writes.length!==1||!same(plan,originalPlan))throw Error('Exact original deletion manifest required');
+  const change=plan.writes[0],prepared=deletionPlan(change,key),current=await store.read(change.collection,change.after._id);
+  if(change.after.company!==company||change.after._id!==request.input.id||change.purchaseDeletion.requestId!==request.requestId
+   ||prepared.expectedVersion!==request.input.version||prepared.document.fileId!==request.input.fileId||prepared.event.actorStaffId!==staff.staffId
+   ||prepared.event.id!==hash(company,request.requestId,staff.memberId,'PO_DELETE_AUDIT'))throw Error('Original deletion request/audit identity conflict');
+  const fence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original Purchase deletion callback fence changed; retain request');};
+  const image=classifyPurchaseDeletionImage(change,current,key);
+  if(image==='FILE_DELETE_COMPLETED'){await fence();return;}
+  if(image!=='PENDING_UNLINK')throw Error('Original pending or completed deletion image conflict');
+  await fence();const receipt=await documentService(copy(prepared.trash));
+  if(receipt?.ok!==true||receipt.trashed!==true||['fileId','company','poId','sha256','name'].some(field=>receipt[field]!==prepared.trash[field]))throw Error('Original Purchase trash unconfirmed; retain request');
+  await fence();if(!same(await store.read(change.collection,change.after._id),change.after))throw Error('Original pending deletion changed during callback');
+  // Completion time is chosen AFTER the real trash receipt, as in original apply.
+  // Once this exact final row is durable, retry adopts it without recomputing time.
+  const completed=finalImage(change.after,prepared,now().toISOString());
+  try{await store.compareAndSet(change.collection,completed._id,change.after._version,completed);}catch(error){if(!same(await store.read(change.collection,completed._id),completed))throw error;}
+  if(!same(await store.read(change.collection,completed._id),completed))throw Error('Original deletion completion unconfirmed');await fence();
+ }
+ return{...base,originalPurchaseDeletion:true,commit:options=>{
+  if(options.requestId!==request.requestId||options.memberId!==staff.memberId||hash(options.input)!==digest)throw Error('Original deletion protocol request changed');
+  return base.commit({...options,authorize:async operation=>{
+   await options.authorize?.(operation);
+   const prior=await store.read(journal,hash(key,'RESULT'));
+   // A corrupt/early RESULT must not clear the barrier while the physical-file
+   // completion is still missing. Later generations use retained original audit.
+   if(prior&&(operation.control.pending||operation.control.generation<=request.stockGeneration+1)){
+    const manifest=await store.read(journal,key);if(!Array.isArray(manifest?.fragments)||!manifest.fragments.length||manifest.fragments.length>32)throw Error('Original deletion result plan requires review');
+    const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
+    const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
+    if(plan.writes.length!==1||classifyPurchaseDeletionImage(plan.writes[0],await store.read('PurchaseOrders',request.input.id),key)!=='FILE_DELETE_COMPLETED')throw Error('Original deletion result lacks completed file image');
+   }
+  },validate:async plan=>{if(options.validate)await options.validate(copy(plan));await complete(plan);}});
+ }};
+}
+module.exports={prepareOriginalPurchaseDeletionWrite,createPurchaseDeleteProtocol,classifyPurchaseDeletionImage};
+
+},
+// segmented-fenced-proof.cjs sha256:43aa65f851d72c5f6e6cd5e907c90b4a218e93f51c9bea7c6aa4ff3c5508bc45
+"segmented-fenced-proof.cjs": (load, module) => {
+'use strict';
+
+// OFFLINE v2 candidate. Same company fence/CAS contract as v1, no live endpoint.
+// Runtime/staging budgets still require actual platform acceptance before activation.
+const randomUUID = () => randomBytes(16).toString('hex');
+const { hash } = load("commit-proof.cjs");
+const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
+function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
+  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32 }) {
+  for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
+    if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
+  }
+  if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
+    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1) throw Error('Bounded execution policy required');
+  const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
+  const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
+  async function readControl() {
+    const row = await store.read(journal, controlId);
+    if (!row || row.company !== company || !row._version || !Number.isSafeInteger(row.generation) || row.generation < 0) throw Error('Control missing or invalid');
+    return row;
+  }
+  async function initialize() { await store.insert(journal, { _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' }); }
+  async function transition(collection, before, after) {
+    try {
+      if (before) await store.compareAndSet(collection, after._id, before._version, copy(after));
+      else await store.insert(collection, copy(after));
+    } catch (error) {
+      if (!same(await store.read(collection, after._id), after)) throw error;
+    }
+    if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
+  }
+  const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
+  async function readSnapshot(readRows) {
+    const before = await readControl();
+    if (before.pending) throw Error('Inventory pending');
+    const rows = await readRows(copy(before)), after = await readControl();
+    if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
+    return { generation: after.generation, rows };
+  }
+  async function commit({ requestId, memberId, input, prepare, validate = () => {}, authorize = () => {} }) {
+    if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId
+      || typeof prepare !== 'function' || typeof validate !== 'function' || typeof authorize !== 'function') throw Error('Operation identity required');
+    const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT'), attempt = newAttempt();
+    if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
+    // Unknown acquisition is never stolen or auto-removed, including a lost reply.
+    await store.insert(journal, { _id: lockId, company, owner: key, attempt });
+    try {
+      let control = await readControl();
+      if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
+      const prior = await store.read(journal, resultId);
+      let manifest = await store.read(journal, key);
+      if (manifest && manifest.digest !== digest) throw Error('Request identity reused');
+      if (manifest && (manifest.company !== company || manifest._id !== key
+        || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
+        || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0)) throw Error('Operation manifest identity conflict');
+      if (prior && (!manifest || prior.company !== company || prior._id !== resultId || prior.digest !== digest
+        || prior.baseGeneration !== manifest.baseGeneration || prior.stockOperationProtocol !== 2
+        || prior.outcome?.ok !== true || prior.outcome.operationId !== key
+        || prior.outcome.generation !== manifest.baseGeneration + 1
+        || !control.pending && control.generation < prior.outcome.generation)) throw Error('Operation result requires review');
+      await authorize(copy({ control, key, digest, replay: !!manifest, baseGeneration: manifest?.baseGeneration ?? control.generation }));
+      if (prior) {
+        if (control.pending) {
+          if (control.generation !== manifest.baseGeneration || control.pending.planHash !== manifest.planHash
+            || control.pending.phase !== 'FINALIZE' || control.pending.cursor !== manifest.writeCount) throw Error('Result generation conflict');
+          await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
+        }
+        return copy(prior.outcome);
+      }
+      if (!manifest) {
+        if (control.pending) throw Error('Pending manifest missing');
+        if (!Number.isSafeInteger(control.generation + 1)) throw Error('Inventory generation exhausted');
+        const encoded = codec.encode({ key, digest, memberId, requestId, attempt, baseGeneration: control.generation, plan: await prepare() });
+        // Refuse before staging, never silently truncate or pretend this is a measured
+        // production limit. All fragments must be durable before unique root insert.
+        if (encoded.fragments.length > maxStagedFragments) throw Error('Staging capacity requires review');
+        for (const fragment of encoded.fragments) await transition(journal, null, fragment);
+        manifest = encoded.manifest;
+        await transition(journal, null, manifest);
+      }
+      if (manifest.baseGeneration !== control.generation) throw Error('Prepared generation stale');
+      const fragments = [];
+      if (!Array.isArray(manifest.fragments) || manifest.fragments.length > maxStagedFragments) throw Error('Manifest capacity conflict');
+      for (const ref of manifest.fragments) fragments.push(await store.read(journal, ref.id));
+      const plan = codec.decode({ manifest, fragments, key, digest, memberId, requestId });
+      const count = plan.writes.length;
+      if (!control.pending) {
+        const pending = { key, digest, planHash: manifest.planHash, phase: 'BEFORE', cursor: 0, count };
+        const next = nextControl(control, { pending }); await transition(journal, control, next); control = next;
+      }
+      const p = control.pending;
+      if (p.planHash !== manifest.planHash || p.count !== count || !['BEFORE', 'APPLY', 'VERIFY', 'FINALIZE'].includes(p.phase)
+        || !Number.isSafeInteger(p.cursor) || p.cursor < 0 || p.cursor > count
+        || p.phase === 'FINALIZE' && p.cursor !== count) throw Error('Pending progress conflict');
+      let phase = p.phase, cursor = p.cursor, steps = 0;
+      while (steps < stepsPerInvocation && phase !== 'FINALIZE') {
+        if (cursor === count) {
+          phase = phase === 'BEFORE' ? 'APPLY' : phase === 'APPLY' ? 'VERIFY' : 'FINALIZE'; cursor = phase === 'FINALIZE' ? count : 0;
+          // Persist phase boundary BEFORE any following-phase action. Particularly,
+          // an interrupted APPLY cannot accidentally re-enter BEFORE verification.
+          const next = nextControl(control, { pending: { ...p, phase, cursor } });
+          await transition(journal, control, next); control = next;
+          continue;
+        }
+        const change = plan.writes[cursor], current = await store.read(change.collection, change.after._id);
+        if (phase === 'BEFORE') {
+          if (!same(current, change.before)) throw Error('Prepared before-image stale');
+        } else if (phase === 'APPLY') {
+          if (!same(current, change.after)) {
+            if (!same(current, change.before)) throw Error('Write version conflict');
+            await transition(change.collection, change.before, change.after);
+          }
+        } else if (!same(current, change.after)) throw Error('Final image conflict');
+        cursor++; steps++;
+      }
+      // Checkpoint may lag completed row writes after an interruption; replay checks
+      // exact after-images, not blind increments. Never advances before row confirms.
+      if (phase !== control.pending.phase || cursor !== control.pending.cursor) {
+        const next = nextControl(control, { pending: { ...p, phase, cursor } });
+        await transition(journal, control, next); control = next;
+      }
+      if (phase !== 'FINALIZE') return { ok: false, pending: true, phase, completedCount: cursor, totalRecords: count, requestId };
+      await validate(copy(plan));
+      const outcome = { ok: true, operationId: key, generation: manifest.baseGeneration + 1 };
+      await transition(journal, null, { _id: resultId, company, stockOperationProtocol: 2, digest, baseGeneration: manifest.baseGeneration, outcome });
+      await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
+      return outcome;
+    } finally {
+      await store.compareAndRemove(journal, lockId, attempt);
+    }
+  }
+  return { initialize, readControl, readSnapshot, commit, ids: codec.ids, planFormat: 'SEGMENTED_V2' };
+}
+module.exports = { createSegmentedFencedProof };
+
+},
+// purchase-delete-images.cjs sha256:b2769aa55140081d48a666413f9039a71315d6eb2d1c636ba1e3dc75e4920564
+"purchase-delete-images.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs");
+const {copy,same}=load("segmented-plan.cjs");
+// Pure original image checks only. Safe to bundle in READ-ONLY recovery without
+// importing file services, mutation protocols or original business writers.
+function pendingImage(before,prepared,requestId){
+ const document=before?.details?.documents?.find(doc=>doc.fileId===prepared?.document?.fileId),event=prepared?.event;
+ if(!before?._version||!document||!same(document,prepared.document)||!same(before.details.taskIds,prepared.taskIds)
+  ||prepared.expected!==hash(before)||!event?.actorStaffId||!event.actor||event.action!=='SUPPLIER_DOCUMENT_DELETED'||event.result!=='SAVED'
+  ||!event.message||!Number.isFinite(Date.parse(prepared.startedAt))||Object.hasOwn(event,'time')
+  ||!same(prepared.trash,{action:'TRASH',company:before.company,poId:before._id,fileId:document.fileId,sha256:document.sha256,name:document.name,type:document.type}))throw Error('Original Purchase pending deletion contract required');
+ const deletion={requestId,fileId:document.fileId,by:event.actor,byStaffId:event.actorStaffId,at:prepared.startedAt};
+ return{...copy(before),details:{...copy(before.details),documentDeletion:deletion,documents:before.details.documents.map(doc=>doc.fileId===document.fileId?{...copy(doc),linked:false,deletion:{...deletion,state:'PENDING'}}:copy(doc))}};
+}
+function finalImage(pending,prepared,at){
+ if(typeof at!=='string'||!Number.isFinite(Date.parse(at))||new Date(at).toISOString()!==at)throw Error('Original Purchase deletion completion time required');
+ const event={...copy(prepared.event),time:at};
+ return{...copy(pending),_version:hash(pending._version,'PURCHASE_FILE_DELETED',at),details:{...copy(pending.details),documentDeletion:null,updatedAt:at,
+  documents:pending.details.documents.map(doc=>doc.fileId===prepared.document.fileId?{...copy(doc),linked:false,deletion:{...copy(doc.deletion),state:'DELETED',at}}:copy(doc)),
+  audit:[...(copy(pending.details.audit||[])),event]}};
+}
+function deletionPlan(change,key){
+ const metadata=change?.purchaseDeletion,prepared=metadata?.prepared,before=change?.before,after=change?.after;
+ if(change?.collection!=='PurchaseOrders'||!metadata||!same(Object.keys(metadata).sort(),['prepared','requestId'])
+  ||!/^[a-f0-9-]{36}$/i.test(metadata.requestId||'')||before?._id!==after?._id||before?.company!==after?.company)throw Error('Exact original Purchase unlink plan required');
+ const expected=pendingImage(before,prepared,metadata.requestId);expected._version=hash(key,'PurchaseOrders',after._id);
+ if(!same(expected,after))throw Error('Original Purchase unlink image changed');return prepared;
+}
+// Evidence classification never authorizes a callback, unlock or write.
+function classifyPurchaseDeletionImage(change,current,key){
+ try{const prepared=deletionPlan(change,key);if(same(current,change.after))return'PENDING_UNLINK';
+  const matches=(current?.details?.audit||[]).filter(event=>event.id===prepared.event.id);
+  return matches.length===1&&same(current,finalImage(change.after,prepared,matches[0].time))?'FILE_DELETE_COMPLETED':null;
+ }catch(_){return null;}
+}
+module.exports = {pendingImage,finalImage,deletionPlan,classifyPurchaseDeletionImage};
 
 },
 // order-file-fenced-store.cjs sha256:f38f2281189b846f54d0ba674051b8ed55c936e7efb2e19ac0a1739415b74313
@@ -4887,144 +5138,6 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
 }
 
 module.exports = { createFencedProof };
-
-},
-// segmented-fenced-proof.cjs sha256:43aa65f851d72c5f6e6cd5e907c90b4a218e93f51c9bea7c6aa4ff3c5508bc45
-"segmented-fenced-proof.cjs": (load, module) => {
-'use strict';
-
-// OFFLINE v2 candidate. Same company fence/CAS contract as v1, no live endpoint.
-// Runtime/staging budgets still require actual platform acceptance before activation.
-const randomUUID = () => randomBytes(16).toString('hex');
-const { hash } = load("commit-proof.cjs");
-const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
-function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
-  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32 }) {
-  for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
-    if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
-  }
-  if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
-    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1) throw Error('Bounded execution policy required');
-  const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
-  const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
-  async function readControl() {
-    const row = await store.read(journal, controlId);
-    if (!row || row.company !== company || !row._version || !Number.isSafeInteger(row.generation) || row.generation < 0) throw Error('Control missing or invalid');
-    return row;
-  }
-  async function initialize() { await store.insert(journal, { _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' }); }
-  async function transition(collection, before, after) {
-    try {
-      if (before) await store.compareAndSet(collection, after._id, before._version, copy(after));
-      else await store.insert(collection, copy(after));
-    } catch (error) {
-      if (!same(await store.read(collection, after._id), after)) throw error;
-    }
-    if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
-  }
-  const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
-  async function readSnapshot(readRows) {
-    const before = await readControl();
-    if (before.pending) throw Error('Inventory pending');
-    const rows = await readRows(copy(before)), after = await readControl();
-    if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
-    return { generation: after.generation, rows };
-  }
-  async function commit({ requestId, memberId, input, prepare, validate = () => {}, authorize = () => {} }) {
-    if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId
-      || typeof prepare !== 'function' || typeof validate !== 'function' || typeof authorize !== 'function') throw Error('Operation identity required');
-    const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT'), attempt = newAttempt();
-    if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
-    // Unknown acquisition is never stolen or auto-removed, including a lost reply.
-    await store.insert(journal, { _id: lockId, company, owner: key, attempt });
-    try {
-      let control = await readControl();
-      if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
-      const prior = await store.read(journal, resultId);
-      let manifest = await store.read(journal, key);
-      if (manifest && manifest.digest !== digest) throw Error('Request identity reused');
-      if (manifest && (manifest.company !== company || manifest._id !== key
-        || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
-        || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0)) throw Error('Operation manifest identity conflict');
-      if (prior && (!manifest || prior.company !== company || prior._id !== resultId || prior.digest !== digest
-        || prior.baseGeneration !== manifest.baseGeneration || prior.stockOperationProtocol !== 2
-        || prior.outcome?.ok !== true || prior.outcome.operationId !== key
-        || prior.outcome.generation !== manifest.baseGeneration + 1
-        || !control.pending && control.generation < prior.outcome.generation)) throw Error('Operation result requires review');
-      await authorize(copy({ control, key, digest, replay: !!manifest, baseGeneration: manifest?.baseGeneration ?? control.generation }));
-      if (prior) {
-        if (control.pending) {
-          if (control.generation !== manifest.baseGeneration || control.pending.planHash !== manifest.planHash
-            || control.pending.phase !== 'FINALIZE' || control.pending.cursor !== manifest.writeCount) throw Error('Result generation conflict');
-          await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
-        }
-        return copy(prior.outcome);
-      }
-      if (!manifest) {
-        if (control.pending) throw Error('Pending manifest missing');
-        if (!Number.isSafeInteger(control.generation + 1)) throw Error('Inventory generation exhausted');
-        const encoded = codec.encode({ key, digest, memberId, requestId, attempt, baseGeneration: control.generation, plan: await prepare() });
-        // Refuse before staging, never silently truncate or pretend this is a measured
-        // production limit. All fragments must be durable before unique root insert.
-        if (encoded.fragments.length > maxStagedFragments) throw Error('Staging capacity requires review');
-        for (const fragment of encoded.fragments) await transition(journal, null, fragment);
-        manifest = encoded.manifest;
-        await transition(journal, null, manifest);
-      }
-      if (manifest.baseGeneration !== control.generation) throw Error('Prepared generation stale');
-      const fragments = [];
-      if (!Array.isArray(manifest.fragments) || manifest.fragments.length > maxStagedFragments) throw Error('Manifest capacity conflict');
-      for (const ref of manifest.fragments) fragments.push(await store.read(journal, ref.id));
-      const plan = codec.decode({ manifest, fragments, key, digest, memberId, requestId });
-      const count = plan.writes.length;
-      if (!control.pending) {
-        const pending = { key, digest, planHash: manifest.planHash, phase: 'BEFORE', cursor: 0, count };
-        const next = nextControl(control, { pending }); await transition(journal, control, next); control = next;
-      }
-      const p = control.pending;
-      if (p.planHash !== manifest.planHash || p.count !== count || !['BEFORE', 'APPLY', 'VERIFY', 'FINALIZE'].includes(p.phase)
-        || !Number.isSafeInteger(p.cursor) || p.cursor < 0 || p.cursor > count
-        || p.phase === 'FINALIZE' && p.cursor !== count) throw Error('Pending progress conflict');
-      let phase = p.phase, cursor = p.cursor, steps = 0;
-      while (steps < stepsPerInvocation && phase !== 'FINALIZE') {
-        if (cursor === count) {
-          phase = phase === 'BEFORE' ? 'APPLY' : phase === 'APPLY' ? 'VERIFY' : 'FINALIZE'; cursor = phase === 'FINALIZE' ? count : 0;
-          // Persist phase boundary BEFORE any following-phase action. Particularly,
-          // an interrupted APPLY cannot accidentally re-enter BEFORE verification.
-          const next = nextControl(control, { pending: { ...p, phase, cursor } });
-          await transition(journal, control, next); control = next;
-          continue;
-        }
-        const change = plan.writes[cursor], current = await store.read(change.collection, change.after._id);
-        if (phase === 'BEFORE') {
-          if (!same(current, change.before)) throw Error('Prepared before-image stale');
-        } else if (phase === 'APPLY') {
-          if (!same(current, change.after)) {
-            if (!same(current, change.before)) throw Error('Write version conflict');
-            await transition(change.collection, change.before, change.after);
-          }
-        } else if (!same(current, change.after)) throw Error('Final image conflict');
-        cursor++; steps++;
-      }
-      // Checkpoint may lag completed row writes after an interruption; replay checks
-      // exact after-images, not blind increments. Never advances before row confirms.
-      if (phase !== control.pending.phase || cursor !== control.pending.cursor) {
-        const next = nextControl(control, { pending: { ...p, phase, cursor } });
-        await transition(journal, control, next); control = next;
-      }
-      if (phase !== 'FINALIZE') return { ok: false, pending: true, phase, completedCount: cursor, totalRecords: count, requestId };
-      await validate(copy(plan));
-      const outcome = { ok: true, operationId: key, generation: manifest.baseGeneration + 1 };
-      await transition(journal, null, { _id: resultId, company, stockOperationProtocol: 2, digest, baseGeneration: manifest.baseGeneration, outcome });
-      await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
-      return outcome;
-    } finally {
-      await store.compareAndRemove(journal, lockId, attempt);
-    }
-  }
-  return { initialize, readControl, readSnapshot, commit, ids: codec.ids, planFormat: 'SEGMENTED_V2' };
-}
-module.exports = { createSegmentedFencedProof };
 
 },
 // purchase-transfer-workspace.cjs sha256:1d9ef617c0459322ae604f04cc14e992544456aeaafbf953c50f01b73870c8ed
@@ -6870,6 +6983,7 @@ export const createCurrentAccountOrderRecordSave = load("current-order-record-sa
 export const createCurrentAccountAuxiliarySave = load("current-account-auxiliary-save.cjs").createCurrentAccountAuxiliarySave;
 export const createCurrentOrderFileSave = load("current-order-file-save.cjs").createCurrentOrderFileSave;
 export const createOrderFileFencedStore = load("order-file-fenced-store.cjs").createOrderFileFencedStore;
+export const createPurchaseDeleteProtocol = load("purchase-delete-protocol.cjs").createPurchaseDeleteProtocol;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;

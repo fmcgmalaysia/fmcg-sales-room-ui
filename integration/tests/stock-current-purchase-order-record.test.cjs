@@ -38,7 +38,7 @@ test('original payment request is preserved, Reviewing lock cannot be bypassed b
   f.records[0] = { ...record, _version: 'P1' };
   const row = f.row(); f.records[0].details.procurementHandoff = transitionProcurementHandoff(row, f.records[0].details,
     { action: 'TAKE_OWNERSHIP', reason: 'Finance review' }, { at: '2026-10-22T07:01:00Z', by: 'Account', byStaffId: 'A' }, 'ACCOUNT');
-  await assert.rejects(preparePurchaseOrderRecord({ ...f.args, input: f.input({ action: 'REQUEST_PAYMENT', termDays: 0, purpose: 'FULL',
+  await assert.rejects(preparePurchaseOrderRecord({ ...f.args, requestId:'22222222-2222-4222-8222-222222222222', input: f.input({ action: 'REQUEST_PAYMENT', termDays: 0, purpose: 'FULL',
     requestedCents: 100000, basisFileId: 'INV', creditNotes: [] }) }), /locked/);
 });
 

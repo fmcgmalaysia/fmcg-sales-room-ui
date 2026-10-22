@@ -2,6 +2,7 @@
 
 const { hash } = require('./commit-proof.cjs');
 const { createSegmentedPlanCodec, same } = require('./segmented-plan.cjs');
+const { classifyPurchaseDeletionImage } = require('./purchase-delete-images.cjs');
 const count = n => Number.isSafeInteger(n) && n >= 0;
 // READ ONLY. A page of evidence cannot authorize unlocking, inverse writes or
 // claim an entire901row operation was checked. Original retained request only.
@@ -44,7 +45,7 @@ async function inspectSegmentedStockRecovery({ store, company, requestId, member
       } else {
         const current = await store.read(change.collection, id);
         packet.images.push({ collection: change.collection, id, version: current?._version || null,
-          image: same(current, change.after) ? 'AFTER' : same(current, change.before) ? 'BEFORE' : 'CONFLICT' });
+          image: change.purchaseDeletion && classifyPurchaseDeletionImage(change,current,key) || (same(current, change.after) ? 'AFTER' : same(current, change.before) ? 'BEFORE' : 'CONFLICT') });
       }
     }
     packet.completeInspection = offset === 0 && packet.images.length === plan.writes.length;
@@ -59,6 +60,8 @@ async function inspectSegmentedStockRecovery({ store, company, requestId, member
   if (!status && lock) status = 'LOCK_PRESENT_STAY_BLOCKED';
   if (!status && control.pending && control.pending.key !== key) status = 'OTHER_OPERATION_PENDING';
   if (!status && packet.images.some(i => i.image === 'CONFLICT')) status = 'REVIEW_IMAGE_CONFLICT';
+  if (!status && result && packet.images.some(i => i.image === 'PENDING_UNLINK')) status = 'REVIEW_FILE_DELETE_NOT_COMPLETED';
+  if (!status && !result && packet.images.some(i => i.image === 'FILE_DELETE_COMPLETED') && control.pending?.phase !== 'FINALIZE') status = 'REVIEW_FILE_DELETE_PHASE';
   if (!status && result) {
     if (!plan || result.company !== company || result._id !== resultId || result.digest !== digest || result.stockOperationProtocol !== 2
       || !count(result.baseGeneration) || result.baseGeneration !== manifest.baseGeneration || result.outcome?.ok !== true

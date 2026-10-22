@@ -15,6 +15,7 @@ async function preparePurchaseOrderRecord({ company, staff, requestId, input, co
     || !Array.isArray(records) || !Object.hasOwn(patches, input?.action) || typeof createPurchaseOrderOperations !== 'function'
     || typeof now !== 'function') throw Error('Original non-file Purchase order context required');
   if (records.some(r => r.company !== company || !r._id) || new Set(records.map(r => r._id)).size !== records.length) throw Error('Exact company PO records required');
+  if (records.find(row => row._id === input.id)?.details?.audit?.some(event => event.id === hash(company,requestId,staff.memberId,'PO_AUDIT'))) throw Error('Preexisting original PO audit without current receipt requires review');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private PO record prepare boundary');
   let captured, reads = 0;
   const scope = c => { if (![journal, 'PurchaseOrders'].includes(c)) throw Error('PO record scope violation'); };

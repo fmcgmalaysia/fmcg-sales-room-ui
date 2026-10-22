@@ -46,6 +46,13 @@ async function finish(f, request = f.request) {
 }
 
 for (const department of ['PURCHASE', 'ACCOUNT']) {
+  test(`${department} pre-migration same-ID original audit without current receipt cannot be adopted or duplicated`,async()=>{
+    const f=await fixture('NCT',department),{hash}=require('../prototypes/stock-current-state/commit-proof.cjs');
+    const record=f.db.get('PurchaseOrders:'+f.request.input.id),audit={id:hash('NCT',f.request.requestId,'M',department==='PURCHASE'?'PO_AUDIT':'FINANCE'),action:'ORIGINAL',time:'2026-10-21T00:00:00Z'};
+    record.details.audit.push(audit);f.request.input=f.input();const before=JSON.stringify(record);
+    await assert.rejects(f.save(f.request),/Preexisting original/);assert.equal(JSON.stringify(f.db.get('PurchaseOrders:'+f.request.input.id)),before);
+    assert.equal((await f.protocol.readControl()).generation,0);assert.equal((await f.protocol.readControl()).pending,null);
+  });
   test(`${department} original PO metadata save/replay preserves documents, stock fields and both company boundaries`, async () => {
     for (const company of ['NCT', 'GHR']) {
       const f = await fixture(company, department), id = f.request.input.id, record = f.db.get('PurchaseOrders:' + id);
