@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after0e76bab: MARGIN_REFERENCE_CURRENT_PLAN.txt. Original GP/FX/invoice
+cache now yields paired exact audit+versioned order plan, no quantity/task edits. Original
+unknown/locked/partial invoices preserved; per-demand grouping retains supplier children,
+no whole-workroom giant transaction.33new+originalpass247.9504ms. Actual gateway/system
+identity/capacity and other writer/recovery/migration/UI/four-stage release OPEN/OFF.
+
 CURRENT HEARTBEAT after5adfc94: SHARED_WRITER_COVERAGE.txt. Targeted backend writer search
 confirmed read-side GP cache, Sales batch plan, quantity decisions, Purchase PO record
 and Account same-PO record updates. Mandatory candidate admission now19 categories,
