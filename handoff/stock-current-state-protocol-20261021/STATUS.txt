@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 TASK ROOT: PURCHASE_TASK_ROOT_AND_MODE_ROUTE.txt. Actual-original-import
+current Purchase task root + original paged table codec bridge (no N+1 per listed row),
+candidate page relay and old PUBLIC save server-mode gate. ACTIVE missing metadata
+cannot select old apply; missing/maintenance/unknown refuses. Exact own protocol-lock
+metadata normalization only, no release privilege.681currentpass0fail6681.087ms,
+75modules33exports. Actual cutover/in-flight legacy proof/all other writer/read/file/
+reload/native/init/recovery/capacity/shadow/fourrelease OPEN. Production exact/OFF.
+
 2026-10-22 COMBINED SORT: PURCHASE_COMBINED_DISPLAY_CURRENT.txt. Original EDIT
 price drafts + split display now ONE fenced request, no partial success/extra task;
 display-only/no-op tasks do not fabricate product updates. Cross-customer price

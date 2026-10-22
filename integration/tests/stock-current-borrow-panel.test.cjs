@@ -71,10 +71,11 @@ test('panel resource/relay builds are exact original overlays, preserve original
   }
   const bridge = fs.readFileSync(path.join(root, 'purchase-room-page.candidate.js'), 'utf8'), originalBridge = fs.readFileSync(path.join(__dirname, '../wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
   const stripped = bridge.replace("import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n", '')
-    .replace("import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';\n", '')
+    .replace("import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent } from 'backend/stockCurrentBorrow.web';\n", '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&\['BORROW_APPROVE','BORROW_RETURN'\].includes\(message.operation\)\)\{[\s\S]*?\n    \}/, '')
+    .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '');
   assert.equal(stripped, originalBridge);
   const index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');

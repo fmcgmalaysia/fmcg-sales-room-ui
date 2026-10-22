@@ -1,4 +1,4 @@
-import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';
+import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent } from 'backend/stockCurrentBorrow.web';
 import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
@@ -26,6 +26,11 @@ $w.onReady(() => {
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>6000)throw Error('Invalid borrowing save request.');
         const result=await savePurchaseBorrowingCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Borrowing save unconfirmed; retain original request. 借货保存尚未确认，请保留原请求。'});}return;
+    }
+    if(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>200000)throw Error('Invalid current Purchase task save.');
+        const result=await savePurchaseTasksCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Purchase save unconfirmed; retain original request. 采购保存尚未确认，请保留原请求。'});}return;
     }
     if(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid borrowing detail request.');

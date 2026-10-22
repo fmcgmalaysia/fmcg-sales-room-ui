@@ -5,6 +5,7 @@
 const metadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId']);
 const own = (row, key) => Object.prototype.hasOwnProperty.call(row, key);
 const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');
+const { hash } = require('./commit-proof.cjs');
 
 function createSdkConditionalStore({ items, company, collections, dateTimeFields = {} }) {
   if (!['NCT', 'GHR'].includes(company) || !Array.isArray(collections) || !collections.length
@@ -74,7 +75,20 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
       condition: { company: { $eq: company }, attempt: { $eq: expectedAttempt } }
     }));
   }
-  return { read, insert, compareAndSet, compareAndRemove };
+  // Private server-read boundary for rows ALREADY returned by the original paged
+  // table reader. Same codec/ownership/version normalization, no extra per-row
+  // SDK request and no new write capability. Not an authority for browser rows.
+  function normalizeListedRow(collection, row) {
+    scope(collection, row?._id);
+    const companyLock = collection === (company === 'NCT' ? 'NCTActivity' : 'NCTActivity1')
+      && row._id === hash(company+'/PURCHASE','LOCK') && typeof row.owner === 'string' && row.owner
+      && typeof row.attempt === 'string' && row.attempt && !row.action && !row.details && !own(row,'stockCommitVersion');
+    // Attempt-scoped protocol locks are intentionally unversioned; only that exact
+    // reserved identity may use the same metadata normalization without a version.
+    if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
+    return normalize(collection, row);
+  }
+  return { read, insert, compareAndSet, compareAndRemove, normalizeListedRow };
 }
 
 module.exports = { createSdkConditionalStore };

@@ -14,7 +14,7 @@ for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
 }
 let bridge = fs.readFileSync(path.join(root, 'integration/wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
 bridge = "import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n" + bridge;
-bridge = "import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';\n" + bridge;
+bridge = "import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent } from 'backend/stockCurrentBorrow.web';\n" + bridge;
 bridge = once(bridge, '    const message = event.data || {};', `    const message = event.data || {};
     if(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid unused return request.');
@@ -30,6 +30,11 @@ bridge = once(bridge, '    const message = event.data || {};', `    const messag
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>6000)throw Error('Invalid borrowing save request.');
         const result=await savePurchaseBorrowingCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Borrowing save unconfirmed; retain original request. 借货保存尚未确认，请保留原请求。'});}return;
+    }
+    if(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>200000)throw Error('Invalid current Purchase task save.');
+        const result=await savePurchaseTasksCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Purchase save unconfirmed; retain original request. 采购保存尚未确认，请保留原请求。'});}return;
     }
     if(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid borrowing detail request.');

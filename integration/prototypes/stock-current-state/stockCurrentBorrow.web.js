@@ -2,7 +2,11 @@ import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import { items } from '@wix/data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
-import { requirePurchaseStaff } from 'backend/purchaseProjection.js';
+import { requirePurchaseStaff, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
+import { createPurchaseOperations } from 'backend/purchaseOperations.js';
+import { createPurchaseSourceOperations } from 'backend/purchaseSources.js';
+import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
+import { PURCHASE_CURRENT_DISPLAY_ORDER_VERSION } from 'backend/purchaseDisplayOrder.js';
 import { fulfilmentStore, readFulfilmentContext } from 'backend/customerFulfilmentService.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
@@ -11,7 +15,7 @@ import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway, createCurrentPurchaseTables, createCurrentPurchaseTaskGateway } from 'backend/stockCurrentCommands.js';
 // Deliberately empty until actual ALL-writer verification and production permission,
 // schemas, initialization, shadow and capacity acceptance. Browser cannot set this.
 const writerCoverage = Object.freeze({});
@@ -19,7 +23,7 @@ const requiredWriters = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES
 // Both company journal activityTime fields were inspected in MASTER CMS. Other
 // fields/collections and actual SDK roundtrips remain gates; never infer types.
 const verifiedDateFields = Object.freeze({ NCTActivity: ['activityTime'], NCTActivity1: ['activityTime'] });
-async function privateGateway(company) {
+async function privateGateway(company, taskCommands = false) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Known Purchase company required');
   await getPurchaseStaffContext(); // Original authorization BEFORE any stock data.
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
@@ -56,6 +60,13 @@ async function privateGateway(company) {
       return rows;
     }, now: () => new Date()
   };
+  if (taskCommands) {
+    const readTables = createCurrentPurchaseTables({ company, store, readOriginalTable: collection => fulfilmentStore.all(collection) });
+    return createCurrentPurchaseTaskGateway({ company, items, store, protocol: guardedProtocol, coverage: writerCoverage,
+      currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION, authorityDependencies: { ...authorityDependencies,
+        readTables, createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace,
+        currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION } });
+  }
   return createCurrentPurchaseBorrowGateway({ company, items, store, protocol: guardedProtocol,
     coverage: writerCoverage, authorityDependencies });
 }
@@ -82,5 +93,14 @@ export const getPurchaseBorrowReturnOptionsCurrent = webMethod(Permissions.SiteM
     return await (await privateGateway(company)).readReturnOptions(company, input);
   } catch (_) {
     return { ok: false, error: 'Unused borrowing return unconfirmed. Refresh and review. 未使用借货的归还资料尚未确认，请刷新核对。' };
+  }
+});
+export const savePurchaseTasksCurrent = webMethod(Permissions.SiteMember, async (company, request) => {
+  try {
+    if (!request || !/^[a-f0-9-]{36}$/i.test(request.requestId || '') || JSON.stringify(request).length > 200000) throw Error('Bounded original Purchase task save required');
+    return await (await privateGateway(company, true))(company, request);
+  } catch (_) {
+    return { ok: false, requestId: typeof request?.requestId === 'string' && request.requestId.length <= 100 ? request.requestId : '',
+      error: 'Purchase save unconfirmed. Retain and retry the original request. 采购保存尚未确认，请保留并重试原请求。' };
   }
 });

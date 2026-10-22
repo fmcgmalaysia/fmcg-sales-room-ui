@@ -40,7 +40,7 @@ async function root(verifiedMockCoverage = false) {
 
 test('generated actual-import web root retains original auth before stock access, exact schema gate and CLOSED writer coverage', async () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-purchase-borrow-web.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
-  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
+  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
   const quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
   assert.equal(quote.ok, false); assert.equal(f.calls[0], 'AUTH');
   assert.equal(f.calls.includes('CONTEXT'), false, 'unverified writer coverage must not yield actionable borrowing quotes');
@@ -93,15 +93,16 @@ test('unapproved member, foreign company, unverified writer coverage and oversiz
 });
 
 function relay() {
-  let callback; const messages = [], queries = [], saves = [], legacy = [], room = { postMessage: m => messages.push(copy(m)), onMessage: fn => { callback = fn; } };
+  let callback; const messages = [], queries = [], saves = [], taskSaves = [], legacy = [], room = { postMessage: m => messages.push(copy(m)), onMessage: fn => { callback = fn; } };
   const $w = () => room; $w.onReady = fn => fn();
   const source = fs.readFileSync(path.join(folder, 'purchase-room-page.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '');
   const native = { $w, getPurchaseBorrowOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input) }); return { ok: true, options: [] }; },
     getPurchaseBorrowReturnOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input), kind: 'RETURN' }); return { ok: true, maximumQuantity: 0 }; },
     savePurchaseBorrowingCurrent: async (company, request) => { saves.push({ company, request: copy(request) }); return {
       ok: false, pending: true, requestId: request.requestId, phase: 'APPLY', completedCount: 1, totalRecords: 5 }; },
+    savePurchaseTasksCurrent: async (company,request) => { taskSaves.push({company,request:copy(request)}); return { ok:false,pending:true,requestId:request.requestId,phase:'VERIFY',completedCount:2,totalRecords:4 }; },
     savePurchaseOperation: async (...args) => { legacy.push(args); return { ok: true, requestId: args[1] }; } };
-  vm.runInNewContext(source, native); return { messages, queries, saves, legacy, send: data => callback({ data }) };
+  vm.runInNewContext(source, native); return { messages, queries, saves, taskSaves, legacy, send: data => callback({ data }) };
 }
 
 test('actual Wix relay sends OPTIONS and BORROW to new root, preserves exact UUID/metadata/progress and leaves ordinary saves untouched', async () => {
@@ -132,4 +133,14 @@ test('actual return quote relay is readonly, bounded and preserves company/reque
   assert.equal(f.messages.at(-1).type, 'PURCHASE_BORROW_RETURN_OPTIONS_RESULT'); assert.equal(f.messages.at(-1).requestId, request.requestId);
   await f.send({ ...request, input: { relationId: 'X'.repeat(6001) } }); assert.equal(f.queries.length, 1);
   assert.equal(f.saves.length, 0); assert.equal(f.legacy.length, 0);
+});
+test('current task relay preserves exact command and progress without a legacy fallback or browser actor grant',async()=>{
+  const f=relay(),request={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'11111111-2222-4333-8444-555555555555',operation:'EDIT',
+    input:{edits:[{taskId:'T',version:'V',changes:{lpCtn:20}}]},stockProtocol:1,stockBuild:'TEST',stockGeneration:8};
+  await f.send({...request,memberId:'FORGED',coverage:'FORGED'});
+  assert.deepEqual(f.taskSaves,[{company:'NCT',request:{requestId:request.requestId,operation:'EDIT',input:request.input,stockProtocol:1,stockBuild:'TEST',stockGeneration:8}}]);
+  assert.equal(f.legacy.length,0);assert.equal(f.saves.length,0);assert.equal(f.messages.at(-1).result.phase,'VERIFY');
+  await f.send({...request,stockProtocol:2});assert.equal(f.taskSaves.length,2);assert.equal(f.legacy.length,0,'invalid metadata must reach current refusal, not old apply');
+  for(const patch of [{company:'OTHER'},{requestId:'BAD'},{input:{reason:'X'.repeat(200001)}}])await f.send({...request,...patch});
+  assert.equal(f.taskSaves.length,2);assert.equal(f.legacy.length,0);
 });

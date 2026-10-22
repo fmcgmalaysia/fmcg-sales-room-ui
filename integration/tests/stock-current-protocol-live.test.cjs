@@ -89,7 +89,8 @@ test('generated live proof embeds unchanged algorithm, adapter and isolation map
     const expected = read(file).replace(/^'use strict';\r?\n/, '')
       .replace(new RegExp('module\\.exports = \\{ ' + exported + ' \\};\\s*$'), '')
       .replace("const { randomUUID } = require('node:crypto');", '')
-      .replace("const { hash } = require('./commit-proof.cjs');", '')
+      .replace("const { hash } = require('./commit-proof.cjs');", file === 'sdk-conditional-store.cjs'
+        ? "const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);" : '')
       .replace("const { planCollections } = require('./domain-scope.cjs');", '');
     assert.equal(compact(actual), compact(expected.replace("const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');", 'const createSdkFieldCodec = sdkFieldCodecFactory;')));
   }

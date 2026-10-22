@@ -2574,7 +2574,7 @@ function createShortageStockPreparation(deps) {
 module.exports = { validateOriginalShortage, createShortageStockPreparation };
 
 },
-// sdk-conditional-store.cjs sha256:d087abf224b05a079b2b74e67e038584a5f3bba0a7285de4adafa129a909e4d5
+// sdk-conditional-store.cjs sha256:30aaf495c3506f9b3578484425b407ca4ae1b1302486be6ea83cce54d0620a09
 "sdk-conditional-store.cjs": (load, module) => {
 'use strict';
 
@@ -2583,6 +2583,7 @@ module.exports = { validateOriginalShortage, createShortageStockPreparation };
 const metadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId']);
 const own = (row, key) => Object.prototype.hasOwnProperty.call(row, key);
 const { createSdkFieldCodec } = load("sdk-field-codec.cjs");
+const { hash } = load("commit-proof.cjs");
 
 function createSdkConditionalStore({ items, company, collections, dateTimeFields = {} }) {
   if (!['NCT', 'GHR'].includes(company) || !Array.isArray(collections) || !collections.length
@@ -2652,7 +2653,20 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
       condition: { company: { $eq: company }, attempt: { $eq: expectedAttempt } }
     }));
   }
-  return { read, insert, compareAndSet, compareAndRemove };
+  // Private server-read boundary for rows ALREADY returned by the original paged
+  // table reader. Same codec/ownership/version normalization, no extra per-row
+  // SDK request and no new write capability. Not an authority for browser rows.
+  function normalizeListedRow(collection, row) {
+    scope(collection, row?._id);
+    const companyLock = collection === (company === 'NCT' ? 'NCTActivity' : 'NCTActivity1')
+      && row._id === hash(company+'/PURCHASE','LOCK') && typeof row.owner === 'string' && row.owner
+      && typeof row.attempt === 'string' && row.attempt && !row.action && !row.details && !own(row,'stockCommitVersion');
+    // Attempt-scoped protocol locks are intentionally unversioned; only that exact
+    // reserved identity may use the same metadata normalization without a version.
+    if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
+    return normalize(collection, row);
+  }
+  return { read, insert, compareAndSet, compareAndRemove, normalizeListedRow };
 }
 
 module.exports = { createSdkConditionalStore };
@@ -2777,6 +2791,97 @@ function createCurrentPurchaseReorderSave({ company, store, protocol, coverage, 
   };
 }
 module.exports = { createCurrentPurchaseReorderSave };
+
+},
+// current-purchase-tables.cjs sha256:c58d84844a5ddfcc3a96f0ac9e7906a22d5f0a32137dbcad609203d8f8696201
+"current-purchase-tables.cjs": (load, module) => {
+'use strict';
+const { domainCollections } = load("domain-scope.cjs");
+const { copy } = load("segmented-plan.cjs");
+// Server-only bridge to ORIGINAL all()/pagination. No replacement query engine,
+// synthetic stock facts or N+1 exact reads for every listed historical row.
+function createCurrentPurchaseTables({ company, readOriginalTable, store }) {
+  if (!['NCT','GHR'].includes(company) || typeof readOriginalTable !== 'function' || typeof store?.normalizeListedRow !== 'function') {
+    throw Error('Original paged Purchase reader and conditional normalization required');
+  }
+  const [orders,tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  return async (selectedCompany, staff) => {
+    if (selectedCompany !== company || !staff?.memberId || !staff.staffId) throw Error('Private original Purchase table scope required');
+    const collections = [orders,tasks,journal,'SharedSuppliers','PurchaseOrders'];
+    const listed = await Promise.all(collections.map(collection => readOriginalTable(collection)));
+    return Object.fromEntries(collections.map((collection,index) => {
+      let rows = listed[index];
+      if (!Array.isArray(rows) || rows.some(row => !row || typeof row._id !== 'string' || !row._id)
+        || new Set(rows.map(row => row._id)).size !== rows.length) throw Error('Complete distinct original Purchase table required');
+      // Shared supplier identities are intentionally global in the original system.
+      if (collection === 'SharedSuppliers') return [collection,copy(rows)];
+      if (collection === 'PurchaseOrders') rows = rows.filter(row => row.company === company);
+      return [collection,rows.map(row => {
+        if (collection === journal && !Object.hasOwn(row,'stockCommitVersion') && !(row.owner && row.attempt && !row.action && !row.details)) {
+          // Immutable PRE-ACTIVE journal history need not be rewritten/versioned.
+          // Keep original Date->JSON snapshots and identities. Such records are not
+          // conditional before-images; current mutations still use exact SDK reads.
+          if (row.company && row.company !== company) throw Error('Original Purchase journal company conflict');
+          return copy(row);
+        }
+        return store.normalizeListedRow(collection,row);
+      })];
+    }));
+  };
+}
+module.exports = { createCurrentPurchaseTables };
+
+},
+// current-purchase-task-gateway.cjs sha256:232e6188574465bdd44c35f0a98a0477d1ca0978ec84db7198ec46d0117a87a4
+"current-purchase-task-gateway.cjs": (load, module) => {
+'use strict';
+const { createCurrentPurchaseSave } = load("current-department-saves.cjs");
+const { createCurrentPurchaseReorderSave } = load("current-purchase-reorder-save.cjs");
+// Current-only authenticated root binding. Unsupported/missing metadata cannot
+// reach an old unfenced writer through this gateway. No browser coverage/actor.
+function createCurrentPurchaseTaskGateway(dependencies) {
+  const { company } = dependencies;
+  if (!['NCT','GHR'].includes(company)) throw Error('Private current Purchase company required');
+  const save = createCurrentPurchaseSave(dependencies), reorder = createCurrentPurchaseReorderSave(dependencies);
+  return async (requestCompany, request) => {
+    if (requestCompany !== company || !request || request.company !== undefined && request.company !== company
+      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER'].includes(request.operation)
+      || JSON.stringify(request).length > 200000) throw Error('Supported bounded current Purchase task request required');
+    return (request.operation === 'REORDER' ? reorder : save)({ requestId:request.requestId,operation:request.operation,input:request.input,
+      stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration });
+  };
+}
+module.exports = { createCurrentPurchaseTaskGateway };
+
+},
+// current-purchase-save-router.cjs sha256:f705661cfe9924d69c9f8080a0d4eb6355712445f68ba2f768381265725640bf
+"current-purchase-save-router.cjs": (load, module) => {
+'use strict';
+const { hash } = load("commit-proof.cjs");
+// Private original authenticated wrapper only. Browser metadata does NOT choose
+// between two active writers; actual server control is the authority.
+function createCurrentPurchaseSaveRouter({ company, readControl, saveCurrent, saveLegacy }) {
+  if (!['NCT','GHR'].includes(company) || [readControl,saveCurrent,saveLegacy].some(fn=>typeof fn!=='function')) throw Error('Original server Purchase routing dependencies required');
+  return async request => {
+    const control = await readControl();
+    if (!control || control._id !== hash(company,'STOCK_CONTROL') || control.company !== company
+      || typeof control.stockCommitVersion !== 'string' || !control.stockCommitVersion || control.schemaVersion !== 1
+      || !Number.isSafeInteger(control.generation) || control.generation < 0
+      || !['LEGACY','SHADOW','MAINTENANCE','ACTIVE'].includes(control.mode)) throw Error('Purchase stock control unconfirmed. Retain the original request. 采购库存控制尚未确认，请保留原请求。');
+    if (control.mode === 'LEGACY') {
+      if (control.pending !== null || request.stockCurrent?.stockProtocol !== undefined) throw Error('Purchase mode changed. Refresh before saving the retained draft. 采购模式已变更，请刷新核对原草稿。');
+      return saveLegacy();
+    }
+    if (control.mode !== 'ACTIVE') throw Error('Purchase inventory maintenance is in progress. Keep the draft. 库存维护中，请保留草稿。');
+    // The commit coordinator validates exact build/generation, pending ownership,
+    // original grant and all-writer coverage again under its company fence.
+    // Missing/wrong metadata or an unsupported command must NEVER reach legacy.
+    return saveCurrent(company,{ requestId:request.requestId,operation:request.operation,input:request.input,
+      stockProtocol:request.stockCurrent?.stockProtocol,stockBuild:request.stockCurrent?.stockBuild,
+      stockGeneration:request.stockCurrent?.stockGeneration });
+  };
+}
+module.exports = { createCurrentPurchaseSaveRouter };
 
 },
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
@@ -4870,6 +4975,9 @@ export const createCurrentAllocationSave = load("current-department-saves.cjs").
 export const createSdkConditionalStore = load("sdk-conditional-store.cjs").createSdkConditionalStore;
 export const createCurrentPurchaseSave = load("current-department-saves.cjs").createCurrentPurchaseSave;
 export const createCurrentPurchaseReorderSave = load("current-purchase-reorder-save.cjs").createCurrentPurchaseReorderSave;
+export const createCurrentPurchaseTables = load("current-purchase-tables.cjs").createCurrentPurchaseTables;
+export const createCurrentPurchaseTaskGateway = load("current-purchase-task-gateway.cjs").createCurrentPurchaseTaskGateway;
+export const createCurrentPurchaseSaveRouter = load("current-purchase-save-router.cjs").createCurrentPurchaseSaveRouter;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;
