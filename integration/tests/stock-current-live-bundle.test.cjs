@@ -10,7 +10,10 @@ test('live diagnostic embeds the actual candidate adapter/query, not a divergent
   const source = read('stockProtocolAdapterTest.web.js');
   const adapter = source.split('const stockAdapterFactory = (() => {')[1].split('return createSdkConditionalStore;')[0];
   const query = source.split('const stockQueryFactory = (() => {')[1].split('return createCurrentQuery;')[0];
-  assert.equal(compact(adapter), body('sdk-conditional-store.cjs', 'createSdkConditionalStore'));
+  assert.equal(compact(adapter), body('sdk-conditional-store.cjs', 'createSdkConditionalStore')
+    .replace(compact("const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');"), compact('const createSdkFieldCodec = sdkFieldCodecFactory;')));
+  const codec = source.split('const sdkFieldCodecFactory = (() => {')[1].split('return createSdkFieldCodec;')[0];
+  assert.equal(compact(codec), body('sdk-field-codec.cjs', 'createSdkFieldCodec'));
   assert.equal(compact(query), body('current-query.cjs', 'createCurrentQuery, readCurrentDetailPage'));
   assert.ok(compact(source).includes(compact(read('adapter-live-harness.txt'))));
   assert.ok(compact(source).includes(compact(read('adapter-readonly-harness.txt'))));

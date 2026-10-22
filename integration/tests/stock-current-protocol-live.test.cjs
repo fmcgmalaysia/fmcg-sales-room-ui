@@ -79,6 +79,7 @@ test('isolation mapper rejects foreign logical collections and cannot alias phys
 test('generated live proof embeds unchanged algorithm, adapter and isolation mapper', () => {
   const bundle = read('stockProtocolCommitTest.web.js');
   const definitions = [
+    ['sdkFieldCodecFactory', 'sdk-field-codec.cjs', 'createSdkFieldCodec'],
     ['stockAdapterFactory', 'sdk-conditional-store.cjs', 'createSdkConditionalStore'],
     ['isolatedStoreFactory', 'isolated-protocol-store.cjs', 'createIsolatedProtocolStore'],
     ['stockProtocolFactory', 'fenced-proof.cjs', 'createFencedProof']
@@ -90,7 +91,7 @@ test('generated live proof embeds unchanged algorithm, adapter and isolation map
       .replace("const { randomUUID } = require('node:crypto');", '')
       .replace("const { hash } = require('./commit-proof.cjs');", '')
       .replace("const { planCollections } = require('./domain-scope.cjs');", '');
-    assert.equal(compact(actual), compact(expected));
+    assert.equal(compact(actual), compact(expected.replace("const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');", 'const createSdkFieldCodec = sdkFieldCodecFactory;')));
   }
   assert.equal((bundle.match(/webMethod\(Permissions\.Admin/g) || []).length, 3);
   const scopeBody = bundle.split('const domainScopeFactory = (() => {')[1].split('return { domainCollections, planCollections };')[0];

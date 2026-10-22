@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST SDK TYPES: read SDK_TYPED_FIELDS.txt. Fresh MASTER NCTActivity
+activityTime verified Date and Time, viewed then Cancel; no data/schema changes.
+Exact schema-driven SDK Date conversion candidate implemented, ordinary text/details
+untouched, mismatched read types fail closed.488current tests pass0fail4911.6773ms;
+runtime38modules. Real other schema/SDK roundtrip, all gateways/client/migration/
+capacity/UI/shadow/release still open. ACTIVE OFF; historical probes NOT rerun.
+
 CURRENT afterb49419a: ASTRA_PRODUCTION_DECISION.txt. User selected Astra High focused
 review then returned Sol High; explicit implementation authorized. Original valid10PO
 lines ->31writes refused;300lines ->901images513614/555614UTF8bytes;15CLOSEDsources block.

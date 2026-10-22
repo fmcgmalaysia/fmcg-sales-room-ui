@@ -15,6 +15,19 @@ test('Wix-compatible command runtime is exact scoped source, without second prot
   assert.deepEqual([...api.planCollections('NCT')], ['NCTActivity', 'StockPositions', 'StockClaims', 'StockProducts']);
   for (const name of ['createCurrentStockSave', 'createCurrentWarehouseReceiptSave', 'createCurrentBorrowingSave', 'createSdkConditionalStore']) assert.throws(() => api[name]({}), /required|scope/);
 });
+
+test('generated SDK store accepts an exact cross-realm schema and preserves typed Date write', async () => {
+  const api = runtime(), stamp = '2026-10-22T01:23:45.678Z';
+  let stored;
+  const items = { query: () => { throw Error('Not used'); }, patch: () => { throw Error('Not used'); }, remove: () => { throw Error('Not used'); },
+    insert: async (collection, row) => {
+      assert.equal(collection, 'NCTActivity');
+      assert.equal(Object.prototype.toString.call(row.activityTime), '[object Date]'); stored = row; return row;
+    } };
+  const store = api.createSdkConditionalStore({ items, company: 'NCT', collections: ['NCTActivity'], dateTimeFields: { NCTActivity: ['activityTime'] } });
+  const result = await store.insert('NCTActivity', { _id: 'D', company: 'NCT', activityTime: stamp });
+  assert.equal(stored.activityTime.toISOString(), stamp); assert.equal(result.activityTime, stamp);
+});
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;
   const store = { read: async (c, id) => copy(rows.get(c + ':' + id) || null), insert: async (c, row) => {

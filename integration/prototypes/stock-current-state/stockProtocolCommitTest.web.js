@@ -4,40 +4,83 @@ import { createHash, randomBytes } from 'crypto';
 const randomUUID = () => randomBytes(16).toString('hex');
 const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
 
+const sdkFieldCodecFactory = (() => {
+
+// Private SDK boundary only. Caller supplies field IDs read from the actual CMS
+// schema; never infer types from names, ISO-looking strings or nested event JSON.
+const isDate = value => Object.prototype.toString.call(value) === '[object Date]';
+function createSdkFieldCodec({ collections, dateTimeFields = {} }) {
+  const proto = dateTimeFields && typeof dateTimeFields === 'object' && Object.getPrototypeOf(dateTimeFields);
+  if (!Array.isArray(collections) || !dateTimeFields || Array.isArray(dateTimeFields)
+    || typeof dateTimeFields !== 'object' || (proto !== null && (Object.getPrototypeOf(proto) !== null
+      || Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name !== 'Object'))) throw Error('Explicit SDK field schema required');
+  const allowed = new Set(collections), fields = new Map();
+  for (const [collection, names] of Object.entries(dateTimeFields)) {
+    if (!allowed.has(collection) || !Array.isArray(names) || new Set(names).size !== names.length
+      || names.some(name => typeof name !== 'string' || !/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)
+        || ['company', 'stockCommitVersion'].includes(name))) throw Error('Invalid SDK DateTime field scope');
+    fields.set(collection, new Set(names));
+  }
+  function convert(collection, field, value, direction) {
+    if (!allowed.has(collection)) throw Error('SDK field collection scope violation');
+    if (!fields.get(collection)?.has(field) || value === null) return JSON.parse(JSON.stringify(value));
+    if (direction === 'decode') {
+      // A string in a DateTime field is not the same Wix type. Do not silently
+      // repair legacy data or make a corrupt write appear verified.
+      if (!isDate(value) || !Number.isFinite(value.getTime())) throw Error('SDK DateTime read type mismatch: ' + collection + '.' + field);
+      return value.toISOString();
+    }
+    const canonical = isDate(value) && Number.isFinite(value.getTime()) ? value.toISOString() : value;
+    if (typeof canonical !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(canonical)) {
+      throw Error('Canonical DateTime write required: ' + collection + '.' + field);
+    }
+    const date = new Date(canonical);
+    if (!Number.isFinite(date.getTime()) || date.toISOString() !== canonical) throw Error('Invalid DateTime write');
+    return date;
+  }
+  return {
+    encode: (collection, field, value) => convert(collection, field, value, 'encode'),
+    decode: (collection, field, value) => convert(collection, field, value, 'decode')
+  };
+}
+
+return createSdkFieldCodec;
+})();
 const stockAdapterFactory = (() => {
 
 // Candidate adapter only. Caller supplies authorized company and explicit collection scope.
 // Not imported by production. Verified SDK1.0.528 uses plain WQL conditions, not Filter().
 const metadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId']);
 const own = (row, key) => Object.prototype.hasOwnProperty.call(row, key);
-const copy = value => JSON.parse(JSON.stringify(value));
+const createSdkFieldCodec = sdkFieldCodecFactory;
 
-function createSdkConditionalStore({ items, company, collections }) {
+function createSdkConditionalStore({ items, company, collections, dateTimeFields = {} }) {
   if (!['NCT', 'GHR'].includes(company) || !Array.isArray(collections) || !collections.length
     || collections.some(name => typeof name !== 'string' || !name)
     || !items || ['query', 'insert', 'patch', 'remove'].some(method => typeof items[method] !== 'function')) {
     throw Error('Explicit conditional store scope required');
   }
   const allowed = new Set(collections);
+  const fieldCodec = createSdkFieldCodec({ collections, dateTimeFields });
   function scope(collection, id) {
     if (!allowed.has(collection) || typeof id !== 'string' || !id) throw Error('Storage scope violation');
   }
-  function normalize(row) {
+  function normalize(collection, row) {
     if (!row) return null;
     if (row.company !== company) throw Error('Storage company conflict');
     const result = {};
     for (const [key, value] of Object.entries(row)) {
-      if (!metadata.has(key) && key !== 'stockCommitVersion') result[key] = copy(value);
+      if (!metadata.has(key) && key !== 'stockCommitVersion') result[key] = fieldCodec.decode(collection, key, value);
     }
     if (own(row, 'stockCommitVersion')) result._version = row.stockCommitVersion;
     return result;
   }
-  function encode(row) {
+  function encode(collection, row) {
     if (!row || row.company !== company || own(row, 'stockCommitVersion')
       || Object.keys(row).some(key => metadata.has(key))) throw Error('Invalid owned storage image');
     const result = {};
     for (const [key, value] of Object.entries(row)) {
-      if (key !== '_version') result[key] = copy(value);
+      if (key !== '_version') result[key] = fieldCodec.encode(collection, key, value);
     }
     if (own(row, '_version')) {
       if (typeof row._version !== 'string' || !row._version) throw Error('Storage version required');
@@ -50,11 +93,11 @@ function createSdkConditionalStore({ items, company, collections }) {
     // Exact bounded query distinguishes missing from any permission/network/query failure.
     const page = await items.query(collection).eq('_id', id).limit(2).find({ consistentRead: true });
     if (!Array.isArray(page?.items) || page.items.length > 1) throw Error('Invalid exact storage read');
-    return normalize(page.items[0] || null);
+    return normalize(collection, page.items[0] || null);
   }
   async function insert(collection, row) {
     scope(collection, row?._id);
-    return normalize(await items.insert(collection, encode(row)));
+    return normalize(collection, await items.insert(collection, encode(collection, row)));
   }
   async function compareAndSet(collection, id, expectedVersion, after) {
     scope(collection, id);
@@ -62,7 +105,7 @@ function createSdkConditionalStore({ items, company, collections }) {
       || !after._version || after._version === expectedVersion) throw Error('Fresh conditional version required');
     const current = await read(collection, id);
     if (!current || current._version !== expectedVersion) throw Error('Storage version conflict');
-    const beforePayload = encode(current), afterPayload = encode(after);
+    const beforePayload = encode(collection, current), afterPayload = encode(collection, after);
     let patch = items.patch(collection, id);
     for (const key of Object.keys(beforePayload)) {
       if (key !== '_id' && !own(afterPayload, key)) patch = patch.removeField(key);
@@ -70,12 +113,12 @@ function createSdkConditionalStore({ items, company, collections }) {
     for (const [key, value] of Object.entries(afterPayload)) {
       if (key !== '_id') patch = patch.setField(key, value);
     }
-    return normalize(await patch.run({ condition: { company: { $eq: company }, stockCommitVersion: { $eq: expectedVersion } } }));
+    return normalize(collection, await patch.run({ condition: { company: { $eq: company }, stockCommitVersion: { $eq: expectedVersion } } }));
   }
   async function compareAndRemove(collection, id, expectedAttempt) {
     scope(collection, id);
     if (typeof expectedAttempt !== 'string' || !expectedAttempt) throw Error('Execution identity required');
-    return normalize(await items.remove(collection, id, {
+    return normalize(collection, await items.remove(collection, id, {
       condition: { company: { $eq: company }, attempt: { $eq: expectedAttempt } }
     }));
   }
