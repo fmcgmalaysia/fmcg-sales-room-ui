@@ -6,7 +6,8 @@ const entries = {
   createCurrentBorrowingSave: 'current-department-saves.cjs', createCurrentAllocationSave: 'current-department-saves.cjs', createSdkConditionalStore: 'sdk-conditional-store.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',
   createPurchaseTransferWorkspace: 'purchase-transfer-workspace.cjs', createBorrowCurrentQuery: 'borrow-current-query.cjs',
-  projectCurrentWarehouseReady: 'current-warehouse-ready-context.cjs'
+  projectCurrentWarehouseReady: 'current-warehouse-ready-context.cjs',
+  createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs'
 };
 const sources = new Map();
 function collect(name) {

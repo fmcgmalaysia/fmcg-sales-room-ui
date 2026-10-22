@@ -560,3 +560,11 @@ trusted delegation binding + remaining actual writers/reads, initialization appl
 platform capacity, UI/recovery/migration/four release gates. Continue implementation,
 do not stop for another business-theory review or claim all work done.
 
+2026-10-22 LATEST SALES: see SALES_CURRENT_BINDING.txt. Concrete trusted-source Sales
+current save/read share complete customer-product view and original adjustmentVersion;
+quantity increase+customer split original core tested without Buyer/PO/stock duplication.
+482current tests pass0fail4830.5231ms, runtime37modules/13exports. Original source gateway
+authorization MUST remain, no Master employee identity substitution. Actual HTTP/HTML
+binding, other writers/reads, schema/date SDK roundtrip, initialization/recovery/capacity/
+UI/shadow/release still unfinished. ACTIVE OFF, no production changes or publication.
+

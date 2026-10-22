@@ -4,13 +4,13 @@ const folder = path.join(__dirname, '../prototypes/stock-current-state');
 function runtime() {
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
   return vm.runInNewContext('(function(){' + source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
-    + '\nreturn {createCurrentStockSave,createCurrentWarehouseReceiptSave,createCurrentBorrowingSave,createCurrentAllocationSave,createSdkConditionalStore,createFencedProof,createSegmentedFencedProof,planCollections,createPurchaseTransferWorkspace,createBorrowCurrentQuery,projectCurrentWarehouseReady};})()',
+    + '\nreturn {createCurrentStockSave,createCurrentWarehouseReceiptSave,createCurrentBorrowingSave,createCurrentAllocationSave,createSdkConditionalStore,createFencedProof,createSegmentedFencedProof,planCollections,createPurchaseTransferWorkspace,createBorrowCurrentQuery,projectCurrentWarehouseReady,createCurrentSalesDemandSave,createCurrentSalesRead};})()',
   { createHash: crypto.createHash, randomBytes: crypto.randomBytes, Buffer });
 }
 test('Wix-compatible command runtime is exact scoped source, without second protocol or public route', () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-current-command-runtime.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8'), api = runtime();
-  assert.equal(Object.keys(api).length, 11); assert.equal(/require\(|webMethod\(|Permissions\.|from ['"]wix-auth|from ['"]@wix\/data/.test(source), false);
+  assert.equal(Object.keys(api).length, 13); assert.equal(/require\(|webMethod\(|Permissions\.|from ['"]wix-auth|from ['"]@wix\/data/.test(source), false);
   assert.equal(source.includes('function createCommitProof'), false); assert.equal(source.includes('function createFencedProof'), true);
   assert.deepEqual([...api.planCollections('NCT')], ['NCTActivity', 'StockPositions', 'StockClaims', 'StockProducts']);
   for (const name of ['createCurrentStockSave', 'createCurrentWarehouseReceiptSave', 'createCurrentBorrowingSave', 'createSdkConditionalStore']) assert.throws(() => api[name]({}), /required|scope/);

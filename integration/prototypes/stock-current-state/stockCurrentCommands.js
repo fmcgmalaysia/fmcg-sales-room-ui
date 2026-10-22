@@ -2489,6 +2489,198 @@ function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion,
 }
 module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
 
+},
+// current-sales-save.cjs sha256:2fa20a1468fc7a609cd53755d41684fc49bbdc97a4e0158ab01ea4009bc55ca7
+"current-sales-save.cjs": (load, module) => {
+'use strict';
+
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { readCurrentSalesWorkspace } = load("sales-current-workspace.cjs");
+const { stockKey } = load("current-model.cjs");
+const { validateOriginalSales } = load("original-sales-validation.cjs");
+const { prepareSalesDemand } = load("borrowing-stock-plan.cjs");
+const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+// PRIVATE composition after original customerFulfilmentGateway authentication.
+// Never expose this as a SiteMember method taking browser staff/customer claims.
+function createCurrentSalesDemandSave({ company, items, store, protocol, coverage, authenticateOriginalDelegation,
+  readContext, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
+  createSalesOrderAdjustmentOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld,
+  readPreparation, projectPreparation, readPlans, planVersion, now = () => new Date() }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2'
+    || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Private current Sales dependencies required');
+  for (const fn of [authenticateOriginalDelegation, readContext, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
+    createSalesOrderAdjustmentOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPlans, planVersion, now]) {
+    if (typeof fn !== 'function') throw Error('Original Sales authority dependency required');
+  }
+  return async request => {
+    // Per-call capture: parallel delegated requests must never share an actor.
+    let staff;
+    const save = createCurrentStockSave({ company, writer: 'SALES_DEMAND', protocol, coverage,
+      authenticate: async () => {
+        staff = await authenticateOriginalDelegation(company, request);
+        requireOriginalSalesDelegation(staff, request?.input?.customerId);
+        if (request.input.action !== 'ADJUST') throw Error('Original authenticated Sales customer delegation required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
+        const metrics = { exactReads: 0, queries: 0 };
+        const snapshot = await protocol.readSnapshot(async control => {
+          const context = await readContext(company, staff);
+          if (context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+            || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Original Sales company context required');
+          const task = context.tasks.find(t => t.id === command.input.taskId && t.customerId === staff.customerId
+            && t.orderId === command.input.orderId && !t.procurementSource && !t.specialPurchase && !t.archived);
+          if (!task) throw Error('Select an active customer order line.');
+          const current = await readCurrentSalesWorkspace({ company, context, staff, control, items, store, metrics,
+            readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+          const product = current.products.get(stockKey({ ...task, company }));
+          if (!product) throw Error('Current Sales task product missing');
+          const { state, rows } = product;
+          const validated = await validateOriginalSales({ company, staff, requestId: command.requestId, input: command.input,
+            context: current.context, createSalesOrderAdjustmentOperations, readPlans, planVersion, now });
+          return { state, rows, validated };
+        });
+        const { state, rows, validated } = snapshot.rows;
+        return { ...prepareSalesDemand({ state, rows, event: validated.event, generation: snapshot.generation }),
+          memberId: staff.memberId, generation: snapshot.generation, metrics };
+      } });
+    return save(request);
+  };
+}
+module.exports = { createCurrentSalesDemandSave };
+
+},
+// sales-current-workspace.cjs sha256:e72b7dd3211f552edd2835aeb325dfc25fcca9a27e30247cfb227d9fb4b5182c
+"sales-current-workspace.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+const { copy } = load("segmented-plan.cjs");
+// Same complete customer-product view for READ and ADJUST. Keeping the ORIGINAL
+// global adjustmentVersion contract avoids inconsistent per-line save versions.
+async function readCurrentSalesWorkspace({ company, context, staff, control, items, store, metrics = { queries: 0, exactReads: 0 },
+  readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders, readAllocations, readCustomerShipments,
+  readPackingLists, packingHeld, readPreparation, projectPreparation }) {
+  if (context?.company !== company || control?.company !== company || control.pending || control.mode !== 'ACTIVE' || control.schemaVersion !== 1
+    || !Number.isSafeInteger(control.generation) || control.generation < 0 || !control.writerBuild || control.transferIndexVersion !== 2
+    || !staff?.customerId || !Array.isArray(context.tasks) || !Array.isArray(context.activity)) throw Error('Complete private Sales current context required');
+  const groups = new Map();
+  for (const task of context.tasks.filter(t => t.customerId === staff.customerId && !t.procurementSource && !t.specialPurchase && !t.archived)) {
+    const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea }, key = stockKey(identity);
+    if (!groups.has(key)) groups.set(key, { identity, taskIds: [] }); groups.get(key).taskIds.push(task.id);
+  }
+  const records = groups.size ? await readPurchaseRecords(company, staff) : [];
+  const orders = groups.size ? projectPurchaseOrders({ company, workspace: context, records }) : [];
+  const prior = readAllocations(context.activity), currentTasks = new Map(), currentSources = new Set(), allocations = [], products = new Map();
+  for (const [key, group] of groups) {
+    const product = originalProductState({ company, context, orders, identity: group.identity, readAllocations: () => prior,
+      readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+    const own = product.sources.filter(s => group.taskIds.includes(s.ownerTaskId));
+    const rows = await readScopedCurrentProduct({ company, identity: group.identity, items, store, metrics, transferIndexVersion: control.transferIndexVersion,
+      sourceTaskIds: own.map(s => s.id), demandTaskIds: group.taskIds, claimPairs: own.map(s => ({ sourceTaskId: s.id, taskId: s.ownerTaskId })) });
+    rows.taskRows = await readCurrentTaskRows(company, product.scopeTaskIds(rows), staff); rows.generation = control.generation;
+    const state = product.buildState(rows), converted = currentAllocationContext({ state, context, readAllocations: () => prior });
+    for (const task of state.tasks) {
+      if (currentTasks.has(task.id)) throw Error('Ambiguous current Sales task product');
+      currentTasks.set(task.id, converted.tasks.find(t => t.id === task.id));
+    }
+    for (const source of state.sources) {
+      if (currentSources.has(source.id)) throw Error('Ambiguous current Sales source product');
+      currentSources.add(source.id); allocations.push(converted.allocations.find(a => a.sourceTaskId === source.id));
+    }
+    products.set(key, { state, rows });
+  }
+  return { context: { ...copy(context), stockAllocationView: 'CURRENT_V2',
+    tasks: context.tasks.map(task => copy(currentTasks.get(task.id) || task)),
+    allocations: [...prior.filter(a => !currentSources.has(a.sourceTaskId)), ...allocations] }, products, metrics };
+}
+module.exports = { readCurrentSalesWorkspace };
+
+},
+// original-sales-validation.cjs sha256:8911582bfacea2781f4044da7db41282fd1ccecf29d314911af63dc16c9d1afa
+"original-sales-validation.cjs": (load, module) => {
+'use strict';
+
+const copy = value => JSON.parse(JSON.stringify(value));
+// Validation seam only: original customer-scoped staff must be supplied by the real
+// Sales authority, never browser claims. No real journal store or mutation accepted.
+async function validateOriginalSales({ createSalesOrderAdjustmentOperations, company, staff, requestId, input, context, readPlans, planVersion, now }) {
+  if (typeof createSalesOrderAdjustmentOperations !== 'function' || !['NCT', 'GHR'].includes(company)
+    || context?.company !== company || !Array.isArray(context.activity) || typeof readPlans !== 'function'
+    || typeof planVersion !== 'function' || typeof now !== 'function') throw Error('Original Sales validation dependencies required');
+  const collection = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scratch = new Map(), boundary = new Error('Private Sales preparation boundary'); let captured, reads = 0;
+  const scope = c => { if (c !== collection) throw Error('Unexpected Sales journal collection'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'SALES_ORDER_ADJUSTMENT_SAVED') throw Error('Unexpected Sales preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy Sales apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => { scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private Sales lock may be removed'); scratch.delete(id); }
+  };
+  const save = createSalesOrderAdjustmentOperations({ store, names: { [company]: { activity: collection } }, readPlans, planVersion, now,
+    readContext: async (c, employee) => { if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected Sales apply/read'); return copy(context); } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original Sales boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original Sales preparation incomplete');
+  return captured;
+}
+module.exports = { validateOriginalSales };
+
+},
+// sales-delegation.cjs sha256:5b896c40c89ec8d5cef5b16fd681c01093018b98d112a84a807ae59bf8a925d2
+"sales-delegation.cjs": (load, module) => {
+'use strict';
+// Shape/scope assertion only, NOT authentication. Original shared-secret gateway
+// must create this staff object AFTER authorizing the source request.
+function requireOriginalSalesDelegation(staff, customerId) {
+  if (typeof staff?.staffId !== 'string' || !staff.staffId || staff.staffId.length > 100
+    || staff.memberId !== 'SOURCE_SALES/' + staff.staffId || typeof staff.staffName !== 'string' || !staff.staffName || staff.staffName.length > 200
+    || staff.canSelectShipment !== true || typeof staff.customerId !== 'string' || !staff.customerId || staff.customerId.length > 100
+    || customerId !== staff.customerId) throw Error('Original authenticated Sales customer delegation required');
+  return staff;
+}
+module.exports = { requireOriginalSalesDelegation };
+
+},
+// current-sales-read.cjs sha256:883addb30bc632c1677fb142612e2e75e70d78f61f43d2ca1ffb04a6f067c62f
+"current-sales-read.cjs": (load, module) => {
+'use strict';
+
+const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+const { readCurrentSalesWorkspace } = load("sales-current-workspace.cjs");
+// PRIVATE original source gateway only. Original response filtering, account/
+// document/currency calculations stay in the original service, not reimplemented.
+function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegation, readContext,
+  readOriginalCustomerFulfilment, currentFulfilmentVersion, ...dependencies }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || currentFulfilmentVersion !== 2
+    || typeof authenticateOriginalDelegation !== 'function' || typeof readContext !== 'function'
+    || typeof readOriginalCustomerFulfilment !== 'function') throw Error('Verified private original Sales read dependencies required');
+  return async requestCompany => {
+    if (requestCompany !== company) throw Error('Sales current read company conflict');
+    const staff = await authenticateOriginalDelegation(company, { action: 'READ' });
+    requireOriginalSalesDelegation(staff, staff?.customerId);
+    const snapshot = await protocol.readSnapshot(async control => {
+      const context = await readContext(company, staff);
+      const current = await readCurrentSalesWorkspace({ ...dependencies, company, context, staff, control });
+      const result = await readOriginalCustomerFulfilment(company, staff, staff.customerId, current.context);
+      if (result?.company !== company) throw Error('Original customer response company changed');
+      return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
+        stockBuild: control.writerBuild, stockGeneration: control.generation } };
+    });
+    return snapshot.rows;
+  };
+}
+module.exports = { createCurrentSalesRead };
+
 }
 };
 const modules = new Map();
@@ -2508,3 +2700,5 @@ export const planCollections = load("domain-scope.cjs").planCollections;
 export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
 export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;
 export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;
+export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
+export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
