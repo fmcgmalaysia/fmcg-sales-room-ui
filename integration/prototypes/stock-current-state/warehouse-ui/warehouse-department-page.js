@@ -1,3 +1,4 @@
+import { getWarehouseResumeContextCurrent } from 'backend/stockCurrentWarehouse.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { handlePackingList } from 'public/packingListBridge.js';
 import { getCustomerFulfilment, saveCustomerShipment } from 'backend/customerFulfilment.web';
@@ -47,10 +48,15 @@ $w.onReady(()=>{
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='FULFILMENT_READ_REQUEST'?'FULFILMENT_READ_RESULT':'FULFILMENT_SAVE_RESULT';try{const result=message.type==='FULFILMENT_READ_REQUEST'?await getCustomerFulfilment(message.company):await saveCustomerShipment(message.company,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Dispatch request could not be confirmed.'});}return;
     }
-    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
+    if(message.type==='WAREHOUSE_RESUME_CONTEXT_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>1000)return;
+      try{const result=await getWarehouseResumeContextCurrent(message.company);room.postMessage({type:'WAREHOUSE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:result?.ok===true,result});}
+      catch(_){room.postMessage({type:'WAREHOUSE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original Warehouse identity unconfirmed.'});}return;
+    }
+    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>(message.type==='WAREHOUSE_RECEIPT_REQUEST'?1000000:200000))return;
     const type=message.type==='WAREHOUSE_ORDERS_REQUEST'?'WAREHOUSE_ORDERS_RESULT':'WAREHOUSE_RECEIPT_RESULT';
-    try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
+    try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261022-current-stock-v1';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261022-current-warehouse-v2';
 });

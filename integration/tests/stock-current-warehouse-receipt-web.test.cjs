@@ -52,7 +52,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
-  const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0});
+  const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0,stockIdentity:{staffId:'W',memberId:'M'}});
   return{...f,db,protocol,api,initial,calls,journal,tasks};
 }
 test('actual-import Warehouse root preserves both-company original PO receipt contract and once-only scoped current stock',async()=>{
@@ -80,13 +80,14 @@ test('partial receipt then remaining PO receipt retain original versions while a
   assert.equal([...f.db.values()].filter(row=>row.action==='WAREHOUSE_RECEIPT_SAVED').length,2);
 });
 test('empty coverage, wrong metadata, original role revocation, bad envelope and over-approved PO never run legacy or create a receipt',async()=>{
-  for(const variant of ['coverage','metadata','role','company','uuid','browserGrant','over']){
+  for(const variant of ['coverage','metadata','role','company','uuid','browserGrant','over','actor']){
     const f=await fixture('NCT',variant!=='coverage'),request=copy(f.initial);
     if(variant==='metadata')delete request.stockBuild;if(variant==='role')f.deps.readMember=async()=>({_id:'M',status:'PENDING'});
     if(variant==='uuid')request.requestId='BAD';if(variant==='browserGrant')request.approved=true;if(variant==='over')request.input.lines[0].accepted=101;
+    if(variant==='actor')request.stockIdentity.memberId='OTHER';
     const result=await f.api.saveWarehouseReceiptCurrent(variant==='company'?'FOREIGN':'NCT',request);
     assert.equal(result.ok,false,variant);assert.equal([...f.db.values()].some(row=>row.action==='WAREHOUSE_RECEIPT_SAVED'),false,variant);
-    if(['coverage','metadata','role','company','uuid','browserGrant'].includes(variant))assert.equal(f.calls.includes('CONTEXT'),false,variant);
+    if(['coverage','metadata','role','company','uuid','browserGrant','actor'].includes(variant))assert.equal(f.calls.includes('CONTEXT'),false,variant);
   }
   const f=await fixture();assert.equal((await f.api.saveWarehouseReceiptCurrent('NCT',f.initial)).ok,true);
   f.deps.readMember=async()=>({_id:'M',status:'PENDING'});assert.equal((await f.api.saveWarehouseReceiptCurrent('NCT',f.initial)).ok,false,'completed replay retains original role requirement');

@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 WAREHOUSE RECEIPT CLIENT: WAREHOUSE_RECEIPT_DURABLE_UI.txt. Original modal
+and receipt input retained; full original request/version/company/staff session saved
+before first current write, same UUID bounded phases/reload auth-only recovery, strict
+receipt cleanup. Root compares expected identity to original actual member/staff BEFORE
+SDK; not browser grant. Paired Wix relay metadata and current packing-entry cache gate
+included.746currentpass0fail14490.1492ms; original UI/host focused23pass384.1551ms before
+final identity tightening.82modules40exports. Native/current initialization, remaining
+preparation/photos/CBM/dispatch/packing/Sales/otherwriter routing, cross-session recovery,
+cutover/capacity/shadow/fourrelease OPEN. Production exact/ACTIVE OFF; no actual install,
+business mutation or publication. Candidate index is an OVERLAY, not standalone deploy.
+
 2026-10-22 WAREHOUSE CURRENT WORKSPACE: WAREHOUSE_ORDERS_ACTUAL_ROOT.txt. Same-fence
 original PO physical receipt/version + current customer/Ready ownership now candidate
 read composition and actual-import Warehouse root; original read wrapper server-mode

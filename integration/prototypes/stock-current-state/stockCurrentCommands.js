@@ -3112,7 +3112,7 @@ function createCurrentPurchaseReadRouter({company,readControl,readLegacy,readCur
 module.exports={createCurrentPurchaseReadRouter};
 
 },
-// current-warehouse-receipt-router.cjs sha256:84e7f9bae1f5038d35cc5d716320d936779b23530df75a3beeb6c3e2a706a8a0
+// current-warehouse-receipt-router.cjs sha256:8ce70ff3d660bb49337bbb8d0145405b505c48baa73e2bb29991e1680db69a59
 "current-warehouse-receipt-router.cjs": (load, module) => {
 'use strict';
 const { hash }=load("commit-proof.cjs");
@@ -3131,7 +3131,7 @@ function createCurrentWarehouseReceiptRouter({company,readControl,saveCurrent,sa
     if(control.mode!=='ACTIVE')throw Error('Warehouse inventory maintenance. Retain the original receipt.');
     // Same-request resume owns pending validation inside the current coordinator.
     return saveCurrent(company,{requestId:request.requestId,input:request.input,stockProtocol:request.stockCurrent?.stockProtocol,
-      stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration});
+      stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration,stockIdentity:request.stockCurrent?.stockIdentity});
   };
 }
 function createCurrentWarehouseOrdersRouter({company,readControl,readCurrent,readLegacy}){

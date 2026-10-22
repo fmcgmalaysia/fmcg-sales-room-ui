@@ -24,9 +24,10 @@ async function warehouseIdentity(){
   if(!member?._id||!member.loginEmail||member.status!=='APPROVED')requireWarehouseStaff(member,[]);
   return {...requireWarehouseStaff(member,await fulfilmentStore.all('StaffMasterAccess')),memberId:member._id};
 }
-async function receiptSave(company,readOrders=false){
+async function receiptSave(company,readOrders=false,expectedIdentity=null){
   if(!['NCT','GHR'].includes(company))throw Error('Known Warehouse company required');
-  await warehouseIdentity(); // Original grant BEFORE current storage or company data.
+  const identity=await warehouseIdentity(); // Original grant BEFORE current storage or company data.
+  if(!readOrders&&(expectedIdentity?.staffId!==identity.staffId||expectedIdentity?.memberId!==identity.memberId))throw Error('Original Warehouse receipt session changed');
   const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
   const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:verifiedDateFields[journal]}});
   const protocol=createSegmentedFencedProof({company,store,domainWrites:true});
@@ -65,10 +66,10 @@ async function receiptSave(company,readOrders=false){
 }
 export const saveWarehouseReceiptCurrent=webMethod(Permissions.SiteMember,async(company,request)=>{
   try{
-    if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration'].includes(key))
+    if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
       ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!request.input||!Array.isArray(request.input.lines)
       ||request.input.lines.length<1||request.input.lines.length>300||JSON.stringify(request).length>1000000)throw Error('Original bounded Warehouse receipt required');
-    return await(await receiptSave(company))(request);
+    return await(await receiptSave(company,false,request.stockIdentity))(request);
   }catch(_){return {ok:false,requestId:request?.requestId,error:'Current Warehouse receipt unconfirmed. Retain and retry the same original save. 当前收货尚未确认，请保留并重试原保存。'};}
 });
 export const getWarehouseOrdersCurrent=webMethod(Permissions.SiteMember,async company=>{

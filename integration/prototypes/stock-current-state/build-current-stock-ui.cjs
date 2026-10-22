@@ -37,6 +37,20 @@ wix = wix.slice(0, a) + [
   '    }', ''
 ].join('\n') + wix.slice(b);
 wix = replace(wix, '20261021-packing-company-v1', marker);
+wix = "import { getWarehouseResumeContextCurrent } from 'backend/stockCurrentWarehouse.web';\n"+wix;
+wix = replace(wix,"    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)",[
+  "    if(message.type==='WAREHOUSE_RESUME_CONTEXT_REQUEST'){",
+  "      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>1000)return;",
+  "      try{const result=await getWarehouseResumeContextCurrent(message.company);room.postMessage({type:'WAREHOUSE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:result?.ok===true,result});}",
+  "      catch(_){room.postMessage({type:'WAREHOUSE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original Warehouse identity unconfirmed.'});}return;",
+  "    }",
+  "    if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)"
+].join('\n'));
+wix = replace(wix,"||JSON.stringify(message).length>200000)return;\n    const type=message.type==='WAREHOUSE_ORDERS_REQUEST'",
+  "||JSON.stringify(message).length>(message.type==='WAREHOUSE_RECEIPT_REQUEST'?1000000:200000))return;\n    const type=message.type==='WAREHOUSE_ORDERS_REQUEST'");
+wix = replace(wix,'await saveWarehouseReceipt(message.company,message.requestId,message.input)',
+  'await saveWarehouseReceipt(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
+wix = replace(wix,'warehouse-room/?v='+marker,'warehouse-room/?v=20261022-current-warehouse-v2');
 files['warehouse-department-page.js'] = wix;
 if (process.argv.includes('--check')) {
   for (const [name, source] of Object.entries(files)) if (fs.readFileSync(path.join(out, name), 'utf8').replace(/\r\n/g, '\n') !== source) throw Error('Stock UI candidate differs: ' + name);

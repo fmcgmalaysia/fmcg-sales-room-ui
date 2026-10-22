@@ -15,7 +15,7 @@ function createCurrentWarehouseReceiptRouter({company,readControl,saveCurrent,sa
     if(control.mode!=='ACTIVE')throw Error('Warehouse inventory maintenance. Retain the original receipt.');
     // Same-request resume owns pending validation inside the current coordinator.
     return saveCurrent(company,{requestId:request.requestId,input:request.input,stockProtocol:request.stockCurrent?.stockProtocol,
-      stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration});
+      stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration,stockIdentity:request.stockCurrent?.stockIdentity});
   };
 }
 function createCurrentWarehouseOrdersRouter({company,readControl,readCurrent,readLegacy}){
