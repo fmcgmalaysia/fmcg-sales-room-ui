@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 BOOTSTRAP LEGACY CACHE LOCK GUARD: BOOTSTRAP_LEGACY_CACHE_LOCKS.txt.
+Pure preflight now recognizes exact per-task GP_LOCK and actual COST_RETRY_LOCK action
+before projection; both companies/unchanged input tested. Additional exact workspace
+candidate + ORIGINAL margin writer witness proves a READ admitted underLEGACY can
+write afterMAINTENANCE with no priorGP lock.30affectedpass407.4544ms includes UNSAFE
+schedule witnesses, NOT cutover safety. No shared runtime/production/native/UI change.
+29c19b6 readonly recovery fix confirmed PUSHED PR220. Exact native grant stillPENDING;
+no repeat/run. No-lock is STILL NOT termination proof. All native/capacity/recovery/
+initialization/cutover/release gatesOPEN, CoverageEMPTY/ACTIVEOFF, realinvoice/exitOFF.
+
 2026-10-23 RECOVERY RESULT/IMAGE MISCLASSIFICATION FIXED OFFLINE:
 RECOVERY_RECEIPT_IMAGE_SEPARATION.txt. Existing v1/v2 diagnostics could confirm RESULT
 despite exactBEFORE/current generation or uninspected pages; v1 also missingplan.

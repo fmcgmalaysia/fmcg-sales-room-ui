@@ -40,6 +40,19 @@ test('not maintenance, pending control, existing target or business locks block 
     const report = stockBootstrapPreflight(f); assert.equal(report.canBootstrap, false); assert.equal(report.rows, null); assert.equal(projected, false);
   }
 });
+test('actual legacy GP lock and cost-retry action cannot be mistaken for an idle maintenance snapshot',()=>{
+  for(const company of ['NCT','GHR'])for(const kind of ['GP_LOCK','COST_RETRY_LOCK']){
+    const f=fixture();f.company=company;f.context.company=company;f.context.tasks.forEach(row=>{row.company=company;});
+    Object.assign(f.control,{_id:hash(company,'STOCK_CONTROL'),company});
+    f.context.activity.push(kind==='GP_LOCK'?{_id:hash(company,'B','GP_LOCK'),details:{requestId:'IN_FLIGHT',actorMemberId:'SYSTEM_GP'}}
+      :{_id:'COST-ON-UNPROJECTED-TASK',action:'COST_RETRY_LOCK',result:'PROCESSING',company});
+    let projected=false;f.projectStockCard=()=>{projected=true;throw Error('Must not project an in-flight legacy writer');};
+    const before=JSON.stringify(f),report=stockBootstrapPreflight(f);
+    assert.equal(report.canBootstrap,false);assert.equal(report.activationReady,false);assert.equal(report.rows,null);
+    assert.ok(report.blockers.includes(kind==='GP_LOCK'?'BUSINESS_GP_LOCK_PRESENT':'BUSINESS_LOCK_PRESENT'));
+    assert.equal(projected,false);assert.equal(JSON.stringify(f),before);
+  }
+});
 test('unconfirmed legacy save blocks and completed matching receipt allows dry run only', () => {
   const f = fixture(), id = 'OLD'; f.context.activity.push({ _id: id, action: 'PURCHASE_OPERATION_PREPARED', details: { digest: 'D', kind: 'PREPARED' } });
   assert.ok(stockBootstrapPreflight(f).blockers.includes('LEGACY_SAVE_NOT_CONFIRMED'));
