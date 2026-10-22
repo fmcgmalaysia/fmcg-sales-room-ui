@@ -17,15 +17,19 @@
    &&Object.keys(request).every(field=>['type','company','customerId','requestId','orderId','customerPoNumber','estimatedShipmentDate','expectedRevision','expectedShipmentRevision','stockCurrent'].includes(field))
    &&['PROGRESS','REVIEW'].includes(entry.ui.scope)&&entry.ui.order?.orderId===request.orderId&&entry.ui.order.customerId===request.customerId&&entry.ui.order.destination===company
    &&entry.ui.order.masterReceipt?.submissionId&&entry.ui.order.shipmentDateRevision===request.expectedShipmentRevision&&JSON.stringify(entry).length<=200000;
-  return entry?.schema===1&&['ADJUST','SHIPMENT'].includes(entry.ui?.kind)&&request?.type==='SALES_ROOM_SHIPMENT_REQUEST'&&request.company===company
+  return entry?.schema===1&&['ADJUST','SHIPMENT','DOCUMENT'].includes(entry.ui?.kind)&&request?.type==='SALES_ROOM_SHIPMENT_REQUEST'&&request.company===company
    &&typeof request.customerId==='string'&&!!request.customerId&&request.customerId.length<=100&&/^[a-f0-9-]{36}$/i.test(request.requestId||'')
-   &&['ADJUST','SELECT','CANCEL','PLAN'].includes(request.action)&&request.input&&typeof request.input==='object'&&!Array.isArray(request.input)
+   &&['ADJUST','SELECT','CANCEL','PLAN','DOCUMENT'].includes(request.action)&&request.input&&typeof request.input==='object'&&!Array.isArray(request.input)
    &&meta?.schema==='CURRENT_STOCK_V2'&&meta.stockProtocol===1&&typeof meta.stockBuild==='string'&&!!meta.stockBuild&&Number.isSafeInteger(meta.stockGeneration)&&meta.stockGeneration>=0
    &&meta.stockIdentity?.staffId===staff.staffId&&meta.stockIdentity?.memberId===staff.memberId
    &&Object.keys(request).every(field=>['type','company','customerId','requestId','action','input'].includes(field))
    &&(request.action==='ADJUST'?entry.ui.kind==='ADJUST'&&entry.ui.selection?.company===company&&entry.ui.selection?.customerId===request.customerId
      &&entry.ui.selection?.orderId===request.input.orderId&&entry.ui.data?.line?.taskId===request.input.taskId&&entry.ui.mode===request.input.mode&&['INCREASE','SPLIT','REDUCE'].includes(entry.ui.mode)
-     &&same(entry.ui.data.stockCurrent,meta):entry.ui.kind==='SHIPMENT'&&entry.ui.company===company&&entry.ui.customer===request.customerId&&same(entry.ui.data?.stockCurrent,meta))&&JSON.stringify(entry).length<=200000;
+     &&same(entry.ui.data.stockCurrent,meta):request.action==='DOCUMENT'?entry.ui.kind==='DOCUMENT'&&entry.ui.company===company&&entry.ui.customer===request.customerId&&same(entry.ui.data?.stockCurrent,meta)
+      &&entry.ui.data?.accountVersion===request.input.version&&request.input.action==='DOCUMENT'&&request.input.customerId===request.customerId
+      &&typeof request.input.base64==='string'&&request.input.base64.length<=4194304&&/^[A-Za-z0-9+/]+={0,2}$/.test(request.input.base64)
+      &&typeof entry.ui.file?.name==='string'&&entry.ui.file.name.length<=1000&&Number.isSafeInteger(entry.ui.file.size)&&entry.ui.file.size>=5&&entry.ui.file.size<=3*1024*1024&&typeof entry.ui.file.type==='string'
+      :entry.ui.kind==='SHIPMENT'&&entry.ui.company===company&&entry.ui.customer===request.customerId&&same(entry.ui.data?.stockCurrent,meta))&&JSON.stringify(entry).length<=(request.action==='DOCUMENT'?4300000:200000);
  }
  function read(company,staff){const entry=JSON.parse(sessionStorage.getItem(key(company,staff))||'null');if(entry===null)return null;if(!valid(entry,company,staff))throw Error('Original Sales cache requires review');return entry;}
  function retain(request,ui){const staff=metadata(requestMeta(request)),entry=copy({schema:1,request,ui});
@@ -39,6 +43,7 @@
    ||request.action==='ADJUST'&&(result.taskId!==request.input.taskId||!Number.isSafeInteger(result.requested)||result.requested<1)
    ||request.action==='SELECT'&&(result.status!=='REQUESTED'||typeof result.shipmentId!=='string'||!result.shipmentId)
    ||request.action==='CANCEL'&&(result.status!=='CANCELLED'||result.shipmentId!==request.input.id)
+   ||request.action==='DOCUMENT'&&(typeof result.documentId!=='string'||!result.documentId||result.documentId.length>128)
    ||request.action==='PLAN'&&(typeof result.planId!=='string'||!result.planId))throw Error('Original Sales save unconfirmed');
   const address=key(request.company,staff);sessionStorage.removeItem(address);if(sessionStorage.getItem(address)!==null)throw Error('Original Sales cache cleanup unconfirmed');
  }
@@ -65,7 +70,7 @@
  async function recover(company,customerId){const current=await authorize(company,customerId);return authorizedEntry(company,customerId,current.staff);}
  // View routing is local presentation only; neither registration nor restoration
  // authorizes a save. Recovery callers must first use the original authorization.
- function register(kind,restore){if(!['ADJUST','SHIPMENT','DATE'].includes(kind)||typeof restore!=='function'||views.has(kind))throw Error('Original Sales view already registered');views.set(kind,restore);}
+ function register(kind,restore){if(!['ADJUST','SHIPMENT','DATE','DOCUMENT'].includes(kind)||typeof restore!=='function'||views.has(kind))throw Error('Original Sales view already registered');views.set(kind,restore);}
  function restore(entry){const render=views.get(entry?.ui?.kind);if(!render)throw Error('Original Sales view is unavailable');render(copy(entry));}
  window.sourceSalesCurrent={retain,finish,checkRead,recover,register,restore,readCurrent:(company,customerId)=>authorize(company,customerId,'READ')};
 })();

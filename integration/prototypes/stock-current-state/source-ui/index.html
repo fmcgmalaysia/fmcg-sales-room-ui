@@ -1372,6 +1372,6 @@ setInterval(()=>{
 function dashboardRfqCount(rows){return rows.every(row=>Number.isSafeInteger(row.rfqItemCount)&&row.rfqItemCount>=0)?rows.reduce((sum,row)=>sum+row.rfqItemCount,0):null}
 document.querySelectorAll('[data-dashboard-target]').forEach(card=>{const activate=()=>{const view=card.dataset.dashboardTarget;if(showView(view)===false)return;if(view==='customers'){customerAccessView='ACTIVE';customerPage=1;document.getElementById('customerSearch').value='';updateAccessTabs();applyCustomerFilters()}};card.onclick=activate;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}}});
 </script>
-<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script><script src="sales-room/customer-documents.js?v=20261017-site-bilingual-copy-v1"></script><script src="sales-room/messages.js?v=20261020-sales-messages-v1"></script>
+<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script><script src="sales-room/customer-documents.js?v=20261022-current-sales-v1"></script><script src="sales-room/messages.js?v=20261020-sales-messages-v1"></script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->

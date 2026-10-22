@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 SOURCE FILE DURABLE CLIENT: SOURCE_DOCUMENT_DURABLE_UI.txt. Original form/
+validation/template unchanged; own full PDF/request/view before network, shared widget
+cache, original cached-customer auth, explicit same-UUID retry, bounded phases/final/
+cleanup/late timer guards.869currentpass0fail16702.3583ms; newUI9pass481.002ms;
+original14pass256.1127ms. Actual UI+bearer/root Node composition, NOT native/browser/real
+upload QA. Runtime92/47 unchanged. Original intake/order/other native roots NEXT;
+native/recovery/capacity/cutover/shadow/Loaded-endtoend/fourrelease OPEN. Coverage EMPTY/
+ACTIVE OFF. No new financial feature; first test ends Loaded; invoice/exit OFF.
+
 2026-10-22 EXISTING CUSTOMER FILE FENCE: CUSTOMER_DOCUMENT_FILE_FENCE.txt. Original
 DOCUMENT fixed server ID/upload confirmation then immutable original event under same
 company fence; no extra CMS confirmation row/legacy apply/PDF in journal. Private

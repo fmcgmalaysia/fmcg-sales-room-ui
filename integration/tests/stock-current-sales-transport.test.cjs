@@ -183,6 +183,7 @@ test('Source UI builder reproduces exact adjustment/shipment script seams and sc
   const candidate=fs.readFileSync(path.join(root,'source-ui/index.html'),'utf8').replace(/\r\n/g,'\n');
   const expected=require(path.join(root,'source-sales-date-ui-overlay.cjs'))(original.replace('<script src="sales-room/order-adjustment.js?v=20261020-order-adjustment-v1"></script>',
     '<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/current-dates.js?v=20261022-current-sales-v1"></script><script src="sales-room/order-adjustment.js?v=20261022-current-sales-v1"></script>').replace('<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script>',
-    '<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>'));
+    '<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>').replace('<script src="sales-room/customer-documents.js?v=20261017-site-bilingual-copy-v1"></script>',
+    '<script src="sales-room/customer-documents.js?v=20261022-current-sales-v1"></script>'));
   assert.equal(candidate,expected);
 });
