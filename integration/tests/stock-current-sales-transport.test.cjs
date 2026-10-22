@@ -177,11 +177,12 @@ test('cached customer authorization mismatch, malformed cache and late attempt t
   malformed.window.salesOrderAdjustment.open({company:'NCT',customerId:'C',orderId:'O',lineId:'L',quantity:100});
   malformed.reply({stockCurrent,lines:[],plans:[]});assert.equal(malformed.sent.length,1);assert.equal(malformed.db.size,1);
 });
-test('Source UI builder changes only the original adjustment script seam and reproduces its own assets',()=>{
+test('Source UI builder reproduces exact adjustment/shipment script seams and scoped original date overlays',()=>{
   assert.match(execFileSync(process.execPath,[path.join(root,'build-source-sales-ui.cjs'),'--check'],{encoding:'utf8'}),/verified/);
   const original=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8').replace(/\r\n/g,'\n');
   const candidate=fs.readFileSync(path.join(root,'source-ui/index.html'),'utf8').replace(/\r\n/g,'\n');
-  assert.equal(candidate.replace('<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/order-adjustment.js?v=20261022-current-sales-v1"></script>',
-    '<script src="sales-room/order-adjustment.js?v=20261020-order-adjustment-v1"></script>').replace('<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>',
-    '<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script>'),original);
+  const expected=require(path.join(root,'source-sales-date-ui-overlay.cjs'))(original.replace('<script src="sales-room/order-adjustment.js?v=20261020-order-adjustment-v1"></script>',
+    '<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/current-dates.js?v=20261022-current-sales-v1"></script><script src="sales-room/order-adjustment.js?v=20261022-current-sales-v1"></script>').replace('<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script>',
+    '<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>'));
+  assert.equal(candidate,expected);
 });

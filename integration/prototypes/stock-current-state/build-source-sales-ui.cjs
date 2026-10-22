@@ -8,7 +8,10 @@ html=html.replace(anchor,'<script src="sales-room/current-requests.js?v=20261022
 const shipment='<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script>';
 if(html.split(shipment).length!==2)throw Error('Exact original Sales shipment script anchor changed');
 html=html.replace(shipment,'<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>');
-const files={'index.html':html,'current-requests.js':read('integration/prototypes/stock-current-state/source-sales-current-requests.js'),'order-adjustment.js':read('integration/prototypes/stock-current-state/sales-order-adjustment.candidate.js'),'shipment-ui.js':read('integration/prototypes/stock-current-state/sales-shipment-ui.candidate.js')};
+html=require('./source-sales-date-ui-overlay.cjs')(html);
+html=html.replace('<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script>','<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/current-dates.js?v=20261022-current-sales-v1"></script>');
+for(const script of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(script[1].trim())new Function(script[1]);
+const files={'index.html':html,'current-requests.js':read('integration/prototypes/stock-current-state/source-sales-current-requests.js'),'current-dates.js':read('integration/prototypes/stock-current-state/source-sales-dates.js'),'order-adjustment.js':read('integration/prototypes/stock-current-state/sales-order-adjustment.candidate.js'),'shipment-ui.js':read('integration/prototypes/stock-current-state/sales-shipment-ui.candidate.js')};
 for(const[name,text]of Object.entries(files)){if(name.endsWith('.js'))new Function(text);const target=path.join(out,name);
  if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==text)throw Error('Original Sales UI overlay differs: '+name);}else{fs.mkdirSync(out,{recursive:true});fs.writeFileSync(target,text);}}
 process.stdout.write('Original Sales current request/adjustment overlays '+(process.argv.includes('--check')?'verified':'built')+'; production unchanged\n');
