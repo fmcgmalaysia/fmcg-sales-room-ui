@@ -21,7 +21,7 @@ function createOrderRecordSave({ company, store, protocol, coverage, authorityDe
         const member = await d.readMember();
         if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') authorize(member, []);
         staff = { ...authorize(member, await d.readStaffRecords()), memberId: member._id };
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Order record actor changed');
         const snapshot = await protocol.readSnapshot(async () => {

@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL PO ROOT/DURABLE UI: PURCHASE_ORDER_CURRENT_ROOT_UI.txt. Original
+web/private default current non-file reader/saver + same PO dialogs/parent/cache/
+recovery; fresh original actor, own PO generation, strict exact final, finite phases,
+same UUID/replay and original audit/locks preserved. Both companies/generated runtime.
+906currentpass0fail17966.4635ms, new12pass738.9564ms. Runtime96/49. Original candidate
+app118pass1preexisting session-label assertion fail; untouched original reproduces
+same fail, unchanged priorHEAD assignment. Node/VM/mock ONLY. Files/shared Account/
+remaining roots/Source large-order phase/native/recovery/capacity/lifecycle/cutover/
+shadow/Loaded-endtoend/review/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF. Invoice/
+exit OFF; no new finance. Production unchanged. No new user business choice needed.
+
 2026-10-22 REFERENCE COST DURABLE UI/FAILURE AUDIT: COST_REFERENCE_DURABLE_UI.txt.
 Original button/parent/web/root uses existing Purchase request cache/tracker/resume;
 own auth+identity, same UUID/phase, finite progress, strict result/cache cleanup, known

@@ -37,6 +37,11 @@ $w.onReady(() => {
         const result=await retryPurchaseTaskCost(message.company,message.input.taskId,message.requestId,{stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Reference save unconfirmed; retain original request. 参考成本保存尚未确认，请保留原请求。'});}return;
     }
+    if(message.type==='PURCHASE_ORDER_SAVE_REQUEST'&&message.stockProtocol!==undefined){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||message.stockProtocol!==1||JSON.stringify(message).length>200000)throw Error('Invalid current original PO request.');
+        const result=await savePurchaseOrder(message.company,message.requestId,message.input,{stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original purchase order save unconfirmed; retain original request. 原采购单保存尚未确认，请保留原请求。'});}return;
+    }
     if(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>200000)throw Error('Invalid current Purchase task save.');
         const result=await savePurchaseTasksCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});

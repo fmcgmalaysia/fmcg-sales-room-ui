@@ -2,20 +2,23 @@
    No fake workspace, inventory reads, cache scans, legacy receipts or unlock. */
 (() => {
   const operations = new Set(['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','BORROW_APPROVE','BORROW_RETURN','COST_REFERENCE']);
+  const orderActions = new Set(['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE']);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function validRequest(request, company) {
-    return request && request.type === 'PURCHASE_SAVE_REQUEST' && request.company === company
-      && /^[a-f0-9-]{36}$/i.test(request.requestId || '') && operations.has(request.operation)
+    const order=request?.type==='PURCHASE_ORDER_SAVE_REQUEST', identified=order||request?.operation==='COST_REFERENCE';
+    return request && (order||request.type === 'PURCHASE_SAVE_REQUEST') && request.company === company
+      && /^[a-f0-9-]{36}$/i.test(request.requestId || '') && (order?orderActions.has(request.input?.action):operations.has(request.operation))
       && request.input && typeof request.input === 'object' && !Array.isArray(request.input)
       && request.stockProtocol === 1 && typeof request.stockBuild === 'string' && request.stockBuild.length > 0
       && Number.isSafeInteger(request.stockGeneration) && request.stockGeneration >= 0
-      && (request.operation!=='COST_REFERENCE'||/^[a-f0-9]{32}$/.test(request.input.taskId||'')&&Object.keys(request.input).length===1
-        &&request.stockIdentity&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200))
-      && Object.keys(request).every(key => ['type','company','requestId','operation','input','stockProtocol','stockBuild','stockGeneration',...(request.operation==='COST_REFERENCE'?['stockIdentity']:[])].includes(key))
-      && JSON.stringify(request).length <= (request.operation.startsWith('BORROW_') ? 6000 : 200000);
+      && (!identified||request.stockIdentity&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200))
+      && (request.operation!=='COST_REFERENCE'||/^[a-f0-9]{32}$/.test(request.input.taskId||'')&&Object.keys(request.input).length===1)
+      && (!order||['id','version'].every(key=>typeof request.input[key]==='string'&&request.input[key]&&request.input[key].length<=200))
+      && Object.keys(request).every(key => ['type','company','requestId',...(order?[]:['operation']),'input','stockProtocol','stockBuild','stockGeneration',...(identified?['stockIdentity']:[])].includes(key))
+      && JSON.stringify(request).length <= (request.operation?.startsWith('BORROW_') ? 6000 : 200000);
   }
   function mount({ company, host, read, send, receipt, lockCompany, esc, autoRequest = null, expectedStaff = null }) {
-    let disposed = false, request = null, staff = null, retry = null, state = null, serial = 0, inFlight = false, completed = false;
+    let disposed = false, request = null, staff = null, retry = null, state = null, serial = 0, inFlight = false, completed = false, orderContinuations = 0;
     const alive = () => !disposed && host?.isConnected !== false;
     function text(message) { if (alive() && state) state.textContent = message; }
     function unknown() {
@@ -47,6 +50,7 @@
         &&result.company===company&&result.taskId===request.input.taskId&&/^(POINTBASE_[A-Z0-9_]+|COST_RETRY_SAVE_FAILED)$/.test(result.error||'');
       if (message.ok && (result?.ok === true || failedCost) && result.requestId === request.requestId
         && (request.operation!=='COST_REFERENCE'||result.company===company&&result.taskId===request.input.taskId&&result.pending!==true)
+        && (request.type!=='PURCHASE_ORDER_SAVE_REQUEST'||result.company===company&&result.poId===request.input.id&&result.pending!==true)
         && Number.isSafeInteger(result.stockGeneration) && result.stockGeneration > request.stockGeneration) {
         completed = true; inFlight = false; retry.disabled = true;
         text('Save confirmed. Reloading original workspace. 保存已确认，正在重新读取原工作台。');
@@ -59,6 +63,7 @@
         && ['BEFORE','APPLY','VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
         && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0 && result.completedCount >= 0
         && result.completedCount <= result.totalRecords) {
+        if(request.type==='PURCHASE_ORDER_SAVE_REQUEST'&&++orderContinuations>64){unknown();return;}
         inFlight = false; const attempt = serial;
         text('Saving 保存中… '+result.completedCount+' / '+result.totalRecords);
         setTimeout(() => { if (attempt === serial && !inFlight) submit(); }, 250); return;
@@ -72,10 +77,10 @@
       staff = context.staff;
       const cached = JSON.parse(sessionStorage.getItem('fmcg-purchase-draft-v1/'+company+'/'+staff.staffId+'/'+staff.memberId) || 'null');
       if (!validRequest(cached?.savePending, company)) return;
-      if(cached.savePending.operation==='COST_REFERENCE'&&(cached.savePending.stockIdentity.staffId!==staff.staffId||cached.savePending.stockIdentity.memberId!==staff.memberId))return;
+      if((cached.savePending.operation==='COST_REFERENCE'||cached.savePending.type==='PURCHASE_ORDER_SAVE_REQUEST')&&(cached.savePending.stockIdentity.staffId!==staff.staffId||cached.savePending.stockIdentity.memberId!==staff.memberId))return;
       request = JSON.parse(JSON.stringify(cached.savePending));
       const section = document.createElement('section'); section.className = 'notice';
-      section.innerHTML = '<h3>Resume original save 继续原保存</h3><p>'+esc(staff.staffName)+' · '+esc(request.operation)
+      section.innerHTML = '<h3>Resume original save 继续原保存</h3><p>'+esc(staff.staffName)+' · '+esc(request.operation||request.input.action)
         +'</p><p>Ref 操作编号: '+esc(request.requestId)+'</p><p role="status"></p><button class="btn primary" type="button">Retry same save 重试原保存</button>';
       state = section.querySelector('[role="status"]'); retry = section.querySelector('button');
       retry.addEventListener('click', submit); host.appendChild(section); lockCompany();

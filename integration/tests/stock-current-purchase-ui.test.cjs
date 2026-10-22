@@ -55,13 +55,14 @@ test('original legacy successful Purchase receipt still reaches unchanged comple
 });
 test('original mutate now snapshots current form metadata into existing immutable cached request', () => {
   const start = source.indexOf('  function mutate(kind,args)'), end = source.indexOf("  window.addEventListener('message'", start);
+  const metadata = source.slice(source.indexOf('  function currentOrderMetadata('), source.indexOf('  function currentOrderSuccess('));
   const context = { currentWorkspaceUpdating:false,savePending: null, data: { stockCurrent: { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 7 } },
     saveIssue: '', saveOrigin: null, saveDialog: null, modal: { open: false }, view: 'active', customerId: 'C', activeCustomer: 'C', company: 'NCT',
     crypto: { randomUUID: () => 'ORIGINAL-UUID' }, saveAttemptCount: 99, saveMessage() {}, showStatus() {}, saveDiagnostic() {} };
-  vm.runInNewContext(source.slice(start, end) + '\nmutate("PURCHASE_SAVE_REQUEST",{operation:"PLAN",input:{totalCtn:50}});', context);
+  vm.runInNewContext(metadata + source.slice(start, end) + '\nmutate("PURCHASE_SAVE_REQUEST",{operation:"PLAN",input:{totalCtn:50}});', context);
   assert.equal(context.savePending.stockGeneration, 7); context.data.stockCurrent.stockGeneration = 99;
   assert.equal(context.savePending.stockGeneration, 7); assert.equal(context.savePending.requestId, 'ORIGINAL-UUID');
   context.savePending=null;context.currentWorkspaceUpdating=true;
-  vm.runInNewContext(source.slice(start,end)+'\nmutate("PURCHASE_SAVE_REQUEST",{operation:"PLAN",input:{totalCtn:50}});',context);
+  vm.runInNewContext(metadata + source.slice(start,end)+'\nmutate("PURCHASE_SAVE_REQUEST",{operation:"PLAN",input:{totalCtn:50}});',context);
   assert.equal(context.savePending,null,'no new original write while current workspace refresh is unresolved');
 });

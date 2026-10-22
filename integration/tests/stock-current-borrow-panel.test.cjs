@@ -77,6 +77,7 @@ test('panel resource/relay builds are exact original overlays, preserve original
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&\['BORROW_APPROVE','BORROW_RETURN'\].includes\(message.operation\)\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&message.operation==='COST_REFERENCE'\)\{[\s\S]*?\n    \}/, '')
+    .replace(/\n    if\(message.type==='PURCHASE_ORDER_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '');
   assert.equal(stripped, originalBridge);

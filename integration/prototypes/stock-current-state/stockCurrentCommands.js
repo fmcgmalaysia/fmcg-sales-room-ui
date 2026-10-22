@@ -4224,7 +4224,7 @@ async function prepareCostReference({ createPurchaseCostRetry, request, tables, 
 module.exports = { prepareCostReference };
 
 },
-// current-order-record-save.cjs sha256:4d57a9b1bf93169f4af92a63bc45c6e58acd9b4e07e05d394877e38d9f1f9e7c
+// current-order-record-save.cjs sha256:fa9c7ad9c26818cc33c4ccaa1a6595cc424d2bd80caa35668131d9f8ce6eaef6
 "current-order-record-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -4249,7 +4249,7 @@ function createOrderRecordSave({ company, store, protocol, coverage, authorityDe
         const member = await d.readMember();
         if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') authorize(member, []);
         staff = { ...authorize(member, await d.readStaffRecords()), memberId: member._id };
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Order record actor changed');
         const snapshot = await protocol.readSnapshot(async () => {

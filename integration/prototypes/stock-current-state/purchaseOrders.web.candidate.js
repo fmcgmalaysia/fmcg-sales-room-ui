@@ -1,0 +1,44 @@
+import { createCurrentPurchaseOrders } from 'backend/stockCurrentPurchaseOrders.js';
+import { webMethod, Permissions } from 'wix-web-module';
+import wixData from 'wix-data';
+import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
+import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
+import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
+import { PURCHASE_DOCUMENT_TYPES } from 'backend/purchaseDocumentPolicy.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+import { readCustomerShortNames } from 'backend/customerNamesClient.js';
+const options={suppressAuth:true,consistentRead:true};
+const store={
+  async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
+  async read(collection,id){const page=await wixData.query(collection).eq('_id',id).limit(2).find(options);if(page.items.length>1)throw Error('Duplicate purchase order record.');return page.items[0]||null;},
+  insert:(collection,row)=>wixData.insert(collection,row,{suppressAuth:true}),
+  update:(collection,row)=>wixData.update(collection,row,{suppressAuth:true}),
+  remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
+};
+const orders=createPurchaseOrderOperations({store,names:PURCHASE_COLLECTIONS,documentService:requestPurchaseDocument,readWorkspace:async(company,staff)=>{
+  const names=PURCHASE_COLLECTIONS[company];
+  const [orderRows,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
+  return projectPurchaseWorkspace({company,orders:orderRows,tasks,activity,suppliers,staff});
+}});
+export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
+  const staff=await getPurchaseStaffContext(),current=await createCurrentPurchaseOrders(company);
+  if(!['LEGACY','ACTIVE'].includes(current?.mode))throw Error('Current purchase order read unavailable');
+  const currentRead=current.mode==='ACTIVE'?await current.list(staff):null;
+  const rows=currentRead?currentRead.rows:await orders.list(company,staff);
+  let names=[],customerNamesError='';
+  try {names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
+  catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
+  return {company,...(currentRead?{stockCurrent:currentRead.stockCurrent}:{}),orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,documentsConnected:true,documentTypes:PURCHASE_DOCUMENT_TYPES,documentDeletionConnected:true,paymentConnected:true,paymentRequestsConnected:true,warehouseConnected:true};
+});
+export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input,stockCurrent)=>{
+  const staff=await getPurchaseStaffContext();
+  try{const current=await createCurrentPurchaseOrders(company);
+    if(current?.mode==='LEGACY'&&stockCurrent===undefined)return await orders.save({company,requestId,input,staff});
+    if(current?.mode!=='ACTIVE'||!stockCurrent||typeof stockCurrent!=='object'||Array.isArray(stockCurrent)||Object.keys(stockCurrent).some(key=>!['stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))||JSON.stringify({input,stockCurrent}).length>200000)throw Error('Current purchase order save unconfirmed');
+    return await current.save({requestId,input,...stockCurrent});}
+  catch(error){
+    const message=String(error?.message||'');
+    const safe=/^(Payment request |Only the original uploader can delete this document\.|This document is (not available for deletion|locked by payment or Finance records)\.|A document deletion is pending\.|Document identity is incomplete\.|Document deletion (is not connected|could not be confirmed|state changed)\.|Procurement handoff |Select an actual payment notification|This payment notification was already acknowledged|Unsupported purchase order action\.|Document upload is not connected\.|Select a (valid )?PDF up to 3 MiB\.|Purchase order changed\.|Purchase order changed while saving\.|Please enter a reason\.|Select a supplier before uploading documents\.|This document is already linked to the purchase order\.|Payment chase has not changed\.|Enter payment terms from 0 to 3650 days\.|Payment term has not changed\.|Enter the supplier document date\.|Select (PO, )?INV, CN, SO, PI or DO\.|Enter the supplier document amount in MYR\.|Supplier short name and document number are required\.|Purchase document service is not configured\.|Upload credentials do not match\.|Document service unavailable\.|Document upload could not be confirmed\.|A save is still processing\.)/.test(message);
+    return {ok:false,requestId,error:safe?message:'Purchase order save could not be confirmed. Retry the same save.'};
+  }
+});
