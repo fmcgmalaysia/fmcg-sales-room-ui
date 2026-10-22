@@ -16,7 +16,7 @@ function createCurrentReadBarrier({ company, items }) {
       || !['LEGACY', 'SHADOW', 'ACTIVE', 'MAINTENANCE'].includes(row.mode)
       || row.pending !== null && (!row.pending || typeof row.pending.key !== 'string' || typeof row.pending.digest !== 'string')) throw Error('Current inventory control requires review');
     return { _id: id, company, _version: row.stockCommitVersion, generation: row.generation, mode: row.mode,
-      schemaVersion: row.schemaVersion, pending: copy(row.pending) };
+      schemaVersion: row.schemaVersion, transferIndexVersion: row.transferIndexVersion ?? null, pending: copy(row.pending) };
   }
   async function readSnapshot(readRows) {
     const before = await readControl(); if (before.pending) throw Error('Inventory pending');

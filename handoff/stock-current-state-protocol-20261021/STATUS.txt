@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation aftera6c12bf: BORROWING_OUTSTANDING_READ.txt. Purchase original-auth
+task/company-outstanding relation read now in generated current-read candidate; active
+index and exact participants/generation checked, independent of archived tasks. Missing
+verified index is unknown/error, not zero. Borrow writer adds same-row two-ID index;
+legacy bootstrap refuses borrowing facts.19affectedpass373.2836ms. Read-only candidate,
+no actual Purchase UI or Wix install; mutator closed-row capacity still OPEN/OFF.
+
 CURRENT continuation aftera22472c: DEPARTMENT_CURRENT_COMMANDS.txt. Concrete original
 Purchase borrow/return + Warehouse receipt command factories now use shared current
 coordinator; approve/return/reborrow/receive100/automatic repayment+replay tested. Added

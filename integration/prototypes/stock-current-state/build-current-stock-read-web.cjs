@@ -11,6 +11,7 @@ const out = [
   "import wixData from 'wix-data';", "import { webMethod, Permissions } from 'wix-web-module';",
   "import { currentMember } from 'wix-members-backend';", "import { requireWarehouseStaff } from 'backend/warehouseReceiving.js';",
   "import { readCustomerShortNames } from 'backend/customerNamesClient.js';",
+  "import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';",
   "import { createHash } from 'crypto';",
   "const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);",
   'const { stockKey } = (() => {\n' + body('current-model.cjs', ["const { hash } = require('./commit-proof.cjs');"]) + '\n})();',
@@ -18,6 +19,9 @@ const out = [
   'const { createCurrentReadBarrier } = (() => {\n' + body('current-read-barrier.cjs', ["const { hash } = require('./commit-proof.cjs');"]) + '\n})();',
   'const { createCurrentStockControlService } = (() => {\n' + body('stock-control-current-service.cjs', ["const { hash } = require('./commit-proof.cjs');",
     "const { stockKey } = require('./current-model.cjs');", "const { createCurrentQuery } = require('./current-query.cjs');"]) + '\n})();',
+  "const transferId = (company, id) => hash(company, 'STOCK_TRANSFER_CURRENT', id);",
+  'const { createBorrowCurrentQuery } = (() => {\n' + body('borrow-current-query.cjs', ["const { hash } = require('./commit-proof.cjs');",
+    "const { transferId } = require('./borrowing-stock-plan.cjs');"]) + '\n})();',
   '// Existing builtin Wix Data read context, original staff checks BEFORE data reads.',
   '// Only read builders exposed: no SDK dependency addition or mutation capability.',
   'function privateItems(company) {',
@@ -54,7 +58,15 @@ const out = [
   '  }',
   '}',
   'export const getWarehouseStockControlCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, false));',
-  'export const getWarehouseStockSourcesCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, true));', ''
+  'export const getWarehouseStockSourcesCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, true));',
+  'export const getPurchaseStockTransfersCurrent = webMethod(Permissions.SiteMember, async (company, input) => {',
+  '  try {',
+  "    if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded relation request required');",
+  '    const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items });',
+  '    const query = createBorrowCurrentQuery({ company, items, protocol, authenticate: getPurchaseStaffContext });',
+  '    return { ok: true, ...await query(company, input) };',
+  "  } catch (_) { return { ok: false, error: 'Borrowing relationships unconfirmed. Refresh and review. 借货关系尚未确认，请刷新核对。' }; }",
+  '});', ''
 ].join('\n');
 const target = path.join(__dirname, 'stockCurrentRead.web.js');
 if (process.argv.includes('--check')) {

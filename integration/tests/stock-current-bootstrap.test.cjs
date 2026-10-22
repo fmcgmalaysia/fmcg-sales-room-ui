@@ -22,6 +22,11 @@ test('dry run resolves actual internal PO identities and prepares exact220/free2
   assert.equal(report.rows.positions.every(p => p.poId !== 'PO-' + p.sourceTaskId && typeof p._version === 'string'), true);
   assert.equal(JSON.stringify(f), before);
 });
+test('legacy bootstrap cannot silently erase existing borrowing facts even if current-row snapshot is empty', () => {
+  const f = fixture(); f.context.activity.push({ _id: 'RELATION', company: 'NCT', action: 'STOCK_TRANSFER_CURRENT' });
+  const report = stockBootstrapPreflight(f); assert.equal(report.canBootstrap, false); assert.equal(report.rows, null);
+  assert.ok(report.blockers.includes('BORROWING_FACTS_REQUIRE_CURRENT_CHECKPOINT'));
+});
 test('not maintenance, pending control, existing target or business locks block before projection', () => {
   for (const mutate of [f => { f.control.mode = 'LEGACY'; }, f => { f.control.pending = { key: 'P', digest: 'D' }; },
     f => { f.existing.positions.push({ _id: 'EXISTS' }); }, f => { f.context.activity.push({ _id: hash('NCT/PURCHASE', 'LOCK') }); },

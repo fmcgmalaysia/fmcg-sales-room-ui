@@ -2,6 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { execFileSync } = require('node:child_process'), { createHash } = require('node:crypto'), load = require('./load-master-module.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs'), { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { requireWarehouseStaff } = load('warehouseReceiving.js');
+const { requirePurchaseStaff } = load('purchaseProjection.js');
 const copy = value => JSON.parse(JSON.stringify(value));
 function fixture() {
   const company = 'NCT', key = stockKey({ company, barcode: '1', packing: '12', ea: 12 }), controlId = hash(company, 'STOCK_CONTROL'), calls = [], permissions = [];
@@ -14,7 +15,7 @@ function fixture() {
   let changeDuringRead = false;
   const wixData = { query: collection => {
     let predicates = [], sort = [], offset = 0, size = 50, fields = [];
-    const q = { eq(k, v) { fields.push([k, v]); predicates.push(row => row[k] === v); return q; },
+    const q = { eq(k, v) { fields.push([k, v]); predicates.push(row => Array.isArray(row[k]) ? row[k].includes(v) : row[k] === v); return q; },
       gt(k, v) { predicates.push(row => typeof row[k] === 'number' && row[k] > v); return q; }, isEmpty(k) { predicates.push(row => row[k] == null); return q; },
       contains(k, v) { predicates.push(row => String(row[k] || '').toLowerCase().includes(v.toLowerCase())); return q; },
       and(other) { predicates.push(other.matches); return q; }, or(other) { const previous = predicates; predicates = [row => previous.every(f => f(row)) || other.matches(row)]; return q; },
@@ -28,8 +29,9 @@ function fixture() {
   } };
   const file = path.join(__dirname, '../prototypes/stock-current-state/stockCurrentRead.web.js');
   const source = fs.readFileSync(file, 'utf8').replace(/^import[^\n]+\r?\n/gm, '').replace(/^export /gm, '');
-  const api = vm.runInNewContext('(function(){' + source + '\nreturn {getWarehouseStockControlCurrent,getWarehouseStockSourcesCurrent};})()', {
+  const api = vm.runInNewContext('(function(){' + source + '\nreturn {getWarehouseStockControlCurrent,getWarehouseStockSourcesCurrent,getPurchaseStockTransfersCurrent};})()', {
     wixData, currentMember: { getMember: async () => member }, requireWarehouseStaff, readCustomerShortNames: async () => [], createHash, Date, JSON, Object, Array, Number, String, Set, Map, WeakMap,
+    getPurchaseStaffContext: async () => ({ ...requirePurchaseStaff(member, [staff]), memberId: member._id }),
     webMethod: (permission, fn) => { permissions.push(permission); return fn; }, Permissions: { SiteMember: 'MEMBER' }
   });
   return { api, data, calls, control, member, staff, permissions, controlId, change: () => changeDuringRead = true };
@@ -37,7 +39,20 @@ function fixture() {
 
 test('generated gateway matches source and exposes only original staff-guarded SiteMember reads', () => {
   assert.match(execFileSync(process.execPath, [path.join(__dirname, '../prototypes/stock-current-state/build-current-stock-read-web.cjs'), '--check'], { encoding: 'utf8' }), /matches exact source/);
-  const f = fixture(); assert.deepEqual(f.permissions, ['MEMBER', 'MEMBER']);
+  const f = fixture(); assert.deepEqual(f.permissions, ['MEMBER', 'MEMBER', 'MEMBER']);
+});
+
+test('generated relation gateway retains original Purchase authorization and refuses unverified index as unknown', async () => {
+  const f = fixture(); assert.equal((await f.api.getPurchaseStockTransfersCurrent('NCT', { taskId: 'A' })).ok, false); assert.equal(f.calls.length, 0);
+  f.staff.departments = ['PURCHASE']; assert.equal((await f.api.getPurchaseStockTransfersCurrent('NCT', { taskId: 'A' })).ok, false);
+  f.control.transferIndexVersion = 1;
+  const relation = { id: 'R', borrowerTaskId: 'A', lenderTaskId: 'B', lenderSourceId: 'SB', replacementSourceId: 'SA', quantity: 30, repaid: 0 };
+  f.data.NCTActivity.push({ _id: hash('NCT', 'STOCK_TRANSFER_CURRENT', 'R'), company: 'NCT', action: 'STOCK_TRANSFER_CURRENT', status: 'ACTIVE',
+    participantTaskIds: ['A', 'B'], revision: 1, checkpointGeneration: 0, details: { relation }, secretPlan: 'PRIVATE' });
+  const result = await f.api.getPurchaseStockTransfersCurrent('NCT', { taskId: 'A' });
+  assert.equal(result.ok, true); assert.equal(result.halo, true); assert.equal(result.items[0].remaining, 30);
+  assert.equal(/PRIVATE|secretPlan|stockCommitVersion/.test(JSON.stringify(result)), false);
+  assert.ok(f.calls.filter(call => call.fields.some(([key]) => key === 'participantTaskIds')).every(call => call.size === 25 && call.options.consistentRead && call.options.suppressAuth));
 });
 
 test('Wix builtin read wrapper suppresses collection auth only after personal Warehouse authorization, never returns private fields', async () => {

@@ -98,6 +98,7 @@ function mapTransition({ before, after, rows, event, generation }) {
     if (same(prior, relation)) continue;
     writes.push({ collection: journal, before: copy(old), after: { ...(old || {}), _id: id, title: relation.id,
       company, stockKey: key, description: relation.id, action: 'STOCK_TRANSFER_CURRENT', result: 'SAVED',
+      participantTaskIds: [relation.borrowerTaskId, relation.lenderTaskId],
       revision: (old?.revision || 0) + 1, activityTime: event.activityTime, checkpointGeneration: generation + 1,
       status: relationRemaining(relation) === 0 ? 'CLOSED' : 'ACTIVE', details: { relation: copy(relation) } } });
   }
