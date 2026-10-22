@@ -3,8 +3,8 @@ const fs = require('node:fs'), path = require('node:path');
 function once(source, before, after) { if (source.split(before).length !== 2) throw Error('Original Purchase relation route anchor changed'); return source.replace(before, () => after); }
 const root = path.join(__dirname, '../../..');
 let index = fs.readFileSync(path.join(root, 'purchase-live/index.html'), 'utf8').replace(/\r\n/g, '\n');
-index = once(index, '</head>', '<link rel="stylesheet" href="borrow-relations.css?v=20261022-stock-current-candidate-v2"></head>');
-index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
+index = once(index, '</head>', '<link rel="stylesheet" href="borrow-relations.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-approval.css?v=20261022-stock-current-candidate-v2"></head>');
+index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-approval.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
 index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-22-stock-current-candidate-v2"');
 for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
   const pattern = new RegExp('(<script src="' + file.replace('.', '\\.') + '\\?v=)[^"]+');

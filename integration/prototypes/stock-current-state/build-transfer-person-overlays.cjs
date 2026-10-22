@@ -21,8 +21,10 @@ for (const [file, condition, shape] of entries) {
     if (candidate.split(hook).length !== 2) throw Error('Original supplier relation panel anchor changed');
     const panel = '<div class="allocation-scroll">';
     if (candidate.split(panel).length !== 2) throw Error('Original supplier relation panel layout anchor changed');
-    candidate = candidate.replace(panel, '<div id="allocationBorrowLinks"></div>' + panel);
+    candidate = candidate.replace(panel, '<div id="allocationBorrowLinks"></div><div id="allocationBorrowApproval"></div>' + panel);
     candidate = candidate.replace(hook, hook + "window.purchaseBorrowRelations?.mount({container:document.querySelector('#allocationBorrowLinks'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc});");
+    const approval = "if(!state.batchId)window.purchaseBorrowApproval?.mount({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submit:input=>{if(api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}});";
+    candidate = candidate.replace(hook, hook + approval);
   }
   // The replacement joins the original surrounding single-quoted markup string.
   // Syntax compilation checks the generated patch before it can be synchronized.

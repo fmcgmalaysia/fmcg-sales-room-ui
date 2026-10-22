@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 BORROW APPROVAL CANDIDATE: BORROW_APPROVAL_UI_CANDIDATE.txt. Compact
+original-dialog section quotes exact donor/replacement POs, quantity/reason/explicit
+future repayment approval; original save tracker owns UUID/progress/retry. Private
+actual-auth quote/save adapter added.628tests pass0fail5773.5748ms; runtime70modules
+29exports. Actual public OPTIONS/BORROW_APPROVE relay/root NOT connected, no browser
+visual QA or publication. All remaining writer/read/schema/init/capacity/recovery/
+shadow/fourrelease gates OPEN. Protected production exact, ACTIVE OFF.
+
 2026-10-22 SHARED PO RECORDS: PO_RECORD_CURRENT_BINDING.txt. Concrete private
 Purchase/Account non-file co-writers now reuse original policies under ONE stock
 company fence; no finance feature/policy change. Original retained audit receipt

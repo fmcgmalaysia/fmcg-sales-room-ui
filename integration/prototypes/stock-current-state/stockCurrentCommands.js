@@ -3647,6 +3647,38 @@ function createPurchaseBorrowOptions({ company, items, store, protocol, authorit
 module.exports = { quoteBorrowOptions, createPurchaseBorrowOptions };
 
 },
+// current-purchase-borrow-gateway.cjs sha256:e6a45ff437ee6ef20b669ee96bc94f18d7a336c88596ba065acc69299e74ffb8
+"current-purchase-borrow-gateway.cjs": (load, module) => {
+'use strict';
+const { createPurchaseBorrowOptions } = load("purchase-borrow-options.cjs");
+const { createCurrentBorrowingSave } = load("current-department-saves.cjs");
+// Private original Purchase gateway binding. Its server-owned dependencies retain
+// actual Purchase permissions; this adapter is not a public permission grant.
+function createCurrentPurchaseBorrowGateway(dependencies) {
+  const { company } = dependencies;
+  const options = createPurchaseBorrowOptions(dependencies), save = createCurrentBorrowingSave(dependencies);
+  function bounded(requestCompany, value) {
+    if (requestCompany !== company || !value || typeof value !== 'object' || Array.isArray(value)
+      || JSON.stringify(value).length > 6000) throw Error('Bounded original Purchase borrowing request required');
+  }
+  return {
+    readOptions: async (requestCompany, input) => {
+      bounded(requestCompany, input);
+      return { ok: true, ...await options(company, { borrowerTaskId: input.borrowerTaskId }) };
+    },
+    save: async (requestCompany, request) => {
+      bounded(requestCompany, request);
+      if (request.company !== undefined && request.company !== company) throw Error('Purchase borrowing company conflict');
+      const kind = request.operation === 'BORROW_APPROVE' ? 'APPROVE' : request.operation === 'BORROW_RETURN' ? 'RETURN' : null;
+      if (!kind) throw Error('Supported original Purchase borrowing action required');
+      return save({ requestId: request.requestId, kind, input: request.input, stockProtocol: request.stockProtocol,
+        stockBuild: request.stockBuild, stockGeneration: request.stockGeneration });
+    }
+  };
+}
+module.exports = { createCurrentPurchaseBorrowGateway };
+
+},
 // current-packing-service.cjs sha256:7a44248693f4bd637b8a35c29a1f5611652535271d991fd81a6d4f2d34ab99b6
 "current-packing-service.cjs": (load, module) => {
 'use strict';
@@ -4658,6 +4690,7 @@ export const planCollections = load("domain-scope.cjs").planCollections;
 export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
 export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;
 export const createPurchaseBorrowOptions = load("purchase-borrow-options.cjs").createPurchaseBorrowOptions;
+export const createCurrentPurchaseBorrowGateway = load("current-purchase-borrow-gateway.cjs").createCurrentPurchaseBorrowGateway;
 export const createCurrentPackingService = load("current-packing-service.cjs").createCurrentPackingService;
 export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
