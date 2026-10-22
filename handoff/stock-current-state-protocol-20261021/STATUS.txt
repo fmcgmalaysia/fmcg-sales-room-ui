@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT afterf903207: ORDER_INTAKE_CURRENT_PLAN.txt. Original intake/receipt now
+compose private insert-only company plan, same request resumes interrupted task save;
+19new+originalpass213.1987ms. Explicit offline counterexample: opposite-company local
+fences cannot prove unique routing.30-write prototype refuses10-line order, NOT production
+capacity. Actual auth/routing/writers/capacity/recovery/migration/UI/release OPEN/OFF.
+
 CURRENT HEARTBEAT afterc69f73c: COST_REFERENCE_COWRITER.txt. Confirmed original reference
 refresh whole-row task/order writes; mandatory admission now14 categories including
 COST_REFERENCE. Original private overlay produces versioned reference-only plan, refuses
