@@ -1,0 +1,69 @@
+2026-10-22 — ORIGINAL PURCHASE REQUEST REFRESH RESUMPTION CANDIDATE
+
+Recovery point: pushedb0b420a, existingPR220. Single objective is the concrete
+deadlock where current pending prevents a workspace and restoreDraft requires that
+workspace. Production runtime32b812c/baselined447185 protected and exact unchanged.
+No browser, live data/schema/permission mutation, initialization, unlock or deployment.
+
+Exact path implemented
+1. Failed workspace mounts only an empty recovery shell. Existing login/load errors
+   stay visible. No fabricated stock/task data or frontend-member authority.
+2. New SiteMember getPurchaseResumeContextCurrent uses ORIGINAL getPurchaseStaffContext
+   (approved member + existing active Purchase StaffMasterAccess policy), returns only
+   selected company/staffId/memberId/staffName. No stock/coverage/actionable workspace,
+   inventory query, alternate grant or administrator impersonation.
+3. Browser reads only ORIGINAL sessionStorage key
+   fmcg-purchase-draft-v1/company/staffId/memberId. No scan, other staff's cache,
+   localStorage, new business persistence or cross-browser recovery claim.
+4. Only valid original current PURCHASE_SAVE_REQUEST tasks or borrowing qualify.
+   Files/suppliers/legacy/unsupported commands stay outside this shell. First retry is
+   explicit; exact cached JSON/UUID/input/build/generation are retained and rechecked
+   before EACH same-request continuation. Role/coverage/mode/generation are reauthorized
+   by existing current backend on every actual save. Browser identity is never forwarded
+   as authority. No recovery mutation endpoint was added.
+5. Valid bounded BEFORE/APPLY/VERIFY progress continues serially; malformed/error/
+   timeout stops automatic continuation and keeps cache. Late progress after timeout,
+   stale/disposed shell or wrong parent/company/UUID cannot resume another command.
+6. Success requires exact UUID and newer stockGeneration. Shell does not clear/cache
+   rewrite or infer debt settlement. It requests normal workspace again. Only matching
+   original staff IDs, build, sufficient fresh current generation and exact retained
+   pending request may then call ORIGINAL finishSave for cost/sort/allocation draft
+   reconciliation. Other drafts are not discarded. Success workspace disposes shell.
+7. Normal restoreDraft for a current request no longer calls the OLD receipt endpoint;
+   request remains available to original current tracker/retry. Legacy behavior remains.
+
+Changed candidate pieces
+build-purchase-borrow-web -> stockCurrentBorrow.web.js (fifth SiteMember identity READ)
+build-purchase-borrow-panel -> candidate Wix relay and candidate index asset
+purchase-ui/purchase-resume.js (new recovery shell)
+build-purchase-current-ui -> candidate app minimal failure/restore/completion seams
+Only exact candidate generators/test overlays changed; original production files exact.
+
+Tests/evidence
+- Initial scoped root/relay/UI21pass0fail1149.5904ms; shell8pass207.6345ms.
+- Full695run first exposed the exact-strip overlay test's outdated import/route list.
+  Updated only strip list to account for new isolated context read; stripped candidate
+  still must equal entire ORIGINAL relay. Focused panel+resume13pass581.396ms.
+- Final all stock-current695pass0fail6484.8383ms. Mock-native/VM tests, NOT platform QA.
+- Actual original Purchase UI fixture exercised candidate app:119total118pass1fail.
+  Sole failure integration/tests/purchase-live-ui.test.cjs:388 expects obsolete
+  'ACTUAL STAFF / Purchase'; candidate and unchanged ORIGINAL both show ACTUAL STAFF.
+  Focused unchanged-original test reproduces same failure. No test/policy changed to
+  hide it. Earlier handoff's63fixture coverage is a separate earlier driver scope, not
+  a reason to pretend all119passed or add repeated checks as independent proofs.
+- All three affected generator --check passed; panel's current-ui exact check also
+  passed in final695. git diff production directories vsd447185 empty.
+
+Not complete / no publication claim
+Actual current workspace/stockCurrent read composition is still NOT installed, so the
+fresh-current workspace completion gate cannot pass on the old live workspace. That is
+intentional fail-closed behavior, not a fallback permission. File/cost/source/Packing
+forced-reload flows still require their own original protocol binding. SessionStorage
+cannot recover a lost tab/session/browser cache; no claim of cross-session durability.
+Unknown lock remains blocked; callback termination/admin incident recovery not proved.
+No live SDK/native permission/capacity test, full writer/read integration, controlled
+initialization/maintenance/cutover/shadow acceptance or formal release completed.
+
+Four states: code partial candidate; Pages unchanged; Wix not installed/synchronized/
+published; new public stock/borrowing unavailable/unverified. ACTIVE remains OFF,
+writerCoverage empty. Support actual invoicing remains OFF. No main merge.

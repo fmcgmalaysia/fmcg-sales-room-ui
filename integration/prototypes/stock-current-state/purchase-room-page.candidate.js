@@ -1,4 +1,4 @@
-import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent } from 'backend/stockCurrentBorrow.web';
+import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent, getPurchaseResumeContextCurrent } from 'backend/stockCurrentBorrow.web';
 import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
@@ -12,6 +12,11 @@ $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(message.type==='PURCHASE_RESUME_CONTEXT_REQUEST'){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>1000)throw Error('Invalid Purchase resume context request.');
+        const result=await getPurchaseResumeContextCurrent(message.company);room.postMessage({type:'PURCHASE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original Purchase identity unconfirmed. 原采购员工身份尚未确认。'});}return;
+    }
     if(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid unused return request.');
         const result=await getPurchaseBorrowReturnOptionsCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_RETURN_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});

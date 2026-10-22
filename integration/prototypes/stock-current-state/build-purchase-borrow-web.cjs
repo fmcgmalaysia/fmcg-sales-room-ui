@@ -113,6 +113,20 @@ export const savePurchaseTasksCurrent = webMethod(Permissions.SiteMember, async 
       error: 'Purchase save unconfirmed. Retain and retry the original request. 采购保存尚未确认，请保留并重试原请求。' };
   }
 });
+// Identity only: unlike a workspace, this ORIGINAL Purchase authorization does
+// not read pending inventory or produce actionable stock/coverage metadata.
+export const getPurchaseResumeContextCurrent = webMethod(Permissions.SiteMember, async company => {
+  try {
+    if (!['NCT', 'GHR'].includes(company)) throw Error('Known Purchase company required');
+    const staff = await getPurchaseStaffContext();
+    if (['staffId','staffName','memberId'].some(key => typeof staff?.[key] !== 'string' || !staff[key]
+      || staff[key].length > 200)) throw Error('Original Purchase identity required');
+    return { ok: true, schema: 'PURCHASE_RESUME_CONTEXT_V1', company,
+      staff: { staffId: staff.staffId, staffName: staff.staffName, memberId: staff.memberId } };
+  } catch (_) {
+    return { ok: false, error: 'Original Purchase identity unconfirmed. 原采购员工身份尚未确认。' };
+  }
+});
 `;
 new Function(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, ''));
 const target = path.join(__dirname, 'stockCurrentBorrow.web.js');

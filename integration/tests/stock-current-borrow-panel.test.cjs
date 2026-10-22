@@ -71,7 +71,8 @@ test('panel resource/relay builds are exact original overlays, preserve original
   }
   const bridge = fs.readFileSync(path.join(root, 'purchase-room-page.candidate.js'), 'utf8'), originalBridge = fs.readFileSync(path.join(__dirname, '../wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
   const stripped = bridge.replace("import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n", '')
-    .replace("import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent } from 'backend/stockCurrentBorrow.web';\n", '')
+    .replace("import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent, getPurchaseResumeContextCurrent } from 'backend/stockCurrentBorrow.web';\n", '')
+    .replace(/\n    if\(message.type==='PURCHASE_RESUME_CONTEXT_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&\['BORROW_APPROVE','BORROW_RETURN'\].includes\(message.operation\)\)\{[\s\S]*?\n    \}/, '')
@@ -79,7 +80,7 @@ test('panel resource/relay builds are exact original overlays, preserve original
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '');
   assert.equal(stripped, originalBridge);
   const index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
-  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'task-grid.js', 'supplier-allocation.js', 'app.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
+  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js', 'task-grid.js', 'supplier-allocation.js', 'app.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
   const candidate = fs.readFileSync(path.join(root, 'purchase-ui/app.js'), 'utf8'), originalApp = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
   for (const marker of ['if(control.dataset.planSource)', 'if(control.dataset.planTask)']) {
     const line = originalApp.split('\n').find(line => line.includes(marker)); assert.ok(candidate.includes(line.trim()));

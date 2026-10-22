@@ -6,7 +6,32 @@ function once(before, after) {
   if (source.split(before).length !== 2) throw Error('Exact Purchase current UI anchor changed: ' + before.slice(0, 70));
   source = source.replace(before, () => after);
 }
-once('  function saveButtonState(busy)', '  let currentSegmentSerial=0;\n  function saveButtonState(busy)');
+once('  function saveButtonState(busy)', `  let currentSegmentSerial=0,currentResumeCleanup=null,currentRecoveredReceipt=null;
+  function mountCurrentResume(){
+    if(savePending||!window.purchaseCurrentResume)return;
+    currentResumeCleanup?.();
+    currentResumeCleanup=window.purchaseCurrentResume.mount({company,host:app,read:readOperation,esc,
+      send:request=>window.parent.postMessage(request,'*'),lockCompany:()=>{document.querySelector('#companySelect').disabled=true;},
+      receipt:receipt=>{currentRecoveredReceipt=receipt;request();}});
+  }
+  function finishCurrentResume(workspace){
+    const receipt=currentRecoveredReceipt;if(!receipt)return;currentRecoveredReceipt=null;
+    if(receipt.request.company!==company||workspace.staff?.staffId!==receipt.staff.staffId||workspace.staff?.memberId!==receipt.staff.memberId
+      ||workspace.stockCurrent?.stockProtocol!==1||workspace.stockCurrent.stockBuild!==receipt.request.stockBuild
+      ||!Number.isSafeInteger(workspace.stockCurrent.stockGeneration)||workspace.stockCurrent.stockGeneration<receipt.result.stockGeneration
+      ||JSON.stringify(savePending)!==JSON.stringify(receipt.request))return;
+    const original=savePending;setTimeout(()=>{if(savePending===original)finishSave(receipt.result);},0);
+  }
+  function saveButtonState(busy)`);
+once('    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet };',
+  '    if(!quiet){currentResumeCleanup?.();currentResumeCleanup=null;}\n    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet };');
+once("+'</div>'; return; }\n    const result = message.workspace;",
+  "+'</div>'; mountCurrentResume(); return; }\n    const result = message.workspace;");
+once('render();allocationUi()?.receivedWorkspace();', 'render();allocationUi()?.receivedWorkspace();finishCurrentResume(result);');
+once('    data = result;if(!quiet)poData=null;',
+  '    currentResumeCleanup?.();currentResumeCleanup=null;\n    data = result;if(!quiet)poData=null;');
+once("const current=savePending;readOperation('PURCHASE_SAVE_CHECK_REQUEST'",
+  "const current=savePending;if(current.stockProtocol===1){checkSaveReceipt(current);return;}readOperation('PURCHASE_SAVE_CHECK_REQUEST'");
 once("    else if(view==='stock') app.innerHTML=expectedStock();", `    else if(view==='borrowing'){
       app.innerHTML='<section id="purchaseBorrowOutstanding"><p role="status">Borrowing view unavailable 请重新载入调货列表。</p></section>';
       window.purchaseBorrowOutstanding?.mount({container:document.querySelector('#purchaseBorrowOutstanding'),workspace:data,read:readOperation,esc,
@@ -17,7 +42,7 @@ once("    else if(view==='stock') app.innerHTML=expectedStock();", `    else if(
 once("    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history';",
   "    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history'||view==='borrowing';\n    const borrowNav=document.querySelector('nav [data-view=\"borrowing\"]');if(borrowNav)borrowNav.hidden=!(data.stockCurrent?.schema==='PURCHASE_TRANSFERS_V2'&&data.stockCurrent.stockProtocol===1&&data.stockCurrent.stockBuild&&Number.isSafeInteger(data.stockCurrent.stockGeneration)&&data.stockCurrent.stockGeneration>=0&&data.stockCurrent.stockGeneration===data.stockCurrent.generation);");
 once('mutate,read:readOperation,savePending:()=>savePending', 'mutate,read:readOperation,stockActionReady:()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),savePending:()=>savePending');
-once("'PURCHASE_REFERENCE_RESULT'].includes(message.type)", "'PURCHASE_REFERENCE_RESULT','PURCHASE_BORROW_RELATIONS_RESULT','PURCHASE_BORROW_OPTIONS_RESULT','PURCHASE_BORROW_RETURN_OPTIONS_RESULT'].includes(message.type)");
+once("'PURCHASE_REFERENCE_RESULT'].includes(message.type)", "'PURCHASE_REFERENCE_RESULT','PURCHASE_BORROW_RELATIONS_RESULT','PURCHASE_BORROW_OPTIONS_RESULT','PURCHASE_BORROW_RETURN_OPTIONS_RESULT','PURCHASE_RESUME_CONTEXT_RESULT'].includes(message.type)");
 once('  function finishSave(result){const completed=savePending,',
   "  function finishSave(result){if(savePending?.stockProtocol===1&&(!Number.isSafeInteger(result?.stockGeneration)||result.stockGeneration<=savePending.stockGeneration)){saveInFlight=false;showStatus('Save not confirmed 保存尚未确认，原请求已保留。',true);paintSaveTracker();return;}const completed=savePending,");
 once('function checkSaveReceipt(current,attempt=0){if(savePending!==current||saveCheckPending)return;',

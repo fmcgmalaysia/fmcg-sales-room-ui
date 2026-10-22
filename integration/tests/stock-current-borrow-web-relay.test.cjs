@@ -14,7 +14,7 @@ async function root(verifiedMockCoverage = false) {
     description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 });
   const native = { webMethod: (permission, fn) => { wrapped.push(permission); return fn; }, Permissions: { SiteMember: 'SITE_MEMBER' },
     currentMember: { getMember: () => f.deps.readMember() }, items: f.items,
-    getPurchaseStaffContext: async () => { calls.push('AUTH'); const member = await f.deps.readMember(); return f.deps.requirePurchaseStaff(member, await f.deps.readStaffRecords()); },
+    getPurchaseStaffContext: async () => { calls.push('AUTH'); const member = await f.deps.readMember(); return { ...f.deps.requirePurchaseStaff(member, await f.deps.readStaffRecords()), memberId: member._id }; },
     fulfilmentStore: { all: async collection => { calls.push(collection); return collection === 'StaffMasterAccess' ? f.deps.readStaffRecords()
       : collection === 'PurchaseOrders' ? [{ company: 'GHR', _id: 'FOREIGN' }] : assert.fail('Unexpected original table scan'); } },
     readFulfilmentContext: async (company, staff) => { calls.push('CONTEXT'); return f.deps.readContext(company, staff); },
@@ -34,13 +34,13 @@ async function root(verifiedMockCoverage = false) {
     source = source.replace(before, 'const writerCoverage = Object.freeze('+JSON.stringify(coverage)+');');
   }
   const api = vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
-    +'\nreturn {getPurchaseBorrowOptionsCurrent,getPurchaseBorrowReturnOptionsCurrent,savePurchaseBorrowingCurrent};})()', native);
+    +'\nreturn {getPurchaseBorrowOptionsCurrent,getPurchaseBorrowReturnOptionsCurrent,savePurchaseBorrowingCurrent,getPurchaseResumeContextCurrent};})()', native);
   return { ...f, api, calls, wrapped };
 }
 
 test('generated actual-import web root retains original auth before stock access, exact schema gate and CLOSED writer coverage', async () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-purchase-borrow-web.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
-  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
+  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
   const quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
   assert.equal(quote.ok, false); assert.equal(f.calls[0], 'AUTH');
   assert.equal(f.calls.includes('CONTEXT'), false, 'unverified writer coverage must not yield actionable borrowing quotes');
@@ -96,7 +96,8 @@ function relay() {
   let callback; const messages = [], queries = [], saves = [], taskSaves = [], legacy = [], room = { postMessage: m => messages.push(copy(m)), onMessage: fn => { callback = fn; } };
   const $w = () => room; $w.onReady = fn => fn();
   const source = fs.readFileSync(path.join(folder, 'purchase-room-page.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '');
-  const native = { $w, getPurchaseBorrowOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input) }); return { ok: true, options: [] }; },
+  const native = { $w, getPurchaseResumeContextCurrent: async company => { queries.push({ company, kind:'RESUME_CONTEXT' }); return { ok:true,schema:'PURCHASE_RESUME_CONTEXT_V1',company,staff:{staffId:'P1',memberId:'M1',staffName:'Purchase'} }; },
+    getPurchaseBorrowOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input) }); return { ok: true, options: [] }; },
     getPurchaseBorrowReturnOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input), kind: 'RETURN' }); return { ok: true, maximumQuantity: 0 }; },
     savePurchaseBorrowingCurrent: async (company, request) => { saves.push({ company, request: copy(request) }); return {
       ok: false, pending: true, requestId: request.requestId, phase: 'APPLY', completedCount: 1, totalRecords: 5 }; },
@@ -118,6 +119,25 @@ test('actual Wix relay sends OPTIONS and BORROW to new root, preserves exact UUI
   assert.deepEqual(f.messages.at(-1).result, { ok: false, pending: true, requestId: id, phase: 'APPLY', completedCount: 1, totalRecords: 5 });
   await f.send({ type: 'PURCHASE_SAVE_REQUEST', company: 'NCT', requestId: id, operation: 'PLAN', input: { original: true } });
   assert.equal(f.legacy.length, 1); assert.equal(f.saves.length, 2); assert.equal(f.messages.at(-1).type, 'PURCHASE_SAVE_RESULT');
+});
+
+test('original Purchase resume context authenticates without stock reads, coverage or workspace and refuses role downgrade', async () => {
+  const f = await root();
+  const result = await f.api.getPurchaseResumeContextCurrent('NCT');
+  assert.equal(result.ok,true);assert.equal(result.schema,'PURCHASE_RESUME_CONTEXT_V1');assert.equal(result.company,'NCT');
+  assert.equal(result.staff.staffId,'P1');assert.equal(result.staff.memberId,'M1');
+  assert.deepEqual(f.calls,['AUTH']);assert.equal(Object.hasOwn(result,'stockCurrent'),false);
+  f.calls.length=0;assert.equal((await f.api.getPurchaseResumeContextCurrent('OTHER')).ok,false);assert.deepEqual(f.calls,[]);
+  f.deps.readMember=async()=>({_id:'M1',status:'PENDING'});
+  assert.equal((await f.api.getPurchaseResumeContextCurrent('NCT')).ok,false);assert.deepEqual(f.calls,['AUTH']);
+});
+
+test('resume context relay sends no cached request or browser identity to authorization', async () => {
+  const f=relay(),request={type:'PURCHASE_RESUME_CONTEXT_REQUEST',company:'NCT',requestId:'11111111-2222-4333-8444-555555555555',memberId:'FORGED'};
+  await f.send(request);assert.deepEqual(f.queries,[{company:'NCT',kind:'RESUME_CONTEXT'}]);
+  assert.equal(f.messages[0].type,'PURCHASE_RESUME_CONTEXT_RESULT');assert.equal(f.messages[0].result.staff.memberId,'M1');
+  await f.send({...request,requestId:'BAD'});await f.send({...request,note:'X'.repeat(1001)});
+  assert.equal(f.queries.length,1);assert.equal(f.messages.at(-1).ok,false);assert.equal(f.saves.length,0);assert.equal(f.legacy.length,0);
 });
 
 test('new relay invalid company/UUID/oversize borrowing payload cannot call either new or legacy writer', async () => {

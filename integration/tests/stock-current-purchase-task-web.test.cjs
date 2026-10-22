@@ -40,7 +40,7 @@ test('actual-import task root uses original auth/table reader and same paired cu
   assert.deepEqual(await f.api.savePurchaseTasksCurrent('NCT',f.request),result);
   assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
   assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_PRICE_SAVED').length,1);
-  assert.equal(f.wrapped.length,4);assert.ok(f.wrapped.every(x=>x==='SITE_MEMBER'));
+  assert.equal(f.wrapped.length,5);assert.ok(f.wrapped.every(x=>x==='SITE_MEMBER'));
 });
 test('default root coverage and unpaired original calculator cannot enter business table preparation',async()=>{
   for(const [coverage,paired]of[[false,true],[true,false]]){
