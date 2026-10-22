@@ -4,7 +4,7 @@
 // production schema installation or replacement for trusted business validators.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = require('./borrowing-model.cjs');
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, quarantineReserved, freeCaseMovement, releaseFreeCase, relationRemaining } = require('./borrowing-model.cjs');
 const { guardProcurementStock } = require('./procurement-stock-guard.cjs');
 const { rollForwardProduct } = require('./product-delta.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
@@ -77,25 +77,26 @@ function mapTransition({ before, after, rows, event, generation }) {
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
         checkpointGeneration: generation + 1, status: next.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
-    const ids = new Set([...Object.keys(source.claims), ...Object.keys(next.claims)]);
+    const ids = new Set([...Object.keys(source.claims), ...Object.keys(next.claims), ...Object.keys(source.isolatedClaims || {}), ...Object.keys(next.isolatedClaims || {})]);
     for (const row of rows.claims.filter(c => c.positionId === id)) ids.add(row.taskId);
     for (const taskId of ids) {
       const claimId = hash(company, id, taskId), oldClaim = claims.get(claimId) || null, task = tasks.get(taskId);
       const prior = source.claims[taskId] || 0, quantity = next.claims[taskId] || 0;
+      const priorIsolated = source.isolatedClaims?.[taskId] || 0, isolated = next.isolatedClaims?.[taskId] || 0;
       if (!task) throw Error('Claim task missing');
       if (oldClaim) {
         consumedClaims.add(claimId); checkRow(oldClaim, company, claimId, key);
         if (oldClaim.positionId !== id || oldClaim.taskId !== taskId || oldClaim.customerId !== task.customerId
-          || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== 0) throw Error('Claim snapshot conflict');
+          || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== priorIsolated) throw Error('Claim snapshot conflict');
         if (before.lifecycleVersion === 2 && oldClaim.dispatchedCumulative !== (source.dispatchedByTask?.[taskId] || 0)) throw Error('Claim dispatch snapshot conflict');
-      } else if (prior !== 0) throw Error('Claim snapshot missing');
-      if (quantity === prior && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
+      } else if (prior !== 0 || priorIsolated !== 0) throw Error('Claim snapshot missing');
+      if (quantity === prior && isolated === priorIsolated && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
       const base = oldClaim || { _id: claimId, schemaVersion: 1, company, stockKey: key, positionId: id,
         taskId, customerId: task.customerId, orderId: task.orderId || '', sourceLineId: task.sourceLineId || '',
         isolatedAttributed: 0, reviewCodes: [] };
-      writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity,
+      writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity, isolatedAttributed: isolated,
         ...(after.lifecycleVersion === 2 ? { dispatchedCumulative: next.dispatchedByTask?.[taskId] || 0 } : {}),
-        revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 ? 'CLOSED' : 'ACTIVE' } });
+        revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 && isolated === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
   }
   for (const relation of after.relations) {
@@ -201,10 +202,13 @@ function prepareFreeQuarantine({ state, rows, event, generation }) {
   checkEvent(event, state.company, 'STOCK_EXCEPTION_REPORTED');
   const source = state.sources.find(s => s.id === event.imageAltText);
   if (!source || event.description !== source.orderId || event.image !== source.sourceLineId) throw Error('Original quarantine source identity mismatch');
-  const { after } = quarantineFree(state, { expectedRevision: state.revision, sourceId: source.id,
-    quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
+  const reserved = event.details.quantity > source.available;
+  const taskId = reserved ? Object.entries(source.claims).filter(([, quantity]) => quantity > 0)[0]?.[0] : null;
+  const { after } = (reserved ? quarantineReserved : quarantineFree)(state, { expectedRevision: state.revision, sourceId: source.id,
+    ...(reserved ? { taskId } : {}), quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
   const plan = mapTransition({ before: state, after, rows, event, generation });
-  plan.writes[0].after.stockAttribution = 'FREE';
+  plan.writes[0].after.stockAttribution = reserved ? 'CUSTOMER' : 'FREE';
+  if (reserved) plan.writes[0].after.stockCustomerTaskId = taskId;
   plan.writes[0].after.stockKey = stockKey(state);
   return { state: after, plan };
 }
@@ -213,7 +217,8 @@ function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolutio
   if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || !event._id || event._id !== event.title
     || !event.initiatedByStaffId || !event.activityTime || !['RETURN', 'REPLACEMENT'].includes(action)
     || caseEvent?.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED' || caseEvent._id !== caseEvent.title
-    || caseEvent.stockAttribution !== 'FREE' || caseEvent.stockKey !== stockKey(state) || caseEvent.company !== state.company
+    || !['FREE', 'CUSTOMER'].includes(caseEvent.stockAttribution) || caseEvent.stockAttribution === 'CUSTOMER' && !state.tasks.some(task => task.id === caseEvent.stockCustomerTaskId)
+    || caseEvent.stockKey !== stockKey(state) || caseEvent.company !== state.company
     || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
     || d.beforeRevision !== (previous.revision || '') || previous.financeApproval || next.financeApproval || next.adminApproval
     || !next.decision || next.decision.value === 'PENDING'
@@ -226,14 +231,15 @@ function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolutio
     || !same(oldFixed, newFixed) || newEntries.some(e => !count(e.quantity) || !e.quantity || !e.reference)
     || total(newEntries.map(e => e.quantity)) > caseEvent.details.quantity) throw Error('Immutable case movement history required');
   const { after } = freeCaseMovement(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText,
-    action, quantity: newEntries.at(-1).quantity });
+    ...(caseEvent.stockAttribution === 'CUSTOMER' ? { customerTaskId: caseEvent.stockCustomerTaskId } : {}), action, quantity: newEntries.at(-1).quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution, generation }) {
   const next = event?.details?.state, previous = priorResolution, approval = next?.financeApproval;
   if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || event._id !== event.title || !event._id
     || !event.activityTime || !event.initiatedByStaffId || event.details.action !== 'CLOSE'
-    || caseEvent?.stockAttribution !== 'FREE' || caseEvent.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED'
+    || !['FREE', 'CUSTOMER'].includes(caseEvent?.stockAttribution) || caseEvent.stockAttribution === 'CUSTOMER' && !state.tasks.some(task => task.id === caseEvent.stockCustomerTaskId)
+    || caseEvent.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED'
     || caseEvent.company !== state.company || caseEvent.stockKey !== stockKey(state) || caseEvent._id !== caseEvent.title
     || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
     || !previous || previous.financeApproval || event.details.beforeRevision !== previous.revision
@@ -243,7 +249,8 @@ function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution
     || (previous.returns || []).length || (previous.replacements || []).length) throw Error('Original separate Admin and Finance release approval required');
   const oldFixed = copy(previous), newFixed = copy(next); delete oldFixed.revision; delete newFixed.financeApproval;
   if (!same(oldFixed, newFixed)) throw Error('Release must preserve original case approval facts');
-  const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText, quantity: caseEvent.details.quantity });
+  const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText,
+    ...(caseEvent.stockAttribution === 'CUSTOMER' ? { customerTaskId: caseEvent.stockCustomerTaskId } : {}), quantity: caseEvent.details.quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 function prepareProcurementTransition({ state, after, rows, event, generation }) {
@@ -253,7 +260,8 @@ function prepareProcurementTransition({ state, after, rows, event, generation })
 }
 function preparePackingHoldTransition({ state, rows, event, generation, packingHolds }) {
   const after = { ...copy(state), revision: state.revision + 1, packingHolds: copy(packingHolds) };
-  // validate(after) in mapper enforces per-task held <= actual usable ownership.
+  // validate(after) also retains explicitly customer-attributed damaged holds.
+  // Original paired packing validation must prevent executing the isolated units.
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, preparePackingHoldTransition, transferId };

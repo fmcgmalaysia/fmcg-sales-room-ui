@@ -65,11 +65,18 @@ test('actual Warehouse free-stock isolation commits original exception and curre
   }
 });
 
-test('reserved stock is not silently assigned customer losses and cannot be quarantined through this free-only path', async () => {
-  const f = await fixture('NCT', true), before = JSON.stringify([...f.db].filter(([id]) => id.startsWith('Stock')));
-  await assert.rejects(f.save(f.request), /attribution review/);
-  assert.equal(JSON.stringify([...f.db].filter(([id]) => id.startsWith('Stock'))), before);
-  assert.equal(readStockExceptions(f.context().activity).length, 0); assert.equal((await f.protocol.readControl()).pending, null);
+test('approved single-customer isolation preserves demand and original PO; mixed free/customer attribution still refuses', async () => {
+  const f = await fixture('NCT', true), before = JSON.stringify(f.task);let result;
+  do { result = await f.save(f.request); } while (result.pending);
+  assert.equal(result.ok,true);assert.equal(JSON.stringify(f.task),before);
+  const claim=[...f.db.values()].find(row=>row.positionId),event=f.context().activity.find(row=>row.action==='STOCK_EXCEPTION_REPORTED');
+  assert.equal(claim.reservedUsable,10);assert.equal(claim.isolatedAttributed,10);assert.equal(event.stockAttribution,'CUSTOMER');assert.equal(event.stockCustomerTaskId,'T');
+  const mixed=await fixture('NCT',true);
+  for(const[id,row]of mixed.db)if(id.startsWith('Stock')){row.reservedUsable=15;if(!row.positionId)row.available=5;}
+  const stock=JSON.stringify([...mixed.db].filter(([id])=>id.startsWith('Stock')));
+  await assert.rejects(mixed.save(mixed.request),/attribution review/);
+  assert.equal(JSON.stringify([...mixed.db].filter(([id])=>id.startsWith('Stock'))),stock);
+  assert.equal(readStockExceptions(mixed.context().activity).length,0);assert.equal((await mixed.protocol.readControl()).pending,null);
 });
 
 test('free isolation preserves original version/physical/quantity checks and exact staff permissions on replay', async () => {

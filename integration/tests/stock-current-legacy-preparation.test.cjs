@@ -19,7 +19,7 @@ function fixture() {
   const args = { company: 'NCT', context, identity, orders: ['A', 'B'].map(id => ({ company: 'NCT', id: 'P' + id, number: 'PO' + id, taskIds: [id] })),
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation };
   const rows = { positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0 }],
-    claims: [{ positionId: hash('NCT', key, 'PURCHASE_SOURCE', 'B'), taskId: 'B', reservedUsable: 100 }], transfers: [], product: null };
+    claims: [{ positionId: hash('NCT', key, 'PURCHASE_SOURCE', 'B'), taskId: 'B', reservedUsable: 100, isolatedAttributed: 0 }], transfers: [], product: null };
   return { args, rows, state: () => originalProductState(args).buildState(rows) };
 }
 const approval = { expectedRevision: 0, id: 'R', lenderSourceId: 'B', replacementSourceId: 'A', borrowerTaskId: 'A', quantity: 20, approvedBy: 'P', reason: 'Fill container' };

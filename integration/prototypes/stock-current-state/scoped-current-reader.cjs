@@ -23,7 +23,7 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
       || !count(row.revision) || !['ACTIVE', 'CLOSED'].includes(row.status) || row.reviewRequired === true || row.reviewCodes?.length) throw Error('Known exact current row required');
     if (collection === 'StockPositions' && (!['receiptAccepted', 'borrowRepaidCumulative', 'onHand', 'isolated', 'available', 'reservedUsable', 'dispatched'].every(f => count(row[f]))
       || row.borrowRepaidCumulative > row.receiptAccepted || row.onHand !== row.isolated + row.available + row.reservedUsable)) throw Error('Source current checkpoint requires review');
-    if (collection === 'StockClaims' && (!count(row.dispatchedCumulative) || !count(row.reservedUsable) || row.isolatedAttributed !== 0
+    if (collection === 'StockClaims' && (!count(row.dispatchedCumulative) || !count(row.reservedUsable) || !count(row.isolatedAttributed)
       || id !== hash(company, row.positionId, row.taskId))) throw Error('Claim current checkpoint requires review');
     if (collection === journal) {
       const r = row.details?.relation;

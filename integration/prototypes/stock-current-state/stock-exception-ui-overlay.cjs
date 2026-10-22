@@ -76,6 +76,8 @@ stockCompanySelect?.addEventListener('change',event=>{if(pending||stockBlocked){
 window.addEventListener('beforeunload',event=>{if(pending?.stockProtocol===1||stockBlocked){event.preventDefault();event.returnValue='';}});
 `;
 function patchStockExceptionDialog(source){
+ source=once(source,"if(state.decision.disposition==='RETURN')choices.push('RETURN');","if(state.decision.disposition==='RETURN'&&!item.packingCorrectionRequired)choices.push('RETURN');");
+ source=once(source,"shell(identity(item)+'<p class=\"stock-note\">'", "shell(identity(item)+(item.packingRecheckRequired?'<p class=\"stock-note\">'+esc(stockCopy('Warehouse must recheck the original packing list. Customer demand is unchanged.','货仓须复核原备货单。客户需求数量不变。'))+'</p>':'')+(item.packingCorrectionRequired?'<p class=\"stock-note\">'+esc(stockCopy('Correct Packed and Loaded before recording supplier return.','登记退货前，请先更正备货与装柜实数。'))+'</p>':'')+'<p class=\"stock-note\">'");
  source=once(source,"let company='',data=null,pending=null,busy=false,readId='',timer,changed=false,form=null;","let company='',data=null,pending=null,busy=false,readId='',timer,changed=false,form=null;\n"+helpers);
  source=once(source,'function close(){if(busy||pending){','function close(){if(busy||pending||stockBlocked){');
  const a=source.indexOf('function read(){'),b=source.indexOf('\nfunction open(){',a);if(a<0||b<a)throw Error('Original stock read anchor changed');
@@ -84,7 +86,11 @@ function patchStockExceptionDialog(source){
  timer=setTimeout(()=>{if(readId!==id)return;if(pending?.stockProtocol===1)stockUnknown();else error(stockCopy('Read is not confirmed. Please retry.','读取尚未确认，请重试。'));dialog.querySelector('[data-reload]')?.removeAttribute('disabled');},30000);}`+source.slice(b);
  source=once(source,"company=companyValue();data=null;form=null;","company=companyValue();data=null;form=null;stockMeta=null;stockActor=null;stockFinal=null;stockReadKind='';");
  source=once(source,'dialog.showModal();read();}','dialog.showModal();dialog.querySelector(\'[data-reload]\').onclick=()=>read(true);read(true);}');
- source=once(source,"pending={type:'STOCK_SAVE_REQUEST',company,requestId:crypto.randomUUID(),input};}","pending={type:'STOCK_SAVE_REQUEST',company,requestId:crypto.randomUUID(),input};if(stockMeta)pending=stockClone({...pending,...stockMeta});}");
+ source=once(source,"pending={type:'STOCK_SAVE_REQUEST',company,requestId:crypto.randomUUID(),input};}",`if(stockMeta&&input.action==='QUARANTINE'){
+ const source=data.sources.find(row=>row.id===input.sourceTaskId),maximum=source?.stockReportMaximum;
+ if(Number.isSafeInteger(maximum)&&(maximum<=0||input.quantity>maximum)){error(stockCopy('Customer attribution needs Purchase review. No save was started.','客户货物归属需要采购员核对，未开始保存。'));return;}
+ }
+ pending={type:'STOCK_SAVE_REQUEST',company,requestId:crypto.randomUUID(),input};if(stockMeta)pending=stockClone({...pending,...stockMeta});}`);
  source=once(source," error('');lock(true);parent.postMessage(pending,'*');", " if(pending.stockProtocol===1){stockSteps=0;stockSend();return;}\n error('');lock(true);parent.postMessage(pending,'*');");
  source=once(source,' if(message.company!==company)return;',' if(message.company!==company)return;\n if(stockResponse(message))return;');
  // Existing Account English selection and ALL form builders remain byte-exact.
@@ -103,5 +109,5 @@ function patchStockExceptionParent(source){return once(source,"    if(['STOCK_RE
     }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){`);}
 function patchStockExceptionIndex(source){const pattern=/<script src="\.\.\/master-shared\/stock-exceptions\.js\?v=[^"]+"><\/script>/g;
- if((source.match(pattern)||[]).length!==1)throw Error('Exact original common stock dialog script required');return source.replace(pattern,'<script src="stock-exceptions.js?v=20261023-current-exception-v1"></script>');}
+ if((source.match(pattern)||[]).length!==1)throw Error('Exact original common stock dialog script required');return source.replace(pattern,'<script src="stock-exceptions.js?v=20261023-current-exception-damage-v1"></script>');}
 module.exports={patchStockExceptionDialog,patchStockExceptionParent,patchStockExceptionIndex};

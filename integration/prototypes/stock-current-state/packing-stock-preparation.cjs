@@ -57,6 +57,7 @@ function createPackingStockPreparation(deps) {
         products.push({ state: builder.buildState(rows), rows });
       }
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
+      if (context.stockDamageVersion === 1 && deps.currentDamageVersion !== 1) throw Error('Paired original isolated packing model required');
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
         stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
       let validated;

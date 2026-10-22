@@ -39,7 +39,8 @@ export async function createCurrentStockExceptions(company){
   const context={...projectPurchaseWorkspace(originalArguments),activity:tables[journal]};
   // The original stock-case workspace includes received historical source lines.
   // Retain those exact IDs; never display a CLOSED source as zero by omission.
-  const retainedTaskIds=context.tasks.filter(task=>task.warehouse?.hasPhysicalReceipt===true).map(task=>task.id);
+  const retainedTaskIds=[...new Set([...context.tasks.filter(task=>task.warehouse?.hasPhysicalReceipt===true).map(task=>task.id),
+   ...context.activity.filter(event=>event.action==='STOCK_EXCEPTION_REPORTED'&&event.stockAttribution==='CUSTOMER').map(event=>event.stockCustomerTaskId)])];
   const current=await readCurrentPurchaseProjection({company,context,staff,control,items,store,originalArguments,projectPurchaseWorkspace,currentProjectionVersion:PURCHASE_CURRENT_PROJECTION_VERSION,
    readCurrentTaskRows:readTasks,readPurchaseRecords:async()=>tables.PurchaseOrders,projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,retainedTaskIds});
   return{context:{...current.workspace,activity:tables[journal]},records:tables.PurchaseOrders,products:current.products};
@@ -62,7 +63,18 @@ export async function createCurrentStockExceptions(company){
  },read:expectedStaff=>snapshot(expectedStaff,(data,purchaseOrders,staff)=>{
   const result=projectStockWorkspace(data.context,purchaseOrders,staff),sources=new Map([...data.products.values()].flatMap(product=>product.state.sources.map(source=>[source.id,source])));
   // Historical accepted is unchanged; only current physical display uses current rows.
-  result.sources=result.sources.map(source=>{const current=sources.get(source.id);if(!current)throw Error('Exact current stock source display required');return{...source,availablePhysical:current.onHand-current.isolated};});
-  result.cases=result.cases.map(item=>({...item,source:result.sources.find(source=>source.id===item.source.id)}));return result;
+  result.sources=result.sources.map(source=>{const current=sources.get(source.id);if(!current)throw Error('Exact current stock source display required');
+   const owners=Object.entries(current.claims).filter(([,quantity])=>quantity>0),maximum=current.available>0?current.available:owners.length===1?owners[0][1]:0;
+   return{...source,availablePhysical:current.onHand-current.isolated,stockReportMaximum:maximum,stockAttributionReviewRequired:maximum<current.onHand-current.isolated};});
+  result.cases=result.cases.map(item=>{
+   const event=data.context.activity.find(event=>event._id===item.id&&event.action==='STOCK_EXCEPTION_REPORTED');
+   if(event?.stockAttribution!=='CUSTOMER')return{...item,source:result.sources.find(source=>source.id===item.source.id)};
+   const state=[...data.products.values()].map(product=>product.state).find(state=>state.tasks.some(task=>task.id===event.stockCustomerTaskId));
+   const task=state?.tasks.find(task=>task.id===event.stockCustomerTaskId);if(!task)throw Error('Exact isolated case customer required');
+   const usable=state.sources.reduce((n,source)=>n+(source.claims[task.id]||0),0);
+   return{...item,source:result.sources.find(source=>source.id===item.source.id),stockCustomerId:task.customerId,
+    packingCorrectionRequired:state.packingHolds.heldByTask[task.id]>usable,
+    packingRecheckRequired:readPackingLists(data.context.activity,company).some(list=>list.stockDamageReviewRequired===true&&list.stockDamageCases?.some(row=>row.caseId===item.id))};
+  });return result;
  }),messages:(expectedStaff,department)=>snapshot(expectedStaff,(data,purchaseOrders)=>projectDepartmentMessages({company,department,staff:expectedStaff,orders:purchaseOrders,activity:data.context.activity}))};
 }

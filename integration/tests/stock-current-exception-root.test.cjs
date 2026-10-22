@@ -57,6 +57,7 @@ test('actual original exception web/private roots report and read both companies
  for(const company of ['NCT','GHR']){
   const f=await fixture({company,generated:true}),read=await f.api.getStockExceptions(company);
   assert.equal(read.sources[0].received,20);assert.equal(read.sources[0].availablePhysical,20);assert.equal(read.permissions.report,true);
+  assert.equal(read.sources[0].stockReportMaximum,20);assert.equal(read.sources[0].stockAttributionReviewRequired,false);
   assert.deepEqual(copy(read.stockCurrent),f.metadata);assert.equal(read.cases.length,0);
   const saved=await f.finish();assert.equal(saved.stockGeneration,1);assert.equal((await f.send()).caseId,saved.caseId);
   const after=await f.api.getStockExceptions(company);assert.equal(after.sources[0].received,20);assert.equal(after.sources[0].availablePhysical,10);
@@ -84,9 +85,10 @@ test('actual resolution root keeps separate original Purchase decision and Wareh
  assert.equal(f.calls.some(value=>value.startsWith('LEGACY_')),false);
 });
 
-test('actual exception root refuses reserved-loss attribution; received CLOSED source display uses exact current row instead of historical receipt balance',async()=>{
- const reserved=await fixture({reserved:true});assert.equal((await reserved.send()).ok,false);assert.equal(reserved.control().generation,0);
- assert.equal([...reserved.db.values()].some(row=>row.action==='STOCK_EXCEPTION_REPORTED'),false);
+test('actual exception root commits approved single-customer isolation; received CLOSED source display uses exact current row instead of historical receipt balance',async()=>{
+ const reserved=await fixture({reserved:true}),saved=await reserved.finish();assert.equal(saved.ok,true);assert.equal(reserved.control().generation,1);
+ const caseEvent=[...reserved.db.values()].find(row=>row.action==='STOCK_EXCEPTION_REPORTED');assert.equal(caseEvent.stockAttribution,'CUSTOMER');assert.equal(caseEvent.stockCustomerTaskId,'T');
+ const reservedRead=await reserved.api.getStockExceptions('NCT');assert.equal(reservedRead.sources[0].availablePhysical,10);assert.equal(reservedRead.sources[0].stockReportMaximum,10);
  const f=await fixture();
  for(const [key,row] of f.db){
   if(key.startsWith('StockPositions:'))Object.assign(row,{onHand:0,available:0,isolated:0,reservedUsable:0,supplierReturned:20,status:'CLOSED'});

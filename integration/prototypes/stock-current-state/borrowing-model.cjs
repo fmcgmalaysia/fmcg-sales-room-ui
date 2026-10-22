@@ -13,6 +13,7 @@ const sum = values => {
   return result;
 };
 const reserved = (state, taskId) => sum(state.sources.map(s => s.claims[taskId] || 0));
+const isolatedFor = (state, taskId) => sum(state.sources.map(s => s.isolatedClaims?.[taskId] || 0));
 const remaining = relation => relation.quantity - relation.repaid - (relation.returned || 0);
 const outgoing = (state, sourceId) => sum(state.relations.filter(r => r.replacementSourceId === sourceId).map(remaining));
 const incoming = (state, taskId) => sum(state.relations.filter(r => r.lenderTaskId === taskId).map(remaining));
@@ -43,6 +44,11 @@ function validate(state) {
     for (const [taskId, qty] of Object.entries(source.claims)) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Claim conflict');
     }
+    if (source.isolatedClaims && (typeof source.isolatedClaims !== 'object' || Array.isArray(source.isolatedClaims))) throw Error('Isolated customer attribution conflict');
+    for (const [taskId, qty] of Object.entries(source.isolatedClaims || {})) {
+      if (!tasks.has(taskId) || !count(qty)) throw Error('Isolated customer attribution conflict');
+    }
+    if (sum(Object.values(source.isolatedClaims || {})) > source.isolated) throw Error('Isolated customer attribution exceeds physical stock');
     for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Dispatch provenance conflict');
     }
@@ -77,7 +83,8 @@ function validate(state) {
   }
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
-      || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
+      || state.packingHolds.heldByTask[task.id] > sum([reserved(state, task.id), isolatedFor(state, task.id)])
+      || state.packingHolds.heldByTask[task.id] > task.requested - task.dispatched) throw Error('Packing task coverage requires review');
     const outside = state.scope === 'CURRENT_ACTIVE_PRODUCT' && state.lifecycleVersion === 2 ? task.dispatchedOutsideScope : 0;
     if (!count(outside) || sum([outside, ...state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)]) !== task.dispatched) throw Error('Task dispatch provenance conflict');
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
@@ -104,7 +111,9 @@ function approveBorrow(before, input) {
     const future = state.sources.find(s => s.id === input.replacementSourceId);
     const borrower = state.tasks.find(t => t.id === input.borrowerTaskId);
     if (!donor || !future || !borrower || !state.tasks.some(t => t.id === donor.ownerTaskId) || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
-      || state.packingHolds.heldByTask[borrower.id] !== 0 || legacyHeld(state, borrower.id)) throw Error('Eligible unheld borrower required');
+      || legacyHeld(state, borrower.id)
+      || state.packingHolds.heldByTask[borrower.id] !== 0 && (input.quantity > isolatedFor(state, borrower.id)
+        || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id))) throw Error('Eligible unheld borrower required');
     const lender = donor.ownerTaskId;
     if (state.packingHolds.heldByTask[lender] !== 0 || legacyHeld(state, lender)) throw Error('Packing task holds lender allocation');
     if (input.quantity > (donor.claims[lender] || 0)
@@ -326,16 +335,49 @@ function quarantineFree(before, input) {
     source.available -= input.quantity; source.isolated += input.quantity;
   });
 }
+function quarantineReserved(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    const owners = source ? Object.entries(source.claims).filter(([, qty]) => qty > 0) : [];
+    // Existing source-only form supplies no customer allocation authority. Only
+    // an entirely reserved source with ONE factual customer claim is unambiguous.
+    // Mixed free/customer or multiple claims needs Purchase attribution review.
+    if (!source || source.available !== 0 || owners.length !== 1 || owners[0][0] !== input.taskId
+      || !positive(input.quantity) || input.quantity > owners[0][1]
+      || !['INTERNAL_DAMAGE', 'WRONG_ITEM', 'SHORT_EXPIRY'].includes(input.kind)
+      || !String(input.reason || '').trim()) throw Error('Reserved stock customer attribution review required');
+    source.claims[input.taskId] -= input.quantity;
+    source.isolatedClaims = { ...(source.isolatedClaims || {}), [input.taskId]: (source.isolatedClaims?.[input.taskId] || 0) + input.quantity };
+    source.isolated += input.quantity;
+  });
+}
+function restoreAttributed(state, source, taskId, quantity) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) throw Error('Original isolated customer unavailable');
+  // This is replacement/restoration of the ALREADY accepted case goods, not a
+  // new cumulative PO delivery. Do not consume or clear future-PO loan promises.
+  const need = task.requested - task.dispatched - reserved(state, taskId) - incoming(state, taskId);
+  const own = Math.min(quantity, need);
+  source.claims[taskId] = (source.claims[taskId] || 0) + own;
+  source.available += quantity - own;
+}
 function freeCaseMovement(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId);
     if (!source || !positive(input.quantity) || !['RETURN', 'REPLACEMENT'].includes(input.action)) throw Error('Validated free-case physical movement required');
     if (input.action === 'RETURN') {
       if (input.quantity > source.isolated) throw Error('Supplier return exceeds isolated stock');
+      if (input.customerTaskId) {
+        if (input.quantity > (source.isolatedClaims?.[input.customerTaskId] || 0)) throw Error('Supplier return exceeds attributed isolated stock');
+        if (state.packingHolds.heldByTask[input.customerTaskId] > reserved(state, input.customerTaskId)) throw Error('Confirm packing shortage correction before supplier return');
+        source.isolatedClaims[input.customerTaskId] -= input.quantity;
+      } else if (input.quantity > source.isolated - sum(Object.values(source.isolatedClaims || {}))) throw Error('Free return cannot consume customer isolation');
       source.isolated -= input.quantity; source.onHand -= input.quantity;
       source.supplierReturned = (source.supplierReturned || 0) + input.quantity;
     } else {
-      source.onHand += input.quantity; source.available += input.quantity;
+      source.onHand += input.quantity;
+      if (input.customerTaskId) restoreAttributed(state, source, input.customerTaskId, input.quantity);
+      else source.available += input.quantity;
       source.replacementReceived = (source.replacementReceived || 0) + input.quantity;
     }
   });
@@ -344,8 +386,16 @@ function releaseFreeCase(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId);
     if (!source || !positive(input.quantity) || input.quantity > source.isolated) throw Error('Approved isolated release quantity required');
-    source.isolated -= input.quantity; source.available += input.quantity;
+    if (input.customerTaskId) {
+      if (input.quantity > (source.isolatedClaims?.[input.customerTaskId] || 0)) throw Error('Release exceeds attributed isolated stock');
+      source.isolatedClaims[input.customerTaskId] -= input.quantity;
+      restoreAttributed(state, source, input.customerTaskId, input.quantity);
+    } else {
+      if (input.quantity > source.isolated - sum(Object.values(source.isolatedClaims || {}))) throw Error('Free release cannot consume customer isolation');
+      source.available += input.quantity;
+    }
+    source.isolated -= input.quantity;
   });
 }
-module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, freeCaseMovement, releaseFreeCase,
+module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, quarantineReserved, freeCaseMovement, releaseFreeCase,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };

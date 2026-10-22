@@ -39,7 +39,8 @@ async function validateOriginalStockException({ company, staff, context, request
 }
 
 // PRIVATE existing stockExceptions.web authentication dependencies only. This
-// handles approved FREE stock isolation, never invents reserved-loss attribution.
+// handles free isolation or one unambiguous reserved customer. Mixed ownership
+// stays blocked; browser cannot choose which customer bears a loss.
 function createCurrentStockExceptionSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const d = authorityDependencies;
   if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || typeof items?.query !== 'function' || typeof store?.read !== 'function'
@@ -75,7 +76,30 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
             transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
           if (!rows.product) throw Error('Current exception product checkpoint required');
           rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
-          return prepareFreeQuarantine({ state: builder.buildState(rows), rows, event: validated.event, generation: control.generation });
+          const prepared = prepareFreeQuarantine({ state: builder.buildState(rows), rows, event: validated.event, generation: control.generation });
+          const event = prepared.plan.writes.find(write => write.after.action === 'STOCK_EXCEPTION_REPORTED').after;
+          if (event.stockAttribution === 'CUSTOMER') {
+            const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+            const affected = d.readPackingLists(context.activity, company).filter(list => d.packingHeld(list, event.stockCustomerTaskId) > 0);
+            event.stockPackingImpacts = [];
+            for (const list of affected) {
+              const id = hash(company, list.id, 'PACKING_CURRENT'), before = await store.read(journal, id); metrics.exactReads++;
+              if (!before?._version || before.company !== company || before.action !== 'SUPPORT_PACKING_LIST_CURRENT'
+                || JSON.stringify(before.details?.list) !== JSON.stringify(list)) throw Error('Exact affected packing list required');
+              const pending = list.stockDamageCases || [];
+              if (!Array.isArray(pending) || pending.some(item => !item?.caseId || !item.taskId) || pending.some(item => item.caseId === event._id)) throw Error('Packing damage review identity conflict');
+              const after = copy(before), revision = hash(list.revision, event._id, 'DAMAGE_REVIEW');
+              after.activityTime = event.activityTime; after.initiatedByStaffId = staff.staffId; after.initiatedByStaffName = staff.staffName;
+              after.details.list = { ...copy(list), revision, stockDamageReviewRequired: true,
+                stockDamageCases: [...copy(pending), { caseId: event._id, taskId: event.stockCustomerTaskId }], updatedAt: event.activityTime };
+              // No planned/Packed/Loaded/PO/invoice/stock quantity is edited here.
+              // Persist the required physical review on the SAME original list so
+              // later replenishment cannot silently certify old Loaded evidence.
+              prepared.plan.writes.push({ collection: journal, before, after });
+              event.stockPackingImpacts.push({ listId: list.id, beforeRevision: list.revision, revision });
+            }
+          }
+          return prepared;
         });
         return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
       } })(request);
@@ -84,8 +108,9 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, staff.memberId, 'STOCK_EXCEPTION')));
     const event = receipt.rows;
     if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
-      || event.action !== 'STOCK_EXCEPTION_REPORTED' || event.stockAttribution !== 'FREE' || event.initiatedByStaffId !== staff.staffId
-      || event.imageAltText !== request.input.sourceTaskId || event.details?.company !== company) throw Error('Committed free stock exception receipt requires review');
+      || event.action !== 'STOCK_EXCEPTION_REPORTED' || !['FREE','CUSTOMER'].includes(event.stockAttribution) || event.initiatedByStaffId !== staff.staffId
+      || event.stockAttribution === 'CUSTOMER' && (typeof event.stockCustomerTaskId !== 'string' || !event.stockCustomerTaskId)
+      || event.imageAltText !== request.input.sourceTaskId || event.details?.company !== company) throw Error('Committed stock exception attribution receipt requires review');
     return { ...result, company, caseId: event.title };
   };
 }

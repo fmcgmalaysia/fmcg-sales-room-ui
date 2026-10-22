@@ -60,6 +60,18 @@ test('quota failure sends nothing; wrong receipt/segment/parent and stale fresh 
   assert.equal(f.storage.has(cacheKey()),true,'same-generation read must still contain this exact saved case');
 });
 
+test('ambiguous customer isolation is refused before retaining or sending an invalid request; Account stays English',()=>{
+ for(const english of [false,true])for(const maximum of [0,4]){
+  const f=ui({english});f.open();f.reply(f.identity());
+  f.reply(f.data({sources:[{id:'T',barcode:'1',name:'Item',availablePhysical:20,stockReportMaximum:maximum,stockAttributionReviewRequired:true}]}));f.start();
+  assert.equal(f.saves().length,0);assert.equal(f.storage.size,0);assert.equal(f.writes.length,0);
+  assert.match(f.node('#stockError').textContent,english?/Purchase review/:/采购员核对/);
+  if(english)assert.doesNotMatch(f.node('#stockError').textContent,/[\u4e00-\u9fff]/);
+ }
+ const exact=ui();exact.open();exact.reply(exact.identity());exact.reply(exact.data({sources:[{id:'T',name:'Item',availablePhysical:20,stockReportMaximum:5}]}));exact.start();
+ assert.equal(exact.saves().length,1);assert.equal(exact.storage.size,1);
+});
+
 test('same full request progresses finitely; timeout/late progress never auto-replays and explicit retry changes only transport segment',()=>{
  const f=ui();f.ready();f.start();const request=f.saves()[0],body=JSON.parse(f.storage.get(cacheKey())).request;
  const progress={ok:false,pending:true,requestId:request.requestId,phase:'APPLY',completedCount:1,totalRecords:5};
@@ -122,6 +134,14 @@ test('all four builders reproducible; generated dialog is shared exact overlay, 
  let common;
  for(const area of ['purchase-ui','account-ui','warehouse-ui']){
   const source=fs.readFileSync(path.join(folder,area,'stock-exceptions.js'),'utf8').replace(/\r\n/g,'\n');assert.equal(forms(source),forms(original));if(common)assert.equal(source,common);common=source;
-  assert.match(fs.readFileSync(path.join(folder,area,'index.html'),'utf8'),/src="stock-exceptions.js\?v=20261023-current-exception-v1"/);
+  assert.match(fs.readFileSync(path.join(folder,area,'index.html'),'utf8'),/src="stock-exceptions.js\?v=20261023-current-exception-damage-v1"/);
+ }
+});
+
+test('original case dialog shows packing correction and hides premature Return; Account remains English',()=>{
+ const source=fs.readFileSync(path.join(folder,'account-ui/stock-exceptions.js'),'utf8'),start=source.indexOf('function caseView(id){'),end=source.indexOf('\nconst field=',start);
+ for(const english of [false,true]){let html='';const item={id:'CASE',status:'OPEN',quantity:10,kind:'SHORT_EXPIRY',owner:'WAREHOUSE',packingCorrectionRequired:true,packingRecheckRequired:true,resolution:{decision:{value:'REPLACE',disposition:'RETURN'}}};
+  const render=vm.runInNewContext(source.slice(start,end)+';caseView;',{data:{cases:[item],permissions:{report:true}},stockCopy:(en,zh)=>english?en:zh,identity:()=>'',esc:String,kinds:{SHORT_EXPIRY:'Short expiry'},owners:{WAREHOUSE:'Warehouse'},actions:{RETURN:'Return',REPLACEMENT:'Replacement'},stamp:()=>'',list:()=>{},shell:body=>{html=body;},dialog:{querySelector:()=>({}),querySelectorAll:()=>[]}});
+  render('CASE');assert.doesNotMatch(html,/data-action="RETURN"/);assert.match(html,/data-action="REPLACEMENT"/);assert.match(html,english?/Correct Packed and Loaded/:/更正备货与装柜实数/);if(english)assert.doesNotMatch(html,/[\u4e00-\u9fff]/);
  }
 });

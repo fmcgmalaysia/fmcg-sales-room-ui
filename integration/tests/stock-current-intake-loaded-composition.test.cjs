@@ -24,9 +24,9 @@ async function fixture(company,steps=100){
  db.set('SharedSuppliers/SUP',{_id:'SUP',title:'SUP',supplierName:'Original supplier',supplierStatus:'ACTIVE'});
  const list=collection=>[...db].filter(([key])=>key.startsWith(collection+'/')).map(([,row])=>copy(row));
  const native=row=>{row=copy(row);if(row._version){row.stockCommitVersion=row._version;delete row._version;}if(row.activityTime)row.activityTime=new Date(row.activityTime);row._updatedDate=new Date('2026-10-23T04:00:00.000Z');return row;};
- const members=Object.fromEntries(['PURCHASE','WAREHOUSE','SUPPORT'].map(department=>[department,{_id:department+'_MEMBER',status:'APPROVED',loginEmail:department.toLowerCase()+'@example.test'}]));
+ const members=Object.fromEntries(['PURCHASE','WAREHOUSE','SUPPORT','ACCOUNT','ADMIN'].map(department=>[department,{_id:department+'_MEMBER',status:'APPROVED',loginEmail:department.toLowerCase()+'@example.test'}]));
  let department='PURCHASE',sequence=1,lastPrivateError;
- const employee=()=>({title:department,description:members[department]._id,staffEmail:members[department].loginEmail,staffName:department,staffStatus:'ACTIVE',departments:[department]});
+ const employee=()=>({title:department,description:members[department]._id,staffEmail:members[department].loginEmail,staffName:department,staffStatus:'ACTIVE',departments:[department],...(department==='ADMIN'?{role:'SUPER ADMIN'}:{})});
  const fulfilmentStore={all:async collection=>collection==='StaffMasterAccess'?[employee()]:list(collection).map(native),
   read:async(collection,id)=>{const row=await f.store.read(collection,id);return row?native(row):null;}};
  const items={query:collection=>{const filters=[];let limit=50,offset=0;const q={eq:(key,value)=>{filters.push(row=>Array.isArray(row[key])?row[key].includes(value):row[key]===value);return q;},
@@ -35,11 +35,13 @@ async function fixture(company,steps=100){
  const noNativeWrite=()=>{throw Error('No native SDK write during mock listed-row normalization');};
  const codec=runtime.createSdkConditionalStore({company,items:{...items,insert:noNativeWrite,patch:noNativeWrite,remove:noNativeWrite},collections:runtime.planCollections(company,true),dateTimeFields:{[names.activity]:['activityTime']}});
  f.store.normalizeListedRow=codec.normalizeListedRow;
- const cache={'purchaseDisplayOrder.js':load('../prototypes/stock-current-state/purchaseDisplayOrder.candidate.js')};
+ const damageModel=load('../prototypes/stock-current-state/packingListModel.candidate.js');
+ const cache={'purchaseDisplayOrder.js':load('../prototypes/stock-current-state/purchaseDisplayOrder.candidate.js'),'packingListModel.js':damageModel};
+ cache['packingListOperations.js']=load('../prototypes/stock-current-state/packingListOperations.candidate.js',cache);
  const modules=Object.assign({},...['purchaseOperations.js','purchaseSources.js','purchaseTaskIdentity.js','purchaseOrderWorkflow.js','purchaseOperationJournal.js',
   'warehouseReceiving.js','warehouseCustomerReadiness.js','warehouseCbm.js','customerShipmentPlan.js','salesOrderAdjustment.js','customerShipmentLedger.js',
   'packingListContext.js','packingListOperations.js','packingListModel.js','purchaseMarginRefresh.js','purchaseProgress.js','purchaseShortage.js','purchaseQuantityCases.js',
-  'customerAccountLedger.js','customerDebtor.js'].map(file=>load(file,cache)),
+  'customerAccountLedger.js','customerDebtor.js','inventoryExceptions.js','stockExceptionResolution.js','stockExceptionWorkspace.js','departmentMessages.js'].map(file=>load(file,cache)),
   load('../prototypes/stock-current-state/plannerAllocation.candidate.js'),load('../prototypes/stock-current-state/purchaseProjection.candidate.js',cache),
   load('../prototypes/stock-current-state/warehousePreparation.candidate.js'),load('../prototypes/stock-current-state/customerFulfilment.candidate.js'));
  const bindings={...runtime,...modules,Buffer,Date,Math,items,fulfilmentStore,PURCHASE_CURRENT_DISPLAY_ORDER_VERSION:2,CUSTOMER_CURRENT_FULFILMENT_VERSION:2,
@@ -47,7 +49,7 @@ async function fixture(company,steps=100){
   readCurrentAdminFx:async currencies=>currencies.map(currency=>({currency,rateToMyr:1,updatedAt:new Date().toISOString()})),readCustomerShortNames:async()=>[],
   capturePointbaseCosts:async()=>{throw Error('Unexpected cost refresh');},requestPurchaseDocument:async()=>{throw Error('No file operation in Loaded acceptance');},
   createSdkConditionalStore:()=>f.store,createSegmentedFencedProof:configuration=>{assert.equal(configuration.store,f.store);return f.protocol;}};
- for(const factory of ['createCurrentPurchaseTaskGateway','createCurrentWarehouseReceiptSave']){
+ for(const factory of ['createCurrentPurchaseTaskGateway','createCurrentWarehouseReceiptSave','createCurrentStockExceptionSave','createCurrentStockResolutionSave']){
   const original=bindings[factory];bindings[factory]=(...args)=>{const save=original(...args);return async(...input)=>{try{return await save(...input);}catch(error){lastPrivateError=error;throw error;}};};
  }
  bindings.getPurchaseStaffContext=async()=>({...bindings.requirePurchaseStaff(await bindings.currentMember.getMember(),[employee()]),memberId:members[department]._id});
@@ -60,6 +62,8 @@ async function fixture(company,steps=100){
  const warehouse=root('stockCurrentWarehouse.web.js',['saveWarehouseReceiptCurrent','getWarehouseOrdersCurrent'],bindings);
  const packing=root('stockCurrentPacking.js',['createCurrentMasterPacking'],bindings);
  const source=root('stockCurrentSourceSales.js',['createCurrentSourceSales'],bindings);
+ const stockRoot=root('stockCurrentExceptions.js',['createCurrentStockExceptions'],bindings);
+ const stock=root('stockExceptions.web.candidate.js',['getStockExceptions','saveStockException'],{...bindings,...stockRoot});
  const quantityModules=load('../prototypes/stock-current-state/purchaseQuantityProjection.candidate.js',{'warehousePreparation.js':modules});
  function quantityApi(covered=true,patch={}){const privateRoot=root('stockCurrentQuantityRead.js',['createCurrentPurchaseQuantityRead'],{...bindings,...quantityModules,...patch},covered);
   return root('purchaseQuantityRead.candidate.js',['readPurchaseQuantities'],{...bindings,...quantityModules,...privateRoot,timingSafeEqual:crypto.timingSafeEqual,
@@ -92,7 +96,7 @@ async function fixture(company,steps=100){
    lines:orders[0].lines.filter(line=>!taskIds||taskIds.includes(line.taskId)).map(line=>({taskId:line.taskId,accepted:quantity,rejected:0,kind:quantity===100?'DELIVERY':'PARTIAL',reason:quantity===100?'':'Remaining delivery pending'}))}};
   return finish(value=>warehouse.saveWarehouseReceiptCurrent(company,value),request);
  }
- return{...f,db,names,list,bindings,purchase,purchaseSave,sourceSend,quantitySend,quantityApi,packingRead,packingSave,receipt,metadata,finishCommand:finish,select:selected=>{department=selected;}};
+ return{...f,db,names,list,bindings,purchase,stock,purchaseSave,sourceSend,quantitySend,quantityApi,packingRead,packingSave,receipt,metadata,finishCommand:finish,select:selected=>{department=selected;}};
 }
 
 for(const company of ['NCT','GHR'])test(`${company}: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded`,async()=>{

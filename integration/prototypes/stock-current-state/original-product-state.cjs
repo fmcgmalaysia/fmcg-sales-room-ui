@@ -87,14 +87,16 @@ function originalProductState({ company, context, orders, identity, readAllocati
       ...(scoped ? { scope: 'CURRENT_ACTIVE_PRODUCT' } : {}),
       ...(currentLifecycle ? { lifecycleVersion: 2, nextBorrowSequence: rows.product.nextBorrowSequence } : {}),
       sources: selected.map(s => {
-        const p = positions.get(s.id), claims = {};
+        const p = positions.get(s.id), claims = {}, isolatedClaims = {};
         for (const c of rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', s.id))) {
-          if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable)) throw Error('Known unique current claims required');
+          if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable) || !count(c.isolatedAttributed)) throw Error('Known unique current claims required');
           claims[c.taskId] = c.reservedUsable;
+          if (c.isolatedAttributed > 0) isolatedClaims[c.taskId] = c.isolatedAttributed;
         }
         return { ...s, replacementReceived: p?.replacementReceived ?? 0, supplierReturned: p?.supplierReturned ?? 0,
           ...(currentLifecycle ? { borrowRepaidCumulative: p ? p.borrowRepaidCumulative : 0 } : {}),
-          onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
+          onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims,
+          ...(Object.keys(isolatedClaims).length ? { isolatedClaims } : {}) };
       }), relations: rows.transfers.map(r => clone(r.details.relation)) };
   } };
 }

@@ -1,5 +1,20 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 APPROVED RESERVED DAMAGE IMPLEMENTED OFFLINE: RESERVED_DAMAGE_IMPLEMENTATION.txt.
+Sole exact customer isolation, customer-specific supplier restoration, Purchase-only
+eligible held-shortage borrowing and same-list durable Loaded recheck now composed.
+No demand/PO reduction; no source-owner misassignment or fabricated repayment. Shared
+ambiguous attribution still refused. Original packing model/reader paired candidates
+and original case UI guards added. Historical attributed case target retained even
+after claims close. Original production files unchanged. FULL1038pass0fail22565.6427ms;
+protected packing35pass0fail337.0955ms. Runtime103/53; builders reproducible. Node/VM/
+mock ONLY. Coverage EMPTY/ACTIVE OFF; realinvoice/exit OFF; no Wix/Pages release/native
+writes. Sync this increment to existing PR220, no main merge. G3/native/schema/index/
+capacity/lifecycle/recovery/shadow/cutover/review/four-release gates remain OPEN.
+Next concrete: bounded G3 dependency/install/read/write manifest including new paired
+packing model/reader and all original roots, then finish independent native setup/
+recovery/capacity evidence prerequisites before concentrated necessary human actions.
+
 2026-10-23 CUSTOMER QUANTITY TIMESTAMP PRESERVATION FOLLOW-UP: original accepted
 allocation time stays EXACT when unaffected by new current ownership/case changes,
 not replaced by generic record touch. Explicit old-allocation parity fixture proves

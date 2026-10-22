@@ -66,7 +66,7 @@ test('real authority preserves legacy Warehouse preparation guard before approvi
       id: 'PREP-B', taskId: 'B', customerId: 'C-B', company: 'NCT', quantity: 100, loaded: 0, prepared: true, photos: [] } } });
   const result = await createBorrowingAuthority(f.deps)(request), id = operationId('NCT', stockKey(result.identity), 'PURCHASE_SOURCE', 'B');
   const state = result.buildState({ positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0 }],
-    claims: [{ positionId: id, taskId: 'B', reservedUsable: 100 }], transfers: [], product: null });
+    claims: [{ positionId: id, taskId: 'B', reservedUsable: 100, isolatedAttributed: 0 }], transfers: [], product: null });
   assert.equal(state.packingHolds.legacyBlockedByTask.B, true);
   assert.throws(() => approveBorrow(state, result.input), /holds lender/);
 });
@@ -81,7 +81,7 @@ test('state assembler uses exact current claims instead of copying legacy task i
   const f = fixture(); f.context.tasks[0].inc = 9999;
   const authority = await createBorrowingAuthority(f.deps)(request), key = stockKey(authority.identity), positionId = operationId('NCT', key, 'PURCHASE_SOURCE', 'B');
   const state = authority.buildState({ positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0 }],
-    claims: [{ positionId, taskId: 'B', reservedUsable: 100 }], transfers: [], product: { revision: 0 } });
+    claims: [{ positionId, taskId: 'B', reservedUsable: 100, isolatedAttributed: 0 }], transfers: [], product: { revision: 0 } });
   assert.equal(state.sources[0].claims.A, undefined);
   assert.equal(state.sources[1].claims.B, 100);
   assert.equal(state.tasks[0].dispatched, 0);
@@ -92,7 +92,7 @@ test('scoped state retains task20dispatched from omitted CLOSED sources and neve
   const positionId = operationId('NCT', key, 'PURCHASE_SOURCE', 'B');
   const state = authority.buildState({ scope: 'CURRENT_ACTIVE_PRODUCT', sourceTaskIds: ['A', 'B'], generation: 0,
     positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0, borrowRepaidCumulative: 0 }],
-    claims: [{ positionId, taskId: 'B', reservedUsable: 100, dispatchedCumulative: 0 }], transfers: [],
+    claims: [{ positionId, taskId: 'B', reservedUsable: 100, isolatedAttributed: 0, dispatchedCumulative: 0 }], transfers: [],
     product: { lifecycleVersion: 2, nextBorrowSequence: 5, revision: 0 },
     taskRows: f.context.tasks.map(t => ({ _id: t.id, company: 'NCT', _version: 'T0', description: t.orderId, imageAltText: t.sourceLineId,
       stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: t.id === 'A' ? 20 : 0 })) });

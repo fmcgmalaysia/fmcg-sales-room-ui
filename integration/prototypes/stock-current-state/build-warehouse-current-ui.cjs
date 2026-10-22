@@ -60,7 +60,7 @@ html=html.replaceAll('20261021-packing-v1','20261022-current-receipt-v2').replac
 html=html.replace('packing-list-link.js?v=20261021-packing-company-v1','packing-list-link.js?v=20261022-current-warehouse-v2');
 html=html.replace('stock-control-link.js?v=20261021-stock-tab-v1','stock-control-link.js?v=20261022-current-stock-v1');
 const packingLink=read('warehouse-room/packing-list-link.js').replace("['20261021-packing-v1','20261021-packing-company-v1']","['20261021-packing-v1','20261021-packing-company-v1','20261022-current-warehouse-v2']")
- .replace('packing-workbench.html?v=20261021-packing-company-v1','packing-workbench.html?v=20261022-current-packing-v1')
+ .replace('packing-workbench.html?v=20261021-packing-company-v1','packing-workbench.html?v=20261023-current-packing-damage-v1')
  .replace("['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST']","['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST','PACKING_RESUME_CONTEXT_REQUEST']")
  .replace("['PACKING_READ_RESULT','PACKING_SAVE_RESULT']","['PACKING_READ_RESULT','PACKING_SAVE_RESULT','PACKING_RESUME_CONTEXT_RESULT']");
 html=patchStockExceptionIndex(html);

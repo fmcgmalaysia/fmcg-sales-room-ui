@@ -435,7 +435,7 @@ module.exports = { stockKey, convertProjectedStock, readProductPage };
 "commit-proof.cjs": (load, module) => {
 module.exports = { hash: (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32) };
 },
-// original-product-state.cjs sha256:c56138aa32c80faf7a6d1bb4eaa9e550996b071834d33dfcf7b757a6d23c29a6
+// original-product-state.cjs sha256:d7cc4dd2cf7cf7d14b1254ff8f0301d84a327114d43db0c5d3080e2b42d8b42b
 "original-product-state.cjs": (load, module) => {
 'use strict';
 
@@ -526,14 +526,16 @@ function originalProductState({ company, context, orders, identity, readAllocati
       ...(scoped ? { scope: 'CURRENT_ACTIVE_PRODUCT' } : {}),
       ...(currentLifecycle ? { lifecycleVersion: 2, nextBorrowSequence: rows.product.nextBorrowSequence } : {}),
       sources: selected.map(s => {
-        const p = positions.get(s.id), claims = {};
+        const p = positions.get(s.id), claims = {}, isolatedClaims = {};
         for (const c of rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', s.id))) {
-          if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable)) throw Error('Known unique current claims required');
+          if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable) || !count(c.isolatedAttributed)) throw Error('Known unique current claims required');
           claims[c.taskId] = c.reservedUsable;
+          if (c.isolatedAttributed > 0) isolatedClaims[c.taskId] = c.isolatedAttributed;
         }
         return { ...s, replacementReceived: p?.replacementReceived ?? 0, supplierReturned: p?.supplierReturned ?? 0,
           ...(currentLifecycle ? { borrowRepaidCumulative: p ? p.borrowRepaidCumulative : 0 } : {}),
-          onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
+          onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims,
+          ...(Object.keys(isolatedClaims).length ? { isolatedClaims } : {}) };
       }), relations: rows.transfers.map(r => clone(r.details.relation)) };
   } };
 }
@@ -923,7 +925,7 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
 module.exports = { readCurrentProduct };
 
 },
-// scoped-current-reader.cjs sha256:500dd4284e595f9b27c5f3fb424f7547d44a3738a71e8e02f856694558c1d9f4
+// scoped-current-reader.cjs sha256:c571a0d3b034ab869a5bddc45e1d0703069778a14d1153a7783b1748b93968d8
 "scoped-current-reader.cjs": (load, module) => {
 'use strict';
 
@@ -950,7 +952,7 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
       || !count(row.revision) || !['ACTIVE', 'CLOSED'].includes(row.status) || row.reviewRequired === true || row.reviewCodes?.length) throw Error('Known exact current row required');
     if (collection === 'StockPositions' && (!['receiptAccepted', 'borrowRepaidCumulative', 'onHand', 'isolated', 'available', 'reservedUsable', 'dispatched'].every(f => count(row[f]))
       || row.borrowRepaidCumulative > row.receiptAccepted || row.onHand !== row.isolated + row.available + row.reservedUsable)) throw Error('Source current checkpoint requires review');
-    if (collection === 'StockClaims' && (!count(row.dispatchedCumulative) || !count(row.reservedUsable) || row.isolatedAttributed !== 0
+    if (collection === 'StockClaims' && (!count(row.dispatchedCumulative) || !count(row.reservedUsable) || !count(row.isolatedAttributed)
       || id !== hash(company, row.positionId, row.taskId))) throw Error('Claim current checkpoint requires review');
     if (collection === journal) {
       const r = row.details?.relation;
@@ -1096,7 +1098,7 @@ function prepareWarehouseReceipt({ validated, products, generation, planFormat =
 module.exports = { prepareWarehouseReceipt };
 
 },
-// borrowing-stock-plan.cjs sha256:d481f8d97933a88f6d7b1802f7a9b9da49156660bdeacfb67c9f4ad1c68cddff
+// borrowing-stock-plan.cjs sha256:40ea244d76fc5d0875eaf1d941ee779060c55ed5adc1b329e39fac4b09c736fe
 "borrowing-stock-plan.cjs": (load, module) => {
 'use strict';
 
@@ -1104,7 +1106,7 @@ module.exports = { prepareWarehouseReceipt };
 // production schema installation or replacement for trusted business validators.
 const { hash } = load("commit-proof.cjs");
 const { stockKey } = load("current-model.cjs");
-const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = load("borrowing-model.cjs");
+const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, quarantineReserved, freeCaseMovement, releaseFreeCase, relationRemaining } = load("borrowing-model.cjs");
 const { guardProcurementStock } = load("procurement-stock-guard.cjs");
 const { rollForwardProduct } = load("product-delta.cjs");
 const copy = row => JSON.parse(JSON.stringify(row));
@@ -1177,25 +1179,26 @@ function mapTransition({ before, after, rows, event, generation }) {
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
         checkpointGeneration: generation + 1, status: next.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
-    const ids = new Set([...Object.keys(source.claims), ...Object.keys(next.claims)]);
+    const ids = new Set([...Object.keys(source.claims), ...Object.keys(next.claims), ...Object.keys(source.isolatedClaims || {}), ...Object.keys(next.isolatedClaims || {})]);
     for (const row of rows.claims.filter(c => c.positionId === id)) ids.add(row.taskId);
     for (const taskId of ids) {
       const claimId = hash(company, id, taskId), oldClaim = claims.get(claimId) || null, task = tasks.get(taskId);
       const prior = source.claims[taskId] || 0, quantity = next.claims[taskId] || 0;
+      const priorIsolated = source.isolatedClaims?.[taskId] || 0, isolated = next.isolatedClaims?.[taskId] || 0;
       if (!task) throw Error('Claim task missing');
       if (oldClaim) {
         consumedClaims.add(claimId); checkRow(oldClaim, company, claimId, key);
         if (oldClaim.positionId !== id || oldClaim.taskId !== taskId || oldClaim.customerId !== task.customerId
-          || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== 0) throw Error('Claim snapshot conflict');
+          || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== priorIsolated) throw Error('Claim snapshot conflict');
         if (before.lifecycleVersion === 2 && oldClaim.dispatchedCumulative !== (source.dispatchedByTask?.[taskId] || 0)) throw Error('Claim dispatch snapshot conflict');
-      } else if (prior !== 0) throw Error('Claim snapshot missing');
-      if (quantity === prior && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
+      } else if (prior !== 0 || priorIsolated !== 0) throw Error('Claim snapshot missing');
+      if (quantity === prior && isolated === priorIsolated && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
       const base = oldClaim || { _id: claimId, schemaVersion: 1, company, stockKey: key, positionId: id,
         taskId, customerId: task.customerId, orderId: task.orderId || '', sourceLineId: task.sourceLineId || '',
         isolatedAttributed: 0, reviewCodes: [] };
-      writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity,
+      writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity, isolatedAttributed: isolated,
         ...(after.lifecycleVersion === 2 ? { dispatchedCumulative: next.dispatchedByTask?.[taskId] || 0 } : {}),
-        revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 ? 'CLOSED' : 'ACTIVE' } });
+        revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 && isolated === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
   }
   for (const relation of after.relations) {
@@ -1301,10 +1304,13 @@ function prepareFreeQuarantine({ state, rows, event, generation }) {
   checkEvent(event, state.company, 'STOCK_EXCEPTION_REPORTED');
   const source = state.sources.find(s => s.id === event.imageAltText);
   if (!source || event.description !== source.orderId || event.image !== source.sourceLineId) throw Error('Original quarantine source identity mismatch');
-  const { after } = quarantineFree(state, { expectedRevision: state.revision, sourceId: source.id,
-    quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
+  const reserved = event.details.quantity > source.available;
+  const taskId = reserved ? Object.entries(source.claims).filter(([, quantity]) => quantity > 0)[0]?.[0] : null;
+  const { after } = (reserved ? quarantineReserved : quarantineFree)(state, { expectedRevision: state.revision, sourceId: source.id,
+    ...(reserved ? { taskId } : {}), quantity: event.details.quantity, kind: event.details.kind, reason: event.details.reason });
   const plan = mapTransition({ before: state, after, rows, event, generation });
-  plan.writes[0].after.stockAttribution = 'FREE';
+  plan.writes[0].after.stockAttribution = reserved ? 'CUSTOMER' : 'FREE';
+  if (reserved) plan.writes[0].after.stockCustomerTaskId = taskId;
   plan.writes[0].after.stockKey = stockKey(state);
   return { state: after, plan };
 }
@@ -1313,7 +1319,8 @@ function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolutio
   if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || !event._id || event._id !== event.title
     || !event.initiatedByStaffId || !event.activityTime || !['RETURN', 'REPLACEMENT'].includes(action)
     || caseEvent?.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED' || caseEvent._id !== caseEvent.title
-    || caseEvent.stockAttribution !== 'FREE' || caseEvent.stockKey !== stockKey(state) || caseEvent.company !== state.company
+    || !['FREE', 'CUSTOMER'].includes(caseEvent.stockAttribution) || caseEvent.stockAttribution === 'CUSTOMER' && !state.tasks.some(task => task.id === caseEvent.stockCustomerTaskId)
+    || caseEvent.stockKey !== stockKey(state) || caseEvent.company !== state.company
     || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
     || d.beforeRevision !== (previous.revision || '') || previous.financeApproval || next.financeApproval || next.adminApproval
     || !next.decision || next.decision.value === 'PENDING'
@@ -1326,14 +1333,15 @@ function prepareFreeCaseMovement({ state, rows, event, caseEvent, priorResolutio
     || !same(oldFixed, newFixed) || newEntries.some(e => !count(e.quantity) || !e.quantity || !e.reference)
     || total(newEntries.map(e => e.quantity)) > caseEvent.details.quantity) throw Error('Immutable case movement history required');
   const { after } = freeCaseMovement(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText,
-    action, quantity: newEntries.at(-1).quantity });
+    ...(caseEvent.stockAttribution === 'CUSTOMER' ? { customerTaskId: caseEvent.stockCustomerTaskId } : {}), action, quantity: newEntries.at(-1).quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution, generation }) {
   const next = event?.details?.state, previous = priorResolution, approval = next?.financeApproval;
   if (!event || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.result !== 'SAVED' || event._id !== event.title || !event._id
     || !event.activityTime || !event.initiatedByStaffId || event.details.action !== 'CLOSE'
-    || caseEvent?.stockAttribution !== 'FREE' || caseEvent.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED'
+    || !['FREE', 'CUSTOMER'].includes(caseEvent?.stockAttribution) || caseEvent.stockAttribution === 'CUSTOMER' && !state.tasks.some(task => task.id === caseEvent.stockCustomerTaskId)
+    || caseEvent.action !== 'STOCK_EXCEPTION_REPORTED' || caseEvent.result !== 'SAVED'
     || caseEvent.company !== state.company || caseEvent.stockKey !== stockKey(state) || caseEvent._id !== caseEvent.title
     || event.description !== caseEvent.title || event.imageAltText !== caseEvent.imageAltText || next?.caseId !== caseEvent.title
     || !previous || previous.financeApproval || event.details.beforeRevision !== previous.revision
@@ -1343,7 +1351,8 @@ function prepareFreeCaseRelease({ state, rows, event, caseEvent, priorResolution
     || (previous.returns || []).length || (previous.replacements || []).length) throw Error('Original separate Admin and Finance release approval required');
   const oldFixed = copy(previous), newFixed = copy(next); delete oldFixed.revision; delete newFixed.financeApproval;
   if (!same(oldFixed, newFixed)) throw Error('Release must preserve original case approval facts');
-  const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText, quantity: caseEvent.details.quantity });
+  const { after } = releaseFreeCase(state, { expectedRevision: state.revision, sourceId: caseEvent.imageAltText,
+    ...(caseEvent.stockAttribution === 'CUSTOMER' ? { customerTaskId: caseEvent.stockCustomerTaskId } : {}), quantity: caseEvent.details.quantity });
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 function prepareProcurementTransition({ state, after, rows, event, generation }) {
@@ -1353,13 +1362,14 @@ function prepareProcurementTransition({ state, after, rows, event, generation })
 }
 function preparePackingHoldTransition({ state, rows, event, generation, packingHolds }) {
   const after = { ...copy(state), revision: state.revision + 1, packingHolds: copy(packingHolds) };
-  // validate(after) in mapper enforces per-task held <= actual usable ownership.
+  // validate(after) also retains explicitly customer-attributed damaged holds.
+  // Original paired packing validation must prevent executing the isolated units.
   return { state: after, plan: mapTransition({ before: state, after, rows, event, generation }) };
 }
 module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, preparePackingHoldTransition, transferId };
 
 },
-// borrowing-model.cjs sha256:c441b846c58578b09c791d849223bbc2102cdcdcedd1cca0b4ec161b886593e2
+// borrowing-model.cjs sha256:6d3ad925af60b77fbe5484dfb16724cd97eafb2e47abac1f7406f4a897f9e6cf
 "borrowing-model.cjs": (load, module) => {
 'use strict';
 
@@ -1376,6 +1386,7 @@ const sum = values => {
   return result;
 };
 const reserved = (state, taskId) => sum(state.sources.map(s => s.claims[taskId] || 0));
+const isolatedFor = (state, taskId) => sum(state.sources.map(s => s.isolatedClaims?.[taskId] || 0));
 const remaining = relation => relation.quantity - relation.repaid - (relation.returned || 0);
 const outgoing = (state, sourceId) => sum(state.relations.filter(r => r.replacementSourceId === sourceId).map(remaining));
 const incoming = (state, taskId) => sum(state.relations.filter(r => r.lenderTaskId === taskId).map(remaining));
@@ -1406,6 +1417,11 @@ function validate(state) {
     for (const [taskId, qty] of Object.entries(source.claims)) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Claim conflict');
     }
+    if (source.isolatedClaims && (typeof source.isolatedClaims !== 'object' || Array.isArray(source.isolatedClaims))) throw Error('Isolated customer attribution conflict');
+    for (const [taskId, qty] of Object.entries(source.isolatedClaims || {})) {
+      if (!tasks.has(taskId) || !count(qty)) throw Error('Isolated customer attribution conflict');
+    }
+    if (sum(Object.values(source.isolatedClaims || {})) > source.isolated) throw Error('Isolated customer attribution exceeds physical stock');
     for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) {
       if (!tasks.has(taskId) || !count(qty)) throw Error('Dispatch provenance conflict');
     }
@@ -1440,7 +1456,8 @@ function validate(state) {
   }
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
-      || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
+      || state.packingHolds.heldByTask[task.id] > sum([reserved(state, task.id), isolatedFor(state, task.id)])
+      || state.packingHolds.heldByTask[task.id] > task.requested - task.dispatched) throw Error('Packing task coverage requires review');
     const outside = state.scope === 'CURRENT_ACTIVE_PRODUCT' && state.lifecycleVersion === 2 ? task.dispatchedOutsideScope : 0;
     if (!count(outside) || sum([outside, ...state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)]) !== task.dispatched) throw Error('Task dispatch provenance conflict');
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
@@ -1467,7 +1484,9 @@ function approveBorrow(before, input) {
     const future = state.sources.find(s => s.id === input.replacementSourceId);
     const borrower = state.tasks.find(t => t.id === input.borrowerTaskId);
     if (!donor || !future || !borrower || !state.tasks.some(t => t.id === donor.ownerTaskId) || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
-      || state.packingHolds.heldByTask[borrower.id] !== 0 || legacyHeld(state, borrower.id)) throw Error('Eligible unheld borrower required');
+      || legacyHeld(state, borrower.id)
+      || state.packingHolds.heldByTask[borrower.id] !== 0 && (input.quantity > isolatedFor(state, borrower.id)
+        || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id))) throw Error('Eligible unheld borrower required');
     const lender = donor.ownerTaskId;
     if (state.packingHolds.heldByTask[lender] !== 0 || legacyHeld(state, lender)) throw Error('Packing task holds lender allocation');
     if (input.quantity > (donor.claims[lender] || 0)
@@ -1689,16 +1708,49 @@ function quarantineFree(before, input) {
     source.available -= input.quantity; source.isolated += input.quantity;
   });
 }
+function quarantineReserved(before, input) {
+  return transition(before, input.expectedRevision, state => {
+    const source = state.sources.find(s => s.id === input.sourceId);
+    const owners = source ? Object.entries(source.claims).filter(([, qty]) => qty > 0) : [];
+    // Existing source-only form supplies no customer allocation authority. Only
+    // an entirely reserved source with ONE factual customer claim is unambiguous.
+    // Mixed free/customer or multiple claims needs Purchase attribution review.
+    if (!source || source.available !== 0 || owners.length !== 1 || owners[0][0] !== input.taskId
+      || !positive(input.quantity) || input.quantity > owners[0][1]
+      || !['INTERNAL_DAMAGE', 'WRONG_ITEM', 'SHORT_EXPIRY'].includes(input.kind)
+      || !String(input.reason || '').trim()) throw Error('Reserved stock customer attribution review required');
+    source.claims[input.taskId] -= input.quantity;
+    source.isolatedClaims = { ...(source.isolatedClaims || {}), [input.taskId]: (source.isolatedClaims?.[input.taskId] || 0) + input.quantity };
+    source.isolated += input.quantity;
+  });
+}
+function restoreAttributed(state, source, taskId, quantity) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) throw Error('Original isolated customer unavailable');
+  // This is replacement/restoration of the ALREADY accepted case goods, not a
+  // new cumulative PO delivery. Do not consume or clear future-PO loan promises.
+  const need = task.requested - task.dispatched - reserved(state, taskId) - incoming(state, taskId);
+  const own = Math.min(quantity, need);
+  source.claims[taskId] = (source.claims[taskId] || 0) + own;
+  source.available += quantity - own;
+}
 function freeCaseMovement(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId);
     if (!source || !positive(input.quantity) || !['RETURN', 'REPLACEMENT'].includes(input.action)) throw Error('Validated free-case physical movement required');
     if (input.action === 'RETURN') {
       if (input.quantity > source.isolated) throw Error('Supplier return exceeds isolated stock');
+      if (input.customerTaskId) {
+        if (input.quantity > (source.isolatedClaims?.[input.customerTaskId] || 0)) throw Error('Supplier return exceeds attributed isolated stock');
+        if (state.packingHolds.heldByTask[input.customerTaskId] > reserved(state, input.customerTaskId)) throw Error('Confirm packing shortage correction before supplier return');
+        source.isolatedClaims[input.customerTaskId] -= input.quantity;
+      } else if (input.quantity > source.isolated - sum(Object.values(source.isolatedClaims || {}))) throw Error('Free return cannot consume customer isolation');
       source.isolated -= input.quantity; source.onHand -= input.quantity;
       source.supplierReturned = (source.supplierReturned || 0) + input.quantity;
     } else {
-      source.onHand += input.quantity; source.available += input.quantity;
+      source.onHand += input.quantity;
+      if (input.customerTaskId) restoreAttributed(state, source, input.customerTaskId, input.quantity);
+      else source.available += input.quantity;
       source.replacementReceived = (source.replacementReceived || 0) + input.quantity;
     }
   });
@@ -1707,10 +1759,18 @@ function releaseFreeCase(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId);
     if (!source || !positive(input.quantity) || input.quantity > source.isolated) throw Error('Approved isolated release quantity required');
-    source.isolated -= input.quantity; source.available += input.quantity;
+    if (input.customerTaskId) {
+      if (input.quantity > (source.isolatedClaims?.[input.customerTaskId] || 0)) throw Error('Release exceeds attributed isolated stock');
+      source.isolatedClaims[input.customerTaskId] -= input.quantity;
+      restoreAttributed(state, source, input.customerTaskId, input.quantity);
+    } else {
+      if (input.quantity > source.isolated - sum(Object.values(source.isolatedClaims || {}))) throw Error('Free release cannot consume customer isolation');
+      source.available += input.quantity;
+    }
+    source.isolated -= input.quantity;
   });
 }
-module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, freeCaseMovement, releaseFreeCase,
+module.exports = { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, dispatch, dispatchReserved, adjustDemand, quarantineFree, quarantineReserved, freeCaseMovement, releaseFreeCase,
   allocateCumulative, procurementOutstanding, taskCoverage, cumulativeTargets, relationRemaining: remaining };
 
 },
@@ -3863,7 +3923,7 @@ async function uploadPackingPhotoSlot({company,staff,requestId,input,plan,index,
 module.exports={captureOriginalPackingPhotoPlan,assertPackingPhotoUploads,uploadPackingPhotoSlot};
 
 },
-// current-stock-exception-save.cjs sha256:fc2aa1a6887cf1aadf8201a0cd5a19c5dc05636b0181407716c5291a85a9fc3b
+// current-stock-exception-save.cjs sha256:7bde1801d29d9d22cfaaed716e4bbf5d0896ad2ffabbb3611f7ba0322c28f024
 "current-stock-exception-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -3906,7 +3966,8 @@ async function validateOriginalStockException({ company, staff, context, request
 }
 
 // PRIVATE existing stockExceptions.web authentication dependencies only. This
-// handles approved FREE stock isolation, never invents reserved-loss attribution.
+// handles free isolation or one unambiguous reserved customer. Mixed ownership
+// stays blocked; browser cannot choose which customer bears a loss.
 function createCurrentStockExceptionSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const d = authorityDependencies;
   if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || typeof items?.query !== 'function' || typeof store?.read !== 'function'
@@ -3942,7 +4003,30 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
             transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
           if (!rows.product) throw Error('Current exception product checkpoint required');
           rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
-          return prepareFreeQuarantine({ state: builder.buildState(rows), rows, event: validated.event, generation: control.generation });
+          const prepared = prepareFreeQuarantine({ state: builder.buildState(rows), rows, event: validated.event, generation: control.generation });
+          const event = prepared.plan.writes.find(write => write.after.action === 'STOCK_EXCEPTION_REPORTED').after;
+          if (event.stockAttribution === 'CUSTOMER') {
+            const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+            const affected = d.readPackingLists(context.activity, company).filter(list => d.packingHeld(list, event.stockCustomerTaskId) > 0);
+            event.stockPackingImpacts = [];
+            for (const list of affected) {
+              const id = hash(company, list.id, 'PACKING_CURRENT'), before = await store.read(journal, id); metrics.exactReads++;
+              if (!before?._version || before.company !== company || before.action !== 'SUPPORT_PACKING_LIST_CURRENT'
+                || JSON.stringify(before.details?.list) !== JSON.stringify(list)) throw Error('Exact affected packing list required');
+              const pending = list.stockDamageCases || [];
+              if (!Array.isArray(pending) || pending.some(item => !item?.caseId || !item.taskId) || pending.some(item => item.caseId === event._id)) throw Error('Packing damage review identity conflict');
+              const after = copy(before), revision = hash(list.revision, event._id, 'DAMAGE_REVIEW');
+              after.activityTime = event.activityTime; after.initiatedByStaffId = staff.staffId; after.initiatedByStaffName = staff.staffName;
+              after.details.list = { ...copy(list), revision, stockDamageReviewRequired: true,
+                stockDamageCases: [...copy(pending), { caseId: event._id, taskId: event.stockCustomerTaskId }], updatedAt: event.activityTime };
+              // No planned/Packed/Loaded/PO/invoice/stock quantity is edited here.
+              // Persist the required physical review on the SAME original list so
+              // later replenishment cannot silently certify old Loaded evidence.
+              prepared.plan.writes.push({ collection: journal, before, after });
+              event.stockPackingImpacts.push({ listId: list.id, beforeRevision: list.revision, revision });
+            }
+          }
+          return prepared;
         });
         return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
       } })(request);
@@ -3951,15 +4035,16 @@ function createCurrentStockExceptionSave({ company, items, store, protocol, cove
     const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, staff.memberId, 'STOCK_EXCEPTION')));
     const event = receipt.rows;
     if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
-      || event.action !== 'STOCK_EXCEPTION_REPORTED' || event.stockAttribution !== 'FREE' || event.initiatedByStaffId !== staff.staffId
-      || event.imageAltText !== request.input.sourceTaskId || event.details?.company !== company) throw Error('Committed free stock exception receipt requires review');
+      || event.action !== 'STOCK_EXCEPTION_REPORTED' || !['FREE','CUSTOMER'].includes(event.stockAttribution) || event.initiatedByStaffId !== staff.staffId
+      || event.stockAttribution === 'CUSTOMER' && (typeof event.stockCustomerTaskId !== 'string' || !event.stockCustomerTaskId)
+      || event.imageAltText !== request.input.sourceTaskId || event.details?.company !== company) throw Error('Committed stock exception attribution receipt requires review');
     return { ...result, company, caseId: event.title };
   };
 }
 module.exports = { validateOriginalStockException, createCurrentStockExceptionSave };
 
 },
-// current-stock-resolution-save.cjs sha256:466121adb415c180d5c2d8dc52fa8c1599cb6aa6b3c746b012712f9ea4a74871
+// current-stock-resolution-save.cjs sha256:bb7079a85460fb3d52d74efcbfe3a9f8f5bd0814e0d7e250c75aabfa993a7137
 "current-stock-resolution-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -4028,8 +4113,8 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
           const item = matches[0], originalCase = context.activity.find(e => e._id === item.id && e.title === item.id && e.action === 'STOCK_EXCEPTION_REPORTED');
           const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
           const caseEvent = await store.read(journal, item.id); metrics.exactReads++;
-          if (!originalCase || !caseEvent?._version || caseEvent.company !== company || caseEvent.stockAttribution !== 'FREE'
-            || JSON.stringify(copy(originalCase)) !== JSON.stringify(caseEvent)) throw Error('Verified current free stock case required');
+          if (!originalCase || !caseEvent?._version || caseEvent.company !== company || !['FREE', 'CUSTOMER'].includes(caseEvent.stockAttribution)
+            || JSON.stringify(copy(originalCase)) !== JSON.stringify(caseEvent)) throw Error('Verified current stock case attribution required');
           const task = context.tasks.find(t => t.id === item.sourceTaskId);
           if (!task) throw Error('Original stock case source unavailable');
           const orders = d.projectPurchaseOrders({ company, workspace: context, records: await d.readPurchaseRecords(company, staff) });
@@ -4048,7 +4133,9 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
             readCustomerShipments: d.readCustomerShipments, readPackingLists: d.readPackingLists, packingHeld: d.packingHeld,
             readPreparation: d.readPreparation, projectPreparation: d.projectPreparation });
           const rows = await readScopedCurrentProduct({ company, identity, items, store, metrics,
-            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
+            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id],
+            ...(caseEvent.stockAttribution === 'CUSTOMER' ? { demandTaskIds: [caseEvent.stockCustomerTaskId],
+              claimPairs: [{ sourceTaskId: task.id, taskId: caseEvent.stockCustomerTaskId }] } : {}) });
           if (!rows.product) throw Error('Current resolution product checkpoint required');
           rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
           const state = builder.buildState(rows), base = { state, rows, event, caseEvent, priorResolution: item.resolution, generation: control.generation };
@@ -5582,7 +5669,7 @@ function createPurchaseBorrowReturnOptions({ company, items, store, protocol, au
 module.exports = { quoteUnusedBorrowReturn, createPurchaseBorrowReturnOptions };
 
 },
-// current-packing-service.cjs sha256:7335607ad767b400ed88013fe1eb2c8ec0ed30378696a32f7027317dc451fdab
+// current-packing-service.cjs sha256:62947e6a9a4c0b97c60cc7c961d5b8162c95f3137a1edf1ed5394424b4a2e07e
 "current-packing-service.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -5603,7 +5690,15 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
   return {
     read: async request => {
       const result = await prepare.read({ company, department: department(request?.department) });
-      return { ...deps.projectPackingWorkroom(result.context, request.department), staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
+      const view = deps.projectPackingWorkroom(result.context, request.department);
+      if (result.context.stockDamageVersion === 1) view.lists = view.lists.map(list => ({ ...list, lines: list.lines.map(line => {
+        const task = result.context.tasks.find(task => task.taskId === line.taskId);
+        if (!task) return line; // Unrelated original archived history stays read-only.
+        const otherHeld = result.context.lists.filter(other => other.id !== list.id).reduce((n, other) => n + deps.packingHeld(other, line.taskId), 0);
+        return { ...line, stockDamageIsolation: task.stockDamageIsolation || 0,
+          stockUsableForList: Math.max(0, Math.min(task.remaining, task.ready) - otherHeld) };
+      }) }));
+      return { ...view, staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
     },
     save: async request => {
       const originalDepartment = department(request?.department);
@@ -5647,7 +5742,7 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
 module.exports = { createCurrentPackingService };
 
 },
-// packing-stock-preparation.cjs sha256:7a822b6b2f1d5d3be5eb2ddc3d7051edd1de0d7905991850215d99fa690bd3e3
+// packing-stock-preparation.cjs sha256:98cd845f21f7b66425fd6f43773ee9b2fc2f5c91986908b389e2c24a967466e9
 "packing-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -5708,6 +5803,7 @@ function createPackingStockPreparation(deps) {
         products.push({ state: builder.buildState(rows), rows });
       }
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
+      if (context.stockDamageVersion === 1 && deps.currentDamageVersion !== 1) throw Error('Paired original isolated packing model required');
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
         stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
       let validated;
@@ -5741,7 +5837,7 @@ function createPackingStockPreparation(deps) {
 module.exports = { createPackingStockPreparation };
 
 },
-// current-packing-context.cjs sha256:b05160716be1f6b23150210faab374255a3b0110f38df5e5519bec3fa85636d1
+// current-packing-context.cjs sha256:f4beea8dc1fdd53c4b85b36ee253cb79772ed1a74eb4a57ee1acc37fe07f6673
 "current-packing-context.cjs": (load, module) => {
 'use strict';
 
@@ -5759,16 +5855,19 @@ function currentPackingContext({ context, states }) {
     if (state.company !== context.company) throw Error('Packing current company conflict');
     for (const task of state.tasks) {
       if (tasks.has(task.id)) throw Error('Packing current task is ambiguous');
-      tasks.set(task.id, { task, ready: state.sources.reduce((n, s) => n + (s.claims[task.id] || 0), 0) });
+      tasks.set(task.id, { task, ready: state.sources.reduce((n, s) => n + (s.claims[task.id] || 0), 0),
+        isolated: state.sources.reduce((n, s) => n + (s.isolatedClaims?.[task.id] || 0), 0) });
     }
   }
   if (new Set(context.tasks.map(t => t.taskId)).size !== context.tasks.length) throw Error('Original packing task is ambiguous');
   const result = copy(context);
+  if ([...tasks.values()].some(row => row.isolated > 0) || context.lists.some(list => list.stockDamageReviewRequired === true)) result.stockDamageVersion = 1;
   result.tasks = context.tasks.map(row => {
     const current = tasks.get(row.taskId);
     if (!current || row.company !== context.company || current.task.customerId !== row.customerId
       || row.remaining !== current.task.requested - current.task.dispatched) throw Error('Exact packing demand provenance required');
-    return { ...copy(row), ready: current.ready, remaining: current.task.requested - current.task.dispatched };
+    return { ...copy(row), ready: current.ready, remaining: current.task.requested - current.task.dispatched,
+      ...(current.isolated > 0 ? { stockDamageIsolation: current.isolated } : {}) };
   });
   result.sourceVersion = hash(context.sourceVersion, states.map(s => [s.barcode, s.packing, s.ea, s.revision, s.packingHolds.version])
     .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));

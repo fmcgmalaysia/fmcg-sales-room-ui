@@ -17,7 +17,15 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
   return {
     read: async request => {
       const result = await prepare.read({ company, department: department(request?.department) });
-      return { ...deps.projectPackingWorkroom(result.context, request.department), staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
+      const view = deps.projectPackingWorkroom(result.context, request.department);
+      if (result.context.stockDamageVersion === 1) view.lists = view.lists.map(list => ({ ...list, lines: list.lines.map(line => {
+        const task = result.context.tasks.find(task => task.taskId === line.taskId);
+        if (!task) return line; // Unrelated original archived history stays read-only.
+        const otherHeld = result.context.lists.filter(other => other.id !== list.id).reduce((n, other) => n + deps.packingHeld(other, line.taskId), 0);
+        return { ...line, stockDamageIsolation: task.stockDamageIsolation || 0,
+          stockUsableForList: Math.max(0, Math.min(task.remaining, task.ready) - otherHeld) };
+      }) }));
+      return { ...view, staff:result.staff, department:request.department, stockCurrent: result.stockCurrent };
     },
     save: async request => {
       const originalDepartment = department(request?.department);

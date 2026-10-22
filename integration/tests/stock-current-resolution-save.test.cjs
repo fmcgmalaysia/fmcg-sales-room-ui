@@ -58,7 +58,7 @@ test('original role, agreed movements, exact attributed case and stale form rema
   await assert.rejects(f.saveResolution(await f.requestResolution({ action: 'RETURN', quantity: 1, reference: 'R' })), /Purchase must/);
   f.role('PURCHASE'); await assert.rejects(f.saveResolution(await f.requestResolution({ action: 'DECIDE', version: 'OLD' })), /changed/);
   const event = f.db.get('NCTActivity:' + f.reported.caseId); delete event.stockAttribution;
-  await assert.rejects(f.saveResolution(await f.requestResolution({ action: 'DECIDE' })), /free stock case/);
+  await assert.rejects(f.saveResolution(await f.requestResolution({ action: 'DECIDE' })), /stock case attribution/);
   assert.deepEqual(f.balances(), [20, 10, 10]);
 });
 

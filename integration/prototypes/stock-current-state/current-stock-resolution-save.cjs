@@ -65,8 +65,8 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
           const item = matches[0], originalCase = context.activity.find(e => e._id === item.id && e.title === item.id && e.action === 'STOCK_EXCEPTION_REPORTED');
           const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
           const caseEvent = await store.read(journal, item.id); metrics.exactReads++;
-          if (!originalCase || !caseEvent?._version || caseEvent.company !== company || caseEvent.stockAttribution !== 'FREE'
-            || JSON.stringify(copy(originalCase)) !== JSON.stringify(caseEvent)) throw Error('Verified current free stock case required');
+          if (!originalCase || !caseEvent?._version || caseEvent.company !== company || !['FREE', 'CUSTOMER'].includes(caseEvent.stockAttribution)
+            || JSON.stringify(copy(originalCase)) !== JSON.stringify(caseEvent)) throw Error('Verified current stock case attribution required');
           const task = context.tasks.find(t => t.id === item.sourceTaskId);
           if (!task) throw Error('Original stock case source unavailable');
           const orders = d.projectPurchaseOrders({ company, workspace: context, records: await d.readPurchaseRecords(company, staff) });
@@ -85,7 +85,9 @@ function createCurrentStockResolutionSave({ company, items, store, protocol, cov
             readCustomerShipments: d.readCustomerShipments, readPackingLists: d.readPackingLists, packingHeld: d.packingHeld,
             readPreparation: d.readPreparation, projectPreparation: d.projectPreparation });
           const rows = await readScopedCurrentProduct({ company, identity, items, store, metrics,
-            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
+            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id],
+            ...(caseEvent.stockAttribution === 'CUSTOMER' ? { demandTaskIds: [caseEvent.stockCustomerTaskId],
+              claimPairs: [{ sourceTaskId: task.id, taskId: caseEvent.stockCustomerTaskId }] } : {}) });
           if (!rows.product) throw Error('Current resolution product checkpoint required');
           rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
           const state = builder.buildState(rows), base = { state, rows, event, caseEvent, priorResolution: item.resolution, generation: control.generation };
