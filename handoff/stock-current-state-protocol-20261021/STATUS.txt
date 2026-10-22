@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT aftere887d62: SHIPMENT_ARRANGEMENT_CURRENT_PLAN.txt. Original Sales date/
+batch prepare maps original event only; new5passed in43-test expanded set.42pass/1FAIL
+1439.3258ms: original PI handoff expectedPAID, actualINSTALLMENT_PAID. Original test+
+all backend hash/diff matchd447185; isolated failure repeats. No finance/test changes.
+Baseline mismatch retained as review/release gate. Actual integration/release still OFF.
+
 CURRENT HEARTBEAT after0e76bab: MARGIN_REFERENCE_CURRENT_PLAN.txt. Original GP/FX/invoice
 cache now yields paired exact audit+versioned order plan, no quantity/task edits. Original
 unknown/locked/partial invoices preserved; per-demand grouping retains supplier children,
