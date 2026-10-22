@@ -25,7 +25,7 @@ $w.onReady(()=>{
     }
     if(message.type==='WAREHOUSE_PREPARATION_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>3100000)return;
-      try{const result=await saveWarehousePreparation(message.company,message.requestId,message.input);room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
+      try{const result=await saveWarehousePreparation(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined);room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type:'WAREHOUSE_PREPARATION_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Warehouse save is unconfirmed.'});}return;
     }
     if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){

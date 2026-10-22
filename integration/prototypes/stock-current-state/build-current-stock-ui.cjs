@@ -50,6 +50,8 @@ wix = replace(wix,"||JSON.stringify(message).length>200000)return;\n    const ty
   "||JSON.stringify(message).length>(message.type==='WAREHOUSE_RECEIPT_REQUEST'?1000000:200000))return;\n    const type=message.type==='WAREHOUSE_ORDERS_REQUEST'");
 wix = replace(wix,'await saveWarehouseReceipt(message.company,message.requestId,message.input)',
   'await saveWarehouseReceipt(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
+wix = replace(wix,'await saveWarehousePreparation(message.company,message.requestId,message.input)',
+  'await saveWarehousePreparation(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,'warehouse-room/?v='+marker,'warehouse-room/?v=20261022-current-warehouse-v2');
 files['warehouse-department-page.js'] = wix;
 if (process.argv.includes('--check')) {

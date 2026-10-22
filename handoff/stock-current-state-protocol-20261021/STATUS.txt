@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 PREPARATION DURABLE CLIENT: WAREHOUSE_PREPARATION_DURABLE_UI.txt. Original
+workroom non-file PACK/LOAD/UNPACK now carries current metadata/identity, own-session
+full original request before send, bounded same UUID phases, auth-only explicit reload
+recovery, strict final receipt/cache cleanup and refresh-before-next-save guard. Paired
+app/Wix relay included; original legacy/photo/CBM behavior source retained, current
+photos explicitly blocked before network (durable file connection still NEXT).
+759currentpass0fail15449.7309ms;28focused0fail614.8313ms. No install/business writes,
+production exact/ACTIVE OFF. All remaining native/allwriter/init/cutover/recovery/
+capacity/shadow/fourrelease gates OPEN. No real borrowing/publication claim.
+
 2026-10-22 NON-FILE PREPARATION ROOT: WAREHOUSE_PREPARATION_ACTUAL_ROOT.txt. Existing
 actual Warehouse root now supplies original paired current context/identity to non-file
 save and server-mode gates old preparation entry. ACTIVE PHOTOS refused, never routed

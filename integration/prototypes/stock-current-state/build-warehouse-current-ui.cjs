@@ -29,7 +29,8 @@ once(" setSaving(true);$('entryError').textContent='';parent.postMessage(pending
  setSaving(true);$('entryError').textContent='';parent.postMessage(pending,'*');const id=pending.requestId,segment=++currentReceiptSerial;`);
 once('if(saving&&pending?.requestId===id){','if(saving&&pending?.requestId===id&&(pending.stockProtocol!==1||segment===currentReceiptSerial)){');
 once("$('entryError').textContent='尚未收到保存确认。请重试同一次保存，系统不会重复累计。';", "$('entryError').textContent='尚未收到保存确认。请重试同一次保存，系统不会重复累计。';if(pending.stockProtocol===1)paintCurrentReceipt($('entryError').textContent);");
-once("notice(message.error||'读取失败，请登录后重试。',true);return;", "notice(message.error||'读取失败，请登录后重试。',true);recoverCurrentReceipt();return;");
+once("notice(message.error||'读取失败，请登录后重试。',true);return;", "notice(message.error||'读取失败，请登录后重试。',true);recoverCurrentReceipt();window.warehouseWorkroom?.recoverCurrent?.(company,{render,refresh:request});return;");
+once('setData({orders:rows,deliveryTasks:legacyTasks}', 'setData({orders:rows,deliveryTasks:legacyTasks,...(currentWarehouse?{stockCurrent:currentWarehouse,staff:currentReceiptStaff}:{})}');
 once('rows=result.orders;deliveryTasks=',`if(result.stockCurrent!==undefined){const meta=result.stockCurrent;
  if(meta.schema!=='CURRENT_WAREHOUSE_V2'||meta.stockProtocol!==1||!meta.stockBuild||!Number.isSafeInteger(meta.stockGeneration)||meta.stockGeneration<0||meta.generation!==meta.stockGeneration||!result.staff?.staffId||!result.staff.memberId){notice('Current Warehouse response unconfirmed 当前货仓回执尚未确认。',true);return;}
  recoverySerial++;currentWarehouse=meta;currentReceiptStaff=result.staff;
@@ -52,6 +53,7 @@ once(" if(message.type==='WAREHOUSE_RECEIPT_RESULT'&&pending?.requestId===messag
 `);
 new Function(source);
 let html=read('warehouse-room/index.html').replace('<script src="app.js?', '<script src="warehouse-receipt-resume.js?v=20261022-current-receipt-v2"></script><script src="app.js?');
+html=html.replace('<script src="workroom.js?v=20261020-split-controls-v1">','<script src="warehouse-preparation-resume.js?v=20261022-current-preparation-v1"></script><script src="workroom.js?v=20261022-current-preparation-v1">');
 html=html.replaceAll('20261021-packing-v1','20261022-current-receipt-v2').replace('content="2026-10-21-stock-tab-v1"','content="2026-10-22-current-receipt-v2"');
 html=html.replace('packing-list-link.js?v=20261021-packing-company-v1','packing-list-link.js?v=20261022-current-warehouse-v2');
 html=html.replace('stock-control-link.js?v=20261021-stock-tab-v1','stock-control-link.js?v=20261022-current-stock-v1');
