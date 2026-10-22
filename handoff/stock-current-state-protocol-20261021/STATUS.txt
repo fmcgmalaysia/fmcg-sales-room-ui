@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ACTUAL CMS STORAGE LIMIT + RECORD GROWTH:
+NATIVE_STORAGE_QUOTA_AND_FOOTPRINT.txt. Readonly existingCMS Monitoring shows maximum
+1000collections/10000items/10GB. Private screenshot/usedcounts OUTSIDE public checkout;
+no Upgrade/Run/settings/secret/log-detail/Publish. Backendplan/time/RPM stillUNKNOWN.
+Existing actual300root offline instrument now decodes same manifest:901images,
+601newbusinessrecords/300updates; Ffragments plusmanifest/RESULT, transient1lock.
+Healthy-first-attempt headroom is arithmetic ONLY, never nativecapacity/activation;
+no automatic cleanup/archive/quota increase.11affectedpass4068.7258ms; priorFULL1133
+reused (not updated full total). Core/runtime/originals unchanged.993c8c3 confirmed
+PUSHED PR220. Native grant stillPENDING/no repeat/run. All rollout gates OPEN.
+
 2026-10-23 LOADED-ONLY INDEPENDENT SERVER GATE: LOADED_ONLY_RELEASE_GATE.txt.
 Existing current fulfilment could physically DISPATCH once coverage supplied, despite
 initial acceptance endingLoaded. New serverconstant CURRENT_PHYSICAL_DISPATCH_ENABLED
