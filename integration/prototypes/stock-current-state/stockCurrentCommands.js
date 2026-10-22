@@ -2655,6 +2655,214 @@ function createSdkFieldCodec({ collections, dateTimeFields = {} }) {
 module.exports = { createSdkFieldCodec };
 
 },
+// current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
+"current-stock-exception-save.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { prepareFreeQuarantine } = load("borrowing-stock-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+
+// Execute only the original validator's PREPARE in a private in-memory journal.
+// Actual stock/event writes belong exclusively to the common current coordinator.
+async function validateOriginalStockException({ company, staff, context, requestId, input, createStockExceptionOperations, now }) {
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks)
+    || !Array.isArray(context.activity) || typeof createStockExceptionOperations !== 'function' || typeof now !== 'function') {
+    throw Error('Original stock exception context required');
+  }
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private exception preparation boundary');
+  let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Stock exception collection scope violation'); };
+  const store = { read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'STOCK_EXCEPTION_REPORTED') throw Error('Unexpected stock exception preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy exception apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private exception lock removal allowed'); scratch.delete(id);
+    } };
+  const save = createStockExceptionOperations({ store, names: { [company]: { activity: journal } }, now,
+    readContext: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected stock exception apply/read'); return copy(context);
+    } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original stock exception boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original stock exception preparation incomplete');
+  return captured;
+}
+
+// PRIVATE existing stockExceptions.web authentication dependencies only. This
+// handles approved FREE stock isolation, never invents reserved-loss attribution.
+function createCurrentStockExceptionSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  const d = authorityDependencies;
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || typeof items?.query !== 'function' || typeof store?.read !== 'function'
+    || [d?.readMember, d?.readStaffRecords, d?.requireStockStaff, d?.readContext, d?.readPurchaseRecords, d?.projectPurchaseOrders,
+      d?.createStockExceptionOperations, d?.readCurrentTaskRows, d?.readAllocations, d?.readCustomerShipments,
+      d?.readPackingLists, d?.packingHeld, d?.now].some(fn => typeof fn !== 'function')) throw Error('Private original stock exception dependencies required');
+  return async request => {
+    let staff;
+    const result = await createCurrentStockSave({ company, writer: 'STOCK_EXCEPTION', protocol, coverage,
+      authenticate: async () => {
+        const member = await d.readMember();
+        if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') d.requireStockStaff(member, []);
+        staff = d.requireStockStaff(member, await d.readStaffRecords());
+        if (staff?.memberId !== member._id || staff.canReportStockException !== true || request?.input?.action !== 'QUARANTINE') throw Error('Original stock quarantine permission required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        if (command.memberId !== staff.memberId) throw Error('Stock exception actor changed');
+        const metrics = { queries: 0, exactReads: 0 };
+        const snapshot = await protocol.readSnapshot(async control => {
+          const context = await d.readContext(company, staff);
+          if (context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)) throw Error('Original stock company context required');
+          const validated = await validateOriginalStockException({ company, staff, context, requestId: command.requestId,
+            input: command.input, createStockExceptionOperations: d.createStockExceptionOperations, now: d.now });
+          const task = context.tasks.find(t => t.id === validated.event.imageAltText);
+          if (!task || validated.event.initiatedByStaffId !== staff.staffId || validated.event.details?.company !== company
+            || validated.event.imageAltText !== command.input.sourceTaskId) throw Error('Original stock exception identity conflict');
+          const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea };
+          const orders = d.projectPurchaseOrders({ company, workspace: context, records: await d.readPurchaseRecords(company, staff) });
+          const builder = originalProductState({ company, context, orders, identity, readAllocations: d.readAllocations,
+            readCustomerShipments: d.readCustomerShipments, readPackingLists: d.readPackingLists, packingHeld: d.packingHeld,
+            readPreparation: d.readPreparation, projectPreparation: d.projectPreparation });
+          const rows = await readScopedCurrentProduct({ company, identity, items, store, metrics,
+            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
+          if (!rows.product) throw Error('Current exception product checkpoint required');
+          rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+          return prepareFreeQuarantine({ state: builder.buildState(rows), rows, event: validated.event, generation: control.generation });
+        });
+        return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+      } })(request);
+    if (result.ok !== true) return result;
+    const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, staff.memberId, 'STOCK_EXCEPTION')));
+    const event = receipt.rows;
+    if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
+      || event.action !== 'STOCK_EXCEPTION_REPORTED' || event.stockAttribution !== 'FREE' || event.initiatedByStaffId !== staff.staffId
+      || event.imageAltText !== request.input.sourceTaskId || event.details?.company !== company) throw Error('Committed free stock exception receipt requires review');
+    return { ...result, company, caseId: event.title };
+  };
+}
+module.exports = { validateOriginalStockException, createCurrentStockExceptionSave };
+
+},
+// current-stock-resolution-save.cjs sha256:e0815bf5868ea37a40749d704dc20bf6a49a0949bc02d7c50189e95b684f8150
+"current-stock-resolution-save.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition } = load("borrowing-stock-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const permissions = { DECIDE: 'canPlanStockResolution', APPROVE_LOSS: 'canApproveStockLoss', APPROVE_VARIANCE: 'canApproveStockLoss',
+  APPROVE_RELEASE: 'canApproveStockLoss', RETURN: 'canReportStockException', REPLACEMENT: 'canReportStockException', CLOSE: 'canCloseStockException' };
+
+async function validateOriginalStockResolution({ company, staff, context, orders, requestId, input, createStockResolutionOperations, now }) {
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private stock resolution boundary');
+  let captured, reads = 0, orderReads = 0;
+  const scope = c => { if (c !== journal) throw Error('Stock resolution collection scope violation'); };
+  const store = { read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED') throw Error('Unexpected stock resolution preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy stock resolution apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private stock resolution lock removal allowed'); scratch.delete(id);
+    } };
+  const save = createStockResolutionOperations({ store, names: { [company]: { activity: journal } }, now,
+    readContext: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected stock resolution apply/read'); return copy(context);
+    }, listOrders: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++orderReads !== 1) throw Error('Unexpected stock resolution order read'); return copy(orders);
+    } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original stock resolution boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || orderReads !== 1 || scratch.size) throw Error('Original stock resolution preparation incomplete');
+  return captured;
+}
+
+// PRIVATE stockExceptions.web dependency composition. Original role and financial
+// validators remain unchanged. Only explicitly attributed FREE cases are mapped.
+function createCurrentStockResolutionSave({ company, items, store, protocol, coverage, authorityDependencies: d }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || typeof items?.query !== 'function' || typeof store?.read !== 'function'
+    || [d?.readMember, d?.readStaffRecords, d?.requireStockStaff, d?.readContext, d?.readPurchaseRecords, d?.projectPurchaseOrders,
+      d?.createStockResolutionOperations, d?.readStockExceptions, d?.readCurrentTaskRows, d?.readAllocations, d?.readCustomerShipments,
+      d?.readPackingLists, d?.packingHeld, d?.now].some(fn => typeof fn !== 'function')) throw Error('Private original stock resolution dependencies required');
+  return async request => {
+    let staff;
+    const result = await createCurrentStockSave({ company, writer: 'STOCK_RESOLUTION', protocol, coverage,
+      authenticate: async () => {
+        const member = await d.readMember();
+        if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') d.requireStockStaff(member, []);
+        staff = d.requireStockStaff(member, await d.readStaffRecords());
+        const permission = permissions[request?.input?.action];
+        if (staff?.memberId !== member._id || !permission || staff[permission] !== true) throw Error('Original stock resolution permission required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        if (command.memberId !== staff.memberId) throw Error('Stock resolution actor changed');
+        const metrics = { queries: 0, exactReads: 0 };
+        const snapshot = await protocol.readSnapshot(async control => {
+          const context = await d.readContext(company, staff);
+          if (context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)) throw Error('Original stock company context required');
+          const matches = d.readStockExceptions(context.activity).filter(c => c.id === command.input.id && c.company === company);
+          if (matches.length !== 1) throw Error('Exact original stock case required');
+          const item = matches[0], originalCase = context.activity.find(e => e._id === item.id && e.title === item.id && e.action === 'STOCK_EXCEPTION_REPORTED');
+          const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+          const caseEvent = await store.read(journal, item.id); metrics.exactReads++;
+          if (!originalCase || !caseEvent?._version || caseEvent.company !== company || caseEvent.stockAttribution !== 'FREE'
+            || JSON.stringify(copy(originalCase)) !== JSON.stringify(caseEvent)) throw Error('Verified current free stock case required');
+          const task = context.tasks.find(t => t.id === item.sourceTaskId);
+          if (!task) throw Error('Original stock case source unavailable');
+          const orders = d.projectPurchaseOrders({ company, workspace: context, records: await d.readPurchaseRecords(company, staff) });
+          const validated = await validateOriginalStockResolution({ company, staff, context, orders, requestId: command.requestId,
+            input: command.input, createStockResolutionOperations: d.createStockResolutionOperations, now: d.now });
+          const event = validated.event;
+          if (event.initiatedByStaffId !== staff.staffId || event.description !== item.id || event.imageAltText !== task.id
+            || event.details?.action !== command.input.action) throw Error('Original stock resolution identity conflict');
+          // Legacy closing has no disposal evidence. Never turn financial closure
+          // into physical outflow or assert remaining isolated goods disappeared.
+          if (command.input.action === 'CLOSE' && command.input.outcome !== 'RELEASED'
+            && item.quantity !== (item.resolution?.returns || []).reduce((n, row) => n + row.quantity, 0)) throw Error('Stock settled goods location requires review');
+          const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea };
+          if (caseEvent.stockKey !== stockKey(identity) || caseEvent.imageAltText !== task.id) throw Error('Free stock case product identity conflict');
+          const builder = originalProductState({ company, context, orders, identity, readAllocations: d.readAllocations,
+            readCustomerShipments: d.readCustomerShipments, readPackingLists: d.readPackingLists, packingHeld: d.packingHeld,
+            readPreparation: d.readPreparation, projectPreparation: d.projectPreparation });
+          const rows = await readScopedCurrentProduct({ company, identity, items, store, metrics,
+            transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id] });
+          if (!rows.product) throw Error('Current resolution product checkpoint required');
+          rows.taskRows = await d.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+          const state = builder.buildState(rows), base = { state, rows, event, caseEvent, priorResolution: item.resolution, generation: control.generation };
+          if (['RETURN', 'REPLACEMENT'].includes(command.input.action)) return prepareFreeCaseMovement(base);
+          if (command.input.action === 'CLOSE' && command.input.outcome === 'RELEASED') return prepareFreeCaseRelease(base);
+          return prepareProcurementTransition({ ...base, after: state });
+        });
+        return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+      } })(request);
+    if (result.ok !== true) return result;
+    const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, staff.memberId, 'STOCK_RESOLUTION')));
+    const event = receipt.rows;
+    if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
+      || event.action !== 'STOCK_EXCEPTION_RESOLUTION_SAVED' || event.initiatedByStaffId !== staff.staffId
+      || event.description !== request.input.id || event.details?.action !== request.input.action) throw Error('Committed stock resolution receipt requires review');
+    return { ...result, company, caseId: event.description };
+  };
+}
+module.exports = { validateOriginalStockResolution, createCurrentStockResolutionSave };
+
+},
 // fenced-proof.cjs sha256:b05eaa71128cd2cd490567b47372c1ce0c744b0d55df8c3001f640f8994a85f9
 "fenced-proof.cjs": (load, module) => {
 'use strict';
@@ -4114,6 +4322,8 @@ export const createSdkConditionalStore = load("sdk-conditional-store.cjs").creat
 export const createCurrentPurchaseSave = load("current-department-saves.cjs").createCurrentPurchaseSave;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
+export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;
+export const createCurrentStockResolutionSave = load("current-stock-resolution-save.cjs").createCurrentStockResolutionSave;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;
