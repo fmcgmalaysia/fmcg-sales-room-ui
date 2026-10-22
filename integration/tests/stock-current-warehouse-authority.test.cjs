@@ -3,6 +3,8 @@ const { createWarehouseAuthority } = require('../prototypes/stock-current-state/
 const { prepareWarehouseReceipt } = require('../prototypes/stock-current-state/warehouse-receipt-plan.cjs');
 const { createWarehouseStockReader } = require('../prototypes/stock-current-state/warehouse-stock-reader.cjs');
 const { createFencedProof } = require('../prototypes/stock-current-state/fenced-proof.cjs');
+const { createCurrentStockSave } = require('../prototypes/stock-current-state/current-stock-save.cjs');
+const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } = load('warehouseReceiving.js');
 const { projectPurchaseOrders } = load('purchaseOrderWorkflow.js');
 const { readAllocations } = load('plannerAllocation.js');
@@ -71,7 +73,7 @@ test('unknown customer share and inconsistent original accepted facts refuse rat
   // Deliberately stale context warehouse metadata: original receipt says100, context says0.
   await assert.rejects(createWarehouseAuthority(g.deps)(correction), /authority differ/);
 });
-test('original auth/PO to current rows to fenced two-product receipt replays without duplicate reads or events', async () => {
+test('authenticated current save composes original PO authority and fenced two-product receipt; replay reauthorizes without duplicate reads/events', async () => {
   const f = fixture(), request = f.request(), db = new Map(), copy = value => JSON.parse(JSON.stringify(value));
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),
     insert: async (c, row) => { if (db.has(c + ':' + row._id)) throw Error('Duplicate'); db.set(c + ':' + row._id, copy(row)); return copy(row); },
@@ -90,20 +92,24 @@ test('original auth/PO to current rows to fenced two-product receipt replays wit
       } }; return query;
   } };
   const protocol = createFencedProof({ store }); await protocol.initialize();
+  Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
   const authority = createWarehouseAuthority(f.deps), reader = createWarehouseStockReader({ company: 'NCT', items, store, protocol,
     readAuthority: () => authority(request) });
   let prepared;
-  const command = { requestId: request.requestId, memberId: member._id, input: request.input,
-    prepare: async () => { prepared = await reader(); return prepared.plan; } };
-  await protocol.commit(command); await protocol.commit(command);
+  let authorizations = 0;
+  const save = createCurrentStockSave({ company: 'NCT', writer: 'RECEIPT', protocol,
+    coverage: Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }])),
+    authenticate: async () => { authorizations++; return { ...requireWarehouseStaff(member, [employee]), memberId: member._id }; },
+    prepare: async () => { prepared = await reader(); return prepared; } });
+  const command = { requestId: request.requestId, input: request.input, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 };
+  await save(command); await save(command); assert.equal(authorizations, 2);
   assert.deepEqual(f.counts(), { contextReads: 1, staffReads: 1, recordReads: 1 });
   assert.deepEqual(prepared.metrics, { queries: 6, exactReads: 2 });
   const rows = [...db.values()];
   assert.equal(rows.filter(r => r.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
   assert.equal(rows.filter(r => r.sourceKind === 'PURCHASE_SOURCE').reduce((n, r) => n + r.onHand, 0), 200);
   assert.equal((await protocol.readControl()).generation, 1);
-  // Production entry MUST authenticate each invocation before commit, including replay;
-  // this test exercises preparation once, not authorization of a real exposed endpoint.
+  // In-memory composition, not a real Wix webMethod or verified production coverage.
 });
 test('pending barrier prevents even authority/context reads', async () => {
   const f = fixture(); let authorities = 0;

@@ -22,7 +22,7 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
     const args = { state: authority.state, rows, event: authority.event, generation: snapshot.generation };
     const result = authority.kind === 'ALLOCATE' ? prepareCurrentAllocation(args) : authority.kind === 'RECEIVE' ? prepareBorrowingReceipt(args)
       : (authority.kind === 'APPROVE' ? prepareBorrowApproval : prepareBorrowReturn)({ ...args, input: authority.input });
-    return { ...result, generation: snapshot.generation, metrics };
+    return { ...result, memberId: authority.memberId, generation: snapshot.generation, metrics };
   };
 }
 module.exports = { createBorrowingStockReader };

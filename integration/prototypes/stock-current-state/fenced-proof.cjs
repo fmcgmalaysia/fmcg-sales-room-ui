@@ -64,8 +64,8 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
     if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
     return { generation: after.generation, rows };
   }
-  async function commit({ requestId, memberId, input, prepare, validate = () => {} }) {
-    if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || !memberId) throw Error('Proof identity required');
+  async function commit({ requestId, memberId, input, prepare, validate = () => {}, authorize = () => {} }) {
+    if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || !memberId || typeof authorize !== 'function') throw Error('Proof identity required');
     const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT');
     const attempt = newAttempt();
     if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
@@ -77,16 +77,21 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
         throw Error('Prior inventory save pending');
       }
       const prior = await store.read(journal, resultId);
+      let receipt = await store.read(journal, key);
+      if (prior && (prior.company !== company || prior._id !== resultId || !Number.isSafeInteger(prior.baseGeneration) || prior.baseGeneration < 0)
+        || receipt && (receipt.company !== company || receipt._id !== key || !Number.isSafeInteger(receipt.baseGeneration) || receipt.baseGeneration < 0)) throw Error('Operation receipt scope conflict');
+      if (prior && prior.digest !== digest || receipt && receipt.digest !== digest) throw Error('Request identity reused');
+      if (prior && receipt && prior.baseGeneration !== receipt.baseGeneration) throw Error('Operation receipt generation conflict');
+      // Runs under the owned fence on EVERY invocation, including completed or pending
+      // replays. Replay identity comes only from exact server receipts, never UI flags.
+      await authorize(copy({ control, key, digest, replay: !!(prior || receipt), baseGeneration: (prior || receipt)?.baseGeneration ?? control.generation }));
       if (prior) {
-        if (prior.digest !== digest) throw Error('Request identity reused');
         if (control.pending) {
           if (control.generation !== prior.baseGeneration) throw Error('Result generation conflict');
           await transition(journal, control, nextControl(control, { generation: prior.baseGeneration + 1, pending: null }));
         }
         return copy(prior.outcome);
       }
-      let receipt = await store.read(journal, key);
-      if (receipt && receipt.digest !== digest) throw Error('Request identity reused');
       if (!receipt) {
         const plan = copy(await prepare()); checkPlan(plan, key);
         receipt = { _id: key, company, digest, baseGeneration: control.generation, plan };
