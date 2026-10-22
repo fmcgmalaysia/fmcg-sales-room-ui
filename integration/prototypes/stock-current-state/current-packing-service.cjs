@@ -46,7 +46,8 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
       }
       const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:saveProtocol, coverage,
         authenticate, prepare: async command => {
-          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
+          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId,
+            staffId: command.staffId, memberId: command.memberId, input: command.input.details });
           if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
           return prepared;
         } })({

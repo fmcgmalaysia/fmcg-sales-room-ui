@@ -1,0 +1,40 @@
+2026-10-23 — PACKING EARLY IDENTITY BEFORE PHOTO IDS, OFFLINE CANDIDATE
+
+Scope: same Support/Outgoing task through Loaded, original staff/claim/hold checks.
+Recovery:d66d2c4 pushed PR220; protected production paths stilld447185.
+
+Unlike the prior Purchase/receipt cases, packing ALREADY compared original employee
+after preparation and refused plan publication on drift. Do not claim it previously
+committed wrong-employee stock. Its preparation could still read private context and
+allocate photo IDs before that late refusal. ID allocation is not a file upload.
+
+New stock-current-packing-admission-actor.test.cjs reuses original current packing
+and photo service fixtures with actual validators/segmented coordinators INMEMORY.
+Photo pre-auth/admission seeS, preparation seesREISSUED, same memberM. Old late guard
+rejects but the allocation stub has one unused ID. Support SEND and Warehouse
+PROGRESS likewise reject late after one context read. Valid prepatch3tests0pass3fail
+285.9233ms. Controlled server dependency is installed before constructor capture.
+
+Minimal correction: service passes private common-command staffId/memberId into
+preparation. Save-only early original-grant comparison runs before context, current
+reads and photo ID allocation. Browser input is not spread into these trusted fields.
+Existing late staff/member/department comparison stays intact. Standalone private
+read/preparation callers without optional identity retain their earlier contract.
+No role, list/stock/quantity/Loaded/photo delivery/ID generation or replay policy change.
+
+Related23pass0fail3982.5157ms includes both-company actual intake/PO/Sales split/
+receipt/same Support-Warehouse list throughLoaded; remainder customer-reserved,
+partial PO waiting, borrowing beforeLoaded and automatic partial/full repayment/halo
+closure; original photo lost-reply/immutable-file/reissued-employee/late-fence cases.
+These are offline compositions, not real published public-page or native acceptance.
+Full current suite1160pass0fail27710.4248ms, includes unsafe witnesses. Runtime104
+modules/install38targets94deps rebuilt;20writer categories stillUNVERIFIED. Builders
+checked, diff--check clean, protected original diff empty. No browser/native/CMS/
+permission/Pages/Wix change, new test record or deletion. No actual file IDs allocated.
+
+Native INIT/TYPE and Wix support-contact consents stillPENDING/no repeat/run/send.
+Migration APPLY/drain/schema/capacity/recovery/G3/shadow/cutover remain unfinished;
+realinvoice/physicalexitOFF, CoverageEMPTY/ACTIVEOFF. Not a completed release.
+Next independent semantic review should stay on packing customer/quantity ownership
+and remaining Loaded-only consumer gaps; do not invent patches where existing guards
+already suffice or rerun unchanged full tests merely for a fresh summary.

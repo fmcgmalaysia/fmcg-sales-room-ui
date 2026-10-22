@@ -29,6 +29,10 @@ function createPackingStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
     const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
+    // Private admission fields from current save, never browser input. Refuse
+    // before context reads and photo ID allocation; retain the later check too.
+    if (save && (request.staffId !== undefined && request.staffId !== staff.staffId
+      || request.memberId !== undefined && request.memberId !== member._id)) throw Error('Original packing employee changed during preparation');
     const snapshot = await protocol.readSnapshot(async control => {
       if (current && (control?.company !== company || control.mode !== 'ACTIVE' || control.pending
         || control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Current packing checkpoint/index unavailable');

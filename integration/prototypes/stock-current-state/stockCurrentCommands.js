@@ -5869,7 +5869,7 @@ function createPurchaseBorrowReturnOptions({ company, items, store, protocol, au
 module.exports = { quoteUnusedBorrowReturn, createPurchaseBorrowReturnOptions };
 
 },
-// current-packing-service.cjs sha256:62947e6a9a4c0b97c60cc7c961d5b8162c95f3137a1edf1ed5394424b4a2e07e
+// current-packing-service.cjs sha256:10f35293b9dbed7b89699dfdaff6cece365234b9f6af11e4b05a20f4f4c7ff64
 "current-packing-service.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -5919,7 +5919,8 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
       }
       const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:saveProtocol, coverage,
         authenticate, prepare: async command => {
-          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
+          const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId,
+            staffId: command.staffId, memberId: command.memberId, input: command.input.details });
           if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
           return prepared;
         } })({
@@ -5942,7 +5943,7 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
 module.exports = { createCurrentPackingService };
 
 },
-// packing-stock-preparation.cjs sha256:98cd845f21f7b66425fd6f43773ee9b2fc2f5c91986908b389e2c24a967466e9
+// packing-stock-preparation.cjs sha256:00ff0259fbd07b9912bd4759bf7bde9d2c7882af752cfbac9ef77cba79f7c24f
 "packing-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -5975,6 +5976,10 @@ function createPackingStockPreparation(deps) {
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
     const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
+    // Private admission fields from current save, never browser input. Refuse
+    // before context reads and photo ID allocation; retain the later check too.
+    if (save && (request.staffId !== undefined && request.staffId !== staff.staffId
+      || request.memberId !== undefined && request.memberId !== member._id)) throw Error('Original packing employee changed during preparation');
     const snapshot = await protocol.readSnapshot(async control => {
       if (current && (control?.company !== company || control.mode !== 'ACTIVE' || control.pending
         || control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Current packing checkpoint/index unavailable');

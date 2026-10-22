@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 PACKING EARLY IDENTITY: PACKING_EARLY_ADMISSION_IDENTITY.txt.
+Existing late packing guard already blocked domain plans; new witness proves photo
+ID allocation/context read preceded that rejection. Forward private common-command
+staff/member and compare beforecontext/IDs, retain late guard/roles/quantity/Loaded.
+23affectedpass3982.5157ms; FULL1160pass0fail27710.4248ms. Runtime104/install38/94,
+20flagsUNVERIFIED; productionoriginalsd447185 unchanged. d66d2c4 priorPUSHED. No native/
+UI/CMS/permission/Pages/Wix action. Both exact test/contact consentsPENDING/no repeat/
+run/send. Migration/native/G3/cutover remainOPEN. Next packing ownership/Loaded-only
+semantic audit, no manufactured patches/repeated unchanged fulltests.
+
 2026-10-23 PURCHASE PREPARATION ACTOR: PURCHASE_PREPARATION_ADMISSION_ACTOR.txt.
 Three wrappers dropped serverstaffId before original repeated Purchase auth; six
 actual-root/v2 counterexamples. Forward trusted field and compare before tables/
