@@ -27,7 +27,7 @@ function createCurrentMarginReferenceSave({ company, store, protocol, coverage, 
         const member=await d.readMember();
         if (!member?._id||!member.loginEmail||member.status!=='APPROVED')d.requirePurchaseStaff(member,[]);
         staff={...d.requirePurchaseStaff(member,await d.readStaffRecords()),memberId:member._id};
-        return {memberId:staff.memberId};
+        return staff;
       },prepare:async command=>{
         if (command.memberId!==staff.memberId)throw Error('Margin actor changed');
         const snapshot=await protocol.readSnapshot(async control=>{

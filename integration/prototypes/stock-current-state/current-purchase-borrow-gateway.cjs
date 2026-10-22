@@ -27,7 +27,7 @@ function createCurrentPurchaseBorrowGateway(dependencies) {
       const kind = request.operation === 'BORROW_APPROVE' ? 'APPROVE' : request.operation === 'BORROW_RETURN' ? 'RETURN' : null;
       if (!kind) throw Error('Supported original Purchase borrowing action required');
       return save({ requestId: request.requestId, kind, input: request.input, stockProtocol: request.stockProtocol,
-        stockBuild: request.stockBuild, stockGeneration: request.stockGeneration });
+        stockBuild: request.stockBuild, stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity });
     }
   };
 }

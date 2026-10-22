@@ -91,7 +91,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:46c26d46271eba796bfab99a750456b3a042c9b3c8e1c408506190c5e8098524
+// current-department-saves.cjs sha256:b42023e8d87173cda36d3323c06b5682db0c92099b21c65f38f4d7b3a965443a
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -150,7 +150,7 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
   return request => {
     if (!request || !['APPROVE', 'RETURN'].includes(request.kind)) throw Error('Purchase borrowing action required');
     return save({ requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
-      stockGeneration: request.stockGeneration, input: { kind: request.kind, details: request.input } });
+      stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { kind: request.kind, details: request.input } });
   };
 }
 function createCurrentAllocationSave({ company, items, store, protocol, coverage, authorityDependencies }) {
@@ -177,7 +177,7 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
     },
       prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
-      stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+      stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
     if (request.operation === 'EDIT' && request.input.displayRows !== undefined) {
       const id = authorityDependencies.operationId(company,request.requestId,actor.memberId,'PURCHASE_DISPLAY_ORDER');
@@ -3104,7 +3104,7 @@ function createCurrentPurchaseTables({ company, readOriginalTable, store }) {
 module.exports = { createCurrentPurchaseTables };
 
 },
-// current-purchase-task-gateway.cjs sha256:191d5bdac141119ca1f51467ff3761438bcc5623bdbf9a72d9612a18985f246b
+// current-purchase-task-gateway.cjs sha256:384c42fa2953f16718ade342f22f2691a9bc2410e3f5e5627cf1cceb3de701b5
 "current-purchase-task-gateway.cjs": (load, module) => {
 'use strict';
 const { createCurrentPurchaseSave, createCurrentAllocationSave, createCurrentShortageSave, createCurrentQuantityCaseSave } = load("current-department-saves.cjs");
@@ -3131,13 +3131,13 @@ function createCurrentPurchaseTaskGateway(dependencies) {
       : request.operation === 'MARGIN_REFRESH' ? createCurrentMarginReferenceSave(dependencies)
       : request.operation === 'QUANTITY_CASE' ? createCurrentQuantityCaseSave(dependencies) : createCurrentPurchaseSave(dependencies);
     return execute({ requestId:request.requestId,operation:request.operation,input:request.operation === 'ADD_SOURCE' ? { ...request.input,action:'ADD_SOURCE' } : request.input,
-      stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration });
+      stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity });
   };
 }
 module.exports = { createCurrentPurchaseTaskGateway };
 
 },
-// current-margin-reference-save.cjs sha256:60686d0b2bad310fb4e6216cf45f6e31bf761a2d8f5e082edad06fcf316fe5a5
+// current-margin-reference-save.cjs sha256:afedc9fb0b213120b9fef187baa83e2e84e33da9108ba3d4df641c351684dfb3
 "current-margin-reference-save.cjs": (load, module) => {
 'use strict';
 
@@ -3168,7 +3168,7 @@ function createCurrentMarginReferenceSave({ company, store, protocol, coverage, 
         const member=await d.readMember();
         if (!member?._id||!member.loginEmail||member.status!=='APPROVED')d.requirePurchaseStaff(member,[]);
         staff={...d.requirePurchaseStaff(member,await d.readStaffRecords()),memberId:member._id};
-        return {memberId:staff.memberId};
+        return staff;
       },prepare:async command=>{
         if (command.memberId!==staff.memberId)throw Error('Margin actor changed');
         const snapshot=await protocol.readSnapshot(async control=>{
@@ -3320,7 +3320,7 @@ async function collectMarginCurrencies({ createPurchaseMarginRefresh, company, t
 module.exports = { prepareMarginReference, prepareMarginReferenceGroup, collectMarginCurrencies };
 
 },
-// current-purchase-save-router.cjs sha256:f705661cfe9924d69c9f8080a0d4eb6355712445f68ba2f768381265725640bf
+// current-purchase-save-router.cjs sha256:8013d3584d586a5eb2f827f47f3a07c37935bda6ca8f82db5581a2542e4a7d46
 "current-purchase-save-router.cjs": (load, module) => {
 'use strict';
 const { hash } = load("commit-proof.cjs");
@@ -3344,7 +3344,7 @@ function createCurrentPurchaseSaveRouter({ company, readControl, saveCurrent, sa
     // Missing/wrong metadata or an unsupported command must NEVER reach legacy.
     return saveCurrent(company,{ requestId:request.requestId,operation:request.operation,input:request.input,
       stockProtocol:request.stockCurrent?.stockProtocol,stockBuild:request.stockCurrent?.stockBuild,
-      stockGeneration:request.stockCurrent?.stockGeneration });
+      stockGeneration:request.stockCurrent?.stockGeneration,stockIdentity:request.stockCurrent?.stockIdentity });
   };
 }
 module.exports = { createCurrentPurchaseSaveRouter };
@@ -5754,7 +5754,7 @@ function createPurchaseBorrowOptions({ company, items, store, protocol, authorit
 module.exports = { quoteBorrowOptions, createPurchaseBorrowOptions };
 
 },
-// current-purchase-borrow-gateway.cjs sha256:2885767e6cde5cffa7e25777b9f5de998f03102003ec3d0632edefbda584556b
+// current-purchase-borrow-gateway.cjs sha256:d956efbe40236c63c51ce635cd32f2051793a3c71ef3b0411073389280ffe1f7
 "current-purchase-borrow-gateway.cjs": (load, module) => {
 'use strict';
 const { createPurchaseBorrowOptions } = load("purchase-borrow-options.cjs");
@@ -5785,7 +5785,7 @@ function createCurrentPurchaseBorrowGateway(dependencies) {
       const kind = request.operation === 'BORROW_APPROVE' ? 'APPROVE' : request.operation === 'BORROW_RETURN' ? 'RETURN' : null;
       if (!kind) throw Error('Supported original Purchase borrowing action required');
       return save({ requestId: request.requestId, kind, input: request.input, stockProtocol: request.stockProtocol,
-        stockBuild: request.stockBuild, stockGeneration: request.stockGeneration });
+        stockBuild: request.stockBuild, stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity });
     }
   };
 }

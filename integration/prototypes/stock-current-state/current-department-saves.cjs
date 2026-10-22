@@ -55,7 +55,7 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
   return request => {
     if (!request || !['APPROVE', 'RETURN'].includes(request.kind)) throw Error('Purchase borrowing action required');
     return save({ requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
-      stockGeneration: request.stockGeneration, input: { kind: request.kind, details: request.input } });
+      stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { kind: request.kind, details: request.input } });
   };
 }
 function createCurrentAllocationSave({ company, items, store, protocol, coverage, authorityDependencies }) {
@@ -82,7 +82,7 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
     },
       prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
-      stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+      stockGeneration: request.stockGeneration, stockIdentity: request.stockIdentity, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
     if (request.operation === 'EDIT' && request.input.displayRows !== undefined) {
       const id = authorityDependencies.operationId(company,request.requestId,actor.memberId,'PURCHASE_DISPLAY_ORDER');

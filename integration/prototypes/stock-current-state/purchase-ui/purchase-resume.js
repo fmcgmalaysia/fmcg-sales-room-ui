@@ -5,18 +5,18 @@
   const orderActions = new Set(['TERM','ACK_PAYMENT','REQUEST_PAYMENT','SUBMIT_FINANCE','WITHDRAW_FINANCE','REQUEST_RETURN','DOCUMENT_ISSUE_RESPONSE','DOCUMENT','DELETE_DOCUMENT']);
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function validRequest(request, company) {
-    const order=request?.type==='PURCHASE_ORDER_SAVE_REQUEST', identified=order||request?.operation==='COST_REFERENCE';
+    const order=request?.type==='PURCHASE_ORDER_SAVE_REQUEST';
     return request && (order||request.type === 'PURCHASE_SAVE_REQUEST') && request.company === company
       && /^[a-f0-9-]{36}$/i.test(request.requestId || '') && (order?orderActions.has(request.input?.action):operations.has(request.operation))
       && request.input && typeof request.input === 'object' && !Array.isArray(request.input)
       && request.stockProtocol === 1 && typeof request.stockBuild === 'string' && request.stockBuild.length > 0
       && Number.isSafeInteger(request.stockGeneration) && request.stockGeneration >= 0
-      && (!identified||request.stockIdentity&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200))
+      && !!request.stockIdentity&&typeof request.stockIdentity==='object'&&!Array.isArray(request.stockIdentity)&&Object.keys(request.stockIdentity).length===2&&['staffId','memberId'].every(key=>typeof request.stockIdentity[key]==='string'&&request.stockIdentity[key]&&request.stockIdentity[key].length<=200)
       && (request.operation!=='COST_REFERENCE'||/^[a-f0-9]{32}$/.test(request.input.taskId||'')&&Object.keys(request.input).length===1)
       && (!order||['id','version'].every(key=>typeof request.input[key]==='string'&&request.input[key]&&request.input[key].length<=200))
       && (!order||request.input.action!=='DOCUMENT'||typeof request.input.base64==='string'&&request.input.base64.length<=4194304&&/^JVBERi[0-3][A-Za-z0-9+/]*={0,2}$/.test(request.input.base64))
       && (!order||request.input.action!=='DELETE_DOCUMENT'||typeof request.input.fileId==='string'&&request.input.fileId&&request.input.fileId.length<=200)
-      && Object.keys(request).every(key => ['type','company','requestId',...(order?[]:['operation']),'input','stockProtocol','stockBuild','stockGeneration',...(identified?['stockIdentity']:[])].includes(key))
+      && Object.keys(request).every(key => ['type','company','requestId',...(order?[]:['operation']),'input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
       && JSON.stringify(request).length <= (order&&request.input.action==='DOCUMENT'?4400000:request.operation?.startsWith('BORROW_') ? 6000 : 200000);
   }
   function mount({ company, host, read, send, receipt, lockCompany, esc, autoRequest = null, expectedStaff = null }) {
@@ -79,7 +79,7 @@
       staff = context.staff;
       const cached = JSON.parse(sessionStorage.getItem('fmcg-purchase-draft-v1/'+company+'/'+staff.staffId+'/'+staff.memberId) || 'null');
       if (!validRequest(cached?.savePending, company)) return;
-      if((cached.savePending.operation==='COST_REFERENCE'||cached.savePending.type==='PURCHASE_ORDER_SAVE_REQUEST')&&(cached.savePending.stockIdentity.staffId!==staff.staffId||cached.savePending.stockIdentity.memberId!==staff.memberId))return;
+      if(cached.savePending.stockIdentity.staffId!==staff.staffId||cached.savePending.stockIdentity.memberId!==staff.memberId)return;
       request = JSON.parse(JSON.stringify(cached.savePending));
       const section = document.createElement('section'); section.className = 'notice';
       section.innerHTML = '<h3>Resume original save 继续原保存</h3><p>'+esc(staff.staffName)+' · '+esc(request.operation||request.input.action)
@@ -111,7 +111,7 @@
         if(!completed)return mount(args); // Never overwrite another/unknown original save.
       }
       const request={type:'PURCHASE_SAVE_REQUEST',company:args.company,requestId:crypto.randomUUID(),operation:'MARGIN_REFRESH',input:{taskId:packet.taskId},
-        stockProtocol:1,stockBuild:meta.stockBuild,stockGeneration:meta.stockGeneration};
+        stockProtocol:1,stockBuild:meta.stockBuild,stockGeneration:meta.stockGeneration,stockIdentity:{staffId:staff.staffId,memberId:staff.memberId}};
       if(!validRequest(request,args.company))throw Error('Original refresh identity unavailable');
       const next={...cached,savePending:request,saveAttemptCount:0,saveIssue:'',
         saveOrigin:{view:cached.customerId?'room':'dashboard',customerId:cached.customerId||'',activeCustomer:''}};

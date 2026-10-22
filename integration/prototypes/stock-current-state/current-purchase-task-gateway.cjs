@@ -23,7 +23,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
       : request.operation === 'MARGIN_REFRESH' ? createCurrentMarginReferenceSave(dependencies)
       : request.operation === 'QUANTITY_CASE' ? createCurrentQuantityCaseSave(dependencies) : createCurrentPurchaseSave(dependencies);
     return execute({ requestId:request.requestId,operation:request.operation,input:request.operation === 'ADD_SOURCE' ? { ...request.input,action:'ADD_SOURCE' } : request.input,
-      stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration });
+      stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity });
   };
 }
 module.exports = { createCurrentPurchaseTaskGateway };

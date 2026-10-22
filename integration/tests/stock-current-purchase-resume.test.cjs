@@ -2,7 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const folder = path.join(__dirname, '../prototypes/stock-current-state'), copy = value => JSON.parse(JSON.stringify(value));
 const source = fs.readFileSync(path.join(folder,'purchase-ui/purchase-resume.js'),'utf8');
 const request = () => ({type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'11111111-2222-4333-8444-555555555555',operation:'EDIT',
-  input:{edits:[{taskId:'TASK',version:'V1',changes:{lpCtn:20}}]},stockProtocol:1,stockBuild:'TEST',stockGeneration:9});
+  input:{edits:[{taskId:'TASK',version:'V1',changes:{lpCtn:20}}]},stockProtocol:1,stockBuild:'TEST',stockGeneration:9,stockIdentity:{staffId:'STAFF',memberId:'MEMBER'}});
 const staff = {staffId:'STAFF',memberId:'MEMBER',staffName:'<Purchase>'};
 const key = 'fmcg-purchase-draft-v1/NCT/STAFF/MEMBER';
 const flush = () => new Promise(resolve=>setImmediate(resolve));
@@ -86,7 +86,15 @@ test('wrong parent/company/UUID and stale authorization completion never create 
 test('only bounded original current task commands qualify; no file/supplier/legacy command or browser grant',()=>{
   const f=fixture();assert.equal(f.valid(request(),'NCT'),true);
   for(const patch of [{type:'PURCHASE_ORDER_SAVE_REQUEST'},{operation:'DOCUMENT'},{stockProtocol:undefined},{stockGeneration:-1},
-    {requestId:'BAD'},{memberId:'FORGED'},{input:{reason:'X'.repeat(200001)}},{company:'GHR'}])assert.equal(f.valid({...request(),...patch},'NCT'),false);
+    {requestId:'BAD'},{memberId:'FORGED'},{input:{reason:'X'.repeat(200001)}},{company:'GHR'},
+    {stockIdentity:undefined},{stockIdentity:null},{stockIdentity:{staffId:'STAFF'}},{stockIdentity:{staffId:'STAFF',memberId:'MEMBER',role:'ADMIN'}}])assert.equal(f.valid({...request(),...patch},'NCT'),false);
+});
+
+test('unbound or different-employee pending requests stay retained but cannot be resumed under the current identity',async()=>{
+  for(const stockIdentity of [undefined,{staffId:'OTHER',memberId:'MEMBER'},{staffId:'STAFF',memberId:'OTHER'}]){
+    const f=fixture();f.db.set(key,JSON.stringify({savePending:{...request(),stockIdentity},drafts:[['KEEP',{}]]}));const before=f.db.get(key);
+    await f.authorize();assert.equal(f.host.children.length,0);assert.equal(f.sent.length,0);assert.deepEqual(f.writes,[]);assert.equal(f.db.get(key),before);
+  }
 });
 
 const refreshPacket=(taskId='TASK',generation=9)=>({schema:'PURCHASE_MARGIN_REFRESH_REQUIRED_V1',company:'NCT',taskId,staff,
@@ -98,6 +106,7 @@ test('internal margin refresh saves exact original session request BEFORE first 
   f.stage(refreshPacket());const staged=JSON.parse(f.db.get(key));
   assert.equal(f.sent.length,0);assert.equal(f.writes.length,1);assert.equal(staged.savePending.operation,'MARGIN_REFRESH');
   assert.deepEqual(staged.savePending.input,{taskId:'TASK'});assert.equal(staged.savePending.stockGeneration,9);
+  assert.deepEqual(staged.savePending.stockIdentity,{staffId:staff.staffId,memberId:staff.memberId});
   for(const field of ['drafts','sequenceDraft','sequenceVersions','supplierAllocation'])assert.deepEqual(staged[field],cached[field]);
   await f.authorize();assert.equal(f.sent.length,1);assert.deepEqual(f.sent[0],staged.savePending);
   assert.equal(f.gets.every(id=>id===key),true);assert.equal(f.writes.length,1,'continuation must not replace the retained request');

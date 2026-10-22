@@ -35,7 +35,7 @@ bridge = once(bridge, '    const message = event.data || {};', `    const messag
     }
     if(message.type==='PURCHASE_SAVE_REQUEST'&&['BORROW_APPROVE','BORROW_RETURN'].includes(message.operation)){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>6000)throw Error('Invalid borrowing save request.');
-        const result=await savePurchaseBorrowingCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+        const result=await savePurchaseBorrowingCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Borrowing save unconfirmed; retain original request. 借货保存尚未确认，请保留原请求。'});}return;
     }
     if(message.type==='PURCHASE_SAVE_REQUEST'&&message.operation==='COST_REFERENCE'){
@@ -50,7 +50,7 @@ bridge = once(bridge, '    const message = event.data || {};', `    const messag
     }
     if(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>200000)throw Error('Invalid current Purchase task save.');
-        const result=await savePurchaseTasksCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+        const result=await savePurchaseTasksCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Purchase save unconfirmed; retain original request. 采购保存尚未确认，请保留原请求。'});}return;
     }
     if(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'){

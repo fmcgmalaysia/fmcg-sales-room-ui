@@ -108,8 +108,33 @@ function relay() {
   vm.runInNewContext(source, native); return { messages, queries, saves, taskSaves, legacy, send: data => callback({ data }) };
 }
 
+test('actual borrowing root binds original staff through pending approval and unused return, not just member login',async()=>{
+  const f=await root(true),before=JSON.stringify([...f.db]);
+  const quote=await f.api.getPurchaseBorrowOptionsCurrent('NCT',{borrowerTaskId:'A'});assert.equal(quote.ok,true);
+  const request={...f.request,input:{...f.request.input,expectedRevision:quote.expectedRevision},stockIdentity:{staffId:'P1',memberId:'M1'}};
+  assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT',{...request,stockIdentity:{staffId:'OTHER',memberId:'M1'}})).ok,false);
+  assert.equal(JSON.stringify([...f.db]),before);
+  let result=await f.api.savePurchaseBorrowingCurrent('NCT',request);assert.equal(result.pending,true);
+  const pending=JSON.stringify([...f.db]),rows=await f.deps.readStaffRecords();
+  f.deps.readStaffRecords=async()=>rows.map(row=>({...row,title:'REISSUED'}));
+  for(const stockIdentity of [request.stockIdentity,{staffId:'REISSUED',memberId:'M1'},undefined]){
+    assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT',{...request,stockIdentity})).ok,false);
+    assert.equal(JSON.stringify([...f.db]),pending);
+  }
+  f.deps.readStaffRecords=async()=>rows;
+  let attempts=0;do{result=await f.api.savePurchaseBorrowingCurrent('NCT',request);assert.ok(attempts++<40);}while(result.pending);
+  assert.equal(result.ok,true);assert.equal(result.stockGeneration,1);
+  assert.deepEqual(await f.api.savePurchaseBorrowingCurrent('NCT',request),result);
+  const relation=[...f.db.values()].find(row=>row.action==='STOCK_TRANSFER_CURRENT').details.relation;
+  const returning={requestId:'22222222-2222-4222-8222-222222222222',operation:'BORROW_RETURN',stockProtocol:1,stockBuild:'TEST',stockGeneration:1,
+    stockIdentity:{staffId:'OTHER',memberId:'M1'},input:{relationId:relation.id,expectedRevision:1,quantity:10,reason:'Unused cartons restored'}};
+  const committed=JSON.stringify([...f.db]);
+  assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT',returning)).ok,false);
+  assert.equal(JSON.stringify([...f.db]),committed);
+});
+
 test('actual Wix relay sends OPTIONS and BORROW to new root, preserves exact UUID/metadata/progress and leaves ordinary saves untouched', async () => {
-  const f = relay(), id = '11111111-2222-4333-8444-555555555555', stock = { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 8 };
+  const f = relay(), id = '11111111-2222-4333-8444-555555555555', stock = { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 8, stockIdentity:{staffId:'P1',memberId:'M1'} };
   await f.send({ type: 'PURCHASE_BORROW_OPTIONS_REQUEST', company: 'NCT', requestId: id, input: { borrowerTaskId: 'A' } });
   assert.deepEqual(f.queries, [{ company: 'NCT', input: { borrowerTaskId: 'A' } }]);
   assert.equal(f.messages.at(-1).type, 'PURCHASE_BORROW_OPTIONS_RESULT');
@@ -158,9 +183,9 @@ test('actual return quote relay is readonly, bounded and preserves company/reque
 });
 test('current task relay preserves exact command and progress without a legacy fallback or browser actor grant',async()=>{
   const f=relay(),request={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'11111111-2222-4333-8444-555555555555',operation:'EDIT',
-    input:{edits:[{taskId:'T',version:'V',changes:{lpCtn:20}}]},stockProtocol:1,stockBuild:'TEST',stockGeneration:8};
+    input:{edits:[{taskId:'T',version:'V',changes:{lpCtn:20}}]},stockProtocol:1,stockBuild:'TEST',stockGeneration:8,stockIdentity:{staffId:'P1',memberId:'M1'}};
   await f.send({...request,memberId:'FORGED',coverage:'FORGED'});
-  assert.deepEqual(f.taskSaves,[{company:'NCT',request:{requestId:request.requestId,operation:'EDIT',input:request.input,stockProtocol:1,stockBuild:'TEST',stockGeneration:8}}]);
+  assert.deepEqual(f.taskSaves,[{company:'NCT',request:{requestId:request.requestId,operation:'EDIT',input:request.input,stockProtocol:1,stockBuild:'TEST',stockGeneration:8,stockIdentity:request.stockIdentity}}]);
   assert.equal(f.legacy.length,0);assert.equal(f.saves.length,0);assert.equal(f.messages.at(-1).result.phase,'VERIFY');
   await f.send({...request,stockProtocol:2});assert.equal(f.taskSaves.length,2);assert.equal(f.legacy.length,0,'invalid metadata must reach current refusal, not old apply');
   for(const patch of [{company:'OTHER'},{requestId:'BAD'},{input:{reason:'X'.repeat(200001)}}])await f.send({...request,...patch});

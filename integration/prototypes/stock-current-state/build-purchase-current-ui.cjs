@@ -93,6 +93,10 @@ const success = '    if(message.ok&&message.result?.ok===true&&message.result.re
 once(success, "    if(savePending.stockProtocol===1){const current=savePending,result=message.result;if(message.ok&&result?.ok===false&&result.pending===true&&result.requestId===current.requestId&&['BEFORE','APPLY','VERIFY'].includes(result.phase)&&Number.isSafeInteger(result.completedCount)&&Number.isSafeInteger(result.totalRecords)&&result.totalRecords>0&&result.completedCount>=0&&result.completedCount<=result.totalRecords){saveInFlight=false;cacheDraft();showStatus('Saving 保存中… '+result.completedCount+' / '+result.totalRecords);paintSaveTracker();setTimeout(()=>{if(savePending===current&&!saveInFlight)saveMessage();},250);return;}if(message.ok&&result?.ok===true&&result.requestId===current.requestId&&Number.isSafeInteger(result.stockGeneration)&&result.stockGeneration>current.stockGeneration){finishSave(result);return;}saveIssue=message.error||result?.error||'Save not confirmed 保存尚未确认';saveInFlight=false;saveButtonState(false);showStatus(saveDiagnostic(current,saveIssue),true);cacheDraft();paintSaveTracker();return;}\n" + success);
 source = require('./purchase-cost-ui-overlay.cjs')(source);
 source = require('./purchase-order-ui-overlay.cjs')(source);
+once('const orderMeta=currentOrderMetadata(kind,args);if(orderMeta===false)return;',
+  "const orderMeta=currentOrderMetadata(kind,args);if(orderMeta===false)return;if(data?.stockCurrent?.stockProtocol===1&&['staffId','memberId'].some(key=>typeof data.staff?.[key]!=='string'||!data.staff[key]||data.staff[key].length>200)){showStatus('Original Purchase identity unconfirmed. Draft retained. 原采购员工身份尚未确认，草稿保留。',true);return;}");
+once('stockGeneration:data.stockCurrent.stockGeneration}:{}))',
+  'stockGeneration:data.stockCurrent.stockGeneration,stockIdentity:{staffId:data.staff.staffId,memberId:data.staff.memberId}}:{}))');
 new Function(source);
 if (process.argv.includes('--check')) {
   if (fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== source) throw Error('Purchase current UI differs from tested patch');

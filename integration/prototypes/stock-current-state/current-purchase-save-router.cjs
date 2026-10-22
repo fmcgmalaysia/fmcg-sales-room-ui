@@ -20,7 +20,7 @@ function createCurrentPurchaseSaveRouter({ company, readControl, saveCurrent, sa
     // Missing/wrong metadata or an unsupported command must NEVER reach legacy.
     return saveCurrent(company,{ requestId:request.requestId,operation:request.operation,input:request.input,
       stockProtocol:request.stockCurrent?.stockProtocol,stockBuild:request.stockCurrent?.stockBuild,
-      stockGeneration:request.stockCurrent?.stockGeneration });
+      stockGeneration:request.stockCurrent?.stockGeneration,stockIdentity:request.stockCurrent?.stockIdentity });
   };
 }
 module.exports = { createCurrentPurchaseSaveRouter };
