@@ -30,7 +30,7 @@ function currentAllocationContext({ state, context, readAllocations }) {
       const task = tasks.get(original.id);
       if (!task) return clone(original);
       // Original inc/customerReceived contract is cumulative, NOT current onHand.
-      const inc = converted.reduce((n, a) => n + (a.targets.find(t => t.taskId === task.id)?.quantity || 0), 0);
+      const inc = (task.dispatchedOutsideScope || 0) + converted.reduce((n, a) => n + (a.targets.find(t => t.taskId === task.id)?.quantity || 0), 0);
       return { ...clone(original), inc };
     }) };
 }

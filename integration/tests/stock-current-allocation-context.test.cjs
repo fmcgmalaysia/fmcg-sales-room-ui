@@ -31,6 +31,14 @@ test('after dispatch the compatibility view still includes actual shipped carton
   const result = view(f); assert.equal(result.tasks[0].inc, 500);
   assert.equal(result.allocations[0].targets[0].quantity, 300); assert.equal(f.state.sources[0].claims.T, 260);
 });
+
+test('scoped compatibility retains cumulative200already dispatched from unloaded CLOSED source', () => {
+  const f = fixture(); f.state.sources.pop();
+  Object.assign(f.state, { lifecycleVersion: 2, nextBorrowSequence: 1, scope: 'CURRENT_ACTIVE_PRODUCT' });
+  f.state.sources[0].borrowRepaidCumulative = 0;
+  Object.assign(f.state.tasks[0], { dispatched: 200, dispatchedOutsideScope: 200 });
+  assert.equal(view(f).tasks[0].inc, 500); assert.equal(view(f).allocations[0].targets[0].quantity, 300);
+});
 test('existing allocation chain revision is preserved while unrelated module facts are untouched', () => {
   const f = fixture(); f.context.activity.push({ title: 'OLD', imageAltText: 'A', action: 'PLANNER_ALLOCATION_SAVED', result: 'SAVED',
     activityTime: '2026-10-21T00:00:00Z', details: { beforeRevision: '', targets: [{ taskId: 'T', quantity: 250 }] } });

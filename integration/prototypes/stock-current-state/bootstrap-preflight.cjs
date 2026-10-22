@@ -8,7 +8,8 @@ const canonical = value => Array.isArray(value) ? value.map(canonical) : value &
 const fingerprint = value => hash(canonical(value));
 // Pure maintenance-window preflight ONLY. Produces private candidate images but
 // performs no CMS/schema/index changes, tags, writes, chunking or mode transition.
-function stockBootstrapPreflight({ company, context, purchaseRecords, existing, control, projectStockCard, projectPurchaseOrders }) {
+function stockBootstrapPreflight({ company, context, purchaseRecords, existing, control, projectStockCard, projectPurchaseOrders, includeProjection = false }) {
+  if (typeof includeProjection !== 'boolean') throw Error('Private projection option required');
   if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
     || !Array.isArray(purchaseRecords) || typeof projectStockCard !== 'function' || typeof projectPurchaseOrders !== 'function'
     || existing?.complete !== true || !['positions', 'claims', 'products', 'transfers'].every(k => Array.isArray(existing[k]))) throw Error('Complete private bootstrap snapshots required');
@@ -54,6 +55,7 @@ function stockBootstrapPreflight({ company, context, purchaseRecords, existing, 
   const rows = Object.fromEntries(['positions', 'claims', 'products'].map(k => [k, candidate[k].map(row => ({ ...row,
     _version: hash(checkpointId, k, row._id) }))]));
   return { checkpointId, sourceHash, currentHash, controlHash, canBootstrap: true, activationReady: false, blockers: [], rows,
+    ...(includeProjection ? { privateProjection: copy(projection) } : {}),
     reviewRequired: !candidate.activationReady, counts: Object.fromEntries(Object.entries(rows).map(([k, values]) => [k, values.length])),
     // This is a PRIVATE dry-run parity aid, not evidence that production has been migrated.
     parity: { sources: rows.positions.length, products: rows.products.length, legacyProjectionHash: fingerprint(projection) } };

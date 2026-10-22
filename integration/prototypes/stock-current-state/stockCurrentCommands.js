@@ -2160,6 +2160,110 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
 }
 module.exports = { createSegmentedFencedProof };
 
+},
+// purchase-transfer-workspace.cjs sha256:a4819fcee4637b1d4b1583ffdecfa613e36b295a37fa03c9ac1a9cdbd2934646
+"purchase-transfer-workspace.cjs": (load, module) => {
+'use strict';
+
+const { copy } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+// Read-only composition. Original Purchase auth/workspace supplied by real gateway.
+// A failed/incomplete relation index must fail the refresh, not clear existing halos.
+function createPurchaseTransferWorkspace({ company, protocol, authenticate, readWorkspace, readOutstanding, maxRelations = 2000 }) {
+  if (!['NCT', 'GHR'].includes(company) || typeof protocol?.readSnapshot !== 'function' || typeof authenticate !== 'function'
+    || typeof readWorkspace !== 'function' || typeof readOutstanding !== 'function' || !Number.isSafeInteger(maxRelations) || maxRelations < 1) throw Error('Private Purchase workspace dependencies required');
+  return async requestCompany => {
+    if (requestCompany !== company) throw Error('Purchase workspace company conflict');
+    const actor = await authenticate(company);
+    if (!actor?.memberId || !actor.staffId) throw Error('Original Purchase authorization required');
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (control?.company !== company || control.pending || !count(control.generation) || !['LEGACY', 'ACTIVE'].includes(control.mode)) throw Error('Purchase stock workspace unavailable');
+      if (control.mode === 'ACTIVE' && control.transferIndexVersion !== 2) throw Error('Purchase source transfer index not verified');
+      const workspace = await readWorkspace(company, actor);
+      if (workspace?.company !== company || !Array.isArray(workspace.tasks) || new Set(workspace.tasks.map(t => t.id)).size !== workspace.tasks.length) throw Error('Original Purchase workspace required');
+      if (control.mode === 'LEGACY') return copy(workspace);
+      const relations = [], seen = new Set(); let cursor, expectedTotal, expectedVersion;
+      do {
+        const page = await readOutstanding(company, { view: 'OUTSTANDING', pageSize: 50, ...(cursor ? { cursor } : {}) });
+        if (page?.schema !== 'CURRENT_BORROW_RELATIONS_V1' || page.company !== company || page.view !== 'OUTSTANDING'
+          || page.generation !== control.generation || !/^[a-f0-9]{32}$/.test(page.version || '') || page.offset !== relations.length || !Array.isArray(page.items)
+          || !count(page.total) || page.total > maxRelations || page.items.length !== Math.min(50, page.total - relations.length)
+          || expectedTotal !== undefined && (page.total !== expectedTotal || page.version !== expectedVersion)) throw Error('Complete current transfer workspace required');
+        expectedTotal = page.total; expectedVersion = page.version;
+        for (const r of page.items) {
+          if (!r.id || seen.has(r.id) || !r.borrowerTaskId || !r.lenderTaskId || !r.lenderSourceId || !r.replacementSourceId
+            || !count(r.quantity) || !r.quantity || !count(r.repaid) || !count(r.returned) || r.repaid + r.returned >= r.quantity) throw Error('Known outstanding relation required');
+          seen.add(r.id); relations.push(r);
+        }
+        cursor = page.nextCursor;
+        if (relations.length < expectedTotal && (!cursor || cursor.offset !== relations.length || cursor.version !== expectedVersion)
+          || relations.length === expectedTotal && cursor) throw Error('Transfer workspace cursor incomplete');
+      } while (cursor);
+      const sourceIds = new Set(relations.flatMap(r => [r.lenderSourceId, r.replacementSourceId]));
+      return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation },
+        tasks: workspace.tasks.map(task => ({ ...copy(task), stockTransferOutstanding: sourceIds.has(task.id),
+          stockTransferTaskId: task.customerDemandTaskId || task.id })) };
+    });
+    return snapshot.rows;
+  };
+}
+module.exports = { createPurchaseTransferWorkspace };
+
+},
+// borrow-current-query.cjs sha256:0b7dad852c7cde57adbbc3aeb233baf03e38abbecdb07ca619bf8b9b3c5bea6b
+"borrow-current-query.cjs": (load, module) => {
+'use strict';
+const { hash } = load("commit-proof.cjs");
+const { transferId } = load("borrowing-stock-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+const text = (s, max) => typeof s === 'string' && s.length > 0 && s.length <= max;
+// Purchase-only relation detail/outstanding read. CLOSED relationship history does
+// not enter the active query. One current row per relationship, no task archive flag.
+function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
+  if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof protocol?.readSnapshot !== 'function'
+    || typeof authenticate !== 'function') throw Error('Private Purchase relation dependencies required');
+  return async (requestCompany, input = {}) => {
+    const view = input.view ?? 'TASK', taskId = view === 'OUTSTANDING' ? null : input.taskId, pageSize = input.pageSize ?? 25, cursor = input.cursor;
+    if (requestCompany !== company || !['TASK', 'OUTSTANDING'].includes(view) || view === 'TASK' && !text(taskId, 128)
+      || view === 'OUTSTANDING' && input.taskId !== undefined || !count(pageSize) || pageSize < 1 || pageSize > 50
+      || cursor != null && (!/^[a-f0-9]{32}$/.test(cursor.version || '') || !count(cursor.offset) || cursor.offset % pageSize)) throw Error('Bounded task relation request required');
+    const actor = await authenticate(company);
+    if (!actor?.memberId || !actor.staffId) throw Error('Original Purchase authorization required');
+    const offset = cursor?.offset || 0, journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const snapshot = await protocol.readSnapshot(async control => {
+      // Index marker may be installed only after complete private migration/parity
+      // verifies all current rows. Missing index must NOT look like zero relations.
+      if (control?.company !== company || control.mode !== 'ACTIVE' || control.pending || ![1, 2].includes(control.transferIndexVersion)) throw Error('Borrowing relation index not verified');
+      let query = items.query(journal).eq('company', company).eq('action', 'STOCK_TRANSFER_CURRENT').eq('status', 'ACTIVE');
+      if (taskId) query = query.eq('participantTaskIds', taskId);
+      const page = await query.ascending('_id').skip(offset).limit(pageSize).find({ consistentRead: true, returnTotalCount: true });
+      if (!Array.isArray(page?.items) || !count(page.totalCount) || offset > page.totalCount
+        || page.items.length !== Math.min(pageSize, page.totalCount - offset) || new Set(page.items.map(row => row._id)).size !== page.items.length) throw Error('Incomplete relation page');
+      return { total: page.totalCount, items: page.items.map(row => {
+        const r = row.details?.relation, participants = r && [r.borrowerTaskId, r.lenderTaskId];
+        if (row.company !== company || row.action !== 'STOCK_TRANSFER_CURRENT' || row.status !== 'ACTIVE'
+          || !r || row._id !== transferId(company, r.id) || !text(r.id, 128) || !text(r.borrowerTaskId, 128) || !text(r.lenderTaskId, 128)
+          || r.borrowerTaskId === r.lenderTaskId || taskId && !participants.includes(taskId) || JSON.stringify(row.participantTaskIds) !== JSON.stringify(participants)
+          || !text(r.lenderSourceId, 128) || !text(r.replacementSourceId, 128) || !count(r.quantity) || !r.quantity || !count(r.repaid)
+          || !count(r.returned ?? 0) || r.repaid + (r.returned || 0) >= r.quantity || !count(row.revision)
+          || !count(row.checkpointGeneration) || row.checkpointGeneration > control.generation) throw Error('Current relationship requires review');
+        if (control.transferIndexVersion === 2 && (row.lenderSourceId !== r.lenderSourceId
+          || row.replacementSourceId !== r.replacementSourceId || row.repaidQuantity !== r.repaid)) throw Error('Current relationship source index requires review');
+        // No private plan/version, cost, arbitrary details or old history payload.
+        return { id: r.id, borrowerTaskId: r.borrowerTaskId, lenderTaskId: r.lenderTaskId, lenderSourceId: r.lenderSourceId,
+          replacementSourceId: r.replacementSourceId, quantity: r.quantity, repaid: r.repaid, returned: r.returned || 0,
+          remaining: r.quantity - r.repaid - (r.returned || 0), revision: row.revision };
+      }) };
+    });
+    const version = hash('CURRENT_BORROW_RELATIONS_V1', company, snapshot.generation, view, taskId, pageSize);
+    if (cursor && cursor.version !== version) throw Error('Borrowing changed while paging; refresh');
+    return { schema: 'CURRENT_BORROW_RELATIONS_V1', company, view, taskId, generation: snapshot.generation, version, offset,
+      ...snapshot.rows, halo: snapshot.rows.total > 0,
+      nextCursor: offset + snapshot.rows.items.length < snapshot.rows.total ? { version, offset: offset + snapshot.rows.items.length } : null };
+  };
+}
+module.exports = { createBorrowCurrentQuery };
+
 }
 };
 const modules = new Map();
@@ -2175,3 +2279,5 @@ export const createSdkConditionalStore = load("sdk-conditional-store.cjs").creat
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;
+export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
+export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;

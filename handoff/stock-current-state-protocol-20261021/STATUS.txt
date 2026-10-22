@@ -544,3 +544,11 @@ for operational closure; segmented Admin read-only recovery supports paged diagn
 Actual old-task migration/version initialization, all real gateways/UI/capacity/file/
 shadow/release remain unfinished. ACTIVE OFF; no business CMS writes or publication.
 
+2026-10-22 LATEST BOOTSTRAP/HALO: see BOOTSTRAP_AND_PURCHASE_HALO.txt.476current
+candidate tests pass0fail4865.9281ms. Maintenance v2 dry-run counters and actual Purchase
+original-icon overlays/current-workspace decoration implemented; no live installation.
+Found/proved original zero-movement projection false-review bug; one-line candidate only.
+Next original allocation CURRENT-view seam + Warehouse Ready scoped consumer before real
+writer binding. Missing-version initialization/actual gateway capacity/migration/file/UI/
+four release gates still unfinished. ACTIVE OFF; do NOT claim deployed/ready for real test.
+
