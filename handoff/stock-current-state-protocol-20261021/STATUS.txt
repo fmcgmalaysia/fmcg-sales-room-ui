@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after7125470: CURRENT_COMMAND_RUNTIME.txt. Mechanical Wix-format
+backend command runtime now bundles21exact current modules, excludes obsolete unsafe
+protocol, no public route/elevation/mode change. Original department dependencies still
+required.395currenttests pass2752.4294ms. Node VM/build evidence only, no Wix acceptance.
+Actual gateway/UI/client wiring/capacity/recovery/migration/G3/release OPEN/OFF.
+
 CURRENT continuation aftera6c12bf: BORROWING_OUTSTANDING_READ.txt. Purchase original-auth
 task/company-outstanding relation read now in generated current-read candidate; active
 index and exact participants/generation checked, independent of archived tasks. Missing
