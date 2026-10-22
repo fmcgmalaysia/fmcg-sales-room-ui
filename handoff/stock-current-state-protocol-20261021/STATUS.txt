@@ -1,5 +1,19 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 INSTALL GRAPH + FRESH EDITOR PARITY: INSTALL_GRAPH_AND_FRESH_EDITOR_PARITY.txt.
+Explicit38target manifest(23MasterPATCH+14newMaster+1SourcePATCH),94dependency modules/
+named imports verified; all20writer categories still unverified, no activation. Missing
+old reader/paired module/coverage drift causes structural refusal. Affected8pass0fail
+815.2049ms. Fresh Chrome WHOLE editor text SHA256_UTF8_LF matches EVERY23MasterPATCH
+before-image; extra original warehouseReceiving.js also matches. Saved editor parity
+ONLY, not published-runtime/public/native acceptance. No code edits/Run/Publish/CMS/
+permission or lock deletion in browser. Current65a3dcd old-reader guard committed;
+df616d8 damage candidate confirmed pushed; sync manifest/evidence and guard PR220.
+Full combined suite1046pass0fail23885.4203ms; session69066 completed. No active exec
+session. Coverage EMPTY/ACTIVE OFF, invoice/exit OFF; native/capacity/recovery/
+maintenance/shadow/focused semanticG3/four-release still OPEN. Do not repeat23UIcopies
+unless actual code/version/state changes; full hashes in generated manifest.
+
 2026-10-23 G3 OLD STOCK ENDPOINT GAP CLOSED OFFLINE: LEGACY_STOCK_READ_MODE_GUARD.txt.
 Old stockControl.web historical reader had no mode gate despite new UI current root.
 New minimum wrapper retains original auth/filters/response in clean LEGACY with before/
