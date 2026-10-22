@@ -5,9 +5,12 @@ const { stockKey } = require('./current-model.cjs');
 const { preparePackingHoldTransition } = require('./borrowing-stock-plan.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const { utf8Bytes } = require('./segmented-plan.cjs');
 // Original prepare and original list parser must run FIRST on current Packing context.
 // No photo/file operations here; PHOTOS needs its own preserved external retry protocol.
-function preparePackingStock({ company, validated, currentRecord, products, generation, packingHeld }) {
+function preparePackingStock({ company, validated, currentRecord, products, generation, packingHeld, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2'
+    && products?.some(p => p.rows?.planFormat !== planFormat || p.rows?.scope !== 'CURRENT_ACTIVE_PRODUCT')) throw Error('Server scoped packing format required');
   const record = validated?.record, prior = currentRecord?.details?.list, next = record?.details?.list;
   if (!['NCT', 'GHR'].includes(company) || typeof packingHeld !== 'function' || validated?.uploads?.length || !next?.id || next.company !== company
     || record.action !== 'SUPPORT_PACKING_LIST_CURRENT' || record.result !== 'SAVED'
@@ -38,7 +41,7 @@ function preparePackingStock({ company, validated, currentRecord, products, gene
     writes.push(...mapped.plan.writes.filter(w => w !== duplicate)); states.push(mapped.state);
   }
   if ([...coverage.values()].some(n => n !== 1) || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
-    || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Atomic packing coverage limit');
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Atomic packing coverage limit');
   return { plan: { writes }, states };
 }
 module.exports = { preparePackingStock };

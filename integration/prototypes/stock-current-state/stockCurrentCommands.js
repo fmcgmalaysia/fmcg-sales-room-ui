@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:7a2c13040560cbb229b9e23b4f753635feed28bba8d1bc8c2d42f38d410a3422
+// current-department-saves.cjs sha256:2ee2acf2a86c0f1865443ff246b97f0a6646fe007c83dbd36bec447473b5a1bd
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -93,6 +93,7 @@ const { createBorrowingAuthority } = load("borrowing-authority.cjs");
 const { createBorrowingStockReader } = load("borrowing-stock-reader.cjs");
 const { createAllocationAuthority } = load("allocation-authority.cjs");
 const { createPurchaseStockPreparation } = load("purchase-stock-preparation.cjs");
+const { domainCollections } = load("domain-scope.cjs");
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -139,14 +140,26 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
   if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current Purchase v2 protocol required');
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
   const prepare = createPurchaseStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
-  return request => {
+  return async request => {
     const writer = request?.operation === 'ADD_SOURCE' ? 'PURCHASE_SOURCE' : request?.operation === 'PLAN' ? 'PURCHASE_PLAN'
       : ['EDIT', 'PO', 'AVERAGE_COST'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
     if (!writer) throw Error('Supported current Purchase operation required');
-    return createCurrentStockSave({ company, writer, protocol, coverage, authenticate: authorize,
+    let actor;
+    const result = await createCurrentStockSave({ company, writer, protocol, coverage, authenticate: async () => { actor = await authorize(); return actor; },
       prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+    if (result.ok !== true || request.operation !== 'ADD_SOURCE') return result;
+    // Preserve the ORIGINAL supplier-dialog receipt contract. A deterministic ID
+    // is not enough: confirm its real committed source row under the read barrier.
+    const sourceTaskId = authorityDependencies.operationId(company, request.requestId, actor.memberId, 'PURCHASE_SOURCE');
+    const [, tasks] = domainCollections(company);
+    await protocol.readSnapshot(async () => {
+      const row = await store.read(tasks, sourceTaskId);
+      if (!row || row._id !== sourceTaskId || row.company !== company || row.title !== sourceTaskId
+        || row.procurementSource !== true || row.customerDemandTaskId !== request.input.parentTaskId || !row._version) throw Error('Committed Purchase source receipt requires review');
+    });
+    return { ...result, company, sourceTaskId, parentTaskId: request.input.parentTaskId };
   };
 }
 module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave };
@@ -2706,7 +2719,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
 module.exports = { createSegmentedFencedProof };
 
 },
-// purchase-transfer-workspace.cjs sha256:a4819fcee4637b1d4b1583ffdecfa613e36b295a37fa03c9ac1a9cdbd2934646
+// purchase-transfer-workspace.cjs sha256:1d9ef617c0459322ae604f04cc14e992544456aeaafbf953c50f01b73870c8ed
 "purchase-transfer-workspace.cjs": (load, module) => {
 'use strict';
 
@@ -2723,7 +2736,7 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
     if (!actor?.memberId || !actor.staffId) throw Error('Original Purchase authorization required');
     const snapshot = await protocol.readSnapshot(async control => {
       if (control?.company !== company || control.pending || !count(control.generation) || !['LEGACY', 'ACTIVE'].includes(control.mode)) throw Error('Purchase stock workspace unavailable');
-      if (control.mode === 'ACTIVE' && control.transferIndexVersion !== 2) throw Error('Purchase source transfer index not verified');
+      if (control.mode === 'ACTIVE' && (control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Purchase source transfer index/build not verified');
       const workspace = await readWorkspace(company, actor);
       if (workspace?.company !== company || !Array.isArray(workspace.tasks) || new Set(workspace.tasks.map(t => t.id)).size !== workspace.tasks.length) throw Error('Original Purchase workspace required');
       if (control.mode === 'LEGACY') return copy(workspace);
@@ -2745,7 +2758,8 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
           || relations.length === expectedTotal && cursor) throw Error('Transfer workspace cursor incomplete');
       } while (cursor);
       const sourceIds = new Set(relations.flatMap(r => [r.lenderSourceId, r.replacementSourceId]));
-      return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation },
+      return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation,
+        stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation },
         tasks: workspace.tasks.map(task => ({ ...copy(task), stockTransferOutstanding: sourceIds.has(task.id),
           stockTransferTaskId: task.customerDemandTaskId || task.id })) };
     });
@@ -2808,6 +2822,337 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
   };
 }
 module.exports = { createBorrowCurrentQuery };
+
+},
+// purchase-borrow-options.cjs sha256:441924522a2e30c49a0ff3d4f26a32441f88581f79a65fbae8cc198bb60b6180
+"purchase-borrow-options.cjs": (load, module) => {
+'use strict';
+const { originalProductState } = load("original-product-state.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { approveBorrow, validate } = load("borrowing-model.cjs");
+// Pure quote, not approval. Reuse the actual approval rules rather than a second
+// UI definition of free stock/future capacity. No event/plan/storage mutation.
+function quoteBorrowOptions({ state, borrowerTaskId, blockedTaskIds = [], maxPairs = 2000 }) {
+  validate(state);
+  if (!Number.isSafeInteger(maxPairs) || maxPairs < 1 || !Array.isArray(blockedTaskIds)) throw Error('Bounded borrowing quote scope required');
+  const borrower = state.tasks.find(t => t.id === borrowerTaskId);
+  if (!borrower) throw Error('Customer borrowing demand unavailable');
+  const futures = state.sources.filter(s => s.ownerTaskId === borrowerTaskId && s.ownerShare > s.accepted);
+  const donors = state.sources.filter(s => s.ownerTaskId && s.ownerTaskId !== borrowerTaskId && (s.claims[s.ownerTaskId] || 0) > 0);
+  if (futures.length * donors.length > maxPairs) throw Error('Borrowing option fanout requires a narrower scope');
+  let id = 'READ_ONLY_BORROW_QUOTE'; while (state.relations.some(r => r.id === id)) id += '_';
+  const options = [];
+  for (const future of futures) for (const donor of donors) {
+    if (blockedTaskIds.includes(borrowerTaskId) || blockedTaskIds.includes(donor.ownerTaskId)) continue;
+    const possible = quantity => {
+      try {
+        approveBorrow(state, { expectedRevision: state.revision, id, quantity, borrowerTaskId,
+          lenderSourceId: donor.id, replacementSourceId: future.id, approvedBy: 'READ_ONLY_QUOTE', reason: 'Read-only eligibility check' });
+        return true;
+      } catch (error) {
+        if (['Eligible unheld borrower required', 'Packing task holds lender allocation',
+          'Insufficient eligible stock, demand or future supply'].includes(error.message)) return false;
+        throw error;
+      }
+    };
+    if (!possible(1)) continue;
+    let low = 1, high = 9999;
+    while (low < high) { const mid = Math.floor((low + high + 1) / 2); if (possible(mid)) low = mid; else high = mid - 1; }
+    options.push({ borrowerTaskId, lenderTaskId: donor.ownerTaskId, lenderSourceId: donor.id,
+      replacementSourceId: future.id, lenderPoId: donor.poId, replacementPoId: future.poId, maximumQuantity: low });
+  }
+  return { expectedRevision: state.revision, options };
+}
+// Private original Purchase gateway composition. The browser supplies a task ID,
+// never a staff member, approved PO flag, quantity balance or replacement promise.
+function createPurchaseBorrowOptions({ company, items, store, protocol, authorityDependencies: deps, maxPairs = 2000 }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2'
+    || typeof protocol.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function'
+    || [deps?.readMember, deps?.readStaffRecords, deps?.requirePurchaseStaff, deps?.readContext, deps?.readPurchaseRecords,
+      deps?.projectPurchaseOrders, deps?.readCurrentTaskRows].some(fn => typeof fn !== 'function')) throw Error('Private Purchase options dependencies required');
+  return async (requestCompany, input = {}) => {
+    if (requestCompany !== company || typeof input.borrowerTaskId !== 'string' || !input.borrowerTaskId || input.borrowerTaskId.length > 128) throw Error('Exact Purchase borrower task required');
+    const member = await deps.readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePurchaseStaff(member, []);
+    const staff = { ...deps.requirePurchaseStaff(member, await deps.readStaffRecords()), memberId: member._id };
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (control.company !== company || control.mode !== 'ACTIVE' || control.pending || control.transferIndexVersion !== 2
+        || !control.writerBuild) throw Error('Current borrowing options unavailable');
+      const context = await deps.readContext(company, staff), borrower = context?.tasks?.find(t => t.id === input.borrowerTaskId && !t.procurementSource && !t.specialPurchase);
+      if (!borrower) throw Error('Customer borrowing demand unavailable');
+      const identity = { company, barcode: borrower.barcode, packing: borrower.packing, ea: borrower.ea };
+      const orders = deps.projectPurchaseOrders({ company, workspace: context, records: await deps.readPurchaseRecords(company, staff) });
+      const product = originalProductState({ ...deps, company, context, orders, identity });
+      const rows = await readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion: control.transferIndexVersion,
+        sourceTaskIds: product.sources.filter(s => s.ownerTaskId === borrower.id && s.ownerShare > s.accepted).map(s => s.id), demandTaskIds: [borrower.id] });
+      if (!rows.product) throw Error('Current borrowing product checkpoint missing');
+      rows.taskRows = await deps.readCurrentTaskRows(company, product.scopeTaskIds(rows), staff); rows.generation = control.generation;
+      const quoted = quoteBorrowOptions({ state: product.buildState(rows), borrowerTaskId: borrower.id, maxPairs,
+        blockedTaskIds: context.tasks.filter(t => t.salesInvoiceLocked || t.salesInvoiceNumber).map(t => t.id) });
+      const labels = new Map(context.tasks.map(t => [t.id, t]));
+      return { schema: 'CURRENT_BORROW_OPTIONS_V2', company, borrowerTaskId: borrower.id, ...quoted,
+        options: quoted.options.map(option => ({ ...option, lenderPoNumber: labels.get(option.lenderSourceId)?.po,
+          replacementPoNumber: labels.get(option.replacementSourceId)?.po,
+          lenderCustomerId: labels.get(option.lenderTaskId)?.customerId })),
+        stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
+    });
+    return snapshot.rows;
+  };
+}
+module.exports = { quoteBorrowOptions, createPurchaseBorrowOptions };
+
+},
+// current-packing-service.cjs sha256:7a44248693f4bd637b8a35c29a1f5611652535271d991fd81a6d4f2d34ab99b6
+"current-packing-service.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { createPackingStockPreparation } = load("packing-stock-preparation.cjs");
+const { hash } = load("commit-proof.cjs");
+// Private existing packing gateways only. PHOTOS/file protocol and real invoice/
+// dispatch remain separate protected flows, not enabled by this non-file service.
+function createCurrentPackingService({ company, items, store, protocol, coverage, authorityDependencies: deps }) {
+  if (protocol?.planFormat !== 'SEGMENTED_V2' || !['NCT', 'GHR'].includes(company)
+    || typeof deps?.projectPackingWorkroom !== 'function') throw Error('Current packing v2 scope/original public projector required');
+  const prepare = createPackingStockPreparation({ ...deps, company, items, store, protocol });
+  function department(value) { if (!['SUPPORT', 'WAREHOUSE'].includes(value)) throw Error('Original packing department required'); return value; }
+  return {
+    read: async request => {
+      const result = await prepare.read({ company, department: department(request?.department) });
+      return { ...deps.projectPackingWorkroom(result.context, request.department), stockCurrent: result.stockCurrent };
+    },
+    save: async request => {
+      const originalDepartment = department(request?.department);
+      let actor;
+      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol, coverage,
+        authenticate: async () => {
+          const member = await deps.readMember();
+          if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePackingStaff(member, [], originalDepartment);
+          actor = { ...deps.requirePackingStaff(member, await deps.readStaffRecords(), originalDepartment), memberId: member._id };
+          return actor;
+        }, prepare: command => prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details }) })({
+        requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild, stockGeneration: request.stockGeneration,
+        input: { department: originalDepartment, details: request.input } });
+      if (result.ok !== true) return result;
+      const id = request.input.action === 'CREATE' ? hash(company, request.requestId, actor.memberId, 'PACKING') : request.input.id;
+      await protocol.readSnapshot(async () => {
+        const row = await store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', hash(company, id, 'PACKING_CURRENT'));
+        if (!row || row.company !== company || row.action !== 'SUPPORT_PACKING_LIST_CURRENT' || !row._version
+          || row.description !== id || row.details?.list?.id !== id) throw Error('Committed packing identity unconfirmed');
+        deps.readPackingLists([row], company);
+      });
+      // Stable list ID needed by the original UI's refresh. Do not label a later
+      // mutable list revision/status as the result of this earlier committed save.
+      return { ...result, company, id };
+    }
+  };
+}
+module.exports = { createCurrentPackingService };
+
+},
+// packing-stock-preparation.cjs sha256:cccee03e09adc88ac42102ece8e276a214cdc573bb86dff51201c1f228118cc5
+"packing-stock-preparation.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readCurrentProduct } = load("current-product-reader.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { currentPackingContext } = load("current-packing-context.cjs");
+const { validateOriginalPacking } = load("original-packing-validation.cjs");
+const { preparePackingStock } = load("packing-stock-plan.cjs");
+// Private candidate for the existing authenticated read/save gateways. Every read
+// shares the company control barrier. No legacy apply/photo/file side effects.
+function createPackingStockPreparation(deps) {
+  const { company, readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
+    projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
+    readPackingLists, packingHeld, readPreparation, projectPreparation, items, store, protocol, now } = deps;
+  if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
+    projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
+    readPackingLists, packingHeld, now].some(f => typeof f !== 'function') || typeof items?.query !== 'function'
+    || typeof store?.read !== 'function' || typeof protocol?.readSnapshot !== 'function') throw Error('Server packing stock dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private packing current task reader required');
+  async function load(request, save) {
+    if (request?.company !== company || !['SUPPORT', 'WAREHOUSE'].includes(request.department)
+      || save && request.input?.action === 'PHOTOS') throw Error('Supported company/non-photo packing request required');
+    const member = await readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
+    const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (current && (control?.company !== company || control.mode !== 'ACTIVE' || control.pending
+        || control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Current packing checkpoint/index unavailable');
+      const original = await readContext(company, staff);
+      if (original?.company !== company || !Array.isArray(original.tasks) || !Array.isArray(original.activity)) throw Error('Original packing company context required');
+      const packing = projectPackingContext(original), identities = new Map();
+      for (const task of packing.tasks) {
+        const source = original.tasks.filter(t => t.id === task.taskId);
+        if (source.length !== 1) throw Error('Exact original packing task required');
+        const identity = { company, barcode: source[0].barcode, packing: source[0].packing, ea: source[0].ea };
+        identities.set(stockKey(identity), identity);
+      }
+      const orders = projectPurchaseOrders({ company, workspace: original, records: await readPurchaseRecords(company, staff) }), products = [];
+      for (const identity of identities.values()) {
+        const builder = originalProductState({ company, context: original, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+        const demandTaskIds = packing.tasks.filter(task => {
+          const originalTask = original.tasks.find(t => t.id === task.taskId);
+          return stockKey({ ...originalTask, company }) === stockKey(identity);
+        }).map(task => task.taskId);
+        const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+          transferIndexVersion: control.transferIndexVersion, demandTaskIds }) : await readCurrentProduct({ company, identity, items, store, metrics });
+        if (current) {
+          if (!rows.product) throw Error('Current packing product checkpoint missing');
+          rows.taskRows = await deps.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+        }
+        products.push({ state: builder.buildState(rows), rows });
+      }
+      const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
+      if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
+        stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
+      const validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
+      const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+      metrics.exactReads++;
+      const currentRecord = await store.read(journal, validated.record._id), prior = context.lists.find(l => l.id === validated.record.description);
+      if (JSON.stringify(currentRecord?.details?.list || null) !== JSON.stringify(prior || null)) throw Error('Packing current record changed');
+      // Reuse original stored-list validation, including evidence/bounds, before mapping.
+      readPackingLists([{ ...validated.record, company }], company);
+      const lines = new Set([...(prior?.lines || []), ...(prior?.change?.lines || []), ...validated.record.details.list.lines,
+        ...(validated.record.details.list.change?.lines || [])].map(l => l.taskId));
+      return { validated, currentRecord, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
+    });
+    if (!save) return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+    return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
+      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
+      memberId: staff.memberId, generation: snapshot.generation, metrics };
+  }
+  return { read: request => load(request, false), prepare: request => load(request, true) };
+}
+module.exports = { createPackingStockPreparation };
+
+},
+// current-packing-context.cjs sha256:b05160716be1f6b23150210faab374255a3b0110f38df5e5519bec3fa85636d1
+"current-packing-context.cjs": (load, module) => {
+'use strict';
+
+const { validate } = load("borrowing-model.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Original packing context keeps its identity, legacy guards, chats and language.
+// Only quantity authority switches to complete server current-state snapshots.
+function currentPackingContext({ context, states }) {
+  if (!['NCT', 'GHR'].includes(context?.company) || !context.sourceVersion || !Array.isArray(context.tasks)
+    || !Array.isArray(context.lists) || !Array.isArray(states)) throw Error('Original server packing context required');
+  const tasks = new Map();
+  for (const state of states) {
+    validate(state);
+    if (state.company !== context.company) throw Error('Packing current company conflict');
+    for (const task of state.tasks) {
+      if (tasks.has(task.id)) throw Error('Packing current task is ambiguous');
+      tasks.set(task.id, { task, ready: state.sources.reduce((n, s) => n + (s.claims[task.id] || 0), 0) });
+    }
+  }
+  if (new Set(context.tasks.map(t => t.taskId)).size !== context.tasks.length) throw Error('Original packing task is ambiguous');
+  const result = copy(context);
+  result.tasks = context.tasks.map(row => {
+    const current = tasks.get(row.taskId);
+    if (!current || row.company !== context.company || current.task.customerId !== row.customerId
+      || row.remaining !== current.task.requested - current.task.dispatched) throw Error('Exact packing demand provenance required');
+    return { ...copy(row), ready: current.ready, remaining: current.task.requested - current.task.dispatched };
+  });
+  result.sourceVersion = hash(context.sourceVersion, states.map(s => [s.barcode, s.packing, s.ea, s.revision, s.packingHolds.version])
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+  return result;
+}
+module.exports = { currentPackingContext };
+
+},
+// original-packing-validation.cjs sha256:fae30516f52a8ca4c4f8fff5a0050a3289a2cd3ccf4ee236f836008b1a6330f3
+"original-packing-validation.cjs": (load, module) => {
+'use strict';
+
+const copy = value => JSON.parse(JSON.stringify(value));
+// Private original prepare capture only. PHOTOS deliberately excluded: its
+// existing external allocation/upload identity protocol must not be replaced.
+async function validateOriginalPacking({ createPackingListOperations, company, staff, requestId, input, context, now }) {
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.lists)
+    || typeof createPackingListOperations !== 'function' || typeof now !== 'function' || !input || input.action === 'PHOTOS') throw Error('Original non-photo packing snapshot required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private packing preparation boundary');
+  let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Packing snapshot scope violation'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.record?.action !== 'SUPPORT_PACKING_LIST_CURRENT'
+          || row.details.plan.uploads?.length) throw Error('Unexpected packing preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Packing apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private packing lock removal allowed'); scratch.delete(id);
+    }
+  };
+  const save = createPackingListOperations({ store, now, names: { [company]: { activity: journal } }, readContext: async (c, employee) => {
+    if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected packing apply/read'); return copy(context);
+  } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original packing boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original packing preparation incomplete');
+  return captured;
+}
+module.exports = { validateOriginalPacking };
+
+},
+// packing-stock-plan.cjs sha256:3d3ff92abc87da4ea0303903f47bcddcf7bf703a7b8f41ecdb2d53204fc5e6f4
+"packing-stock-plan.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const { preparePackingHoldTransition } = load("borrowing-stock-plan.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const { utf8Bytes } = load("segmented-plan.cjs");
+// Original prepare and original list parser must run FIRST on current Packing context.
+// No photo/file operations here; PHOTOS needs its own preserved external retry protocol.
+function preparePackingStock({ company, validated, currentRecord, products, generation, packingHeld, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2'
+    && products?.some(p => p.rows?.planFormat !== planFormat || p.rows?.scope !== 'CURRENT_ACTIVE_PRODUCT')) throw Error('Server scoped packing format required');
+  const record = validated?.record, prior = currentRecord?.details?.list, next = record?.details?.list;
+  if (!['NCT', 'GHR'].includes(company) || typeof packingHeld !== 'function' || validated?.uploads?.length || !next?.id || next.company !== company
+    || record.action !== 'SUPPORT_PACKING_LIST_CURRENT' || record.result !== 'SAVED'
+    || record._id !== hash(company, next.id, 'PACKING_CURRENT') || record.description !== next.id
+    || !record.initiatedByStaffId || !Array.isArray(next.lines) || !next.lines.length || !Array.isArray(products) || !products.length
+    || (prior?.revision || '') !== validated.beforeRevision
+    || currentRecord && (currentRecord.company !== company || !currentRecord._version || currentRecord._id !== record._id)
+    || next.invoiceId || next.dispatchedAt) throw Error('Original exact non-invoice packing transition required');
+  const lines = new Set([...(prior?.lines || []), ...(prior?.change?.lines || []), ...next.lines, ...(next.change?.lines || [])].map(l => l.taskId));
+  const coverage = new Map([...lines].map(id => [id, 0])), keys = new Set(), states = [], writes = [];
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', event = { ...copy(record), company };
+  writes.push({ collection: journal, before: copy(currentRecord || null), after: event });
+  for (const product of products) {
+    const key = stockKey(product.state), covered = [...lines].filter(id => product.state.tasks.some(t => t.id === id));
+    if (product.state.company !== company || keys.has(key) || !covered.length) throw Error('Distinct complete packing product coverage required');
+    keys.add(key); for (const id of covered) coverage.set(id, coverage.get(id) + 1);
+    const packingHolds = copy(product.state.packingHolds);
+    packingHolds.version = hash(packingHolds.version, record._id, prior?.revision || '', next.revision);
+    for (const task of product.state.tasks) {
+      const oldListHeld = prior ? packingHeld(prior, task.id) : 0, newListHeld = packingHeld(next, task.id);
+      if (![oldListHeld, newListHeld].every(n => Number.isSafeInteger(n) && n >= 0)
+        || packingHolds.heldByTask[task.id] < oldListHeld) throw Error('Original packing hold provenance conflict');
+      packingHolds.heldByTask[task.id] += newListHeld - oldListHeld;
+    }
+    const mapped = preparePackingHoldTransition({ ...product, event, generation, packingHolds });
+    const duplicate = mapped.plan.writes.find(w => w.collection === journal && w.after._id === record._id);
+    if (!duplicate || !same(duplicate.after, event)) throw Error('Original packing record mismatch');
+    writes.push(...mapped.plan.writes.filter(w => w !== duplicate)); states.push(mapped.state);
+  }
+  if ([...coverage.values()].some(n => n !== 1) || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Atomic packing coverage limit');
+  return { plan: { writes }, states };
+}
+module.exports = { preparePackingStock };
 
 },
 // current-warehouse-ready-context.cjs sha256:58bc025e56523a568f30517567093ef75111dc32f195793aba455aa6a161a5a3
@@ -3124,6 +3469,8 @@ export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").cre
 export const planCollections = load("domain-scope.cjs").planCollections;
 export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
 export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;
+export const createPurchaseBorrowOptions = load("purchase-borrow-options.cjs").createPurchaseBorrowOptions;
+export const createCurrentPackingService = load("current-packing-service.cjs").createCurrentPackingService;
 export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;

@@ -3,6 +3,7 @@
 const { stockKey } = require('./current-model.cjs');
 const { originalProductState } = require('./original-product-state.cjs');
 const { readCurrentProduct } = require('./current-product-reader.cjs');
+const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { currentPackingContext } = require('./current-packing-context.cjs');
 const { validateOriginalPacking } = require('./original-packing-validation.cjs');
 const { preparePackingStock } = require('./packing-stock-plan.cjs');
@@ -16,13 +17,17 @@ function createPackingStockPreparation(deps) {
     projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
     readPackingLists, packingHeld, now].some(f => typeof f !== 'function') || typeof items?.query !== 'function'
     || typeof store?.read !== 'function' || typeof protocol?.readSnapshot !== 'function') throw Error('Server packing stock dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private packing current task reader required');
   async function load(request, save) {
     if (request?.company !== company || !['SUPPORT', 'WAREHOUSE'].includes(request.department)
       || save && request.input?.action === 'PHOTOS') throw Error('Supported company/non-photo packing request required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
     const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (current && (control?.company !== company || control.mode !== 'ACTIVE' || control.pending
+        || control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Current packing checkpoint/index unavailable');
       const original = await readContext(company, staff);
       if (original?.company !== company || !Array.isArray(original.tasks) || !Array.isArray(original.activity)) throw Error('Original packing company context required');
       const packing = projectPackingContext(original), identities = new Map();
@@ -35,11 +40,21 @@ function createPackingStockPreparation(deps) {
       const orders = projectPurchaseOrders({ company, workspace: original, records: await readPurchaseRecords(company, staff) }), products = [];
       for (const identity of identities.values()) {
         const builder = originalProductState({ company, context: original, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
-        const rows = await readCurrentProduct({ company, identity, items, store, metrics });
+        const demandTaskIds = packing.tasks.filter(task => {
+          const originalTask = original.tasks.find(t => t.id === task.taskId);
+          return stockKey({ ...originalTask, company }) === stockKey(identity);
+        }).map(task => task.taskId);
+        const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+          transferIndexVersion: control.transferIndexVersion, demandTaskIds }) : await readCurrentProduct({ company, identity, items, store, metrics });
+        if (current) {
+          if (!rows.product) throw Error('Current packing product checkpoint missing');
+          rows.taskRows = await deps.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+        }
         products.push({ state: builder.buildState(rows), rows });
       }
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
-      if (!save) return { context };
+      if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
+        stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
       const validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
       const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       metrics.exactReads++;
@@ -51,8 +66,9 @@ function createPackingStockPreparation(deps) {
         ...(validated.record.details.list.change?.lines || [])].map(l => l.taskId));
       return { validated, currentRecord, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
     });
-    if (!save) return { context: snapshot.rows.context, memberId: staff.memberId, generation: snapshot.generation, metrics };
-    return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld }),
+    if (!save) return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+    return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
+      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
       memberId: staff.memberId, generation: snapshot.generation, metrics };
   }
   return { read: request => load(request, false), prepare: request => load(request, true) };

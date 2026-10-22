@@ -183,9 +183,19 @@ for (const segmented of [false, true]) test(`concrete ${segmented ? 'v2 scoped' 
   Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', ...(segmented ? { transferIndexVersion: 2 } : {}) });
   f.deps.readTransfer = async (company, id) => store.read('NCTActivity', transferId(company, id));
   const coverage = Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }]));
+  if (segmented) {
+    const options = require('../prototypes/stock-current-state/purchase-borrow-options.cjs').createPurchaseBorrowOptions({ company: 'NCT', items, store, protocol, authorityDependencies: f.deps });
+    const before = JSON.stringify([...db]);
+    const quoted = await options('NCT', { borrowerTaskId: 'A', approvedBy: 'FORGED', poValid: true });
+    assert.equal(quoted.options.length, 1); assert.equal(quoted.options[0].maximumQuantity, 100);
+    assert.equal(quoted.options[0].lenderSourceId, 'B'); assert.equal(quoted.options[0].replacementSourceId, 'A');
+    assert.equal(quoted.options[0].lenderPoNumber, 'PO-B'); assert.equal(quoted.stockCurrent.stockGeneration, 0);
+    assert.equal(JSON.stringify([...db]), before, 'quoting must not reserve, approve or write anything');
+  }
   const save = createCurrentBorrowingSave({ company: 'NCT', items, store, protocol, coverage, authorityDependencies: f.deps });
   const command = { ...request, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 };
-  await save(command); await save(command); assert.equal(f.calls.length, 1);
+  const readsBeforeSave = f.calls.length;
+  await save(command); await save(command); assert.equal(f.calls.length, readsBeforeSave + 1);
   const relation = [...db.values()].find(row => row.action === 'STOCK_TRANSFER_CURRENT').details.relation;
   assert.equal(db.get('StockClaims:' + operationId('NCT', positionId, 'A')).reservedUsable, 30);
   assert.equal(db.get('StockClaims:' + operationId('NCT', positionId, 'B')).reservedUsable, 70);

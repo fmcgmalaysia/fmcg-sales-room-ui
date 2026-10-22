@@ -18,7 +18,7 @@ test('both Purchase overlays are exact original source plus shared halo helper a
   assert.equal(halo.includes('viewBox="0 -'), false); assert.equal(halo.includes('#'), false);
 });
 function fixture() {
-  const control = { company: 'NCT', mode: 'ACTIVE', generation: 5, transferIndexVersion: 2, pending: null };
+  const control = { company: 'NCT', mode: 'ACTIVE', generation: 5, transferIndexVersion: 2, pending: null, writerBuild: 'TEST' };
   const workspace = { company: 'NCT', tasks: [{ id: 'SA', customerDemandTaskId: 'A', po: 'PO-A' }, { id: 'SB', po: 'PO-B' }, { id: 'OTHER' }] };
   let authorized = true, reads = 0;
   const relations = [{ id: 'R', borrowerTaskId: 'A', lenderTaskId: 'B', lenderSourceId: 'SB', replacementSourceId: 'SA', quantity: 30, repaid: 0, returned: 0 }];
@@ -32,6 +32,7 @@ test('full outstanding index paints both actual source heads; completion removes
   const f = fixture(), first = await f.read();
   assert.deepEqual(first.tasks.map(t => t.stockTransferOutstanding), [true, true, false]);
   assert.equal(first.tasks[0].stockTransferTaskId, 'A'); assert.equal(first.tasks[0].po, 'PO-A');
+  assert.equal(first.stockCurrent.stockGeneration, 5); assert.equal(first.stockCurrent.stockBuild, 'TEST');
   f.relations.length = 0; const cleared = await f.read(); assert.ok(cleared.tasks.every(t => t.stockTransferOutstanding === false));
   assert.equal(Object.hasOwn(f.workspace.tasks[0], 'stockTransferOutstanding'), false);
 });

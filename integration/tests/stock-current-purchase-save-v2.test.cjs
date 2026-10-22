@@ -56,11 +56,16 @@ test('current ADD_SOURCE initializes only new task checkpoint, no copied receipt
   assert.equal(prepared.states[0].sources[0].id, newTask._id);
   assert.equal(prepared.plan.writes.some(w => w.collection === 'StockClaims'), false);
   assert.equal(JSON.stringify([...f.db]), before);
+  const request = { ...f.request, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 };
+  const result = await f.save(request);
+  assert.equal(result.sourceTaskId, newTask._id); assert.equal(result.parentTaskId, f.request.input.parentTaskId);
+  assert.deepEqual(await f.save(request), result);
+  assert.equal([...f.db.values()].filter(r => r._id === result.sourceTaskId).length, 1);
 });
 test('current missing checkpoint/task counter and unconnected operations cannot fall back to old writer', async () => {
   const f = await fixture(); delete f.f.task().stockCounterSchema;
   await assert.rejects(createPurchaseStockPreparation(f.deps)(f.request), /checkpoint/);
   const g = await fixture(); g.db.delete('StockProducts/' + hash('NCT', g.key));
   await assert.rejects(createPurchaseStockPreparation(g.deps)(g.request), /product checkpoint/);
-  for (const operation of ['REORDER', 'SPECIAL', 'QTY', 'ARCHIVE', 'ASSIGN']) assert.throws(() => g.save({ ...g.request, operation }), /Supported/);
+  for (const operation of ['REORDER', 'SPECIAL', 'QTY', 'ARCHIVE', 'ASSIGN']) await assert.rejects(g.save({ ...g.request, operation }), /Supported/);
 });

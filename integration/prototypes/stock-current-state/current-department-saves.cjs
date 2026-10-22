@@ -6,6 +6,7 @@ const { createBorrowingAuthority } = require('./borrowing-authority.cjs');
 const { createBorrowingStockReader } = require('./borrowing-stock-reader.cjs');
 const { createAllocationAuthority } = require('./allocation-authority.cjs');
 const { createPurchaseStockPreparation } = require('./purchase-stock-preparation.cjs');
+const { domainCollections } = require('./domain-scope.cjs');
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -52,14 +53,26 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
   if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current Purchase v2 protocol required');
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
   const prepare = createPurchaseStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
-  return request => {
+  return async request => {
     const writer = request?.operation === 'ADD_SOURCE' ? 'PURCHASE_SOURCE' : request?.operation === 'PLAN' ? 'PURCHASE_PLAN'
       : ['EDIT', 'PO', 'AVERAGE_COST'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
     if (!writer) throw Error('Supported current Purchase operation required');
-    return createCurrentStockSave({ company, writer, protocol, coverage, authenticate: authorize,
+    let actor;
+    const result = await createCurrentStockSave({ company, writer, protocol, coverage, authenticate: async () => { actor = await authorize(); return actor; },
       prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+    if (result.ok !== true || request.operation !== 'ADD_SOURCE') return result;
+    // Preserve the ORIGINAL supplier-dialog receipt contract. A deterministic ID
+    // is not enough: confirm its real committed source row under the read barrier.
+    const sourceTaskId = authorityDependencies.operationId(company, request.requestId, actor.memberId, 'PURCHASE_SOURCE');
+    const [, tasks] = domainCollections(company);
+    await protocol.readSnapshot(async () => {
+      const row = await store.read(tasks, sourceTaskId);
+      if (!row || row._id !== sourceTaskId || row.company !== company || row.title !== sourceTaskId
+        || row.procurementSource !== true || row.customerDemandTaskId !== request.input.parentTaskId || !row._version) throw Error('Committed Purchase source receipt requires review');
+    });
+    return { ...result, company, sourceTaskId, parentTaskId: request.input.parentTaskId };
   };
 }
 module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave };

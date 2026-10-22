@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST OPTIONS/PACKING: BORROW_OPTIONS_AND_PACKING_V2.txt. Purchase
+actual-approval-rule borrow options + original source identity receipt, original
+Purchase cached same-request progress, scoped Support/Warehouse packing read/save
+and original packing transport now candidates.510tests pass0fail5202.3541ms;
+runtime51modules17exports. Both original user flows and department draft visibility
+retained. Actual relays/gateways/remainingwriters/reload/capacity/schema/init/shadow/
+relation popup/fourrelease still OPEN. ACTIVE OFF; no production modification/publish.
+
 2026-10-22 LATEST TRANSPORT/PURCHASE: SALES_TRANSPORT_AND_PURCHASE_SAVE.txt. Exact
 Sales gateway/adjustment candidates forward version+same-request bounded progress;
 original auth unchanged. Concrete Purchase EDIT/PO/AVERAGE_COST/PLAN/ADD_SOURCE v2

@@ -13,7 +13,7 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
     if (!actor?.memberId || !actor.staffId) throw Error('Original Purchase authorization required');
     const snapshot = await protocol.readSnapshot(async control => {
       if (control?.company !== company || control.pending || !count(control.generation) || !['LEGACY', 'ACTIVE'].includes(control.mode)) throw Error('Purchase stock workspace unavailable');
-      if (control.mode === 'ACTIVE' && control.transferIndexVersion !== 2) throw Error('Purchase source transfer index not verified');
+      if (control.mode === 'ACTIVE' && (control.transferIndexVersion !== 2 || !control.writerBuild)) throw Error('Purchase source transfer index/build not verified');
       const workspace = await readWorkspace(company, actor);
       if (workspace?.company !== company || !Array.isArray(workspace.tasks) || new Set(workspace.tasks.map(t => t.id)).size !== workspace.tasks.length) throw Error('Original Purchase workspace required');
       if (control.mode === 'LEGACY') return copy(workspace);
@@ -35,7 +35,8 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
           || relations.length === expectedTotal && cursor) throw Error('Transfer workspace cursor incomplete');
       } while (cursor);
       const sourceIds = new Set(relations.flatMap(r => [r.lenderSourceId, r.replacementSourceId]));
-      return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation },
+      return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation,
+        stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation },
         tasks: workspace.tasks.map(task => ({ ...copy(task), stockTransferOutstanding: sourceIds.has(task.id),
           stockTransferTaskId: task.customerDemandTaskId || task.id })) };
     });
