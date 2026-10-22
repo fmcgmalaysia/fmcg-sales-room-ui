@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('node:fs'), path = require('node:path');
+const {patchStockExceptionDialog,patchStockExceptionParent,patchStockExceptionIndex}=require('./stock-exception-ui-overlay.cjs');
 function once(source, before, after) { if (source.split(before).length !== 2) throw Error('Original Purchase relation route anchor changed'); return source.replace(before, () => after); }
 const root = path.join(__dirname, '../../..');
 let index = fs.readFileSync(path.join(root, 'purchase-live/index.html'), 'utf8').replace(/\r\n/g, '\n');
@@ -57,8 +58,9 @@ bridge = once(bridge, '    const message = event.data || {};', `    const messag
         const result=await getPurchaseStockTransfersCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_RELATIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
       }catch(error){room.postMessage({type:'PURCHASE_BORROW_RELATIONS_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Borrowing links unconfirmed. 调货关系尚未确认。'});}return;
     }`);
+bridge=patchStockExceptionParent(bridge);index=patchStockExceptionIndex(index);
 new Function(bridge.replace(/^import[^\n]+\n/gm, ''));
-for (const [file, source] of [['purchase-ui/index.html', index], ['purchase-room-page.candidate.js', bridge]]) {
+for (const [file, source] of [['purchase-ui/index.html', index], ['purchase-room-page.candidate.js', bridge],['purchase-ui/stock-exceptions.js',patchStockExceptionDialog(fs.readFileSync(path.join(root,'master-shared/stock-exceptions.js'),'utf8').replace(/\r\n/g,'\n'))]]) {
   const target = path.join(__dirname, file);
   if (process.argv.includes('--check')) { if (fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== source) throw Error('Purchase borrowing panel candidate differs'); }
   else fs.writeFileSync(target, source);

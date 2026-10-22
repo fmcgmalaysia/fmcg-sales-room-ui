@@ -64,6 +64,17 @@ $w.onReady(() => {
       try{const result=message.type==='DEPARTMENT_MESSAGES_REQUEST'?await getDepartmentMessages(message.company,message.department):await saveDepartmentMessage(message.company,message.department,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}
       catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Messages could not be confirmed.'});}return;
     }
+    if(message.type==='STOCK_READ_REQUEST'&&message.readOptions!==undefined){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>1000)throw Error('Invalid stock identity request');
+        const result=await getStockExceptions(message.company,message.readOptions);room.postMessage({type:'STOCK_READ_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(_){room.postMessage({type:'STOCK_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original stock identity unconfirmed.'});}return;
+    }
+    if(message.type==='STOCK_SAVE_REQUEST'&&message.stockProtocol!==undefined){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||message.stockProtocol!==1||!Number.isSafeInteger(message.stockSegment)||message.stockSegment<1||message.stockSegment>1000000||JSON.stringify(message).length>200000)throw Error('Invalid original current stock save');
+        const metadata={stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity};
+        const result=await saveStockException(message.company,message.requestId,message.input,metadata);room.postMessage({type:'STOCK_SAVE_RESULT',company:message.company,requestId:message.requestId,stockSegment:message.stockSegment,ok:true,result});
+      }catch(_){room.postMessage({type:'STOCK_SAVE_RESULT',company:message.company,requestId:message.requestId,stockSegment:message.stockSegment,ok:false,error:'Original stock save unconfirmed; retain the same request.'});}return;
+    }
     if(['STOCK_READ_REQUEST','STOCK_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
       const type=message.type==='STOCK_READ_REQUEST'?'STOCK_READ_RESULT':'STOCK_SAVE_RESULT';

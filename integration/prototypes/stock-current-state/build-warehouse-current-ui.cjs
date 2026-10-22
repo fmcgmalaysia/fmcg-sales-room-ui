@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
+const {patchStockExceptionDialog,patchStockExceptionIndex}=require('./stock-exception-ui-overlay.cjs');
 const root=path.resolve(__dirname,'../../..'),out=path.join(__dirname,'warehouse-ui');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n');
 let source=read('warehouse-room/app.js');
@@ -62,7 +63,8 @@ const packingLink=read('warehouse-room/packing-list-link.js').replace("['2026102
  .replace('packing-workbench.html?v=20261021-packing-company-v1','packing-workbench.html?v=20261022-current-packing-v1')
  .replace("['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST']","['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST','PACKING_RESUME_CONTEXT_REQUEST']")
  .replace("['PACKING_READ_RESULT','PACKING_SAVE_RESULT']","['PACKING_READ_RESULT','PACKING_SAVE_RESULT','PACKING_RESUME_CONTEXT_RESULT']");
-const files=[['app.js',source],['index.html',html],['packing-list-link.js',packingLink]];
+html=patchStockExceptionIndex(html);
+const files=[['app.js',source],['index.html',html],['packing-list-link.js',packingLink],['stock-exceptions.js',patchStockExceptionDialog(read('master-shared/stock-exceptions.js'))]];
 if(process.argv.includes('--check')){for(const[file,text]of files)if(fs.readFileSync(path.join(out,file),'utf8').replace(/\r\n/g,'\n')!==text)throw Error('Warehouse current UI differs: '+file);}
 else{for(const[file,text]of files)fs.writeFileSync(path.join(out,file),text);}
 process.stdout.write('Original Warehouse receipt current UI '+(process.argv.includes('--check')?'verified':'built')+'; production unchanged\n');

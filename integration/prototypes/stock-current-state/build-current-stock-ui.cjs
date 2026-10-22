@@ -1,6 +1,7 @@
 'use strict';
 // Mechanical candidate overlays only. Protected production files are read, never changed.
 const fs = require('node:fs'), path = require('node:path'), root = path.resolve(__dirname, '../../..');
+const {patchStockExceptionParent}=require('./stock-exception-ui-overlay.cjs');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
 const replace = (source, from, to) => { if (source.split(from).length !== 2) throw Error('Exact stock UI anchor changed: ' + from.slice(0, 60)); return source.replace(from, to); };
 const marker = '20261022-current-stock-v1', out = path.join(__dirname, 'warehouse-ui');
@@ -65,7 +66,7 @@ wix = replace(wix,"    if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].
 wix = replace(wix,'await saveCustomerShipment(message.company,message.requestId,message.input)',
   'await saveCustomerShipment(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,'warehouse-room/?v='+marker,'warehouse-room/?v=20261022-current-warehouse-v2');
-files['warehouse-department-page.js'] = wix;
+files['warehouse-department-page.js'] = patchStockExceptionParent(wix);
 if (process.argv.includes('--check')) {
   for (const [name, source] of Object.entries(files)) if (fs.readFileSync(path.join(out, name), 'utf8').replace(/\r\n/g, '\n') !== source) throw Error('Stock UI candidate differs: ' + name);
 } else {

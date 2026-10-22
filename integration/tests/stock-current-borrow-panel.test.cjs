@@ -79,7 +79,9 @@ test('panel resource/relay builds are exact original overlays, preserve original
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&message.operation==='COST_REFERENCE'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_ORDER_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/, '')
-    .replace(/\n    if\(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '');
+    .replace(/\n    if\(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
+    .replace(/\n    if\(message.type==='STOCK_READ_REQUEST'&&message.readOptions!==undefined\)\{[\s\S]*?\n    \}/,'')
+    .replace(/\n    if\(message.type==='STOCK_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'');
   assert.equal(stripped, originalBridge);
   const index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
   for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js', 'task-grid.js', 'supplier-allocation.js', 'app.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));

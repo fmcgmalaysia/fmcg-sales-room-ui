@@ -41,7 +41,9 @@ function ready(options){const h=harness(options);h.authorize();h.api.observe(h.r
 test('Account overlays reproduce exact originals and parent retains old routing, with bounded current metadata and transport segment only', () => {
   for(const file of ['build-account-current-ui.cjs','build-current-account-purchase.cjs'])assert.match(execFileSync(process.execPath,[path.join(folder,file),'--check'],{encoding:'utf8'}),/verified/);
   const original=fs.readFileSync(path.join(__dirname,'../wix/account-department-page.js'),'utf8').replace(/\r\n/g,'\n'),panel=fs.readFileSync(path.join(folder,'account-department-page.candidate.js'),'utf8');
-  const stripped=panel.replace(/\n    if\(message.type==='ACCOUNT_CURRENT_CONTEXT_REQUEST'\)\{[\s\S]*?\n    \}/,'').replace(/\n    if\(\['ACCOUNT_SETTLEMENT_REQUEST','ACCOUNT_CHECK_REQUEST'\].includes\(message.type\)&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'');
+  const stripped=panel.replace(/\n    if\(message.type==='ACCOUNT_CURRENT_CONTEXT_REQUEST'\)\{[\s\S]*?\n    \}/,'').replace(/\n    if\(\['ACCOUNT_SETTLEMENT_REQUEST','ACCOUNT_CHECK_REQUEST'\].includes\(message.type\)&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'')
+    .replace(/\n    if\(message.type==='STOCK_READ_REQUEST'&&message.readOptions!==undefined\)\{[\s\S]*?\n    \}/,'')
+    .replace(/\n    if\(message.type==='STOCK_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'');
   assert.equal(stripped,original); const h=ready(),request=h.request(); let done=0;h.api.send(request,{done:()=>done++});
   assert.deepEqual(JSON.parse(h.db.get(key)).request,copy(request));assert.equal(h.saves().length,1);assert.equal(h.saves()[0].stockSegment,1);assert.equal(done,0);
   h.api.send(request);assert.equal(h.saves().length,1,'duplicate click while in flight');

@@ -1,6 +1,7 @@
 'use strict';
 // Narrow original UI/panel overlays, not a standalone publication bundle.
 const fs = require('node:fs'), path = require('node:path'), root = path.resolve(__dirname, '../../..'), out = path.join(__dirname, 'account-ui');
+const {patchStockExceptionDialog,patchStockExceptionParent,patchStockExceptionIndex}=require('./stock-exception-ui-overlay.cjs');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
 function once(source, before, after) { if (source.split(before).length !== 2) throw Error('Exact original Account client anchor changed: ' + before.slice(0, 100)); return source.replace(before, () => after); }
 let settlement = read('account-room/settlement.js');
@@ -40,7 +41,8 @@ let index = read('account-room/index.html');
 index = once(index, '<script src="settlement.js', '<script src="account-current.js?v=20261022-current-v1"></script><script src="settlement.js');
 index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-22-stock-current-candidate-v2"');
 for (const file of ['settlement.js','purchase-payments.js']) index = once(index, file + '?v=20261019-finance-' + (file === 'settlement.js' ? 'audit-v15' : 'account-query-v1'), file + '?v=20261022-current-v1');
-const files = { 'account-ui/account-current.js':read('integration/prototypes/stock-current-state/account-current-client.js'),'account-ui/settlement.js':settlement,'account-ui/purchase-payments.js':payments,'account-ui/index.html':index,'account-department-page.candidate.js':panel };
+panel=patchStockExceptionParent(panel);index=patchStockExceptionIndex(index);
+const files = { 'account-ui/account-current.js':read('integration/prototypes/stock-current-state/account-current-client.js'),'account-ui/settlement.js':settlement,'account-ui/purchase-payments.js':payments,'account-ui/index.html':index,'account-department-page.candidate.js':panel,'account-ui/stock-exceptions.js':patchStockExceptionDialog(read('master-shared/stock-exceptions.js')) };
 for (const [file, text] of Object.entries(files)) {
   if (file.endsWith('.js')) new Function(text.replace(/^import[^\n]+\n/gm, ''));
   const target = path.join(__dirname, file);

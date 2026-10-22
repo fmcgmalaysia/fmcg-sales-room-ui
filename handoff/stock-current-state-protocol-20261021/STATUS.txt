@@ -1,5 +1,30 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ORIGINAL STOCK DIALOG DURABLE UI: ORIGINAL_STOCK_EXCEPTION_DURABLE_UI.txt.
+Three department original shared dialog/forms preserved via one mechanical overlay;
+own actor/company exact request durable before network, finite phase correlation,
+explicit reload retry via original stock identity-only read, strict original case
+receipt + fresh matching case/actor/build/generation before cleanup. All3original
+parent relays and index resources paired. Account English unchanged. New8UIcases
+include actual original dialog→parent→web/private root shared-store isolation once.
+FinalFULL1019pass0fail21895.5304ms; affected25pass1343.2057ms;4builders reproducible.
+Node/VM/mock ONLY, no Chrome/native installation/visual acceptance. Original protected
+directories unchanged. aeb88d8 preceding backend root milestone confirmed pushed PR220.
+NEXT: finish bounded G3 writer/read audit and shared data composition from ACTUAL
+order intake→Purchase PO issuance→Sales split→receipt→packing Loaded. Prior composed
+receipt/borrow/Loaded starts approved PO, not intake. Entry tests known exact paths:
+integration/tests/stock-current-intake-root.test.cjs and stock-current-source-sales-root.test.cjs.
+Original Source root already has actual bearer READ/increase/SPLIT and own PLAN tests;
+reuse same-version evidence, do not rediscover/duplicate a missing arbitrary route.
+Then native schema/index/permissions/Date/capacity/lifecycle, operational recovery,
+migration/shadow/cutover, focused review and four-stage release still OPEN.
+BUSINESS QUESTION PENDING human response: reserved customer goods damaged—may Warehouse
+record attributable isolation, leave demand unchanged/show shortage, Purchase decides
+replacement/approved borrowing? Asked clearly in last status reply; NOT approved yet.
+Do NOT implement reserved-loss attribution or ask again on each heartbeat; existing
+free-only guarded refusal remains. Independent remaining work continues.
+Coverage EMPTY/ACTIVE OFF, realinvoice/physical exit OFF, production unchanged.
+
 2026-10-23 ORIGINAL STOCK EXCEPTION ROOT: ORIGINAL_STOCK_EXCEPTION_ROOT.txt. New
 reproducible minimum original web seams/private root for current stock exception/
 resolution and guarded message reads, original roles/validators/public endpoints/
