@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 EXISTING CUSTOMER FILE PREPARE: CUSTOMER_DOCUMENT_ORIGINAL_PREPARE.txt.
+UNUSED offline capture of original DOCUMENT validator/prepare, one fixed slot, exact
+PDF/descriptor/receipt assertion; no legacy apply/upload during capture or PDF in
+journal plan. New4pass146.5141ms; related original+new10pass247.5956ms. NOT bundled,
+native/real upload unverified. Fenced file confirmation/private root/durable client
+NEXT. Otherwriter/native/recovery/capacity/cutover/shadow/Loaded-endtoend/fourrelease
+OPEN. Runtime89/45 unchanged. First test ends Loaded; invoice/exit OFF. Coverage EMPTY.
+
 2026-10-22 SOURCE DATE DURABLE UI: SOURCE_DATE_DURABLE_UI.txt. Actual Progress/Review
 date Save + shared employee/company cache, fresh original READ/auth-only identity,
 cached-customer reauth, original Review recovery (no new popup), same UUID/phase/final/
