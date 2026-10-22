@@ -4,6 +4,10 @@ const {createCurrentPackingService}=require('../prototypes/stock-current-state/c
 const {createPackingPhotoFencedStore}=require('../prototypes/stock-current-state/packing-photo-fenced-store.cjs');
 const {createCurrentPurchaseBorrowGateway}=require('../prototypes/stock-current-state/current-purchase-borrow-gateway.cjs');
 const {createBorrowCurrentQuery}=require('../prototypes/stock-current-state/borrow-current-query.cjs');
+const {createCurrentSalesDemandSave}=require('../prototypes/stock-current-state/current-sales-save.cjs');
+const {readCurrentSalesWorkspace}=require('../prototypes/stock-current-state/sales-current-workspace.cjs');
+const {createSalesOrderAdjustmentOperations,salesAdjustmentVersion}=load('salesOrderAdjustment.js');
+const {readShipmentPlans,shipmentPlanVersion}=load('customerShipmentPlan.js');
 const {hash}=require('../prototypes/stock-current-state/commit-proof.cjs');
 const {WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
 const copy=value=>JSON.parse(JSON.stringify(value)),folder=path.join(__dirname,'../prototypes/stock-current-state');
@@ -142,7 +146,7 @@ test('shared current stock refuses unsupplied send, wrong department and over-lo
  assert.equal(listById(await f.read('WAREHOUSE'),draft.id).lines[0].loaded,0);
 });
 
-test('one database: same/different PO Purchase-authorized borrow → borrower Loaded → partial/full automatic repayment closes both halos',async()=>{
+test('one database: same/different PO borrow → both customer shipment splits → borrower Loaded → automatic repayment closes both halos',async()=>{
  for(const [company,separatePo] of ['NCT','GHR'].flatMap(company=>[[company,false],[company,true]])){
   const f=await fixture(company);
   f.context.tasks[1].barcode=f.context.tasks[0].barcode;
@@ -167,6 +171,39 @@ test('one database: same/different PO Purchase-authorized borrow → borrower Lo
   const borrowed=await f.borrowApi.savePurchaseBorrowingCurrent(company,request);assert.equal(borrowed.ok,true);
   assert.deepEqual(copy(await f.borrowApi.savePurchaseBorrowingCurrent(company,request)),copy(borrowed));
   for(const taskId of ['A','B']){const view=await f.relations(company,{taskId});assert.equal(view.halo,true);assert.equal(view.items[0].remaining,30);}
+  // SPLIT is a shipment-plan operation on the SAME demand task. Compose the
+  // private authenticated Sales save with the actual borrow/receipt/packing roots
+  // and one coordinator, not a separate fabricated post-split borrowing state.
+  for(const [index,taskId] of ['A','B'].entries()){
+   const task=f.context.tasks.find(row=>row.id===taskId),actor={staffId:'SOURCE-'+taskId,memberId:'SOURCE_SALES/SOURCE-'+taskId,
+    staffName:'Original Sales',customerId:task.customerId,canSelectShipment:true},
+    dependencies={company,items:f.items,store:f.store,protocol:f.protocol,coverage:Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])),
+     authenticateOriginalDelegation:async()=>copy(actor),readContext:f.bindings.readFulfilmentContext,
+     readCurrentTaskRows:async(selected,ids)=>{assert.equal(selected,company);return f.store.readMany(f.tasks,ids);},
+     readPurchaseRecords:async()=>[],projectPurchaseOrders:f.bindings.projectPurchaseOrders,
+     readAllocations:f.bindings.readAllocations,readCustomerShipments:f.bindings.readCustomerShipments,
+     readPackingLists:f.bindings.readPackingLists,packingHeld:f.bindings.packingHeld,
+     createSalesOrderAdjustmentOperations,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion,now:()=>new Date('2026-10-23T00:00:00.000Z')};
+   const captured=await f.protocol.readSnapshot(async control=>readCurrentSalesWorkspace({...dependencies,control,
+    context:await dependencies.readContext(company,actor),staff:actor}));
+   const splitRequest={requestId:'55555555-5555-4555-8555-'+String(index).padStart(12,'0'),stockProtocol:1,stockBuild:'TEST',
+    stockGeneration:captured.generation,stockIdentity:{staffId:actor.staffId,memberId:actor.memberId},
+    input:{action:'ADJUST',customerId:task.customerId,orderId:task.orderId,taskId,mode:'SPLIT',quantity:30,batchId:'',
+     version:salesAdjustmentVersion(captured.rows.context,shipmentPlanVersion)}};
+   const beforePhysical=physical(f),beforeRelation=copy([...f.db.values()].find(row=>row.action==='STOCK_TRANSFER_CURRENT')),
+    rawTasks=copy([...f.db].filter(([key])=>key.startsWith(f.tasks+'/'))),save=createCurrentSalesDemandSave(dependencies);
+   const split=await save(splitRequest);assert.equal(split.ok,true);assert.deepEqual(copy(await save(splitRequest)),copy(split));
+   assert.deepEqual(physical(f),beforePhysical);assert.deepEqual(copy([...f.db].filter(([key])=>key.startsWith(f.tasks+'/'))),rawTasks);
+   assert.deepEqual(copy([...f.db.values()].find(row=>row.action==='STOCK_TRANSFER_CURRENT')),beforeRelation);
+   const plan=readShipmentPlans([...f.db.values()]).find(row=>row.customerId===task.customerId&&row.orderId===task.orderId);
+   assert.deepEqual(copy(plan.batches.map(batch=>batch.lines.find(line=>line.taskId===taskId).quantity)),[30,70]);
+   const splitLines=plan.batches.map(batch=>batch.lines.find(line=>line.taskId===taskId));
+   assert.equal(splitLines.reduce((n,line)=>n+line.stockCoverage.reduce((sum,source)=>sum+source.quantity,0),0),taskId==='A'?30:70,
+    'split must distribute, not duplicate, the actual borrowed/customer stock coverage');
+   assert.equal(splitLines.reduce((n,line)=>n+line.sourceCoverage.reduce((sum,source)=>sum+source.quantity,0),0),100,
+    'split keeps exactly the original customer PO commitment');
+   const linked=await f.relations(company,{taskId});assert.equal(linked.halo,true);assert.equal(linked.items[0].remaining,30);
+  }
   support=await f.read('SUPPORT');assert.equal(support.tasks.find(task=>task.taskId==='A').ready,30);assert.equal(support.tasks.find(task=>task.taskId==='B').ready,70);
   const draft=await f.command('SUPPORT','CREATE',{customerId:'C-A',currency:'USD',lines:[{taskId:'A',quantity:30}]});
   await f.command('SUPPORT','SEND',{id:draft.id});await f.command('WAREHOUSE','START',{id:draft.id});
@@ -193,6 +230,9 @@ test('one database: same/different PO Purchase-authorized borrow → borrower Lo
   const positions=[...f.db].filter(([key])=>key.startsWith('StockPositions/')).map(([,row])=>row);
   assert.equal(positions.reduce((n,row)=>n+row.onHand,0),200);assert.equal(positions.reduce((n,row)=>n+row.dispatched,0),0);
   assert.equal([...f.db.values()].filter(row=>row.action==='WAREHOUSE_RECEIPT_SAVED').length,3);
+  assert.equal([...f.db.values()].filter(row=>row.action==='SALES_ORDER_ADJUSTMENT_SAVED').length,2);
+  for(const taskId of ['A','B']){const task=f.context.tasks.find(row=>row.id===taskId),plan=readShipmentPlans([...f.db.values()]).find(row=>row.customerId===task.customerId);
+   assert.deepEqual(copy(plan.batches.map(batch=>batch.lines.find(line=>line.taskId===taskId).quantity)),[30,70]);}
   assert.equal(listById(support,draft.id).invoiceId,undefined);
  }
 });

@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 BORROW/SPLIT/REPAY: BORROW_SPLIT_LOADED_REPAY_COMPOSITION.txt.
+Extended sameDB NCT/GHR x same/differentPO witness: borrow30, bothparties split30/70,
+Loaded30 stillowes30, receipt20/80 repaysonce/endsbothhalos. Splits preserve full
+physical/claim/rawtask/transfer rows, actual stockCoverage and originalPOcoverage.
+Final affected5pass3901.3581ms after additional coverage assertions. TESTONLY/no
+businesscode change/full rerun; priorFULL1166belongs027e285 (confirmedPUSHED), reused.
+G3packet updated without G3pass. Protectedoriginalsd447185, no native/UI/CMS/Pages/
+Wix/permission action. Both exact consentsPENDING/no repeat/run/send; migration/native/
+drain/recovery/G3/cutover remainOPEN. CoverageEMPTY/ACTIVEOFF, invoice/physicalexitOFF.
+
 2026-10-23 CURRENT READ COVERAGE GATE: CURRENT_READ_WRITER_COVERAGE_GATE.txt.
 Actual generated native-reader candidate acceptedACTIVE without writercoverage and
 droppedwriterBuild; six counterexamples. DefaultEMPTY servercoverage now blocks

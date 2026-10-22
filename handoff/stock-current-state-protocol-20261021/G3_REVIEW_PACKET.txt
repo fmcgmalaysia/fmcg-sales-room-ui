@@ -1,6 +1,13 @@
 2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
 
 LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- BORROW_SPLIT_LOADED_REPAY_COMPOSITION.txt: sameDB both-company same/different PO
+  borrow then BOTH parties' Sales30/70 splits, borrowerLoaded30, own receipt20/80
+  automatically repays30 and ends halos. Full positions/claims/rawtasks/transfer
+  unchanged at split; actual stockCoverage30/70 and original POcoverage100 conserved.
+  Final affected5pass3901.3581ms, test-only; unchanged business source reuses last
+  FULL1166 at027e285, not a new full total. Private Sales composition, not new HTTP/
+  native/public acceptance. Existing linked/packing cancellation guards stay intact.
 - BORROW_ADMISSION_ACTOR_SNAPSHOT.txt, RECEIPT_ALLOCATION_ADMISSION_ACTOR.txt,
   PURCHASE_PREPARATION_ADMISSION_ACTOR.txt: actual-root same-member staff reissue
   counterexamples; trusted admitted staff now forwarded/compared before business
