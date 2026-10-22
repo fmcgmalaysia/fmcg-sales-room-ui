@@ -73,6 +73,11 @@ Next independent implementation prep: bounded native-capacity/read/typed roundtr
 diagnostic and actual schema/index installation/recovery checklist; no execution of
 new synthetic writes or deletes without exact remaining authority. Existing original
 StockProtocolTest lock deletion grants exhausted, preserve all previous records.
+NATIVE_INITIALIZATION_PROBE.txt now defines the reviewable new2retained-row Admin
+candidate (10reads/2inserts/7patchattempts maximum) and11new offline tests. No fresh
+mutation grant or native test claimed; missing-version/date conjunction still unknown.
+Do not equate WQL exists:false with strict missing/null or synthetic date proof with
+whole-company writer quiescence/ABA/migration recovery. Not in production packet.
 Consolidate truly missing platform permission questions after reviewable probe ready.
 Do not repeat unchanged tests/23UIcaptures or claim publication. GitHub push/Pages/
 Wix published-live/public verification/user Loaded acceptance remain distinct.

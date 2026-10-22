@@ -1,0 +1,76 @@
+2026-10-23 — isolated initialization conjunction diagnostic READY OFFLINE ONLY
+
+Problem: existing original legacy tasks can lack company/stockCommitVersion. Ordinary
+version-equality CAS cannot initialize an absent version. Read-then-unconditional-write
+would risk overwriting an intervening legacy task change. No business initializer is
+implemented or authorized by this candidate; ACTIVE remains OFF, coverage EMPTY.
+
+Exact candidate files:
+ integration/prototypes/stock-current-state/native-initialization-probe.cjs
+ integration/prototypes/stock-current-state/build-initialization-probe.cjs
+ integration/prototypes/stock-current-state/stockProtocolInitialization.web.js
+ integration/tests/stock-current-native-initialization-probe.test.cjs
+Standalone NEW Permissions.Admin diagnostic, excluded from38target production packet.
+No shared runtime/SDK adapter/install graph/original business file changed. Generated
+web wrapper has one export verifyStockInitialization. NOT installed or run in Wix.
+
+Proposed future test scope — FRESH EXACT PERMISSION STILL REQUIRED
+ Collection StockProtocolTest ONLY; exactly2NEW fixed synthetic records, retained:
+ SPT-INIT-3c82f6a5-58d4-46ef-ae09-1dd52bc460f1
+ SPT-INIT-58eb46cb-1ebf-48bc-b416-936bb23793c0
+ First: no company/version, quantity50. Second: company NCT/no version, quantity60.
+ Maximum10strong exact queries,2insert attempts,7patch attempts. No locks, deletion,
+ reset, automatic replay/retry, arbitrary IDs/company/collection, schema, permissions,
+ mode/control writes, Publish, file callbacks or business collection access. Input
+ confirmation:TWO_RETAINED_SYNTHETIC_ROWS_NO_DELETE is ONLY an accidental-run guard,
+ not user authorization. Old fixture/lock grants do not cover this new operation.
+ If either fixed ID already exists, stop before writes; never adopt or reset it.
+ On partial insert/timeout/unknown post-write outcome, retain everything and stop.
+
+Checks prepared, NOT native evidence:
+ 1 Strict private pre-read requires version and counter properties truly absent;
+   null/undefined/empty values, foreign/null company, malformed date refuse.
+ 2 WQL condition combines expected company presence/value, stockCommitVersion
+   exists:false, and _updatedDate equality using {$date:actualNativeISO}.
+ 3 Wrong timestamp must return confirmed WDE0193 AND full unchanged readback.
+ 4 Correct first initialization adds only exact company/version/v2counter fields;
+   preserves all original business fields and native value types.
+ 5 Late first initialization must refuse without any image change.
+ 6 Deliberate synthetic legacy edit quantity60->61 must advance native updatedDate;
+   if timestamp does not advance, stop, no stale-snapshot inference/wait/retry.
+ 7 Initialization against pre-edit timestamp must refuse;61 remains intact.
+ 8 Two contenders using same fresh company/version-absence/date snapshot: exactly
+   one confirmed success, other confirmed condition refusal, exact winning image.
+ No raw record payload/IDs/provider error messages returned by endpoint. Fixed IDs
+ are private source/test-scope metadata, not production customer records.
+
+Important limits, even if future native test passes:
+ - Official WQL exists:false ALSO matches null/no-value; it is NOT strict native
+   own-property absence. The private strict pre-read is a distinct prerequisite.
+ - SDK developer-preview support for this actual date/missing-version conjunction
+   is UNVERIFIED. Date filter representation/type is being tested, not asserted.
+ - Native timestamp granularity/ABA or all original writers being quiescent is NOT
+   proved. Real maintenance/fencing/fresh business capture remains mandatory.
+ - Two synthetic rows do not prove production schema/types/indexes/300line capacity,
+   migration recovery, full writer coverage, shadow parity or ACTIVE readiness.
+ - No business task original version is initialized, no current stock rows created.
+ businessInitializationAccepted and activationReady are ALWAYS false in reports.
+
+Offline verification actually run:
+ Initial10newtests10pass0fail246.9738ms. Strengthened opposite contender and native
+ business Date preservation; final11new+8existing read-only diagnostics =19pass0fail
+ 346.7017ms. Includes false conflict/success, ignored conditions, stale acceptance,
+ two winners, mutation-on-rejection, unsupported Date, null-vs-absence, foreign/
+ partial reads, insert failure and timeout-after-apply with no retries. Mock/VM ONLY.
+ No native operation executed; no new fixture permission inferred. Wrapper --check
+ passes. Original protected production paths still equald447185. Existing FULL1071
+ output retained, not claimed to include subsequent lifecycle/probe-only tests.
+
+Read/research efficiency: reuse retained SDK equality proof and WQL official docs.
+One absent checkout-local IMPLEMENTATION_SPEC path was mistakenly queried; actual
+spec is under ROOT handoff/stock-current-state-spec-20261021 and was already fully
+read. No repeated scan/retry/bypass. Actual Credit usage remains UNKNOWN.
+
+Next: finish independent semantic writer/recovery and native-install acceptance
+preparation; consolidate actual platform permission needs once reviewable. Do not
+ask user to run real borrowing test, enable ACTIVE or call this release complete.

@@ -1,5 +1,17 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 NATIVE INITIALIZATION PROBE PREPARED, NOT AUTHORIZED/INSTALLED/EXECUTED:
+NATIVE_INITIALIZATION_PROBE.txt. New standalone Admin-only fixed StockProtocolTest
+2retainedrows/10reads/2inserts/7patchmaximum, no lock/delete/reset/retry/business/schema/
+mode access. Strict absent/null/type guards, native Date WQL conjunction, stale legacy
+edit and exactly-one contender winner; exact business image preservation. Final
+11new+8existing diagnostic19pass0fail346.7017ms MOCK/VM ONLY. Existing FULL1071 retained,
+not an updated full-suite total. Missing-version+nativeDate conjunction still UNKNOWN;
+report businessInitializationAccepted/activationReady ALWAYS false. Old lock grants
+not reused. Need fresh exact grant before native install/run, consolidate after other
+independent reviewable work. Shared runtime/production/install graph unchanged; new
+wrapper excluded. No browser/native write/permission/Pages/Wix changes. ACTIVE OFF.
+
 eae231e lifecycle shadow increment confirmed PUSHED existing PR220. Further bounded
 initialization research: Wix WQL exists:false also matches null, not strict JS absence;
 do not claim it proves safe unversioned-task bootstrap. SDK patch.run docs still expose
