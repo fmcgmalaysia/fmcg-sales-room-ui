@@ -52,6 +52,20 @@ never silently omit missing rows or use partial batch totals. Request-scoped rea
 reuse is not a second stock authority, but must be proved safe before implementation.
 If insufficient, resumable preparation needs exact durable digest/snapshot/fencing
 and failure review rather than casually adding another coordinator or lock.
+Exact bounded dependencies now read for this next work: warehouse-stock-reader.cjs
+per-product loop; warehouse-authority.cjs server-created product scopes/task readers;
+scoped-current-reader.cjs complete current/correction/exact-CLOSED closure; original-
+product-state.cjs task scope; sdk-conditional-store.cjs native typed normalization.
+Potential minimal seam: private strong readMany/complete multi-key active sets scoped
+to ONE immutable readSnapshot, preserving existing single-product validation and all
+commit/apply/verify code. Query rows must undergo same version/company/type validation;
+no permission/network errors may become absence. Task checkpoint reads must be batched
+too, otherwise300serialexact task reads remain. Never cache writes or later protocol
+phases. This is an analysis candidate, NOT implemented or reviewed production logic.
+Primary hasSome docs read: https://dev.wix.com/docs/sdk/backend-modules/data/items/wix-data-query/has-some
+Supports matching exact scalar values/array membership; no value-count limit was
+established by that page. Native hasSome/index compatibility NOT yet tested. No API
+budget reduction claimed until actual same-data/query-count and corruption tests.
 G3 user manual AstraHigh question already pending; do NOT send it again or auto-switch.
 Do NOT enable ACTIVE or claim current code ready to publish while this blocker stands.
 
@@ -60,3 +74,7 @@ Code tests retained:1050full offlinepass plus isolated new4diagnostic tests, NOT
 runtime32b812c/baselined447185 unchanged, Pages no dispatch/Wix no Publish/public new
 workflow not verified. Added read-only diagnostic saved ONLY; do not say entire Wix
 editor untouched now. Prior23original editor comparisons reusable unchanged.
+
+8fcc4c6 actual native result/instrumentation/evidence commit confirmed PUSHED PR220.
+No active native call or command session; two successful samples are enough for this
+bounded read latency question. Do not repeat native runs merely to reprint metrics.

@@ -13,8 +13,8 @@ concrete technical release blocker; do not claim G3/code capacity complete.
 NEXT: inspect/prove same-snapshot batched scoped current reads with exact CLOSED/zero
 identities before any broader resumable-preparation protocol change. Preserve current
 fence/plan/authority; user manual AstraHigh G3 question pending, do not repeat/autoswitch.
-c2c5e51 readonly probe candidate confirmed PUSHED PR220; sync actual evidence/instrument
-next. Prior FULL1050pass + new4isolated tests retained, no new full rerun. No sessions.
+c2c5e51 readonly probe candidate and8fcc4c6 actual evidence/instrument confirmed PUSHED
+PR220. Prior FULL1050pass + new4isolated tests retained, no new full rerun. No sessions.
 Coverage EMPTY/ACTIVE OFF; actual invoice/exit OFF. Native types/index/private setup/
 write capacity/recovery/maintenance/shadow/review/four-release remain OPEN. Browser
 Master now at expanded safe readonly function result; no further sampling needed.
