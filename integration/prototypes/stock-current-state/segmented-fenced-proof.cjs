@@ -33,7 +33,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
   async function readSnapshot(readRows) {
     const before = await readControl();
     if (before.pending) throw Error('Inventory pending');
-    const rows = await readRows(), after = await readControl();
+    const rows = await readRows(copy(before)), after = await readControl();
     if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
     return { generation: after.generation, rows };
   }
@@ -49,7 +49,8 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
       const prior = await store.read(journal, resultId);
       let manifest = await store.read(journal, key);
-      if (manifest && (manifest.company !== company || manifest._id !== key || manifest.digest !== digest
+      if (manifest && manifest.digest !== digest) throw Error('Request identity reused');
+      if (manifest && (manifest.company !== company || manifest._id !== key
         || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
         || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0)) throw Error('Operation manifest identity conflict');
       if (prior && (!manifest || prior.company !== company || prior._id !== resultId || prior.digest !== digest

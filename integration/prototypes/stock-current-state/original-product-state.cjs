@@ -44,17 +44,42 @@ function originalProductState({ company, context, orders, identity, readAllocati
   holds.legacyBlockedByTask = legacy.blockedByTask;
   holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])), legacy.version);
   return { identity, demands, sources, buildState: rows => {
+    if (rows.product?.lifecycleVersion != null && rows.product.lifecycleVersion !== 2) throw Error('Unknown product lifecycle checkpoint');
+    const currentLifecycle = rows.product?.lifecycleVersion === 2;
+    const scoped = rows.scope === 'CURRENT_ACTIVE_PRODUCT';
+    if (scoped && (!currentLifecycle || !Array.isArray(rows.sourceTaskIds))) throw Error('Scoped lifecycle checkpoint required');
     const positions = new Map(rows.positions.map(p => [p.sourceTaskId, p]));
-    const tasks = demands.map(t => ({ ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,
-      requested: t.requested ?? t.ord, dispatched: sources.reduce((n, s) => n + (s.dispatchedByTask[t.id] || 0), 0) }));
-    return { ...identity, name: rows.product?.name || name, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: holds,
-      sources: sources.map(s => {
+    const selectedSources = scoped ? sources.filter(s => rows.sourceTaskIds.includes(s.id)) : sources;
+    if (scoped && rows.sourceTaskIds.some(id => !selectedSources.some(s => s.id === id))) throw Error('Current source authority missing');
+    const neededTasks = new Set([...selectedSources.map(s => s.ownerTaskId).filter(Boolean), ...rows.claims.map(c => c.taskId),
+      ...rows.transfers.flatMap(r => [r.details.relation.borrowerTaskId, r.details.relation.lenderTaskId])]);
+    const selectedDemands = scoped ? demands.filter(t => neededTasks.has(t.id)) : demands;
+    if (scoped && [...neededTasks].some(id => !selectedDemands.some(t => t.id === id))) throw Error('Current demand authority missing');
+    const currentDispatched = source => Object.fromEntries(rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', source.id))
+      .filter(c => c.dispatchedCumulative > 0).map(c => [c.taskId, c.dispatchedCumulative]));
+    const selected = selectedSources.map(s => scoped ? { ...s, dispatchedByTask: currentDispatched(s) } : s);
+    const tasks = selectedDemands.map(t => {
+      const inScope = selected.reduce((n, s) => n + (s.dispatchedByTask[t.id] || 0), 0);
+      if (scoped && (t.stockCounterSchema !== 2 || !t.stockCommitVersion || !count(t.stockDispatchedCumulative)
+        || t.stockDispatchedCumulative < inScope)) throw Error('Current task dispatch checkpoint required');
+      return { ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,
+        requested: t.requested ?? t.ord, dispatched: scoped ? t.stockDispatchedCumulative : inScope,
+        ...(scoped ? { dispatchedOutsideScope: t.stockDispatchedCumulative - inScope } : {}) };
+    });
+    const selectedHolds = scoped ? { ...holds,
+      heldByTask: Object.fromEntries(tasks.map(t => [t.id, holds.heldByTask[t.id]])),
+      legacyBlockedByTask: Object.fromEntries(tasks.map(t => [t.id, holds.legacyBlockedByTask[t.id]])) } : holds;
+    return { ...identity, name: rows.product?.name || name, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: selectedHolds,
+      ...(scoped ? { scope: 'CURRENT_ACTIVE_PRODUCT' } : {}),
+      ...(currentLifecycle ? { lifecycleVersion: 2, nextBorrowSequence: rows.product.nextBorrowSequence } : {}),
+      sources: selected.map(s => {
         const p = positions.get(s.id), claims = {};
         for (const c of rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', s.id))) {
           if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable)) throw Error('Known unique current claims required');
           claims[c.taskId] = c.reservedUsable;
         }
         return { ...s, replacementReceived: p?.replacementReceived ?? 0, supplierReturned: p?.supplierReturned ?? 0,
+          ...(currentLifecycle ? { borrowRepaidCumulative: p ? p.borrowRepaidCumulative : 0 } : {}),
           onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
       }), relations: rows.transfers.map(r => clone(r.details.relation)) };
   } };

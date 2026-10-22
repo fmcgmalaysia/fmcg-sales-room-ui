@@ -27,6 +27,11 @@ test('legacy bootstrap cannot silently erase existing borrowing facts even if cu
   const report = stockBootstrapPreflight(f); assert.equal(report.canBootstrap, false); assert.equal(report.rows, null);
   assert.ok(report.blockers.includes('BORROWING_FACTS_REQUIRE_CURRENT_CHECKPOINT'));
 });
+
+test('legacy bootstrap never reconstructs over segmented operation authority when current rows are missing', () => {
+  const f = fixture(); f.context.activity.push({ _id: 'ROOT', company: 'NCT', stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST' });
+  assert.ok(stockBootstrapPreflight(f).blockers.includes('SEGMENTED_FACTS_REQUIRE_CURRENT_CHECKPOINT'));
+});
 test('not maintenance, pending control, existing target or business locks block before projection', () => {
   for (const mutate of [f => { f.control.mode = 'LEGACY'; }, f => { f.control.pending = { key: 'P', digest: 'D' }; },
     f => { f.existing.positions.push({ _id: 'EXISTS' }); }, f => { f.context.activity.push({ _id: hash('NCT/PURCHASE', 'LOCK') }); },

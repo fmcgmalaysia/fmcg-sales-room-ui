@@ -42,6 +42,14 @@ test('missing verified participant index is an error, never a false zero/ordinar
   for (const mode of ['LEGACY', 'SHADOW', 'MAINTENANCE']) { f.control.transferIndexVersion = 1; f.control.mode = mode; await assert.rejects(f.read('NCT', { taskId: 'A' }), /not verified/); }
   assert.equal(f.calls.length, 0);
 });
+
+test('verified v2 source index retains same halo output and rejects contradicting correction index', async () => {
+  const f = fixture(); f.control.transferIndexVersion = 2;
+  Object.assign(f.rows[0], { lenderSourceId: 'SB', replacementSourceId: 'SA', repaidQuantity: 0 });
+  assert.equal((await f.read('NCT', { taskId: 'A' })).halo, true);
+  f.rows[0].repaidQuantity = 1;
+  await assert.rejects(f.read('NCT', { taskId: 'A' }), /source index requires review/);
+});
 test('company outstanding view is independent of task archive and cannot mix cursor with task details', async () => {
   const f = fixture([relation('R1'), relation('R2', { archived: true })]);
   const page = await f.read('NCT', { view: 'OUTSTANDING', pageSize: 1 });

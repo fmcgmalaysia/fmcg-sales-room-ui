@@ -20,6 +20,7 @@ const legacyHeld = (state, taskId) => state.packingHolds.legacyBlockedByTask?.[t
 function validate(state) {
   if (state.complete !== true || !count(state.revision) || !Array.isArray(state.tasks)
     || !Array.isArray(state.sources) || !Array.isArray(state.relations)) throw Error('Complete snapshot required');
+  if (state.scope != null && (state.scope !== 'CURRENT_ACTIVE_PRODUCT' || state.lifecycleVersion !== 2)) throw Error('Known current lifecycle scope required');
   const key = stockKey(state), tasks = new Map(), sources = new Map(), ids = new Set(), sequences = new Set();
   if (state.packingHolds?.complete !== true || state.packingHolds.company !== state.company
     || state.packingHolds.scope !== 'TASK_TOTAL' || !state.packingHolds.version
@@ -77,7 +78,8 @@ function validate(state) {
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
       || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
-    if (sum(state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)) !== task.dispatched) throw Error('Task dispatch provenance conflict');
+    const outside = state.scope === 'CURRENT_ACTIVE_PRODUCT' && state.lifecycleVersion === 2 ? task.dispatchedOutsideScope : 0;
+    if (!count(outside) || sum([outside, ...state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)]) !== task.dispatched) throw Error('Task dispatch provenance conflict');
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
   }
   for (const source of state.sources) {

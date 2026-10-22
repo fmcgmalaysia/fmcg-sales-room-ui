@@ -133,25 +133,33 @@ test('real auth/PO parsers plus current snapshot produce a single approved borro
   await assert.rejects(createBorrowingStockReader(deps)(), /Packing task holds lender/);
 });
 
-test('concrete Purchase/receipt commands approve, return and automatically repay without duplicating PO or physical stock', async () => {
+for (const segmented of [false, true]) test(`concrete ${segmented ? 'v2 scoped' : 'v1'} Purchase/receipt commands approve, return and automatically repay without duplicating PO or physical stock`, async () => {
   const f = fixture(), copy = value => JSON.parse(JSON.stringify(value)), db = new Map();
   const key = stockKey({ company: 'NCT', barcode: '1', packing: '24x1', ea: 24 }), positionId = operationId('NCT', key, 'PURCHASE_SOURCE', 'B');
   const base = { company: 'NCT', stockKey: key, revision: 0, status: 'ACTIVE', _version: 'V0', reviewCodes: [] };
   const seed = (collection, row) => db.set(collection + ':' + row._id, copy(row));
   seed('StockPositions', { ...base, _id: positionId, sourceTaskId: 'B', poId: operationId('NCT', 'PURCHASE_ORDER', ['B']), receiptAccepted: 100,
-    replacementReceived: 0, dispatched: 0, onHand: 100, isolated: 0, available: 0, reservedUsable: 100 });
-  seed('StockClaims', { ...base, _id: operationId('NCT', positionId, 'B'), positionId, taskId: 'B', customerId: 'C-B', reservedUsable: 100, isolatedAttributed: 0 });
-  seed('StockProducts', { ...base, _id: operationId('NCT', key), onHand: 100, isolated: 0, available: 0, reservedUsable: 100 });
+    replacementReceived: 0, dispatched: 0, onHand: 100, isolated: 0, available: 0, reservedUsable: 100,
+    ...(segmented ? { borrowRepaidCumulative: 0 } : {}) });
+  seed('StockClaims', { ...base, _id: operationId('NCT', positionId, 'B'), positionId, taskId: 'B', customerId: 'C-B', reservedUsable: 100, isolatedAttributed: 0,
+    ...(segmented ? { dispatchedCumulative: 0 } : {}) });
+  seed('StockProducts', { ...base, _id: operationId('NCT', key), onHand: 100, isolated: 0, available: 0, reservedUsable: 100,
+    ...(segmented ? { lifecycleVersion: 2, nextBorrowSequence: 51 } : {}) });
+  if (segmented) for (const task of f.context.tasks) Object.assign(task, { stockCounterSchema: 2, stockCommitVersion: 'T0', stockDispatchedCumulative: 0 });
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),
     insert: async (c, row) => { if (db.has(c + ':' + row._id)) throw Error('Duplicate'); seed(c, row); return copy(row); },
     compareAndSet: async (c, id, version, row) => { if (db.get(c + ':' + id)?._version !== version) throw Error('CAS conflict'); seed(c, row); return copy(row); },
     compareAndRemove: async (c, id, attempt) => { if (db.get(c + ':' + id)?.attempt !== attempt) throw Error('Wrong attempt'); db.delete(c + ':' + id); }
   };
-  const items = { query: collection => { const filters = []; const q = { eq: (k, v) => { filters.push([k, v]); return q; }, ascending: () => q, limit: () => q,
-    find: async () => { const selected = [...db].filter(([address, row]) => address.startsWith(collection + ':') && filters.every(([k, v]) => row[k] === v)).map(([, row]) => copy(row));
-      return { items: selected, totalCount: selected.length }; } }; return q; } };
-  const protocol = createFencedProof({ store }); await protocol.initialize();
-  Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
+  const items = { query: collection => { const filters = []; let limit = 1000; const q = {
+    eq: (k, v) => { filters.push(['eq', k, v]); return q; }, gt: (k, v) => { filters.push(['gt', k, v]); return q; },
+    ascending: () => q, limit: n => { limit = n; return q; },
+    find: async () => { const selected = [...db].filter(([address, row]) => address.startsWith(collection + ':')
+      && filters.every(([method, k, v]) => method === 'eq' ? row[k] === v : row[k] > v)).map(([, row]) => copy(row)).sort((a, b) => a._id.localeCompare(b._id));
+      return { items: selected.slice(0, limit), totalCount: selected.length }; } }; return q; } };
+  const protocol = segmented ? require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({ store, stepsPerInvocation: 100 }) : createFencedProof({ store });
+  await protocol.initialize();
+  Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', ...(segmented ? { transferIndexVersion: 2 } : {}) });
   f.deps.readTransfer = async (company, id) => store.read('NCTActivity', transferId(company, id));
   const coverage = Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }]));
   const save = createCurrentBorrowingSave({ company: 'NCT', items, store, protocol, coverage, authorityDependencies: f.deps });

@@ -6,6 +6,7 @@ const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
 const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = require('./borrowing-model.cjs');
 const { guardProcurementStock } = require('./procurement-stock-guard.cjs');
+const { rollForwardProduct } = require('./product-delta.cjs');
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -30,9 +31,13 @@ function checkEvent(event, company, action) {
 function mapTransition({ before, after, rows, event, generation }) {
   validate(before); validate(after);
   const company = before.company, key = stockKey(before), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scoped = rows?.scope === 'CURRENT_ACTIVE_PRODUCT';
+  if (scoped && (before.scope !== rows.scope || after.scope !== rows.scope || before.lifecycleVersion !== 2
+    || rows.planFormat !== 'SEGMENTED_V2')) throw Error('Scoped current plan requires v2 lifecycle');
   if (!count(generation) || !rows || rows.complete !== true || !Array.isArray(rows.positions)
-    || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers) || before.sources.length > 14
-    || before.tasks.length > 30 || before.relations.length > 30 || after.relations.length > 30 || rows.claims.length > 60
+    || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers) || before.sources.length > (scoped ? 2000 : 14)
+    || before.tasks.length > (scoped ? 4000 : 30) || before.relations.length > (scoped ? 2000 : 30)
+    || after.relations.length > (scoped ? 2000 : 30) || rows.claims.length > (scoped ? 2000 : 60)
     || after.company !== company || stockKey(after) !== key) throw Error('Complete bounded stock rows required');
   const positions = new Map(rows.positions.map(r => [r._id, r])), claims = new Map(rows.claims.map(r => [r._id, r]));
   const transfers = new Map(rows.transfers.map(r => [r._id, r])), tasks = new Map(before.tasks.map(t => [t.id, t]));
@@ -45,7 +50,7 @@ function mapTransition({ before, after, rows, event, generation }) {
   if (before.lifecycleVersion !== after.lifecycleVersion) throw Error('Lifecycle migration is not a business save');
   if (product) {
     checkRow(product, company, productId, key);
-    if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
+    if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => scoped ? product[k] >= beforeTotals[k] : product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
     if (before.lifecycleVersion === 2 && (product.lifecycleVersion !== 2 || product.nextBorrowSequence !== before.nextBorrowSequence)) throw Error('Product lifecycle checkpoint conflict');
   } else if (before.revision !== 0 || Object.values(beforeTotals).some(n => n !== 0)) throw Error('Product snapshot missing');
   for (const source of before.sources) {
@@ -105,18 +110,18 @@ function mapTransition({ before, after, rows, event, generation }) {
     writes.push({ collection: journal, before: copy(old), after: { ...(old || {}), _id: id, title: relation.id,
       company, stockKey: key, description: relation.id, action: 'STOCK_TRANSFER_CURRENT', result: 'SAVED',
       participantTaskIds: [relation.borrowerTaskId, relation.lenderTaskId],
+      lenderSourceId: relation.lenderSourceId, replacementSourceId: relation.replacementSourceId, repaidQuantity: relation.repaid,
       revision: (old?.revision || 0) + 1, activityTime: event.activityTime, checkpointGeneration: generation + 1,
       status: relationRemaining(relation) === 0 ? 'CLOSED' : 'ACTIVE', details: { relation: copy(relation) } } });
   }
   if (consumedPositions.size !== positions.size || consumedClaims.size !== claims.size || consumedTransfers.size !== transfers.size) throw Error('Snapshot contains unrelated stock rows');
-  const totals = summary(after);
-  writes.push({ collection: 'StockProducts', before: copy(product || null), after: { ...(product || { _id: productId,
-    schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing, ea: before.ea, name: before.name || '' }),
-    ...totals, revision: before.revision + 1, checkpointGeneration: generation + 1, reviewRequired: false,
-    ...(after.lifecycleVersion === 2 ? { lifecycleVersion: 2, nextBorrowSequence: after.nextBorrowSequence } : {}),
-    status: totals.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
+  const productAfter = rollForwardProduct({ identity: before, product, beforeSources: before.sources,
+    afterSources: after.sources, generation, revision: before.revision,
+    lifecycle: after.lifecycleVersion === 2 ? { version: 2, nextBorrowSequence: after.nextBorrowSequence } : null });
+  writes.push({ collection: 'StockProducts', before: copy(product || null), after: productAfter });
   const identities = writes.map(w => w.collection + ':' + w.after._id);
-  if (new Set(identities).size !== writes.length || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Borrowing plan exceeds atomic proof bound');
+  if (new Set(identities).size !== writes.length || writes.length > (scoped ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify({ writes })) > (scoped ? 8 * 1024 * 1024 : 180000)) throw Error('Borrowing plan exceeds atomic proof bound');
   return { writes };
 }
 function prepareBorrowApproval({ state, rows, input, event, generation }) {

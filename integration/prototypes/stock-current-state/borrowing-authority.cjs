@@ -56,7 +56,9 @@ function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchas
       action: kind === 'APPROVE' ? 'STOCK_TRANSFER_APPROVED' : 'STOCK_TRANSFER_RETURNED', result: 'SAVED',
       activityTime: now().toISOString(), actorType: 'STAFF', initiatedByStaffId: staff.staffId, initiatedByStaffName: staff.staffName,
       details: { company, [kind === 'APPROVE' ? 'approval' : 'return']: safeInput } };
-    return { kind, identity, input: safeInput, event, memberId: member._id, buildState: product.buildState };
+    return { kind, identity, input: safeInput, event, memberId: member._id, buildState: product.buildState,
+      stockScope: { sourceTaskIds: [donorId, futureId], claimPairs: [donorId, futureId].flatMap(sourceTaskId =>
+        [borrowerId, donor.ownerTaskId].map(taskId => ({ sourceTaskId, taskId }))) } };
   };
 }
 module.exports = { createBorrowingAuthority };

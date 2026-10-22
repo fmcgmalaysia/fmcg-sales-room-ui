@@ -125,7 +125,7 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
 module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave };
 
 },
-// warehouse-authority.cjs sha256:93c0452a7f3c509b7246510e0e2f90e6a8f877345bef8c1113b7a870e016803f
+// warehouse-authority.cjs sha256:fea726be804985b7e955e680f35d681442b0f3ad80c0adf2b6b1d0eef1fdb14c
 "warehouse-authority.cjs": (load, module) => {
 'use strict';
 
@@ -167,7 +167,14 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
         || source.planned !== line.planned) throw Error('Original receipt and source authority differ');
     }
     return { kind: 'RECEIVE', memberId: member._id, validated,
-      products: [...products.values()].map(p => ({ identity: p.identity, buildState: p.buildState })) };
+      products: [...products.values()].map(p => {
+        const lines = validated.event.details.lines.filter(line => p.sources.some(s => s.id === line.taskId));
+        return { identity: p.identity, buildState: p.buildState, stockScope: {
+          sourceTaskIds: lines.map(line => line.taskId),
+          correctionSourceIds: lines.filter(line => line.kind === 'CORRECTION' && line.accepted < line.beforeAccepted).map(line => line.taskId),
+          claimPairs: lines.flatMap(line => { const source = p.sources.find(s => s.id === line.taskId);
+            return source.ownerTaskId ? [{ sourceTaskId: source.id, taskId: source.ownerTaskId }] : []; }) } };
+      }) };
   };
 }
 module.exports = { createWarehouseAuthority };
@@ -295,7 +302,7 @@ module.exports = { stockKey, convertProjectedStock, readProductPage };
 "commit-proof.cjs": (load, module) => {
 module.exports = { hash: (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32) };
 },
-// original-product-state.cjs sha256:6dcb7fac9c5d88c6b5f01de0c45a723062ecc25f0da9fecaab7df2b1279834da
+// original-product-state.cjs sha256:6d500252c7ac62badd312e1ac80df44723e594ff1aa7178808d643b97aa2a6b8
 "original-product-state.cjs": (load, module) => {
 'use strict';
 
@@ -343,17 +350,42 @@ function originalProductState({ company, context, orders, identity, readAllocati
   holds.legacyBlockedByTask = legacy.blockedByTask;
   holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])), legacy.version);
   return { identity, demands, sources, buildState: rows => {
+    if (rows.product?.lifecycleVersion != null && rows.product.lifecycleVersion !== 2) throw Error('Unknown product lifecycle checkpoint');
+    const currentLifecycle = rows.product?.lifecycleVersion === 2;
+    const scoped = rows.scope === 'CURRENT_ACTIVE_PRODUCT';
+    if (scoped && (!currentLifecycle || !Array.isArray(rows.sourceTaskIds))) throw Error('Scoped lifecycle checkpoint required');
     const positions = new Map(rows.positions.map(p => [p.sourceTaskId, p]));
-    const tasks = demands.map(t => ({ ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,
-      requested: t.requested ?? t.ord, dispatched: sources.reduce((n, s) => n + (s.dispatchedByTask[t.id] || 0), 0) }));
-    return { ...identity, name: rows.product?.name || name, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: holds,
-      sources: sources.map(s => {
+    const selectedSources = scoped ? sources.filter(s => rows.sourceTaskIds.includes(s.id)) : sources;
+    if (scoped && rows.sourceTaskIds.some(id => !selectedSources.some(s => s.id === id))) throw Error('Current source authority missing');
+    const neededTasks = new Set([...selectedSources.map(s => s.ownerTaskId).filter(Boolean), ...rows.claims.map(c => c.taskId),
+      ...rows.transfers.flatMap(r => [r.details.relation.borrowerTaskId, r.details.relation.lenderTaskId])]);
+    const selectedDemands = scoped ? demands.filter(t => neededTasks.has(t.id)) : demands;
+    if (scoped && [...neededTasks].some(id => !selectedDemands.some(t => t.id === id))) throw Error('Current demand authority missing');
+    const currentDispatched = source => Object.fromEntries(rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', source.id))
+      .filter(c => c.dispatchedCumulative > 0).map(c => [c.taskId, c.dispatchedCumulative]));
+    const selected = selectedSources.map(s => scoped ? { ...s, dispatchedByTask: currentDispatched(s) } : s);
+    const tasks = selectedDemands.map(t => {
+      const inScope = selected.reduce((n, s) => n + (s.dispatchedByTask[t.id] || 0), 0);
+      if (scoped && (t.stockCounterSchema !== 2 || !t.stockCommitVersion || !count(t.stockDispatchedCumulative)
+        || t.stockDispatchedCumulative < inScope)) throw Error('Current task dispatch checkpoint required');
+      return { ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,
+        requested: t.requested ?? t.ord, dispatched: scoped ? t.stockDispatchedCumulative : inScope,
+        ...(scoped ? { dispatchedOutsideScope: t.stockDispatchedCumulative - inScope } : {}) };
+    });
+    const selectedHolds = scoped ? { ...holds,
+      heldByTask: Object.fromEntries(tasks.map(t => [t.id, holds.heldByTask[t.id]])),
+      legacyBlockedByTask: Object.fromEntries(tasks.map(t => [t.id, holds.legacyBlockedByTask[t.id]])) } : holds;
+    return { ...identity, name: rows.product?.name || name, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: selectedHolds,
+      ...(scoped ? { scope: 'CURRENT_ACTIVE_PRODUCT' } : {}),
+      ...(currentLifecycle ? { lifecycleVersion: 2, nextBorrowSequence: rows.product.nextBorrowSequence } : {}),
+      sources: selected.map(s => {
         const p = positions.get(s.id), claims = {};
         for (const c of rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', s.id))) {
           if (Object.hasOwn(claims, c.taskId) || !count(c.reservedUsable)) throw Error('Known unique current claims required');
           claims[c.taskId] = c.reservedUsable;
         }
         return { ...s, replacementReceived: p?.replacementReceived ?? 0, supplierReturned: p?.supplierReturned ?? 0,
+          ...(currentLifecycle ? { borrowRepaidCumulative: p ? p.borrowRepaidCumulative : 0 } : {}),
           onHand: p?.onHand ?? 0, isolated: p?.isolated ?? 0, available: p?.available ?? 0, claims };
       }), relations: rows.transfers.map(r => clone(r.details.relation)) };
   } };
@@ -478,11 +510,12 @@ async function validateOriginalReceipt({ createWarehouseOperations, company, sta
 module.exports = { validateOriginalReceipt };
 
 },
-// warehouse-stock-reader.cjs sha256:872b2dd16adaf3702a9b6e37137755141a27b5629d4fc3c9b3490711887381aa
+// warehouse-stock-reader.cjs sha256:2fdc4732b58fa1728173970328b49804e170a3ba5035218ece66e231f2436f2d
 "warehouse-stock-reader.cjs": (load, module) => {
 'use strict';
 
 const { readCurrentProduct } = load("current-product-reader.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
 const { prepareWarehouseReceipt } = load("warehouse-receipt-plan.cjs");
 function createWarehouseStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
@@ -490,14 +523,17 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
   // Intended as fenced commit.prepare; not a standalone unauthenticated save route.
   return async () => {
     const metrics = { queries: 0, exactReads: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
       const authority = await readAuthority();
       if (authority?.kind !== 'RECEIVE' || !authority.memberId || !authority.validated
         || !Array.isArray(authority.products) || !authority.products.length) throw Error('Verified Warehouse authority required');
       const products = [];
       for (const product of authority.products) {
         if (product.identity?.company !== company || typeof product.buildState !== 'function') throw Error('Server product authority required');
-        const rows = await readCurrentProduct({ company, identity: product.identity, items, store, metrics });
+        if (protocol.planFormat === 'SEGMENTED_V2' && !product.stockScope) throw Error('Server receipt current scope required');
+        const rows = protocol.planFormat === 'SEGMENTED_V2'
+          ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
+          : await readCurrentProduct({ company, identity: product.identity, items, store, metrics });
         products.push({ state: product.buildState(rows), rows });
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
@@ -558,6 +594,275 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
 module.exports = { readCurrentProduct };
 
 },
+// scoped-current-reader.cjs sha256:0a02dc4bf5cbd3ba2141fa419d2a098181a097598746aba83e43271ddf1d9e7f
+"scoped-current-reader.cjs": (load, module) => {
+'use strict';
+
+// Server-only candidate. Call inside common readSnapshot, with migration-verified
+// transfer index version from private control, never from the browser. No history
+// fallback and no ACTIVE switch. Output is operational scope, not full history.
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const { copy } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+async function readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion,
+  sourceTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
+  metrics = { queries: 0, exactReads: 0 } }) {
+  const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  if (!['NCT', 'GHR'].includes(company) || identity.company !== company || typeof items?.query !== 'function'
+    || typeof store?.read !== 'function' || transferIndexVersion !== 2) throw Error('Verified scoped current dependencies/index required');
+  if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100 || !Number.isSafeInteger(maxRowsPerSet) || maxRowsPerSet < 1
+    || !Array.isArray(sourceTaskIds) || !Array.isArray(correctionSourceIds) || !Array.isArray(claimPairs)
+    || sourceTaskIds.length + correctionSourceIds.length + claimPairs.length > maxRowsPerSet
+    || [...sourceTaskIds, ...correctionSourceIds].some(id => typeof id !== 'string' || !id)
+    || claimPairs.some(p => !p || typeof p.sourceTaskId !== 'string' || !p.sourceTaskId || typeof p.taskId !== 'string' || !p.taskId)) throw Error('Explicit bounded current scope required');
+  function known(row, collection, id) {
+    if (!row || row._id !== id || row.company !== company || row.stockKey !== key || !row._version
+      || !count(row.revision) || !['ACTIVE', 'CLOSED'].includes(row.status) || row.reviewRequired === true || row.reviewCodes?.length) throw Error('Known exact current row required');
+    if (collection === 'StockPositions' && (!['receiptAccepted', 'borrowRepaidCumulative', 'onHand', 'isolated', 'available', 'reservedUsable', 'dispatched'].every(f => count(row[f]))
+      || row.borrowRepaidCumulative > row.receiptAccepted || row.onHand !== row.isolated + row.available + row.reservedUsable)) throw Error('Source current checkpoint requires review');
+    if (collection === 'StockClaims' && (!count(row.dispatchedCumulative) || !count(row.reservedUsable) || row.isolatedAttributed !== 0
+      || id !== hash(company, row.positionId, row.taskId))) throw Error('Claim current checkpoint requires review');
+    if (collection === journal) {
+      const r = row.details?.relation;
+      if (row.action !== 'STOCK_TRANSFER_CURRENT' || !r || row._id !== hash(company, 'STOCK_TRANSFER_CURRENT', r.id)
+        || row.replacementSourceId !== r.replacementSourceId || row.lenderSourceId !== r.lenderSourceId || row.repaidQuantity !== r.repaid
+        || !count(r.quantity) || !r.quantity || !count(r.repaid) || !count(r.returned || 0) || r.repaid + (r.returned || 0) > r.quantity
+        || row.status !== (r.quantity === r.repaid + (r.returned || 0) ? 'CLOSED' : 'ACTIVE')
+        || !Array.isArray(row.participantTaskIds) || row.participantTaskIds.length !== 2
+        || !row.participantTaskIds.includes(r.borrowerTaskId) || !row.participantTaskIds.includes(r.lenderTaskId)) throw Error('Transfer current index conflict');
+    }
+    return row;
+  }
+  const cache = new Map();
+  async function exact(collection, id) {
+    const address = collection + '/' + id;
+    if (!cache.has(address)) {
+      metrics.exactReads++;
+      const row = await store.read(collection, id);
+      cache.set(address, row ? copy(known(row, collection, id)) : null);
+    }
+    return cache.get(address);
+  }
+  // Cursor queries are complete sets, not first-page sums. Count changes, missing
+  // pages, duplicates, overflow and network errors all stop before preparation.
+  async function querySet(collection, filters) {
+    const result = []; let cursor = null, total;
+    do {
+      let q = items.query(collection).eq('company', company).eq('stockKey', key);
+      for (const [method, field, value] of filters) q = q[method](field, value);
+      if (cursor) q = q.gt('_id', cursor);
+      metrics.queries++;
+      const page = await q.ascending('_id').limit(pageSize).find({ consistentRead: true, returnTotalCount: true });
+      if (!Array.isArray(page?.items) || !count(page.totalCount) || page.totalCount > maxRowsPerSet
+        || total !== undefined && page.totalCount !== total - result.length
+        || page.items.length !== Math.min(pageSize, page.totalCount)) throw Error('Incomplete scoped current set');
+      if (total === undefined) total = page.totalCount;
+      for (const listed of page.items) {
+        if (typeof listed?._id !== 'string' || !listed._id || cursor && listed._id <= cursor) throw Error('Scoped current cursor conflict');
+        const row = await exact(collection, listed._id);
+        if (!row || filters.some(([method, field, value]) => method === 'eq' ? row[field] !== value : !(row[field] > value))) throw Error('Scoped current query changed');
+        result.push(row); cursor = listed._id;
+      }
+    } while (result.length < total);
+    return result;
+  }
+  const product = await exact('StockProducts', hash(company, key));
+  if (product && (product.lifecycleVersion !== 2 || !Number.isSafeInteger(product.nextBorrowSequence) || product.nextBorrowSequence < 1
+    || !['onHand', 'reservedUsable', 'available', 'isolated'].every(f => count(product[f]))
+    || product.onHand !== product.reservedUsable + product.available + product.isolated)) throw Error('Product lifecycle checkpoint requires review');
+  const positions = new Map((await querySet('StockPositions', [['eq', 'status', 'ACTIVE']])).map(row => [row._id, row]));
+  const claims = new Map((await querySet('StockClaims', [['eq', 'status', 'ACTIVE']])).map(row => [row._id, row]));
+  const transfers = new Map((await querySet(journal, [['eq', 'action', 'STOCK_TRANSFER_CURRENT'], ['eq', 'status', 'ACTIVE']])).map(row => [row._id, row]));
+  for (const sourceId of new Set(correctionSourceIds)) {
+    const rows = await querySet(journal, [['eq', 'action', 'STOCK_TRANSFER_CURRENT'], ['eq', 'replacementSourceId', sourceId], ['gt', 'repaidQuantity', 0]]);
+    for (const row of rows) transfers.set(row._id, row);
+  }
+  const requiredSources = new Set([...sourceTaskIds, ...correctionSourceIds, ...claimPairs.map(p => p.sourceTaskId)]), pairs = [...claimPairs];
+  for (const claim of claims.values()) {
+    const position = await exact('StockPositions', claim.positionId);
+    if (!position) throw Error('Active claim source missing'); positions.set(position._id, position);
+  }
+  for (const row of transfers.values()) {
+    const r = row.details.relation;
+    requiredSources.add(r.lenderSourceId); requiredSources.add(r.replacementSourceId);
+    for (const sourceTaskId of [r.lenderSourceId, r.replacementSourceId]) {
+      for (const taskId of [r.lenderTaskId, r.borrowerTaskId]) pairs.push({ sourceTaskId, taskId });
+    }
+  }
+  for (const id of requiredSources) {
+    const row = await exact('StockPositions', hash(company, key, 'PURCHASE_SOURCE', id));
+    if (row) { if (row.sourceTaskId !== id) throw Error('Source stable identity conflict'); positions.set(row._id, row); }
+  }
+  for (const position of positions.values()) {
+    if (position._id !== hash(company, key, 'PURCHASE_SOURCE', position.sourceTaskId)) throw Error('Source stable identity conflict');
+    requiredSources.add(position.sourceTaskId);
+    // Only this source's nonzero dispatch provenance, not all CLOSED product claims.
+    for (const row of await querySet('StockClaims', [['eq', 'positionId', position._id], ['gt', 'dispatchedCumulative', 0]])) claims.set(row._id, row);
+  }
+  for (const { sourceTaskId, taskId } of pairs) {
+    const positionId = hash(company, key, 'PURCHASE_SOURCE', sourceTaskId);
+    const row = await exact('StockClaims', hash(company, positionId, taskId));
+    if (row) {
+      if (row.positionId !== positionId || row.taskId !== taskId || !positions.has(positionId)) throw Error('Claim stable identity conflict');
+      claims.set(row._id, row);
+    }
+  }
+  if (positions.size > maxRowsPerSet || claims.size > maxRowsPerSet || transfers.size > maxRowsPerSet || requiredSources.size > maxRowsPerSet) throw Error('Scoped current fanout policy');
+  if (!product && (positions.size || claims.size || transfers.size)) throw Error('Product checkpoint missing; no historical fallback');
+  return { complete: true, scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2', sourceTaskIds: [...requiredSources],
+    positions: [...positions.values()], claims: [...claims.values()], transfers: [...transfers.values()].sort((a, b) => a.details.relation.sequence - b.details.relation.sequence), product };
+}
+module.exports = { readScopedCurrentProduct };
+
+},
+// segmented-plan.cjs sha256:0039b49767dc5d7105fa42aed123468ce123839e5e815c9856f2324822adf1b4
+"segmented-plan.cjs": (load, module) => {
+'use strict';
+
+// Candidate only. Budgets are server policy, NOT measured Wix production capacity.
+// No storage, endpoint, permission or business mutation is performed by this codec.
+const { hash } = load("commit-proof.cjs");
+const { planCollections } = load("domain-scope.cjs");
+const canonical = value => Array.isArray(value) ? value.map(canonical)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+const stringify = value => JSON.stringify(canonical(value));
+const same = (a, b) => stringify(a) === stringify(b);
+const copy = value => JSON.parse(JSON.stringify(value));
+// Works in the generated backend without Node Buffer or a browser TextEncoder.
+function utf8Bytes(value) {
+  let bytes = 0;
+  for (const character of value) {
+    const cp = character.codePointAt(0);
+    bytes += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+}
+function assertJson(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
+  if (typeof value === 'number' && Number.isFinite(value)) return;
+  if (!value || typeof value !== 'object') throw Error('Plain JSON plan required');
+  const proto = Object.getPrototypeOf(value);
+  if (!Array.isArray(value) && proto !== null && (Object.getPrototypeOf(proto) !== null
+    || Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name !== 'Object')) throw Error('Plain JSON plan required');
+  for (const key of Object.keys(value)) assertJson(value[key]);
+}
+function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetBytes = 64000,
+  maxPlanBytes = 8 * 1024 * 1024, maxWrites = 10000, maxFragments = 256 }) {
+  if (!['NCT', 'GHR'].includes(company)) throw Error('Known company required');
+  for (const value of [recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments]) {
+    if (!Number.isSafeInteger(value) || value <= 0) throw Error('Positive codec policy required');
+  }
+  if (recordBudgetBytes < 2048 || recordBudgetBytes > 256000) throw Error('Conservative record budget required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scope = company + '/PURCHASE', lockId = hash(scope, 'LOCK'), controlId = hash(company, 'STOCK_CONTROL');
+  const allowed = new Set(planCollections(company, domainWrites));
+  const fragmentId = (key, attempt, index) => hash(key, 'PLAN_FRAGMENT', attempt, index);
+  function normalize(plan, key, reserved = []) {
+    assertJson(plan);
+    if (!Array.isArray(plan?.writes) || !plan.writes.length || plan.writes.length > maxWrites) throw Error('Segmented plan write policy');
+    const normalized = copy(plan), identities = new Set();
+    const protectedIds = new Set([lockId, controlId, key, hash(key, 'RESULT'), ...reserved]);
+    for (const change of normalized.writes) {
+      const id = change.after?._id, identity = change.collection + '/' + id;
+      if (!allowed.has(change.collection) || typeof id !== 'string' || !id || identities.has(identity)
+        || change.after.company !== company || change.before !== null && (!change.before || change.before._id !== id
+          || change.before.company !== company || typeof change.before._version !== 'string' || !change.before._version)
+        || change.collection === journal && (protectedIds.has(id)
+          || [change.before, change.after].some(row => row?.stockOperationProtocol != null))) throw Error('Plan identity conflict');
+      identities.add(identity);
+      const token = hash(key, change.collection, id);
+      if (change.before?._version === token) throw Error('Version reuse');
+      change.after._version = token;
+    }
+    if (utf8Bytes(stringify(normalized)) > maxPlanBytes) throw Error('Segmented plan byte policy');
+    return normalized;
+  }
+  function identity({ key, digest, memberId, requestId, baseGeneration, attempt }) {
+    if (typeof memberId !== 'string' || !memberId || !/^[a-f0-9-]{36}$/i.test(requestId || '')
+      || key !== hash(scope, requestId, memberId) || typeof digest !== 'string' || !digest
+      || !Number.isSafeInteger(baseGeneration) || baseGeneration < 0 || typeof attempt !== 'string' || !attempt) throw Error('Segmented operation identity');
+  }
+  function encode(context) {
+    identity(context);
+    const { key, digest, memberId, requestId, baseGeneration, attempt } = context;
+    const plan = normalize(context.plan, key), payload = stringify(plan), fragments = [];
+    let offset = 0;
+    while (offset < payload.length) {
+      if (fragments.length >= maxFragments) throw Error('Segment count policy');
+      const index = fragments.length, id = fragmentId(key, attempt, index);
+      const wrap = text => ({ _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
+        operationId: key, attempt, index, payload: text, payloadHash: hash(text) });
+      let low = 1, high = Math.min(payload.length - offset, recordBudgetBytes), size = 0;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        if (utf8Bytes(stringify(wrap(payload.slice(offset, offset + mid)))) <= recordBudgetBytes) { size = mid; low = mid + 1; }
+        else high = mid - 1;
+      }
+      // Never split a surrogate pair. JSON escaping also counts against record budget.
+      if (size && /[\uD800-\uDBFF]/.test(payload[offset + size - 1]) && /[\uDC00-\uDFFF]/.test(payload[offset + size] || '')) size--;
+      if (!size) throw Error('Fragment metadata exceeds policy');
+      fragments.push(wrap(payload.slice(offset, offset + size))); offset += size;
+    }
+    normalize(plan, key, fragments.map(row => row._id));
+    const manifest = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
+      memberId, requestId, attempt, baseGeneration, planHash: hash(payload), planBytes: utf8Bytes(payload),
+      writeCount: plan.writes.length, fragments: fragments.map(row => ({ id: row._id, hash: row.payloadHash, bytes: utf8Bytes(row.payload) })) };
+    if (utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest exceeds policy');
+    return { manifest, fragments, plan };
+  }
+  function decode({ manifest, fragments, key, digest, memberId, requestId }) {
+    if (!manifest || manifest.company !== company || manifest._id !== key || manifest.digest !== digest
+      || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
+      || manifest.action !== 'STOCK_PLAN_MANIFEST' || !Array.isArray(manifest.fragments) || !manifest.fragments.length
+      || manifest.fragments.length > maxFragments || !Array.isArray(fragments) || fragments.length !== manifest.fragments.length
+      || utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest integrity conflict');
+    identity({ ...manifest, key });
+    const parts = []; let payloadBytes = 0;
+    for (let index = 0; index < fragments.length; index++) {
+      const ref = manifest.fragments[index], row = fragments[index];
+      const id = fragmentId(key, manifest.attempt, index);
+      if (!row || !same(ref, { id, hash: row.payloadHash, bytes: typeof row.payload === 'string' ? utf8Bytes(row.payload) : -1 })
+        || typeof row.payload !== 'string' || !same(row, { _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
+          operationId: key, attempt: manifest.attempt, index, payload: row.payload, payloadHash: hash(row.payload) })
+        || utf8Bytes(stringify(row)) > recordBudgetBytes) throw Error('Fragment integrity conflict');
+      parts.push(row.payload); payloadBytes += ref.bytes;
+      if (payloadBytes > maxPlanBytes) throw Error('Segmented plan byte policy');
+    }
+    const payload = parts.join('');
+    if (manifest.planBytes !== utf8Bytes(payload) || manifest.planHash !== hash(payload)) throw Error('Plan hash conflict');
+    const parsed = JSON.parse(payload), normalized = normalize(parsed, key, fragments.map(row => row._id));
+    if (!same(parsed, normalized) || stringify(parsed) !== payload || manifest.writeCount !== normalized.writes.length) throw Error('Prepared plan changed');
+    const expected = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
+      memberId, requestId, attempt: manifest.attempt, baseGeneration: manifest.baseGeneration,
+      planHash: manifest.planHash, planBytes: manifest.planBytes, writeCount: manifest.writeCount, fragments: manifest.fragments };
+    if (!same(manifest, expected)) throw Error('Manifest fields conflict');
+    return normalized;
+  }
+  return { encode, decode, normalize, ids: { journal, lockId, controlId }, policy: { recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments } };
+}
+module.exports = { createSegmentedPlanCodec, utf8Bytes, same, copy };
+
+},
+// domain-scope.cjs sha256:cddb64affc043a9dda5fbf1c60b671f46611d21be8d6cf4797f243bb1df181e7
+"domain-scope.cjs": (load, module) => {
+'use strict';
+
+// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
+// This changes no CMS/employee permission; optional conditional domain plans only.
+function domainCollections(company) {
+  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
+  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
+  throw Error('Known company domain scope required');
+}
+function planCollections(company, domainWrites = false) {
+  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
+  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
+    ...(domainWrites ? domainCollections(company) : [])];
+}
+module.exports = { domainCollections, planCollections };
+
+},
 // warehouse-receipt-plan.cjs sha256:f79f9771fb228327bc0792add498e75eff483a7fd89075c660c93d98c970592a
 "warehouse-receipt-plan.cjs": (load, module) => {
 'use strict';
@@ -609,7 +914,7 @@ function prepareWarehouseReceipt({ validated, products, generation, planFormat =
 module.exports = { prepareWarehouseReceipt };
 
 },
-// borrowing-stock-plan.cjs sha256:977a60e7241a54056e821496ffc706e569b8096a36af0ef702d1cf35777b8f2e
+// borrowing-stock-plan.cjs sha256:d481f8d97933a88f6d7b1802f7a9b9da49156660bdeacfb67c9f4ad1c68cddff
 "borrowing-stock-plan.cjs": (load, module) => {
 'use strict';
 
@@ -619,6 +924,7 @@ const { hash } = load("commit-proof.cjs");
 const { stockKey } = load("current-model.cjs");
 const { validate, approveBorrow, receive, correctAccepted, returnUnusedBorrow, allocateCumulative, adjustDemand, dispatchReserved, quarantineFree, freeCaseMovement, releaseFreeCase, relationRemaining } = load("borrowing-model.cjs");
 const { guardProcurementStock } = load("procurement-stock-guard.cjs");
+const { rollForwardProduct } = load("product-delta.cjs");
 const copy = row => JSON.parse(JSON.stringify(row));
 const count = n => Number.isSafeInteger(n) && n >= 0;
 const total = values => {
@@ -643,9 +949,13 @@ function checkEvent(event, company, action) {
 function mapTransition({ before, after, rows, event, generation }) {
   validate(before); validate(after);
   const company = before.company, key = stockKey(before), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scoped = rows?.scope === 'CURRENT_ACTIVE_PRODUCT';
+  if (scoped && (before.scope !== rows.scope || after.scope !== rows.scope || before.lifecycleVersion !== 2
+    || rows.planFormat !== 'SEGMENTED_V2')) throw Error('Scoped current plan requires v2 lifecycle');
   if (!count(generation) || !rows || rows.complete !== true || !Array.isArray(rows.positions)
-    || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers) || before.sources.length > 14
-    || before.tasks.length > 30 || before.relations.length > 30 || after.relations.length > 30 || rows.claims.length > 60
+    || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers) || before.sources.length > (scoped ? 2000 : 14)
+    || before.tasks.length > (scoped ? 4000 : 30) || before.relations.length > (scoped ? 2000 : 30)
+    || after.relations.length > (scoped ? 2000 : 30) || rows.claims.length > (scoped ? 2000 : 60)
     || after.company !== company || stockKey(after) !== key) throw Error('Complete bounded stock rows required');
   const positions = new Map(rows.positions.map(r => [r._id, r])), claims = new Map(rows.claims.map(r => [r._id, r]));
   const transfers = new Map(rows.transfers.map(r => [r._id, r])), tasks = new Map(before.tasks.map(t => [t.id, t]));
@@ -658,7 +968,7 @@ function mapTransition({ before, after, rows, event, generation }) {
   if (before.lifecycleVersion !== after.lifecycleVersion) throw Error('Lifecycle migration is not a business save');
   if (product) {
     checkRow(product, company, productId, key);
-    if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
+    if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => scoped ? product[k] >= beforeTotals[k] : product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
     if (before.lifecycleVersion === 2 && (product.lifecycleVersion !== 2 || product.nextBorrowSequence !== before.nextBorrowSequence)) throw Error('Product lifecycle checkpoint conflict');
   } else if (before.revision !== 0 || Object.values(beforeTotals).some(n => n !== 0)) throw Error('Product snapshot missing');
   for (const source of before.sources) {
@@ -718,18 +1028,18 @@ function mapTransition({ before, after, rows, event, generation }) {
     writes.push({ collection: journal, before: copy(old), after: { ...(old || {}), _id: id, title: relation.id,
       company, stockKey: key, description: relation.id, action: 'STOCK_TRANSFER_CURRENT', result: 'SAVED',
       participantTaskIds: [relation.borrowerTaskId, relation.lenderTaskId],
+      lenderSourceId: relation.lenderSourceId, replacementSourceId: relation.replacementSourceId, repaidQuantity: relation.repaid,
       revision: (old?.revision || 0) + 1, activityTime: event.activityTime, checkpointGeneration: generation + 1,
       status: relationRemaining(relation) === 0 ? 'CLOSED' : 'ACTIVE', details: { relation: copy(relation) } } });
   }
   if (consumedPositions.size !== positions.size || consumedClaims.size !== claims.size || consumedTransfers.size !== transfers.size) throw Error('Snapshot contains unrelated stock rows');
-  const totals = summary(after);
-  writes.push({ collection: 'StockProducts', before: copy(product || null), after: { ...(product || { _id: productId,
-    schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing, ea: before.ea, name: before.name || '' }),
-    ...totals, revision: before.revision + 1, checkpointGeneration: generation + 1, reviewRequired: false,
-    ...(after.lifecycleVersion === 2 ? { lifecycleVersion: 2, nextBorrowSequence: after.nextBorrowSequence } : {}),
-    status: totals.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
+  const productAfter = rollForwardProduct({ identity: before, product, beforeSources: before.sources,
+    afterSources: after.sources, generation, revision: before.revision,
+    lifecycle: after.lifecycleVersion === 2 ? { version: 2, nextBorrowSequence: after.nextBorrowSequence } : null });
+  writes.push({ collection: 'StockProducts', before: copy(product || null), after: productAfter });
   const identities = writes.map(w => w.collection + ':' + w.after._id);
-  if (new Set(identities).size !== writes.length || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Borrowing plan exceeds atomic proof bound');
+  if (new Set(identities).size !== writes.length || writes.length > (scoped ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify({ writes })) > (scoped ? 8 * 1024 * 1024 : 180000)) throw Error('Borrowing plan exceeds atomic proof bound');
   return { writes };
 }
 function prepareBorrowApproval({ state, rows, input, event, generation }) {
@@ -867,7 +1177,7 @@ function preparePackingHoldTransition({ state, rows, event, generation, packingH
 module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, preparePackingHoldTransition, transferId };
 
 },
-// borrowing-model.cjs sha256:7923a4d5c9ddaab5ffa108a991821dca30179b71340354dbdbcf2c145076fbd8
+// borrowing-model.cjs sha256:c441b846c58578b09c791d849223bbc2102cdcdcedd1cca0b4ec161b886593e2
 "borrowing-model.cjs": (load, module) => {
 'use strict';
 
@@ -891,6 +1201,7 @@ const legacyHeld = (state, taskId) => state.packingHolds.legacyBlockedByTask?.[t
 function validate(state) {
   if (state.complete !== true || !count(state.revision) || !Array.isArray(state.tasks)
     || !Array.isArray(state.sources) || !Array.isArray(state.relations)) throw Error('Complete snapshot required');
+  if (state.scope != null && (state.scope !== 'CURRENT_ACTIVE_PRODUCT' || state.lifecycleVersion !== 2)) throw Error('Known current lifecycle scope required');
   const key = stockKey(state), tasks = new Map(), sources = new Map(), ids = new Set(), sequences = new Set();
   if (state.packingHolds?.complete !== true || state.packingHolds.company !== state.company
     || state.packingHolds.scope !== 'TASK_TOTAL' || !state.packingHolds.version
@@ -948,7 +1259,8 @@ function validate(state) {
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
       || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
-    if (sum(state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)) !== task.dispatched) throw Error('Task dispatch provenance conflict');
+    const outside = state.scope === 'CURRENT_ACTIVE_PRODUCT' && state.lifecycleVersion === 2 ? task.dispatchedOutsideScope : 0;
+    if (!count(outside) || sum([outside, ...state.sources.map(s => s.dispatchedByTask?.[task.id] || 0)]) !== task.dispatched) throw Error('Task dispatch provenance conflict');
     if (sum([task.dispatched, reserved(state, task.id), incoming(state, task.id)]) > task.requested) throw Error('Customer coverage exceeded');
   }
   for (const source of state.sources) {
@@ -1267,154 +1579,76 @@ function guardProcurementStock({ before, after }) {
 module.exports = { guardProcurementStock };
 
 },
-// segmented-plan.cjs sha256:0039b49767dc5d7105fa42aed123468ce123839e5e815c9856f2324822adf1b4
-"segmented-plan.cjs": (load, module) => {
+// product-delta.cjs sha256:c3d7cec57dfaf0eaae9fbf5c368731dcc779963eab3263d185521e7c5c736a29
+"product-delta.cjs": (load, module) => {
 'use strict';
 
-// Candidate only. Budgets are server policy, NOT measured Wix production capacity.
-// No storage, endpoint, permission or business mutation is performed by this codec.
+// Inductive current balance: initial parity + every exact changed-source delta.
+// This is a pure mapper, not an initializer, reader or permission boundary.
 const { hash } = load("commit-proof.cjs");
-const { planCollections } = load("domain-scope.cjs");
-const canonical = value => Array.isArray(value) ? value.map(canonical)
-  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
-const stringify = value => JSON.stringify(canonical(value));
-const same = (a, b) => stringify(a) === stringify(b);
+const { stockKey } = load("current-model.cjs");
 const copy = value => JSON.parse(JSON.stringify(value));
-// Works in the generated backend without Node Buffer or a browser TextEncoder.
-function utf8Bytes(value) {
-  let bytes = 0;
-  for (const character of value) {
-    const cp = character.codePointAt(0);
-    bytes += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
-  }
-  return bytes;
+const fields = ['onHand', 'reservedUsable', 'available', 'isolated'];
+const count = n => Number.isSafeInteger(n) && n >= 0;
+function sourceTotals(source) {
+  const reservedUsable = Object.values(source.claims || {}).reduce((sum, n) => {
+    if (!count(n) || !count(sum + n)) throw Error('Source claim total overflow'); return sum + n;
+  }, 0);
+  const totals = { onHand: source.onHand, reservedUsable, available: source.available, isolated: source.isolated };
+  if (!fields.every(k => count(totals[k])) || !count(reservedUsable + totals.available + totals.isolated)
+    || totals.onHand !== reservedUsable + totals.available + totals.isolated) throw Error('Known source balance required');
+  return totals;
 }
-function assertJson(value) {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
-  if (typeof value === 'number' && Number.isFinite(value)) return;
-  if (!value || typeof value !== 'object') throw Error('Plain JSON plan required');
-  const proto = Object.getPrototypeOf(value);
-  if (!Array.isArray(value) && proto !== null && (Object.getPrototypeOf(proto) !== null
-    || Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name !== 'Object')) throw Error('Plain JSON plan required');
-  for (const key of Object.keys(value)) assertJson(value[key]);
+function rollForwardProduct({ identity, product, beforeSources, afterSources, generation, revision, lifecycle }) {
+  const company = identity?.company, key = stockKey(identity), id = hash(company, key);
+  if (!['NCT', 'GHR'].includes(company) || !count(generation) || !count(revision)
+    || !Array.isArray(beforeSources) || !Array.isArray(afterSources)
+    || new Set(beforeSources.map(s => s.id)).size !== beforeSources.length
+    || new Set(afterSources.map(s => s.id)).size !== afterSources.length) throw Error('Exact source delta scope required');
+  if (product && (product._id !== id || product.company !== company || product.stockKey !== key || !product._version
+    || product.revision !== revision || product.reviewRequired === true || product.reviewCodes?.length
+    || !fields.every(k => count(product[k])) || product.onHand !== product.reservedUsable + product.available + product.isolated)) throw Error('Known product checkpoint required');
+  if (product?.lifecycleVersion === 2 && !lifecycle) throw Error('Product lifecycle context missing');
+  const afterById = new Map(afterSources.map(s => [s.id, s])), delta = Object.fromEntries(fields.map(k => [k, 0]));
+  const beforeTotals = Object.fromEntries(fields.map(k => [k, 0]));
+  const priorIds = new Set(beforeSources.map(s => s.id));
+  for (const source of afterSources.filter(s => !priorIds.has(s.id))) {
+    // Procurement may add a zero/nonphysical source before PO confirmation. The
+    // existing source mapper has not written a physical position for it yet.
+    if (!source.id || stockKey(source) !== key || Object.values(sourceTotals(source)).some(n => n !== 0)) throw Error('New source must remain nonphysical');
+  }
+  for (const before of beforeSources) {
+    const after = afterById.get(before.id);
+    if (!before.id || !after || stockKey(before) !== key || stockKey(after) !== key) throw Error('Source delta identity conflict');
+    const old = sourceTotals(before), next = sourceTotals(after);
+    if (!product && fields.some(k => old[k] !== 0)) throw Error('Product checkpoint missing');
+    for (const field of fields) {
+      beforeTotals[field] += old[field];
+      if (!count(beforeTotals[field]) || product && beforeTotals[field] > product[field]) throw Error('Source delta exceeds product checkpoint');
+      delta[field] += next[field] - old[field];
+      if (!Number.isSafeInteger(delta[field])) throw Error('Product delta overflow');
+    }
+  }
+  if (!product && revision !== 0) throw Error('Product checkpoint missing');
+  const totals = Object.fromEntries(fields.map(k => [k, (product?.[k] || 0) + delta[k]]));
+  if (!fields.every(k => count(totals[k])) || !count(totals.reservedUsable + totals.available + totals.isolated)
+    || totals.onHand !== totals.reservedUsable + totals.available + totals.isolated || !count(revision + 1) || !count(generation + 1)) throw Error('Product delta balance conflict');
+  const result = { ...(product || { _id: id, schemaVersion: 1, company, stockKey: key,
+    barcode: identity.barcode, packing: identity.packing, ea: identity.ea, name: identity.name || '' }),
+    ...totals, revision: revision + 1, checkpointGeneration: generation + 1, reviewRequired: false,
+    status: totals.onHand === 0 ? 'CLOSED' : 'ACTIVE' };
+  if (lifecycle) {
+    if (lifecycle.version !== 2 || !Number.isSafeInteger(lifecycle.nextBorrowSequence) || lifecycle.nextBorrowSequence <= 0
+      || product && (product.lifecycleVersion !== 2 || !Number.isSafeInteger(product.nextBorrowSequence)
+        || lifecycle.nextBorrowSequence < product.nextBorrowSequence)) throw Error('Product lifecycle delta conflict');
+    Object.assign(result, { lifecycleVersion: 2, nextBorrowSequence: lifecycle.nextBorrowSequence });
+  }
+  return copy(result);
 }
-function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetBytes = 64000,
-  maxPlanBytes = 8 * 1024 * 1024, maxWrites = 10000, maxFragments = 256 }) {
-  if (!['NCT', 'GHR'].includes(company)) throw Error('Known company required');
-  for (const value of [recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments]) {
-    if (!Number.isSafeInteger(value) || value <= 0) throw Error('Positive codec policy required');
-  }
-  if (recordBudgetBytes < 2048 || recordBudgetBytes > 256000) throw Error('Conservative record budget required');
-  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
-  const scope = company + '/PURCHASE', lockId = hash(scope, 'LOCK'), controlId = hash(company, 'STOCK_CONTROL');
-  const allowed = new Set(planCollections(company, domainWrites));
-  const fragmentId = (key, attempt, index) => hash(key, 'PLAN_FRAGMENT', attempt, index);
-  function normalize(plan, key, reserved = []) {
-    assertJson(plan);
-    if (!Array.isArray(plan?.writes) || !plan.writes.length || plan.writes.length > maxWrites) throw Error('Segmented plan write policy');
-    const normalized = copy(plan), identities = new Set();
-    const protectedIds = new Set([lockId, controlId, key, hash(key, 'RESULT'), ...reserved]);
-    for (const change of normalized.writes) {
-      const id = change.after?._id, identity = change.collection + '/' + id;
-      if (!allowed.has(change.collection) || typeof id !== 'string' || !id || identities.has(identity)
-        || change.after.company !== company || change.before !== null && (!change.before || change.before._id !== id
-          || change.before.company !== company || typeof change.before._version !== 'string' || !change.before._version)
-        || change.collection === journal && (protectedIds.has(id)
-          || [change.before, change.after].some(row => row?.stockOperationProtocol != null))) throw Error('Plan identity conflict');
-      identities.add(identity);
-      const token = hash(key, change.collection, id);
-      if (change.before?._version === token) throw Error('Version reuse');
-      change.after._version = token;
-    }
-    if (utf8Bytes(stringify(normalized)) > maxPlanBytes) throw Error('Segmented plan byte policy');
-    return normalized;
-  }
-  function identity({ key, digest, memberId, requestId, baseGeneration, attempt }) {
-    if (typeof memberId !== 'string' || !memberId || !/^[a-f0-9-]{36}$/i.test(requestId || '')
-      || key !== hash(scope, requestId, memberId) || typeof digest !== 'string' || !digest
-      || !Number.isSafeInteger(baseGeneration) || baseGeneration < 0 || typeof attempt !== 'string' || !attempt) throw Error('Segmented operation identity');
-  }
-  function encode(context) {
-    identity(context);
-    const { key, digest, memberId, requestId, baseGeneration, attempt } = context;
-    const plan = normalize(context.plan, key), payload = stringify(plan), fragments = [];
-    let offset = 0;
-    while (offset < payload.length) {
-      if (fragments.length >= maxFragments) throw Error('Segment count policy');
-      const index = fragments.length, id = fragmentId(key, attempt, index);
-      const wrap = text => ({ _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
-        operationId: key, attempt, index, payload: text, payloadHash: hash(text) });
-      let low = 1, high = Math.min(payload.length - offset, recordBudgetBytes), size = 0;
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        if (utf8Bytes(stringify(wrap(payload.slice(offset, offset + mid)))) <= recordBudgetBytes) { size = mid; low = mid + 1; }
-        else high = mid - 1;
-      }
-      // Never split a surrogate pair. JSON escaping also counts against record budget.
-      if (size && /[\uD800-\uDBFF]/.test(payload[offset + size - 1]) && /[\uDC00-\uDFFF]/.test(payload[offset + size] || '')) size--;
-      if (!size) throw Error('Fragment metadata exceeds policy');
-      fragments.push(wrap(payload.slice(offset, offset + size))); offset += size;
-    }
-    normalize(plan, key, fragments.map(row => row._id));
-    const manifest = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
-      memberId, requestId, attempt, baseGeneration, planHash: hash(payload), planBytes: utf8Bytes(payload),
-      writeCount: plan.writes.length, fragments: fragments.map(row => ({ id: row._id, hash: row.payloadHash, bytes: utf8Bytes(row.payload) })) };
-    if (utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest exceeds policy');
-    return { manifest, fragments, plan };
-  }
-  function decode({ manifest, fragments, key, digest, memberId, requestId }) {
-    if (!manifest || manifest.company !== company || manifest._id !== key || manifest.digest !== digest
-      || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
-      || manifest.action !== 'STOCK_PLAN_MANIFEST' || !Array.isArray(manifest.fragments) || !manifest.fragments.length
-      || manifest.fragments.length > maxFragments || !Array.isArray(fragments) || fragments.length !== manifest.fragments.length
-      || utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest integrity conflict');
-    identity({ ...manifest, key });
-    const parts = []; let payloadBytes = 0;
-    for (let index = 0; index < fragments.length; index++) {
-      const ref = manifest.fragments[index], row = fragments[index];
-      const id = fragmentId(key, manifest.attempt, index);
-      if (!row || !same(ref, { id, hash: row.payloadHash, bytes: typeof row.payload === 'string' ? utf8Bytes(row.payload) : -1 })
-        || typeof row.payload !== 'string' || !same(row, { _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
-          operationId: key, attempt: manifest.attempt, index, payload: row.payload, payloadHash: hash(row.payload) })
-        || utf8Bytes(stringify(row)) > recordBudgetBytes) throw Error('Fragment integrity conflict');
-      parts.push(row.payload); payloadBytes += ref.bytes;
-      if (payloadBytes > maxPlanBytes) throw Error('Segmented plan byte policy');
-    }
-    const payload = parts.join('');
-    if (manifest.planBytes !== utf8Bytes(payload) || manifest.planHash !== hash(payload)) throw Error('Plan hash conflict');
-    const parsed = JSON.parse(payload), normalized = normalize(parsed, key, fragments.map(row => row._id));
-    if (!same(parsed, normalized) || stringify(parsed) !== payload || manifest.writeCount !== normalized.writes.length) throw Error('Prepared plan changed');
-    const expected = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
-      memberId, requestId, attempt: manifest.attempt, baseGeneration: manifest.baseGeneration,
-      planHash: manifest.planHash, planBytes: manifest.planBytes, writeCount: manifest.writeCount, fragments: manifest.fragments };
-    if (!same(manifest, expected)) throw Error('Manifest fields conflict');
-    return normalized;
-  }
-  return { encode, decode, normalize, ids: { journal, lockId, controlId }, policy: { recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments } };
-}
-module.exports = { createSegmentedPlanCodec, utf8Bytes, same, copy };
+module.exports = { rollForwardProduct, sourceTotals };
 
 },
-// domain-scope.cjs sha256:cddb64affc043a9dda5fbf1c60b671f46611d21be8d6cf4797f243bb1df181e7
-"domain-scope.cjs": (load, module) => {
-'use strict';
-
-// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
-// This changes no CMS/employee permission; optional conditional domain plans only.
-function domainCollections(company) {
-  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
-  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
-  throw Error('Known company domain scope required');
-}
-function planCollections(company, domainWrites = false) {
-  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
-  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
-    ...(domainWrites ? domainCollections(company) : [])];
-}
-module.exports = { domainCollections, planCollections };
-
-},
-// borrowing-authority.cjs sha256:91a596aac377f03a1eb79c246a19f9c4a84642be9f6c31df56d4498cb880d744
+// borrowing-authority.cjs sha256:4f06a340c93d11520fce44513db30099529b4af6e76760105f8380ace02b9b8d
 "borrowing-authority.cjs": (load, module) => {
 'use strict';
 
@@ -1474,31 +1708,37 @@ function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchas
       action: kind === 'APPROVE' ? 'STOCK_TRANSFER_APPROVED' : 'STOCK_TRANSFER_RETURNED', result: 'SAVED',
       activityTime: now().toISOString(), actorType: 'STAFF', initiatedByStaffId: staff.staffId, initiatedByStaffName: staff.staffName,
       details: { company, [kind === 'APPROVE' ? 'approval' : 'return']: safeInput } };
-    return { kind, identity, input: safeInput, event, memberId: member._id, buildState: product.buildState };
+    return { kind, identity, input: safeInput, event, memberId: member._id, buildState: product.buildState,
+      stockScope: { sourceTaskIds: [donorId, futureId], claimPairs: [donorId, futureId].flatMap(sourceTaskId =>
+        [borrowerId, donor.ownerTaskId].map(taskId => ({ sourceTaskId, taskId }))) } };
   };
 }
 module.exports = { createBorrowingAuthority };
 
 },
-// borrowing-stock-reader.cjs sha256:397d3a682736eeba0d2bf35883b798049f28116a1bbe942016ae0a9141a15370
+// borrowing-stock-reader.cjs sha256:bca1b684644e6396355280e21bf2b47f5a09ab4df40d1a022903970ff037911e
 "borrowing-stock-reader.cjs": (load, module) => {
 'use strict';
 
 // Bounded current-row preparation candidate. Authority callback is SERVER-owned and
 // must retain existing permission/PO/packing/finance checks. No production imports.
 const { readCurrentProduct } = load("current-product-reader.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
 const { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation } = load("borrowing-stock-plan.cjs");
 function createBorrowingStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
     || typeof protocol?.readSnapshot !== 'function' || typeof readAuthority !== 'function') throw Error('Server borrowing dependencies required');
   return async () => {
     const metrics = { exactReads: 0, queries: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
       const authority = await readAuthority();
       const identity = authority?.identity || authority?.state;
       if (!identity || identity.company !== company || !['APPROVE', 'RETURN', 'RECEIVE', 'ALLOCATE'].includes(authority.kind)
         || !authority.state && typeof authority.buildState !== 'function') throw Error('Verified borrowing authority required');
-      const rows = await readCurrentProduct({ company, identity, items, store, metrics });
+      if (protocol.planFormat === 'SEGMENTED_V2' && (!authority.stockScope || authority.state)) throw Error('Server borrowing current scope required');
+      const rows = protocol.planFormat === 'SEGMENTED_V2'
+        ? await readScopedCurrentProduct({ ...authority.stockScope, company, identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
+        : await readCurrentProduct({ company, identity, items, store, metrics });
       if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
       return { authority, rows };
     });
@@ -1733,7 +1973,7 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
 module.exports = { createFencedProof };
 
 },
-// segmented-fenced-proof.cjs sha256:dbfbb2e74438de5bfda8616ab177adced523ac32543c175a2206c5185c61ca78
+// segmented-fenced-proof.cjs sha256:ca8c8902ba0fc50a0d245f8de6ab20df11e30ddb70078227fe1a934b604a119d
 "segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
@@ -1770,7 +2010,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
   async function readSnapshot(readRows) {
     const before = await readControl();
     if (before.pending) throw Error('Inventory pending');
-    const rows = await readRows(), after = await readControl();
+    const rows = await readRows(copy(before)), after = await readControl();
     if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
     return { generation: after.generation, rows };
   }
@@ -1786,7 +2026,8 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
       const prior = await store.read(journal, resultId);
       let manifest = await store.read(journal, key);
-      if (manifest && (manifest.company !== company || manifest._id !== key || manifest.digest !== digest
+      if (manifest && manifest.digest !== digest) throw Error('Request identity reused');
+      if (manifest && (manifest.company !== company || manifest._id !== key
         || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
         || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0)) throw Error('Operation manifest identity conflict');
       if (prior && (!manifest || prior.company !== company || prior._id !== resultId || prior.digest !== digest

@@ -22,6 +22,7 @@ function stockBootstrapPreflight({ company, context, purchaseRecords, existing, 
     activity.set(row._id, row);
     if (row._id === expectedLockId || row.action === 'PURCHASE_OPERATION_LOCK' || row.action === 'PURCHASE_TASK_COST_LOCK') blockers.push('BUSINESS_LOCK_PRESENT');
     if (row.action === 'STOCK_TRANSFER_CURRENT') blockers.push('BORROWING_FACTS_REQUIRE_CURRENT_CHECKPOINT');
+    if (row.stockOperationProtocol === 2 && row.action === 'STOCK_PLAN_MANIFEST') blockers.push('SEGMENTED_FACTS_REQUIRE_CURRENT_CHECKPOINT');
   }
   for (const task of context.tasks) if (activity.has(hash(company, task.id, 'COST_LOCK'))) blockers.push('BUSINESS_COST_LOCK_PRESENT');
   for (const row of context.activity) {

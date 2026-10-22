@@ -43,6 +43,29 @@ test('one immutable invoice dispatch consumes only its reservation; other holds 
   const events = result.plan.writes.filter(w => w.after.action === 'CUSTOMER_SHIPMENT_CHANGED');
   assert.equal(events.length, 1); assert.deepEqual(events[0].after.details, f.event.details);
 });
+
+test('v2 actual dispatch includes exact existing task cumulative in same plan as physical outflow', () => {
+  const f = fixture(); f.planFormat = 'SEGMENTED_V2';
+  for (const p of f.products) {
+    Object.assign(p.state, { lifecycleVersion: 2, nextBorrowSequence: 1, scope: 'CURRENT_ACTIVE_PRODUCT' });
+    p.state.tasks[0].dispatchedOutsideScope = 0; p.state.sources[0].borrowRepaidCumulative = 0;
+    Object.assign(p.rows, { scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2' });
+    p.rows.positions[0].borrowRepaidCumulative = 0; p.rows.claims[0].dispatchedCumulative = 0;
+    Object.assign(p.rows.product, { lifecycleVersion: 2, nextBorrowSequence: 1 });
+  }
+  f.taskRows = ['A', 'B'].map(id => ({ _id: id, company: 'NCT', _version: 'TASK0', stockCounterSchema: 2,
+    stockCounterGeneration: 0, stockDispatchedCumulative: 0, po: 'KEEP', requested: 100 }));
+  const result = prepareWarehouseDispatch(f), changes = result.plan.writes.filter(w => w.collection === 'NCTTasks');
+  assert.equal(changes.length, 2);
+  for (const change of changes) {
+    assert.equal(change.before.stockDispatchedCumulative, 0); assert.equal(change.after.stockDispatchedCumulative, 40);
+    assert.equal(change.after.stockCounterGeneration, 1); assert.equal(change.after.po, 'KEEP');
+  }
+  for (const mutate of [x => { x.taskRows.pop(); }, x => { x.taskRows[0].stockDispatchedCumulative = 1; },
+    x => { x.taskRows[0].company = 'GHR'; }, x => { x.planFormat = 'PROOF_V1'; }]) {
+    const bad = copy(f); mutate(bad); assert.throws(() => prepareWarehouseDispatch(bad));
+  }
+});
 test('loaded/invoiced-only, changed invoice/source, missing reservation or product cannot deduct stock', () => {
   for (const mutate of [f => { f.event.details.shipment.status = 'INVOICED'; }, f => { f.event.details.shipment.invoice.amountCents = 999; },
     f => { f.event.details.shipment.lines[0].sources[0].quantity = 41; }, f => { f.products[0].state.packingHolds.heldByTask.A = 0; },

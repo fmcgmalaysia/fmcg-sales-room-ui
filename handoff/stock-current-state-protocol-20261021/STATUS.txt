@@ -530,3 +530,10 @@ actual original300line receipt over segmented in-memory protocol implemented. Se
 LIFECYCLE_COUNTERS.txt. This is still candidate, NOT actual all-writer/production capacity
 completion. No live stock enabled or publication. Next scoped current reader/deltas.
 
+2026-10-22 LATEST SCOPED INTEGRATION: see SCOPED_LIFECYCLE_INTEGRATION.txt. Candidate
+v2 original-auth Purchase borrowing/return and Warehouse receipt/automatic repayment
+now use scoped current reader + exact source delta. Dispatch includes task cumulative
+counter in same plan.456current tests pass0fail4188.3604ms. ACTIVE OFF; initial counter/
+task/version/schema/index parity, actual all-writer wiring/recovery/platform and release
+still unfinished. Do NOT report publication or ask user to test real borrowing yet.
+

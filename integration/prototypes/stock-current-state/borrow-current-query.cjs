@@ -19,7 +19,7 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
     const snapshot = await protocol.readSnapshot(async control => {
       // Index marker may be installed only after complete private migration/parity
       // verifies all current rows. Missing index must NOT look like zero relations.
-      if (control?.company !== company || control.mode !== 'ACTIVE' || control.pending || control.transferIndexVersion !== 1) throw Error('Borrowing relation index not verified');
+      if (control?.company !== company || control.mode !== 'ACTIVE' || control.pending || ![1, 2].includes(control.transferIndexVersion)) throw Error('Borrowing relation index not verified');
       let query = items.query(journal).eq('company', company).eq('action', 'STOCK_TRANSFER_CURRENT').eq('status', 'ACTIVE');
       if (taskId) query = query.eq('participantTaskIds', taskId);
       const page = await query.ascending('_id').skip(offset).limit(pageSize).find({ consistentRead: true, returnTotalCount: true });
@@ -33,6 +33,8 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
           || !text(r.lenderSourceId, 128) || !text(r.replacementSourceId, 128) || !count(r.quantity) || !r.quantity || !count(r.repaid)
           || !count(r.returned ?? 0) || r.repaid + (r.returned || 0) >= r.quantity || !count(row.revision)
           || !count(row.checkpointGeneration) || row.checkpointGeneration > control.generation) throw Error('Current relationship requires review');
+        if (control.transferIndexVersion === 2 && (row.lenderSourceId !== r.lenderSourceId
+          || row.replacementSourceId !== r.replacementSourceId || row.repaidQuantity !== r.repaid)) throw Error('Current relationship source index requires review');
         // No private plan/version, cost, arbitrary details or old history payload.
         return { id: r.id, borrowerTaskId: r.borrowerTaskId, lenderTaskId: r.lenderTaskId, lenderSourceId: r.lenderSourceId,
           replacementSourceId: r.replacementSourceId, quantity: r.quantity, repaid: r.repaid, returned: r.returned || 0,

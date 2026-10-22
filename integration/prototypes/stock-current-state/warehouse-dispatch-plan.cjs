@@ -2,8 +2,10 @@
 
 const { stockKey } = require('./current-model.cjs');
 const { prepareShipmentDispatch } = require('./borrowing-stock-plan.cjs');
+const { appendTaskDispatchCheckpoints } = require('./task-dispatch-checkpoint.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
-function prepareWarehouseDispatch({ event, priorShipment, products, generation }) {
+function prepareWarehouseDispatch({ event, priorShipment, products, generation, taskRows, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server dispatch plan format required');
   const shipment = event?.details?.shipment;
   if (!Array.isArray(shipment?.lines) || !shipment.lines.length || !Array.isArray(priorShipment?.lines)
     || !Array.isArray(products) || !products.length) throw Error('Complete original dispatch and products required');
@@ -24,8 +26,11 @@ function prepareWarehouseDispatch({ event, priorShipment, products, generation }
     || new Set(priorShipment.lines.map(l => l.taskId)).size !== shipment.lines.length
     || priorShipment.lines.some(l => !consumed.has(l.taskId))) throw Error('Incomplete dispatch product coverage');
   writes.unshift({ collection: shipment.company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', before: null, after: { ...copy(event), company: shipment.company } });
-  if (new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
-    || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Combined dispatch exceeds atomic proof bound');
-  return { states, plan: { writes } };
+  const plan = planFormat === 'SEGMENTED_V2' ? appendTaskDispatchCheckpoints({ company: shipment.company, plan: { writes }, products, states, taskRows, generation }) : { writes };
+  if (planFormat !== 'SEGMENTED_V2' && products.some(p => p.state.lifecycleVersion === 2)) throw Error('Current dispatch must retain task checkpoints');
+  if (new Set(plan.writes.map(w => w.collection + ':' + w.after._id)).size !== plan.writes.length
+    || plan.writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify(plan)) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Combined dispatch exceeds atomic proof bound');
+  return { states, plan };
 }
 module.exports = { prepareWarehouseDispatch };

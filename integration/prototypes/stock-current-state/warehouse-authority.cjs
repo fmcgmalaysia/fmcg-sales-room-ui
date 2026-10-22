@@ -38,7 +38,14 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
         || source.planned !== line.planned) throw Error('Original receipt and source authority differ');
     }
     return { kind: 'RECEIVE', memberId: member._id, validated,
-      products: [...products.values()].map(p => ({ identity: p.identity, buildState: p.buildState })) };
+      products: [...products.values()].map(p => {
+        const lines = validated.event.details.lines.filter(line => p.sources.some(s => s.id === line.taskId));
+        return { identity: p.identity, buildState: p.buildState, stockScope: {
+          sourceTaskIds: lines.map(line => line.taskId),
+          correctionSourceIds: lines.filter(line => line.kind === 'CORRECTION' && line.accepted < line.beforeAccepted).map(line => line.taskId),
+          claimPairs: lines.flatMap(line => { const source = p.sources.find(s => s.id === line.taskId);
+            return source.ownerTaskId ? [{ sourceTaskId: source.id, taskId: source.ownerTaskId }] : []; }) } };
+      }) };
   };
 }
 module.exports = { createWarehouseAuthority };
