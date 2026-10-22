@@ -3,7 +3,7 @@
 const fs = require('node:fs'), path = require('node:path');
 let source = fs.readFileSync(path.join(__dirname, '../../backend/customerFulfilmentService.js'), 'utf8').replace(/\r\n/g, '\n');
 const old = "export async function readCustomerFulfilment(company,staff,customerId=''){\n const context=await readFulfilmentContext(company,staff),shipments=";
-const next = "export const CUSTOMER_CURRENT_FULFILMENT_VERSION = 2;\nexport async function readCustomerFulfilment(company,staff,customerId='',currentContext=null){\n if(currentContext!==null&&(currentContext.company!==company||currentContext.stockAllocationView!=='CURRENT_V2'||staff.customerId!==customerId))throw Error('Verified current customer context required.');\n const context=currentContext===null?await readFulfilmentContext(company,staff):currentContext,shipments=";
+const next = "export const CUSTOMER_CURRENT_FULFILMENT_VERSION = 2;\nexport async function readCustomerFulfilment(company,staff,customerId='',currentContext=null){\n if(currentContext!==null&&(currentContext.company!==company||currentContext.stockAllocationView!=='CURRENT_V2'||staff.customerId!==customerId&&!(customerId===''&&!staff.customerId&&(staff.canDispatchShipment===true||staff.readFinancial===true))))throw Error('Verified current customer context required.');\n const context=currentContext===null?await readFulfilmentContext(company,staff):currentContext,shipments=";
 if (source.split(old).length !== 2) throw Error('Original customer fulfilment read anchor changed');
 source = source.replace(old, next);
 const target = path.join(__dirname, 'customerFulfilmentService.candidate.js');

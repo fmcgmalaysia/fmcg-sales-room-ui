@@ -9,7 +9,8 @@ const { copy } = require('./segmented-plan.cjs');
 async function readCurrentWarehouseShipmentWorkspace({ company, staff, context, control, items, store,
   readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders, readAllocations, readCustomerShipments,
   readPackingLists, packingHeld, readPreparation, projectPreparation, metrics = { exactReads: 0, queries: 0 } }) {
-  if (!['NCT', 'GHR'].includes(company) || !staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
+  if (!['NCT', 'GHR'].includes(company) || !staff?.memberId || !staff.staffId
+    || staff.canDispatchShipment !== true && staff.readFinancial !== true || staff.customerId
     || context?.company !== company || control?.company !== company || control.mode !== 'ACTIVE' || control.pending
     || control.schemaVersion !== 1 || !Number.isSafeInteger(control.generation) || control.generation < 0
     || control.transferIndexVersion !== 2 || typeof control.writerBuild !== 'string' || !control.writerBuild

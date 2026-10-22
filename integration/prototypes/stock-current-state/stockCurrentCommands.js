@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 // Candidate-only backend runtime. Original gateway authentication and verified
 // all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.
 const factories = {
-// current-stock-save.cjs sha256:83fea3fb1d8885a95c8189849c330df1cdb59fc883fbca621d5d7f18fb36180e
+// current-stock-save.cjs sha256:327551fdabc6e6139aa945f5cd274b827fc8d136e4f1c1b92d493dc38b8405d2
 "current-stock-save.cjs": (load, module) => {
 'use strict';
 
@@ -21,8 +21,14 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
     // approval, coverage, resume or route field enters the privileged callbacks.
     const actor = await authenticate(company);
     if (typeof actor?.memberId !== 'string' || !actor.memberId) throw Error('Authenticated department member required');
+    if(request.stockIdentity!==undefined&&(typeof request.stockIdentity!=='object'||request.stockIdentity===null||Array.isArray(request.stockIdentity)
+      ||Object.keys(request.stockIdentity).length!==2||['staffId','memberId'].some(field=>typeof request.stockIdentity[field]!=='string'||!request.stockIdentity[field]||request.stockIdentity[field].length>200)
+      ||request.stockIdentity.memberId!==actor.memberId||request.stockIdentity.staffId!==actor.staffId))throw Error('Original stock request identity required');
+    // Gateways still check the ORIGINAL role/staff ID. Bind that expected identity
+    // into immutable replay digest too: same login with a reissued staff ID must
+    // not adopt a plan prepared under its old staff ID. This grants no authority.
     const envelope = copy({ company, writer, input: request.input, stockProtocol: request.stockProtocol,
-      stockBuild: request.stockBuild, stockGeneration: request.stockGeneration });
+      stockBuild: request.stockBuild, stockGeneration: request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{}) });
     let admittedGeneration;
     const result = await protocol.commit({ requestId: request.requestId, memberId: actor.memberId, input: envelope,
       authorize: operation => {
@@ -3558,7 +3564,7 @@ async function uploadWarehousePhotoSlot({company,staff,requestId,input,plan,inde
 module.exports={captureOriginalWarehousePhotoPlan,assertWarehousePhotoUploads,uploadWarehousePhotoSlot};
 
 },
-// warehouse-photo-fenced-store.cjs sha256:626aa63fe701a328a2a2aa9beea64bff6197a51a651f04af88bc35d74bf03939
+// warehouse-photo-fenced-store.cjs sha256:3c59fe1ee7149beb732924d709d5d7ac96cd8c325bedca085833bfef75cfea45
 "warehouse-photo-fenced-store.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs");
@@ -3593,7 +3599,7 @@ function createWarehousePhotoFencedStore({company,staff,request,store,documentSe
   ||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0||!Array.isArray(request.input?.photos)||request.input.photos.length>3
   ||['read','insert','compareAndSet','compareAndRemove'].some(method=>typeof store?.[method]!=='function')||typeof documentService!=='function')throw Error('Private fenced Warehouse photo dependencies required');
  const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids,requestId=request.requestId;
- const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'WAREHOUSE_PREPARATION',input:request.input,stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration});
+ const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'WAREHOUSE_PREPARATION',input:request.input,stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{})});
  async function boundPlan(collection,row){
   const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration
@@ -5576,7 +5582,7 @@ async function prepareShipmentArrangement({ company, staff, requestId, input, co
 module.exports = { prepareShipmentArrangement };
 
 },
-// current-warehouse-dispatch-save.cjs sha256:c42613e519b6f75c80117fd78655e7302a0eea38cfec4f245fe80de31386a52f
+// current-warehouse-dispatch-save.cjs sha256:f73bb7bdf82c474ea26bb471034cc0da14d51314185bac4b229938aabe2dc688
 "current-warehouse-dispatch-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -5597,7 +5603,7 @@ function createCurrentWarehouseDispatchSave({ company, items, store, protocol, c
         staff = await authenticateOriginalWarehouse(company);
         if (!staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
           || request?.input?.action !== 'DISPATCH') throw Error('Original Warehouse dispatch grant required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         const metrics = { exactReads: 0, queries: 0 };
         const snapshot = await protocol.readSnapshot(async control => {
@@ -5635,7 +5641,7 @@ function createCurrentWarehouseShipmentRead({ company, protocol, authenticateOri
       // Original public gateway still applies its original financial redaction.
       const result = await readOriginalCustomerFulfilment(company, staff, '', current.context);
       if (result?.company !== company) throw Error('Original Warehouse shipment response company changed');
-      return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
+      return { ...result, staff:{...result.staff,staffId:staff.staffId,memberId:staff.memberId}, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
     });
     return snapshot.rows;
   };
@@ -5643,7 +5649,7 @@ function createCurrentWarehouseShipmentRead({ company, protocol, authenticateOri
 module.exports = { createCurrentWarehouseDispatchSave, createCurrentWarehouseShipmentRead };
 
 },
-// warehouse-shipment-workspace.cjs sha256:a65427c28ad34f4c7907be273c2c74618fde31684659e24b598dcdbd0ec0ed1f
+// warehouse-shipment-workspace.cjs sha256:8671cb8c5bf4479ea6653dbf7e1d676d26c90db6165871d03c7bdaf4b972c407
 "warehouse-shipment-workspace.cjs": (load, module) => {
 'use strict';
 const { stockKey } = load("current-model.cjs");
@@ -5656,7 +5662,8 @@ const { copy } = load("segmented-plan.cjs");
 async function readCurrentWarehouseShipmentWorkspace({ company, staff, context, control, items, store,
   readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders, readAllocations, readCustomerShipments,
   readPackingLists, packingHeld, readPreparation, projectPreparation, metrics = { exactReads: 0, queries: 0 } }) {
-  if (!['NCT', 'GHR'].includes(company) || !staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
+  if (!['NCT', 'GHR'].includes(company) || !staff?.memberId || !staff.staffId
+    || staff.canDispatchShipment !== true && staff.readFinancial !== true || staff.customerId
     || context?.company !== company || control?.company !== company || control.mode !== 'ACTIVE' || control.pending
     || control.schemaVersion !== 1 || !Number.isSafeInteger(control.generation) || control.generation < 0
     || control.transferIndexVersion !== 2 || typeof control.writerBuild !== 'string' || !control.writerBuild

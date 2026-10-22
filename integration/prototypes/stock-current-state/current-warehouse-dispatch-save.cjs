@@ -17,7 +17,7 @@ function createCurrentWarehouseDispatchSave({ company, items, store, protocol, c
         staff = await authenticateOriginalWarehouse(company);
         if (!staff?.memberId || !staff.staffId || staff.canDispatchShipment !== true || staff.customerId
           || request?.input?.action !== 'DISPATCH') throw Error('Original Warehouse dispatch grant required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         const metrics = { exactReads: 0, queries: 0 };
         const snapshot = await protocol.readSnapshot(async control => {
@@ -55,7 +55,7 @@ function createCurrentWarehouseShipmentRead({ company, protocol, authenticateOri
       // Original public gateway still applies its original financial redaction.
       const result = await readOriginalCustomerFulfilment(company, staff, '', current.context);
       if (result?.company !== company) throw Error('Original Warehouse shipment response company changed');
-      return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
+      return { ...result, staff:{...result.staff,staffId:staff.staffId,memberId:staff.memberId}, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
     });
     return snapshot.rows;
   };

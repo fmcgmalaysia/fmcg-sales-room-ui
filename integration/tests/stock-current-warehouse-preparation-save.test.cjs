@@ -73,7 +73,7 @@ test('paired current photo PACK/PHOTOS/LOAD reuse actual original validation, fr
  const bytes=Buffer.from([255,216,255,...Array(20).fill(2)]),photo={mimeType:'image/jpeg',base64:bytes.toString('base64'),sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
  const complete=async request=>{for(let index=0;index<50;index++){const result=await save(request);if(result.ok)return result;}throw Error('Photo did not finish');};
  const physical=()=>JSON.stringify([...f.db.values()].filter(row=>row.sourceKind==='PURCHASE_SOURCE'));
- const before=physical(),request=await f.command({action:'PACK',photos:[photo],photoStage:'PACKING'});lost=true;
+ const before=physical(),request=await f.command({action:'PACK',photos:[photo],photoStage:'PACKING'}),actor=await f.deps.authenticateOriginalWarehouse();request.stockIdentity={staffId:actor.staffId,memberId:actor.memberId};lost=true;
  await assert.rejects(complete(request),/Lost actual photo/);assert.ok((await f.protocol.readControl()).pending);assert.equal(allocated.length,1);renamed=true;
  await complete(request);assert.equal(physical(),before);assert.equal(allocated.length,1);assert.equal(commands.length,2);assert.deepEqual(commands[0],commands[1]);
  const calls=commands.length;await complete(request);assert.equal(commands.length,calls);assert.equal(allocated.length,1);

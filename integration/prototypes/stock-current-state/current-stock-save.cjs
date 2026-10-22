@@ -15,8 +15,14 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
     // approval, coverage, resume or route field enters the privileged callbacks.
     const actor = await authenticate(company);
     if (typeof actor?.memberId !== 'string' || !actor.memberId) throw Error('Authenticated department member required');
+    if(request.stockIdentity!==undefined&&(typeof request.stockIdentity!=='object'||request.stockIdentity===null||Array.isArray(request.stockIdentity)
+      ||Object.keys(request.stockIdentity).length!==2||['staffId','memberId'].some(field=>typeof request.stockIdentity[field]!=='string'||!request.stockIdentity[field]||request.stockIdentity[field].length>200)
+      ||request.stockIdentity.memberId!==actor.memberId||request.stockIdentity.staffId!==actor.staffId))throw Error('Original stock request identity required');
+    // Gateways still check the ORIGINAL role/staff ID. Bind that expected identity
+    // into immutable replay digest too: same login with a reissued staff ID must
+    // not adopt a plan prepared under its old staff ID. This grants no authority.
     const envelope = copy({ company, writer, input: request.input, stockProtocol: request.stockProtocol,
-      stockBuild: request.stockBuild, stockGeneration: request.stockGeneration });
+      stockBuild: request.stockBuild, stockGeneration: request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{}) });
     let admittedGeneration;
     const result = await protocol.commit({ requestId: request.requestId, memberId: actor.memberId, input: envelope,
       authorize: operation => {

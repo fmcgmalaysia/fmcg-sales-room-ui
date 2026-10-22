@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 MASTER DISPATCH ROOT/CLIENT: MASTER_DISPATCH_ACTUAL_ROOT_AND_UI.txt.
+Actual private fulfilment root + original TWO-method shared gateway now mode-route
+current read/dispatch, preserve shared consumers/redaction and original invoice/role
+guards, auth-only own dispatch recovery; original Warehouse confirmation now durable
+same UUID/phases/strict cleanup/open-form version freeze. Shared expected staff/member
+identity bound into digest after concrete reissued-staff counterexample; photo digest
+paired.784currentpass0fail15864.378ms,86modules42exports. No new finance feature/grant,
+no native/UI/public acceptance; production exact/ACTIVE OFF/coverage EMPTY. CBM/packing/
+Sales/intake/remaining actual writers and all native/recovery/capacity/cutover/shadow/
+SHIPPED-history/fourrelease gates OPEN. No real borrowing/publication claim.
+
 2026-10-22 PHOTO CURRENT PROTOCOL: WAREHOUSE_PHOTO_DURABLE_PROTOCOL.txt supersedes
 the prior photo-block/NEXT notes. Actual preparation factory/root/client now bind
 original photo validation, fixed IDs, durable per-photo confirmation before original

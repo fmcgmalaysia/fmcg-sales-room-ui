@@ -52,6 +52,16 @@ wix = replace(wix,'await saveWarehouseReceipt(message.company,message.requestId,
   'await saveWarehouseReceipt(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,'await saveWarehousePreparation(message.company,message.requestId,message.input)',
   'await saveWarehousePreparation(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
+wix = replace(wix,"    if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){",[
+  "    if(message.type==='WAREHOUSE_DISPATCH_RESUME_REQUEST'){",
+  "      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>1000)return;",
+  "      try{const result=await getCustomerFulfilment(message.company,{resume:'WAREHOUSE_DISPATCH_V1'});room.postMessage({type:'WAREHOUSE_DISPATCH_RESUME_RESULT',company:message.company,requestId:message.requestId,ok:result?.ok===true,result});}",
+  "      catch(_){room.postMessage({type:'WAREHOUSE_DISPATCH_RESUME_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Original dispatch identity unconfirmed.'});}return;",
+  "    }",
+  "    if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){"
+].join('\n'));
+wix = replace(wix,'await saveCustomerShipment(message.company,message.requestId,message.input)',
+  'await saveCustomerShipment(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,'warehouse-room/?v='+marker,'warehouse-room/?v=20261022-current-warehouse-v2');
 files['warehouse-department-page.js'] = wix;
 if (process.argv.includes('--check')) {
