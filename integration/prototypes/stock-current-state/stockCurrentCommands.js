@@ -3280,6 +3280,175 @@ function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion,
 module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
 
 },
+// current-warehouse-preparation-save.cjs sha256:d777c0bc6b7f09910af82e90f5a0fd030c275695c580e4ba5399064ddbfd3729
+"current-warehouse-preparation-save.cjs": (load, module) => {
+'use strict';
+const {createCurrentStockSave}=load("current-stock-save.cjs");
+const {currentWarehouseReadyContext}=load("current-warehouse-ready-context.cjs");
+const {validateOriginalPreparation}=load("legacy-warehouse-preparation.cjs");
+const {originalProductState}=load("original-product-state.cjs");
+const {preparePackingHoldTransition}=load("borrowing-stock-plan.cjs");
+const {hash}=load("commit-proof.cjs");
+// PRIVATE non-file co-writer. Original preparation rules/identity stay; it posts
+// neither physical departure nor invoice and never allocates another customer's stock.
+function createCurrentWarehousePreparationSave({company,store,protocol,coverage,authenticateOriginalWarehouse,
+  readCurrentContext,createPreparationOperations,projectPreparation,currentReadyVersion,projectPurchaseOrders,
+  readPreparation,readAllocations,readCustomerShipments,readPackingLists,packingHeld,now}){
+  if(!['NCT','GHR'].includes(company)||protocol?.planFormat!=='SEGMENTED_V2'||typeof protocol.readSnapshot!=='function'||typeof store?.read!=='function'||currentReadyVersion!==2
+    ||[authenticateOriginalWarehouse,readCurrentContext,createPreparationOperations,projectPreparation,projectPurchaseOrders,
+      readPreparation,readAllocations,readCustomerShipments,readPackingLists,packingHeld,now].some(fn=>typeof fn!=='function'))throw Error('Paired private current Warehouse preparation dependencies required');
+  return async request=>{
+    // Refuse before any prepare/document callback. File protocol is separate.
+    if(!['PACK','LOAD','UNPACK'].includes(request?.input?.action)
+      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length))throw Error('Current non-photo Warehouse preparation required');
+    let staff;
+    const result=await createCurrentStockSave({company,writer:'WAREHOUSE_PREPARATION',protocol,coverage,
+      authenticate:async()=>{
+        const original=await authenticateOriginalWarehouse(company);
+        if(!original?.staffId||!original.memberId||!original.staffName||original.customerId)throw Error('Original Warehouse preparation grant required');
+        staff={...original,canPrepareWarehouse:true};return staff;
+      },prepare:async command=>{
+        const snapshot=await protocol.readSnapshot(async control=>{
+          if(control?.company!==company||control.mode!=='ACTIVE'||control.schemaVersion!==1||control.transferIndexVersion!==2||control.pending)throw Error('Current Warehouse preparation checkpoint required');
+          const data=await readCurrentContext(company,staff,control),workspace=data?.workspace,products=data?.products;
+          if(workspace?.company!==company||workspace.stockAllocationView!=='CURRENT_V2'||data.originalContext?.company!==company
+            ||typeof products?.values!=='function'||!Array.isArray(data.tables?.PurchaseOrders))throw Error('Complete current Warehouse preparation context required');
+          const selectedProducts=[...products.values()];
+          if(selectedProducts.some(product=>product.state?.scope!=='CURRENT_ACTIVE_PRODUCT'||product.state.lifecycleVersion!==2||!product.rows))throw Error('Scoped Warehouse preparation products required');
+          const originalContext={...workspace,activity:data.originalContext.activity};
+          const requiredTaskIds=[...new Set([...workspace.tasks.filter(task=>!task.archived&&!task.specialPurchase&&!task.procurementSource).map(task=>task.id),
+            ...[...readPreparation(originalContext.activity).values()].filter(state=>state.loaded>0).map(state=>state.taskId)])];
+          const context=currentWarehouseReadyContext({context:originalContext,states:selectedProducts.map(product=>product.state),requiredTaskIds,readAllocations,readCustomerShipments});
+          const selected=projectPreparation(context).filter(row=>row.id===command.input.id);
+          if(selected.length!==1)throw Error('Exact current Warehouse preparation batch required');
+          const product=selectedProducts.filter(product=>product.state.tasks.some(task=>task.id===selected[0].taskId));
+          if(product.length!==1)throw Error('Exact current Warehouse preparation product required');
+          const validated=await validateOriginalPreparation({company,staff,requestId:command.requestId,input:command.input,context,createPreparationOperations,now}),event=validated.event;
+          if(event.initiatedByStaffId!==staff.staffId||event.description!==selected[0].id||event.imageAltText!==selected[0].taskId
+            ||event.image!==selected[0].customerId||validated.version!==command.input.version)throw Error('Original Warehouse preparation identity changed');
+          const originalOrders=projectPurchaseOrders({company,workspace:data.originalContext,records:data.tables.PurchaseOrders});
+          const after=originalProductState({company,context:{...context,activity:[...context.activity,event]},orders:originalOrders,
+            identity:product[0].state,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation}).buildState(product[0].rows);
+          return preparePackingHoldTransition({state:product[0].state,rows:product[0].rows,event,generation:control.generation,packingHolds:after.packingHolds}).plan;
+        });return{plan:snapshot.rows,memberId:staff.memberId,generation:snapshot.generation};
+      }})(request);
+    if(result.ok!==true)return result;
+    const id=hash(company,request.requestId,staff.memberId,'WAREHOUSE_PREPARATION');
+    const snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',id)),event=snapshot.rows;
+    if(!event?._version||event._id!==id||event.title!==id||event.company!==company||event.action!=='WAREHOUSE_PREPARATION_SAVED'||event.result!=='SAVED'
+      ||event.initiatedByStaffId!==staff.staffId||event.description!==request.input.id||event.details?.state?.id!==request.input.id
+      ||event.details.action!==request.input.action||typeof event.activityTime!=='string'||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Committed Warehouse preparation receipt requires review');
+    return{...result,company,id:request.input.id,savedAt:event.activityTime};
+  };
+}
+module.exports={createCurrentWarehousePreparationSave};
+
+},
+// legacy-warehouse-preparation.cjs sha256:ff763b0564021adefb61292d9d11c944c7776a8051d712afd7275f64753dfe1b
+"legacy-warehouse-preparation.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readCurrentProduct } = load("current-product-reader.cjs");
+const { currentWarehouseReadyContext } = load("current-warehouse-ready-context.cjs");
+const { preparePackingHoldTransition } = load("borrowing-stock-plan.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const nonPhoto = input => ['PACK', 'LOAD', 'UNPACK'].includes(input?.action)
+  && (input.photos === undefined || Array.isArray(input.photos) && input.photos.length === 0);
+
+// Capture the ORIGINAL prepare, never its apply or external document protocol.
+// Only a private journal exists here; no actual lock/event/file can be mutated.
+async function validateOriginalPreparation({ createPreparationOperations, company, staff, requestId, input, context, now }) {
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks)
+    || !Array.isArray(context.activity) || !nonPhoto(input) || typeof createPreparationOperations !== 'function'
+    || typeof now !== 'function') throw Error('Original non-photo Warehouse preparation required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private Warehouse prepare boundary');
+  let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Warehouse preparation scope violation'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'WAREHOUSE_PREPARATION_SAVED'
+          || !Array.isArray(row.details.plan.uploads) || row.details.plan.uploads.length) throw Error('Unexpected Warehouse preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Warehouse apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    },
+    remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private Warehouse lock removal allowed'); scratch.delete(id);
+    }
+  };
+  const save = createPreparationOperations({ store, names: { [company]: { activity: journal } }, now,
+    documentService: async () => { throw Error('External Warehouse documents forbidden'); },
+    readContext: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected Warehouse apply/read'); return copy(context);
+    } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original Warehouse boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original Warehouse preparation incomplete');
+  return captured;
+}
+
+// Candidate composition for the existing authenticated Warehouse gateway. Not an
+// endpoint or admission switch. All co-writers/apply-only guards must be fenced
+// before adoption. PHOTOS still require the protected external upload protocol.
+function createLegacyWarehousePreparation(deps) {
+  const { company, readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords, projectPurchaseOrders,
+    createPreparationOperations, projectPreparation, readPreparation, readAllocations, readCustomerShipments, readPackingLists,
+    packingHeld, protocol, items, store, now } = deps;
+  if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords,
+    projectPurchaseOrders, createPreparationOperations, projectPreparation, readPreparation, readAllocations, readCustomerShipments,
+    readPackingLists, packingHeld, now].some(f => typeof f !== 'function') || typeof protocol?.readSnapshot !== 'function'
+    || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server Warehouse preparation dependencies required');
+  async function load(request, save) {
+    if (request?.company !== company || save && !nonPhoto(request.input)) throw Error('Supported company/non-photo Warehouse request required');
+    const member = await readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requireWarehouseStaff(member, []);
+    // Same permission boundary as the ORIGINAL saveWarehousePreparation wrapper.
+    const staff = { ...requireWarehouseStaff(member, await readStaffRecords()), memberId: member._id, canPrepareWarehouse: true };
+    const metrics = { queries: 0, exactReads: 0 };
+    const snapshot = await protocol.readSnapshot(async () => {
+      const original = await readContext(company, staff);
+      if (original?.company !== company || !Array.isArray(original.tasks) || !Array.isArray(original.activity)) throw Error('Original Warehouse context required');
+      const orders = projectPurchaseOrders({ company, workspace: original, records: await readPurchaseRecords(company, staff) });
+      const identities = new Map(), products = [];
+      for (const task of original.tasks.filter(t => !t.procurementSource && !t.specialPurchase || t.warehouse?.hasPhysicalReceipt === true)) {
+        const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea }; identities.set(stockKey(identity), identity);
+      }
+      const build = (context, identity) => originalProductState({ company, context, orders, identity, readAllocations,
+        readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+      for (const identity of identities.values()) {
+        const rows = await readCurrentProduct({ company, identity, items, store, metrics });
+        products.push({ identity, rows, state: build(original, identity).buildState(rows) });
+      }
+      const context = currentWarehouseReadyContext({ context: original, states: products.map(p => p.state), readAllocations, readCustomerShipments });
+      const projected = projectPreparation(context);
+      if (!save) return { projected };
+      const selected = projected.filter(row => row.id === request.input.id);
+      if (selected.length !== 1) throw Error('Exact Warehouse preparation task required');
+      const product = products.find(p => p.state.tasks.some(t => t.id === selected[0].taskId));
+      if (!product) throw Error('Warehouse preparation current product unavailable');
+      const validated = await validateOriginalPreparation({ createPreparationOperations, company, staff, requestId: request.requestId,
+        input: request.input, context, now }), event = validated.event;
+      if (event.initiatedByStaffId !== staff.staffId || event.description !== selected[0].id || event.imageAltText !== selected[0].taskId
+        || event.image !== selected[0].customerId || validated.version !== request.input.version) throw Error('Original Warehouse event identity conflict');
+      const state = build(context, product.identity).buildState(product.rows);
+      const after = build({ ...context, activity: [...context.activity, event] }, product.identity).buildState(product.rows);
+      return { state, rows: product.rows, event, packingHolds: after.packingHolds };
+    });
+    if (!save) return { rows: snapshot.rows.projected, memberId: staff.memberId, generation: snapshot.generation, metrics };
+    return { ...preparePackingHoldTransition({ ...snapshot.rows, generation: snapshot.generation }),
+      memberId: staff.memberId, generation: snapshot.generation, metrics };
+  }
+  return { read: request => load(request, false), prepare: request => load(request, true) };
+}
+module.exports = { validateOriginalPreparation, createLegacyWarehousePreparation };
+
+},
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
 "current-stock-exception-save.cjs": (load, module) => {
 'use strict';
@@ -5461,6 +5630,7 @@ export const createCurrentPurchaseReadRouter = load("current-purchase-read-route
 export const createCurrentWarehouseReceiptRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseReceiptRouter;
 export const createCurrentWarehouseOrdersRead = load("current-warehouse-orders-read.cjs").createCurrentWarehouseOrdersRead;
 export const createCurrentWarehouseOrdersRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseOrdersRouter;
+export const createCurrentWarehousePreparationSave = load("current-warehouse-preparation-save.cjs").createCurrentWarehousePreparationSave;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;

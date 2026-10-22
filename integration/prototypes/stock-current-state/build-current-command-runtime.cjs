@@ -13,6 +13,7 @@ const entries = {
   createCurrentWarehouseReceiptRouter: 'current-warehouse-receipt-router.cjs',
   createCurrentWarehouseOrdersRead: 'current-warehouse-orders-read.cjs',
   createCurrentWarehouseOrdersRouter: 'current-warehouse-receipt-router.cjs',
+  createCurrentWarehousePreparationSave: 'current-warehouse-preparation-save.cjs',
   createCurrentQuantityCaseSave: 'current-department-saves.cjs',
   createCurrentShortageSave: 'current-department-saves.cjs',
   createCurrentStockExceptionSave: 'current-stock-exception-save.cjs',

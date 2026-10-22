@@ -6,6 +6,7 @@ const {createSegmentedFencedProof}=require('../prototypes/stock-current-state/se
 const {createCurrentWarehouseReceiptSave}=require('../prototypes/stock-current-state/current-department-saves.cjs');
 const {createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter}=require('../prototypes/stock-current-state/current-warehouse-receipt-router.cjs');
 const {createCurrentWarehouseOrdersRead}=require('../prototypes/stock-current-state/current-warehouse-orders-read.cjs');
+const {createCurrentWarehousePreparationSave}=require('../prototypes/stock-current-state/current-warehouse-preparation-save.cjs');
 const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
 const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
@@ -34,7 +35,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       return{items:rows.slice(0,limit),totalCount:rows.length};}};return q;}};
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
-    createCurrentWarehouseOrdersRead,createCurrentPurchaseTables,readCurrentPurchaseProjection,
+    createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createCurrentPurchaseTables,readCurrentPurchaseProjection,
     ...load('../prototypes/stock-current-state/warehousePreparation.candidate.js'),
     ...load('../prototypes/stock-current-state/purchaseProjection.candidate.js'),
     projectWarehouseCustomerReadiness:load('warehouseCustomerReadiness.js').projectWarehouseCustomerReadiness,
@@ -51,9 +52,9 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
     createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);return protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
-  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
+  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,saveWarehousePreparationCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
   const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0,stockIdentity:{staffId:'W',memberId:'M'}});
-  return{...f,db,protocol,api,initial,calls,journal,tasks};
+  return{...f,db,protocol,api,initial,calls,journal,tasks,bindings};
 }
 test('actual-import Warehouse root preserves both-company original PO receipt contract and once-only scoped current stock',async()=>{
   for(const company of ['NCT','GHR']){
@@ -136,6 +137,21 @@ test('receipt router uses server ACTIVE only and refuses unknown control/mainten
     }
   }
 });
+test('actual-import non-file preparation root supplies paired current context and original Warehouse grant; closed coverage or files never reach old apply',async()=>{
+  const f=await fixture(),request={...copy(f.initial),input:{action:'PACK',id:'BATCH',version:'V'}};let configuration;
+  f.bindings.createCurrentWarehousePreparationSave=deps=>{configuration=deps;return async command=>{
+    assert.equal((await deps.authenticateOriginalWarehouse()).staffId,'W');assert.deepEqual(copy(command),request);
+    return{ok:false,pending:true,requestId:command.requestId,phase:'BEFORE',completedCount:0,totalRecords:2};
+  };};
+  const result=await f.api.saveWarehousePreparationCurrent('NCT',request);assert.equal(result.pending,true);
+  assert.equal(configuration.protocol.planFormat,'SEGMENTED_V2');assert.equal(configuration.currentReadyVersion,2);
+  assert.equal(typeof configuration.readCurrentContext,'function');assert.equal(typeof configuration.createPreparationOperations,'function');
+  const closed=await fixture('NCT',false);assert.equal((await closed.api.saveWarehousePreparationCurrent('NCT',request)).ok,false);
+  assert.equal(closed.calls.includes(closed.tasks),false,'actual common admission refuses before native listed tables');
+  for(const input of [{action:'PHOTOS',id:'BATCH'},{action:'PACK',id:'BATCH',photos:[{base64:'X'}]}]){
+    const count=f.calls.length;assert.equal((await f.api.saveWarehousePreparationCurrent('NCT',{...request,input})).ok,false);assert.equal(f.calls.length,count);
+  }
+});
 test('actual original Warehouse wrapper authenticates before server mode read; ACTIVE calls only paired root and LEGACY calls only old save',async()=>{
   async function invoke(mode,approved=true){
     const calls=[],member={_id:'M',loginEmail:'w@example.test',status:approved?'APPROVED':'PENDING'},
@@ -143,30 +159,34 @@ test('actual original Warehouse wrapper authenticates before server mode read; A
     const bindings={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(_grant,fn)=>fn,currentMember:{getMember:async()=>{calls.push('MEMBER');return member;}},
       requireWarehouseStaff:load('warehouseReceiving.js').requireWarehouseStaff,createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter,operationId:hash,
       PURCHASE_COLLECTIONS:{NCT:{activity:'NCTActivity'}},createWarehouseOperations:()=>({save:async()=>{calls.push('LEGACY');return{ok:true,legacy:true};}}),
-      createPreparationOperations:()=>()=>{},createWarehouseCbmCapture:()=>()=>{},requestPurchaseDocument:()=>{},capturePointbaseCosts:()=>{},
+      createPreparationOperations:()=>async()=>{calls.push('LEGACY_PREP');return{ok:true,legacyPrep:true};},createWarehouseCbmCapture:()=>()=>{},requestPurchaseDocument:()=>{},capturePointbaseCosts:()=>{},
       saveWarehouseReceiptCurrent:async(company,request)=>{calls.push('CURRENT');assert.equal(company,'NCT');return{ok:true,current:true,stockGeneration:request.stockGeneration};},
       getWarehouseOrdersCurrent:async()=>{calls.push('CURRENT_READ');return{current:true};},
+      saveWarehousePreparationCurrent:async()=>{calls.push('CURRENT_PREP');return{ok:true,currentPrep:true};},
       projectPurchaseWorkspace:()=>({tasks:[],customers:[],suppliers:[]}),projectPurchaseOrders:()=>[],projectWarehouseOrders:()=>[],
       projectWarehouseCustomerReadiness:()=>[],projectPreparation:()=>[],readCustomerShortNames:async()=>[],
       wixData:{query:c=>{let exact=false;const q={limit:()=>q,eq:(field,id)=>{assert.equal(field,'_id');assert.equal(id,control._id);exact=true;return q;},
         find:async()=>{calls.push(exact?'CONTROL':c==='StaffMasterAccess'?'STAFF':'TABLE');return{items:c==='StaffMasterAccess'?[{title:'W',description:'M',staffName:'Warehouse',staffEmail:member.loginEmail,staffStatus:'ACTIVE',departments:['WAREHOUSE']}]:exact?[control]:[],hasNext:()=>false};}};return q;}}};
     const source=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt,getWarehouseOrders};})()',bindings);
-    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined),read:()=>api.getWarehouseOrders('NCT')};
+    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt,saveWarehousePreparation,getWarehouseOrders};})()',bindings);
+    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined),read:()=>api.getWarehouseOrders('NCT'),prep:()=>api.saveWarehousePreparation('NCT','UUID',{})};
   }
   const active=await invoke('ACTIVE');assert.equal((await active.run()).current,true);assert.deepEqual(active.calls,['MEMBER','STAFF','CONTROL','CURRENT']);
   const legacy=await invoke('LEGACY');assert.equal((await legacy.run()).legacy,true);assert.deepEqual(legacy.calls,['MEMBER','STAFF','CONTROL','LEGACY']);
   const denied=await invoke('ACTIVE',false);await assert.rejects(denied.run());assert.deepEqual(denied.calls,['MEMBER','STAFF']);
   const currentRead=await invoke('ACTIVE');assert.equal((await currentRead.read()).current,true);assert.deepEqual(currentRead.calls,['MEMBER','STAFF','CONTROL','CURRENT_READ']);
   const legacyRead=await invoke('LEGACY');assert.equal((await legacyRead.read()).orders.length,0);assert.equal(legacyRead.calls.includes('CURRENT_READ'),false);
+  const currentPrep=await invoke('ACTIVE');assert.equal((await currentPrep.prep()).currentPrep,true);assert.deepEqual(currentPrep.calls,['MEMBER','STAFF','CONTROL','CURRENT_PREP']);
+  const legacyPrep=await invoke('LEGACY');assert.equal((await legacyPrep.prep()).legacyPrep,true);assert.deepEqual(legacyPrep.calls,['MEMBER','STAFF','CONTROL','LEGACY_PREP']);
 });
 test('generated receipt root and minimum wrapper are exact; other original Warehouse read/preparation/CBM paths untouched',()=>{
   for(const file of ['build-warehouse-receipt-web.cjs','build-warehouse-receipt-route-candidate.cjs'])assert.match(execFileSync(process.execPath,[path.join(folder,file),'--check'],{encoding:'utf8'}),/verified/);
   let candidate=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
-    .replace('async(company,requestId,input,stockCurrent)=>{','async(company,requestId,input)=>{')
+  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
+    .replaceAll('async(company,requestId,input,stockCurrent)=>{','async(company,requestId,input)=>{')
     .replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehouseReceiptCurrent,saveLegacy:()=>operations.save({company,staff,requestId,input})})({requestId,input,stockCurrent});",'return await operations.save({company,staff,requestId,input});')
     .replace("  const staff=await staffContext();\n  return createCurrentWarehouseOrdersRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),readCurrent:getWarehouseOrdersCurrent,readLegacy:async()=>{\n  const {orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];",'  const staff=await staffContext(),{orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];')
     .replace('readAt:new Date().toISOString()};\n  }})();\n});','readAt:new Date().toISOString()};\n});');
+  candidate=candidate.replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehousePreparationCurrent,saveLegacy:()=>savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input})})({requestId,input,stockCurrent});",'return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});');
   assert.equal(candidate,fs.readFileSync(path.join(__dirname,'../backend/warehouseReceiving.web.js'),'utf8').replace(/\r\n/g,'\n'));
 });

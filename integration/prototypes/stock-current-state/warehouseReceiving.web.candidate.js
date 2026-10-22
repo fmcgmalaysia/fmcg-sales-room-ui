@@ -1,5 +1,5 @@
 import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';
-import { saveWarehouseReceiptCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';
+import { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
@@ -49,9 +49,9 @@ const savePreparation=createPreparationOperations({store,names:PURCHASE_COLLECTI
  const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
  return {...projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff}),activity};
 },documentService:requestPurchaseDocument});
-export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
+export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input,stockCurrent)=>{
  const staff=await staffContext();
- try{return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});}
+ try{return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehousePreparationCurrent,saveLegacy:()=>savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input})})({requestId,input,stockCurrent});}
  catch(error){const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
 });
 

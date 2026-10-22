@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 NON-FILE PREPARATION ROOT: WAREHOUSE_PREPARATION_ACTUAL_ROOT.txt. Existing
+actual Warehouse root now supplies original paired current context/identity to non-file
+save and server-mode gates old preparation entry. ACTIVE PHOTOS refused, never routed
+back to old file/apply path.751currentpass0fail15342.2904ms,84modules41exports,4Warehouse
+SiteMember entries. Workroom client metadata/replay and PHOTOS/file durable protocol
+still NEXT. Remaining native/allwriter/init/cutover/recovery/capacity/shadow/fourrelease
+OPEN, production exact/ACTIVE OFF. No actual installation/business mutation/publication.
+
 2026-10-22 NON-FILE PREPARATION: WAREHOUSE_PREPARATION_V2_SAVE.txt. New private current
 PACK/LOAD/UNPACK save reuses paired original Ready/validation, same company fence and
 exact product hold/revision; no physical movement/invoice.3newfocusedpass0fail966.5124ms,

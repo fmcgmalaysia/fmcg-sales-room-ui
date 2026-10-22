@@ -12,8 +12,8 @@ import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
-import { readPreparation, projectPreparation, WAREHOUSE_CURRENT_READY_VERSION } from 'backend/warehousePreparation.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseReceiptSave, createCurrentWarehouseOrdersRead, createCurrentPurchaseTables, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
+import { readPreparation, projectPreparation, createPreparationOperations, WAREHOUSE_CURRENT_READY_VERSION } from 'backend/warehousePreparation.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseReceiptSave, createCurrentWarehouseOrdersRead, createCurrentWarehousePreparationSave, createCurrentPurchaseTables, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
 // CLOSED until all original writers/native schemas/permissions/init/capacity/cutover
 // and shadow acceptance pass. This is not browser-supplied activation evidence.
 const writerCoverage = Object.freeze({});
@@ -24,7 +24,7 @@ async function warehouseIdentity(){
   if(!member?._id||!member.loginEmail||member.status!=='APPROVED')requireWarehouseStaff(member,[]);
   return {...requireWarehouseStaff(member,await fulfilmentStore.all('StaffMasterAccess')),memberId:member._id};
 }
-async function receiptSave(company,readOrders=false,expectedIdentity=null){
+async function receiptSave(company,readOrders=false,expectedIdentity=null,preparation=false){
   if(!['NCT','GHR'].includes(company))throw Error('Known Warehouse company required');
   const identity=await warehouseIdentity(); // Original grant BEFORE current storage or company data.
   if(!readOrders&&(expectedIdentity?.staffId!==identity.staffId||expectedIdentity?.memberId!==identity.memberId))throw Error('Original Warehouse receipt session changed');
@@ -42,7 +42,7 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null){
         ||ids.some(id=>typeof id!=='string'||!id||id.length>128))throw Error('Exact current Warehouse task scope required');
       const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'NCTTasks':'NCTTasks1',id));return rows;
     },now:()=>new Date()};
-  if(!readOrders)return createCurrentWarehouseReceiptSave({company,items,store,protocol,coverage:writerCoverage,authorityDependencies});
+  if(!readOrders&&!preparation)return createCurrentWarehouseReceiptSave({company,items,store,protocol,coverage:writerCoverage,authorityDependencies});
   if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired original current Warehouse calculators required');
   const guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(control=>{
     if(!control.writerBuild||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==control.writerBuild))throw Error('All current writers must be verified before Warehouse reads');
@@ -58,8 +58,11 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null){
     const current=await readCurrentPurchaseProjection({...authorityDependencies,company,context:originalContext,staff,control,items,store,
       originalArguments,projectPurchaseWorkspace,currentProjectionVersion:PURCHASE_CURRENT_PROJECTION_VERSION,retainedTaskIds,
       readPurchaseRecords:async()=>tables.PurchaseOrders});
-    return {tables,originalContext,workspace:current.workspace,states:[...current.products.values()].map(product=>product.state)};
+    return {tables,originalContext,workspace:current.workspace,products:current.products,states:[...current.products.values()].map(product=>product.state)};
   };
+  if(preparation)return createCurrentWarehousePreparationSave({...authorityDependencies,company,items,store,protocol:guardedProtocol,
+    coverage:writerCoverage,authenticateOriginalWarehouse:warehouseIdentity,readCurrentContext,createPreparationOperations,
+    currentReadyVersion:WAREHOUSE_CURRENT_READY_VERSION});
   return createCurrentWarehouseOrdersRead({company,protocol:guardedProtocol,authenticate:warehouseIdentity,readCurrentContext,
     projectPurchaseOrders,projectWarehouseOrders,projectWarehouseCustomerReadiness,projectPreparation,currentReadyVersion:WAREHOUSE_CURRENT_READY_VERSION,
     readAllocations,readCustomerShipments,readPreparation,warehouseCbm,readCustomerShortNames,now:authorityDependencies.now});
@@ -75,6 +78,15 @@ export const saveWarehouseReceiptCurrent=webMethod(Permissions.SiteMember,async(
 export const getWarehouseOrdersCurrent=webMethod(Permissions.SiteMember,async company=>{
   try{return await(await receiptSave(company,true))(company);}
   catch(_){throw Error('Current Warehouse orders unavailable. Retain the original receipt or preparation. 当前货仓资料尚未确认，请保留原收货或备货请求。');}
+});
+export const saveWarehousePreparationCurrent=webMethod(Permissions.SiteMember,async(company,request)=>{
+  try{
+    if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
+      ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!['PACK','LOAD','UNPACK'].includes(request.input?.action)
+      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length)
+      ||JSON.stringify(request).length>10000)throw Error('Original bounded non-file Warehouse preparation required');
+    return await(await receiptSave(company,false,request.stockIdentity,true))(request);
+  }catch(_){return{ok:false,requestId:request?.requestId,error:'Current Warehouse preparation unconfirmed. Retain and retry the same original save. 当前备货尚未确认，请保留并重试原保存。'};}
 });
 export const getWarehouseResumeContextCurrent=webMethod(Permissions.SiteMember,async company=>{
   try{
