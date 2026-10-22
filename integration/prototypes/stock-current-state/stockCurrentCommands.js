@@ -3556,6 +3556,104 @@ function prepareSalesShipmentHolds({ company, event, priorShipment, products, ge
 module.exports = { prepareSalesShipmentHolds };
 
 },
+// current-sales-arrangement-save.cjs sha256:f80fbcb3aefdf6e5f3fc1b9d06e52cf80e93db10c75c921c9eeeb3e18b03c723
+"current-sales-arrangement-save.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+const { prepareShipmentArrangement } = load("shipment-arrangement-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+// PRIVATE original source gateway composition. Dates and shipment batches remain
+// intent metadata: one original event, no stock/demand/PO/packing mutation.
+function createCurrentSalesArrangementSave({ company, store, protocol, coverage, authenticateOriginalDelegation,
+  readContext, createSalesShipmentDateOperations, createShipmentPlanOperations, now = () => new Date() }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || typeof store?.read !== 'function'
+    || [authenticateOriginalDelegation, readContext, createSalesShipmentDateOperations, createShipmentPlanOperations, now].some(fn => typeof fn !== 'function')) {
+    throw Error('Private original Sales arrangement dependencies required');
+  }
+  return async request => {
+    let staff;
+    const result = await createCurrentStockSave({ company, writer: 'SHIPMENT_PLAN', protocol, coverage,
+      authenticate: async () => {
+        staff = await authenticateOriginalDelegation(company, request);
+        requireOriginalSalesDelegation(staff, request?.input?.customerId);
+        if (!['PLAN', 'ORDER_DATE'].includes(request.input.action)) throw Error('Original Sales arrangement action required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
+        const snapshot = await protocol.readSnapshot(async () => prepareShipmentArrangement({ company, staff,
+          requestId: command.requestId, input: command.input, context: await readContext(company, staff),
+          createSalesShipmentDateOperations, createShipmentPlanOperations, now }));
+        return { plan: snapshot.rows.plan, memberId: staff.memberId, generation: snapshot.generation };
+      } })(request);
+    if (result.ok !== true) return result;
+    const date = request.input.action === 'ORDER_DATE', journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const receipt = await protocol.readSnapshot(() => store.read(journal,
+      hash(company, request.requestId, staff.memberId, date ? 'SALES_SHIPMENT_DATE' : 'SHIPMENT_PLAN_EVENT')));
+    const event = receipt.rows;
+    if (!event?._version || event.company !== company || event.title !== event._id || event.result !== 'SAVED'
+      || event.initiatedByStaffId !== staff.staffId || event.image !== staff.customerId
+      || event.action !== (date ? 'SALES_SHIPMENT_DATE_SAVED' : 'CUSTOMER_SHIPMENT_PLAN_SAVED')
+      || date && (event.description !== request.input.orderId || event.details?.customerId !== staff.customerId
+        || event.details?.submissionId !== request.input.submissionId || event.details?.date !== request.input.date)
+      || !date && (event.details?.plan?.company !== company || event.details?.plan?.customerId !== staff.customerId
+        || event.details?.plan?.orderId !== request.input.orderId || event.details?.plan?.id !== event.description)) {
+      throw Error('Committed Sales arrangement receipt identity unconfirmed');
+    }
+    return date ? { ...result, company, orderId: event.description, customerId: staff.customerId,
+      date: event.details.date, revision: event.title, savedAt: event.activityTime, by: event.initiatedByStaffName }
+      : { ...result, company, planId: event.description };
+  };
+}
+module.exports = { createCurrentSalesArrangementSave };
+
+},
+// shipment-arrangement-plan.cjs sha256:c63409a7c46abee0146e241d27d0209e96f39510273e21e07c944b842cc1b0c4
+"shipment-arrangement-plan.cjs": (load, module) => {
+'use strict';
+
+const copy = value => JSON.parse(JSON.stringify(value));
+// Original authenticated Sales gateway must supply staff/context under the common
+// fence. This seam grants no authority and never calls legacy apply. Batches/date
+// remain intent metadata; no stock movement, demand cancellation or allocation.
+async function prepareShipmentArrangement({ company, staff, requestId, input, context,
+  createSalesShipmentDateOperations, createShipmentPlanOperations, now }) {
+  const date = input?.action === 'ORDER_DATE', batch = input?.action === 'PLAN';
+  const factory = date ? createSalesShipmentDateOperations : createShipmentPlanOperations;
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks)
+    || !Array.isArray(context.activity) || !date && !batch || typeof factory !== 'function' || typeof now !== 'function') throw Error('Original Sales arrangement context required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', expectedAction = date ? 'SALES_SHIPMENT_DATE_SAVED' : 'CUSTOMER_SHIPMENT_PLAN_SAVED';
+  const scratch = new Map(), boundary = new Error('Private Sales arrangement boundary'); let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Sales arrangement scope violation'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== expectedAction) throw Error('Unexpected Sales arrangement preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Sales arrangement apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private Sales arrangement lock removal allowed'); scratch.delete(id);
+    }
+  };
+  const save = factory({ store, names: { [company]: { activity: journal } }, now, readContext: async (c, employee) => {
+    if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected Sales arrangement apply/read'); return copy(context);
+  } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original Sales arrangement boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  const event = captured?.event;
+  if (!event || reads !== 1 || scratch.size || event._id !== event.title || event.result !== 'SAVED'
+    || event.initiatedByStaffId !== staff.staffId || event.image !== input.customerId
+    || date && (event.description !== input.orderId || event.details.submissionId !== input.submissionId)
+    || batch && (event.details.plan?.company !== company || event.details.plan.orderId !== input.orderId)) throw Error('Original Sales arrangement identity conflict');
+  return { plan: { writes: [{ collection: journal, before: null, after: { ...event, company } }] }, event, expectedVersion: input.version };
+}
+module.exports = { prepareShipmentArrangement };
+
+},
 // current-warehouse-dispatch-save.cjs sha256:c42613e519b6f75c80117fd78655e7302a0eea38cfec4f245fe80de31386a52f
 "current-warehouse-dispatch-save.cjs": (load, module) => {
 'use strict';
@@ -3761,7 +3859,7 @@ function appendTaskDispatchCheckpoints({ company, plan, products, states, taskRo
 module.exports = { appendTaskDispatchCheckpoints };
 
 },
-// sales-gateway-current.cjs sha256:8ab8f99386452754e32ea7c0d11f66b51bb842dde0d0e751d3aaa1b13a0063bb
+// sales-gateway-current.cjs sha256:c18616c8887d6b1781a6f448ca09ee03a26659187916f4094f2064f6d80c4229
 "sales-gateway-current.cjs": (load, module) => {
 'use strict';
 const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
@@ -3774,7 +3872,8 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   if (current?.mode === 'LEGACY') return legacy();
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
-  const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave : null;
+  const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave
+    : ['PLAN', 'ORDER_DATE'].includes(body.action) ? current.arrangementSave : null;
   if (typeof save !== 'function') {
     throw Error('Current Sales action is not connected; no legacy write fallback');
   }
@@ -3815,6 +3914,7 @@ export const projectCurrentWarehouseReady = load("current-warehouse-ready-contex
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
 export const createCurrentSalesShipmentSave = load("current-sales-shipment-save.cjs").createCurrentSalesShipmentSave;
+export const createCurrentSalesArrangementSave = load("current-sales-arrangement-save.cjs").createCurrentSalesArrangementSave;
 export const createCurrentWarehouseDispatchSave = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseDispatchSave;
 export const createCurrentWarehouseShipmentRead = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseShipmentRead;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;

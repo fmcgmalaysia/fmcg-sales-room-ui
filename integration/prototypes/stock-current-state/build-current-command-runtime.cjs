@@ -12,6 +12,7 @@ const entries = {
   projectCurrentWarehouseReady: 'current-warehouse-ready-context.cjs',
   createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs',
   createCurrentSalesShipmentSave: 'current-sales-shipment-save.cjs',
+  createCurrentSalesArrangementSave: 'current-sales-arrangement-save.cjs',
   createCurrentWarehouseDispatchSave: 'current-warehouse-dispatch-save.cjs', createCurrentWarehouseShipmentRead: 'current-warehouse-dispatch-save.cjs',
   dispatchCurrentSalesGateway: 'sales-gateway-current.cjs'
 };

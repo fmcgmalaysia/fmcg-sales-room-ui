@@ -49,6 +49,18 @@ test('active source SELECT/CANCEL route uses its connected reservation handler, 
   }
   assert.equal(selected, 2);
 });
+test('active source PLAN/ORDER_DATE route uses only the connected original arrangement handler', async () => {
+  for (const action of ['PLAN', 'ORDER_DATE']) {
+    const result = await dispatchCurrentSalesGateway({ body: { ...body, action, input: { ...body.input, action: 'INVOICE', customerId: 'FORGED' } }, staff,
+      legacy: () => { throw Error('Legacy forbidden'); }, resolveCurrentSales: async () => ({ mode: 'ACTIVE',
+        save: () => { throw Error('Wrong adjustment handler'); }, shipmentSave: () => { throw Error('Wrong shipment handler'); },
+        arrangementSave: async request => { assert.equal(request.input.action, action); assert.equal(request.input.customerId, 'C');
+          assert.equal(request.stockGeneration, 4); assert.equal(request.input.stockCurrent, undefined); return { arrangement: true }; } }) });
+    assert.equal(result.arrangement, true);
+    await assert.rejects(dispatchCurrentSalesGateway({ body: { ...body, action }, staff, legacy: () => { throw Error('Legacy forbidden'); },
+      resolveCurrentSales: async () => ({ mode: 'ACTIVE' }) }), /not connected/);
+  }
+});
 function uiFixture() {
   let onMessage, html = '', closed = 0, refreshed = 0, ids = 0;
   const sent = [], timers = new Map(), nodes = new Map();
