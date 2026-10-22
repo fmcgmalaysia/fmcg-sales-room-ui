@@ -3647,16 +3647,18 @@ function createPurchaseBorrowOptions({ company, items, store, protocol, authorit
 module.exports = { quoteBorrowOptions, createPurchaseBorrowOptions };
 
 },
-// current-purchase-borrow-gateway.cjs sha256:e6a45ff437ee6ef20b669ee96bc94f18d7a336c88596ba065acc69299e74ffb8
+// current-purchase-borrow-gateway.cjs sha256:2885767e6cde5cffa7e25777b9f5de998f03102003ec3d0632edefbda584556b
 "current-purchase-borrow-gateway.cjs": (load, module) => {
 'use strict';
 const { createPurchaseBorrowOptions } = load("purchase-borrow-options.cjs");
 const { createCurrentBorrowingSave } = load("current-department-saves.cjs");
+const { createPurchaseBorrowReturnOptions } = load("purchase-borrow-return-options.cjs");
 // Private original Purchase gateway binding. Its server-owned dependencies retain
 // actual Purchase permissions; this adapter is not a public permission grant.
 function createCurrentPurchaseBorrowGateway(dependencies) {
   const { company } = dependencies;
   const options = createPurchaseBorrowOptions(dependencies), save = createCurrentBorrowingSave(dependencies);
+  const returnOptions = createPurchaseBorrowReturnOptions(dependencies);
   function bounded(requestCompany, value) {
     if (requestCompany !== company || !value || typeof value !== 'object' || Array.isArray(value)
       || JSON.stringify(value).length > 6000) throw Error('Bounded original Purchase borrowing request required');
@@ -3665,6 +3667,10 @@ function createCurrentPurchaseBorrowGateway(dependencies) {
     readOptions: async (requestCompany, input) => {
       bounded(requestCompany, input);
       return { ok: true, ...await options(company, { borrowerTaskId: input.borrowerTaskId }) };
+    },
+    readReturnOptions: async (requestCompany, input) => {
+      bounded(requestCompany, input);
+      return { ok: true, ...await returnOptions(company, { relationId: input.relationId }) };
     },
     save: async (requestCompany, request) => {
       bounded(requestCompany, request);
@@ -3677,6 +3683,68 @@ function createCurrentPurchaseBorrowGateway(dependencies) {
   };
 }
 module.exports = { createCurrentPurchaseBorrowGateway };
+
+},
+// purchase-borrow-return-options.cjs sha256:1b788b1cd91a1b6dc00d2e5c9d5bd83b3e9f22434c7b390ee788b8d4280026a6
+"purchase-borrow-return-options.cjs": (load, module) => {
+'use strict';
+const { createBorrowingAuthority } = load("borrowing-authority.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { returnUnusedBorrow, validate } = load("borrowing-model.cjs");
+// A remaining debt is NOT proof that its physical cartons can be returned. Quote
+// the actual unchanged return rules using current claims/holds/dispatch counters.
+function quoteUnusedBorrowReturn({ state, relationId }) {
+  validate(state);
+  const relation = state.relations.find(r => r.id === relationId);
+  if (!relation) throw Error('Current borrowing relationship unavailable');
+  const remaining = relation.quantity - relation.repaid - (relation.returned || 0);
+  const possible = quantity => {
+    try { returnUnusedBorrow(state, { expectedRevision: state.revision, relationId, quantity,
+      approvedBy: 'READ_ONLY_QUOTE', reason: 'Read-only unused return eligibility' }); return true; }
+    catch (error) {
+      if (['Approved unused borrowing return required', 'Borrowed stock already used or held'].includes(error.message)) return false;
+      throw error;
+    }
+  };
+  let low = 0, high = Math.min(remaining, 9999);
+  while (low < high) { const mid = Math.floor((low + high + 1) / 2); if (possible(mid)) low = mid; else high = mid - 1; }
+  return { relationId, borrowerTaskId: relation.borrowerTaskId, lenderTaskId: relation.lenderTaskId,
+    lenderSourceId: relation.lenderSourceId, replacementSourceId: relation.replacementSourceId,
+    remaining, maximumQuantity: low, expectedRevision: state.revision };
+}
+function createPurchaseBorrowReturnOptions({ company, items, store, protocol, authorityDependencies: deps }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2'
+    || typeof protocol.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function') {
+    throw Error('Private Purchase unused return dependencies required');
+  }
+  const authority = createBorrowingAuthority(deps);
+  return async (requestCompany, input = {}) => {
+    if (requestCompany !== company || typeof input.relationId !== 'string' || !input.relationId || input.relationId.length > 128) {
+      throw Error('Exact current borrowing relationship required');
+    }
+    const member = await deps.readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePurchaseStaff(member, []);
+    deps.requirePurchaseStaff(member, await deps.readStaffRecords());
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (control.company !== company || control.mode !== 'ACTIVE' || control.pending || control.transferIndexVersion !== 2
+        || !control.writerBuild) throw Error('Current unused return quote unavailable');
+      // In-memory ORIGINAL authority/event only, INSIDE the barrier. No write,
+      // journal lock or real request. Actual save reauthorizes and revalidates.
+      const current = await authority({ company, requestId: '00000000-0000-4000-8000-000000000000', kind: 'RETURN',
+        input: { relationId: input.relationId, expectedRevision: 0, quantity: 1, reason: 'Read-only unused return eligibility' } });
+      if (typeof current.readTaskRows !== 'function') throw Error('Private current return task reader required');
+      const rows = await readScopedCurrentProduct({ ...current.stockScope, company, identity: current.identity,
+        items, store, transferIndexVersion: control.transferIndexVersion });
+      if (!rows.product) throw Error('Current borrowing product checkpoint missing');
+      rows.taskRows = await current.readTaskRows(rows); rows.generation = control.generation;
+      return { schema: 'CURRENT_BORROW_RETURN_OPTIONS_V2', company,
+        ...quoteUnusedBorrowReturn({ state: current.buildState(rows), relationId: input.relationId }),
+        stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation } };
+    });
+    return snapshot.rows;
+  };
+}
+module.exports = { quoteUnusedBorrowReturn, createPurchaseBorrowReturnOptions };
 
 },
 // current-packing-service.cjs sha256:7a44248693f4bd637b8a35c29a1f5611652535271d991fd81a6d4f2d34ab99b6

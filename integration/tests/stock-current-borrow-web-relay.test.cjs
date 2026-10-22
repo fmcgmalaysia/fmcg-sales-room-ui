@@ -32,13 +32,13 @@ async function root(verifiedMockCoverage = false) {
     source = source.replace(before, 'const writerCoverage = Object.freeze('+JSON.stringify(coverage)+');');
   }
   const api = vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
-    +'\nreturn {getPurchaseBorrowOptionsCurrent,savePurchaseBorrowingCurrent};})()', native);
+    +'\nreturn {getPurchaseBorrowOptionsCurrent,getPurchaseBorrowReturnOptionsCurrent,savePurchaseBorrowingCurrent};})()', native);
   return { ...f, api, calls, wrapped };
 }
 
 test('generated actual-import web root retains original auth before stock access, exact schema gate and CLOSED writer coverage', async () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-purchase-borrow-web.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
-  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER']);
+  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
   const quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
   assert.equal(quote.ok, false); assert.equal(f.calls[0], 'AUTH');
   assert.equal(f.calls.includes('CONTEXT'), false, 'unverified writer coverage must not yield actionable borrowing quotes');
@@ -61,6 +61,20 @@ test('root and existing relay can drive actual scoped borrow plan with same requ
   const relations = [...f.db.values()].filter(r => r.action === 'STOCK_TRANSFER_CURRENT'); assert.equal(relations.length, 1);
   assert.equal(relations[0].details.relation.approvedBy, 'P1'); assert.equal(relations[0].details.relation.quantity, 30);
   assert.deepEqual(copy(f.context.tasks.map(t => t.po)), ['PO-A','PO-B']);
+  const relationId = relations[0].details.relation.id, before = JSON.stringify([...f.db]);
+  const unused = await f.api.getPurchaseBorrowReturnOptionsCurrent('NCT', { relationId });
+  assert.equal(unused.ok, true); assert.equal(unused.maximumQuantity, 30); assert.equal(unused.remaining, 30);
+  assert.equal(unused.expectedRevision, 1); assert.equal(unused.stockCurrent.stockGeneration, 1);
+  assert.equal(JSON.stringify([...f.db]), before, 'return quote must not release debt or move cartons');
+  const returning = { requestId: '22222222-2222-4222-8222-222222222222', operation: 'BORROW_RETURN', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 1,
+    input: { relationId, expectedRevision: unused.expectedRevision, quantity: 10, reason: 'Unused cartons restored', approvedBy: 'FORGED' } };
+  attempts = 0; do { result = await f.api.savePurchaseBorrowingCurrent('NCT', returning); assert.ok(attempts++ < 40); } while (result.pending);
+  assert.equal(result.ok, true); assert.equal(result.stockGeneration, 2); assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT', returning)).stockGeneration, 2);
+  const afterReturn = await f.api.getPurchaseBorrowReturnOptionsCurrent('NCT', { relationId });
+  assert.equal(afterReturn.maximumQuantity, 20); assert.equal(afterReturn.remaining, 20); assert.equal(afterReturn.expectedRevision, 2);
+  const current = [...f.db.values()].find(r => r.action === 'STOCK_TRANSFER_CURRENT');
+  assert.equal(current.status, 'ACTIVE'); assert.equal(current.details.relation.returned, 10); assert.equal(current.details.relation.returnApprovedBy, 'P1');
+  assert.equal([...f.db.values()].filter(r => r.action === 'STOCK_TRANSFER_CURRENT').length, 1);
 });
 
 test('unapproved member, foreign company, unverified GHR schema and oversize messages cannot read stock or save', async () => {
@@ -79,6 +93,7 @@ function relay() {
   const $w = () => room; $w.onReady = fn => fn();
   const source = fs.readFileSync(path.join(folder, 'purchase-room-page.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '');
   const native = { $w, getPurchaseBorrowOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input) }); return { ok: true, options: [] }; },
+    getPurchaseBorrowReturnOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input), kind: 'RETURN' }); return { ok: true, maximumQuantity: 0 }; },
     savePurchaseBorrowingCurrent: async (company, request) => { saves.push({ company, request: copy(request) }); return {
       ok: false, pending: true, requestId: request.requestId, phase: 'APPLY', completedCount: 1, totalRecords: 5 }; },
     savePurchaseOperation: async (...args) => { legacy.push(args); return { ok: true, requestId: args[1] }; } };
@@ -105,4 +120,12 @@ test('new relay invalid company/UUID/oversize borrowing payload cannot call eith
   for (const patch of [{ company: 'OTHER' }, { requestId: 'INVALID' }, { input: { reason: 'X'.repeat(6001) } }]) await f.send({ ...valid, ...patch });
   assert.equal(f.saves.length, 0); assert.equal(f.legacy.length, 0); assert.equal(f.messages.length, 3);
   assert.ok(f.messages.every(m => m.type === 'PURCHASE_SAVE_RESULT' && m.ok === false));
+});
+
+test('actual return quote relay is readonly, bounded and preserves company/request identity', async () => {
+  const f = relay(), request = { type: 'PURCHASE_BORROW_RETURN_OPTIONS_REQUEST', company: 'NCT', requestId: '11111111-2222-4333-8444-555555555555', input: { relationId: 'R' } };
+  await f.send(request); assert.deepEqual(f.queries, [{ company: 'NCT', input: { relationId: 'R' }, kind: 'RETURN' }]);
+  assert.equal(f.messages.at(-1).type, 'PURCHASE_BORROW_RETURN_OPTIONS_RESULT'); assert.equal(f.messages.at(-1).requestId, request.requestId);
+  await f.send({ ...request, input: { relationId: 'X'.repeat(6001) } }); assert.equal(f.queries.length, 1);
+  assert.equal(f.saves.length, 0); assert.equal(f.legacy.length, 0);
 });

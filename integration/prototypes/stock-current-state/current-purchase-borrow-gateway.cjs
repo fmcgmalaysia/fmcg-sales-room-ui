@@ -1,11 +1,13 @@
 'use strict';
 const { createPurchaseBorrowOptions } = require('./purchase-borrow-options.cjs');
 const { createCurrentBorrowingSave } = require('./current-department-saves.cjs');
+const { createPurchaseBorrowReturnOptions } = require('./purchase-borrow-return-options.cjs');
 // Private original Purchase gateway binding. Its server-owned dependencies retain
 // actual Purchase permissions; this adapter is not a public permission grant.
 function createCurrentPurchaseBorrowGateway(dependencies) {
   const { company } = dependencies;
   const options = createPurchaseBorrowOptions(dependencies), save = createCurrentBorrowingSave(dependencies);
+  const returnOptions = createPurchaseBorrowReturnOptions(dependencies);
   function bounded(requestCompany, value) {
     if (requestCompany !== company || !value || typeof value !== 'object' || Array.isArray(value)
       || JSON.stringify(value).length > 6000) throw Error('Bounded original Purchase borrowing request required');
@@ -14,6 +16,10 @@ function createCurrentPurchaseBorrowGateway(dependencies) {
     readOptions: async (requestCompany, input) => {
       bounded(requestCompany, input);
       return { ok: true, ...await options(company, { borrowerTaskId: input.borrowerTaskId }) };
+    },
+    readReturnOptions: async (requestCompany, input) => {
+      bounded(requestCompany, input);
+      return { ok: true, ...await returnOptions(company, { relationId: input.relationId }) };
     },
     save: async (requestCompany, request) => {
       bounded(requestCompany, request);

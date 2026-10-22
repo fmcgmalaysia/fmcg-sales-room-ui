@@ -8,7 +8,7 @@ function once(before, after) {
 }
 once('  function saveButtonState(busy)', '  let currentSegmentSerial=0;\n  function saveButtonState(busy)');
 once('mutate,read:readOperation,savePending:()=>savePending', 'mutate,read:readOperation,stockActionReady:()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),savePending:()=>savePending');
-once("'PURCHASE_REFERENCE_RESULT'].includes(message.type)", "'PURCHASE_REFERENCE_RESULT','PURCHASE_BORROW_RELATIONS_RESULT','PURCHASE_BORROW_OPTIONS_RESULT'].includes(message.type)");
+once("'PURCHASE_REFERENCE_RESULT'].includes(message.type)", "'PURCHASE_REFERENCE_RESULT','PURCHASE_BORROW_RELATIONS_RESULT','PURCHASE_BORROW_OPTIONS_RESULT','PURCHASE_BORROW_RETURN_OPTIONS_RESULT'].includes(message.type)");
 once('  function finishSave(result){const completed=savePending,',
   "  function finishSave(result){if(savePending?.stockProtocol===1&&(!Number.isSafeInteger(result?.stockGeneration)||result.stockGeneration<=savePending.stockGeneration)){saveInFlight=false;showStatus('Save not confirmed 保存尚未确认，原请求已保留。',true);paintSaveTracker();return;}const completed=savePending,");
 once('function checkSaveReceipt(current,attempt=0){if(savePending!==current||saveCheckPending)return;',

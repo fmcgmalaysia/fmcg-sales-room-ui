@@ -81,6 +81,14 @@ export const savePurchaseBorrowingCurrent = webMethod(Permissions.SiteMember, as
       error: 'Borrowing save unconfirmed. Retain and retry the original request. 借货保存尚未确认，请保留并重试原请求。' };
   }
 });
+export const getPurchaseBorrowReturnOptionsCurrent = webMethod(Permissions.SiteMember, async (company, input) => {
+  try {
+    if (!input || JSON.stringify(input).length > 6000) throw Error('Bounded unused return options required');
+    return await (await privateGateway(company)).readReturnOptions(company, input);
+  } catch (_) {
+    return { ok: false, error: 'Unused borrowing return unconfirmed. Refresh and review. 未使用借货的归还资料尚未确认，请刷新核对。' };
+  }
+});
 `;
 new Function(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, ''));
 const target = path.join(__dirname, 'stockCurrentBorrow.web.js');

@@ -4,7 +4,7 @@ function once(source, before, after) { if (source.split(before).length !== 2) th
 const root = path.join(__dirname, '../../..');
 let index = fs.readFileSync(path.join(root, 'purchase-live/index.html'), 'utf8').replace(/\r\n/g, '\n');
 index = once(index, '</head>', '<link rel="stylesheet" href="borrow-relations.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-approval.css?v=20261022-stock-current-candidate-v2"></head>');
-index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-approval.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
+index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-approval.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-return.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
 index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-22-stock-current-candidate-v2"');
 for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
   const pattern = new RegExp('(<script src="' + file.replace('.', '\\.') + '\\?v=)[^"]+');
@@ -13,8 +13,13 @@ for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
 }
 let bridge = fs.readFileSync(path.join(root, 'integration/wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
 bridge = "import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n" + bridge;
-bridge = "import { getPurchaseBorrowOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';\n" + bridge;
+bridge = "import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';\n" + bridge;
 bridge = once(bridge, '    const message = event.data || {};', `    const message = event.data || {};
+    if(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid unused return request.');
+        const result=await getPurchaseBorrowReturnOptionsCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_RETURN_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_BORROW_RETURN_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Unused borrowing return unconfirmed. 未使用借货归还尚未确认。'});}return;
+    }
     if(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid borrowing options request.');
         const result=await getPurchaseBorrowOptionsCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});

@@ -1,7 +1,7 @@
 /* Read-only relation detail inside the EXISTING supplier planning dialog. */
 (() => {
   const mounted = new WeakMap(), count = value => Number.isSafeInteger(value) && value >= 0;
-  function mount({ container, workspace, rootId, read, rowLabel, esc }) {
+  function mount({ container, workspace, rootId, read, rowLabel, esc, submitReturn, canSubmit }) {
     if (!container || typeof read !== 'function' || typeof esc !== 'function') return;
     const old = mounted.get(container); if (old) { old.cancelled = true; old.section.remove(); }
     const root = workspace?.tasks?.find(task => task.id === rootId), meta = workspace?.stockCurrent;
@@ -55,6 +55,8 @@
           +(result.nextCursor?'<button type="button" class="btn" data-borrow-link-next>Next 下一页</button>':'')+'</div>';
         const prev = section.querySelector('[data-borrow-link-prev]'), next = section.querySelector('[data-borrow-link-next]');
         if (prev) prev.onclick = () => load(Math.max(0, state.offset - pageSize)); if (next) next.onclick = () => load(result.nextCursor.offset);
+        window.purchaseBorrowReturn?.mount({ container: section, workspace, relations: result.items, read,
+          submit: submitReturn, canSubmit, rowLabel, esc, isCurrent: () => active(serial) });
       } catch (error) { if (active(serial)) status(error?.message || 'Borrowing links unconfirmed 调货关系尚未确认', true, offset); }
     }
     load();

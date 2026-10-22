@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 UNUSED RETURN: UNUSED_RETURN_QUOTE_AND_UI.txt. Current Purchase quote
+uses actual original unused-return rules (debt != returnable stock), exact source/
+claim/hold/counter scope; bounded web/page relay +original-dialog inline action now
+candidate-connected. Original save tracker owns request/retry. Borrow30/return10
+leaves ACTIVE20, no physical outflow/PO copy.641tests pass0fail6195.4128ms; runtime
+71modules29exports. Actual SDK permissions/store/native roundtrip mocked, not live
+acceptance. EMPTY coverage/GHR schema gates closed; original production exact.
+Remaining writers/workspace/outstanding/reload/files/schema/init/recovery/capacity/
+shadow/fourrelease all OPEN. No installation, business data changes or publication.
+
 2026-10-22 BORROW ROOT/RELAY: BORROW_WEB_ROOT_AND_RELAY.txt. Candidate Wix OPTIONS
 and BORROW saves now connect to a generated real-original-import backend root; same
 UUID/metadata/progress, original readonly context/auth, no GP refresh. Empty coverage

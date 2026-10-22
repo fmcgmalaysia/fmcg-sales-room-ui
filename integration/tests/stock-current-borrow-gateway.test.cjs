@@ -29,6 +29,7 @@ async function fixture(department = 'PURCHASE') {
   Object.assign(db.get(protocol.ids.journal+':'+protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', transferIndexVersion: 2 });
   f.deps.readCurrentTaskRows = async (_c, ids) => ids.map(id => { const task = f.context.tasks.find(t => t.id === id); return { _id: id, company: 'NCT', _version: 'T0',
     description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 }; });
+  f.deps.readTransfer = (company, id) => store.read('NCTActivity', hash(company, 'STOCK_TRANSFER_CURRENT', id));
   const gateway = createCurrentPurchaseBorrowGateway({ company: 'NCT', items, store, protocol,
     coverage: Object.fromEntries(WRITERS.map(w => [w, { verified: true, build: 'TEST' }])), authorityDependencies: f.deps });
   return { ...f, db, items, store, protocol, gateway, request: { ...copy(original.request), operation: 'BORROW_APPROVE', kind: 'FORGED', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 } };
