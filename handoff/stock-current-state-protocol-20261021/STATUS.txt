@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 G3 OLD STOCK ENDPOINT GAP CLOSED OFFLINE: LEGACY_STOCK_READ_MODE_GUARD.txt.
+Old stockControl.web historical reader had no mode gate despite new UI current root.
+New minimum wrapper retains original auth/filters/response in clean LEGACY with before/
+after control; refuses ACTIVE(stale UI must refresh)/maintenance/pending/missing/race.
+New4pass0fail893.5794ms, original service7pass. No shared runtime change; priorFULL1038
+retained. df616d8 reserved-damage milestone confirmed PUSHED PR220. This guard candidate
+not installed. Coverage EMPTY/ACTIVE OFF; all native/release gates remain OPEN.
+
 2026-10-23 APPROVED RESERVED DAMAGE IMPLEMENTED OFFLINE: RESERVED_DAMAGE_IMPLEMENTATION.txt.
 Sole exact customer isolation, customer-specific supplier restoration, Purchase-only
 eligible held-shortage borrowing and same-list durable Loaded recheck now composed.
