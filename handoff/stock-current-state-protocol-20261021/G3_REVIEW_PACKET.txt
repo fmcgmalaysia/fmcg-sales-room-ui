@@ -1,0 +1,63 @@
+2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
+
+Review one objective: existing system current stock + Purchase borrowing/automatic
+repayment + customer split + original person halo, initial human test through Loaded.
+Real Support invoicing/physical exit OFF. Do not design finance features, a replacement
+authority, extra global queues or autonomous models/agents. Keep current chosen model
+unless user manually switches. Original approved ASTRA_PRODUCTION_DECISION stays.
+
+Exact recovery: d447185987fecbb81bcaf6b25c170f631f767f9f; production runtime32b812c.
+Branch feat/stock-current-state-protocol-20261021; draft PR220. Latest code commit is
+Git HEAD; do not use stale b3cc6d4 in automation as HEAD. Current STATUS and evidence
+supersede historical OVERNIGHT_CLOSEOUT. All changes isolated; original production
+directories unchanged. No actual CMS current collections/schema/activation installed.
+
+Use bounded inputs, not another full project scan:
+1 INSTALL_GRAPH_AND_FRESH_EDITOR_PARITY.txt + current-install-manifest.json:
+  38exact two-system install targets/94transitive backend modules;23Master original
+  PATCH whole SAVED EDITOR texts freshly matched canonical hashes. No claim this is
+  a published runtime/public pass or all94live dependency capture.20writer review
+  flags unverified/coverageEMPTY/activation false.
+2 INTAKE_LOADED_CUSTOMER_QUANTITIES.txt: actual original generated roots, single mock
+  store intake→PLAN/PO→Sales60/40split→receipt100→same listLoaded60; actual HTTP safe
+  quantity endpoint now current-fenced/customer-scoped. Original timestamp unchanged
+  where unaffected; borrowed customer ownership distinct from physical PO source.
+3 RESERVED_DAMAGE_IMPLEMENTATION.txt and reserved-damage tests: exact sole customer
+  claim isolation, demand unchanged, Purchase-only eligible shortage borrow, supplier
+  restore exact case customer without falsifying future receipt/repayment, durable
+  same-list physical recheck even after good stock restored. Ambiguous shared source
+  attribution REFUSES; Warehouse cannot guess or reallocate. Check held/case/claim/
+  change/reopen/closed/source lifecycle interactions; do not loosen them silently.
+4 LEGACY_STOCK_READ_MODE_GUARD.txt: actual old stock endpoint now legacy-only and
+  version-barrier checked; ACTIVE old UI must refresh, no competing historical stock.
+5 FRESH_DOMAIN_DATE_FIELDS.txt: actual CMS8field definitions, real configuration bug
+  witness, same existing codec bound across all roots/recovery.1050offlinepass. Date-
+  preserving MOCK adapter is NOT native Wix acceptance; corrupt legacy Date refuses.
+
+Review questions (return evidence/file+line and minimal required correction):
+- Any exposed web/HTTP root or read-side write bypassing the same fence/CAS, including
+  old clients, read margin/cache and co-writers? Structural map is not semantic proof.
+- Can customer cumulative received/current usable/isolated/dispatched or PO acceptance
+  be conflated under split, borrowed fulfilment, partial repayment/correction, duplicate
+  request, physical damage/replacement or archived departments? Halo must reflect all
+  outstanding relations, never shared archived blocks; original blue/orange unchanged.
+- Large original300business-line request: complete scoped preparation/staging/reload/
+  verification and file callback costs, not merely segmented envelope901images. Are
+  real server timeout/RPM/record limits still unmeasured or algorithmically unbounded?
+  Refusal must precede durable domain mutation; do not substitute prototype bound for
+  production acceptance or silently split one business request into multiple saves.
+- Recovery: same original member/request/digest after interruption; no recalculation,
+  TTL stealing, forced unlock, arbitrary inverse rollback or old lock deletion grant.
+  Unknown lock remains blocked. Is there sufficient operational rehearsal/termination
+  proof for supported cases? Classify unsupported cases honestly, not by assertion.
+- Native schema/private permissions/indexes/Date/metadata and all-writer review must
+  precede maintenance, exact initialization/migration and shadow single-authority
+  cutover. No manual ACTIVE/coverage flag based on test count or this document.
+
+Next independent implementation prep: bounded native-capacity/read/typed roundtrip
+diagnostic and actual schema/index installation/recovery checklist; no execution of
+new synthetic writes or deletes without exact remaining authority. Existing original
+StockProtocolTest lock deletion grants exhausted, preserve all previous records.
+Consolidate truly missing platform permission questions after reviewable probe ready.
+Do not repeat unchanged tests/23UIcaptures or claim publication. GitHub push/Pages/
+Wix published-live/public verification/user Loaded acceptance remain distinct.

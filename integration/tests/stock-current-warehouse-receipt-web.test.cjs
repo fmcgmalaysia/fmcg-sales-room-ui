@@ -50,7 +50,9 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       f.context.activity=[...db].filter(([key])=>key.startsWith(journal+'/')).map(([,row])=>copy(row));
       f.context.tasks.forEach(task=>{task.warehouse=load('warehouseReceiving.js').readWarehouseTask({title:task.id,description:task.orderId,imageAltText:task.sourceLineId,purchaseQtyInCtn:task.ord},f.context.activity);});
       return copy(f.context);},
-    createSdkConditionalStore:args=>{calls.push('SDK');assert.equal(args.company,company);assert.deepEqual(copy(args.dateTimeFields),{[journal]:['activityTime']});return store;},
+    createSdkConditionalStore:args=>{calls.push('SDK');assert.equal(args.company,company);assert.deepEqual(copy(args.dateTimeFields),{[journal]:['activityTime'],
+      [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+      [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']});return store;},
     createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);if(args.stepsPerInvocation===1){assert.notEqual(args.store,store);return createSegmentedFencedProof(args);}return protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');

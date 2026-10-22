@@ -27,7 +27,9 @@ export async function createCurrentSourceSales({company,authenticateOriginalDele
  if(control.mode==='LEGACY'){if(control.pending!==null)throw Error('Source Sales legacy inventory pending');return{mode:'LEGACY'};}
  if(control.mode!=='ACTIVE')return{mode:control.mode};
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||CUSTOMER_CURRENT_FULFILMENT_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2||SHIPMENT_CURRENT_ALLOCATION_VERSION!==2)throw Error('Paired original current Sales calculators required');
- const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime']}});
+ const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
+  [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+  [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']}});
  const protocol=createSegmentedFencedProof({company,store,domainWrites:true}),guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(checkpoint=>{
   if(!checkpoint.writerBuild||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==checkpoint.writerBuild))throw Error('All original writers required before current Sales read');return read(checkpoint);
  })};

@@ -31,8 +31,8 @@ import { createSdkConditionalStore, createSegmentedFencedProof, planCollections,
 // schemas, initialization, shadow and capacity acceptance. Browser cannot set this.
 const writerCoverage = Object.freeze({});
 const requiredWriters = Object.freeze(${JSON.stringify(WRITERS)});
-// Both company journal activityTime fields were inspected in MASTER CMS. Other
-// fields/collections and actual SDK roundtrips remain gates; never infer types.
+// Original journal and both companies' order/task Date fields inspected in CMS.
+// Exact native SDK roundtrips remain a gate; never infer types from field names.
 const verifiedDateFields = Object.freeze({ NCTActivity: ['activityTime'], NCTActivity1: ['activityTime'] });
 async function privateGateway(company, taskCommands = false, workspaceRead = false) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Known Purchase company required');
@@ -40,7 +40,9 @@ async function privateGateway(company, taskCommands = false, workspaceRead = fal
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!Object.hasOwn(verifiedDateFields, journal)) throw Error('Current company schema not verified');
   const store = createSdkConditionalStore({ company, items, collections: planCollections(company, true),
-    dateTimeFields: { [journal]: verifiedDateFields[journal] } });
+    dateTimeFields: { [journal]: verifiedDateFields[journal],
+      [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+      [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime'] } });
   const protocol = createSegmentedFencedProof({ company, store, domainWrites: true });
   const guardedProtocol = { ...protocol, readSnapshot: read => protocol.readSnapshot(control => {
     if (!control.writerBuild || requiredWriters.some(writer => writerCoverage[writer]?.verified !== true

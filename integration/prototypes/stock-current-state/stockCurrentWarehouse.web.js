@@ -31,7 +31,9 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null,prepar
   const identity=await warehouseIdentity(); // Original grant BEFORE current storage or company data.
   if(!readOrders&&(expectedIdentity?.staffId!==identity.staffId||expectedIdentity?.memberId!==identity.memberId))throw Error('Original Warehouse receipt session changed');
   const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
-  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:verifiedDateFields[journal]}});
+  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:verifiedDateFields[journal],
+    [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+    [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']}});
   const protocol=createSegmentedFencedProof({company,store,domainWrites:true});
   const authorityDependencies={readMember:()=>currentMember.getMember({fieldsets:['FULL']}),
     readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),requireWarehouseStaff,

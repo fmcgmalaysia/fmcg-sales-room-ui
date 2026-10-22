@@ -17,7 +17,7 @@ async function fixture(coverage=true){
   currentMember:{getMember:async()=>{calls.push('MEMBER');return f.deps.readMember();}},
   fulfilmentStore:{all:async collection=>{calls.push(collection);if(collection==='StaffMasterAccess')return f.deps.readStaffRecords();if(collection==='PurchaseOrders')return[];throw Error('Unscoped table');}},
   readFulfilmentContext:async(...args)=>{calls.push('CONTEXT');return f.deps.readContext(...args);},
-  createSdkConditionalStore:configuration=>{calls.push('SDK');assert.equal(configuration.company,'NCT');assert.deepEqual(copy(configuration.dateTimeFields),{NCTActivity:['activityTime']});return f.store;},
+  createSdkConditionalStore:configuration=>{calls.push('SDK');assert.equal(configuration.company,'NCT');assert.deepEqual(copy(configuration.dateTimeFields),{NCTActivity:['activityTime'],NCTOrders:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],NCTTasks:['lastCostCaptureTime']});return f.store;},
   requestPurchaseDocument:async command=>{calls.push(command.action);if(command.action==='ALLOCATE')return{ok:true,fileId:'original-root-packing-slot-'+String(calls.length).padStart(5,'0')};const receipt={ok:true,...command};delete receipt.base64;return receipt;},
   createSegmentedFencedProof:configuration=>{assert.equal(configuration.company,'NCT');assert.equal(configuration.domainWrites,true);if(configuration.stepsPerInvocation===1){assert.notEqual(configuration.store,f.store);return createSegmentedFencedProof(configuration);}return f.protocol;}};
  let source=fs.readFileSync(path.join(folder,'stockCurrentPacking.js'),'utf8');

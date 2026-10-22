@@ -21,7 +21,8 @@ export async function createCurrentPurchaseQuantityRead(company){
  if(control.mode==='LEGACY'){if(control.pending!==null)throw Error('Original quantity legacy pending');return{mode:'LEGACY'};}
  if(control.mode!=='ACTIVE')return{mode:control.mode};
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||PURCHASE_CURRENT_QUANTITY_PROJECTION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired current quantity calculators required');
- const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[names.activity]:['activityTime']}}),protocol=createSegmentedFencedProof({company,store,domainWrites:true});
+ const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[names.activity]:['activityTime'],
+  [names.orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],[names.tasks]:['lastCostCaptureTime']}}),protocol=createSegmentedFencedProof({company,store,domainWrites:true});
  const readTables=createCurrentPurchaseTables({company,store,readOriginalTable:collection=>fulfilmentStore.all(collection)});
  const staff={memberId:'SYSTEM_CUSTOMER_READ',staffId:'SYSTEM_CUSTOMER_READ',staffName:'System'};
  return{mode:'ACTIVE',read:async body=>{

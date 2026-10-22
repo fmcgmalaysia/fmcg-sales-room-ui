@@ -22,7 +22,9 @@ export async function createCurrentMasterFulfilment({company,authenticateOrigina
   ||staff.customerId||staff.canDispatchShipment!==true&&staff.readFinancial!==true)throw Error('Original Master fulfilment grant required');
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||CUSTOMER_CURRENT_FULFILMENT_VERSION!==2||SHIPMENT_CURRENT_ALLOCATION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired original current fulfilment modules required');
  const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
- const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime']}});
+ const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
+  [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+  [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']}});
  const protocol=createSegmentedFencedProof({company,store,domainWrites:true});
  const guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(control=>{
   if(!control.writerBuild||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==control.writerBuild))throw Error('All current writers required before fulfilment read');

@@ -1,5 +1,20 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 DOMAIN DATE ROOT BINDING FIX: FRESH_DOMAIN_DATE_FIELDS.txt; G3_REVIEW_PACKET.txt.
+CMS8actual order/task Date field IDs/types inspected in BOTH companies; ALL Cancel,
+no schema/data/permission save. New retained counterexample proves journal-only root
+config writes untouched task Date as text. Minimum six current root + readonly recovery
+configs now same native fields as other roots; codec/model/permissions unchanged.
+All11roots/recovery Date-preserving MOCK checks4pass; exact old mock schema expectations
+updated after inspected23failures, related31pass. FINAL FULL1050pass0fail22964.7846ms;
+no exec active. Manifest hashes refreshed; protected paths still match baseline.
+c727f03 graph/editor parity confirmed PUSHED PR220; sync this increment next.
+Fresh CMS directory original13collections, current3not installed. NCTOrders record grid
+load ERROR -> count UNKNOWN (not assumed empty); schema UI independently readable.
+Optional manual AstraHigh G3 question sent; no automatic model/agent; continue bounded
+native probe/install/recovery prep while awaiting. Coverage EMPTY/ACTIVE OFF, invoice/
+exit OFF. Native capacity/type/index/permissions/recovery/shadow/review/release OPEN.
+
 2026-10-23 INSTALL GRAPH + FRESH EDITOR PARITY: INSTALL_GRAPH_AND_FRESH_EDITOR_PARITY.txt.
 Explicit38target manifest(23MasterPATCH+14newMaster+1SourcePATCH),94dependency modules/
 named imports verified; all20writer categories still unverified, no activation. Missing
