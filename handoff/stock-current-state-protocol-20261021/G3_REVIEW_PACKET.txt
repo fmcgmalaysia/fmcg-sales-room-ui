@@ -39,6 +39,12 @@ Use bounded inputs, not another full project scan:
   task dispatch sums, generation/index/typed versions.33affectedpass; no native/runtime
   installation or migration executor. Initial transfer relations still refuse legacy
   rebuilding. Verify future G4 composition uses v2 proof, not legacy-only parity.
+7 NATIVE_SETUP_REVIEW.txt: pure additive field/index review with10new+4install tests.
+  Actual reader/batched/detail/relation query fields exercised. Native UI both company
+  journals show2SYSTEM indexes only; no manual index visible, actual quota/status/path
+  metadata UNKNOWN. Screenshots/LIVE_EXISTING_INDEX_READBACK retained. No install.
+  Three-field/slot/UTF8 constraints never justify native capacity or changing identity;
+  matching metadata is not stored-value enforcement or a native typed roundtrip.
 
 Review questions (return evidence/file+line and minimal required correction):
 - LEGACY_ADMISSION_RACE_WITNESS.txt now gives exact original-writer interleaving:
