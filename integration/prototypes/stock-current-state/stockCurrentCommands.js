@@ -4,7 +4,7 @@ const Buffer = StockRuntimeBuffer;
 // Candidate-only backend runtime. Original gateway authentication and verified
 // all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.
 const factories = {
-// current-stock-save.cjs sha256:327551fdabc6e6139aa945f5cd274b827fc8d136e4f1c1b92d493dc38b8405d2
+// current-stock-save.cjs sha256:ce797701f3b6105bb4e27b2ddf91e11772fc7498afb662791ff09238992b9406
 "current-stock-save.cjs": (load, module) => {
 'use strict';
 
@@ -39,7 +39,7 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
         admittedGeneration = admission.generation;
       },
       prepare: async () => {
-        const prepared = await prepare({ company, requestId: request.requestId, memberId: actor.memberId, input: copy(envelope.input) });
+        const prepared = await prepare({ company, requestId: request.requestId, memberId: actor.memberId, staffId: actor.staffId, input: copy(envelope.input) });
         if (prepared?.memberId !== actor.memberId || prepared.generation !== admittedGeneration || !prepared.plan) throw Error('Prepared authority/generation changed');
         return prepared.plan;
       } });
@@ -91,7 +91,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:b42023e8d87173cda36d3323c06b5682db0c92099b21c65f38f4d7b3a965443a
+// current-department-saves.cjs sha256:d569b12287f29d9a8c48ae5758b3d899f9da6b4520410f4aa47f2063c372b5d5
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -146,7 +146,13 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
   const save = createCurrentStockSave({ company, writer: 'BORROWING', protocol, coverage,
     authenticate: authorize,
     prepare: command => createBorrowingStockReader({ company, items, store, protocol,
-      readAuthority: () => authority({ company, requestId: command.requestId, kind: command.input.kind, input: command.input.details }) })() });
+      readAuthority: async () => {
+        const verified = await authority({ company, requestId: command.requestId, kind: command.input.kind, input: command.input.details });
+        // Both identities are server-read. A same-member staff reissue between
+        // admission and PO authority must not stage approval under another staff.
+        if (verified.event?.initiatedByStaffId !== command.staffId) throw Error('Borrowing approval identity changed');
+        return verified;
+      } })() });
   return request => {
     if (!request || !['APPROVE', 'RETURN'].includes(request.kind)) throw Error('Purchase borrowing action required');
     return save({ requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,

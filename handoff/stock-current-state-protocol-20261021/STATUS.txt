@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 BORROW ADMISSION ACTOR SNAPSHOT: BORROW_ADMISSION_ACTOR_SNAPSHOT.txt.
+Actual APPROVE/RETURN same-member staff-reissue counterexamples retained (corrected
+fixture installed before gateway capture). Trusted common prepare now carries its
+serverstaffId; Borrow compares original authority event actor before plan staging.
+No shared mutable actor/permission/PO/quantity/replay change.24affectedpass1172.7054ms;
+FULL1143pass0fail29097.468ms. Runtime104/install38/94 rebuilt; all20writer flags still
+UNVERIFIED. Protected originals d447185, no native/UI/Pages/Wix mutation. Both exact
+INIT/TYPE and support-contact consent PENDING/no repeat/run/send. Migration/drain/
+capacity/G3/cutover still OPEN. Next bounded audit: receipt/allocation repeated-auth
+preparation, not a global identity closure claim. CoverageEMPTY/ACTIVEOFF.
+
 2026-10-23 RELEASE BLOCKER AUDIT: RELEASE_BLOCKERS_AND_PLATFORM_QUESTION.txt.
 No new tests/native calls or production edits. Existing1c65bec pushed; tracked clean
 before documentation. Migration APPLY remains NOT IMPLEMENTED, not merely unpublished.

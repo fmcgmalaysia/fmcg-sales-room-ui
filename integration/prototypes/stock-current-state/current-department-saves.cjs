@@ -51,7 +51,13 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
   const save = createCurrentStockSave({ company, writer: 'BORROWING', protocol, coverage,
     authenticate: authorize,
     prepare: command => createBorrowingStockReader({ company, items, store, protocol,
-      readAuthority: () => authority({ company, requestId: command.requestId, kind: command.input.kind, input: command.input.details }) })() });
+      readAuthority: async () => {
+        const verified = await authority({ company, requestId: command.requestId, kind: command.input.kind, input: command.input.details });
+        // Both identities are server-read. A same-member staff reissue between
+        // admission and PO authority must not stage approval under another staff.
+        if (verified.event?.initiatedByStaffId !== command.staffId) throw Error('Borrowing approval identity changed');
+        return verified;
+      } })() });
   return request => {
     if (!request || !['APPROVE', 'RETURN'].includes(request.kind)) throw Error('Purchase borrowing action required');
     return save({ requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,

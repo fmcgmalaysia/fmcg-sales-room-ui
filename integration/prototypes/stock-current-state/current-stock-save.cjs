@@ -31,7 +31,7 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
         admittedGeneration = admission.generation;
       },
       prepare: async () => {
-        const prepared = await prepare({ company, requestId: request.requestId, memberId: actor.memberId, input: copy(envelope.input) });
+        const prepared = await prepare({ company, requestId: request.requestId, memberId: actor.memberId, staffId: actor.staffId, input: copy(envelope.input) });
         if (prepared?.memberId !== actor.memberId || prepared.generation !== admittedGeneration || !prepared.plan) throw Error('Prepared authority/generation changed');
         return prepared.plan;
       } });
