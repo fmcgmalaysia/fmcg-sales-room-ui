@@ -18,6 +18,7 @@ const entries = {
   createCurrentAccountOrderRecordSave: 'current-order-record-save.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',
   createPurchaseTransferWorkspace: 'purchase-transfer-workspace.cjs', createBorrowCurrentQuery: 'borrow-current-query.cjs',
+  readCurrentPurchaseProjection: 'purchase-current-projection.cjs',
   createPurchaseBorrowOptions: 'purchase-borrow-options.cjs',
   createCurrentPurchaseBorrowGateway: 'current-purchase-borrow-gateway.cjs',
   createCurrentPackingService: 'current-packing-service.cjs',
