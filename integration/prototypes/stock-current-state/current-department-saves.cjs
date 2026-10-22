@@ -72,6 +72,18 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
+    if (request.operation === 'EDIT' && request.input.displayRows !== undefined) {
+      const id = authorityDependencies.operationId(company,request.requestId,actor.memberId,'PURCHASE_DISPLAY_ORDER');
+      const receipt = await protocol.readSnapshot(() => store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1',id)), event = receipt.rows;
+      const taskIds = [...new Set([...request.input.taskIds,...request.input.edits.map(row => row.taskId)])];
+      if (!event?._version || event._id !== id || event.title !== id || event.company !== company || event.result !== 'SAVED'
+        || event.action !== 'PURCHASE_DISPLAY_ORDER_SAVED' || event.initiatedByStaffId !== actor.staffId || event.details?.schema !== 2
+        || event.details.displayOrder?.customerId !== request.input.customerId
+        || JSON.stringify(event.details.displayOrder.rows) !== JSON.stringify(request.input.displayRows)
+        || !Array.isArray(event.details.taskIds) || new Set(event.details.taskIds).size !== taskIds.length
+        || event.details.taskIds.some(id => !taskIds.includes(id))) throw Error('Committed combined Purchase display receipt requires review');
+      return { ...result, company, operation: 'EDIT', savedAt: event.activityTime, taskIds: [...event.details.taskIds] };
+    }
     if (request.operation === 'QTY') {
       // Original QTY reduces the procurement commitment, NOT the Sales requested
       // demand. Keep its original Super Admin validator and immutable stock guards.

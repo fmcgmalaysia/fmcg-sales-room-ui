@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 COMBINED SORT: PURCHASE_COMBINED_DISPLAY_CURRENT.txt. Original EDIT
+price drafts + split display now ONE fenced request, no partial success/extra task;
+display-only/no-op tasks do not fabricate product updates. Cross-customer price
+draft/sort and interruptions covered.666currentpass0fail6205.7053ms,72modules30exports.
+Actual ordinary gateway/paired projector/current workspace/remaining writer/file/
+reload/native/init/recovery/capacity/shadow/fourrelease OPEN. Production exact/OFF.
+
 2026-10-22 DISPLAY SORT: PURCHASE_DISPLAY_ORDER_CURRENT.txt. Original pure REORDER
 now private common-fenced current candidate with paired narrow original display
 receipt seam, same split keys/old chain, no stock/PO/task copies. Both companies,

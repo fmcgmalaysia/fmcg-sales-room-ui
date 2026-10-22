@@ -49,13 +49,15 @@ function createPurchaseStockPreparation(deps) {
       const validated = source ? await validateOriginalSource({ createPurchaseSourceOperations, request: trusted, tables, workspace: beforeContext, now })
         : await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
       const domainPlan = source ? prepareSourceDomain({ validated, request: trusted, tables })
-        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat });
+        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat,
+          currentDisplayOrderVersion: deps.currentDisplayOrderVersion });
       if (current) for (const write of domainPlan.writes.filter(w => w.collection === tasks && w.before === null)) {
         Object.assign(write.after, { stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: control.generation + 1 });
       }
       const afterContext = projectDomainAfter({ company, staff, tables, plan: domainPlan, projectPurchaseWorkspace });
       const identities = new Map();
-      for (const update of source ? [{ id: validated.task._id }] : validated.updates) {
+      const changedTaskIds = new Set(domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id));
+      for (const update of source ? [{ id: validated.task._id }] : validated.updates.filter(update => changedTaskIds.has(update.id))) {
         const found = [beforeContext, afterContext].flatMap(context => context.tasks.filter(t => t.id === update.id));
         if (!found.length) throw Error('Purchase changed task missing from original projection');
         const identity = { company, barcode: found[0].barcode, packing: found[0].packing, ea: found[0].ea }, key = stockKey(identity);
@@ -94,7 +96,13 @@ function createPurchaseStockPreparation(deps) {
       }
       return { domainPlan, products };
     });
-    return { ...preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat }),
+    // A split-display-only EDIT can legitimately have no changed raw task image.
+    // Its one immutable event is still fenced; do not fabricate a stock revision.
+    const displayOnly = request.operation === 'EDIT' && request.input?.edits?.length === 0 && request.input.displayRows !== undefined
+      && snapshot.rows.domainPlan.writes.every(w => w.collection === (company === 'NCT' ? 'NCTActivity' : 'NCTActivity1')
+        && w.after.action === 'PURCHASE_DISPLAY_ORDER_SAVED');
+    return { ...(displayOnly ? { plan: snapshot.rows.domainPlan, states: [] }
+      : preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat })),
       memberId: staff.memberId, generation: snapshot.generation, metrics };
   };
 }

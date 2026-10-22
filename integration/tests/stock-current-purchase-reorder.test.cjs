@@ -2,6 +2,9 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { createRequire } = require('node:module'), { execFileSync } = require('node:child_process');
 const load = require('./load-master-module.cjs');
 const { createCurrentPurchaseReorderSave } = require('../prototypes/stock-current-state/current-purchase-reorder-save.cjs');
+const { createCurrentPurchaseSave } = require('../prototypes/stock-current-state/current-department-saves.cjs');
+const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
+const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
 const folder = path.join(__dirname,'../prototypes/stock-current-state'), copy = x => JSON.parse(JSON.stringify(x));
 const displaySource = fs.readFileSync(path.join(folder,'purchaseDisplayOrder.candidate.js'),'utf8');
 const display = vm.runInNewContext('(function(){'+displaySource.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+
@@ -125,4 +128,65 @@ test('GHR display save and projection cannot change equal-ID NCT task rows or re
   assert.deepEqual(copy([...db].filter(([k])=>k.startsWith('NCTTasks/')||k.startsWith('Stock'))),nct);
   const after=await deps.readTables('GHR');assert.deepEqual(copy(projectPurchaseWorkspace({company:'GHR',staff:{},orders:after.NCTOrders1,
     tasks:after.NCTTasks1,activity:after.NCTActivity1,suppliers:after.SharedSuppliers}).purchaseDisplayOrder.C.rows),request.input.displayRows);
+});
+
+async function combinedFixture() {
+  const f=await fixture();Object.assign(f.deps,{projectPurchaseWorkspace,currentDisplayOrderVersion:2});
+  const identity={company:'NCT',barcode:'B1',packing:'16EA',ea:16},key=stockKey(identity),id=hash('NCT',key);
+  f.db.set('StockProducts/'+id,{...identity,_id:id,_version:'P1',stockKey:key,lifecycleVersion:2,nextBorrowSequence:1,
+    revision:0,checkpointGeneration:0,status:'CLOSED',reviewCodes:[],reviewRequired:false,onHand:0,available:0,reservedUsable:0,isolated:0});
+  f.request={...f.request,operation:'EDIT',input:{...f.request.input,edits:[{taskId:f.f.id,version:f.deps.taskEditVersion(f.f.task()),changes:{lpCtn:20}}]}};
+  f.save=createCurrentPurchaseSave({company:'NCT',items:f.deps.items,store:f.deps.store,protocol:f.protocol,coverage:f.coverage,authorityDependencies:f.deps});return f;
+}
+test('original Save combining price draft and row order remains ONE fenced request and ONE display revision',async()=>{
+  const f=await combinedFixture(),saved=await f.save(f.request);
+  assert.equal(saved.operation,'EDIT');assert.equal(saved.stockGeneration,1);assert.equal(f.f.task().lpCtn,20);assert.equal(f.f.task().rowPosition,2);
+  assert.deepEqual(copy((await f.workspace()).purchaseDisplayOrder.C.rows),f.request.input.displayRows);
+  assert.deepEqual(await f.save(f.request),saved);
+  assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
+  assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_PRICE_SAVED').length,1);
+});
+test('unchanged task ordering images do not require unrelated product reads or revisions',async()=>{
+  const f=await combinedFixture(),before=await f.workspace();
+  f.request.input.taskIds=[f.f.id,f.f.second];f.request.input.displayRows=copy(before.purchaseDisplayOrder.C.rows);
+  const otherId=hash('NCT',stockKey({company:'NCT',barcode:'B1',packing:'16EA',ea:16}));
+  f.db.delete('StockProducts/'+otherId); // Deliberately absent unrelated product; task row is a no-op.
+  await f.save(f.request);assert.equal(f.f.task().lpCtn,20);assert.equal(f.db.has('StockProducts/'+otherId),false);
+});
+test('split display-only original EDIT saves one event without fabricated stock revision or duplicate task',async()=>{
+  const f=await combinedFixture(),{createSalesOrderAdjustmentOperations,salesAdjustmentVersion}=load('salesOrderAdjustment.js'),
+    {readShipmentPlans,shipmentPlanVersion}=load('customerShipmentPlan.js');
+  const adjust=createSalesOrderAdjustmentOperations({store:f.f.store,names:{NCT:{activity:'NCTActivity'}},readContext:f.workspace,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});
+  await adjust({...f.f.base,requestId:'22222222-2222-4222-8222-222222222222',staff:{...f.f.base.staff,customerId:'C',canSelectShipment:true},
+    input:{action:'ADJUST',customerId:'C',orderId:'ORDER',taskId:f.f.id,batchId:'',mode:'SPLIT',quantity:150,version:salesAdjustmentVersion(await f.workspace(),shipmentPlanVersion)}});
+  const current=await f.workspace(),entries=current.purchaseDisplayOrder.C.rows;assert.equal(entries.length,3);f.request.input.edits=[];
+  f.request.input.displayRows=[entries[1],entries[0],entries[2]];f.request.input.displayOrderVersion=current.purchaseDisplayOrder.C.version;
+  f.request.input.versions=Object.fromEntries(current.tasks.map(t=>[t.id,t.editVersion]));
+  // Original row sequence need not change to save an independent display identity order.
+  f.request.input.taskIds=[f.f.id,f.f.second];
+  const products=JSON.stringify([...f.db].filter(([k])=>k.startsWith('Stock')));
+  const saved=await f.save(f.request);assert.equal(saved.stockGeneration,1);
+  assert.equal(JSON.stringify([...f.db].filter(([k])=>k.startsWith('Stock'))),products);
+  assert.deepEqual(copy((await f.workspace()).purchaseDisplayOrder.C.rows),f.request.input.displayRows);
+  assert.equal([...f.db.keys()].filter(k=>k.startsWith('NCTTasks/')).length,current.tasks.length);
+});
+test('combined edit refuses unpaired display calculator and does not silently save only its price half',async()=>{
+  const f=await combinedFixture();delete f.deps.currentDisplayOrderVersion;
+  f.save=createCurrentPurchaseSave({company:'NCT',items:f.deps.items,store:f.deps.store,protocol:f.protocol,coverage:f.coverage,authorityDependencies:f.deps});
+  const before=copy(f.f.task());await assert.rejects(f.save(f.request),/display order/);assert.deepEqual(copy(f.f.task()),before);
+});
+test('original mixed Save may retain another customer price draft while ordering only the selected customer',async()=>{
+  const f=await combinedFixture();f.db.get('NCTOrders/O1').customerId='OTHER';
+  const current=await f.workspace();f.request.input={...f.request.input,taskIds:[f.f.id],displayRows:copy(current.purchaseDisplayOrder.C.rows),
+    displayOrderVersion:current.purchaseDisplayOrder.C.version,edits:[{taskId:f.f.second,version:f.deps.taskEditVersion(f.f.task(f.f.second)),changes:{lpCtn:20}}]};
+  const result=await f.save(f.request);assert.equal(result.operation,'EDIT');assert.deepEqual(new Set(result.taskIds),new Set([f.f.id,f.f.second]));
+  assert.equal(f.f.task(f.f.second).lpCtn,20);assert.equal(f.f.task().lpCtn,16);assert.deepEqual(await f.save(f.request),result);
+});
+test('mixed price/order interruption cannot expose half a save; retry restores exactly the same events once',async()=>{
+  const f=await combinedFixture(),insert=f.deps.store.insert;let interrupted=false;
+  f.deps.store.insert=async(c,row)=>{if(!interrupted&&row.action==='PURCHASE_DISPLAY_ORDER_SAVED'){interrupted=true;throw Error('Mixed display interruption');}return insert(c,row);};
+  await assert.rejects(f.save(f.request),/Mixed display interruption/);assert.equal(f.f.task().lpCtn,20);
+  await assert.rejects(f.protocol.readSnapshot(()=>f.workspace()),/pending/i);
+  assert.equal((await f.save(f.request)).stockGeneration,1);assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_PRICE_SAVED').length,1);
+  assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
 });

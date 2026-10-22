@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:121012d5008c37d9524e9ca68e3f03e2c28d30e9461178482c1f1b401c5362b2
+// current-department-saves.cjs sha256:135efadbcebb17e52f02c23ccdd8b14815326c00ca701a4cc2921632db53f6bc
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -159,6 +159,18 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
     if (result.ok !== true) return result;
+    if (request.operation === 'EDIT' && request.input.displayRows !== undefined) {
+      const id = authorityDependencies.operationId(company,request.requestId,actor.memberId,'PURCHASE_DISPLAY_ORDER');
+      const receipt = await protocol.readSnapshot(() => store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1',id)), event = receipt.rows;
+      const taskIds = [...new Set([...request.input.taskIds,...request.input.edits.map(row => row.taskId)])];
+      if (!event?._version || event._id !== id || event.title !== id || event.company !== company || event.result !== 'SAVED'
+        || event.action !== 'PURCHASE_DISPLAY_ORDER_SAVED' || event.initiatedByStaffId !== actor.staffId || event.details?.schema !== 2
+        || event.details.displayOrder?.customerId !== request.input.customerId
+        || JSON.stringify(event.details.displayOrder.rows) !== JSON.stringify(request.input.displayRows)
+        || !Array.isArray(event.details.taskIds) || new Set(event.details.taskIds).size !== taskIds.length
+        || event.details.taskIds.some(id => !taskIds.includes(id))) throw Error('Committed combined Purchase display receipt requires review');
+      return { ...result, company, operation: 'EDIT', savedAt: event.activityTime, taskIds: [...event.details.taskIds] };
+    }
     if (request.operation === 'QTY') {
       // Original QTY reduces the procurement commitment, NOT the Sales requested
       // demand. Keep its original Super Admin validator and immutable stock guards.
@@ -2043,7 +2055,7 @@ function currentAllocationContext({ state, context, readAllocations }) {
 module.exports = { currentAllocationContext };
 
 },
-// purchase-stock-preparation.cjs sha256:1c617f85f7ae57ffa457b9f2921bc8e5861bdfaef56efae5406def33c88c6301
+// purchase-stock-preparation.cjs sha256:e4c89a5919599fb7d8b89d413a1e0789d7a7c732d5c86b36039d1737c3f42693
 "purchase-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -2096,13 +2108,15 @@ function createPurchaseStockPreparation(deps) {
       const validated = source ? await validateOriginalSource({ createPurchaseSourceOperations, request: trusted, tables, workspace: beforeContext, now })
         : await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
       const domainPlan = source ? prepareSourceDomain({ validated, request: trusted, tables })
-        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat });
+        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat,
+          currentDisplayOrderVersion: deps.currentDisplayOrderVersion });
       if (current) for (const write of domainPlan.writes.filter(w => w.collection === tasks && w.before === null)) {
         Object.assign(write.after, { stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: control.generation + 1 });
       }
       const afterContext = projectDomainAfter({ company, staff, tables, plan: domainPlan, projectPurchaseWorkspace });
       const identities = new Map();
-      for (const update of source ? [{ id: validated.task._id }] : validated.updates) {
+      const changedTaskIds = new Set(domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id));
+      for (const update of source ? [{ id: validated.task._id }] : validated.updates.filter(update => changedTaskIds.has(update.id))) {
         const found = [beforeContext, afterContext].flatMap(context => context.tasks.filter(t => t.id === update.id));
         if (!found.length) throw Error('Purchase changed task missing from original projection');
         const identity = { company, barcode: found[0].barcode, packing: found[0].packing, ea: found[0].ea }, key = stockKey(identity);
@@ -2141,7 +2155,13 @@ function createPurchaseStockPreparation(deps) {
       }
       return { domainPlan, products };
     });
-    return { ...preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat }),
+    // A split-display-only EDIT can legitimately have no changed raw task image.
+    // Its one immutable event is still fenced; do not fabricate a stock revision.
+    const displayOnly = request.operation === 'EDIT' && request.input?.edits?.length === 0 && request.input.displayRows !== undefined
+      && snapshot.rows.domainPlan.writes.every(w => w.collection === (company === 'NCT' ? 'NCTActivity' : 'NCTActivity1')
+        && w.after.action === 'PURCHASE_DISPLAY_ORDER_SAVED');
+    return { ...(displayOnly ? { plan: snapshot.rows.domainPlan, states: [] }
+      : preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat })),
       memberId: staff.memberId, generation: snapshot.generation, metrics };
   };
 }
@@ -2188,7 +2208,7 @@ async function validateOriginalPurchase({ createPurchaseOperations, request, tab
 module.exports = { validateOriginalPurchase };
 
 },
-// purchase-domain-plan.cjs sha256:db8541ecfee808a39216a23127fb61ed8f72387e6aede0116a49a64ac53a1ce7
+// purchase-domain-plan.cjs sha256:c92088dc3c6726a78b6ac33fa4ae1ad3175b68862885dcda66007f566e9b5240
 "purchase-domain-plan.cjs": (load, module) => {
 'use strict';
 
@@ -2197,11 +2217,12 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const { utf8Bytes } = load("segmented-plan.cjs");
 // Maps unchanged original domain intent. Requires migration-tagged exact row versions.
 // Does NOT replace stock/share guards, cost locks or all-writer authorization.
-function preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId, planFormat = 'PROOF_V1' }) {
+function preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId, planFormat = 'PROOF_V1', currentDisplayOrderVersion }) {
   if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server Purchase plan format required');
   const company = request.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!validated || validated.operation !== request.operation || !Array.isArray(validated.updates) || !Array.isArray(validated.events)
-    || !validated.time || validated.displayOrder || typeof taskEditVersion !== 'function' || typeof operationId !== 'function') throw Error('Supported original Purchase plan required; display order needs its own adapter');
+    || !validated.time || validated.displayOrder && (planFormat !== 'SEGMENTED_V2' || currentDisplayOrderVersion !== 2 || request.operation !== 'EDIT')
+    || typeof taskEditVersion !== 'function' || typeof operationId !== 'function') throw Error('Supported original Purchase plan required; display order needs its own adapter');
   const changes = new Map(), writes = [];
   for (const change of validated.updates) {
     if (!change.id || changes.has(change.id) || !change.patch || !change.orderId || !change.lineId) throw Error('Distinct Purchase task intent required');
@@ -2226,6 +2247,13 @@ function preparePurchaseDomain({ validated, request, tables, taskEditVersion, op
       image: change.lineId, imageAltText: event.shareRootId || event.taskId, action: event.action, activityTime: validated.time,
       actorType: 'STAFF', initiatedByStaffId: request.staff.staffId, initiatedByStaffName: request.staff.staffName,
       result: 'SAVED', message: event.action.replaceAll('_', ' '), details: { requestId: request.requestId, ...copy(event) } } });
+  }
+  if (validated.displayOrder) {
+    const id = operationId(company,request.requestId,request.staff.memberId,'PURCHASE_DISPLAY_ORDER');
+    writes.push({ collection: journal, before: null, after: { _id: id, title: id, company,
+      description: request.input.customerId, action: 'PURCHASE_DISPLAY_ORDER_SAVED', result: 'SAVED', activityTime: validated.time,
+      actorType: 'STAFF', initiatedByStaffId: request.staff.staffId, initiatedByStaffName: request.staff.staffName,
+      details: { schema: 2, requestId: request.requestId, taskIds: validated.updates.map(row => row.id), displayOrder: copy(validated.displayOrder) } } });
   }
   if (!writes.length || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)
     || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length) throw Error('Purchase domain exceeds atomic proof bound');
