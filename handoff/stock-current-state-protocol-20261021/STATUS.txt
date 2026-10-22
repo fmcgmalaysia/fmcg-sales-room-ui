@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after69dce08: ACCOUNT_PO_RECORD_CURRENT_PLAN.txt. Original Account
+auth/non-file settlement prepare now maps exact versioned PO image; action-specific
+field guard preserves existing payments/quantity/file identities.34new+originalpass
+355.385ms. File/credit/legacy-review and actual gateway/admission integration still open;
+all other activation/publication gates remain OFF, baseline mismatch unchanged.
+
 CURRENT HEARTBEAT afterebea186: PURCHASE_PO_RECORD_CURRENT_PLAN.txt. Original non-file
 Purchase PO metadata prepare maps exact versioned PO image+embedded audit only. Payment
 request/CN/Reviewing rules retained; no file/stock/task edits.40new+originalpass302.3609ms.
