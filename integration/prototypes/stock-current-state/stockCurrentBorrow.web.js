@@ -5,6 +5,8 @@ import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { requirePurchaseStaff, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
+import { readCustomerShortNames } from 'backend/customerNamesClient.js';
+import { applyPurchaseProgress } from 'backend/purchaseProgress.js';
 import { createPurchaseOperations } from 'backend/purchaseOperations.js';
 import { createPurchaseSourceOperations } from 'backend/purchaseSources.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
@@ -19,7 +21,7 @@ import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation } from 'backend/warehousePreparation.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway, createCurrentPurchaseTables, createCurrentPurchaseTaskGateway, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPurchaseBorrowGateway, createCurrentPurchaseTables, createCurrentPurchaseTaskGateway, readCurrentPurchaseProjection, createCurrentPurchaseWorkspaceRead, createBorrowCurrentQuery } from 'backend/stockCurrentCommands.js';
 // Deliberately empty until actual ALL-writer verification and production permission,
 // schemas, initialization, shadow and capacity acceptance. Browser cannot set this.
 const writerCoverage = Object.freeze({});
@@ -27,7 +29,7 @@ const requiredWriters = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES
 // Both company journal activityTime fields were inspected in MASTER CMS. Other
 // fields/collections and actual SDK roundtrips remain gates; never infer types.
 const verifiedDateFields = Object.freeze({ NCTActivity: ['activityTime'], NCTActivity1: ['activityTime'] });
-async function privateGateway(company, taskCommands = false) {
+async function privateGateway(company, taskCommands = false, workspaceRead = false) {
   if (!['NCT', 'GHR'].includes(company)) throw Error('Known Purchase company required');
   await getPurchaseStaffContext(); // Original authorization BEFORE any stock data.
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
@@ -64,12 +66,9 @@ async function privateGateway(company, taskCommands = false) {
       return rows;
     }, now: () => new Date()
   };
-  if (taskCommands) {
+  if (taskCommands || workspaceRead) {
     const readTables = createCurrentPurchaseTables({ company, store, readOriginalTable: collection => fulfilmentStore.all(collection) });
-    return createCurrentPurchaseTaskGateway({ company, items, store, protocol: guardedProtocol, coverage: writerCoverage,
-      currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION, authorityDependencies: { ...authorityDependencies,
-        createPurchaseMarginRefresh, readRates: readCurrentAdminFx,
-        readMarginContext: async (selectedCompany, staff, control) => {
+    const readCurrentContext = async (selectedCompany, staff, control) => {
           if(selectedCompany!==company||PURCHASE_CURRENT_PROJECTION_VERSION!==2)throw Error('Paired original current margin context required');
           const tables=await readTables(company,staff),names=company==='NCT'?{orders:'NCTOrders',tasks:'NCTTasks',activity:'NCTActivity'}:{orders:'NCTOrders1',tasks:'NCTTasks1',activity:'NCTActivity1'};
           const originalArguments={company,staff,orders:tables[names.orders],tasks:tables[names.tasks],activity:tables[names.activity],suppliers:tables.SharedSuppliers};
@@ -78,7 +77,13 @@ async function privateGateway(company, taskCommands = false) {
             projectPurchaseWorkspace,currentProjectionVersion:PURCHASE_CURRENT_PROJECTION_VERSION,
             readPurchaseRecords:async()=>tables.PurchaseOrders});
           return {tables,workspace:current.workspace};
-        },
+        };
+    if (workspaceRead) return createCurrentPurchaseWorkspaceRead({company,protocol:guardedProtocol,authenticate:getPurchaseStaffContext,
+      readCurrentContext,readRates:readCurrentAdminFx,createPurchaseMarginRefresh,readCustomerShortNames,projectPurchaseOrders,applyPurchaseProgress,now:authorityDependencies.now,
+      readOutstanding:(selectedCompany,input,staff)=>createBorrowCurrentQuery({company,items,protocol:guardedProtocol,authenticate:async()=>staff})(selectedCompany,input)});
+    return createCurrentPurchaseTaskGateway({ company, items, store, protocol: guardedProtocol, coverage: writerCoverage,
+      currentDisplayOrderVersion: PURCHASE_CURRENT_DISPLAY_ORDER_VERSION, authorityDependencies: { ...authorityDependencies,
+        createPurchaseMarginRefresh, readRates: readCurrentAdminFx, readMarginContext:readCurrentContext,
         readTables, createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace,
         createPlannerAllocationOperations, allocationViewVersion: ALLOCATION_CURRENT_VIEW_VERSION,
         createShortageOperations, createQuantityCaseOperations, projectQuantityCases,
@@ -134,4 +139,8 @@ export const getPurchaseResumeContextCurrent = webMethod(Permissions.SiteMember,
   } catch (_) {
     return { ok: false, error: 'Original Purchase identity unconfirmed. 原采购员工身份尚未确认。' };
   }
+});
+export const getPurchaseWorkspaceCurrent = webMethod(Permissions.SiteMember, async company => {
+  try { return await (await privateGateway(company,false,true))(company); }
+  catch (_) { throw Error('Current Purchase workspace unavailable. Preserve the original draft or save. 当前采购资料尚未确认，请保留原草稿或保存请求。'); }
 });

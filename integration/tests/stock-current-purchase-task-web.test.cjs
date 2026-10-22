@@ -4,6 +4,8 @@ const {createCurrentPurchaseTaskGateway}=require('../prototypes/stock-current-st
 const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const {createSdkConditionalStore}=require('../prototypes/stock-current-state/sdk-conditional-store.cjs');
 const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
+const {createCurrentPurchaseWorkspaceRead}=require('../prototypes/stock-current-state/current-purchase-workspace-read.cjs');
+const {createBorrowCurrentQuery}=require('../prototypes/stock-current-state/borrow-current-query.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
 const folder=path.join(__dirname,'../prototypes/stock-current-state'),fixtureFile=require.resolve('./stock-current-purchase-reorder.test.cjs'),copy=x=>JSON.parse(JSON.stringify(x));
 const original=vm.runInNewContext(fs.readFileSync(fixtureFile,'utf8').replace("const test = require('node:test')",'const test = () => {}')+';combinedFixture;',
@@ -13,7 +15,8 @@ async function root(coverage=false,paired=true,decisionFixture=null){
   for(const [key,row]of f.db)if(key.startsWith('NCTOrders/'))Object.assign(row,{company:'NCT',_version:row._version||'MIGRATED_ORDER'});
   const forbidden=()=>{throw Error('No SDK calls during listed-row normalization');},codec=createSdkConditionalStore({company:'NCT',items:{query:forbidden,insert:forbidden,patch:forbidden,remove:forbidden},
     collections:planCollections('NCT',true),dateTimeFields:{NCTActivity:['activityTime']}});
-  const native={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{wrapped.push(permission);return fn;},currentMember:{getMember:()=>f.deps.readMember()},items:f.deps.items,
+  const native={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{wrapped.push(permission);return fn;},currentMember:{getMember:()=>f.deps.readMember()},
+    items:{...f.deps.items,query:collection=>{const q=f.deps.items.query(collection);q.skip=offset=>{assert.equal(offset,0);return q;};return q;}},
     getPurchaseStaffContext:async()=>{calls.push('AUTH');const member=await f.deps.readMember();return{...f.deps.requirePurchaseStaff(member,await f.deps.readStaffRecords()),memberId:member._id};},
     fulfilmentStore:{all:async collection=>{calls.push(collection);if(collection==='StaffMasterAccess')return f.deps.readStaffRecords();
       const listed=f.f?await f.f.store.all(collection):[...f.db].filter(([key])=>key.startsWith(collection+':')).map(([,row])=>row);
@@ -27,6 +30,8 @@ async function root(coverage=false,paired=true,decisionFixture=null){
     projectPurchaseWorkspace:load('../prototypes/stock-current-state/purchaseProjection.candidate.js',{
       'purchaseDisplayOrder.js':load('../prototypes/stock-current-state/purchaseDisplayOrder.candidate.js')}).projectPurchaseWorkspace,
     createPurchaseMarginRefresh:load('purchaseMarginRefresh.js').createPurchaseMarginRefresh,
+    createCurrentPurchaseWorkspaceRead,createBorrowCurrentQuery,applyPurchaseProgress:load('purchaseProgress.js').applyPurchaseProgress,
+    readCustomerShortNames:async()=>[],
     readCurrentAdminFx:async currencies=>currencies.map(currency=>({currency,rateToMyr:1,updatedAt:'2026-10-22T08:30:00.000Z'})),
     createPlannerAllocationOperations:load('../prototypes/stock-current-state/plannerAllocation.candidate.js').createPlannerAllocationOperations,
     ALLOCATION_CURRENT_VIEW_VERSION:2,createShortageOperations:load('purchaseShortage.js').createShortageOperations,
@@ -36,7 +41,7 @@ async function root(coverage=false,paired=true,decisionFixture=null){
     createSegmentedFencedProof:args=>{assert.equal(args.domainWrites,true);return f.protocol||f.deps.protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentBorrow.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(w=>[w,{verified:true,build:'TEST'}])))+');');
-  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return {savePurchaseTasksCurrent};})()',native);
+  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return {savePurchaseTasksCurrent,getPurchaseWorkspaceCurrent};})()',native);
   return{...f,calls,wrapped,api};
 }
 test('actual-import task root uses original auth/table reader and same paired current save, never legacy apply',async()=>{
@@ -46,7 +51,7 @@ test('actual-import task root uses original auth/table reader and same paired cu
   assert.deepEqual(await f.api.savePurchaseTasksCurrent('NCT',f.request),result);
   assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_DISPLAY_ORDER_SAVED').length,1);
   assert.equal([...f.db.values()].filter(r=>r.action==='PURCHASE_PRICE_SAVED').length,1);
-  assert.equal(f.wrapped.length,5);assert.ok(f.wrapped.every(x=>x==='SITE_MEMBER'));
+  assert.equal(f.wrapped.length,6);assert.ok(f.wrapped.every(x=>x==='SITE_MEMBER'));
 });
 test('default root coverage and unpaired original calculator cannot enter business table preparation',async()=>{
   for(const [coverage,paired]of[[false,true],[true,false]]){
@@ -89,6 +94,16 @@ test('current margin root refuses empty coverage or unpaired projection without 
     assert.equal([...f.db.values()].some(row=>row.action==='GP_RECALCULATED'||row.action==='MARGIN_REFERENCE_RESULT'),false);
     assert.equal(f.calls.includes('NCTOrders'),false);
   }
+});
+
+test('actual-import current workspace root returns one read-only current view with original progress/redaction and no implicit GP writer',async()=>{
+  const f=await root(true),before=JSON.stringify([...f.db]),result=await f.api.getPurchaseWorkspaceCurrent('NCT');
+  assert.equal(result.company,'NCT');assert.equal(result.stockCurrent.schema,'PURCHASE_TRANSFERS_V2');assert.equal(result.stockCurrent.stockGeneration,0);
+  assert.equal(result.stockAllocationView,'CURRENT_V2');assert.ok(result.tasks.every(row=>row.stockTransferOutstanding===false));
+  assert.equal(result.staff.memberId,'M');assert.equal(JSON.stringify(result).includes('sellingPrice'),false);
+  assert.equal(JSON.stringify([...f.db]),before);assert.equal(f.calls[0],'AUTH');
+  const closed=await root();await assert.rejects(closed.api.getPurchaseWorkspaceCurrent('NCT'),/unavailable/);
+  assert.equal(closed.calls.includes('NCTOrders'),false);
 });
 for(const operation of ['QUANTITY_CASE','SHORTAGE'])test(`actual-import root routes original ${operation} decision without releasing physical reservations or borrowing debt`,async()=>{
   const filename=require.resolve(operation==='QUANTITY_CASE'?'./stock-current-quantity-case.test.cjs':'./stock-current-shortage-save.test.cjs'),

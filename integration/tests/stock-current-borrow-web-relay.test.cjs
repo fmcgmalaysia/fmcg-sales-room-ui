@@ -40,7 +40,7 @@ async function root(verifiedMockCoverage = false) {
 
 test('generated actual-import web root retains original auth before stock access, exact schema gate and CLOSED writer coverage', async () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-purchase-borrow-web.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
-  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
+  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER','SITE_MEMBER']);
   const quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
   assert.equal(quote.ok, false); assert.equal(f.calls[0], 'AUTH');
   assert.equal(f.calls.includes('CONTEXT'), false, 'unverified writer coverage must not yield actionable borrowing quotes');

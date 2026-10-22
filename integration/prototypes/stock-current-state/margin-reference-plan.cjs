@@ -81,4 +81,17 @@ async function prepareMarginReferenceGroup(args) {
   const tasks = args.workspace.tasks.filter(t => t.id === args.targetTaskId || t.customerDemandTaskId === args.targetTaskId);
   return prepareMarginReference({ ...args, workspace: { ...args.workspace, tasks } });
 }
-module.exports = { prepareMarginReference, prepareMarginReferenceGroup };
+// Preserve ORIGINAL workspace-wide open-currency selection without requesting
+// rates for old locked/closed currencies. This pass exposes NO calculation result
+// and has NO storage capability: any attempted original cache write is refused.
+async function collectMarginCurrencies({ createPurchaseMarginRefresh, company, tables, workspace, now }) {
+  const [orders,tasks]=domainCollections(company),journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+  let currencies=[],calls=0;
+  const refuse=async()=>{throw Error('Currency inspection cannot write');};
+  await createPurchaseMarginRefresh({store:{read:async()=>null,insert:refuse,update:refuse,remove:refuse},now,
+    readRates:async requested=>{calls++;if(!Array.isArray(requested))throw Error('Original currency list required');currencies=copy(requested);throw Error('Currency inspection only');}})
+    ({company,names:{orders,tasks,activity:journal},orders:copy(tables[orders]),tasks:copy(tables[tasks]),activity:copy(tables[journal]),workspace:copy(workspace)});
+  if(calls>1||new Set(currencies).size!==currencies.length)throw Error('Original single FX snapshot required');
+  return currencies;
+}
+module.exports = { prepareMarginReference, prepareMarginReferenceGroup, collectMarginCurrencies };

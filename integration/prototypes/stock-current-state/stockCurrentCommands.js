@@ -2947,7 +2947,7 @@ function createCurrentMarginReferenceSave({ company, store, protocol, coverage, 
 module.exports={createCurrentMarginReferenceSave};
 
 },
-// margin-reference-plan.cjs sha256:61f04be3d92eb25f0d39621842fcbd06672f805f88a2004a3f1ba5bc7c7b1db2
+// margin-reference-plan.cjs sha256:0f71dfe022f2e464de9f5824565e11b593b6d8bdda45f0dae77ea2fcffe73f53
 "margin-reference-plan.cjs": (load, module) => {
 'use strict';
 
@@ -3032,7 +3032,20 @@ async function prepareMarginReferenceGroup(args) {
   const tasks = args.workspace.tasks.filter(t => t.id === args.targetTaskId || t.customerDemandTaskId === args.targetTaskId);
   return prepareMarginReference({ ...args, workspace: { ...args.workspace, tasks } });
 }
-module.exports = { prepareMarginReference, prepareMarginReferenceGroup };
+// Preserve ORIGINAL workspace-wide open-currency selection without requesting
+// rates for old locked/closed currencies. This pass exposes NO calculation result
+// and has NO storage capability: any attempted original cache write is refused.
+async function collectMarginCurrencies({ createPurchaseMarginRefresh, company, tables, workspace, now }) {
+  const [orders,tasks]=domainCollections(company),journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+  let currencies=[],calls=0;
+  const refuse=async()=>{throw Error('Currency inspection cannot write');};
+  await createPurchaseMarginRefresh({store:{read:async()=>null,insert:refuse,update:refuse,remove:refuse},now,
+    readRates:async requested=>{calls++;if(!Array.isArray(requested))throw Error('Original currency list required');currencies=copy(requested);throw Error('Currency inspection only');}})
+    ({company,names:{orders,tasks,activity:journal},orders:copy(tables[orders]),tasks:copy(tables[tasks]),activity:copy(tables[journal]),workspace:copy(workspace)});
+  if(calls>1||new Set(currencies).size!==currencies.length)throw Error('Original single FX snapshot required');
+  return currencies;
+}
+module.exports = { prepareMarginReference, prepareMarginReferenceGroup, collectMarginCurrencies };
 
 },
 // current-purchase-save-router.cjs sha256:f705661cfe9924d69c9f8080a0d4eb6355712445f68ba2f768381265725640bf
@@ -3063,6 +3076,28 @@ function createCurrentPurchaseSaveRouter({ company, readControl, saveCurrent, sa
   };
 }
 module.exports = { createCurrentPurchaseSaveRouter };
+
+},
+// current-purchase-read-router.cjs sha256:56be4be53d09bf09fcc1f4632d1737297e4e3a33d88473bf15f87ceb2e02b5fb
+"current-purchase-read-router.cjs": (load, module) => {
+'use strict';
+const { hash }=load("commit-proof.cjs");
+// Invoked only after original Purchase auth. Missing control never authorizes the
+// old workspace's implicit GP cache writer. Browser metadata does not choose mode.
+function createCurrentPurchaseReadRouter({company,readControl,readLegacy,readCurrent}) {
+  if(!['NCT','GHR'].includes(company)||[readControl,readLegacy,readCurrent].some(fn=>typeof fn!=='function'))throw Error('Private Purchase read routing dependencies required');
+  return async()=>{
+    const control=await readControl();
+    if(!control||control._id!==hash(company,'STOCK_CONTROL')||control.company!==company||control.schemaVersion!==1
+      ||typeof control.stockCommitVersion!=='string'||!control.stockCommitVersion||!Number.isSafeInteger(control.generation)||control.generation<0
+      ||!['LEGACY','ACTIVE','SHADOW','MAINTENANCE'].includes(control.mode))throw Error('Purchase stock read mode unconfirmed');
+    if(control.pending!==null)throw Error('Purchase inventory save pending; retain original request');
+    if(control.mode==='LEGACY')return readLegacy();
+    if(control.mode!=='ACTIVE')throw Error('Purchase inventory maintenance is in progress');
+    return readCurrent(company);
+  };
+}
+module.exports={createCurrentPurchaseReadRouter};
 
 },
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
@@ -4064,6 +4099,72 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
   return {workspace,products,metrics};
 }
 module.exports={prepareCurrentPurchaseProjection,readCurrentPurchaseProjection};
+
+},
+// current-purchase-workspace-read.cjs sha256:b211b0d70c9fe32aca926d602cbd5331e81527c743aa1b9f87993738e56b142d
+"current-purchase-workspace-read.cjs": (load, module) => {
+'use strict';
+
+const { prepareMarginReferenceGroup, collectMarginCurrencies } = load("margin-reference-plan.cjs");
+const { createPurchaseTransferWorkspace } = load("purchase-transfer-workspace.cjs");
+const { domainCollections } = load("domain-scope.cjs");
+const { copy } = load("segmented-plan.cjs");
+// READ ONLY. Refresh suggestions contain no draft GP/rate/order data. The caller
+// must durably retain an original authenticated save request BEFORE acting on one.
+function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, readCurrentContext, readRates,
+  createPurchaseMarginRefresh, readCustomerShortNames, projectPurchaseOrders, applyPurchaseProgress, readOutstanding, now }) {
+  if (!['NCT','GHR'].includes(company) || typeof protocol?.readSnapshot!=='function'
+    || [authenticate,readCurrentContext,readRates,createPurchaseMarginRefresh,readCustomerShortNames,projectPurchaseOrders,
+      applyPurchaseProgress,readOutstanding,now].some(fn=>typeof fn!=='function')) throw Error('Original current Purchase workspace dependencies required');
+  const [orders,tasks]=domainCollections(company),journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+  return async selectedCompany=>{
+    if (selectedCompany!==company)throw Error('Purchase workspace company conflict');
+    const staff=await authenticate(company);
+    if (!staff?.staffId||!staff.memberId)throw Error('Original Purchase workspace authorization required');
+    const snapshot=await protocol.readSnapshot(async control=>{
+      if (control?.company!==company||control.mode!=='ACTIVE'||control.schemaVersion!==1||control.pending
+        || !control.writerBuild||control.transferIndexVersion!==2||!Number.isSafeInteger(control.generation)||control.generation<0) throw Error('Verified current Purchase workspace required');
+      const data=await readCurrentContext(company,staff,control),workspace=data?.workspace,tables=data?.tables;
+      if (workspace?.company!==company||workspace.stockAllocationView!=='CURRENT_V2'||workspace.staff?.staffId!==staff.staffId
+        || workspace.staff?.memberId!==staff.memberId||!Array.isArray(workspace.tasks)||new Set(workspace.tasks.map(row=>row.id)).size!==workspace.tasks.length
+        || !tables||[orders,tasks,journal,'PurchaseOrders'].some(collection=>!Array.isArray(tables[collection]))) throw Error('Original complete current Purchase workspace required');
+      const currencies=await collectMarginCurrencies({company,tables,workspace,createPurchaseMarginRefresh,now});
+      let rates;
+      const currentRates=()=>rates||(rates=Promise.resolve().then(()=>readRates(currencies)));
+      const margins=new Map();
+      for (const target of workspace.tasks.filter(row=>!row.procurementSource)) {
+        const group=workspace.tasks.filter(row=>row.id===target.id||row.customerDemandTaskId===target.id);
+        const allowed=new Set([target.id,...group.map(row=>'SOURCE:'+row.id)]);
+        const prepared=await prepareMarginReferenceGroup({company,targetTaskId:target.id,workspace,
+          tables:Object.fromEntries([orders,tasks,journal].map(collection=>[collection,tables[collection]])),
+          createPurchaseMarginRefresh,readRates:currentRates,now});
+        if (prepared.results.some(row=>!allowed.has(row[0])||row[1]!==null&&(typeof row[1]!=='number'||!Number.isFinite(row[1])))) throw Error('Known original Purchase margins required');
+        if (prepared.mustCommit) return {schema:'PURCHASE_MARGIN_REFRESH_REQUIRED_V1',company,taskId:target.id,
+          staff:{staffId:staff.staffId,memberId:staff.memberId,staffName:staff.staffName},
+          stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:control.writerBuild,
+            stockGeneration:control.generation,generation:control.generation}};
+        for (const [id,gp] of prepared.results) {
+          if(margins.has(id))throw Error('Ambiguous original Purchase margin group');margins.set(id,gp);
+        }
+      }
+      let customerNamesError='',names=[];
+      try {names=await readCustomerShortNames(workspace.customers.map(row=>row.id));}
+      catch (_) {customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。';}
+      if(!Array.isArray(names))throw Error('Original customer short names required');
+      const result={...copy(workspace),customerNamesError,
+        customers:workspace.customers.map(row=>({...copy(row),shortName:names.find(item=>item.customerId===row.id)?.shortName||''})),
+        tasks:workspace.tasks.map(row=>({...copy(row),gp:margins.get(row.id)??null,sourceGp:margins.get('SOURCE:'+row.id)??null}))};
+      const purchaseOrders=projectPurchaseOrders({company,workspace:result,records:tables.PurchaseOrders});
+      applyPurchaseProgress(result,tables[journal],purchaseOrders);
+      // Original archived/stage decisions above remain untouched; relation loading
+      // is independent and may still put halos on either archived participant.
+      return createPurchaseTransferWorkspace({company,protocol,authenticate:async()=>staff,
+        readWorkspace:async()=>result,readOutstanding:(c,input)=>readOutstanding(c,input,staff)})(company);
+    });
+    return snapshot.rows;
+  };
+}
+module.exports={createCurrentPurchaseWorkspaceRead};
 
 },
 // purchase-borrow-options.cjs sha256:441924522a2e30c49a0ff3d4f26a32441f88581f79a65fbae8cc198bb60b6180
@@ -5246,6 +5347,7 @@ export const createCurrentPurchaseReorderSave = load("current-purchase-reorder-s
 export const createCurrentPurchaseTables = load("current-purchase-tables.cjs").createCurrentPurchaseTables;
 export const createCurrentPurchaseTaskGateway = load("current-purchase-task-gateway.cjs").createCurrentPurchaseTaskGateway;
 export const createCurrentPurchaseSaveRouter = load("current-purchase-save-router.cjs").createCurrentPurchaseSaveRouter;
+export const createCurrentPurchaseReadRouter = load("current-purchase-read-router.cjs").createCurrentPurchaseReadRouter;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;
@@ -5260,6 +5362,7 @@ export const planCollections = load("domain-scope.cjs").planCollections;
 export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
 export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;
 export const readCurrentPurchaseProjection = load("purchase-current-projection.cjs").readCurrentPurchaseProjection;
+export const createCurrentPurchaseWorkspaceRead = load("current-purchase-workspace-read.cjs").createCurrentPurchaseWorkspaceRead;
 export const createPurchaseBorrowOptions = load("purchase-borrow-options.cjs").createPurchaseBorrowOptions;
 export const createCurrentPurchaseBorrowGateway = load("current-purchase-borrow-gateway.cjs").createCurrentPurchaseBorrowGateway;
 export const createCurrentPackingService = load("current-packing-service.cjs").createCurrentPackingService;
