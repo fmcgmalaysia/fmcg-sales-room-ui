@@ -1,0 +1,53 @@
+2026-10-22 continuation after348e236 — Warehouse current inventory read gateway
+
+Main scope: stock current balance/read path, NOT financial feature expansion.
+Production recovery d447185/runtime32b812c unchanged. No business CMS writes or sync.
+
+Implemented
+- stock-control-current-service.cjs: original Warehouse/management staff boundary;
+  company/status/search/stock filter applied to StockProducts BEFORE paging; four
+  counts use same filtered query, totalCount and limit1, not complete product scans.
+- Quantity/summary validation, real0/null distinction and null-with-missing-reviewflag
+  remains Review. Product/source/claim pages never sum a partial page into product total.
+- Sources and claims requested separately, stable bounded pages, cursor binds company,
+  query/product/kind/source/page-size + generation. Pending/changed generation refuses.
+- Query-only current-read-barrier.cjs reads ONLY exact company STOCK_CONTROL ID,
+  validates encoded stockCommitVersion/schema/mode/pending/generation, checks before/
+  after, supplies control snapshot to avoid a redundant third control query.
+- Generated stockCurrentRead.web.js exposes SiteMember read methods with ORIGINAL
+  requireWarehouseStaff/currentMember checks before current control/quantity reads.
+  Uses existing builtin Wix Data consistentRead/suppressAuth context, NOT an expansion
+  of the @wix/data package's isolated-test permission. It exposes no mutation capability.
+- Original customer short-name reader reused only for bounded claim page IDs after
+  authorization; failure retains exact customer IDs and flags name unavailability.
+- Explicit CURRENT_STOCK_V1 / CURRENT_STOCK_DETAIL_V1 schema and sourceDetails:PAGED.
+  Old eager row.sources UI must NOT be silently bound to this response. Paired UI/
+  nested relay/Wix page integration is the next part, still not deployed.
+- ACTIVE-only; no legacy fallback, mode flip, collection setup or self-activation.
+  Missing/inactive control fails safely; no claim this endpoint is currently on Wix.
+
+Evidence
+- Current read service/query + original stock service + generated web tests:
+  24pass0fail443.174ms. After bounded identity/name-display addition, affected service+
+  generated web10pass0fail366.59ms. Overlapping counts, not distinct accumulated tests.
+- Actual generated source compared mechanically (--check), executed with builtin Wix
+  Data/webMethod/member mocks: original Warehouse auth, two exact control queries and
+  five bounded quantity queries + existing staff lookup (8 finds for one product page),
+  suppressed collection read auth only inside original personal-role checks.
+- Source detail2000 sources,20 returned, product summary2000 unchanged; null claims
+  retained. No incidental cost/internal version/operation plan sent to frontend.
+- Synthetic Activity fixtures grow0/1000/10000/100000; quantity query count stays5 and
+  only StockProducts is queried. In-memory architectural evidence, NOT Wix latency/
+  throughput/capacity proof. No records added to real CMS, no history read capability.
+- Original baseline financial scenario failure remains separate/open; not rerun or fixed.
+
+Official API references checked for query behavior (not deployed API acceptance):
+https://dev.wix.com/docs/sdk/backend-modules/data/items/wix-data-query/find
+https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-query/gt
+https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-query/is-empty
+SDK docs mark preview; generated production-read candidate deliberately uses existing
+builtin Wix Data path and still needs actual live-query acceptance before activation.
+
+Four states: code candidate; Pages NOT deployed; Wix NOT synchronized/published;
+public page NOT verified. ACTIVE OFF. Real source permissions/indexes/data conversion,
+all writers/final guards/capacity/lifecycle/recovery/shadow, main UI/halo and review remain.

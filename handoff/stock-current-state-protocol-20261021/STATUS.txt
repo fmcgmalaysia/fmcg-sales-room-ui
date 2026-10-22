@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after348e236: WAREHOUSE_CURRENT_READ_GATEWAY.txt. Warehouse stock
+service+generated staff-guarded Wix read module now queries current Products and paged
+sources/claims; only exact control ID, no history replay.24pass443.174ms, then affected
+10pass366.59ms after bounded identity/name mapping (overlap). Paired UI/relay/live query
+acceptance and all writer/capacity/recovery/migration/release gates still OPEN/OFF.
+
 CURRENT continuation after69dce08: ACCOUNT_PO_RECORD_CURRENT_PLAN.txt. Original Account
 auth/non-file settlement prepare now maps exact versioned PO image; action-specific
 field guard preserves existing payments/quantity/file identities.34new+originalpass
