@@ -1,0 +1,108 @@
+const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
+const { createRequire } = require('node:module'), { execFileSync } = require('node:child_process');
+const { createCurrentPurchaseBorrowGateway } = require('../prototypes/stock-current-state/current-purchase-borrow-gateway.cjs');
+const { planCollections } = require('../prototypes/stock-current-state/domain-scope.cjs');
+const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
+const load = require('./load-master-module.cjs'), { operationId } = load('purchaseOperationJournal.js');
+const folder = path.join(__dirname, '../prototypes/stock-current-state'), fixturePath = require.resolve('./stock-current-borrow-gateway.test.cjs');
+const fixture = vm.runInNewContext(fs.readFileSync(fixturePath, 'utf8').replace("const test = require('node:test')", 'const test = () => {}')+'\nfixture;',
+  { require: createRequire(fixturePath), Map, Buffer });
+const copy = value => JSON.parse(JSON.stringify(value));
+async function root(verifiedMockCoverage = false) {
+  const f = await fixture(), calls = [], wrapped = [];
+  for (const task of f.context.tasks) f.db.set('NCTTasks:'+task.id, { _id: task.id, title: task.id, company: 'NCT', _version: 'T0',
+    description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 });
+  const native = { webMethod: (permission, fn) => { wrapped.push(permission); return fn; }, Permissions: { SiteMember: 'SITE_MEMBER' },
+    currentMember: { getMember: () => f.deps.readMember() }, items: f.items,
+    getPurchaseStaffContext: async () => { calls.push('AUTH'); const member = await f.deps.readMember(); return f.deps.requirePurchaseStaff(member, await f.deps.readStaffRecords()); },
+    fulfilmentStore: { all: async collection => { calls.push(collection); return collection === 'StaffMasterAccess' ? f.deps.readStaffRecords()
+      : collection === 'PurchaseOrders' ? [{ company: 'GHR', _id: 'FOREIGN' }] : assert.fail('Unexpected original table scan'); } },
+    readFulfilmentContext: async (company, staff) => { calls.push('CONTEXT'); return f.deps.readContext(company, staff); },
+    ...Object.fromEntries(['requirePurchaseStaff','projectPurchaseOrders','readAllocations','readCustomerShipments','readPackingLists','packingHeld','readPreparation'].map(k => [k, f.deps[k]])),
+    readPreparation: load('warehousePreparation.js').readPreparation, projectPreparation: load('warehousePreparation.js').projectPreparation, operationId, planCollections,
+    createSdkConditionalStore: args => { calls.push('SDK'); assert.equal(args.company, 'NCT'); assert.deepEqual(copy(args.collections), planCollections('NCT', true));
+      assert.deepEqual(copy(args.dateTimeFields), { NCTActivity: ['activityTime'] }); return f.store; },
+    createSegmentedFencedProof: args => { assert.equal(args.store, f.store); assert.equal(args.domainWrites, true); return f.protocol; },
+    createCurrentPurchaseBorrowGateway };
+  let source = fs.readFileSync(path.join(folder, 'stockCurrentBorrow.web.js'), 'utf8');
+  if (verifiedMockCoverage) {
+    // Deliberate OFFLINE fixture only. Shipped candidate remains empty/fail-closed.
+    const coverage = Object.fromEntries(WRITERS.map(w => [w, { verified: true, build: 'TEST' }]));
+    const before = 'const writerCoverage = Object.freeze({});'; assert.equal(source.split(before).length, 2);
+    source = source.replace(before, 'const writerCoverage = Object.freeze('+JSON.stringify(coverage)+');');
+  }
+  const api = vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
+    +'\nreturn {getPurchaseBorrowOptionsCurrent,savePurchaseBorrowingCurrent};})()', native);
+  return { ...f, api, calls, wrapped };
+}
+
+test('generated actual-import web root retains original auth before stock access, exact schema gate and CLOSED writer coverage', async () => {
+  assert.match(execFileSync(process.execPath, [path.join(folder, 'build-purchase-borrow-web.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
+  const f = await root(); assert.deepEqual(f.wrapped, ['SITE_MEMBER','SITE_MEMBER']);
+  const quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
+  assert.equal(quote.ok, false); assert.equal(f.calls[0], 'AUTH');
+  assert.equal(f.calls.includes('CONTEXT'), false, 'unverified writer coverage must not yield actionable borrowing quotes');
+  const failed = await f.api.savePurchaseBorrowingCurrent('NCT', { ...f.request, coverage: Object.fromEntries(WRITERS.map(w => [w, true])) });
+  assert.equal(failed.ok, false); assert.equal(failed.requestId, f.request.requestId);
+  assert.equal([...f.db.values()].some(r => r.action === 'STOCK_TRANSFER_CURRENT'), false);
+  assert.equal((await f.protocol.readControl()).generation, 0);
+  const source = fs.readFileSync(path.join(folder, 'stockCurrentBorrow.web.js'), 'utf8');
+  assert.equal(/elevate\(|suppressAuth|\.initialize\(|getPurchaseWorkspace\(/.test(source), false);
+});
+
+test('root and existing relay can drive actual scoped borrow plan with same request progress; no receipt or PO duplication', async () => {
+  const f = await root(true), quote = await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' });
+  assert.equal(quote.ok, true); assert.equal(quote.options[0].maximumQuantity, 100); assert.equal(f.calls[0], 'AUTH');
+  assert.ok(f.calls.indexOf('CONTEXT') > f.calls.indexOf('AUTH'));
+  const request = { ...f.request, input: { ...f.request.input, expectedRevision: quote.expectedRevision, approvedBy: 'FORGED' } };
+  let result, attempts = 0; do { result = await f.api.savePurchaseBorrowingCurrent('NCT', request); assert.ok(attempts++ < 40); } while (result.pending);
+  assert.equal(result.ok, true); assert.equal(result.stockGeneration, 1); assert.ok(attempts > 1);
+  assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT', request)).stockGeneration, 1);
+  const relations = [...f.db.values()].filter(r => r.action === 'STOCK_TRANSFER_CURRENT'); assert.equal(relations.length, 1);
+  assert.equal(relations[0].details.relation.approvedBy, 'P1'); assert.equal(relations[0].details.relation.quantity, 30);
+  assert.deepEqual(copy(f.context.tasks.map(t => t.po)), ['PO-A','PO-B']);
+});
+
+test('unapproved member, foreign company, unverified GHR schema and oversize messages cannot read stock or save', async () => {
+  const f = await root(); assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('OTHER', { borrowerTaskId: 'A' })).ok, false);
+  assert.equal(f.calls.length, 0);
+  assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('GHR', { borrowerTaskId: 'A' })).ok, false); assert.deepEqual(f.calls, ['AUTH']);
+  f.calls.length = 0; f.deps.readMember = async () => ({ _id: 'M1', status: 'PENDING' });
+  assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'A' })).ok, false); assert.deepEqual(f.calls, ['AUTH']);
+  f.calls.length = 0; assert.equal((await f.api.getPurchaseBorrowOptionsCurrent('NCT', { borrowerTaskId: 'X'.repeat(6001) })).ok, false);
+  assert.equal((await f.api.savePurchaseBorrowingCurrent('NCT', { ...f.request, input: { note: 'X'.repeat(6001) } })).ok, false);
+  assert.equal(f.calls.length, 0);
+});
+
+function relay() {
+  let callback; const messages = [], queries = [], saves = [], legacy = [], room = { postMessage: m => messages.push(copy(m)), onMessage: fn => { callback = fn; } };
+  const $w = () => room; $w.onReady = fn => fn();
+  const source = fs.readFileSync(path.join(folder, 'purchase-room-page.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '');
+  const native = { $w, getPurchaseBorrowOptionsCurrent: async (company, input) => { queries.push({ company, input: copy(input) }); return { ok: true, options: [] }; },
+    savePurchaseBorrowingCurrent: async (company, request) => { saves.push({ company, request: copy(request) }); return {
+      ok: false, pending: true, requestId: request.requestId, phase: 'APPLY', completedCount: 1, totalRecords: 5 }; },
+    savePurchaseOperation: async (...args) => { legacy.push(args); return { ok: true, requestId: args[1] }; } };
+  vm.runInNewContext(source, native); return { messages, queries, saves, legacy, send: data => callback({ data }) };
+}
+
+test('actual Wix relay sends OPTIONS and BORROW to new root, preserves exact UUID/metadata/progress and leaves ordinary saves untouched', async () => {
+  const f = relay(), id = '11111111-2222-4333-8444-555555555555', stock = { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 8 };
+  await f.send({ type: 'PURCHASE_BORROW_OPTIONS_REQUEST', company: 'NCT', requestId: id, input: { borrowerTaskId: 'A' } });
+  assert.deepEqual(f.queries, [{ company: 'NCT', input: { borrowerTaskId: 'A' } }]);
+  assert.equal(f.messages.at(-1).type, 'PURCHASE_BORROW_OPTIONS_RESULT');
+  const input = { borrowerTaskId: 'A', lenderSourceId: 'B', replacementSourceId: 'A', expectedRevision: 1, quantity: 20, reason: 'Customer shipment' };
+  for (const operation of ['BORROW_APPROVE','BORROW_RETURN']) await f.send({ type: 'PURCHASE_SAVE_REQUEST', company: 'NCT', requestId: id, operation, input,
+    ...stock, memberId: 'FORGED', coverage: 'FORGED' });
+  assert.equal(f.saves.length, 2); assert.equal(f.legacy.length, 0);
+  assert.deepEqual(f.saves[0].request, { requestId: id, operation: 'BORROW_APPROVE', input, ...stock });
+  assert.deepEqual(f.messages.at(-1).result, { ok: false, pending: true, requestId: id, phase: 'APPLY', completedCount: 1, totalRecords: 5 });
+  await f.send({ type: 'PURCHASE_SAVE_REQUEST', company: 'NCT', requestId: id, operation: 'PLAN', input: { original: true } });
+  assert.equal(f.legacy.length, 1); assert.equal(f.saves.length, 2); assert.equal(f.messages.at(-1).type, 'PURCHASE_SAVE_RESULT');
+});
+
+test('new relay invalid company/UUID/oversize borrowing payload cannot call either new or legacy writer', async () => {
+  const f = relay(), valid = { type: 'PURCHASE_SAVE_REQUEST', company: 'NCT', requestId: '11111111-2222-4333-8444-555555555555', operation: 'BORROW_APPROVE', input: {} };
+  for (const patch of [{ company: 'OTHER' }, { requestId: 'INVALID' }, { input: { reason: 'X'.repeat(6001) } }]) await f.send({ ...valid, ...patch });
+  assert.equal(f.saves.length, 0); assert.equal(f.legacy.length, 0); assert.equal(f.messages.length, 3);
+  assert.ok(f.messages.every(m => m.type === 'PURCHASE_SAVE_RESULT' && m.ok === false));
+});

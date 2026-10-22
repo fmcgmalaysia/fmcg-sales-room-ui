@@ -31,7 +31,7 @@ async function fixture(department = 'PURCHASE') {
     description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 }; });
   const gateway = createCurrentPurchaseBorrowGateway({ company: 'NCT', items, store, protocol,
     coverage: Object.fromEntries(WRITERS.map(w => [w, { verified: true, build: 'TEST' }])), authorityDependencies: f.deps });
-  return { ...f, db, protocol, gateway, request: { ...copy(original.request), operation: 'BORROW_APPROVE', kind: 'FORGED', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 } };
+  return { ...f, db, items, store, protocol, gateway, request: { ...copy(original.request), operation: 'BORROW_APPROVE', kind: 'FORGED', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 } };
 }
 
 test('private dialog gateway quotes real PO pair, approves once through bounded progress and preserves physical/PO identities', async () => {

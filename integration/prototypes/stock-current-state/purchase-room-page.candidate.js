@@ -1,3 +1,4 @@
+import { getPurchaseBorrowOptionsCurrent, savePurchaseBorrowingCurrent } from 'backend/stockCurrentBorrow.web';
 import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { getPurchaseWorkspace } from 'backend/purchaseWorkspace.web';
@@ -11,6 +12,16 @@ $w.onReady(() => {
   const room = $w('#html1');
   room.onMessage(async event => {
     const message = event.data || {};
+    if(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid borrowing options request.');
+        const result=await getPurchaseBorrowOptionsCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_BORROW_OPTIONS_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Borrowing options unconfirmed. 可借货资料尚未确认。'});}return;
+    }
+    if(message.type==='PURCHASE_SAVE_REQUEST'&&['BORROW_APPROVE','BORROW_RETURN'].includes(message.operation)){
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>6000)throw Error('Invalid borrowing save request.');
+        const result=await savePurchaseBorrowingCurrent(message.company,{requestId:message.requestId,operation:message.operation,input:message.input,stockProtocol:message.stockProtocol,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration});room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(error){room.postMessage({type:'PURCHASE_SAVE_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Borrowing save unconfirmed; retain original request. 借货保存尚未确认，请保留原请求。'});}return;
+    }
     if(message.type==='PURCHASE_BORROW_RELATIONS_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid borrowing detail request.');
         const result=await getPurchaseStockTransfersCurrent(message.company,message.input);room.postMessage({type:'PURCHASE_BORROW_RELATIONS_RESULT',company:message.company,requestId:message.requestId,ok:true,result});
