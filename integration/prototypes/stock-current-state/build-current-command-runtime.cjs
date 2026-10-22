@@ -11,6 +11,7 @@ const entries = {
   createCurrentPackingService: 'current-packing-service.cjs',
   projectCurrentWarehouseReady: 'current-warehouse-ready-context.cjs',
   createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs',
+  createCurrentSalesShipmentSave: 'current-sales-shipment-save.cjs',
   dispatchCurrentSalesGateway: 'sales-gateway-current.cjs'
 };
 const sources = new Map();

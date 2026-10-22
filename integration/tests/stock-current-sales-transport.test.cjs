@@ -38,6 +38,17 @@ test('only LEGACY route can invoke original writer; maintenance/unconnected/malf
   assert.equal(await run('ACTIVE', { read: async company => company }, { ...body, action: 'READ' }), 'NCT');
   assert.equal(legacy, 1); assert.equal(saved, 0);
 });
+test('active source SELECT/CANCEL route uses its connected reservation handler, never the adjustment or legacy writer', async () => {
+  let selected = 0;
+  for (const action of ['SELECT', 'CANCEL']) {
+    const result = await dispatchCurrentSalesGateway({ body: { ...body, action }, staff, legacy: () => { throw Error('Legacy forbidden'); },
+      resolveCurrentSales: async () => ({ mode: 'ACTIVE', save: () => { throw Error('Wrong adjustment handler'); }, shipmentSave: async request => {
+        selected++; assert.equal(request.input.action, action); assert.equal(request.input.customerId, 'C'); return { selected: true };
+      } }) });
+    assert.equal(result.selected, true);
+  }
+  assert.equal(selected, 2);
+});
 function uiFixture() {
   let onMessage, html = '', closed = 0, refreshed = 0, ids = 0;
   const sent = [], timers = new Map(), nodes = new Map();

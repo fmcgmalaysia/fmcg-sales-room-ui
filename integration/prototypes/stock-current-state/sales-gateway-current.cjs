@@ -9,7 +9,8 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   if (current?.mode === 'LEGACY') return legacy();
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
-  if (body.action !== 'ADJUST' || typeof current.save !== 'function') {
+  const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave : null;
+  if (typeof save !== 'function') {
     throw Error('Current Sales action is not connected; no legacy write fallback');
   }
   const { stockCurrent, ...input } = body.input || {};
@@ -18,7 +19,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
     || !Number.isSafeInteger(stockCurrent.stockGeneration) || stockCurrent.stockGeneration < 0) {
     throw Error('Current Sales form changed; refresh and review retained input');
   }
-  return current.save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
+  return save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
     stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,
     input: { ...input, action: body.action, customerId: staff.customerId } });
 }

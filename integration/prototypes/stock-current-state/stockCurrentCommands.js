@@ -3422,7 +3422,138 @@ function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegat
 module.exports = { createCurrentSalesRead };
 
 },
-// sales-gateway-current.cjs sha256:8d12e610121d7439db479b9d61beb268a74f4c941d45887eb6ed48d7d1c9fc48
+// current-sales-shipment-save.cjs sha256:c36789c04b02f4384ce241ffdecd91cf5b78e26a3c818c5533666b2d8deb1a32
+"current-sales-shipment-save.cjs": (load, module) => {
+'use strict';
+const { createCurrentStockSave } = load("current-stock-save.cjs");
+const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+const { readCurrentSalesWorkspace } = load("sales-current-workspace.cjs");
+const { validateOriginalShipment } = load("original-shipment-validation.cjs");
+const { prepareSalesShipmentHolds } = load("sales-shipment-hold-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+// PRIVATE existing source bearer gateway only, not SiteMember identity input.
+function createCurrentSalesShipmentSave({ company, items, store, protocol, coverage, authenticateOriginalDelegation,
+  readContext, createCustomerFulfilmentOperations, currentAllocationVersion, now = () => new Date(), ...dependencies }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2' || currentAllocationVersion !== 2
+    || typeof authenticateOriginalDelegation !== 'function' || typeof readContext !== 'function'
+    || typeof createCustomerFulfilmentOperations !== 'function') throw Error('Private original current Sales shipment dependencies required');
+  return async request => {
+    let staff;
+    const result = await createCurrentStockSave({ company, writer: 'SHIPMENT', protocol, coverage,
+      authenticate: async () => {
+        staff = await authenticateOriginalDelegation(company, request); requireOriginalSalesDelegation(staff, request?.input?.customerId);
+        if (!['SELECT', 'CANCEL'].includes(request.input.action)) throw Error('Original non-invoice Sales shipment action required');
+        return { memberId: staff.memberId };
+      }, prepare: async command => {
+        const metrics = { queries: 0, exactReads: 0 };
+        const snapshot = await protocol.readSnapshot(async control => {
+          const original = await readContext(company, staff);
+          const current = await readCurrentSalesWorkspace({ ...dependencies, company, items, store, staff, control, context: original, metrics });
+          const validated = await validateOriginalShipment({ company, staff, requestId: command.requestId, input: command.input,
+            context: current.context, createCustomerFulfilmentOperations, currentAllocationVersion, now });
+          const shipment = validated.event.details.shipment;
+          const ids = new Set(shipment.lines.map(line => line.taskId));
+          const products = [...current.products.values()].filter(p => p.state.tasks.some(t => ids.has(t.id)));
+          const priorShipment = command.input.action === 'CANCEL' ? dependencies.readCustomerShipments(current.context.activity).find(s => s.id === shipment.id) : null;
+          return prepareSalesShipmentHolds({ company, event: validated.event, priorShipment, products, generation: control.generation });
+        });
+        return { ...snapshot.rows, memberId: staff.memberId, generation: snapshot.generation, metrics };
+      } })(request);
+    if (result.ok !== true) return result;
+    const record = await protocol.readSnapshot(() => store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', hash(company, request.requestId, staff.memberId, 'SHIPMENT_EVENT')));
+    const event = record.rows, shipment = event?.details?.shipment;
+    if (!event?._version || event.company !== company || event.action !== 'CUSTOMER_SHIPMENT_CHANGED' || event.result !== 'SAVED'
+      || event.initiatedByStaffId !== staff.staffId || shipment?.company !== company || shipment.customerId !== staff.customerId
+      || shipment.status !== (request.input.action === 'SELECT' ? 'REQUESTED' : 'CANCELLED')) throw Error('Committed shipment receipt identity unconfirmed');
+    return { ...result, company, shipmentId: shipment.id, status: shipment.status };
+  };
+}
+module.exports = { createCurrentSalesShipmentSave };
+
+},
+// original-shipment-validation.cjs sha256:60b9d049a5346af921a9ac9612769c7b8ded103900635d986a1dddb3597f7f48
+"original-shipment-validation.cjs": (load, module) => {
+'use strict';
+const copy = value => JSON.parse(JSON.stringify(value));
+// Capture ORIGINAL preparation only. Does not invoice, dispatch, allocate files,
+// call FX or perform a business write. Real invoice entry remains disabled.
+async function validateOriginalShipment({ company, staff, requestId, input, context, createCustomerFulfilmentOperations,
+  currentAllocationVersion, now }) {
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.activity)
+    || !['SELECT', 'CANCEL', 'DISPATCH'].includes(input?.action) || typeof createCustomerFulfilmentOperations !== 'function'
+    || typeof now !== 'function' || context.stockAllocationView === 'CURRENT_V2' && currentAllocationVersion !== 2) throw Error('Original non-invoice shipment validation dependencies required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scratch = new Map(), boundary = new Error('Private original shipment prepare boundary'); let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Original shipment journal scope violation'); };
+  const store = { read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'CUSTOMER_SHIPMENT_CHANGED') throw Error('Unexpected original shipment preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy shipment apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => { scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private shipment lock release allowed'); scratch.delete(id); } };
+  const save = createCustomerFulfilmentOperations({ store, names: { [company]: { activity: journal } }, now,
+    readRates: async () => { throw Error('Real invoice/FX not authorized by current shipment validator'); },
+    readContext: async (c, actor) => { if (c !== company || actor.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected shipment context/apply'); return copy(context); } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original shipment prepare boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  const event = captured?.event, shipment = event?.details?.shipment;
+  const status = { SELECT: 'REQUESTED', CANCEL: 'CANCELLED', DISPATCH: 'DISPATCHED' }[input.action];
+  if (!event || reads !== 1 || scratch.size || event._id !== event.title || event.result !== 'SAVED'
+    || event.initiatedByStaffId !== staff.staffId || shipment?.company !== company || shipment.status !== status
+    || event.description !== shipment.id || event.image !== shipment.customerId || staff.customerId && staff.customerId !== shipment.customerId) throw Error('Original shipment event identity conflict');
+  return captured;
+}
+module.exports = { validateOriginalShipment };
+
+},
+// sales-shipment-hold-plan.cjs sha256:369609efdb72a7b404b72d94a77898cb5939e0d56fe387687d844f443c54d189
+"sales-shipment-hold-plan.cjs": (load, module) => {
+'use strict';
+const { preparePackingHoldTransition } = load("borrowing-stock-plan.cjs");
+const { copy, utf8Bytes } = load("segmented-plan.cjs");
+// Original SELECT/CANCEL reservation only. Neither Loaded nor invoice nor actual
+// physical dispatch is inferred from this change in legacy shipment intent.
+function prepareSalesShipmentHolds({ company, event, priorShipment, products, generation }) {
+  const shipment = event?.details?.shipment;
+  if (!['NCT', 'GHR'].includes(company) || event?.action !== 'CUSTOMER_SHIPMENT_CHANGED' || event.result !== 'SAVED'
+    || !event._id || event._id !== event.title || !event.initiatedByStaffId || !event.activityTime
+    || shipment?.company !== company || !['REQUESTED', 'CANCELLED'].includes(shipment.status)
+    || !Array.isArray(shipment.lines) || !shipment.lines.length || !Array.isArray(products) || !products.length
+    || shipment.status === 'REQUESTED' && (priorShipment || event.details.beforeRevision)
+    || shipment.status === 'CANCELLED' && (priorShipment?.status !== 'REQUESTED' || priorShipment.revision !== event.details.beforeRevision
+      || priorShipment.id !== shipment.id || JSON.stringify(priorShipment.lines) !== JSON.stringify(shipment.lines))) throw Error('Original exact shipment reservation transition required');
+  const coverage = new Map(shipment.lines.map(line => [line.taskId, 0])), writes = [], states = [];
+  if (coverage.size !== shipment.lines.length) throw Error('Distinct shipment hold task coverage required');
+  for (const product of products) {
+    const covered = shipment.lines.filter(line => product.state.tasks.some(t => t.id === line.taskId));
+    if (!covered.length || product.rows.planFormat !== 'SEGMENTED_V2') throw Error('Exact current shipment hold product required');
+    const holds = copy(product.state.packingHolds);
+    for (const line of covered) {
+      const task = product.state.tasks.find(t => t.id === line.taskId);
+      if (task.customerId !== shipment.customerId || task.orderId !== line.orderId || task.sourceLineId !== line.sourceLineId
+        || !Number.isSafeInteger(line.quantity) || line.quantity < 1) throw Error('Original shipment hold demand conflict');
+      coverage.set(task.id, coverage.get(task.id) + 1);
+      const delta = shipment.status === 'REQUESTED' ? line.quantity : -line.quantity;
+      holds.heldByTask[task.id] += delta;
+    }
+    const mapped = preparePackingHoldTransition({ ...product, event, generation, packingHolds: holds });
+    states.push(mapped.state);
+    writes.push(...mapped.plan.writes.filter(w => w.after.action !== 'CUSTOMER_SHIPMENT_CHANGED'));
+  }
+  if ([...coverage.values()].some(n => n !== 1)) throw Error('Complete shipment hold product coverage required');
+  writes.unshift({ collection: company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', before: null, after: { ...copy(event), company } });
+  if (new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length || writes.length > 10000
+    || utf8Bytes(JSON.stringify({ writes })) > 8 * 1024 * 1024) throw Error('Shipment hold segmented policy');
+  return { plan: { writes }, states };
+}
+module.exports = { prepareSalesShipmentHolds };
+
+},
+// sales-gateway-current.cjs sha256:8ab8f99386452754e32ea7c0d11f66b51bb842dde0d0e751d3aaa1b13a0063bb
 "sales-gateway-current.cjs": (load, module) => {
 'use strict';
 const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
@@ -3435,7 +3566,8 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   if (current?.mode === 'LEGACY') return legacy();
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
-  if (body.action !== 'ADJUST' || typeof current.save !== 'function') {
+  const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave : null;
+  if (typeof save !== 'function') {
     throw Error('Current Sales action is not connected; no legacy write fallback');
   }
   const { stockCurrent, ...input } = body.input || {};
@@ -3444,7 +3576,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
     || !Number.isSafeInteger(stockCurrent.stockGeneration) || stockCurrent.stockGeneration < 0) {
     throw Error('Current Sales form changed; refresh and review retained input');
   }
-  return current.save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
+  return save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
     stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,
     input: { ...input, action: body.action, customerId: staff.customerId } });
 }
@@ -3474,4 +3606,5 @@ export const createCurrentPackingService = load("current-packing-service.cjs").c
 export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
+export const createCurrentSalesShipmentSave = load("current-sales-shipment-save.cjs").createCurrentSalesShipmentSave;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;
