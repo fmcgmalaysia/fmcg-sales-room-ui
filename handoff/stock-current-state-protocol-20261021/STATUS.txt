@@ -1,5 +1,24 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ACTUAL INTAKE→PO→SALES SPLIT→RECEIPT→LOADED / CUSTOMER QUANTITY READ:
+INTAKE_LOADED_CUSTOMER_QUANTITIES.txt. New2shared-data cases start actual original
+intake (not preapproved task/PO) and run generated original roots with same mock
+coordinator. NCT/GHR100→Sales60/40→receipt100→Loaded60, remainder40customer-owned,
+no duplicate PO/task/stock/invoice/exit. GHR2steps/invocation/replays; held split refused.
+Bounded G3 found ACTUAL separate HTTP purchaseQuantities reader still unfenced/old
+allocation. New minimum original bearer root + formatter seam use same current
+barrier/paired projection, exact customer/submission privacy and true SDK claim
+update timestamp, never read time/new PO receipt. No new runtime export required.
+New4root tests include borrow30→30/70→automaticrepayment100/100, no writes, closed/
+missing/pending/defaultcoverage/version/Date/identity/race refusal, exactLEGACY.
+FULL1025pass0fail22243.1916ms; runtime103/53 and generator checks pass. Extra original
+quantity/case14pass1PRE-EXISTING FAIL: Buyer baseline English while old test expects
+Chinese. Baseline/current page/test/formatter unchanged; evidence retained, no fix
+or relaxed assertion. G3 not exhaustively closed; all native/capacity/recovery/
+shadow/cutover/review/four-release gates OPEN; reserved-damage implementation still
+next core work (approval below stands). Coverage EMPTY/ACTIVE OFF. No browser/native
+or production writes. Candidate starts from pushedf42cf3e; sync this increment PR220.
+
 2026-10-23 HUMAN APPROVED RESERVED DAMAGE RULE: RESERVED_DAMAGE_RULE.txt.
 User explicitly confirmed: Warehouse records damage/isolation; customer requested
 quantity unchanged, shortage shown; Purchase decides replacement or approves eligible
