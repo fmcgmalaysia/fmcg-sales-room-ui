@@ -1,5 +1,24 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ACTUAL READ LATENCY + PREPARE BLOCKER: PREPARE_INVOCATION_BUDGET.txt.
+New isolated Admin readonly diagnostic saved/whole-text SHA matches; correct Wix
+functional test EXACTLY2runs:3reads495ms and12reads1969ms, existing13synthetic records
+retained. LIVE_READ_CAPACITY_RESULT.json + native-read-capacity-result.png. NO record/
+lock/schema/permission mutation; no original business code sync/Publish. Generic Run
+first opened page preview, immediately exited; not counted as test. Native whole
+business capacity NOT accepted. Offline actual300line root invocation1 uses1250exact
+reads+900queries (SDK roundtrip lower-bound2168), only THEN pending BEFORE20/901;
+invocation2 lower-bound39. Bounded apply is NOT bounded preparation. This is now the
+concrete technical release blocker; do not claim G3/code capacity complete.
+NEXT: inspect/prove same-snapshot batched scoped current reads with exact CLOSED/zero
+identities before any broader resumable-preparation protocol change. Preserve current
+fence/plan/authority; user manual AstraHigh G3 question pending, do not repeat/autoswitch.
+c2c5e51 readonly probe candidate confirmed PUSHED PR220; sync actual evidence/instrument
+next. Prior FULL1050pass + new4isolated tests retained, no new full rerun. No sessions.
+Coverage EMPTY/ACTIVE OFF; actual invoice/exit OFF. Native types/index/private setup/
+write capacity/recovery/maintenance/shadow/review/four-release remain OPEN. Browser
+Master now at expanded safe readonly function result; no further sampling needed.
+
 2026-10-23 READ-ONLY NATIVE PROBE READY: NATIVE_READ_CAPACITY_PROBE.txt. Fixed existing
 StockProtocolTest only, Admin,1..12reads/page<=25, no writes/locks/deletes/record payload
 returned; not part of38production install targets.4mock tests pass237.0927ms, no full

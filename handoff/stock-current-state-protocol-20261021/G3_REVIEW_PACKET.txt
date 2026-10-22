@@ -35,6 +35,12 @@ Use bounded inputs, not another full project scan:
   preserving MOCK adapter is NOT native Wix acceptance; corrupt legacy Date refuses.
 
 Review questions (return evidence/file+line and minimal required correction):
+- NEW concrete prerequisite: PREPARE_INVOCATION_BUDGET.txt. Native fixed-table12reads
+  measured1969ms, NOT business capacity. OFFLINE actual300line root first invocation
+  uses1250exact reads+900queries before pending20/901; next invocation only35reads.
+  Bound/optimize first preparation safely before release, not just apply/verify.
+  Prefer proof of same-snapshot batched strong reads and exact CLOSED/zero identities
+  before introducing resumable preparation or changing protocol. No native writes.
 - Any exposed web/HTTP root or read-side write bypassing the same fence/CAS, including
   old clients, read margin/cache and co-writers? Structural map is not semantic proof.
 - Can customer cumulative received/current usable/isolated/dispatched or PO acceptance
