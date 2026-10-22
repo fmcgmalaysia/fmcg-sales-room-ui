@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 SHARED PO RECORDS: PO_RECORD_CURRENT_BINDING.txt. Concrete private
+Purchase/Account non-file co-writers now reuse original policies under ONE stock
+company fence; no finance feature/policy change. Original retained audit receipt
+verified after commit/replay, both departments preserve earlier audit and stock fields.
+621tests pass0fail5976.7201ms, runtime69modules28exports. Actual root/read/relay/UI/
+remainingwriter/schema/capacity/init/recovery/shadow/fourrelease gates OPEN, ACTIVE OFF.
+No production business edit, live CMS mutation or publication this continuation.
+
 2026-10-22 LATEST PURCHASE PANEL/REPAIR: PURCHASE_BORROW_PANEL_AND_HALO_REPAIR.txt.
 Read-only linked-row/PO/remaining panel now in EXISTING supplier dialog + original
 read relay candidate/index assets. New unchanged original fixture driver exposed22
