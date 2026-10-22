@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 RELEASE BLOCKER AUDIT: RELEASE_BLOCKERS_AND_PLATFORM_QUESTION.txt.
+No new tests/native calls or production edits. Existing1c65bec pushed; tracked clean
+before documentation. Migration APPLY remains NOT IMPLEMENTED, not merely unpublished.
+Native two-probe consent PENDING/no repeat/run; supported legacy drain UNKNOWN. Exact
+generic Wix support question prepared NOT SENT; new specific contact authority needed.
+Native schema/capacity/recovery, semanticG3, migration/shadow/cutover and four-stage
+release still unfinished. No claim all independent semantic work is complete. Avoid
+peripheral patches/repeated unchanged audits. CoverageEMPTY/ACTIVEOFF, invoice/exitOFF.
+
 2026-10-23 OFFLINE ITEM QUOTA RECOVERY: ITEM_QUOTA_RECOVERY_MATRIX.txt.
 Actual authenticated receipt root with fake insert-only site quota: lock/secondstage
 fragment/partialdomain/finalRESULT failure. Original request retained, no false success,
