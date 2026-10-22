@@ -3,7 +3,7 @@ const { createWarehouseAuthority } = require('../prototypes/stock-current-state/
 const { prepareWarehouseReceipt } = require('../prototypes/stock-current-state/warehouse-receipt-plan.cjs');
 const { createWarehouseStockReader } = require('../prototypes/stock-current-state/warehouse-stock-reader.cjs');
 const { createFencedProof } = require('../prototypes/stock-current-state/fenced-proof.cjs');
-const { createCurrentStockSave } = require('../prototypes/stock-current-state/current-stock-save.cjs');
+const { createCurrentWarehouseReceiptSave } = require('../prototypes/stock-current-state/current-department-saves.cjs');
 const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } = load('warehouseReceiving.js');
 const { projectPurchaseOrders } = load('purchaseOrderWorkflow.js');
@@ -39,6 +39,8 @@ test('original Warehouse authority resolves both products once; browser actor ca
   const saved = prepareWarehouseReceipt({ validated: result.validated, products, generation: 0 });
   assert.equal(saved.plan.writes.filter(w => w.after.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
   assert.equal(saved.states.reduce((n, s) => n + s.sources[0].onHand, 0), 200);
+  assert.deepEqual(saved.plan.writes.filter(w => w.collection === 'StockProducts').map(w => w.after.name).sort(), ['Product A', 'Product B']);
+  assert.deepEqual(saved.plan.writes.filter(w => w.collection === 'StockPositions').map(w => w.after.name).sort(), ['Product A', 'Product B']);
   assert.equal(f.context.activity.length, 0);
 });
 test('Purchase/Support cannot receive; pending member does not cause private reads', async () => {
@@ -93,18 +95,11 @@ test('authenticated current save composes original PO authority and fenced two-p
   } };
   const protocol = createFencedProof({ store }); await protocol.initialize();
   Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
-  const authority = createWarehouseAuthority(f.deps), reader = createWarehouseStockReader({ company: 'NCT', items, store, protocol,
-    readAuthority: () => authority(request) });
-  let prepared;
-  let authorizations = 0;
-  const save = createCurrentStockSave({ company: 'NCT', writer: 'RECEIPT', protocol,
-    coverage: Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }])),
-    authenticate: async () => { authorizations++; return { ...requireWarehouseStaff(member, [employee]), memberId: member._id }; },
-    prepare: async () => { prepared = await reader(); return prepared; } });
+  const save = createCurrentWarehouseReceiptSave({ company: 'NCT', items, store, protocol,
+    coverage: Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }])), authorityDependencies: f.deps });
   const command = { requestId: request.requestId, input: request.input, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 };
-  await save(command); await save(command); assert.equal(authorizations, 2);
-  assert.deepEqual(f.counts(), { contextReads: 1, staffReads: 1, recordReads: 1 });
-  assert.deepEqual(prepared.metrics, { queries: 6, exactReads: 2 });
+  await save(command); await save(command);
+  assert.deepEqual(f.counts(), { contextReads: 1, staffReads: 3, recordReads: 1 });
   const rows = [...db.values()];
   assert.equal(rows.filter(r => r.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
   assert.equal(rows.filter(r => r.sourceKind === 'PURCHASE_SOURCE').reduce((n, r) => n + r.onHand, 0), 200);

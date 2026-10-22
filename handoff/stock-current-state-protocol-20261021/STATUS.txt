@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation aftera22472c: DEPARTMENT_CURRENT_COMMANDS.txt. Concrete original
+Purchase borrow/return + Warehouse receipt command factories now use shared current
+coordinator; approve/return/reborrow/receive100/automatic repayment+replay tested. Added
+BORROWING mandatory category(now20), product names and result-integrity guards.406
+candidate+relatedoriginalpass2208.5615ms. Source original lock/destination contract now
+has concurrency/retry tests; live equivalence remains open. Original halo scale fixed
+in candidate/demo only. Actual gateways/capacity/recovery/migration/release OPEN/OFF.
+
 CURRENT continuation after52ffd68: CURRENT_SAVE_COORDINATION.txt. Original department
 reauth + owned-lock all-writer admission + server-proven same-request replay now compose
 through candidate current save coordinator; original two-product receipt test uses it.

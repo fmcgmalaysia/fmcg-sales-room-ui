@@ -15,6 +15,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
   const matching = context.tasks.filter(t => t.barcode === identity.barcode && t.packing === identity.packing && t.ea === identity.ea);
   if (matching.some(t => t.company && t.company !== company)) throw Error('Source company conflict');
   const demands = matching.filter(t => !t.procurementSource && !t.specialPurchase);
+  const name = matching.find(t => typeof t.name === 'string' && t.name.trim())?.name || '';
   const candidates = matching.filter(t => t.po && t.procurement?.totalCtn > 0);
   const allocations = readAllocations(context.activity), shipments = readCustomerShipments(context.activity);
   if (shipments.some(s => s.company !== company)) throw Error('Shipment company conflict');
@@ -46,7 +47,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
     const positions = new Map(rows.positions.map(p => [p.sourceTaskId, p]));
     const tasks = demands.map(t => ({ ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,
       requested: t.requested ?? t.ord, dispatched: sources.reduce((n, s) => n + (s.dispatchedByTask[t.id] || 0), 0) }));
-    return { ...identity, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: holds,
+    return { ...identity, name: rows.product?.name || name, complete: true, revision: rows.product?.revision || 0, tasks, packingHolds: holds,
       sources: sources.map(s => {
         const p = positions.get(s.id), claims = {};
         for (const c of rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', s.id))) {

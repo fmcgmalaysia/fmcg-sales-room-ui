@@ -220,6 +220,8 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
         || receipt && (receipt.company !== company || receipt._id !== key || !Number.isSafeInteger(receipt.baseGeneration) || receipt.baseGeneration < 0)) throw Error('Operation receipt scope conflict');
       if (prior && prior.digest !== digest || receipt && receipt.digest !== digest) throw Error('Request identity reused');
       if (prior && receipt && prior.baseGeneration !== receipt.baseGeneration) throw Error('Operation receipt generation conflict');
+      if (prior && (prior.outcome?.ok !== true || prior.outcome.operationId !== key || prior.outcome.generation !== prior.baseGeneration + 1
+        || !control.pending && control.generation < prior.outcome.generation)) throw Error('Operation result requires review');
       // Runs under the owned fence on EVERY invocation, including completed or pending
       // replays. Replay identity comes only from exact server receipts, never UI flags.
       await authorize(copy({ control, key, digest, replay: !!(prior || receipt), baseGeneration: (prior || receipt)?.baseGeneration ?? control.generation }));

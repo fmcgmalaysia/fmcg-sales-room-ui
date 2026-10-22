@@ -80,3 +80,14 @@ test('server request digest binds writer/client metadata as well as business inp
   await assert.rejects(save({ ...f.request, input: { accepted: 21 } }), /identity reused/);
   f.control().generation = 10; assert.equal((await save(f.request)).stockGeneration, 1);
 });
+test('corrupted result identity, quantity generation or company is never returned as confirmed', async () => {
+  for (const corruption of ['identity', 'generation', 'company', 'control']) {
+    const f = await fixture(), save = createCurrentStockSave(f.deps); await save(f.request);
+    const result = [...f.rows.values()].find(row => row.outcome);
+    if (corruption === 'identity') result.outcome.operationId = 'FORGED';
+    if (corruption === 'generation') result.outcome.generation = 100;
+    if (corruption === 'company') result.company = 'GHR';
+    if (corruption === 'control') f.control().generation = 0;
+    await assert.rejects(save(f.request), /result requires review|scope conflict/);
+  }
+});

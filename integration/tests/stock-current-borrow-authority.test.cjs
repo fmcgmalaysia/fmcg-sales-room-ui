@@ -13,6 +13,10 @@ const { transferId } = require('../prototypes/stock-current-state/borrowing-stoc
 const { createBorrowingStockReader } = require('../prototypes/stock-current-state/borrowing-stock-reader.cjs');
 const { readPreparation } = load('warehousePreparation.js');
 const { approveBorrow } = require('../prototypes/stock-current-state/borrowing-model.cjs');
+const { createCurrentBorrowingSave, createCurrentWarehouseReceiptSave } = require('../prototypes/stock-current-state/current-department-saves.cjs');
+const { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } = load('warehouseReceiving.js');
+const { createFencedProof } = require('../prototypes/stock-current-state/fenced-proof.cjs');
+const { WRITERS } = require('../prototypes/stock-current-state/stock-admission.cjs');
 const member = { _id: 'M1', loginEmail: 'purchase@example.test', status: 'APPROVED' };
 const staff = { title: 'P1', description: 'M1', staffEmail: member.loginEmail, staffName: 'DEMO', staffStatus: 'ACTIVE', role: 'STAFF', departments: ['PURCHASE'] };
 const request = { company: 'NCT', requestId: '11111111-2222-4333-8444-555555555555', kind: 'APPROVE',
@@ -127,4 +131,60 @@ test('real auth/PO parsers plus current snapshot produce a single approved borro
     activityTime: '2026-10-22T00:00:00Z', details: { beforeRevision: '', shipment: { id: 'SHIP', company: 'NCT', customerId: 'C-B', currency: 'USD', status: 'REQUESTED',
       lines: [{ taskId: 'B', quantity: 10, sources: [{ sourceTaskId: 'B', quantity: 10 }] }] } } });
   await assert.rejects(createBorrowingStockReader(deps)(), /Packing task holds lender/);
+});
+
+test('concrete Purchase/receipt commands approve, return and automatically repay without duplicating PO or physical stock', async () => {
+  const f = fixture(), copy = value => JSON.parse(JSON.stringify(value)), db = new Map();
+  const key = stockKey({ company: 'NCT', barcode: '1', packing: '24x1', ea: 24 }), positionId = operationId('NCT', key, 'PURCHASE_SOURCE', 'B');
+  const base = { company: 'NCT', stockKey: key, revision: 0, status: 'ACTIVE', _version: 'V0', reviewCodes: [] };
+  const seed = (collection, row) => db.set(collection + ':' + row._id, copy(row));
+  seed('StockPositions', { ...base, _id: positionId, sourceTaskId: 'B', poId: operationId('NCT', 'PURCHASE_ORDER', ['B']), receiptAccepted: 100,
+    replacementReceived: 0, dispatched: 0, onHand: 100, isolated: 0, available: 0, reservedUsable: 100 });
+  seed('StockClaims', { ...base, _id: operationId('NCT', positionId, 'B'), positionId, taskId: 'B', customerId: 'C-B', reservedUsable: 100, isolatedAttributed: 0 });
+  seed('StockProducts', { ...base, _id: operationId('NCT', key), onHand: 100, isolated: 0, available: 0, reservedUsable: 100 });
+  const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),
+    insert: async (c, row) => { if (db.has(c + ':' + row._id)) throw Error('Duplicate'); seed(c, row); return copy(row); },
+    compareAndSet: async (c, id, version, row) => { if (db.get(c + ':' + id)?._version !== version) throw Error('CAS conflict'); seed(c, row); return copy(row); },
+    compareAndRemove: async (c, id, attempt) => { if (db.get(c + ':' + id)?.attempt !== attempt) throw Error('Wrong attempt'); db.delete(c + ':' + id); }
+  };
+  const items = { query: collection => { const filters = []; const q = { eq: (k, v) => { filters.push([k, v]); return q; }, ascending: () => q, limit: () => q,
+    find: async () => { const selected = [...db].filter(([address, row]) => address.startsWith(collection + ':') && filters.every(([k, v]) => row[k] === v)).map(([, row]) => copy(row));
+      return { items: selected, totalCount: selected.length }; } }; return q; } };
+  const protocol = createFencedProof({ store }); await protocol.initialize();
+  Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
+  f.deps.readTransfer = async (company, id) => store.read('NCTActivity', transferId(company, id));
+  const coverage = Object.fromEntries(WRITERS.map(name => [name, { verified: true, build: 'TEST' }]));
+  const save = createCurrentBorrowingSave({ company: 'NCT', items, store, protocol, coverage, authorityDependencies: f.deps });
+  const command = { ...request, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 };
+  await save(command); await save(command); assert.equal(f.calls.length, 1);
+  const relation = [...db.values()].find(row => row.action === 'STOCK_TRANSFER_CURRENT').details.relation;
+  assert.equal(db.get('StockClaims:' + operationId('NCT', positionId, 'A')).reservedUsable, 30);
+  assert.equal(db.get('StockClaims:' + operationId('NCT', positionId, 'B')).reservedUsable, 70);
+  await assert.rejects(save({ ...command, kind: 'RETURN' }), /identity reused/);
+  await save({ ...command, requestId: '22222222-2222-4333-8444-555555555555', kind: 'RETURN', stockGeneration: 1,
+    input: { expectedRevision: 1, relationId: relation.id, quantity: 30, reason: 'Unused goods restored' } });
+  assert.equal(db.get('StockClaims:' + operationId('NCT', positionId, 'B')).reservedUsable, 100);
+  assert.equal(db.get('StockProducts:' + operationId('NCT', key)).onHand, 100);
+  assert.equal([...db.values()].filter(row => row.action === 'STOCK_TRANSFER_CURRENT').length, 1);
+  assert.equal([...db.values()].find(row => row.action === 'STOCK_TRANSFER_CURRENT').status, 'CLOSED');
+  assert.deepEqual(f.context.tasks.map(task => task.po), ['PO-A', 'PO-B']); assert.equal((await protocol.readControl()).generation, 2);
+  await save({ ...command, requestId: '33333333-2222-4333-8444-555555555555', stockGeneration: 2, input: { ...request.input, expectedRevision: 2 } });
+  const warehouseMember = { _id: 'WM', status: 'APPROVED', loginEmail: 'warehouse@example.test' };
+  const warehouseEmployee = { title: 'W', description: 'WM', staffEmail: warehouseMember.loginEmail, staffName: 'Warehouse', staffStatus: 'ACTIVE', departments: ['WAREHOUSE'] };
+  const authorityDependencies = { ...f.deps, readMember: async () => warehouseMember, readStaffRecords: async () => [warehouseEmployee],
+    requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations };
+  const receive = createCurrentWarehouseReceiptSave({ company: 'NCT', items, store, protocol, coverage, authorityDependencies });
+  const orders = projectWarehouseOrders({ company: 'NCT', purchaseOrders: projectPurchaseOrders({ company: 'NCT', workspace: f.context, records: [] }),
+    tasks: f.context.tasks, activity: f.context.activity }), ownPo = orders.find(po => po.lines.some(line => line.taskId === 'A'));
+  const receipt = { requestId: '44444444-2222-4333-8444-555555555555', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 3,
+    input: { id: ownPo.id, version: ownPo.version, action: 'RECEIVE', lines: [{ taskId: 'A', accepted: 100, rejected: 0, kind: 'DELIVERY', reason: '' }] } };
+  await receive(receipt); await receive(receipt);
+  const currentRelations = [...db.values()].filter(row => row.action === 'STOCK_TRANSFER_CURRENT');
+  assert.equal(currentRelations.length, 2); assert.equal(currentRelations.every(row => row.status === 'CLOSED'), true);
+  assert.equal(currentRelations.find(row => row.details.relation.id !== relation.id).details.relation.repaid, 30);
+  assert.equal(db.get('StockProducts:' + operationId('NCT', key)).onHand, 200);
+  assert.equal(db.get('StockProducts:' + operationId('NCT', key)).reservedUsable, 200);
+  const claimTotals = id => [...db.entries()].filter(([address, row]) => address.startsWith('StockClaims:') && row.taskId === id).reduce((n, [, row]) => n + row.reservedUsable, 0);
+  assert.equal(claimTotals('A'), 100); assert.equal(claimTotals('B'), 100);
+  assert.deepEqual(f.context.tasks.map(task => task.po), ['PO-A', 'PO-B']); assert.equal((await protocol.readControl()).generation, 4);
 });
