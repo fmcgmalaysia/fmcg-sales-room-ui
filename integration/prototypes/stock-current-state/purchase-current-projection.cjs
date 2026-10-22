@@ -41,14 +41,16 @@ function prepareCurrentPurchaseProjection({ context, states, readAllocations, ge
 async function readCurrentPurchaseProjection({ company, context, staff, control, items, store, originalArguments,
   projectPurchaseWorkspace, currentProjectionVersion, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
   readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
-  metrics={queries:0,exactReads:0} }) {
+  metrics={queries:0,exactReads:0},retainedTaskIds=[] }) {
   if (!['NCT','GHR'].includes(company) || !control || control.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
     || control.transferIndexVersion !== 2 || !control.writerBuild || !Number.isSafeInteger(control.generation) || control.generation < 0
     || context?.company !== company || !staff?.staffId || !staff.memberId || originalArguments?.company !== company
     || currentProjectionVersion !== 2 || typeof projectPurchaseWorkspace !== 'function' || typeof readCurrentTaskRows !== 'function'
-    || typeof readPurchaseRecords !== 'function' || typeof projectPurchaseOrders !== 'function') throw Error('Paired private current Purchase snapshot required');
+    || typeof readPurchaseRecords !== 'function' || typeof projectPurchaseOrders !== 'function'
+    ||!Array.isArray(retainedTaskIds)||new Set(retainedTaskIds).size!==retainedTaskIds.length
+    ||retainedTaskIds.some(id=>typeof id!=='string'||!context.tasks.some(task=>task.id===id))) throw Error('Paired private current Purchase snapshot required');
   const groups=new Map();
-  for (const task of context.tasks.filter(row=>!row.archived)) {
+  for (const task of context.tasks.filter(row=>!row.archived||retainedTaskIds.includes(row.id))) {
     const identity={company,barcode:task.barcode,packing:task.packing,ea:task.ea},key=stockKey(identity);
     if (!groups.has(key)) groups.set(key,{identity,taskIds:[],sourceIds:[]});
     if (!task.procurementSource && !task.specialPurchase) groups.get(key).taskIds.push(task.id);

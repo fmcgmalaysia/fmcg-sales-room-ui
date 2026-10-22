@@ -1,5 +1,5 @@
-import { createCurrentWarehouseReceiptRouter } from 'backend/stockCurrentCommands.js';
-import { saveWarehouseReceiptCurrent } from 'backend/stockCurrentWarehouse.web';
+import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';
+import { saveWarehouseReceiptCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
@@ -30,9 +30,12 @@ async function readWarehouseData(company,staff){
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await staffContext(),{orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];
+  const staff=await staffContext();
+  return createCurrentWarehouseOrdersRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),readCurrent:getWarehouseOrdersCurrent,readLegacy:async()=>{
+  const {orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];
   try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},deliveryTasks,customerLines:customerLines.map(row=>({...row,fullCustomerName:row.customerName,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),orders:orders.map(row=>({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
+  }})();
 });
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input,stockCurrent)=>{
   const staff=await staffContext();

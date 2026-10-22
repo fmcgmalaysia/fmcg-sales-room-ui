@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 WAREHOUSE CURRENT WORKSPACE: WAREHOUSE_ORDERS_ACTUAL_ROOT.txt. Same-fence
+original PO physical receipt/version + current customer/Ready ownership now candidate
+read composition and actual-import Warehouse root; original read wrapper server-mode
+gated too. Loaded-task exact retained scope and missing-task review; auth-only resume
+identity returns no stock grant.739currentpass0fail14528.6055ms; both-company empty root
+read/coverage/auth focused449.751ms after final fixture expansion.82modules40exports.
+Warehouse client metadata/pending replay and preparation/files still OPEN; no live
+install/activation/publication, production exact. Remaining native/allwriter/init/
+cutover/recovery/platform capacity/shadow/fourrelease gates OPEN. ACTIVE OFF.
+
 2026-10-22 WAREHOUSE RECEIPT ROOT: WAREHOUSE_RECEIPT_ACTUAL_ROOT.txt. Actual-original
 auth/context/PO/receipt composition now candidate SiteMember root, common segmented
 current save; verified original poId/receiptId/savedAt retained. Original save wrapper

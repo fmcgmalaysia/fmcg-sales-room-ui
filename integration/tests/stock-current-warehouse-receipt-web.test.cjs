@@ -4,7 +4,10 @@ const folder=path.join(__dirname,'../prototypes/stock-current-state'),copy=value
 const {hash}=require('../prototypes/stock-current-state/commit-proof.cjs'),{stockKey}=require('../prototypes/stock-current-state/current-model.cjs');
 const {createSegmentedFencedProof}=require('../prototypes/stock-current-state/segmented-fenced-proof.cjs');
 const {createCurrentWarehouseReceiptSave}=require('../prototypes/stock-current-state/current-department-saves.cjs');
-const {createCurrentWarehouseReceiptRouter}=require('../prototypes/stock-current-state/current-warehouse-receipt-router.cjs');
+const {createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter}=require('../prototypes/stock-current-state/current-warehouse-receipt-router.cjs');
+const {createCurrentWarehouseOrdersRead}=require('../prototypes/stock-current-state/current-warehouse-orders-read.cjs');
+const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
+const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
 async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvocation=100){
   const filename=require.resolve('./stock-current-warehouse-authority.test.cjs');
@@ -12,7 +15,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
     .replaceAll("'NCT'",'company')+';fixture;',{require:createRequire(filename),company});
   const f=original(),db=new Map(),calls=[],journal=company==='NCT'?'NCTActivity':'NCTActivity1',tasks=company==='NCT'?'NCTTasks':'NCTTasks1';
   if(productCount!==2){const first=copy(f.context.tasks[0]);f.context.tasks=Array.from({length:productCount},(_,i)=>({...copy(first),id:'T'+i,sourceLineId:'L'+i,barcode:String(i)}));}
-  const store={read:async(c,id)=>copy(db.get(c+'/'+id)||null),insert:async(c,row)=>{
+  const store={normalizeListedRow:(_c,row)=>copy(row),read:async(c,id)=>copy(db.get(c+'/'+id)||null),insert:async(c,row)=>{
     assert.equal(db.has(c+'/'+row._id),false);db.set(c+'/'+row._id,copy(row));return copy(row);
   },compareAndSet:async(c,id,version,row)=>{assert.equal(db.get(c+'/'+id)?._version,version);db.set(c+'/'+id,copy(row));return copy(row);},
   compareAndRemove:async(c,id,attempt)=>{assert.equal(db.get(c+'/'+id)?.attempt,attempt);db.delete(c+'/'+id);}};
@@ -31,9 +34,15 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       return{items:rows.slice(0,limit),totalCount:rows.length};}};return q;}};
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
+    createCurrentWarehouseOrdersRead,createCurrentPurchaseTables,readCurrentPurchaseProjection,
+    ...load('../prototypes/stock-current-state/warehousePreparation.candidate.js'),
+    ...load('../prototypes/stock-current-state/purchaseProjection.candidate.js'),
+    projectWarehouseCustomerReadiness:load('warehouseCustomerReadiness.js').projectWarehouseCustomerReadiness,
+    warehouseCbm:load('warehouseCbm.js').warehouseCbm,readCustomerShortNames:async()=>[],
     Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{assert.equal(permission,'SITE_MEMBER');return fn;},
     currentMember:{getMember:async()=>{calls.push('MEMBER');return f.deps.readMember();}},items,
-    fulfilmentStore:{all:async c=>{calls.push(c);if(c==='StaffMasterAccess')return f.deps.readStaffRecords();if(c==='PurchaseOrders')return [];throw Error('Unexpected full scan');}},
+    fulfilmentStore:{all:async c=>{calls.push(c);if(c==='StaffMasterAccess')return f.deps.readStaffRecords();
+      if(['PurchaseOrders','SharedSuppliers',journal,tasks,company==='NCT'?'NCTOrders':'NCTOrders1'].includes(c))return [...db].filter(([key])=>key.startsWith(c+'/')).map(([,row])=>copy(row));throw Error('Unexpected full scan');}},
     readFulfilmentContext:async selected=>{calls.push('CONTEXT');assert.equal(selected,company);
       f.context.activity=[...db].filter(([key])=>key.startsWith(journal+'/')).map(([,row])=>copy(row));
       f.context.tasks.forEach(task=>{task.warehouse=load('warehouseReceiving.js').readWarehouseTask({title:task.id,description:task.orderId,imageAltText:task.sourceLineId,purchaseQtyInCtn:task.ord},f.context.activity);});
@@ -42,7 +51,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
     createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);return protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
-  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent};})()',bindings);
+  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
   const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0});
   return{...f,db,protocol,api,initial,calls,journal,tasks};
 }
@@ -98,6 +107,21 @@ test('original 300-line receipt executes bounded phases under SAME request and e
   assert.equal(f.calls.filter(call=>call==='CONTEXT').length,1,'all phases reuse one captured original receipt plan');
   assert.deepEqual(copy(await f.api.saveWarehouseReceiptCurrent('NCT',f.initial)),copy(result));
 });
+test('actual-import empty Warehouse workspace stays same-generation and read-only; closed coverage refuses before company tables while identity recovery remains authorized',async()=>{
+  for(const company of ['NCT','GHR'])for(const coverage of [true,false]){
+    const f=await fixture(company,coverage);
+    for(const key of [...f.db.keys()])if(key.startsWith('StockProducts/')||key.startsWith(f.tasks+'/'))f.db.delete(key);
+    const before=JSON.stringify([...f.db]);
+    if(coverage){const result=await f.api.getWarehouseOrdersCurrent(company);assert.equal(result.stockCurrent.stockGeneration,0);
+      assert.equal(result.orders.length,0);assert.equal(result.deliveryTasks.length,0);assert.equal(result.customerLines.length,0);
+      assert.equal(f.calls.includes('CONTEXT'),false,'same native listed tables, not a second legacy context scan');
+    }else{await assert.rejects(f.api.getWarehouseOrdersCurrent(company),/unavailable/);assert.equal(f.calls.includes(f.tasks),false);}
+    assert.equal(JSON.stringify([...f.db]),before);
+    const identity=await f.api.getWarehouseResumeContextCurrent(company);assert.equal(identity.schema,'WAREHOUSE_RESUME_CONTEXT_V1');
+    assert.equal(identity.staff.memberId,'M');assert.equal(identity.stockCurrent,undefined,'auth-only endpoint grants no stock generation');
+    f.deps.readMember=async()=>({_id:'M',status:'PENDING'});assert.equal((await f.api.getWarehouseResumeContextCurrent(company)).ok,false);
+  }
+});
 test('receipt router uses server ACTIVE only and refuses unknown control/maintenance or legacy-current mismatch',async()=>{
   for(const company of ['NCT','GHR']){
     const calls=[],control={_id:hash(company,'STOCK_CONTROL'),company,stockCommitVersion:'C0',mode:'ACTIVE',schemaVersion:1,generation:3,pending:null};
@@ -116,25 +140,32 @@ test('actual original Warehouse wrapper authenticates before server mode read; A
     const calls=[],member={_id:'M',loginEmail:'w@example.test',status:approved?'APPROVED':'PENDING'},
       control={_id:hash('NCT','STOCK_CONTROL'),company:'NCT',stockCommitVersion:'V',mode,schemaVersion:1,generation:0,pending:null};
     const bindings={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(_grant,fn)=>fn,currentMember:{getMember:async()=>{calls.push('MEMBER');return member;}},
-      requireWarehouseStaff:load('warehouseReceiving.js').requireWarehouseStaff,createCurrentWarehouseReceiptRouter,operationId:hash,
+      requireWarehouseStaff:load('warehouseReceiving.js').requireWarehouseStaff,createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter,operationId:hash,
       PURCHASE_COLLECTIONS:{NCT:{activity:'NCTActivity'}},createWarehouseOperations:()=>({save:async()=>{calls.push('LEGACY');return{ok:true,legacy:true};}}),
       createPreparationOperations:()=>()=>{},createWarehouseCbmCapture:()=>()=>{},requestPurchaseDocument:()=>{},capturePointbaseCosts:()=>{},
       saveWarehouseReceiptCurrent:async(company,request)=>{calls.push('CURRENT');assert.equal(company,'NCT');return{ok:true,current:true,stockGeneration:request.stockGeneration};},
+      getWarehouseOrdersCurrent:async()=>{calls.push('CURRENT_READ');return{current:true};},
+      projectPurchaseWorkspace:()=>({tasks:[],customers:[],suppliers:[]}),projectPurchaseOrders:()=>[],projectWarehouseOrders:()=>[],
+      projectWarehouseCustomerReadiness:()=>[],projectPreparation:()=>[],readCustomerShortNames:async()=>[],
       wixData:{query:c=>{let exact=false;const q={limit:()=>q,eq:(field,id)=>{assert.equal(field,'_id');assert.equal(id,control._id);exact=true;return q;},
-        find:async()=>{calls.push(exact?'CONTROL':'STAFF');return{items:c==='StaffMasterAccess'?[{title:'W',description:'M',staffName:'Warehouse',staffEmail:member.loginEmail,staffStatus:'ACTIVE',departments:['WAREHOUSE']}]:[control],hasNext:()=>false};}};return q;}}};
+        find:async()=>{calls.push(exact?'CONTROL':c==='StaffMasterAccess'?'STAFF':'TABLE');return{items:c==='StaffMasterAccess'?[{title:'W',description:'M',staffName:'Warehouse',staffEmail:member.loginEmail,staffStatus:'ACTIVE',departments:['WAREHOUSE']}]:exact?[control]:[],hasNext:()=>false};}};return q;}}};
     const source=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt};})()',bindings);
-    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined)};
+    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt,getWarehouseOrders};})()',bindings);
+    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined),read:()=>api.getWarehouseOrders('NCT')};
   }
   const active=await invoke('ACTIVE');assert.equal((await active.run()).current,true);assert.deepEqual(active.calls,['MEMBER','STAFF','CONTROL','CURRENT']);
   const legacy=await invoke('LEGACY');assert.equal((await legacy.run()).legacy,true);assert.deepEqual(legacy.calls,['MEMBER','STAFF','CONTROL','LEGACY']);
   const denied=await invoke('ACTIVE',false);await assert.rejects(denied.run());assert.deepEqual(denied.calls,['MEMBER','STAFF']);
+  const currentRead=await invoke('ACTIVE');assert.equal((await currentRead.read()).current,true);assert.deepEqual(currentRead.calls,['MEMBER','STAFF','CONTROL','CURRENT_READ']);
+  const legacyRead=await invoke('LEGACY');assert.equal((await legacyRead.read()).orders.length,0);assert.equal(legacyRead.calls.includes('CURRENT_READ'),false);
 });
 test('generated receipt root and minimum wrapper are exact; other original Warehouse read/preparation/CBM paths untouched',()=>{
   for(const file of ['build-warehouse-receipt-web.cjs','build-warehouse-receipt-route-candidate.cjs'])assert.match(execFileSync(process.execPath,[path.join(folder,file),'--check'],{encoding:'utf8'}),/verified/);
   let candidate=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
+  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
     .replace('async(company,requestId,input,stockCurrent)=>{','async(company,requestId,input)=>{')
-    .replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehouseReceiptCurrent,saveLegacy:()=>operations.save({company,staff,requestId,input})})({requestId,input,stockCurrent});",'return await operations.save({company,staff,requestId,input});');
+    .replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehouseReceiptCurrent,saveLegacy:()=>operations.save({company,staff,requestId,input})})({requestId,input,stockCurrent});",'return await operations.save({company,staff,requestId,input});')
+    .replace("  const staff=await staffContext();\n  return createCurrentWarehouseOrdersRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),readCurrent:getWarehouseOrdersCurrent,readLegacy:async()=>{\n  const {orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];",'  const staff=await staffContext(),{orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];')
+    .replace('readAt:new Date().toISOString()};\n  }})();\n});','readAt:new Date().toISOString()};\n});');
   assert.equal(candidate,fs.readFileSync(path.join(__dirname,'../backend/warehouseReceiving.web.js'),'utf8').replace(/\r\n/g,'\n'));
 });

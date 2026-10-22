@@ -18,4 +18,11 @@ function createCurrentWarehouseReceiptRouter({company,readControl,saveCurrent,sa
       stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration});
   };
 }
-module.exports={createCurrentWarehouseReceiptRouter};
+function createCurrentWarehouseOrdersRouter({company,readControl,readCurrent,readLegacy}){
+  if([readControl,readCurrent,readLegacy].some(fn=>typeof fn!=='function'))throw Error('Original Warehouse read routing dependencies required');
+  const route=createCurrentWarehouseReceiptRouter({company,readControl:async()=>{
+    const control=await readControl();if(control?.pending!==null)throw Error('Warehouse inventory pending. Retain the original input.');return control;
+  },saveCurrent:selected=>readCurrent(selected),saveLegacy:readLegacy});
+  return()=>route({});
+}
+module.exports={createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter};

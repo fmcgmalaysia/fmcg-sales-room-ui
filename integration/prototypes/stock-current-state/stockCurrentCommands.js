@@ -3112,7 +3112,7 @@ function createCurrentPurchaseReadRouter({company,readControl,readLegacy,readCur
 module.exports={createCurrentPurchaseReadRouter};
 
 },
-// current-warehouse-receipt-router.cjs sha256:a3d307c83eff35ef30f44cacf41c039df25d741a1bf6e82de6133217b8c240ac
+// current-warehouse-receipt-router.cjs sha256:84e7f9bae1f5038d35cc5d716320d936779b23530df75a3beeb6c3e2a706a8a0
 "current-warehouse-receipt-router.cjs": (load, module) => {
 'use strict';
 const { hash }=load("commit-proof.cjs");
@@ -3134,7 +3134,143 @@ function createCurrentWarehouseReceiptRouter({company,readControl,saveCurrent,sa
       stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration});
   };
 }
-module.exports={createCurrentWarehouseReceiptRouter};
+function createCurrentWarehouseOrdersRouter({company,readControl,readCurrent,readLegacy}){
+  if([readControl,readCurrent,readLegacy].some(fn=>typeof fn!=='function'))throw Error('Original Warehouse read routing dependencies required');
+  const route=createCurrentWarehouseReceiptRouter({company,readControl:async()=>{
+    const control=await readControl();if(control?.pending!==null)throw Error('Warehouse inventory pending. Retain the original input.');return control;
+  },saveCurrent:selected=>readCurrent(selected),saveLegacy:readLegacy});
+  return()=>route({});
+}
+module.exports={createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter};
+
+},
+// current-warehouse-orders-read.cjs sha256:3a4ffb9c4c498639df85042272ffba36017b67536fa554fe0f4bfcb3cb3a2163
+"current-warehouse-orders-read.cjs": (load, module) => {
+'use strict';
+const {projectCurrentWarehouseReady}=load("current-warehouse-ready-context.cjs");
+const {copy}=load("segmented-plan.cjs");
+// PRIVATE composition. Receipt PO/version remains ORIGINAL physical-source facts;
+// customer availability and Ready use current ownership. Neither is stored twice.
+function createCurrentWarehouseOrdersRead({company,protocol,authenticate,readCurrentContext,projectPurchaseOrders,
+  projectWarehouseOrders,projectWarehouseCustomerReadiness,projectPreparation,currentReadyVersion,readAllocations,
+  readCustomerShipments,readPreparation,warehouseCbm,readCustomerShortNames,now}){
+  if(!['NCT','GHR'].includes(company)||typeof protocol?.readSnapshot!=='function'||currentReadyVersion!==2
+    ||[authenticate,readCurrentContext,projectPurchaseOrders,projectWarehouseOrders,projectWarehouseCustomerReadiness,
+      projectPreparation,readAllocations,readCustomerShipments,readPreparation,warehouseCbm,readCustomerShortNames,now].some(fn=>typeof fn!=='function'))throw Error('Paired original current Warehouse read dependencies required');
+  return async selected=>{
+    if(selected!==company)throw Error('Warehouse orders company conflict');
+    const staff=await authenticate(company);if(!staff?.staffId||!staff.memberId||!staff.staffName)throw Error('Original Warehouse identity required');
+    const snapshot=await protocol.readSnapshot(async control=>{
+      if(control?.company!==company||control.mode!=='ACTIVE'||control.pending||control.schemaVersion!==1||control.transferIndexVersion!==2
+        ||!control.writerBuild||!Number.isSafeInteger(control.generation)||control.generation<0)throw Error('Current Warehouse control required');
+      const data=await readCurrentContext(company,staff,control),workspace=data?.workspace,original=data?.originalContext;
+      if(workspace?.company!==company||workspace.stockAllocationView!=='CURRENT_V2'||original?.company!==company
+        ||!Array.isArray(workspace.tasks)||!Array.isArray(original.tasks)||!Array.isArray(original.activity)
+        ||!Array.isArray(data.tables?.PurchaseOrders)||!Array.isArray(data.states)
+        ||data.states.some(state=>state.scope!=='CURRENT_ACTIVE_PRODUCT'||state.lifecycleVersion!==2)
+        ||workspace.tasks.length!==original.tasks.length||new Set(workspace.tasks.map(row=>row.id)).size!==workspace.tasks.length
+        ||workspace.tasks.some(row=>!original.tasks.some(task=>task.id===row.id&&task.customerId===row.customerId
+          &&task.orderId===row.orderId&&task.sourceLineId===row.sourceLineId&&task.po===row.po&&task.ord===row.ord)))throw Error('Complete original and current Warehouse facts required');
+      const context={...copy(workspace),activity:copy(original.activity)};
+      const loaded=[...readPreparation(context.activity).values()].filter(state=>state.loaded>0).map(state=>state.taskId);
+      const requiredTaskIds=[...new Set([...context.tasks.filter(task=>!task.archived&&!task.specialPurchase&&!task.procurementSource).map(task=>task.id),...loaded])];
+      if(requiredTaskIds.some(id=>!context.tasks.some(task=>task.id===id)))throw Error('Loaded Warehouse task requires review');
+      const deliveryTasks=projectCurrentWarehouseReady({context,states:data.states,requiredTaskIds,projectPreparation,currentReadyVersion,
+        readAllocations,readCustomerShipments}).map(item=>{
+        const task=context.tasks.find(row=>row.id===item.taskId);
+        return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,context.activity):null};
+      });
+      // Never feed borrowed inc into original physical receipt bootstrap guard,
+      // nor change original PO version just because customer ownership moved.
+      const orders=projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace:original,records:data.tables.PurchaseOrders}),
+        tasks:original.tasks,activity:original.activity});
+      const customerLines=projectWarehouseCustomerReadiness(workspace);let names=[];
+      try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
+      if(!Array.isArray(names))throw Error('Original Warehouse customer names require review');
+      return{company,staff:{staffId:staff.staffId,staffName:staff.staffName,memberId:staff.memberId},deliveryTasks,
+        customerLines:customerLines.map(row=>({...row,fullCustomerName:row.customerName,customerName:names.find(item=>item.customerId===row.customerId)?.shortName||row.customerName})),
+        orders:orders.map(row=>({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}])
+          .map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' · ')})),
+        readAt:now().toISOString(),stockCurrent:{schema:'CURRENT_WAREHOUSE_V2',stockProtocol:1,stockBuild:control.writerBuild,stockGeneration:control.generation,generation:control.generation}};
+    });return snapshot.rows;
+  };
+}
+module.exports={createCurrentWarehouseOrdersRead};
+
+},
+// current-warehouse-ready-context.cjs sha256:58bc025e56523a568f30517567093ef75111dc32f195793aba455aa6a161a5a3
+"current-warehouse-ready-context.cjs": (load, module) => {
+'use strict';
+
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+const { stockKey } = load("current-model.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Explicit adapter ONLY for original Warehouse Ready/preparation consumers.
+// Not a replacement for readFulfilmentContext or financial/exception case facts.
+function currentWarehouseReadyContext({ context, states, readAllocations, readCustomerShipments, requiredTaskIds }) {
+  if (!['NCT', 'GHR'].includes(context?.company) || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+    || !Array.isArray(states) || typeof readAllocations !== 'function' || typeof readCustomerShipments !== 'function') throw Error('Complete Warehouse ready context required');
+  const products = new Set(), tasks = new Map(), sources = new Map(), allocations = [];
+  const scoped = states.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
+  if (scoped && (states.some(state => state.scope !== 'CURRENT_ACTIVE_PRODUCT' || state.lifecycleVersion !== 2)
+    || !Array.isArray(requiredTaskIds) || new Set(requiredTaskIds).size !== requiredTaskIds.length)) throw Error('Explicit verified current Ready scope required');
+  for (const state of states) {
+    const key = stockKey(state);
+    if (state.company !== context.company || products.has(key)) throw Error('Distinct company ready products required');
+    products.add(key);
+    const converted = currentAllocationContext({ state, context, readAllocations });
+    for (const task of state.tasks) {
+      if (tasks.has(task.id)) throw Error('Warehouse demand coverage is ambiguous');
+      tasks.set(task.id, converted.tasks.find(t => t.id === task.id));
+    }
+    for (const source of state.sources) {
+      if (sources.has(source.id)) throw Error('Warehouse source coverage is ambiguous'); sources.set(source.id, source);
+      allocations.push(converted.allocations.find(a => a.sourceTaskId === source.id));
+    }
+  }
+  for (const task of context.tasks) {
+    if (!scoped && (!task.procurementSource && !task.specialPurchase && !tasks.has(task.id)
+      || task.warehouse?.hasPhysicalReceipt === true && !sources.has(task.id))) throw Error('Complete current-ready task/source coverage required');
+  }
+  if (scoped && requiredTaskIds.some(id => typeof id !== 'string' || !tasks.has(id))) throw Error('Complete required Ready task coverage required');
+  const shipments = scoped ? [] : readCustomerShipments(context.activity);
+  if (shipments.some(s => s.company !== context.company)) throw Error('Warehouse shipment company conflict');
+  const dispatched = shipments.filter(s => s.status === 'DISPATCHED'), actual = new Map(), expected = new Map();
+  for (const shipment of dispatched) for (const line of shipment.lines) for (const source of line.sources) {
+    if (!sources.has(source.sourceTaskId) || !tasks.has(line.taskId)) throw Error('Warehouse shipment provenance outside current snapshot');
+    const key = hash(source.sourceTaskId, line.taskId); actual.set(key, (actual.get(key) || 0) + source.quantity);
+  }
+  for (const source of sources.values()) {
+    for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) if (qty) expected.set(hash(source.id, taskId), qty);
+  }
+  if (!scoped && (expected.size !== actual.size || [...expected].some(([key, qty]) => actual.get(key) !== qty))) throw Error('Warehouse dispatched provenance differs');
+  const prior = scoped ? [] : readAllocations(context.activity);
+  const visible = scoped ? context.tasks.filter(t => tasks.has(t.id) || sources.has(t.id)) : context.tasks;
+  return { ...copy(context), ...(scoped ? { stockCurrentReadyVersion: 2,
+    stockDispatchedByTask: Object.fromEntries(states.flatMap(s => s.tasks.map(t => [t.id, t.dispatched]))),
+    stockDispatchedBySource: Object.fromEntries(states.flatMap(s => s.sources.map(p => [p.id, copy(p.dispatchedByTask || {})]))),
+    stockRequiredTaskIds: [...requiredTaskIds] } : {}),
+    allocations: [...prior.filter(a => !sources.has(a.sourceTaskId)), ...allocations], tasks: visible.map(original => {
+    const row = copy(tasks.get(original.id) || original), source = sources.get(original.id);
+    if (!source) return row;
+    if ((original.warehouse?.hasPhysicalReceipt === true ? original.warehouse.accepted : 0) !== source.accepted
+      || source.accepted > 0 && original.warehouse?.hasPhysicalReceipt !== true) throw Error('Warehouse accepted receipt provenance differs');
+    if (original.warehouse?.hasPhysicalReceipt === true) row.warehouse = { ...copy(original.warehouse), stock: {
+      ...copy(original.warehouse.stock || {}), availablePhysical: source.onHand - source.isolated } };
+    return row;
+  }) };
+}
+function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion, ...context }) {
+  const scoped = context.states?.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
+  if (typeof projectPreparation !== 'function' || scoped && currentReadyVersion !== 2) throw Error('Verified original current Ready calculator required');
+  const view = currentWarehouseReadyContext(context), rows = projectPreparation(view);
+  if (!Array.isArray(rows)) throw Error('Original Ready rows required');
+  // Other customers' sources may be needed to calculate ownership, but do not
+  // create extra outgoing tasks outside the server-selected instruction scope.
+  return scoped ? rows.filter(row => context.requiredTaskIds.includes(row.taskId)) : rows;
+}
+module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
 
 },
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
@@ -4051,7 +4187,7 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
 module.exports = { createBorrowCurrentQuery };
 
 },
-// purchase-current-projection.cjs sha256:5179d243dd3a25cc09de036e3bda2ed7f1fc5bb551c4ecd9ddcd2b397d4d7dcd
+// purchase-current-projection.cjs sha256:a7524d300f86d39638f2303b5affea3b516f5184ca5b2112c9f19695d5fd50c8
 "purchase-current-projection.cjs": (load, module) => {
 'use strict';
 
@@ -4096,14 +4232,16 @@ function prepareCurrentPurchaseProjection({ context, states, readAllocations, ge
 async function readCurrentPurchaseProjection({ company, context, staff, control, items, store, originalArguments,
   projectPurchaseWorkspace, currentProjectionVersion, readCurrentTaskRows, readPurchaseRecords, projectPurchaseOrders,
   readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
-  metrics={queries:0,exactReads:0} }) {
+  metrics={queries:0,exactReads:0},retainedTaskIds=[] }) {
   if (!['NCT','GHR'].includes(company) || !control || control.company !== company || control.mode !== 'ACTIVE' || control.schemaVersion !== 1 || control.pending
     || control.transferIndexVersion !== 2 || !control.writerBuild || !Number.isSafeInteger(control.generation) || control.generation < 0
     || context?.company !== company || !staff?.staffId || !staff.memberId || originalArguments?.company !== company
     || currentProjectionVersion !== 2 || typeof projectPurchaseWorkspace !== 'function' || typeof readCurrentTaskRows !== 'function'
-    || typeof readPurchaseRecords !== 'function' || typeof projectPurchaseOrders !== 'function') throw Error('Paired private current Purchase snapshot required');
+    || typeof readPurchaseRecords !== 'function' || typeof projectPurchaseOrders !== 'function'
+    ||!Array.isArray(retainedTaskIds)||new Set(retainedTaskIds).size!==retainedTaskIds.length
+    ||retainedTaskIds.some(id=>typeof id!=='string'||!context.tasks.some(task=>task.id===id))) throw Error('Paired private current Purchase snapshot required');
   const groups=new Map();
-  for (const task of context.tasks.filter(row=>!row.archived)) {
+  for (const task of context.tasks.filter(row=>!row.archived||retainedTaskIds.includes(row.id))) {
     const identity={company,barcode:task.barcode,packing:task.packing,ea:task.ea},key=stockKey(identity);
     if (!groups.has(key)) groups.set(key,{identity,taskIds:[],sourceIds:[]});
     if (!task.procurementSource && !task.specialPurchase) groups.get(key).taskIds.push(task.id);
@@ -4636,81 +4774,6 @@ function preparePackingStock({ company, validated, currentRecord, products, gene
   return { plan: { writes }, states };
 }
 module.exports = { preparePackingStock };
-
-},
-// current-warehouse-ready-context.cjs sha256:58bc025e56523a568f30517567093ef75111dc32f195793aba455aa6a161a5a3
-"current-warehouse-ready-context.cjs": (load, module) => {
-'use strict';
-
-const { currentAllocationContext } = load("current-allocation-context.cjs");
-const { stockKey } = load("current-model.cjs");
-const { hash } = load("commit-proof.cjs");
-const copy = value => JSON.parse(JSON.stringify(value));
-// Explicit adapter ONLY for original Warehouse Ready/preparation consumers.
-// Not a replacement for readFulfilmentContext or financial/exception case facts.
-function currentWarehouseReadyContext({ context, states, readAllocations, readCustomerShipments, requiredTaskIds }) {
-  if (!['NCT', 'GHR'].includes(context?.company) || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
-    || !Array.isArray(states) || typeof readAllocations !== 'function' || typeof readCustomerShipments !== 'function') throw Error('Complete Warehouse ready context required');
-  const products = new Set(), tasks = new Map(), sources = new Map(), allocations = [];
-  const scoped = states.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
-  if (scoped && (states.some(state => state.scope !== 'CURRENT_ACTIVE_PRODUCT' || state.lifecycleVersion !== 2)
-    || !Array.isArray(requiredTaskIds) || new Set(requiredTaskIds).size !== requiredTaskIds.length)) throw Error('Explicit verified current Ready scope required');
-  for (const state of states) {
-    const key = stockKey(state);
-    if (state.company !== context.company || products.has(key)) throw Error('Distinct company ready products required');
-    products.add(key);
-    const converted = currentAllocationContext({ state, context, readAllocations });
-    for (const task of state.tasks) {
-      if (tasks.has(task.id)) throw Error('Warehouse demand coverage is ambiguous');
-      tasks.set(task.id, converted.tasks.find(t => t.id === task.id));
-    }
-    for (const source of state.sources) {
-      if (sources.has(source.id)) throw Error('Warehouse source coverage is ambiguous'); sources.set(source.id, source);
-      allocations.push(converted.allocations.find(a => a.sourceTaskId === source.id));
-    }
-  }
-  for (const task of context.tasks) {
-    if (!scoped && (!task.procurementSource && !task.specialPurchase && !tasks.has(task.id)
-      || task.warehouse?.hasPhysicalReceipt === true && !sources.has(task.id))) throw Error('Complete current-ready task/source coverage required');
-  }
-  if (scoped && requiredTaskIds.some(id => typeof id !== 'string' || !tasks.has(id))) throw Error('Complete required Ready task coverage required');
-  const shipments = scoped ? [] : readCustomerShipments(context.activity);
-  if (shipments.some(s => s.company !== context.company)) throw Error('Warehouse shipment company conflict');
-  const dispatched = shipments.filter(s => s.status === 'DISPATCHED'), actual = new Map(), expected = new Map();
-  for (const shipment of dispatched) for (const line of shipment.lines) for (const source of line.sources) {
-    if (!sources.has(source.sourceTaskId) || !tasks.has(line.taskId)) throw Error('Warehouse shipment provenance outside current snapshot');
-    const key = hash(source.sourceTaskId, line.taskId); actual.set(key, (actual.get(key) || 0) + source.quantity);
-  }
-  for (const source of sources.values()) {
-    for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) if (qty) expected.set(hash(source.id, taskId), qty);
-  }
-  if (!scoped && (expected.size !== actual.size || [...expected].some(([key, qty]) => actual.get(key) !== qty))) throw Error('Warehouse dispatched provenance differs');
-  const prior = scoped ? [] : readAllocations(context.activity);
-  const visible = scoped ? context.tasks.filter(t => tasks.has(t.id) || sources.has(t.id)) : context.tasks;
-  return { ...copy(context), ...(scoped ? { stockCurrentReadyVersion: 2,
-    stockDispatchedByTask: Object.fromEntries(states.flatMap(s => s.tasks.map(t => [t.id, t.dispatched]))),
-    stockDispatchedBySource: Object.fromEntries(states.flatMap(s => s.sources.map(p => [p.id, copy(p.dispatchedByTask || {})]))),
-    stockRequiredTaskIds: [...requiredTaskIds] } : {}),
-    allocations: [...prior.filter(a => !sources.has(a.sourceTaskId)), ...allocations], tasks: visible.map(original => {
-    const row = copy(tasks.get(original.id) || original), source = sources.get(original.id);
-    if (!source) return row;
-    if ((original.warehouse?.hasPhysicalReceipt === true ? original.warehouse.accepted : 0) !== source.accepted
-      || source.accepted > 0 && original.warehouse?.hasPhysicalReceipt !== true) throw Error('Warehouse accepted receipt provenance differs');
-    if (original.warehouse?.hasPhysicalReceipt === true) row.warehouse = { ...copy(original.warehouse), stock: {
-      ...copy(original.warehouse.stock || {}), availablePhysical: source.onHand - source.isolated } };
-    return row;
-  }) };
-}
-function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion, ...context }) {
-  const scoped = context.states?.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
-  if (typeof projectPreparation !== 'function' || scoped && currentReadyVersion !== 2) throw Error('Verified original current Ready calculator required');
-  const view = currentWarehouseReadyContext(context), rows = projectPreparation(view);
-  if (!Array.isArray(rows)) throw Error('Original Ready rows required');
-  // Other customers' sources may be needed to calculate ownership, but do not
-  // create extra outgoing tasks outside the server-selected instruction scope.
-  return scoped ? rows.filter(row => context.requiredTaskIds.includes(row.taskId)) : rows;
-}
-module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
 
 },
 // current-sales-save.cjs sha256:2fa20a1468fc7a609cd53755d41684fc49bbdc97a4e0158ab01ea4009bc55ca7
@@ -5389,6 +5452,8 @@ export const createCurrentPurchaseTaskGateway = load("current-purchase-task-gate
 export const createCurrentPurchaseSaveRouter = load("current-purchase-save-router.cjs").createCurrentPurchaseSaveRouter;
 export const createCurrentPurchaseReadRouter = load("current-purchase-read-router.cjs").createCurrentPurchaseReadRouter;
 export const createCurrentWarehouseReceiptRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseReceiptRouter;
+export const createCurrentWarehouseOrdersRead = load("current-warehouse-orders-read.cjs").createCurrentWarehouseOrdersRead;
+export const createCurrentWarehouseOrdersRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseOrdersRouter;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;
