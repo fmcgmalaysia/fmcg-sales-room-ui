@@ -2,10 +2,13 @@
 
 const { domainCollections } = require('./domain-scope.cjs');
 const { hash } = require('./commit-proof.cjs');
+const { appendIntakeProductCheckpoints } = require('./intake-product-checkpoint.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
 // Candidate ONLY after original nctReceiver authentication. This is not an HTTP
 // gateway and possession of a payload is NOT proof of the intake shared secret.
-async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, company, body, tables, captureCosts, now }) {
+async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, company, body, tables, captureCosts, now,
+  planFormat = 'PROOF_V1', generation, productRows }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2' && (!Number.isSafeInteger(generation) || generation < 0 || !Number.isSafeInteger(generation + 1))) throw Error('Server intake protocol/generation required');
   const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const opposite = company === 'NCT' ? 'GHR' : 'NCT', otherJournal = opposite === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const allowed = new Set([orders, tasks, journal, otherJournal]);
@@ -29,6 +32,8 @@ async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, com
         || c === tasks && row.description !== body.orderId
         || c === journal && row.description !== body.orderId) throw Error('Unexpected original intake insert');
       const proposed = { ...copy(row), company };
+      if (c === tasks && planFormat === 'SEGMENTED_V2') Object.assign(proposed, {
+        stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: generation + 1 });
       overlay.set(key, proposed); writes.push({ collection: c, before: null, after: proposed }); return copy(proposed);
     }
   };
@@ -38,12 +43,14 @@ async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, com
   const receipt = await createNctReceiptReader({ store })(copy(body));
   if (JSON.stringify(outcome) !== JSON.stringify(receipt) || outcome.ok !== true
     || writes.length && writes.at(-1).after.action !== 'ORDER_RECEIVED'
-    || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Complete bounded original intake receipt required');
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Complete bounded original intake receipt required');
   const taskRows = outcome.taskIds.map(id => overlay.get(tasks + ':' + id));
   if (taskRows.some(row => !row || row.description !== body.orderId)
     || writes.some(w => w.collection === tasks && (!outcome.taskIds.includes(w.after._id) || w.after.receivedQtyInCtn !== null
       || w.after.ourPoNumber !== '' || w.after.supplierId !== ''))) throw Error('Original initial task identity required');
-  return { plan: { writes }, outcome: copy(outcome), replay: writes.length === 0,
+  const plan = planFormat === 'SEGMENTED_V2' ? appendIntakeProductCheckpoints({ company, body, plan: { writes }, productRows, generation }) : { writes };
+  return { plan, outcome: copy(outcome), replay: writes.length === 0,
     // Company fence cannot serialize a concurrent opposite-company intake. Real
     // immutable routing/cross-company arbitration still requires proof before live.
     activationReady: false, blockers: ['ORIGINAL_AUTH_GATEWAY_REQUIRED', 'CROSS_COMPANY_ROUTING_PROOF_REQUIRED', 'PRODUCTION_INTAKE_CAPACITY_REQUIRED'] };

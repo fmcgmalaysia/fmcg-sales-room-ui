@@ -6,7 +6,8 @@ const count = n => Number.isSafeInteger(n) && n >= 0;
 // Caller includes this plan in the SAME stock fence; does not write separately.
 function appendTaskDispatchCheckpoints({ company, plan, products, states, taskRows, generation }) {
   if (!['NCT', 'GHR'].includes(company) || !Array.isArray(plan?.writes) || !Array.isArray(products)
-    || !Array.isArray(states) || !Array.isArray(taskRows) || !count(generation)) throw Error('Private dispatch checkpoint context required');
+    || !Array.isArray(states) || states.length !== products.length || !Array.isArray(taskRows)
+    || !count(generation) || !count(generation + 1)) throw Error('Private dispatch checkpoint context required');
   const collection = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1', result = copy(plan);
   const exact = new Map(taskRows.map(row => [row._id, row]));
   if (exact.size !== taskRows.length) throw Error('Duplicate exact dispatch task');

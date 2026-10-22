@@ -52,6 +52,20 @@ test('prepared current domain images are classified privately with no rewrite or
   assert.equal(result.report.status, 'SAME_REQUEST_RESUME_PREPARED'); assert.equal(result.report.images[0].image, 'BEFORE');
   assert.equal(JSON.stringify(result).includes('PRIVATE_PAYLOAD'), false); assert.equal(JSON.stringify([...f.db]), before);
 });
+
+test('generated Admin endpoint decodes segmented plan without exposing images or granting recovery writes', async () => {
+  const f = fixture(); f.admin();
+  const codec = require('../prototypes/stock-current-state/segmented-plan.cjs').createSegmentedPlanCodec({ company: 'NCT', domainWrites: true });
+  const encoded = codec.encode({ ...f.request, key: f.key, digest: f.digest, baseGeneration: 0, attempt: 'A',
+    plan: { writes: [{ collection: 'NCTTasks', before: null, after: { _id: 'TASK', company: 'NCT', secret: 'DO_NOT_EXPOSE' } }] } });
+  for (const row of [encoded.manifest, ...encoded.fragments]) f.put('NCTActivity', row);
+  f.put('NCTActivity', { _id: f.controlId, company: 'NCT', generation: 0, stockCommitVersion: 'C1',
+    pending: { key: f.key, digest: f.digest, planHash: encoded.manifest.planHash, phase: 'BEFORE', cursor: 0, count: 1 } });
+  const before = JSON.stringify([...f.db]), result = await f.api.inspectStockSave({ ...f.request, pageSize: 1 });
+  assert.equal(result.ok, true); assert.equal(result.report.status, 'SAME_REQUEST_REVALIDATES_ON_RESUME');
+  assert.equal(result.report.recoveryPerformed, false); assert.equal(JSON.stringify(result).includes('DO_NOT_EXPOSE'), false);
+  assert.equal(JSON.stringify([...f.db]), before);
+});
 test('scope corruption and provider errors fail without exposing raw diagnostics', async () => {
   const f = fixture(); f.admin(); f.db.get('NCTActivity:' + f.controlId).company = 'GHR';
   const result = await f.api.inspectStockSave(f.request); assert.equal(result.ok, false); assert.equal(Object.hasOwn(result, 'report'), false);
@@ -61,7 +75,9 @@ test('scope corruption and provider errors fail without exposing raw diagnostics
 });
 test('standalone recovery bundle contains exact current inspector and query-only store bodies', () => {
   const bundle = fs.readFileSync(require.resolve('../prototypes/stock-current-state/stockRecoveryRead.web.js'), 'utf8');
-  for (const [file, imports] of [['recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');"]],
+  for (const [file, imports] of [['recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');", "const { inspectSegmentedStockRecovery } = require('./segmented-recovery-inspector.cjs');"]],
+    ['segmented-plan.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');"]],
+    ['segmented-recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { createSegmentedPlanCodec, same } = require('./segmented-plan.cjs');"]],
     ['recovery-read-store.cjs', ["const { planCollections } = require('./domain-scope.cjs');"]]]) {
     let source = fs.readFileSync(require.resolve('../prototypes/stock-current-state/' + file), 'utf8').replace(/^'use strict';\r?\n/, '');
     for (const line of imports) source = source.replace(line, '');

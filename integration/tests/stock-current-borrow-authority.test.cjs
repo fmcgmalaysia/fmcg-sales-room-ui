@@ -86,6 +86,22 @@ test('state assembler uses exact current claims instead of copying legacy task i
   assert.equal(state.sources[1].claims.B, 100);
   assert.equal(state.tasks[0].dispatched, 0);
 });
+
+test('scoped state retains task20dispatched from omitted CLOSED sources and never buys/allocates it again', async () => {
+  const f = fixture(), authority = await createBorrowingAuthority(f.deps)(request), key = stockKey(authority.identity);
+  const positionId = operationId('NCT', key, 'PURCHASE_SOURCE', 'B');
+  const state = authority.buildState({ scope: 'CURRENT_ACTIVE_PRODUCT', sourceTaskIds: ['A', 'B'], generation: 0,
+    positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0, borrowRepaidCumulative: 0 }],
+    claims: [{ positionId, taskId: 'B', reservedUsable: 100, dispatchedCumulative: 0 }], transfers: [],
+    product: { lifecycleVersion: 2, nextBorrowSequence: 5, revision: 0 },
+    taskRows: f.context.tasks.map(t => ({ _id: t.id, company: 'NCT', _version: 'T0', description: t.orderId, imageAltText: t.sourceLineId,
+      stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: t.id === 'A' ? 20 : 0 })) });
+  assert.equal(state.tasks[0].dispatched, 20); assert.equal(state.tasks[0].dispatchedOutsideScope, 20);
+  let next = approveBorrow(state, authority.input).after;
+  next = require('../prototypes/stock-current-state/borrowing-model.cjs').receive(next, { expectedRevision: next.revision, sourceId: 'A', cumulativeAccepted: 100 }).after;
+  const own = next.sources.find(s => s.id === 'A'); assert.equal(own.claims.A, 50); assert.equal(own.claims.B, 30); assert.equal(own.available, 20);
+  assert.equal(next.tasks[0].dispatched, 20);
+});
 test('return authority resolves stable server relationship and does not trust browser borrower IDs', async () => {
   const f = fixture(), relation = { id: 'R1', borrowerTaskId: 'A', lenderTaskId: 'B', lenderSourceId: 'B', replacementSourceId: 'A', quantity: 30, repaid: 0 };
   const result = await createBorrowingAuthority({ ...f.deps, readTransfer: async () => ({ _id: transferId('NCT', 'R1'), company: 'NCT', stockKey: stockKey({ company: 'NCT', barcode: '1', packing: '24x1', ea: 24 }), action: 'STOCK_TRANSFER_CURRENT', details: { relation } }) })({
@@ -146,6 +162,11 @@ for (const segmented of [false, true]) test(`concrete ${segmented ? 'v2 scoped' 
   seed('StockProducts', { ...base, _id: operationId('NCT', key), onHand: 100, isolated: 0, available: 0, reservedUsable: 100,
     ...(segmented ? { lifecycleVersion: 2, nextBorrowSequence: 51 } : {}) });
   if (segmented) for (const task of f.context.tasks) Object.assign(task, { stockCounterSchema: 2, stockCommitVersion: 'T0', stockDispatchedCumulative: 0 });
+  if (segmented) f.deps.readCurrentTaskRows = async (company, ids, verified) => {
+    assert.equal(company, 'NCT'); assert.ok(verified.memberId);
+    return ids.map(id => { const task = f.context.tasks.find(t => t.id === id); return { _id: id, company, _version: 'T0',
+      description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 }; });
+  };
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),
     insert: async (c, row) => { if (db.has(c + ':' + row._id)) throw Error('Duplicate'); seed(c, row); return copy(row); },
     compareAndSet: async (c, id, version, row) => { if (db.get(c + ':' + id)?._version !== version) throw Error('CAS conflict'); seed(c, row); return copy(row); },

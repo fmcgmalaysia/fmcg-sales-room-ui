@@ -71,6 +71,26 @@ test('prototype budget refuses a large original order atomically; never silently
   assert.equal(Object.values(f.args.tables).every(rows => rows.length === 0), true);
 });
 
+test('v2 original intake initializes only new task counters, retains PO fields and accepts segmented100line plan', async () => {
+  const f = fixture(); f.args.body.lines = Array.from({ length: 100 }, (_, i) => ({ ...f.args.body.lines[0], sourceLineId: 'L' + i }));
+  const productRows = [{ identity: { company: 'NCT', barcode: '00123', packing: '12x1', ea: 12 }, row: null }];
+  const result = await prepareOrderIntake({ ...f.args, planFormat: 'SEGMENTED_V2', generation: 12, productRows });
+  const tasks = result.plan.writes.filter(w => w.collection === f.tasks);
+  assert.equal(tasks.length, 100); assert.ok(result.plan.writes.length > 30);
+  for (const w of tasks) {
+    assert.equal(w.after.stockCounterSchema, 2); assert.equal(w.after.stockDispatchedCumulative, 0); assert.equal(w.after.stockCounterGeneration, 13);
+    assert.equal(w.after.ourPoNumber, ''); assert.equal(w.after.receivedQtyInCtn, null);
+  }
+  const product = result.plan.writes.find(w => w.collection === 'StockProducts');
+  assert.deepEqual([product.after.onHand, product.after.reservedUsable, product.after.available], [0, 0, 0]);
+  assert.equal(result.plan.writes.at(-1).after.action, 'ORDER_RECEIVED');
+  f.apply({ plan: { writes: result.plan.writes.filter(w => w.collection !== 'StockProducts') } });
+  const task = f.args.tables[f.tasks][0]; task.ourPoNumber = 'KEEP'; task.stockDispatchedCumulative = 20;
+  const replay = await prepareOrderIntake({ ...f.args, planFormat: 'SEGMENTED_V2', generation: 13 });
+  assert.equal(replay.plan.writes.length, 0); assert.equal(task.ourPoNumber, 'KEEP'); assert.equal(task.stockDispatchedCumulative, 20);
+  assert.equal(f.captures(), 1);
+});
+
 test('company-local plan does not pretend concurrent opposite routing is serialized', async () => {
   const f = fixture(), g = fixture('GHR');
   const [a, b] = await Promise.all([prepareOrderIntake(f.args), prepareOrderIntake(g.args)]);

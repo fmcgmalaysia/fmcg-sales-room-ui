@@ -19,6 +19,10 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
       const rows = protocol.planFormat === 'SEGMENTED_V2'
         ? await readScopedCurrentProduct({ ...authority.stockScope, company, identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
         : await readCurrentProduct({ company, identity, items, store, metrics });
+      if (protocol.planFormat === 'SEGMENTED_V2') {
+        if (typeof authority.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
+        rows.taskRows = await authority.readTaskRows(rows); rows.generation = control.generation;
+      }
       if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
       return { authority, rows };
     });

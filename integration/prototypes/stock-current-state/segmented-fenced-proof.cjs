@@ -69,6 +69,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       }
       if (!manifest) {
         if (control.pending) throw Error('Pending manifest missing');
+        if (!Number.isSafeInteger(control.generation + 1)) throw Error('Inventory generation exhausted');
         const encoded = codec.encode({ key, digest, memberId, requestId, attempt, baseGeneration: control.generation, plan: await prepare() });
         // Refuse before staging, never silently truncate or pretend this is a measured
         // production limit. All fragments must be durable before unique root insert.

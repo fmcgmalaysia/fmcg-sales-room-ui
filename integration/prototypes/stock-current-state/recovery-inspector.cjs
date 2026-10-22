@@ -2,12 +2,13 @@
 
 const { hash } = require('./commit-proof.cjs');
 const { planCollections } = require('./domain-scope.cjs');
+const { inspectSegmentedStockRecovery } = require('./segmented-recovery-inspector.cjs');
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
 const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 // Private, read-only incident classification. No lock deletion/stealing, inverse writes,
 // automatic retry or new save identity. Server administrator auth must wrap any endpoint.
-async function inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites = false }) {
+async function inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites = false, pageSize, cursor }) {
   if (typeof store?.read !== 'function' || !['NCT', 'GHR'].includes(company)
     || !/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId) throw Error('Known original request identity required');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
@@ -19,6 +20,7 @@ async function inspectStockRecovery({ store, company, requestId, memberId, input
     || !Number.isSafeInteger(control.generation) || control.generation < 0
     || control.pending && (!control.pending.key || !control.pending.digest)) throw Error('Inventory control unavailable or invalid');
   const prepared = await store.read(journal, key), result = await store.read(journal, resultId);
+  if (prepared?.stockOperationProtocol === 2) return inspectSegmentedStockRecovery({ store, company, requestId, memberId, input, domainWrites, pageSize, cursor });
   const packet = { company, operationId: key, generation: control.generation, controlVersion: control._version,
     pendingOperation: control.pending?.key || null, lockOwner: lock?.owner || null, lockAttempt: lock?.attempt || null,
     prepared: !!prepared, result: !!result, images: [] };

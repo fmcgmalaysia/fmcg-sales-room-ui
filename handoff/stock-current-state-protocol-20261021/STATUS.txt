@@ -537,3 +537,10 @@ counter in same plan.456current tests pass0fail4188.3604ms. ACTIVE OFF; initial 
 task/version/schema/index parity, actual all-writer wiring/recovery/platform and release
 still unfinished. Do NOT report publication or ask user to test real borrowing yet.
 
+2026-10-22 LATEST TASK/INTAKE/RECOVERY: see TASK_INTAKE_RECOVERY_V2.txt. New v2 intake
+initializes only new task/product checkpoints; private exact task counters loaded only
+for operational closure; segmented Admin read-only recovery supports paged diagnostics.
+465full candidate tests pass before one added outside-source test (12targeted pass).
+Actual old-task migration/version initialization, all real gateways/UI/capacity/file/
+shadow/release remain unfinished. ACTIVE OFF; no business CMS writes or publication.
+

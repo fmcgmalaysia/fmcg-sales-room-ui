@@ -4,6 +4,7 @@ const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
 const { createPackingHoldSnapshot } = require('./packing-hold-snapshot.cjs');
 const { legacyPreparationGuard } = require('./legacy-preparation-guard.cjs');
+const { currentTaskContext } = require('./current-task-context.cjs');
 const clone = value => JSON.parse(JSON.stringify(value));
 const count = value => Number.isSafeInteger(value) && value >= 0;
 // Server-owned ORIGINAL facts plus exact current ownership rows. Shared by Purchase
@@ -43,7 +44,12 @@ function originalProductState({ company, context, orders, identity, readAllocati
   const legacy = legacyPreparationGuard({ company, context, taskIds: demands.map(t => t.id), readPreparation, projectPreparation });
   holds.legacyBlockedByTask = legacy.blockedByTask;
   holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])), legacy.version);
-  return { identity, demands, sources, buildState: rows => {
+  const scopeTaskIds = rows => {
+    if (!Array.isArray(rows.sourceTaskIds) || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers)) throw Error('Complete operational task scope required');
+    return [...new Set([...sources.filter(s => rows.sourceTaskIds.includes(s.id)).map(s => s.ownerTaskId).filter(Boolean),
+      ...rows.claims.map(c => c.taskId), ...rows.transfers.flatMap(r => [r.details.relation.borrowerTaskId, r.details.relation.lenderTaskId])])];
+  };
+  return { identity, demands, sources, scopeTaskIds, buildState: rows => {
     if (rows.product?.lifecycleVersion != null && rows.product.lifecycleVersion !== 2) throw Error('Unknown product lifecycle checkpoint');
     const currentLifecycle = rows.product?.lifecycleVersion === 2;
     const scoped = rows.scope === 'CURRENT_ACTIVE_PRODUCT';
@@ -51,10 +57,11 @@ function originalProductState({ company, context, orders, identity, readAllocati
     const positions = new Map(rows.positions.map(p => [p.sourceTaskId, p]));
     const selectedSources = scoped ? sources.filter(s => rows.sourceTaskIds.includes(s.id)) : sources;
     if (scoped && rows.sourceTaskIds.some(id => !selectedSources.some(s => s.id === id))) throw Error('Current source authority missing');
-    const neededTasks = new Set([...selectedSources.map(s => s.ownerTaskId).filter(Boolean), ...rows.claims.map(c => c.taskId),
-      ...rows.transfers.flatMap(r => [r.details.relation.borrowerTaskId, r.details.relation.lenderTaskId])]);
-    const selectedDemands = scoped ? demands.filter(t => neededTasks.has(t.id)) : demands;
+    const neededTasks = new Set(scoped ? scopeTaskIds(rows) : []);
+    let selectedDemands = scoped ? demands.filter(t => neededTasks.has(t.id)) : demands;
     if (scoped && [...neededTasks].some(id => !selectedDemands.some(t => t.id === id))) throw Error('Current demand authority missing');
+    if (scoped) selectedDemands = currentTaskContext({ company, context: { company, tasks: selectedDemands },
+      taskRows: rows.taskRows, generation: rows.generation }).tasks;
     const currentDispatched = source => Object.fromEntries(rows.claims.filter(c => c.positionId === hash(company, key, 'PURCHASE_SOURCE', source.id))
       .filter(c => c.dispatchedCumulative > 0).map(c => [c.taskId, c.dispatchedCumulative]));
     const selected = selectedSources.map(s => scoped ? { ...s, dispatchedByTask: currentDispatched(s) } : s);

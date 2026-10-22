@@ -8,7 +8,7 @@ const { transferId } = require('./borrowing-stock-plan.cjs');
 const { originalProductState } = require('./original-product-state.cjs');
 const count = value => Number.isSafeInteger(value) && value >= 0;
 function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
-  projectPurchaseOrders, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, readTransfer, now = () => new Date() }) {
+  projectPurchaseOrders, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, readTransfer, readCurrentTaskRows, now = () => new Date() }) {
   for (const fn of [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords, projectPurchaseOrders,
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, readTransfer]) if (typeof fn !== 'function') throw Error('Existing server authority dependency required');
   return async ({ company, requestId, kind, input }) => {
@@ -57,6 +57,7 @@ function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchas
       activityTime: now().toISOString(), actorType: 'STAFF', initiatedByStaffId: staff.staffId, initiatedByStaffName: staff.staffName,
       details: { company, [kind === 'APPROVE' ? 'approval' : 'return']: safeInput } };
     return { kind, identity, input: safeInput, event, memberId: member._id, buildState: product.buildState,
+      readTaskRows: typeof readCurrentTaskRows === 'function' ? rows => readCurrentTaskRows(company, product.scopeTaskIds(rows), { ...staff, memberId: member._id }) : null,
       stockScope: { sourceTaskIds: [donorId, futureId], claimPairs: [donorId, futureId].flatMap(sourceTaskId =>
         [borrowerId, donor.ownerTaskId].map(taskId => ({ sourceTaskId, taskId }))) } };
   };

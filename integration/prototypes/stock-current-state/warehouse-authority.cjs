@@ -7,7 +7,7 @@ const { validateOriginalReceipt } = require('./original-receipt-validation.cjs')
 // and recheck expectedVersion under the fenced lock before committing its plan.
 function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords,
   projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations,
-  readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, now = () => new Date() }) {
+  readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, readCurrentTaskRows, now = () => new Date() }) {
   for (const fn of [readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Warehouse authority dependency required');
@@ -40,7 +40,8 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
     return { kind: 'RECEIVE', memberId: member._id, validated,
       products: [...products.values()].map(p => {
         const lines = validated.event.details.lines.filter(line => p.sources.some(s => s.id === line.taskId));
-        return { identity: p.identity, buildState: p.buildState, stockScope: {
+        return { identity: p.identity, buildState: p.buildState,
+          readTaskRows: typeof readCurrentTaskRows === 'function' ? rows => readCurrentTaskRows(company, p.scopeTaskIds(rows), staff) : null, stockScope: {
           sourceTaskIds: lines.map(line => line.taskId),
           correctionSourceIds: lines.filter(line => line.kind === 'CORRECTION' && line.accepted < line.beforeAccepted).map(line => line.taskId),
           claimPairs: lines.flatMap(line => { const source = p.sources.find(s => s.id === line.taskId);

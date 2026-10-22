@@ -61,7 +61,8 @@ function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetB
   function identity({ key, digest, memberId, requestId, baseGeneration, attempt }) {
     if (typeof memberId !== 'string' || !memberId || !/^[a-f0-9-]{36}$/i.test(requestId || '')
       || key !== hash(scope, requestId, memberId) || typeof digest !== 'string' || !digest
-      || !Number.isSafeInteger(baseGeneration) || baseGeneration < 0 || typeof attempt !== 'string' || !attempt) throw Error('Segmented operation identity');
+      || !Number.isSafeInteger(baseGeneration) || baseGeneration < 0 || !Number.isSafeInteger(baseGeneration + 1)
+      || typeof attempt !== 'string' || !attempt) throw Error('Segmented operation identity');
   }
   function encode(context) {
     identity(context);

@@ -20,6 +20,10 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
         const rows = protocol.planFormat === 'SEGMENTED_V2'
           ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
           : await readCurrentProduct({ company, identity: product.identity, items, store, metrics });
+        if (protocol.planFormat === 'SEGMENTED_V2') {
+          if (typeof product.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
+          rows.taskRows = await product.readTaskRows(rows); rows.generation = control.generation;
+        }
         products.push({ state: product.buildState(rows), rows });
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
