@@ -18,7 +18,7 @@ function createCurrentSalesArrangementSave({ company, store, protocol, coverage,
         staff = await authenticateOriginalDelegation(company, request);
         requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (!['PLAN', 'ORDER_DATE'].includes(request.input.action)) throw Error('Original Sales arrangement action required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
         const snapshot = await protocol.readSnapshot(async () => prepareShipmentArrangement({ company, staff,

@@ -19,7 +19,7 @@ function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegat
       const result = await readOriginalCustomerFulfilment(company, staff, staff.customerId, current.context);
       if (result?.company !== company) throw Error('Original customer response company changed');
       return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
-        stockBuild: control.writerBuild, stockGeneration: control.generation } };
+        stockBuild: control.writerBuild, stockGeneration: control.generation,stockIdentity:{staffId:staff.staffId,memberId:staff.memberId} } };
     });
     return snapshot.rows;
   };

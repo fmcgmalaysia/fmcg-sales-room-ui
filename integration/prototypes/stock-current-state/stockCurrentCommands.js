@@ -5396,7 +5396,7 @@ function preparePackingStock({ company, validated, currentRecord, products, gene
 module.exports = { preparePackingStock };
 
 },
-// current-sales-save.cjs sha256:2fa20a1468fc7a609cd53755d41684fc49bbdc97a4e0158ab01ea4009bc55ca7
+// current-sales-save.cjs sha256:b56de22ce7a02d59ad2e6bd60ad37c4372c10b97629bc434b41496c7a783055b
 "current-sales-save.cjs": (load, module) => {
 'use strict';
 
@@ -5406,6 +5406,7 @@ const { stockKey } = load("current-model.cjs");
 const { validateOriginalSales } = load("original-sales-validation.cjs");
 const { prepareSalesDemand } = load("borrowing-stock-plan.cjs");
 const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+const {hash}=load("commit-proof.cjs");
 // PRIVATE composition after original customerFulfilmentGateway authentication.
 // Never expose this as a SiteMember method taking browser staff/customer claims.
 function createCurrentSalesDemandSave({ company, items, store, protocol, coverage, authenticateOriginalDelegation,
@@ -5426,7 +5427,7 @@ function createCurrentSalesDemandSave({ company, items, store, protocol, coverag
         staff = await authenticateOriginalDelegation(company, request);
         requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (request.input.action !== 'ADJUST') throw Error('Original authenticated Sales customer delegation required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
         const metrics = { exactReads: 0, queries: 0 };
@@ -5450,7 +5451,13 @@ function createCurrentSalesDemandSave({ company, items, store, protocol, coverag
         return { ...prepareSalesDemand({ state, rows, event: validated.event, generation: snapshot.generation }),
           memberId: staff.memberId, generation: snapshot.generation, metrics };
       } });
-    return save(request);
+    const result=await save(request);if(result.ok!==true)return result;
+    const id=hash(company,request.requestId,staff.memberId,'SALES_ORDER_ADJUSTMENT');
+    const snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',id)),event=snapshot.rows;
+    if(!event?._version||event.company!==company||event._id!==id||event.title!==id||event.action!=='SALES_ORDER_ADJUSTMENT_SAVED'||event.result!=='SAVED'
+      ||event.initiatedByStaffId!==staff.staffId||event.image!==staff.customerId||event.imageAltText!==request.input.taskId||event.details?.customerId!==staff.customerId
+      ||event.details.orderId!==request.input.orderId||event.details.mode!==request.input.mode||!Number.isSafeInteger(event.details.requested)||event.details.requested<1)throw Error('Committed original Sales adjustment receipt unconfirmed');
+    return{...result,company,taskId:event.imageAltText,requested:event.details.requested};
   };
 }
 module.exports = { createCurrentSalesDemandSave };
@@ -5557,7 +5564,7 @@ function requireOriginalSalesDelegation(staff, customerId) {
 module.exports = { requireOriginalSalesDelegation };
 
 },
-// current-sales-read.cjs sha256:883addb30bc632c1677fb142612e2e75e70d78f61f43d2ca1ffb04a6f067c62f
+// current-sales-read.cjs sha256:552b774be88911132c6b7da13a4f446325b2f7ec751a09e411404c7c27f64346
 "current-sales-read.cjs": (load, module) => {
 'use strict';
 
@@ -5580,7 +5587,7 @@ function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegat
       const result = await readOriginalCustomerFulfilment(company, staff, staff.customerId, current.context);
       if (result?.company !== company) throw Error('Original customer response company changed');
       return { ...result, stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
-        stockBuild: control.writerBuild, stockGeneration: control.generation } };
+        stockBuild: control.writerBuild, stockGeneration: control.generation,stockIdentity:{staffId:staff.staffId,memberId:staff.memberId} } };
     });
     return snapshot.rows;
   };
@@ -5588,7 +5595,7 @@ function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegat
 module.exports = { createCurrentSalesRead };
 
 },
-// current-sales-shipment-save.cjs sha256:c36789c04b02f4384ce241ffdecd91cf5b78e26a3c818c5533666b2d8deb1a32
+// current-sales-shipment-save.cjs sha256:40dae7f13bedffcdf7f183f9b0fb838c9682668b197a974eb64a7df54d12e112
 "current-sales-shipment-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -5609,7 +5616,7 @@ function createCurrentSalesShipmentSave({ company, items, store, protocol, cover
       authenticate: async () => {
         staff = await authenticateOriginalDelegation(company, request); requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (!['SELECT', 'CANCEL'].includes(request.input.action)) throw Error('Original non-invoice Sales shipment action required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         const metrics = { queries: 0, exactReads: 0 };
         const snapshot = await protocol.readSnapshot(async control => {
@@ -5719,7 +5726,7 @@ function prepareSalesShipmentHolds({ company, event, priorShipment, products, ge
 module.exports = { prepareSalesShipmentHolds };
 
 },
-// current-sales-arrangement-save.cjs sha256:f80fbcb3aefdf6e5f3fc1b9d06e52cf80e93db10c75c921c9eeeb3e18b03c723
+// current-sales-arrangement-save.cjs sha256:ebbfc9dff9fae8498494eebe93c889cc05ab2a2fc701f14d644f77c63771cfa9
 "current-sales-arrangement-save.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -5741,7 +5748,7 @@ function createCurrentSalesArrangementSave({ company, store, protocol, coverage,
         staff = await authenticateOriginalDelegation(company, request);
         requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (!['PLAN', 'ORDER_DATE'].includes(request.input.action)) throw Error('Original Sales arrangement action required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
         const snapshot = await protocol.readSnapshot(async () => prepareShipmentArrangement({ company, staff,
@@ -6023,7 +6030,7 @@ function appendTaskDispatchCheckpoints({ company, plan, products, states, taskRo
 module.exports = { appendTaskDispatchCheckpoints };
 
 },
-// sales-gateway-current.cjs sha256:c18616c8887d6b1781a6f448ca09ee03a26659187916f4094f2064f6d80c4229
+// sales-gateway-current.cjs sha256:739cf903ab81e7bc5e2ef083b50d8ba9424133650a6a0f6bd404c343c68b026f
 "sales-gateway-current.cjs": (load, module) => {
 'use strict';
 const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
@@ -6033,7 +6040,10 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   requireOriginalSalesDelegation(staff, body.customerId);
   if (typeof resolveCurrentSales !== 'function' || typeof legacy !== 'function') throw Error('Private Sales route dependencies required');
   const current = await resolveCurrentSales(body.company, staff);
-  if (current?.mode === 'LEGACY') return legacy();
+  if (current?.mode === 'LEGACY') {
+    if(body.input?.stockCurrent!==undefined)throw Error('Sales inventory mode changed; retain the original current request');
+    return legacy();
+  }
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
   const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave
@@ -6048,7 +6058,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
     throw Error('Current Sales form changed; refresh and review retained input');
   }
   return save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
-    stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,
+    stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,stockIdentity:stockCurrent.stockIdentity,
     input: { ...input, action: body.action, customerId: staff.customerId } });
 }
 module.exports = { dispatchCurrentSalesGateway };
@@ -6105,3 +6115,4 @@ export const createCurrentSalesArrangementSave = load("current-sales-arrangement
 export const createCurrentWarehouseDispatchSave = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseDispatchSave;
 export const createCurrentWarehouseShipmentRead = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseShipmentRead;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;
+export const requireOriginalSalesDelegation = load("sales-delegation.cjs").requireOriginalSalesDelegation;

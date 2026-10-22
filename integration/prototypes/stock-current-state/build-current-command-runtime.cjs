@@ -37,7 +37,8 @@ const entries = {
   createCurrentSalesShipmentSave: 'current-sales-shipment-save.cjs',
   createCurrentSalesArrangementSave: 'current-sales-arrangement-save.cjs',
   createCurrentWarehouseDispatchSave: 'current-warehouse-dispatch-save.cjs', createCurrentWarehouseShipmentRead: 'current-warehouse-dispatch-save.cjs',
-  dispatchCurrentSalesGateway: 'sales-gateway-current.cjs'
+  dispatchCurrentSalesGateway: 'sales-gateway-current.cjs',
+  requireOriginalSalesDelegation:'sales-delegation.cjs'
 };
 const sources = new Map();
 function collect(name) {

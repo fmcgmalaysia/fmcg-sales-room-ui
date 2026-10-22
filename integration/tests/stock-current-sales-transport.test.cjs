@@ -29,7 +29,8 @@ test('only LEGACY route can invoke original writer; maintenance/unconnected/malf
   let legacy = 0, saved = 0;
   const run = (mode, extra = {}, requestBody = body) => dispatchCurrentSalesGateway({ body: requestBody, staff,
     resolveCurrentSales: async () => ({ mode, save: async () => { saved++; }, ...extra }), legacy: async () => ++legacy });
-  assert.equal(await run('LEGACY'), 1);
+  assert.equal(await run('LEGACY',{}, {...body,input:{taskId:'T'}}), 1);
+  await assert.rejects(run('LEGACY'),/mode changed/);
   for (const mode of ['MAINTENANCE', 'SHADOW', undefined]) await assert.rejects(run(mode), /paused/);
   await assert.rejects(run('ACTIVE', {}, { ...body, action: 'DOCUMENT' }), /not connected/);
   await assert.rejects(run('ACTIVE', {}, { ...body, input: {} }), /form changed/);

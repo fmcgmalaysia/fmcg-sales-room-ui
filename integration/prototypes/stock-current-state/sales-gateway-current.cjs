@@ -6,7 +6,10 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   requireOriginalSalesDelegation(staff, body.customerId);
   if (typeof resolveCurrentSales !== 'function' || typeof legacy !== 'function') throw Error('Private Sales route dependencies required');
   const current = await resolveCurrentSales(body.company, staff);
-  if (current?.mode === 'LEGACY') return legacy();
+  if (current?.mode === 'LEGACY') {
+    if(body.input?.stockCurrent!==undefined)throw Error('Sales inventory mode changed; retain the original current request');
+    return legacy();
+  }
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
   const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave
@@ -21,7 +24,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
     throw Error('Current Sales form changed; refresh and review retained input');
   }
   return save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
-    stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,
+    stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,stockIdentity:stockCurrent.stockIdentity,
     input: { ...input, action: body.action, customerId: staff.customerId } });
 }
 module.exports = { dispatchCurrentSalesGateway };

@@ -6,6 +6,7 @@ const { stockKey } = require('./current-model.cjs');
 const { validateOriginalSales } = require('./original-sales-validation.cjs');
 const { prepareSalesDemand } = require('./borrowing-stock-plan.cjs');
 const { requireOriginalSalesDelegation } = require('./sales-delegation.cjs');
+const {hash}=require('./commit-proof.cjs');
 // PRIVATE composition after original customerFulfilmentGateway authentication.
 // Never expose this as a SiteMember method taking browser staff/customer claims.
 function createCurrentSalesDemandSave({ company, items, store, protocol, coverage, authenticateOriginalDelegation,
@@ -26,7 +27,7 @@ function createCurrentSalesDemandSave({ company, items, store, protocol, coverag
         staff = await authenticateOriginalDelegation(company, request);
         requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (request.input.action !== 'ADJUST') throw Error('Original authenticated Sales customer delegation required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Sales delegated actor changed');
         const metrics = { exactReads: 0, queries: 0 };
@@ -50,7 +51,13 @@ function createCurrentSalesDemandSave({ company, items, store, protocol, coverag
         return { ...prepareSalesDemand({ state, rows, event: validated.event, generation: snapshot.generation }),
           memberId: staff.memberId, generation: snapshot.generation, metrics };
       } });
-    return save(request);
+    const result=await save(request);if(result.ok!==true)return result;
+    const id=hash(company,request.requestId,staff.memberId,'SALES_ORDER_ADJUSTMENT');
+    const snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',id)),event=snapshot.rows;
+    if(!event?._version||event.company!==company||event._id!==id||event.title!==id||event.action!=='SALES_ORDER_ADJUSTMENT_SAVED'||event.result!=='SAVED'
+      ||event.initiatedByStaffId!==staff.staffId||event.image!==staff.customerId||event.imageAltText!==request.input.taskId||event.details?.customerId!==staff.customerId
+      ||event.details.orderId!==request.input.orderId||event.details.mode!==request.input.mode||!Number.isSafeInteger(event.details.requested)||event.details.requested<1)throw Error('Committed original Sales adjustment receipt unconfirmed');
+    return{...result,company,taskId:event.imageAltText,requested:event.details.requested};
   };
 }
 module.exports = { createCurrentSalesDemandSave };

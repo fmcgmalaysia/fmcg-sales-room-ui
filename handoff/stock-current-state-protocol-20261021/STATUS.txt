@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 SOURCE SALES ACTUAL ROOT: SOURCE_SALES_ACTUAL_ROOT.txt. Original one-arg
+bearer gateway now defaults real private current resolver after exact original auth;
+READ/ADJUST/SELECT/CANCEL/PLAN/ORDER_DATE current authority, expected actor bound,
+original committed adjustment receipt and own auth-only recovery. Current request never
+falls into LEGACY on mode change.819currentpass0fail16514.3865ms,89modules45exports;
+original adjustment/split/date/fulfilment30pass0fail420.0646ms. Native/public unverified.
+Sales durable client/date transport NEXT; existing DOCUMENT same-fence file connection
+still OPEN before ACTIVE (not new financial work). Other writer/native/recovery/
+capacity/cutover/shadow/Loaded-endtoend/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF.
+
 2026-10-22 USER FIRST ACCEPTANCE ENDS AT LOADED. Real invoice/actual dispatch remain
 OFF and are not required first user-test steps. Prior invoice-scope question resolved;
 do not repeat. Preserve downstream co-writer safety, no half-stock activation.

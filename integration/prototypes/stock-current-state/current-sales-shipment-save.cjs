@@ -17,7 +17,7 @@ function createCurrentSalesShipmentSave({ company, items, store, protocol, cover
       authenticate: async () => {
         staff = await authenticateOriginalDelegation(company, request); requireOriginalSalesDelegation(staff, request?.input?.customerId);
         if (!['SELECT', 'CANCEL'].includes(request.input.action)) throw Error('Original non-invoice Sales shipment action required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId,staffId:staff.staffId };
       }, prepare: async command => {
         const metrics = { queries: 0, exactReads: 0 };
         const snapshot = await protocol.readSnapshot(async control => {
