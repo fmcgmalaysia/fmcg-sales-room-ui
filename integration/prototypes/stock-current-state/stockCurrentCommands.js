@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:135efadbcebb17e52f02c23ccdd8b14815326c00ca701a4cc2921632db53f6bc
+// current-department-saves.cjs sha256:46c26d46271eba796bfab99a750456b3a042c9b3c8e1c408506190c5e8098524
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -116,9 +116,21 @@ function authorityContext(deps, protocol) {
 function createCurrentWarehouseReceiptSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requireWarehouseStaff);
   const authority = createWarehouseAuthority(authorityContext(authorityDependencies, protocol));
-  return createCurrentStockSave({ company, writer: 'RECEIPT', protocol, coverage,
-    authenticate: authorize,
-    prepare: command => createWarehouseStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+  return async request=>{
+    let actor;
+    const save = createCurrentStockSave({ company, writer: 'RECEIPT', protocol, coverage,
+      authenticate: async()=>{actor=await authorize();return actor;},
+      prepare: command => createWarehouseStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+    const result=await save(request);
+    if(result.ok!==true)return result;
+    const id=hash(company,request.requestId,actor.memberId,'WAREHOUSE_RECEIPT');
+    const snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',id)),event=snapshot.rows;
+    if(!event?._version||event._id!==id||event.title!==id||event.company!==company||event.result!=='SAVED'
+      ||event.action!=='WAREHOUSE_RECEIPT_SAVED'||event.initiatedByStaffId!==actor.staffId
+      ||event.description!==request.input.id||event.details?.company!==company
+      ||typeof event.activityTime!=='string'||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Committed Warehouse receipt requires review');
+    return {...result,company,poId:event.description,receiptId:id,savedAt:event.activityTime};
+  };
 }
 function createCurrentBorrowingSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
@@ -3100,6 +3112,31 @@ function createCurrentPurchaseReadRouter({company,readControl,readLegacy,readCur
 module.exports={createCurrentPurchaseReadRouter};
 
 },
+// current-warehouse-receipt-router.cjs sha256:a3d307c83eff35ef30f44cacf41c039df25d741a1bf6e82de6133217b8c240ac
+"current-warehouse-receipt-router.cjs": (load, module) => {
+'use strict';
+const { hash }=load("commit-proof.cjs");
+// Called only AFTER original Warehouse authentication. Browser cannot select mode.
+function createCurrentWarehouseReceiptRouter({company,readControl,saveCurrent,saveLegacy}){
+  if(!['NCT','GHR'].includes(company)||[readControl,saveCurrent,saveLegacy].some(fn=>typeof fn!=='function'))throw Error('Original Warehouse receipt routing dependencies required');
+  return async request=>{
+    const control=await readControl();
+    if(control?._id!==hash(company,'STOCK_CONTROL')||control.company!==company||typeof control.stockCommitVersion!=='string'
+      ||!control.stockCommitVersion||control.schemaVersion!==1||!Number.isSafeInteger(control.generation)||control.generation<0
+      ||!['LEGACY','SHADOW','MAINTENANCE','ACTIVE'].includes(control.mode))throw Error('Warehouse inventory control unconfirmed. Retain the original receipt.');
+    if(control.mode==='LEGACY'){
+      if(control.pending!==null||request.stockCurrent?.stockProtocol!==undefined)throw Error('Warehouse inventory mode changed. Refresh the retained receipt.');
+      return saveLegacy();
+    }
+    if(control.mode!=='ACTIVE')throw Error('Warehouse inventory maintenance. Retain the original receipt.');
+    // Same-request resume owns pending validation inside the current coordinator.
+    return saveCurrent(company,{requestId:request.requestId,input:request.input,stockProtocol:request.stockCurrent?.stockProtocol,
+      stockBuild:request.stockCurrent?.stockBuild,stockGeneration:request.stockCurrent?.stockGeneration});
+  };
+}
+module.exports={createCurrentWarehouseReceiptRouter};
+
+},
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
 "current-stock-exception-save.cjs": (load, module) => {
 'use strict';
@@ -5351,6 +5388,7 @@ export const createCurrentPurchaseTables = load("current-purchase-tables.cjs").c
 export const createCurrentPurchaseTaskGateway = load("current-purchase-task-gateway.cjs").createCurrentPurchaseTaskGateway;
 export const createCurrentPurchaseSaveRouter = load("current-purchase-save-router.cjs").createCurrentPurchaseSaveRouter;
 export const createCurrentPurchaseReadRouter = load("current-purchase-read-router.cjs").createCurrentPurchaseReadRouter;
+export const createCurrentWarehouseReceiptRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseReceiptRouter;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;

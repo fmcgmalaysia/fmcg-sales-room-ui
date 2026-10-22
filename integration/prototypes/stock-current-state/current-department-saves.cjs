@@ -29,9 +29,21 @@ function authorityContext(deps, protocol) {
 function createCurrentWarehouseReceiptSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requireWarehouseStaff);
   const authority = createWarehouseAuthority(authorityContext(authorityDependencies, protocol));
-  return createCurrentStockSave({ company, writer: 'RECEIPT', protocol, coverage,
-    authenticate: authorize,
-    prepare: command => createWarehouseStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+  return async request=>{
+    let actor;
+    const save = createCurrentStockSave({ company, writer: 'RECEIPT', protocol, coverage,
+      authenticate: async()=>{actor=await authorize();return actor;},
+      prepare: command => createWarehouseStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+    const result=await save(request);
+    if(result.ok!==true)return result;
+    const id=hash(company,request.requestId,actor.memberId,'WAREHOUSE_RECEIPT');
+    const snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',id)),event=snapshot.rows;
+    if(!event?._version||event._id!==id||event.title!==id||event.company!==company||event.result!=='SAVED'
+      ||event.action!=='WAREHOUSE_RECEIPT_SAVED'||event.initiatedByStaffId!==actor.staffId
+      ||event.description!==request.input.id||event.details?.company!==company
+      ||typeof event.activityTime!=='string'||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Committed Warehouse receipt requires review');
+    return {...result,company,poId:event.description,receiptId:id,savedAt:event.activityTime};
+  };
 }
 function createCurrentBorrowingSave({ company, items, store, protocol, coverage, authorityDependencies }) {
   const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);

@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 WAREHOUSE RECEIPT ROOT: WAREHOUSE_RECEIPT_ACTUAL_ROOT.txt. Actual-original
+auth/context/PO/receipt composition now candidate SiteMember root, common segmented
+current save; verified original poId/receiptId/savedAt retained. Original save wrapper
+routes by server mode AFTER original Warehouse auth; ACTIVE never old receipt writer.
+Both companies, partials, role-revoked replay, empty coverage and 300-line SAME-request
+bounded phases tested.734currentpass0fail13702.4053ms,originalreceiving7pass113.1656ms;
+81modules38exports. Warehouse current workspace/client replay metadata/file/preparation/
+otherwriters/native/init/cutover/recovery/capacity/shadow/fourrelease OPEN. Production
+exact/ACTIVE OFF; no actual installation, business data mutation or publication.
+
 2026-10-22 DURABLE WORKSPACE ORCHESTRATION: PURCHASE_WORKSPACE_REFRESH_RESUME.txt.
 Original own-session cache retains each GP request BEFORE first save; multiple groups
 replace only confirmed prior GP request. Completed other operations reconcile ORIGINAL

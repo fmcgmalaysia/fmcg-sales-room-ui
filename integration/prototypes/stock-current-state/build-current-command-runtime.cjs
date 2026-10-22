@@ -10,6 +10,7 @@ const entries = {
   createCurrentPurchaseTaskGateway: 'current-purchase-task-gateway.cjs',
   createCurrentPurchaseSaveRouter: 'current-purchase-save-router.cjs',
   createCurrentPurchaseReadRouter: 'current-purchase-read-router.cjs',
+  createCurrentWarehouseReceiptRouter: 'current-warehouse-receipt-router.cjs',
   createCurrentQuantityCaseSave: 'current-department-saves.cjs',
   createCurrentShortageSave: 'current-department-saves.cjs',
   createCurrentStockExceptionSave: 'current-stock-exception-save.cjs',
