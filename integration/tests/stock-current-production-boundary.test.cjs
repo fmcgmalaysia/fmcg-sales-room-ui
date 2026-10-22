@@ -55,3 +55,23 @@ test('fifteen settled old sources already block unrelated new product mutation u
     find: async () => ({ items: rows, totalCount: rows.length }) }; return q; } };
   await assert.rejects(readCurrentProduct({ company, identity, items, store: { read: async () => { throw Error('Must reject before exact reads'); } }, metrics: { queries: 0, exactReads: 0 } }), /Incomplete bounded/);
 });
+
+test('segmented candidate commits actual original300line receipt once, without splitting PO/business event', async () => {
+  const original = await receipt(300, 3), candidate = prepareWarehouseReceipt({ ...original, planFormat: 'SEGMENTED_V2' });
+  assert.equal(candidate.plan.writes.length, 901);
+  assert.equal(candidate.plan.writes.filter(w => w.after.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
+  const rows = new Map(), copy = x => JSON.parse(JSON.stringify(x));
+  const store = { read: async (c, id) => copy(rows.get(c + '/' + id) || null),
+    insert: async (c, row) => { const key = c + '/' + row._id; if (rows.has(key)) throw Error('Duplicate'); rows.set(key, copy(row)); },
+    compareAndSet: async (c, id, version, row) => { if (rows.get(c + '/' + id)?._version !== version) throw Error('Conflict'); rows.set(c + '/' + id, copy(row)); },
+    compareAndRemove: async (c, id, attempt) => { if (rows.get(c + '/' + id)?.attempt !== attempt) throw Error('Wrong attempt'); rows.delete(c + '/' + id); } };
+  const protocol = require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({ store, stepsPerInvocation: 100 });
+  await protocol.initialize(); let prepares = 0, result;
+  const command = { requestId, memberId: 'M', input: original.validated.event.details, prepare: async () => { prepares++; return candidate.plan; } };
+  for (let i = 0; i < 40; i++) { result = await protocol.commit(command); if (result.ok) break; assert.equal(result.pending, true); }
+  assert.equal(result.ok, true); assert.equal(prepares, 1); assert.equal((await protocol.readControl()).generation, 1);
+  await protocol.commit(command); assert.equal(prepares, 1);
+  assert.equal([...rows.values()].filter(r => r.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
+  assert.equal([...rows.keys()].filter(k => k.startsWith('StockPositions/')).length, 300);
+  assert.equal([...rows.entries()].filter(([k]) => k.startsWith('StockProducts/')).reduce((n, [, row]) => n + row.onHand, 0), 30000);
+});

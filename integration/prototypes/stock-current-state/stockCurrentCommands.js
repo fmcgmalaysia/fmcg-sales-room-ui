@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 // Candidate-only backend runtime. Original gateway authentication and verified
 // all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.
 const factories = {
-// current-stock-save.cjs sha256:6d0f9c5d3f80be9894031265cf22e68deccfd6f1ff33122d37e678f1fdd1b01f
+// current-stock-save.cjs sha256:83fea3fb1d8885a95c8189849c330df1cdb59fc883fbca621d5d7f18fb36180e
 "current-stock-save.cjs": (load, module) => {
 'use strict';
 
@@ -35,6 +35,13 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
         if (prepared?.memberId !== actor.memberId || prepared.generation !== admittedGeneration || !prepared.plan) throw Error('Prepared authority/generation changed');
         return prepared.plan;
       } });
+    if (result?.ok === false && result.pending === true && result.requestId === request.requestId
+      && ['BEFORE', 'APPLY', 'VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
+      && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0
+      && result.completedCount >= 0 && result.completedCount <= result.totalRecords) {
+      return { ok: false, pending: true, requestId: request.requestId, phase: result.phase,
+        completedCount: result.completedCount, totalRecords: result.totalRecords };
+    }
     if (result?.ok !== true || !Number.isSafeInteger(result.generation) || result.generation < 1) throw Error('Current stock result unconfirmed');
     return { ok: true, requestId: request.requestId, stockGeneration: result.generation };
   };
@@ -471,7 +478,7 @@ async function validateOriginalReceipt({ createWarehouseOperations, company, sta
 module.exports = { validateOriginalReceipt };
 
 },
-// warehouse-stock-reader.cjs sha256:41dbd6961805afa4c689832055d51d6ec98f1c161b94f2c8713ad8a7b6fb1e0d
+// warehouse-stock-reader.cjs sha256:872b2dd16adaf3702a9b6e37137755141a27b5629d4fc3c9b3490711887381aa
 "warehouse-stock-reader.cjs": (load, module) => {
 'use strict';
 
@@ -495,7 +502,7 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
     });
-    return { ...prepareWarehouseReceipt({ ...snapshot.rows, generation: snapshot.generation }),
+    return { ...prepareWarehouseReceipt({ ...snapshot.rows, generation: snapshot.generation, planFormat: protocol.planFormat || 'PROOF_V1' }),
       memberId: snapshot.rows.memberId, generation: snapshot.generation, metrics };
   };
 }
@@ -551,16 +558,18 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
 module.exports = { readCurrentProduct };
 
 },
-// warehouse-receipt-plan.cjs sha256:3df3a68fe6c9854f79f35731439c44f56696ca5d6a809fb0d96969910a87de46
+// warehouse-receipt-plan.cjs sha256:f79f9771fb228327bc0792add498e75eff483a7fd89075c660c93d98c970592a
 "warehouse-receipt-plan.cjs": (load, module) => {
 'use strict';
 
 const { stockKey } = load("current-model.cjs");
 const { prepareBorrowingReceipt } = load("borrowing-stock-plan.cjs");
+const { utf8Bytes } = load("segmented-plan.cjs");
 const copy = value => JSON.parse(JSON.stringify(value));
 // One original PO receipt, potentially several products, ONE fenced commit.
 // Product snapshots must be assembled together inside the same read barrier.
-function prepareWarehouseReceipt({ validated, products, generation }) {
+function prepareWarehouseReceipt({ validated, products, generation, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server receipt plan format required');
   const event = validated?.event;
   if (!validated?.expectedVersion || !event || event.action !== 'WAREHOUSE_RECEIPT_SAVED'
     || !Array.isArray(event.details?.lines) || !event.details.lines.length || !Array.isArray(products) || !products.length
@@ -590,14 +599,17 @@ function prepareWarehouseReceipt({ validated, products, generation }) {
     || consumed.size !== event.details.lines.length) throw Error('Incomplete receipt product coverage');
   writes.unshift({ collection: event.details.company === 'NCT' ? 'NCTActivity' : 'NCTActivity1',
     before: null, after: { ...copy(event), company: event.details.company } });
-  if (new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
-    || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Combined receipt exceeds atomic proof bound');
+  if (new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length) throw Error('Combined receipt write identity conflict');
+  // Only a server-composed v2 protocol requests the segmented envelope. Individual
+  // product preparation is still subject to its current working-set guards.
+  if (planFormat === 'PROOF_V1' && (writes.length > 30 || utf8Bytes(JSON.stringify({ writes })) > 180000)) throw Error('Combined receipt exceeds atomic proof bound');
+  if (planFormat === 'SEGMENTED_V2' && (writes.length > 10000 || utf8Bytes(JSON.stringify({ writes })) > 8 * 1024 * 1024)) throw Error('Combined receipt exceeds segmented policy');
   return { states, expectedVersion: validated.expectedVersion, plan: { writes } };
 }
 module.exports = { prepareWarehouseReceipt };
 
 },
-// borrowing-stock-plan.cjs sha256:11caf1651df2b842c14fbdad6f44a13b870f08eec7375ed2b3bb31871544c72a
+// borrowing-stock-plan.cjs sha256:977a60e7241a54056e821496ffc706e569b8096a36af0ef702d1cf35777b8f2e
 "borrowing-stock-plan.cjs": (load, module) => {
 'use strict';
 
@@ -643,9 +655,11 @@ function mapTransition({ before, after, rows, event, generation }) {
   const summary = state => ({ onHand: total(state.sources.map(s => s.onHand)), isolated: total(state.sources.map(s => s.isolated)),
     reservedUsable: total(state.sources.map(sumClaims)), available: total(state.sources.map(s => s.available)) });
   const beforeTotals = summary(before), productId = hash(company, key), product = rows.product;
+  if (before.lifecycleVersion !== after.lifecycleVersion) throw Error('Lifecycle migration is not a business save');
   if (product) {
     checkRow(product, company, productId, key);
     if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
+    if (before.lifecycleVersion === 2 && (product.lifecycleVersion !== 2 || product.nextBorrowSequence !== before.nextBorrowSequence)) throw Error('Product lifecycle checkpoint conflict');
   } else if (before.revision !== 0 || Object.values(beforeTotals).some(n => n !== 0)) throw Error('Product snapshot missing');
   for (const source of before.sources) {
     const next = after.sources.find(s => s.id === source.id), id = hash(company, key, 'PURCHASE_SOURCE', source.id), old = positions.get(id) || null;
@@ -657,6 +671,7 @@ function mapTransition({ before, after, rows, event, generation }) {
         || old.dispatched !== total(Object.values(source.dispatchedByTask || {}))
         || old.onHand !== source.onHand || old.isolated !== source.isolated
         || old.available !== source.available || old.reservedUsable !== sumClaims(source)) throw Error('Source snapshot conflict');
+      if (before.lifecycleVersion === 2 && old.borrowRepaidCumulative !== source.borrowRepaidCumulative) throw Error('Source repayment snapshot conflict');
     } else if (source.accepted !== 0 || source.onHand !== 0 || sumClaims(source) !== 0) throw Error('Source snapshot missing');
     const positionChanged = !same(source, next);
     if (positionChanged) {
@@ -665,6 +680,7 @@ function mapTransition({ before, after, rows, event, generation }) {
         poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
       writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId, receiptAccepted: next.accepted,
         replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
+        ...(after.lifecycleVersion === 2 ? { borrowRepaidCumulative: next.borrowRepaidCumulative } : {}),
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
         checkpointGeneration: generation + 1, status: next.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
@@ -679,12 +695,14 @@ function mapTransition({ before, after, rows, event, generation }) {
         consumedClaims.add(claimId); checkRow(oldClaim, company, claimId, key);
         if (oldClaim.positionId !== id || oldClaim.taskId !== taskId || oldClaim.customerId !== task.customerId
           || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== 0) throw Error('Claim snapshot conflict');
+        if (before.lifecycleVersion === 2 && oldClaim.dispatchedCumulative !== (source.dispatchedByTask?.[taskId] || 0)) throw Error('Claim dispatch snapshot conflict');
       } else if (prior !== 0) throw Error('Claim snapshot missing');
-      if (quantity === prior) continue;
+      if (quantity === prior && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
       const base = oldClaim || { _id: claimId, schemaVersion: 1, company, stockKey: key, positionId: id,
         taskId, customerId: task.customerId, orderId: task.orderId || '', sourceLineId: task.sourceLineId || '',
         isolatedAttributed: 0, reviewCodes: [] };
       writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity,
+        ...(after.lifecycleVersion === 2 ? { dispatchedCumulative: next.dispatchedByTask?.[taskId] || 0 } : {}),
         revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
   }
@@ -708,6 +726,7 @@ function mapTransition({ before, after, rows, event, generation }) {
   writes.push({ collection: 'StockProducts', before: copy(product || null), after: { ...(product || { _id: productId,
     schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing, ea: before.ea, name: before.name || '' }),
     ...totals, revision: before.revision + 1, checkpointGeneration: generation + 1, reviewRequired: false,
+    ...(after.lifecycleVersion === 2 ? { lifecycleVersion: 2, nextBorrowSequence: after.nextBorrowSequence } : {}),
     status: totals.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
   const identities = writes.map(w => w.collection + ':' + w.after._id);
   if (new Set(identities).size !== writes.length || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Borrowing plan exceeds atomic proof bound');
@@ -848,7 +867,7 @@ function preparePackingHoldTransition({ state, rows, event, generation, packingH
 module.exports = { prepareBorrowApproval, prepareBorrowReturn, prepareBorrowingReceipt, prepareCurrentAllocation, prepareSalesDemand, prepareShipmentDispatch, prepareFreeQuarantine, prepareFreeCaseMovement, prepareFreeCaseRelease, prepareProcurementTransition, preparePackingHoldTransition, transferId };
 
 },
-// borrowing-model.cjs sha256:b062d7425008a60fcab705c13263833099abae0198aff1a145acde8e3e7c3681
+// borrowing-model.cjs sha256:7923a4d5c9ddaab5ffa108a991821dca30179b71340354dbdbcf2c145076fbd8
 "borrowing-model.cjs": (load, module) => {
 'use strict';
 
@@ -916,6 +935,16 @@ function validate(state) {
       || tasks.get(relation.borrowerTaskId).customerId === tasks.get(relation.lenderTaskId).customerId) throw Error('Borrowing relation conflict');
     ids.add(relation.id); sequences.add(relation.sequence);
   }
+  // v2 current-state counters survive omission of CLOSED relationship history.
+  // They must be initialized by verified parity, never inferred from a partial list.
+  if (state.lifecycleVersion != null && state.lifecycleVersion !== 2) throw Error('Unknown stock lifecycle');
+  if (state.lifecycleVersion === 2) {
+    if (!positive(state.nextBorrowSequence) || state.relations.some(r => r.sequence >= state.nextBorrowSequence)) throw Error('Borrow sequence checkpoint conflict');
+    for (const source of state.sources) {
+      if (!count(source.borrowRepaidCumulative) || source.borrowRepaidCumulative > source.accepted
+        || sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid)) > source.borrowRepaidCumulative) throw Error('Source repayment checkpoint conflict');
+    }
+  }
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
       || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
@@ -952,7 +981,9 @@ function approveBorrow(before, input) {
       || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id)) throw Error('Insufficient eligible stock, demand or future supply');
     donor.claims[lender] -= input.quantity;
     donor.claims[borrower.id] = (donor.claims[borrower.id] || 0) + input.quantity;
-    const sequence = Math.max(0, ...state.relations.map(r => r.sequence)) + 1;
+    const sequence = state.lifecycleVersion === 2 ? state.nextBorrowSequence : Math.max(0, ...state.relations.map(r => r.sequence)) + 1;
+    if (!positive(sequence) || sequence >= Number.MAX_SAFE_INTEGER) throw Error('Borrow sequence exhausted');
+    if (state.lifecycleVersion === 2) state.nextBorrowSequence++;
     state.relations.push({ id: input.id, sequence, lenderSourceId: donor.id, replacementSourceId: future.id,
       lenderTaskId: lender, borrowerTaskId: borrower.id, quantity: input.quantity, repaid: 0, returned: 0,
       approvedBy: input.approvedBy, reason: input.reason });
@@ -970,11 +1001,13 @@ function receive(before, input) {
       const take = Math.min(left, remaining(relation));
       if (take) source.claims[relation.lenderTaskId] = (source.claims[relation.lenderTaskId] || 0) + take;
       relation.repaid += take;
+      if (state.lifecycleVersion === 2) source.borrowRepaidCumulative = sum([source.borrowRepaidCumulative, take]);
       left -= take;
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
     const need = owner ? owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id) : 0;
-    const repaidFromSource = sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
+    const repaidFromSource = state.lifecycleVersion === 2 ? source.borrowRepaidCumulative
+      : sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
     const ownCapacity = owner ? Math.max(0, source.ownerShare - repaidFromSource - (source.claims[owner.id] || 0) - (source.dispatchedByTask?.[owner.id] || 0)) : 0;
     const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need, ownCapacity);
     if (own) source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
@@ -1031,6 +1064,7 @@ function correctAccepted(before, input) {
     for (const r of state.relations.filter(r => r.replacementSourceId === source.id).sort((a, b) => b.sequence - a.sequence)) {
       const take = removeClaim(r.lenderTaskId, r.repaid);
       r.repaid -= take;
+      if (state.lifecycleVersion === 2) source.borrowRepaidCumulative -= take;
     }
     if (reduction) throw Error('Correction would consume shipped, isolated or unrelated allocations');
     source.onHand -= source.accepted - input.cumulativeAccepted;
@@ -1231,6 +1265,153 @@ function guardProcurementStock({ before, after }) {
   return { company: before.company, stockKey: stockKey(before), generationUnchanged: true, changedSources };
 }
 module.exports = { guardProcurementStock };
+
+},
+// segmented-plan.cjs sha256:0039b49767dc5d7105fa42aed123468ce123839e5e815c9856f2324822adf1b4
+"segmented-plan.cjs": (load, module) => {
+'use strict';
+
+// Candidate only. Budgets are server policy, NOT measured Wix production capacity.
+// No storage, endpoint, permission or business mutation is performed by this codec.
+const { hash } = load("commit-proof.cjs");
+const { planCollections } = load("domain-scope.cjs");
+const canonical = value => Array.isArray(value) ? value.map(canonical)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+const stringify = value => JSON.stringify(canonical(value));
+const same = (a, b) => stringify(a) === stringify(b);
+const copy = value => JSON.parse(JSON.stringify(value));
+// Works in the generated backend without Node Buffer or a browser TextEncoder.
+function utf8Bytes(value) {
+  let bytes = 0;
+  for (const character of value) {
+    const cp = character.codePointAt(0);
+    bytes += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+}
+function assertJson(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
+  if (typeof value === 'number' && Number.isFinite(value)) return;
+  if (!value || typeof value !== 'object') throw Error('Plain JSON plan required');
+  const proto = Object.getPrototypeOf(value);
+  if (!Array.isArray(value) && proto !== null && (Object.getPrototypeOf(proto) !== null
+    || Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name !== 'Object')) throw Error('Plain JSON plan required');
+  for (const key of Object.keys(value)) assertJson(value[key]);
+}
+function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetBytes = 64000,
+  maxPlanBytes = 8 * 1024 * 1024, maxWrites = 10000, maxFragments = 256 }) {
+  if (!['NCT', 'GHR'].includes(company)) throw Error('Known company required');
+  for (const value of [recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments]) {
+    if (!Number.isSafeInteger(value) || value <= 0) throw Error('Positive codec policy required');
+  }
+  if (recordBudgetBytes < 2048 || recordBudgetBytes > 256000) throw Error('Conservative record budget required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scope = company + '/PURCHASE', lockId = hash(scope, 'LOCK'), controlId = hash(company, 'STOCK_CONTROL');
+  const allowed = new Set(planCollections(company, domainWrites));
+  const fragmentId = (key, attempt, index) => hash(key, 'PLAN_FRAGMENT', attempt, index);
+  function normalize(plan, key, reserved = []) {
+    assertJson(plan);
+    if (!Array.isArray(plan?.writes) || !plan.writes.length || plan.writes.length > maxWrites) throw Error('Segmented plan write policy');
+    const normalized = copy(plan), identities = new Set();
+    const protectedIds = new Set([lockId, controlId, key, hash(key, 'RESULT'), ...reserved]);
+    for (const change of normalized.writes) {
+      const id = change.after?._id, identity = change.collection + '/' + id;
+      if (!allowed.has(change.collection) || typeof id !== 'string' || !id || identities.has(identity)
+        || change.after.company !== company || change.before !== null && (!change.before || change.before._id !== id
+          || change.before.company !== company || typeof change.before._version !== 'string' || !change.before._version)
+        || change.collection === journal && (protectedIds.has(id)
+          || [change.before, change.after].some(row => row?.stockOperationProtocol != null))) throw Error('Plan identity conflict');
+      identities.add(identity);
+      const token = hash(key, change.collection, id);
+      if (change.before?._version === token) throw Error('Version reuse');
+      change.after._version = token;
+    }
+    if (utf8Bytes(stringify(normalized)) > maxPlanBytes) throw Error('Segmented plan byte policy');
+    return normalized;
+  }
+  function identity({ key, digest, memberId, requestId, baseGeneration, attempt }) {
+    if (typeof memberId !== 'string' || !memberId || !/^[a-f0-9-]{36}$/i.test(requestId || '')
+      || key !== hash(scope, requestId, memberId) || typeof digest !== 'string' || !digest
+      || !Number.isSafeInteger(baseGeneration) || baseGeneration < 0 || typeof attempt !== 'string' || !attempt) throw Error('Segmented operation identity');
+  }
+  function encode(context) {
+    identity(context);
+    const { key, digest, memberId, requestId, baseGeneration, attempt } = context;
+    const plan = normalize(context.plan, key), payload = stringify(plan), fragments = [];
+    let offset = 0;
+    while (offset < payload.length) {
+      if (fragments.length >= maxFragments) throw Error('Segment count policy');
+      const index = fragments.length, id = fragmentId(key, attempt, index);
+      const wrap = text => ({ _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
+        operationId: key, attempt, index, payload: text, payloadHash: hash(text) });
+      let low = 1, high = Math.min(payload.length - offset, recordBudgetBytes), size = 0;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        if (utf8Bytes(stringify(wrap(payload.slice(offset, offset + mid)))) <= recordBudgetBytes) { size = mid; low = mid + 1; }
+        else high = mid - 1;
+      }
+      // Never split a surrogate pair. JSON escaping also counts against record budget.
+      if (size && /[\uD800-\uDBFF]/.test(payload[offset + size - 1]) && /[\uDC00-\uDFFF]/.test(payload[offset + size] || '')) size--;
+      if (!size) throw Error('Fragment metadata exceeds policy');
+      fragments.push(wrap(payload.slice(offset, offset + size))); offset += size;
+    }
+    normalize(plan, key, fragments.map(row => row._id));
+    const manifest = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
+      memberId, requestId, attempt, baseGeneration, planHash: hash(payload), planBytes: utf8Bytes(payload),
+      writeCount: plan.writes.length, fragments: fragments.map(row => ({ id: row._id, hash: row.payloadHash, bytes: utf8Bytes(row.payload) })) };
+    if (utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest exceeds policy');
+    return { manifest, fragments, plan };
+  }
+  function decode({ manifest, fragments, key, digest, memberId, requestId }) {
+    if (!manifest || manifest.company !== company || manifest._id !== key || manifest.digest !== digest
+      || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
+      || manifest.action !== 'STOCK_PLAN_MANIFEST' || !Array.isArray(manifest.fragments) || !manifest.fragments.length
+      || manifest.fragments.length > maxFragments || !Array.isArray(fragments) || fragments.length !== manifest.fragments.length
+      || utf8Bytes(stringify(manifest)) > recordBudgetBytes) throw Error('Manifest integrity conflict');
+    identity({ ...manifest, key });
+    const parts = []; let payloadBytes = 0;
+    for (let index = 0; index < fragments.length; index++) {
+      const ref = manifest.fragments[index], row = fragments[index];
+      const id = fragmentId(key, manifest.attempt, index);
+      if (!row || !same(ref, { id, hash: row.payloadHash, bytes: typeof row.payload === 'string' ? utf8Bytes(row.payload) : -1 })
+        || typeof row.payload !== 'string' || !same(row, { _id: id, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_FRAGMENT',
+          operationId: key, attempt: manifest.attempt, index, payload: row.payload, payloadHash: hash(row.payload) })
+        || utf8Bytes(stringify(row)) > recordBudgetBytes) throw Error('Fragment integrity conflict');
+      parts.push(row.payload); payloadBytes += ref.bytes;
+      if (payloadBytes > maxPlanBytes) throw Error('Segmented plan byte policy');
+    }
+    const payload = parts.join('');
+    if (manifest.planBytes !== utf8Bytes(payload) || manifest.planHash !== hash(payload)) throw Error('Plan hash conflict');
+    const parsed = JSON.parse(payload), normalized = normalize(parsed, key, fragments.map(row => row._id));
+    if (!same(parsed, normalized) || stringify(parsed) !== payload || manifest.writeCount !== normalized.writes.length) throw Error('Prepared plan changed');
+    const expected = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
+      memberId, requestId, attempt: manifest.attempt, baseGeneration: manifest.baseGeneration,
+      planHash: manifest.planHash, planBytes: manifest.planBytes, writeCount: manifest.writeCount, fragments: manifest.fragments };
+    if (!same(manifest, expected)) throw Error('Manifest fields conflict');
+    return normalized;
+  }
+  return { encode, decode, normalize, ids: { journal, lockId, controlId }, policy: { recordBudgetBytes, maxPlanBytes, maxWrites, maxFragments } };
+}
+module.exports = { createSegmentedPlanCodec, utf8Bytes, same, copy };
+
+},
+// domain-scope.cjs sha256:cddb64affc043a9dda5fbf1c60b671f46611d21be8d6cf4797f243bb1df181e7
+"domain-scope.cjs": (load, module) => {
+'use strict';
+
+// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
+// This changes no CMS/employee permission; optional conditional domain plans only.
+function domainCollections(company) {
+  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
+  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
+  throw Error('Known company domain scope required');
+}
+function planCollections(company, domainWrites = false) {
+  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
+  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
+    ...(domainWrites ? domainCollections(company) : [])];
+}
+module.exports = { domainCollections, planCollections };
 
 },
 // borrowing-authority.cjs sha256:91a596aac377f03a1eb79c246a19f9c4a84642be9f6c31df56d4498cb880d744
@@ -1552,23 +1733,140 @@ function createFencedProof({ store, company = 'NCT', newAttempt = randomUUID, do
 module.exports = { createFencedProof };
 
 },
-// domain-scope.cjs sha256:cddb64affc043a9dda5fbf1c60b671f46611d21be8d6cf4797f243bb1df181e7
-"domain-scope.cjs": (load, module) => {
+// segmented-fenced-proof.cjs sha256:dbfbb2e74438de5bfda8616ab177adced523ac32543c175a2206c5185c61ca78
+"segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
-// Exact existing collection map, verified against purchaseProjection.PURCHASE_COLLECTIONS.
-// This changes no CMS/employee permission; optional conditional domain plans only.
-function domainCollections(company) {
-  if (company === 'NCT') return ['NCTOrders', 'NCTTasks', 'PurchaseOrders'];
-  if (company === 'GHR') return ['NCTOrders1', 'NCTTasks1', 'PurchaseOrders'];
-  throw Error('Known company domain scope required');
+// OFFLINE v2 candidate. Same company fence/CAS contract as v1, no live endpoint.
+// Runtime/staging budgets still require actual platform acceptance before activation.
+const randomUUID = () => randomBytes(16).toString('hex');
+const { hash } = load("commit-proof.cjs");
+const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
+function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
+  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32 }) {
+  for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
+    if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
+  }
+  if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
+    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1) throw Error('Bounded execution policy required');
+  const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
+  const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
+  async function readControl() {
+    const row = await store.read(journal, controlId);
+    if (!row || row.company !== company || !row._version || !Number.isSafeInteger(row.generation) || row.generation < 0) throw Error('Control missing or invalid');
+    return row;
+  }
+  async function initialize() { await store.insert(journal, { _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' }); }
+  async function transition(collection, before, after) {
+    try {
+      if (before) await store.compareAndSet(collection, after._id, before._version, copy(after));
+      else await store.insert(collection, copy(after));
+    } catch (error) {
+      if (!same(await store.read(collection, after._id), after)) throw error;
+    }
+    if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
+  }
+  const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
+  async function readSnapshot(readRows) {
+    const before = await readControl();
+    if (before.pending) throw Error('Inventory pending');
+    const rows = await readRows(), after = await readControl();
+    if (after.pending || before._version !== after._version) throw Error('Inventory changed during read');
+    return { generation: after.generation, rows };
+  }
+  async function commit({ requestId, memberId, input, prepare, validate = () => {}, authorize = () => {} }) {
+    if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || typeof memberId !== 'string' || !memberId
+      || typeof prepare !== 'function' || typeof validate !== 'function' || typeof authorize !== 'function') throw Error('Operation identity required');
+    const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT'), attempt = newAttempt();
+    if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
+    // Unknown acquisition is never stolen or auto-removed, including a lost reply.
+    await store.insert(journal, { _id: lockId, company, owner: key, attempt });
+    try {
+      let control = await readControl();
+      if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
+      const prior = await store.read(journal, resultId);
+      let manifest = await store.read(journal, key);
+      if (manifest && (manifest.company !== company || manifest._id !== key || manifest.digest !== digest
+        || manifest.memberId !== memberId || manifest.requestId !== requestId || manifest.stockOperationProtocol !== 2
+        || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0)) throw Error('Operation manifest identity conflict');
+      if (prior && (!manifest || prior.company !== company || prior._id !== resultId || prior.digest !== digest
+        || prior.baseGeneration !== manifest.baseGeneration || prior.stockOperationProtocol !== 2
+        || prior.outcome?.ok !== true || prior.outcome.operationId !== key
+        || prior.outcome.generation !== manifest.baseGeneration + 1
+        || !control.pending && control.generation < prior.outcome.generation)) throw Error('Operation result requires review');
+      await authorize(copy({ control, key, digest, replay: !!manifest, baseGeneration: manifest?.baseGeneration ?? control.generation }));
+      if (prior) {
+        if (control.pending) {
+          if (control.generation !== manifest.baseGeneration || control.pending.planHash !== manifest.planHash
+            || control.pending.phase !== 'FINALIZE' || control.pending.cursor !== manifest.writeCount) throw Error('Result generation conflict');
+          await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
+        }
+        return copy(prior.outcome);
+      }
+      if (!manifest) {
+        if (control.pending) throw Error('Pending manifest missing');
+        const encoded = codec.encode({ key, digest, memberId, requestId, attempt, baseGeneration: control.generation, plan: await prepare() });
+        // Refuse before staging, never silently truncate or pretend this is a measured
+        // production limit. All fragments must be durable before unique root insert.
+        if (encoded.fragments.length > maxStagedFragments) throw Error('Staging capacity requires review');
+        for (const fragment of encoded.fragments) await transition(journal, null, fragment);
+        manifest = encoded.manifest;
+        await transition(journal, null, manifest);
+      }
+      if (manifest.baseGeneration !== control.generation) throw Error('Prepared generation stale');
+      const fragments = [];
+      if (!Array.isArray(manifest.fragments) || manifest.fragments.length > maxStagedFragments) throw Error('Manifest capacity conflict');
+      for (const ref of manifest.fragments) fragments.push(await store.read(journal, ref.id));
+      const plan = codec.decode({ manifest, fragments, key, digest, memberId, requestId });
+      const count = plan.writes.length;
+      if (!control.pending) {
+        const pending = { key, digest, planHash: manifest.planHash, phase: 'BEFORE', cursor: 0, count };
+        const next = nextControl(control, { pending }); await transition(journal, control, next); control = next;
+      }
+      const p = control.pending;
+      if (p.planHash !== manifest.planHash || p.count !== count || !['BEFORE', 'APPLY', 'VERIFY', 'FINALIZE'].includes(p.phase)
+        || !Number.isSafeInteger(p.cursor) || p.cursor < 0 || p.cursor > count
+        || p.phase === 'FINALIZE' && p.cursor !== count) throw Error('Pending progress conflict');
+      let phase = p.phase, cursor = p.cursor, steps = 0;
+      while (steps < stepsPerInvocation && phase !== 'FINALIZE') {
+        if (cursor === count) {
+          phase = phase === 'BEFORE' ? 'APPLY' : phase === 'APPLY' ? 'VERIFY' : 'FINALIZE'; cursor = phase === 'FINALIZE' ? count : 0;
+          // Persist phase boundary BEFORE any following-phase action. Particularly,
+          // an interrupted APPLY cannot accidentally re-enter BEFORE verification.
+          const next = nextControl(control, { pending: { ...p, phase, cursor } });
+          await transition(journal, control, next); control = next;
+          continue;
+        }
+        const change = plan.writes[cursor], current = await store.read(change.collection, change.after._id);
+        if (phase === 'BEFORE') {
+          if (!same(current, change.before)) throw Error('Prepared before-image stale');
+        } else if (phase === 'APPLY') {
+          if (!same(current, change.after)) {
+            if (!same(current, change.before)) throw Error('Write version conflict');
+            await transition(change.collection, change.before, change.after);
+          }
+        } else if (!same(current, change.after)) throw Error('Final image conflict');
+        cursor++; steps++;
+      }
+      // Checkpoint may lag completed row writes after an interruption; replay checks
+      // exact after-images, not blind increments. Never advances before row confirms.
+      if (phase !== control.pending.phase || cursor !== control.pending.cursor) {
+        const next = nextControl(control, { pending: { ...p, phase, cursor } });
+        await transition(journal, control, next); control = next;
+      }
+      if (phase !== 'FINALIZE') return { ok: false, pending: true, phase, completedCount: cursor, totalRecords: count, requestId };
+      await validate(copy(plan));
+      const outcome = { ok: true, operationId: key, generation: manifest.baseGeneration + 1 };
+      await transition(journal, null, { _id: resultId, company, stockOperationProtocol: 2, digest, baseGeneration: manifest.baseGeneration, outcome });
+      await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
+      return outcome;
+    } finally {
+      await store.compareAndRemove(journal, lockId, attempt);
+    }
+  }
+  return { initialize, readControl, readSnapshot, commit, ids: codec.ids, planFormat: 'SEGMENTED_V2' };
 }
-function planCollections(company, domainWrites = false) {
-  if (!['NCT', 'GHR'].includes(company) || typeof domainWrites !== 'boolean') throw Error('Explicit server plan scope required');
-  return [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'StockPositions', 'StockClaims', 'StockProducts',
-    ...(domainWrites ? domainCollections(company) : [])];
-}
-module.exports = { domainCollections, planCollections };
+module.exports = { createSegmentedFencedProof };
 
 }
 };
@@ -1583,4 +1881,5 @@ export const createCurrentWarehouseReceiptSave = load("current-department-saves.
 export const createCurrentBorrowingSave = load("current-department-saves.cjs").createCurrentBorrowingSave;
 export const createSdkConditionalStore = load("sdk-conditional-store.cjs").createSdkConditionalStore;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
+export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;

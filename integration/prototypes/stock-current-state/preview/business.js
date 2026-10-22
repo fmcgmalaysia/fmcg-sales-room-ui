@@ -69,6 +69,16 @@ function validate(state) {
       || tasks.get(relation.borrowerTaskId).customerId === tasks.get(relation.lenderTaskId).customerId) throw Error('Borrowing relation conflict');
     ids.add(relation.id); sequences.add(relation.sequence);
   }
+  // v2 current-state counters survive omission of CLOSED relationship history.
+  // They must be initialized by verified parity, never inferred from a partial list.
+  if (state.lifecycleVersion != null && state.lifecycleVersion !== 2) throw Error('Unknown stock lifecycle');
+  if (state.lifecycleVersion === 2) {
+    if (!positive(state.nextBorrowSequence) || state.relations.some(r => r.sequence >= state.nextBorrowSequence)) throw Error('Borrow sequence checkpoint conflict');
+    for (const source of state.sources) {
+      if (!count(source.borrowRepaidCumulative) || source.borrowRepaidCumulative > source.accepted
+        || sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid)) > source.borrowRepaidCumulative) throw Error('Source repayment checkpoint conflict');
+    }
+  }
   for (const task of state.tasks) {
     if (!Object.hasOwn(state.packingHolds.heldByTask, task.id) || !count(state.packingHolds.heldByTask[task.id])
       || state.packingHolds.heldByTask[task.id] > reserved(state, task.id)) throw Error('Packing task coverage requires review');
@@ -105,7 +115,9 @@ function approveBorrow(before, input) {
       || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id)) throw Error('Insufficient eligible stock, demand or future supply');
     donor.claims[lender] -= input.quantity;
     donor.claims[borrower.id] = (donor.claims[borrower.id] || 0) + input.quantity;
-    const sequence = Math.max(0, ...state.relations.map(r => r.sequence)) + 1;
+    const sequence = state.lifecycleVersion === 2 ? state.nextBorrowSequence : Math.max(0, ...state.relations.map(r => r.sequence)) + 1;
+    if (!positive(sequence) || sequence >= Number.MAX_SAFE_INTEGER) throw Error('Borrow sequence exhausted');
+    if (state.lifecycleVersion === 2) state.nextBorrowSequence++;
     state.relations.push({ id: input.id, sequence, lenderSourceId: donor.id, replacementSourceId: future.id,
       lenderTaskId: lender, borrowerTaskId: borrower.id, quantity: input.quantity, repaid: 0, returned: 0,
       approvedBy: input.approvedBy, reason: input.reason });
@@ -123,11 +135,13 @@ function receive(before, input) {
       const take = Math.min(left, remaining(relation));
       if (take) source.claims[relation.lenderTaskId] = (source.claims[relation.lenderTaskId] || 0) + take;
       relation.repaid += take;
+      if (state.lifecycleVersion === 2) source.borrowRepaidCumulative = sum([source.borrowRepaidCumulative, take]);
       left -= take;
     }
     const owner = state.tasks.find(t => t.id === source.ownerTaskId);
     const need = owner ? owner.requested - owner.dispatched - reserved(state, owner.id) - incoming(state, owner.id) : 0;
-    const repaidFromSource = sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
+    const repaidFromSource = state.lifecycleVersion === 2 ? source.borrowRepaidCumulative
+      : sum(state.relations.filter(r => r.replacementSourceId === source.id).map(r => r.repaid));
     const ownCapacity = owner ? Math.max(0, source.ownerShare - repaidFromSource - (source.claims[owner.id] || 0) - (source.dispatchedByTask?.[owner.id] || 0)) : 0;
     const own = source.receiptPolicy === 'EXPLICIT_ONLY' ? 0 : Math.min(left, need, ownCapacity);
     if (own) source.claims[owner.id] = (source.claims[owner.id] || 0) + own;
@@ -184,6 +198,7 @@ function correctAccepted(before, input) {
     for (const r of state.relations.filter(r => r.replacementSourceId === source.id).sort((a, b) => b.sequence - a.sequence)) {
       const take = removeClaim(r.lenderTaskId, r.repaid);
       r.repaid -= take;
+      if (state.lifecycleVersion === 2) source.borrowRepaidCumulative -= take;
     }
     if (reduction) throw Error('Correction would consume shipped, isolated or unrelated allocations');
     source.onHand -= source.accepted - input.cumulativeAccepted;

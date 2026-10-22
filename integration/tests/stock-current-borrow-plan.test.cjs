@@ -73,6 +73,23 @@ test('approval uses individual current rows, updates CLOSED claim and keeps phys
   assert.equal(transfer.after.details.relation.quantity, 30);
   assert.equal(result.plan.writes.some(w => Object.hasOwn(w.after, 'sources') || Object.hasOwn(w.after, 'tasks')), false);
 });
+
+test('v2sequence and repayment/dispatch counters persist with exact current rows in same plan', async () => {
+  const f = fixture(); Object.assign(f.state, { lifecycleVersion: 2, nextBorrowSequence: 101 });
+  for (const s of f.state.sources) s.borrowRepaidCumulative = 0;
+  Object.assign(f.rows.product, { lifecycleVersion: 2, nextBorrowSequence: 101 });
+  for (const p of f.rows.positions) p.borrowRepaidCumulative = 0;
+  for (const c of f.rows.claims) c.dispatchedCumulative = 0;
+  const m = await memory(f), approved = prepareBorrowApproval(f);
+  const product = approved.plan.writes.find(w => w.collection === 'StockProducts');
+  assert.equal(product.after.nextBorrowSequence, 102); assert.equal(approved.state.relations[0].sequence, 101);
+  assert.equal(approved.plan.writes.find(w => w.collection === 'StockClaims').after.dispatchedCumulative, 0);
+  await m.protocol.commit({ requestId: uuid(1), memberId: 'P1', input: f.input, prepare: async () => approved.plan });
+  const prepared = prepareBorrowingReceipt({ state: approved.state, rows: m.rows(), event: receipt(approved.state, 20), generation: 1 });
+  assert.equal(prepared.plan.writes.find(w => w.collection === 'StockPositions' && w.after.sourceTaskId === 'S-A').after.borrowRepaidCumulative, 20);
+  const corrupt = copy(m.rows()); corrupt.positions[0].borrowRepaidCumulative = 1;
+  assert.throws(() => prepareBorrowingReceipt({ state: approved.state, rows: corrupt, event: receipt(approved.state, 20), generation: 1 }), /repayment snapshot/);
+});
 test('approval, receipt20, receipt100 share existing conditional protocol and retain one transfer record', async () => {
   const f = fixture(), m = await memory(f), approved = prepareBorrowApproval(f);
   await m.protocol.commit({ requestId: uuid(1), memberId: 'P1', input: f.input, prepare: async () => approved.plan });

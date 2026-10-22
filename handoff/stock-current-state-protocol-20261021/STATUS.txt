@@ -520,3 +520,13 @@ protocol and concrete failure acceptance are established.
 Recovery
 Only new isolated files were added; existing tracked business files must match d447185.
 No data rollback needed because no CMS writes occurred. Do not delete user untracked files.
+2026-10-22 CONTINUATION: user returned Sol High; segmented codec/fenced v2 candidate
+implemented. Read SEGMENTED_PROTOCOL.txt and ASTRA_PRODUCTION_DECISION.txt.37new
+targeted tests pass; not production capacity acceptance. ACTIVE remains OFF, actual
+writers/read lifecycle/migration/recovery/platform gates still incomplete; no publish.
+
+2026-10-22 LATEST: lifecycle v2 repayment/high-water/claim-dispatch checkpoints and
+actual original300line receipt over segmented in-memory protocol implemented. See
+LIFECYCLE_COUNTERS.txt. This is still candidate, NOT actual all-writer/production capacity
+completion. No live stock enabled or publication. Next scoped current reader/deltas.
+

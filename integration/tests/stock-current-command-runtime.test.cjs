@@ -4,24 +4,24 @@ const folder = path.join(__dirname, '../prototypes/stock-current-state');
 function runtime() {
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
   return vm.runInNewContext('(function(){' + source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
-    + '\nreturn {createCurrentStockSave,createCurrentWarehouseReceiptSave,createCurrentBorrowingSave,createSdkConditionalStore,createFencedProof,planCollections};})()',
+    + '\nreturn {createCurrentStockSave,createCurrentWarehouseReceiptSave,createCurrentBorrowingSave,createSdkConditionalStore,createFencedProof,createSegmentedFencedProof,planCollections};})()',
   { createHash: crypto.createHash, randomBytes: crypto.randomBytes, Buffer });
 }
 test('Wix-compatible command runtime is exact scoped source, without second protocol or public route', () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-current-command-runtime.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8'), api = runtime();
-  assert.equal(Object.keys(api).length, 6); assert.equal(/require\(|webMethod\(|Permissions\.|from ['"]wix-auth|from ['"]@wix\/data/.test(source), false);
+  assert.equal(Object.keys(api).length, 7); assert.equal(/require\(|webMethod\(|Permissions\.|from ['"]wix-auth|from ['"]@wix\/data/.test(source), false);
   assert.equal(source.includes('function createCommitProof'), false); assert.equal(source.includes('function createFencedProof'), true);
   assert.deepEqual([...api.planCollections('NCT')], ['NCTActivity', 'StockPositions', 'StockClaims', 'StockProducts']);
   for (const name of ['createCurrentStockSave', 'createCurrentWarehouseReceiptSave', 'createCurrentBorrowingSave', 'createSdkConditionalStore']) assert.throws(() => api[name]({}), /required|scope/);
 });
-test('generated current coordinator replays once, reauthorizes and cannot bypass default writer coverage', async () => {
+for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;
   const store = { read: async (c, id) => copy(rows.get(c + ':' + id) || null), insert: async (c, row) => {
     if (rows.has(c + ':' + row._id)) throw Error('Duplicate'); rows.set(c + ':' + row._id, copy(row)); return copy(row);
   }, compareAndSet: async (c, id, version, row) => { if (rows.get(c + ':' + id)?._version !== version) throw Error('Conflict'); rows.set(c + ':' + id, copy(row)); return copy(row); },
   compareAndRemove: async (c, id, attempt) => { if (rows.get(c + ':' + id)?.attempt !== attempt) throw Error('Wrong attempt'); rows.delete(c + ':' + id); } };
-  const protocol = api.createFencedProof({ store }); await protocol.initialize();
+  const protocol = api[protocolName]({ store }); await protocol.initialize();
   const control = rows.get(protocol.ids.journal + ':' + protocol.ids.controlId); Object.assign(control, { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
   const coverage = Object.fromEntries(require('../prototypes/stock-current-state/stock-admission.cjs').WRITERS.map(name => [name, { verified: true, build: 'TEST' }]));
   const deps = { company: 'NCT', writer: 'RECEIPT', protocol, coverage, authenticate: async () => { authorized++; return { memberId: 'M' }; }, prepare: async () => {

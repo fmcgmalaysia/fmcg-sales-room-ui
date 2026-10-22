@@ -29,6 +29,13 @@ function createCurrentStockSave({ company, writer, authenticate, protocol, prepa
         if (prepared?.memberId !== actor.memberId || prepared.generation !== admittedGeneration || !prepared.plan) throw Error('Prepared authority/generation changed');
         return prepared.plan;
       } });
+    if (result?.ok === false && result.pending === true && result.requestId === request.requestId
+      && ['BEFORE', 'APPLY', 'VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
+      && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0
+      && result.completedCount >= 0 && result.completedCount <= result.totalRecords) {
+      return { ok: false, pending: true, requestId: request.requestId, phase: result.phase,
+        completedCount: result.completedCount, totalRecords: result.totalRecords };
+    }
     if (result?.ok !== true || !Number.isSafeInteger(result.generation) || result.generation < 1) throw Error('Current stock result unconfirmed');
     return { ok: true, requestId: request.requestId, stockGeneration: result.generation };
   };

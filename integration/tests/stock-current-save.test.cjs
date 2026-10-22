@@ -35,6 +35,23 @@ test('every replay uses original department permission, once-only plan and publi
   assert.deepEqual(f.counts(), { preparations: 1, authentications: 2 }); assert.equal(f.control().generation, 1);
   f.revoke(); await assert.rejects(save(f.request), /approved|authorized/i); assert.equal(f.counts().preparations, 1);
 });
+
+test('segmented save exposes bounded progress, keeps original envelope and prepares only once', async () => {
+  const f = await fixture();
+  f.deps.protocol = require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({
+    store: f.protocol.store || { read: async (c, id) => copy(f.rows.get(c + ':' + id) || null),
+      insert: async (c, row) => { const id = c + ':' + row._id; if (f.rows.has(id)) throw Error('Duplicate'); f.rows.set(id, copy(row)); },
+      compareAndSet: async (c, id, version, row) => { if (f.rows.get(c + ':' + id)?._version !== version) throw Error('Conflict'); f.rows.set(c + ':' + id, copy(row)); },
+      compareAndRemove: async (c, id, attempt) => { if (f.rows.get(c + ':' + id)?.attempt !== attempt) throw Error('Wrong attempt'); f.rows.delete(c + ':' + id); } },
+    stepsPerInvocation: 1 });
+  const save = createCurrentStockSave(f.deps);
+  const results = [];
+  for (let i = 0; i < 5; i++) { const result = await save(f.request); results.push(result); if (result.ok) break; }
+  assert.equal(results.at(-1).stockGeneration, 1); assert.equal(results.at(-1).ok, true);
+  assert.deepEqual(results.filter(r => r.pending).map(r => r.phase), ['BEFORE', 'APPLY', 'VERIFY']);
+  assert.equal(f.counts().preparations, 1); assert.equal(f.control().pending, null);
+  assert.equal(JSON.stringify(results).includes('operationId'), false);
+});
 test('exact interrupted request resumes under owned fence despite pending; no second preparation', async () => {
   const f = await fixture(), save = createCurrentStockSave(f.deps); f.interrupt();
   await assert.rejects(save(f.request), /Interrupted/); assert.ok(f.control().pending);

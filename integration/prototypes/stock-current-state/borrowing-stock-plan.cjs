@@ -42,9 +42,11 @@ function mapTransition({ before, after, rows, event, generation }) {
   const summary = state => ({ onHand: total(state.sources.map(s => s.onHand)), isolated: total(state.sources.map(s => s.isolated)),
     reservedUsable: total(state.sources.map(sumClaims)), available: total(state.sources.map(s => s.available)) });
   const beforeTotals = summary(before), productId = hash(company, key), product = rows.product;
+  if (before.lifecycleVersion !== after.lifecycleVersion) throw Error('Lifecycle migration is not a business save');
   if (product) {
     checkRow(product, company, productId, key);
     if (product.revision !== before.revision || !Object.keys(beforeTotals).every(k => product[k] === beforeTotals[k])) throw Error('Product snapshot conflict');
+    if (before.lifecycleVersion === 2 && (product.lifecycleVersion !== 2 || product.nextBorrowSequence !== before.nextBorrowSequence)) throw Error('Product lifecycle checkpoint conflict');
   } else if (before.revision !== 0 || Object.values(beforeTotals).some(n => n !== 0)) throw Error('Product snapshot missing');
   for (const source of before.sources) {
     const next = after.sources.find(s => s.id === source.id), id = hash(company, key, 'PURCHASE_SOURCE', source.id), old = positions.get(id) || null;
@@ -56,6 +58,7 @@ function mapTransition({ before, after, rows, event, generation }) {
         || old.dispatched !== total(Object.values(source.dispatchedByTask || {}))
         || old.onHand !== source.onHand || old.isolated !== source.isolated
         || old.available !== source.available || old.reservedUsable !== sumClaims(source)) throw Error('Source snapshot conflict');
+      if (before.lifecycleVersion === 2 && old.borrowRepaidCumulative !== source.borrowRepaidCumulative) throw Error('Source repayment snapshot conflict');
     } else if (source.accepted !== 0 || source.onHand !== 0 || sumClaims(source) !== 0) throw Error('Source snapshot missing');
     const positionChanged = !same(source, next);
     if (positionChanged) {
@@ -64,6 +67,7 @@ function mapTransition({ before, after, rows, event, generation }) {
         poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
       writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId, receiptAccepted: next.accepted,
         replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
+        ...(after.lifecycleVersion === 2 ? { borrowRepaidCumulative: next.borrowRepaidCumulative } : {}),
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,
         available: next.available, reservedUsable: sumClaims(next), revision: (old?.revision || 0) + 1,
         checkpointGeneration: generation + 1, status: next.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
@@ -78,12 +82,14 @@ function mapTransition({ before, after, rows, event, generation }) {
         consumedClaims.add(claimId); checkRow(oldClaim, company, claimId, key);
         if (oldClaim.positionId !== id || oldClaim.taskId !== taskId || oldClaim.customerId !== task.customerId
           || oldClaim.reservedUsable !== prior || oldClaim.isolatedAttributed !== 0) throw Error('Claim snapshot conflict');
+        if (before.lifecycleVersion === 2 && oldClaim.dispatchedCumulative !== (source.dispatchedByTask?.[taskId] || 0)) throw Error('Claim dispatch snapshot conflict');
       } else if (prior !== 0) throw Error('Claim snapshot missing');
-      if (quantity === prior) continue;
+      if (quantity === prior && (source.dispatchedByTask?.[taskId] || 0) === (next.dispatchedByTask?.[taskId] || 0)) continue;
       const base = oldClaim || { _id: claimId, schemaVersion: 1, company, stockKey: key, positionId: id,
         taskId, customerId: task.customerId, orderId: task.orderId || '', sourceLineId: task.sourceLineId || '',
         isolatedAttributed: 0, reviewCodes: [] };
       writes.push({ collection: 'StockClaims', before: copy(oldClaim), after: { ...copy(base), reservedUsable: quantity,
+        ...(after.lifecycleVersion === 2 ? { dispatchedCumulative: next.dispatchedByTask?.[taskId] || 0 } : {}),
         revision: (oldClaim?.revision || 0) + 1, checkpointGeneration: generation + 1, status: quantity === 0 ? 'CLOSED' : 'ACTIVE' } });
     }
   }
@@ -107,6 +113,7 @@ function mapTransition({ before, after, rows, event, generation }) {
   writes.push({ collection: 'StockProducts', before: copy(product || null), after: { ...(product || { _id: productId,
     schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing, ea: before.ea, name: before.name || '' }),
     ...totals, revision: before.revision + 1, checkpointGeneration: generation + 1, reviewRequired: false,
+    ...(after.lifecycleVersion === 2 ? { lifecycleVersion: 2, nextBorrowSequence: after.nextBorrowSequence } : {}),
     status: totals.onHand === 0 ? 'CLOSED' : 'ACTIVE' } });
   const identities = writes.map(w => w.collection + ':' + w.after._id);
   if (new Set(identities).size !== writes.length || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Borrowing plan exceeds atomic proof bound');

@@ -20,7 +20,7 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
     });
-    return { ...prepareWarehouseReceipt({ ...snapshot.rows, generation: snapshot.generation }),
+    return { ...prepareWarehouseReceipt({ ...snapshot.rows, generation: snapshot.generation, planFormat: protocol.planFormat || 'PROOF_V1' }),
       memberId: snapshot.rows.memberId, generation: snapshot.generation, metrics };
   };
 }
