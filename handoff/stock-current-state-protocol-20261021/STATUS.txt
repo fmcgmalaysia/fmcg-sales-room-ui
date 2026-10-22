@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 DURABLE WORKSPACE ORCHESTRATION: PURCHASE_WORKSPACE_REFRESH_RESUME.txt.
+Original own-session cache retains each GP request BEFORE first save; multiple groups
+replace only confirmed prior GP request. Completed other operations reconcile ORIGINAL
+drafts via explicitly hidden, same-generation public snapshot (all GP unknown), never
+rendered. Already-open workspace restores last staged request before original finishSave;
+unresolved refresh blocks new writes/navigation/company change.727currentpass0fail
+6805.5655ms. Original UI118/119 with SAME known staff-suffix baseline failure. Production
+exact; native/remainingwriter/read/file/recovery/capacity/init/cutover/shadow/fourrelease
+remain OPEN. No actual installation, business mutation or publication; ACTIVE OFF.
+
 2026-10-22 CURRENT WORKSPACE ROOT: PURCHASE_CURRENT_WORKSPACE_READ.txt. Actual-import
 read-only current root now composes current inventory/split view, original GP/progress/
 short names and complete outstanding halos; returns metadata-only refresh suggestion

@@ -26,7 +26,7 @@ function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, r
       const currencies=await collectMarginCurrencies({company,tables,workspace,createPurchaseMarginRefresh,now});
       let rates;
       const currentRates=()=>rates||(rates=Promise.resolve().then(()=>readRates(currencies)));
-      const margins=new Map();
+      const margins=new Map();let refreshTaskId=null;
       for (const target of workspace.tasks.filter(row=>!row.procurementSource)) {
         const group=workspace.tasks.filter(row=>row.id===target.id||row.customerDemandTaskId===target.id);
         const allowed=new Set([target.id,...group.map(row=>'SOURCE:'+row.id)]);
@@ -34,10 +34,7 @@ function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, r
           tables:Object.fromEntries([orders,tasks,journal].map(collection=>[collection,tables[collection]])),
           createPurchaseMarginRefresh,readRates:currentRates,now});
         if (prepared.results.some(row=>!allowed.has(row[0])||row[1]!==null&&(typeof row[1]!=='number'||!Number.isFinite(row[1])))) throw Error('Known original Purchase margins required');
-        if (prepared.mustCommit) return {schema:'PURCHASE_MARGIN_REFRESH_REQUIRED_V1',company,taskId:target.id,
-          staff:{staffId:staff.staffId,memberId:staff.memberId,staffName:staff.staffName},
-          stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:control.writerBuild,
-            stockGeneration:control.generation,generation:control.generation}};
+        if (prepared.mustCommit) {refreshTaskId=target.id;break;}
         for (const [id,gp] of prepared.results) {
           if(margins.has(id))throw Error('Ambiguous original Purchase margin group');margins.set(id,gp);
         }
@@ -48,13 +45,19 @@ function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, r
       if(!Array.isArray(names))throw Error('Original customer short names required');
       const result={...copy(workspace),customerNamesError,
         customers:workspace.customers.map(row=>({...copy(row),shortName:names.find(item=>item.customerId===row.id)?.shortName||''})),
-        tasks:workspace.tasks.map(row=>({...copy(row),gp:margins.get(row.id)??null,sourceGp:margins.get('SOURCE:'+row.id)??null}))};
+        tasks:workspace.tasks.map(row=>({...copy(row),gp:refreshTaskId?null:margins.get(row.id)??null,sourceGp:refreshTaskId?null:margins.get('SOURCE:'+row.id)??null}))};
       const purchaseOrders=projectPurchaseOrders({company,workspace:result,records:tables.PurchaseOrders});
       applyPurchaseProgress(result,tables[journal],purchaseOrders);
       // Original archived/stage decisions above remain untouched; relation loading
       // is independent and may still put halos on either archived participant.
-      return createPurchaseTransferWorkspace({company,protocol,authenticate:async()=>staff,
+      const completed=await createPurchaseTransferWorkspace({company,protocol,authenticate:async()=>staff,
         readWorkspace:async()=>result,readOutstanding:(c,input)=>readOutstanding(c,input,staff)})(company);
+      if(refreshTaskId)return {schema:'PURCHASE_MARGIN_REFRESH_REQUIRED_V1',company,taskId:refreshTaskId,
+        staff:{staffId:staff.staffId,memberId:staff.memberId,staffName:staff.staffName},stockCurrent:completed.stockCurrent,
+        // Not renderable/actionable. Only ORIGINAL draft reconciliation may use
+        // these current public fields after its exact completed save receipt.
+        reconciliationWorkspace:{...completed,stockReconciliationOnly:true}};
+      return completed;
     });
     return snapshot.rows;
   };

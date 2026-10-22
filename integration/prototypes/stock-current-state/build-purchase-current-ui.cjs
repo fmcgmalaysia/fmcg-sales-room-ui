@@ -6,7 +6,7 @@ function once(before, after) {
   if (source.split(before).length !== 2) throw Error('Exact Purchase current UI anchor changed: ' + before.slice(0, 70));
   source = source.replace(before, () => after);
 }
-once('  function saveButtonState(busy)', `  let currentSegmentSerial=0,currentResumeCleanup=null,currentRecoveredReceipt=null;
+once('  function saveButtonState(busy)', `  let currentSegmentSerial=0,currentResumeCleanup=null,currentRecoveredReceipt=null,currentWorkspaceUpdating=false;
   function mountCurrentResume(){
     if(savePending||!window.purchaseCurrentResume)return;
     currentResumeCleanup?.();
@@ -22,14 +22,50 @@ once('  function saveButtonState(busy)', `  let currentSegmentSerial=0,currentRe
       ||JSON.stringify(savePending)!==JSON.stringify(receipt.request))return;
     const original=savePending;setTimeout(()=>{if(savePending===original)finishSave(receipt.result);},0);
   }
+  function reconcileHiddenCurrentSave(packet){
+    const receipt=currentRecoveredReceipt,snapshot=packet.reconciliationWorkspace;
+    if(!receipt||receipt.request.operation==='MARGIN_REFRESH'||!snapshot?.stockReconciliationOnly||snapshot.company!==company
+      ||snapshot.staff?.staffId!==receipt.staff.staffId||snapshot.staff?.memberId!==receipt.staff.memberId
+      ||snapshot.stockCurrent?.stockProtocol!==1||snapshot.stockCurrent.stockBuild!==receipt.request.stockBuild
+      ||!Number.isSafeInteger(snapshot.stockCurrent.stockGeneration)||snapshot.stockCurrent.stockGeneration<receipt.result.stockGeneration
+      ||savePending&&JSON.stringify(savePending)!==JSON.stringify(receipt.request))return false;
+    const key='fmcg-purchase-draft-v1/'+company+'/'+snapshot.staff.staffId+'/'+snapshot.staff.memberId;
+    try{if(JSON.stringify(JSON.parse(sessionStorage.getItem(key)||'null')?.savePending)!==JSON.stringify(receipt.request))return false;
+      const before=data;try{data=snapshot;draftKey=key;restoredDraft=false;restoreDraft();
+        if(JSON.stringify(savePending)!==JSON.stringify(receipt.request))return false;
+        currentRecoveredReceipt=null;finishSave(receipt.result);return true;
+      }finally{if(data===snapshot)data=before;}
+    }catch(_){showStatus('Original save reconciliation unconfirmed. 原保存核对尚未确认，缓存保留。',true);return false;}
+  }
+  function handleMarginRefresh(packet){
+    if(reconcileHiddenCurrentSave(packet))return;
+    currentWorkspaceUpdating=true;data=null;poData=null;
+    document.querySelector('#companySelect').disabled=true;
+    currentResumeCleanup?.();currentResumeCleanup=null;
+    app.innerHTML='<div class="live-empty">Updating Master records 正在更新资料…</div>';
+    showStatus('Updating Master records. Original drafts are retained. 正在更新资料，原草稿保留。');
+    if(!window.purchaseCurrentResume?.stageMargin){showStatus('Current workspace update unavailable. 请刷新核对当前工作台版本。',true);return;}
+    currentResumeCleanup=window.purchaseCurrentResume.stageMargin({packet,priorReceipt:currentRecoveredReceipt,company,host:app,read:readOperation,esc,
+      send:request=>window.parent.postMessage(request,'*'),lockCompany:()=>{document.querySelector('#companySelect').disabled=true;},
+      receipt:receipt=>{currentRecoveredReceipt=receipt;request();}});
+  }
   function saveButtonState(busy)`);
 once('    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet };',
   '    if(!quiet){currentResumeCleanup?.();currentResumeCleanup=null;}\n    const requestId = crypto.randomUUID(); pending = { requestId, company, quiet };');
 once("+'</div>'; return; }\n    const result = message.workspace;",
   "+'</div>'; mountCurrentResume(); return; }\n    const result = message.workspace;");
 once('render();allocationUi()?.receivedWorkspace();', 'render();allocationUi()?.receivedWorkspace();finishCurrentResume(result);');
+once('    const result = message.workspace;',"    const result = message.workspace;\n    if(result?.schema==='PURCHASE_MARGIN_REFRESH_REQUIRED_V1'){handleMarginRefresh(result);return;}");
+once("    if (result?.company !== company || !Array.isArray(result.tasks)",
+  "    if (result?.stockReconciliationOnly===true || result?.company !== company || !Array.isArray(result.tasks)");
 once('    data = result;if(!quiet)poData=null;',
-  '    currentResumeCleanup?.();currentResumeCleanup=null;\n    data = result;if(!quiet)poData=null;');
+  '    currentResumeCleanup?.();currentResumeCleanup=null;currentWorkspaceUpdating=false;\n    if(currentRecoveredReceipt)restoredDraft=false;\n    data = result;if(!quiet)poData=null;');
+once('  function mutate(kind,args){if(savePending)',
+  "  function mutate(kind,args){if(currentWorkspaceUpdating){showStatus('Workspace update pending. Original drafts retained. 工作台更新中，原草稿保留。',true);return;}if(savePending)");
+once("    const control=event.target.closest('button');if(!control)return;",
+  "    const control=event.target.closest('button');if(!control)return;\n    if(currentWorkspaceUpdating&&!['refresh','masterLogin','closeModal'].includes(control.id)){showStatus('Workspace update pending 工作台更新中，请稍候。',true);return;}");
+once("event=>{if(costRetry||savePending||drafts.size||sequenceDraft||allocationUi()?.dirty()){event.target.value=company;",
+  "event=>{if(currentWorkspaceUpdating||costRetry||savePending||drafts.size||sequenceDraft||allocationUi()?.dirty()){event.target.value=company;");
 once("const current=savePending;readOperation('PURCHASE_SAVE_CHECK_REQUEST'",
   "const current=savePending;if(current.stockProtocol===1){checkSaveReceipt(current);return;}readOperation('PURCHASE_SAVE_CHECK_REQUEST'");
 once("    else if(view==='stock') app.innerHTML=expectedStock();", `    else if(view==='borrowing'){

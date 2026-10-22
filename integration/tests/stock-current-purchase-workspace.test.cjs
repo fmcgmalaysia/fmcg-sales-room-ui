@@ -34,11 +34,13 @@ test('both companies return same-generation original GP/progress/names plus halo
   }
 });
 
-test('needed GP cache refresh returns only exact authenticated request suggestion, never draft GP/FX/private workspace or writes',async()=>{
+test('needed GP refresh never returns draft GP/FX or writes; reconciliation snapshot is explicitly non-renderable with unknown GP',async()=>{
   const f=fixture();f.order.gp=0.1;const before=JSON.stringify(f.tables),result=await f.read();
   assert.equal(result.schema,'PURCHASE_MARGIN_REFRESH_REQUIRED_V1');assert.equal(result.taskId,'T');assert.equal(result.staff.memberId,'M');
   assert.equal(result.stockCurrent.stockGeneration,4);assert.equal(Object.hasOwn(result,'tasks'),false);assert.equal(Object.hasOwn(result,'results'),false);
-  assert.equal(JSON.stringify(result).includes('rateToMyr'),false);assert.equal(f.calls.includes('RELATIONS'),false);assert.equal(JSON.stringify(f.tables),before);
+  assert.equal(JSON.stringify(result).includes('rateToMyr'),false);assert.equal(f.calls.includes('RELATIONS'),true);assert.equal(JSON.stringify(f.tables),before);
+  assert.equal(result.reconciliationWorkspace.stockReconciliationOnly,true);assert.equal(result.reconciliationWorkspace.stockCurrent.stockGeneration,4);
+  assert.equal(result.reconciliationWorkspace.tasks[0].gp,null);assert.equal(result.reconciliationWorkspace.tasks[0].sourceGp,null);
 });
 
 test('one ORIGINAL open-currency snapshot excludes an old locked currency instead of suppressing valid current GP',async()=>{
