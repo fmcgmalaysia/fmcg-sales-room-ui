@@ -5,6 +5,26 @@ const icon=n=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+paths[n]+'
 function stamp(v){const d=new Date(v);return v&&Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(d).replaceAll('/','-').replace(',',''):'—';}
 const validCbm=v=>typeof v==='number'&&Number.isFinite(v)&&v>0;
 let cbmRequest=null,cbmTimer,currentPreparation=null,preparationStaff=null,preparationSerial=0,preparationRecovery=0,preparationConfirmedGeneration=null;
+let cbmRetained=false,cbmSerial=0,cbmStaff=null;
+function restoreCbm(staff,request){
+ if(!request||pending||saving||dialog.open||cbmRetained)return;
+ cbmRequest=JSON.parse(JSON.stringify(request));cbmStaff=staff;cbmRetained=true;
+ modal('Pending CBM 待确认体积','Resume CBM 继续核对','<p id="whCbmValue">CBM: —</p><p>Retry the original request. Do not capture again.<br>请重试原请求，不要重复抓取。</p>','Retry 重试',fetchCbm);dialog.classList.add('wh-cbm');
+}
+function currentCbmResult(message){
+ if(cbmRequest?.stockProtocol!==1)return false;
+ const original=cbmRequest,result=message.result;
+ if(message.ok&&result?.ok===false&&result.pending===true&&result.requestId===original.requestId&&saving&&['BEFORE','APPLY','VERIFY'].includes(result.phase)&&Number.isSafeInteger(result.completedCount)&&Number.isSafeInteger(result.totalRecords)&&result.totalRecords>0&&result.completedCount>=0&&result.completedCount<=result.totalRecords){
+  clearTimeout(cbmTimer);saving=false;setBusy();$('whInfo').textContent='Saving 保存中… '+result.completedCount+' / '+result.totalRecords;const segment=cbmSerial;
+  setTimeout(()=>{if(cbmRequest===original&&!saving&&segment===cbmSerial)fetchCbm();},250);return true;
+ }
+ clearTimeout(cbmTimer);cbmSerial++;saving=false;setBusy();
+ if(!(message.ok&&result?.ok===true&&result.requestId===original.requestId&&result.company===original.company&&result.taskId===original.taskId&&validCbm(result.cbmPerCtn)&&Number.isSafeInteger(result.stockGeneration)&&(result.retained===true?result.stockGeneration>=original.stockGeneration:result.stockGeneration>original.stockGeneration))){
+  error('CBM result unconfirmed. Retry the original request. 体积结果尚未确认，请重试原请求。');$('whInfo').textContent='';return true;
+ }
+ try{window.warehouseCurrentCbm.clear(original,cbmStaff);}catch(_){error('CBM confirmed; cache cleanup pending. Retry original request. 体积已确认，暂存清理待核对，请重试原请求。');return true;}
+ cbmRetained=false;preparationConfirmedGeneration=result.stockGeneration;return false;
+}
 function restorePreparation(staff,request){
  if(!request||pending||saving||dialog.open)return;
  pending=JSON.parse(JSON.stringify(request));preparationStaff=staff;resume();
@@ -14,7 +34,7 @@ function recoverPreparation(value,handlers){
  const attempt=++preparationRecovery;
  window.warehouseCurrentPreparation.recover(value).then(result=>{
   if(attempt!==preparationRecovery||pending||saving||dialog.open||company!==value)return;
-  callbacks=handlers;restorePreparation(result.staff,result.request);
+  callbacks=handlers;if(result.request)restorePreparation(result.staff,result.request);else restoreCbm(result.staff,window.warehouseCurrentCbm?.pending(value,result.staff));
  }).catch(()=>{if(attempt===preparationRecovery&&company===value){callbacks=handlers;modal('Preparation recovery 备货恢复','Identity check required 请核对员工登录','<p>Original preparation recovery is unconfirmed. Keep this tab and refresh after checking login.<br>原备货恢复尚未确认，请保留此页，核对登录后再刷新。</p>');}});
 }
 function currentPreparationResult(message){
@@ -34,8 +54,8 @@ function currentPreparationResult(message){
 const companyName=()=>company==='GHR'?'Global HR Sdn. Bhd.':'North Cape Trading Sdn. Bhd.';
 let company='NCT',data={orders:[],deliveryTasks:[]},callbacks={},filter='',currentView='receiving',pending=null,saving=false,photos=[],target=null,mode='',timer,customerFilter='';
 const dialog=document.createElement('dialog');dialog.id='warehouseAction';dialog.className='wh-action';document.body.appendChild(dialog);
-function modal(title,subtitle,body,saveLabel,save){dialog.classList.remove('wh-cbm');dialog.innerHTML='<div class="dialog-header"><div><strong>'+esc(title)+'</strong><h2>'+esc(subtitle)+'</h2></div><button data-wh-close aria-label="Close">×</button></div><div class="dialog-body">'+body+'<p id="whError" role="alert"></p><p id="whInfo" role="status"></p></div><footer><button data-wh-close>Cancel</button>'+(saveLabel?'<button id="whSave" class="primary">'+esc(saveLabel)+'</button>':'')+'</footer>';dialog.querySelectorAll('[data-wh-close]').forEach(b=>b.onclick=close);if(saveLabel)$('whSave').onclick=save;if(!dialog.open)dialog.showModal();}
-function close(){if(saving||pending){error('Confirm the pending save first. 请先核对待确认的保存。');return;}dialog.close();photos=[];target=null;cbmRequest=null;clearTimeout(cbmTimer);}
+function modal(title,subtitle,body,saveLabel,save){if(cbmRetained&&save!==fetchCbm){error('Confirm the original CBM request first. 请先核对原体积请求。');return;}dialog.classList.remove('wh-cbm');dialog.innerHTML='<div class="dialog-header"><div><strong>'+esc(title)+'</strong><h2>'+esc(subtitle)+'</h2></div><button data-wh-close aria-label="Close">×</button></div><div class="dialog-body">'+body+'<p id="whError" role="alert"></p><p id="whInfo" role="status"></p></div><footer><button data-wh-close>Cancel</button>'+(saveLabel?'<button id="whSave" class="primary">'+esc(saveLabel)+'</button>':'')+'</footer>';dialog.querySelectorAll('[data-wh-close]').forEach(b=>b.onclick=close);if(saveLabel)$('whSave').onclick=save;if(!dialog.open)dialog.showModal();}
+function close(){if(saving||pending||cbmRetained){error('Confirm the pending save first. 请先核对待确认的保存。');return;}dialog.close();photos=[];target=null;cbmRequest=null;clearTimeout(cbmTimer);}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
 function error(v){if($('whError'))$('whError').textContent=v;}
 function incoming(rows,title){
@@ -68,20 +88,26 @@ function picker(){let picker=$('whCustomerPicker');if(!picker){picker=document.c
  picker.querySelectorAll('[data-wh-customer]').forEach(b=>b.onclick=()=>{customerFilter=b.dataset.whCustomer;picker.open=false;callbacks.render();});
 }
 function openCbm(id){
- if(saving||pending)return;const item=data.deliveryTasks.find(i=>i.id===id);if(!item||validCbm(item.cbmPerCtn))return;
+ if(saving||pending||cbmRetained)return;
+ if(preparationConfirmedGeneration!==null){modal('CBM confirmed 体积已确认','Refresh required 请刷新资料','<p>Wait for the updated Warehouse workspace.<br>请先刷新货仓资料。</p>');return;}
+ const item=data.deliveryTasks.find(i=>i.id===id);if(!item||validCbm(item.cbmPerCtn))return;
  cbmRequest={type:'WAREHOUSE_CBM_REQUEST',company,taskId:item.taskId,requestId:crypto.randomUUID()};
+ if(currentPreparation){cbmRequest={...cbmRequest,stockProtocol:1,stockBuild:currentPreparation.stockBuild,stockGeneration:currentPreparation.stockGeneration,stockIdentity:{staffId:preparationStaff.staffId,memberId:preparationStaff.memberId}};cbmStaff=preparationStaff;}
  modal(item.name,'Update CBM 更新体积','<p>'+esc(item.barcode)+'</p><p id="whCbmValue">CBM: —</p><p class="wh-help">Ask Super Admin to update POINTBASE, then fetch CBM.<br>请先通知管理员补齐 POINTBASE，再抓取 CBM。</p>','Fetch CBM 抓取体积',fetchCbm);dialog.classList.add('wh-cbm');
 }
 function fetchCbm(){
- if(saving||!cbmRequest)return;saving=true;setBusy();error('');$('whInfo').textContent='Fetching… 抓取中…';parent.postMessage(cbmRequest,'*');clearTimeout(cbmTimer);
- cbmTimer=setTimeout(()=>{saving=false;setBusy();error('Result unconfirmed. Retry. 结果尚未确认，请重试。');$('whInfo').textContent='';},30000);
+ if(saving||!cbmRequest)return;
+ if(cbmRequest.stockProtocol===1){try{window.warehouseCurrentCbm.retain(cbmRequest,cbmStaff);cbmRetained=true;}catch(_){error('CBM not sent: cache confirmation required. 体积请求尚未发送，请核对浏览器暂存。');return;}}
+ const original=cbmRequest,segment=++cbmSerial;saving=true;setBusy();error('');$('whInfo').textContent='Fetching… 抓取中…';parent.postMessage(cbmRequest,'*');clearTimeout(cbmTimer);
+ cbmTimer=setTimeout(()=>{if(cbmRequest!==original||segment!==cbmSerial)return;saving=false;setBusy();error('Result unconfirmed. Retry. 结果尚未确认，请重试。');$('whInfo').textContent='';},30000);
 }
 window.addEventListener('message',e=>{
  const m=e.data||{};if(e.source!==parent||m.type!=='WAREHOUSE_CBM_RESULT'||m.company!==company||m.requestId!==cbmRequest?.requestId)return;
+ const wasCurrent=cbmRequest.stockProtocol===1;if(currentCbmResult(m))return;
  clearTimeout(cbmTimer);saving=false;setBusy();
  if(m.ok&&m.result?.ok&&validCbm(m.result.cbmPerCtn)){
   data.deliveryTasks.filter(i=>i.taskId===cbmRequest.taskId).forEach(i=>{if(!validCbm(i.cbmPerCtn))i.cbmPerCtn=m.result.cbmPerCtn;});
-  $('whCbmValue').textContent='CBM: '+m.result.cbmPerCtn;$('whInfo').textContent='Saved 已保存';dialog.querySelector('footer [data-wh-close]').textContent='Close 关闭';error('');$('whSave').hidden=true;cbmRequest=null;callbacks.render();
+  $('whCbmValue').textContent='CBM: '+m.result.cbmPerCtn;$('whInfo').textContent='Saved 已保存';dialog.querySelector('footer [data-wh-close]').textContent='Close 关闭';error('');$('whSave').hidden=true;cbmRequest=null;callbacks.render();if(wasCurrent)callbacks.refresh();
  }else{error(m.error||'CBM is still unavailable. CBM 仍然缺失。');$('whInfo').textContent='';}
 });
 function review(id){const r=data.orders.find(r=>r.id===id);modal(r.supplierName,'Review PO 采购单预览','<p>'+esc(r.number)+' · '+esc(r.fullCustomerName||r.customerName)+'</p><p class="wh-help">Read-only current P.O. Confirm any revision with Purchase before unloading.<br>当前采购单只读。卸货前如发现变更，请先向采购确认。</p>'+r.lines.map(l=>'<div class="wh-review-line"><span><small>'+esc(l.barcode)+'</small><b>'+esc(l.name)+'</b><small>'+esc(l.packing)+'</small></span><strong>'+l.planned+' CTN</strong></div>').join(''));}
@@ -101,12 +127,12 @@ function send(){if(saving||!pending)return;
  const original=pending,segment=++preparationSerial;error('');saving=true;setBusy();$('whInfo').textContent='Saving… 保存中…';parent.postMessage(pending,'*');clearTimeout(timer);timer=setTimeout(()=>{if(pending===original&&(pending.stockProtocol!==1||segment===preparationSerial)){saving=false;setBusy();$('whSave').textContent='Retry';error('Save unconfirmed. Retry the same save. 保存尚未确认，请重试同一次保存。');}},30000);}
 function resume(){modal('Pending Save 待确认保存','Resume Save 继续核对','<p>Retry the original save. Do not enter the same work again.<br>请重试原保存，不要重复登记。</p>','Retry',send);}
 window.addEventListener('message',e=>{const m=e.data||{};if(e.source!==parent||m.company!==company||m.type!=='WAREHOUSE_PREPARATION_RESULT'||m.requestId!==pending?.requestId)return;if(currentPreparationResult(m))return;clearTimeout(timer);saving=false;setBusy();if(m.ok&&m.result?.ok){try{sessionStorage.removeItem('warehousePending/'+company);}catch{}pending=null;dialog.close();photos=[];callbacks.refresh();}else{error(m.result?.error||m.error||'Save unconfirmed 保存尚未确认');$('whInfo').textContent='';if(m.result?.retryable===false){pending=null;try{sessionStorage.removeItem('warehousePending/'+company);}catch{}}else $('whSave').textContent='Retry';}});
-window.addEventListener('beforeunload',e=>{if(pending||saving){e.preventDefault();e.returnValue='';}});
-window.warehouseWorkroom={recoverCurrent:recoverPreparation,incoming,cards,delivery,hydrate,isBusy:()=>Boolean(pending||saving||dialog.open),setData(result,value,handlers){data={...result,orders:(result.orders||[]).map(r=>({...r,status:r.workroomStatus||r.status})),deliveryTasks:result.deliveryTasks||[]};if(company!==value&&!pending)preparationConfirmedGeneration=null;company=value;callbacks=handlers;
+window.addEventListener('beforeunload',e=>{if(pending||saving||cbmRetained){e.preventDefault();e.returnValue='';}});
+window.warehouseWorkroom={recoverCurrent:recoverPreparation,incoming,cards,delivery,hydrate,isBusy:()=>Boolean(pending||saving||dialog.open),setData(result,value,handlers){if(cbmRequest?.stockProtocol===1&&(dialog.open||cbmRetained))return;data={...result,orders:(result.orders||[]).map(r=>({...r,status:r.workroomStatus||r.status})),deliveryTasks:result.deliveryTasks||[]};if(company!==value&&!pending)preparationConfirmedGeneration=null;company=value;callbacks=handlers;
  if(result.stockCurrent!==undefined){const meta=result.stockCurrent;
   if(meta.schema!=='CURRENT_WAREHOUSE_V2'||meta.stockProtocol!==1||!meta.stockBuild||!Number.isSafeInteger(meta.stockGeneration)||meta.stockGeneration<0||meta.generation!==meta.stockGeneration||!result.staff?.staffId||!result.staff.memberId)throw Error('Current Warehouse preparation metadata unconfirmed');
   currentPreparation=meta;preparationStaff=result.staff;preparationRecovery++;if(preparationConfirmedGeneration!==null&&meta.stockGeneration>=preparationConfirmedGeneration)preparationConfirmedGeneration=null;
-  if(!pending){const cached=window.warehouseCurrentPreparation.pending(company,preparationStaff);if(cached)restorePreparation(preparationStaff,cached);}
+  if(!pending){const cached=window.warehouseCurrentPreparation.pending(company,preparationStaff);if(cached)restorePreparation(preparationStaff,cached);else restoreCbm(preparationStaff,window.warehouseCurrentCbm?.pending(company,preparationStaff));}
  }else{currentPreparation=null;preparationStaff=null;}
  if(!pending&&!currentPreparation){try{pending=JSON.parse(sessionStorage.getItem('warehousePending/'+company)||'null');}catch{}if(pending)resume();}let caption=$('whCompanyCaption');if(!caption){caption=document.createElement('p');caption.id='whCompanyCaption';document.querySelector('.title-row').after(caption);}caption.textContent=companyName();},resetFilter(){filter='';}};
 })();

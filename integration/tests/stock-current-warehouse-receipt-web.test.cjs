@@ -7,6 +7,7 @@ const {createCurrentWarehouseReceiptSave}=require('../prototypes/stock-current-s
 const {createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter}=require('../prototypes/stock-current-state/current-warehouse-receipt-router.cjs');
 const {createCurrentWarehouseOrdersRead}=require('../prototypes/stock-current-state/current-warehouse-orders-read.cjs');
 const {createCurrentWarehousePreparationSave}=require('../prototypes/stock-current-state/current-warehouse-preparation-save.cjs');
+const {createCurrentWarehouseCbmSave}=require('../prototypes/stock-current-state/current-warehouse-cbm-save.cjs');
 const {createWarehousePhotoFencedStore}=require('../prototypes/stock-current-state/warehouse-photo-fenced-store.cjs');
 const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
 const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
@@ -36,11 +37,11 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       return{items:rows.slice(0,limit),totalCount:rows.length};}};return q;}};
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
-    createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createWarehousePhotoFencedStore,createCurrentPurchaseTables,readCurrentPurchaseProjection,
+    createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createWarehousePhotoFencedStore,createCurrentPurchaseTables,readCurrentPurchaseProjection,
     ...load('../prototypes/stock-current-state/warehousePreparation.candidate.js'),
     ...load('../prototypes/stock-current-state/purchaseProjection.candidate.js'),
     projectWarehouseCustomerReadiness:load('warehouseCustomerReadiness.js').projectWarehouseCustomerReadiness,
-    warehouseCbm:load('warehouseCbm.js').warehouseCbm,readCustomerShortNames:async()=>[],requestPurchaseDocument:async command=>{calls.push(command.action);return{ok:true,fileId:'root-original-file-'+calls.length};},
+    ...load('warehouseCbm.js'),capturePointbaseCosts:async()=>{calls.push('POINTBASE');return{};},readCustomerShortNames:async()=>[],requestPurchaseDocument:async command=>{calls.push(command.action);return{ok:true,fileId:'root-original-file-'+calls.length};},
     Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{assert.equal(permission,'SITE_MEMBER');return fn;},
     currentMember:{getMember:async()=>{calls.push('MEMBER');return f.deps.readMember();}},items,
     fulfilmentStore:{all:async c=>{calls.push(c);if(c==='StaffMasterAccess')return f.deps.readStaffRecords();
@@ -53,7 +54,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
     createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);if(args.stepsPerInvocation===1){assert.notEqual(args.store,store);return createSegmentedFencedProof(args);}return protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
-  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,saveWarehousePreparationCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
+  const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,saveWarehousePreparationCurrent,captureWarehouseCbmCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
   const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0,stockIdentity:{staffId:'W',memberId:'M'}});
   return{...f,db,protocol,api,initial,calls,journal,tasks,bindings};
 }
@@ -163,17 +164,18 @@ test('actual original Warehouse wrapper authenticates before server mode read; A
     const bindings={Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(_grant,fn)=>fn,currentMember:{getMember:async()=>{calls.push('MEMBER');return member;}},
       requireWarehouseStaff:load('warehouseReceiving.js').requireWarehouseStaff,createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter,operationId:hash,
       PURCHASE_COLLECTIONS:{NCT:{activity:'NCTActivity'}},createWarehouseOperations:()=>({save:async()=>{calls.push('LEGACY');return{ok:true,legacy:true};}}),
-      createPreparationOperations:()=>async()=>{calls.push('LEGACY_PREP');return{ok:true,legacyPrep:true};},createWarehouseCbmCapture:()=>()=>{},requestPurchaseDocument:()=>{},capturePointbaseCosts:()=>{},
+      createPreparationOperations:()=>async()=>{calls.push('LEGACY_PREP');return{ok:true,legacyPrep:true};},createWarehouseCbmCapture:()=>async()=>{calls.push('LEGACY_CBM');return{ok:true,legacyCbm:true};},requestPurchaseDocument:()=>{},capturePointbaseCosts:()=>{},
       saveWarehouseReceiptCurrent:async(company,request)=>{calls.push('CURRENT');assert.equal(company,'NCT');return{ok:true,current:true,stockGeneration:request.stockGeneration};},
       getWarehouseOrdersCurrent:async()=>{calls.push('CURRENT_READ');return{current:true};},
       saveWarehousePreparationCurrent:async()=>{calls.push('CURRENT_PREP');return{ok:true,currentPrep:true};},
+      captureWarehouseCbmCurrent:async()=>{calls.push('CURRENT_CBM');return{ok:true,currentCbm:true};},
       projectPurchaseWorkspace:()=>({tasks:[],customers:[],suppliers:[]}),projectPurchaseOrders:()=>[],projectWarehouseOrders:()=>[],
       projectWarehouseCustomerReadiness:()=>[],projectPreparation:()=>[],readCustomerShortNames:async()=>[],
       wixData:{query:c=>{let exact=false;const q={limit:()=>q,eq:(field,id)=>{assert.equal(field,'_id');assert.equal(id,control._id);exact=true;return q;},
         find:async()=>{calls.push(exact?'CONTROL':c==='StaffMasterAccess'?'STAFF':'TABLE');return{items:c==='StaffMasterAccess'?[{title:'W',description:'M',staffName:'Warehouse',staffEmail:member.loginEmail,staffStatus:'ACTIVE',departments:['WAREHOUSE']}]:exact?[control]:[],hasNext:()=>false};}};return q;}}};
     const source=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt,saveWarehousePreparation,getWarehouseOrders};})()',bindings);
-    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined),read:()=>api.getWarehouseOrders('NCT'),prep:()=>api.saveWarehousePreparation('NCT','UUID',{})};
+    const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceipt,saveWarehousePreparation,captureWarehouseCbm,getWarehouseOrders};})()',bindings);
+    return{calls,run:()=>api.saveWarehouseReceipt('NCT','UUID',{},mode==='ACTIVE'?{stockProtocol:1,stockBuild:'TEST',stockGeneration:0}:undefined),read:()=>api.getWarehouseOrders('NCT'),prep:()=>api.saveWarehousePreparation('NCT','UUID',{}),cbm:()=>api.captureWarehouseCbm('NCT','UUID','a'.repeat(32))};
   }
   const active=await invoke('ACTIVE');assert.equal((await active.run()).current,true);assert.deepEqual(active.calls,['MEMBER','STAFF','CONTROL','CURRENT']);
   const legacy=await invoke('LEGACY');assert.equal((await legacy.run()).legacy,true);assert.deepEqual(legacy.calls,['MEMBER','STAFF','CONTROL','LEGACY']);
@@ -182,15 +184,33 @@ test('actual original Warehouse wrapper authenticates before server mode read; A
   const legacyRead=await invoke('LEGACY');assert.equal((await legacyRead.read()).orders.length,0);assert.equal(legacyRead.calls.includes('CURRENT_READ'),false);
   const currentPrep=await invoke('ACTIVE');assert.equal((await currentPrep.prep()).currentPrep,true);assert.deepEqual(currentPrep.calls,['MEMBER','STAFF','CONTROL','CURRENT_PREP']);
   const legacyPrep=await invoke('LEGACY');assert.equal((await legacyPrep.prep()).legacyPrep,true);assert.deepEqual(legacyPrep.calls,['MEMBER','STAFF','CONTROL','LEGACY_PREP']);
+  const currentCbm=await invoke('ACTIVE');assert.equal((await currentCbm.cbm()).currentCbm,true);assert.deepEqual(currentCbm.calls,['MEMBER','STAFF','CONTROL','CURRENT_CBM']);
+  const legacyCbm=await invoke('LEGACY');assert.equal((await legacyCbm.cbm()).legacyCbm,true);assert.deepEqual(legacyCbm.calls,['MEMBER','STAFF','CONTROL','LEGACY_CBM']);
+  const deniedCbm=await invoke('ACTIVE',false);await assert.rejects(deniedCbm.cbm());assert.deepEqual(deniedCbm.calls,['MEMBER','STAFF']);
 });
-test('generated receipt root and minimum wrapper are exact; other original Warehouse read/preparation/CBM paths untouched',()=>{
+test('actual-import CBM root composes original validator and guarded current read; closed coverage cannot read company tables',async()=>{
+ const f=await fixture(),request={...copy(f.initial),input:{taskId:'a'.repeat(32)}};let configuration;
+ f.bindings.createCurrentWarehouseCbmSave=deps=>{configuration=deps;return async command=>{
+  assert.deepEqual(copy(command),request);assert.equal((await deps.authenticateOriginalWarehouse()).staffId,'W');
+  return{ok:false,pending:true,requestId:command.requestId,phase:'BEFORE',completedCount:0,totalRecords:1};
+ };};
+ assert.equal((await f.api.captureWarehouseCbmCurrent('NCT',request)).pending,true);assert.equal(configuration.createWarehouseCbmCapture,f.bindings.createWarehouseCbmCapture);
+ assert.equal(configuration.captureCosts,f.bindings.capturePointbaseCosts);assert.equal(configuration.protocol.planFormat,'SEGMENTED_V2');assert.equal(typeof configuration.readCurrentOrders,'function');
+ const closed=await fixture('NCT',false);assert.equal((await closed.api.captureWarehouseCbmCurrent('NCT',request)).ok,false);
+ assert.equal(closed.calls.includes(closed.tasks),false);assert.equal(closed.calls.includes('POINTBASE'),false);
+ const other=await fixture();assert.equal((await other.api.captureWarehouseCbmCurrent('NCT',{...request,stockIdentity:{staffId:'OTHER',memberId:'M'}})).ok,false);assert.equal(other.calls.includes('SDK'),false);
+ const count=f.calls.length;assert.equal((await f.api.captureWarehouseCbmCurrent('NCT',{...request,approved:true})).ok,false);assert.equal(f.calls.length,count);
+});
+test('generated receipt root and minimum wrappers are exact original bodies after removal of explicit current mode seams',()=>{
   for(const file of ['build-warehouse-receipt-web.cjs','build-warehouse-receipt-route-candidate.cjs'])assert.match(execFileSync(process.execPath,[path.join(folder,file),'--check'],{encoding:'utf8'}),/verified/);
   let candidate=fs.readFileSync(path.join(folder,'warehouseReceiving.web.candidate.js'),'utf8');
-  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
+  candidate=candidate.replace("import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, captureWarehouseCbmCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n",'')
     .replaceAll('async(company,requestId,input,stockCurrent)=>{','async(company,requestId,input)=>{')
     .replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehouseReceiptCurrent,saveLegacy:()=>operations.save({company,staff,requestId,input})})({requestId,input,stockCurrent});",'return await operations.save({company,staff,requestId,input});')
     .replace("  const staff=await staffContext();\n  return createCurrentWarehouseOrdersRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),readCurrent:getWarehouseOrdersCurrent,readLegacy:async()=>{\n  const {orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];",'  const staff=await staffContext(),{orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];')
     .replace('readAt:new Date().toISOString()};\n  }})();\n});','readAt:new Date().toISOString()};\n});');
   candidate=candidate.replace("return await createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:saveWarehousePreparationCurrent,saveLegacy:()=>savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input})})({requestId,input,stockCurrent});",'return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});');
+  candidate=candidate.replace("async(company,requestId,taskId,stockCurrent)=>{const staff=await staffContext();return createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:captureWarehouseCbmCurrent,saveLegacy:()=>captureCbm({company,requestId,taskId,staff})})({requestId,input:{taskId},stockCurrent});}",
+   'async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext()})');
   assert.equal(candidate,fs.readFileSync(path.join(__dirname,'../backend/warehouseReceiving.web.js'),'utf8').replace(/\r\n/g,'\n'));
 });

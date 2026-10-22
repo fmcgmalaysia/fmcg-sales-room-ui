@@ -53,7 +53,7 @@ once(" if(message.type==='WAREHOUSE_RECEIPT_RESULT'&&pending?.requestId===messag
 `);
 new Function(source);
 let html=read('warehouse-room/index.html').replace('<script src="app.js?', '<script src="warehouse-receipt-resume.js?v=20261022-current-receipt-v2"></script><script src="app.js?');
-html=html.replace('<script src="workroom.js?v=20261020-split-controls-v1">','<script src="warehouse-preparation-resume.js?v=20261022-current-preparation-v1"></script><script src="workroom.js?v=20261022-current-preparation-v1">');
+html=html.replace('<script src="workroom.js?v=20261020-split-controls-v1">','<script src="warehouse-preparation-resume.js?v=20261022-current-preparation-v1"></script><script src="warehouse-cbm-resume.js?v=20261022-current-cbm-v1"></script><script src="workroom.js?v=20261022-current-cbm-v1">');
 html=html.replace('<script src="dispatch.js?v=20261018-warehouse-workroom-v1">','<script src="warehouse-dispatch-resume.js?v=20261022-current-dispatch-v1"></script><script src="dispatch.js?v=20261022-current-dispatch-v1">');
 html=html.replaceAll('20261021-packing-v1','20261022-current-receipt-v2').replace('content="2026-10-21-stock-tab-v1"','content="2026-10-22-current-receipt-v2"');
 html=html.replace('packing-list-link.js?v=20261021-packing-company-v1','packing-list-link.js?v=20261022-current-warehouse-v2');

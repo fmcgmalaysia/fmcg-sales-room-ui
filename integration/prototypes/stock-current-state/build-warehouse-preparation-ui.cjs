@@ -1,5 +1,5 @@
 'use strict';
-// Exact original workroom overlay. Original legacy/photo/CBM/render code stays.
+// Exact original workroom overlay. Original legacy/photo/render code stays.
 const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'../../..');
 let source=fs.readFileSync(path.join(root,'warehouse-room/workroom.js'),'utf8').replace(/\r\n/g,'\n');
 function once(before,after){if(source.split(before).length!==2)throw Error('Exact Warehouse preparation UI anchor changed: '+before.slice(0,80));source=source.replace(before,()=>after);}
@@ -46,6 +46,7 @@ once("company=value;callbacks=handlers;if(!pending)",`if(company!==value&&!pendi
   if(!pending){const cached=window.warehouseCurrentPreparation.pending(company,preparationStaff);if(cached)restorePreparation(preparationStaff,cached);}
  }else{currentPreparation=null;preparationStaff=null;}
  if(!pending&&!currentPreparation)`);
+source=require('./warehouse-cbm-ui-overlay.cjs')(source);
 new Function(source);
 const target=path.join(__dirname,'warehouse-ui/workroom.js');
 if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==source)throw Error('Warehouse preparation UI differs');}

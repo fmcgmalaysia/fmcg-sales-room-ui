@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 CBM CURRENT ROOT/CLIENT: WAREHOUSE_CBM_CURRENT_ROOT_AND_UI.txt. Actual
+original CBM-only immutable supplement now private current factory/root + original
+server-mode wrapper/Wix relay/durable own-tab client. Known scalar is zero-row READ,
+not useless CMS receipt/generation bump. Same manifest/identity/UUID replay even when
+event visible; auth-only own recovery, strict final/cache cleanup, no source/price/
+quantity writes or legacy fallback.797currentpass0fail15995.4729ms; independent original
+Warehouse27pass0fail260.8257ms,87modules43exports. Native root composition spy and
+actual original-validator/coordinator tests are separate, no native/UI acceptance.
+Production exact/ACTIVE OFF/coverage EMPTY. Packing/Sales/intake/other actual writers,
+native/init/recovery/capacity/cutover/shadow/SHIPPED-history/fourrelease OPEN. Not published.
+
 2026-10-22 MASTER DISPATCH ROOT/CLIENT: MASTER_DISPATCH_ACTUAL_ROOT_AND_UI.txt.
 Actual private fulfilment root + original TWO-method shared gateway now mode-route
 current read/dispatch, preserve shared consumers/redaction and original invoice/role

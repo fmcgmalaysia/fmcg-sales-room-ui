@@ -1,5 +1,5 @@
 import { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';
-import { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';
+import { saveWarehouseReceiptCurrent, saveWarehousePreparationCurrent, captureWarehouseCbmCurrent, getWarehouseOrdersCurrent } from 'backend/stockCurrentWarehouse.web';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
@@ -56,4 +56,4 @@ export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(com
 });
 
 const captureCbm=createWarehouseCbmCapture({store,names:PURCHASE_COLLECTIONS,readData:readWarehouseData,captureCosts:capturePointbaseCosts});
-export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId)=>captureCbm({company,requestId,taskId,staff:await staffContext()}));
+export const captureWarehouseCbm=webMethod(Permissions.SiteMember,async(company,requestId,taskId,stockCurrent)=>{const staff=await staffContext();return createCurrentWarehouseReceiptRouter({company,readControl:()=>store.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),saveCurrent:captureWarehouseCbmCurrent,saveLegacy:()=>captureCbm({company,requestId,taskId,staff})})({requestId,input:{taskId},stockCurrent});});

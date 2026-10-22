@@ -52,6 +52,8 @@ wix = replace(wix,'await saveWarehouseReceipt(message.company,message.requestId,
   'await saveWarehouseReceipt(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,'await saveWarehousePreparation(message.company,message.requestId,message.input)',
   'await saveWarehousePreparation(message.company,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
+wix = replace(wix,'await captureWarehouseCbm(message.company,message.requestId,message.taskId)',
+  'await captureWarehouseCbm(message.company,message.requestId,message.taskId,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined)');
 wix = replace(wix,"    if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){",[
   "    if(message.type==='WAREHOUSE_DISPATCH_RESUME_REQUEST'){",
   "      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>1000)return;",
