@@ -1,5 +1,22 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 INITIAL V2 SHADOW GAP CLOSED OFFLINE: LIFECYCLE_SHADOW_PARITY.txt.
+Retained counterexamples prove legacy physical-only shadow accepts bad borrow repayment,
+claim dispatch/highwater/lifecycle and truthy nonstring version metadata. New private
+initial-v2 comparator composes same physical/customer check with exact lifetime/task
+counters, raw-task business preservation, independent source/task dispatched sums,
+transfer index and same-maintenance-generation guard. Both NCT/GHR, real partial20/
+fully dispatched CLOSED200claim, empty/unknown/changed/pending/unexpected data tested.
+New metadata preflight company/generation now binds exact captured control (even empty).
+33affectedpass0fail536.6995ms (12new cases). Existing finalFULL1071 retained, NOT1083full
+claim. Runtime/SDK/production install graph unchanged; new helper is pure unused G4
+diagnostic, NOT live validation, migration executor, recovery or activation permission.
+44cc826 prior cache guard confirmed PUSHED PR220. No browser/native/permission/CMS/
+Pages/Wix writes this turn. Protected paths still equald447185. All release gates OPEN.
+NEXT: native unversioned-task conditional initialization/type/capacity proof and safe
+maintenance/bootstrap apply/recovery; current native schema absent and force-unlock
+not allowed. Optional manual AstraHigh G3 question already pending; do not repeat.
+
 2026-10-23 BATCH CACHE CLOSING GUARD: memory<=8MiB plus aggregate input bound before
 helper I/O; counts alone did not bound cached payload. Related13pass then FINAL FULL
 1071pass0fail24419.8851ms. Initial guard13test run5fail due non-exported stringify

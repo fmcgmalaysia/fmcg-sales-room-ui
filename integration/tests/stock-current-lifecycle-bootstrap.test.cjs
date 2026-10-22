@@ -59,3 +59,11 @@ test('candidate nonzero-movement projection avoids storing unrelated zero claims
   assert.equal(report.rows.claims[0].dispatchedCumulative, 20); assert.equal(report.rows.claims[0].reservedUsable, 180);
   assert.equal(report.rows.products.reduce((n, p) => n + p.available, 0), 20);
 });
+test('lifecycle metadata generation is bound to the captured maintenance control even with no physical rows', () => {
+  const f = fixture(), base = stockBootstrapPreflight(f.args);
+  assert.equal(base.company, 'NCT'); assert.equal(base.generation, 0);
+  assert.throws(() => lifecycleBootstrapPreflight({ company: 'NCT', context: f.context, base, taskRows: f.taskRows, generation: 1 }), /Complete original maintenance/);
+  const empty = fixture(); empty.context.tasks = []; empty.taskRows = [];
+  const emptyBase = stockBootstrapPreflight(empty.args);
+  assert.throws(() => lifecycleBootstrapPreflight({ company: 'NCT', context: empty.context, base: emptyBase, taskRows: [], generation: 1 }), /Complete original maintenance/);
+});

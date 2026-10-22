@@ -33,6 +33,12 @@ Use bounded inputs, not another full project scan:
 5 FRESH_DOMAIN_DATE_FIELDS.txt: actual CMS8field definitions, real configuration bug
   witness, same existing codec bound across all roots/recovery.1050offlinepass. Date-
   preserving MOCK adapter is NOT native Wix acceptance; corrupt legacy Date refuses.
+6 LIFECYCLE_SHADOW_PARITY.txt: retained witness proves original physical-only parity
+  accepts incorrect v2 lifetime/highwater/task metadata. New private initial-v2 check
+  composes same balances with exact original task preservation and independent source/
+  task dispatch sums, generation/index/typed versions.33affectedpass; no native/runtime
+  installation or migration executor. Initial transfer relations still refuse legacy
+  rebuilding. Verify future G4 composition uses v2 proof, not legacy-only parity.
 
 Review questions (return evidence/file+line and minimal required correction):
 - UPDATED concrete prerequisite: BATCHED_RECEIPT_READS.txt supersedes pre-batch workload

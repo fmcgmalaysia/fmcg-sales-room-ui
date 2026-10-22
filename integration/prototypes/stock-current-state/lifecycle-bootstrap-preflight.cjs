@@ -8,7 +8,7 @@ const count = n => Number.isSafeInteger(n) && n >= 0;
 // fabricates counters from an incomplete current page. NO database capability.
 function lifecycleBootstrapPreflight({ company, context, base, taskRows, generation }) {
   if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks)
-    || base?.canBootstrap !== true || !base.checkpointId || base.privateProjection?.company !== company
+    || base?.canBootstrap !== true || base.company !== company || base.generation !== generation || !base.checkpointId || base.privateProjection?.company !== company
     || !Array.isArray(base.privateProjection.items) || !Array.isArray(base.rows?.positions) || !Array.isArray(base.rows.claims)
     || !Array.isArray(base.rows.products) || !Array.isArray(taskRows) || !count(generation)) throw Error('Complete original maintenance bootstrap evidence required');
   const raw = new Map(taskRows.map(row => [row._id, row])), tasks = new Map(context.tasks.map(t => [t.id, t]));
@@ -63,7 +63,7 @@ function lifecycleBootstrapPreflight({ company, context, base, taskRows, generat
   const checkpointId = hash(base.checkpointId, 'LIFECYCLE_V2', taskInitializations);
   const rows = Object.fromEntries(Object.entries({ positions, claims, products: productRows }).map(([kind, values]) => [kind,
     values.map(row => ({ ...row, _version: hash(checkpointId, kind, row._id) }))]));
-  return { company, checkpointId, baseCheckpointId: base.checkpointId, canPlan: true,
+  return { company, generation, checkpointId, baseCheckpointId: base.checkpointId, canPlan: true,
     canApply: false, activationReady: false, blockers: [...new Set([...blockers, 'ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED'])],
     rows, taskInitializations, proposedTransferIndexVersion: 2,
     // No immutable prepared plan/endpoint may treat these fields as executable CAS

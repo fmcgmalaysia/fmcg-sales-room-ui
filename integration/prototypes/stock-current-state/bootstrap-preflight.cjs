@@ -54,7 +54,7 @@ function stockBootstrapPreflight({ company, context, purchaseRecords, existing, 
   const projection = projectStockCard({ ...context, tasks }), candidate = convertProjectedStock({ snapshot: projection, tasks, generation: control.generation });
   const rows = Object.fromEntries(['positions', 'claims', 'products'].map(k => [k, candidate[k].map(row => ({ ...row,
     _version: hash(checkpointId, k, row._id) }))]));
-  return { checkpointId, sourceHash, currentHash, controlHash, canBootstrap: true, activationReady: false, blockers: [], rows,
+  return { company, generation: control.generation, checkpointId, sourceHash, currentHash, controlHash, canBootstrap: true, activationReady: false, blockers: [], rows,
     ...(includeProjection ? { privateProjection: copy(projection) } : {}),
     reviewRequired: !candidate.activationReady, counts: Object.fromEntries(Object.entries(rows).map(([k, values]) => [k, values.length])),
     // This is a PRIVATE dry-run parity aid, not evidence that production has been migrated.

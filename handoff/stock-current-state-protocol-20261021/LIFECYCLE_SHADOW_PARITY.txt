@@ -1,0 +1,74 @@
+2026-10-23 — initial current lifecycle shadow proof, candidate only
+
+Objective/evidence
+Review exact existing shadow-parity.cjs and lifecycle-bootstrap-preflight.cjs under
+current G3 packet. Physical/customer fields in the original shadow comparator do not
+include subsequently added source.borrowRepaidCumulative, claim.dispatchedCumulative,
+product.lifecycleVersion/nextBorrowSequence or versioned original task counters. A
+same-total comparison can therefore pass incorrect v2 operational metadata. Tests
+retain that unsafe legacy-only result as a witness, not as a v2 pass or a live fault.
+No production consumer imports these maintenance diagnostics; original paths untouched.
+Recoverypoint44cc826 already pushed, PR220. No native browser/data access this turn.
+
+Implemented minimum separate initial-v2 diagnostic
+lifecycle-shadow-parity.cjs composes the SAME original physical/customer comparison,
+then checks v2 initial counters against the private lifecycle preflight. It does not
+replace daily stock reads, create a second authority, change model/writers, access a
+database, choose a winner or switch mode. It is intentionally not added to production
+command runtime/38target installation manifest until a real G4 operator composition.
+No gateway/role/grant/maintenance entry or executable migration is introduced here.
+
+- Exact complete source/claim/product/task datasets and captured legacy task images.
+- Same private MAINTENANCE/SHADOW generation/control version, no pending; indexV2.
+- Initial source repaid0, claim historical dispatch exact, product lifecycle2/sequence1.
+  Initial-only: existing transfer rows still require relation-aware current checkpoint;
+  the diagnostic refuses to reconstruct or overwrite them from legacy history.
+- Current stock/task versions must be nonempty strings; exact initial checkpoint
+  generation required. Missing, foreign, duplicate or unexpected tasks never disappear.
+- Independently sums dispatched claims by physical source and customer task, including
+  fully dispatched CLOSED claims. Equal corrupt expected/current caches do not suffice.
+- Original raw task business fields (PO, quantities, costs, identity and other payload)
+  remain exact; only known counter/company/version/system-metadata initialization may
+  differ. Canonical private business-image hash avoids false key-order differences.
+- Report has counts/field/reason/IDs/hashes, no private field values, at most100details
+  while counting every difference. Unknown stays Review, empty company stays empty.
+  activationReady ALWAYSfalse even with confirmed initial lifecycle parity.
+
+Related preflight correction
+stockBootstrapPreflight successful report now includes captured company/generation;
+lifecycleBootstrapPreflight requires those exact values and returns the generation.
+Previously its independent generation argument could disagree with the old projection
+checkpoint, producing mixed initialization counters (including an empty company's
+snapshot). New test rejects that mismatch. These remain dry runs with
+ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED; no blocker removed or native CAS asserted.
+
+Verification
+Final affected bootstrap/lifecycle/shadow suites33pass0fail536.6995ms:21existing+12new.
+Both-company complete220physical/free20/200reserved and real-order zero checkpoint;
+historical20partial and200fully CLOSED dispatch; wrong counter/index/generation/raw
+source evidence/stock version/task company/version/PO/cost/quantity; equal wrong caches,
+unknown/empty/pending/changed/ACTIVE/relation rejection;300unexpected-task report bounded.
+Legacy physical-only tests unchanged, production diff againstd447185 empty; whitespace
+check passes. Shared runtime unchanged, so prior full1071pass0fail24419.8851ms reused;
+do not call this a1083full execution or sum repeated affected runs.
+Development failures recorded: first20run18pass2fail exposed noncanonical task business
+hash and an overbroad leak regex also matching a reason code; fixed canonical hash and
+quoted-value assertion. Historical dispatch fixture first omitted original image then
+selected a zero provenance claim with find(); restored original event identity and
+asserted SUM across exact customer claims plus the positive CLOSED provenance. This
+does not relax quantities, original parser or state rules. Final33allpass.
+
+Open release conditions (unchanged)
+Native task version initialization is not proved for missing stockCommitVersion; cannot
+write unversioned original tasks using ordinary versioned CAS by assumption. Actual
+private current collections/types/indexes/native300line/businesswrite/recovery capacity,
+safe admin maintenance/install/apply/recovery, all-writer semantic review, shadow capture
+and single-authority cutover remain. No forced lock stealing/deletion authorization.
+This comparator is not an installer or proof that operational recovery is complete.
+No business user question newly identified; prerequisite is technical/native evidence.
+
+Four release states
+Code: isolated diagnostic increment implemented/tested; overall release not complete.
+GitHub Pages: unchanged, no dispatch. Wix: unchanged this turn, no sync/Publish.
+Public: current inventory/borrowing workflow unavailable/unverified. ACTIVE and real
+invoice/physical exit OFF. Continue existing PR220; no main merge or automation pause.
