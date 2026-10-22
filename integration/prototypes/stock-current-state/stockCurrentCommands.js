@@ -3280,7 +3280,7 @@ function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion,
 module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
 
 },
-// current-warehouse-preparation-save.cjs sha256:d777c0bc6b7f09910af82e90f5a0fd030c275695c580e4ba5399064ddbfd3729
+// current-warehouse-preparation-save.cjs sha256:2c8a848dc1d025c1dac41e5d1ea0c8ed0cbe66397153ce6b9fb918b1f625499d
 "current-warehouse-preparation-save.cjs": (load, module) => {
 'use strict';
 const {createCurrentStockSave}=load("current-stock-save.cjs");
@@ -3289,23 +3289,36 @@ const {validateOriginalPreparation}=load("legacy-warehouse-preparation.cjs");
 const {originalProductState}=load("original-product-state.cjs");
 const {preparePackingHoldTransition}=load("borrowing-stock-plan.cjs");
 const {hash}=load("commit-proof.cjs");
-// PRIVATE non-file co-writer. Original preparation rules/identity stay; it posts
+const {captureOriginalWarehousePhotoPlan}=load("warehouse-photo-plan.cjs");
+const {prependWarehousePhotoReceipts}=load("warehouse-photo-fenced-store.cjs");
+// PRIVATE co-writer. Files require the paired durable file adapter. Original
+// preparation rules/identity stay; it posts
 // neither physical departure nor invoice and never allocates another customer's stock.
 function createCurrentWarehousePreparationSave({company,store,protocol,coverage,authenticateOriginalWarehouse,
   readCurrentContext,createPreparationOperations,projectPreparation,currentReadyVersion,projectPurchaseOrders,
-  readPreparation,readAllocations,readCustomerShipments,readPackingLists,packingHeld,now}){
+  readPreparation,readAllocations,readCustomerShipments,readPackingLists,packingHeld,now,createPhotoProtocol,allocatePhotoSlots}){
   if(!['NCT','GHR'].includes(company)||protocol?.planFormat!=='SEGMENTED_V2'||typeof protocol.readSnapshot!=='function'||typeof store?.read!=='function'||currentReadyVersion!==2
     ||[authenticateOriginalWarehouse,readCurrentContext,createPreparationOperations,projectPreparation,projectPurchaseOrders,
       readPreparation,readAllocations,readCustomerShipments,readPackingLists,packingHeld,now].some(fn=>typeof fn!=='function'))throw Error('Paired private current Warehouse preparation dependencies required');
   return async request=>{
-    // Refuse before any prepare/document callback. File protocol is separate.
-    if(!['PACK','LOAD','UNPACK'].includes(request?.input?.action)
-      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length))throw Error('Current non-photo Warehouse preparation required');
+    const photoRequest=request?.input?.action==='PHOTOS'||Array.isArray(request?.input?.photos)&&request.input.photos.length>0;
+    if(!['PACK','LOAD','UNPACK','PHOTOS'].includes(request?.input?.action)
+      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length>3)
+      ||photoRequest&&(typeof createPhotoProtocol!=='function'||typeof allocatePhotoSlots!=='function'))throw Error('Current non-photo Warehouse preparation required until paired private file protocol is supplied');
+    if(photoRequest&&request.input.photos===undefined)request={...request,input:{...request.input,photos:[]}};
     let staff;
-    const result=await createCurrentStockSave({company,writer:'WAREHOUSE_PREPARATION',protocol,coverage,
+    let saveProtocol=protocol;
+    if(photoRequest){
+      const original=await authenticateOriginalWarehouse(company);
+      if(!original?.staffId||!original.memberId||!original.staffName||original.customerId)throw Error('Original Warehouse photo grant required');
+      staff={...original,canPrepareWarehouse:true};saveProtocol=createPhotoProtocol({request,staff});
+      if(saveProtocol?.planFormat!=='SEGMENTED_V2'||typeof saveProtocol.commit!=='function'||typeof saveProtocol.readSnapshot!=='function')throw Error('Bounded private file protocol required');
+    }
+    const result=await createCurrentStockSave({company,writer:'WAREHOUSE_PREPARATION',protocol:saveProtocol,coverage,
       authenticate:async()=>{
         const original=await authenticateOriginalWarehouse(company);
         if(!original?.staffId||!original.memberId||!original.staffName||original.customerId)throw Error('Original Warehouse preparation grant required');
+        if(photoRequest&&(original.staffId!==staff.staffId||original.memberId!==staff.memberId||original.staffName!==staff.staffName))throw Error('Original photo actor changed');
         staff={...original,canPrepareWarehouse:true};return staff;
       },prepare:async command=>{
         const snapshot=await protocol.readSnapshot(async control=>{
@@ -3323,13 +3336,24 @@ function createCurrentWarehousePreparationSave({company,store,protocol,coverage,
           if(selected.length!==1)throw Error('Exact current Warehouse preparation batch required');
           const product=selectedProducts.filter(product=>product.state.tasks.some(task=>task.id===selected[0].taskId));
           if(product.length!==1)throw Error('Exact current Warehouse preparation product required');
-          const validated=await validateOriginalPreparation({company,staff,requestId:command.requestId,input:command.input,context,createPreparationOperations,now}),event=validated.event;
+          let validated;
+          if(photoRequest){
+            const input={...command.input,photos:command.input.photos||[]},at=now(),fixedNow=()=>new Date(at);
+            const args={company,staff,requestId:command.requestId,input,context,createPreparationOperations,now:fixedNow};
+            // Run every ORIGINAL task/ownership/file validator before requesting
+            // Drive generated IDs. ALLOCATE reserves IDs only; it creates no file.
+            await captureOriginalWarehousePhotoPlan({...args,slots:input.photos.map((_,index)=>'pending-photo-'+hash(company,command.requestId,staff.memberId,index))});
+            const slots=await allocatePhotoSlots(input.photos.length);
+            validated=await captureOriginalWarehousePhotoPlan({...args,slots});
+          }else validated=await validateOriginalPreparation({company,staff,requestId:command.requestId,input:command.input,context,createPreparationOperations,now});
+          const event=validated.event;
           if(event.initiatedByStaffId!==staff.staffId||event.description!==selected[0].id||event.imageAltText!==selected[0].taskId
             ||event.image!==selected[0].customerId||validated.version!==command.input.version)throw Error('Original Warehouse preparation identity changed');
           const originalOrders=projectPurchaseOrders({company,workspace:data.originalContext,records:data.tables.PurchaseOrders});
           const after=originalProductState({company,context:{...context,activity:[...context.activity,event]},orders:originalOrders,
             identity:product[0].state,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation}).buildState(product[0].rows);
-          return preparePackingHoldTransition({state:product[0].state,rows:product[0].rows,event,generation:control.generation,packingHolds:after.packingHolds}).plan;
+          const plan=preparePackingHoldTransition({state:product[0].state,rows:product[0].rows,event,generation:control.generation,packingHolds:after.packingHolds}).plan;
+          return photoRequest?prependWarehousePhotoReceipts({company,staff,requestId:command.requestId,input:{...command.input,photos:command.input.photos||[]},prepared:validated,plan}):plan;
         });return{plan:snapshot.rows,memberId:staff.memberId,generation:snapshot.generation};
       }})(request);
     if(result.ok!==true)return result;
@@ -3447,6 +3471,185 @@ function createLegacyWarehousePreparation(deps) {
   return { read: request => load(request, false), prepare: request => load(request, true) };
 }
 module.exports = { validateOriginalPreparation, createLegacyWarehousePreparation };
+
+},
+// warehouse-photo-plan.cjs sha256:fb23f8aae26f77ffb8ac0600d8dc3aca2d53207e56f9cb400088c7c26b1a3bd1
+"warehouse-photo-plan.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs");
+const {same,copy}=load("segmented-plan.cjs");
+const fileId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{10,200}$/.test(value);
+// PRIVATE boundary: slots must come from the server's durable plan, never browser
+// file IDs. Capture ORIGINAL validation/prepare with no legacy apply or file call.
+async function captureOriginalWarehousePhotoPlan({company,staff,requestId,input,context,createPreparationOperations,now,slots}){
+ if(!['NCT','GHR'].includes(company)||context?.company!==company||!Array.isArray(context.tasks)||!Array.isArray(context.activity)
+  ||!staff?.memberId||!staff.staffId||!staff.staffName||staff.canPrepareWarehouse!==true
+  ||!/^[a-f0-9-]{36}$/i.test(requestId||'')||!['PACK','LOAD','UNPACK','PHOTOS'].includes(input?.action)
+  ||!Array.isArray(input.photos)||input.photos.length>3||!Array.isArray(slots)||slots.length!==input.photos.length
+  ||slots.some(id=>!fileId(id))||new Set(slots).size!==slots.length
+  ||typeof createPreparationOperations!=='function'||typeof now!=='function')throw Error('Private original Warehouse photo plan scope required');
+ const journal=company==='NCT'?'NCTActivity':'NCTActivity1',scratch=new Map(),boundary=Error('Private photo prepare boundary');
+ let captured,reads=0,allocated=0;
+ const scope=collection=>{if(collection!==journal)throw Error('Private Warehouse photo journal scope');};
+ const store={
+  read:async(collection,id)=>{scope(collection);return copy(scratch.get(id)||null);},
+  insert:async(collection,row)=>{scope(collection);
+   if(row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.kind==='PREPARED'){
+    if(captured||scratch.size!==1||row.details.plan?.event?.action!=='WAREHOUSE_PREPARATION_SAVED')throw Error('Unexpected original photo prepare');
+    captured=copy(row.details.plan);throw boundary;
+   }
+   if(row.action!=='PURCHASE_OPERATION_LOCK'||row.details?.kind!=='LOCK'||scratch.size)throw Error('Original photo apply forbidden');
+   scratch.set(row._id,copy(row));return copy(row);
+  },
+  remove:async(collection,id)=>{scope(collection);if(scratch.get(id)?.action!=='PURCHASE_OPERATION_LOCK')throw Error('Only scratch photo lock removal allowed');scratch.delete(id);}
+ };
+ const save=createPreparationOperations({store,names:{[company]:{activity:journal}},now,
+  readContext:async(c,actor)=>{if(c!==company||actor.memberId!==staff.memberId||++reads!==1)throw Error('Original photo context scope');return copy(context);},
+  documentService:async command=>{
+   if(!same(command,{action:'ALLOCATE',company})||allocated>=slots.length)throw Error('External photo call forbidden during capture');
+   return{ok:true,fileId:slots[allocated++]};
+  }});
+ try{await save({company,staff:copy(staff),requestId,input:copy(input)});throw Error('Original photo prepare boundary not reached');}
+ catch(error){if(error!==boundary)throw error;}
+ if(!captured||reads!==1||scratch.size||allocated!==slots.length||captured.version!==input.version
+  ||captured.event._id!==hash(company,requestId,staff.memberId,'WAREHOUSE_PREPARATION')||captured.event.initiatedByStaffId!==staff.staffId
+  ||captured.event.description!==input.id||captured.event.details?.action!==input.action||captured.event.details.state?.id!==input.id
+  ||captured.uploads.length!==slots.length||captured.uploads.some((upload,index)=>upload.fileId!==slots[index]))throw Error('Original photo plan identity conflict');
+ assertWarehousePhotoUploads({company,staff,requestId,input,plan:captured});
+ return captured;
+}
+// Validate ONLY exact immutable upload descriptors already captured from original
+// prepare. The authenticated caller must hold durable pending before upload; this
+// helper intentionally has NO network/storage/lock/allocate/trash capability.
+function assertWarehousePhotoUploads({company,staff,requestId,input,plan}){
+ const event=plan?.event,photos=input?.photos,uploads=plan?.uploads;
+ if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName
+  ||!/^[a-f0-9-]{36}$/i.test(requestId||'')||!['PACK','LOAD','UNPACK','PHOTOS'].includes(input?.action)
+  ||!Array.isArray(photos)||photos.length>3||!Array.isArray(uploads)||uploads.length!==photos.length
+  ||event?._id!==hash(company,requestId,staff.memberId,'WAREHOUSE_PREPARATION')||event.title!==event._id
+  ||event.action!=='WAREHOUSE_PREPARATION_SAVED'||event.result!=='SAVED'||event.description!==input.id
+  ||event.initiatedByStaffId!==staff.staffId||event.initiatedByStaffName!==staff.staffName
+  ||event.details?.action!==input.action||event.details.state?.id!==input.id||plan.version!==input.version
+  ||event.details.state.company!==company||!Array.isArray(event.details.state.photos)||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Immutable original photo plan required');
+ const evidence=event.details.state.photos.slice(-uploads.length),seen=new Set();
+ for(const[index,upload]of uploads.entries()){
+  const photo=photos[index],ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo?.mimeType];
+  const expected={action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:input.id,fileId:upload.fileId,type:input.photoStage,mimeType:photo?.mimeType,
+   sha256:photo?.sha256,size:upload.size,name:company+'-'+event.details.state.barcode+'-'+input.photoStage+'-'+requestId+'-'+index+'.'+ext};
+  if(!ext||!fileId(upload.fileId)||seen.has(upload.fileId)||!same(upload,expected)||!['PACKING','LOADING'].includes(upload.type)
+   ||typeof photo?.base64!=='string'||photo.base64.length>2800000||!/^[a-f0-9]{64}$/i.test(photo.sha256||'')
+   ||!Number.isSafeInteger(upload.size)||upload.size<12||upload.size>2*1024*1024
+   ||!same(evidence[index],{fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at:event.activityTime,by:staff.staffName}))throw Error('Immutable original photo upload conflict');
+  seen.add(upload.fileId);
+ }
+ return true;
+}
+// A single deterministic slot is one bounded external action. Replays reuse the
+// exact original file ID; legacy service is create-only + same-ID content check.
+// A timeout/unknown response throws: caller must keep its pending operation. There
+// is no TTL unlock or interpretation of a timeout as callback termination here.
+async function uploadWarehousePhotoSlot({company,staff,requestId,input,plan,index,documentService}){
+ assertWarehousePhotoUploads({company,staff,requestId,input,plan});
+ if(!Number.isSafeInteger(index)||index<0||index>=plan.uploads.length||typeof documentService!=='function')throw Error('Exact original photo slot required');
+ const upload=copy(plan.uploads[index]),receipt=await documentService({...upload,base64:input.photos[index].base64});
+ if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Original photo upload unconfirmed; retain same slot');
+ return{fileId:upload.fileId,company,poId:upload.poId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size};
+}
+module.exports={captureOriginalWarehousePhotoPlan,assertWarehousePhotoUploads,uploadWarehousePhotoSlot};
+
+},
+// warehouse-photo-fenced-store.cjs sha256:626aa63fe701a328a2a2aa9beea64bff6197a51a651f04af88bc35d74bf03939
+"warehouse-photo-fenced-store.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs");
+const {createSegmentedPlanCodec,same,copy}=load("segmented-plan.cjs");
+const {assertWarehousePhotoUploads,uploadWarehousePhotoSlot}=load("warehouse-photo-plan.cjs");
+const ACTION='WAREHOUSE_PHOTO_CONFIRMED';
+const withoutVersion=row=>{const result=copy(row);delete result._version;return result;};
+function photoReceipt({company,staff,requestId,input,plan,index}){
+ assertWarehousePhotoUploads({company,staff,requestId,input,plan});
+ if(!Number.isSafeInteger(index)||index<0||index>=plan.uploads.length)throw Error('Exact photo receipt slot required');
+ const id=hash(company,requestId,staff.memberId,ACTION,index);
+ return{_id:id,title:id,company,stockPhotoProtocol:1,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:plan.event.activityTime,
+  initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,description:input.id,imageAltText:plan.event.imageAltText,
+  details:{requestId,memberId:staff.memberId,index,eventId:plan.event._id,upload:copy(plan.uploads[index])}};
+}
+// Insert-only receipts precede the ORIGINAL event and every stock/hold after-image.
+// They contain descriptors, never photo bytes or a browser-chosen destination.
+function prependWarehousePhotoReceipts({company,staff,requestId,input,prepared,plan}){
+ assertWarehousePhotoUploads({company,staff,requestId,input,plan:prepared});
+ const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+ if(!Array.isArray(plan?.writes)||plan.writes.filter(change=>change.collection===journal&&same(change.after,{...prepared.event,company})).length!==1
+  ||plan.writes.some(change=>change.after?.action===ACTION||change.after?.stockPhotoProtocol!==undefined))throw Error('Exact original preparation stock plan required');
+ const writes=prepared.uploads.map((_,index)=>({collection:journal,before:null,after:photoReceipt({company,staff,requestId,input,plan:prepared,index})}));
+ return{...copy(plan),writes:[...writes,...copy(plan.writes)]};
+}
+// PRIVATE request-scoped adapter. Use only with the existing SEGMENTED_V2 protocol
+// and <=1 APPLY write per invocation for bounded external work. No protocol rewrite,
+// allocation/trash/update-file/TTL unlock or alternate stock authority is introduced.
+function createWarehousePhotoFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+ if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||staff.canPrepareWarehouse!==true
+  ||!/^[a-f0-9-]{36}$/i.test(request?.requestId||'')||request.stockProtocol!==1||!request.stockBuild
+  ||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0||!Array.isArray(request.input?.photos)||request.input.photos.length>3
+  ||['read','insert','compareAndSet','compareAndRemove'].some(method=>typeof store?.[method]!=='function')||typeof documentService!=='function')throw Error('Private fenced Warehouse photo dependencies required');
+ const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids,requestId=request.requestId;
+ const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'WAREHOUSE_PREPARATION',input:request.input,stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration});
+ async function boundPlan(collection,row){
+  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration
+   ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'
+   ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration
+   ||lock?.company!==company||lock.owner!==key||typeof lock.attempt!=='string'||!lock.attempt)throw Error('Durable pending photo operation required');
+  if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded photo manifest required');
+  const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
+  const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId});
+  if(!plan.writes.some(change=>change.collection===collection&&same(change.after,row)))throw Error('Photo write absent from immutable plan');
+  const events=plan.writes.filter(change=>change.collection===journal&&change.after.action==='WAREHOUSE_PREPARATION_SAVED');
+  if(events.length!==1||events[0].before!==null)throw Error('Exact immutable photo preparation event required');
+  const event=withoutVersion(events[0].after),evidence=event.details?.state?.photos;
+  if(!Array.isArray(evidence)||evidence.length<request.input.photos.length)throw Error('Original photo evidence required');
+  const uploads=evidence.slice(evidence.length-request.input.photos.length).map(photo=>({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:request.input.id,
+   fileId:photo.fileId,type:photo.stage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:photo.name}));
+  if(typeof event.initiatedByStaffName!=='string'||!event.initiatedByStaffName||event.initiatedByStaffName.length>200)throw Error('Original recorded photo actor required');
+  // Current role/member/staff ID are reauthorized by the gateway. A display-name
+  // edit must neither rewrite the captured audit nor strand a valid same actor.
+  const recordedStaff={...staff,staffName:event.initiatedByStaffName};
+  const prepared={version:request.input.version,event,uploads};assertWarehousePhotoUploads({company,staff:recordedStaff,requestId,input:request.input,plan:prepared});
+  const receiptWrites=plan.writes.filter(change=>change.after.action===ACTION||change.after.stockPhotoProtocol!==undefined);
+  if(receiptWrites.length!==uploads.length)throw Error('Complete immutable photo receipts required');
+  for(let index=0;index<uploads.length;index++){
+   const expected=photoReceipt({company,staff:recordedStaff,requestId,input:request.input,plan:prepared,index}),change=plan.writes[index];
+   if(change?.collection!==journal||change.before!==null||!same(withoutVersion(change.after),expected))throw Error('Photo receipts must precede original business writes');
+  }
+  return{control,lock,prepared,recordedStaff,receipts:receiptWrites};
+ }
+ const metadata=(collection,row)=>collection===journal&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
+ async function beforeDomainWrite(collection,row){
+  const state=await boundPlan(collection,row),isReceipt=row.action===ACTION;
+  const index=isReceipt?row.details?.index:state.receipts.length;
+  if(!Number.isSafeInteger(index)||index<0||index>state.receipts.length||isReceipt&&index===state.receipts.length)throw Error('Exact bounded photo receipt required');
+  for(let prior=0;prior<index;prior++)if(!same(await store.read(journal,state.receipts[prior].after._id),state.receipts[prior].after))throw Error('Earlier photo receipt unconfirmed');
+  if(isReceipt)await uploadWarehousePhotoSlot({company,staff:state.recordedStaff,requestId,input:request.input,plan:state.prepared,index,documentService});
+  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId);
+  if(!same(control,state.control)||!same(lock,state.lock))throw Error('Photo callback fence changed; original request remains pending');
+ }
+ return{
+  read:(...args)=>store.read(...args),compareAndRemove:(collection,id,attempt)=>{
+   if(collection!==journal||id!==lockId)throw Error('Only exact owned protocol lock release allowed');
+   return store.compareAndRemove(collection,id,attempt);
+  },
+  compareAndSet:async(collection,id,version,row)=>{
+   if(row?.action===ACTION||row?.stockPhotoProtocol!==undefined||row?.action==='WAREHOUSE_PREPARATION_SAVED')throw Error('Original photo evidence is insert-only');
+   if(!metadata(collection,row))await beforeDomainWrite(collection,row);
+   return store.compareAndSet(collection,id,version,row);
+  },
+  insert:async(collection,row)=>{
+   if(!metadata(collection,row))await beforeDomainWrite(collection,row);
+   return store.insert(collection,row);
+  }
+ };
+}
+module.exports={photoReceipt,prependWarehousePhotoReceipts,createWarehousePhotoFencedStore};
 
 },
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
@@ -5631,6 +5834,7 @@ export const createCurrentWarehouseReceiptRouter = load("current-warehouse-recei
 export const createCurrentWarehouseOrdersRead = load("current-warehouse-orders-read.cjs").createCurrentWarehouseOrdersRead;
 export const createCurrentWarehouseOrdersRouter = load("current-warehouse-receipt-router.cjs").createCurrentWarehouseOrdersRouter;
 export const createCurrentWarehousePreparationSave = load("current-warehouse-preparation-save.cjs").createCurrentWarehousePreparationSave;
+export const createWarehousePhotoFencedStore = load("warehouse-photo-fenced-store.cjs").createWarehousePhotoFencedStore;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;

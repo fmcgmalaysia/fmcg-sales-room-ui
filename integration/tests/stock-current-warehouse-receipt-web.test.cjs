@@ -7,6 +7,7 @@ const {createCurrentWarehouseReceiptSave}=require('../prototypes/stock-current-s
 const {createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter}=require('../prototypes/stock-current-state/current-warehouse-receipt-router.cjs');
 const {createCurrentWarehouseOrdersRead}=require('../prototypes/stock-current-state/current-warehouse-orders-read.cjs');
 const {createCurrentWarehousePreparationSave}=require('../prototypes/stock-current-state/current-warehouse-preparation-save.cjs');
+const {createWarehousePhotoFencedStore}=require('../prototypes/stock-current-state/warehouse-photo-fenced-store.cjs');
 const {readCurrentPurchaseProjection}=require('../prototypes/stock-current-state/purchase-current-projection.cjs');
 const {createCurrentPurchaseTables}=require('../prototypes/stock-current-state/current-purchase-tables.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
@@ -35,11 +36,11 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       return{items:rows.slice(0,limit),totalCount:rows.length};}};return q;}};
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
-    createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createCurrentPurchaseTables,readCurrentPurchaseProjection,
+    createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createWarehousePhotoFencedStore,createCurrentPurchaseTables,readCurrentPurchaseProjection,
     ...load('../prototypes/stock-current-state/warehousePreparation.candidate.js'),
     ...load('../prototypes/stock-current-state/purchaseProjection.candidate.js'),
     projectWarehouseCustomerReadiness:load('warehouseCustomerReadiness.js').projectWarehouseCustomerReadiness,
-    warehouseCbm:load('warehouseCbm.js').warehouseCbm,readCustomerShortNames:async()=>[],
+    warehouseCbm:load('warehouseCbm.js').warehouseCbm,readCustomerShortNames:async()=>[],requestPurchaseDocument:async command=>{calls.push(command.action);return{ok:true,fileId:'root-original-file-'+calls.length};},
     Permissions:{SiteMember:'SITE_MEMBER'},webMethod:(permission,fn)=>{assert.equal(permission,'SITE_MEMBER');return fn;},
     currentMember:{getMember:async()=>{calls.push('MEMBER');return f.deps.readMember();}},items,
     fulfilmentStore:{all:async c=>{calls.push(c);if(c==='StaffMasterAccess')return f.deps.readStaffRecords();
@@ -49,7 +50,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       f.context.tasks.forEach(task=>{task.warehouse=load('warehouseReceiving.js').readWarehouseTask({title:task.id,description:task.orderId,imageAltText:task.sourceLineId,purchaseQtyInCtn:task.ord},f.context.activity);});
       return copy(f.context);},
     createSdkConditionalStore:args=>{calls.push('SDK');assert.equal(args.company,company);assert.deepEqual(copy(args.dateTimeFields),{[journal]:['activityTime']});return store;},
-    createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);return protocol;}};
+    createSegmentedFencedProof:args=>{assert.equal(args.company,company);assert.equal(args.domainWrites,true);if(args.stepsPerInvocation===1){assert.notEqual(args.store,store);return createSegmentedFencedProof(args);}return protocol;}};
   let source=fs.readFileSync(path.join(folder,'stockCurrentWarehouse.web.js'),'utf8');
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,saveWarehousePreparationCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
@@ -137,7 +138,7 @@ test('receipt router uses server ACTIVE only and refuses unknown control/mainten
     }
   }
 });
-test('actual-import non-file preparation root supplies paired current context and original Warehouse grant; closed coverage or files never reach old apply',async()=>{
+test('actual-import preparation root supplies paired current context/file factories and original Warehouse grant; closed coverage or invalid bounded files never reach old apply',async()=>{
   const f=await fixture(),request={...copy(f.initial),input:{action:'PACK',id:'BATCH',version:'V'}};let configuration;
   f.bindings.createCurrentWarehousePreparationSave=deps=>{configuration=deps;return async command=>{
     assert.equal((await deps.authenticateOriginalWarehouse()).staffId,'W');assert.deepEqual(copy(command),request);
@@ -146,9 +147,12 @@ test('actual-import non-file preparation root supplies paired current context an
   const result=await f.api.saveWarehousePreparationCurrent('NCT',request);assert.equal(result.pending,true);
   assert.equal(configuration.protocol.planFormat,'SEGMENTED_V2');assert.equal(configuration.currentReadyVersion,2);
   assert.equal(typeof configuration.readCurrentContext,'function');assert.equal(typeof configuration.createPreparationOperations,'function');
+  assert.equal(typeof configuration.createPhotoProtocol,'function');assert.equal(typeof configuration.allocatePhotoSlots,'function');
+  const photoProtocol=configuration.createPhotoProtocol({request:{...request,input:{...request.input,photos:[]}},staff:{staffId:'W',staffName:'Warehouse',memberId:'M',canPrepareWarehouse:true}});
+  assert.equal(photoProtocol.planFormat,'SEGMENTED_V2');assert.equal((await configuration.allocatePhotoSlots(2)).length,2);assert.equal(f.calls.filter(call=>call==='ALLOCATE').length,2);
   const closed=await fixture('NCT',false);assert.equal((await closed.api.saveWarehousePreparationCurrent('NCT',request)).ok,false);
   assert.equal(closed.calls.includes(closed.tasks),false,'actual common admission refuses before native listed tables');
-  for(const input of [{action:'PHOTOS',id:'BATCH'},{action:'PACK',id:'BATCH',photos:[{base64:'X'}]}]){
+  for(const input of [{action:'PHOTOS',id:'BATCH',photos:null},{action:'PACK',id:'BATCH',photos:[{},{},{},{}]}]){
     const count=f.calls.length;assert.equal((await f.api.saveWarehousePreparationCurrent('NCT',{...request,input})).ok,false);assert.equal(f.calls.length,count);
   }
 });

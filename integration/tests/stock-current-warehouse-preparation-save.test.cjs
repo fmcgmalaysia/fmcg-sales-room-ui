@@ -60,3 +60,27 @@ test('photo/file actions, missing all-writer coverage, stale form, partial-load 
  await assert.rejects(f.save(await f.command({action:'UNPACK',note:'No'})),/unload first/);
  assert.equal((await f.quote('B')).row.loaded,40);
 });
+test('paired current photo PACK/PHOTOS/LOAD reuse actual original validation, frozen slots, current holds and once-only physical stock',async()=>{
+ const f=await fixture(),{createSegmentedFencedProof}=require('../prototypes/stock-current-state/segmented-fenced-proof.cjs'),
+  {createWarehousePhotoFencedStore}=require('../prototypes/stock-current-state/warehouse-photo-fenced-store.cjs'),crypto=require('node:crypto');
+ const commands=[],allocated=[],files=new Map();let lost=false,renamed=false;
+ const documentService=async command=>{commands.push(copy(command));const old=files.get(command.fileId);if(old)assert.deepEqual(old,copy(command));else files.set(command.fileId,copy(command));
+  const receipt={ok:true,...command};delete receipt.base64;if(lost){lost=false;throw Error('Lost actual photo reply');}return receipt;};
+ const save=createCurrentWarehousePreparationSave({...f.deps,authenticateOriginalWarehouse:async()=>({...await f.deps.authenticateOriginalWarehouse(),staffName:renamed?'Warehouse Renamed':'Warehouse'}),
+  createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company:'NCT',domainWrites:true,stepsPerInvocation:1,
+    store:createWarehousePhotoFencedStore({company:'NCT',staff,request,store:f.store,documentService})}),readSnapshot:f.protocol.readSnapshot}),
+  allocatePhotoSlots:async count=>{const slots=Array.from({length:count},()=> 'actual-original-slot-'+String(allocated.length+1).padStart(5,'0'));allocated.push(...slots);return slots;}});
+ const bytes=Buffer.from([255,216,255,...Array(20).fill(2)]),photo={mimeType:'image/jpeg',base64:bytes.toString('base64'),sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
+ const complete=async request=>{for(let index=0;index<50;index++){const result=await save(request);if(result.ok)return result;}throw Error('Photo did not finish');};
+ const physical=()=>JSON.stringify([...f.db.values()].filter(row=>row.sourceKind==='PURCHASE_SOURCE'));
+ const before=physical(),request=await f.command({action:'PACK',photos:[photo],photoStage:'PACKING'});lost=true;
+ await assert.rejects(complete(request),/Lost actual photo/);assert.ok((await f.protocol.readControl()).pending);assert.equal(allocated.length,1);renamed=true;
+ await complete(request);assert.equal(physical(),before);assert.equal(allocated.length,1);assert.equal(commands.length,2);assert.deepEqual(commands[0],commands[1]);
+ const calls=commands.length;await complete(request);assert.equal(commands.length,calls);assert.equal(allocated.length,1);
+ await complete(await f.command({action:'PHOTOS',photos:[photo],photoStage:'PACKING'}));
+ await complete(await f.command({action:'LOAD',loaded:40,note:'Container full',photos:[photo],photoStage:'LOADING'}));
+ const read=await f.quote('B');assert.equal(read.row.loaded,40);assert.equal(read.row.photos.length,3);assert.equal(physical(),before);assert.equal(files.size,3);
+ assert.equal([...f.db.values()].filter(row=>row.action==='WAREHOUSE_PHOTO_CONFIRMED').length,3);
+ await complete(await f.command({action:'PHOTOS',note:'Original note-only evidence update'}));assert.equal(files.size,3);assert.equal(allocated.length,3,'empty original PHOTOS remains no-file, even when the request omits photos');
+ const allocations=allocated.length;await assert.rejects(save(await f.command({action:'PHOTOS',photos:[{...photo,sha256:'0'.repeat(64)}],photoStage:'PACKING'})),/content/);assert.equal(allocated.length,allocations,'original file validation occurs before external generated IDs');
+});

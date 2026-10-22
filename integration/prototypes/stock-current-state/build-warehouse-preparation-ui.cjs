@@ -31,8 +31,6 @@ function currentPreparationResult(message){
  pending=null;preparationConfirmedGeneration=result.stockGeneration;dialog.close();photos=[];callbacks.refresh();return true;
 }`);
 once("function prepare(id,action){if(pending||saving){resume();return;}","function prepare(id,action){if(pending||saving){resume();return;}if(preparationConfirmedGeneration!==null){modal('Preparation confirmed 备货已确认','Refresh required 请刷新资料','<p>Wait for the updated Warehouse workspace before another save.<br>请先刷新货仓资料，再登记下一次操作。</p>');return;}");
-once("pending={type:'WAREHOUSE_PREPARATION_REQUEST'",`if(currentPreparation&&(action==='PHOTOS'||photos.length)){error('Photo saves are not connected to current stock yet. No save was sent. 照片保存尚未接入当前库存，本次未发送。');return;}
- pending={type:'WAREHOUSE_PREPARATION_REQUEST'`);
 once("try{sessionStorage.setItem('warehousePending/'+company,JSON.stringify(pending));}",`if(currentPreparation){pending=JSON.parse(JSON.stringify({...pending,stockProtocol:1,stockBuild:currentPreparation.stockBuild,stockGeneration:currentPreparation.stockGeneration,stockIdentity:{staffId:preparationStaff.staffId,memberId:preparationStaff.memberId}}));send();return;}
  try{sessionStorage.setItem('warehousePending/'+company,JSON.stringify(pending));}`);
 once("function send(){error('');saving=true;",`function send(){if(saving||!pending)return;

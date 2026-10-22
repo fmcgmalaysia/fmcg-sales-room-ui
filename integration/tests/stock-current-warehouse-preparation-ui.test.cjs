@@ -27,7 +27,7 @@ test('preparation own-session cache retains exact original before send and refus
  const f=fixture(),original=request();f.helper.retain(original,staff);assert.deepEqual(copy(f.helper.pending('NCT',staff)),original);
  assert.throws(()=>f.helper.retain({...original,requestId:'33333333-3333-4333-8333-333333333333'},staff),/Another/);
  assert.throws(()=>f.helper.retain(original,{...staff,memberId:'OTHER'}),/session changed/);
- assert.throws(()=>f.helper.retain({...original,input:{...original.input,photos:[{base64:'x'}]}},staff),/non-file/);
+ assert.throws(()=>f.helper.retain({...original,input:{...original.input,photos:[{base64:'x'}]}},staff),/bounded/);
  assert.throws(()=>f.helper.clear({...original,input:{changed:true}},staff),/changed/);
  assert.equal(f.gets.every(id=>id===key),true);assert.equal(f.sent.length,0);f.helper.clear(original,staff);assert.equal(f.db.has(key),false);
  const blocked=fixture();blocked.ready();blocked.open();blocked.failWrite();blocked.save();assert.equal(blocked.sent.length,0);assert.equal(blocked.db.size,0);
@@ -55,11 +55,16 @@ test('unknown/retryable-false, malformed, stale or foreign results never clear c
 test('failed cache removal retains confirmed original and replay uses same UUID, not a replacement',()=>{
  const f=fixture();f.ready();f.open();f.save();const original=f.sent.at(-1);f.failRemove();f.result(complete(original));assert.equal(f.db.has(key),true);assert.equal(f.refreshes(),0);f.save();assert.deepEqual(f.sent.at(-1),original);
 });
-test('original LOAD reason/whole-carton checks remain and current PHOTOS blocks before pending/cache/network',()=>{
+test('original LOAD reason/whole-carton checks remain and current PHOTOS retains exact original request',()=>{
  const f=fixture();f.ready();f.open('LOAD');f.node('whLoaded').value='40';f.save();assert.equal(f.sent.length,0);assert.match(f.node('whError').textContent,/reason/);
  f.node('whNote').value='Container full';f.save();assert.equal(f.sent.at(-1).input.loaded,40);assert.equal(f.sent.at(-1).input.action,'LOAD');assert.equal(f.sent.at(-1).input.photoStage,'LOADING');
  const invalid=fixture();invalid.ready();invalid.open('LOAD');invalid.node('whLoaded').value='4.5';invalid.node('whNote').value='Reason';invalid.save();assert.equal(invalid.sent.length,0);
- const photos=fixture();photos.task.prepared=true;photos.ready();photos.open();photos.save();assert.equal(photos.sent.length,0);assert.equal(photos.db.size,0);assert.match(photos.node('whError').textContent,/No save was sent/);
+ const photos=fixture();photos.task.prepared=true;photos.ready();photos.open();photos.save();assert.equal(photos.sent.at(-1).input.action,'PHOTOS');assert.equal(photos.db.has(key),true);
+});
+test('reload retains full original photo bytes/hash/stage and sends same UUID rather than recompressing or reallocating',()=>{
+ const original=request();original.input.photos=[{mimeType:'image/jpeg',base64:'original-compressed-bytes',sha256:'a'.repeat(64)}];
+ const f=fixture(new Map([[key,JSON.stringify(original)]]));f.ready();assert.equal(f.sent.length,0);f.save();assert.deepEqual(f.sent.at(-1),original);
+ f.result({ok:false,pending:true,requestId:original.requestId,phase:'APPLY',completedCount:1,totalRecords:5});[...f.timers.values()].filter(timer=>timer.ms===250).at(-1).fn();assert.deepEqual(f.sent.at(-1),original);
 });
 test('reload behind stock barrier authenticates before exact own-cache lookup and explicit replay; other member never sees original cache',async()=>{
  for(const memberId of ['M','OTHER']){

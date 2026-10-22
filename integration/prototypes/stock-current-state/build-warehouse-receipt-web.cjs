@@ -10,13 +10,14 @@ import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
 import { projectWarehouseCustomerReadiness } from 'backend/warehouseCustomerReadiness.js';
 import { warehouseCbm } from 'backend/warehouseCbm.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation, createPreparationOperations, WAREHOUSE_CURRENT_READY_VERSION } from 'backend/warehousePreparation.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseReceiptSave, createCurrentWarehouseOrdersRead, createCurrentWarehousePreparationSave, createCurrentPurchaseTables, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseReceiptSave, createCurrentWarehouseOrdersRead, createCurrentWarehousePreparationSave, createWarehousePhotoFencedStore, createCurrentPurchaseTables, readCurrentPurchaseProjection } from 'backend/stockCurrentCommands.js';
 // CLOSED until all original writers/native schemas/permissions/init/capacity/cutover
 // and shadow acceptance pass. This is not browser-supplied activation evidence.
 const writerCoverage = Object.freeze({});
@@ -65,6 +66,10 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null,prepar
   };
   if(preparation)return createCurrentWarehousePreparationSave({...authorityDependencies,company,items,store,protocol:guardedProtocol,
     coverage:writerCoverage,authenticateOriginalWarehouse:warehouseIdentity,readCurrentContext,createPreparationOperations,
+    createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,
+      store:createWarehousePhotoFencedStore({company,staff,request:{...request,input:{...request.input,photos:request.input.photos||[]}},store,documentService:requestPurchaseDocument})}),readSnapshot:guardedProtocol.readSnapshot}),
+    allocatePhotoSlots:async count=>{if(!Number.isSafeInteger(count)||count<0||count>3)throw Error('Bounded original photo allocation required');
+      const slots=[];for(let index=0;index<count;index++){const result=await requestPurchaseDocument({action:'ALLOCATE',company});if(result?.ok!==true)throw Error('Photo ID allocation unconfirmed');slots.push(result.fileId);}return slots;},
     currentReadyVersion:WAREHOUSE_CURRENT_READY_VERSION});
   return createCurrentWarehouseOrdersRead({company,protocol:guardedProtocol,authenticate:warehouseIdentity,readCurrentContext,
     projectPurchaseOrders,projectWarehouseOrders,projectWarehouseCustomerReadiness,projectPreparation,currentReadyVersion:WAREHOUSE_CURRENT_READY_VERSION,
@@ -85,9 +90,9 @@ export const getWarehouseOrdersCurrent=webMethod(Permissions.SiteMember,async co
 export const saveWarehousePreparationCurrent=webMethod(Permissions.SiteMember,async(company,request)=>{
   try{
     if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
-      ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!['PACK','LOAD','UNPACK'].includes(request.input?.action)
-      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length)
-      ||JSON.stringify(request).length>10000)throw Error('Original bounded non-file Warehouse preparation required');
+      ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!['PACK','LOAD','UNPACK','PHOTOS'].includes(request.input?.action)
+      ||request.input.photos!==undefined&&(!Array.isArray(request.input.photos)||request.input.photos.length>3)
+      ||JSON.stringify(request).length>3100000)throw Error('Original bounded Warehouse preparation required');
     return await(await receiptSave(company,false,request.stockIdentity,true))(request);
   }catch(_){return{ok:false,requestId:request?.requestId,error:'Current Warehouse preparation unconfirmed. Retain and retry the same original save. 当前备货尚未确认，请保留并重试原保存。'};}
 });
