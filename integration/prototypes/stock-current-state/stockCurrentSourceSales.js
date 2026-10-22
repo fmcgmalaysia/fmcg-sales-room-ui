@@ -8,10 +8,12 @@ import { readPackingLists } from 'backend/packingListOperations.js';
 import { packingHeld } from 'backend/packingListModel.js';
 import { readPreparation, projectPreparation, WAREHOUSE_CURRENT_READY_VERSION } from 'backend/warehousePreparation.js';
 import { createSalesOrderAdjustmentOperations } from 'backend/salesOrderAdjustment.js';
+import { createCustomerAccountOperations } from 'backend/customerAccountLedger.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readShipmentPlans, shipmentPlanVersion, createShipmentPlanOperations, createSalesShipmentDateOperations } from 'backend/customerShipmentPlan.js';
 import { createCustomerFulfilmentOperations, SHIPMENT_CURRENT_ALLOCATION_VERSION } from 'backend/customerFulfilment.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, requireOriginalSalesDelegation, createCurrentSalesRead, createCurrentSalesDemandSave, createCurrentSalesShipmentSave, createCurrentSalesArrangementSave } from 'backend/stockCurrentCommands.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, requireOriginalSalesDelegation, createCurrentSalesRead, createCurrentSalesDemandSave, createCurrentSalesShipmentSave, createCurrentSalesArrangementSave, createCurrentSalesDocumentSave, createCustomerDocumentFencedStore } from 'backend/stockCurrentCommands.js';
 // No source staff claims are authenticated here. ONLY original bearer gateway may
 // construct the server callback. Empty coverage intentionally prevents activation.
 const writerCoverage=Object.freeze({});
@@ -37,15 +39,17 @@ export async function createCurrentSourceSales({company,authenticateOriginalDele
    if(selected!==company||!Array.isArray(ids)||new Set(ids).size!==ids.length||ids.length>2000||ids.some(id=>typeof id!=='string'||!id||id.length>128))throw Error('Exact current source Sales task scope required');
    const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'NCTTasks':'NCTTasks1',id));return rows;
   },projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,
-  createSalesOrderAdjustmentOperations,createCustomerFulfilmentOperations,currentAllocationVersion:SHIPMENT_CURRENT_ALLOCATION_VERSION,
+  createSalesOrderAdjustmentOperations,createCustomerFulfilmentOperations,currentAllocationVersion:SHIPMENT_CURRENT_ALLOCATION_VERSION,createCustomerAccountOperations,
+  createDocumentProtocol:({request,staff})=>createSegmentedFencedProof({company,store:createCustomerDocumentFencedStore({company,staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true,stepsPerInvocation:1}),
+  allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original document company conflict');const allocated=await requestPurchaseDocument({action:'ALLOCATE',company});if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('Original document identity unavailable');return allocated.fileId;},
   readPlans:readShipmentPlans,planVersion:shipmentPlanVersion,createShipmentPlanOperations,createSalesShipmentDateOperations,now:()=>new Date()};
  const protect=(save,actions)=>request=>{
   if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
-   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!actions.includes(request.input?.action)||request.input.customerId!==actor.customerId||JSON.stringify(request).length>200000
+   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!actions.includes(request.input?.action)||request.input.customerId!==actor.customerId||JSON.stringify(request).length>(actions.length===1&&actions[0]==='DOCUMENT'?4300000:200000)
    ||request.stockIdentity?.staffId!==actor.staffId||request.stockIdentity?.memberId!==actor.memberId)throw Error('Original current source Sales request/identity required');return save(request);
  };
  return{mode:'ACTIVE',read:createCurrentSalesRead({...dependencies,readOriginalCustomerFulfilment:readCustomerFulfilment,currentFulfilmentVersion:CUSTOMER_CURRENT_FULFILMENT_VERSION}),
   save:protect(createCurrentSalesDemandSave(dependencies),['ADJUST']),
   shipmentSave:protect(createCurrentSalesShipmentSave(dependencies),['SELECT','CANCEL']),
-  arrangementSave:protect(createCurrentSalesArrangementSave(dependencies),['PLAN','ORDER_DATE'])};
+  arrangementSave:protect(createCurrentSalesArrangementSave(dependencies),['PLAN','ORDER_DATE']),documentSave:protect(createCurrentSalesDocumentSave(dependencies),['DOCUMENT'])};
 }

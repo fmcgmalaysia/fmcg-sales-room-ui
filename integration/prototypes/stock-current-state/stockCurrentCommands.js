@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
+import { Buffer as StockRuntimeBuffer } from 'buffer';
 // Candidate-only backend runtime. Original gateway authentication and verified
 // all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.
 const factories = {
@@ -5824,6 +5825,146 @@ async function prepareShipmentArrangement({ company, staff, requestId, input, co
 module.exports = { prepareShipmentArrangement };
 
 },
+// current-sales-document-save.cjs sha256:2e6bc0eb0860c53ba66a2757e6b756af2be5bd50c1250fe0322b37f79198453f
+"current-sales-document-save.cjs": (load, module) => {
+'use strict';
+const {createCurrentStockSave}=load("current-stock-save.cjs"),{requireOriginalSalesDelegation}=load("sales-delegation.cjs");
+const {captureOriginalCustomerDocumentPlan,assertCustomerDocumentPlan}=load("customer-document-plan.cjs"),{hash}=load("commit-proof.cjs");
+// PRIVATE ORIGINAL Source bearer composition only. Existing document posting rules
+// unchanged; this appends its existing immutable event under the common fence.
+function createCurrentSalesDocumentSave({company,store,coverage,authenticateOriginalDelegation,readContext,createCustomerAccountOperations,
+ createDocumentProtocol,allocateDocumentSlot,now=()=>new Date()}){
+ if(!['NCT','GHR'].includes(company)||typeof store?.read!=='function'||[authenticateOriginalDelegation,readContext,createCustomerAccountOperations,createDocumentProtocol,allocateDocumentSlot,now].some(fn=>typeof fn!=='function'))throw Error('Private original document save dependencies required');
+ return async request=>{
+  let staff;
+  const authenticate=async()=>{const current=await authenticateOriginalDelegation(company,request);requireOriginalSalesDelegation(current,request?.input?.customerId);
+   if(current.canUploadCustomerDocument!==true||request?.input?.action!=='DOCUMENT'||request.stockIdentity?.staffId!==current.staffId||request.stockIdentity?.memberId!==current.memberId
+    ||staff&&(staff.staffId!==current.staffId||staff.memberId!==current.memberId))throw Error('Original source document identity/permission required');staff=current;return{memberId:staff.memberId,staffId:staff.staffId};};
+  await authenticate();const protocol=createDocumentProtocol({request,staff});
+  if(protocol?.planFormat!=='SEGMENTED_V2'||typeof protocol.commit!=='function'||typeof protocol.readSnapshot!=='function')throw Error('Paired original document protocol required');
+  const result=await createCurrentStockSave({company,writer:'SHIPMENT',protocol,coverage,authenticate,prepare:async command=>{
+   if(command.memberId!==staff.memberId)throw Error('Original document employee changed');
+   const snapshot=await protocol.readSnapshot(async()=>{
+    const context=await readContext(company,staff),at=now().toISOString(),args={company,staff,requestId:command.requestId,input:command.input,context,createCustomerAccountOperations,now:()=>new Date(at)};
+    // Validate with an unused placeholder before any real ID allocation; capture
+    // again against the same frozen original context/time using server-only slot.
+    await captureOriginalCustomerDocumentPlan({...args,slot:'DOCUMENT_VALIDATION_SLOT'});
+    const slot=await allocateDocumentSlot(company),prepared=await captureOriginalCustomerDocumentPlan({...args,slot});
+    return{writes:[{collection:company==='NCT'?'NCTActivity':'NCTActivity1',before:null,after:{...prepared.event,company}}]};
+   });return{memberId:staff.memberId,generation:snapshot.generation,plan:snapshot.rows};
+  }})(request);
+  if(result.ok!==true)return result;
+  const documentId=hash(company,request.requestId,staff.memberId,'CUSTOMER_DOCUMENT'),snapshot=await protocol.readSnapshot(()=>store.read(company==='NCT'?'NCTActivity':'NCTActivity1',documentId)),row=snapshot.rows;
+  if(!row?._version||row.company!==company)throw Error('Original committed document unconfirmed');
+  const event={...row};delete event._version;delete event.company;const doc=event.details?.document;
+  assertCustomerDocumentPlan({company,staff:{...staff,staffName:event.initiatedByStaffName},requestId:request.requestId,input:request.input,plan:{expectedVersion:request.input.version,event,
+   upload:{action:'UPLOAD',company,department:'SALES',type:doc?.type,poId:documentId,fileId:doc?.fileId,name:doc?.name,sha256:doc?.sha256}}});
+  return{...result,company,documentId};
+ };
+}
+module.exports={createCurrentSalesDocumentSave};
+
+},
+// customer-document-plan.cjs sha256:f231c865a16498b6d185415836a2d06739aeb27078eeb742c9b7d873c63adcfd
+"customer-document-plan.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs"),{copy,same}=load("segmented-plan.cjs"),{requireOriginalSalesDelegation}=load("sales-delegation.cjs");
+function pdfFacts(base64){const Buffer=StockRuntimeBuffer;const bytes=Buffer.from(base64,'base64');return{bytes,sha256:createHash('sha256').update(bytes).digest('hex')};}
+const fileId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{10,200}$/.test(value),clean=value=>String(value??'').trim().replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,90);
+// PRIVATE candidate prepare capture. The original factory owns all document, invoice,
+// duplicate, PDF, customer and account-version rules. Never its legacy apply.
+async function captureOriginalCustomerDocumentPlan({company,staff,requestId,input,context,createCustomerAccountOperations,now,slot}){
+ requireOriginalSalesDelegation(staff,input?.customerId);
+ if(!['NCT','GHR'].includes(company)||context?.company!==company||!Array.isArray(context.activity)||!Array.isArray(context.customers)
+  ||staff.canUploadCustomerDocument!==true||input?.action!=='DOCUMENT'||typeof createCustomerAccountOperations!=='function'||typeof now!=='function'||!fileId(slot))throw Error('Original private customer document scope required');
+ const journal=company==='NCT'?'NCTActivity':'NCTActivity1',scratch=new Map(),boundary=Error('Original private customer document boundary');let captured,reads=0,allocated=0;
+ const scope=collection=>{if(collection!==journal)throw Error('Original customer document collection scope');};
+ const store={read:async(collection,id)=>{scope(collection);return copy(scratch.get(id)||null);},
+  insert:async(collection,row)=>{scope(collection);
+   if(row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.kind==='PREPARED'){
+    if(captured||scratch.size!==1||row.details.plan?.event?.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED')throw Error('Original customer document prepare conflict');captured=copy(row.details.plan);throw boundary;
+   }
+   if(row.action!=='PURCHASE_OPERATION_LOCK'||row.details?.kind!=='LOCK'||scratch.size)throw Error('Original customer document legacy apply forbidden');scratch.set(row._id,copy(row));return copy(row);
+  },remove:async(collection,id)=>{scope(collection);if(scratch.get(id)?.action!=='PURCHASE_OPERATION_LOCK')throw Error('Only original scratch document lock removal allowed');scratch.delete(id);}};
+ const save=createCustomerAccountOperations({store,names:{[company]:{activity:journal}},now,
+  readContext:async(selected,employee)=>{if(selected!==company||employee.memberId!==staff.memberId||employee.staffId!==staff.staffId||++reads!==1)throw Error('Original customer document context/actor conflict');return copy(context);},
+  documentService:async command=>{if(!same(command,{action:'ALLOCATE',company})||allocated++)throw Error('Original document external apply forbidden during capture');return{ok:true,fileId:slot};}});
+ try{await save({company,staff:copy(staff),requestId,input:copy(input)});throw Error('Original document prepare boundary missing');}catch(error){if(error!==boundary)throw error;}
+ if(!captured||reads!==1||scratch.size||allocated!==1)throw Error('Original customer document capture incomplete');
+ assertCustomerDocumentPlan({company,staff,requestId,input,plan:captured});return captured;
+}
+function assertCustomerDocumentPlan({company,staff,requestId,input,plan}){
+ requireOriginalSalesDelegation(staff,input?.customerId);
+ const event=plan?.event,doc=event?.details?.document,id=hash(company,requestId,staff.memberId,'CUSTOMER_DOCUMENT');
+ if(!['NCT','GHR'].includes(company)||staff.canUploadCustomerDocument!==true||!/^[a-f0-9-]{36}$/i.test(requestId||'')||input?.action!=='DOCUMENT'
+  ||typeof input.base64!=='string'||input.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(input.base64))throw Error('Immutable original customer PDF required');
+ const {bytes,sha256}=pdfFacts(input.base64);
+ if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64
+  ||event?._id!==id||event.title!==id||event.description!==id||event.image!==input.customerId||event.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'||event.result!=='SAVED'
+  ||event.initiatedByStaffId!==staff.staffId||event.initiatedByStaffName!==staff.staffName||event.actorType!=='STAFF'||event.message!==String(input.reason).trim()||!Number.isFinite(Date.parse(event.activityTime))
+  ||doc?.id!==id||doc.company!==company||doc.customerId!==input.customerId||doc.byStaffId!==staff.staffId||doc.by!==staff.staffName||doc.at!==event.activityTime
+  ||!['SALES_INV','SALES_CN','DEBIT_NOTE','CUSTOMER_RECEIPT'].includes(doc.type)||doc.type!==input.type||doc.number!==String(input.number).trim()||doc.date!==input.date
+  ||doc.currency!==String(input.currency).trim().toUpperCase()||doc.amountCents!==input.amountCents||doc.reason!==String(input.reason).trim()
+  ||doc.shipmentId!==(input.type==='SALES_INV'?input.shipmentId:'')||!fileId(doc.fileId)||doc.sha256!==sha256||doc.size!==bytes.length
+  ||doc.url!=='https://drive.google.com/file/d/'+doc.fileId+'/view'||doc.name!==input.date+' '+clean(doc.customerName||doc.customerId)+' '+input.type+' '+clean(doc.number)+'.pdf'
+  ||plan.expectedVersion!==input.version||!same(plan.upload,{action:'UPLOAD',company,department:'SALES',type:input.type,poId:id,fileId:doc.fileId,name:doc.name,sha256}))throw Error('Immutable original customer document plan conflict');
+ return true;
+}
+async function uploadCustomerDocumentSlot({company,staff,requestId,input,plan,documentService}){
+ assertCustomerDocumentPlan({company,staff,requestId,input,plan});if(typeof documentService!=='function')throw Error('Original document service required');
+ const upload=copy(plan.upload),receipt=await documentService({...upload,base64:input.base64});
+ if(receipt?.ok!==true||['fileId','company','poId','sha256','name'].some(key=>receipt[key]!==upload[key]))throw Error('Original customer document upload unconfirmed; retain same file ID');
+ return{fileId:upload.fileId,company,poId:upload.poId,sha256:upload.sha256,name:upload.name};
+}
+module.exports={captureOriginalCustomerDocumentPlan,assertCustomerDocumentPlan,uploadCustomerDocumentSlot};
+
+},
+// customer-document-fenced-store.cjs sha256:3bc2cc3183c53c52529c4b5f5d668638d52d92fe7724e8ff778bc8f711421428
+"customer-document-fenced-store.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs"),{createSegmentedPlanCodec,copy,same}=load("segmented-plan.cjs");
+const {assertCustomerDocumentPlan,uploadCustomerDocumentSlot}=load("customer-document-plan.cjs"),{requireOriginalSalesDelegation}=load("sales-delegation.cjs");
+const unversion=row=>{const result=copy(row);delete result._version;delete result.company;return result;};
+// The ORIGINAL document event is already immutable and contains its file receipt.
+// Upload then conditional INSERT that event: no extra CMS file-confirmation row,
+// no mutable ledger rewrite, no separate stock authority or legacy apply.
+function createCustomerDocumentFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+ requireOriginalSalesDelegation(staff,request?.input?.customerId);
+ if(!['NCT','GHR'].includes(company)||staff.canUploadCustomerDocument!==true||request.input?.action!=='DOCUMENT'
+  ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.stockProtocol!==1||typeof request.stockBuild!=='string'||!request.stockBuild
+  ||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
+  ||['read','insert','compareAndSet','compareAndRemove'].some(method=>typeof store?.[method]!=='function')||typeof documentService!=='function')throw Error('Private original customer file fence required');
+ const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids;
+ // Existing source fulfilment co-writer category, not a new financial capability.
+ const key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:'SHIPMENT',input:request.input,stockProtocol:request.stockProtocol,
+  stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
+ const documentId=hash(company,request.requestId,staff.memberId,'CUSTOMER_DOCUMENT');
+ async function beforeDocumentInsert(collection,row){
+  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  if(collection!==journal||row?._id!==documentId||row.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'||row.company!==company
+   ||!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
+   ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
+   ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original customer document APPLY fence required');
+  if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded original document manifest required');const fragments=[];
+  for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
+  if(plan.writes.length!==1||plan.writes[0].collection!==journal||plan.writes[0].before!==null||!same(plan.writes[0].after,row))throw Error('Exact immutable original document insertion required');
+  const event=unversion(row),doc=event.details?.document,recordedStaff={...staff,staffName:event.initiatedByStaffName};
+  const prepared={expectedVersion:request.input.version,event,upload:{action:'UPLOAD',company,department:'SALES',type:doc?.type,poId:documentId,fileId:doc?.fileId,name:doc?.name,sha256:doc?.sha256}};
+  assertCustomerDocumentPlan({company,staff:recordedStaff,requestId:request.requestId,input:request.input,plan:prepared});
+  await uploadCustomerDocumentSlot({company,staff:recordedStaff,requestId:request.requestId,input:request.input,plan:prepared,documentService});
+  // A late file callback does not authorize a late CMS write. Never take/renew/
+  // steal any lease or accept a changed owner, checkpoint, mode or generation.
+  if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original document callback fence changed; retain request');
+ }
+ const metadata=(collection,row)=>collection===journal&&row?._id!==documentId&&row?.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
+ return{read:(...args)=>store.read(...args),
+  insert:async(collection,row)=>{if(!metadata(collection,row))await beforeDocumentInsert(collection,row);return store.insert(collection,row);},
+  compareAndSet:(collection,id,version,row)=>{if(!metadata(collection,row)||id!==row._id)throw Error('Original customer document is insert-only');return store.compareAndSet(collection,id,version,row);},
+  compareAndRemove:(collection,id,attempt)=>{if(collection!==journal||id!==lockId)throw Error('Only exact owned document protocol lock release allowed');return store.compareAndRemove(collection,id,attempt);}};
+}
+module.exports={createCustomerDocumentFencedStore};
+
+},
 // current-warehouse-dispatch-save.cjs sha256:f73bb7bdf82c474ea26bb471034cc0da14d51314185bac4b229938aabe2dc688
 "current-warehouse-dispatch-save.cjs": (load, module) => {
 'use strict';
@@ -6030,7 +6171,7 @@ function appendTaskDispatchCheckpoints({ company, plan, products, states, taskRo
 module.exports = { appendTaskDispatchCheckpoints };
 
 },
-// sales-gateway-current.cjs sha256:739cf903ab81e7bc5e2ef083b50d8ba9424133650a6a0f6bd404c343c68b026f
+// sales-gateway-current.cjs sha256:67b31ee12c3715f15eb95391f51cf22db623cf5565cbd9b7685926edfbd3cf87
 "sales-gateway-current.cjs": (load, module) => {
 'use strict';
 const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
@@ -6047,7 +6188,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
   const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave
-    : ['PLAN', 'ORDER_DATE'].includes(body.action) ? current.arrangementSave : null;
+    : ['PLAN', 'ORDER_DATE'].includes(body.action) ? current.arrangementSave : body.action==='DOCUMENT'?current.documentSave:null;
   if (typeof save !== 'function') {
     throw Error('Current Sales action is not connected; no legacy write fallback');
   }
@@ -6112,6 +6253,8 @@ export const createCurrentSalesDemandSave = load("current-sales-save.cjs").creat
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
 export const createCurrentSalesShipmentSave = load("current-sales-shipment-save.cjs").createCurrentSalesShipmentSave;
 export const createCurrentSalesArrangementSave = load("current-sales-arrangement-save.cjs").createCurrentSalesArrangementSave;
+export const createCurrentSalesDocumentSave = load("current-sales-document-save.cjs").createCurrentSalesDocumentSave;
+export const createCustomerDocumentFencedStore = load("customer-document-fenced-store.cjs").createCustomerDocumentFencedStore;
 export const createCurrentWarehouseDispatchSave = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseDispatchSave;
 export const createCurrentWarehouseShipmentRead = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseShipmentRead;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;

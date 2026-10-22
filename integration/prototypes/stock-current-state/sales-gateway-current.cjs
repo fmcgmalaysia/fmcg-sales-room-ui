@@ -13,7 +13,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
   if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
   if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
   const save = body.action === 'ADJUST' ? current.save : ['SELECT', 'CANCEL'].includes(body.action) ? current.shipmentSave
-    : ['PLAN', 'ORDER_DATE'].includes(body.action) ? current.arrangementSave : null;
+    : ['PLAN', 'ORDER_DATE'].includes(body.action) ? current.arrangementSave : body.action==='DOCUMENT'?current.documentSave:null;
   if (typeof save !== 'function') {
     throw Error('Current Sales action is not connected; no legacy write fallback');
   }

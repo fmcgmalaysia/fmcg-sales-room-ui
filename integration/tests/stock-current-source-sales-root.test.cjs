@@ -4,6 +4,8 @@ const {createCurrentSalesRead}=require('../prototypes/stock-current-state/curren
 const {createCurrentSalesDemandSave}=require('../prototypes/stock-current-state/current-sales-save.cjs');
 const {createCurrentSalesShipmentSave}=require('../prototypes/stock-current-state/current-sales-shipment-save.cjs');
 const {createCurrentSalesArrangementSave}=require('../prototypes/stock-current-state/current-sales-arrangement-save.cjs');
+const {createCurrentSalesDocumentSave}=require('../prototypes/stock-current-state/current-sales-document-save.cjs'),{createCustomerDocumentFencedStore}=require('../prototypes/stock-current-state/customer-document-fenced-store.cjs');
+const {createSegmentedFencedProof}=require('../prototypes/stock-current-state/segmented-fenced-proof.cjs');
 const {requireOriginalSalesDelegation}=require('../prototypes/stock-current-state/sales-delegation.cjs');
 const {dispatchCurrentSalesGateway}=require('../prototypes/stock-current-state/sales-gateway-current.cjs');
 const {planCollections}=require('../prototypes/stock-current-state/domain-scope.cjs'),{WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs');
@@ -12,17 +14,20 @@ const filename=require.resolve('./stock-current-sales-save.test.cjs'),original=v
 async function fixture(coverage=true){
  const f=await original(true),calls=[],modules=Object.assign({},...['customerShipmentPlan.js','customerShipmentLedger.js','salesOrderAdjustment.js','customerAccountLedger.js','customerDebtor.js','packingListOperations.js','packingListModel.js'].map(file=>load(file)),
   load('../prototypes/stock-current-state/customerFulfilment.candidate.js'),load('../prototypes/stock-current-state/warehousePreparation.candidate.js'));
+ const files=new Map(),fileCalls=[];let loseFile=false;
  const readContext=f.deps.readContext;f.deps.readContext=async(...args)=>{const context=await readContext(...args);return{...context,tasks:context.tasks.map(task=>({...task,transactionCurrency:'USD'}))};};
  const originalSource=fs.readFileSync(path.join(folder,'customerFulfilmentService.candidate.js'),'utf8'),readBody=originalSource.slice(originalSource.indexOf('export async function readCustomerFulfilment(')).replace(/^export /,'');
  const readOriginal=vm.runInNewContext(readBody+';readCustomerFulfilment;',{...modules,Date,Math,readFulfilmentContext:()=>{throw Error('Current source read must supply original verified context');}});
  for(const row of await f.deps.readCurrentTaskRows('NCT',['T','U']))f.db.set('NCTTasks/'+row._id,row);
- const bindings={...modules,readAllocations:f.deps.readAllocations,projectPurchaseOrders:f.deps.projectPurchaseOrders,items:f.deps.items,createCurrentSalesRead,createCurrentSalesDemandSave,createCurrentSalesShipmentSave,createCurrentSalesArrangementSave,
+ const bindings={...modules,readAllocations:f.deps.readAllocations,projectPurchaseOrders:f.deps.projectPurchaseOrders,items:f.deps.items,createCurrentSalesRead,createCurrentSalesDemandSave,createCurrentSalesShipmentSave,createCurrentSalesArrangementSave,createCurrentSalesDocumentSave,createCustomerDocumentFencedStore,
   requireOriginalSalesDelegation,planCollections,PURCHASE_CURRENT_PROJECTION_VERSION:2,CUSTOMER_CURRENT_FULFILMENT_VERSION:2,operationId:cryptoHash,
   fulfilmentStore:{read:async(collection,id)=>{calls.push('CONTROL');const row=await f.deps.store.read(collection,id);return row?{...row,stockCommitVersion:row._version}:null;},
    all:async collection=>{calls.push(collection);assert.equal(collection,'PurchaseOrders');return[];}},
   readFulfilmentContext:async(...args)=>{calls.push('CONTEXT');return f.deps.readContext(...args);},readCustomerFulfilment:readOriginal,
   createSdkConditionalStore:configuration=>{calls.push('SDK');assert.equal(configuration.company,'NCT');assert.deepEqual(copy(configuration.dateTimeFields),{NCTActivity:['activityTime']});return f.deps.store;},
-  createSegmentedFencedProof:configuration=>{assert.equal(configuration.company,'NCT');assert.equal(configuration.domainWrites,true);return f.deps.protocol;}};
+  requestPurchaseDocument:async command=>{fileCalls.push(copy(command));if(command.action==='ALLOCATE')return{ok:true,fileId:'Original_Source_File_0001'};
+   assert.equal(command.action,'UPLOAD');if(files.has(command.fileId))assert.deepEqual(files.get(command.fileId),copy(command));else files.set(command.fileId,copy(command));if(loseFile){loseFile=false;throw Error('Lost original source file reply');}return{ok:true,...copy(command)};},
+  createSegmentedFencedProof:configuration=>{assert.equal(configuration.company,'NCT');assert.equal(configuration.domainWrites,true);return configuration.store===f.deps.store?f.deps.protocol:createSegmentedFencedProof(configuration);}};
  let source=fs.readFileSync(path.join(folder,'stockCurrentSourceSales.js'),'utf8');
  if(coverage)source=source.replace('const writerCoverage=Object.freeze({});','const writerCoverage=Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
  const create=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return createCurrentSourceSales;})()',bindings);
@@ -33,7 +38,7 @@ async function fixture(coverage=true){
   Buffer,timingSafeEqual:crypto.timingSafeEqual,getSecret:async()=>{calls.push('BEARER');return'SYNTHETIC-TEST-ONLY';},createCurrentSourceSales:create,dispatchCurrentSalesGateway,
   readCustomerFulfilment:async()=>{calls.push('LEGACY_READ');return{legacy:true};},saveCustomerFulfilment:async()=>{calls.push('LEGACY_SAVE');return{legacy:true};},saveCustomerAccountDocument:async()=>{calls.push('LEGACY_DOCUMENT');return{legacy:true};},handleSalesTaskChat:async()=>({chat:true})});
  const send=(body,authorized=true)=>gateway({headers:authorized?{Authorization:'Bearer SYNTHETIC-TEST-ONLY'}:{},body:{json:async()=>body}});
- return{...f,calls,create,root,send};
+ return{...f,calls,create,root,send,files,fileCalls,loseFile:()=>loseFile=true};
 }
 const cryptoHash=(...parts)=>crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0,32);
 const body=(action,input={},requestId='11111111-1111-4111-8111-111111111111')=>({company:'NCT',customerId:'C',customerName:'Customer',staff:{staffId:'S',staffName:'Sales'},action,input,requestId});
@@ -73,12 +78,24 @@ test('actual source bearer root accepts original date/version with current metad
  assert.equal(JSON.stringify([...f.db].filter(([key])=>/^(StockProducts|StockPositions|StockClaims|PurchaseOrders|NCTTasks|NCTOrders)\//.test(key))),immutable);
  const changed=await f.send({...request,input:{...request.input,date:'2026-11-02'}});assert.equal(changed.status,400);assert.equal(f.calls.includes('LEGACY_SAVE'),false);
 });
-test('default source gateway validates bearer before control/data, never falls back on missing/maintenance/current metadata or unconnected document',async()=>{
+
+test('actual original bearer gateway DOCUMENT uses paired fixed-ID file fence, original receipt and one ledger event without touching stock or issuing invoice',async()=>{
+ const f=await fixture(),initial=(await f.send(body('READ'))).body.result;
+ const immutable=JSON.stringify([...f.db].filter(([key])=>/^(StockProducts|StockPositions|StockClaims|PurchaseOrders|NCTTasks|NCTOrders)\//.test(key)));
+ const request=body('DOCUMENT',{stockCurrent:initial.stockCurrent,version:initial.accountVersion,type:'CUSTOMER_RECEIPT',number:'RCV-1',date:'2026-10-22',currency:'USD',amountCents:10000,reason:'Original file path',base64:Buffer.from('%PDF-1.4\n'+'a'.repeat(220000)).toString('base64')});assert.ok(JSON.stringify(request).length>200000,'original PDFs retain their original 3MiB limit, not normal non-file UI cap');
+ const first=await f.send(request);assert.equal(first.status,200,first.body.error);assert.equal(first.body.result.pending,true);assert.equal(f.fileCalls.filter(row=>row.action==='ALLOCATE').length,1);assert.equal(f.files.size,0);
+ f.loseFile();const unknown=await f.send(request);assert.equal(unknown.status,400);assert.match(unknown.body.error,/Lost original source file reply/);assert.equal(f.files.size,1);
+ let saved;for(let step=0;step<8;step++){const current=await f.send({...request,staff:{...request.staff,staffName:'Renamed Sales'}});assert.equal(current.status,200,current.body.error);if(current.body.result.ok){saved=current.body.result;break;}assert.equal(current.body.result.pending,true);}assert.ok(saved);assert.equal(saved.stockGeneration,2);assert.equal(typeof saved.documentId,'string');
+ assert.deepEqual(copy((await f.send(request)).body.result),copy(saved));assert.equal(f.fileCalls.filter(row=>row.action==='ALLOCATE').length,1);assert.equal(f.files.size,1);assert.equal([...f.db.values()].filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED').length,1);
+ assert.equal([...f.db.values()].find(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED').initiatedByStaffName,'Sales');
+ assert.equal(JSON.stringify([...f.db].filter(([key])=>/^(StockProducts|StockPositions|StockClaims|PurchaseOrders|NCTTasks|NCTOrders)\//.test(key))),immutable);assert.equal([...f.db.values()].some(row=>row.details?.shipment?.status==='INVOICED'),false);assert.equal(f.calls.includes('LEGACY_DOCUMENT'),false);
+});
+test('default source gateway validates bearer before control/data, never falls back on missing/maintenance/current metadata or unqualified document',async()=>{
  const f=await fixture();assert.equal((await f.send(body('READ'),false)).status,401);assert.deepEqual(f.calls,['BEARER']);
  const control=f.db.get('NCTActivity/'+f.deps.protocol.ids.controlId);
  for(const mode of ['MAINTENANCE','SHADOW','BAD']){control.mode=mode;const result=await f.send(body('READ'));assert.equal(result.status,400);assert.equal(f.calls.includes('LEGACY_READ'),false);}
  control.mode='ACTIVE';assert.equal((await f.send(body('ADJUST',{taskId:'T',customerId:'C'}))).status,400);
- assert.equal((await f.send(body('DOCUMENT',{type:'CUSTOMER_RECEIPT'}))).status,400);assert.equal(f.calls.includes('LEGACY_DOCUMENT'),false,'DOCUMENT pending same-fence connection, not a production-ready disabled workflow');
+ assert.equal((await f.send(body('DOCUMENT',{type:'CUSTOMER_RECEIPT'}))).status,400);assert.equal(f.calls.includes('LEGACY_DOCUMENT'),false,'old client without current metadata cannot bypass paired document protocol');
  const closed=await fixture(false);assert.equal((await closed.send(body('READ'))).status,400);assert.equal(closed.calls.includes('CONTEXT'),false);
  const legacy=await fixture();legacy.db.get('NCTActivity/'+legacy.deps.protocol.ids.controlId).mode='LEGACY';assert.equal((await legacy.send(body('READ'))).body.result.legacy,true);assert.equal(legacy.calls.includes('SDK'),false);
  assert.equal((await legacy.send(body('ADJUST',{stockCurrent:{schema:'CURRENT_STOCK_V2',stockProtocol:1}}))).status,400);assert.equal(legacy.calls.includes('LEGACY_SAVE'),false);

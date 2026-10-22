@@ -32,14 +32,16 @@ test('generated SDK store accepts an exact cross-realm schema and preserves type
 test('new current Purchase read and original margin co-writer exports are executable private capabilities, not public routes',async()=>{
   const source=fs.readFileSync(path.join(folder,'stockCurrentCommands.js'),'utf8');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')
-    +'\nreturn {readCurrentPurchaseProjection,createCurrentMarginReferenceSave,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createPackingPhotoFencedStore};})()',
+    +'\nreturn {readCurrentPurchaseProjection,createCurrentMarginReferenceSave,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createPackingPhotoFencedStore,createCurrentSalesDocumentSave,createCustomerDocumentFencedStore};})()',
     {createHash:crypto.createHash,randomBytes:crypto.randomBytes,Buffer});
   assert.throws(()=>api.createCurrentMarginReferenceSave({}),/dependencies/);
   assert.throws(()=>api.createCurrentWarehousePreparationSave({}),/dependencies/);
   assert.throws(()=>api.createCurrentWarehouseCbmSave({}),/dependencies/);
   assert.throws(()=>api.createPackingPhotoFencedStore({}),/dependencies/);
+  assert.throws(()=>api.createCurrentSalesDocumentSave({}),/dependencies/);
+  assert.throws(()=>api.createCustomerDocumentFencedStore({}),/delegation/);
   await assert.rejects(api.readCurrentPurchaseProjection({}),/snapshot/);
-  assert.equal([...source.matchAll(/^export const /gm)].length,45);
+  assert.equal([...source.matchAll(/^export const /gm)].length,47);
 });
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;

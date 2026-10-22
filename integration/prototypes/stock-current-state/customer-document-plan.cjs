@@ -1,8 +1,8 @@
 'use strict';
-const {Buffer}=require('node:buffer'),{createHash}=require('node:crypto');
 const {hash}=require('./commit-proof.cjs'),{copy,same}=require('./segmented-plan.cjs'),{requireOriginalSalesDelegation}=require('./sales-delegation.cjs');
+function pdfFacts(base64){const {Buffer}=require('node:buffer');const {createHash}=require('node:crypto');const bytes=Buffer.from(base64,'base64');return{bytes,sha256:createHash('sha256').update(bytes).digest('hex')};}
 const fileId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{10,200}$/.test(value),clean=value=>String(value??'').trim().replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,90);
-// OFFLINE PRIVATE prepare capture. The original factory owns all document, invoice,
+// PRIVATE candidate prepare capture. The original factory owns all document, invoice,
 // duplicate, PDF, customer and account-version rules. Never its legacy apply.
 async function captureOriginalCustomerDocumentPlan({company,staff,requestId,input,context,createCustomerAccountOperations,now,slot}){
  requireOriginalSalesDelegation(staff,input?.customerId);
@@ -29,7 +29,7 @@ function assertCustomerDocumentPlan({company,staff,requestId,input,plan}){
  const event=plan?.event,doc=event?.details?.document,id=hash(company,requestId,staff.memberId,'CUSTOMER_DOCUMENT');
  if(!['NCT','GHR'].includes(company)||staff.canUploadCustomerDocument!==true||!/^[a-f0-9-]{36}$/i.test(requestId||'')||input?.action!=='DOCUMENT'
   ||typeof input.base64!=='string'||input.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(input.base64))throw Error('Immutable original customer PDF required');
- const bytes=Buffer.from(input.base64,'base64'),sha256=createHash('sha256').update(bytes).digest('hex');
+ const {bytes,sha256}=pdfFacts(input.base64);
  if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64
   ||event?._id!==id||event.title!==id||event.description!==id||event.image!==input.customerId||event.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'||event.result!=='SAVED'
   ||event.initiatedByStaffId!==staff.staffId||event.initiatedByStaffName!==staff.staffName||event.actorType!=='STAFF'||event.message!==String(input.reason).trim()||!Number.isFinite(Date.parse(event.activityTime))

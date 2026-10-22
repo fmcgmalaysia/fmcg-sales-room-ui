@@ -36,6 +36,7 @@ const entries = {
   createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs',
   createCurrentSalesShipmentSave: 'current-sales-shipment-save.cjs',
   createCurrentSalesArrangementSave: 'current-sales-arrangement-save.cjs',
+  createCurrentSalesDocumentSave:'current-sales-document-save.cjs',createCustomerDocumentFencedStore:'customer-document-fenced-store.cjs',
   createCurrentWarehouseDispatchSave: 'current-warehouse-dispatch-save.cjs', createCurrentWarehouseShipmentRead: 'current-warehouse-dispatch-save.cjs',
   dispatchCurrentSalesGateway: 'sales-gateway-current.cjs',
   requireOriginalSalesDelegation:'sales-delegation.cjs'
@@ -52,7 +53,7 @@ function collect(name) {
   } else source = fs.readFileSync(path.join(__dirname, name), 'utf8').replace(/\r\n/g, '\n');
   sources.set(name, source);
   for (const match of source.matchAll(/require\('([^']+)'\)/g)) {
-    if (match[1] === 'node:crypto') continue;
+    if (match[1] === 'node:crypto'||match[1]==='node:buffer') continue;
     if (!match[1].startsWith('./')) throw Error('Unsupported backend runtime dependency: ' + match[1]);
     collect(match[1].slice(2));
   }
@@ -61,11 +62,12 @@ for (const name of Object.values(entries)) collect(name);
 const factories = [...sources.entries()].map(([name, source]) => {
   const digest = createHash('sha256').update(source).digest('hex');
   source = source.replace("const { randomUUID } = require('node:crypto');", "const randomUUID = () => randomBytes(16).toString('hex');")
+    .replace("const {Buffer}=require('node:buffer');",'const Buffer=StockRuntimeBuffer;').replace("const {createHash}=require('node:crypto');",'')
     .replace(/require\('\.\/([^']+)'\)/g, (_, target) => 'load(' + JSON.stringify(target) + ')');
   if (/require\(/.test(source)) throw Error('Unbundled backend runtime dependency');
   return '// ' + name + ' sha256:' + digest + '\n' + JSON.stringify(name) + ': (load, module) => {\n' + source + '\n}';
 });
-const out = ["import { createHash, randomBytes } from 'crypto';",
+const out = ["import { createHash, randomBytes } from 'crypto';","import { Buffer as StockRuntimeBuffer } from 'buffer';",
   '// Candidate-only backend runtime. Original gateway authentication and verified',
   '// all-writer coverage are mandatory. No webMethods, SDK elevation or mode switch.',
   'const factories = {\n' + factories.join(',\n') + '\n};',
