@@ -18,6 +18,7 @@ test('preserves actual existing body paths and inherits original colour without 
     assert.ok(fs.readFileSync(path.join(__dirname, '../../purchase-live', file), 'utf8').includes(body));
     const decorated = transferPerson({ taskId: 'A', relations: [relation], variant }).svg;
     assert.ok(decorated.includes(body)); assert.ok(decorated.includes('<ellipse'));
+    assert.ok(decorated.includes('viewBox="0 0 20 20"')); assert.ok(decorated.includes('overflow:visible'));
     assert.ok(decorated.includes('stroke="currentColor"')); assert.equal(decorated.includes('<polygon'), false);
     assert.equal(decorated.includes('#'), false);
   }

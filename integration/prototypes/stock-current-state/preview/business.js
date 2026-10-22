@@ -356,10 +356,11 @@ function transferPerson({ taskId, relations, variant = 'TASK_GRID' }) {
       || r.repaid + (r.returned || 0) > r.quantity) throw Error('Transfer display requires known quantities');
   }
   const halo = relations.some(r => (r.borrowerTaskId === taskId || r.lenderTaskId === taskId) && r.repaid + (r.returned || 0) < r.quantity);
-  // Expanded canvas retains original body coordinates and scale, adding room above.
+  // Same canvas/body scale as the original CSS-sized icon. Halo paints above it;
+  // expanding viewBox would shrink the original head inside existing16px CSS boxes.
   // currentColor inherits the existing orange/blue state; no gradient, triangle or badge.
   const svg = halo
-    ? '<svg viewBox="0 -5 20 25" width="16" height="20" aria-hidden="true" style="fill:currentColor">'
+    ? '<svg viewBox="0 0 20 20" aria-hidden="true" style="fill:currentColor;overflow:visible">'
       + '<ellipse cx="10" cy="-2.5" rx="5.5" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.25"/>' + shapes[variant] + '</svg>'
     : '<svg viewBox="0 0 20 20" aria-hidden="true">' + shapes[variant] + '</svg>';
   return { halo, svg };
