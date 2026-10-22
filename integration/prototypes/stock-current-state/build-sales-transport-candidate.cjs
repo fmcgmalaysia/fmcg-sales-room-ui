@@ -19,6 +19,7 @@ adjustment = once(adjustment, 'if(/changed|Enter |Select |must |already|before |
 adjustment = once(adjustment, 'const action=pending.action;pending=null;',
   "if(pending.action==='ADJUST'&&pending.input?.stockCurrent){const receipt=message.result;if(receipt?.ok===false&&receipt.pending===true&&receipt.requestId===pending.requestId&&['BEFORE','APPLY','VERIFY'].includes(receipt.phase)&&Number.isSafeInteger(receipt.completedCount)&&Number.isSafeInteger(receipt.totalRecords)&&receipt.totalRecords>0&&receipt.completedCount>=0&&receipt.completedCount<=receipt.totalRecords){lock(true);status('Saving 保存中… '+receipt.completedCount+' / '+receipt.totalRecords);timer=setTimeout(transmit,250);return;}if(receipt?.ok!==true||receipt.requestId!==pending.requestId||!Number.isSafeInteger(receipt.stockGeneration)||receipt.stockGeneration<=pending.input.stockCurrent.stockGeneration){status('Save not confirmed 保存尚未确认，请重试同一次操作。');dialog.querySelector('[data-retry]').hidden=false;return;}}\n  const action=pending.action;pending=null;");
 adjustment = once(adjustment, 'version:result.adjustmentVersion,plan};render();', 'version:result.adjustmentVersion,plan,stockCurrent:result.stockCurrent};render();');
+adjustment=require('./source-sales-adjustment-ui-overlay.cjs')(adjustment);
 let shipment = fs.readFileSync(path.join(root, 'sales-room/shipment-ui.js'), 'utf8').replace(/\r\n/g, '\n');
 shipment = once(shipment, "pending=null,saving=false;", "pending=null,saving=false,timer=null,serial=0;");
 shipment = once(shipment, "action,requestId:crypto.randomUUID(),input};transmit();",
@@ -35,6 +36,7 @@ shipment = once(shipment, 'open(customerId){if(!dialog){',
   'open(customerId){if(pending?.input?.stockCurrent){if(!dialog.open)dialog.showModal();return;}if(!dialog){');
 shipment = once(shipment, ' window.masterShipments=',
   " window.addEventListener('beforeunload',event=>{if(pending?.input?.stockCurrent){event.preventDefault();event.returnValue='';}});\n window.masterShipments=");
+shipment=require('./source-sales-shipment-ui-overlay.cjs')(shipment);
 for (const [file, source] of [['customerFulfilmentGateway.candidate.js', gateway], ['sales-order-adjustment.candidate.js', adjustment], ['sales-shipment-ui.candidate.js', shipment]]) {
   const target = path.join(__dirname, file);
   new Function(source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, ''));

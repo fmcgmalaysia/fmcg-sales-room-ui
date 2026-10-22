@@ -2,7 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { execFileSync } = require('node:child_process');
 const { dispatchCurrentSalesGateway } = require('../prototypes/stock-current-state/sales-gateway-current.cjs');
 const root = path.join(__dirname, '../prototypes/stock-current-state');
-const stockCurrent = { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 4 };
+const stockCurrent = { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 4,stockIdentity:{staffId:'S',memberId:'SOURCE_SALES/S'} };
 const staff = { staffId: 'S', staffName: 'LAW', memberId: 'SOURCE_SALES/S', customerId: 'C', canSelectShipment: true };
 const body = { company: 'NCT', action: 'ADJUST', customerId: 'C', customerName: 'Customer', staff,
   requestId: '11111111-1111-4111-8111-111111111111', input: { taskId: 'T', mode: 'SPLIT', quantity: 40, stockCurrent } };
@@ -62,13 +62,13 @@ test('active source PLAN/ORDER_DATE route uses only the connected original arran
       resolveCurrentSales: async () => ({ mode: 'ACTIVE' }) }), /not connected/);
   }
 });
-function uiFixture() {
-  let onMessage, html = '', closed = 0, refreshed = 0, ids = 0;
-  const sent = [], timers = new Map(), nodes = new Map();
+function uiFixture(db=new Map()) {
+  let html = '', closed = 0, refreshed = 0, ids = 0,failWrite=false,failRemove=false;
+  const sent = [], timers = new Map(), nodes = new Map(),listeners=new Set(),events=[],gets=[];
   const node = () => ({ disabled: false, hidden: false, value: '', textContent: '', setAttribute() {}, focus() {} });
-  const dialog = { className: '', addEventListener() {}, showModal() {}, close() { closed++; },
+  const dialog = { className: '', open:false, addEventListener() {}, showModal() { this.open=true; }, close() { this.open=false;closed++; },
     querySelector: selector => nodes.get(selector) || null,
-    querySelectorAll: selector => selector === 'button,input' ? [...nodes.values()]
+      querySelectorAll: selector => selector === 'button,input' ? [...nodes.values()]:selector==='input,[data-close],[data-back],[data-save]'?['[data-first]','[data-close]','[data-back]','[data-save]'].map(key=>nodes.get(key)).filter(Boolean)
       : selector === '[data-mode]' ? ['INCREASE', 'SPLIT', 'REDUCE'].map(mode => nodes.get('[mode-' + mode + ']')).filter(Boolean)
       : selector === '[data-close]' ? [nodes.get(selector)].filter(Boolean) : [],
     set innerHTML(value) { html = value; nodes.clear();
@@ -77,23 +77,26 @@ function uiFixture() {
         if (!nodes.has(key)) nodes.set(key, { ...node(), dataset: { mode: match[2] } });
       }
     }, get innerHTML() { return html; } };
-  const parent = { postMessage: value => sent.push(JSON.parse(JSON.stringify(value))) };
-  const window = { addEventListener: (name, fn) => { if (name === 'message') onMessage = fn; },
+  const parent = { postMessage: value => {events.push('NETWORK');sent.push(JSON.parse(JSON.stringify(value)));} };
+  const window = { parent,addEventListener: (name, fn) => { if (name === 'message') listeners.add(fn); },
     customerShipmentBatches: { notify: () => refreshed++ }, dispatchEvent() {} };
-  vm.runInNewContext(fs.readFileSync(path.join(root, 'sales-order-adjustment.candidate.js'), 'utf8'), {
+  const context={
     window, parent, document: { createElement: () => dialog, body: { appendChild() {} } },
     crypto: { randomUUID: () => String(++ids).padStart(8, '0') + '-1111-4111-8111-111111111111' },
     setTimeout: (fn, ms) => { const id = ++ids; timers.set(id, { fn, ms }); return id; }, clearTimeout: id => timers.delete(id),
+    sessionStorage:{getItem:key=>{gets.push(key);return db.get(key)||null;},setItem:(key,value)=>{if(failWrite)throw Error('Cache unavailable');events.push('CACHE');db.set(key,value);},removeItem:key=>{if(!failRemove)db.delete(key);}},
     CustomEvent: function () {}, alert: message => { throw Error(message); }
-  });
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(root,'source-sales-current-requests.js'),'utf8'),context);
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'sales-order-adjustment.candidate.js'), 'utf8'),context);
   function reply(result, extra = {}) { const request = sent.at(-1);
-    onMessage({ source: parent, data: { type: 'SALES_ROOM_SHIPMENT_RESULT', company: 'NCT', requestId: request.requestId, ok: true, result, ...extra } }); }
+    for(const handler of [...listeners])handler({ source: parent, data: { type: 'SALES_ROOM_SHIPMENT_RESULT', company: 'NCT', requestId: request.requestId, ok: true, result, ...extra } }); }
   function start(current = stockCurrent) {
     window.salesOrderAdjustment.open({ company: 'NCT', customerId: 'C', orderId: 'O', lineId: 'L', quantity: 100, name: 'Item' });
     reply({ lines: [{ orderId: 'O', sourceLineId: 'L', taskId: 'T', requested: 100 }], plans: [], adjustmentVersion: 'ADJUST-V1', ...(current ? { stockCurrent: current } : {}) });
     nodes.get('[mode-SPLIT]').onclick(); nodes.get('[data-first]').value = '40'; nodes.get('[data-first]').oninput(); nodes.get('[data-save]').onclick();
   }
-  return { start, reply, sent, timers, nodes, closed: () => closed, refreshed: () => refreshed,
+  return { start, reply, sent, timers, nodes, db,events,gets,window,failWrite:()=>failWrite=true,failRemove:()=>failRemove=true,allowRemove:()=>failRemove=false,closed: () => closed, refreshed: () => refreshed,
     retry: () => nodes.get('[data-retry]').onclick() };
 }
 test('actual adjustment UI retains same immutable request across bounded phases and closes only on confirmed generation', () => {
@@ -105,7 +108,7 @@ test('actual adjustment UI retains same immutable request across bounded phases 
     const continuation = [...f.timers.entries()].find(([, value]) => value.ms === 250); assert.ok(continuation);
     f.timers.delete(continuation[0]); continuation[1].fn(); assert.deepEqual(f.sent.at(-1), request);
   }
-  f.reply({ ok: true, requestId: request.requestId, stockGeneration: 5 });
+  f.reply({ ok: true,company:'NCT',taskId:'T',requested:100, requestId: request.requestId, stockGeneration: 5 });
   assert.equal(f.closed(), 1); assert.equal(f.refreshed(), 1);
 });
 test('malformed/current errors never close or discard pending request on error-text guesses', () => {
@@ -121,4 +124,64 @@ test('malformed/current errors never close or discard pending request on error-t
 test('original non-current adjustment successful response remains unchanged', () => {
   const f = uiFixture(); f.start(null); assert.equal(f.sent.at(-1).input.stockCurrent, undefined);
   f.reply({ legacy: true }); assert.equal(f.closed(), 1); assert.equal(f.refreshed(), 1);
+});
+
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+function resume(f,customerId='C',staffId='S'){
+  assert.deepEqual(f.sent.at(-1).input,{resume:'SOURCE_SALES_V1'});
+  f.reply({ok:true,schema:'SOURCE_SALES_RESUME_V1',company:'NCT',customerId,staff:{staffId,memberId:'SOURCE_SALES/'+staffId}});
+}
+test('complete adjustment request and original view are retained before network, with quota failure preventing send',()=>{
+  const f=uiFixture();f.start();assert.deepEqual(f.events,['NETWORK','CACHE','NETWORK']);
+  const entry=JSON.parse([...f.db.values()][0]);assert.deepEqual(entry.request,f.sent.at(-1));
+  assert.equal(entry.ui.data.line.taskId,'T');assert.equal(entry.ui.mode,'SPLIT');assert.equal(entry.ui.selection.orderId,'O');
+  const blocked=uiFixture();blocked.failWrite();blocked.start();assert.equal(blocked.sent.length,1);assert.equal(blocked.db.size,0);
+  assert.match(blocked.nodes.get('[data-status]').textContent,/Cache unavailable/);assert.equal(blocked.nodes.get('[data-first]').disabled,true);
+});
+test('wrong company/task final or failed cache cleanup cannot close a retained adjustment',()=>{
+  const f=uiFixture();f.start();const request=f.sent.at(-1),receipt={ok:true,company:'NCT',taskId:'T',requested:100,requestId:request.requestId,stockGeneration:5};
+  for(const bad of [{...receipt,company:'GHR'},{...receipt,taskId:'OTHER'},{...receipt,requested:0}]){
+    f.reply(bad);assert.equal(f.db.size,1);assert.equal(f.closed(),0);f.retry();assert.deepEqual(f.sent.at(-1),request);
+  }
+  f.failRemove();f.reply(receipt);assert.equal(f.db.size,1);assert.equal(f.closed(),0);
+  f.allowRemove();f.retry();f.reply(receipt);assert.equal(f.db.size,0);assert.equal(f.closed(),1);
+});
+test('reload freshly authorizes the cached customer and restores exact same adjustment only for explicit retry',async()=>{
+  const first=uiFixture();first.start();const request=structuredClone(first.sent.at(-1)),f=uiFixture(first.db);
+  f.window.salesOrderAdjustment.open({company:'NCT',customerId:'OTHER',orderId:'OTHER',lineId:'OTHER',quantity:20,name:'Other'});
+  f.reply({stockCurrent,lines:[],plans:[],adjustmentVersion:'OTHER'});
+  assert.equal(f.sent.at(-1).customerId,'C');resume(f);await tick();
+  assert.equal(f.sent.filter(value=>value.action==='ADJUST').length,0);
+  assert.equal(f.nodes.get('[data-first]').value,'40');assert.equal(f.nodes.get('[data-first]').disabled,true);
+  f.retry();assert.deepEqual(f.sent.at(-1),request);assert.equal(f.db.size,1);
+});
+test('pending normal READ failure can recover own cache through original authorization without reading another employee key',async()=>{
+  const first=uiFixture();first.start();const request=structuredClone(first.sent.at(-1)),f=uiFixture(first.db);
+  f.window.salesOrderAdjustment.open({company:'NCT',customerId:'C',orderId:'O',lineId:'L',quantity:100,name:'Item'});
+  f.reply(null,{ok:false,error:'Company save pending'});assert.equal(f.gets.length,0);
+  resume(f);await tick();resume(f);await tick();f.retry();assert.deepEqual(f.sent.at(-1),request);
+  const other=uiFixture(first.db);other.window.salesOrderAdjustment.open({company:'NCT',customerId:'C',orderId:'O',lineId:'L',quantity:100});
+  other.reply(null,{ok:false,error:'Company save pending'});resume(other,'C','OTHER');await tick();
+  assert.equal(other.gets.some(key=>key.includes('/S/')),false);assert.equal(other.sent.filter(value=>value.action==='ADJUST').length,0);assert.equal(other.db.size,1);
+});
+test('cached customer authorization mismatch, malformed cache and late attempt timers never reopen editing or invent another save',async()=>{
+  const first=uiFixture();first.start();const f=uiFixture(first.db);
+  f.window.salesOrderAdjustment.open({company:'NCT',customerId:'C',orderId:'O',lineId:'L',quantity:100});
+  f.reply({stockCurrent,lines:[],plans:[]});resume(f,'OTHER');await tick();
+  assert.equal(f.sent.filter(value=>value.action==='ADJUST').length,0);assert.equal(f.db.size,1);
+  assert.match(f.nodes.get('[data-status]').textContent,/identity unconfirmed/);
+  const timer=[...first.timers.values()].find(value=>value.ms===30000).fn;
+  first.reply({ok:false,pending:true,requestId:first.sent.at(-1).requestId,phase:'APPLY',completedCount:1,totalRecords:2});
+  timer();assert.equal(first.nodes.get('[data-first]').disabled,true);
+  const malformed=uiFixture(new Map([['fmcg-source-sales-current-v1/NCT/S/SOURCE_SALES%2FS','{bad']]));
+  malformed.window.salesOrderAdjustment.open({company:'NCT',customerId:'C',orderId:'O',lineId:'L',quantity:100});
+  malformed.reply({stockCurrent,lines:[],plans:[]});assert.equal(malformed.sent.length,1);assert.equal(malformed.db.size,1);
+});
+test('Source UI builder changes only the original adjustment script seam and reproduces its own assets',()=>{
+  assert.match(execFileSync(process.execPath,[path.join(root,'build-source-sales-ui.cjs'),'--check'],{encoding:'utf8'}),/verified/);
+  const original=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8').replace(/\r\n/g,'\n');
+  const candidate=fs.readFileSync(path.join(root,'source-ui/index.html'),'utf8').replace(/\r\n/g,'\n');
+  assert.equal(candidate.replace('<script src="sales-room/current-requests.js?v=20261022-current-sales-v1"></script><script src="sales-room/order-adjustment.js?v=20261022-current-sales-v1"></script>',
+    '<script src="sales-room/order-adjustment.js?v=20261020-order-adjustment-v1"></script>').replace('<script src="sales-room/shipment-ui.js?v=20261022-current-sales-v1"></script>',
+    '<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script>'),original);
 });
