@@ -58,14 +58,33 @@ function createCurrentPurchaseSave({ company, items, store, protocol, coverage, 
   const prepare = createPurchaseStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
   return async request => {
     const writer = request?.operation === 'ADD_SOURCE' ? 'PURCHASE_SOURCE' : request?.operation === 'PLAN' ? 'PURCHASE_PLAN'
-      : ['EDIT', 'PO', 'AVERAGE_COST'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
+      : ['EDIT', 'PO', 'AVERAGE_COST', 'QTY'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
     if (!writer) throw Error('Supported current Purchase operation required');
     let actor;
-    const result = await createCurrentStockSave({ company, writer, protocol, coverage, authenticate: async () => { actor = await authorize(); return actor; },
+    const result = await createCurrentStockSave({ company, writer, protocol, coverage, authenticate: async () => {
+      actor = await authorize();
+      // Replays also retain the ORIGINAL operation-specific grant, not merely
+      // general Purchase access after a role downgrade.
+      if (request.operation === 'QTY' && actor.role !== 'SUPER ADMIN') throw Error('Only Super Admin may change customer demand.');
+      return actor;
+    },
       prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
       requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
       stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
-    if (result.ok !== true || request.operation !== 'ADD_SOURCE') return result;
+    if (result.ok !== true) return result;
+    if (request.operation === 'QTY') {
+      // Original QTY reduces the procurement commitment, NOT the Sales requested
+      // demand. Keep its original Super Admin validator and immutable stock guards.
+      const id = authorityDependencies.operationId(company, request.requestId, actor.memberId, request.input.taskId, 'PURCHASE_QTY_REDUCED');
+      const receipt = await protocol.readSnapshot(() => store.read(company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', id));
+      const event = receipt.rows;
+      if (!event?._version || event._id !== id || event.title !== id || event.company !== company || event.result !== 'SAVED'
+        || event.action !== 'PURCHASE_QTY_REDUCED' || event.imageAltText !== request.input.taskId
+        || event.initiatedByStaffId !== actor.staffId || event.details?.authorizedRole !== 'SUPER ADMIN'
+        || event.details.after !== request.input.quantity) throw Error('Committed original Purchase quantity receipt requires review');
+      return { ...result, company, operation: 'QTY', savedAt: event.activityTime, taskIds: [request.input.taskId] };
+    }
+    if (request.operation !== 'ADD_SOURCE') return result;
     // Preserve the ORIGINAL supplier-dialog receipt contract. A deterministic ID
     // is not enough: confirm its real committed source row under the read barrier.
     const sourceTaskId = authorityDependencies.operationId(company, request.requestId, actor.memberId, 'PURCHASE_SOURCE');

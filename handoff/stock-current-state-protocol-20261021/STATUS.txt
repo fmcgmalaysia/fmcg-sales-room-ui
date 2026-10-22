@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ADMIN QTY: PURCHASE_ADMIN_QTY_CURRENT.txt. Existing Super Admin-only
+procurement commitment reduction now private current save; original Sales requested
+unchanged, no implicit claim/debt release. Both companies, role downgrade replay,
+interruption and ACTIVE30 borrowing preservation tested.652currentpass0fail6270.1568ms;
+runtime71modules29exports. Original production exact. REORDER/SPECIAL and remaining
+writer/root/read/client/native schema/init/recovery/capacity/shadow/fourrelease OPEN.
+
 2026-10-22 GHR DATE: GHR_JOURNAL_SCHEMA.txt. Fresh MASTER GHR Activity field
 activityTime verified Date and Time then Cancel, no schema/data edits. Candidate
 root now supplies exact DateTime codec for BOTH journals. Empty writer coverage
