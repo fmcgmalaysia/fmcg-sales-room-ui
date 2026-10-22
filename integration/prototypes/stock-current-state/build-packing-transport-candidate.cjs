@@ -14,6 +14,7 @@ once("read:()=>send({type:'PACKING_READ_REQUEST',company:company(),requestId:cry
   "read:async()=>{const selectedCompany=company(),result=await send({type:'PACKING_READ_REQUEST',company:selectedCompany,requestId:crypto.randomUUID()});if(result?.stockCurrent!=null){const meta=result.stockCurrent;if(meta.schema!=='CURRENT_STOCK_V2'||meta.stockProtocol!==1||typeof meta.stockBuild!=='string'||!meta.stockBuild||!Number.isSafeInteger(meta.stockGeneration)||meta.stockGeneration<0)throw Error('Current packing form metadata unavailable. Refresh.');currentStock={company:selectedCompany,stockProtocol:1,stockBuild:meta.stockBuild,stockGeneration:meta.stockGeneration};}else currentStock=null;return result;},");
 once("pendingSave={type:'PACKING_SAVE_REQUEST',company:company(),requestId:crypto.randomUUID(),input};",
   "if(currentStock&&currentStock.company!==company())throw Error('Company changed. Refresh packing before saving.');pendingSave={type:'PACKING_SAVE_REQUEST',company:company(),requestId:crypto.randomUUID(),input:currentStock?JSON.parse(JSON.stringify(input)):input,...(currentStock?{stockProtocol:1,stockBuild:currentStock.stockBuild,stockGeneration:currentStock.stockGeneration}:{})};");
+source=require('./packing-durable-transport-overlay.cjs')(source);
 new Function(source);
 const target = path.join(__dirname, 'packing-transport.current.js');
 if (process.argv.includes('--check')) {

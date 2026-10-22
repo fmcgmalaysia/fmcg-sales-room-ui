@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 PACKING DURABLE CHILD: PACKING_DURABLE_CHILD_AND_RELAY.txt. Original child
+actor callback+own-tab full request retained before network, strict final/cache cleanup,
+auth-only own reload behind pending, no automatic send or replacement. Exact original
+app/layout/fonts otherwise unchanged; paired Support entry/public bridge/Warehouse nested
+host recovery and current metadata seam.808currentpass0fail17550.6555ms; independent
+original UI/bridge/host15pass0fail272.0606ms. No actual browser/native acceptance. Packing
+PHOTOS NEXT (current root still refuses), Sales/intake/otherwriter/native/recovery/
+capacity/cutover/shadow/history/fourrelease OPEN. Production exact/ACTIVE OFF/coverage
+EMPTY/real invoice OFF. Do NOT deploy these overlays as a complete active inventory.
+
 2026-10-22 PACKING PRIVATE ROOT: PACKING_ACTUAL_NONFILE_ROOT.txt. Actual original
 Support/Warehouse packing service+same TWO-method gateway mode routes current list/
 holds; original auth/catch/department rights preserved. Own auth-only recovery behind

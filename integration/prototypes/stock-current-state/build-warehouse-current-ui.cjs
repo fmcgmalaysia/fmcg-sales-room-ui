@@ -58,7 +58,10 @@ html=html.replace('<script src="dispatch.js?v=20261018-warehouse-workroom-v1">',
 html=html.replaceAll('20261021-packing-v1','20261022-current-receipt-v2').replace('content="2026-10-21-stock-tab-v1"','content="2026-10-22-current-receipt-v2"');
 html=html.replace('packing-list-link.js?v=20261021-packing-company-v1','packing-list-link.js?v=20261022-current-warehouse-v2');
 html=html.replace('stock-control-link.js?v=20261021-stock-tab-v1','stock-control-link.js?v=20261022-current-stock-v1');
-const packingLink=read('warehouse-room/packing-list-link.js').replace("['20261021-packing-v1','20261021-packing-company-v1']","['20261021-packing-v1','20261021-packing-company-v1','20261022-current-warehouse-v2']");
+const packingLink=read('warehouse-room/packing-list-link.js').replace("['20261021-packing-v1','20261021-packing-company-v1']","['20261021-packing-v1','20261021-packing-company-v1','20261022-current-warehouse-v2']")
+ .replace('packing-workbench.html?v=20261021-packing-company-v1','packing-workbench.html?v=20261022-current-packing-v1')
+ .replace("['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST']","['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST','PACKING_RESUME_CONTEXT_REQUEST']")
+ .replace("['PACKING_READ_RESULT','PACKING_SAVE_RESULT']","['PACKING_READ_RESULT','PACKING_SAVE_RESULT','PACKING_RESUME_CONTEXT_RESULT']");
 const files=[['app.js',source],['index.html',html],['packing-list-link.js',packingLink]];
 if(process.argv.includes('--check')){for(const[file,text]of files)if(fs.readFileSync(path.join(out,file),'utf8').replace(/\r\n/g,'\n')!==text)throw Error('Warehouse current UI differs: '+file);}
 else{for(const[file,text]of files)fs.writeFileSync(path.join(out,file),text);}
