@@ -1,5 +1,29 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 SHARED RECEIPT/PACKING/BORROW COMPOSITION: RECEIPT_PACKING_BORROW_COMPOSITION.txt.
+One mock SDK/database, actual generated Warehouse/Packing/Purchase borrowing roots,
+real candidate coordinator, original validators. Starts approved PO tasks/zero stock:
+receipt→draft→send→start→Loaded→complete, replays, partial receipt, container-full
+remainder, next-list/reopen hold refusal, wrong-department/overload refusal. Borrower
+Loaded retains debt;20then80actual receipts repay30promise in parts; both halos close
+only at full repayment. Same/different PO, both companies, no new/changed PO, no
+invoice/physical exit. New5cases; FULL1004pass0fail40390.4264ms; runtime103/53 check.
+Node/VM/mock ONLY; not native/browser or intake→PO→Loaded full acceptance.
+Bounded co-writer audit found next ACTUAL ROOT GAP: original stockExceptions.web.js
+still has no current candidate wrapper/root binding for implemented exception/
+resolution saves. All three department parents import it. Do not mark these writers
+covered. Implement smallest actual original auth/read/save mode seam and durable
+client metadata/replay; retain original stock resolution/financial permission rules.
+Message save in that original module already refuses; do NOT re-enable it. Its
+read-only getDepartmentMessages still projects PO facts outside a current snapshot;
+needs stable guarded read in same root work. CustomerAccountOperations is already
+paired through Source DOCUMENT candidate; AccountReadIndex candidate uses guarded
+rows (see next bounded audit), not an excuse to redesign finance. Further G3 scope
+still open. Native schema/index/permissions/Date/capacity/lifecycle, recovery,
+migration/shadow/cutover/review/fourrelease remain OPEN. Coverage EMPTY/ACTIVE OFF;
+invoice/exit OFF. Production unchanged.6862e55 confirmed pushed to existing PR220.
+No new user business choice or permission needed for next offline root work.
+
 2026-10-23 ORIGINAL FILE ROOTS/DURABLE UI: ORIGINAL_FILE_ROOTS_DURABLE_UI.txt. Actual
 original Purchase/Account file web/private roots plus original dialogs/parent/cache/
 recovery now paired OFFLINE. Whole PDF/attachments retained before network, original

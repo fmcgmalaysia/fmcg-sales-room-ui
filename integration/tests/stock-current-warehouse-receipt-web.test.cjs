@@ -31,10 +31,10 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
     db.set('StockProducts/'+id,{_id:id,company,stockKey:key,_version:'P0',revision:0,checkpointGeneration:0,lifecycleVersion:2,
       nextBorrowSequence:1,status:'CLOSED',reviewCodes:[],reviewRequired:false,onHand:0,reservedUsable:0,available:0,isolated:0});
   }
-  const items={query:c=>{const filters=[];let limit=50;const q={eq:(k,v)=>{filters.push(row=>row[k]===v);return q;},
-    gt:(k,v)=>{filters.push(row=>row[k]>v);return q;},ascending:()=>q,limit:n=>{limit=n;return q;},find:async()=>{
+  const items={query:c=>{const filters=[];let limit=50,offset=0;const q={eq:(k,v)=>{filters.push(row=>Array.isArray(row[k])?row[k].includes(v):row[k]===v);return q;},
+    gt:(k,v)=>{filters.push(row=>row[k]>v);return q;},ascending:()=>q,skip:n=>{offset=n;return q;},limit:n=>{limit=n;return q;},find:async()=>{
       const rows=[...db].filter(([key,row])=>key.startsWith(c+'/')&&filters.every(fn=>fn(row))).map(([,row])=>copy(row)).sort((a,b)=>a._id.localeCompare(b._id));
-      return{items:rows.slice(0,limit),totalCount:rows.length};}};return q;}};
+      return{items:rows.slice(offset,offset+limit),totalCount:rows.length};}};return q;}};
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
     createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createWarehousePhotoFencedStore,createCurrentPurchaseTables,readCurrentPurchaseProjection,
@@ -56,7 +56,7 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
   if(coverage)source=source.replace('const writerCoverage = Object.freeze({});','const writerCoverage = Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return{saveWarehouseReceiptCurrent,saveWarehousePreparationCurrent,captureWarehouseCbmCurrent,getWarehouseOrdersCurrent,getWarehouseResumeContextCurrent};})()',bindings);
   const initial=f.request();delete initial.company;Object.assign(initial,{stockProtocol:1,stockBuild:'TEST',stockGeneration:0,stockIdentity:{staffId:'W',memberId:'M'}});
-  return{...f,db,protocol,api,initial,calls,journal,tasks,bindings};
+  return{...f,db,store,items,protocol,api,initial,calls,journal,tasks,bindings};
 }
 test('actual-import Warehouse root preserves both-company original PO receipt contract and once-only scoped current stock',async()=>{
   for(const company of ['NCT','GHR']){
