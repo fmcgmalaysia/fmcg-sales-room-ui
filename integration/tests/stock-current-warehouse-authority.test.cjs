@@ -75,6 +75,23 @@ test('unknown customer share and inconsistent original accepted facts refuse rat
   // Deliberately stale context warehouse metadata: original receipt says100, context says0.
   await assert.rejects(createWarehouseAuthority(g.deps)(correction), /authority differ/);
 });
+
+test('ordinary original projected expected-extra gives exact customer share without requiring a fixed-share record; explicit unknown remains blocked',async()=>{
+  const f=fixture(),task=f.context.tasks[0];delete task.procurement.customerCtn;
+  task.procurement.totalCtn=150;task.procurement.expectedExtra=50;
+  const request=f.request();request.input.lines[0].accepted=150;
+  const authority=await createWarehouseAuthority(f.deps)(request),products=authority.products.map(product=>{
+    const rows={complete:true,positions:[],claims:[],transfers:[],product:null};return{rows,state:product.buildState(rows)};
+  });
+  const prepared=prepareWarehouseReceipt({validated:authority.validated,products,generation:0});
+  const state=prepared.states.find(state=>state.barcode==='A');
+  assert.equal(state.sources[0].ownerShare,100);assert.equal(state.sources[0].onHand,150);assert.equal(state.sources[0].available,50);
+  assert.equal(state.sources[0].claims.A,100);assert.equal(Object.hasOwn(task.procurement,'customerCtn'),false,'read mapping must not rewrite original facts');
+  for(const patch of [{customerCtn:null,expectedExtra:0},{customerCtn:undefined,expectedExtra:0},{expectedExtra:undefined},{expectedExtra:101},{expectedExtra:-1},{expectedExtra:0.5}]){
+    const next=fixture();delete next.context.tasks[0].procurement.customerCtn;Object.assign(next.context.tasks[0].procurement,patch);
+    await assert.rejects(createWarehouseAuthority(next.deps)(next.request()),/customer share/);
+  }
+});
 test('authenticated current save composes original PO authority and fenced two-product receipt; replay reauthorizes without duplicate reads/events', async () => {
   const f = fixture(), request = f.request(), db = new Map(), copy = value => JSON.parse(JSON.stringify(value));
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),

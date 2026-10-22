@@ -21,12 +21,19 @@ function originalProductState({ company, context, orders, identity, readAllocati
   const allocations = readAllocations(context.activity), shipments = readCustomerShipments(context.activity);
   if (shipments.some(s => s.company !== company)) throw Error('Shipment company conflict');
   const sources = candidates.map(source => {
+    // ORIGINAL projector emits an explicit fixed customerCtn when shares exist.
+    // Ordinary PO plans instead expose its already-computed expectedExtra. This
+    // is the same original source/customer split, not a history/zero guess. An
+    // explicitly unknown fixed share remains unknown and must still refuse.
+    const customerShare=Object.hasOwn(source.procurement,'customerCtn')?source.procurement.customerCtn:
+      count(source.procurement.expectedExtra)&&source.procurement.expectedExtra<=source.procurement.totalCtn
+        ?source.procurement.totalCtn-source.procurement.expectedExtra:null;
     const po = orders.filter(p => p.company === company && p.taskIds.includes(source.id));
     const candidateOwner = source.customerDemandTaskId || source.id;
     const ownerTaskId = demands.some(t => t.id === candidateOwner) ? candidateOwner : null;
     if (po.length !== 1 || po[0].number !== source.po || source.procurement.draftPlan
-      || ownerTaskId === null && source.procurement.customerCtn !== 0 || !count(source.procurement.customerCtn)
-      || source.procurement.customerCtn > source.procurement.totalCtn
+      || ownerTaskId === null && customerShare !== 0 || !count(customerShare)
+      || customerShare > source.procurement.totalCtn
       || source.warehouse && source.warehouse.hasPhysicalReceipt !== true && source.warehouse.accepted > 0) throw Error('Confirmed source PO and customer share required');
     const dispatchedByTask = {};
     for (const shipment of shipments.filter(s => s.status === 'DISPATCHED')) for (const line of shipment.lines) {
@@ -35,7 +42,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
     }
     return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, orderId: source.orderId, sourceLineId: source.sourceLineId,
       poValid: true, reviewRequired: false, receiptPolicy: ownerTaskId === null || allocations.some(a => a.sourceTaskId === source.id) ? 'EXPLICIT_ONLY' : 'OWNER_DEMAND',
-      ownerShare: source.procurement.customerCtn, planned: source.procurement.totalCtn,
+      ownerShare: customerShare, planned: source.procurement.totalCtn,
       accepted: source.warehouse?.hasPhysicalReceipt === true ? source.warehouse.accepted : 0, dispatchedByTask };
   });
   const holds = createPackingHoldSnapshot({ readPackingLists, packingHeld })({ company, activity: context.activity, taskIds: demands.map(t => t.id) });

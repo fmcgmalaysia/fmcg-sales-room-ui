@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL SOURCE SHARE MAPPING: ORIGINAL_NORMAL_PO_SHARE_MAPPING.txt.
+Actual original normal PO branch may have no fixed customerCtn; its original projector
+already computes known expectedExtra. Private authority now reads totalCtn-expectedExtra
+ONLY when fixed field is absent; explicit null/undefined/invalid fixed or unknown extra
+still refuses. No PO/receiving/allocation math rewritten.747trackedcurrentpass0fail
+14856.4875ms,82modules40exports. New non-file preparation factory is independent pending
+work, not included in this exact747run/commit. Production exact, all prior OPEN gates,
+ACTIVE OFF/no install or publication.
+
 2026-10-22 WAREHOUSE RECEIPT CLIENT: WAREHOUSE_RECEIPT_DURABLE_UI.txt. Original modal
 and receipt input retained; full original request/version/company/staff session saved
 before first current write, same UUID bounded phases/reload auth-only recovery, strict
