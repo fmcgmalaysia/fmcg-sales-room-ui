@@ -11,6 +11,8 @@ const { operationId } = load('purchaseOperationJournal.js');
 const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { transferId } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
 const { createBorrowingStockReader } = require('../prototypes/stock-current-state/borrowing-stock-reader.cjs');
+const { readPreparation } = load('warehousePreparation.js');
+const { approveBorrow } = require('../prototypes/stock-current-state/borrowing-model.cjs');
 const member = { _id: 'M1', loginEmail: 'purchase@example.test', status: 'APPROVED' };
 const staff = { title: 'P1', description: 'M1', staffEmail: member.loginEmail, staffName: 'DEMO', staffStatus: 'ACTIVE', role: 'STAFF', departments: ['PURCHASE'] };
 const request = { company: 'NCT', requestId: '11111111-2222-4333-8444-555555555555', kind: 'APPROVE',
@@ -51,6 +53,18 @@ test('unapproved member rejects before reading private staff records', async () 
   await assert.rejects(createBorrowingAuthority({ ...f.deps, readMember: async () => ({ ...member, status: 'PENDING' }),
     readStaffRecords: async () => { staffReads++; return [staff]; } })(request), /approved Master staff/);
   assert.equal(staffReads, 0); assert.equal(f.calls.length, 0);
+});
+
+test('real authority preserves legacy Warehouse preparation guard before approving borrowing', async () => {
+  const f = fixture(); f.deps.readPreparation = readPreparation;
+  f.context.activity.push({ _id: 'PREP', title: 'PREP', description: 'PREP-B', action: 'WAREHOUSE_PREPARATION_SAVED', result: 'SAVED',
+    activityTime: '2026-10-22T00:00:00Z', initiatedByStaffId: 'W', details: { beforeRevision: '', state: {
+      id: 'PREP-B', taskId: 'B', customerId: 'C-B', company: 'NCT', quantity: 100, loaded: 0, prepared: true, photos: [] } } });
+  const result = await createBorrowingAuthority(f.deps)(request), id = operationId('NCT', stockKey(result.identity), 'PURCHASE_SOURCE', 'B');
+  const state = result.buildState({ positions: [{ sourceTaskId: 'B', onHand: 100, isolated: 0, available: 0 }],
+    claims: [{ positionId: id, taskId: 'B', reservedUsable: 100 }], transfers: [], product: null });
+  assert.equal(state.packingHolds.legacyBlockedByTask.B, true);
+  assert.throws(() => approveBorrow(state, result.input), /holds lender/);
 });
 test('missing PO, draft plan, invoice lock, foreign context and unknown customer share reject', async () => {
   for (const mutate of [f => { f.context.tasks[0].po = ''; }, f => { f.context.tasks[0].procurement.draftPlan = true; },

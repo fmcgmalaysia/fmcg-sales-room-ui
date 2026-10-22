@@ -5,7 +5,7 @@ const { validateOriginalAllocation } = require('./original-allocation-validation
 // Ordinary free-stock assignment only. Moving existing customer reservations is
 // handled by approved borrowing/cancellation, NOT unrestricted legacy redistribution.
 function createAllocationAuthority({ readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
-  projectPurchaseOrders, createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld,
+  projectPurchaseOrders, createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
   now = () => new Date() }) {
   for (const fn of [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords, projectPurchaseOrders,
     createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
@@ -27,7 +27,7 @@ function createAllocationAuthority({ readMember, readStaffRecords, requirePurcha
     const identity = { company, barcode: source.barcode, packing: source.packing, ea: source.ea };
     const records = await readPurchaseRecords(company, staff);
     const orders = projectPurchaseOrders({ company, workspace: context, records });
-    const product = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld });
+    const product = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
     if (!product.sources.some(s => s.id === source.id && s.accepted === validated.event.details.accepted)) throw Error('Allocation receipt authority mismatch');
     return { kind: 'ALLOCATE', memberId: member._id, identity, event: validated.event,
       expectedVersion: validated.expectedVersion, buildState: product.buildState };

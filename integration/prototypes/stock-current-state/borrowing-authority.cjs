@@ -8,7 +8,7 @@ const { transferId } = require('./borrowing-stock-plan.cjs');
 const { originalProductState } = require('./original-product-state.cjs');
 const count = value => Number.isSafeInteger(value) && value >= 0;
 function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
-  projectPurchaseOrders, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readTransfer, now = () => new Date() }) {
+  projectPurchaseOrders, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, readTransfer, now = () => new Date() }) {
   for (const fn of [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords, projectPurchaseOrders,
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, readTransfer]) if (typeof fn !== 'function') throw Error('Existing server authority dependency required');
   return async ({ company, requestId, kind, input }) => {
@@ -40,7 +40,7 @@ function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchas
     if (relation && relationKey !== key) throw Error('Transfer product identity conflict');
     const records = await readPurchaseRecords(company, staff);
     const orders = projectPurchaseOrders({ company, workspace: context, records });
-    const product = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld });
+    const product = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
     const { sources, demands } = product;
     const donorId = relation?.lenderSourceId || input.lenderSourceId, futureId = relation?.replacementSourceId || input.replacementSourceId;
     const donor = sources.find(s => s.id === donorId), future = sources.find(s => s.id === futureId);

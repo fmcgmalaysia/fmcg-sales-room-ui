@@ -3,11 +3,12 @@
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
 const { createPackingHoldSnapshot } = require('./packing-hold-snapshot.cjs');
+const { legacyPreparationGuard } = require('./legacy-preparation-guard.cjs');
 const clone = value => JSON.parse(JSON.stringify(value));
 const count = value => Number.isSafeInteger(value) && value >= 0;
 // Server-owned ORIGINAL facts plus exact current ownership rows. Shared by Purchase
 // and Warehouse candidates, NOT a new staff entitlement or a legacy inc fallback.
-function originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld }) {
+function originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation }) {
   const key = stockKey(identity);
   if (identity.company !== company || context.company !== company || !Array.isArray(context.tasks)
     || !Array.isArray(context.activity) || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');
@@ -38,7 +39,9 @@ function originalProductState({ company, context, orders, identity, readAllocati
   const holds = createPackingHoldSnapshot({ readPackingLists, packingHeld })({ company, activity: context.activity, taskIds: demands.map(t => t.id) });
   const legacyHeld = shipments.filter(s => ['REQUESTED', 'INVOICED'].includes(s.status));
   for (const shipment of legacyHeld) for (const line of shipment.lines) if (Object.hasOwn(holds.heldByTask, line.taskId)) holds.heldByTask[line.taskId] += line.quantity;
-  holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])));
+  const legacy = legacyPreparationGuard({ company, context, taskIds: demands.map(t => t.id), readPreparation, projectPreparation });
+  holds.legacyBlockedByTask = legacy.blockedByTask;
+  holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])), legacy.version);
   return { identity, demands, sources, buildState: rows => {
     const positions = new Map(rows.positions.map(p => [p.sourceTaskId, p]));
     const tasks = demands.map(t => ({ ...identity, id: t.id, customerId: t.customerId, orderId: t.orderId, sourceLineId: t.sourceLineId,

@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after7efe607: LEGACY_PREPARATION_OWNERSHIP_GUARD.txt. Found candidate
+omitted old Warehouse prep/loaded guard; original parser now blocks ownership removal
+without inventing double invoice holds. Exact original batch/signature/full dispatch can
+retire guard, no age/total guessing. All candidate+original326pass1638.3688ms. Actual
+gateway/writer/photo/capacity/recovery/migration/UI/four-stage release still OPEN/OFF.
+
 CURRENT HEARTBEAT afterd0116d9: WAREHOUSE_CURRENT_READY.txt. Original Warehouse Ready
 adapter uses current physical/claims with cumulative progress + exact old dispatch proof;
 unchanged signatures preserved, borrowingA30/B70 then actual dispatch20 ->A10/B70. Shared

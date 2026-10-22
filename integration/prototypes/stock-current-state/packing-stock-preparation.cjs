@@ -11,7 +11,7 @@ const { preparePackingStock } = require('./packing-stock-plan.cjs');
 function createPackingStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
-    readPackingLists, packingHeld, items, store, protocol, now } = deps;
+    readPackingLists, packingHeld, readPreparation, projectPreparation, items, store, protocol, now } = deps;
   if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
     readPackingLists, packingHeld, now].some(f => typeof f !== 'function') || typeof items?.query !== 'function'
@@ -34,7 +34,7 @@ function createPackingStockPreparation(deps) {
       }
       const orders = projectPurchaseOrders({ company, workspace: original, records: await readPurchaseRecords(company, staff) }), products = [];
       for (const identity of identities.values()) {
-        const builder = originalProductState({ company, context: original, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld });
+        const builder = originalProductState({ company, context: original, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
         const rows = await readCurrentProduct({ company, identity, items, store, metrics });
         products.push({ state: builder.buildState(rows), rows });
       }

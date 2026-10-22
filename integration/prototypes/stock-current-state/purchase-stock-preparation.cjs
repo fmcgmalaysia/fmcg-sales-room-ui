@@ -15,7 +15,7 @@ const { validateOriginalSource, prepareSourceDomain } = require('./original-sour
 function createPurchaseStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePurchaseStaff, readTables, protocol, items, store,
     createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
-    readAllocations, readCustomerShipments, readPackingLists, packingHeld, now } = deps;
+    readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, now } = deps;
   if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readTables,
     createPurchaseOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
@@ -59,7 +59,7 @@ function createPurchaseStockPreparation(deps) {
       for (const identity of identities.values()) {
         const builder = context => originalProductState({ company, context, identity,
           orders: projectPurchaseOrders({ company, workspace: context, records: tables.PurchaseOrders }),
-          readAllocations, readCustomerShipments, readPackingLists, packingHeld });
+          readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
         const before = builder(beforeContext), after = builder(afterContext);
         const rows = await readCurrentProduct({ company, identity, items, store, metrics });
         const unconfirmedSourceIds = afterContext.tasks.filter(t => t.procurementSource && !t.po && t.procurement?.draftPlan

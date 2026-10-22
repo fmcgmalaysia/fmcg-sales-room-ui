@@ -7,7 +7,7 @@ const { validateOriginalReceipt } = require('./original-receipt-validation.cjs')
 // and recheck expectedVersion under the fenced lock before committing its plan.
 function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords,
   projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations,
-  readAllocations, readCustomerShipments, readPackingLists, packingHeld, now = () => new Date() }) {
+  readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, now = () => new Date() }) {
   for (const fn of [readMember, readStaffRecords, requireWarehouseStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Warehouse authority dependency required');
@@ -32,7 +32,7 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
       if (!task) throw Error('Receipt source unavailable');
       const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea }, key = stockKey(identity);
       if (!products.has(key)) products.set(key, originalProductState({ company, context, orders: purchaseOrders, identity,
-        readAllocations, readCustomerShipments, readPackingLists, packingHeld }));
+        readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation }));
       const source = products.get(key).sources.find(s => s.id === line.taskId);
       if (!source || source.poId !== validated.event.description || source.accepted !== line.beforeAccepted
         || source.planned !== line.planned) throw Error('Original receipt and source authority differ');

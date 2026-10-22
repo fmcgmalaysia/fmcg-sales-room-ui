@@ -36,7 +36,7 @@ async function validateOriginalShortage({ createShortageOperations, company, sta
 }
 function createShortageStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
-    projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld,
+    projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
     protocol, items, store, now } = deps;
   if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
@@ -51,7 +51,7 @@ function createShortageStockPreparation(deps) {
       if (context?.company !== company || !task) throw Error('Original shortage task unavailable');
       const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea };
       const orders = projectPurchaseOrders({ company, workspace: context, records: await readPurchaseRecords(company, staff) });
-      const builder = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld });
+      const builder = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
       const rows = await readCurrentProduct({ company, identity, items, store, metrics }), state = builder.buildState(rows);
       const workspace = currentAllocationContext({ state, context, readAllocations });
       const validated = await validateOriginalShortage({ createShortageOperations, company, staff, requestId: request.requestId, input: request.input, workspace, now });

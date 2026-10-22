@@ -21,6 +21,7 @@ const reserved = (state, taskId) => sum(state.sources.map(s => s.claims[taskId] 
 const remaining = relation => relation.quantity - relation.repaid - (relation.returned || 0);
 const outgoing = (state, sourceId) => sum(state.relations.filter(r => r.replacementSourceId === sourceId).map(remaining));
 const incoming = (state, taskId) => sum(state.relations.filter(r => r.lenderTaskId === taskId).map(remaining));
+const legacyHeld = (state, taskId) => state.packingHolds.legacyBlockedByTask?.[taskId] === true;
 function validate(state) {
   if (state.complete !== true || !count(state.revision) || !Array.isArray(state.tasks)
     || !Array.isArray(state.sources) || !Array.isArray(state.relations)) throw Error('Complete snapshot required');
@@ -33,6 +34,8 @@ function validate(state) {
       || task.dispatched > task.requested || stockKey(task) !== key) throw Error('Task identity or demand conflict');
     tasks.set(task.id, task);
   }
+  if (state.packingHolds.legacyBlockedByTask && (typeof state.packingHolds.legacyBlockedByTask !== 'object'
+    || Array.isArray(state.packingHolds.legacyBlockedByTask) || Object.entries(state.packingHolds.legacyBlockedByTask).some(([id, flag]) => !tasks.has(id) || typeof flag !== 'boolean'))) throw Error('Legacy preparation guard requires review');
   for (const source of state.sources) {
     const freeOnly = source.ownerTaskId === null && source.ownerShare === 0 && source.receiptPolicy === 'EXPLICIT_ONLY';
     if (!source.id || sources.has(source.id) || !tasks.has(source.ownerTaskId) && !freeOnly || !source.poId
@@ -94,9 +97,9 @@ function approveBorrow(before, input) {
     const future = state.sources.find(s => s.id === input.replacementSourceId);
     const borrower = state.tasks.find(t => t.id === input.borrowerTaskId);
     if (!donor || !future || !borrower || !state.tasks.some(t => t.id === donor.ownerTaskId) || future.ownerTaskId !== borrower.id || donor.ownerTaskId === borrower.id
-      || state.packingHolds.heldByTask[borrower.id] !== 0) throw Error('Eligible unheld borrower required');
+      || state.packingHolds.heldByTask[borrower.id] !== 0 || legacyHeld(state, borrower.id)) throw Error('Eligible unheld borrower required');
     const lender = donor.ownerTaskId;
-    if (state.packingHolds.heldByTask[lender] !== 0) throw Error('Packing task holds lender allocation');
+    if (state.packingHolds.heldByTask[lender] !== 0 || legacyHeld(state, lender)) throw Error('Packing task holds lender allocation');
     if (input.quantity > (donor.claims[lender] || 0)
       || input.quantity > Math.max(0, future.ownerShare - future.accepted) - outgoing(state, future.id)
       || input.quantity > borrower.requested - borrower.dispatched - reserved(state, borrower.id) - incoming(state, borrower.id)) throw Error('Insufficient eligible stock, demand or future supply');
@@ -135,7 +138,7 @@ function dispatch(before, input) {
   return transition(before, input.expectedRevision, state => {
     const source = state.sources.find(s => s.id === input.sourceId), task = state.tasks.find(t => t.id === input.taskId);
     if (!source || !task || !positive(input.quantity) || input.quantity > (source.claims[task.id] || 0)
-      || state.packingHolds.heldByTask[task.id] !== 0) throw Error('Validated dispatch source required');
+      || state.packingHolds.heldByTask[task.id] !== 0 || legacyHeld(state, task.id)) throw Error('Validated dispatch source required');
     source.claims[task.id] -= input.quantity;
     source.onHand -= input.quantity;
     source.dispatchedByTask = { ...(source.dispatchedByTask || {}),
@@ -152,6 +155,7 @@ function returnUnusedBorrow(before, input) {
     // Conservative: do not guess which relationship supplied already shipped cartons.
     if ((source.dispatchedByTask?.[r.borrowerTaskId] || 0) > 0
       || state.packingHolds.heldByTask[r.borrowerTaskId] > 0 || state.packingHolds.heldByTask[r.lenderTaskId] > 0
+      || legacyHeld(state, r.borrowerTaskId) || legacyHeld(state, r.lenderTaskId)
       || (source.claims[r.borrowerTaskId] || 0) < input.quantity) throw Error('Borrowed stock already used or held');
     source.claims[r.borrowerTaskId] -= input.quantity;
     source.claims[r.lenderTaskId] = (source.claims[r.lenderTaskId] || 0) + input.quantity;
@@ -171,7 +175,7 @@ function correctAccepted(before, input) {
     source.available -= free; reduction -= free;
     const removeClaim = (taskId, max) => {
       const take = Math.min(reduction, source.claims[taskId] || 0, max);
-      if (take && state.packingHolds.heldByTask[taskId] > 0) throw Error('Packing task holds corrected allocation');
+      if (take && (state.packingHolds.heldByTask[taskId] > 0 || legacyHeld(state, taskId))) throw Error('Packing task holds corrected allocation');
       if (take) source.claims[taskId] = (source.claims[taskId] || 0) - take;
       reduction -= take; return take;
     };
@@ -230,7 +234,7 @@ function allocateCumulative(before, input) {
     for (const taskId of ids) {
       if ((next[taskId] || 0) < (source.claims[taskId] || 0)) {
         // Existing task-total packing evidence cannot prove source-specific release.
-        if (state.packingHolds.heldByTask[taskId] > 0) throw Error('Packing task holds allocation');
+        if (state.packingHolds.heldByTask[taskId] > 0 || legacyHeld(state, taskId)) throw Error('Packing task holds allocation');
         if (state.relations.some(r => remaining(r) > 0
           && [r.lenderSourceId, r.replacementSourceId].includes(source.id)
           && [r.borrowerTaskId, r.lenderTaskId].includes(taskId))) throw Error('Outstanding borrowing allocation requires dedicated transfer return or repayment');
@@ -268,7 +272,7 @@ function adjustDemand(before, input) {
       const shipped = source.dispatchedByTask?.[task.id] || 0, current = source.claims[task.id] || 0;
       const cumulative = targets.get(task.id) || 0, release = current + shipped - cumulative;
       if (release < 0 || release > current) throw Error('Cancellation cannot create stock or remove dispatched provenance');
-      if (release && state.packingHolds.heldByTask[task.id] > 0) throw Error('Packing task holds cancellation');
+      if (release && (state.packingHolds.heldByTask[task.id] > 0 || legacyHeld(state, task.id))) throw Error('Packing task holds cancellation');
       if (release && state.relations.some(r => remaining(r) > 0 && [r.lenderSourceId, r.replacementSourceId].includes(source.id)
         && [r.borrowerTaskId, r.lenderTaskId].includes(task.id))) throw Error('Resolve borrowing before releasing linked customer stock');
       if (release) { source.claims[task.id] = current - release; source.available += release; source.receiptPolicy = 'EXPLICIT_ONLY'; }

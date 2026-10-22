@@ -21,6 +21,8 @@ function guardProcurementStock({ before, after }) {
     if (['ownerTaskId', 'orderId', 'sourceLineId'].some(k => next[k] !== source[k])) throw Error('Procurement source ownership identity is immutable');
     const related = before.relations.filter(r => [r.lenderSourceId, r.replacementSourceId].includes(source.id));
     if (next.poId !== source.poId && (source.accepted > 0 || related.length)) throw Error('Received or transfer-bound PO substitution requires its dedicated workflow');
+    if (before.packingHolds.legacyBlockedByTask?.[source.ownerTaskId] === true
+      && (next.planned < source.planned || next.ownerShare < source.ownerShare || next.poId !== source.poId)) throw Error('Legacy Warehouse preparation blocks procurement reduction or substitution');
     if (['accepted', 'onHand', 'isolated', 'available'].some(k => next[k] !== source[k])
       || (next.replacementReceived || 0) !== (source.replacementReceived || 0) || (next.supplierReturned || 0) !== (source.supplierReturned || 0)
       || !same(next.claims, source.claims) || !same(next.dispatchedByTask || {}, source.dispatchedByTask || {})) throw Error('Procurement cannot release ownership or change physical movements');
