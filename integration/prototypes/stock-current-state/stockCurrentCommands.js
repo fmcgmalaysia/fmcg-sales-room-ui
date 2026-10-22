@@ -4538,6 +4538,219 @@ async function prepareAccountOriginalAuxiliary({ company, staff, requestId, inpu
 module.exports = { prepareAccountOriginalAuxiliary };
 
 },
+// current-order-file-save.cjs sha256:c702afc28d4a4292e14d84aa8844bbada5536b06a7f3252e2d1ac5d9d60fa20e
+"current-order-file-save.cjs": (load, module) => {
+'use strict';
+const {createCurrentStockSave}=load("current-stock-save.cjs"),{prepareOriginalOrderFileWrite,captureOriginalOrderFilePlan}=load("original-order-file-plan.cjs");
+const {hash}=load("commit-proof.cjs");
+// Original gateway role checks and same company protocol supplied privately. No
+// web endpoint, real file action, bank instruction, or stock activation here.
+function createCurrentOrderFileSave({company,department,store,coverage,authenticateOriginal,readOriginalContext,createFileProtocol,allocateDocumentSlot,
+ createPurchaseOrderOperations,createAccountSettlementOperations,now=()=>new Date()}){
+ const purchase=department==='PURCHASE';
+ if(!['NCT','GHR'].includes(company)||!['PURCHASE','ACCOUNT'].includes(department)||typeof store?.read!=='function'
+  ||[authenticateOriginal,readOriginalContext,createFileProtocol,allocateDocumentSlot,now,purchase?createPurchaseOrderOperations:createAccountSettlementOperations].some(fn=>typeof fn!=='function'))throw Error('Private original order file save dependencies required');
+ return async request=>{
+  let staff;
+  const authenticate=async()=>{const current=await authenticateOriginal(company);
+   if(!current?.staffId||!current.memberId||!current.staffName||request?.stockIdentity?.staffId!==current.staffId||request.stockIdentity.memberId!==current.memberId
+    ||staff&&(staff.staffId!==current.staffId||staff.memberId!==current.memberId))throw Error('Original order file actor required');staff=current;return{staffId:staff.staffId,memberId:staff.memberId};};
+  await authenticate();
+  if(!(purchase?request.input?.action==='DOCUMENT':['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action)))throw Error('Original staged Purchase deletion not connected');
+  const protocol=createFileProtocol({request,staff});
+  if(protocol?.planFormat!=='SEGMENTED_V2'||typeof protocol.readSnapshot!=='function')throw Error('Original paired order file protocol required');
+  const result=await createCurrentStockSave({company,writer:purchase?'PURCHASE_ORDER_RECORD':'ACCOUNT_PURCHASE_RECORD',protocol,coverage,authenticate,prepare:async command=>{
+   const snapshot=await protocol.readSnapshot(async()=>{
+    const context=await readOriginalContext(company,staff),at=now().toISOString(),upload=command.input.action!=='PAYMENT_FILE_DELETE',count=upload?1+(!purchase&&Array.isArray(command.input.attachments)?command.input.attachments.length:0):0;
+    const args={...context,company,department,staff,requestId:command.requestId,input:command.input,now:()=>new Date(at),createPurchaseOrderOperations,createAccountSettlementOperations};
+    const placeholders=Array.from({length:Math.min(count,7)},(_,index)=>'ORIGINAL_VALIDATION_SLOT_'+index);
+    await captureOriginalOrderFilePlan({...args,slots:placeholders});
+    const slots=[];for(let index=0;index<count;index++)slots.push(await allocateDocumentSlot(company));
+    return prepareOriginalOrderFileWrite({...args,slots});
+   });return{memberId:staff.memberId,generation:snapshot.generation,plan:snapshot.rows};
+  }})(request);
+  if(result.ok!==true)return result;
+  const snapshot=await protocol.readSnapshot(()=>store.read('PurchaseOrders',request.input.id)),row=snapshot.rows;
+  const auditId=hash(company,request.requestId,staff.memberId,purchase?'PO_AUDIT':'FINANCE'),matches=(row?.details?.audit||[]).filter(event=>event.id===auditId),audit=matches[0];
+  if(!row?._version||row.company!==company||row._id!==request.input.id||row.title!==row._id||matches.length!==1||audit.actorStaffId!==staff.staffId
+   ||audit.action!==(purchase?'SUPPLIER_DOCUMENT_UPLOADED':'ACCOUNT_'+request.input.action)||audit.result!=='SAVED'||!Number.isFinite(Date.parse(audit.time)))throw Error('Original committed order file receipt requires review');
+  return{...result,company,poId:row._id,savedAt:audit.time};
+ };
+}
+module.exports={createCurrentOrderFileSave};
+
+},
+// original-order-file-plan.cjs sha256:af5407e88310f286caaf9a67e5b02d0c58db20e0386cfa2deb3bb3e5b8e34602
+"original-order-file-plan.cjs": (load, module) => {
+'use strict';
+
+const Buffer=StockRuntimeBuffer;
+const { hash } = load("commit-proof.cjs"), { copy, same } = load("segmented-plan.cjs");
+const fileId = value => typeof value === 'string' && /^[A-Za-z0-9_-]{10,200}$/.test(value);
+const fieldsExcept = (value, fields) => Object.fromEntries(Object.entries(value || {}).filter(([key]) => !fields.includes(key)));
+const noPayload = value => {
+  if (!value || typeof value !== 'object') return;
+  for (const [key, child] of Object.entries(value)) { if (key === 'base64') throw Error('PDF payload cannot enter prepared order metadata'); noPayload(child); }
+};
+// Private ORIGINAL prepare capture only. Scratch journal, preallocated fixed slots,
+// no legacy apply, external upload/trash, domain write, or change to file policy.
+async function captureOriginalOrderFilePlan({ department, company, staff, requestId, input, context, records, rows, suppliers = [],
+  createPurchaseOrderOperations, createAccountSettlementOperations, now, slots = [] }) {
+  const purchase = department === 'PURCHASE', upload = input?.action === (purchase ? 'DOCUMENT' : 'DOCUMENT_UPLOAD');
+  if (!['PURCHASE','ACCOUNT'].includes(department) || !['NCT','GHR'].includes(company) || !staff?.staffId || !staff.memberId || !staff.staffName
+    || !/^[a-f0-9-]{36}$/i.test(requestId || '') || ![purchase ? 'DOCUMENT' : 'DOCUMENT_UPLOAD', purchase ? 'DELETE_DOCUMENT' : 'PAYMENT_FILE_DELETE'].includes(input?.action)
+    || typeof now !== 'function' || !Array.isArray(records) || records.some(row => row.company !== company || !row._id || !row._version)
+    || new Set(records.map(row => row._id)).size !== records.length || !Array.isArray(slots) || slots.some(id => !fileId(id)) || new Set(slots).size !== slots.length
+    || slots.length !== (upload ? 1 + (!purchase && Array.isArray(input.attachments) ? input.attachments.length : 0) : 0)
+    || purchase && (context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity) || typeof createPurchaseOrderOperations !== 'function')
+    || !purchase && (!Array.isArray(rows) || rows.some(row => row.company !== company) || new Set(rows.map(row => row.id)).size !== rows.length || !Array.isArray(suppliers) || typeof createAccountSettlementOperations !== 'function')) {
+    throw Error('Private original order file context required');
+  }
+  const before = records.find(row => row._id === input.id) || null, journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const expectedAuditId = hash(company,requestId,staff.memberId,purchase ? (upload ? 'PO_AUDIT' : 'PO_DELETE_AUDIT') : 'FINANCE');
+  if ((before?.details?.audit || []).some(event => event.id === expectedAuditId)) throw Error('Preexisting original file audit without current receipt requires review');
+  const scratch = new Map(), boundary = Error('Original order file prepare boundary'); let captured, reads = 0, allocated = 0;
+  const store = {
+    all: async collection => {
+      if (purchase && collection === 'PurchaseOrders') return copy(records);
+      if (!purchase && collection === 'SharedSuppliers') return copy(suppliers);
+      throw Error('Original file preparation table scope');
+    },
+    read: async (collection, id) => {
+      if (collection === journal) return copy(scratch.get(id) || null);
+      if (collection !== 'PurchaseOrders' || id !== input.id) throw Error('Original file preparation record scope'); return copy(before);
+    },
+    insert: async (collection, row) => {
+      if (collection === journal && row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || !row.details.plan) throw Error('Original file preparation conflict'); captured = copy(row.details.plan); throw boundary;
+      }
+      if (collection !== journal || row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Original file legacy apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    },
+    remove: async (collection, id) => { if (collection !== journal || scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private scratch file lock removal allowed'); scratch.delete(id); }
+  };
+  const documentService = async command => {
+    if (!upload || !same(command, { action:'ALLOCATE',company }) || allocated >= slots.length) throw Error('External order file action forbidden during preparation');
+    return { ok:true,fileId:slots[allocated++] };
+  };
+  const readOriginal = async (selected, employee) => {
+    if (selected !== company || employee.memberId !== staff.memberId || employee.staffId !== staff.staffId || ++reads !== 1) throw Error('Original file preparation actor/context changed');
+    return copy(purchase ? context : rows);
+  };
+  const shared = { store, now, documentService, names:{ [company]:{ activity:journal } } };
+  const operations = purchase ? createPurchaseOrderOperations({ ...shared,readWorkspace:readOriginal }) : createAccountSettlementOperations({ ...shared,listOrders:readOriginal });
+  try { await operations.save({ company,staff:copy(staff),requestId,input:copy(input) }); throw Error('Original file prepare boundary missing'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size || allocated !== slots.length || captured.expectedVersion !== input.version) throw Error('Original file preparation incomplete');
+  noPayload(captured);
+  const audit = purchase ? captured.event : captured.audit, record = captured.record;
+  const expectedAction = purchase ? (upload ? 'SUPPLIER_DOCUMENT_UPLOADED' : 'SUPPLIER_DOCUMENT_DELETED') : 'ACCOUNT_' + input.action;
+  if (audit?.id !== expectedAuditId || audit.action !== expectedAction || audit.actorStaffId !== staff.staffId || audit.actor !== staff.staffName || audit.result !== 'SAVED'
+    || (purchase || upload) && captured.expected !== (before ? hash(before) : null)) throw Error('Original file audit/record identity conflict');
+  if (upload || !purchase) {
+    const allowed = purchase ? ['documents','finalInvoiceComplete','documentIssues','taskIds','createdAt','createdBy','updatedAt','audit']
+      : upload ? ['finance','documents','chasePayment','taskIds','createdAt','createdBy','updatedAt','audit'] : ['finance','updatedAt','audit'];
+    if (!record || record._id !== input.id || record.title !== input.id || record.company !== company
+      || before && !same(fieldsExcept(before,['details']),fieldsExcept(record,['details']))
+      || !same(fieldsExcept(before?.details,allowed),fieldsExcept(record.details,allowed))
+      || !same(record.details.audit.at(-1),audit) || !same(record.details.audit.slice(0,-1),before?.details?.audit || [])) throw Error('Original file cannot alter unrelated record or audit');
+    if (!purchase && !same(fieldsExcept(before?.details?.finance,upload ? ['payments','check'] : ['payments']),fieldsExcept(record.details.finance,upload ? ['payments','check'] : ['payments']))) throw Error('Original file cannot alter unrelated finance');
+  } else if (!before || !same(captured.document,before.details?.documents?.find(doc => doc.fileId === input.fileId)) || !same(captured.taskIds,before.details.taskIds)
+    || typeof captured.startedAt !== 'string' || !Number.isFinite(Date.parse(captured.startedAt))) throw Error('Original pending deletion identity conflict');
+  const uploads = upload ? [captured.upload,...(captured.extraUploads || [])] : [];
+  if (uploads.length !== slots.length || Boolean(captured.trash) === upload) throw Error('Original file side-effect shape conflict');
+  for (const [index, command] of uploads.entries()) {
+    const pdf = index ? input.attachments[index-1]?.base64 : input.base64;
+    const bytes = Buffer.from(pdf,'base64');
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    if (command.action !== 'UPLOAD' || command.company !== company || command.poId !== input.id || command.fileId !== slots[index]
+      || command.sha256 !== sha256 || command.type !== input.type || !command.name || (command.department || 'PURCHASE') !== (!purchase && input.type === 'PAYMENT' ? 'ACCOUNT' : 'PURCHASE')) throw Error('Original fixed upload slot conflict');
+  }
+  if (!upload && (captured.trash.action !== 'TRASH' || captured.trash.company !== company || captured.trash.poId !== input.id || captured.trash.fileId !== input.fileId
+    || !captured.trash.sha256 || !captured.trash.name || !purchase && (captured.trash.department !== 'ACCOUNT' || captured.trash.type !== 'PAYMENT'))) throw Error('Original exact trash scope required');
+  return { before:copy(before),prepared:captured,uploads:copy(uploads),trash:captured.trash ? copy(captured.trash) : null };
+}
+async function prepareOriginalOrderFileWrite(args) {
+  const captured = await captureOriginalOrderFilePlan(args);
+  if (args.department === 'PURCHASE' && args.input.action === 'DELETE_DOCUMENT') throw Error('Original Purchase deletion requires pending-unlink stage; not a single-write upload');
+  const after = copy(captured.prepared.record);
+  if (args.department === 'PURCHASE') for (const command of captured.uploads) {
+    const document = after.details.documents.find(doc => doc.fileId === command.fileId);
+    if (!document) throw Error('Original uploaded document missing'); document.url = 'https://drive.google.com/file/d/'+command.fileId+'/view';
+  }
+  return { writes:[{ collection:'PurchaseOrders',before:captured.before,after,
+    orderFile:{ department:args.department,uploads:captured.uploads,trash:captured.trash } }] };
+}
+module.exports = { captureOriginalOrderFilePlan,prepareOriginalOrderFileWrite };
+
+},
+// order-file-fenced-store.cjs sha256:f38f2281189b846f54d0ba674051b8ed55c936e7efb2e19ac0a1739415b74313
+"order-file-fenced-store.cjs": (load, module) => {
+'use strict';
+
+const Buffer=StockRuntimeBuffer;
+const { hash } = load("commit-proof.cjs"), { copy,same,createSegmentedPlanCodec } = load("segmented-plan.cjs");
+// Private original file callbacks under the SAME pending manifest/owner. No lease
+// theft, automatic cleanup, PDF journal payload, new collection, or legacy write.
+function createOrderFileFencedStore({ company,department,staff,request,store,documentService,codecPolicy={} }) {
+  const purchase=department==='PURCHASE',upload=request?.input?.action===(purchase?'DOCUMENT':'DOCUMENT_UPLOAD');
+  if (!['NCT','GHR'].includes(company)||!['PURCHASE','ACCOUNT'].includes(department)||!staff?.staffId||!staff.memberId
+    ||request?.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
+    ||typeof request.stockBuild!=='string'||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
+    ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!(upload||!purchase&&request.input?.action==='PAYMENT_FILE_DELETE')
+    ||['read','insert','compareAndSet','compareAndRemove'].some(method=>typeof store?.[method]!=='function')||typeof documentService!=='function')throw Error('Private original order file fence required');
+  const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,controlId,lockId}=codec.ids;
+  const key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:purchase?'PURCHASE_ORDER_RECORD':'ACCOUNT_PURCHASE_RECORD',input:request.input,
+    stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
+  async function beforeWrite(collection,row,expectedVersion) {
+    const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+    if(collection!=='PurchaseOrders'||row?._id!==request.input.id||row.company!==company||!control?._version||control.company!==company||control.mode!=='ACTIVE'
+      ||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration||control.pending?.key!==key||control.pending.digest!==digest
+      ||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
+      ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original order file APPLY fence required');
+    if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>codec.policy.maxFragments)throw Error('Bounded original order file manifest required');
+    const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
+    const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId}),change=plan.writes[0],side=change?.orderFile;
+    if(plan.writes.length!==1||change.collection!==collection||!same(change.after,row)||(change.before?._version||null)!==expectedVersion
+      ||!side||!same(Object.keys(side).sort(),['department','trash','uploads'])||side.department!==department||!Array.isArray(side.uploads))throw Error('Exact original order file image required');
+    if(!same(await store.read(collection,row._id),change.before))throw Error('Original file before-image changed');
+    const auditId=hash(company,request.requestId,staff.memberId,purchase?'PO_AUDIT':'FINANCE'),audit=row.details?.audit?.at(-1);
+    if(audit?.id!==auditId||audit.actorStaffId!==staff.staffId||audit.result!=='SAVED'||audit.action!==(purchase?'SUPPLIER_DOCUMENT_UPLOADED':'ACCOUNT_'+request.input.action)
+      ||!same(row.details.audit.slice(0,-1),change.before?.details?.audit||[]))throw Error('Original file audit fence conflict');
+    const assertFence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original order file callback fence changed; retain request');};
+    if(upload){
+      const payloads=[request.input.base64,...(!purchase&&Array.isArray(request.input.attachments)?request.input.attachments.map(file=>file.base64):[])];
+      if(side.trash!==null||side.uploads.length!==payloads.length||!payloads.length||payloads.length>(purchase?1:6)||new Set(side.uploads.map(command=>command.fileId)).size!==payloads.length)throw Error('Original upload count conflict');
+      for(const [index,command]of side.uploads.entries()){
+        const bytes=Buffer.from(payloads[index],'base64');
+        if(bytes.length<5||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==payloads[index]||command.action!=='UPLOAD'||command.company!==company
+          ||command.poId!==row._id||command.type!==request.input.type||typeof command.fileId!=='string'||!/^[A-Za-z0-9_-]{10,200}$/.test(command.fileId)
+          ||command.sha256!==createHash('sha256').update(bytes).digest('hex')||(command.department||'PURCHASE')!==(!purchase&&request.input.type==='PAYMENT'?'ACCOUNT':'PURCHASE'))throw Error('Original immutable PDF/slot conflict');
+        const documents=purchase||request.input.type==='DO'?row.details.documents:(row.details.finance?.payments||[]).flatMap(payment=>payment.proofs||[payment.proof]);
+        const matches=(documents||[]).filter(doc=>doc?.fileId===command.fileId);
+        if(matches.length!==1||matches[0].linked!==true||matches[0].sha256!==command.sha256||matches[0].name!==command.name||matches[0].type!==command.type||matches[0].size!==bytes.length
+          ||matches[0].uploadedByStaffId!==staff.staffId||purchase&&matches[0].url!=='https://drive.google.com/file/d/'+command.fileId+'/view')throw Error('Original uploaded association conflict');
+        await assertFence();const receipt=await documentService({...copy(command),base64:payloads[index]});
+        if(receipt?.ok!==true||['fileId','company','poId','sha256','name'].some(field=>receipt[field]!==command[field]))throw Error('Original order file upload unconfirmed; retain slot/request');
+        await assertFence();
+      }
+    }else{
+      const command=side.trash,payment=change.before?.details?.finance?.payments?.find(value=>value.id===request.input.paymentId),proof=(payment?.proofs||[payment?.proof]).find(value=>value?.fileId===request.input.fileId);
+      if(side.uploads.length||!proof||!same(command,{action:'TRASH',department:'ACCOUNT',company,poId:row._id,fileId:proof.fileId,sha256:proof.sha256,name:proof.name,type:'PAYMENT'}))throw Error('Original payment trash identity conflict');
+      await assertFence();const receipt=await documentService(copy(command));
+      if(receipt?.ok!==true||receipt.trashed!==true||['fileId','company','poId','sha256','name','type'].some(field=>receipt[field]!==command[field]))throw Error('Original payment trash unconfirmed; retain request');
+      await assertFence();
+    }
+  }
+  const metadata=(collection,row)=>collection===journal&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
+  return{read:(...args)=>store.read(...args),
+    insert:async(collection,row)=>{if(!metadata(collection,row))await beforeWrite(collection,row,null);return store.insert(collection,row);},
+    compareAndSet:async(collection,id,version,row)=>{if(id!==row._id)throw Error('Original file conditional identity conflict');if(!metadata(collection,row))await beforeWrite(collection,row,version);return store.compareAndSet(collection,id,version,row);},
+    compareAndRemove:(collection,id,attempt)=>{if(collection!==journal||id!==lockId)throw Error('Only exact owned order file protocol lock release allowed');return store.compareAndRemove(collection,id,attempt);}};
+}
+module.exports={createOrderFileFencedStore};
+
+},
 // fenced-proof.cjs sha256:b05eaa71128cd2cd490567b47372c1ce0c744b0d55df8c3001f640f8994a85f9
 "fenced-proof.cjs": (load, module) => {
 'use strict';
@@ -6655,6 +6868,8 @@ export const createCurrentMarginReferenceSave = load("current-margin-reference-s
 export const createCurrentPurchaseOrderRecordSave = load("current-order-record-save.cjs").createCurrentPurchaseOrderRecordSave;
 export const createCurrentAccountOrderRecordSave = load("current-order-record-save.cjs").createCurrentAccountOrderRecordSave;
 export const createCurrentAccountAuxiliarySave = load("current-account-auxiliary-save.cjs").createCurrentAccountAuxiliarySave;
+export const createCurrentOrderFileSave = load("current-order-file-save.cjs").createCurrentOrderFileSave;
+export const createOrderFileFencedStore = load("order-file-fenced-store.cjs").createOrderFileFencedStore;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;

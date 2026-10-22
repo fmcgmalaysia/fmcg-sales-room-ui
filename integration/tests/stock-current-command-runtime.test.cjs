@@ -5,7 +5,7 @@ function runtime() {
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
   return vm.runInNewContext('(function(){' + source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
     + '\nreturn {createCurrentStockSave,createCurrentWarehouseReceiptSave,createCurrentBorrowingSave,createCurrentAllocationSave,createCurrentPurchaseSave,createCurrentPurchaseReorderSave,createCurrentPurchaseTables,createCurrentPurchaseTaskGateway,createCurrentPurchaseSaveRouter,createCurrentQuantityCaseSave,createCurrentShortageSave,createCurrentStockExceptionSave,createCurrentStockResolutionSave,createCurrentCostReferenceSave,createCurrentPurchaseOrderRecordSave,createCurrentAccountOrderRecordSave,createSdkConditionalStore,createFencedProof,createSegmentedFencedProof,planCollections,createPurchaseTransferWorkspace,createBorrowCurrentQuery,createPurchaseBorrowOptions,createCurrentPurchaseBorrowGateway,createCurrentPackingService,projectCurrentWarehouseReady,createCurrentSalesDemandSave,createCurrentSalesRead,createCurrentSalesShipmentSave,createCurrentSalesArrangementSave,createCurrentWarehouseDispatchSave,createCurrentWarehouseShipmentRead,dispatchCurrentSalesGateway};})()',
-  { createHash: crypto.createHash, randomBytes: crypto.randomBytes, Buffer });
+  { createHash: crypto.createHash, randomBytes: crypto.randomBytes, Buffer, StockRuntimeBuffer: Buffer });
 }
 test('Wix-compatible command runtime is exact scoped source, without second protocol or public route', () => {
   assert.match(execFileSync(process.execPath, [path.join(folder, 'build-current-command-runtime.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
@@ -32,8 +32,8 @@ test('generated SDK store accepts an exact cross-realm schema and preserves type
 test('new current Purchase read and original margin co-writer exports are executable private capabilities, not public routes',async()=>{
   const source=fs.readFileSync(path.join(folder,'stockCurrentCommands.js'),'utf8');
   const api=vm.runInNewContext('(function(){'+source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')
-    +'\nreturn {readCurrentPurchaseProjection,createCurrentMarginReferenceSave,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createPackingPhotoFencedStore,createCurrentSalesDocumentSave,createCustomerDocumentFencedStore,createCurrentAccountAuxiliarySave};})()',
-    {createHash:crypto.createHash,randomBytes:crypto.randomBytes,Buffer});
+    +'\nreturn {readCurrentPurchaseProjection,createCurrentMarginReferenceSave,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createPackingPhotoFencedStore,createCurrentSalesDocumentSave,createCustomerDocumentFencedStore,createCurrentAccountAuxiliarySave,createCurrentOrderFileSave,createOrderFileFencedStore};})()',
+    {createHash:crypto.createHash,randomBytes:crypto.randomBytes,Buffer,StockRuntimeBuffer:Buffer});
   assert.throws(()=>api.createCurrentMarginReferenceSave({}),/dependencies/);
   assert.throws(()=>api.createCurrentWarehousePreparationSave({}),/dependencies/);
   assert.throws(()=>api.createCurrentWarehouseCbmSave({}),/dependencies/);
@@ -41,8 +41,10 @@ test('new current Purchase read and original margin co-writer exports are execut
   assert.throws(()=>api.createCurrentSalesDocumentSave({}),/dependencies/);
   assert.throws(()=>api.createCustomerDocumentFencedStore({}),/delegation/);
   assert.throws(()=>api.createCurrentAccountAuxiliarySave({}),/dependencies/);
+  assert.throws(()=>api.createCurrentOrderFileSave({}),/dependencies/);
+  assert.throws(()=>api.createOrderFileFencedStore({}),/fence/);
   await assert.rejects(api.readCurrentPurchaseProjection({}),/snapshot/);
-  assert.equal([...source.matchAll(/^export const /gm)].length,50);
+  assert.equal([...source.matchAll(/^export const /gm)].length,52);
 });
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;

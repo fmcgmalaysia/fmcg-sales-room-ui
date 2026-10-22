@@ -1,5 +1,19 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL FILE PRIVATE PROTOCOL: ORIGINAL_ORDER_FILE_PROTOCOL.txt. Pure
+original PO/Account file captures, exact fixed-slot upload and Account proof-trash
+under same durable manifest/fence; callback owner/checkpoint/receipt guards, no PDF
+in CMS or extra confirmation row. Runtime101modules52exports. Original Purchase
+DELETE has pending-unlink THEN trash THEN final audit/time: capture preserved but
+staged save still OPEN; never substitute single-write upload or legacy fallback.
+Original web/UI file roots still refused/unpaired; need full original PDF body
+limits, not existing200k non-file caps. Related29pass630.8837ms; FINAL983currentpass
+0fail23421.9451ms. Node/VM/mock ONLY; no native/browser/service/business writes.
+NEXT staged Purchase deletion + actual original file roots/durable clients; audit
+non-file pre-migration same-ID receipt concern. Native/recovery/capacity/lifecycle/
+migration/shadow/Loaded/review/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF, invoice/
+exit OFF. Production unchanged; eebbf28 Account UI milestone pushed PR220.
+
 2026-10-22 ORIGINAL ACCOUNT DURABLE CLIENT: ACCOUNT_DURABLE_ORIGINAL_CLIENT.txt.
 Original two dialogs/controllers and parent paired with exact own-user session
 request before network, finite phases/transport correlation, explicit reload retry,
