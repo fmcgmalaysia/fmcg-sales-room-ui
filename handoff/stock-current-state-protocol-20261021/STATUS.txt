@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL COST REFERENCE ROOT: COST_REFERENCE_ACTUAL_ROOT.txt. Original
+SiteMember/authorizer/retry preserved, optional metadata/private default current root,
+exact-ID plus original bounded-query context; no full journal scan. Same fence and
+original counters/manual prices/PO preserved. Bound staffId omission found/fixed by
+new integration tests.884currentpass0fail18874.3029ms; affected19pass835.6751ms.
+Runtime96modules49exports. Node/VM/mock ONLY. NEXT original cost parent/browser durable
+request/phase/reload and original failed-attempt audit; current old3arg client refused
+under ACTIVE. Remaining roots/native/recovery/capacity/cutover/shadow/Loaded/fourrelease
+OPEN. Coverage EMPTY/ACTIVE OFF. No invoice/exit/new financial feature. Original
+intake aa22615 confirmed pushed to existing PR220; production unchanged.
+
 2026-10-22 ORIGINAL ORDER INTAKE ACTUAL ROOT: ORDER_INTAKE_ACTUAL_ROOT.txt. Original
 receiver bearer+Source immutable destination/order lock preserved; actual private
 default current root, exact-ID snapshot/product checkpoints, original receipt only

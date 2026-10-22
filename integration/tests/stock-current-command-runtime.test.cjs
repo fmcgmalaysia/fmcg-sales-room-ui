@@ -41,7 +41,7 @@ test('new current Purchase read and original margin co-writer exports are execut
   assert.throws(()=>api.createCurrentSalesDocumentSave({}),/dependencies/);
   assert.throws(()=>api.createCustomerDocumentFencedStore({}),/delegation/);
   await assert.rejects(api.readCurrentPurchaseProjection({}),/snapshot/);
-  assert.equal([...source.matchAll(/^export const /gm)].length,48);
+  assert.equal([...source.matchAll(/^export const /gm)].length,49);
 });
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;

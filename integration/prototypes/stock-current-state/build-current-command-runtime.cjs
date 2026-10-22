@@ -40,7 +40,8 @@ const entries = {
   createCurrentWarehouseDispatchSave: 'current-warehouse-dispatch-save.cjs', createCurrentWarehouseShipmentRead: 'current-warehouse-dispatch-save.cjs',
   dispatchCurrentSalesGateway: 'sales-gateway-current.cjs',
   requireOriginalSalesDelegation:'sales-delegation.cjs',
-  createCurrentOrderIntakeOperations: 'current-order-intake.cjs'
+  createCurrentOrderIntakeOperations: 'current-order-intake.cjs',
+  createCurrentCostTables: 'current-cost-tables.cjs'
 };
 const sources = new Map();
 function collect(name) {

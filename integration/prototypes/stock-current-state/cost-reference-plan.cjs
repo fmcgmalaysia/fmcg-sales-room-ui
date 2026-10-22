@@ -13,6 +13,7 @@ const events = new Set(['COST_RETRY_LOCK', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAP
 // Run the ORIGINAL reference-only workflow against a private overlay. Collect its
 // exact final writes for the common fence; never run its TTL lock deletion live.
 async function prepareCostReference({ createPurchaseCostRetry, request, tables, captureCosts, now }) {
+  const {Buffer}=require('node:buffer');
   const company = request?.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const allowed = new Set([orders, tasks, journal]);
   if (typeof createPurchaseCostRetry !== 'function' || typeof captureCosts !== 'function' || typeof now !== 'function'

@@ -16,13 +16,13 @@ function createCurrentCostReferenceSave({ company, store, protocol, coverage, au
         if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') d.requirePurchaseStaff(member, []);
         staff = { ...d.requirePurchaseStaff(member, await d.readStaffRecords()), memberId: member._id };
         if (!/^[a-f0-9]{32}$/.test(request?.input?.taskId || '')) throw Error('Exact original cost retry task required');
-        return { memberId: staff.memberId };
+        return { memberId: staff.memberId, staffId: staff.staffId };
       }, prepare: async command => {
         if (command.memberId !== staff.memberId) throw Error('Cost reference actor changed');
         const snapshot = await protocol.readSnapshot(async () => {
           const prepared = await prepareCostReference({ createPurchaseCostRetry: d.createPurchaseCostRetry,
             request: { company, taskId: command.input.taskId, requestId: command.requestId, staff },
-            tables: await d.readCostTables(company, command.input.taskId, staff), captureCosts: d.captureCosts, now: d.now });
+            tables: await d.readCostTables(company, command.input.taskId, staff, command.requestId), captureCosts: d.captureCosts, now: d.now });
           if (prepared.outcome?.ok !== true || prepared.outcome.requestId !== command.requestId || prepared.outcome.company !== company
             || prepared.outcome.taskId !== command.input.taskId) throw Error('Original cost retry receipt identity conflict');
           if (!prepared.plan.writes.length) throw Error('Prior legacy cost receipt requires reconciliation before current save');
