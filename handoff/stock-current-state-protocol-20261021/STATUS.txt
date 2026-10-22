@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST PROTOCOL REPAIR: BUSINESS_JSON_ORDER_FIX.txt. Actual original
+dispatch offline test exposed canonical plan serialization breaking legacy source/
+invoice JSON-order hashes. Feature work paused; minimum2line codec repair preserves
+business payload insertion order, protocol integrity unchanged. Old canonical roots
+readable.518workingtree tests pass0fail5169.5878ms incl2new uncommitted dispatch tests.
+Original production unchanged, no rollback/write/publish. Actual SDK date+nestedorder
+roundtrip still mandatory. Continue dispatch binding after this regression repair.
+
 2026-10-22 LATEST LEGACY SHIPMENT: LEGACY_SHIPMENT_CURRENT_BINDING.txt. Existing
 original shipment core now has exact3expression current-allocation candidate seam;
 source SELECT/CANCEL concrete current save preserves same original intent/holds,

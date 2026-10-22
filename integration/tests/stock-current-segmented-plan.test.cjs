@@ -7,6 +7,30 @@ const context = { key, digest, memberId, requestId, baseGeneration: 7, attempt: 
 const writes = (count, text = '巧克力😀\\"\n'.repeat(100)) => Array.from({ length: count }, (_, i) => ({ collection: 'StockPositions', before: null,
   after: { _id: 'S' + i, company, name: text, onHand: 100 } }));
 const decode = (codec, encoded) => codec.decode({ ...context, ...encoded });
+
+test('business nested key order survives durable roundtrip to preserve original invoice snapshot hashes', () => {
+  const codec = createSegmentedPlanCodec({ company });
+  const lines = [{ taskId: 'A', quantity: 20, sources: [{ sourceTaskId: 'B', quantity: 20 }], rateToMyr: 4 }];
+  const plan = { writes: [{ collection: 'NCTActivity', before: null, after: { _id: 'EVENT', company,
+    details: { beforeRevision: 'OLD', shipment: { id: 'SHIP', lines } }, action: 'CUSTOMER_SHIPMENT_CHANGED' } }] };
+  const encoded = codec.encode({ ...context, plan }), result = decode(codec, encoded);
+  const restored = result.writes[0].after.details.shipment.lines;
+  assert.equal(JSON.stringify(restored), JSON.stringify(lines));
+  assert.equal(hash(restored), hash(lines));
+  assert.deepEqual(Object.keys(restored[0].sources[0]), ['sourceTaskId', 'quantity']);
+});
+
+test('already staged canonical JSON manifests remain readable without rewriting their payload or hashes', () => {
+  const codec = createSegmentedPlanCodec({ company }), encoded = codec.encode({ ...context, plan: { writes: writes(1, 'small') } });
+  assert.equal(encoded.fragments.length, 1);
+  const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+  const oldPayload = JSON.stringify(canonical(encoded.plan)), row = encoded.fragments[0];
+  row.payload = oldPayload; row.payloadHash = hash(oldPayload);
+  Object.assign(encoded.manifest, { planHash: hash(oldPayload), planBytes: utf8Bytes(oldPayload),
+    fragments: [{ id: row._id, hash: row.payloadHash, bytes: utf8Bytes(oldPayload) }] });
+  assert.equal(JSON.stringify(decode(codec, encoded)), oldPayload);
+});
 test('901large exact write images roundtrip; every actual serialized record remains below budget', () => {
   const codec = createSegmentedPlanCodec({ company }), encoded = codec.encode({ ...context, plan: { writes: writes(901) } });
   assert.ok(encoded.manifest.planBytes > 512 * 1024); assert.ok(encoded.fragments.length > 1);

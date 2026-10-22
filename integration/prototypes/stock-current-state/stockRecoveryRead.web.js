@@ -106,7 +106,10 @@ function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetB
   function encode(context) {
     identity(context);
     const { key, digest, memberId, requestId, baseGeneration, attempt } = context;
-    const plan = normalize(context.plan, key), payload = stringify(plan), fragments = [];
+    // Business after-images retain original JSON key order: protected legacy
+    // snapshot hashes can depend on it. Canonical comparison remains appropriate
+    // for protocol metadata/equality, not for rewriting stored business payloads.
+    const plan = normalize(context.plan, key), payload = JSON.stringify(plan), fragments = [];
     let offset = 0;
     while (offset < payload.length) {
       if (fragments.length >= maxFragments) throw Error('Segment count policy');
@@ -152,7 +155,7 @@ function createSegmentedPlanCodec({ company, domainWrites = false, recordBudgetB
     const payload = parts.join('');
     if (manifest.planBytes !== utf8Bytes(payload) || manifest.planHash !== hash(payload)) throw Error('Plan hash conflict');
     const parsed = JSON.parse(payload), normalized = normalize(parsed, key, fragments.map(row => row._id));
-    if (!same(parsed, normalized) || stringify(parsed) !== payload || manifest.writeCount !== normalized.writes.length) throw Error('Prepared plan changed');
+    if (!same(parsed, normalized) || JSON.stringify(parsed) !== payload || manifest.writeCount !== normalized.writes.length) throw Error('Prepared plan changed');
     const expected = { _id: key, company, stockOperationProtocol: 2, action: 'STOCK_PLAN_MANIFEST', digest,
       memberId, requestId, attempt: manifest.attempt, baseGeneration: manifest.baseGeneration,
       planHash: manifest.planHash, planBytes: manifest.planBytes, writeCount: manifest.writeCount, fragments: manifest.fragments };
