@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 RECOVERY TYPE PARITY: RECOVERY_NATIVE_TYPE_PARITY.txt. Admin QUERY-ONLY
+inspection now uses the same explicit SDK field codec as saves, for inspected NCT/GHR
+journal activityTime only; native ISO-text impostors and invalid version tokens refuse.
+20focusedpass0fail503.2161ms;685currentpass0fail6849.4175ms. No recovery write/unlock,
+production data/schema/permission change, installation or publication. Forced-reload
+original-request resumption and remaining writer/read/cutover/native/init/capacity/
+shadow/fourrelease gates OPEN. Production exact/ACTIVE OFF.
+
 2026-10-22 DECISION ROOT: PURCHASE_ALLOCATION_DECISION_ROOT.txt. Existing ALLOCATE/
 SHORTAGE/QUANTITY_CASE now current task root routes, selected original authority only;
 free5 allocation retains loan3, attempted reserved redistribution refuses. Actual-import

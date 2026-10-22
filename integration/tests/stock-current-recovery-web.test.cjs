@@ -10,7 +10,7 @@ function fixture() {
   const items = { query: c => {
     const filters = [], q = { eq: (k, v) => { filters.push([k, v]); return q; }, limit: n => { assert.equal(n, 2); return q; },
       find: async options => { assert.deepEqual(copy(options), { consistentRead: true }); calls.push([c, filters]);
-        return { items: [...db.entries()].filter(([id, row]) => id.startsWith(c + ':') && filters.every(([k, v]) => row[k] === v)).map(([, row]) => copy(row)) }; } };
+        return { items: [...db.entries()].filter(([id, row]) => id.startsWith(c + ':') && filters.every(([k, v]) => row[k] === v)).map(([, row]) => structuredClone(row)) }; } };
     return q;
   } };
   let admin = false;
@@ -28,6 +28,53 @@ test('query-only recovery store has no mutation capability and never scans arbit
   assert.equal(Object.hasOwn(await store.read('NCTActivity', f.controlId), 'stockCommitVersion'), false);
   for (const c of ['StaffMasterAccess', 'SharedSuppliers', 'NCTActivity1', 'NCTOrders1']) await assert.rejects(store.read(c, 'ID'), /scope/);
   assert.equal(f.calls.length, 2);
+});
+
+test('read-only recovery uses the same explicit DateTime codec and rejects invalid native versions', async () => {
+  for (const company of ['NCT', 'GHR']) {
+    const f = fixture(), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const store = createRecoveryReadStore({ items: f.items, company, dateTimeFields: { [journal]: ['activityTime'] } });
+    const iso = '2026-10-22T07:55:26.483Z', id = 'EVENT';
+    f.db.set(journal + ':' + id, { _id: id, company, activityTime: new Date(iso), stockCommitVersion: 'V1',
+      note: iso, details: { activityTime: iso }, _createdDate: new Date(iso) });
+    const decoded = await store.read(journal, id);
+    assert.equal(decoded.activityTime, iso); assert.equal(decoded.note, iso);
+    assert.deepEqual(decoded.details, { activityTime: iso }); assert.equal(decoded._version, 'V1');
+    assert.equal(Object.hasOwn(decoded, '_createdDate'), false);
+    f.db.get(journal + ':' + id).activityTime = iso;
+    await assert.rejects(store.read(journal, id), /DateTime read type mismatch/);
+    f.db.get(journal + ':' + id).activityTime = new Date(iso);
+    for (const invalid of ['', 0, {}, null]) {
+      f.db.get(journal + ':' + id).stockCommitVersion = invalid;
+      await assert.rejects(store.read(journal, id), /Invalid recovery storage version/);
+    }
+  }
+});
+
+test('Admin segmented inspection distinguishes a real native journal Date from an ISO text impostor', async () => {
+  const f = fixture(); f.admin();
+  const codec = require('../prototypes/stock-current-state/segmented-plan.cjs').createSegmentedPlanCodec({ company: 'NCT', domainWrites: true });
+  const iso = '2026-10-22T07:55:26.483Z';
+  const encoded = codec.encode({ ...f.request, key: f.key, digest: f.digest, baseGeneration: 0, attempt: 'A',
+    plan: { writes: [{ collection: 'NCTActivity', before: null, after: { _id: 'EVENT', company: 'NCT', activityTime: iso } }] } });
+  for (const row of [encoded.manifest, ...encoded.fragments]) f.put('NCTActivity', row);
+  f.put('NCTActivity', { _id: f.controlId, company: 'NCT', generation: 0, stockCommitVersion: 'C1',
+    pending: { key: f.key, digest: f.digest, planHash: encoded.manifest.planHash, phase: 'APPLY', cursor: 1, count: 1 } });
+  const after = codec.decode({ manifest: encoded.manifest, fragments: encoded.fragments, key: f.key, digest: f.digest,
+    memberId: f.request.memberId, requestId: f.request.requestId }).writes[0].after;
+  f.db.set('NCTActivity:EVENT', { ...after, _version: undefined, stockCommitVersion: after._version, activityTime: new Date(iso) });
+  delete f.db.get('NCTActivity:EVENT')._version;
+  const report = await f.api.inspectStockSave(f.request);
+  assert.equal(report.ok, true); assert.equal(report.report.images[0].image, 'AFTER');
+  assert.equal(report.report.status, 'SAME_REQUEST_REVALIDATES_ON_RESUME');
+  const before = JSON.stringify([...f.db]);
+  f.db.get('NCTActivity:EVENT').activityTime = iso;
+  const invalid = await f.api.inspectStockSave(f.request);
+  assert.equal(invalid.ok, false); assert.equal(Object.hasOwn(invalid, 'report'), false);
+  assert.equal(JSON.stringify(invalid).includes('DateTime'), false);
+  // No SDK mutation method exists in this fixture; serialization alone must not
+  // make the invalid native type appear as a verified AFTER image.
+  assert.equal(JSON.stringify([...f.db]), before);
 });
 test('Admin boundary precedes reads; browser administrator flag never grants access', async () => {
   const f = fixture(); await assert.rejects(f.api.inspectStockSave({ ...f.request, administrator: true }), /Admin/);
@@ -78,7 +125,8 @@ test('standalone recovery bundle contains exact current inspector and query-only
   for (const [file, imports] of [['recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');", "const { inspectSegmentedStockRecovery } = require('./segmented-recovery-inspector.cjs');"]],
     ['segmented-plan.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { planCollections } = require('./domain-scope.cjs');"]],
     ['segmented-recovery-inspector.cjs', ["const { hash } = require('./commit-proof.cjs');", "const { createSegmentedPlanCodec, same } = require('./segmented-plan.cjs');"]],
-    ['recovery-read-store.cjs', ["const { planCollections } = require('./domain-scope.cjs');"]]]) {
+    ['sdk-field-codec.cjs', []],
+    ['recovery-read-store.cjs', ["const { planCollections } = require('./domain-scope.cjs');", "const { createSdkFieldCodec } = require('./sdk-field-codec.cjs');"]]]) {
     let source = fs.readFileSync(require.resolve('../prototypes/stock-current-state/' + file), 'utf8').replace(/^'use strict';\r?\n/, '');
     for (const line of imports) source = source.replace(line, '');
     source = source.replace(/module\.exports = ([^;]+);/, 'return $1;').trim();

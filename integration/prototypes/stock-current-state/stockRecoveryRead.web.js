@@ -18,21 +18,65 @@ function planCollections(company, domainWrites = false) {
 }
 return { domainCollections, planCollections };
 })();
+const { createSdkFieldCodec } = (() => {
+// Private SDK boundary only. Caller supplies field IDs read from the actual CMS
+// schema; never infer types from names, ISO-looking strings or nested event JSON.
+const isDate = value => Object.prototype.toString.call(value) === '[object Date]';
+function createSdkFieldCodec({ collections, dateTimeFields = {} }) {
+  const proto = dateTimeFields && typeof dateTimeFields === 'object' && Object.getPrototypeOf(dateTimeFields);
+  if (!Array.isArray(collections) || !dateTimeFields || Array.isArray(dateTimeFields)
+    || typeof dateTimeFields !== 'object' || (proto !== null && (Object.getPrototypeOf(proto) !== null
+      || Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name !== 'Object'))) throw Error('Explicit SDK field schema required');
+  const allowed = new Set(collections), fields = new Map();
+  for (const [collection, names] of Object.entries(dateTimeFields)) {
+    if (!allowed.has(collection) || !Array.isArray(names) || new Set(names).size !== names.length
+      || names.some(name => typeof name !== 'string' || !/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)
+        || ['company', 'stockCommitVersion'].includes(name))) throw Error('Invalid SDK DateTime field scope');
+    fields.set(collection, new Set(names));
+  }
+  function convert(collection, field, value, direction) {
+    if (!allowed.has(collection)) throw Error('SDK field collection scope violation');
+    if (!fields.get(collection)?.has(field) || value === null) return JSON.parse(JSON.stringify(value));
+    if (direction === 'decode') {
+      // A string in a DateTime field is not the same Wix type. Do not silently
+      // repair legacy data or make a corrupt write appear verified.
+      if (!isDate(value) || !Number.isFinite(value.getTime())) throw Error('SDK DateTime read type mismatch: ' + collection + '.' + field);
+      return value.toISOString();
+    }
+    const canonical = isDate(value) && Number.isFinite(value.getTime()) ? value.toISOString() : value;
+    if (typeof canonical !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(canonical)) {
+      throw Error('Canonical DateTime write required: ' + collection + '.' + field);
+    }
+    const date = new Date(canonical);
+    if (!Number.isFinite(date.getTime()) || date.toISOString() !== canonical) throw Error('Invalid DateTime write');
+    return date;
+  }
+  return {
+    encode: (collection, field, value) => convert(collection, field, value, 'encode'),
+    decode: (collection, field, value) => convert(collection, field, value, 'decode')
+  };
+}
+return { createSdkFieldCodec };
+})();
 const { createRecoveryReadStore } = (() => {
-const copy = value => JSON.parse(JSON.stringify(value));
 // Deliberately QUERY-ONLY. Returned capability has no insert/update/CAS/remove.
 // Only for the Wix Admin inspection boundary, not a business writer fallback.
-function createRecoveryReadStore({ items, company }) {
+function createRecoveryReadStore({ items, company, dateTimeFields = {} }) {
   if (typeof items?.query !== 'function' || !['NCT', 'GHR'].includes(company)) throw Error('Private recovery read scope required');
   const allowed = new Set(planCollections(company, true)), metadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId']);
+  const fieldCodec = createSdkFieldCodec({ collections: [...allowed], dateTimeFields });
   return { read: async (collection, id) => {
     if (!allowed.has(collection) || typeof id !== 'string' || !id || id.length > 128) throw Error('Private recovery exact scope violation');
     const page = await items.query(collection).eq('_id', id).limit(2).find({ consistentRead: true });
     if (!Array.isArray(page?.items) || page.items.length > 1) throw Error('Ambiguous recovery record');
     const row = page.items[0]; if (!row) return null;
     if (row._id !== id || row.company !== company) throw Error('Recovery record identity conflict');
-    const result = Object.fromEntries(Object.entries(row).filter(([k]) => !metadata.has(k) && k !== 'stockCommitVersion').map(([k, v]) => [k, copy(v)]));
-    if (Object.hasOwn(row, 'stockCommitVersion')) result._version = row.stockCommitVersion;
+    const result = Object.fromEntries(Object.entries(row).filter(([k]) => !metadata.has(k) && k !== 'stockCommitVersion')
+      .map(([k, v]) => [k, fieldCodec.decode(collection, k, v)]));
+    if (Object.hasOwn(row, 'stockCommitVersion')) {
+      if (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion) throw Error('Invalid recovery storage version');
+      result._version = row.stockCommitVersion;
+    }
     return result;
   } };
 }
@@ -326,7 +370,9 @@ export const inspectStockSave = webMethod(Permissions.Admin, async request => {
       || typeof request.memberId !== 'string' || request.memberId.length > 128 || !Object.hasOwn(request, 'input')
       || Buffer.byteLength(JSON.stringify(request), 'utf8') > 180000) throw Error('Bounded original save identity required');
     const { company, requestId, memberId, input, pageSize, cursor } = request;
-    const store = createRecoveryReadStore({ items, company });
+    const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    // Only these existing DateTime field IDs were inspected in MASTER CMS.
+    const store = createRecoveryReadStore({ items, company, dateTimeFields: { [journal]: ['activityTime'] } });
     return { ok: true, report: await inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites: true, pageSize, cursor }) };
   } catch (_) {
     return { ok: false, error: 'Inventory recovery inspection unavailable. No recovery performed.' };
