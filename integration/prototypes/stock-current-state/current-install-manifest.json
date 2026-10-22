@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "309de3054d7842676b26dc4fc20b83702e914ca23b0fc5781bbdac67fa1ab56f",
+      "sha256": "416a80a70a9d9359041ad4370d8dc1ec3cfb6c65c99784a66311805b3c221754",
       "beforeSha256": null
     },
     {
@@ -275,7 +275,7 @@
       "source": "stockCurrentWarehouse.web.js",
       "target": "stockCurrentWarehouse.web.js",
       "kind": "NEW",
-      "sha256": "b791ca81ef51320d7526f5d564644d772d368e5de90212bdd232399363a33dde",
+      "sha256": "13f5ea278b23dd1fa4fa7d90e4644686f182a99ba1703cdfc708a4a916f1cc0b",
       "beforeSha256": null
     },
     {
@@ -1395,7 +1395,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "309de3054d7842676b26dc4fc20b83702e914ca23b0fc5781bbdac67fa1ab56f",
+      "sha256": "416a80a70a9d9359041ad4370d8dc1ec3cfb6c65c99784a66311805b3c221754",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1645,7 +1645,7 @@
       "system": "MASTER",
       "target": "stockCurrentWarehouse.web.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentWarehouse.web.js",
-      "sha256": "b791ca81ef51320d7526f5d564644d772d368e5de90212bdd232399363a33dde",
+      "sha256": "13f5ea278b23dd1fa4fa7d90e4644686f182a99ba1703cdfc708a4a916f1cc0b",
       "exports": [
         "captureWarehouseCbmCurrent",
         "getWarehouseOrdersCurrent",

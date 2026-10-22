@@ -21,18 +21,27 @@ function fixture() {
   put('NCTActivity', { ...base, _id: hash('NCT', 'STOCK_TRANSFER_CURRENT', relation.id), status: 'CLOSED',
     action: 'STOCK_TRANSFER_CURRENT', lenderSourceId: 'S', replacementSourceId: 'FUTURE', repaidQuantity: 20,
     participantTaskIds: ['B', 'A'], details: { relation } });
-  const store = { read: async (c, id) => { reads.push(c + '/' + id); return copy(rows.get(c + '/' + id) || null); } };
+  const store = { normalizeListedRow: (_c, row) => copy(row), read: async (c, id) => { reads.push(c + '/' + id); return copy(rows.get(c + '/' + id) || null); } };
   const items = { query: c => {
     const filters = []; let limit;
-    const q = { eq: (f, v) => { filters.push(['eq', f, v]); return q; }, gt: (f, v) => { filters.push(['gt', f, v]); return q; },
+    const q = { eq: (f, v) => { filters.push(['eq', f, v]); return q; }, hasSome: (f, v) => { filters.push(['hasSome', f, v]); return q; }, gt: (f, v) => { filters.push(['gt', f, v]); return q; },
       ascending: f => { assert.equal(f, '_id'); return q; }, limit: n => { limit = n; return q; }, find: async options => {
-        assert.deepEqual(options, { consistentRead: true, returnTotalCount: true }); queries.push({ c, filters: copy(filters) });
+        assert.deepEqual(copy(options), { consistentRead: true, returnTotalCount: true }); queries.push({ c, filters: copy(filters) });
         const matching = [...rows.entries()].filter(([address, row]) => address.startsWith(c + '/')
-          && filters.every(([m, f, v]) => m === 'eq' ? row[f] === v : row[f] > v)).map(([, r]) => r).sort((a, b) => a._id.localeCompare(b._id));
+          && filters.every(([m, f, v]) => m === 'eq' ? row[f] === v : m === 'hasSome' ? v.includes(row[f]) : row[f] > v)).map(([, r]) => r).sort((a, b) => a._id.localeCompare(b._id));
         const page = { items: copy(matching.slice(0, limit)), totalCount: matching.length };
         if (corruptPage) corruptPage(page); return page;
       } }; return q;
   } };
+  store.readMany = async (c, ids) => {
+    const found = new Map();
+    for (let offset = 0; offset < ids.length; offset += 50) {
+      const batch = ids.slice(offset, offset + 50), page = await items.query(c).hasSome('_id', batch).limit(batch.length + 1).find({ consistentRead: true, returnTotalCount: true });
+      if (page.items.length !== page.totalCount || page.totalCount > batch.length) throw Error('Incomplete mock exact batch');
+      for (const row of page.items) { if (!batch.includes(row._id) || found.has(row._id)) throw Error('Mock exact identity conflict'); found.set(row._id, row); }
+    }
+    return ids.map(id => found.get(id) || null);
+  };
   const args = { company: 'NCT', identity, store, items, transferIndexVersion: 2, pageSize: 1,
     sourceTaskIds: ['S', 'NEW'], claimPairs: [{ sourceTaskId: 'S', taskId: 'C' }] };
   return { args, rows, reads, queries, put, p, positionId, corrupt: fn => { corruptPage = fn; } };

@@ -1,0 +1,82 @@
+2026-10-23 — bounded same-snapshot receipt preparation increment
+
+Recovery/scope
+Candidate starting checkpoint9809f58 on feat/stock-current-state-protocol-20261021,
+existing draftPR220. Protected original production paths remain byte-identical to
+d447185; productionruntime32b812c unchanged. Verified split tag remains present.
+Only isolated candidate sources/tests/generated bundles/manifest and test diagnostic
+changed; no main merge, stock activation, business data, grants or Pages dispatch.
+Framework reread after context loss; missing checkoutSTART_HERE corrected to root.
+Old OVERNIGHT_CLOSEOUT is historical, not current completion evidence.
+
+Concrete change
+- SDK readMany: explicit allowed collection/distinct IDs, at most2000/entry and50per
+  query policy; strong read+complete total cardinality, strict identity/company/Date
+  codec. Same as exact read, NO company predicate hiding an occupied foreign ID.
+  Foreign IDs reject, rather than appearing absent. No fallback when hasSome fails.
+- receipt-read-snapshot: private temporary coalescing INSIDE common readSnapshot.
+  Batched complete ACTIVE sources/claims/transfers plus affected CLOSED repaid
+  correction relationships and selected-source dispatched claim provenance. Exact
+  source/claim/product IDs include zero/CLOSED and confirmed absence. Strong exact
+  confirmation of listed images detects changed versions/content; duplicate/cursor/
+  partial/total/type/permission/transport/fanout errors stop before preparing writes.
+  Fifty IDs,100/page,10000snapshot images are server policy, not production capacity.
+- Same existing scoped-current-reader validates operational images and identities;
+  no new stock totals/model, no cached write/apply/verify phase. Cache has no write
+  methods, cannot answer an unprepared scope, and never survives that preparation.
+- Warehouse authority exposes existing task scope; one union task read (same original
+  role/company grant) replaces per-product exact task requests. Missing task rejects.
+- Existing company fence/pending/result/idempotence/PO/financial/receipt/model rules
+  and default stepsPerInvocation remain unchanged.300-line measurement explicitly
+  uses steps20; do not present it as timing of the root's default100steps policy.
+- Shared SDK command bundle and local old test-adapter bundles rebuilt mechanically.
+  Old test modules were NOT resynchronized/run in Wix and old lock-delete grants are
+  NOT renewed. Production install manifest hashes regenerated, still all unverified.
+
+Verification actually run
+SDK batch5new, receipt-snapshot7new (including actual300root instrumentation), native
+batch4new; earlier1050full+4isolated diagnostic are not added as a separate run claim.
+Original scoped query baseline and batch results compared including10000unrelated
+CLOSED records, closed zero source/claim, correction-reopen relation, selected-source
+dispatch and >100claim paging. Actual original-root NCT/GHR receipt, split-to-Loaded,
+borrow/return/repay and reserved damage composition all pass after mock adaptation.
+Initial6snapshot tests3fail were cross-realm deepStrictEqual of mock options; corrected
+to normalize mock options, then all6passed. First combined full1066:1053pass/13fail:
+two old mock stores lacked new capabilities. Added actual codec.readMany/hasSome to
+composition mock and explicit methods to borrowing mock. Relevant28pass. No weakened
+stock or permissions assertion. FINAL FULL1070pass0fail28935.8989ms.
+Diff whitespace check passes. Protected production path diff againstd447185 empty.
+
+Actual300line OFFLINE comparison, same fixture/request/20steps
+Before: invocation1 read1250/find900/insert13/CAS2/remove1, counted lower-bound2168.
+After:  invocation1 read50/find42/insert13/CAS2/remove1, counted lower-bound110.
+Both return pending BEFORE20/901, not success/partial receipt. Next invocation remains
+read35/find0/insert1/CAS1/remove1, lower-bound39, pending BEFORE40/901. Native SDK CAS
+adds read+patch; original auth/table/file/network costs not fully counted. Not native
+300line throughput or production capacity, no measured Credit claim (UNKNOWN).
+
+Wix native READ-ONLY evidence
+Existing Master editor tab51426657. Old browser3 handle unavailable; fresh inventory
+showed Chrome4 with same existing tabs. Rebound exact existing tab, no new tab/login.
+Existing diagnostic WHOLE clipboard LF3106 SHA2560ea4df405c12cf11f7441233edd689b86af126b25a5d394852375ab76a8c038d
+matched prior recorded saved source before edit. Appended3599characters ONLY; existing
+function/code retained exactly. Whole clipboard LF6705 SHA2560b41e5811d2432d9ec468823ff7b8ef6f70ff7e56380f84639b61f081fe3bf68
+matches generated file, Autosave on. No Publish or original business module edits.
+New Admin-only measureStockBatchRead reads fixed StockProtocolTest, no caller IDs or
+collection selection. Complete <=25seed creates exact expected identities internally;
+50distinct IDs include proven-missing placeholders, never returned to browser.
+Dedicated function gutter at exportline68 -> parameter panel -> explicit
+{"input":{"company":"NCT"}} -> Run EXACTLY ONCE. No generic page Run clicked.
+Returned ok:true,3queries648ms, complete seed13/339ms,50IDbatch13/127ms,company+batch
+13/182ms; exact set/count validation passed. Native query capacity50 only; compound
+StockPositions/Claims/Products indexes, native business typed writes, actual300line
+preparation and recovery remain unmeasured. No CMS rows/locks/schema/permissions
+created/modified/deleted. Results retained in LIVE_BATCH_READ_RESULT.json/screenshot.
+
+Release audit
+Code: this concrete candidate increment implemented and offline tested, overall G3/
+native/recovery/install/cutover incomplete. Pages: no candidate dispatch. Wix: only
+isolated readonly diagnostic appended/saved/tested, no business sync/Publish. Public:
+new inventory/borrowing path unavailable/unverified. ACTIVE and actual invoice/exit
+remain OFF. Do not tell user to run real borrowing yet. Do not repeat this native
+query just to redisplay metrics. Optional manual AstraHigh question already pending.

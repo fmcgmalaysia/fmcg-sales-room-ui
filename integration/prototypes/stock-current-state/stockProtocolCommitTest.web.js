@@ -96,6 +96,30 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!Array.isArray(page?.items) || page.items.length > 1) throw Error('Invalid exact storage read');
     return normalize(collection, page.items[0] || null);
   }
+  // Server-only exact IDs within ONE caller-owned readSnapshot. No persistent
+  // cache or write/verify reuse. Fifty is our request policy, not a claimed Wix
+  // hasSome capacity. Missing is returned only after a complete strong result.
+  async function readMany(collection, ids) {
+    if (!allowed.has(collection) || !Array.isArray(ids) || ids.length > 2000
+      || new Set(ids).size !== ids.length) throw Error('Bounded distinct storage IDs required');
+    const requested = [...ids];
+    for (const id of requested) scope(collection, id);
+    const found = new Map();
+    for (let offset = 0; offset < requested.length; offset += 50) {
+      const batch = requested.slice(offset, offset + 50), expected = new Set(batch);
+      // Match read(): do not hide a foreign row behind a company filter and
+      // misreport an occupied exact ID as absent. normalize rejects that row.
+      const page = await items.query(collection).hasSome('_id', batch)
+        .limit(batch.length + 1).find({ consistentRead: true, returnTotalCount: true });
+      if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.totalCount) || page.totalCount < 0
+        || page.totalCount > batch.length || page.items.length !== page.totalCount) throw Error('Incomplete exact storage batch');
+      for (const row of page.items) {
+        if (!expected.has(row?._id) || found.has(row._id)) throw Error('Exact storage batch identity conflict');
+        found.set(row._id, normalize(collection, row));
+      }
+    }
+    return requested.map(id => found.get(id) || null);
+  }
   async function insert(collection, row) {
     scope(collection, row?._id);
     return normalize(collection, await items.insert(collection, encode(collection, row)));
@@ -136,7 +160,7 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
     return normalize(collection, row);
   }
-  return { read, insert, compareAndSet, compareAndRemove, normalizeListedRow };
+  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow };
 }
 
 

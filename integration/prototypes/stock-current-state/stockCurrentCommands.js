@@ -257,7 +257,7 @@ function createCurrentShortageSave({ company, items, store, protocol, coverage, 
 module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave, createCurrentQuantityCaseSave, createCurrentShortageSave };
 
 },
-// warehouse-authority.cjs sha256:6ac1a4cbccd0d64e074b6d0afa4a7c7aeffccb43367aaf4738d8a7c4a9e29ce5
+// warehouse-authority.cjs sha256:0c43fd16239c63cfe998cff0aa4fcb5635f921a4be82f789c3962c3d541fcd36
 "warehouse-authority.cjs": (load, module) => {
 'use strict';
 
@@ -299,9 +299,10 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
         || source.planned !== line.planned) throw Error('Original receipt and source authority differ');
     }
     return { kind: 'RECEIVE', memberId: member._id, validated,
+      readTaskRows: typeof readCurrentTaskRows === 'function' ? ids => readCurrentTaskRows(company, ids, staff) : null,
       products: [...products.values()].map(p => {
         const lines = validated.event.details.lines.filter(line => p.sources.some(s => s.id === line.taskId));
-        return { identity: p.identity, buildState: p.buildState,
+        return { identity: p.identity, buildState: p.buildState, scopeTaskIds: p.scopeTaskIds,
           readTaskRows: typeof readCurrentTaskRows === 'function' ? rows => readCurrentTaskRows(company, p.scopeTaskIds(rows), staff) : null, stockScope: {
           sourceTaskIds: lines.map(line => line.taskId),
           correctionSourceIds: lines.filter(line => line.kind === 'CORRECTION' && line.accepted < line.beforeAccepted).map(line => line.taskId),
@@ -837,13 +838,14 @@ async function validateOriginalReceipt({ createWarehouseOperations, company, sta
 module.exports = { validateOriginalReceipt };
 
 },
-// warehouse-stock-reader.cjs sha256:9e33c59871013fa9a2a97289ea434b4fc9bbf153c6f5a6cc527830eda08a9a0e
+// warehouse-stock-reader.cjs sha256:d1a746eec893e3373a3081dc59dc52fdb12881bd356e2601ec497eeecc3d9acc
 "warehouse-stock-reader.cjs": (load, module) => {
 'use strict';
 
 const { readCurrentProduct } = load("current-product-reader.cjs");
 const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
 const { prepareWarehouseReceipt } = load("warehouse-receipt-plan.cjs");
+const { createReceiptReadSnapshot } = load("receipt-read-snapshot.cjs");
 function createWarehouseStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
     || typeof protocol?.readSnapshot !== 'function' || typeof readAuthority !== 'function') throw Error('Server Warehouse stock dependencies required');
@@ -855,17 +857,32 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
       if (authority?.kind !== 'RECEIVE' || !authority.memberId || !authority.validated
         || !Array.isArray(authority.products) || !authority.products.length) throw Error('Verified Warehouse authority required');
       const products = [];
+      const batched = protocol.planFormat === 'SEGMENTED_V2' ? await createReceiptReadSnapshot({ company, products: authority.products,
+        items, store, metrics, transferIndexVersion: control?.transferIndexVersion }) : null;
+      const prepared = [];
       for (const product of authority.products) {
         if (product.identity?.company !== company || typeof product.buildState !== 'function') throw Error('Server product authority required');
         if (protocol.planFormat === 'SEGMENTED_V2' && !product.stockScope) throw Error('Server receipt current scope required');
         const rows = protocol.planFormat === 'SEGMENTED_V2'
-          ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
+          ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store: batched.store,
+            snapshotSets: batched, transferIndexVersion: control?.transferIndexVersion })
           : await readCurrentProduct({ company, identity: product.identity, items, store, metrics });
         if (protocol.planFormat === 'SEGMENTED_V2') {
-          if (typeof product.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
-          rows.taskRows = await product.readTaskRows(rows); rows.generation = control.generation;
+          if (typeof product.scopeTaskIds !== 'function' || typeof authority.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
+          prepared.push({ product, rows, taskIds: product.scopeTaskIds(rows) });
+        } else {
+          products.push({ state: product.buildState(rows), rows });
         }
-        products.push({ state: product.buildState(rows), rows });
+      }
+      if (batched) {
+        const ids = [...new Set(prepared.flatMap(p => p.taskIds))], taskRows = await authority.readTaskRows(ids);
+        if (!Array.isArray(taskRows) || taskRows.length !== ids.length
+          || taskRows.some((row, i) => !row || row._id !== ids[i] || row.company !== company)) throw Error('Complete receipt task checkpoint batch required');
+        const byId = new Map(taskRows.map(row => [row._id, row]));
+        for (const { product, rows, taskIds } of prepared) {
+          rows.taskRows = taskIds.map(id => byId.get(id)); rows.generation = control.generation;
+          products.push({ state: product.buildState(rows), rows });
+        }
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
     });
@@ -925,7 +942,7 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
 module.exports = { readCurrentProduct };
 
 },
-// scoped-current-reader.cjs sha256:c571a0d3b034ab869a5bddc45e1d0703069778a14d1153a7783b1748b93968d8
+// scoped-current-reader.cjs sha256:f1e408ee775dd203cf52a6c499d864e2ed8471570b18d47d961bf8e960ffd8fe
 "scoped-current-reader.cjs": (load, module) => {
 'use strict';
 
@@ -938,7 +955,7 @@ const { copy } = load("segmented-plan.cjs");
 const count = n => Number.isSafeInteger(n) && n >= 0;
 async function readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion,
   sourceTaskIds = [], demandTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
-  metrics = { queries: 0, exactReads: 0 } }) {
+  metrics = { queries: 0, exactReads: 0 }, snapshotSets = null }) {
   const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!['NCT', 'GHR'].includes(company) || identity.company !== company || typeof items?.query !== 'function'
     || typeof store?.read !== 'function' || transferIndexVersion !== 2) throw Error('Verified scoped current dependencies/index required');
@@ -978,6 +995,18 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
   // Cursor queries are complete sets, not first-page sums. Count changes, missing
   // pages, duplicates, overflow and network errors all stop before preparation.
   async function querySet(collection, filters) {
+    if (snapshotSets) {
+      const listed = await snapshotSets.readSet(collection, key, filters);
+      if (!Array.isArray(listed) || listed.length > maxRowsPerSet) throw Error('Incomplete scoped current set');
+      const result = []; let cursor = null;
+      for (const candidate of listed) {
+        if (typeof candidate?._id !== 'string' || !candidate._id || cursor && candidate._id <= cursor) throw Error('Scoped current cursor conflict');
+        const row = await exact(collection, candidate._id);
+        if (!row || filters.some(([method, field, value]) => method === 'eq' ? row[field] !== value : !(row[field] > value))) throw Error('Scoped current query changed');
+        result.push(row); cursor = candidate._id;
+      }
+      return result;
+    }
     const result = []; let cursor = null, total;
     do {
       let q = items.query(collection).eq('company', company).eq('stockKey', key);
@@ -1890,6 +1919,131 @@ function rollForwardProduct({ identity, product, beforeSources, afterSources, ge
 module.exports = { rollForwardProduct, sourceTotals };
 
 },
+// receipt-read-snapshot.cjs sha256:891edc20c82827ef36694f05bd5385cce17e5a748263d8f9ce6955bad8f915ae
+"receipt-read-snapshot.cjs": (load, module) => {
+'use strict';
+
+// Private preparation-only read coalescing INSIDE the existing readSnapshot.
+// Not a new stock authority: the unchanged scoped reader/model still validate
+// every image. No cache escapes preparation, no writes/apply/verify use it.
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const { copy, same } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+async function createReceiptReadSnapshot({ company, products, items, store, transferIndexVersion,
+  metrics = { queries: 0, exactReads: 0 }, maxRowsPerSet = 2000, maxSnapshotRows = 10000 }) {
+  if (!['NCT', 'GHR'].includes(company) || transferIndexVersion !== 2 || typeof items?.query !== 'function'
+    || typeof store?.readMany !== 'function' || typeof store?.normalizeListedRow !== 'function'
+    || !Array.isArray(products) || !products.length || products.length > 300
+    || !Number.isSafeInteger(maxRowsPerSet) || maxRowsPerSet < 1 || !Number.isSafeInteger(maxSnapshotRows)
+    || maxSnapshotRows < 1) throw Error('Private bounded receipt snapshot dependencies required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', keys = new Set(), scopes = new Map(), images = new Map();
+  for (const product of products) {
+    const key = stockKey(product.identity), scope = product.stockScope;
+    if (product.identity.company !== company || keys.has(key) || !scope
+      || ['sourceTaskIds', 'correctionSourceIds', 'claimPairs'].some(field => !Array.isArray(scope[field]))
+      || scope.sourceTaskIds.length + scope.correctionSourceIds.length + scope.claimPairs.length > maxRowsPerSet
+      || [...scope.sourceTaskIds, ...scope.correctionSourceIds].some(id => typeof id !== 'string' || !id)
+      || scope.claimPairs.some(p => !p || typeof p.sourceTaskId !== 'string' || !p.sourceTaskId || typeof p.taskId !== 'string' || !p.taskId)) throw Error('Explicit receipt product scope required');
+    keys.add(key); scopes.set(key, scope);
+  }
+  function put(collection, id, row) {
+    if (row && (row._id !== id || row.company !== company || !keys.has(row.stockKey))) throw Error('Receipt snapshot identity conflict');
+    const address = collection + '/' + id;
+    if (images.has(address) && !same(images.get(address), row)) throw Error('Receipt snapshot image changed');
+    images.set(address, row ? copy(row) : null);
+    if (images.size > maxSnapshotRows) throw Error('Receipt snapshot row policy');
+  }
+  function rows(collection) { return [...images].filter(([address, row]) => address.startsWith(collection + '/') && row).map(([, row]) => row); }
+  async function exactMany(collection, ids) {
+    const requested = [...new Set(ids)];
+    // Preserve the old reader's exact confirmation of listed images, now one
+    // complete strong batch per <=50 IDs rather than a request for each row.
+    for (let offset = 0; offset < requested.length; offset += 2000) {
+      const batch = requested.slice(offset, offset + 2000);
+      metrics.exactReads += Math.ceil(batch.length / 50);
+      const result = await store.readMany(collection, batch);
+      if (!Array.isArray(result) || result.length !== batch.length) throw Error('Incomplete receipt exact batch');
+      result.forEach((row, index) => put(collection, batch[index], row));
+    }
+  }
+  const matches = (row, filters) => filters.every(([method, field, value]) => method === 'eq' ? row[field] === value : row[field] > value);
+  async function loadSet(collection, field, values, filters) {
+    const requested = [...new Set(values)];
+    for (let offset = 0; offset < requested.length; offset += 50) {
+      const batch = requested.slice(offset, offset + 50), allowed = new Set(batch), listedIds = [], perProduct = new Map();
+      let cursor = null, total;
+      do {
+        let q = items.query(collection).eq('company', company).hasSome(field, batch);
+        for (const [method, name, value] of filters) q = q[method](name, value);
+        if (cursor) q = q.gt('_id', cursor);
+        metrics.queries++;
+        const page = await q.ascending('_id').limit(100).find({ consistentRead: true, returnTotalCount: true });
+        if (!Array.isArray(page?.items) || !count(page.totalCount) || page.totalCount > maxSnapshotRows
+          || total !== undefined && page.totalCount !== total - listedIds.length
+          || page.items.length !== Math.min(100, page.totalCount)) throw Error('Incomplete receipt current set');
+        if (total === undefined) total = page.totalCount;
+        for (const raw of page.items) {
+          if (typeof raw?._id !== 'string' || !raw._id || cursor && raw._id <= cursor) throw Error('Receipt snapshot cursor conflict');
+          const row = store.normalizeListedRow(collection, raw);
+          if (!row || !allowed.has(row[field]) || !matches(row, filters)) throw Error('Receipt snapshot query conflict');
+          put(collection, raw._id, row); listedIds.push(raw._id); cursor = raw._id;
+          perProduct.set(row.stockKey, (perProduct.get(row.stockKey) || 0) + 1);
+          if (perProduct.get(row.stockKey) > maxRowsPerSet) throw Error('Receipt snapshot product fanout policy');
+        }
+      } while (listedIds.length < total);
+      await exactMany(collection, listedIds);
+    }
+  }
+  const active = [['eq', 'status', 'ACTIVE']], transfer = [['eq', 'action', 'STOCK_TRANSFER_CURRENT']];
+  await exactMany('StockProducts', [...keys].map(key => hash(company, key)));
+  await loadSet('StockPositions', 'stockKey', [...keys], active);
+  await loadSet('StockClaims', 'stockKey', [...keys], active);
+  await loadSet(journal, 'stockKey', [...keys], [...transfer, ...active]);
+  const corrections = [...scopes.values()].flatMap(scope => scope.correctionSourceIds);
+  await loadSet(journal, 'replacementSourceId', corrections, [...transfer, ['gt', 'repaidQuantity', 0]]);
+  const sourceIds = new Set(rows('StockPositions').map(row => row._id)), pairs = [];
+  for (const [key, scope] of scopes) {
+    for (const source of [...scope.sourceTaskIds, ...scope.correctionSourceIds, ...scope.claimPairs.map(p => p.sourceTaskId)]) sourceIds.add(hash(company, key, 'PURCHASE_SOURCE', source));
+    for (const pair of scope.claimPairs) pairs.push({ key, ...pair });
+  }
+  for (const claim of rows('StockClaims')) sourceIds.add(claim.positionId);
+  for (const row of rows(journal)) {
+    const r = row.details?.relation;
+    if (!r || !r.lenderSourceId || !r.replacementSourceId || !r.lenderTaskId || !r.borrowerTaskId) throw Error('Receipt transfer scope conflict');
+    for (const sourceTaskId of [r.lenderSourceId, r.replacementSourceId]) {
+      sourceIds.add(hash(company, row.stockKey, 'PURCHASE_SOURCE', sourceTaskId));
+      for (const taskId of [r.lenderTaskId, r.borrowerTaskId]) pairs.push({ key: row.stockKey, sourceTaskId, taskId });
+    }
+  }
+  await exactMany('StockPositions', [...sourceIds]);
+  const positions = rows('StockPositions');
+  await loadSet('StockClaims', 'positionId', positions.map(row => row._id), [['gt', 'dispatchedCumulative', 0]]);
+  await exactMany('StockClaims', pairs.map(p => hash(company, hash(company, p.key, 'PURCHASE_SOURCE', p.sourceTaskId), p.taskId)));
+  const readablePositions = new Set(positions.map(row => row._id)), correctionSet = new Set(corrections);
+  return {
+    store: { read: async (collection, id) => {
+      const address = collection + '/' + id;
+      if (!images.has(address)) throw Error('Receipt snapshot exact scope not prepared');
+      return copy(images.get(address));
+    } },
+    readSet: async (collection, key, filters) => {
+      const valid = keys.has(key) && (collection === 'StockPositions' && same(filters, active)
+        || collection === 'StockClaims' && (same(filters, active) || filters.length === 2
+          && filters[0][0] === 'eq' && filters[0][1] === 'positionId' && readablePositions.has(filters[0][2]) && same(filters[1], ['gt', 'dispatchedCumulative', 0]))
+        || collection === journal && (same(filters, [...transfer, ...active]) || filters.length === 3
+          && same(filters[0], transfer[0]) && filters[1][0] === 'eq' && filters[1][1] === 'replacementSourceId'
+          && correctionSet.has(filters[1][2]) && same(filters[2], ['gt', 'repaidQuantity', 0])));
+      if (!valid) throw Error('Receipt snapshot set scope not prepared');
+      const selected = rows(collection).filter(row => row.stockKey === key && matches(row, filters)).sort((a, b) => a._id < b._id ? -1 : a._id > b._id ? 1 : 0);
+      if (selected.length > maxRowsPerSet) throw Error('Receipt snapshot product fanout policy');
+      return copy(selected);
+    }
+  };
+}
+module.exports = { createReceiptReadSnapshot };
+
+},
 // borrowing-authority.cjs sha256:f4501272505daed8f3ffd3a07d8269595756a11cb2a198fe620dd07a4a0deaf4
 "borrowing-authority.cjs": (load, module) => {
 'use strict';
@@ -2661,7 +2815,7 @@ function createShortageStockPreparation(deps) {
 module.exports = { validateOriginalShortage, createShortageStockPreparation };
 
 },
-// sdk-conditional-store.cjs sha256:30aaf495c3506f9b3578484425b407ca4ae1b1302486be6ea83cce54d0620a09
+// sdk-conditional-store.cjs sha256:544fec0c865dcf841a5766d2e36e50718afc32a7a41c74fafc0a4523c161c5a8
 "sdk-conditional-store.cjs": (load, module) => {
 'use strict';
 
@@ -2713,6 +2867,30 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!Array.isArray(page?.items) || page.items.length > 1) throw Error('Invalid exact storage read');
     return normalize(collection, page.items[0] || null);
   }
+  // Server-only exact IDs within ONE caller-owned readSnapshot. No persistent
+  // cache or write/verify reuse. Fifty is our request policy, not a claimed Wix
+  // hasSome capacity. Missing is returned only after a complete strong result.
+  async function readMany(collection, ids) {
+    if (!allowed.has(collection) || !Array.isArray(ids) || ids.length > 2000
+      || new Set(ids).size !== ids.length) throw Error('Bounded distinct storage IDs required');
+    const requested = [...ids];
+    for (const id of requested) scope(collection, id);
+    const found = new Map();
+    for (let offset = 0; offset < requested.length; offset += 50) {
+      const batch = requested.slice(offset, offset + 50), expected = new Set(batch);
+      // Match read(): do not hide a foreign row behind a company filter and
+      // misreport an occupied exact ID as absent. normalize rejects that row.
+      const page = await items.query(collection).hasSome('_id', batch)
+        .limit(batch.length + 1).find({ consistentRead: true, returnTotalCount: true });
+      if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.totalCount) || page.totalCount < 0
+        || page.totalCount > batch.length || page.items.length !== page.totalCount) throw Error('Incomplete exact storage batch');
+      for (const row of page.items) {
+        if (!expected.has(row?._id) || found.has(row._id)) throw Error('Exact storage batch identity conflict');
+        found.set(row._id, normalize(collection, row));
+      }
+    }
+    return requested.map(id => found.get(id) || null);
+  }
   async function insert(collection, row) {
     scope(collection, row?._id);
     return normalize(collection, await items.insert(collection, encode(collection, row)));
@@ -2753,7 +2931,7 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
     return normalize(collection, row);
   }
-  return { read, insert, compareAndSet, compareAndRemove, normalizeListedRow };
+  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow };
 }
 
 module.exports = { createSdkConditionalStore };

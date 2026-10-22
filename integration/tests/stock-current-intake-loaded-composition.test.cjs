@@ -30,11 +30,12 @@ async function fixture(company,steps=100){
  const fulfilmentStore={all:async collection=>collection==='StaffMasterAccess'?[employee()]:list(collection).map(native),
   read:async(collection,id)=>{const row=await f.store.read(collection,id);return row?native(row):null;}};
  const items={query:collection=>{const filters=[];let limit=50,offset=0;const q={eq:(key,value)=>{filters.push(row=>Array.isArray(row[key])?row[key].includes(value):row[key]===value);return q;},
-  gt:(key,value)=>{filters.push(row=>row[key]>value);return q;},ascending:()=>q,descending:field=>{assert.equal(field,'_updatedDate');return q;},skip:n=>{offset=n;return q;},limit:n=>{limit=n;return q;},find:async()=>{
+  hasSome:(key,values)=>{filters.push(row=>values.includes(row[key]));return q;},gt:(key,value)=>{filters.push(row=>row[key]>value);return q;},ascending:()=>q,descending:field=>{assert.equal(field,'_updatedDate');return q;},skip:n=>{offset=n;return q;},limit:n=>{limit=n;return q;},find:async()=>{
    const rows=list(collection).filter(row=>filters.every(fn=>fn(row))).sort((a,b)=>a._id.localeCompare(b._id)).map(native);return{items:rows.slice(offset,offset+limit),totalCount:rows.length,hasNext:()=>false};}};return q;}};
  const noNativeWrite=()=>{throw Error('No native SDK write during mock listed-row normalization');};
  const codec=runtime.createSdkConditionalStore({company,items:{...items,insert:noNativeWrite,patch:noNativeWrite,remove:noNativeWrite},collections:runtime.planCollections(company,true),dateTimeFields:{[names.activity]:['activityTime']}});
  f.store.normalizeListedRow=codec.normalizeListedRow;
+ f.store.readMany=codec.readMany;
  const damageModel=load('../prototypes/stock-current-state/packingListModel.candidate.js');
  const cache={'purchaseDisplayOrder.js':load('../prototypes/stock-current-state/purchaseDisplayOrder.candidate.js'),'packingListModel.js':damageModel};
  cache['packingListOperations.js']=load('../prototypes/stock-current-state/packingListOperations.candidate.js',cache);

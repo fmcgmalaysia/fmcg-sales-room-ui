@@ -32,9 +32,15 @@ async function fixture(company='NCT',coverage=true,productCount=2,stepsPerInvoca
       nextBorrowSequence:1,status:'CLOSED',reviewCodes:[],reviewRequired:false,onHand:0,reservedUsable:0,available:0,isolated:0});
   }
   const items={query:c=>{const filters=[];let limit=50,offset=0;const q={eq:(k,v)=>{filters.push(row=>Array.isArray(row[k])?row[k].includes(v):row[k]===v);return q;},
-    gt:(k,v)=>{filters.push(row=>row[k]>v);return q;},ascending:()=>q,skip:n=>{offset=n;return q;},limit:n=>{limit=n;return q;},find:async()=>{
+    hasSome:(k,v)=>{filters.push(row=>v.includes(row[k]));return q;},gt:(k,v)=>{filters.push(row=>row[k]>v);return q;},ascending:()=>q,skip:n=>{offset=n;return q;},limit:n=>{limit=n;return q;},find:async()=>{
       const rows=[...db].filter(([key,row])=>key.startsWith(c+'/')&&filters.every(fn=>fn(row))).map(([,row])=>copy(row)).sort((a,b)=>a._id.localeCompare(b._id));
       return{items:rows.slice(offset,offset+limit),totalCount:rows.length};}};return q;}};
+  store.readMany=async(c,ids)=>{
+    const found=new Map();for(let offset=0;offset<ids.length;offset+=50){const batch=ids.slice(offset,offset+50);
+      const page=await items.query(c).hasSome('_id',batch).limit(batch.length+1).find({consistentRead:true,returnTotalCount:true});
+      assert.equal(page.items.length,page.totalCount);page.items.forEach(row=>found.set(row._id,row));}
+    return ids.map(id=>found.get(id)||null);
+  };
   const modules=['warehouseReceiving.js','purchaseOrderWorkflow.js','plannerAllocation.js','customerShipmentLedger.js','packingListOperations.js','packingListModel.js','warehousePreparation.js'];
   const bindings={...Object.assign({},...modules.map(name=>load(name))),planCollections,createCurrentWarehouseReceiptSave,
     createCurrentWarehouseOrdersRead,createCurrentWarehousePreparationSave,createCurrentWarehouseCbmSave,createWarehousePhotoFencedStore,createCurrentPurchaseTables,readCurrentPurchaseProjection,

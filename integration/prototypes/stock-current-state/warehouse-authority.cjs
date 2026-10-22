@@ -38,9 +38,10 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
         || source.planned !== line.planned) throw Error('Original receipt and source authority differ');
     }
     return { kind: 'RECEIVE', memberId: member._id, validated,
+      readTaskRows: typeof readCurrentTaskRows === 'function' ? ids => readCurrentTaskRows(company, ids, staff) : null,
       products: [...products.values()].map(p => {
         const lines = validated.event.details.lines.filter(line => p.sources.some(s => s.id === line.taskId));
-        return { identity: p.identity, buildState: p.buildState,
+        return { identity: p.identity, buildState: p.buildState, scopeTaskIds: p.scopeTaskIds,
           readTaskRows: typeof readCurrentTaskRows === 'function' ? rows => readCurrentTaskRows(company, p.scopeTaskIds(rows), staff) : null, stockScope: {
           sourceTaskIds: lines.map(line => line.taskId),
           correctionSourceIds: lines.filter(line => line.kind === 'CORRECTION' && line.accepted < line.beforeAccepted).map(line => line.taskId),

@@ -9,7 +9,7 @@ const { copy } = require('./segmented-plan.cjs');
 const count = n => Number.isSafeInteger(n) && n >= 0;
 async function readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion,
   sourceTaskIds = [], demandTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
-  metrics = { queries: 0, exactReads: 0 } }) {
+  metrics = { queries: 0, exactReads: 0 }, snapshotSets = null }) {
   const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!['NCT', 'GHR'].includes(company) || identity.company !== company || typeof items?.query !== 'function'
     || typeof store?.read !== 'function' || transferIndexVersion !== 2) throw Error('Verified scoped current dependencies/index required');
@@ -49,6 +49,18 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
   // Cursor queries are complete sets, not first-page sums. Count changes, missing
   // pages, duplicates, overflow and network errors all stop before preparation.
   async function querySet(collection, filters) {
+    if (snapshotSets) {
+      const listed = await snapshotSets.readSet(collection, key, filters);
+      if (!Array.isArray(listed) || listed.length > maxRowsPerSet) throw Error('Incomplete scoped current set');
+      const result = []; let cursor = null;
+      for (const candidate of listed) {
+        if (typeof candidate?._id !== 'string' || !candidate._id || cursor && candidate._id <= cursor) throw Error('Scoped current cursor conflict');
+        const row = await exact(collection, candidate._id);
+        if (!row || filters.some(([method, field, value]) => method === 'eq' ? row[field] !== value : !(row[field] > value))) throw Error('Scoped current query changed');
+        result.push(row); cursor = candidate._id;
+      }
+      return result;
+    }
     const result = []; let cursor = null, total;
     do {
       let q = items.query(collection).eq('company', company).eq('stockKey', key);

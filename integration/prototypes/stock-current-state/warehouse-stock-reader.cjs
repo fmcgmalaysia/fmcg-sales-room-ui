@@ -3,6 +3,7 @@
 const { readCurrentProduct } = require('./current-product-reader.cjs');
 const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { prepareWarehouseReceipt } = require('./warehouse-receipt-plan.cjs');
+const { createReceiptReadSnapshot } = require('./receipt-read-snapshot.cjs');
 function createWarehouseStockReader({ company, items, store, protocol, readAuthority }) {
   if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
     || typeof protocol?.readSnapshot !== 'function' || typeof readAuthority !== 'function') throw Error('Server Warehouse stock dependencies required');
@@ -14,17 +15,32 @@ function createWarehouseStockReader({ company, items, store, protocol, readAutho
       if (authority?.kind !== 'RECEIVE' || !authority.memberId || !authority.validated
         || !Array.isArray(authority.products) || !authority.products.length) throw Error('Verified Warehouse authority required');
       const products = [];
+      const batched = protocol.planFormat === 'SEGMENTED_V2' ? await createReceiptReadSnapshot({ company, products: authority.products,
+        items, store, metrics, transferIndexVersion: control?.transferIndexVersion }) : null;
+      const prepared = [];
       for (const product of authority.products) {
         if (product.identity?.company !== company || typeof product.buildState !== 'function') throw Error('Server product authority required');
         if (protocol.planFormat === 'SEGMENTED_V2' && !product.stockScope) throw Error('Server receipt current scope required');
         const rows = protocol.planFormat === 'SEGMENTED_V2'
-          ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store, metrics, transferIndexVersion: control?.transferIndexVersion })
+          ? await readScopedCurrentProduct({ ...product.stockScope, company, identity: product.identity, items, store: batched.store,
+            snapshotSets: batched, transferIndexVersion: control?.transferIndexVersion })
           : await readCurrentProduct({ company, identity: product.identity, items, store, metrics });
         if (protocol.planFormat === 'SEGMENTED_V2') {
-          if (typeof product.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
-          rows.taskRows = await product.readTaskRows(rows); rows.generation = control.generation;
+          if (typeof product.scopeTaskIds !== 'function' || typeof authority.readTaskRows !== 'function') throw Error('Private current task checkpoint reader required');
+          prepared.push({ product, rows, taskIds: product.scopeTaskIds(rows) });
+        } else {
+          products.push({ state: product.buildState(rows), rows });
         }
-        products.push({ state: product.buildState(rows), rows });
+      }
+      if (batched) {
+        const ids = [...new Set(prepared.flatMap(p => p.taskIds))], taskRows = await authority.readTaskRows(ids);
+        if (!Array.isArray(taskRows) || taskRows.length !== ids.length
+          || taskRows.some((row, i) => !row || row._id !== ids[i] || row.company !== company)) throw Error('Complete receipt task checkpoint batch required');
+        const byId = new Map(taskRows.map(row => [row._id, row]));
+        for (const { product, rows, taskIds } of prepared) {
+          rows.taskRows = taskIds.map(id => byId.get(id)); rows.generation = control.generation;
+          products.push({ state: product.buildState(rows), rows });
+        }
       }
       return { validated: authority.validated, products, memberId: authority.memberId };
     });

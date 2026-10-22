@@ -167,17 +167,25 @@ for (const segmented of [false, true]) test(`concrete ${segmented ? 'v2 scoped' 
     return ids.map(id => { const task = f.context.tasks.find(t => t.id === id); return { _id: id, company, _version: 'T0',
       description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 }; });
   };
-  const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null),
+  const store = { normalizeListedRow: (_c, row) => copy(row), read: async (c, id) => copy(db.get(c + ':' + id) || null),
     insert: async (c, row) => { if (db.has(c + ':' + row._id)) throw Error('Duplicate'); seed(c, row); return copy(row); },
     compareAndSet: async (c, id, version, row) => { if (db.get(c + ':' + id)?._version !== version) throw Error('CAS conflict'); seed(c, row); return copy(row); },
     compareAndRemove: async (c, id, attempt) => { if (db.get(c + ':' + id)?.attempt !== attempt) throw Error('Wrong attempt'); db.delete(c + ':' + id); }
   };
   const items = { query: collection => { const filters = []; let limit = 1000; const q = {
-    eq: (k, v) => { filters.push(['eq', k, v]); return q; }, gt: (k, v) => { filters.push(['gt', k, v]); return q; },
+    eq: (k, v) => { filters.push(['eq', k, v]); return q; }, hasSome: (k, v) => { filters.push(['hasSome', k, v]); return q; }, gt: (k, v) => { filters.push(['gt', k, v]); return q; },
     ascending: () => q, limit: n => { limit = n; return q; },
     find: async () => { const selected = [...db].filter(([address, row]) => address.startsWith(collection + ':')
-      && filters.every(([method, k, v]) => method === 'eq' ? row[k] === v : row[k] > v)).map(([, row]) => copy(row)).sort((a, b) => a._id.localeCompare(b._id));
+      && filters.every(([method, k, v]) => method === 'eq' ? row[k] === v : method === 'hasSome' ? v.includes(row[k]) : row[k] > v)).map(([, row]) => copy(row)).sort((a, b) => a._id.localeCompare(b._id));
       return { items: selected.slice(0, limit), totalCount: selected.length }; } }; return q; } };
+  store.readMany = async (collection, ids) => {
+    const found = new Map();
+    for (let offset = 0; offset < ids.length; offset += 50) {
+      const batch = ids.slice(offset, offset + 50), page = await items.query(collection).hasSome('_id', batch).limit(batch.length + 1).find({ consistentRead: true, returnTotalCount: true });
+      assert.equal(page.items.length, page.totalCount); page.items.forEach(row => found.set(row._id, row));
+    }
+    return ids.map(id => found.get(id) || null);
+  };
   const protocol = segmented ? require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({ store, stepsPerInvocation: 100 }) : createFencedProof({ store });
   await protocol.initialize();
   Object.assign(db.get(protocol.ids.journal + ':' + protocol.ids.controlId), { mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', ...(segmented ? { transferIndexVersion: 2 } : {}) });

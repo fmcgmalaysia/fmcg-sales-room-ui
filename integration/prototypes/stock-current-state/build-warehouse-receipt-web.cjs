@@ -47,7 +47,7 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null,prepar
     packingHeld,readPreparation,projectPreparation,readCurrentTaskRows:async(selected,ids)=>{
       if(selected!==company||!Array.isArray(ids)||new Set(ids).size!==ids.length||ids.length>2000
         ||ids.some(id=>typeof id!=='string'||!id||id.length>128))throw Error('Exact current Warehouse task scope required');
-      const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'NCTTasks':'NCTTasks1',id));return rows;
+      return store.readMany(company==='NCT'?'NCTTasks':'NCTTasks1',ids);
     },now:()=>new Date()};
   if(!readOrders&&!preparation&&!cbm)return createCurrentWarehouseReceiptSave({company,items,store,protocol,coverage:writerCoverage,authorityDependencies});
   if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired original current Warehouse calculators required');

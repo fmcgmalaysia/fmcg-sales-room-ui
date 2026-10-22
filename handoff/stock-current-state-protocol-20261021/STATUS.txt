@@ -1,5 +1,24 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 BATCHED RECEIPT PREPARATION IMPLEMENTED: BATCHED_RECEIPT_READS.txt.
+Private preparation-only strong batch reads preserve old scoped validation/fence/model/
+commit, exact CLOSED/zero/correction/dispatch identities and one union task batch. No
+write/verify cache or history fallback. Actual300line offline invocation1 lower-bound
+2168->110 (read1250->50, find900->42), same BEFORE20/901; invocation2still39. Not native
+business timing/capacity. Original and batched scopes match; partial/foreign/duplicate/
+type/error/race/fanout refuse. FULL1070pass0fail28935.8989ms. First full13fail were two
+old mock stores missing readMany/hasSome; fixed exact mock capability, not business rules.
+Fresh existing Wix readonly diagnostic beforehash0ea4df4 matched, APPEND-ONLY batch
+function added, whole readback LF6705/hash0b41e5811d2432d9ec468823ff7b8ef6f70ff7e56380f84639b61f081fe3bf68.
+Dedicated batch test EXACTLY ONCE:3nativequeries648ms,50IDs/13existing seed rows; both
+exact-set and company-filter identities/counts pass. LIVE_BATCH_READ_RESULT.json and
+native-batch-read-result.png. No data/locks/schema/permission/Publish/business module
+writes. Chrome oldbrowser3unavailable; fresh inventory4sameexisting Master tab retained.
+Coverage EMPTY/ACTIVE OFF, invoice/exit OFF. No new Pages/Wix/public business release.
+NEXT: focused semantic G3 + actual native typed/domain/300capacity and operational
+recovery/install/cutover prerequisites. Do NOT claim total readiness from1070tests or
+50-ID isolated query. No need repeat3nativequeries or existing23editor comparisons.
+
 2026-10-23 ACTUAL READ LATENCY + PREPARE BLOCKER: PREPARE_INVOCATION_BUDGET.txt.
 New isolated Admin readonly diagnostic saved/whole-text SHA matches; correct Wix
 functional test EXACTLY2runs:3reads495ms and12reads1969ms, existing13synthetic records
