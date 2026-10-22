@@ -92,3 +92,10 @@ test('actual 300-product receipt preparation stays within the new offline query 
   assert.ok(first.operations.find <= 45); assert.ok(first.operations.read <= 55); assert.ok(first.countedDataRoundTripLowerBound <= 120);
   assert.equal(second.result.completedCount, 40); assert.equal(second.operations.find, 0);
 });
+test('snapshot byte and aggregate input budgets stop before memory grows with huge images or scopes', async () => {
+  await assert.rejects(batched(factory(), { maxSnapshotBytes: 100 }), /byte policy/);
+  await assert.rejects(batched(factory(), { maxSnapshotBytes: 0 }), /dependencies required/);
+  const f = factory(); f.args.sourceTaskIds = Array.from({ length: 30 }, (_, i) => 'S' + i);
+  await assert.rejects(batched(f, { maxSnapshotRows: 25 }), /input policy/);
+  assert.equal(f.queries.length, 0);
+});

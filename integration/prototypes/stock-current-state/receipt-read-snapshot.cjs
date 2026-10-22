@@ -5,16 +5,17 @@
 // every image. No cache escapes preparation, no writes/apply/verify use it.
 const { hash } = require('./commit-proof.cjs');
 const { stockKey } = require('./current-model.cjs');
-const { copy, same } = require('./segmented-plan.cjs');
+const { copy, same, utf8Bytes } = require('./segmented-plan.cjs');
 const count = n => Number.isSafeInteger(n) && n >= 0;
 async function createReceiptReadSnapshot({ company, products, items, store, transferIndexVersion,
-  metrics = { queries: 0, exactReads: 0 }, maxRowsPerSet = 2000, maxSnapshotRows = 10000 }) {
+  metrics = { queries: 0, exactReads: 0 }, maxRowsPerSet = 2000, maxSnapshotRows = 10000, maxSnapshotBytes = 8 * 1024 * 1024 }) {
   if (!['NCT', 'GHR'].includes(company) || transferIndexVersion !== 2 || typeof items?.query !== 'function'
     || typeof store?.readMany !== 'function' || typeof store?.normalizeListedRow !== 'function'
     || !Array.isArray(products) || !products.length || products.length > 300
     || !Number.isSafeInteger(maxRowsPerSet) || maxRowsPerSet < 1 || !Number.isSafeInteger(maxSnapshotRows)
-    || maxSnapshotRows < 1) throw Error('Private bounded receipt snapshot dependencies required');
+    || maxSnapshotRows < 1 || !Number.isSafeInteger(maxSnapshotBytes) || maxSnapshotBytes < 1) throw Error('Private bounded receipt snapshot dependencies required');
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', keys = new Set(), scopes = new Map(), images = new Map();
+  let inputIdentities = 0, imageBytes = 0;
   for (const product of products) {
     const key = stockKey(product.identity), scope = product.stockScope;
     if (product.identity.company !== company || keys.has(key) || !scope
@@ -23,11 +24,17 @@ async function createReceiptReadSnapshot({ company, products, items, store, tran
       || [...scope.sourceTaskIds, ...scope.correctionSourceIds].some(id => typeof id !== 'string' || !id)
       || scope.claimPairs.some(p => !p || typeof p.sourceTaskId !== 'string' || !p.sourceTaskId || typeof p.taskId !== 'string' || !p.taskId)) throw Error('Explicit receipt product scope required');
     keys.add(key); scopes.set(key, scope);
+    inputIdentities += 1 + scope.sourceTaskIds.length + scope.correctionSourceIds.length + scope.claimPairs.length;
+    if (inputIdentities > maxSnapshotRows) throw Error('Receipt snapshot input policy');
   }
   function put(collection, id, row) {
     if (row && (row._id !== id || row.company !== company || !keys.has(row.stockKey))) throw Error('Receipt snapshot identity conflict');
     const address = collection + '/' + id;
     if (images.has(address) && !same(images.get(address), row)) throw Error('Receipt snapshot image changed');
+    if (!images.has(address)) {
+      imageBytes += utf8Bytes(JSON.stringify([address, row]));
+      if (imageBytes > maxSnapshotBytes) throw Error('Receipt snapshot byte policy');
+    }
     images.set(address, row ? copy(row) : null);
     if (images.size > maxSnapshotRows) throw Error('Receipt snapshot row policy');
   }

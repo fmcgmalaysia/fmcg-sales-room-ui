@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 BATCH CACHE CLOSING GUARD: memory<=8MiB plus aggregate input bound before
+helper I/O; counts alone did not bound cached payload. Related13pass then FINAL FULL
+1071pass0fail24419.8851ms. Initial guard13test run5fail due non-exported stringify
+import; fixed local JSON byte measurement (no shared codec API widening), reran related
+and full. Native3query648ms evidence unchanged, do not rerun. b7a9dc4 batch increment
+confirmed PUSHED PR220. Original default segmented steps is20, NOT100 (some mock
+fixtures override100); evidence corrected. Protected production diff still empty.
+No active command/native calls. Continue focused G3/native domain capacity/recovery/
+schema/cutover gates; no user business question newly identified. CoverageEMPTY/OFF,
+real invoice/exit OFF, all business publication stages still OPEN.
+
 2026-10-23 BATCHED RECEIPT PREPARATION IMPLEMENTED: BATCHED_RECEIPT_READS.txt.
 Private preparation-only strong batch reads preserve old scoped validation/fence/model/
 commit, exact CLOSED/zero/correction/dispatch identities and one union task batch. No
