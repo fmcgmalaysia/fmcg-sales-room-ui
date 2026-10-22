@@ -263,7 +263,7 @@ function createCurrentShortageSave({ company, items, store, protocol, coverage, 
 module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave, createCurrentQuantityCaseSave, createCurrentShortageSave };
 
 },
-// warehouse-authority.cjs sha256:0c43fd16239c63cfe998cff0aa4fcb5635f921a4be82f789c3962c3d541fcd36
+// warehouse-authority.cjs sha256:a8595c9c5616fe9b85e1a498c92550175c27ea683dfa7563d99f9e54d3e19d4b
 "warehouse-authority.cjs": (load, module) => {
 'use strict';
 
@@ -279,12 +279,15 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
     projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Warehouse authority dependency required');
   }
-  return async ({ company, requestId, input }) => {
+  return async ({ company, requestId, input, staffId: admittedStaffId }) => {
     if (!['NCT', 'GHR'].includes(company) || !/^[a-f0-9-]{36}$/i.test(requestId || '')
       || !input || !['RECEIVE', 'CORRECT'].includes(input.action)) throw Error('Valid Warehouse receipt request required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requireWarehouseStaff(member, []);
     const staff = { ...requireWarehouseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Private current-save command carries its server-read admission identity;
+    // browser input cannot supply or overwrite this top-level preparation field.
+    if (admittedStaffId !== undefined && staff.staffId !== admittedStaffId) throw Error('Warehouse receipt identity changed');
     const context = await readContext(company, staff);
     if (context.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
       || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');
@@ -2171,7 +2174,7 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
 module.exports = { createBorrowingStockReader };
 
 },
-// allocation-authority.cjs sha256:84a32525a9374412cf092aad3cf0142a69de343377c2ee50d76052739dce78db
+// allocation-authority.cjs sha256:25ad6fc2b10b11a79de6583cc7ba74d272a970d5421eeac840dad47c6fe8a4ac
 "allocation-authority.cjs": (load, module) => {
 'use strict';
 
@@ -2189,12 +2192,14 @@ function createAllocationAuthority({ readMember, readStaffRecords, requirePurcha
     createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Purchase allocation dependency required');
   }
-  return async ({ company, requestId, input }) => {
+  return async ({ company, requestId, input, staffId: admittedStaffId }) => {
     if (!['NCT', 'GHR'].includes(company) || !/^[a-f0-9-]{36}$/i.test(requestId || '')
       || input?.action !== 'ALLOCATE' || typeof input.sourceTaskId !== 'string' || !input.sourceTaskId) throw Error('Valid allocation request required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Bound by the private current-save command, not browser actor/approval flags.
+    if (admittedStaffId !== undefined && staff.staffId !== admittedStaffId) throw Error('Allocation identity changed');
     const context = await readContext(company, staff);
     if (context.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
       || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');

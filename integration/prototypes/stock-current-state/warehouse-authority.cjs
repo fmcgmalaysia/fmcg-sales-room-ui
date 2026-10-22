@@ -12,12 +12,15 @@ function createWarehouseAuthority({ readMember, readStaffRecords, requireWarehou
     projectPurchaseOrders, projectWarehouseOrders, createWarehouseOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Warehouse authority dependency required');
   }
-  return async ({ company, requestId, input }) => {
+  return async ({ company, requestId, input, staffId: admittedStaffId }) => {
     if (!['NCT', 'GHR'].includes(company) || !/^[a-f0-9-]{36}$/i.test(requestId || '')
       || !input || !['RECEIVE', 'CORRECT'].includes(input.action)) throw Error('Valid Warehouse receipt request required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requireWarehouseStaff(member, []);
     const staff = { ...requireWarehouseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Private current-save command carries its server-read admission identity;
+    // browser input cannot supply or overwrite this top-level preparation field.
+    if (admittedStaffId !== undefined && staff.staffId !== admittedStaffId) throw Error('Warehouse receipt identity changed');
     const context = await readContext(company, staff);
     if (context.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
       || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');

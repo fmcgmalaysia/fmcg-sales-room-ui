@@ -14,12 +14,14 @@ function createAllocationAuthority({ readMember, readStaffRecords, requirePurcha
     createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
     if (typeof fn !== 'function') throw Error('Existing Purchase allocation dependency required');
   }
-  return async ({ company, requestId, input }) => {
+  return async ({ company, requestId, input, staffId: admittedStaffId }) => {
     if (!['NCT', 'GHR'].includes(company) || !/^[a-f0-9-]{36}$/i.test(requestId || '')
       || input?.action !== 'ALLOCATE' || typeof input.sourceTaskId !== 'string' || !input.sourceTaskId) throw Error('Valid allocation request required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    // Bound by the private current-save command, not browser actor/approval flags.
+    if (admittedStaffId !== undefined && staff.staffId !== admittedStaffId) throw Error('Allocation identity changed');
     const context = await readContext(company, staff);
     if (context.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
       || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');

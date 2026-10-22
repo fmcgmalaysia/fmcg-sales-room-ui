@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 RECEIPT/ALLOCATION ADMISSION ACTOR: RECEIPT_ALLOCATION_ADMISSION_ACTOR.txt.
+Exact offline both-company RECEIVE/CORRECT roots proved ok:false after committed
+stock under same-member staff drift; v1/v2 allocation also admitted differentstaff.
+Minimum2authority guards compare already server-captured staffId beforecontext; no
+new role/browser trust/quantity/PO/commit changes.30affectedpass888.2158ms; FULL1151
+pass0fail27120.3917ms. Runtime104/install38/94 rebuilt,20flagsUNVERIFIED. Original
+paths equald447185, no native/UI/CMS/Pages/Wix mutation. cb85f50 priorincrementPUSHED.
+Both exact native-test and support-contact consent PENDING/no repeat/run/send.
+Migration/drain/nativecapacity/G3/cutover stillOPEN. Nextboundedread: Purchase task/
+source/plan and quantity/shortage repeated authority, nofinance feature work.
+
 2026-10-23 BORROW ADMISSION ACTOR SNAPSHOT: BORROW_ADMISSION_ACTOR_SNAPSHOT.txt.
 Actual APPROVE/RETURN same-member staff-reissue counterexamples retained (corrected
 fixture installed before gateway capture). Trusted common prepare now carries its
