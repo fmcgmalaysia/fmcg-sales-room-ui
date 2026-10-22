@@ -1,5 +1,17 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL SHARED ACCOUNT CO-WRITER ROOT: ACCOUNT_ORIGINAL_CO_WRITER_ROOT.txt.
+Original non-file settlement plus DISTINCT legacy invoice-check and credit event
+preparations bound to same company barrier; original policy/audit/PO identity/bank/
+file permissions preserved. Original full/paged/index authority reads guarded;
+clean LEGACY only. Original Purchase save cannot interleave with credit journal.
+957currentpass0fail19574.1807ms; related64pass1027.71ms; finalnewroot7pass737.8403ms.
+Runtime98modules50exports. Node/VM/mock ONLY, no new finance feature. NEXT pair original
+Account clients/panel durable metadata/phases/reload (two existing pending mechanisms),
+then shared Purchase/Account FILE writers. Native/recovery/capacity/lifecycle/cutover/
+shadow/Loaded-endtoend/review/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF; invoice/
+exit OFF; production unchanged.66714f5 Source phase milestone confirmed pushed PR220.
+
 2026-10-22 SOURCE LARGE ORDER PHASE UX: SOURCE_INTAKE_PHASE_UX.txt. Actual original
 Source wrapper unchanged, adapter+saved immutable body/lock retained across typed
 Master phases; no early SUBMITTED/audit/unlock, same Master identity, bounded
