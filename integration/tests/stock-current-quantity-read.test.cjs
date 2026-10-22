@@ -71,11 +71,18 @@ test('quantity snapshot rejects native timestamp/type/version/identity and concu
 });
 
 test('explicit clean LEGACY retains the exact original endpoint result; formatter original body is unchanged outside its one stock seam',async()=>{
- const f=await issued('NCT');await f.receipt(100);f.control().mode='LEGACY';
+ const f=await issued('NCT');await f.receipt(100);
+ // Separate parity fixture for an existing pre-ACTIVE allocation. The current
+ // physical100matches it; this immutable historical event is NOT a new writer.
+ f.db.set(f.names.activity+'/PRE_ACTIVE_ALLOC',{_id:'PRE_ACTIVE_ALLOC',title:'PRE_ACTIVE_ALLOC',description:f.submission.orderId,imageAltText:f.taskId,
+  action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-22T03:30:00.000Z',initiatedByStaffName:'Original planner',
+  details:{beforeRevision:'',targets:[{taskId:f.taskId,customerId:'C',orderId:f.submission.orderId,sourceLineId:'L',quantity:100}]}});
+ const current=await f.quantitySend(quantityBody('NCT',f.submission));f.control().mode='LEGACY';
  const original=root('../..'+ '/backend/purchaseQuantityRead.js',['readPurchaseQuantities'],{...f.bindings,projectPurchaseQuantities:load('purchaseQuantityProjection.js').projectPurchaseQuantities,
   timingSafeEqual:require('node:crypto').timingSafeEqual,getSecret:async()=> 'SYNTHETIC-COMPOSITION-ONLY',wixData:f.bindings.items});
  const body=quantityBody('NCT',f.submission),request={headers:{Authorization:'Bearer SYNTHETIC-COMPOSITION-ONLY'},body:{json:async()=>copy(body)}};
  assert.deepEqual(copy(await f.quantitySend(body)),copy(await original.readPurchaseQuantities(request)));
+ assert.deepEqual(copy(current),copy(await original.readPurchaseQuantities(request)),'unaffected original receipt timestamp and full safe response remain exact at ACTIVE too');
  assert.match(execFileSync(process.execPath,[path.join(folder,'build-current-quantity-read.cjs'),'--check'],{encoding:'utf8'}),/verified/);
  const candidate=fs.readFileSync(path.join(folder,'purchaseQuantityProjection.candidate.js'),'utf8').replace(/\r\n/g,'\n');
  const restored=candidate.replace('export const PURCHASE_CURRENT_QUANTITY_PROJECTION_VERSION = 2;\n','').replace(/      const originalWarehouse=readWarehouseTask\(task,activity\),current=workspace\?\.stockAllocationView==='CURRENT_V2';\n      if\(current[^\n]+\n      const warehouse=current\?[^\n]+,decision=/,'      const warehouse=readWarehouseTask(task,activity),decision=');

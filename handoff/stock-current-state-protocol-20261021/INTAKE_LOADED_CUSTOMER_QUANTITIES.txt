@@ -59,6 +59,17 @@ Native metadata Date behavior and company/task/_updatedDate query/index/runtime 
 are STILL platform/capacity gates, not proved by these VM mocks. Current formatter
 keeps original receivedUpdatedAt field semantics: time quantity state was updated,
 not a new invoice/physical receipt action. No new Source transport/response fields.
+Follow-up preservation check: when the original customer allocation quantity is
+unchanged and no new current transfer/customer-attributed case affects that task,
+retain its EXACT original allocation/receipt timestamp, not a later generic stock
+record touch. Added a pre-ACTIVE historical-allocation parity fixture: ACTIVE and
+explicit LEGACY both equal the complete original safe response including timestamp.
+First attempted comparison correctly exposed that a new current receipt has NO
+legacy allocation journal and old reader returns0; corrected the parity fixture to
+include actual immutable old allocation evidence instead of weakening expectations.
+New current-only receipt/borrow quantities continue to use verified SDK state time.
+Follow-up affected6pass0fail2040.9854ms; FULL1025pass0fail21462.2497ms. Prior first
+increment0f6e1d4 confirmed pushed PR220. No original/protected file modified.
 
 Tests/evidence
 - New original quantity root4pass0fail1499.7788ms, both companies borrow30→30/70;

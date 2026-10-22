@@ -14,7 +14,7 @@ let projection=fs.readFileSync(path.join(original,'purchaseQuantityProjection.js
 projection='export const PURCHASE_CURRENT_QUANTITY_PROJECTION_VERSION = 2;\n'+projection;
 projection=once(projection,'      const warehouse=readWarehouseTask(task,activity),decision=',`      const originalWarehouse=readWarehouseTask(task,activity),current=workspace?.stockAllocationView==='CURRENT_V2';
       if(current&&(!adjusted||!Number.isSafeInteger(adjusted.inc)||adjusted.inc<0||adjusted.inc>quantity||!Number.isFinite(Date.parse(workspace.stockQuantityUpdatedAtByTask?.[task.title]))))throw Error('Verified current customer quantity required');
-      const warehouse=current?{...(originalWarehouse||{}),customerReceived:adjusted.inc,allocationAt:workspace.stockQuantityUpdatedAtByTask[task.title]}:originalWarehouse,decision=`);
+      const warehouse=current?{...(originalWarehouse||{}),customerReceived:adjusted.inc,allocationAt:originalWarehouse&&originalWarehouse.customerReceived===adjusted.inc&&!activity.some(event=>event.action==='STOCK_TRANSFER_CURRENT'&&event.participantTaskIds?.includes(task.title)||event.action==='STOCK_EXCEPTION_REPORTED'&&event.stockAttribution==='CUSTOMER'&&event.stockCustomerTaskId===task.title)?originalWarehouse.allocationAt||originalWarehouse.at:workspace.stockQuantityUpdatedAtByTask[task.title]}:originalWarehouse,decision=`);
 const source=`import { items } from '@wix/data';
 import { fulfilmentStore } from 'backend/customerFulfilmentService.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.js';
