@@ -3733,6 +3733,134 @@ function createCurrentWarehouseCbmSave({company,store,protocol,coverage,authenti
 module.exports={captureOriginalWarehouseCbm,createCurrentWarehouseCbmSave};
 
 },
+// packing-photo-fenced-store.cjs sha256:0c8f91663af1622b1a014b8a62521fe0b732960fee17ded3d1edfd2373cb4e1f
+"packing-photo-fenced-store.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs"),{createSegmentedPlanCodec,copy,same}=load("segmented-plan.cjs");
+const {assertPackingPhotoUploads,uploadPackingPhotoSlot}=load("packing-photo-plan.cjs");
+const ACTION='PACKING_PHOTO_CONFIRMED',unversion=row=>{const result=copy(row);delete result._version;return result;};
+function packingPhotoReceipt({company,staff,requestId,input,plan,index}){
+ assertPackingPhotoUploads({company,staff,requestId,input,plan});if(!Number.isSafeInteger(index)||index<0||index>=plan.uploads.length)throw Error('Exact packing photo receipt slot required');
+ const id=hash(company,requestId,staff.memberId,ACTION,index);
+ return{_id:id,title:id,company,stockPhotoProtocol:1,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:plan.record.activityTime,
+  initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,description:input.id,imageAltText:input.taskId,
+  details:{requestId,memberId:staff.memberId,index,recordId:plan.record._id,upload:copy(plan.uploads[index])}};
+}
+function prependPackingPhotoReceipts({company,staff,requestId,input,prepared,plan}){
+ assertPackingPhotoUploads({company,staff,requestId,input,plan:prepared});const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
+ if(!Array.isArray(plan?.writes)||plan.writes.filter(change=>change.collection===journal&&same(change.after,{...prepared.record,company})).length!==1
+  ||plan.writes.some(change=>change.after?.action===ACTION||change.after?.stockPhotoProtocol!==undefined))throw Error('Exact original packing stock plan required');
+ return{...copy(plan),writes:[...prepared.uploads.map((_,index)=>({collection:journal,before:null,after:packingPhotoReceipt({company,staff,requestId,input,plan:prepared,index})})),...copy(plan.writes)]};
+}
+// Request-scoped private adapter, paired to segmented coordinator with one APPLY
+// write per invocation. Mutable original packing record remains conditional CAS;
+// file receipts insert-only. No allocation/file update/trash/lock theft capability.
+function createPackingPhotoFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+ if(!['NCT','GHR'].includes(company)||staff?.packingDepartment!=='WAREHOUSE'||!staff.staffId||!staff.memberId||!staff.staffName||request?.department!=='WAREHOUSE'
+  ||request.input?.action!=='PHOTOS'||!Array.isArray(request.input.photos)||request.input.photos.length<1||request.input.photos.length>3
+  ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.stockProtocol!==1||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
+  ||['read','insert','compareAndSet','compareAndRemove'].some(method=>typeof store?.[method]!=='function')||typeof documentService!=='function')throw Error('Private fenced packing photo dependencies required');
+ const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids,requestId=request.requestId;
+ const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'PACKING',input:{department:'WAREHOUSE',details:request.input},stockProtocol:request.stockProtocol,
+  stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{})});
+ async function boundPlan(collection,row){
+  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'
+   ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable pending packing photo operation required');
+  if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded packing photo manifest required');const fragments=[];
+  for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId});
+  if(!plan.writes.some(change=>change.collection===collection&&same(change.after,row)))throw Error('Packing photo write absent from immutable plan');
+  const records=plan.writes.filter(change=>change.collection===journal&&change.after.action==='SUPPORT_PACKING_LIST_CURRENT');
+  if(records.length!==1||!records[0].before?._version||records[0].before.details?.list?.revision!==request.input.revision)throw Error('Exact original conditional packing record required');
+  const record=unversion(records[0].after),line=record.details?.list?.lines?.find(item=>item.taskId===request.input.taskId);
+  if(!Array.isArray(line?.photos)||line.photos.length<request.input.photos.length||typeof record.initiatedByStaffName!=='string'||!record.initiatedByStaffName||record.initiatedByStaffName.length>200)throw Error('Original packing photo evidence/actor required');
+  const uploads=line.photos.slice(-request.input.photos.length).map(photo=>({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:hash(company,request.input.id,request.input.taskId,'PACKING_PHOTO'),
+   fileId:photo.fileId,type:photo.stage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:photo.name}));
+  const recordedStaff={...staff,staffName:record.initiatedByStaffName},prepared={record,uploads,beforeRevision:request.input.revision,expectedVersion:request.input.version};
+  assertPackingPhotoUploads({company,staff:recordedStaff,requestId,input:request.input,plan:prepared});
+  const receipts=plan.writes.filter(change=>change.after.action===ACTION||change.after.stockPhotoProtocol!==undefined);if(receipts.length!==uploads.length)throw Error('Complete original packing photo receipts required');
+  for(let index=0;index<uploads.length;index++){
+   const change=plan.writes[index],expected=packingPhotoReceipt({company,staff:recordedStaff,requestId,input:request.input,plan:prepared,index});
+   if(change?.collection!==journal||change.before!==null||!same(unversion(change.after),expected))throw Error('Packing photo receipts must precede business writes');
+  }
+  return{control,lock,prepared,recordedStaff,receipts};
+ }
+ const metadata=(collection,row)=>collection===journal&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
+ async function beforeDomainWrite(collection,row){
+  const state=await boundPlan(collection,row),receipt=row.action===ACTION,index=receipt?row.details?.index:state.receipts.length;
+  if(!Number.isSafeInteger(index)||index<0||index>state.receipts.length||receipt&&index===state.receipts.length)throw Error('Exact packing photo receipt required');
+  for(let prior=0;prior<index;prior++)if(!same(await store.read(journal,state.receipts[prior].after._id),state.receipts[prior].after))throw Error('Earlier packing photo receipt unconfirmed');
+  if(receipt)await uploadPackingPhotoSlot({company,staff:state.recordedStaff,requestId,input:request.input,plan:state.prepared,index,documentService});
+  if(!same(await store.read(journal,controlId),state.control)||!same(await store.read(journal,lockId),state.lock))throw Error('Packing photo callback fence changed; retain request');
+ }
+ return{read:(...args)=>store.read(...args),compareAndRemove:(collection,id,attempt)=>{if(collection!==journal||id!==lockId)throw Error('Only exact owned packing protocol lock release allowed');return store.compareAndRemove(collection,id,attempt);},
+  insert:async(collection,row)=>{if(!metadata(collection,row))await beforeDomainWrite(collection,row);return store.insert(collection,row);},
+  compareAndSet:async(collection,id,version,row)=>{if(row?.action===ACTION||row?.stockPhotoProtocol!==undefined)throw Error('Packing photo receipts are insert-only');if(!metadata(collection,row))await beforeDomainWrite(collection,row);return store.compareAndSet(collection,id,version,row);}};
+}
+module.exports={packingPhotoReceipt,prependPackingPhotoReceipts,createPackingPhotoFencedStore};
+
+},
+// packing-photo-plan.cjs sha256:276e60a400e2d606dce746f4b6de3d5fbb9baf46fe2d2de728744bf48c398de6
+"packing-photo-plan.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs"),{copy,same}=load("segmented-plan.cjs");
+const validFile=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{10,200}$/.test(value);
+// ORIGINAL packing validators and prepare only. Server-supplied generated IDs;
+// no legacy apply or file upload may run inside this scratch capture.
+async function captureOriginalPackingPhotoPlan({company,staff,requestId,input,context,createPackingListOperations,now,slots}){
+ if(!['NCT','GHR'].includes(company)||context?.company!==company||!Array.isArray(context.tasks)||!Array.isArray(context.lists)
+  ||staff?.packingDepartment!=='WAREHOUSE'||!staff.memberId||!staff.staffId||!staff.staffName||input?.action!=='PHOTOS'
+  ||!Array.isArray(input.photos)||!input.photos.length||input.photos.length>3||!Array.isArray(slots)||slots.length!==input.photos.length
+  ||slots.some(id=>!validFile(id))||new Set(slots).size!==slots.length||typeof createPackingListOperations!=='function'||typeof now!=='function')throw Error('Original private packing photo scope required');
+ const journal=company==='NCT'?'NCTActivity':'NCTActivity1',scratch=new Map(),boundary=Error('Original private packing photo boundary');let captured,reads=0,allocated=0;
+ const scope=collection=>{if(collection!==journal)throw Error('Original packing photo collection scope');};
+ const store={read:async(collection,id)=>{scope(collection);return copy(scratch.get(id)||null);},
+  insert:async(collection,row)=>{scope(collection);
+   if(row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.kind==='PREPARED'){
+    if(captured||scratch.size!==1||row.details.plan?.record?.action!=='SUPPORT_PACKING_LIST_CURRENT')throw Error('Original packing photo plan conflict');
+    captured=copy(row.details.plan);throw boundary;
+   }
+   if(row.action!=='PURCHASE_OPERATION_LOCK'||row.details?.kind!=='LOCK'||scratch.size)throw Error('Original packing photo apply forbidden');scratch.set(row._id,copy(row));return copy(row);
+  },remove:async(collection,id)=>{scope(collection);if(scratch.get(id)?.action!=='PURCHASE_OPERATION_LOCK')throw Error('Only original scratch lock removal allowed');scratch.delete(id);}};
+ const save=createPackingListOperations({store,names:{[company]:{activity:journal}},now,
+  readContext:async(selected,employee)=>{if(selected!==company||employee.memberId!==staff.memberId||employee.staffId!==staff.staffId||++reads!==1)throw Error('Original packing photo actor/context conflict');return copy(context);},
+  documentService:async command=>{if(!same(command,{action:'ALLOCATE',company})||allocated>=slots.length)throw Error('Original external photo call forbidden during capture');return{ok:true,fileId:slots[allocated++]};}});
+ try{await save({company,staff:copy(staff),requestId,input:copy(input)});throw Error('Original packing photo boundary missing');}catch(error){if(error!==boundary)throw error;}
+ if(!captured||reads!==1||scratch.size||allocated!==slots.length||captured.uploads?.some((upload,index)=>upload.fileId!==slots[index]))throw Error('Original packing photo capture incomplete');
+ assertPackingPhotoUploads({company,staff,requestId,input,plan:captured});return captured;
+}
+function assertPackingPhotoUploads({company,staff,requestId,input,plan}){
+ const record=plan?.record,list=record?.details?.list,uploads=plan?.uploads,photos=input?.photos;
+ if(!['NCT','GHR'].includes(company)||staff?.packingDepartment!=='WAREHOUSE'||!staff.staffId||!staff.memberId||!staff.staffName
+  ||!/^[a-f0-9-]{36}$/i.test(requestId||'')||input?.action!=='PHOTOS'||!input.id||!input.taskId||!input.revision||!input.version
+  ||!Array.isArray(photos)||photos.length<1||photos.length>3||!Array.isArray(uploads)||uploads.length!==photos.length
+  ||record?._id!==hash(company,input.id,'PACKING_CURRENT')||record.title!==input.id||record.description!==input.id||record.action!=='SUPPORT_PACKING_LIST_CURRENT'||record.result!=='SAVED'
+  ||record.initiatedByStaffId!==staff.staffId||record.initiatedByStaffName!==staff.staffName||!Number.isFinite(Date.parse(record.activityTime))
+  ||list?.id!==input.id||list.company!==company||list.revision!==hash(company,requestId,staff.memberId,'PACKING_REVISION')
+  ||list.updatedByStaffId!==staff.staffId||list.updatedBy!==staff.staffName||list.updatedAt!==record.activityTime||list.invoiceId||list.dispatchedAt
+  ||plan.expectedVersion!==input.version||plan.beforeRevision!==input.revision||!Array.isArray(list.lines))throw Error('Immutable original packing photo plan required');
+ const lines=list.lines.filter(line=>line.taskId===input.taskId),seen=new Set();if(lines.length!==1||!Array.isArray(lines[0].photos)||lines[0].photos.length<photos.length)throw Error('Original packing photo line required');
+ const evidence=lines[0].photos.slice(-photos.length);
+ for(const[index,upload]of uploads.entries()){
+  const photo=photos[index],extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo?.mimeType];
+  const expected={action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:hash(company,input.id,input.taskId,'PACKING_PHOTO'),fileId:upload.fileId,type:input.photoStage,
+   mimeType:photo?.mimeType,sha256:photo?.sha256,size:upload.size,name:company+'-'+input.id+'-'+input.photoStage+'-'+requestId+'-'+index+'.'+extension};
+  if(!extension||!['PACKING','LOADING'].includes(input.photoStage)||!validFile(upload.fileId)||seen.has(upload.fileId)||!same(upload,expected)
+   ||typeof photo?.base64!=='string'||photo.base64.length>2800000||!/^[a-f0-9]{64}$/i.test(photo.sha256||'')||!Number.isSafeInteger(upload.size)||upload.size<12||upload.size>2*1024*1024
+   ||!same(evidence[index],{fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at:record.activityTime,by:staff.staffName}))throw Error('Immutable original packing photo upload conflict');
+  seen.add(upload.fileId);
+ }
+ return true;
+}
+async function uploadPackingPhotoSlot({company,staff,requestId,input,plan,index,documentService}){
+ assertPackingPhotoUploads({company,staff,requestId,input,plan});if(!Number.isSafeInteger(index)||index<0||index>=plan.uploads.length||typeof documentService!=='function')throw Error('Exact original packing photo slot required');
+ const upload=copy(plan.uploads[index]),receipt=await documentService({...upload,base64:input.photos[index].base64});
+ if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Original packing photo upload unconfirmed; retain same slot');
+ return{fileId:upload.fileId,company,poId:upload.poId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size};
+}
+module.exports={captureOriginalPackingPhotoPlan,assertPackingPhotoUploads,uploadPackingPhotoSlot};
+
+},
 // current-stock-exception-save.cjs sha256:8c8f18f75ab2f1ce033156391c40e714dafa9b88683d8d7d2477290b49c0282e
 "current-stock-exception-save.cjs": (load, module) => {
 'use strict';
@@ -4983,15 +5111,15 @@ function createPurchaseBorrowReturnOptions({ company, items, store, protocol, au
 module.exports = { quoteUnusedBorrowReturn, createPurchaseBorrowReturnOptions };
 
 },
-// current-packing-service.cjs sha256:86ac44e5d015b0e096bac004b8fd4b64935786b69c5a3752686296a14f690cf3
+// current-packing-service.cjs sha256:7335607ad767b400ed88013fe1eb2c8ec0ed30378696a32f7027317dc451fdab
 "current-packing-service.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
 const { createPackingStockPreparation } = load("packing-stock-preparation.cjs");
 const { hash } = load("commit-proof.cjs");
 const { WRITERS } = load("stock-admission.cjs");
-// Private existing packing gateways only. PHOTOS/file protocol and real invoice/
-// dispatch remain separate protected flows, not enabled by this non-file service.
+// Private existing packing gateways only. PHOTOS requires its paired immutable
+// file protocol; neither this service nor evidence posts invoice/physical dispatch.
 function createCurrentPackingService({ company, items, store, protocol, coverage, authorityDependencies: deps }) {
   if (protocol?.planFormat !== 'SEGMENTED_V2' || !['NCT', 'GHR'].includes(company)
     || typeof deps?.projectPackingWorkroom !== 'function') throw Error('Current packing v2 scope/original public projector required');
@@ -5009,13 +5137,22 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
     save: async request => {
       const originalDepartment = department(request?.department);
       let actor;
-      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:guardedProtocol, coverage,
-        authenticate: async () => {
+      const authenticate=async()=>{
           const member = await deps.readMember();
           if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePackingStaff(member, [], originalDepartment);
-          actor = { ...deps.requirePackingStaff(member, await deps.readStaffRecords(), originalDepartment), memberId: member._id };
+          const employee={...deps.requirePackingStaff(member,await deps.readStaffRecords(),originalDepartment),memberId:member._id};
+          if(actor&&(employee.staffId!==actor.staffId||employee.memberId!==actor.memberId))throw Error('Original packing photo employee changed');
+          actor=employee;
           return actor;
-        }, prepare: async command => {
+      };
+      let saveProtocol=guardedProtocol;
+      if(request.input?.action==='PHOTOS'){
+        if(originalDepartment!=='WAREHOUSE'||typeof deps.createPhotoProtocol!=='function'||typeof deps.allocatePhotoSlots!=='function')throw Error('Current non-photo packing required until paired file protocol supplied');
+        await authenticate();saveProtocol=deps.createPhotoProtocol({request,staff:actor});
+        if(saveProtocol?.planFormat!=='SEGMENTED_V2'||typeof saveProtocol.commit!=='function'||typeof saveProtocol.readSnapshot!=='function')throw Error('Bounded original packing photo protocol required');
+      }
+      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:saveProtocol, coverage,
+        authenticate, prepare: async command => {
           const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
           if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
           return prepared;
@@ -5039,7 +5176,7 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
 module.exports = { createCurrentPackingService };
 
 },
-// packing-stock-preparation.cjs sha256:938051c26934a681b7a4109e51c9fb5dbb532a31b45c6041d6d188c1d7a453e8
+// packing-stock-preparation.cjs sha256:7a822b6b2f1d5d3be5eb2ddc3d7051edd1de0d7905991850215d99fa690bd3e3
 "packing-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -5050,8 +5187,11 @@ const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
 const { currentPackingContext } = load("current-packing-context.cjs");
 const { validateOriginalPacking } = load("original-packing-validation.cjs");
 const { preparePackingStock } = load("packing-stock-plan.cjs");
+const {captureOriginalPackingPhotoPlan}=load("packing-photo-plan.cjs");
+const {prependPackingPhotoReceipts}=load("packing-photo-fenced-store.cjs");
+const {hash}=load("commit-proof.cjs");
 // Private candidate for the existing authenticated read/save gateways. Every read
-// shares the company control barrier. No legacy apply/photo/file side effects.
+// shares the company control barrier. No legacy apply or file upload in prepare.
 function createPackingStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
@@ -5063,8 +5203,9 @@ function createPackingStockPreparation(deps) {
   const current = protocol.planFormat === 'SEGMENTED_V2';
   if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private packing current task reader required');
   async function load(request, save) {
+    const photos=save&&request?.input?.action==='PHOTOS';
     if (request?.company !== company || !['SUPPORT', 'WAREHOUSE'].includes(request.department)
-      || save && request.input?.action === 'PHOTOS') throw Error('Supported company/non-photo packing request required');
+      || photos&&(!current||request.department!=='WAREHOUSE'||typeof deps.allocatePhotoSlots!=='function')) throw Error('Supported company/non-photo packing request required until paired file protocol supplied');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
     const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
@@ -5098,7 +5239,14 @@ function createPackingStockPreparation(deps) {
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
         stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
-      const validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
+      let validated;
+      if(photos){
+        const at=now(),args={company,staff,requestId:request.requestId,input:request.input,context,createPackingListOperations,now:()=>new Date(at)};
+        // Original file/state/history validators BEFORE generated IDs. ALLOCATE
+        // creates no file; after manifest publication this capture never reruns.
+        await captureOriginalPackingPhotoPlan({...args,slots:(request.input.photos||[]).map((_,index)=>'pending-packing-'+hash(company,request.requestId,staff.memberId,index))});
+        validated=await captureOriginalPackingPhotoPlan({...args,slots:await deps.allocatePhotoSlots(request.input.photos.length)});
+      }else validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
       const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       metrics.exactReads++;
       const currentRecord = await store.read(journal, validated.record._id), prior = context.lists.find(l => l.id === validated.record.description);
@@ -5111,8 +5259,10 @@ function createPackingStockPreparation(deps) {
     });
     const originalStaff={memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,packingDepartment:staff.packingDepartment};
     if (!save) return { ...snapshot.rows, staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
-    return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
-      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
+    const mapped=preparePackingStock({ company, ...snapshot.rows, validated:photos?{...snapshot.rows.validated,uploads:[]}:snapshot.rows.validated,generation: snapshot.generation, packingHeld,
+      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' });
+    if(photos)mapped.plan=prependPackingPhotoReceipts({company,staff,requestId:request.requestId,input:request.input,prepared:snapshot.rows.validated,plan:mapped.plan});
+    return { ...mapped,
       staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
   }
   return { read: request => load(request, false), prepare: request => load(request, true) };
@@ -5928,6 +6078,7 @@ export const createCurrentWarehouseOrdersRouter = load("current-warehouse-receip
 export const createCurrentWarehousePreparationSave = load("current-warehouse-preparation-save.cjs").createCurrentWarehousePreparationSave;
 export const createCurrentWarehouseCbmSave = load("current-warehouse-cbm-save.cjs").createCurrentWarehouseCbmSave;
 export const createWarehousePhotoFencedStore = load("warehouse-photo-fenced-store.cjs").createWarehousePhotoFencedStore;
+export const createPackingPhotoFencedStore = load("packing-photo-fenced-store.cjs").createPackingPhotoFencedStore;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
 export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createCurrentStockExceptionSave = load("current-stock-exception-save.cjs").createCurrentStockExceptionSave;

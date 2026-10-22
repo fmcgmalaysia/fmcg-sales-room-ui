@@ -7,8 +7,11 @@ const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { currentPackingContext } = require('./current-packing-context.cjs');
 const { validateOriginalPacking } = require('./original-packing-validation.cjs');
 const { preparePackingStock } = require('./packing-stock-plan.cjs');
+const {captureOriginalPackingPhotoPlan}=require('./packing-photo-plan.cjs');
+const {prependPackingPhotoReceipts}=require('./packing-photo-fenced-store.cjs');
+const {hash}=require('./commit-proof.cjs');
 // Private candidate for the existing authenticated read/save gateways. Every read
-// shares the company control barrier. No legacy apply/photo/file side effects.
+// shares the company control barrier. No legacy apply or file upload in prepare.
 function createPackingStockPreparation(deps) {
   const { company, readMember, readStaffRecords, requirePackingStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, projectPackingContext, createPackingListOperations, readAllocations, readCustomerShipments,
@@ -20,8 +23,9 @@ function createPackingStockPreparation(deps) {
   const current = protocol.planFormat === 'SEGMENTED_V2';
   if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private packing current task reader required');
   async function load(request, save) {
+    const photos=save&&request?.input?.action==='PHOTOS';
     if (request?.company !== company || !['SUPPORT', 'WAREHOUSE'].includes(request.department)
-      || save && request.input?.action === 'PHOTOS') throw Error('Supported company/non-photo packing request required');
+      || photos&&(!current||request.department!=='WAREHOUSE'||typeof deps.allocatePhotoSlots!=='function')) throw Error('Supported company/non-photo packing request required until paired file protocol supplied');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePackingStaff(member, [], request.department);
     const staff = requirePackingStaff(member, await readStaffRecords(), request.department), metrics = { queries: 0, exactReads: 0 };
@@ -55,7 +59,14 @@ function createPackingStockPreparation(deps) {
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
         stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };
-      const validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
+      let validated;
+      if(photos){
+        const at=now(),args={company,staff,requestId:request.requestId,input:request.input,context,createPackingListOperations,now:()=>new Date(at)};
+        // Original file/state/history validators BEFORE generated IDs. ALLOCATE
+        // creates no file; after manifest publication this capture never reruns.
+        await captureOriginalPackingPhotoPlan({...args,slots:(request.input.photos||[]).map((_,index)=>'pending-packing-'+hash(company,request.requestId,staff.memberId,index))});
+        validated=await captureOriginalPackingPhotoPlan({...args,slots:await deps.allocatePhotoSlots(request.input.photos.length)});
+      }else validated = await validateOriginalPacking({ createPackingListOperations, company, staff, requestId: request.requestId, input: request.input, context, now });
       const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       metrics.exactReads++;
       const currentRecord = await store.read(journal, validated.record._id), prior = context.lists.find(l => l.id === validated.record.description);
@@ -68,8 +79,10 @@ function createPackingStockPreparation(deps) {
     });
     const originalStaff={memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,packingDepartment:staff.packingDepartment};
     if (!save) return { ...snapshot.rows, staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
-    return { ...preparePackingStock({ company, ...snapshot.rows, generation: snapshot.generation, packingHeld,
-      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' }),
+    const mapped=preparePackingStock({ company, ...snapshot.rows, validated:photos?{...snapshot.rows.validated,uploads:[]}:snapshot.rows.validated,generation: snapshot.generation, packingHeld,
+      planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' });
+    if(photos)mapped.plan=prependPackingPhotoReceipts({company,staff,requestId:request.requestId,input:request.input,prepared:snapshot.rows.validated,plan:mapped.plan});
+    return { ...mapped,
       staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
   }
   return { read: request => load(request, false), prepare: request => load(request, true) };

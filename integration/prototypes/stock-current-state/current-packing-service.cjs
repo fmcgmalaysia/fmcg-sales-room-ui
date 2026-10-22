@@ -3,8 +3,8 @@ const { createCurrentStockSave } = require('./current-stock-save.cjs');
 const { createPackingStockPreparation } = require('./packing-stock-preparation.cjs');
 const { hash } = require('./commit-proof.cjs');
 const { WRITERS } = require('./stock-admission.cjs');
-// Private existing packing gateways only. PHOTOS/file protocol and real invoice/
-// dispatch remain separate protected flows, not enabled by this non-file service.
+// Private existing packing gateways only. PHOTOS requires its paired immutable
+// file protocol; neither this service nor evidence posts invoice/physical dispatch.
 function createCurrentPackingService({ company, items, store, protocol, coverage, authorityDependencies: deps }) {
   if (protocol?.planFormat !== 'SEGMENTED_V2' || !['NCT', 'GHR'].includes(company)
     || typeof deps?.projectPackingWorkroom !== 'function') throw Error('Current packing v2 scope/original public projector required');
@@ -22,13 +22,22 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
     save: async request => {
       const originalDepartment = department(request?.department);
       let actor;
-      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:guardedProtocol, coverage,
-        authenticate: async () => {
+      const authenticate=async()=>{
           const member = await deps.readMember();
           if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') deps.requirePackingStaff(member, [], originalDepartment);
-          actor = { ...deps.requirePackingStaff(member, await deps.readStaffRecords(), originalDepartment), memberId: member._id };
+          const employee={...deps.requirePackingStaff(member,await deps.readStaffRecords(),originalDepartment),memberId:member._id};
+          if(actor&&(employee.staffId!==actor.staffId||employee.memberId!==actor.memberId))throw Error('Original packing photo employee changed');
+          actor=employee;
           return actor;
-        }, prepare: async command => {
+      };
+      let saveProtocol=guardedProtocol;
+      if(request.input?.action==='PHOTOS'){
+        if(originalDepartment!=='WAREHOUSE'||typeof deps.createPhotoProtocol!=='function'||typeof deps.allocatePhotoSlots!=='function')throw Error('Current non-photo packing required until paired file protocol supplied');
+        await authenticate();saveProtocol=deps.createPhotoProtocol({request,staff:actor});
+        if(saveProtocol?.planFormat!=='SEGMENTED_V2'||typeof saveProtocol.commit!=='function'||typeof saveProtocol.readSnapshot!=='function')throw Error('Bounded original packing photo protocol required');
+      }
+      const result = await createCurrentStockSave({ company, writer: 'PACKING', protocol:saveProtocol, coverage,
+        authenticate, prepare: async command => {
           const prepared=await prepare.prepare({ company, department: originalDepartment, requestId: command.requestId, input: command.input.details });
           if(prepared.staff.staffId!==actor.staffId||prepared.staff.memberId!==actor.memberId||prepared.staff.packingDepartment!==originalDepartment)throw Error('Original packing employee changed during preparation');
           return prepared;

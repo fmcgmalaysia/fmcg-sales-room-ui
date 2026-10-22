@@ -1,5 +1,18 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 USER FIRST ACCEPTANCE ENDS AT LOADED. Real invoice/actual dispatch remain
+OFF and are not required first user-test steps. Prior invoice-scope question resolved;
+do not repeat. Preserve downstream co-writer safety, no half-stock activation.
+
+2026-10-22 PACKING PHOTO PROTOCOL: PACKING_PHOTO_DURABLE_PROTOCOL.txt. Original file/
+role/revision/physical-stage/hash validators + server fixed slots + immutable per-photo
+receipts before current-list conditional CAS and hold writes. Actual private root/client
+wiring, <=1APPLYupload/invocation, same UUID/ID lost/late replay and actor binding.
+814currentpass0fail17531.5788ms,89modules44exports; original operations/file9pass0fail
+247.7864ms. All Node/VM/in-memory; no native/browser acceptance. Source Sales actual
+root/transport NEXT, then intake/order/otherwriter/native/recovery/capacity/cutover/
+shadow/Loaded-endtoend/fourrelease OPEN. Production exact/ACTIVE OFF/coverage EMPTY.
+
 2026-10-22 PACKING DURABLE CHILD: PACKING_DURABLE_CHILD_AND_RELAY.txt. Original child
 actor callback+own-tab full request retained before network, strict final/cache cleanup,
 auth-only own reload behind pending, no automatic send or replacement. Exact original

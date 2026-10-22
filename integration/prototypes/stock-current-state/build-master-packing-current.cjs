@@ -12,7 +12,8 @@ import { PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/purchaseProjection.
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readPreparation, projectPreparation, WAREHOUSE_CURRENT_READY_VERSION } from 'backend/warehousePreparation.js';
-import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPackingService } from 'backend/stockCurrentCommands.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentPackingService, createPackingPhotoFencedStore } from 'backend/stockCurrentCommands.js';
 // CLOSED until actual ALL-writer/native/file/recovery/capacity/cutover acceptance.
 const writerCoverage=Object.freeze({});
 export async function createCurrentMasterPacking({company,department,authenticateOriginalPacking}){
@@ -31,12 +32,17 @@ export async function createCurrentMasterPacking({company,department,authenticat
   readCurrentTaskRows:async(selected,ids)=>{
    if(selected!==company||!Array.isArray(ids)||new Set(ids).size!==ids.length||ids.length>2000||ids.some(id=>typeof id!=='string'||!id||id.length>128))throw Error('Exact current packing task scope required');
    const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'NCTTasks':'NCTTasks1',id));return rows;
-  },projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,now:()=>new Date()};
+  },projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,now:()=>new Date(),
+  createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,
+    store:createPackingPhotoFencedStore({company,staff,request,store,documentService:requestPurchaseDocument})}),readSnapshot:protocol.readSnapshot}),
+  allocatePhotoSlots:async count=>{if(!Number.isSafeInteger(count)||count<1||count>3)throw Error('Bounded packing photo allocation required');
+   const slots=[];for(let index=0;index<count;index++){const result=await requestPurchaseDocument({action:'ALLOCATE',company});if(result?.ok!==true)throw Error('Packing photo ID allocation unconfirmed');slots.push(result.fileId);}return slots;}};
  const service=createCurrentPackingService({company,items,store,protocol,coverage:writerCoverage,authorityDependencies});
  return{read:()=>service.read({department}),save:request=>{
   if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
-   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!request.input||request.input.action==='PHOTOS'||JSON.stringify(request).length>200000
-   ||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId)throw Error('Original non-file current packing request required');
+   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||!request.input||JSON.stringify(request).length>(request.input.action==='PHOTOS'?3100000:200000)
+   ||request.input.action==='PHOTOS'&&(department!=='WAREHOUSE'||!Array.isArray(request.input.photos)||request.input.photos.length<1||request.input.photos.length>3)
+   ||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId)throw Error('Original bounded current packing request required');
   return service.save({...request,department});
  }};
 }
