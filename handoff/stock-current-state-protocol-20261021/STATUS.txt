@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT continuation after0f582a1: WAREHOUSE_CURRENT_UI.txt. Paired existing Warehouse
+tab/current read bridge + paged same-modal source/claim UI generated, original routes
+preserved.17new+originalpass329.3381ms, exact generator check passes; no visual/live
+acceptance. Writer/capacity/recovery/migration/publication still OPEN/OFF. Continue
+actual authenticated save coordination; do not stop merely because UI is committed.
+
 CURRENT continuation after348e236: WAREHOUSE_CURRENT_READ_GATEWAY.txt. Warehouse stock
 service+generated staff-guarded Wix read module now queries current Products and paged
 sources/claims; only exact control ID, no history replay.24pass443.174ms, then affected
