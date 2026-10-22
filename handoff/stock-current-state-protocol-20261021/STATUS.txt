@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+fd2cba9 unsafe-race witness confirmed PUSHED existing PR220. Bounded official Wix
+compute docs state backend may continue after client timeout; no supported per-site
+drain/publish termination guarantee established by targeted search. Do not infer
+quiescence from504, elapsed time, empty-lock scan or published-code marker. Source
+links/limits retained in LEGACY_ADMISSION_RACE_WITNESS.txt. No UI/native/mode/business
+or deployment writes. Next independent preparation: exact native schema/index/typed
+domain and recovery acceptance scope; no guessed paths, full rescan or retry of
+same read probes. New initialization fixture grant still not requested/executed.
+
 2026-10-23 CONCRETE LEGACY ADMISSION GAP: LEGACY_ADMISSION_RACE_WITNESS.txt.
 Exact candidate web/root + ORIGINAL reference writer: held LEGACY control response,
 then MAINTENANCE with no cost lock yet, then original task/journal writes still occur.

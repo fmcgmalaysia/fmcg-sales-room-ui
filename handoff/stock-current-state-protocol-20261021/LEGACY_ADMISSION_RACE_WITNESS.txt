@@ -52,3 +52,20 @@ overbroad JSON module output; corrected using inventory and explicit -g patterns
 Initial evidence patch had wrong checkout date and failed atomically; verified no
 file created, then corrected exact path. No bypass/full scan/full-suite rerun.
 Protected production paths still equald447185. Actual Credit usage UNKNOWN.
+
+Bounded official-source check (2026-10-23, no live operation):
+ https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+ Official backend-timeout guidance explicitly allows server code to keep executing
+ after the client connection closes. Therefore a504/client failure or waiting a
+ published request-timeout number does NOT prove old execution termination.
+ https://dev.wix.com/docs/velo/articles/getting-started/testing-and-debugging
+ Functional tests run in preview context; a release candidate uses the same live
+ data as the main site. Neither is evidence of a separate isolated business DB.
+ Two targeted official-document searches did not establish a per-site drain API
+ or a guaranteed publish-to-old-execution termination interval. This is UNKNOWN,
+ not proof no platform mechanism exists. Old engineering implementation stories
+ and third-party hard-timeout claims were not adopted as a supported guarantee.
+ fd2cba9 witness confirmed PUSHED PR220. No further feature patch/activation based
+ on this discovery; keep candidate gates shut. Continue independent schema/index/
+ typed-domain/recovery acceptance preparation, consolidate exact remaining grants
+ after reviewable scope, not repeated business-policy questions or blind UI checks.
