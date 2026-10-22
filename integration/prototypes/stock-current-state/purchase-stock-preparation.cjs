@@ -7,6 +7,7 @@ const { preparePurchaseDomain } = require('./purchase-domain-plan.cjs');
 const { projectDomainAfter } = require('./domain-after-snapshot.cjs');
 const { originalProductState } = require('./original-product-state.cjs');
 const { readCurrentProduct } = require('./current-product-reader.cjs');
+const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { preparePurchaseStock } = require('./purchase-stock-plan.cjs');
 const { hash } = require('./commit-proof.cjs');
 const { validateOriginalSource, prepareSourceDomain } = require('./original-source-validation.cjs');
@@ -20,6 +21,9 @@ function createPurchaseStockPreparation(deps) {
     createPurchaseOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
     readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
     || typeof protocol?.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server Purchase stock dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private v2 Purchase task checkpoint reader required');
+  const planFormat = current ? 'SEGMENTED_V2' : 'PROOF_V1';
   return async request => {
     if (request?.company !== company) throw Error('Purchase company conflict');
     const member = await readMember();
@@ -28,7 +32,7 @@ function createPurchaseStockPreparation(deps) {
     const trusted = { company, staff: request.operation === 'ADD_SOURCE' ? { ...staff, canAddPurchaseSource: true } : staff,
       requestId: request.requestId, operation: request.operation, input: request.input };
     const metrics = { queries: 0, exactReads: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
       let tables = await readTables(company, staff);
       const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       const lockId = hash(company + '/PURCHASE', 'LOCK'), lock = tables[journal]?.find(row => row._id === lockId);
@@ -45,7 +49,10 @@ function createPurchaseStockPreparation(deps) {
       const validated = source ? await validateOriginalSource({ createPurchaseSourceOperations, request: trusted, tables, workspace: beforeContext, now })
         : await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
       const domainPlan = source ? prepareSourceDomain({ validated, request: trusted, tables })
-        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId });
+        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat });
+      if (current) for (const write of domainPlan.writes.filter(w => w.collection === tasks && w.before === null)) {
+        Object.assign(write.after, { stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: control.generation + 1 });
+      }
       const afterContext = projectDomainAfter({ company, staff, tables, plan: domainPlan, projectPurchaseWorkspace });
       const identities = new Map();
       for (const update of source ? [{ id: validated.task._id }] : validated.updates) {
@@ -61,15 +68,33 @@ function createPurchaseStockPreparation(deps) {
           orders: projectPurchaseOrders({ company, workspace: context, records: tables.PurchaseOrders }),
           readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
         const before = builder(beforeContext), after = builder(afterContext);
-        const rows = await readCurrentProduct({ company, identity, items, store, metrics });
+        const changedIds = domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id);
+        const sourceIds = [...new Set([...before.sources, ...after.sources].filter(s => changedIds.includes(s.id)).map(s => s.id))];
+        const demandTaskIds = [...new Set([...before.demands, ...after.demands].filter(t => changedIds.includes(t.id)
+          || [...before.sources, ...after.sources].some(s => changedIds.includes(s.id) && s.ownerTaskId === t.id)).map(t => t.id))];
+        const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+          transferIndexVersion: control?.transferIndexVersion, sourceTaskIds: sourceIds, demandTaskIds })
+          : await readCurrentProduct({ company, identity, items, store, metrics });
+        let beforeRows = rows, afterRows = rows;
+        if (current) {
+          // Intake/bootstrap must have initialized this product; a Purchase edit
+          // is not permission to reconstruct a missing current checkpoint.
+          if (!rows.product || rows.product.lifecycleVersion !== 2) throw Error('Current Purchase product checkpoint required');
+          const forBuilder = builder => ({ ...rows, sourceTaskIds: rows.sourceTaskIds.filter(id => builder.sources.some(s => s.id === id)) });
+          beforeRows = forBuilder(before); afterRows = forBuilder(after);
+          const taskIds = [...new Set([...before.scopeTaskIds(beforeRows), ...after.scopeTaskIds(afterRows)])];
+          const taskRows = await deps.readCurrentTaskRows(company, taskIds, staff);
+          beforeRows = { ...beforeRows, taskRows, generation: control.generation };
+          afterRows = { ...afterRows, taskRows, generation: control.generation };
+        }
         const unconfirmedSourceIds = afterContext.tasks.filter(t => t.procurementSource && !t.po && t.procurement?.draftPlan
           && stockKey({ company, barcode: t.barcode, packing: t.packing, ea: t.ea }) === stockKey(identity))
           .map(t => t.id).filter(id => domainPlan.writes.some(w => w.collection === tasks && w.after._id === id));
-        products.push({ state: before.buildState(rows), after: after.buildState(rows), rows, unconfirmedSourceIds });
+        products.push({ state: before.buildState(beforeRows), after: after.buildState(afterRows), rows, unconfirmedSourceIds });
       }
       return { domainPlan, products };
     });
-    return { ...preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation }),
+    return { ...preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat }),
       memberId: staff.memberId, generation: snapshot.generation, metrics };
   };
 }

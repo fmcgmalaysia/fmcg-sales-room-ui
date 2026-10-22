@@ -4,10 +4,12 @@ const fs = require('node:fs'), path = require('node:path'), { createHash } = req
 const entries = {
   createCurrentStockSave: 'current-stock-save.cjs', createCurrentWarehouseReceiptSave: 'current-department-saves.cjs',
   createCurrentBorrowingSave: 'current-department-saves.cjs', createCurrentAllocationSave: 'current-department-saves.cjs', createSdkConditionalStore: 'sdk-conditional-store.cjs',
+  createCurrentPurchaseSave: 'current-department-saves.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',
   createPurchaseTransferWorkspace: 'purchase-transfer-workspace.cjs', createBorrowCurrentQuery: 'borrow-current-query.cjs',
   projectCurrentWarehouseReady: 'current-warehouse-ready-context.cjs',
-  createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs'
+  createCurrentSalesDemandSave: 'current-sales-save.cjs', createCurrentSalesRead: 'current-sales-read.cjs',
+  dispatchCurrentSalesGateway: 'sales-gateway-current.cjs'
 };
 const sources = new Map();
 function collect(name) {

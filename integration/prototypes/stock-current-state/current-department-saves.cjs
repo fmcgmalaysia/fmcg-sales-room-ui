@@ -5,6 +5,7 @@ const { createWarehouseStockReader } = require('./warehouse-stock-reader.cjs');
 const { createBorrowingAuthority } = require('./borrowing-authority.cjs');
 const { createBorrowingStockReader } = require('./borrowing-stock-reader.cjs');
 const { createAllocationAuthority } = require('./allocation-authority.cjs');
+const { createPurchaseStockPreparation } = require('./purchase-stock-preparation.cjs');
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -47,4 +48,18 @@ function createCurrentAllocationSave({ company, items, store, protocol, coverage
   return createCurrentStockSave({ company, writer: 'ALLOCATION', protocol, coverage, authenticate: authorize,
     prepare: command => createBorrowingStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave };
+function createCurrentPurchaseSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current Purchase v2 protocol required');
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const prepare = createPurchaseStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
+  return request => {
+    const writer = request?.operation === 'ADD_SOURCE' ? 'PURCHASE_SOURCE' : request?.operation === 'PLAN' ? 'PURCHASE_PLAN'
+      : ['EDIT', 'PO', 'AVERAGE_COST'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
+    if (!writer) throw Error('Supported current Purchase operation required');
+    return createCurrentStockSave({ company, writer, protocol, coverage, authenticate: authorize,
+      prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
+      requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
+      stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+  };
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave };

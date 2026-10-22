@@ -4,10 +4,13 @@ const { stockKey } = require('./current-model.cjs');
 const { domainCollections } = require('./domain-scope.cjs');
 const { prepareProcurementTransition } = require('./borrowing-stock-plan.cjs');
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const { utf8Bytes } = require('./segmented-plan.cjs');
 // Private composition seam. Products MUST be server before/after projectors over
 // the same exact current rows and original domain after-images, not client states.
 // Called inside fenced prepare after original Purchase/auth/version validation.
-function preparePurchaseStock({ company, domainPlan, products, generation }) {
+function preparePurchaseStock({ company, domainPlan, products, generation, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2'
+    && products?.some(p => p.rows?.planFormat !== planFormat || p.rows?.scope !== 'CURRENT_ACTIVE_PRODUCT')) throw Error('Server scoped Purchase plan format required');
   const [, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!Array.isArray(domainPlan?.writes) || !domainPlan.writes.length || !Array.isArray(products) || !products.length) throw Error('Complete Purchase stock composition required');
   const taskIds = domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id);
@@ -37,7 +40,7 @@ function preparePurchaseStock({ company, domainPlan, products, generation }) {
     writes.push(...mapped.plan.writes.filter(w => w !== repeated)); states.push(mapped.state);
   }
   if ([...coverage.values()].some(n => n !== 1) || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
-    || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Complete atomic Purchase stock coverage required');
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Complete atomic Purchase stock coverage required');
   return { plan: { writes }, states };
 }
 module.exports = { preparePurchaseStock };

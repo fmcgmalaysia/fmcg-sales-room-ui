@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:3e77b7e1ac17aff35113f141abd9045b8199f90d5ce5dcba4a449c0098fbf143
+// current-department-saves.cjs sha256:7a2c13040560cbb229b9e23b4f753635feed28bba8d1bc8c2d42f38d410a3422
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -92,6 +92,7 @@ const { createWarehouseStockReader } = load("warehouse-stock-reader.cjs");
 const { createBorrowingAuthority } = load("borrowing-authority.cjs");
 const { createBorrowingStockReader } = load("borrowing-stock-reader.cjs");
 const { createAllocationAuthority } = load("allocation-authority.cjs");
+const { createPurchaseStockPreparation } = load("purchase-stock-preparation.cjs");
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -134,7 +135,21 @@ function createCurrentAllocationSave({ company, items, store, protocol, coverage
   return createCurrentStockSave({ company, writer: 'ALLOCATION', protocol, coverage, authenticate: authorize,
     prepare: command => createBorrowingStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave };
+function createCurrentPurchaseSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current Purchase v2 protocol required');
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const prepare = createPurchaseStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
+  return request => {
+    const writer = request?.operation === 'ADD_SOURCE' ? 'PURCHASE_SOURCE' : request?.operation === 'PLAN' ? 'PURCHASE_PLAN'
+      : ['EDIT', 'PO', 'AVERAGE_COST'].includes(request?.operation) ? 'PURCHASE_TASK' : null;
+    if (!writer) throw Error('Supported current Purchase operation required');
+    return createCurrentStockSave({ company, writer, protocol, coverage, authenticate: authorize,
+      prepare: command => prepare({ company, requestId: command.requestId, operation: command.input.operation, input: command.input.details }) })({
+      requestId: request.requestId, stockProtocol: request.stockProtocol, stockBuild: request.stockBuild,
+      stockGeneration: request.stockGeneration, input: { operation: request.operation, details: request.input } });
+  };
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave };
 
 },
 // warehouse-authority.cjs sha256:6ac1a4cbccd0d64e074b6d0afa4a7c7aeffccb43367aaf4738d8a7c4a9e29ce5
@@ -1952,6 +1967,341 @@ function currentAllocationContext({ state, context, readAllocations }) {
 module.exports = { currentAllocationContext };
 
 },
+// purchase-stock-preparation.cjs sha256:1c617f85f7ae57ffa457b9f2921bc8e5861bdfaef56efae5406def33c88c6301
+"purchase-stock-preparation.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const { stockKey } = load("current-model.cjs");
+const { validateOriginalPurchase } = load("original-purchase-validation.cjs");
+const { preparePurchaseDomain } = load("purchase-domain-plan.cjs");
+const { projectDomainAfter } = load("domain-after-snapshot.cjs");
+const { originalProductState } = load("original-product-state.cjs");
+const { readCurrentProduct } = load("current-product-reader.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { preparePurchaseStock } = load("purchase-stock-plan.cjs");
+const { hash } = load("commit-proof.cjs");
+const { validateOriginalSource, prepareSourceDomain } = load("original-source-validation.cjs");
+// Server-owned adapter candidate, intended as fenced commit.prepare. It is not a
+// gateway, does not apply a legacy save, and cannot certify unconnected co-writers.
+function createPurchaseStockPreparation(deps) {
+  const { company, readMember, readStaffRecords, requirePurchaseStaff, readTables, protocol, items, store,
+    createPurchaseOperations, createPurchaseSourceOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
+    readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation, now } = deps;
+  if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readTables,
+    createPurchaseOperations, taskEditVersion, operationId, projectPurchaseWorkspace, projectPurchaseOrders,
+    readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
+    || typeof protocol?.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server Purchase stock dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private v2 Purchase task checkpoint reader required');
+  const planFormat = current ? 'SEGMENTED_V2' : 'PROOF_V1';
+  return async request => {
+    if (request?.company !== company) throw Error('Purchase company conflict');
+    const member = await readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
+    const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    const trusted = { company, staff: request.operation === 'ADD_SOURCE' ? { ...staff, canAddPurchaseSource: true } : staff,
+      requestId: request.requestId, operation: request.operation, input: request.input };
+    const metrics = { queries: 0, exactReads: 0 };
+    const snapshot = await protocol.readSnapshot(async control => {
+      let tables = await readTables(company, staff);
+      const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+      const lockId = hash(company + '/PURCHASE', 'LOCK'), lock = tables[journal]?.find(row => row._id === lockId);
+      if (lock) {
+        const current = await store.read(journal, lockId), owner = hash(company + '/PURCHASE', request.requestId, member._id);
+        // This is a private read-only snapshot for ORIGINAL validation, not removal
+        // of the real lock. Other request, legacy, mismatched or unknown locks stay blocked.
+        if (lock.company !== company || lock.owner !== owner || typeof lock.attempt !== 'string' || !lock.attempt
+          || lock.action || lock.details || JSON.stringify(current) !== JSON.stringify(lock)) throw Error('Purchase preparation lock is not owned by this request');
+        tables = { ...tables, [journal]: tables[journal].filter(row => row._id !== lockId) };
+      }
+      const beforeContext = { ...projectPurchaseWorkspace({ company, staff, orders: tables[orders], tasks: tables[tasks], activity: tables[journal], suppliers: tables.SharedSuppliers }), activity: tables[journal] };
+      const source = request.operation === 'ADD_SOURCE';
+      const validated = source ? await validateOriginalSource({ createPurchaseSourceOperations, request: trusted, tables, workspace: beforeContext, now })
+        : await validateOriginalPurchase({ createPurchaseOperations, request: trusted, tables, now });
+      const domainPlan = source ? prepareSourceDomain({ validated, request: trusted, tables })
+        : preparePurchaseDomain({ validated, request: trusted, tables, taskEditVersion, operationId, planFormat });
+      if (current) for (const write of domainPlan.writes.filter(w => w.collection === tasks && w.before === null)) {
+        Object.assign(write.after, { stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: control.generation + 1 });
+      }
+      const afterContext = projectDomainAfter({ company, staff, tables, plan: domainPlan, projectPurchaseWorkspace });
+      const identities = new Map();
+      for (const update of source ? [{ id: validated.task._id }] : validated.updates) {
+        const found = [beforeContext, afterContext].flatMap(context => context.tasks.filter(t => t.id === update.id));
+        if (!found.length) throw Error('Purchase changed task missing from original projection');
+        const identity = { company, barcode: found[0].barcode, packing: found[0].packing, ea: found[0].ea }, key = stockKey(identity);
+        if (found.some(t => stockKey({ company, barcode: t.barcode, packing: t.packing, ea: t.ea }) !== key)) throw Error('Purchase cannot replace product identity');
+        identities.set(key, identity);
+      }
+      const products = [];
+      for (const identity of identities.values()) {
+        const builder = context => originalProductState({ company, context, identity,
+          orders: projectPurchaseOrders({ company, workspace: context, records: tables.PurchaseOrders }),
+          readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+        const before = builder(beforeContext), after = builder(afterContext);
+        const changedIds = domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id);
+        const sourceIds = [...new Set([...before.sources, ...after.sources].filter(s => changedIds.includes(s.id)).map(s => s.id))];
+        const demandTaskIds = [...new Set([...before.demands, ...after.demands].filter(t => changedIds.includes(t.id)
+          || [...before.sources, ...after.sources].some(s => changedIds.includes(s.id) && s.ownerTaskId === t.id)).map(t => t.id))];
+        const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+          transferIndexVersion: control?.transferIndexVersion, sourceTaskIds: sourceIds, demandTaskIds })
+          : await readCurrentProduct({ company, identity, items, store, metrics });
+        let beforeRows = rows, afterRows = rows;
+        if (current) {
+          // Intake/bootstrap must have initialized this product; a Purchase edit
+          // is not permission to reconstruct a missing current checkpoint.
+          if (!rows.product || rows.product.lifecycleVersion !== 2) throw Error('Current Purchase product checkpoint required');
+          const forBuilder = builder => ({ ...rows, sourceTaskIds: rows.sourceTaskIds.filter(id => builder.sources.some(s => s.id === id)) });
+          beforeRows = forBuilder(before); afterRows = forBuilder(after);
+          const taskIds = [...new Set([...before.scopeTaskIds(beforeRows), ...after.scopeTaskIds(afterRows)])];
+          const taskRows = await deps.readCurrentTaskRows(company, taskIds, staff);
+          beforeRows = { ...beforeRows, taskRows, generation: control.generation };
+          afterRows = { ...afterRows, taskRows, generation: control.generation };
+        }
+        const unconfirmedSourceIds = afterContext.tasks.filter(t => t.procurementSource && !t.po && t.procurement?.draftPlan
+          && stockKey({ company, barcode: t.barcode, packing: t.packing, ea: t.ea }) === stockKey(identity))
+          .map(t => t.id).filter(id => domainPlan.writes.some(w => w.collection === tasks && w.after._id === id));
+        products.push({ state: before.buildState(beforeRows), after: after.buildState(afterRows), rows, unconfirmedSourceIds });
+      }
+      return { domainPlan, products };
+    });
+    return { ...preparePurchaseStock({ company, ...snapshot.rows, generation: snapshot.generation, planFormat }),
+      memberId: staff.memberId, generation: snapshot.generation, metrics };
+  };
+}
+module.exports = { createPurchaseStockPreparation };
+
+},
+// original-purchase-validation.cjs sha256:fb02cd51627b14d5e5a996e81179df7308a55f471c90cb32f340eb85cba13ac2
+"original-purchase-validation.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Validation-only invocation of the ORIGINAL prepare. Tables are an authenticated
+// server snapshot; no real store, external service or legacy apply is invoked.
+async function validateOriginalPurchase({ createPurchaseOperations, request, tables, now }) {
+  const company = request?.company, [orders, tasks] = domainCollections(company);
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const allowed = new Set([orders, tasks, journal, 'SharedSuppliers', 'PurchaseOrders']);
+  if (typeof createPurchaseOperations !== 'function' || typeof now !== 'function'
+    || !tables || [...allowed].some(c => !Array.isArray(tables[c])) || Object.keys(tables).some(c => !allowed.has(c))) throw Error('Complete original Purchase snapshot required');
+  const scratch = new Map(), boundary = new Error('Private Purchase prepare boundary'); let captured;
+  const scope = c => { if (!allowed.has(c)) throw Error('Purchase snapshot scope violation'); };
+  const store = {
+    all: async c => { scope(c); return copy(tables[c]); },
+    read: async (c, id) => { scope(c); return copy(c === journal && scratch.has(id) ? scratch.get(id) : tables[c].find(r => r._id === id) || null); },
+    one: async (c, criteria) => { scope(c); return copy(tables[c].find(r => Object.entries(criteria).every(([k, v]) => r[k] === v)) || null); },
+    insert: async (c, row) => {
+      if (c !== journal) throw Error('Legacy Purchase domain write forbidden during validation');
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.operation !== request.operation) throw Error('Unexpected Purchase preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy Purchase apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      if (c !== journal || scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private Purchase lock may be removed'); scratch.delete(id);
+    }
+  };
+  try { await createPurchaseOperations({ store, now })(copy(request)); throw Error('Original Purchase boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || scratch.size || !Array.isArray(captured.updates) || !Array.isArray(captured.events)) throw Error('Original Purchase preparation incomplete');
+  return captured;
+}
+module.exports = { validateOriginalPurchase };
+
+},
+// purchase-domain-plan.cjs sha256:db8541ecfee808a39216a23127fb61ed8f72387e6aede0116a49a64ac53a1ce7
+"purchase-domain-plan.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const { utf8Bytes } = load("segmented-plan.cjs");
+// Maps unchanged original domain intent. Requires migration-tagged exact row versions.
+// Does NOT replace stock/share guards, cost locks or all-writer authorization.
+function preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server Purchase plan format required');
+  const company = request.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  if (!validated || validated.operation !== request.operation || !Array.isArray(validated.updates) || !Array.isArray(validated.events)
+    || !validated.time || validated.displayOrder || typeof taskEditVersion !== 'function' || typeof operationId !== 'function') throw Error('Supported original Purchase plan required; display order needs its own adapter');
+  const changes = new Map(), writes = [];
+  for (const change of validated.updates) {
+    if (!change.id || changes.has(change.id) || !change.patch || !change.orderId || !change.lineId) throw Error('Distinct Purchase task intent required');
+    changes.set(change.id, change);
+    const before = tables[tasks].find(r => r._id === change.id) || null;
+    const matches = tables[orders].filter(r => r.title === change.orderId && r.sourceLineId === change.lineId);
+    if (matches.length !== 1 || matches[0].salesInvoiceNumber) throw Error('Original customer order unavailable or invoice locked');
+    if (before && (before.company !== company || !before._version || taskEditVersion(before) !== change.expected)
+      || !before && change.expected !== null) throw Error('Migration-tagged exact Purchase task before-image required');
+    const costLock = operationId(company, change.patch.title || change.id, 'COST_LOCK');
+    if (tables[journal].some(r => r._id === costLock)) throw Error('Original task cost lock still active');
+    if (Object.hasOwn(change.patch, '_version') || Object.hasOwn(change.patch, 'company') || change.patch._id && change.patch._id !== change.id) throw Error('Purchase patch cannot replace protocol ownership');
+    if (before && (before.description !== change.orderId || before.imageAltText !== change.lineId)) throw Error('Purchase task identity conflict');
+    const after = { ...(before || {}), ...copy(change.patch), _id: change.id, company };
+    if (!before || taskEditVersion(before) !== taskEditVersion(after)) writes.push({ collection: tasks, before: copy(before), after });
+  }
+  for (const event of validated.events) {
+    const change = changes.get(event.taskId);
+    if (!change || !event.action) throw Error('Original Purchase event task missing');
+    const id = operationId(company, request.requestId, request.staff.memberId, event.taskId, event.action);
+    writes.push({ collection: journal, before: null, after: { _id: id, title: id, company, description: change.orderId,
+      image: change.lineId, imageAltText: event.shareRootId || event.taskId, action: event.action, activityTime: validated.time,
+      actorType: 'STAFF', initiatedByStaffId: request.staff.staffId, initiatedByStaffName: request.staff.staffName,
+      result: 'SAVED', message: event.action.replaceAll('_', ' '), details: { requestId: request.requestId, ...copy(event) } } });
+  }
+  if (!writes.length || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)
+    || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length) throw Error('Purchase domain exceeds atomic proof bound');
+  return { writes };
+}
+module.exports = { preparePurchaseDomain };
+
+},
+// domain-after-snapshot.cjs sha256:ce2dc765ba91f00992ebfb247a1ca690a4d445d4da39cfe50642b8ac66a48c44
+"domain-after-snapshot.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Pure simulation of the exact domain images to feed ORIGINAL projectors. Never
+// save this snapshot or infer stock from caller-supplied after quantities.
+function domainAfterSnapshot({ company, tables, plan }) {
+  const journal = company === 'NCT' ? 'NCTActivity' : company === 'GHR' ? 'NCTActivity1' : null;
+  if (!journal) throw Error('Supported company required');
+  const allowed = new Set([...domainCollections(company), journal]), result = copy(tables), seen = new Set();
+  if (!Array.isArray(plan?.writes)) throw Error('Original conditional domain plan required');
+  for (const change of plan.writes) {
+    const id = change.after?._id, identity = change.collection + ':' + id;
+    if (!allowed.has(change.collection) || !Array.isArray(result[change.collection]) || !id || seen.has(identity)
+      || change.after.company !== company) throw Error('Domain after-image scope conflict');
+    seen.add(identity);
+    const matches = result[change.collection].filter(r => r._id === id);
+    if (matches.length > 1 || JSON.stringify(matches[0] || null) !== JSON.stringify(change.before)) throw Error('Exact domain before-image required');
+    result[change.collection] = result[change.collection].filter(r => r._id !== id).concat(copy(change.after));
+  }
+  return result;
+}
+function projectDomainAfter({ company, staff, tables, plan, projectPurchaseWorkspace }) {
+  if (typeof projectPurchaseWorkspace !== 'function') throw Error('Original Purchase projector required');
+  const next = domainAfterSnapshot({ company, tables, plan }), [orders, tasks] = domainCollections(company), activity = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  return { ...projectPurchaseWorkspace({ company, staff, orders: next[orders], tasks: next[tasks], activity: next[activity], suppliers: next.SharedSuppliers }), activity: next[activity] };
+}
+module.exports = { domainAfterSnapshot, projectDomainAfter };
+
+},
+// purchase-stock-plan.cjs sha256:e2da6bf2e1e7c3be88cddce91ca4ae02b8fa5c4d96aa8b2b40efe4f5fd9e98cc
+"purchase-stock-plan.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { domainCollections } = load("domain-scope.cjs");
+const { prepareProcurementTransition } = load("borrowing-stock-plan.cjs");
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const { utf8Bytes } = load("segmented-plan.cjs");
+// Private composition seam. Products MUST be server before/after projectors over
+// the same exact current rows and original domain after-images, not client states.
+// Called inside fenced prepare after original Purchase/auth/version validation.
+function preparePurchaseStock({ company, domainPlan, products, generation, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2'
+    && products?.some(p => p.rows?.planFormat !== planFormat || p.rows?.scope !== 'CURRENT_ACTIVE_PRODUCT')) throw Error('Server scoped Purchase plan format required');
+  const [, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  if (!Array.isArray(domainPlan?.writes) || !domainPlan.writes.length || !Array.isArray(products) || !products.length) throw Error('Complete Purchase stock composition required');
+  const taskIds = domainPlan.writes.filter(w => w.collection === tasks).map(w => w.after._id);
+  const originalEvents = domainPlan.writes.filter(w => w.collection === journal);
+  if (!taskIds.length || !originalEvents.length || new Set(taskIds).size !== taskIds.length
+    || domainPlan.writes.some(w => ![tasks, journal].includes(w.collection) || w.after?.company !== company)
+    || originalEvents.some(w => w.before !== null || w.after.result !== 'SAVED' || !w.after.action?.startsWith('PURCHASE_'))) throw Error('Original Purchase domain intent required');
+  const keys = new Set(), coverage = new Map(taskIds.map(id => [id, 0])), writes = [...domainPlan.writes], states = [];
+  const event = originalEvents[0].after;
+  for (const product of products) {
+    const key = stockKey(product.state);
+    if (product.state.company !== company || stockKey(product.after) !== key || keys.has(key)) throw Error('Distinct same-company Purchase product coverage required');
+    keys.add(key);
+    const drafts = product.unconfirmedSourceIds || [];
+    if (!Array.isArray(drafts) || new Set(drafts).size !== drafts.length || drafts.some(id => {
+      const row = domainPlan.writes.find(w => w.collection === tasks && w.after._id === id)?.after;
+      return !row?.procurementSource || row.ourPoNumber || !originalEvents.some(w => w.after.imageAltText === id
+        && w.after.action === 'PURCHASE_PLAN_SAVED' && w.after.details?.draftPlan === true);
+    })) throw Error('Original unconfirmed source coverage required');
+    const present = id => drafts.includes(id) || [product.state, product.after].some(s => s.tasks.some(t => t.id === id) || s.sources.some(t => t.id === id));
+    const covered = taskIds.filter(present);
+    if (!covered.length) throw Error('Unrelated Purchase product snapshot');
+    for (const id of covered) coverage.set(id, coverage.get(id) + 1);
+    const mapped = prepareProcurementTransition({ ...product, event, generation });
+    const repeated = mapped.plan.writes.find(w => w.collection === journal && w.after._id === event._id);
+    if (!repeated || !same(repeated, originalEvents[0])) throw Error('Original Purchase event mismatch');
+    writes.push(...mapped.plan.writes.filter(w => w !== repeated)); states.push(mapped.state);
+  }
+  if ([...coverage.values()].some(n => n !== 1) || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Complete atomic Purchase stock coverage required');
+  return { plan: { writes }, states };
+}
+module.exports = { preparePurchaseStock };
+
+},
+// original-source-validation.cjs sha256:f732b0a5cec207636e2c318c624bb0b35c3f57bb283b593160c1f1f20e401ba0
+"original-source-validation.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Read-only original ADD_SOURCE preparation, with a private in-memory journal.
+// Staff flag is resolved by the authenticated server gateway, never from input.
+async function validateOriginalSource({ createPurchaseSourceOperations, request, tables, workspace, now }) {
+  const { company, staff } = request, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const allowed = new Set([orders, tasks, journal, 'SharedSuppliers', 'PurchaseOrders']);
+  if (typeof createPurchaseSourceOperations !== 'function' || typeof now !== 'function' || workspace?.company !== company
+    || !tables || [...allowed].some(c => !Array.isArray(tables[c])) || Object.keys(tables).some(c => !allowed.has(c))) throw Error('Complete original source snapshot required');
+  const scratch = new Map(), boundary = new Error('Private source prepare boundary'); let captured, reads = 0;
+  const scope = c => { if (!allowed.has(c)) throw Error('Source snapshot scope violation'); };
+  const store = {
+    all: async c => { scope(c); return copy(tables[c]); },
+    read: async (c, id) => { scope(c); return copy(scratch.get(c + ':' + id) || tables[c].find(r => r._id === id) || null); },
+    one: async (c, criteria) => { scope(c); return copy(tables[c].find(r => Object.entries(criteria).every(([k, v]) => r[k] === v)) || null); },
+    insert: async (c, row) => {
+      if (c !== journal) throw Error('Source domain apply forbidden');
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || !row.details.plan?.task || !Array.isArray(row.details.plan.events)) throw Error('Unexpected source preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Source apply forbidden');
+      scratch.set(c + ':' + row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      if (c !== journal || scratch.get(c + ':' + id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private source lock removal allowed');
+      scratch.delete(c + ':' + id);
+    }
+  };
+  const save = createPurchaseSourceOperations({ store, now, names: { [company]: { orders, tasks, activity: journal } },
+    readWorkspace: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected source apply/read');
+      return copy(workspace);
+    } });
+  try { await save({ ...copy(request), input: { ...copy(request.input), action: 'ADD_SOURCE' } }); throw Error('Original source boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original source preparation incomplete');
+  return captured;
+}
+function prepareSourceDomain({ validated, request, tables }) {
+  const { company } = request, [, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const task = validated?.task, added = validated?.events?.filter(e => e.action === 'PURCHASE_SOURCE_ADDED');
+  if (!task?._id || task.title !== task._id || task.procurementSource !== true || task.specialPurchase
+    || task.purchaseQtyInCtn !== 0 || !task.customerDemandTaskId || tables[tasks].some(t => t._id === task._id)
+    || added?.length !== 1 || added[0].imageAltText !== task._id || added[0].details?.parentTaskId !== task.customerDemandTaskId
+    || task.company || task._version) throw Error('Original new procurement source required');
+  const writes = [{ collection: tasks, before: null, after: { ...copy(task), company } }];
+  for (const event of validated.events) {
+    if (!event._id || event.title !== event._id || !event.action?.startsWith('PURCHASE_') || event.result !== 'SAVED'
+      || tables[journal].some(e => e._id === event._id) || event.initiatedByStaffId !== request.staff.staffId) throw Error('Original source event required');
+    writes.push({ collection: journal, before: null, after: { ...copy(event), company } });
+  }
+  if (new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length || writes.length > 30
+    || Buffer.byteLength(JSON.stringify({ writes })) > 180000) throw Error('Source domain plan exceeds atomic proof bounds');
+  return { writes };
+}
+module.exports = { validateOriginalSource, prepareSourceDomain };
+
+},
 // sdk-conditional-store.cjs sha256:d087abf224b05a079b2b74e67e038584a5f3bba0a7285de4adafa129a909e4d5
 "sdk-conditional-store.cjs": (load, module) => {
 'use strict';
@@ -2726,6 +3076,35 @@ function createCurrentSalesRead({ company, protocol, authenticateOriginalDelegat
 }
 module.exports = { createCurrentSalesRead };
 
+},
+// sales-gateway-current.cjs sha256:8d12e610121d7439db479b9d61beb268a74f4c941d45887eb6ed48d7d1c9fc48
+"sales-gateway-current.cjs": (load, module) => {
+'use strict';
+const { requireOriginalSalesDelegation } = load("sales-delegation.cjs");
+// PRIVATE: invoked only after the existing source bearer authentication. This is
+// a transport adapter, never a replacement for source/member authentication.
+async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, legacy }) {
+  requireOriginalSalesDelegation(staff, body.customerId);
+  if (typeof resolveCurrentSales !== 'function' || typeof legacy !== 'function') throw Error('Private Sales route dependencies required');
+  const current = await resolveCurrentSales(body.company, staff);
+  if (current?.mode === 'LEGACY') return legacy();
+  if (current?.mode !== 'ACTIVE') throw Error('Inventory maintenance; Sales changes are paused');
+  if (body.action === 'READ' && typeof current.read === 'function') return current.read(body.company);
+  if (body.action !== 'ADJUST' || typeof current.save !== 'function') {
+    throw Error('Current Sales action is not connected; no legacy write fallback');
+  }
+  const { stockCurrent, ...input } = body.input || {};
+  if (stockCurrent?.schema !== 'CURRENT_STOCK_V2' || stockCurrent.stockProtocol !== 1
+    || typeof stockCurrent.stockBuild !== 'string' || !stockCurrent.stockBuild
+    || !Number.isSafeInteger(stockCurrent.stockGeneration) || stockCurrent.stockGeneration < 0) {
+    throw Error('Current Sales form changed; refresh and review retained input');
+  }
+  return current.save({ requestId: body.requestId, stockProtocol: stockCurrent.stockProtocol,
+    stockBuild: stockCurrent.stockBuild, stockGeneration: stockCurrent.stockGeneration,
+    input: { ...input, action: body.action, customerId: staff.customerId } });
+}
+module.exports = { dispatchCurrentSalesGateway };
+
 }
 };
 const modules = new Map();
@@ -2739,6 +3118,7 @@ export const createCurrentWarehouseReceiptSave = load("current-department-saves.
 export const createCurrentBorrowingSave = load("current-department-saves.cjs").createCurrentBorrowingSave;
 export const createCurrentAllocationSave = load("current-department-saves.cjs").createCurrentAllocationSave;
 export const createSdkConditionalStore = load("sdk-conditional-store.cjs").createSdkConditionalStore;
+export const createCurrentPurchaseSave = load("current-department-saves.cjs").createCurrentPurchaseSave;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;
@@ -2747,3 +3127,4 @@ export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createB
 export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;
 export const createCurrentSalesDemandSave = load("current-sales-save.cjs").createCurrentSalesDemandSave;
 export const createCurrentSalesRead = load("current-sales-read.cjs").createCurrentSalesRead;
+export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;

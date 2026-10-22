@@ -2,9 +2,11 @@
 
 const { domainCollections } = require('./domain-scope.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
+const { utf8Bytes } = require('./segmented-plan.cjs');
 // Maps unchanged original domain intent. Requires migration-tagged exact row versions.
 // Does NOT replace stock/share guards, cost locks or all-writer authorization.
-function preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId }) {
+function preparePurchaseDomain({ validated, request, tables, taskEditVersion, operationId, planFormat = 'PROOF_V1' }) {
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat)) throw Error('Server Purchase plan format required');
   const company = request.company, [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!validated || validated.operation !== request.operation || !Array.isArray(validated.updates) || !Array.isArray(validated.events)
     || !validated.time || validated.displayOrder || typeof taskEditVersion !== 'function' || typeof operationId !== 'function') throw Error('Supported original Purchase plan required; display order needs its own adapter');
@@ -33,7 +35,7 @@ function preparePurchaseDomain({ validated, request, tables, taskEditVersion, op
       actorType: 'STAFF', initiatedByStaffId: request.staff.staffId, initiatedByStaffName: request.staff.staffName,
       result: 'SAVED', message: event.action.replaceAll('_', ' '), details: { requestId: request.requestId, ...copy(event) } } });
   }
-  if (!writes.length || writes.length > 30 || Buffer.byteLength(JSON.stringify({ writes })) > 180000
+  if (!writes.length || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30) || utf8Bytes(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)
     || new Set(writes.map(w => w.collection + ':' + w.after._id)).size !== writes.length) throw Error('Purchase domain exceeds atomic proof bound');
   return { writes };
 }

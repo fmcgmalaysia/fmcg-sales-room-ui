@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST TRANSPORT/PURCHASE: SALES_TRANSPORT_AND_PURCHASE_SAVE.txt. Exact
+Sales gateway/adjustment candidates forward version+same-request bounded progress;
+original auth unchanged. Concrete Purchase EDIT/PO/AVERAGE_COST/PLAN/ADD_SOURCE v2
+save composition now scoped/counter-aware.496current tests pass0fail5342.241ms;
+runtime45modules15exports. Other writes/routes/reload/capacity/init/schema/shadow/
+real UI/fourrelease gates unfinished. No production changes; ACTIVE OFF. Continue.
+
 2026-10-22 LATEST SDK TYPES: read SDK_TYPED_FIELDS.txt. Fresh MASTER NCTActivity
 activityTime verified Date and Time, viewed then Cancel; no data/schema changes.
 Exact schema-driven SDK Date conversion candidate implemented, ordinary text/details
