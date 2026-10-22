@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:c8e939ca18341513748579305f1c0f9519e1acc9c8dafd3ebf946eed910fd3a8
+// current-department-saves.cjs sha256:3e77b7e1ac17aff35113f141abd9045b8199f90d5ce5dcba4a449c0098fbf143
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -91,6 +91,7 @@ const { createWarehouseAuthority } = load("warehouse-authority.cjs");
 const { createWarehouseStockReader } = load("warehouse-stock-reader.cjs");
 const { createBorrowingAuthority } = load("borrowing-authority.cjs");
 const { createBorrowingStockReader } = load("borrowing-stock-reader.cjs");
+const { createAllocationAuthority } = load("allocation-authority.cjs");
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -127,7 +128,13 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
       stockGeneration: request.stockGeneration, input: { kind: request.kind, details: request.input } });
   };
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave };
+function createCurrentAllocationSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const authority = createAllocationAuthority({ ...authorityContext(authorityDependencies, protocol), currentPlan: protocol?.planFormat === 'SEGMENTED_V2' });
+  return createCurrentStockSave({ company, writer: 'ALLOCATION', protocol, coverage, authenticate: authorize,
+    prepare: command => createBorrowingStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave };
 
 },
 // warehouse-authority.cjs sha256:6ac1a4cbccd0d64e074b6d0afa4a7c7aeffccb43367aaf4738d8a7c4a9e29ce5
@@ -308,7 +315,7 @@ module.exports = { stockKey, convertProjectedStock, readProductPage };
 "commit-proof.cjs": (load, module) => {
 module.exports = { hash: (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32) };
 },
-// original-product-state.cjs sha256:0fa934e924cb36b0b63929739c15f68f61d95f1a96c0bb18c94e99694eb3d64a
+// original-product-state.cjs sha256:b6900df9feef392a2b4311b85214d08daf5616d0239586be21489f3ec4f6b567
 "original-product-state.cjs": (load, module) => {
 'use strict';
 
@@ -358,7 +365,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
   holds.version = hash(holds.version, legacyHeld.map(s => [s.id, s.revision]).sort((a, b) => a[0].localeCompare(b[0])), legacy.version);
   const scopeTaskIds = rows => {
     if (!Array.isArray(rows.sourceTaskIds) || !Array.isArray(rows.claims) || !Array.isArray(rows.transfers)) throw Error('Complete operational task scope required');
-    return [...new Set([...sources.filter(s => rows.sourceTaskIds.includes(s.id)).map(s => s.ownerTaskId).filter(Boolean),
+    return [...new Set([...(rows.demandTaskIds || []), ...sources.filter(s => rows.sourceTaskIds.includes(s.id)).map(s => s.ownerTaskId).filter(Boolean),
       ...rows.claims.map(c => c.taskId), ...rows.transfers.flatMap(r => [r.details.relation.borrowerTaskId, r.details.relation.lenderTaskId])])];
   };
   return { identity, demands, sources, scopeTaskIds, buildState: rows => {
@@ -786,7 +793,7 @@ async function readCurrentProduct({ company, identity, items, store, metrics }) 
 module.exports = { readCurrentProduct };
 
 },
-// scoped-current-reader.cjs sha256:0a02dc4bf5cbd3ba2141fa419d2a098181a097598746aba83e43271ddf1d9e7f
+// scoped-current-reader.cjs sha256:500dd4284e595f9b27c5f3fb424f7547d44a3738a71e8e02f856694558c1d9f4
 "scoped-current-reader.cjs": (load, module) => {
 'use strict';
 
@@ -798,15 +805,15 @@ const { stockKey } = load("current-model.cjs");
 const { copy } = load("segmented-plan.cjs");
 const count = n => Number.isSafeInteger(n) && n >= 0;
 async function readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion,
-  sourceTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
+  sourceTaskIds = [], demandTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
   metrics = { queries: 0, exactReads: 0 } }) {
   const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!['NCT', 'GHR'].includes(company) || identity.company !== company || typeof items?.query !== 'function'
     || typeof store?.read !== 'function' || transferIndexVersion !== 2) throw Error('Verified scoped current dependencies/index required');
   if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100 || !Number.isSafeInteger(maxRowsPerSet) || maxRowsPerSet < 1
-    || !Array.isArray(sourceTaskIds) || !Array.isArray(correctionSourceIds) || !Array.isArray(claimPairs)
-    || sourceTaskIds.length + correctionSourceIds.length + claimPairs.length > maxRowsPerSet
-    || [...sourceTaskIds, ...correctionSourceIds].some(id => typeof id !== 'string' || !id)
+    || !Array.isArray(sourceTaskIds) || !Array.isArray(demandTaskIds) || !Array.isArray(correctionSourceIds) || !Array.isArray(claimPairs)
+    || sourceTaskIds.length + demandTaskIds.length + correctionSourceIds.length + claimPairs.length > maxRowsPerSet
+    || [...sourceTaskIds, ...demandTaskIds, ...correctionSourceIds].some(id => typeof id !== 'string' || !id)
     || claimPairs.some(p => !p || typeof p.sourceTaskId !== 'string' || !p.sourceTaskId || typeof p.taskId !== 'string' || !p.taskId)) throw Error('Explicit bounded current scope required');
   function known(row, collection, id) {
     if (!row || row._id !== id || row.company !== company || row.stockKey !== key || !row._version
@@ -902,7 +909,7 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
   }
   if (positions.size > maxRowsPerSet || claims.size > maxRowsPerSet || transfers.size > maxRowsPerSet || requiredSources.size > maxRowsPerSet) throw Error('Scoped current fanout policy');
   if (!product && (positions.size || claims.size || transfers.size)) throw Error('Product checkpoint missing; no historical fallback');
-  return { complete: true, scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2', sourceTaskIds: [...requiredSources],
+  return { complete: true, scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2', sourceTaskIds: [...requiredSources], demandTaskIds: [...new Set(demandTaskIds)],
     positions: [...positions.values()], claims: [...claims.values()], transfers: [...transfers.values()].sort((a, b) => a.details.relation.sequence - b.details.relation.sequence), product };
 }
 module.exports = { readScopedCurrentProduct };
@@ -1762,7 +1769,7 @@ function createBorrowingAuthority({ readMember, readStaffRecords, requirePurchas
 module.exports = { createBorrowingAuthority };
 
 },
-// borrowing-stock-reader.cjs sha256:4b0b5d8b33bdd9f5c2a2b20b23621cd1882736f549cc536a3238104a3b436138
+// borrowing-stock-reader.cjs sha256:cdbbd7556451053de6dbb8e89792f3408b971bd7dada656b4d05e4156069a7ac
 "borrowing-stock-reader.cjs": (load, module) => {
 'use strict';
 
@@ -1790,6 +1797,11 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
         rows.taskRows = await authority.readTaskRows(rows); rows.generation = control.generation;
       }
       if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
+      if (typeof authority.prepareFromState === 'function') {
+        const prepared = await authority.prepareFromState(authority.state);
+        if (!prepared?.event) throw Error('Original current-state validation incomplete');
+        authority.event = prepared.event; authority.expectedVersion = prepared.expectedVersion;
+      }
       return { authority, rows };
     });
     const { authority, rows } = snapshot.rows;
@@ -1800,6 +1812,144 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
   };
 }
 module.exports = { createBorrowingStockReader };
+
+},
+// allocation-authority.cjs sha256:84a32525a9374412cf092aad3cf0142a69de343377c2ee50d76052739dce78db
+"allocation-authority.cjs": (load, module) => {
+'use strict';
+
+const { originalProductState } = load("original-product-state.cjs");
+const { validateOriginalAllocation } = load("original-allocation-validation.cjs");
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+// Ordinary free-stock assignment only. Moving existing customer reservations is
+// handled by approved borrowing/cancellation, NOT unrestricted legacy redistribution.
+function createAllocationAuthority({ readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
+  projectPurchaseOrders, createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
+  readCurrentTaskRows, allocationViewVersion, currentPlan = false, now = () => new Date() }) {
+  if (typeof currentPlan !== 'boolean') throw Error('Explicit server allocation mode required');
+  if (currentPlan && allocationViewVersion !== 2) throw Error('Verified original CURRENT allocation view required');
+  for (const fn of [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords, projectPurchaseOrders,
+    createPlannerAllocationOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld]) {
+    if (typeof fn !== 'function') throw Error('Existing Purchase allocation dependency required');
+  }
+  return async ({ company, requestId, input }) => {
+    if (!['NCT', 'GHR'].includes(company) || !/^[a-f0-9-]{36}$/i.test(requestId || '')
+      || input?.action !== 'ALLOCATE' || typeof input.sourceTaskId !== 'string' || !input.sourceTaskId) throw Error('Valid allocation request required');
+    const member = await readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
+    const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id };
+    const context = await readContext(company, staff);
+    if (context.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+      || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Authoritative company context required');
+    if (currentPlan && (!Array.isArray(input.targets) || input.targets.length > 300
+      || input.targets.some(t => typeof t.taskId !== 'string' || !t.taskId))) throw Error('Bounded original allocation targets required');
+    const validated = currentPlan ? null : await validateOriginalAllocation({ createPlannerAllocationOperations, company, staff, requestId,
+      input, workspace: context, activity: context.activity, now });
+    const source = context.tasks.find(t => t.id === (validated?.event.details.sourceTaskId || input.sourceTaskId));
+    if (!source) throw Error('Allocation source unavailable');
+    const identity = { company, barcode: source.barcode, packing: source.packing, ea: source.ea };
+    const records = await readPurchaseRecords(company, staff);
+    const orders = projectPurchaseOrders({ company, workspace: context, records });
+    const product = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+    if (!product.sources.some(s => s.id === source.id && (!validated || s.accepted === validated.event.details.accepted))) throw Error('Allocation receipt authority mismatch');
+    return { kind: 'ALLOCATE', memberId: member._id, identity, event: validated?.event,
+      expectedVersion: validated?.expectedVersion, buildState: product.buildState,
+      stockScope: { sourceTaskIds: [source.id], demandTaskIds: currentPlan ? input.targets.map(t => t.taskId) : [],
+        claimPairs: currentPlan ? input.targets.map(t => ({ sourceTaskId: source.id, taskId: t.taskId })) : [] },
+      readTaskRows: typeof readCurrentTaskRows === 'function' ? rows => readCurrentTaskRows(company, product.scopeTaskIds(rows), staff) : null,
+      prepareFromState: currentPlan ? async state => {
+        const workspace = currentAllocationContext({ state, context, readAllocations });
+        const result = await validateOriginalAllocation({ createPlannerAllocationOperations, company, staff, requestId, input,
+          workspace, activity: context.activity, now });
+        if (result.event.details.accepted !== state.sources.find(s => s.id === source.id)?.accepted) throw Error('Allocation accepted receipt authority changed');
+        return result;
+      } : null };
+  };
+}
+module.exports = { createAllocationAuthority };
+
+},
+// original-allocation-validation.cjs sha256:2ca48b4261ea465f53b4888ec2e9aace7d9130d33d0eb4786358ba50c0c234d8
+"original-allocation-validation.cjs": (load, module) => {
+'use strict';
+
+const copy = value => JSON.parse(JSON.stringify(value));
+// Private validation-only original journal. No real store is accepted. Its lock
+// exists in local memory only; original apply is never allowed to save separately.
+async function validateOriginalAllocation({ createPlannerAllocationOperations, company, staff, requestId, input, workspace, activity, now }) {
+  if (typeof createPlannerAllocationOperations !== 'function' || !['NCT', 'GHR'].includes(company)
+    || workspace?.company !== company || !Array.isArray(activity) || typeof now !== 'function') throw Error('Original allocation validation dependencies required');
+  const collection = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const scratch = new Map(), boundary = new Error('Private allocation prepare boundary');
+  let captured, reads = 0;
+  const scope = c => { if (c !== collection) throw Error('Unexpected allocation journal collection'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    all: async c => { scope(c); return copy(activity); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'PLANNER_ALLOCATION_SAVED') throw Error('Unexpected allocation preparation');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Legacy allocation apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    },
+    remove: async (c, id) => { scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private allocation lock may be removed'); scratch.delete(id); }
+  };
+  const save = createPlannerAllocationOperations({ store, names: { [company]: { activity: collection } }, now,
+    readWorkspace: async (c, employee) => {
+      if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected allocation apply/read');
+      return copy(workspace);
+    } });
+  try { await save({ company, staff: copy(staff), requestId, input: copy(input) }); throw Error('Original allocation boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original allocation preparation incomplete');
+  return captured;
+}
+module.exports = { validateOriginalAllocation };
+
+},
+// current-allocation-context.cjs sha256:7000187d68b8c61e672d547690b9f30b9a75fee06c80be40eac54e2a4b6ea5f7
+"current-allocation-context.cjs": (load, module) => {
+'use strict';
+
+const { validate, cumulativeTargets } = load("borrowing-model.cjs");
+const clone = value => JSON.parse(JSON.stringify(value));
+// Compatibility VIEW only, never an independent writer or a synthetic stored event.
+// Current physical ownership + actual dispatched provenance is authoritative at ACTIVE.
+// Existing allocation revision is kept for the original append-only history chain.
+function currentAllocationContext({ state, context, readAllocations }) {
+  validate(state);
+  if (context.company !== state.company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+    || typeof readAllocations !== 'function' || new Set(context.tasks.map(t => t.id)).size !== context.tasks.length) throw Error('Original authenticated allocation context required');
+  const prior = readAllocations(context.activity), currentSources = new Set(state.sources.map(s => s.id));
+  const tasks = new Map(state.tasks.map(t => [t.id, t]));
+  for (const task of state.tasks) {
+    const original = context.tasks.find(t => t.id === task.id);
+    if (!original || original.customerId !== task.customerId || original.orderId !== task.orderId || original.sourceLineId !== task.sourceLineId
+      || original.barcode !== state.barcode || original.packing !== state.packing || original.ea !== state.ea
+      || (original.requested ?? original.ord) !== task.requested) throw Error('Current demand and original task identity differ');
+  }
+  const converted = state.sources.map(source => {
+    const old = prior.find(a => a.sourceTaskId === source.id);
+    return { sourceTaskId: source.id, revision: old?.revision || '', at: old?.at || null, by: old?.by || '',
+      targets: cumulativeTargets(state, source.id).map(target => {
+        const task = tasks.get(target.taskId);
+        return { taskId: target.taskId, orderId: task.orderId, sourceLineId: task.sourceLineId, customerId: task.customerId, quantity: target.quantity };
+      }) };
+  });
+  return { ...clone(context), ...(state.lifecycleVersion === 2 ? { stockAllocationView: 'CURRENT_V2' } : {}),
+    allocations: [...prior.filter(a => !currentSources.has(a.sourceTaskId)), ...converted],
+    tasks: context.tasks.map(original => {
+      const task = tasks.get(original.id);
+      if (!task) return clone(original);
+      // Original inc/customerReceived contract is cumulative, NOT current onHand.
+      const inc = (task.dispatchedOutsideScope || 0) + converted.reduce((n, a) => n + (a.targets.find(t => t.taskId === task.id)?.quantity || 0), 0);
+      return { ...clone(original), inc };
+    }) };
+}
+module.exports = { currentAllocationContext };
 
 },
 // sdk-conditional-store.cjs sha256:3ba8df47b612e124ee65cbf91fda3c3e33056ce37b2b438d53191424f51d8974
@@ -2264,6 +2414,81 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
 }
 module.exports = { createBorrowCurrentQuery };
 
+},
+// current-warehouse-ready-context.cjs sha256:58bc025e56523a568f30517567093ef75111dc32f195793aba455aa6a161a5a3
+"current-warehouse-ready-context.cjs": (load, module) => {
+'use strict';
+
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+const { stockKey } = load("current-model.cjs");
+const { hash } = load("commit-proof.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Explicit adapter ONLY for original Warehouse Ready/preparation consumers.
+// Not a replacement for readFulfilmentContext or financial/exception case facts.
+function currentWarehouseReadyContext({ context, states, readAllocations, readCustomerShipments, requiredTaskIds }) {
+  if (!['NCT', 'GHR'].includes(context?.company) || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+    || !Array.isArray(states) || typeof readAllocations !== 'function' || typeof readCustomerShipments !== 'function') throw Error('Complete Warehouse ready context required');
+  const products = new Set(), tasks = new Map(), sources = new Map(), allocations = [];
+  const scoped = states.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
+  if (scoped && (states.some(state => state.scope !== 'CURRENT_ACTIVE_PRODUCT' || state.lifecycleVersion !== 2)
+    || !Array.isArray(requiredTaskIds) || new Set(requiredTaskIds).size !== requiredTaskIds.length)) throw Error('Explicit verified current Ready scope required');
+  for (const state of states) {
+    const key = stockKey(state);
+    if (state.company !== context.company || products.has(key)) throw Error('Distinct company ready products required');
+    products.add(key);
+    const converted = currentAllocationContext({ state, context, readAllocations });
+    for (const task of state.tasks) {
+      if (tasks.has(task.id)) throw Error('Warehouse demand coverage is ambiguous');
+      tasks.set(task.id, converted.tasks.find(t => t.id === task.id));
+    }
+    for (const source of state.sources) {
+      if (sources.has(source.id)) throw Error('Warehouse source coverage is ambiguous'); sources.set(source.id, source);
+      allocations.push(converted.allocations.find(a => a.sourceTaskId === source.id));
+    }
+  }
+  for (const task of context.tasks) {
+    if (!scoped && (!task.procurementSource && !task.specialPurchase && !tasks.has(task.id)
+      || task.warehouse?.hasPhysicalReceipt === true && !sources.has(task.id))) throw Error('Complete current-ready task/source coverage required');
+  }
+  if (scoped && requiredTaskIds.some(id => typeof id !== 'string' || !tasks.has(id))) throw Error('Complete required Ready task coverage required');
+  const shipments = scoped ? [] : readCustomerShipments(context.activity);
+  if (shipments.some(s => s.company !== context.company)) throw Error('Warehouse shipment company conflict');
+  const dispatched = shipments.filter(s => s.status === 'DISPATCHED'), actual = new Map(), expected = new Map();
+  for (const shipment of dispatched) for (const line of shipment.lines) for (const source of line.sources) {
+    if (!sources.has(source.sourceTaskId) || !tasks.has(line.taskId)) throw Error('Warehouse shipment provenance outside current snapshot');
+    const key = hash(source.sourceTaskId, line.taskId); actual.set(key, (actual.get(key) || 0) + source.quantity);
+  }
+  for (const source of sources.values()) {
+    for (const [taskId, qty] of Object.entries(source.dispatchedByTask || {})) if (qty) expected.set(hash(source.id, taskId), qty);
+  }
+  if (!scoped && (expected.size !== actual.size || [...expected].some(([key, qty]) => actual.get(key) !== qty))) throw Error('Warehouse dispatched provenance differs');
+  const prior = scoped ? [] : readAllocations(context.activity);
+  const visible = scoped ? context.tasks.filter(t => tasks.has(t.id) || sources.has(t.id)) : context.tasks;
+  return { ...copy(context), ...(scoped ? { stockCurrentReadyVersion: 2,
+    stockDispatchedByTask: Object.fromEntries(states.flatMap(s => s.tasks.map(t => [t.id, t.dispatched]))),
+    stockDispatchedBySource: Object.fromEntries(states.flatMap(s => s.sources.map(p => [p.id, copy(p.dispatchedByTask || {})]))),
+    stockRequiredTaskIds: [...requiredTaskIds] } : {}),
+    allocations: [...prior.filter(a => !sources.has(a.sourceTaskId)), ...allocations], tasks: visible.map(original => {
+    const row = copy(tasks.get(original.id) || original), source = sources.get(original.id);
+    if (!source) return row;
+    if ((original.warehouse?.hasPhysicalReceipt === true ? original.warehouse.accepted : 0) !== source.accepted
+      || source.accepted > 0 && original.warehouse?.hasPhysicalReceipt !== true) throw Error('Warehouse accepted receipt provenance differs');
+    if (original.warehouse?.hasPhysicalReceipt === true) row.warehouse = { ...copy(original.warehouse), stock: {
+      ...copy(original.warehouse.stock || {}), availablePhysical: source.onHand - source.isolated } };
+    return row;
+  }) };
+}
+function projectCurrentWarehouseReady({ projectPreparation, currentReadyVersion, ...context }) {
+  const scoped = context.states?.some(state => state.scope === 'CURRENT_ACTIVE_PRODUCT');
+  if (typeof projectPreparation !== 'function' || scoped && currentReadyVersion !== 2) throw Error('Verified original current Ready calculator required');
+  const view = currentWarehouseReadyContext(context), rows = projectPreparation(view);
+  if (!Array.isArray(rows)) throw Error('Original Ready rows required');
+  // Other customers' sources may be needed to calculate ownership, but do not
+  // create extra outgoing tasks outside the server-selected instruction scope.
+  return scoped ? rows.filter(row => context.requiredTaskIds.includes(row.taskId)) : rows;
+}
+module.exports = { currentWarehouseReadyContext, projectCurrentWarehouseReady };
+
 }
 };
 const modules = new Map();
@@ -2275,9 +2500,11 @@ function load(name) {
 export const createCurrentStockSave = load("current-stock-save.cjs").createCurrentStockSave;
 export const createCurrentWarehouseReceiptSave = load("current-department-saves.cjs").createCurrentWarehouseReceiptSave;
 export const createCurrentBorrowingSave = load("current-department-saves.cjs").createCurrentBorrowingSave;
+export const createCurrentAllocationSave = load("current-department-saves.cjs").createCurrentAllocationSave;
 export const createSdkConditionalStore = load("sdk-conditional-store.cjs").createSdkConditionalStore;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;
 export const createPurchaseTransferWorkspace = load("purchase-transfer-workspace.cjs").createPurchaseTransferWorkspace;
 export const createBorrowCurrentQuery = load("borrow-current-query.cjs").createBorrowCurrentQuery;
+export const projectCurrentWarehouseReady = load("current-warehouse-ready-context.cjs").projectCurrentWarehouseReady;

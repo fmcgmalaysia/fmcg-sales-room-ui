@@ -5,6 +5,7 @@ const { allocateCumulative, dispatch, approveBorrow } = require('../prototypes/s
 const { prepareCurrentAllocation } = require('../prototypes/stock-current-state/borrowing-stock-plan.cjs');
 const { stockKey } = require('../prototypes/stock-current-state/current-model.cjs');
 const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
+const { currentAllocationContext } = require('../prototypes/stock-current-state/current-allocation-context.cjs');
 const { createAllocationAuthority } = require('../prototypes/stock-current-state/allocation-authority.cjs');
 const { createBorrowingStockReader } = require('../prototypes/stock-current-state/borrowing-stock-reader.cjs');
 const { requirePurchaseStaff } = load('purchaseProjection.js');
@@ -91,6 +92,71 @@ test('allocation cannot erase active borrowing claims or its promised future rep
   assert.throws(() => allocateCumulative(borrowed, { expectedRevision: 1, sourceId: 'A', reason: 'Bypass return',
     targets: [{ taskId: 'A', quantity: 10 }] }), /Outstanding borrowing/);
   assert.equal(JSON.stringify(borrowed), before); assert.equal(borrowed.relations[0].repaid, 0);
+});
+
+test('original CURRENT-view seam rejects unchanged post-borrow allocation and keeps free-stock assignment usable', async () => {
+  assert.match(require('node:child_process').execFileSync(process.execPath, [require('node:path').join(__dirname, '../prototypes/stock-current-state/build-allocation-view-candidate.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
+  const f = fixture(), candidate = load('../prototypes/stock-current-state/plannerAllocation.candidate.js');
+  const borrowed = approveBorrow(f.state, { expectedRevision: 0, id: 'R', lenderSourceId: 'A', replacementSourceId: 'B',
+    borrowerTaskId: 'B', quantity: 3, approvedBy: 'P', reason: 'Fill container' }).after;
+  Object.assign(borrowed, { lifecycleVersion: 2, nextBorrowSequence: 2 });
+  for (const s of borrowed.sources) s.borrowRepaidCumulative = 0;
+  const workspace = currentAllocationContext({ state: borrowed, context: f.workspace, readAllocations });
+  const input = { ...f.input(), version: candidate.allocationVersion(workspace, f.activity), targets: [{ taskId: 'A', quantity: 7 }, { taskId: 'B', quantity: 3 }] };
+  // Counterexample: old prepare ignores the supplied current view and accepts no-op.
+  assert.equal((await validateOriginalAllocation({ ...f.args, workspace, input })).event.action, 'PLANNER_ALLOCATION_SAVED');
+  await assert.rejects(validateOriginalAllocation({ ...f.args, workspace, input,
+    createPlannerAllocationOperations: candidate.createPlannerAllocationOperations }), /has not changed/);
+  input.targets[1].quantity = 8;
+  const validated = await validateOriginalAllocation({ ...f.args, workspace, input, createPlannerAllocationOperations: candidate.createPlannerAllocationOperations });
+  const next = allocateCumulative(borrowed, { expectedRevision: borrowed.revision, sourceId: 'A', reason: input.reason, targets: validated.event.details.targets }).after;
+  assert.equal(next.sources[0].available, 0); assert.equal(next.sources[0].claims.A, 7); assert.equal(next.sources[0].claims.B, 8);
+  assert.equal(next.relations[0].quantity, 3); assert.equal(next.relations[0].repaid, 0);
+  const deps = authorityFixture().deps;
+  assert.throws(() => createAllocationAuthority({ ...deps, currentPlan: true }), /CURRENT allocation view required/);
+  assert.equal(candidate.ALLOCATION_CURRENT_VIEW_VERSION, 2);
+});
+
+test('concrete v2 allocation authenticates original Purchase, allocates only free5 and preserves pending borrow3', async () => {
+  const f = authorityFixture(), candidate = load('../prototypes/stock-current-state/plannerAllocation.candidate.js');
+  const borrowed = approveBorrow(f.state, { expectedRevision: 0, id: 'R', lenderSourceId: 'A', replacementSourceId: 'B', borrowerTaskId: 'B', quantity: 3, approvedBy: 'P', reason: 'Fill' }).after;
+  Object.assign(borrowed, { lifecycleVersion: 2, nextBorrowSequence: 2 });
+  for (const s of borrowed.sources) s.borrowRepaidCumulative = 0;
+  const workspace = currentAllocationContext({ state: borrowed, context: f.workspace, readAllocations });
+  const db = new Map(), key = stockKey(f.identity), positionId = hash('NCT', key, 'PURCHASE_SOURCE', 'A');
+  const base = { company: 'NCT', stockKey: key, _version: 'V0', revision: 0, status: 'ACTIVE', reviewCodes: [] };
+  const put = (c, row) => db.set(c + '/' + row._id, copy(row));
+  put('StockPositions', { ...base, _id: positionId, sourceTaskId: 'A', poId: hash('NCT', 'PURCHASE_ORDER', ['A']), receiptAccepted: 15,
+    replacementReceived: 0, borrowRepaidCumulative: 0, supplierReturned: 0, dispatched: 0, onHand: 15, isolated: 0, available: 5, reservedUsable: 10 });
+  for (const [taskId, qty] of [['A', 7], ['B', 3]]) put('StockClaims', { ...base, _id: hash('NCT', positionId, taskId), positionId, taskId,
+    customerId: taskId, orderId: 'O' + taskId, sourceLineId: 'L' + taskId, reservedUsable: qty, isolatedAttributed: 0, dispatchedCumulative: 0 });
+  put('StockProducts', { ...base, _id: hash('NCT', key), revision: 1, lifecycleVersion: 2, nextBorrowSequence: 2,
+    onHand: 15, isolated: 0, available: 5, reservedUsable: 10, reviewRequired: false });
+  put('NCTActivity', { ...base, _id: hash('NCT', 'STOCK_TRANSFER_CURRENT', 'R'), action: 'STOCK_TRANSFER_CURRENT',
+    participantTaskIds: ['B', 'A'], lenderSourceId: 'A', replacementSourceId: 'B', repaidQuantity: 0, details: { relation: borrowed.relations[0] } });
+  const store = { read: async (c, id) => copy(db.get(c + '/' + id) || null), insert: async (c, row) => {
+    if (db.has(c + '/' + row._id)) throw Error('Duplicate'); put(c, row); },
+    compareAndSet: async (c, id, version, row) => { if (db.get(c + '/' + id)?._version !== version) throw Error('Conflict'); put(c, row); },
+    compareAndRemove: async (c, id, attempt) => { if (db.get(c + '/' + id)?.attempt !== attempt) throw Error('Attempt'); db.delete(c + '/' + id); } };
+  const items = { query: c => { const filters = []; let limit;
+    const q = { eq: (k, v) => { filters.push(['eq', k, v]); return q; }, gt: (k, v) => { filters.push(['gt', k, v]); return q; }, ascending: () => q,
+      limit: n => { limit = n; return q; }, find: async () => { const selected = [...db.entries()].filter(([address, row]) => address.startsWith(c + '/')
+        && filters.every(([m, k, v]) => m === 'eq' ? row[k] === v : row[k] > v)).map(([, row]) => copy(row)).sort((a, b) => a._id.localeCompare(b._id));
+        return { items: selected.slice(0, limit), totalCount: selected.length }; } }; return q; } };
+  const protocol = require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({ store, stepsPerInvocation: 100 });
+  await protocol.initialize(); Object.assign(db.get('NCTActivity/' + protocol.ids.controlId), { generation: 1, mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST', transferIndexVersion: 2 });
+  f.deps.readCurrentTaskRows = async (company, ids) => ids.map(id => { const task = f.workspace.tasks.find(t => t.id === id); return { _id: id, company,
+    _version: 'T0', description: task.orderId, imageAltText: task.sourceLineId, stockCounterSchema: 2, stockCounterGeneration: 0, stockDispatchedCumulative: 0 }; });
+  const coverage = Object.fromEntries(require('../prototypes/stock-current-state/stock-admission.cjs').WRITERS.map(name => [name, { verified: true, build: 'TEST' }]));
+  const save = require('../prototypes/stock-current-state/current-department-saves.cjs').createCurrentAllocationSave({ company: 'NCT', items, store, protocol, coverage,
+    authorityDependencies: { ...f.deps, createPlannerAllocationOperations: candidate.createPlannerAllocationOperations, allocationViewVersion: candidate.ALLOCATION_CURRENT_VIEW_VERSION } });
+  const request = { requestId: f.args.requestId, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 1, input: { action: 'ALLOCATE', sourceTaskId: 'A',
+    version: candidate.allocationVersion(workspace, f.activity), targets: [{ taskId: 'A', quantity: 7 }, { taskId: 'B', quantity: 8 }], reason: 'Assign free stock' } };
+  assert.equal((await save(request)).stockGeneration, 2); await save(request);
+  assert.equal(db.get('StockProducts/' + hash('NCT', key)).onHand, 15); assert.equal(db.get('StockProducts/' + hash('NCT', key)).available, 0);
+  assert.equal(db.get('StockClaims/' + hash('NCT', positionId, 'B')).reservedUsable, 8);
+  assert.equal(db.get('NCTActivity/' + hash('NCT', 'STOCK_TRANSFER_CURRENT', 'R')).details.relation.repaid, 0);
+  assert.equal([...db.values()].filter(row => row.action === 'PLANNER_ALLOCATION_SAVED').length, 1);
 });
 test('packing-held claim reductions and isolated physical quantities cannot be reallocated', () => {
   const f = fixture(); f.state.packingHolds.heldByTask.A = 2;

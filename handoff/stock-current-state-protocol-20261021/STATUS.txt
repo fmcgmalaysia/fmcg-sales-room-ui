@@ -552,3 +552,11 @@ Next original allocation CURRENT-view seam + Warehouse Ready scoped consumer bef
 writer binding. Missing-version initialization/actual gateway capacity/migration/file/UI/
 four release gates still unfinished. ACTIVE OFF; do NOT claim deployed/ready for real test.
 
+2026-10-22 LATEST ALLOCATION/READY: see ALLOCATION_AND_READY_CURRENT.txt. Concrete
+v2 original-auth free allocation composition and guarded CURRENT Warehouse Ready
+calculator now implemented;479current tests pass0fail4936.8706ms, runtime32modules.
+Original backend untouched; no production installation/ACTIVE/publication. Next Sales
+trusted delegation binding + remaining actual writers/reads, initialization apply and
+platform capacity, UI/recovery/migration/four release gates. Continue implementation,
+do not stop for another business-theory review or claim all work done.
+

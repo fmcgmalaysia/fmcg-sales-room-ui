@@ -8,15 +8,15 @@ const { stockKey } = require('./current-model.cjs');
 const { copy } = require('./segmented-plan.cjs');
 const count = n => Number.isSafeInteger(n) && n >= 0;
 async function readScopedCurrentProduct({ company, identity, items, store, transferIndexVersion,
-  sourceTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
+  sourceTaskIds = [], demandTaskIds = [], claimPairs = [], correctionSourceIds = [], pageSize = 50, maxRowsPerSet = 2000,
   metrics = { queries: 0, exactReads: 0 } }) {
   const key = stockKey(identity), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   if (!['NCT', 'GHR'].includes(company) || identity.company !== company || typeof items?.query !== 'function'
     || typeof store?.read !== 'function' || transferIndexVersion !== 2) throw Error('Verified scoped current dependencies/index required');
   if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100 || !Number.isSafeInteger(maxRowsPerSet) || maxRowsPerSet < 1
-    || !Array.isArray(sourceTaskIds) || !Array.isArray(correctionSourceIds) || !Array.isArray(claimPairs)
-    || sourceTaskIds.length + correctionSourceIds.length + claimPairs.length > maxRowsPerSet
-    || [...sourceTaskIds, ...correctionSourceIds].some(id => typeof id !== 'string' || !id)
+    || !Array.isArray(sourceTaskIds) || !Array.isArray(demandTaskIds) || !Array.isArray(correctionSourceIds) || !Array.isArray(claimPairs)
+    || sourceTaskIds.length + demandTaskIds.length + correctionSourceIds.length + claimPairs.length > maxRowsPerSet
+    || [...sourceTaskIds, ...demandTaskIds, ...correctionSourceIds].some(id => typeof id !== 'string' || !id)
     || claimPairs.some(p => !p || typeof p.sourceTaskId !== 'string' || !p.sourceTaskId || typeof p.taskId !== 'string' || !p.taskId)) throw Error('Explicit bounded current scope required');
   function known(row, collection, id) {
     if (!row || row._id !== id || row.company !== company || row.stockKey !== key || !row._version
@@ -112,7 +112,7 @@ async function readScopedCurrentProduct({ company, identity, items, store, trans
   }
   if (positions.size > maxRowsPerSet || claims.size > maxRowsPerSet || transfers.size > maxRowsPerSet || requiredSources.size > maxRowsPerSet) throw Error('Scoped current fanout policy');
   if (!product && (positions.size || claims.size || transfers.size)) throw Error('Product checkpoint missing; no historical fallback');
-  return { complete: true, scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2', sourceTaskIds: [...requiredSources],
+  return { complete: true, scope: 'CURRENT_ACTIVE_PRODUCT', planFormat: 'SEGMENTED_V2', sourceTaskIds: [...requiredSources], demandTaskIds: [...new Set(demandTaskIds)],
     positions: [...positions.values()], claims: [...claims.values()], transfers: [...transfers.values()].sort((a, b) => a.details.relation.sequence - b.details.relation.sequence), product };
 }
 module.exports = { readScopedCurrentProduct };

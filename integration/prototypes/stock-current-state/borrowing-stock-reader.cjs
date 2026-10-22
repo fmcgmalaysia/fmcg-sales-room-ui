@@ -24,6 +24,11 @@ function createBorrowingStockReader({ company, items, store, protocol, readAutho
         rows.taskRows = await authority.readTaskRows(rows); rows.generation = control.generation;
       }
       if (typeof authority.buildState === 'function') authority.state = authority.buildState(rows);
+      if (typeof authority.prepareFromState === 'function') {
+        const prepared = await authority.prepareFromState(authority.state);
+        if (!prepared?.event) throw Error('Original current-state validation incomplete');
+        authority.event = prepared.event; authority.expectedVersion = prepared.expectedVersion;
+      }
       return { authority, rows };
     });
     const { authority, rows } = snapshot.rows;

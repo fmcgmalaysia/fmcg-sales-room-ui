@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert/strict'), load = require('./load-master-module.cjs');
-const { currentWarehouseReadyContext } = require('../prototypes/stock-current-state/current-warehouse-ready-context.cjs');
+const { currentWarehouseReadyContext, projectCurrentWarehouseReady } = require('../prototypes/stock-current-state/current-warehouse-ready-context.cjs');
 const { approveBorrow, dispatch } = require('../prototypes/stock-current-state/borrowing-model.cjs');
 const { readAllocations } = load('plannerAllocation.js'), { readCustomerShipments } = load('customerShipmentLedger.js');
 const { projectPreparation } = load('warehousePreparation.js');
@@ -61,4 +61,30 @@ test('incomplete source/task/product or changed accepted authority refuses, not 
   const f = fixture(); f.states = []; assert.throws(() => currentWarehouseReadyContext(f), /coverage/);
   const g = fixture(); g.context.tasks[1].warehouse.accepted = 99; assert.throws(() => currentWarehouseReadyContext(g), /accepted/);
   const h = fixture(); h.states.push(copy(h.states[0])); assert.throws(() => currentWarehouseReadyContext(h), /Distinct/);
+});
+
+test('scoped CURRENT Ready uses exact dispatch counters without replaying permanent shipment history', () => {
+  assert.match(require('node:child_process').execFileSync(process.execPath, [require('node:path').join(__dirname, '../prototypes/stock-current-state/build-warehouse-ready-candidate.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
+  const candidate = load('../prototypes/stock-current-state/warehousePreparation.candidate.js'), f = fixture();
+  assert.deepEqual(copy(candidate.projectPreparation(f.context)), copy(projectPreparation(f.context)));
+  f.states[0] = dispatch(borrowed(f.states[0]), { expectedRevision: 1, sourceId: 'B', taskId: 'A', quantity: 20 }).after;
+  Object.assign(f.states[0], { lifecycleVersion: 2, nextBorrowSequence: 2, scope: 'CURRENT_ACTIVE_PRODUCT' });
+  for (const task of f.states[0].tasks) task.dispatchedOutsideScope = 0;
+  for (const source of f.states[0].sources) source.borrowRepaidCumulative = 0;
+  f.context.tasks.push({ company: 'NCT', id: 'OLD-UNRELATED', barcode: 'OTHER', warehouse: { hasPhysicalReceipt: true, accepted: 900 } });
+  const context = currentWarehouseReadyContext({ ...f, requiredTaskIds: ['A', 'B'],
+    readCustomerShipments: () => { throw Error('Must not replay old shipment history for current Ready'); } });
+  assert.equal(context.tasks.some(t => t.id === 'OLD-UNRELATED'), false); assert.equal(context.activity.length, 0);
+  const rows = candidate.projectPreparation(context);
+  assert.equal(rows.find(r => r.taskId === 'A').readyStock, 10); assert.equal(rows.find(r => r.taskId === 'A').dispatched, 20);
+  assert.equal(rows.find(r => r.taskId === 'B').readyStock, 70);
+  // Evidence why CURRENT context cannot be bound to the old unpatched calculator.
+  assert.equal(projectPreparation(context).find(r => r.taskId === 'B').readyStock, 50);
+  assert.equal(candidate.WAREHOUSE_CURRENT_READY_VERSION, 2);
+  const selected = projectCurrentWarehouseReady({ ...f, requiredTaskIds: ['A'], projectPreparation: candidate.projectPreparation,
+    currentReadyVersion: candidate.WAREHOUSE_CURRENT_READY_VERSION });
+  assert.equal(selected.length, 1); assert.equal(selected[0].taskId, 'A'); assert.equal(selected[0].readyStock, 10);
+  assert.throws(() => projectCurrentWarehouseReady({ ...f, requiredTaskIds: ['A'], projectPreparation }), /Verified original/);
+  assert.throws(() => currentWarehouseReadyContext({ ...f, requiredTaskIds: ['OLD-UNRELATED'] }), /required Ready/);
+  assert.throws(() => currentWarehouseReadyContext(f), /Explicit verified/);
 });

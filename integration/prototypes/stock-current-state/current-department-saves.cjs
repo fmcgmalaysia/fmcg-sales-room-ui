@@ -4,6 +4,7 @@ const { createWarehouseAuthority } = require('./warehouse-authority.cjs');
 const { createWarehouseStockReader } = require('./warehouse-stock-reader.cjs');
 const { createBorrowingAuthority } = require('./borrowing-authority.cjs');
 const { createBorrowingStockReader } = require('./borrowing-stock-reader.cjs');
+const { createAllocationAuthority } = require('./allocation-authority.cjs');
 
 function authenticate(deps, requireStaff) {
   if (typeof deps?.readMember !== 'function' || typeof deps?.readStaffRecords !== 'function' || typeof requireStaff !== 'function') throw Error('Original department authentication required');
@@ -40,4 +41,10 @@ function createCurrentBorrowingSave({ company, items, store, protocol, coverage,
       stockGeneration: request.stockGeneration, input: { kind: request.kind, details: request.input } });
   };
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave };
+function createCurrentAllocationSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const authority = createAllocationAuthority({ ...authorityContext(authorityDependencies, protocol), currentPlan: protocol?.planFormat === 'SEGMENTED_V2' });
+  return createCurrentStockSave({ company, writer: 'ALLOCATION', protocol, coverage, authenticate: authorize,
+    prepare: command => createBorrowingStockReader({ company, items, store, protocol, readAuthority: () => authority(command) })() });
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave };

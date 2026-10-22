@@ -22,10 +22,11 @@ function currentAllocationContext({ state, context, readAllocations }) {
     return { sourceTaskId: source.id, revision: old?.revision || '', at: old?.at || null, by: old?.by || '',
       targets: cumulativeTargets(state, source.id).map(target => {
         const task = tasks.get(target.taskId);
-        return { ...target, orderId: task.orderId, sourceLineId: task.sourceLineId, customerId: task.customerId };
+        return { taskId: target.taskId, orderId: task.orderId, sourceLineId: task.sourceLineId, customerId: task.customerId, quantity: target.quantity };
       }) };
   });
-  return { ...clone(context), allocations: [...prior.filter(a => !currentSources.has(a.sourceTaskId)), ...converted],
+  return { ...clone(context), ...(state.lifecycleVersion === 2 ? { stockAllocationView: 'CURRENT_V2' } : {}),
+    allocations: [...prior.filter(a => !currentSources.has(a.sourceTaskId)), ...converted],
     tasks: context.tasks.map(original => {
       const task = tasks.get(original.id);
       if (!task) return clone(original);
