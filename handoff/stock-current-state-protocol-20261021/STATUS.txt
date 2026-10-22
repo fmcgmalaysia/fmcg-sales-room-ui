@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 READ-ONLY NATIVE PROBE READY: NATIVE_READ_CAPACITY_PROBE.txt. Fixed existing
+StockProtocolTest only, Admin,1..12reads/page<=25, no writes/locks/deletes/record payload
+returned; not part of38production install targets.4mock tests pass237.0927ms, no full
+rerun for unchanged core; previous1050pass retained. Actual native metrics UNKNOWN.
+b273cb2 Date binding milestone confirmed PUSHED PR220. Next bounded UI: isolated
+readonly diagnostic Run samples3, then at most one12sample if confirmed. No original
+business module sync/publish or current collection mutation. All release gates OPEN.
+
 2026-10-23 DOMAIN DATE ROOT BINDING FIX: FRESH_DOMAIN_DATE_FIELDS.txt; G3_REVIEW_PACKET.txt.
 CMS8actual order/task Date field IDs/types inspected in BOTH companies; ALL Cancel,
 no schema/data/permission save. New retained counterexample proves journal-only root
