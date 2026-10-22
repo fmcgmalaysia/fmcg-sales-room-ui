@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 CONCRETE LEGACY ADMISSION GAP: LEGACY_ADMISSION_RACE_WITNESS.txt.
+Exact candidate web/root + ORIGINAL reference writer: held LEGACY control response,
+then MAINTENANCE with no cost lock yet, then original task/journal writes still occur.
+2offline witness tests2pass276.9956ms; first PASS proves UNSAFE interleaving, NOT safe
+production behavior. No candidate/source/business logic change, no live operation.
+Empty-lock snapshot cannot prove drain/termination; second mode read merely moves
+await gap. Preserve existing quiescence prerequisite, do not bootstrap/activate or
+mark coverage from initialization probe/shadow alone. Need supported platform drain
+proof or separately reviewed all-legacy-writer fencing; no broad redesign authorized
+by this witness.3140723 diagnostic confirmed PUSHED PR220; shared production unchanged.
+
 2026-10-23 NATIVE INITIALIZATION PROBE PREPARED, NOT AUTHORIZED/INSTALLED/EXECUTED:
 NATIVE_INITIALIZATION_PROBE.txt. New standalone Admin-only fixed StockProtocolTest
 2retainedrows/10reads/2inserts/7patchmaximum, no lock/delete/reset/retry/business/schema/

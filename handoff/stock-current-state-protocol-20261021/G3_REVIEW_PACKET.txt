@@ -41,6 +41,11 @@ Use bounded inputs, not another full project scan:
   rebuilding. Verify future G4 composition uses v2 proof, not legacy-only parity.
 
 Review questions (return evidence/file+line and minimal required correction):
+- LEGACY_ADMISSION_RACE_WITNESS.txt now gives exact original-writer interleaving:
+  LEGACY control response delayed across MAINTENANCE, no lock at capture, then old
+  task writes.2offline assertions include UNSAFE witness, not safety acceptance.
+  Need real supported admission drain/termination proof or separately reviewed
+  all-legacy fencing BEFORE migration. Another non-atomic mode read is not a fix.
 - UPDATED concrete prerequisite: BATCHED_RECEIPT_READS.txt supersedes pre-batch workload
   in PREPARE_INVOCATION_BUDGET. b7a9dc4 implemented same-snapshot batch/current/exact
   CLOSED/zero identities and union task reads. OFFLINE300line first counted lower-
