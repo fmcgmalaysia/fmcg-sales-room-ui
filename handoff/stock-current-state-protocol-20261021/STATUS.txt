@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL ACCOUNT DURABLE CLIENT: ACCOUNT_DURABLE_ORIGINAL_CLIENT.txt.
+Original two dialogs/controllers and parent paired with exact own-user session
+request before network, finite phases/transport correlation, explicit reload retry,
+fresh original auth-only context and same actor/build/generation read before clear.
+Original web endpoint separation preserved. Files STILL refused/pending. Target18
+pass1069.8412ms; full968pass0fail19889.0615ms. Runtime98/50 unchanged. Node/VM/mock
+ONLY, not browser/native acceptance. NEXT original Purchase/Account file co-writers;
+native/recovery/capacity/lifecycle/migration/shadow/Loaded/review/fourrelease OPEN.
+Coverage EMPTY/ACTIVE OFF; realinvoice/exit OFF. Production unchanged.5bba277 pushed
+PR220 before this patch. No new user business choice required.
+
 2026-10-22 ORIGINAL SHARED ACCOUNT CO-WRITER ROOT: ACCOUNT_ORIGINAL_CO_WRITER_ROOT.txt.
 Original non-file settlement plus DISTINCT legacy invoice-check and credit event
 preparations bound to same company barrier; original policy/audit/PO identity/bank/

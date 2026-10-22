@@ -71,6 +71,15 @@ test('original shared Account web/root builds exactly and original Account auth 
   const f = await fixture(); f.employee.departments = ['PURCHASE']; await assert.rejects(f.api.getAccountPurchaseOrders('NCT')); await assert.rejects(f.send()); assert.equal(f.calls.includes('CONTROL'), false);
 });
 
+test('existing Account read method provides only fresh own authorization context during pending state, never inventory/finance data', async () => {
+  const f = await fixture(); f.control().pending = { original: 'PENDING' };
+  const context = await f.api.getAccountPurchaseOrders('NCT', { contextOnly: true });
+  assert.deepEqual(copy(context), { ok: true, schema: 'ACCOUNT_ORIGINAL_CONTEXT_V1', company: 'NCT', staff: { staffId: 'A', staffName: 'ACCOUNT', memberId: 'M' } });
+  assert.equal(f.calls.includes('CONTROL'), false); assert.equal(f.calls.includes('CURRENT_PROJECTION'), false);
+  for (const options of [null, {}, { contextOnly: false }, { contextOnly: true, role: 'SUPER ADMIN' }]) await assert.rejects(f.api.getAccountPurchaseOrders('NCT', options));
+  f.employee.departments = ['PURCHASE']; await assert.rejects(f.api.getAccountPurchaseOrders('NCT', { contextOnly: true }));
+});
+
 test('both companies original full/query/index reads and non-file save retain versions, bank/file permissions, audit and stock counters', async () => {
   for (const company of ['NCT','GHR']) {
     const f = await fixture({ company, generated: true }), listed = await f.api.getAccountPurchaseOrders(company), row = listed.orders[0];
@@ -100,6 +109,7 @@ test('unpaired modes, missing coverage/actor, stale version and files refuse wit
   const f = await fixture(); for (const mode of ['SHADOW','MAINTENANCE']) { f.control().mode = mode; assert.equal((await f.send()).ok, false); await assert.rejects(f.api.getAccountPurchaseOrders('NCT')); }
   f.control().mode = 'ACTIVE'; for (const meta of [null, { stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 0 }, { ...f.metadata, stockIdentity: { staffId: 'OTHER', memberId: 'M' } }]) assert.equal((await f.send(f.request.input, meta)).ok, false);
   for (const action of ['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE']) assert.equal((await f.send({ ...f.request.input, action })).ok, false);
+  assert.equal((await f.api.saveAccountSettlement('NCT', f.request.requestId, { ...f.request.input, action: 'INVOICE_CHECK' }, f.metadata)).ok, false, 'distinct original endpoint may not adopt legacy review');
   assert.equal((await f.send({ ...f.request.input, version: 'OLD' })).ok, false); assert.equal(f.calls.some(call => call.startsWith('LEGACY_')), false);
   const g = await fixture({ coverage: false }); assert.equal((await g.send()).ok, false); await assert.rejects(g.api.queryAccountPurchaseOrders('NCT', { view: 'SUPPLIER_ACTIVE' }), /co-writers/); assert.equal(g.calls.includes('CURRENT_PROJECTION'), false);
 });
