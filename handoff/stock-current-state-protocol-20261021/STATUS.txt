@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 DISPLAY SORT: PURCHASE_DISPLAY_ORDER_CURRENT.txt. Original pure REORDER
+now private common-fenced current candidate with paired narrow original display
+receipt seam, same split keys/old chain, no stock/PO/task copies. Both companies,
+interruption and original regressions pass;660currentpass0fail6283.3961ms,
+runtime72modules30exports. Mixed EDIT+sort/actual gateway/read/remaining writers/
+native/init/recovery/capacity/shadow/fourrelease OPEN. Production unchanged, ACTIVE OFF.
+
 2026-10-22 ADMIN QTY: PURCHASE_ADMIN_QTY_CURRENT.txt. Existing Super Admin-only
 procurement commitment reduction now private current save; original Sales requested
 unchanged, no implicit claim/debt release. Both companies, role downgrade replay,

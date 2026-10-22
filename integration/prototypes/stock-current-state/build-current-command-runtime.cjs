@@ -5,6 +5,7 @@ const entries = {
   createCurrentStockSave: 'current-stock-save.cjs', createCurrentWarehouseReceiptSave: 'current-department-saves.cjs',
   createCurrentBorrowingSave: 'current-department-saves.cjs', createCurrentAllocationSave: 'current-department-saves.cjs', createSdkConditionalStore: 'sdk-conditional-store.cjs',
   createCurrentPurchaseSave: 'current-department-saves.cjs',
+  createCurrentPurchaseReorderSave: 'current-purchase-reorder-save.cjs',
   createCurrentQuantityCaseSave: 'current-department-saves.cjs',
   createCurrentShortageSave: 'current-department-saves.cjs',
   createCurrentStockExceptionSave: 'current-stock-exception-save.cjs',
