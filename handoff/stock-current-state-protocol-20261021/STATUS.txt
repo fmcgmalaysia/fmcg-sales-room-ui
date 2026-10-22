@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 LOADED-ONLY INDEPENDENT SERVER GATE: LOADED_ONLY_RELEASE_GATE.txt.
+Existing current fulfilment could physically DISPATCH once coverage supplied, despite
+initial acceptance endingLoaded. New serverconstant CURRENT_PHYSICAL_DISPATCH_ENABLED
+is false, independently blocks save regardless browserflags/coverage; CURRENT read
+permissions no longer advertise unavailable invoice/exit. Original LEGACY/roles intact.
+Future positive dispatch tests use explicit OFFLINE opt-in, not shipped authorization.
+23affectedpass1724.968ms; FINAL FULL1133pass0fail24420.8746ms, builder/manifest checked.
+Originals d447185, no native/UI/Pages/WixPublish.133fb1d preflight increment confirmed
+PUSHED PR220. Exact native consentPENDING (no repeat/run); all rollout gates stillOPEN,
+coverageEMPTY/ACTIVEOFF, realinvoice/physicalexitOFF. Sync this increment existingPR220.
+
 2026-10-23 BOOTSTRAP LEGACY CACHE LOCK GUARD: BOOTSTRAP_LEGACY_CACHE_LOCKS.txt.
 Pure preflight now recognizes exact per-task GP_LOCK and actual COST_RETRY_LOCK action
 before projection; both companies/unchanged input tested. Additional exact workspace

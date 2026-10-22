@@ -11,6 +11,9 @@ import { readPreparation, projectPreparation, WAREHOUSE_CURRENT_READY_VERSION } 
 import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseDispatchSave, createCurrentWarehouseShipmentRead } from 'backend/stockCurrentCommands.js';
 // Empty until all writers/native schemas/permissions/platform/cutover accepted.
 const writerCoverage=Object.freeze({});
+// Initial human acceptance ends at Loaded. A later verified release must opt in
+// here independently; neither writer coverage nor browser flags open physical exit.
+export const CURRENT_PHYSICAL_DISPATCH_ENABLED=false;
 const requiredWriters=Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
 export async function createCurrentMasterFulfilment({company,authenticateOriginalWarehouse}){
  if(!['NCT','GHR'].includes(company)||typeof authenticateOriginalWarehouse!=='function')throw Error('Private original Master fulfilment scope required');
@@ -40,6 +43,7 @@ export async function createCurrentMasterFulfilment({company,authenticateOrigina
   if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
    ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.input?.action!=='DISPATCH'||JSON.stringify(request).length>200000
    ||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId)throw Error('Original current dispatch request/identity required; real invoicing remains closed');
+  if(CURRENT_PHYSICAL_DISPATCH_ENABLED!==true)throw Error('Current stock test ends at Loaded. Physical dispatch is not enabled. 当前库存测试止于装柜确认，尚未开放实际出库。');
   return save(request);
  }};
 }

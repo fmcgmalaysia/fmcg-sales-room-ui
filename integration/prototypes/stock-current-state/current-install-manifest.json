@@ -35,7 +35,7 @@
       "source": "customerFulfilment.web.candidate.js",
       "target": "customerFulfilment.web.js",
       "kind": "PATCH",
-      "sha256": "355893dcfee40b778ca0d7eb71a8cf5e53b1e77a36ef37c3f447f7b0d49b1e6c",
+      "sha256": "6a46a9d6cd5114dff2837c1dbea1b6e72d40205315d89399122c19caa8e28a29",
       "beforeSha256": "9ebe1022d1eb4c9d3f41e18ff058b4c627ce948189ce4b166ec054c1145cb089"
     },
     {
@@ -219,7 +219,7 @@
       "source": "stockCurrentFulfilment.js",
       "target": "stockCurrentFulfilment.js",
       "kind": "NEW",
-      "sha256": "e4a7779f4fa7d7d9d2d0f2d197272661fc7e960af85cc92637ef06cf7f095d8a",
+      "sha256": "139a38a36cf2dd4ba2bf9286c8ca29def01bc3f63dffebedc25b02d633fefe92",
       "beforeSha256": null
     },
     {
@@ -494,7 +494,7 @@
       "system": "MASTER",
       "target": "customerFulfilment.web.js",
       "source": "integration/prototypes/stock-current-state/customerFulfilment.web.candidate.js",
-      "sha256": "355893dcfee40b778ca0d7eb71a8cf5e53b1e77a36ef37c3f447f7b0d49b1e6c",
+      "sha256": "6a46a9d6cd5114dff2837c1dbea1b6e72d40205315d89399122c19caa8e28a29",
       "exports": [
         "getCustomerFulfilment",
         "saveCustomerShipment"
@@ -1500,8 +1500,9 @@
       "system": "MASTER",
       "target": "stockCurrentFulfilment.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentFulfilment.js",
-      "sha256": "e4a7779f4fa7d7d9d2d0f2d197272661fc7e960af85cc92637ef06cf7f095d8a",
+      "sha256": "139a38a36cf2dd4ba2bf9286c8ca29def01bc3f63dffebedc25b02d633fefe92",
       "exports": [
+        "CURRENT_PHYSICAL_DISPATCH_ENABLED",
         "createCurrentMasterFulfilment"
       ],
       "dependencies": [

@@ -14,6 +14,9 @@ import { readPreparation, projectPreparation, WAREHOUSE_CURRENT_READY_VERSION } 
 import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentWarehouseDispatchSave, createCurrentWarehouseShipmentRead } from 'backend/stockCurrentCommands.js';
 // Empty until all writers/native schemas/permissions/platform/cutover accepted.
 const writerCoverage=Object.freeze({});
+// Initial human acceptance ends at Loaded. A later verified release must opt in
+// here independently; neither writer coverage nor browser flags open physical exit.
+export const CURRENT_PHYSICAL_DISPATCH_ENABLED=false;
 const requiredWriters=Object.freeze(${JSON.stringify(WRITERS)});
 export async function createCurrentMasterFulfilment({company,authenticateOriginalWarehouse}){
  if(!['NCT','GHR'].includes(company)||typeof authenticateOriginalWarehouse!=='function')throw Error('Private original Master fulfilment scope required');
@@ -43,13 +46,14 @@ export async function createCurrentMasterFulfilment({company,authenticateOrigina
   if(!request||Object.keys(request).some(key=>!['requestId','input','stockProtocol','stockBuild','stockGeneration','stockIdentity'].includes(key))
    ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.input?.action!=='DISPATCH'||JSON.stringify(request).length>200000
    ||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId)throw Error('Original current dispatch request/identity required; real invoicing remains closed');
+  if(CURRENT_PHYSICAL_DISPATCH_ENABLED!==true)throw Error('Current stock test ends at Loaded. Physical dispatch is not enabled. 当前库存测试止于装柜确认，尚未开放实际出库。');
   return save(request);
  }};
 }
 `;
 let gateway=fs.readFileSync(path.join(__dirname,'../../backend/customerFulfilment.web.js'),'utf8').replace(/\r\n/g,'\n');
 function once(before,after){if(gateway.split(before).length!==2)throw Error('Exact original Master fulfilment anchor changed');gateway=gateway.replace(before,()=>after);}
-gateway="import { createCurrentMasterFulfilment } from 'backend/stockCurrentFulfilment.js';\nimport { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\nimport { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';\n"+gateway;
+gateway="import { createCurrentMasterFulfilment, CURRENT_PHYSICAL_DISPATCH_ENABLED } from 'backend/stockCurrentFulfilment.js';\nimport { createCurrentWarehouseReceiptRouter, createCurrentWarehouseOrdersRouter } from 'backend/stockCurrentCommands.js';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\nimport { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';\n"+gateway;
 once('export const getCustomerFulfilment=',`async function currentMasterFulfilment(company,staff){return createCurrentMasterFulfilment({company,authenticateOriginalWarehouse:async()=>{
  const current=await staffContext();if(JSON.stringify(current)!==JSON.stringify(staff))throw Error('Master fulfilment identity changed. Retain original request.');return current;
 }});}
@@ -62,6 +66,8 @@ once('const result=await readCustomerFulfilment(company,staff);',`const result=a
 once('async(company,requestId,input)=>{const staff=await staffContext();try{return await saveCustomerFulfilment({company,staff,requestId,input});}',`async(company,requestId,input,stockCurrent)=>{const staff=await staffContext();try{return await createCurrentWarehouseReceiptRouter({company,
  readControl:()=>fulfilmentStore.read(PURCHASE_COLLECTIONS[company].activity,operationId(company,'STOCK_CONTROL')),
  saveCurrent:async(selected,request)=>(await currentMasterFulfilment(selected,staff)).save(request),saveLegacy:()=>saveCustomerFulfilment({company,staff,requestId,input})})({requestId,input,stockCurrent});}`);
+once('return {...result,permissions:{invoice:staff.canInvoiceShipment,dispatch:staff.canDispatchShipment}};',
+ 'return {...result,permissions:{invoice:staff.canInvoiceShipment&&result.stockCurrent?.stockProtocol!==1,dispatch:staff.canDispatchShipment&&(result.stockCurrent?.stockProtocol!==1||CURRENT_PHYSICAL_DISPATCH_ENABLED===true)}};');
 for(const[name,text]of [['stockCurrentFulfilment.js',source],['customerFulfilment.web.candidate.js',gateway]]){
  new Function(text.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,''));const target=path.join(__dirname,name);
  if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==text)throw Error('Current Master fulfilment differs: '+name);}else fs.writeFileSync(target,text);

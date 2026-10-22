@@ -1,0 +1,65 @@
+2026-10-23 — INDEPENDENT INITIAL LOADED-ONLY RELEASE BOUNDARY
+
+Approved scope / protected baseline
+Initial human acceptance stops at Loaded. Existing G3_REVIEW_PACKET explicitly keeps
+real Support invoicing/physical exitOFF. This increment enforces that existing scope,
+not a new finance/dispatch design or permission expansion. Starting133fb1d confirmed
+pushed existing PR220; protected production d447185/runtime32b812c untouched.
+Same framework/spec/Astra decision reused. No model switch or agent creation.
+
+Concrete gap
+Current Master fulfilment root rejected INVOICE but could run actual DISPATCH after
+all-writer coverage was supplied. CoverageEMPTY currently blocked all production
+activity, but there was NO independent Loaded-only exit switch. Its existing offline
+actual-root dispatch test demonstrated actual stock debit with mock verified coverage.
+The original shared web wrapper also advertised Support permissions.invoice=true
+on a CURRENT read although its CURRENT save root rejected INVOICE.
+New prepatch single gate assertion failed1test/0pass218.4077ms on missing independent
+constant. This was a missing-boundary assertion, not a native corruption experiment.
+
+Minimum candidate correction
+- Private stockCurrentFulfilment exports CURRENT_PHYSICAL_DISPATCH_ENABLED=false.
+  Root save checks this independently before invoking the actual dispatch save.
+  Existing original actor/action/size/build/fence/PO/invoice guards remain intact.
+- Browser metadata/flags cannot enable it. It is a server source constant, not a
+  public web method, employee role, CMS control or client preference.
+- On CURRENT reads only, original shared wrapper exposes invoicefalse and intersects
+  dispatch permission with the independent release flag. Original staff authority
+  stays byte-exact; LEGACY read/save and its permission metadata remain unchanged.
+- Loaded/packing/stock/borrow/Sales split implementations are unchanged. No invoice
+  endpoint is added, no Loaded action debits stock and no physical dispatch is sent.
+- Future actual dispatch release requires separate verification/authorization and
+  review of pending original requests. This patch is NOT permission to toggle a live
+  gate on/off, abandon a pending save or bypass any writer/native/recovery condition.
+
+Acceptance actually run
+New actual generated root + original web wrapper test uses mock complete coverage
+with shipped physical gateOFF. Warehouse read advertises no dispatch; valid-shaped
+DISPATCH and forged browser enable flags return unconfirmed/notpending with a clear
+Loaded-only error, whole mock DB unchanged. Support CURRENT read advertises no invoice
+or dispatch. LEGACY Warehouse permission remains intact.
+Existing future dispatch algorithm/replay/actor/privacy/physical-debit tests retain an
+EXPLICIT OFFLINE opt-in replacing the constant in their VM fixture, separately from
+mock verified coverage. That opt-in is NOT shipped/enabled. These tests still verify
+original physical/financial/role protections; no deletion of positive-path coverage.
+Targeted23pass0fail1724.968ms. FINAL FULL stock-current-*.test.cjs1133pass0fail
+24420.8746ms. Includes retained unsafe-schedule witnesses; not1133proofs of production
+safety. No native/root/public workflow acceptance inferred from VM/mock tests.
+Actual builder --check passes; install manifest38targets94dependencies20UNVERIFIED
+writer categories, new named private export resolved. Shared command runtime unchanged.
+Protected original production path diff vsd447185 empty, diff --check clean.
+
+No external rollout
+No browser/live sync, new test data, CMS/schema/index/ACL, native probe, maintenance/
+bootstrap/ACTIVE change, Pages dispatch, Wix Publish, main merge or forced history.
+Exact2INIT+1TYPE isolated native-test consent remains PENDING; do not repeat or run.
+Legacy pre-lock writer drain/termination remains unresolved. Native setup/types/
+capacity, operational recovery, migration/shadow/cutover and final review still OPEN.
+One exploratory absent handoff path failed; known G3 packet/actual root/test inventory
+provided the evidence, no invented readiness report was used. Actual CreditsUNKNOWN.
+
+Four release states
+Code: isolated Loaded-only server boundary complete/regressed; overall release NOT
+complete. GitHub Pages: unchanged/unverified for current stock. Wix published-live:
+unchanged. Public new inventory/borrow Loaded acceptance: NOT performed. CoverageEMPTY,
+ACTIVEOFF, realinvoice/physicalexitOFF. Do not claim published or ready for live tests.

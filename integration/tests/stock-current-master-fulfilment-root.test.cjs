@@ -15,7 +15,7 @@ function originalRead(){
   projectCustomerAccount:()=>({entries:[],balances:[]}),projectCustomerDebtors:()=>[{sensitive:'DEBTOR'}],
   customerAccountVersion:()=> 'ACCOUNT',shipmentVersion:base.api.shipmentVersion,Date,Math});
 }
-async function fixture({department='WAREHOUSE',mode='ACTIVE',coverage=true,changed=false,steps=100}={}){
+async function fixture({department='WAREHOUSE',mode='ACTIVE',coverage=true,changed=false,steps=100,dispatch=true}={}){
  const f=await base.fixture(),calls=[];let staffReads=0;
  const read=originalRead(),control=f.db.get('NCTActivity:'+f.protocol.ids.controlId);control.mode=mode;
  const staffRow={title:'W',description:'M',staffEmail:'master@example.test',staffName:'Warehouse',role:'STAFF',staffStatus:'ACTIVE',departments:[department]};
@@ -28,10 +28,13 @@ async function fixture({department='WAREHOUSE',mode='ACTIVE',coverage=true,chang
   createSdkConditionalStore:()=>{calls.push('SDK');return f.deps.store;},createSegmentedFencedProof:()=>steps===100?f.protocol:require('../prototypes/stock-current-state/segmented-fenced-proof.cjs').createSegmentedFencedProof({store:f.deps.store,domainWrites:true,stepsPerInvocation:steps})};
  let rootSource=fs.readFileSync(path.join(folder,'stockCurrentFulfilment.js'),'utf8');
  if(coverage)rootSource=rootSource.replace('const writerCoverage=Object.freeze({});','const writerCoverage=Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');
+ // Explicit OFFLINE opt-in exercises the future dispatch algorithm; shipped root
+ // must retain its independent Loaded-only release gate even after coverage passes.
+ if(dispatch)rootSource=rootSource.replace('export const CURRENT_PHYSICAL_DISPATCH_ENABLED=false;','export const CURRENT_PHYSICAL_DISPATCH_ENABLED=true;');
  const root=vm.runInNewContext('(function(){'+rootSource.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'')+';return createCurrentMasterFulfilment;})()',bindings);
  const gatewaySource=fs.readFileSync(path.join(folder,'customerFulfilment.web.candidate.js'),'utf8').replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,'');
  const api=vm.runInNewContext('(function(){'+gatewaySource+';return{getCustomerFulfilment,saveCustomerShipment};})()',{
-  createCurrentMasterFulfilment:root,createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter,operationId:hash,PURCHASE_COLLECTIONS:load('purchaseProjection.js').PURCHASE_COLLECTIONS,
+  createCurrentMasterFulfilment:root,CURRENT_PHYSICAL_DISPATCH_ENABLED:dispatch,createCurrentWarehouseReceiptRouter,createCurrentWarehouseOrdersRouter,operationId:hash,PURCHASE_COLLECTIONS:load('purchaseProjection.js').PURCHASE_COLLECTIONS,
   webMethod:(_permission,fn)=>fn,Permissions:{SiteMember:'SITE_MEMBER'},currentMember:{getMember:async()=>{calls.push('MEMBER');return{_id:'M',status:'APPROVED',loginEmail:'master@example.test'};}},fulfilmentStore,
   readCustomerFulfilment:async()=>{calls.push('LEGACY_READ');return copy(legacyResult);},saveCustomerFulfilment:async request=>{calls.push('LEGACY_SAVE');return{ok:true,legacy:true,requestId:request.requestId};}});
  return{...f,api,calls,staffRow,control,read,root,
@@ -47,10 +50,28 @@ test('actual private root plus original shared staff gateway supplies current Wa
  assert.equal(JSON.stringify(f.db.get('NCTActivity:INV')),beforeInvoice);assert.equal(f.db.get('NCTTasks:T').stockDispatchedCumulative,20);
  assert.equal([...f.db.values()].find(row=>row.sourceTaskId==='T'&&row.receiptAccepted===50).onHand,30);
 });
+
+test('shipped Loaded-only gate blocks real physical exit independently of complete writer coverage and browser flags',async()=>{
+ const source=fs.readFileSync(path.join(folder,'stockCurrentFulfilment.js'),'utf8');
+ assert.match(source,/export const CURRENT_PHYSICAL_DISPATCH_ENABLED=false;/);
+ const f=await fixture({dispatch:false}),read=await f.api.getCustomerFulfilment('NCT');
+ assert.equal(read.permissions.dispatch,false);assert.equal(read.permissions.invoice,false);
+ const before=JSON.stringify([...f.db]),requestId='acacacac-1111-4111-8111-111111111111';
+ const input={action:'DISPATCH',id:'SHIP',version:read.version,reference:'CONTAINER',reason:'Beyond Loaded',dispatchEnabled:true};
+ for(const meta of [f.meta(),{...f.meta(),CURRENT_PHYSICAL_DISPATCH_ENABLED:true}]){
+  const result=await f.api.saveCustomerShipment('NCT',requestId,input,meta);
+  assert.equal(result.ok,false);assert.equal(result.pending,undefined);assert.match(result.error,/Loaded/);
+  assert.equal(JSON.stringify([...f.db]),before);
+ }
+ const support=await fixture({department:'SUPPORT',dispatch:false}),supportRead=await support.api.getCustomerFulfilment('NCT');
+ assert.equal(supportRead.permissions.invoice,false);assert.equal(supportRead.permissions.dispatch,false);
+ const legacy=await fixture({mode:'LEGACY',dispatch:false});
+ assert.equal((await legacy.api.getCustomerFulfilment('NCT')).permissions.dispatch,true,'original legacy grant preserved');
+});
 test('original Support and Account keep shared current read permissions without gaining dispatch or enabling a real invoice',async()=>{
  for(const department of ['SUPPORT','ACCOUNT']){
   const f=await fixture({department}),read=await f.api.getCustomerFulfilment('NCT');assert.equal(read.stockCurrent.stockGeneration,0);assert.ok(read.customerAccount);assert.equal(read.debtorInvoices[0].sensitive,'DEBTOR');
-  assert.equal(read.permissions.dispatch,false);assert.equal(read.permissions.invoice,department==='SUPPORT');
+  assert.equal(read.permissions.dispatch,false);assert.equal(read.permissions.invoice,false);
   const before=JSON.stringify([...f.db]);
   for(const action of ['DISPATCH','INVOICE'])assert.equal((await f.api.saveCustomerShipment('NCT','bbbbbbbb-1111-4111-8111-111111111111',{action,id:'SHIP',version:read.version,reason:'Not granted',reference:'X'},f.meta())).ok,false);
   assert.equal(JSON.stringify([...f.db]),before);assert.equal(f.calls.includes('LEGACY_SAVE'),false);
