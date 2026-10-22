@@ -466,10 +466,17 @@ const stages=[
   function render() {
     if (!data) return;
     renderTaskSignals();if(window.masterTaskSignals&&!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();
-    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history';
+    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history'||view==='borrowing';
+    const borrowNav=document.querySelector('nav [data-view="borrowing"]');if(borrowNav)borrowNav.hidden=!(data.stockCurrent?.schema==='PURCHASE_TRANSFERS_V2'&&data.stockCurrent.stockProtocol===1&&data.stockCurrent.stockBuild&&Number.isSafeInteger(data.stockCurrent.stockGeneration)&&data.stockCurrent.stockGeneration>=0&&data.stockCurrent.stockGeneration===data.stockCurrent.generation);
     document.querySelectorAll('nav [data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view || view==='room'&&button.dataset.view==='dashboard'));
     if(view==='dashboard') app.innerHTML=dashboard(); else if(view==='room'||view==='active'){app.innerHTML=room();fitItemNames();} else if(view==='history'){app.innerHTML=history();if(!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();}
     else if(view==='payments'){app.innerHTML=payments();if(!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();}
+    else if(view==='borrowing'){
+      app.innerHTML='<section id="purchaseBorrowOutstanding"><p role="status">Borrowing view unavailable 请重新载入调货列表。</p></section>';
+      window.purchaseBorrowOutstanding?.mount({container:document.querySelector('#purchaseBorrowOutstanding'),workspace:data,read:readOperation,esc,
+        canSubmit:()=>!modal.open&&!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),
+        submitReturn:input=>{if(modal.open||savePending||drafts.size||sequenceDraft||costRetry||allocationUi()?.dirty())throw Error('Existing edits or save pending 请先处理原修改或保存。');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
+    }
     else if(view==='stock') app.innerHTML=expectedStock();
     else {app.innerHTML=purchaseOrders();if(!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();}
     if(poLoading&&['po','pohistory','payments','history'].includes(view))app.innerHTML='<div class="po-read-status" role="status" aria-live="polite">'+(poData?'Updating records 正在更新资料…':'Loading records 正在读取资料…')+'</div>'+app.innerHTML;

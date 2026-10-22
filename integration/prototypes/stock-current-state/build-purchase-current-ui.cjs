@@ -7,6 +7,15 @@ function once(before, after) {
   source = source.replace(before, () => after);
 }
 once('  function saveButtonState(busy)', '  let currentSegmentSerial=0;\n  function saveButtonState(busy)');
+once("    else if(view==='stock') app.innerHTML=expectedStock();", `    else if(view==='borrowing'){
+      app.innerHTML='<section id="purchaseBorrowOutstanding"><p role="status">Borrowing view unavailable 请重新载入调货列表。</p></section>';
+      window.purchaseBorrowOutstanding?.mount({container:document.querySelector('#purchaseBorrowOutstanding'),workspace:data,read:readOperation,esc,
+        canSubmit:()=>!modal.open&&!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),
+        submitReturn:input=>{if(modal.open||savePending||drafts.size||sequenceDraft||costRetry||allocationUi()?.dirty())throw Error('Existing edits or save pending 请先处理原修改或保存。');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
+    }
+    else if(view==='stock') app.innerHTML=expectedStock();`);
+once("    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history';",
+  "    document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history'||view==='borrowing';\n    const borrowNav=document.querySelector('nav [data-view=\"borrowing\"]');if(borrowNav)borrowNav.hidden=!(data.stockCurrent?.schema==='PURCHASE_TRANSFERS_V2'&&data.stockCurrent.stockProtocol===1&&data.stockCurrent.stockBuild&&Number.isSafeInteger(data.stockCurrent.stockGeneration)&&data.stockCurrent.stockGeneration>=0&&data.stockCurrent.stockGeneration===data.stockCurrent.generation);");
 once('mutate,read:readOperation,savePending:()=>savePending', 'mutate,read:readOperation,stockActionReady:()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),savePending:()=>savePending');
 once("'PURCHASE_REFERENCE_RESULT'].includes(message.type)", "'PURCHASE_REFERENCE_RESULT','PURCHASE_BORROW_RELATIONS_RESULT','PURCHASE_BORROW_OPTIONS_RESULT','PURCHASE_BORROW_RETURN_OPTIONS_RESULT'].includes(message.type)");
 once('  function finishSave(result){const completed=savePending,',

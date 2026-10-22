@@ -1,5 +1,13 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 OUTSTANDING VIEW: PURCHASE_OUTSTANDING_VIEW.txt. Separate Purchase-only
+company debt view uses current ACTIVE relations, no task archived filter; both
+archived parties remain visible. Exact25row paging, unknown/error != zero, original
+unused-return tracker, current-only hidden nav.647tests pass0fail6145.8063ms.
+NOT installed; original current WORKSPACE metadata/ownership/progress/GP protected
+read integration and all remaining writer/file/reload/schema/permission/init/recovery/
+capacity/shadow/fourrelease gates OPEN. Original production exact, ACTIVE OFF.
+
 2026-10-22 UNUSED RETURN: UNUSED_RETURN_QUOTE_AND_UI.txt. Current Purchase quote
 uses actual original unused-return rules (debt != returnable stock), exact source/
 claim/hold/counter scope; bounded web/page relay +original-dialog inline action now
