@@ -1,5 +1,15 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 ORIGINAL ORDER INTAKE ACTUAL ROOT: ORDER_INTAKE_ACTUAL_ROOT.txt. Original
+receiver bearer+Source immutable destination/order lock preserved; actual private
+default current root, exact-ID snapshot/product checkpoints, original receipt only
+after verified segmented completion. Original accepted replay read-only; pending/
+lost reply keeps same Source order. New9 tests include generated runtime+actual SDK
+adapter with MOCK native Date/conditions.878currentpass0fail19762.0701ms; affected29
+pass0fail1738.8192ms. Runtime95modules48exports. NOT real Wix/browser/platform QA.
+Remaining original roots/large-order Source phase UX/native/recovery/capacity/cutover/
+shadow/Loaded-endtoend/fourrelease OPEN. Coverage EMPTY/ACTIVE OFF. Invoice/exit OFF.
+
 2026-10-22 SOURCE FILE DURABLE CLIENT: SOURCE_DOCUMENT_DURABLE_UI.txt. Original form/
 validation/template unchanged; own full PDF/request/view before network, shared widget
 cache, original cached-customer auth, explicit same-UUID retry, bounded phases/final/

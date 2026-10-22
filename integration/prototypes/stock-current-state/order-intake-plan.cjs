@@ -8,6 +8,7 @@ const copy = value => JSON.parse(JSON.stringify(value));
 // gateway and possession of a payload is NOT proof of the intake shared secret.
 async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, company, body, tables, captureCosts, now,
   planFormat = 'PROOF_V1', generation, productRows }) {
+  const {Buffer}=require('node:buffer');
   if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2' && (!Number.isSafeInteger(generation) || generation < 0 || !Number.isSafeInteger(generation + 1))) throw Error('Server intake protocol/generation required');
   const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const opposite = company === 'NCT' ? 'GHR' : 'NCT', otherJournal = opposite === 'NCT' ? 'NCTActivity' : 'NCTActivity1';

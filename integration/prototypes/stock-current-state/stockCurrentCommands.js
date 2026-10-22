@@ -6204,6 +6204,223 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
 }
 module.exports = { dispatchCurrentSalesGateway };
 
+},
+// current-order-intake.cjs sha256:1f5bb48b43e924088c9eae2e791f5431abea40b446dab72242b753599387b299
+"current-order-intake.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const { domainCollections } = load("domain-scope.cjs");
+const { prepareOrderIntake, intakeProtocolIdentity } = load("order-intake-plan.cjs");
+const { evaluateStockAdmission } = load("stock-admission.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+
+// PRIVATE, reachable only after the unchanged nctReceiver bearer check. The source
+// keeps its original immutable destination/order lock across every pending response.
+// No browser generation, routing override, staff grant or new submission identity.
+function createCurrentOrderIntakeOperations({ company, store, protocol, coverage = {},
+  createNctIntake, createNctReceiptReader, readOppositePreparation, captureCosts, now = () => new Date() }) {
+  if (!['NCT', 'GHR'].includes(company) || protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Private current intake scope required');
+  for (const fn of [store?.read, protocol?.commit, protocol?.readSnapshot, protocol?.readControl,
+    createNctIntake, createNctReceiptReader, readOppositePreparation, captureCosts, now]) {
+    if (typeof fn !== 'function') throw Error('Original current intake dependency required');
+  }
+  const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const otherJournal = company === 'NCT' ? 'NCTActivity1' : 'NCTActivity';
+  const originalReceipt = createNctReceiptReader({ store });
+  async function validate(body) {
+    if (body?.destination !== company) throw Error('Original intake company conflict');
+    // Run the ORIGINAL full input validator without touching a real collection.
+    await createNctReceiptReader({ store: { read: async () => null } })(body);
+    intakeProtocolIdentity(body);
+  }
+  function admit(control, operation) {
+    const result = evaluateStockAdmission({ company, writer: 'ORDER_INTAKE', control, coverage, operation,
+      request: { stockProtocol: 1, stockBuild: control.writerBuild,
+        stockGeneration: operation?.replay ? operation.baseGeneration : control.generation } });
+    if (result.route !== 'FENCED_CURRENT') throw Error('Current intake requires ACTIVE; no legacy fallback');
+    return result;
+  }
+  async function readReceipt(body) {
+    await validate(body);
+    const snapshot = await protocol.readSnapshot(async control => {
+      admit(control);
+      return originalReceipt(copy(body));
+    });
+    return copy(snapshot.rows);
+  }
+  async function receive(body) {
+    await validate(body);
+    const input = copy(body), identity = intakeProtocolIdentity(input);
+    // An already accepted original delivery is a read-only replay, not an empty
+    // stock commit. Pending saves must resume below; even ORDER_RECEIVED alone is
+    // not a final receipt until all current images/generation have been verified.
+    const initial = await protocol.readControl();
+    if (!initial.pending) {
+      const prior = await readReceipt(input);
+      if (prior.ok === true) return prior;
+    }
+    let admittedGeneration;
+    const result = await protocol.commit({ ...identity, input,
+      authorize: operation => { admittedGeneration = admit(operation.control, operation).generation; },
+      prepare: async () => {
+        const snapshot = await protocol.readSnapshot(async control => {
+          if (control.generation !== admittedGeneration) throw Error('Intake checkpoint changed');
+          admit(control);
+          const base = [input.sourceSiteId, input.orderId];
+          const tables = { [orders]: [], [tasks]: [], [journal]: [], [otherJournal]: [] };
+          const exact = async (collection, id) => {
+            const row = collection === otherJournal ? await readOppositePreparation(collection, id) : await store.read(collection, id);
+            if (row !== null) {
+              if (!row || row._id !== id || row.company && row.company !== (collection === otherJournal ? (company === 'NCT' ? 'GHR' : 'NCT') : company)) throw Error('Exact intake record identity conflict');
+              tables[collection].push(copy(row));
+            }
+          };
+          await exact(journal, hash(...base, 'PREPARED'));
+          await exact(journal, hash(...base, 'ACCEPTED'));
+          await exact(otherJournal, hash(...base, 'PREPARED'));
+          for (const line of input.lines) {
+            await exact(orders, hash(...base, line.sourceLineId, 'ORDER'));
+            await exact(tasks, hash(...base, line.sourceLineId, 'TASK'));
+            await exact(journal, hash(...base, line.sourceLineId, 'INITIAL_COST'));
+          }
+          const products = new Map();
+          for (const line of input.lines) {
+            const product = { company, barcode: line.unitBarcode, packing: line.packingSize, ea: line.eaPerCtn };
+            const key = stockKey(product);
+            if (!products.has(key)) products.set(key, { identity: product, row: await store.read('StockProducts', hash(company, key)) });
+          }
+          return prepareOrderIntake({ company, body: input, tables, createNctIntake, createNctReceiptReader,
+            captureCosts, now, planFormat: 'SEGMENTED_V2', generation: control.generation, productRows: [...products.values()] });
+        });
+        if (snapshot.rows.replay || !snapshot.rows.plan.writes.length || snapshot.generation !== admittedGeneration) throw Error('Intake changed before preparation; review original receipt');
+        return snapshot.rows.plan;
+      } });
+    if (result?.ok === false && result.pending === true && result.requestId === identity.requestId
+      && ['BEFORE', 'APPLY', 'VERIFY'].includes(result.phase) && Number.isSafeInteger(result.completedCount)
+      && Number.isSafeInteger(result.totalRecords) && result.totalRecords > 0 && result.completedCount >= 0 && result.completedCount <= result.totalRecords) {
+      return { ok: false, pending: true, orderId: input.orderId, destination: company };
+    }
+    if (result?.ok !== true || !Number.isSafeInteger(result.generation) || result.generation < 1) throw Error('Current intake commit unconfirmed');
+    const receipt = await readReceipt(input);
+    if (receipt.ok !== true) throw Error('Original accepted receipt unconfirmed');
+    return receipt;
+  }
+  return { receive, readReceipt };
+}
+module.exports = { createCurrentOrderIntakeOperations };
+
+},
+// order-intake-plan.cjs sha256:51d61bb97622250d5380a079877e7f754fbecd824fe7cf70cf538f99e6cfe8f8
+"order-intake-plan.cjs": (load, module) => {
+'use strict';
+
+const { domainCollections } = load("domain-scope.cjs");
+const { hash } = load("commit-proof.cjs");
+const { appendIntakeProductCheckpoints } = load("intake-product-checkpoint.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+// Candidate ONLY after original nctReceiver authentication. This is not an HTTP
+// gateway and possession of a payload is NOT proof of the intake shared secret.
+async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, company, body, tables, captureCosts, now,
+  planFormat = 'PROOF_V1', generation, productRows }) {
+  const Buffer=StockRuntimeBuffer;
+  if (!['PROOF_V1', 'SEGMENTED_V2'].includes(planFormat) || planFormat === 'SEGMENTED_V2' && (!Number.isSafeInteger(generation) || generation < 0 || !Number.isSafeInteger(generation + 1))) throw Error('Server intake protocol/generation required');
+  const [orders, tasks] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const opposite = company === 'NCT' ? 'GHR' : 'NCT', otherJournal = opposite === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const allowed = new Set([orders, tasks, journal, otherJournal]);
+  if (body?.destination !== company || typeof createNctIntake !== 'function' || typeof createNctReceiptReader !== 'function'
+    || typeof captureCosts !== 'function' || typeof now !== 'function' || !tables
+    || Object.keys(tables).some(c => !allowed.has(c)) || [...allowed].some(c => !Array.isArray(tables[c]))) throw Error('Complete private intake snapshot required');
+  const overlay = new Map(), writes = [];
+  for (const c of allowed) for (const row of tables[c]) {
+    const key = c + ':' + row._id, expectedCompany = c === otherJournal ? opposite : company;
+    if (!row._id || overlay.has(key) || row.company && row.company !== expectedCompany) throw Error('Intake snapshot scope/identity conflict');
+    overlay.set(key, copy(row));
+  }
+  const permittedEvents = new Set(['INTAKE_PREPARED', 'COST_CAPTURE', 'ORDER_RECEIVED']);
+  const store = {
+    read: async (c, id) => { if (!allowed.has(c)) throw Error('Intake read scope violation'); return copy(overlay.get(c + ':' + id) || null); },
+    insert: async (c, row) => {
+      const key = c + ':' + row._id;
+      if (![orders, tasks, journal].includes(c) || !row._id || overlay.has(key)
+        || c === journal && !permittedEvents.has(row.action)
+        || c === orders && (row.title !== body.orderId || row.customerId !== body.customerId || row.submissionId !== body.submissionId)
+        || c === tasks && row.description !== body.orderId
+        || c === journal && row.description !== body.orderId) throw Error('Unexpected original intake insert');
+      const proposed = { ...copy(row), company };
+      if (c === tasks && planFormat === 'SEGMENTED_V2') Object.assign(proposed, {
+        stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: generation + 1 });
+      overlay.set(key, proposed); writes.push({ collection: c, before: null, after: proposed }); return copy(proposed);
+    }
+  };
+  // ORIGINAL core validates identity/quote/FX/date, reuses durable captured costs,
+  // preserves existing task manual edits, and inserts ORDER_RECEIVED last.
+  const outcome = await createNctIntake({ store, captureCosts, now })(copy(body));
+  const receipt = await createNctReceiptReader({ store })(copy(body));
+  if (JSON.stringify(outcome) !== JSON.stringify(receipt) || outcome.ok !== true
+    || writes.length && writes.at(-1).after.action !== 'ORDER_RECEIVED'
+    || writes.length > (planFormat === 'SEGMENTED_V2' ? 10000 : 30)
+    || Buffer.byteLength(JSON.stringify({ writes })) > (planFormat === 'SEGMENTED_V2' ? 8 * 1024 * 1024 : 180000)) throw Error('Complete bounded original intake receipt required');
+  const taskRows = outcome.taskIds.map(id => overlay.get(tasks + ':' + id));
+  if (taskRows.some(row => !row || row.description !== body.orderId)
+    || writes.some(w => w.collection === tasks && (!outcome.taskIds.includes(w.after._id) || w.after.receivedQtyInCtn !== null
+      || w.after.ourPoNumber !== '' || w.after.supplierId !== ''))) throw Error('Original initial task identity required');
+  const plan = planFormat === 'SEGMENTED_V2' ? appendIntakeProductCheckpoints({ company, body, plan: { writes }, productRows, generation }) : { writes };
+  return { plan, outcome: copy(outcome), replay: writes.length === 0,
+    // Company fence cannot serialize a concurrent opposite-company intake. Real
+    // immutable routing/cross-company arbitration still requires proof before live.
+    activationReady: false, blockers: ['ORIGINAL_AUTH_GATEWAY_REQUIRED', 'CROSS_COMPANY_ROUTING_PROOF_REQUIRED', 'PRODUCTION_INTAKE_CAPACITY_REQUIRED'] };
+}
+function intakeProtocolIdentity({ sourceSiteId, orderId, destination }) {
+  if (sourceSiteId !== '5292b63a-30e5-4c0e-8762-a1b127bbc651' || typeof orderId !== 'string' || !orderId.trim()
+    || !['NCT', 'GHR'].includes(destination)) throw Error('Original intake identity required');
+  const digest = hash('ORDER_INTAKE', sourceSiteId, orderId, destination);
+  return { requestId: digest.slice(0, 8) + '-' + digest.slice(8, 12) + '-4' + digest.slice(13, 16) + '-8' + digest.slice(17, 20) + '-' + digest.slice(20),
+    memberId: 'INTERNAL_ORDER_INTAKE:' + sourceSiteId };
+}
+module.exports = { prepareOrderIntake, intakeProtocolIdentity };
+
+},
+// intake-product-checkpoint.cjs sha256:2eb7ef3e1791aefa19363b889e6cf843e56b6f33ad4561b91f531a36cf3f86d7
+"intake-product-checkpoint.cjs": (load, module) => {
+'use strict';
+
+const { stockKey } = load("current-model.cjs");
+const { hash } = load("commit-proof.cjs");
+const { copy } = load("segmented-plan.cjs");
+// Exact company-scoped product reads from the private shared barrier are required.
+// Creates zero product metadata only; no receipt, reservation, PO or free cartons.
+function appendIntakeProductCheckpoints({ company, body, plan, productRows, generation }) {
+  if (!['NCT', 'GHR'].includes(company) || body?.destination !== company || !Array.isArray(body.lines)
+    || !Array.isArray(plan?.writes) || !Number.isSafeInteger(generation) || generation < 0 || !Number.isSafeInteger(generation + 1)) throw Error('Private intake product context required');
+  if (!plan.writes.length) return copy(plan); // Original accepted replay stays read-only.
+  const identities = new Map();
+  for (const line of body.lines) {
+    const identity = { company, barcode: line.unitBarcode, packing: line.packingSize, ea: line.eaPerCtn, name: line.itemName };
+    const key = stockKey(identity); if (!identities.has(key)) identities.set(key, identity);
+  }
+  if (!Array.isArray(productRows) || productRows.length !== identities.size) throw Error('Complete exact intake product reads required');
+  const provided = new Map();
+  for (const entry of productRows) {
+    const key = stockKey(entry.identity);
+    if (entry.identity.company !== company || !identities.has(key) || provided.has(key) || entry.row !== null && (!entry.row
+      || entry.row._id !== hash(company, key) || entry.row.company !== company || entry.row.stockKey !== key || !entry.row._version
+      || entry.row.lifecycleVersion !== 2 || !Number.isSafeInteger(entry.row.nextBorrowSequence) || entry.row.nextBorrowSequence < 1)) throw Error('Intake product checkpoint conflict');
+    provided.set(key, entry.row);
+  }
+  const result = copy(plan), marker = result.writes.pop();
+  if (marker?.after.action !== 'ORDER_RECEIVED') throw Error('Original accepted marker must remain last');
+  for (const [key, identity] of identities) if (provided.get(key) === null) {
+    result.writes.push({ collection: 'StockProducts', before: null, after: { _id: hash(company, key), schemaVersion: 1,
+      company, stockKey: key, barcode: identity.barcode, name: identity.name, packing: identity.packing, ea: identity.ea,
+      lifecycleVersion: 2, nextBorrowSequence: 1, onHand: 0, isolated: 0, available: 0, reservedUsable: 0,
+      reviewRequired: false, reviewCodes: [], revision: 0, checkpointGeneration: generation + 1, status: 'CLOSED' } });
+  }
+  result.writes.push(marker); return result;
+}
+module.exports = { appendIntakeProductCheckpoints };
+
 }
 };
 const modules = new Map();
@@ -6259,3 +6476,4 @@ export const createCurrentWarehouseDispatchSave = load("current-warehouse-dispat
 export const createCurrentWarehouseShipmentRead = load("current-warehouse-dispatch-save.cjs").createCurrentWarehouseShipmentRead;
 export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dispatchCurrentSalesGateway;
 export const requireOriginalSalesDelegation = load("sales-delegation.cjs").requireOriginalSalesDelegation;
+export const createCurrentOrderIntakeOperations = load("current-order-intake.cjs").createCurrentOrderIntakeOperations;
