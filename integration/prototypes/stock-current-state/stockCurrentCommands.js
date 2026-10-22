@@ -83,7 +83,7 @@ function evaluateStockAdmission({ company, control, coverage = {}, writer, reque
 module.exports = { WRITERS, createStockAdmission, evaluateStockAdmission };
 
 },
-// current-department-saves.cjs sha256:3ffe31ad39c8cf304e6813812fcca21a9747a3296991015ed87d62099231d051
+// current-department-saves.cjs sha256:52e1ed6f4cd930c0777501cf4f69760e08dc473e4506be9ab2276483dd605a15
 "current-department-saves.cjs": (load, module) => {
 'use strict';
 const { createCurrentStockSave } = load("current-stock-save.cjs");
@@ -94,6 +94,7 @@ const { createBorrowingStockReader } = load("borrowing-stock-reader.cjs");
 const { createAllocationAuthority } = load("allocation-authority.cjs");
 const { createPurchaseStockPreparation } = load("purchase-stock-preparation.cjs");
 const { createQuantityCasePreparation } = load("quantity-case-preparation.cjs");
+const { createShortageStockPreparation } = load("shortage-stock-preparation.cjs");
 const { hash } = load("commit-proof.cjs");
 const { domainCollections } = load("domain-scope.cjs");
 
@@ -183,7 +184,26 @@ function createCurrentQuantityCaseSave({ company, items, store, protocol, covera
     return { ...result, company, caseId: event.details.caseId };
   };
 }
-module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave, createCurrentQuantityCaseSave };
+function createCurrentShortageSave({ company, items, store, protocol, coverage, authorityDependencies }) {
+  if (protocol?.planFormat !== 'SEGMENTED_V2') throw Error('Current shortage v2 protocol required');
+  const authorize = authenticate(authorityDependencies, authorityDependencies?.requirePurchaseStaff);
+  const prepare = createShortageStockPreparation({ ...authorityContext(authorityDependencies, protocol), company, items, store, protocol });
+  return async request => {
+    let actor;
+    const result = await createCurrentStockSave({ company, writer: 'QUANTITY_CASE', protocol, coverage,
+      authenticate: async () => { actor = await authorize(); return actor; },
+      prepare: command => prepare({ company, requestId: command.requestId, input: command.input }) })(request);
+    if (result.ok !== true) return result;
+    const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+    const receipt = await protocol.readSnapshot(() => store.read(journal, hash(company, request.requestId, actor.memberId, 'SHORTAGE')));
+    const event = receipt.rows;
+    if (!event?._version || event.company !== company || event._id !== event.title || event.result !== 'SAVED'
+      || event.action !== 'PURCHASE_SHORTAGE_DECIDED' || event.initiatedByStaffId !== actor.staffId
+      || event.imageAltText !== request.input.taskId) throw Error('Committed shortage decision receipt requires review');
+    return { ...result, company, taskId: event.imageAltText, savedAt: event.activityTime };
+  };
+}
+module.exports = { createCurrentWarehouseReceiptSave, createCurrentBorrowingSave, createCurrentAllocationSave, createCurrentPurchaseSave, createCurrentQuantityCaseSave, createCurrentShortageSave };
 
 },
 // warehouse-authority.cjs sha256:6ac1a4cbccd0d64e074b6d0afa4a7c7aeffccb43367aaf4738d8a7c4a9e29ce5
@@ -2426,6 +2446,87 @@ function createQuantityCasePreparation(deps) {
 module.exports = { validateOriginalQuantityCase, createQuantityCasePreparation };
 
 },
+// shortage-stock-preparation.cjs sha256:6dad0dba421e14f99a54d8d970e1c2139df00853e55dedeaf914a2f550bfc8c6
+"shortage-stock-preparation.cjs": (load, module) => {
+'use strict';
+
+const { originalProductState } = load("original-product-state.cjs");
+const { readCurrentProduct } = load("current-product-reader.cjs");
+const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
+const { currentAllocationContext } = load("current-allocation-context.cjs");
+const { prepareProcurementTransition } = load("borrowing-stock-plan.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+async function validateOriginalShortage({ createShortageOperations, company, staff, requestId, input, workspace, now }) {
+  if (!['NCT', 'GHR'].includes(company) || workspace?.company !== company || !Array.isArray(workspace.activity)
+    || typeof createShortageOperations !== 'function' || typeof now !== 'function') throw Error('Original shortage context required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', scratch = new Map(), boundary = new Error('Private shortage prepare boundary');
+  let captured, reads = 0;
+  const scope = c => { if (c !== journal) throw Error('Shortage context scope violation'); };
+  const store = {
+    read: async (c, id) => { scope(c); return copy(scratch.get(id) || null); },
+    all: async c => { scope(c); return copy(workspace.activity); },
+    insert: async (c, row) => {
+      scope(c);
+      if (row.action === 'PURCHASE_OPERATION_PREPARED' && row.details?.kind === 'PREPARED') {
+        if (captured || scratch.size !== 1 || row.details.plan?.event?.action !== 'PURCHASE_SHORTAGE_DECIDED') throw Error('Unexpected shortage prepare');
+        captured = copy(row.details.plan); throw boundary;
+      }
+      if (row.action !== 'PURCHASE_OPERATION_LOCK' || row.details?.kind !== 'LOCK' || scratch.size) throw Error('Shortage apply forbidden');
+      scratch.set(row._id, copy(row)); return copy(row);
+    }, remove: async (c, id) => {
+      scope(c); if (scratch.get(id)?.action !== 'PURCHASE_OPERATION_LOCK') throw Error('Only private shortage lock removal allowed'); scratch.delete(id);
+    }
+  };
+  const save = createShortageOperations({ store, now, names: { [company]: { activity: journal } }, readWorkspace: async (c, employee) => {
+    if (c !== company || employee.memberId !== staff.memberId || ++reads !== 1) throw Error('Unexpected shortage apply/read'); return copy(workspace);
+  } });
+  try { await save({ company, staff: copy(staff), requestId, input: { ...copy(input), action: 'SHORTAGE' } }); throw Error('Original shortage boundary not reached'); }
+  catch (error) { if (error !== boundary) throw error; }
+  if (!captured || reads !== 1 || scratch.size) throw Error('Original shortage preparation incomplete');
+  return captured;
+}
+function createShortageStockPreparation(deps) {
+  const { company, readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
+    projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation,
+    protocol, items, store, now } = deps;
+  if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
+    projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
+    || typeof protocol?.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server shortage dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private v2 shortage task checkpoint reader required');
+  return async request => {
+    if (request?.company !== company || typeof request.input?.taskId !== 'string' || !request.input.taskId) throw Error('Known company shortage task required');
+    const member = await readMember();
+    if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
+    const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id }, metrics = { queries: 0, exactReads: 0 };
+    const snapshot = await protocol.readSnapshot(async control => {
+      const context = await readContext(company, staff), task = context?.tasks?.find(t => t.id === request.input.taskId);
+      if (context?.company !== company || !task) throw Error('Original shortage task unavailable');
+      const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea };
+      const orders = projectPurchaseOrders({ company, workspace: context, records: await readPurchaseRecords(company, staff) });
+      const builder = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
+      const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+        transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id], demandTaskIds: [task.customerDemandTaskId || task.id] })
+        : await readCurrentProduct({ company, identity, items, store, metrics });
+      if (current) {
+        if (!rows.product) throw Error('Current shortage product checkpoint required');
+        rows.taskRows = await deps.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+      }
+      const state = builder.buildState(rows);
+      const workspace = currentAllocationContext({ state, context, readAllocations });
+      const validated = await validateOriginalShortage({ createShortageOperations, company, staff, requestId: request.requestId, input: request.input, workspace, now });
+      if (validated.event.initiatedByStaffId !== staff.staffId || validated.event.imageAltText !== task.id
+        || validated.event.description !== task.orderId || validated.event.image !== task.sourceLineId) throw Error('Original shortage event identity conflict');
+      return { state, rows, event: validated.event };
+    });
+    const { state, rows, event } = snapshot.rows;
+    return { ...prepareProcurementTransition({ state, after: state, rows, event, generation: snapshot.generation }),
+      memberId: staff.memberId, generation: snapshot.generation, metrics };
+  };
+}
+module.exports = { validateOriginalShortage, createShortageStockPreparation };
+
+},
 // sdk-conditional-store.cjs sha256:d087abf224b05a079b2b74e67e038584a5f3bba0a7285de4adafa129a909e4d5
 "sdk-conditional-store.cjs": (load, module) => {
 'use strict';
@@ -4012,6 +4113,7 @@ export const createCurrentAllocationSave = load("current-department-saves.cjs").
 export const createSdkConditionalStore = load("sdk-conditional-store.cjs").createSdkConditionalStore;
 export const createCurrentPurchaseSave = load("current-department-saves.cjs").createCurrentPurchaseSave;
 export const createCurrentQuantityCaseSave = load("current-department-saves.cjs").createCurrentQuantityCaseSave;
+export const createCurrentShortageSave = load("current-department-saves.cjs").createCurrentShortageSave;
 export const createFencedProof = load("fenced-proof.cjs").createFencedProof;
 export const createSegmentedFencedProof = load("segmented-fenced-proof.cjs").createSegmentedFencedProof;
 export const planCollections = load("domain-scope.cjs").planCollections;

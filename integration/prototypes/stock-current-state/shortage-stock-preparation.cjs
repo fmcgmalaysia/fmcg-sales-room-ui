@@ -2,6 +2,7 @@
 
 const { originalProductState } = require('./original-product-state.cjs');
 const { readCurrentProduct } = require('./current-product-reader.cjs');
+const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { currentAllocationContext } = require('./current-allocation-context.cjs');
 const { prepareProcurementTransition } = require('./borrowing-stock-plan.cjs');
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -41,18 +42,27 @@ function createShortageStockPreparation(deps) {
   if (!['NCT', 'GHR'].includes(company) || [readMember, readStaffRecords, requirePurchaseStaff, readContext, readPurchaseRecords,
     projectPurchaseOrders, createShortageOperations, readAllocations, readCustomerShipments, readPackingLists, packingHeld, now].some(f => typeof f !== 'function')
     || typeof protocol?.readSnapshot !== 'function' || typeof items?.query !== 'function' || typeof store?.read !== 'function') throw Error('Server shortage dependencies required');
+  const current = protocol.planFormat === 'SEGMENTED_V2';
+  if (current && typeof deps.readCurrentTaskRows !== 'function') throw Error('Private v2 shortage task checkpoint reader required');
   return async request => {
     if (request?.company !== company || typeof request.input?.taskId !== 'string' || !request.input.taskId) throw Error('Known company shortage task required');
     const member = await readMember();
     if (!member?._id || !member.loginEmail || member.status !== 'APPROVED') requirePurchaseStaff(member, []);
     const staff = { ...requirePurchaseStaff(member, await readStaffRecords()), memberId: member._id }, metrics = { queries: 0, exactReads: 0 };
-    const snapshot = await protocol.readSnapshot(async () => {
+    const snapshot = await protocol.readSnapshot(async control => {
       const context = await readContext(company, staff), task = context?.tasks?.find(t => t.id === request.input.taskId);
       if (context?.company !== company || !task) throw Error('Original shortage task unavailable');
       const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea };
       const orders = projectPurchaseOrders({ company, workspace: context, records: await readPurchaseRecords(company, staff) });
       const builder = originalProductState({ company, context, orders, identity, readAllocations, readCustomerShipments, readPackingLists, packingHeld, readPreparation, projectPreparation });
-      const rows = await readCurrentProduct({ company, identity, items, store, metrics }), state = builder.buildState(rows);
+      const rows = current ? await readScopedCurrentProduct({ company, identity, items, store, metrics,
+        transferIndexVersion: control.transferIndexVersion, sourceTaskIds: [task.id], demandTaskIds: [task.customerDemandTaskId || task.id] })
+        : await readCurrentProduct({ company, identity, items, store, metrics });
+      if (current) {
+        if (!rows.product) throw Error('Current shortage product checkpoint required');
+        rows.taskRows = await deps.readCurrentTaskRows(company, builder.scopeTaskIds(rows), staff); rows.generation = control.generation;
+      }
+      const state = builder.buildState(rows);
       const workspace = currentAllocationContext({ state, context, readAllocations });
       const validated = await validateOriginalShortage({ createShortageOperations, company, staff, requestId: request.requestId, input: request.input, workspace, now });
       if (validated.event.initiatedByStaffId !== staff.staffId || validated.event.imageAltText !== task.id

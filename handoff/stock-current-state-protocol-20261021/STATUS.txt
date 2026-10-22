@@ -1,5 +1,12 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST LEGACY SHORTAGE: SHORTAGE_CURRENT_BINDING.txt. Remaining original
+SHORTAGE operation now concrete scoped current save; original cumulative inc/version
+and Purchase role/date/message rules preserved. No demand/physical/debt release;
+borrower20 received by transfer remains outstanding, shortage80 preserved.531tests
+pass0fail5493.6426ms; runtime62modules23exports. Actual install/remainingwriters/reads/
+relays/UI/reload/schema/capacity/init/routing/shadow/fourrelease remain OPEN. ACTIVE OFF.
+
 2026-10-22 LATEST QUANTITY: QUANTITY_CASE_CURRENT_BINDING.txt. Concrete original
 Purchase shortage decision current save + scoped v2 preparation, retaining actual
 original Purchase permission and case/version/feedback rules. STOP/CREDIT preserves

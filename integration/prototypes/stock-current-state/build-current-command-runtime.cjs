@@ -6,6 +6,7 @@ const entries = {
   createCurrentBorrowingSave: 'current-department-saves.cjs', createCurrentAllocationSave: 'current-department-saves.cjs', createSdkConditionalStore: 'sdk-conditional-store.cjs',
   createCurrentPurchaseSave: 'current-department-saves.cjs',
   createCurrentQuantityCaseSave: 'current-department-saves.cjs',
+  createCurrentShortageSave: 'current-department-saves.cjs',
   createFencedProof: 'fenced-proof.cjs', createSegmentedFencedProof: 'segmented-fenced-proof.cjs', planCollections: 'domain-scope.cjs',
   createPurchaseTransferWorkspace: 'purchase-transfer-workspace.cjs', createBorrowCurrentQuery: 'borrow-current-query.cjs',
   createPurchaseBorrowOptions: 'purchase-borrow-options.cjs',
