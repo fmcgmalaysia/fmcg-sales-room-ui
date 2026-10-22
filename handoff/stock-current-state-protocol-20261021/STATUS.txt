@@ -1,5 +1,11 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+CURRENT HEARTBEAT after5adfc94: SHARED_WRITER_COVERAGE.txt. Targeted backend writer search
+confirmed read-side GP cache, Sales batch plan, quantity decisions, Purchase PO record
+and Account same-PO record updates. Mandatory candidate admission now19 categories,
+none newly verified;7pass137.0537ms. Completeness/actual adapters still NOT proven.
+Protected production unchanged; all activation/four-stage release gates remain OFF.
+
 CURRENT HEARTBEAT afterf903207: ORDER_INTAKE_CURRENT_PLAN.txt. Original intake/receipt now
 compose private insert-only company plan, same request resumes interrupted task save;
 19new+originalpass213.1987ms. Explicit offline counterexample: opposite-company local

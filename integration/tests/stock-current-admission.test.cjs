@@ -49,6 +49,17 @@ test('reference-price whole-row task/order writer cannot be omitted just because
   const admit = createStockAdmission({ company: 'NCT', readControl: async () => control, coverage });
   await assert.rejects(admit({ writer: 'RECEIPT', request: { stockProtocol: 1, stockGeneration: 0, stockBuild: 'BUILD' } }), /coverage incomplete/);
 });
+
+test('shared GP/order/finance/batch decision writers require explicit coverage rather than an unrelated writer flag', async () => {
+  const required = ['MARGIN_REFERENCE', 'SHIPMENT_PLAN', 'QUANTITY_CASE', 'PURCHASE_ORDER_RECORD', 'ACCOUNT_PURCHASE_RECORD'];
+  for (const name of required) {
+    assert.equal(WRITERS.includes(name), true);
+    const control = { company: 'NCT', _version: 'V', generation: 0, schemaVersion: 1, mode: 'ACTIVE', writerBuild: 'BUILD' };
+    const coverage = Object.fromEntries(WRITERS.filter(writer => writer !== name).map(writer => [writer, { verified: true, build: 'BUILD' }]));
+    await assert.rejects(createStockAdmission({ company: 'NCT', readControl: async () => control, coverage })({ writer: 'RECEIPT',
+      request: { stockProtocol: 1, stockGeneration: 0, stockBuild: 'BUILD' } }), /coverage incomplete/);
+  }
+});
 test('opted-in company task + inventory changes commit/replay together; recovery sees same private scope', async () => {
   const db = new Map(), before = { _id: 'TASK', company: 'NCT', _version: 'T0', quantity: 10 }; db.set('NCTTasks:TASK', before);
   const store = { read: async (c, id) => copy(db.get(c + ':' + id) || null), insert: async (c, r) => { if (db.has(c + ':' + r._id)) throw Error('Duplicate'); db.set(c + ':' + r._id, copy(r)); return copy(r); },
