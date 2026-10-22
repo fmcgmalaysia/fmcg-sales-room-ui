@@ -1,9 +1,10 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const { execFileSync } = require('node:child_process');
+const { createRequire } = require('node:module');
 const { haloSvg } = require('../prototypes/stock-current-state/transfer-person.cjs');
 const { createPurchaseTransferWorkspace } = require('../prototypes/stock-current-state/purchase-transfer-workspace.cjs');
 const root = path.join(__dirname, '../prototypes/stock-current-state');
-test('both Purchase overlays are exact original source plus shared halo helper and one SVG substitution', () => {
+test('both Purchase overlays preserve original heads, with read-only relation panel added only inside supplier dialog', () => {
   assert.match(execFileSync(process.execPath, [path.join(root, 'build-transfer-person-overlays.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
   for (const file of ['task-grid.js', 'supplier-allocation.js']) {
     const source = fs.readFileSync(path.join(root, 'purchase-ui', file), 'utf8'); new vm.Script(source);
@@ -11,11 +12,24 @@ test('both Purchase overlays are exact original source plus shared halo helper a
     // No event handler/action/permission or existing colour selector replacements.
     const original = fs.readFileSync(path.join(__dirname, '../../purchase-live', file), 'utf8').replace(/\r\n/g, '\n');
     assert.equal((source.match(/data-self-collect/g) || []).length, (original.match(/data-self-collect/g) || []).length);
+    assert.equal(source.includes('purchaseBorrowRelations?.mount'), file === 'supplier-allocation.js');
   }
   const ordinary = '<svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="4"/><path d="M2 19v-3a8 7 0 0 1 16 0v3z"/></svg>';
   assert.equal(haloSvg(ordinary, false), ordinary);
   const halo = haloSvg(ordinary, true); assert.ok(halo.includes('<ellipse')); assert.ok(halo.includes(ordinary.slice(ordinary.indexOf('<circle'))));
   assert.equal(halo.includes('viewBox="0 -'), false); assert.equal(halo.includes('#'), false);
+});
+test('actual generated task grid renders ordinary heads byte-identically and adds/removes halos for both real source heads', () => {
+  const filename = path.join(__dirname, 'purchase-source-grid.test.cjs');
+  const source = fs.readFileSync(filename, 'utf8').replace("const test=require('node:test')", 'const test=()=>{}');
+  const fixture = target => vm.runInNewContext(source.replace('../../purchase-live/task-grid.js', target) + '\nfixture;',
+    { require: createRequire(filename), __dirname, Map, Set });
+  const current = fixture('../prototypes/stock-current-state/purchase-ui/task-grid.js')(), original = fixture('../../purchase-live/task-grid.js')();
+  const ordinary = original.render(); assert.equal(current.render(), ordinary);
+  current.root.stockTransferOutstanding = true; current.child.stockTransferOutstanding = true;
+  const decorated = current.render(); assert.ok((decorated.match(/<ellipse/g) || []).length >= 2); assert.equal(decorated.includes('triangle'), false);
+  assert.equal((decorated.match(/supplier-head complete/g) || []).length, (ordinary.match(/supplier-head complete/g) || []).length);
+  current.root.stockTransferOutstanding = false; current.child.stockTransferOutstanding = false; assert.equal(current.render(), ordinary);
 });
 function fixture() {
   const control = { company: 'NCT', mode: 'ACTIVE', generation: 5, transferIndexVersion: 2, pending: null, writerBuild: 'TEST' };

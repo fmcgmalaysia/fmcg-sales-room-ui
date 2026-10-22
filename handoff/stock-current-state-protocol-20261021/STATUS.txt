@@ -1,5 +1,14 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-22 LATEST PURCHASE PANEL/REPAIR: PURCHASE_BORROW_PANEL_AND_HALO_REPAIR.txt.
+Read-only linked-row/PO/remaining panel now in EXISTING supplier dialog + original
+read relay candidate/index assets. New unchanged original fixture driver exposed22
+candidate rendering failures from OLD reversed halo arguments; feature work paused,
+minimum generator fix applied, ordinary grid byte-identical restored.63original
+assertion scenarios now run against actual candidate; all current610pass0fail5858.121ms.
+No actual UI/live install/public QA/approval controls claimed. Runtime66modules26exports.
+All other existing gates remain OPEN, ACTIVE OFF, original production still exact.
+
 2026-10-22 COST REFERENCE: COST_REFERENCE_CURRENT_BINDING.txt. Concrete original
 Purchase retry reference gateway candidate now common-fenced, original price/manual/
 invoice/receipt guards and task stock counters preserved. Interrupted APPLY reuses

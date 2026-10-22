@@ -1,0 +1,58 @@
+2026-10-22 — original supplier dialog relation detail + mandatory halo regression repair
+
+Recovery: production d447185/runtime32b812c remained untouched throughout. Candidate
+e5a9008 cost reference separate commit. No fresh live sync or production edit attempted.
+Reused framework and prior halo/workspace/query/read runtime records; targeted original
+Purchase supplier dialog, app readOperation, actual head parent controls and Wix relay.
+
+Implemented read-only existing-dialog detail:
+- User clicks existing head/supplier plan button: SAME original handler, same supplier
+  draft/save/reference/PO mechanism; no replacement icon or separate large dialog.
+- Optional compact section ABOVE supplier table: Borrowed from/Lent to, counterparty
+  known row label + customer + PO, original approved total/repaid/unused returned/
+  remaining. Source head and its root customer scope remain distinct. Unknown row label
+  never gets a fabricated ROW number; stable customer/PO or task fallback used.
+- Query existing original-Purchase-auth getPurchaseStockTransfersCurrent, page5 with
+  actual total/prev/next under same version/generation. No first-page total fiction.
+- Requires complete matching schema/company/root/generation/quantities/page; failure,
+  changed generation or inconsistent zero with an outstanding halo shows unconfirmed,
+  never clears head or claims loan settled. Late old-dialog replies cannot overwrite
+  another dialog; HTML escaped. Labels bilingual spaces, font inherits original.
+- No mutation/approval/return/cost fields or new authority in panel. Original head blue/
+  orange and shapes unchanged, halo removed by verified future workspace only when ALL
+  source relations close. Shipped does not clear repayment reminder.
+- Exact candidate relay adds ONLY one read handler/import; all other Wix page bytes
+  preserved. App existing read registry accepts one new result type. Candidate index
+  adds module/CSS and explicit marker for changed existing script assets. Original live
+  source/HTML unmodified. This is staged assembly, not claim of a working live preview.
+
+REGRESSION DISCOVERY AND REPAIR — DO NOT HIDE:
+Existing previous halo generator called haloSvg(boolean, originalSvg), but tested pure
+helper requires haloSvg(originalSvg, boolean). Prior tests checked helper and generated
+syntax, NOT actual full candidate render. New driver executes UNCHANGED original
+supplier fixture assertions against candidate:13pass22fail with Exact original person
+shape required. Production still exact baseline and original supplier35pass control
+was verified before candidate driver; no live restoration/deployment needed.
+Stopped added feature work, inspected exact error and helper/generated call; one-line
+argument order fix in generator then regenerated copies. Did NOT weaken helper shape
+checks or rewrite assertions/business handlers. Added original source-grid/split fixture
+drivers plus actual ordinary/halo render check. Plain generated task grid equals original
+HTML byte-for-byte; both actual source halos add/remove with original colours/head count.
+Then resumed only regression/recording, no stacking new feature on the broken candidate.
+
+Evidence: initial original supplier control35pass0fail290.9018ms; initial actual candidate
+35run13pass22fail reproduced above. After fix combined candidate panel/head + unchanged
+old fixtures72pass0fail436.9805ms. Existing-regression driver includes63 unchanged
+original assertion scenarios across8files, only loaded source path changed. These are
+additional executions against the candidate, not63new independent business guarantees.
+Full stock-current suite610pass0fail5858.121ms. All offline VM/DOM mocks/generated source
+checks, NOT browser visual or real public acceptance. Runtime remains66modules26exports.
+Original production directory diff d447185 clean. No UI/browser use this continuation.
+
+OPEN: actual display sizing/halo clipping/click view browser QA, real read runtime/Wix
+relay/index install, borrower options + approval/save controls and outstanding workbench,
+all missing writers/read/client-reload/capacity/schema/SDK Date+nested JSON order/init/
+routing/shadow/G3 + four release phases. Free reserved-loss/settled physical evidence
+boundaries from previous record still OPEN. No ACTIVE, Support real invoice OFF,
+no Pages/Wix publication/main merge/data/schema/role/Drive changes. Continue, not done.
+Token/cache/actual Credit UNKNOWN. User untracked files and automation unchanged.

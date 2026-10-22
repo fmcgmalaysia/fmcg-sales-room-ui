@@ -15,7 +15,15 @@ for (const [file, condition, shape] of entries) {
   const source = fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
   const svg = '<svg viewBox="0 0 20 20">' + shape + '</svg>', anchor = '(() => {\n';
   if (source.split(svg).length !== 2 || source.split(anchor).length !== 2) throw Error('Original Purchase person anchor changed');
-  const candidate = source.replace(anchor, anchor + helper).replace(svg, "'+currentStockPerson(" + condition + ',' + JSON.stringify(svg) + ")+'");
+  let candidate = source.replace(anchor, anchor + helper).replace(svg, "'+currentStockPerson(" + JSON.stringify(svg) + ',' + condition + ")+'");
+  if (file === 'supplier-allocation.js') {
+    const hook = 'update();renderHistory();';
+    if (candidate.split(hook).length !== 2) throw Error('Original supplier relation panel anchor changed');
+    const panel = '<div class="allocation-scroll">';
+    if (candidate.split(panel).length !== 2) throw Error('Original supplier relation panel layout anchor changed');
+    candidate = candidate.replace(panel, '<div id="allocationBorrowLinks"></div>' + panel);
+    candidate = candidate.replace(hook, hook + "window.purchaseBorrowRelations?.mount({container:document.querySelector('#allocationBorrowLinks'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc});");
+  }
   // The replacement joins the original surrounding single-quoted markup string.
   // Syntax compilation checks the generated patch before it can be synchronized.
   new Function(candidate);
