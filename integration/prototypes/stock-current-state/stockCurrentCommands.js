@@ -3120,12 +3120,13 @@ function createCurrentPurchaseTables({ company, readOriginalTable, store }) {
 module.exports = { createCurrentPurchaseTables };
 
 },
-// current-purchase-task-gateway.cjs sha256:384c42fa2953f16718ade342f22f2691a9bc2410e3f5e5627cf1cceb3de701b5
+// current-purchase-task-gateway.cjs sha256:fca19fa24189f50262cdae55bccb1a4fa8b243001dc57b5beef8f5f2e02863c8
 "current-purchase-task-gateway.cjs": (load, module) => {
 'use strict';
 const { createCurrentPurchaseSave, createCurrentAllocationSave, createCurrentShortageSave, createCurrentQuantityCaseSave } = load("current-department-saves.cjs");
 const { createCurrentPurchaseReorderSave } = load("current-purchase-reorder-save.cjs");
 const { createCurrentMarginReferenceSave } = load("current-margin-reference-save.cjs");
+const { createCurrentPurchaseArrangementSave } = load("current-purchase-arrangement-save.cjs");
 // Current-only authenticated root binding. Unsupported/missing metadata cannot
 // reach an old unfenced writer through this gateway. No browser coverage/actor.
 function createCurrentPurchaseTaskGateway(dependencies) {
@@ -3133,7 +3134,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
   if (!['NCT','GHR'].includes(company)) throw Error('Private current Purchase company required');
   return async (requestCompany, request) => {
     if (requestCompany !== company || !request || request.company !== undefined && request.company !== company
-      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH'].includes(request.operation)
+      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','ARRANGE_AVAILABLE'].includes(request.operation)
       || JSON.stringify(request).length > 200000) throw Error('Supported bounded current Purchase task request required');
     if ((request.operation === 'REORDER' || request.operation === 'EDIT' && request.input?.displayRows !== undefined)
       && (dependencies.currentDisplayOrderVersion !== 2 || dependencies.authorityDependencies?.currentDisplayOrderVersion !== 2)) {
@@ -3142,6 +3143,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
     // Construct only the selected ORIGINAL authority. A shortage read must not
     // require a separate price/sort workspace or run another department command.
     const execute = request.operation === 'REORDER' ? createCurrentPurchaseReorderSave(dependencies)
+      : request.operation === 'ARRANGE_AVAILABLE' ? createCurrentPurchaseArrangementSave(dependencies)
       : request.operation === 'ALLOCATE' ? createCurrentAllocationSave(dependencies)
       : request.operation === 'SHORTAGE' ? createCurrentShortageSave(dependencies)
       : request.operation === 'MARGIN_REFRESH' ? createCurrentMarginReferenceSave(dependencies)
@@ -3334,6 +3336,84 @@ async function collectMarginCurrencies({ createPurchaseMarginRefresh, company, t
   return currencies;
 }
 module.exports = { prepareMarginReference, prepareMarginReferenceGroup, collectMarginCurrencies };
+
+},
+// current-purchase-arrangement-save.cjs sha256:2c27744df4c7e825a8647caecbc67c72b4cd21f9e461a67d4c0123892643475b
+"current-purchase-arrangement-save.cjs": (load, module) => {
+'use strict';
+const {createCurrentStockSave}=load("current-stock-save.cjs");
+const {prepareArrangement,identity}=load("purchase-arrangement.cjs");
+function createCurrentPurchaseArrangementSave({company,store,protocol,coverage,authorityDependencies:d}){
+ if(protocol?.planFormat!=='SEGMENTED_V2'||typeof store?.read!=='function'
+   ||[d?.readMember,d?.readStaffRecords,d?.requirePurchaseStaff,d?.readMarginContext,d?.now].some(f=>typeof f!=='function'))throw Error('Private Purchase arrangement dependencies required');
+ let staff;
+ return createCurrentStockSave({company,writer:'PURCHASE_TASK',protocol,coverage,authenticate:async()=>{
+   const member=await d.readMember();if(!member?._id||member.status!=='APPROVED'||!member.loginEmail)d.requirePurchaseStaff(member,[]);
+   staff={...d.requirePurchaseStaff(member,await d.readStaffRecords()),memberId:member._id};return staff;
+ },prepare:async command=>{
+   const snapshot=await protocol.readSnapshot(async control=>{
+    const {workspace}=await d.readMarginContext(company,staff,control);
+    const before=await store.read(company==='NCT'?'NCTActivity':'NCTActivity1',identity(company,command.input.taskId,command.input.batchId));
+    return prepareArrangement({company,staff,requestId:command.requestId,input:command.input,workspace,before,at:d.now().toISOString()});
+   });
+   return {plan:snapshot.rows,memberId:staff.memberId,generation:snapshot.generation};
+ }});
+}
+module.exports={createCurrentPurchaseArrangementSave};
+
+},
+// purchase-arrangement.cjs sha256:571d0695caca2252ea4de9c1a0bedac14f42fe913a53fd2a5bb487798dac770b
+"purchase-arrangement.cjs": (load, module) => {
+'use strict';
+const {hash}=load("commit-proof.cjs");
+const whole=n=>Number.isSafeInteger(n)&&n>=0;
+const copy=v=>JSON.parse(JSON.stringify(v));
+const action='PURCHASE_ARRANGEMENT_CURRENT';
+const identity=(company,taskId,batchId)=>hash(company,taskId,batchId||'WHOLE',action);
+// An instruction for Support, not a stock hold, shipment or change of Sales demand.
+function arrangementLimit(task,batchId=''){
+ const f=task?.stockAllocationFacts;
+ if(task?.archived||!f||f.review!==false||!['usable','held','dispatched','availableToArrange'].every(k=>whole(f[k]))
+   ||f.usable+f.dispatched!==task.stockAllocatedCumulative||f.availableToArrange!==Math.max(0,f.usable-f.held))throw Error('Current arrangement stock requires review');
+ if(!batchId)return f.availableToArrange;
+ const batch=task.stockAllocatedBatches?.find(b=>b.id===batchId);
+ if(!batch||!whole(batch.allocated)||!whole(batch.demand)||batch.allocated>batch.demand)throw Error('Confirmed arrangement batch required');
+ // Until per-batch physical holds are explicit, subtract ALL task holds/shipped
+ // amounts. This can restrict availability, but cannot reuse another batch's stock.
+ return Math.min(f.availableToArrange,Math.max(0,batch.allocated-f.held-f.dispatched));
+}
+function prepareArrangement({company,staff,requestId,input,workspace,before,at}){
+ if(!['NCT','GHR'].includes(company)||workspace?.company!==company||workspace.stockAllocationView!=='CURRENT_V2'
+   ||!staff?.memberId||!staff.staffId||!staff.staffName||workspace.staff?.memberId!==staff.memberId||workspace.staff.staffId!==staff.staffId
+   ||!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||Object.keys(input).some(k=>!['taskId','batchId','quantity','expectedRevision','reason'].includes(k)))throw Error('Original Purchase arrangement authority required');
+ const task=workspace.tasks.find(t=>t.id===input.taskId&&!t.procurementSource&&!t.specialPurchase),batchId=input.batchId||'';
+ if(!task||typeof batchId!=='string'||batchId.length>200||!whole(input.quantity)||input.quantity<1||input.quantity>9999
+   ||input.quantity>arrangementLimit(task,batchId)||typeof input.expectedRevision!=='string')throw Error('Available arrangement quantity changed');
+ const reason=String(input.reason||'').trim();if(!reason||reason.length>1000||typeof at!=='string'||!Number.isFinite(Date.parse(at)))throw Error('Arrangement reason and time required');
+ const id=identity(company,task.id,batchId);
+ if(before&&(before._id!==id||before.company!==company||before.action!==action||before.details?.taskId!==task.id||before.details.batchId!==batchId||!before._version)
+   ||(before?.details?.revision||'')!==input.expectedRevision)throw Error('Arrangement instruction changed');
+ const revision=hash(company,requestId,staff.memberId,'ARRANGEMENT');
+ const details={taskId:task.id,batchId,customerId:task.customerId,orderId:task.orderId,quantity:input.quantity,
+   revision,status:'PENDING_SUPPORT',reason,availableAtApproval:arrangementLimit(task,batchId)};
+ const after={_id:id,title:id,company,description:task.orderId,imageAltText:task.id,action,result:'SAVED',actorType:'STAFF',
+   initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,details};
+ const audit={...copy(after),_id:revision,title:revision,action:'PURCHASE_ARRANGEMENT_REQUESTED',details:{...details,beforeRevision:input.expectedRevision}};
+ return {writes:[{collection:company==='NCT'?'NCTActivity':'NCTActivity1',before:copy(before||null),after},
+   {collection:company==='NCT'?'NCTActivity':'NCTActivity1',before:null,after:audit}]};
+}
+function readArrangements(company,activity){
+ if(!['NCT','GHR'].includes(company)||!Array.isArray(activity))throw Error('Arrangement company activity required');
+ const seen=new Set();
+ return activity.filter(r=>r.action===action).map(r=>{
+  const d=r.details;
+  if(r.company!==company||r.title!==r._id||r.result!=='SAVED'||!d?.taskId||typeof d.batchId!=='string'||r._id!==identity(company,d.taskId,d.batchId)||seen.has(r._id)
+    ||r.description!==d.orderId||!d.customerId||!d.revision||d.status!=='PENDING_SUPPORT'||!whole(d.quantity)||d.quantity<1||d.quantity>9999||!d.reason||!r.initiatedByStaffId
+    ||typeof r.activityTime!=='string'||!Number.isFinite(Date.parse(r.activityTime)))throw Error('Arrangement instruction requires review');
+  seen.add(r._id);return {...copy(d),by:r.initiatedByStaffName,at:r.activityTime};
+ });
+}
+module.exports={arrangementLimit,prepareArrangement,readArrangements,identity};
 
 },
 // current-purchase-save-router.cjs sha256:8013d3584d586a5eb2f827f47f3a07c37935bda6ca8f82db5581a2542e4a7d46
@@ -5652,7 +5732,7 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
 module.exports={prepareCurrentPurchaseProjection,readCurrentPurchaseProjection};
 
 },
-// current-purchase-workspace-read.cjs sha256:3298fa1067dda346dbabf0fa23467baa24066641d42d44e6070d4643d0b6f3dc
+// current-purchase-workspace-read.cjs sha256:5fa430514edbff5c6863b72dbf047b8889b9a3fa7e13580f64cf95582a72d206
 "current-purchase-workspace-read.cjs": (load, module) => {
 'use strict';
 
@@ -5660,6 +5740,7 @@ const { prepareMarginReferenceGroup, collectMarginCurrencies } = load("margin-re
 const { createPurchaseTransferWorkspace } = load("purchase-transfer-workspace.cjs");
 const { domainCollections } = load("domain-scope.cjs");
 const { copy } = load("segmented-plan.cjs");
+const {readArrangements}=load("purchase-arrangement.cjs");
 // READ ONLY. Refresh suggestions contain no draft GP/rate/order data. The caller
 // must durably retain an original authenticated save request BEFORE acting on one.
 function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, readCurrentContext, readRates,
@@ -5699,9 +5780,10 @@ function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, r
       try {names=await readCustomerShortNames(workspace.customers.map(row=>row.id));}
       catch (_) {customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。';}
       if(!Array.isArray(names))throw Error('Original customer short names required');
+      const arrangements=readArrangements(company,tables[journal]);
       const result={...copy(workspace),customerNamesError,
         customers:workspace.customers.map(row=>({...copy(row),shortName:names.find(item=>item.customerId===row.id)?.shortName||''})),
-        tasks:workspace.tasks.map(row=>({...copy(row),gp:refreshTaskId?null:margins.get(row.id)??null,sourceGp:refreshTaskId?null:margins.get('SOURCE:'+row.id)??null}))};
+        tasks:workspace.tasks.map(row=>({...copy(row),stockArrangements:arrangements.filter(a=>a.taskId===row.id),gp:refreshTaskId?null:margins.get(row.id)??null,sourceGp:refreshTaskId?null:margins.get('SOURCE:'+row.id)??null}))};
       const purchaseOrders=projectPurchaseOrders({company,workspace:result,records:tables.PurchaseOrders});
       applyPurchaseProgress(result,tables[journal],purchaseOrders);
       // Original archived/stage decisions above remain untouched; relation loading
@@ -5973,7 +6055,7 @@ function createCurrentPackingService({ company, items, store, protocol, coverage
 module.exports = { createCurrentPackingService };
 
 },
-// packing-stock-preparation.cjs sha256:00ff0259fbd07b9912bd4759bf7bde9d2c7882af752cfbac9ef77cba79f7c24f
+// packing-stock-preparation.cjs sha256:dc4bd0cae930d9052b0dac5a50c9b9e82d9b929c273566436dbf2b01a3c93be2
 "packing-stock-preparation.cjs": (load, module) => {
 'use strict';
 
@@ -5987,6 +6069,7 @@ const { preparePackingStock } = load("packing-stock-plan.cjs");
 const {captureOriginalPackingPhotoPlan}=load("packing-photo-plan.cjs");
 const {prependPackingPhotoReceipts}=load("packing-photo-fenced-store.cjs");
 const {hash}=load("commit-proof.cjs");
+const {readArrangements}=load("purchase-arrangement.cjs");
 // Private candidate for the existing authenticated read/save gateways. Every read
 // shares the company control barrier. No legacy apply or file upload in prepare.
 function createPackingStockPreparation(deps) {
@@ -6038,6 +6121,8 @@ function createPackingStockPreparation(deps) {
         products.push({ state: builder.buildState(rows), rows });
       }
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
+      if(current){const instructions=readArrangements(company,original.activity);
+        context.tasks=context.tasks.map(task=>({...task,purchaseArrangements:instructions.filter(i=>i.taskId===task.taskId)}));}
       if (context.stockDamageVersion === 1 && deps.currentDamageVersion !== 1) throw Error('Paired original isolated packing model required');
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,
         stockBuild: control.writerBuild, stockGeneration: control.generation } } : {}) };

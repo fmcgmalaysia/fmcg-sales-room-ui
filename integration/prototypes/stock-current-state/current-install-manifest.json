@@ -203,7 +203,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "5764035d8b9df77df65e7dea26d22d7f9f301c891e06dbc4c23552ad7b1f2443",
+      "sha256": "e21afca08d3ae258969a983a6396cafbf7db64463411140de4a366b94617f3f0",
       "beforeSha256": null
     },
     {
@@ -1496,7 +1496,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "5764035d8b9df77df65e7dea26d22d7f9f301c891e06dbc4c23552ad7b1f2443",
+      "sha256": "e21afca08d3ae258969a983a6396cafbf7db64463411140de4a366b94617f3f0",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",

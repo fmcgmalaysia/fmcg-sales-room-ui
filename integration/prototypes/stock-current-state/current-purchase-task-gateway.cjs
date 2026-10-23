@@ -2,6 +2,7 @@
 const { createCurrentPurchaseSave, createCurrentAllocationSave, createCurrentShortageSave, createCurrentQuantityCaseSave } = require('./current-department-saves.cjs');
 const { createCurrentPurchaseReorderSave } = require('./current-purchase-reorder-save.cjs');
 const { createCurrentMarginReferenceSave } = require('./current-margin-reference-save.cjs');
+const { createCurrentPurchaseArrangementSave } = require('./current-purchase-arrangement-save.cjs');
 // Current-only authenticated root binding. Unsupported/missing metadata cannot
 // reach an old unfenced writer through this gateway. No browser coverage/actor.
 function createCurrentPurchaseTaskGateway(dependencies) {
@@ -9,7 +10,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
   if (!['NCT','GHR'].includes(company)) throw Error('Private current Purchase company required');
   return async (requestCompany, request) => {
     if (requestCompany !== company || !request || request.company !== undefined && request.company !== company
-      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH'].includes(request.operation)
+      || typeof request.operation !== 'string' || !['EDIT','PLAN','PO','ADD_SOURCE','AVERAGE_COST','QTY','REORDER','ALLOCATE','SHORTAGE','QUANTITY_CASE','MARGIN_REFRESH','ARRANGE_AVAILABLE'].includes(request.operation)
       || JSON.stringify(request).length > 200000) throw Error('Supported bounded current Purchase task request required');
     if ((request.operation === 'REORDER' || request.operation === 'EDIT' && request.input?.displayRows !== undefined)
       && (dependencies.currentDisplayOrderVersion !== 2 || dependencies.authorityDependencies?.currentDisplayOrderVersion !== 2)) {
@@ -18,6 +19,7 @@ function createCurrentPurchaseTaskGateway(dependencies) {
     // Construct only the selected ORIGINAL authority. A shortage read must not
     // require a separate price/sort workspace or run another department command.
     const execute = request.operation === 'REORDER' ? createCurrentPurchaseReorderSave(dependencies)
+      : request.operation === 'ARRANGE_AVAILABLE' ? createCurrentPurchaseArrangementSave(dependencies)
       : request.operation === 'ALLOCATE' ? createCurrentAllocationSave(dependencies)
       : request.operation === 'SHORTAGE' ? createCurrentShortageSave(dependencies)
       : request.operation === 'MARGIN_REFRESH' ? createCurrentMarginReferenceSave(dependencies)

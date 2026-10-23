@@ -1,5 +1,12 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST HANDOFF: ARRANGEMENT_HANDOFF_20261024.txt implements ARRANGE_AVAILABLE
+server path, same Purchase admission/fenced commit, exact current instruction plus
+immutable audit and current Purchase/Support read context. Does not reserve stock,
+create packing or dispatch. UI second choice remains unwired; lifecycle next.
+Full1316pass30028.2702ms; added service contract included in6targetedpass98.1931ms.
+Runtime118modules; no native/deployment/export or activation.
+
 LATEST AVAILABILITY: ALLOC_AVAILABILITY_20261024.txt adds server-derived usable,
 held,dispatched and availableToArrange; unknown/held/shipped/review cannot enable
 the second action. That action remains informational, not an executed instruction.
