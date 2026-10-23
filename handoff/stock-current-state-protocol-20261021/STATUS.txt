@@ -1,4 +1,16 @@
-CURRENT 2026-10-23 — INTERFACE RELEASE REVERTED; PUBLIC RESTORATION NOT YET ACCEPTED
+CURRENT 2026-10-23 — USER SCREENSHOT CONFIRMS TASK LIST VISIBLE AFTER ROLLBACK
+
+LATEST USER EVIDENCE: after request to hard-refresh the real Purchase page, user
+supplied screenshot showing NCT Active Orders, TESTING01/02 and final row016.
+Task-list visibility restored by user's observed interface. Private exact image
+user-purchase-list-restored-20261023.png SHA256
+9773388eb16f7b05c8b0b77af702930145d740a263262d6f793e16b69f8fc860.
+This closes the request to confirm list visibility ONLY. Image does not contain
+browser URL/build marker; it does NOT establish new borrowing UI, save behavior,
+halo, receipt repayment, Loaded acceptance or full regression freeze. No need to
+ask again for the same16-task screenshot or repeat the failed agent reload path.
+Run263 rollback,37resource checks and restored7permission rules remain valid.
+Underlying reason for agent-only blank remains UNKNOWN. No new publishing grant.
 
 LATEST RECOVERY FACTS (supersede pre-release installation notes below):
 Code6926ae01ea3db56d38d920aa8ca1144f7e82f71d pushed to existing PR220.
@@ -21,7 +33,8 @@ and release marker404 on first read; remaining new borrow-return.js initially200
 targeted no-cache read then404/Age0. Thus original runtime paths restored and all
 16new direct paths absent; no new artifact marker. No additional dispatch/retry.
 
-PUBLIC RESTORATION STILL UNVERIFIED: old agent tab51426476 was closed by user.
+HISTORICAL AGENT RESTORATION OBSERVATION (user visibility result now above):
+Old agent tab51426476 was closed by user.
 Existing new user Purchase tab51426904 shows real NCT dashboard,16tasks and both
 customers, but DOM build still2026-10-22-stock-current-candidate-v2 (cached before
 rollback). Did not refresh or alter that tab. Fresh recovery-only real Wix tab
@@ -35,7 +48,8 @@ publicly/user verified. Private release-state JSON/screenshots are authoritative
 
 Four states: interface code retained6926ae0; Pages baseline resources restored by
 Run263; Wix business code/published site unchanged, no new whole-site Publish;
-public restoration/new-interface acceptance NOT PASSED. ACTIVE/invoice/exitOFF.
+original-task-list visibility confirmed by user's screenshot; new-interface/
+borrowing/Loaded acceptance NOT PASSED. ACTIVE/invoice/exitOFF.
 
 LATEST USER OVERRIDE: "你干脆直接把界面做出来吧。不需要草稿了".
 No more draft/replay/local candidate delivery or waiting for UX-draft approval.

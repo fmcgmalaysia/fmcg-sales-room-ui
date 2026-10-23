@@ -1,3 +1,12 @@
+Latest user-visible recovery evidence
+User responded to real Purchase hard-refresh check with screenshot showing NCT
+Active Orders, bothTESTING01/02 and final row016. Preserve as task-list visibility
+confirmation ONLY; screenshot has no browser URL/build marker, and does not verify
+new borrowing, saves or Loaded. No need to ask user again for the same screenshot.
+Private user-purchase-list-restored-20261023.png SHA256
+9773388eb16f7b05c8b0b77af702930145d740a263262d6f793e16b69f8fc860.
+No new write/publication/permission/automation action based on this image.
+
 Exact code retained
 6926ae01ea3db56d38d920aa8ca1144f7e82f71d, existing branch/PR220. No main merge,
 force push, new business backend/Wix source installation, CMS mutation or ACTIVE.
