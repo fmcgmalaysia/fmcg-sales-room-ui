@@ -143,3 +143,36 @@ site identifier, screenshot hashes, interruption state; no credentials/cookies/
 tokens/business-item details) to existing fmcgmalaysia/fmcg-sales-room-ui PR220
 branch before any new export attempt. No repository ownership inferred from
 cached remote contents. No permission/environment/deployment change performed.
+
+USER EXTENSION REINSTALL AND NATIVE READBACK — FOLLOW-UP
+
+User explicitly reported REINSTALL completed. Fresh browser inventory identified
+new extension instance f71fb06d-4d92-4e27-add5-2fd2906933bb, browser4, SAME original
+Wix tab51426657. Actual getTab succeeded and returned native NCTActivity CMS.
+No browser reload, fresh website/login, security/permission/CDP change or Run.
+Exact Manage Fields DOM IDs confirmed checkpointGeneration and generation ARE
+saved; transferIndexVersion absent. Existing open Add a field form still Number,
+name Number, ID number. This resolves the previous THREE unknown outcomes:
+firstTWO already persisted, third not saved. Filled exact transferIndexVersion
+name/ID, Save ONCE, native list then contains allTHREE exact IDs. No prior Save
+repeated and no unintended default number field created. NCTActivity now has12
+confirmed added fields, including the previously confirmed9.
+
+Following batch attempted repaidQuantity Number and participantTaskIds Tags via
+the same native form. Whole browser-tool call timed out at55seconds and reset
+the JavaScript kernel, returning NO per-field result. BOTH outcomes UNKNOWN:
+neither assume saved nor assume absent, and do not repeat either Save. pending
+Object NOT attempted. Prior default-form outcome cannot be reused for this batch.
+
+Immediately STOPPED batch mutation. Read-only inventory after timeout shows the
+SAME reinstalled extension instance, re-enumerated browser3, SAME user tab51426657.
+One direct read-only getTab again reports Debugger unattached. No further attach,
+claim, reload, mutation retry, alternative control route or repeated reinstall.
+This is recurring browser-tool execution/connection failure; actual site/data
+cause not established. User should NOT repeatedly reinstall or broaden access.
+Request only unchanged current Wix screenshot for human-visible reconciliation.
+
+This follow-up adds ONE confirmed field transferIndexVersion; TWO previously
+unknown saves confirmed by actual readback; TWO later attempts remainUNKNOWN.
+No new tests/code changes/Pages/Wix Publish/public acceptance/GitHub push.
+Local-only evidence update; exact export authorization remains outstanding.

@@ -1,5 +1,22 @@
 CURRENT 2026-10-23 — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
 
+LATEST STOP AFTER REINSTALL: ONE confirmed transferIndexVersion Save completed
+after reconciling prior outcomes. NCTActivity12added fields now CONFIRMED.
+Next pair repaidQuantityNumber/participantTaskIdsTags attempted;55second browser
+tool timeout/reset, BOTH outcomesUNKNOWN. pendingObjectNOTattempted. No Save
+replay. Fresh inventory same reinstalled instance/tab; ONE read-only getTab again
+Debugger unattached. STOP browser writes/batches; do not ask repeated reinstall,
+change permissions/CDP, reload or use another control route. Current Wix screenshot
+requested only for human-visible reconciliation. Full follow-up in native record.
+
+RECONNECTED AFTER USER REINSTALL: new Chrome extension instance f71fb06d-4d92-
+4e27-add5-2fd2906933bb/browser4, sameWix51426657tab. Actual native read succeeded.
+Exact field-ID list confirms checkpointGeneration/generation already saved.
+transferIndexVersion absent, default Number form still open. Filled its exact
+name/ID, saved ONCE; all3now confirmed present. No earlier Save repeated, no
+refresh/Run or permission change. Prior browser stop below is historical;
+schema tester/old300 stops and GitHub export refusal remain unchanged.
+
 SYNC STOP: local66bb853 contains two exact handoff records; origin/PR220 remains
 last-known e331024. Normal push rejected by safety review, then rejected again
 after read-only scope/remote/prior-record checks. NO further retry or alternate
