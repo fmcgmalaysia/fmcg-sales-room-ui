@@ -176,3 +176,32 @@ This follow-up adds ONE confirmed field transferIndexVersion; TWO previously
 unknown saves confirmed by actual readback; TWO later attempts remainUNKNOWN.
 No new tests/code changes/Pages/Wix Publish/public acceptance/GitHub push.
 Local-only evidence update; exact export authorization remains outstanding.
+
+USER SCREENSHOT RECONCILES THE LAST TWO SAVE OUTCOMES
+
+User supplied codex-clipboard-cb4731b2-7aa8-4879-966b-84c0ab155085.png.
+Actual native NCT Activity Manage Fields visibly lists repaidQuantity with
+Number(#) icon, participantTaskIds with Tags icon, plus prior checkpointGeneration,
+generation and transferIndexVersion. No Add a field modal remains open. Table
+still displays30items. These TWO field-save outcomes are now CONFIRMED_UI; this
+image does NOT expose SDK field-ID metadata or prove typed item roundtrips/index
+readiness. No further browser tool calls/inputs, repeated Save or native retries.
+pending Object remains NOT attempted. NCTActivity14new fields now confirmed in
+total across prior exact-ID readbacks/form checks and this human visual evidence.
+
+User image copied unchanged into root private evidence, not repository/Pages:
+ nctactivity-repaid-participants-user-confirmed-20261023.png
+ SHA256 a26c44535fdc0840d46b4b39f8af0d4e21797feaf3a27bc3ba3020d8f1cbf3b3
+Prior user screenshot remains unmodified. Human visual evidence settles the
+unknown saves without re-running the failed browser-control path.
+
+No settings/permission change requested. OpenAI official Browser extension
+troubleshooting says restarting the desktop app is a connection recovery step:
+ https://learn.chatgpt.com/docs/chrome-extension
+Request user normal fully exit/reopen desktop app, keeping Chrome/Wix OPEN, then
+return to SAME chat and say continue. No force-kill/reboot/Chrome restart/new chat,
+automatic agent creation or repeated extension reinstall. This is a proposed
+recovery, not claimed to resolve the fault. After user changed-state confirmation,
+only fresh read-only browser binding first; no automatic mutation/test replay.
+All prior native schema tester/300 stops, ACTIVE OFF and no-publication gates
+remain. Local text record only; no further push/export attempted.

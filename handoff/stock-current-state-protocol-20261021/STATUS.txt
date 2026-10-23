@@ -1,5 +1,17 @@
 CURRENT 2026-10-23 — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
 
+LATEST USER SCREENSHOT RECONCILES LAST TWO SAVES: actual NCT Activity Manage
+Fields shows repaidQuantity with Number icon and participantTaskIds with Tags
+icon, both listed; no Add a field modal open,30existing activity items visible.
+These TWO save outcomes nowCONFIRMED_UI, NOT SDK metadata/type roundtrip proof.
+NCTActivity14added fields confirmed across native readback and this human image;
+pendingObject remainsNOTattempted. No Save replay or other browser input made.
+Evidence privately preserved with SHA in native record. Browser control remains
+STOPPED after recurring timeout/Debugger unattached; do not repeat reinstall or
+broaden permissions/CDP. Request normal desktop-app restart ONLY, leaving Chrome/
+Wix open; after human restart use read-only fresh binding first. No publication.
+Local records remain unpushed; prior exact GitHub export approval still required.
+
 LATEST STOP AFTER REINSTALL: ONE confirmed transferIndexVersion Save completed
 after reconciling prior outcomes. NCTActivity12added fields now CONFIRMED.
 Next pair repaidQuantityNumber/participantTaskIdsTags attempted;55second browser
