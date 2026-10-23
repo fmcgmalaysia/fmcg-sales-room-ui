@@ -1,0 +1,43 @@
+2026-10-23 — AUTHORIZED TECHNICAL QUESTION SENT TO HELPMATE; TICKET NOT YET SUBMITTED
+
+User explicitly authorized assistant to ask Wix directly, not ask user to fill it.
+User also asked when to return to Sol. Recommended Sol High now because focused
+Astra review concluded; no model setting changed by assistant, no agent created.
+
+Used Chrome extension/browser APIs successfully in a separate support tab; no
+native screen control, changes to user editor, CMS, permissions, code or publishing.
+Browser3, support contact tab51427275:
+https://www.wix.com/contact?referral=article_0bdfcec6-a05e-4604-be55-cacd7e912259
+Selected site visibly Master. Logged-in session already present; no login action,
+credential access, new permissions or private business data uploaded.
+
+Sent platform question, clarified web methods/HTTP functions/wix-data suppressAuth
+and cache writers; requested HUMAN Velo technical expert/engineering documentation,
+email ticket/no callback, and explicitly forbade any site/data/permission/plan changes.
+Helpmate first offered AI help, then agreed to transfer to an Expert and requested
+summary confirmation. Assistant submitted this exact summary (within field limit):
+
+I need engineering-confirmed documentation for safely migrating the same Wix Data collections on Master: how to stop old-version backend invocations, account for already-running executions, and verify that accepted insert/update/remove requests and pending writes have settled. Old code uses web methods and HTTP functions, wix-data with suppressAuth, and cache-refresh writes. A client504 or empty app-lock scan is not a drain guarantee; a new maintenance check cannot stop already-running old code. Does Publish/Unpublish provide a documented lifecycle boundary, completion receipt, or hard bound covering pending writes? If not, what supported maintenance procedure exists? We reproduced the race OFFLINE and have NOT migrated. Please escalate for Velo engineering confirmation and provide sources. No changes to site/code/data/permissions/plan are authorized. Email follow-up preferred; no callback.
+
+CURRENT STOP POINT — NOT A TECHNICAL OR CHROME FAILURE
+Helpmate displays Submit a ticket / An Expert will reply via email. Immediately
+above it: requesting support agrees to Wix Customer Care Terms of Use, whose
+section1 incorporates full Wix Terms of Use. Browser confirmation policy requires
+action-time confirmation for legally binding terms. Asked one async question in
+this chat for consent; no need for user to operate Wix. Button NOT clicked yet.
+No ticket number, confirmation email, human reply or engineering guarantee exists.
+Do NOT say support ticket was submitted or wait for an email as if it were.
+
+Terms read:
+https://support.wix.com/en/article/wix-customer-care-terms-of-use
+Evidence local/private (do not publish to GitHub/Pages):
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/wix-support-ticket-terms-pending-20261023.png
+Support contact tab marked handoff so it survives this turn. After user confirms,
+freshly inspect same tab, submit once, complete any ordinary follow-up fields using
+visible account context, verify actual ticket receipt/number and retain evidence.
+Do not restart/create duplicate conversations or invent an email/phone number.
+If the user refuses terms, leave ticket unsubmitted. No model switch needed.
+
+Release unchanged: candidate only; Pages baseline; Wix new flow unpublished;
+public borrowing unavailable. No native tester retry, GitHub export retry or
+heartbeat activation. Existing GitHub export-specific safety refusal still applies.
