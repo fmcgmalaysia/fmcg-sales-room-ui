@@ -16,19 +16,9 @@ for (const [file, condition, shape] of entries) {
   const svg = '<svg viewBox="0 0 20 20">' + shape + '</svg>', anchor = '(() => {\n';
   if (source.split(svg).length !== 2 || source.split(anchor).length !== 2) throw Error('Original Purchase person anchor changed');
   let candidate = source.replace(anchor, anchor + helper).replace(svg, "'+currentStockPerson(" + JSON.stringify(svg) + ',' + condition + ")+'");
-  if (file === 'supplier-allocation.js') {
-    const hook = 'update();renderHistory();';
-    if (candidate.split(hook).length !== 2) throw Error('Original supplier relation panel anchor changed');
-    const panel = '<div class="allocation-scroll">';
-    if (candidate.split(panel).length !== 2) throw Error('Original supplier relation panel layout anchor changed');
-    candidate = candidate.replace(panel, '<div id="allocationBorrowLinks"></div><div id="allocationBorrowApproval"></div>' + panel);
-    candidate = candidate.replace(hook, hook + "window.purchaseBorrowRelations?.mount({container:document.querySelector('#allocationBorrowLinks'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>!state.batchId&&api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submitReturn:input=>{if(state.batchId||api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});");
-    const approval = "if(!state.batchId)window.purchaseBorrowApproval?.mount({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submit:input=>{if(api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}});";
-    const batchEntry = "if(state.batchId)window.purchaseBorrowApproval?.mountBatchEntry({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),openRoot:id=>{if(state.rootId!==id||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');open(id);}});";
-    candidate = candidate.replace(hook, hook + batchEntry + approval);
-  }
   // The replacement joins the original surrounding single-quoted markup string.
   // Syntax compilation checks the generated patch before it can be synchronized.
+  if(file==='task-grid.js')candidate=require('./purchase-allocation-ui-overlay.cjs').grid(candidate);
   new Function(candidate);
   const output = path.join(target, file);
   if (process.argv.includes('--check')) {

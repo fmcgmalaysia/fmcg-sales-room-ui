@@ -29,7 +29,7 @@ test('fixed review reads expose clearly fictional exact PO pair without mutating
   f.send({ type: 'PURCHASE_BORROW_OPTIONS_REQUEST', company: 'NCT', requestId: '2', input: { borrowerTaskId: 'a'.repeat(32) } });
   const quote = f.posted.at(-1).result;
   assert.equal(quote.schema, 'CURRENT_BORROW_OPTIONS_V2'); assert.equal(quote.options[0].lenderPoId, 'EXAMPLE-PO-B');
-  assert.equal(quote.options[0].replacementPoId, 'EXAMPLE-PO-A'); assert.equal(quote.options[0].maximumQuantity, 100);
+  assert.equal(quote.options[0].replacementPoId, 'EXAMPLE-PO-A'); assert.equal(quote.options[0].maximumQuantity, 10);
   f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '3' });
   assert.equal(JSON.stringify(f.posted.at(-1).workspace), original);
   f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'GHR', requestId: '4' });

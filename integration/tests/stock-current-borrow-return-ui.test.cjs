@@ -67,6 +67,7 @@ test('late quote after paging/closed dialog is ignored; network retry keeps orig
 test('return UI uses existing saved workflow, has no stock mutation/halo clear shortcut and is present in candidate only', () => {
   const index = fs.readFileSync(path.join(folder, 'purchase-ui/index.html'), 'utf8'), supplier = fs.readFileSync(path.join(folder, 'purchase-ui/supplier-allocation.js'), 'utf8');
   assert.ok(index.includes('borrow-return.js?v=20261022-stock-current-candidate-v2'));
-  assert.match(supplier, /api.mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_RETURN',input\}\)/);
+  assert.doesNotMatch(supplier,/allocationBorrowLinks/);
+  assert.match(fs.readFileSync(path.join(folder,'purchase-ui/app.js'),'utf8'), /mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_RETURN',input\}\)/);
   const ui = fs.readFileSync(path.join(folder, 'purchase-ui/borrow-return.js'), 'utf8'); assert.equal(/postMessage|localStorage|stockTransferOutstanding\s*=|repaid\s*=/.test(ui), false);
 });

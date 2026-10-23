@@ -101,6 +101,7 @@ once('const orderMeta=currentOrderMetadata(kind,args);if(orderMeta===false)retur
   "const orderMeta=currentOrderMetadata(kind,args);if(orderMeta===false)return;if(data?.stockCurrent?.stockProtocol===1&&['staffId','memberId'].some(key=>typeof data.staff?.[key]!=='string'||!data.staff[key]||data.staff[key].length>200)){showStatus('Original Purchase identity unconfirmed. Draft retained. 原采购员工身份尚未确认，草稿保留。',true);return;}");
 once('stockGeneration:data.stockCurrent.stockGeneration}:{}))',
   'stockGeneration:data.stockCurrent.stockGeneration,stockIdentity:{staffId:data.staff.staffId,memberId:data.staff.memberId}}:{}))');
+source = require('./purchase-allocation-ui-overlay.cjs').app(source);
 new Function(source);
 if (process.argv.includes('--check')) {
   if (fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== source) throw Error('Purchase current UI differs from tested patch');

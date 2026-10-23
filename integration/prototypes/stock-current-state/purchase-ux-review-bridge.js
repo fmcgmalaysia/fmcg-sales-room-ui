@@ -15,10 +15,12 @@
       { id: 'EXAMPLE-B', name: 'Example Customer B', shortName: 'EXAMPLE B 示例客户B' }],
     suppliers: [{ id: 'EXAMPLE-SUP-A', name: 'Example Supplier A', shortName: 'EXAMPLE SUPPLIER A' },
       { id: 'EXAMPLE-SUP-B', name: 'Example Supplier B', shortName: 'EXAMPLE SUPPLIER B' }],
+    stockAllocationView:'CURRENT_V2',allocations:[],
     tasks: [{ ...base, id: idA, customerId: 'EXAMPLE-A', orderId: 'EXAMPLE-ORDER-A', sourceLineId: 'EXAMPLE-LINE-A',
-      supplierId: 'EXAMPLE-SUP-A', po: 'EXAMPLE-PO-A', warehouse: { hasPhysicalReceipt: true, accepted: 0 } },
+      stockAllocatedCumulative:80,procurement:{...base.procurement,totalCtn:90,customerCtn:90},
+      supplierId: 'EXAMPLE-SUP-A', po: 'EXAMPLE-PO-A', warehouse: { hasPhysicalReceipt: true, accepted: 80 } },
       { ...base, id: idB, customerId: 'EXAMPLE-B', orderId: 'EXAMPLE-ORDER-B', sourceLineId: 'EXAMPLE-LINE-B',
-        supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } }],
+        stockAllocatedCumulative:100,supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } }],
     shipmentPlans: [], stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', stockProtocol: 1,
       stockBuild: 'UX-REVIEW-ONLY', stockGeneration: generation, generation } };
   const summary = document.querySelector('#uxReviewResult');
@@ -51,7 +53,7 @@
           stockBuild: 'UX-REVIEW-ONLY', stockGeneration: generation }, options: eligible ? [{ borrowerTaskId: idA,
           lenderTaskId: idB, lenderCustomerId: 'EXAMPLE-B', lenderSourceId: idB, replacementSourceId: idA,
           lenderPoId: 'EXAMPLE-PO-B', replacementPoId: 'EXAMPLE-PO-A', lenderPoNumber: 'EXAMPLE-PO-B',
-          replacementPoNumber: 'EXAMPLE-PO-A', maximumQuantity: 100 }] : [] }); return;
+          replacementPoNumber: 'EXAMPLE-PO-A', maximumQuantity: 10 }] : [] }); return;
     }
     if (m.type === 'PURCHASE_BORROW_RELATIONS_REQUEST') {
       result(m, 'PURCHASE_BORROW_RELATIONS_RESULT', { ok: true, schema: 'CURRENT_BORROW_RELATIONS_V1', company: 'NCT',

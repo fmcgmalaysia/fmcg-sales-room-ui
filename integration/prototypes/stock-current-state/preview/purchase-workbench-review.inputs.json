@@ -61,7 +61,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.css",
-      "sha256": "4daf1c18410df7e4a1c2c4142a61f258a8f2cb9e7b3a00526847f5e48572ca6e"
+      "sha256": "59814d2e353478b2c13aa0e40e1f5d149aca32de71314261e552278cc4c95490"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.css",
@@ -85,7 +85,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
-      "sha256": "aad0ad5e8db701517b73eba560fdd065677383414f46b6ae0d3c73a279dceb7b"
+      "sha256": "c9de2ba15f6cc3358ece463820c8fc9767c129953634c413e6a03f905acf4399"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",
@@ -93,7 +93,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.js",
-      "sha256": "092ef17419ce39fd4db950e603533d355c649293fce6be68296472b3b5b8b4b4"
+      "sha256": "a6708db92a90d3db244603ef076ddc05a9b49e6860174fabc2cae9f0dfe791b1"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-return.js",
@@ -105,7 +105,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/supplier-allocation.js",
-      "sha256": "258fd5d1c3c47b94193ce3c9aa8c6c926fc94984415e28b1749967dae78bd9d7"
+      "sha256": "9d4207d9306d8589fb9dc72fec830ff1bbce44fb4780a4bab2eded4e8b986b7c"
     },
     {
       "file": "purchase-live/dashboard.js",
@@ -125,7 +125,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/app.js",
-      "sha256": "3d43c574894dd58031c4e91448671300797645333aa2e76701ebd93bc7903e67"
+      "sha256": "9c9424f85986e6b5540392d21a868b191cf706e0fe750a0562783d69145e3a34"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/stock-exceptions.js",

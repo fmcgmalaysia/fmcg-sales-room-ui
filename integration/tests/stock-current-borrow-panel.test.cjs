@@ -85,9 +85,10 @@ test('panel resource/relay builds are exact original overlays, preserve original
     .replace(/\n    if\(message.type==='STOCK_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'');
   assert.equal(stripped, originalBridge);
   const index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
-  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js', 'task-grid.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
-  assert.ok(index.includes('supplier-allocation.js?v=20261023-split-borrow-entry-v4'));
-  assert.ok(index.includes('app.js?v=20261023-purchase-current-stock-v1'));
+  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
+  assert.ok(index.includes('task-grid.js?v=20261024-alloc-entry-v1'));
+  assert.ok(index.includes('supplier-allocation.js?v=20261024-alloc-entry-v1'));
+  assert.ok(index.includes('app.js?v=20261024-alloc-entry-v1'));
   assert.ok(index.includes('stock-control.js?v=20261023-purchase-current-stock-v1'));
   const candidate = fs.readFileSync(path.join(root, 'purchase-ui/app.js'), 'utf8'), originalApp = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
   for (const marker of ['if(control.dataset.planSource)', 'if(control.dataset.planTask)']) {

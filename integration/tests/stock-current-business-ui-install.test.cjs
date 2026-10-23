@@ -31,13 +31,13 @@ test('omitted paired asset, duplicate destination, fixture input and path escape
 });
 test('approval JS and CSS use matching fresh resource versions and retain real CURRENT-only mounting and original mutation route', () => {
   const html = fs.readFileSync(path.join(folder, 'purchase-ui/index.html'), 'utf8');
-  for (const file of ['borrow-approval.js', 'borrow-approval.css']) assert.ok(html.includes(file + '?v=20261023-split-borrow-entry-v4'));
+  for (const file of ['borrow-approval.js', 'borrow-approval.css']) assert.ok(html.includes(file + '?v=20261024-alloc-entry-v1'));
   const approval = fs.readFileSync(path.join(folder, 'purchase-ui/borrow-approval.js'), 'utf8');
   assert.match(approval, /const enabled = meta\?\.schema === 'PURCHASE_TRANSFERS_V2' && meta.stockProtocol === 1/);
   assert.match(approval, /if \(!enabled\) \{[\s\S]*?data-borrow-availability[\s\S]*?return;/);
   assert.match(approval, /consent.checked = false/);
-  const source = fs.readFileSync(path.join(folder, 'purchase-ui/supplier-allocation.js'), 'utf8');
-  assert.match(source, /api.mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
+  const source = fs.readFileSync(path.join(folder, 'purchase-ui/app.js'), 'utf8');
+  assert.match(source, /mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
   assert.doesNotMatch(approval, /EXAMPLE-PO-|fetch\(|postMessage\(/);
 });
 

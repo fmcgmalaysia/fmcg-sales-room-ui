@@ -1,4 +1,13 @@
-CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
+CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
+
+LATEST: ALLOC_ENTRY_20261024.txt supersedes supplier-dialog borrowing placement.
+Candidate ALLOC column/own dialog and explicit current cumulative allocation added;
+local review rebuilt33assets. No Pages/Wix/native/CMS writes. Second option still
+informational, batch numeric coverage unfinished; NOT a completed shipping flow.
+Export-specific prior automatic rejection remains unresolved; no push/bypass.
+Final stock-current suite1307pass0fail29717.3622ms after new ALLOC and consumer
+updates. Candidate original-workflow replay63pass329.4539ms is overlapping coverage.
+These are local tests, including unsafe legacy-writer witnesses; NOT native proof.
 
 LATEST VISIBLE2026-10-24: existing HTTPS Purchase review successfully opened in
 Chrome51427282 and actually clicked to borrowing form. ExampleA borrows30fromB,

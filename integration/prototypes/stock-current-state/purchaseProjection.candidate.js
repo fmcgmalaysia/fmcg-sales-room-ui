@@ -142,7 +142,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   // precede ORIGINAL split entitlements and batch-stock/version calculations below.
   if(current){
     for(const entry of current.taskReceived){const row=rows.find(row=>row.id===entry.taskId&&!row.procurementSource&&!row.specialPurchase);
-      if(!row)throw Error('Current Purchase demand identity missing');row.inc=entry.quantity;}
+      if(!row)throw Error('Current Purchase demand identity missing');row.inc=entry.quantity;row.stockAllocatedCumulative=entry.quantity;}
     for(const entry of current.sourceAvailable){const row=rows.find(row=>row.id===entry.taskId);
       if(!row||!row.po||(row.warehouse?.hasPhysicalReceipt===true?row.warehouse.accepted:0)!==entry.accepted)throw Error('Current Purchase receipt provenance differs');
       row.procurement.availableCtn=entry.availableCtn;row.procurement.allocationEnabled=entry.availableCtn>0;

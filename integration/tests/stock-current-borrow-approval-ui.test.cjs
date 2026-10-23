@@ -119,12 +119,14 @@ test('candidate original overlays include approval assets and existing save mech
     assert.match(execFileSync(process.execPath, [path.join(root, file), '--check'], { encoding: 'utf8' }), /verified/);
   }
   const supplier = fs.readFileSync(path.join(root, 'purchase-ui/supplier-allocation.js'), 'utf8'), index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
-  assert.match(supplier, /api.mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
-  assert.match(supplier, /if\(!state.batchId\)window.purchaseBorrowApproval/); assert.match(supplier, /api.stockActionReady\?\.\(\)!==true/);
-  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261023-split-borrow-entry-v4'));
+  assert.doesNotMatch(supplier, /purchaseBorrowApproval|allocationBorrowApproval/);
+  const app=fs.readFileSync(path.join(root,'purchase-ui/app.js'),'utf8');
+  assert.match(app,/data-current-allocation|dataset.currentAllocation/);
+  assert.match(app,/mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
+  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261024-alloc-entry-v1'));
 });
 
-test('actual generated supplier dialog routes split-batch entry to the same root and refuses to abandon dirty or pending batch edits', () => {
+test('actual generated supplier dialog no longer mounts borrowing in either split or root procurement editing', () => {
   const nodes = new Map(), node = key => {
     if (!nodes.has(key)) nodes.set(key, { innerHTML: '', textContent: '', value: '', insertAdjacentHTML(_, html) { this.innerHTML += html; }, querySelector: selector => node(key + selector) });
     return nodes.get(key);
@@ -142,16 +144,13 @@ test('actual generated supplier dialog routes split-batch entry to the same root
     num: String, dialog() {}, modal: () => ({ classList: { add() {}, contains: () => true } }), cache() {}, status() {},
     savePending: () => pending, stockActionReady: () => !pending, handIcon: () => '' });
   const before = JSON.stringify(workspace);
-  ui.open('A', 'PLAN|1'); assert.equal(batches.length, 1); assert.equal(roots.length, 0);
-  assert.equal(batches[0].rootId, 'A'); pending = true; assert.equal(batches[0].canSubmit(), false);
-  assert.throws(() => batches[0].openRoot('A'), /pending/); pending = false;
+  ui.open('A', 'PLAN|1'); assert.equal(batches.length, 0); assert.equal(roots.length, 0);
   ui.edit({ target: { id: 'allocationReason', value: 'Unsaved reason' } });
-  assert.equal(batches[0].canSubmit(), false); assert.throws(() => batches[0].openRoot('A'), /pending/);
   // Reopen a fresh independent dialog to verify the clean navigation path.
   const clean = window.purchaseSupplierAllocation.create({ workspace: () => workspace, company: () => 'NCT', esc: String,
     num: String, dialog() {}, modal: () => ({ classList: { add() {}, contains: () => true } }), cache() {}, status() {},
     savePending: () => false, stockActionReady: () => true, handIcon: () => '' });
-  clean.open('A', 'PLAN|1'); batches.at(-1).openRoot('A');
-  assert.equal(roots.length, 1); assert.equal(roots[0].rootId, 'A');
+  clean.open('A');
+  assert.equal(roots.length, 0);assert.equal(batches.length,0);
   assert.equal(JSON.stringify(workspace), before);
 });

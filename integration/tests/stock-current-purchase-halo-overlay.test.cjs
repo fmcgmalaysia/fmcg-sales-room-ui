@@ -4,7 +4,7 @@ const { createRequire } = require('node:module');
 const { haloSvg } = require('../prototypes/stock-current-state/transfer-person.cjs');
 const { createPurchaseTransferWorkspace } = require('../prototypes/stock-current-state/purchase-transfer-workspace.cjs');
 const root = path.join(__dirname, '../prototypes/stock-current-state');
-test('both Purchase overlays preserve original heads, with read-only relation panel added only inside supplier dialog', () => {
+test('both Purchase overlays preserve original heads; relation actions are mounted by ALLOC instead of procurement editing', () => {
   assert.match(execFileSync(process.execPath, [path.join(root, 'build-transfer-person-overlays.cjs'), '--check'], { encoding: 'utf8' }), /verified/);
   for (const file of ['task-grid.js', 'supplier-allocation.js']) {
     const source = fs.readFileSync(path.join(root, 'purchase-ui', file), 'utf8'); new vm.Script(source);
@@ -12,7 +12,7 @@ test('both Purchase overlays preserve original heads, with read-only relation pa
     // No event handler/action/permission or existing colour selector replacements.
     const original = fs.readFileSync(path.join(__dirname, '../../purchase-live', file), 'utf8').replace(/\r\n/g, '\n');
     assert.equal((source.match(/data-self-collect/g) || []).length, (original.match(/data-self-collect/g) || []).length);
-    assert.equal(source.includes('purchaseBorrowRelations?.mount'), file === 'supplier-allocation.js');
+    assert.equal(source.includes('purchaseBorrowRelations?.mount'), false);
   }
   const ordinary = '<svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="4"/><path d="M2 19v-3a8 7 0 0 1 16 0v3z"/></svg>';
   assert.equal(haloSvg(ordinary, false), ordinary);

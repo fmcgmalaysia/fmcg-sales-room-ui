@@ -54,7 +54,7 @@ return haloSvg;
     return progress(rows,orders).map((done,i)=>(i===3&&receiptProblem||i===1&&reviewProblem)?'problem':done?'complete':'pending');
   }
   function summaryProgressStates(root,rows,orders){return progressStates(rows,orders).map(state=>totals(rows).customerQty<root.ord&&state==='complete'?'pending':state);}
-  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon,shipmentPlans=[],purchaseDisplayOrder={},displayDraft=null,selectedDisplayRows=new Set()}) {
+  function render({rows,tasks,customers,suppliers,selected,selectedSources,selectionIssue=()=>'',expanded,active,canMove,orders,age,shipmentDate=value=>value||'—',quantityCells,drafts,riskDeal,supplierIcon,shipmentPlans=[],purchaseDisplayOrder={},displayDraft=null,selectedDisplayRows=new Set(),allocations,stockAllocationView}) {
     const roots = rows.filter(row=>!row.procurementSource), name = id=>suppliers.find(row=>row.id===id)?.shortName || suppliers.find(row=>row.id===id)?.name || 'Select Supplier 选择供应商';
     const shortName = row=>customers.find(item=>item.id===row.customerId)?.shortName || customers.find(item=>item.id===row.customerId)?.name || row.customerId;
     const person=(state,source)=>'<span class="supplier-head '+state+'" '+(source?.procurement?.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true">'+currentStockPerson("<svg viewBox=\"0 0 20 20\"><circle cx=\"10\" cy=\"5\" r=\"4\"/><path d=\"M2 19v-3a8 7 0 0 1 16 0v3z\"/></svg>",source?.stockTransferOutstanding===true)+'</span>';
@@ -106,7 +106,22 @@ return haloSvg;
         return html+(batchIndex===0&&group.some(source=>source.procurement?.totalCtn>0)?group.map((source,i)=>line(source,index,row,i)).join(''):'');
       }).join('');
     }
-    const markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
+    let markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
+    if(active)markup=markup.replace(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/g,(all,attrs,body)=>{
+      const rootId=(attrs.match(/data-id="([^"]+)"/)||attrs.match(/data-split-parent="([^"]+)"/))?.[1];
+      const row=tasks.find(t=>t.id===rootId),split=/data-split-parent=/.test(attrs);
+      let cell='<td class="allocated-quantity"></td>';
+      if(row){
+        const known=stockAllocationView==='CURRENT_V2'&&Array.isArray(allocations);
+        const targets=known?allocations.flatMap(a=>a.targets||[]).filter(t=>t.taskId===row.id):[];
+        const amount=known&&Number.isSafeInteger(row.stockAllocatedCumulative)&&row.stockAllocatedCumulative>=0?row.stockAllocatedCumulative:null;
+        const links=sources(row,tasks).some(t=>t.stockTransferOutstanding===true);
+        const deficit=amount!==null&&amount<row.ord;
+        cell='<td class="allocated-quantity">'+(split?'':amount===null?'':quantity(amount))
+          +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
+      }
+      return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">[\s\S]*?<\/td>)/,'$1'+cell)+'</tr>';
+    });
     return active&&window.purchaseDisplayRows&&Object.keys(purchaseDisplayOrder).length?window.purchaseDisplayRows.decorate(markup,{tasks,shipmentPlans,purchaseDisplayOrder,draft:displayDraft,selected:selectedDisplayRows,canMove}):markup;
   }
   window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
