@@ -1,5 +1,29 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+USER PRIORITY OVERRIDE 2026-10-23 — INTERFACE AND VISIBLE BUSINESS FLOW FIRST:
+User explicitly rejected continued invisible backend testing before usable UX.
+Stop expanding/running broad native/capacity/recovery tests as the next deliverable.
+Next scoped work: finish/show the ACTUAL existing Sales/Purchase/Warehouse interface
+for customer split + purchaser-approved borrowing + original-person halo/relation
+details + receipt repayment, then walk user-visible TESTING01/02 acceptance toLoaded.
+Reuse existing candidate UI/backend work; do not invent a second unrelated demo
+website, financial features or another stock authority. Show candidate vs published
+and real-save-enabled vs disabled honestly. Minimal business-write safety remains;
+no half-stock ACTIVE or pretending a UI-only publication is functional borrowing.
+User awake and available; ask a concrete UX question only when it materially matters.
+Do not use old heartbeat "sleeping"/b3cc6d4 text as current factual status.
+
+Fresh real public Purchase check: existing companyNCT, TESTING01/02,16PendingPO;
+iframe purchase-live/?v=20261020-split-controls-v2. Opened original TESTING01 7UP
+person/supplier-plan dialog:300CTN,WAITING, no new borrowing section/halo/approval.
+NO Save/PO/stock mutation. Private live-purchase-no-borrow-entry-20261023.png saved;
+existing real Purchase tab left open for user. Sales real OrderProgress TESTING02
+7items/660CTN shows original Adjust requested quantity buttons; opening via AX
+failed stale backend node then detached node, stopped this click path, no Save.
+Chrome connection NEW inventory5 available after prior browser4 outage; new UI
+review session only, NOT resumption of unknown native call20. Do not Run that test.
+
+
 2026-10-23 NATIVE300 STOPPED ON UNKNOWN UI OUTCOME, DO NOT RUN AGAIN:
 NATIVE_300_COMMIT_REHEARSAL.txt + BATCHED_IMAGE_READS.txt. Nineteen native executor
 calls CONFIRMED, last BEFORE380/901, generation0/pending. Call20 ADVANCE was marked
