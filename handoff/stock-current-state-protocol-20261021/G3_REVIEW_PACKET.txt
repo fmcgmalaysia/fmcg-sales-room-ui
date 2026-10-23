@@ -1,6 +1,13 @@
 2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
 
 LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- NATIVE_300_PLAN_STAGING_ACCEPTANCE.txt: actual mock-prepared original300receipt
+  plan901images/596928bytes now EXACT native SDK staged/readback: intentional first
+  fragment interruption then same plan continuation;4queries/12inserts total,
+  11fragments+manifest retained, no patch/delete/lock/business/ACL/Publish.16affected
+  tests pass. This is NOT native whole300preparation or901imagecommit/fence/recovery
+  acceptance. Actual Babel>500KB formatting warning retained. User ordinary-testing
+  autonomy/visible-Wix requirement recorded separately; no early blanket ACL grant.
 - NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt: exact separate human grants received;
   actual Wix INIT+TYPE each ranONCE and passed.10reads/2inserts/7patch attempts and
   9queries/1insert/1patch respectively.3fixed fixtures retained, only granted TYPE
