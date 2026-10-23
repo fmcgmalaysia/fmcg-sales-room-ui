@@ -56,6 +56,12 @@ function verifiedCurrentPurchaseProjection(view,company){
     ||new Set(view.allocations.map(row=>row.sourceTaskId)).size!==view.allocations.length
     ||view.allocations.some(row=>!row.sourceTaskId||!Array.isArray(row.targets)||new Set(row.targets.map(target=>target.taskId)).size!==row.targets.length
       ||row.targets.some(target=>!target.taskId||!count(target.quantity))))throw Error('Known current Purchase projection quantities required');
+  for(const row of view.taskReceived)if(row.allocationFacts!==undefined){
+    const f=row.allocationFacts;
+    if(!f||!['usable','held','dispatched','availableToArrange'].every(k=>count(f[k]))
+      ||typeof f.review!=='boolean'||f.availableToArrange!==(f.review?0:Math.max(0,f.usable-f.held))
+      ||f.usable+f.dispatched!==row.quantity)throw Error('Current allocation availability requires review');
+  }
   return view;
 }
 export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff, currentStock }) {
@@ -154,7 +160,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   // precede ORIGINAL split entitlements and batch-stock/version calculations below.
   if(current){
     for(const entry of current.taskReceived){const row=rows.find(row=>row.id===entry.taskId&&!row.procurementSource&&!row.specialPurchase);
-      if(!row)throw Error('Current Purchase demand identity missing');row.inc=entry.quantity;row.stockAllocatedCumulative=entry.quantity;}
+      if(!row)throw Error('Current Purchase demand identity missing');row.inc=entry.quantity;row.stockAllocatedCumulative=entry.quantity;
+      if(entry.allocationFacts)row.stockAllocationFacts={...entry.allocationFacts};}
     for(const entry of current.sourceAvailable){const row=rows.find(row=>row.id===entry.taskId);
       if(!row||!row.po||(row.warehouse?.hasPhysicalReceipt===true?row.warehouse.accepted:0)!==entry.accepted)throw Error('Current Purchase receipt provenance differs');
       row.procurement.availableCtn=entry.availableCtn;row.procurement.allocationEnabled=entry.availableCtn>0;

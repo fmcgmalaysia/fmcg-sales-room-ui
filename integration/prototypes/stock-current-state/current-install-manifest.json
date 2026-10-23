@@ -139,7 +139,7 @@
       "source": "purchaseProjection.candidate.js",
       "target": "purchaseProjection.js",
       "kind": "PATCH",
-      "sha256": "e3ba822d7d827db2efbacf0c08d5dc43e18b94376b5a7907d3678415ab63d047",
+      "sha256": "1352ce352ca28516a0173f719a9c80193a95099f3e032824d62b19a726b3e84f",
       "beforeSha256": "eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf"
     },
     {
@@ -203,7 +203,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "109183036b2431dd0181c1582afd4d10873211d060aaa1cecf3baa3656f4868c",
+      "sha256": "5764035d8b9df77df65e7dea26d22d7f9f301c891e06dbc4c23552ad7b1f2443",
       "beforeSha256": null
     },
     {
@@ -1195,7 +1195,7 @@
       "system": "MASTER",
       "target": "purchaseProjection.js",
       "source": "integration/prototypes/stock-current-state/purchaseProjection.candidate.js",
-      "sha256": "e3ba822d7d827db2efbacf0c08d5dc43e18b94376b5a7907d3678415ab63d047",
+      "sha256": "1352ce352ca28516a0173f719a9c80193a95099f3e032824d62b19a726b3e84f",
       "exports": [
         "PURCHASE_COLLECTIONS",
         "PURCHASE_CURRENT_PROJECTION_VERSION",
@@ -1496,7 +1496,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "109183036b2431dd0181c1582afd4d10873211d060aaa1cecf3baa3656f4868c",
+      "sha256": "5764035d8b9df77df65e7dea26d22d7f9f301c891e06dbc4c23552ad7b1f2443",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",

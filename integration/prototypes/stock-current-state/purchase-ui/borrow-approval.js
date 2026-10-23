@@ -142,13 +142,18 @@
     const batch=batchId?root.stockAllocatedBatches?.find(b=>b.id===batchId):null;
     const batchKnown=!batchId||batch&&count(batch.demand)&&count(batch.allocated)&&batch.allocated<=batch.demand;
     const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received<planned&&(!batchId||batch.allocated<batch.demand);
+    const facts=root.stockAllocationFacts,available=known&&facts&&['usable','held','dispatched','availableToArrange'].every(k=>count(facts[k]))
+      &&typeof facts.review==='boolean'&&facts.usable+facts.dispatched===allocated
+      &&facts.availableToArrange===(facts.review?0:Math.max(0,facts.usable-facts.held))?facts.availableToArrange:null;
     container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
       +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
+      +'<p>Available to arrange 可安排 <b>'+esc(available??'Unconfirmed 尚未确认')+'</b>'+(available===null?'':' · Held 备货占用 '+esc(facts.held)+' · Dispatched 已发货 '+esc(facts.dispatched))+'</p>'
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '
-      +'<button type="button" class="btn" data-alloc-existing>2 Use available stock 按现有数量安排</button><p data-alloc-message role="status"></p>';
+      +'<button type="button" class="btn" data-alloc-existing '+(available>0?'':'disabled')+'>2 Use available stock 按现有数量安排</button><p data-alloc-message role="status"></p>';
     container.querySelector('[data-alloc-borrow]').onclick=()=>{if(canBorrow&&canSubmit())showBorrow();};
     container.querySelector('[data-alloc-existing]').onclick=()=>{
+      if(!(available>0)||!canSubmit())return;
       container.querySelector('[data-alloc-message]').textContent='Continue through the confirmed shipment and Support packing workflow. This choice does not confirm dispatch or change a shipment batch. 请按已确认的发货批次进入Support备货；此处不确认实物发货或修改批次。';
     };
   }

@@ -17,10 +17,10 @@
       { id: 'EXAMPLE-SUP-B', name: 'Example Supplier B', shortName: 'EXAMPLE SUPPLIER B' }],
     stockAllocationView:'CURRENT_V2',allocations:[],
     tasks: [{ ...base, id: idA, customerId: 'EXAMPLE-A', orderId: 'EXAMPLE-ORDER-A', sourceLineId: 'EXAMPLE-LINE-A',
-      stockAllocatedCumulative:80,procurement:{...base.procurement,totalCtn:90,customerCtn:90},
+      stockAllocatedCumulative:80,stockAllocationFacts:{usable:80,held:0,dispatched:0,availableToArrange:80,review:false},procurement:{...base.procurement,totalCtn:90,customerCtn:90},
       supplierId: 'EXAMPLE-SUP-A', po: 'EXAMPLE-PO-A', warehouse: { hasPhysicalReceipt: true, accepted: 80 } },
       { ...base, id: idB, customerId: 'EXAMPLE-B', orderId: 'EXAMPLE-ORDER-B', sourceLineId: 'EXAMPLE-LINE-B',
-        stockAllocatedCumulative:100,supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } }],
+        stockAllocatedCumulative:100,stockAllocationFacts:{usable:100,held:0,dispatched:0,availableToArrange:100,review:false},supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } }],
     shipmentPlans: [], stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', stockProtocol: 1,
       stockBuild: 'UX-REVIEW-ONLY', stockGeneration: generation, generation } };
   const summary = document.querySelector('#uxReviewResult');

@@ -19,7 +19,10 @@ function prepareCurrentPurchaseProjection({ context, states, readAllocations, ge
     const current=currentAllocationContext({state,context,readAllocations:()=>prior});
     for (const task of state.tasks) {
       if (demands.has(task.id)) throw Error('Ambiguous Purchase demand coverage');
-      demands.set(task.id,{taskId:task.id,quantity:current.tasks.find(row=>row.id===task.id).inc});
+      const usable=state.sources.reduce((n,s)=>n+(s.claims[task.id]||0),0),held=state.packingHolds.heldByTask[task.id];
+      const review=state.packingHolds.legacyBlockedByTask?.[task.id]===true;
+      demands.set(task.id,{taskId:task.id,quantity:current.tasks.find(row=>row.id===task.id).inc,
+        allocationFacts:{usable,held,dispatched:task.dispatched,availableToArrange:review?0:Math.max(0,usable-held),review}});
     }
     for (const source of state.sources) {
       if (sources.has(source.id)) throw Error('Ambiguous Purchase source coverage');

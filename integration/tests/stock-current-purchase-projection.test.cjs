@@ -45,6 +45,8 @@ test('same-generation current reader uses actual borrowing ownership before orig
   const before=JSON.stringify([...f.db]),legacy=load('purchaseProjection.js').projectPurchaseWorkspace(f.originalArguments),result=(await f.read()).rows;
   assert.deepEqual(copy(legacy.tasks.map(row=>[row.id,row.inc])),[['A',null],['B',100]]);
   assert.deepEqual(copy(result.workspace.tasks.map(row=>[row.id,row.inc])),[['A',30],['B',70]]);
+  assert.deepEqual(copy(result.workspace.tasks.find(row=>row.id==='A').stockAllocationFacts),{usable:30,held:0,dispatched:0,availableToArrange:30,review:false});
+  assert.deepEqual(copy(result.workspace.tasks.find(row=>row.id==='B').stockAllocationFacts),{usable:70,held:0,dispatched:0,availableToArrange:70,review:false});
   assert.equal(result.workspace.tasks.find(row=>row.id==='B').warehouse.accepted,100);
   assert.equal(result.workspace.tasks.find(row=>row.id==='B').warehouse.stock.availablePhysical,100);
   assert.equal(result.workspace.tasks.find(row=>row.id==='B').procurement.availableCtn,0);

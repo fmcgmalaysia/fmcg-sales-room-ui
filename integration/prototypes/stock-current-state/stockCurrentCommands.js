@@ -5560,7 +5560,7 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
 module.exports = { createBorrowCurrentQuery };
 
 },
-// purchase-current-projection.cjs sha256:a7524d300f86d39638f2303b5affea3b516f5184ca5b2112c9f19695d5fd50c8
+// purchase-current-projection.cjs sha256:f384ad437607cb59d7ef5c5307cd8a80e6fe2be0a27b603d2fe931d861e421a8
 "purchase-current-projection.cjs": (load, module) => {
 'use strict';
 
@@ -5583,7 +5583,10 @@ function prepareCurrentPurchaseProjection({ context, states, readAllocations, ge
     const current=currentAllocationContext({state,context,readAllocations:()=>prior});
     for (const task of state.tasks) {
       if (demands.has(task.id)) throw Error('Ambiguous Purchase demand coverage');
-      demands.set(task.id,{taskId:task.id,quantity:current.tasks.find(row=>row.id===task.id).inc});
+      const usable=state.sources.reduce((n,s)=>n+(s.claims[task.id]||0),0),held=state.packingHolds.heldByTask[task.id];
+      const review=state.packingHolds.legacyBlockedByTask?.[task.id]===true;
+      demands.set(task.id,{taskId:task.id,quantity:current.tasks.find(row=>row.id===task.id).inc,
+        allocationFacts:{usable,held,dispatched:task.dispatched,availableToArrange:review?0:Math.max(0,usable-held),review}});
     }
     for (const source of state.sources) {
       if (sources.has(source.id)) throw Error('Ambiguous Purchase source coverage');

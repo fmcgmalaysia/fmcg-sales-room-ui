@@ -1,10 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),root=path.join(__dirname,'../prototypes/stock-current-state');
-function fixture({planned=90,received=80,allocated=80,current=true}={}){
+function fixture({planned=90,received=80,allocated=80,current=true,facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
   const controls=new Map(),container={innerHTML:'',querySelector(s){if(!controls.has(s))controls.set(s,{});return controls.get(s);}};
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/borrow-approval.js'),'utf8'),{window});
   let opened=0,ready=true;
-  const workspace={stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockAllocatedCumulative:allocated,procurement:{customerCtn:planned},warehouse:{accepted:received}}]};
+  const workspace={stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}}]};
   window.purchaseBorrowApproval.mountAllocation({container,workspace,rootId:'A',esc:String,canSubmit:()=>ready,showBorrow:()=>opened++});
   return {container,controls,open:()=>opened,busy:()=>ready=false};
 }
@@ -17,6 +17,14 @@ test('fully received purchase does not authorize borrowing to cover unpurchased 
 });
 test('existing quantity choice cannot silently write a shipment or simulate dispatch',()=>{
   const f=fixture();f.controls.get('[data-alloc-existing]').onclick();assert.match(f.controls.get('[data-alloc-message]').textContent,/不确认实物发货/);assert.equal(f.open(),0);
+});
+test('cumulative allocated80cannot be offered again when shipped, held or unconfirmed',()=>{
+  for(const facts of [undefined,{usable:0,held:0,dispatched:80,availableToArrange:0,review:false},
+    {usable:80,held:80,dispatched:0,availableToArrange:0,review:false},{usable:80,held:0,dispatched:0,availableToArrange:80,review:true}]){
+    const f=fixture({facts:facts??null});f.controls.get('[data-alloc-existing]').onclick();
+    assert.match(f.container.innerHTML,/data-alloc-existing disabled/);assert.equal(f.controls.get('[data-alloc-message]')?.textContent,undefined);
+  }
+  const f=fixture({facts:{usable:80,held:50,dispatched:0,availableToArrange:30,review:false}});assert.match(f.container.innerHTML,/可安排 <b>30/);
 });
 test('actual grid inserts one aligned ALLOC cell per row; receipts stay 80 when current allocation becomes 90',()=>{
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/task-grid.js'),'utf8'),{window});
