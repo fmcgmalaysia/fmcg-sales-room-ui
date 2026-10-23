@@ -1,5 +1,12 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST NATIVE PURCHASE: MASTER_PURCHASE_BACKEND_PARITY_20261024.txt preserves
+full saved-editor readback of purchaseProjection/purchaseWorkspace.web/
+purchaseOperations.web. All3match repository and install-before hashes; private
+exact preimages saved. Existing Wix ticket page only shows Request submitted,
+not a readable expert reply; no conclusion about email inbox. No native writes,
+installation/deployment/export/activation; final1337test result reused unchanged.
+
 LATEST BATCH HOLDS: BATCH_HOLD_ATTRIBUTION_20261024.txt adds same-generation
 batch availability from existing instruction/current packing links plus immutable
 link identity audit (never audit quantities). First batch hold80no longer consumes
