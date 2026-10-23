@@ -1,5 +1,12 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST STOCK/READ DEPENDENCIES: MASTER_STOCK_READ_DEPENDENCY_PARITY_20261024.txt
+adds16full original stock/exception/Warehouse/intake/quantity/margin readbacks,
+all exact repository+manifest+private-copy matches.62existingMASTER originals now
+match:23patch before-images+39unchanged dependencies;16MASTER+5Source unchanged
+and2Sourcepatch originals remain outside this overnight set. No code/native/deploy/
+export change or test rerun. This remains pre-install parity, not live acceptance.
+
 LATEST WORKFLOW DEPENDENCIES: MASTER_WORKFLOW_DEPENDENCY_PARITY_20261024.txt adds
 15full unchanged Purchase/Sales split/financial editor readbacks, exact repository/
 manifest/private-copy matches.46existingMASTER originals now match:23patch before-
