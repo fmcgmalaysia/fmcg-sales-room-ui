@@ -1,4 +1,22 @@
-CURRENT 2026-10-23 — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
+CURRENT 2026-10-23 — APP RESTART RESTORES CMS; NCT TASK STOCK FIELDS SAVED
+
+User restarted desktop app. Same original Wix51426657/tab and reinstalled
+extension, browser3: read-only exact native field-ID reconciliation succeeded.
+NCTActivity pending Object added ONCE/read back; all18required fields now present
+through native UI, not SDK acceptance. Two regular activity indexes saved/read:
+SC_ACTIVE_PRODUCT(company,stockKey,status), SC_REPAID_SOURCE(company,
+replacementSourceId,repaidQuantity), allASC. SC_TASK_REL not saved: third-field
+status selector failed twice; canceled form and confirmed list lacks this index.
+STOP that specific index path; no alternate selector/control route or Save replay.
+Independent native field forms still work. NCTTasks existing lastCostCaptureTime
+confirmed Date and Time then canceled; added company/stockCommitVersion Text and
+stockCounterSchema/stockDispatchedCumulative/stockCounterGeneration Number once,
+each exact-ID readback confirmed. No business rows, ACL, production code or release
+changed. Remaining original tables still require native review/setup. Evidence
+and screenshot hashes in CMS_FIELDS_INDEXES_NATIVE_20261023.txt. Local only; no
+GitHub export retry. Old schema tester/300 hard stops remain; ACTIVE OFF.
+
+PREVIOUS — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
 
 LATEST USER SCREENSHOT RECONCILES LAST TWO SAVES: actual NCT Activity Manage
 Fields shows repaidQuantity with Number icon and participantTaskIds with Tags

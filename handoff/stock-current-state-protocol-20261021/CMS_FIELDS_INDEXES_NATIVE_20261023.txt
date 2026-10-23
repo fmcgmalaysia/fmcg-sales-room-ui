@@ -205,3 +205,78 @@ recovery, not claimed to resolve the fault. After user changed-state confirmatio
 only fresh read-only browser binding first; no automatic mutation/test replay.
 All prior native schema tester/300 stops, ACTIVE OFF and no-publication gates
 remain. Local text record only; no further push/export attempted.
+
+AFTER USER DESKTOP-APP RESTART — NATIVE CONNECTION AND ADDITIVE SETUP
+
+Same extension f71fb06d-4d92-4e27-add5-2fd2906933bb, browser3, original51426657
+Wix tab. Initial read-only field-ID reconciliation succeeded without reload or
+settings/permission/CDP changes. Exact IDs checkpointGeneration/generation/
+transferIndexVersion/repaidQuantity/participantTaskIds present, no field modal.
+pending absent. Added pending Object ONCE after exact type/name/ID checks and
+confirmed native list exact-ID count1. NCTActivity required18fields now present
+in native UI; SDK metadata/typed query/roundtrip still UNCONFIRMED.
+
+Original activity index list had only two system indexes. Created and read back
+REGULAR indexes SC_ACTIVE_PRODUCT(company,stockKey,status) and SC_REPAID_SOURCE
+(company,replacementSourceId,repaidQuantity), all ASC. No unique/system change.
+SC_TASK_REL attempted but NOT SAVED: name/company/participantTaskIds entered;
+third status dropdown click did not expand, no option found. Fresh visible-input
+inspection then input fill failed with timeout. Two failures STOP this exact
+third-field selector path. Read-only state confirmed third field blank; canceled
+form. Final native list contains only original2system +above2regular indexes,
+not SC_TASK_REL. No Save attempted/repeated for the incomplete index. Connection
+remains usable for independent native field work; not globally disconnected.
+
+NCTTasks original field-ID list captured. Existing lastCostCaptureTime exactID
+and Date and Time type opened read-only, Cancel, no Save. Missing required fields
+then added individually via short type-form and fill/Save/readback calls:
+ TEXT company stockCommitVersion
+ NUMBER stockCounterSchema stockDispatchedCumulative stockCounterGeneration
+All FIVE saved ONCE and exact native Manage Fields ID count1 confirmed. Original
+fields/definitions/rows/quantities/ACL unchanged. Other original tables not yet
+augmented in this increment. No new business items, native tests/Run, old-lock
+release, permissions, Pages resources, Wix whole-site Publish or public acceptance.
+
+Private PNG evidence in root stock-current-state-spec-20261021/private-evidence:
+ nctactivity-pending-saved-after-app-restart-20261023.png
+ SHA256 6bd9b6db8e0d033f9651b6f127036376d706c2bae30c103c1983583c34849d9f
+ nctactivity-two-indexes-after-app-restart-20261023.png
+ SHA256 00579341848af7bde6a27e6e8ebb4b3aead4d8651f7a89414ef112173a4ba878
+ ncttasks-fields-before-stock-20261023.png
+ SHA256 29f0b47b19741e0cb6a4341f880d6ac90fbbce933d31b967c9130c0c58719c27
+ ncttasks-stock-fields-saved-20261023.png
+ SHA256 6b51ab8237718c92d9b85d942a74d35d915646fd815e95831230ced8af41fa99
+
+Unchanged candidate1295-test output reused, not native acceptance. Code remains
+e331024; local documentation only. GitHub export refusal not retried/bypassed.
+All legacy drain/fence/native type/index/capacity/recovery/install/migration/
+shadow/four-stage public gates remain, ACTIVE/invoice/physical exit OFF.
+
+SUBSEQUENT ORDER/PO SCHEMA — EXACT UI READBACK, NO ITEM WRITES
+
+NCTOrders and NCTOrders1 native original fields inspected. For BOTH companies,
+estimatedShipmentDate exact ID has Date type; masterReceivedTime and
+salesSubmissionTime exact IDs have Date and Time type. All opened read-only and
+canceled, no definition Save. User explicitly clarified estimated shipment date
+needs date only, no time. Existing Date definition preserved, NOT a schema fault
+to repair. Added company and stockCommitVersion Text to EACH order table, once
+per field, exact native Manage Fields ID readback confirmed.
+
+PurchaseOrders original company exactID/type Text confirmed read-only, canceled;
+stockCommitVersion Text added once/readback confirmed. One ambiguous Company
+text locator matched table header and Manage Fields list before any click; scoped
+to the observed exact company field row, then successful readonly inspection.
+No duplicate field, business row, ACL, original quantity or payment change.
+
+Evidence same private directory:
+ nctorders-stock-fields-date-only-20261023.png
+ SHA256 ea2f9f66794c4ba382aeb6150bfbd92d14f792bf63727dd654cc39508fe8c1fc
+ ghrorders-stock-fields-date-only-20261023.png
+ SHA256 ccdd4d0e0f9046719e0474fcc7581389d7906f4da45b2d4a40f387fcb2775379
+ purchaseorders-stock-version-20261023.png
+ SHA256 440d2d7be043f8f0e0c67bd56cf4e3ac9cdebe8f902fd1bb3587c3eb16e901e1
+
+GHR Tasks currently open in Manage Fields, original IDs captured, no additions
+there yet. No field modal remains open. GHR Activity still untouched. Candidate
+date-only mapping correction separately in progress; original production code
+unchanged. No stopped index/schema/300 retry, GitHub export or deployment.
