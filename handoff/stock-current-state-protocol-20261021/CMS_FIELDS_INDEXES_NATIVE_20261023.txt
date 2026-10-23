@@ -358,3 +358,70 @@ field-only additions. Actual native original-table metadata/typed queries/index
 ACTIVE/capacity/recovery/install/drain/migration/shadow/public acceptance remain
 OPEN. No main merge, push/export retry, permissions, Pages/Wix Publish, test item
 creation or historical native300 continuation/lock release. Heartbeat PAUSED.
+
+FOLLOW-UP HUMAN RESTART / CURRENT NATIVE READ-ONLY DIAGNOSTIC
+
+User screenshot a75f3368 shows unsaved Choose field type dialog, no new field
+name/ID or Save stage. User subsequently canceled and confirmed AUTOSAVE, then
+fully restarted Chrome/GPT as guided. Later screenshot068b4645 shows actual HTTPS
+MASTER GHR Activity empty table, no field modal, Last saved12minutes ago. This
+settles the prior preparation state without any field Save replay. It does not
+prove the missing8fields exist or give SDK schema/index acceptance.
+
+Current tool surface exposes native Windows @oai/sky instead of former CUA browser
+extension API. Used current computer-use26.1016.62342 guidance/API/confirmations.
+Read-only list_apps finds ONE Chrome window66680. First attempt on user's Chrome
+internal extension settings page stopped because current browser URL could not
+be reliably established by safety enforcement. Did not bypass or change settings.
+After user independently returned to actual authorized HTTPS MASTER, native
+get_window_state reads actual editor URL and GHR Activity table successfully.
+Do not describe all these distinct outcomes as extension disconnection.
+
+One Manage Fields AX click failed coordinate input geometry unavailable. Fresh
+screenshot/text then exposed mismatch: text was Chrome while screenshot captured
+GPT in foreground. No input on that mismatched image. Activated ONLY returned
+Chrome window, refreshed; actual Chrome screenshot and AX then aligned. Second
+AX click failed element874 unavailable in cached app state for chrome.exe. Both
+were ordinary input/location errors, not safety denial; no Save/data write and
+no repeated same failed click. Asked human to open Manage Fields. Subsequent
+native read confirms heading Manage Fields and Add Field; screenshot shows GPT
+window covering Chrome right side. Asked human to move/minimize GPT before any
+further UI input. No invented coordinates, other browser profile, CDP or bypass.
+Do not persist signed CMS iframe instance URLs or unrelated chat screenshots.
+
+FOCUSED OLD-EXECUTION REVIEW — NO SAFE CUTOVER CLAIM
+
+Reused actual retained original cost/GP admission witnesses, current native Admin
+root and existing bootstrap checks; no witness rerun or full tests for this review.
+Recovered current authoritative code remains11a7d89, local record checkpointd193ee1.
+The latest general authorization does not itself prove a platform guarantee.
+
+Primary docs retrieved (not third-party snippets):
+ https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+ Backend request timeout can close client connection while server code continues.
+ https://dev.wix.com/docs/develop-websites-sdk/code-your-site/work-with-data/data-api/about-data-hooks
+ Hooks cover Velo, SDK, REST, datasets/manual operations and can reject mutations.
+ https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/hooks/using-data-hooks
+ Hooks live in backend data.js and run before/after collection operations.
+None of those retrieved pages establishes that an old paused execution must use
+newly published hooks, a database-admitted old write is canceled, or a publish/
+empty-lock/elapsed wait proves per-site all-execution drain. These points remain
+UNKNOWN; this is not a claim that Wix has no supported mechanism.
+
+Decision: keep verifyLegacyDrain refusal and EMPTY native writer coverage. Do not
+replace it with true, a timestamp, an administrator checkbox, another mode read,
+unverified new data.js hooks or data-clearing workaround. No new competing table,
+ID renaming, original writer refactor, API/ACL change, lock stealing or cleanup.
+Minimum provider questions needed for an implementation decision:
+ 1. Supported operation or documented guarantee to prevent ALL old site-code
+    executions, including ones awaiting upstream HTTP/DB calls, from issuing any
+    later collection mutation; exact acknowledgement/failure semantics.
+ 2. Whether already accepted Wix Data requests may finish after that boundary,
+    and how their completion or cancellation can be positively established.
+ 3. If hooks are suggested, which deployed hook version an already-running old
+    execution uses, how suppressHooks/SDK calls behave, and whether the check and
+    final write can race a cutover; exact supported server-side guarantee required.
+No Wix support communication/ticket sent. A platform answer can establish a next
+step, but cannot substitute native boundary rehearsal and all-writer acceptance.
+Independent schema/index completion still in progress, not exhausted. No release,
+GitHub export retry, native tester/300 replay, mode switch or business item write.

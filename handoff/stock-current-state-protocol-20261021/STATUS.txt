@@ -1,5 +1,29 @@
 CURRENT 2026-10-23 — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
 
+LATEST USER RESUMPTION / FOCUSED CUTOVER REVIEW: user authorized continuing to
+testable release, is at computer and can open pages. No new model/agent created.
+Official compute documentation still explicitly permits backend execution after
+client timeout. Data hooks can reject writes but retrieved primary docs do NOT
+establish hook-version selection for already-admitted old executions, nor that
+an already accepted storage write can be canceled at cutover. A hook or second
+mode read alone is NOT a proven fix; verifyLegacyDrain remains deliberately shut.
+Provider termination/drain contract or separately reviewed equivalent database
+boundary remains a real engineering prerequisite, not ordinary-consent waiting.
+
+User canceled incomplete field-type chooser, confirmed autosave and restarted
+Chrome/GPT, then returned actual MASTER GHR Activity screenshot. Current Windows
+read-only tools successfully see original HTTPS MASTER/GHR Activity, empty table;
+original extension connection stability is NOT thereby proven. Internal Chrome
+settings read previously safety-stopped on unconfirmed URL, not proof of malware
+or wrong permission. Current Manage Fields clicks using accessibility index failed
+first missing geometry, then missing cached element after refresh/activation.
+No Save/item/schema mutation issued. Text/screenshot mismatch observed while GPT
+window obscured Chrome; activation aligned once. User manually opened Manage
+Fields (native heading/button readback), but GPT window then covered its right
+side. Asked user to move/minimize GPT, not change permissions/reinstall/CDP. Stop
+repeating failed AX clicks; reobserve actual visible state before new action.
+All prior specific native tester/300 and NCT third-index stops remain unchanged.
+
 LATEST NATIVE PROGRESS/CONNECTION STOP: user suggested duplicating NCT. Reused
 the SAME required field list on EXISTING fixed-ID GHR tables instead of creating
 duplicate tables or copying NCT items. NCTTasks1 now has all5new stock fields
