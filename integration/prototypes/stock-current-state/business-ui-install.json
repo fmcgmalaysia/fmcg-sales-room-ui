@@ -60,7 +60,7 @@
       "source": "purchase-ui/app.js",
       "target": "purchase-live/app.js",
       "kind": "PAGES",
-      "sha256": "92538e16b5763930855c5ec80c7e82ad2b95ff13dbbee2b3958a8b46cdc3ac36",
+      "sha256": "d160ac07052114b558c31960bfef72ed90485b8520c29696b61dc20a140ff8a0",
       "beforeSha256": "25d4e21c41573b53816576e5726d2b2be64c4f43f344ad15a9b0726d755b4461"
     },
     {

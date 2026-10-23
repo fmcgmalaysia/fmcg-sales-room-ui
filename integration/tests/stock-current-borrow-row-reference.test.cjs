@@ -47,3 +47,18 @@ test('generated ALLOC dialog embeds the exact tested resolver; all original rela
   assert.match(source, /operation:'BORROW_APPROVE',input/); assert.match(source, /operation:'BORROW_RETURN',input/);
   assert.doesNotMatch(allocationRowLabel.toString(), /localStorage|postMessage|\.archived\s*=|rowNumber\s*=/);
 });
+
+test('actual generated outstanding-view route supplies the same fresh row resolver instead of exposing internal task IDs', () => {
+  const source=fs.readFileSync(path.join(checkout,'integration/prototypes/stock-current-state/purchase-ui/app.js'),'utf8');
+  const route=source.match(/    else if\(view==='borrowing'\)\{[\s\S]*?(?=    else if\(view==='inventory'\))/)?.[0];
+  assert.ok(route,'existing outstanding route required');
+  let mounted,numbers=['102'];
+  const data={tasks:[{id:'A'},{id:'B',archived:true}]},container={};
+  const document={querySelector:()=>container,querySelectorAll:()=>numbers.map(textContent=>({dataset:{id:'A'},querySelector:()=>({textContent})}))};
+  vm.runInNewContext(route.replace('else if','if'),{view:'borrowing',app:{},document,data,readOperation(){},esc:String,
+    window:{purchaseBorrowOutstanding:{mount:args=>{mounted=args;}}}});
+  assert.equal(typeof mounted.rowLabel,'function');assert.equal(mounted.rowLabel('A'),'ROW 102');
+  numbers=['007','105'];assert.equal(mounted.rowLabel('A'),'ROWS 007, 105');
+  numbers=[];assert.equal(mounted.rowLabel('A'),'Not in current view 当前未显示');assert.equal(mounted.rowLabel('B'),'Archived 已归档');
+  assert.equal(mounted.rowLabel('MISSING'),'Not in current view 当前未显示');
+});

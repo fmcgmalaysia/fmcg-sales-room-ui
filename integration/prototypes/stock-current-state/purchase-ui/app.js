@@ -569,6 +569,19 @@ const stages=[
     else if(view==='borrowing'){
       app.innerHTML='<section id="purchaseBorrowOutstanding"><p role="status">Borrowing view unavailable 请重新载入调货列表。</p></section>';
       window.purchaseBorrowOutstanding?.mount({container:document.querySelector('#purchaseBorrowOutstanding'),workspace:data,read:readOperation,esc,
+        rowLabel:id=>(function allocationRowLabel(document, workspace, taskId) {
+  // Display references are resolved anew; never persisted as relationship keys.
+  if (workspace.tasks?.find(task => task.id === taskId)?.archived) return 'Archived 已归档';
+  const numbers = [];
+  for (const row of document.querySelectorAll('#taskRows tr')) {
+    if (row.dataset.id !== taskId && row.dataset.splitParent !== taskId) continue;
+    const number = row.querySelector('.row-number')?.textContent?.trim();
+    if (/^\d+$/.test(number || '') && Number(number) > 0 && !numbers.includes(number)) numbers.push(number);
+  }
+  // A task may occupy several independently moved shipment rows. Showing only
+  // its first row would incorrectly imply the loan belongs to that one batch.
+  return numbers.length ? (numbers.length === 1 ? 'ROW ' : 'ROWS ') + numbers.join(', ') : 'Not in current view 当前未显示';
+})(document,data,id),
         canSubmit:()=>!modal.open&&!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),
         submitReturn:input=>{if(modal.open||savePending||drafts.size||sequenceDraft||costRetry||allocationUi()?.dirty())throw Error('Existing edits or save pending 请先处理原修改或保存。');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
     }

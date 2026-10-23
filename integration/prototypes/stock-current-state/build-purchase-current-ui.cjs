@@ -71,6 +71,7 @@ once("const current=savePending;readOperation('PURCHASE_SAVE_CHECK_REQUEST'",
 once("    else if(view==='stock') app.innerHTML=expectedStock();", `    else if(view==='borrowing'){
       app.innerHTML='<section id="purchaseBorrowOutstanding"><p role="status">Borrowing view unavailable 请重新载入调货列表。</p></section>';
       window.purchaseBorrowOutstanding?.mount({container:document.querySelector('#purchaseBorrowOutstanding'),workspace:data,read:readOperation,esc,
+        rowLabel:id=>(${require('./purchase-allocation-ui-overlay.cjs').allocationRowLabel.toString()})(document,data,id),
         canSubmit:()=>!modal.open&&!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty(),
         submitReturn:input=>{if(modal.open||savePending||drafts.size||sequenceDraft||costRetry||allocationUi()?.dirty())throw Error('Existing edits or save pending 请先处理原修改或保存。');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
     }

@@ -1,5 +1,14 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST OUTSTANDING ROUTE: OUTSTANDING_ROW_BINDING_20261024.txt fixes actual app
+route omitting rowLabel although component tests supplied one. New route regression
+failed first, now SAME fresh resolver bound: visible split refs follow moves;
+independent view with no active grid says Not in current view, known archive says
+Archived, never invented/stale ROW. One binding only, backend/submit IDs unchanged.
+43affected checks+17Purchase save/progress/PO/replay+63original workflow replay pass.
+Prior full1348result reused for unchanged backend, not retallied with new route test.
+No native/deploy/export/ACTIVE changes; real visual acceptance remains incomplete.
+
 LATEST RCV REPAYMENT: RCV_REPAYMENT_STATUS_20261024.txt adds borrower-only owed
 quantity from ALL same-generation relations, independent of own RCV/ALLOC. Actual
 grid shows80+owed10withALLOC90; partial repayment only reduces owed; split whole-line
