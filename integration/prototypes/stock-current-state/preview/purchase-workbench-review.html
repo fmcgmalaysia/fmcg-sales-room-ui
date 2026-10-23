@@ -1756,7 +1756,25 @@ return haloSvg;
     }
     entry();
   }
-  window.purchaseBorrowApproval = { mount };
+  function mountBatchEntry({ container, workspace, rootId, canSubmit, openRoot, esc }) {
+    if (!container || [canSubmit, openRoot, esc].some(fn => typeof fn !== 'function')) return;
+    const root = workspace?.tasks?.find(task => task.id === rootId);
+    if (!root || root.procurementSource || root.specialPurchase) return;
+    const previous = mounted.get(container); if (previous) { previous.cancelled = true; previous.section.remove(); }
+    const section = document.createElement('section'); section.className = 'purchase-borrow-approval';
+    const customer = workspace.customers?.find(item => item.id === root.customerId);
+    section.innerHTML = '<h4>Borrow Stock 借货调配</h4><p>Borrowing belongs to this customer product line across its shipment batches. 借货按本客户产品行核对，分批不会增加订单或采购单数量。</p>'
+      + '<p>'+esc(customer?.shortName || customer?.name || root.customerId || '')+' · '+esc(root.name || root.barcode || '')+'</p>'
+      + '<button type="button" class="btn" data-borrow-open-root>Open customer borrowing 进入本客户借货</button><p role="status" data-borrow-navigation-status></p>';
+    const state = { section, cancelled: false }; mounted.set(container, state); container.appendChild(section);
+    section.querySelector('[data-borrow-open-root]').onclick = () => {
+      if (state.cancelled || section.isConnected === false) return;
+      const status = section.querySelector('[data-borrow-navigation-status]');
+      if (!canSubmit()) { status.textContent = 'Save or cancel existing edits first 请先保存或取消现有修改。'; return; }
+      try { openRoot(rootId); } catch (error) { status.textContent = error?.message || 'Customer borrowing unavailable 本客户借货暂不可打开。'; }
+    };
+  }
+  window.purchaseBorrowApproval = { mount, mountBatchEntry };
 })();
 
 </script><script>
@@ -2042,7 +2060,7 @@ return haloSvg;
     }
     function renderRows(){
       document.querySelector('#allocationRows').innerHTML=state.rows.map(rowMarkup).join('');
-      document.querySelector('#allocationConfirmations').innerHTML='<p id="allocationStockNote" hidden></p>';update();renderHistory();if(!state.batchId)window.purchaseBorrowApproval?.mount({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submit:input=>{if(api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}});window.purchaseBorrowRelations?.mount({container:document.querySelector('#allocationBorrowLinks'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>!state.batchId&&api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submitReturn:input=>{if(state.batchId||api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
+      document.querySelector('#allocationConfirmations').innerHTML='<p id="allocationStockNote" hidden></p>';update();renderHistory();if(state.batchId)window.purchaseBorrowApproval?.mountBatchEntry({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),openRoot:id=>{if(state.rootId!==id||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');open(id);}});if(!state.batchId)window.purchaseBorrowApproval?.mount({container:document.querySelector('#allocationBorrowApproval'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submit:input=>{if(api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}});window.purchaseBorrowRelations?.mount({container:document.querySelector('#allocationBorrowLinks'),workspace:workspace(),rootId:state.rootId,read:api.read,rowLabel:api.rowLabel,esc,canSubmit:()=>!state.batchId&&api.stockActionReady?.()===true&&!state.running&&!state.current&&!state.dirty&&!api.savePending(),submitReturn:input=>{if(state.batchId||api.stockActionReady?.()!==true||state.running||state.current||state.dirty||api.savePending())throw Error('Existing save or edits pending 请先处理原保存或修改。');api.mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});
     }
     function renderHistory(){
       const target=document.querySelector('#allocationHistory');if(!target)return;

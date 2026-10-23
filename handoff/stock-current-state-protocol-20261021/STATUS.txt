@@ -1,5 +1,14 @@
 CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
 
+LATEST VISIBLE2026-10-24: existing HTTPS Purchase review successfully opened in
+Chrome51427282 and actually clicked to borrowing form. ExampleA borrows30fromB,
+PO-B->futurePO-A, reason and repayment consent filled; stopped before approval.
+Private screenshot visible-borrow-approval-form-20261024.png. UX confirmation asked,
+not received. Visible deployed review is earlier bundle, not latest batch-entry
+code; local review rebuilt33exactassets,3tests pass223.5224ms. Sales new+existing
+public pages show shell/no order controls; no real split/save attempted. See
+VISIBLE_BORROW_FORM_20261024.txt. No deployment/activation/new permissions/export.
+
 LATEST NATIVE2026-10-24: complete Warehouse page6693CRLFchars read directly from
 actual editor. LF SHA256ff80639d4e0cc015453d26313e6922281df452d2bfbe24ce9bc8e624c99c57a3
 matches repository. Together with Purchase this is2fresh saved-editor page matches,
