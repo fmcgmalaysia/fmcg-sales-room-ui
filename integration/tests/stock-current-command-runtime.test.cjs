@@ -45,7 +45,7 @@ test('new current Purchase read and original margin co-writer exports are execut
   assert.throws(()=>api.createCurrentOrderFileSave({}),/dependencies/);
   assert.throws(()=>api.createOrderFileFencedStore({}),/fence/);
   await assert.rejects(api.readCurrentPurchaseProjection({}),/snapshot/);
-  assert.equal([...source.matchAll(/^export const /gm)].length,54);
+  assert.equal([...source.matchAll(/^export const /gm)].length,56);
 });
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;
@@ -69,7 +69,7 @@ for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) 
 test('generated private maintenance reader executes complete capture and typed cross-realm backup without a public route', async () => {
   const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
   const api = vm.runInNewContext('(function(){' + source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
-    + '\nreturn {createMaintenanceSnapshotReader};})()', { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
+    + '\nreturn {createMaintenanceSnapshotReader,createMaintenanceBackupStore};})()', { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
   const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
   const control = { _id: hash('NCT', 'STOCK_CONTROL'), company: 'NCT', mode: 'MAINTENANCE', schemaVersion: 1,
     transferIndexVersion: 2, generation: 0, _version: 'C0', pending: null };
@@ -91,4 +91,14 @@ test('generated private maintenance reader executes complete capture and typed c
   assert.equal(result.durableBackupConfirmed, false); assert.equal(result.activationReady, false);
   assert.match(JSON.stringify(result.backup), /\["DATE","2026-10-23T05:00:00.000Z"\]/);
   assert.equal(Object.hasOwn(result.context, 'fetchedAt'), false);
+  const retained = new Map(), backup = api.createMaintenanceBackupStore({ company: 'NCT',
+    store: { read: async (collection, id) => retained.get(id) || null, insert: async (collection, row) => {
+      assert.equal(collection, 'NCTActivity'); assert.equal(retained.has(row._id), false); retained.set(row._id, row);
+    } }, authenticateAdmin: async () => ({ memberId: 'ADMIN', isAdmin: true }),
+    verifyPrivateRetention: async () => true, verifyLegacyDrain: async () => true, readControl: async () => control,
+    readSnapshot: () => reader.read(), policy: { recordBudgetBytes: 4096, maxBackupBytes: 100000, maxFragments: 16, partsPerInvocation: 16 } });
+  const saved = await backup.retain({ requestId: '99999999-1111-4111-8111-111111111111' });
+  assert.equal(saved.durableBackupConfirmed, true); assert.equal(saved.activationReady, false);
+  assert.equal(saved.backupId, result.backup.backupId);
+  assert.equal(Object.prototype.toString.call(saved.raw.tables.SharedSuppliers[0]._updatedDate), '[object Date]');
 });

@@ -6,6 +6,7 @@ const { domainCollections } = require('./domain-scope.cjs');
 const { stockBootstrapPreflight } = require('./bootstrap-preflight.cjs');
 const { lifecycleBootstrapPreflight } = require('./lifecycle-bootstrap-preflight.cjs');
 const { encodeMaintenanceNativeImage, decodeMaintenanceNativeImage } = require('./maintenance-native-images.cjs');
+const { isMaintenanceBackupRecord } = require('./maintenance-backup-store.cjs');
 const {Buffer}=require('node:buffer');
 
 // Private maintenance reader only, not a public method or a mode/drain authority.
@@ -61,13 +62,14 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
                 : Object.hasOwn(row, 'company') && row.company !== company)) throw Error('Maintenance collection company conflict');
             seen.add(row._id); previous = row._id;
             const image = encodeMaintenanceNativeImage(row);
-            retainedBytes += Buffer.byteLength(JSON.stringify(image), 'utf8');
+            if (collection !== journal || !isMaintenanceBackupRecord(row, company)) retainedBytes += Buffer.byteLength(JSON.stringify(image), 'utf8');
             if (retainedBytes > maxBackupBytes) throw Error('Maintenance backup exceeds explicit byte budget');
             rows.push(decodeMaintenanceNativeImage(image));
           }
         } while (rows.length < expected);
         capturedTables[collection] = rows;
-        tables[collection] = collection === purchaseOrders ? rows.filter(row => row.company === company) : rows;
+        tables[collection] = collection === purchaseOrders ? rows.filter(row => row.company === company)
+          : collection === journal ? rows.filter(row => !isMaintenanceBackupRecord(row, company)) : rows;
       }
       const metadataRows = [];
       for (const collection of [orders, tasks, purchaseOrders]) for (const row of tables[collection]) {

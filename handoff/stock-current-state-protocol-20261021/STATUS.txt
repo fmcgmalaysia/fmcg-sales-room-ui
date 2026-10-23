@@ -1,4 +1,29 @@
-CURRENT 2026-10-23 — COMPLETE PRIVATE MAINTENANCE CAPTURE IMPLEMENTED, NOT NATIVE INSTALLED
+CURRENT 2026-10-23 — BACKUP RETENTION/READBACK AND METADATA-TO-MIGRATION CAPTURE IMPLEMENTED
+
+User remains away and asked to continue background work. No browser/desktop used.
+MAINTENANCE_BACKUP_RETENTION_20261023.txt records bounded immutable journal backup
+headers/parts/final confirmations, exact readback, unknown-reply STOP, explicit
+same-request resume, and original typed rows supplied to the existing initializer.
+New retained-capture adapter compares ALL original business cohorts to fresh data;
+only exact existing metadata initialization is allowed. Migration requires retained
+owner/request/checkpoint/backup identity and retains it in the immutable plan.
+Native image codec now preserves original nested JSON key order for legacy hashes.
+Own exact reserved backup frames are excluded from business checkpoint input and
+recursive backup, but still counted/paged/readback-checked; malformed frames refuse.
+Runtime109modules/56exports; same38backend targets/94dependency modules and38Pages
+paths+4Wix relays. All20writer categories stillUNVERIFIED. Intermediate1259full
+checks passed; after actual new capture-binding changes FINAL1260full checks pass
+32030.0814ms. Added identity-negative regression afterwards: final9migration tests
+pass186.2186ms; overlapping, not a claimed1269test full run. Private logs retained.
+NO actual native backup retained, CMS mutation, ACL change, Admin-root installation,
+schema execution, native300 continuation, Pages/Wix publish or public acceptance.
+Actual private-retention verifier/drain proof/native setup/capacity/readInstalled/
+Admin binding remainOPEN. Existing journal privacy is NOT assumed and no permission
+is changed: absent native privacy proof blocks even backup storage reads/writes.
+Production originals unchanged against d447185; recovery61fd80a. Both stopped Wix
+paths staySTOPPED; heartbeatPAUSED; ACTIVE/invoice/physical exitOFF. ExistingPR220.
+
+PREVIOUS 2026-10-23 — COMPLETE PRIVATE MAINTENANCE CAPTURE IMPLEMENTED, NOT NATIVE INSTALLED
 
 User is away from computer and asked to continue independent background work.
 MAINTENANCE_SNAPSHOT_READER_20261023.txt records complete bounded company capture,

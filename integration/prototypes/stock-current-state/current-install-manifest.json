@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "ef685dbcdfea054f86fe69ab0a7e0461ed2c5c00bd1e47a001f4784ed9a05fb8",
+      "sha256": "acb13951d45a3bdfa9c8bbbe70d96b80a9e59b4598e7b97391985304bcda1975",
       "beforeSha256": null
     },
     {
@@ -1395,7 +1395,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "ef685dbcdfea054f86fe69ab0a7e0461ed2c5c00bd1e47a001f4784ed9a05fb8",
+      "sha256": "acb13951d45a3bdfa9c8bbbe70d96b80a9e59b4598e7b97391985304bcda1975",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1437,12 +1437,14 @@
         "createCurrentWarehouseShipmentRead",
         "createCustomerDocumentFencedStore",
         "createFencedProof",
+        "createMaintenanceBackupStore",
         "createMaintenanceSnapshotReader",
         "createOrderFileFencedStore",
         "createPackingPhotoFencedStore",
         "createPurchaseBorrowOptions",
         "createPurchaseDeleteProtocol",
         "createPurchaseTransferWorkspace",
+        "createRetainedMaintenanceCapture",
         "createSdkConditionalStore",
         "createSegmentedFencedProof",
         "createWarehousePhotoFencedStore",

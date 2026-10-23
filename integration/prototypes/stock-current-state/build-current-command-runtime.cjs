@@ -45,7 +45,9 @@ const entries = {
   requireOriginalSalesDelegation:'sales-delegation.cjs',
   createCurrentOrderIntakeOperations: 'current-order-intake.cjs',
   createCurrentCostTables: 'current-cost-tables.cjs',
-  createMaintenanceSnapshotReader: 'maintenance-snapshot-reader.cjs'
+  createMaintenanceSnapshotReader: 'maintenance-snapshot-reader.cjs',
+  createMaintenanceBackupStore: 'maintenance-backup-store.cjs',
+  createRetainedMaintenanceCapture: 'maintenance-backup-store.cjs'
 };
 const sources = new Map();
 function collect(name) {

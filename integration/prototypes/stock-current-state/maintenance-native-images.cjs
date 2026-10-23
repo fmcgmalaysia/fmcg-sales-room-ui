@@ -19,7 +19,9 @@ function encodeMaintenanceNativeImage(value) {
   const proto = value && typeof value === 'object' && Object.getPrototypeOf(value);
   if (value && typeof value === 'object' && (proto === null || Object.getPrototypeOf(proto) === null
     && Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name === 'Object') && !Object.getOwnPropertySymbols(value).length) {
-    return ['OBJECT', Object.keys(value).sort().map(key => [key, encodeMaintenanceNativeImage(value[key])])];
+    // Existing nested business snapshots may be hashed as original JSON. Keep
+    // their key order; canonical protocol-metadata comparison is separate.
+    return ['OBJECT', Object.keys(value).map(key => [key, encodeMaintenanceNativeImage(value[key])])];
   }
   throw Error('Supported native backup value required');
 }
@@ -36,8 +38,8 @@ function decodeMaintenanceNativeImage(value) {
     if (Number.isFinite(date.getTime()) && date.toISOString() === data) return date;
   }
   if (type === 'ARRAY' && Array.isArray(data)) return data.map(decodeMaintenanceNativeImage);
-  if (type === 'OBJECT' && Array.isArray(data) && data.every((entry, i) => Array.isArray(entry) && entry.length === 2
-    && typeof entry[0] === 'string' && (i === 0 || data[i - 1][0] < entry[0]))) {
+  if (type === 'OBJECT' && Array.isArray(data) && data.every(entry => Array.isArray(entry) && entry.length === 2
+    && typeof entry[0] === 'string') && new Set(data.map(entry => entry[0])).size === data.length) {
     return Object.fromEntries(data.map(([key, image]) => [key, decodeMaintenanceNativeImage(image)]));
   }
   throw Error('Valid exact native backup image required');

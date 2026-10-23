@@ -43,7 +43,8 @@ function fixture(company = 'NCT', empty = false) {
   const service = createMaintenanceMigration({ company, store, authenticateAdmin: async () => admin,
     verifyLegacyDrain: async () => drain, capture: async () => {
       captureCount++;
-      return { expected: copy(expected), taskRows: copy(taskRows), control: copy(control), emptyCurrentConfirmed: true, durableBackupConfirmed: true };
+      return { expected: copy(expected), taskRows: copy(taskRows), control: copy(control), emptyCurrentConfirmed: true, durableBackupConfirmed: true,
+        backupIdentity: { requestId: '66666666-1111-4111-8111-111111111111', backupId: 'b'.repeat(32), checkpointId: 'c'.repeat(32), retainedBy: 'ADMIN' } };
     }, readInstalled, protocolOptions: { stepsPerInvocation: 2 } });
   const input = { requestId: '77777777-1111-4111-8111-111111111111', checkpointId: expected.checkpointId };
   const finish = async () => {
@@ -120,4 +121,16 @@ test('a complete in-memory capture cannot migrate without a separately retained 
   assert.equal([...f.rows.keys()].some(key => key.startsWith('StockPositions/')), false);
   assert.equal((await f.store.read(f.journal, f.control._id)).generation, 0);
   assert.equal(f.calls.some(call => call[0] === 'CAS'), false);
+});
+
+test('a boolean backup flag without the original retained owner/identity cannot prepare migration writes', async () => {
+  for (const backupIdentity of [null, { requestId: '66666666-1111-4111-8111-111111111111', backupId: 'b'.repeat(32), checkpointId: 'c'.repeat(32), retainedBy: 'OTHER' }]) {
+    const f = fixture(), service = createMaintenanceMigration({ company: 'NCT', store: f.store,
+      authenticateAdmin: async () => ({ isAdmin: true, memberId: 'ADMIN' }), verifyLegacyDrain: async () => true, readInstalled: f.readInstalled,
+      capture: async () => ({ expected: f.expected, taskRows: f.taskRows, control: f.control, emptyCurrentConfirmed: true,
+        durableBackupConfirmed: true, backupIdentity }) });
+    await assert.rejects(service.apply(f.input), /retained backup identity/);
+    assert.equal(f.calls.some(call => call[0] === 'CAS'), false);
+    assert.equal([...f.rows.keys()].some(key => key.startsWith('StockPositions/')), false);
+  }
 });

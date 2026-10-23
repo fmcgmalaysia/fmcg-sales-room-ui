@@ -11,7 +11,7 @@ const count = n => Number.isSafeInteger(n) && n >= 0;
 // Server-only migration of an already versioned, complete captured cohort. Missing
 // legacy versions require the separate conditional metadata initializer first.
 // This does not create schema, assert old requests stopped, or enable ACTIVE.
-function prepareMaintenanceMigration({ company, expected, taskRows, control }) {
+function prepareMaintenanceMigration({ company, expected, taskRows, control, backupIdentity }) {
   if (!['NCT', 'GHR'].includes(company) || expected?.company !== company || expected.canPlan !== true
     || !expected.checkpointId || !expected.baseCheckpointId || expected.proposedTransferIndexVersion !== 2
     || !Array.isArray(expected.blockers) || expected.blockers.some(code => code !== 'ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED')
@@ -50,7 +50,7 @@ function prepareMaintenanceMigration({ company, expected, taskRows, control }) {
     action: 'STOCK_INITIALIZATION_CHECKPOINT', checkpointId: expected.checkpointId, generation,
     counts: copy(expected.counts), lifecycleVersion: 2 } });
   return { writes, migration: { company, checkpointId: expected.checkpointId, baseGeneration: expected.generation,
-    expected: target, legacyTaskRows: copy(taskRows) } };
+    expected: target, legacyTaskRows: copy(taskRows), ...(backupIdentity ? { backupIdentity: copy(backupIdentity) } : {}) } };
 }
 
 function createMaintenanceMigration({ company, store, authenticateAdmin, verifyLegacyDrain, capture,
@@ -83,6 +83,10 @@ function createMaintenanceMigration({ company, store, authenticateAdmin, verifyL
         const observed = await capture({ company, checkpointId: input.checkpointId });
         if (observed?.expected?.checkpointId !== input.checkpointId || observed.emptyCurrentConfirmed !== true) throw Error('Original complete empty-current checkpoint required');
         if (observed.durableBackupConfirmed !== true) throw Error('Durable private original migration backup required');
+        const proof = observed.backupIdentity;
+        if (!proof || Object.keys(proof).sort().join(',') !== 'backupId,checkpointId,requestId,retainedBy'
+          || !/^[a-f0-9-]{36}$/i.test(proof.requestId || '') || !/^[a-f0-9]{32}$/.test(proof.backupId || '')
+          || !/^[a-f0-9]{32}$/.test(proof.checkpointId || '') || proof.retainedBy !== admin.memberId) throw Error('Original retained backup identity required');
         const control = await protocol.readControl();
         if (!same(control, observed.control)) throw Error('Migration capture changed');
         return prepareMaintenanceMigration({ company, ...observed, control });
