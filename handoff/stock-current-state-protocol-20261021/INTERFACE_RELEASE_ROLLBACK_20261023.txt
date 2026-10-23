@@ -1,0 +1,59 @@
+Exact code retained
+6926ae01ea3db56d38d920aa8ca1144f7e82f71d, existing branch/PR220. No main merge,
+force push, new business backend/Wix source installation, CMS mutation or ACTIVE.
+
+First exact action-time grant
+Temporary current-branch github-pages rule + ONE stock-interface dispatch, then
+restore original7. Added only that rule. Run262,39898970022,36seconds SUCCESS.
+Public release JSON named6926ae0,37resources and stock/borrowingfalse. All37actual
+asset hashes matched UI manifest. Rule removed and original7confirmed.
+
+Actual public acceptance failure
+Old public Purchase tab retained original scripts/meta despite keyboard refresh.
+Original TESTING01 7UP supplier dialog opened read-only, no new borrowing section.
+Closed unchanged form; normal tab reload produced blank iframe. One subsequent
+reload after verifying exact iframe URL serves new HTML again blank. Stop same
+loading path after two failures. Console returned no errors/warnings. Exact src
+unchanged, iframe visible with normal dimensions. Direct real static URL rendered
+new shell/meta but has no Wix parent authentication. It is NOT business acceptance.
+Prior native Wix Preview was already blank before resource release, so no claim
+that the new interface caused the failure. Nonetheless restore original resources
+before stacking feature patches, in accordance with user stability rules.
+
+Separate rollback grant and human action
+User separately approved only one baseline-mode6926ae0 dispatch, temporary same
+branch rule and restoration of original7. Rule added. Agent branch selection
+closed dispatch modal twice; second attempt after inspecting auto-refresh issue
+also failed, STOPPED. Agent never clicked rollback Run, no unknown dispatch.
+User given actual workflow link, selected BASELINE and manually ran once. Supplied
+two screenshots show modebaseline,commit6926ae0,inprogress. Fresh workflow list
+then confirms Run263/39899931550 SUCCESS. No further Run/Re-run clicked by agent.
+Temporary rule removed after success, exact original7 and no other settings changed.
+
+Rollback resource verification
+All21old direct resource hashes equal manifest beforeSha256.15new direct paths404
+and stock-interface-release.json404. One remaining new borrow-return.js initially
+returned200; focused read with Cache-Control:no-cache returned404,Age0,
+DateFri23Oct202604:25:38GMT. No deletion/purge request was sent. No need to rerun all
+37checks simply to redisplay unchanged successful results.
+
+Remaining restoration check
+Old agent Purchase tab closed by user. New user tab51426904 displays actual NCT
+dashboard,16supplier tasks,TESTING01/02, but DOM marker still candidate-v2 from
+before rollback. Preserve user tab; do not infer a fresh original-version pass.
+Fresh ordinary Wix Purchase tab51426916 (new server rollback state) still shows
+blank embedded content. DOM visibilityvisible; actual original src and normal
+dimensions. No further reload/testing/feature patch, no causal guess.
+Need user to hard-refresh https://fmcg999.wixstudio.com/master and report whether
+the16tasks display. Public restoration NOT yet accepted, no full-release claim.
+
+Automation and evidence
+Heartbeat automation statusPAUSED confirmed by app tool, original name/prompt/
+15minute recurrence/thread preserved. No chat archive. This is pause for necessary
+human restoration, not completed inventory/borrowing system or abandoned code.
+Private release-state JSON holds exact grants/attempts/run IDs/remaining status.
+Private screenshots: formal-interface-pages-success-20261023.png;
+formal-interface-public-blank-20261023.png;
+formal-interface-rollback-permission-restored-20261023.png;
+formal-interface-rollback-purchase-restored-20261023.png (cached candidate, NOT
+original acceptance); fresh blank restoration screenshot separately retained.

@@ -1,3 +1,7 @@
+Installation checkpoint only. Later actual release, failed visual acceptance and
+resource rollback supersede release-status notes here; see
+INTERFACE_RELEASE_ROLLBACK_20261023.txt and current STATUS.txt.
+
 Objective
 User rejected more drafts and invisible backend tests. Implement the existing real
 Sales split, Purchase borrowing and Warehouse/Support Loaded interface; do not

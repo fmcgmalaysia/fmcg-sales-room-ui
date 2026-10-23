@@ -1,4 +1,41 @@
-CURRENT 2026-10-23 — DIRECT FORMAL INTERFACE IMPLEMENTATION; ACTIVE OFF
+CURRENT 2026-10-23 — INTERFACE RELEASE REVERTED; PUBLIC RESTORATION NOT YET ACCEPTED
+
+LATEST RECOVERY FACTS (supersede pre-release installation notes below):
+Code6926ae01ea3db56d38d920aa8ca1144f7e82f71d pushed to existing PR220.
+User granted exact temporary branch permission and ONE stock-interface dispatch.
+Run262/39898970022 SUCCESS36s;37formal static resources matched exact UI hashes.
+Temporary rule removed and original7restored. Real Wix Purchase verification
+failed: original tab first remained cached-old; after normal reload iframe blank
+on two attempts. No relevant console error captured; cause UNKNOWN, not proven
+to be business-code regression. Same public static iframe URL alone rendered
+the new shell. Feature/sync/publication work stopped, no backend/Wix/CMS change.
+
+Separate human grant received for ONE baseline-mode resource rollback + same
+temporary branch rule. Rule added. Agent's branch chooser closed dispatch dialog
+twice; STOPPED that interaction path, zero agent rollback dispatches. User then
+manually selected BASELINE and ran it once (screenshots supplied).
+Run263/39899931550 SUCCESS. Temporary branch rule now removed; exact original
+7branches/0tags and original reviewer/wait/bypass states preserved.
+All21pre-existing affected public files match original LF hashes.15new paths404
+and release marker404 on first read; remaining new borrow-return.js initially200,
+targeted no-cache read then404/Age0. Thus original runtime paths restored and all
+16new direct paths absent; no new artifact marker. No additional dispatch/retry.
+
+PUBLIC RESTORATION STILL UNVERIFIED: old agent tab51426476 was closed by user.
+Existing new user Purchase tab51426904 shows real NCT dashboard,16tasks and both
+customers, but DOM build still2026-10-22-stock-current-candidate-v2 (cached before
+rollback). Did not refresh or alter that tab. Fresh recovery-only real Wix tab
+51426916 remains blank iframe, visible,src exact original production URL; cause
+UNKNOWN. No extra reload or alternate-business-path bypass. Need user hard-refresh
+the actual Purchase page and report whether16tasks display. Do not claim restored
+visual acceptance, full release, real borrowing or Loaded acceptance.
+Heartbeat automation PAUSED as authorized while manual recovery was needed; no
+automatic resume, no chat archive. Keep feature work frozen until restoration is
+publicly/user verified. Private release-state JSON/screenshots are authoritative.
+
+Four states: interface code retained6926ae0; Pages baseline resources restored by
+Run263; Wix business code/published site unchanged, no new whole-site Publish;
+public restoration/new-interface acceptance NOT PASSED. ACTIVE/invoice/exitOFF.
 
 LATEST USER OVERRIDE: "你干脆直接把界面做出来吧。不需要草稿了".
 No more draft/replay/local candidate delivery or waiting for UX-draft approval.
@@ -10,7 +47,8 @@ Unverified CURRENT capability displays unavailable borrowing, no quotes/saves.
 37 actual Pages asset destinations and4 future Wix relays are hash paired. New
 optional workflow static_ui=stock-interface packages ONLY the static overlay in
 a dedicated artifact, preserving source originals and unchanged Wix/backend.
-Existing push-main/default baseline publication unchanged. No dispatch performed.
+Existing push-main/default baseline publication unchanged. Packaging checkpoint
+preceded Run262; later release and rollback are recorded above.
 69 affected UI checks passed1128.6357ms; after packaging addition16 targeted checks
 passed1082.2169ms. These are not native/full-release/public acceptance results.
 Fresh public static check: all21existing affected resources match original repo
