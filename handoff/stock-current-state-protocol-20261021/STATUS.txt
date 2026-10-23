@@ -1,5 +1,10 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST REVIEW GUIDANCE: ALLOC_REVIEW_GUIDANCE_20261024.txt fixes stale original-
+person banner to actual ALLOC ALERT -> Borrow -> Check eligible P.O.s. Local33asset
+review rebuilt;4package/fixture/no-fake-save checks pass314.5648ms. Copy only,
+not changed stock logic, updated HTTPS preview, native install or public acceptance.
+
 LATEST NATIVE MASTER: MASTER_PATCH_PREIMAGES_COMPLETE_20261024.txt completes
 remaining13full editor readbacks. All23MASTER PATCH originals now match exact
 repository/install-before hashes; private preimages preserved. This is pre-install

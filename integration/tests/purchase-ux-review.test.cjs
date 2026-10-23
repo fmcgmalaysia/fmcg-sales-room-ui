@@ -21,6 +21,8 @@ test('review mechanically packages exact existing candidate assets and parses ev
   }
   for (const script of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(script[1]);
   assert.match(html, /connect-src 'none'/); assert.match(html, /NOT PUBLISHED/);
+  assert.match(html, /EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P\.O\.s/);
+  assert.doesNotMatch(html, /original person →|点击原人头查看借货表单/);
   assert.doesNotMatch(html, /<(?:script|link)\b[^>]*(?:src|href)=/);
 });
 test('fixed review reads expose clearly fictional exact PO pair without mutating the workspace', () => {
