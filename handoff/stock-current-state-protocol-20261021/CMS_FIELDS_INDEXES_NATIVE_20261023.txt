@@ -475,3 +475,23 @@ NCTActivity SC_TASK_REL remains NOT saved, stopped earlier third-field UI path
 not retried. Asked human once to add exactly Regular SC_TASK_REL(company,
 participantTaskIds,status), allAscending, preserving other indexes. Await readback;
 do not infer that the manual action or all native gates are complete.
+
+NCT SC_TASK_REL — HUMAN SAVE AND FRESH NATIVE CREATION RECEIPT
+
+User requested exclusive screen control; automation relinquished the screen.
+User manually selected company,participantTaskIds,status, all Ascending, Regular,
+then reported SAVE. Fresh read-only get_window_state of returned existing Chrome
+MASTER window66680 shows Index "SC_TASK_REL" was created toast plus exact ordered
+three-field row, Regular, Delete control, no building spinner. Original2system
+indexes and SC_ACTIVE_PRODUCT/SC_REPAID_SOURCE remain listed. No input, replayed
+Save, alternate automated selection route, delete, permission or business write.
+Prior twice-failed automated field-selector path remains stopped; human completed
+that definition. All required additive native field/index definitions now have UI
+evidence across both companies. SDK state ACTIVE, typed queries, native capacity/
+recovery, old-writer drain, installation/migration/shadow and public acceptance
+remain OPEN. No claim that borrowing can yet be tested on the public MASTER.
+Private retained screenshot outside public checkout:
+ C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/nctactivity-three-regular-indexes-user-saved-20261023.png
+ SHA256 678d3d7485c63708f2585b887c4243ab1185f12458ab5542f9c84a8022bdbc15
+No candidate code change; existing final1299pass evidence reused, no test rerun.
+Pages/Wix publish unchanged, ACTIVE/invoice/physical exit OFF. No export retry.

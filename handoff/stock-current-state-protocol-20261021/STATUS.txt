@@ -1,5 +1,18 @@
 CURRENT 2026-10-23 — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
 
+LATEST NCT INDEX HUMAN SAVE CONFIRMED: user manually completed Regular SC_TASK_REL
+and reported SAVE. Fresh read-only native MASTER screenshot shows explicit toast
+Index "SC_TASK_REL" was created and list row company,participantTaskIds,status,
+all Ascending, Regular, no building spinner. Original2system and prior2new indexes
+remain listed. No automated Save, field selection, deletion or other input made;
+the twice-failed automated selector path remains stopped. Private evidence PNG
+nctactivity-three-regular-indexes-user-saved-20261023.png SHA256
+678d3d7485c63708f2585b887c4243ab1185f12458ab5542f9c84a8022bdbc15.
+Required native field/index definitions are now UI-confirmed for both companies.
+This closes only the missing definition, NOT SDK ACTIVE/typed query/capacity,
+legacy drain, installation, migration/shadow or actual public borrowing gates.
+Candidate code/tests unchanged; no publish, business writes or GitHub export retry.
+
 LATEST NATIVE SCHEMA COMPLETION: after user exposed unobscured Chrome, documented
 screenshot-coordinate input works on the existing MASTER GHR Activity window.
 Added/saved ONCE each, checking exact name/ID/type before Save and settled native
