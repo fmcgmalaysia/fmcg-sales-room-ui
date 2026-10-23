@@ -1,0 +1,48 @@
+2026-10-24 — ALLOC dialog actual customer receipt gate, candidate only
+Parent2a7782d; same overnight scope, current checkout/branch and protected recovery
+d447185/runtime32b812c. Reused unchanged framework/spec/ALLOC handoffs; read current
+STATUS and exact original batch projection, borrowing quote/authority/model and
+candidate ALLOC/render/projection tests. Initial rg filename glob was invalid on
+Windows; corrected to directory plus -g, no broad scan/retry of blocked paths.
+
+Review target was selected split borrowing context. Existing quote/approval remains
+customer-product-line scoped (stable task/source IDs), explicitly stated in the
+dialog and tested; selected batch only gates displayed deficit/context. We did not
+silently introduce a new batch-specific stock authority or claim this proves a
+loan's precise physical-batch assignment. Per-batch provenance/native acceptance
+remains incomplete. This review exposed a separate concrete defect in the same
+dialog's own receipt gate, corrected minimally below.
+
+Reproduction before patch (new tests): root PO customer's share70, gross receipt80;
+second PO customer's share20, receipt10. Procurement total90/customer receipt80,
+but old dialog summed gross receipts90, displayed Awaiting0 and disabled borrowing.
+This contradicted explicit stockActualReceived80 already used by main RCV column.
+Unknown/malformed own receipt also fell back to gross0 and opened borrowing.
+New tests failed exactly these two assertions (7pass2fail133.675ms); no native data.
+
+Minimum patch: purchase-ui/borrow-approval.js mountAllocation uses the CURRENT_V2
+root.stockActualReceived nonnegative safe integer. Missing/invalid is Unconfirmed,
+no numeric zero substitution and no borrow entry. Pending count derives from this
+same fact. No changes to quote/approval maximum, PO validity, future supply,
+current quantities, holds, batch allocation formulas, request/retry or permissions.
+Current own90received90 still cannot borrow merely to fill customer100unpurchased10.
+Original source rows/RCV and Warehouse receipt authority unchanged.
+Review bridge's two fictional tasks now explicitly carry own receipt/hasReceipt
+facts; real component test verifies example100/90/80 opens borrowing and remains
+read-only. It still refuses all saves; not real stock or successful approval.
+
+Verification after patch:
+-27targeted ALLOC/approval/batch/projector checks pass521.2899ms.
+-Final98checks pass1009.325ms: those27plus original63Purchase-workflow replay,
+ real Pages/Wix paired-install validation and4self-contained-review tests.
+ Counts overlap; do not add27+98. Prior full1323suite and row-reference26/92results
+ reused for unchanged code, not rerun or labeled full coverage of this patch.
+-38Pages-assets/5relays hash manifest rebuilt;33exact local review assets rebuilt.
+-No protected original production directory diff or backend module/runtime change.
+No native/Wix/CMS read/write, browser operation, new screenshot, publish/dispatch,
+GitHub push/export, permission change or deletion. GitHub export-specific block and
+unsafe legacy cutover/Wix-reply gate remain; no new evidence resolves either.
+Code local candidate; Pages unchanged; Wix not synchronized or published; public
+new ALLOC borrowing unverified/unavailable. ACTIVE/real invoice/dispatch remainOFF.
+Continue remaining precise installation/batch provenance/visual acceptance work;
+do not repeat stopped editor/localfile/localhost paths or old UNKNOWN tests.

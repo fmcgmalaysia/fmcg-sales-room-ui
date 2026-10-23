@@ -1,5 +1,11 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST DIALOG RECEIPTS: ALLOC_RECEIPT_GATE_20261024.txt reproduces and fixes
+gross multi-PO receipts wrongly closing borrowing despite own customer shortage.
+Dialog now uses the same explicit stockActualReceived as main RCV; unknown never
+falls back to gross receipts or false0.98affected original/projection/UI/package
+checks pass1009.325ms. No backend/native/deploy/export/ACTIVE changes.
+
 LATEST ROW REFERENCES: BORROW_ROW_REFERENCES_20261024.txt replaces candidate
 first-match row labels with freshly resolved all-visible split row references;
 filtered/missing and archived rows are explicit, never an old row number. Actual

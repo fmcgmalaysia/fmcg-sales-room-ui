@@ -35,6 +35,17 @@ test('fixed review reads expose clearly fictional exact PO pair without mutating
   f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'GHR', requestId: '4' });
   assert.equal(f.posted.at(-1).ok, false);
 });
+
+test('exact review fixture supplies the same own-customer receipt fact as real ALLOC dialog, never a gross-PO fallback', () => {
+  const f = fixture(); f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '1' });
+  const workspace = f.posted.at(-1).workspace, before = JSON.stringify(workspace), window = {}, controls = new Map();
+  const container = { innerHTML: '', querySelector(selector) { if (!controls.has(selector)) controls.set(selector, {}); return controls.get(selector); } };
+  vm.runInNewContext(fs.readFileSync(path.join(folder, 'purchase-ui/borrow-approval.js'), 'utf8'), { window });
+  let opens = 0;
+  window.purchaseBorrowApproval.mountAllocation({ container, workspace, rootId: 'a'.repeat(32), esc: String, canSubmit: () => true, showBorrow: () => opens++ });
+  assert.match(container.innerHTML, /Received 实收 <b>80<\/b>/); assert.match(container.innerHTML, /Awaiting receipt 待到货 10/);
+  controls.get('[data-alloc-borrow]').onclick(); assert.equal(opens, 1); assert.equal(JSON.stringify(workspace), before);
+});
 test('review cannot fake an approved save, new generation, halo, receipt or real inventory mutation', () => {
   const f = fixture(); f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '1' });
   const before = JSON.stringify(f.posted.at(-1).workspace);

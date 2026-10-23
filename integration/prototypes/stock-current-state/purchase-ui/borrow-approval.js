@@ -138,10 +138,12 @@
     const allocated=known&&count(root.stockAllocatedCumulative)?root.stockAllocatedCumulative:null;
     const group=workspace.tasks.filter(t=>t.id===rootId||t.customerDemandTaskId===rootId);
     const planned=group.reduce((n,t)=>n+(t.procurement?.customerCtn??Math.max(0,(t.procurement?.totalCtn||0)-(t.procurement?.expectedExtra||0))),0);
-    const received=group.reduce((n,t)=>n+(t.warehouse?.accepted||0),0);
+    // Same own-customer physical receipt fact as RCV; gross PO receipts may
+    // include extra/free stock and must not hide this customer's missing supply.
+    const received=known&&count(root.stockActualReceived)?root.stockActualReceived:null;
     const batch=batchId?root.stockAllocatedBatches?.find(b=>b.id===batchId):null;
     const batchKnown=!batchId||batch&&count(batch.demand)&&count(batch.allocated)&&batch.allocated<=batch.demand;
-    const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received<planned&&(!batchId||batch.allocated<batch.demand);
+    const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received!==null&&received<planned&&(!batchId||batch.allocated<batch.demand);
     const facts=root.stockAllocationFacts,available=known&&facts&&['usable','held','dispatched','availableToArrange'].every(k=>count(facts[k]))
       &&typeof facts.review==='boolean'&&facts.usable+facts.dispatched===allocated
       &&facts.availableToArrange===(facts.review?0:Math.max(0,facts.usable-facts.held))?facts.availableToArrange:null;
@@ -152,8 +154,8 @@
     const canArrange=capability&&arrangeQty>0&&previous&&previous.length<=1&&previous.every(i=>i.status==='PENDING_SUPPORT'||i.status==='LINKED'&&i.mayRequestAgain===true)&&typeof submitArrangement==='function';
     let submitted=false;
     container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
-      +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
-      +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
+      +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received??'Unconfirmed 尚未确认')+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
+      +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(received===null?'Unconfirmed 尚未确认':Math.max(0,planned-received))+'</p>'
       +'<p>Available to arrange 可安排 <b>'+esc(available??'Unconfirmed 尚未确认')+'</b>'+(available===null?'':' · Held 备货占用 '+esc(facts.held)+' · Dispatched 已发货 '+esc(facts.dispatched))+'</p>'
       +(previous?.[0]?.status==='LINKED'?'<p>Packing list 备货单 '+esc(previous[0].packingListId)+' · '+esc(previous[0].packingStatus||'Review 待核对')
         +' · Planned 计划 '+esc(previous[0].currentPlanned??'')+' · Loaded 已装柜 '+esc(previous[0].currentLoaded??'')+(previous[0].changePending?' · Change pending 变更待确认':'')+'</p>':'')

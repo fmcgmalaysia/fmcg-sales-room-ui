@@ -1,10 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),root=path.join(__dirname,'../prototypes/stock-current-state');
-function fixture({planned=90,received=80,allocated=80,current=true,instructions=[],facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
+function fixture({planned=90,received=80,ownReceived=received,sources=[],allocated=80,current=true,instructions=[],facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
   const controls=new Map(),container={innerHTML:'',querySelector(s){if(!controls.has(s))controls.set(s,{});return controls.get(s);}};
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/borrow-approval.js'),'utf8'),{window});
   let opened=0,ready=true;const arranged=[];
-  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockArrangements:instructions,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}}]};
+  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockActualReceived:ownReceived,stockArrangements:instructions,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}},...sources]};
   window.purchaseBorrowApproval.mountAllocation({container,workspace,rootId:'A',esc:String,canSubmit:()=>ready,showBorrow:()=>opened++,submitArrangement:input=>arranged.push(input)});
   return {container,controls,arranged,open:()=>opened,busy:()=>ready=false};
 }
@@ -14,6 +14,18 @@ test('100 demand / 90 purchased / 80 received exposes borrowing while 10 unpurch
 });
 test('fully received purchase does not authorize borrowing to cover unpurchased demand; unknown allocation cannot quote',()=>{
   for(const args of [{planned:80,received:80},{current:false}]){const f=fixture(args);f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),0);assert.match(f.container.innerHTML,/data-alloc-borrow disabled/);}
+});
+test('allocation dialog uses own customer receipts, not gross PO receipts including extra stock from another source',()=>{
+  const f=fixture({planned:70,received:80,ownReceived:80,sources:[{id:'AS',customerDemandTaskId:'A',procurement:{customerCtn:20,totalCtn:20},warehouse:{accepted:10}}]});
+  assert.match(f.container.innerHTML,/Purchased 采购 <b>90<\/b> · Received 实收 <b>80<\/b>/);
+  assert.match(f.container.innerHTML,/Awaiting receipt 待到货 10/);f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),1);
+});
+test('missing or malformed own receipt facts cannot be replaced by gross receipts or become a false zero shortfall',()=>{
+  for(const ownReceived of [null,-1,NaN,'80']){
+    const f=fixture({ownReceived,received:0});f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),0);
+    assert.match(f.container.innerHTML,/Received 实收 <b>Unconfirmed 尚未确认<\/b>/);
+    assert.match(f.container.innerHTML,/Awaiting receipt 待到货 Unconfirmed 尚未确认/);
+  }
 });
 test('existing quantity choice requests Support once through callback without simulating dispatch',()=>{
   const f=fixture();f.controls.get('[data-alloc-existing]').onclick();assert.match(f.controls.get('[data-alloc-message]').textContent,/不确认实物发货/);assert.equal(f.open(),0);
