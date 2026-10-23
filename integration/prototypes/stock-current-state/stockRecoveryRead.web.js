@@ -424,7 +424,7 @@ export const inspectStockSave = webMethod(Permissions.Admin, async request => {
     const { company, requestId, memberId, input, pageSize, cursor } = request;
     const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
     // Exact original journal/order/task Date fields inspected in MASTER CMS.
-    const store = createRecoveryReadStore({ items, company, dateTimeFields: { [journal]: ['activityTime'], [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime'] } });
+    const store = createRecoveryReadStore({ items, company, dateTimeFields: { [journal]: ['activityTime'], [company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'], [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime'] } });
     return { ok: true, report: await inspectStockRecovery({ store, company, requestId, memberId, input, domainWrites: true, pageSize, cursor }) };
   } catch (_) {
     return { ok: false, error: 'Inventory recovery inspection unavailable. No recovery performed.' };

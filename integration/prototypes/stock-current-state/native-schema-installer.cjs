@@ -1,7 +1,7 @@
 'use strict';
 // Additive schema administration only. No records, permissions, deletes or ACTIVE.
 const { currentNativeSetupContract } = require('./native-setup-review.cjs');
-const wireType = type => ({ DATE: 'DATETIME', TEXT_ARRAY: 'ARRAY_STRING', OBJECT_OR_NULL: 'OBJECT' }[type] || type);
+const wireType = type => ({ DATE: 'DATETIME', DATE_ONLY: 'DATE', TEXT_ARRAY: 'ARRAY_STRING', OBJECT_OR_NULL: 'OBJECT' }[type] || type);
 const copy = value => JSON.parse(JSON.stringify(value));
 const stable = value => JSON.stringify(value, function (key, item) {
  if (item && typeof item === 'object' && !Array.isArray(item)) return Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]]));

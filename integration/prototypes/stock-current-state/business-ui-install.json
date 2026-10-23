@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "6831498c09686a5e398aedc36048c512a3056fed2c86acaee468f880edd5a57a",
+  "backendInstallManifestSha256": "2bf0dd4c5a4d825215dbab6ec519358dc39df78c768c3113fb357a86271bd6c7",
   "install": [
     {
       "source": "source-ui/index.html",

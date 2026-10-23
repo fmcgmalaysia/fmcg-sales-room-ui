@@ -32,7 +32,7 @@ async function fixture({company='NCT',coverage=true,reserved=false,generated=fal
   projectPurchaseWorkspace:args=>{calls.push('PROJECT');assert.equal(args.company,company);
    const context=f.context();return{...context,staff:args.staff,...(args.currentStock?{stockAllocationView:'CURRENT_V2',allocations:copy(args.currentStock.allocations),
     tasks:context.tasks.map(task=>({...task,inc:args.currentStock.taskReceived.find(row=>row.taskId===task.id)?.quantity||0}))}:{})};},
-  createSdkConditionalStore:config=>{calls.push('SDK');assert.equal(config.company,company);assert.deepEqual(copy(config.dateTimeFields),{[journal]:['activityTime'],[orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']});return f.store;},
+  createSdkConditionalStore:config=>{calls.push('SDK');assert.equal(config.company,company);assert.deepEqual(copy(config.dateTimeFields),{[journal]:['activityTime'],[orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']});return f.store;},
   createSegmentedFencedProof:config=>{assert.equal(config.domainWrites,true);assert.equal(config.store,f.store);return f.protocol;}};
  let source=fs.readFileSync(path.join(folder,'stockCurrentExceptions.js'),'utf8');
  if(coverage)source=source.replace('const writerCoverage=Object.freeze({});','const writerCoverage=Object.freeze('+JSON.stringify(Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])))+');');

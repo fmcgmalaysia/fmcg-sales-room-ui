@@ -79,7 +79,7 @@ for (const company of ['NCT', 'GHR']) test(company + ' explicit test-only bounda
   assert.equal(c.reader.items, f.bindings.items); assert.equal(c.store.items, f.bindings.items);
   assert.equal(c.store.company, company); assert.deepEqual(plain(c.store.collections), ['EXACT_NATIVE_SCOPE']);
   assert.deepEqual(plain(c.store.dateTimeFields), { [company === 'NCT' ? 'NCTActivity' : 'NCTActivity1']: ['activityTime'],
-    [company === 'NCT' ? 'NCTOrders' : 'NCTOrders1']: ['estimatedShipmentDate', 'masterReceivedTime', 'salesSubmissionTime'],
+    [company === 'NCT' ? 'NCTOrders' : 'NCTOrders1']: ['masterReceivedTime', 'salesSubmissionTime'],
     [company === 'NCT' ? 'NCTTasks' : 'NCTTasks1']: ['lastCostCaptureTime'] });
   assert.equal(await f.api.retainStockMaintenanceBackup(input.retainStockMaintenanceBackup), 'RETAIN');
   assert.equal(await f.api.inspectStockMaintenanceBackup(input.inspectStockMaintenanceBackup), 'BACKUP');

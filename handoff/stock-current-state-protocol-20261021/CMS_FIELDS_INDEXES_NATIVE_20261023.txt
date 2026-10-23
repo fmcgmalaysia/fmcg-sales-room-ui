@@ -280,3 +280,40 @@ GHR Tasks currently open in Manage Fields, original IDs captured, no additions
 there yet. No field modal remains open. GHR Activity still untouched. Candidate
 date-only mapping correction separately in progress; original production code
 unchanged. No stopped index/schema/300 retry, GitHub export or deployment.
+
+DATE-ONLY USER RULE IMPLEMENTED IN LOCAL CANDIDATE
+
+Recovery before correction e726019; native evidence checkpoint2c3c55a.
+One objective: preserve original Date-only estimatedShipmentDate in NCT/GHR,
+without altering other timestamps, existing business core, quantities, original
+authentication or any live item/field definition. Actual native UI readback plus
+user clarification, not an assumed schema replacement, determines the contract.
+Wix official primary documentation confirms Date is YYYY-MM-DD string, distinct
+from Date and Time JavaScript Date:
+ https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/data-api/working-with-the-data-api#date-fields
+
+native-setup-review semantic DATE_ONLY maps native DATE; existing semantic DATE
+continues mapping DATETIME for all original timestamps. All12 business/recovery
+roots and maintenance omit only estimatedShipmentDate from dateTimeFields.
+Original intake validation retained; candidate after-image normalizes ONLY the
+order estimatedShipmentDate to already validated source YYYY-MM-DD/null, rather
+than original core's Date object. Original production core untouched. Paired
+generators/runtime/backend/UI manifests refreshed mechanically; no live install.
+
+Affected120checks pass15049.1199ms. Shared full first run1299tests/1297pass/2fail
+53179.6656ms: BOTH failures stale paired UI install manifest hash after backend
+manifest change. Original full failure log retained, not erased or called pass.
+Rebuilt dependent business-ui-install.json. Final shared regression:
+1299tests/1299pass/0fail52566.4742ms,173stock-current test files. Includes tests
+for both companies/all13bindings, leap/date/null/absent preservation through CAS,
+timestamp native Date retention, real original intake with shared adapter, and
+schema installer Date-only/no-overwrite behavior. Two retained counterexamples
+are witnesses, not extra native acceptance. Old typed synthetic probe/fixtures
+remain frozen and are NOT proof of original order Date schema compatibility.
+
+Private logs same evidence directory:
+ shipment-date-only-full-tests-20261023.txt (first failed packaging run retained)
+ shipment-date-only-final-full-tests-20261023.txt
+ SHA256 b90895fd125146f7c3c427ee755383693fd1d812f86a8fee72572fcdfe4bd8c3
+No actual CMS item roundtrip, native tester replay, permission change, external
+export or deployment. Code/Pages/Wix/public remain separate, not published.

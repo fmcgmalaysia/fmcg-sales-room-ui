@@ -1,4 +1,20 @@
-CURRENT 2026-10-23 — APP RESTART RESTORES CMS; NCT TASK STOCK FIELDS SAVED
+CURRENT 2026-10-23 — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
+
+User clarified estimated shipment date needs date only. Actual NCT/GHR original
+estimatedShipmentDate fields are Date, preserved. Candidate schema now separates
+DATE_ONLY -> native DATE from existing semantic DATE -> DATETIME. Removed this
+ONE field from all12 business/recovery timestamp binding roots plus maintenance;
+other timestamps unchanged. Current intake plan keeps validated source YYYY-MM-DD
+instead of original core's midnight Date image, without changing original core.
+Both-company adapter tests preserve calendar/leap dates, null and absent values
+through whole-row CAS; original intake test verifies date-only versus timestamps.
+Targeted120pass15049.1199ms. First full1297pass/2packaging-check failures due
+stale paired-manifest hash, retained. Rebuilt derived business manifest; FINAL
+1299pass0fail52566.4742ms across173test files. Evidence details in native record.
+Only local candidate/derived artifacts changed, no production sync or release.
+Original native schema/300 and activity third-index stops remain; ACTIVE OFF.
+
+PREVIOUS — APP RESTART RESTORES CMS; NCT TASK STOCK FIELDS SAVED
 
 User restarted desktop app. Same original Wix51426657/tab and reinstalled
 extension, browser3: read-only exact native field-ID reconciliation succeeded.

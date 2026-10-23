@@ -9,6 +9,19 @@ function snapshot() {
   limits: { regular: 3, unique: 1 }, indexes: entry.indexes.map(index => ({ ...structuredClone(index), source: 'USER', type: 'REGULAR', status: 'ACTIVE' })) }));
 }
 const codes = result => result.issues.map(issue => issue.code);
+
+test('shipment dates are date-only while receipt/submission timestamps retain time for both companies', () => {
+ const collections = snapshot();
+ for (const id of ['NCTOrders', 'NCTOrders1']) {
+  const row = collections.find(entry => entry.id === id);
+  assert.equal(row.fields.estimatedShipmentDate, 'DATE_ONLY');
+  assert.equal(row.fields.masterReceivedTime, 'DATE');
+  assert.equal(row.fields.salesSubmissionTime, 'DATE');
+ }
+ assert.equal(reviewCurrentNativeSetup({ collections }).metadataMatches, true);
+ collections.find(entry => entry.id === 'NCTOrders').fields.estimatedShipmentDate = 'DATE';
+ assert.ok(reviewCurrentNativeSetup({ collections }).issues.some(issue => issue.collection === 'NCTOrders' && issue.field === 'estimatedShipmentDate'));
+});
 test('review plan has three new private tables, seven additive existing scopes and only feasible three-field regular index candidates', () => {
  const contract = currentNativeSetupContract();
  assert.equal(contract.entries.length, 10); assert.equal(contract.entries.filter(row => row.kind === 'NEW_PRIVATE').length, 3);

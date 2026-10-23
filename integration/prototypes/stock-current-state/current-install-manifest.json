@@ -179,7 +179,7 @@
       "source": "stockCurrentAccountPurchase.js",
       "target": "stockCurrentAccountPurchase.js",
       "kind": "NEW",
-      "sha256": "b971c73a4572899ff79a3047f224a58932fdd877cc115b2589982185e551f1f6",
+      "sha256": "096538e56076877c9dfe811af0f859970d125ce42c52d47b1db634f5eba90a01",
       "beforeSha256": null
     },
     {
@@ -187,7 +187,7 @@
       "source": "stockCurrentBorrow.web.js",
       "target": "stockCurrentBorrow.web.js",
       "kind": "NEW",
-      "sha256": "2833a26345e67e50b773a36e89d975920767742634f2e505e765bf9e0e1ea046",
+      "sha256": "40af370a88d65479767e797d31a0315c799a30d49edf88428961c78fdca3706f",
       "beforeSha256": null
     },
     {
@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "30620ec72fa3b83b29d417264ae849613d3f07be728fee2d70664198f6d0a2e6",
+      "sha256": "109183036b2431dd0181c1582afd4d10873211d060aaa1cecf3baa3656f4868c",
       "beforeSha256": null
     },
     {
@@ -203,7 +203,7 @@
       "source": "stockCurrentCostReference.js",
       "target": "stockCurrentCostReference.js",
       "kind": "NEW",
-      "sha256": "74a58b47df19c2a30cb6aa229a72a9f974fa0e0964a664dceea70646338b2ac4",
+      "sha256": "caeef6d117caaf64366cc3c08fd2088dfc80b8b8af1f7f2214d66846630aa229",
       "beforeSha256": null
     },
     {
@@ -211,7 +211,7 @@
       "source": "stockCurrentExceptions.js",
       "target": "stockCurrentExceptions.js",
       "kind": "NEW",
-      "sha256": "e5a52cf8f6a331d3ce764738c8233bfb123c8d757de5d651ab318dd285f6990a",
+      "sha256": "787b8ea930d3c355169731747aee6ad28988dc20fb72289dc2889c88700c5427",
       "beforeSha256": null
     },
     {
@@ -219,7 +219,7 @@
       "source": "stockCurrentFulfilment.js",
       "target": "stockCurrentFulfilment.js",
       "kind": "NEW",
-      "sha256": "139a38a36cf2dd4ba2bf9286c8ca29def01bc3f63dffebedc25b02d633fefe92",
+      "sha256": "6c4fc5bd37271187aba5b9051717d35ae21083f0b857acb50617efc0fbb9d5d6",
       "beforeSha256": null
     },
     {
@@ -227,7 +227,7 @@
       "source": "stockCurrentOrderIntake.js",
       "target": "stockCurrentOrderIntake.js",
       "kind": "NEW",
-      "sha256": "9b0d432861189de3b1f8c1ab30a799dbf08e6437a05c92619b80257ca7e97fa9",
+      "sha256": "cea7b09c799af64002aa80cf0343682eac9891f91c852d2c277d4b4932a01633",
       "beforeSha256": null
     },
     {
@@ -235,7 +235,7 @@
       "source": "stockCurrentPacking.js",
       "target": "stockCurrentPacking.js",
       "kind": "NEW",
-      "sha256": "ae840c89884cb041018abcbb66f61f5b4c77cbaecc6c629b5c3c9a0fb8dde7b2",
+      "sha256": "e87feac4d72221795063a1042c19e10c972d75fab371d0b7a4aaee7244ba325f",
       "beforeSha256": null
     },
     {
@@ -243,7 +243,7 @@
       "source": "stockCurrentPurchaseOrders.js",
       "target": "stockCurrentPurchaseOrders.js",
       "kind": "NEW",
-      "sha256": "7936eb8f16c7627b922656b47d5ee2d0aa051377bce6690db0d4a147be2360c9",
+      "sha256": "87a4f29cbd45cd55ed200e525fb7d2765d495942bbf3d7b6bd0d343f2cdd39f9",
       "beforeSha256": null
     },
     {
@@ -251,7 +251,7 @@
       "source": "stockCurrentQuantityRead.js",
       "target": "stockCurrentQuantityRead.js",
       "kind": "NEW",
-      "sha256": "018d8a7c44401c7b1d1c457b98039ec1f3d62285810bdef4a96106789ad3c591",
+      "sha256": "d3fa549ccc29da40774332adb03678563eaed347d04bd987d18601607bbb1dd7",
       "beforeSha256": null
     },
     {
@@ -267,7 +267,7 @@
       "source": "stockCurrentSourceSales.js",
       "target": "stockCurrentSourceSales.js",
       "kind": "NEW",
-      "sha256": "74932883af9f37d5322343b97fa2b2959d8a4118d2e99dbd1aba5eb203c07766",
+      "sha256": "aad69e3079829d5dd9ececc19240ccbfbba150b411ab302eed167ac62abcd880",
       "beforeSha256": null
     },
     {
@@ -275,7 +275,7 @@
       "source": "stockCurrentWarehouse.web.js",
       "target": "stockCurrentWarehouse.web.js",
       "kind": "NEW",
-      "sha256": "13f5ea278b23dd1fa4fa7d90e4644686f182a99ba1703cdfc708a4a916f1cc0b",
+      "sha256": "37a684c51a732d528a2d7c232b1dcf173121a0eeaee911e75b19ff9dfa2c84f4",
       "beforeSha256": null
     },
     {
@@ -291,7 +291,7 @@
       "source": "stockMaintenanceAdmin.web.js",
       "target": "stockMaintenanceAdmin.web.js",
       "kind": "NEW",
-      "sha256": "cb049f7fc77c0337e240f1070077fc0b9ce20fa7ba1ce5f2d2849a3324493414",
+      "sha256": "3ad44165ad1aaf0666667263653f4523d26561c44664d597c0198ba21120d161",
       "beforeSha256": null
     },
     {
@@ -299,7 +299,7 @@
       "source": "stockRecoveryRead.web.js",
       "target": "stockRecoveryRead.web.js",
       "kind": "NEW",
-      "sha256": "1357ca0efde6363f7868e0292752d52b4e389a04b2d884aaf1430c4575ffc280",
+      "sha256": "f3f5421030d6ef2d1de2853bd5f966ac10f6254b00fcf9784c5307af40d445a4",
       "beforeSha256": null
     },
     {
@@ -1341,7 +1341,7 @@
       "system": "MASTER",
       "target": "stockCurrentAccountPurchase.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentAccountPurchase.js",
-      "sha256": "b971c73a4572899ff79a3047f224a58932fdd877cc115b2589982185e551f1f6",
+      "sha256": "096538e56076877c9dfe811af0f859970d125ce42c52d47b1db634f5eba90a01",
       "exports": [
         "createCurrentAccountPurchase"
       ],
@@ -1366,7 +1366,7 @@
       "system": "MASTER",
       "target": "stockCurrentBorrow.web.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentBorrow.web.js",
-      "sha256": "2833a26345e67e50b773a36e89d975920767742634f2e505e765bf9e0e1ea046",
+      "sha256": "40af370a88d65479767e797d31a0315c799a30d49edf88428961c78fdca3706f",
       "exports": [
         "getPurchaseBorrowOptionsCurrent",
         "getPurchaseBorrowReturnOptionsCurrent",
@@ -1403,7 +1403,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "30620ec72fa3b83b29d417264ae849613d3f07be728fee2d70664198f6d0a2e6",
+      "sha256": "109183036b2431dd0181c1582afd4d10873211d060aaa1cecf3baa3656f4868c",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1472,7 +1472,7 @@
       "system": "MASTER",
       "target": "stockCurrentCostReference.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCostReference.js",
-      "sha256": "74a58b47df19c2a30cb6aa229a72a9f974fa0e0964a664dceea70646338b2ac4",
+      "sha256": "caeef6d117caaf64366cc3c08fd2088dfc80b8b8af1f7f2214d66846630aa229",
       "exports": [
         "createCurrentCostReference"
       ],
@@ -1490,7 +1490,7 @@
       "system": "MASTER",
       "target": "stockCurrentExceptions.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentExceptions.js",
-      "sha256": "e5a52cf8f6a331d3ce764738c8233bfb123c8d757de5d651ab318dd285f6990a",
+      "sha256": "787b8ea930d3c355169731747aee6ad28988dc20fb72289dc2889c88700c5427",
       "exports": [
         "createCurrentStockExceptions"
       ],
@@ -1515,7 +1515,7 @@
       "system": "MASTER",
       "target": "stockCurrentFulfilment.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentFulfilment.js",
-      "sha256": "139a38a36cf2dd4ba2bf9286c8ca29def01bc3f63dffebedc25b02d633fefe92",
+      "sha256": "6c4fc5bd37271187aba5b9051717d35ae21083f0b857acb50617efc0fbb9d5d6",
       "exports": [
         "CURRENT_PHYSICAL_DISPATCH_ENABLED",
         "createCurrentMasterFulfilment"
@@ -1537,7 +1537,7 @@
       "system": "MASTER",
       "target": "stockCurrentOrderIntake.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentOrderIntake.js",
-      "sha256": "9b0d432861189de3b1f8c1ab30a799dbf08e6437a05c92619b80257ca7e97fa9",
+      "sha256": "cea7b09c799af64002aa80cf0343682eac9891f91c852d2c277d4b4932a01633",
       "exports": [
         "createCurrentOrderIntake"
       ],
@@ -1552,7 +1552,7 @@
       "system": "MASTER",
       "target": "stockCurrentPacking.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentPacking.js",
-      "sha256": "ae840c89884cb041018abcbb66f61f5b4c77cbaecc6c629b5c3c9a0fb8dde7b2",
+      "sha256": "e87feac4d72221795063a1042c19e10c972d75fab371d0b7a4aaee7244ba325f",
       "exports": [
         "createCurrentMasterPacking"
       ],
@@ -1574,7 +1574,7 @@
       "system": "MASTER",
       "target": "stockCurrentPurchaseOrders.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentPurchaseOrders.js",
-      "sha256": "7936eb8f16c7627b922656b47d5ee2d0aa051377bce6690db0d4a147be2360c9",
+      "sha256": "87a4f29cbd45cd55ed200e525fb7d2765d495942bbf3d7b6bd0d343f2cdd39f9",
       "exports": [
         "createCurrentPurchaseOrders"
       ],
@@ -1597,7 +1597,7 @@
       "system": "MASTER",
       "target": "stockCurrentQuantityRead.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentQuantityRead.js",
-      "sha256": "018d8a7c44401c7b1d1c457b98039ec1f3d62285810bdef4a96106789ad3c591",
+      "sha256": "d3fa549ccc29da40774332adb03678563eaed347d04bd987d18601607bbb1dd7",
       "exports": [
         "createCurrentPurchaseQuantityRead"
       ],
@@ -1638,7 +1638,7 @@
       "system": "MASTER",
       "target": "stockCurrentSourceSales.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentSourceSales.js",
-      "sha256": "74932883af9f37d5322343b97fa2b2959d8a4118d2e99dbd1aba5eb203c07766",
+      "sha256": "aad69e3079829d5dd9ececc19240ccbfbba150b411ab302eed167ac62abcd880",
       "exports": [
         "createCurrentSourceSales"
       ],
@@ -1664,7 +1664,7 @@
       "system": "MASTER",
       "target": "stockCurrentWarehouse.web.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentWarehouse.web.js",
-      "sha256": "13f5ea278b23dd1fa4fa7d90e4644686f182a99ba1703cdfc708a4a916f1cc0b",
+      "sha256": "37a684c51a732d528a2d7c232b1dcf173121a0eeaee911e75b19ff9dfa2c84f4",
       "exports": [
         "captureWarehouseCbmCurrent",
         "getWarehouseOrdersCurrent",
@@ -1756,7 +1756,7 @@
       "system": "MASTER",
       "target": "stockMaintenanceAdmin.web.js",
       "source": "integration/prototypes/stock-current-state/stockMaintenanceAdmin.web.js",
-      "sha256": "cb049f7fc77c0337e240f1070077fc0b9ce20fa7ba1ce5f2d2849a3324493414",
+      "sha256": "3ad44165ad1aaf0666667263653f4523d26561c44664d597c0198ba21120d161",
       "exports": [
         "applyStockMaintenanceMigration",
         "captureStockMaintenance",
@@ -1788,7 +1788,7 @@
       "system": "MASTER",
       "target": "stockRecoveryRead.web.js",
       "source": "integration/prototypes/stock-current-state/stockRecoveryRead.web.js",
-      "sha256": "1357ca0efde6363f7868e0292752d52b4e389a04b2d884aaf1430c4575ffc280",
+      "sha256": "f3f5421030d6ef2d1de2853bd5f966ac10f6254b00fcf9784c5307af40d445a4",
       "exports": [
         "inspectStockSave"
       ],

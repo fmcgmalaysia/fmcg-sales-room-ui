@@ -54,7 +54,7 @@ async function fixture({ company = 'NCT', saved = true, coverage = true, generat
         if ([journal, 'PurchaseOrders'].includes(collection)) return [...f.db].filter(([key]) => key.startsWith(collection + ':')).map(([, row]) => copy(row));
         throw Error('Unexpected root table'); } }, operationId: hash, planCollections, createCurrentPurchaseOrderRecordSave: createSave, createCurrentPurchaseTables: createTables,
     createSdkConditionalStore: config => { assert.equal(config.company, company); assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'],
-      [orders]: ['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; },
+      [orders]: ['masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; },
     createSegmentedFencedProof: config => config.store===f.store?f.protocol:createSegmentedFencedProof({...config,stepsPerInvocation:1})
   });
   let privateError;

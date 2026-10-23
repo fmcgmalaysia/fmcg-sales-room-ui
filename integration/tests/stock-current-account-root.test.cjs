@@ -51,7 +51,7 @@ async function fixture({ company = 'NCT', coverage = true, generated = false, cr
     // this fixture exercises ORIGINAL PO/financial projectors and native routing.
     readCurrentPurchaseProjection: async args => { calls.push('CURRENT_PROJECTION'); assert.equal(args.currentProjectionVersion, 2); assert.equal(args.control.mode, 'ACTIVE');
       assert.equal((await args.readCurrentTaskRows(company, f.context.tasks.map(row => row.id))).length, f.context.tasks.length); return { workspace: args.context }; },
-    createSdkConditionalStore: config => { assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'], [orders]: ['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; }, createSegmentedFencedProof: config=>config.store===f.store?f.protocol:createSegmentedFencedProof({...config,stepsPerInvocation:1})
+    createSdkConditionalStore: config => { assert.deepEqual(copy(config.dateTimeFields), { [journal]: ['activityTime'], [orders]: ['masterReceivedTime','salesSubmissionTime'], [tasks]: ['lastCostCaptureTime'] }); return f.store; }, createSegmentedFencedProof: config=>config.store===f.store?f.protocol:createSegmentedFencedProof({...config,stepsPerInvocation:1})
   });
   let privateError;
   const api = vm.runInNewContext(fs.readFileSync(path.join(folder, 'accountPurchase.web.candidate.js'), 'utf8').replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '') + ';({saveAccountSettlement,saveAccountInvoiceCheck,getAccountPurchaseOrders,queryAccountPurchaseOrders,planAccountReadIndex,maintainAccountReadIndex});', {

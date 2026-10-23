@@ -7114,7 +7114,7 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
 module.exports = { createCurrentOrderIntakeOperations };
 
 },
-// order-intake-plan.cjs sha256:51d61bb97622250d5380a079877e7f754fbecd824fe7cf70cf538f99e6cfe8f8
+// order-intake-plan.cjs sha256:2df022e0f0b25b00e5d7bbe0ac49e734290045cf9f72b428227e4d7780de09a4
 "order-intake-plan.cjs": (load, module) => {
 'use strict';
 
@@ -7151,6 +7151,9 @@ async function prepareOrderIntake({ createNctIntake, createNctReceiptReader, com
         || c === tasks && row.description !== body.orderId
         || c === journal && row.description !== body.orderId) throw Error('Unexpected original intake insert');
       const proposed = { ...copy(row), company };
+      // The original validator has already checked the date-only source value.
+      // Preserve the existing CMS Date field, not a midnight DateTime conversion.
+      if (c === orders) proposed.estimatedShipmentDate = body.estimatedShipmentDate || null;
       if (c === tasks && planFormat === 'SEGMENTED_V2') Object.assign(proposed, {
         stockCounterSchema: 2, stockDispatchedCumulative: 0, stockCounterGeneration: generation + 1 });
       overlay.set(key, proposed); writes.push({ collection: c, before: null, after: proposed }); return copy(proposed);

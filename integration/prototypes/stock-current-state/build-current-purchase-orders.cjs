@@ -42,7 +42,7 @@ export async function createCurrentPurchaseOrders(company) {
   if(PURCHASE_CURRENT_PROJECTION_VERSION!==2)throw Error('Original paired current Purchase projector required');
   const [orders,tasks]=company==='NCT'?['NCTOrders','NCTTasks']:['NCTOrders1','NCTTasks1'];
   const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
-    [orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
+    [orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
   const base=createSegmentedFencedProof({company,store,domainWrites:true});
   const protocol={...base,readSnapshot:read=>base.readSnapshot(control=>{
     if(control.company!==company||control.mode!=='ACTIVE'||control.schemaVersion!==1||!control.writerBuild

@@ -34,7 +34,7 @@ function currentNativeSetupContract() {
  for (const id of ['NCTTasks', 'NCTTasks1']) entries.push({ id, kind: 'EXISTING_AUGMENT',
   fields: { ...text('company stockCommitVersion'), ...number('stockCounterSchema stockDispatchedCumulative stockCounterGeneration'), lastCostCaptureTime: 'DATE' }, indexes: [] });
  for (const id of ['NCTOrders', 'NCTOrders1']) entries.push({ id, kind: 'EXISTING_AUGMENT',
-  fields: { ...text('company stockCommitVersion'), estimatedShipmentDate: 'DATE', masterReceivedTime: 'DATE', salesSubmissionTime: 'DATE' }, indexes: [] });
+  fields: { ...text('company stockCommitVersion'), estimatedShipmentDate: 'DATE_ONLY', masterReceivedTime: 'DATE', salesSubmissionTime: 'DATE' }, indexes: [] });
  // Shared PO metadata is an existing conditional co-writer, not a new finance
  // feature. Its exact company/version fields must be installed and initialized
  // too; otherwise current Purchase list normalization and PO updates both refuse.

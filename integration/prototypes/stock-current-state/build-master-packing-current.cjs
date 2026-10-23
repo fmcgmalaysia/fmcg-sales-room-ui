@@ -23,7 +23,7 @@ export async function createCurrentMasterPacking({company,department,authenticat
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired current packing calculators required');
  const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
-  [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+  [company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']}});
  const protocol=createSegmentedFencedProof({company,store,domainWrites:true});
  const authorityDependencies={currentDamageVersion:typeof PACKING_CURRENT_DAMAGE_VERSION==='number'&&typeof PACKING_CURRENT_DAMAGE_READ_VERSION==='number'&&PACKING_CURRENT_DAMAGE_VERSION===PACKING_CURRENT_DAMAGE_READ_VERSION?PACKING_CURRENT_DAMAGE_VERSION:0,readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),

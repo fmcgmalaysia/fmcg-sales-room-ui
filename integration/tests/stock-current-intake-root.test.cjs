@@ -49,7 +49,7 @@ async function fixture({ company = 'NCT', steps = 20, coverage = true, generated
     createSdkConditionalStore: config => {
       sdk++; assert.equal(config.company, company);
       assert.deepEqual(copy(config.dateTimeFields), { [protocol.ids.journal]: ['activityTime'],
-        [company === 'NCT' ? 'NCTOrders' : 'NCTOrders1']: ['estimatedShipmentDate', 'masterReceivedTime', 'salesSubmissionTime'],
+        [company === 'NCT' ? 'NCTOrders' : 'NCTOrders1']: ['masterReceivedTime', 'salesSubmissionTime'],
         [company === 'NCT' ? 'NCTTasks' : 'NCTTasks1']: ['lastCostCaptureTime'] }); return store;
     }
   });
@@ -216,7 +216,7 @@ test('generated intake uses the actual conditional SDK adapter and explicit Date
     }
   };
   const store = createSdkConditionalStore({ company: 'NCT', items, collections: planCollections('NCT', true), dateTimeFields: {
-    NCTActivity: ['activityTime'], NCTOrders: ['estimatedShipmentDate', 'masterReceivedTime', 'salesSubmissionTime'], NCTTasks: ['lastCostCaptureTime'] } });
+    NCTActivity: ['activityTime'], NCTOrders: ['masterReceivedTime', 'salesSubmissionTime'], NCTTasks: ['lastCostCaptureTime'] } });
   const protocol = createSegmentedFencedProof({ company: 'NCT', store, domainWrites: true }); await protocol.initialize();
   const before = await protocol.readControl();
   await store.compareAndSet('NCTActivity', before._id, before._version, { ...before, _version: 'ACTIVE-V1', mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' });
@@ -229,7 +229,8 @@ test('generated intake uses the actual conditional SDK adapter and explicit Date
     readOppositePreparation: async () => null, captureCosts: async () => ({}), now: () => new Date('2026-10-22T03:00:01.000Z') });
   const receipt = await operations.receive(input); assert.equal(receipt.ok, true);
   const order = [...native.entries()].find(([key]) => key.startsWith('NCTOrders/'))[1];
-  assert.equal(Object.prototype.toString.call(order.estimatedShipmentDate), '[object Date]');
+  assert.equal(order.estimatedShipmentDate, input.estimatedShipmentDate);
+  assert.equal(typeof order.estimatedShipmentDate, 'string');
   assert.equal(Object.prototype.toString.call(order.masterReceivedTime), '[object Date]');
   assert.equal(Object.prototype.toString.call(order.salesSubmissionTime), '[object Date]');
   const prepared = [...native.values()].find(row => row.action === 'INTAKE_PREPARED');

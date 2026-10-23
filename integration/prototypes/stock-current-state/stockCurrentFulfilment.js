@@ -23,7 +23,7 @@ export async function createCurrentMasterFulfilment({company,authenticateOrigina
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||CUSTOMER_CURRENT_FULFILMENT_VERSION!==2||SHIPMENT_CURRENT_ALLOCATION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired original current fulfilment modules required');
  const journal=company==='NCT'?'NCTActivity':'NCTActivity1';
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
-  [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+  [company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']}});
  const protocol=createSegmentedFencedProof({company,store,domainWrites:true});
  const guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(control=>{

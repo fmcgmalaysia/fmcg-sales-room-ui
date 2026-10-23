@@ -4,9 +4,9 @@ const {planCollections}=require('../prototypes/stock-current-state/domain-scope.
 const folder=path.join(__dirname,'../prototypes/stock-current-state'),copy=value=>structuredClone(value);
 const roots=['stockCurrentAccountPurchase.js','stockCurrentBorrow.web.js','stockCurrentCostReference.js','stockCurrentExceptions.js',
  'stockCurrentFulfilment.js','stockCurrentOrderIntake.js','stockCurrentPacking.js','stockCurrentPurchaseOrders.js','stockCurrentQuantityRead.js',
- 'stockCurrentSourceSales.js','stockCurrentWarehouse.web.js','stockRecoveryRead.web.js'];
+ 'stockCurrentSourceSales.js','stockCurrentWarehouse.web.js','stockRecoveryRead.web.js','stockMaintenanceAdmin.web.js'];
 function schema(company){return{[company==='NCT'?'NCTActivity':'NCTActivity1']:['activityTime'],
- [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+ [company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
  [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime']};}
 function boundFields(file,company){const source=fs.readFileSync(path.join(folder,file),'utf8'),match=source.match(/dateTimeFields:\s*(\{[^{}]*\})/);
  assert.ok(match,'Exact native date configuration required: '+file);const names={activity:company==='NCT'?'NCTActivity':'NCTActivity1',orders:company==='NCT'?'NCTOrders':'NCTOrders1',tasks:company==='NCT'?'NCTTasks':'NCTTasks1'};
@@ -21,19 +21,38 @@ function nativeStore(company,dateTimeFields){const db=new Map(),date='2026-10-23
     const result={...row,...set};for(const field of remove)delete result[field];db.set(collection+'/'+id,copy(result));return copy(result);}};return query;}};
  return{db,date,store:createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields})};}
 
-test('all eleven current roots plus read-only recovery bind both companies exact CMS-inspected order/task/journal date fields',()=>{
+test('all current roots, read-only recovery and maintenance bind both companies exact CMS-inspected order/task/journal date fields',()=>{
  for(const file of roots)for(const company of ['NCT','GHR'])assert.deepEqual(boundFields(file,company),schema(company),file+' '+company);
 });
 test('root-bound actual adapter keeps native Date types through whole-row CAS while canonical plans and ordinary text stay unchanged',async()=>{
  for(const company of ['NCT','GHR'])for(const file of roots){const fields=boundFields(file,company),f=nativeStore(company,fields);
   for(const [collection,names] of Object.entries(fields)){
-   const native={_id:'ROW',company,stockCommitVersion:'V0',ordinaryText:f.date,...Object.fromEntries(names.map(name=>[name,new Date(f.date)]))};f.db.set(collection+'/ROW',copy(native));
+   const native={_id:'ROW',company,stockCommitVersion:'V0',ordinaryText:f.date,...Object.fromEntries(names.map(name=>[name,new Date(f.date)])),
+    ...(/^NCTOrders1?$/.test(collection)?{estimatedShipmentDate:'2028-02-29'}:{})};f.db.set(collection+'/ROW',copy(native));
    const before=await f.store.read(collection,'ROW');for(const name of names)assert.equal(before[name],f.date);
    await f.store.compareAndSet(collection,'ROW','V0',{...before,_version:'V1',inventoryCounter:1});
    const actual=f.db.get(collection+'/ROW');for(const name of names){assert.ok(actual[name] instanceof Date,file+' '+collection+'.'+name);assert.equal(actual[name].toISOString(),f.date);}
    assert.equal(actual.ordinaryText,f.date);assert.equal(typeof actual.ordinaryText,'string');assert.equal(actual.inventoryCounter,1);
+   if(/^NCTOrders1?$/.test(collection)){assert.equal(actual.estimatedShipmentDate,'2028-02-29');assert.equal(typeof actual.estimatedShipmentDate,'string');}
   }
  }
+});
+
+test('date-only order values including null and absent remain exact through every root without timezone conversion',async()=>{
+ for(const company of ['NCT','GHR'])for(const file of roots)for(const value of ['2026-10-23','2026-01-01',null,undefined]){
+  const f=nativeStore(company,boundFields(file,company)),collection=company==='NCT'?'NCTOrders':'NCTOrders1';
+  const native={_id:'ROW',company,stockCommitVersion:'V0',...(value===undefined?{}:{estimatedShipmentDate:value})};f.db.set(collection+'/ROW',copy(native));
+  const before=await f.store.read(collection,'ROW');await f.store.compareAndSet(collection,'ROW','V0',{...before,_version:'V1',inventoryCounter:0});
+  const actual=f.db.get(collection+'/ROW');assert.equal(actual.estimatedShipmentDate,value);
+  assert.equal(Object.hasOwn(actual,'estimatedShipmentDate'),value!==undefined);
+ }
+});
+
+test('retained counterexample: old timestamp binding rejects a valid date-only order before any stock save',async()=>{
+ const fields=schema('NCT');fields.NCTOrders=['estimatedShipmentDate',...fields.NCTOrders];const f=nativeStore('NCT',fields);
+ f.db.set('NCTOrders/ROW',{_id:'ROW',company:'NCT',stockCommitVersion:'V0',estimatedShipmentDate:'2026-10-23'});
+ await assert.rejects(f.store.read('NCTOrders','ROW'),/DateTime read type mismatch/);
+ assert.equal(f.db.get('NCTOrders/ROW').stockCommitVersion,'V0');
 });
 test('retained counterexample: journal-only configuration silently writes an untouched task Date as text during another field update',async()=>{
  const f=nativeStore('NCT',{NCTActivity:['activityTime']}),native={_id:'ROW',company:'NCT',stockCommitVersion:'V0',lastCostCaptureTime:new Date(f.date)};

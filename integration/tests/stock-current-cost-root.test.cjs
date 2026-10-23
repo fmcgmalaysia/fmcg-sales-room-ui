@@ -35,7 +35,7 @@ async function fixture({ company = 'NCT', coverage = true, generated = false, ca
       all: async collection => { assert.equal(collection, 'StaffMasterAccess', 'never scan company journals for one cost task'); return [f.employee]; } },
     createSdkConditionalStore: config => {
       calls.push('SDK'); assert.equal(config.company, company); assert.deepEqual(copy(config.dateTimeFields), { [f.journal]: ['activityTime'],
-        [f.tasks]: ['lastCostCaptureTime'], [f.orders]: ['estimatedShipmentDate', 'masterReceivedTime', 'salesSubmissionTime'] }); return f.store;
+        [f.tasks]: ['lastCostCaptureTime'], [f.orders]: ['masterReceivedTime', 'salesSubmissionTime'] }); return f.store;
     }, createSegmentedFencedProof: () => f.protocol
   });
   const web = fs.readFileSync(path.join(folder, 'purchaseCostRetry.web.candidate.js'), 'utf8');

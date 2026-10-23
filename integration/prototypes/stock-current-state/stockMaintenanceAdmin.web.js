@@ -57,7 +57,7 @@ async function nativeServices(company, backupRequestId) {
   const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
   const orders = company === 'NCT' ? 'NCTOrders' : 'NCTOrders1', tasks = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1';
   const store = createSdkConditionalStore({ company, items, collections: planCollections(company, true),
-    dateTimeFields: { [journal]: ['activityTime'], [orders]: ['estimatedShipmentDate', 'masterReceivedTime', 'salesSubmissionTime'],
+    dateTimeFields: { [journal]: ['activityTime'], [orders]: ['masterReceivedTime', 'salesSubmissionTime'],
       [tasks]: ['lastCostCaptureTime'] } });
   const protocol = createSegmentedFencedProof({ company, store, domainWrites: true });
   // Explicit refusal budgets, NOT measured production capacity or permission to

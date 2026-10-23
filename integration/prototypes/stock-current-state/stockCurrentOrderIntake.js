@@ -17,7 +17,7 @@ export async function createCurrentOrderIntake({ company, captureCosts }) {
   if (control.mode !== 'ACTIVE') return {mode:control.mode};
   const [orders, tasks] = company === 'NCT' ? ['NCTOrders','NCTTasks'] : ['NCTOrders1','NCTTasks1'];
   const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
-    [journal]:['activityTime'],[orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
+    [journal]:['activityTime'],[orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
   const protocol = createSegmentedFencedProof({company,store,domainWrites:true});
   const operations = createCurrentOrderIntakeOperations({company,store,protocol,coverage:writerCoverage,createNctIntake,createNctReceiptReader,captureCosts,
     readOppositePreparation:async(collection,id)=>{

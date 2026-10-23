@@ -22,7 +22,7 @@ export async function createCurrentCostReference(company) {
   if (control.mode !== 'ACTIVE') return {mode:control.mode};
   const [orders,tasks] = company === 'NCT' ? ['NCTOrders','NCTTasks'] : ['NCTOrders1','NCTTasks1'];
   const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
-    [journal]:['activityTime'],[tasks]:['lastCostCaptureTime'],[orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime']}});
+    [journal]:['activityTime'],[tasks]:['lastCostCaptureTime'],[orders]:['masterReceivedTime','salesSubmissionTime']}});
   const protocol = createSegmentedFencedProof({company,store,domainWrites:true});
   const save = createCurrentCostReferenceSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:{
     readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),requirePurchaseStaff,

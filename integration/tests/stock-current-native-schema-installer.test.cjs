@@ -21,7 +21,21 @@ function fixture(id = 'StockPositions') {
  return { state, calls, hooks, collections, indexes, api: createNativeSchemaInstaller({ collections, indexes }) };
 }
 test('maps semantic date to timestamp and string arrays to native enums', () => {
- assert.equal(wireType('DATE'), 'DATETIME'); assert.equal(wireType('TEXT_ARRAY'), 'ARRAY_STRING'); assert.equal(wireType('OBJECT_OR_NULL'), 'OBJECT');
+ assert.equal(wireType('DATE'), 'DATETIME'); assert.equal(wireType('DATE_ONLY'), 'DATE'); assert.equal(wireType('TEXT_ARRAY'), 'ARRAY_STRING'); assert.equal(wireType('OBJECT_OR_NULL'), 'OBJECT');
+});
+
+test('original date-only order field is retained and missing date-only field uses DATE, never DATETIME', async () => {
+ for (const collection of ['NCTOrders', 'NCTOrders1']) {
+  const f = fixture(collection);
+  await f.api.addField({ collection, key: 'estimatedShipmentDate', revision: '1' });
+  assert.equal(f.state.collection.fields[1].type, 'DATE');
+  assert.equal((await f.api.inspect({ collection })).missingFields.some(row => row.key === 'estimatedShipmentDate'), false);
+  const before = clone(f.state.collection.fields);
+  await f.api.addField({ collection, key: 'company', revision: '2' });
+  assert.deepEqual(f.state.collection.fields.slice(0, 2), before);
+  f.state.collection.fields[1].type = 'DATETIME';
+  await assert.rejects(f.api.inspect({ collection }), /Existing field type conflict/);
+ }
 });
 test('inspection is metadata-only and returns exact missing field scope', async () => {
  const f = fixture(), result = await f.api.inspect({ collection: 'StockPositions' });

@@ -64,7 +64,7 @@ export async function createCurrentAccountPurchase(company){
   if(PURCHASE_CURRENT_PROJECTION_VERSION!==2)throw Error('Original paired current shared Account projector required');
   const [orders,tasks]=company==='NCT'?['NCTOrders','NCTTasks']:['NCTOrders1','NCTTasks1'];
   const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
-    [orders]:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
+    [orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
   const base=createSegmentedFencedProof({company,store,domainWrites:true}),protocol={...base,readSnapshot:read=>base.readSnapshot(control=>{
     if(control.company!==company||control.mode!=='ACTIVE'||control.schemaVersion!==1||!control.writerBuild
       ||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==control.writerBuild))throw Error('All original shared Account co-writers required');return read(control);

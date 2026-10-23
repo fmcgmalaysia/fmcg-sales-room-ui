@@ -41,7 +41,7 @@ async function privateGateway(company, taskCommands = false, workspaceRead = fal
   if (!Object.hasOwn(verifiedDateFields, journal)) throw Error('Current company schema not verified');
   const store = createSdkConditionalStore({ company, items, collections: planCollections(company, true),
     dateTimeFields: { [journal]: verifiedDateFields[journal],
-      [company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+      [company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
       [company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime'] } });
   const protocol = createSegmentedFencedProof({ company, store, domainWrites: true });
   const guardedProtocol = { ...protocol, readSnapshot: read => protocol.readSnapshot(control => {

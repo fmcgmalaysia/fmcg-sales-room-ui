@@ -24,7 +24,7 @@ async function root(verifiedMockCoverage = false) {
       assert.deepEqual(copy(args.collections), planCollections(args.company, true));
       const journal = args.company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
       assert.deepEqual(copy(args.dateTimeFields), { [journal]: ['activityTime'],
-        [args.company==='NCT'?'NCTOrders':'NCTOrders1']:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],
+        [args.company==='NCT'?'NCTOrders':'NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
         [args.company==='NCT'?'NCTTasks':'NCTTasks1']:['lastCostCaptureTime'] }); return f.store; },
     createSegmentedFencedProof: args => { assert.equal(args.store, f.store); assert.equal(args.domainWrites, true); return f.protocol; },
     createCurrentPurchaseBorrowGateway };

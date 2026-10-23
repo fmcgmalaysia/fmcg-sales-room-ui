@@ -24,7 +24,7 @@ async function fixture(coverage=true){
   fulfilmentStore:{read:async(collection,id)=>{calls.push('CONTROL');const row=await f.deps.store.read(collection,id);return row?{...row,stockCommitVersion:row._version}:null;},
    all:async collection=>{calls.push(collection);assert.equal(collection,'PurchaseOrders');return[];}},
   readFulfilmentContext:async(...args)=>{calls.push('CONTEXT');return f.deps.readContext(...args);},readCustomerFulfilment:readOriginal,
-  createSdkConditionalStore:configuration=>{calls.push('SDK');assert.equal(configuration.company,'NCT');assert.deepEqual(copy(configuration.dateTimeFields),{NCTActivity:['activityTime'],NCTOrders:['estimatedShipmentDate','masterReceivedTime','salesSubmissionTime'],NCTTasks:['lastCostCaptureTime']});return f.deps.store;},
+  createSdkConditionalStore:configuration=>{calls.push('SDK');assert.equal(configuration.company,'NCT');assert.deepEqual(copy(configuration.dateTimeFields),{NCTActivity:['activityTime'],NCTOrders:['masterReceivedTime','salesSubmissionTime'],NCTTasks:['lastCostCaptureTime']});return f.deps.store;},
   requestPurchaseDocument:async command=>{fileCalls.push(copy(command));if(command.action==='ALLOCATE')return{ok:true,fileId:'Original_Source_File_0001'};
    assert.equal(command.action,'UPLOAD');if(files.has(command.fileId))assert.deepEqual(files.get(command.fileId),copy(command));else files.set(command.fileId,copy(command));if(loseFile){loseFile=false;throw Error('Lost original source file reply');}return{ok:true,...copy(command)};},
   createSegmentedFencedProof:configuration=>{assert.equal(configuration.company,'NCT');assert.equal(configuration.domainWrites,true);return configuration.store===f.deps.store?f.deps.protocol:createSegmentedFencedProof(configuration);}};
