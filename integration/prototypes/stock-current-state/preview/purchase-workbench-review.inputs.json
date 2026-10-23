@@ -1,0 +1,135 @@
+{
+  "schema": "PURCHASE_UX_REVIEW_V1",
+  "candidateOnly": true,
+  "cmsWrites": false,
+  "inputs": [
+    {
+      "file": "purchase-live/style.css",
+      "sha256": "2d3552f02061edd9b1724b82db703286f897cb358f67f3513c8e754e569ba25e"
+    },
+    {
+      "file": "purchase-live/task-grid.css",
+      "sha256": "29987a18bc3b4957a175380fe2f35f0867e60607c29a3e2c3db84ed48665e120"
+    },
+    {
+      "file": "master-shared/task-signals.css",
+      "sha256": "f200cf31bdce10685c3876123271ca77e44ba8d6a762094e4f2ffe208c8e7895"
+    },
+    {
+      "file": "master-shared/stock-exceptions.css",
+      "sha256": "384655c19a6e02e114826b07f5537a6c78495d65adc88b33585f54116c59a986"
+    },
+    {
+      "file": "purchase-live/dashboard.css",
+      "sha256": "ed7ac1a34142728bbe3fdc5693a104c21d5b22d04ffd1e9e1c141d2a689614f5"
+    },
+    {
+      "file": "purchase-live/header.css",
+      "sha256": "22482d3cd3bc7a1a5310f54dce0213aec6ac517b7a4fddc0a204f1ab15d46fb8"
+    },
+    {
+      "file": "purchase-live/active-orders.css",
+      "sha256": "fdef36ff50573195f581c43d63def2aef9b9d005d7a88bba386dc518b9df9129"
+    },
+    {
+      "file": "master-shared/workroom-theme.css",
+      "sha256": "0191c166998d6195a42701f2052ac46ca0f34c71c27301f9030a1304ca632195"
+    },
+    {
+      "file": "master-shared/task-chat.css",
+      "sha256": "475f74128079a9d5cf301aca0e308d93fd9ada30e1ef3770f0a9a689c8fe746f"
+    },
+    {
+      "file": "master-shared/mobile-menu.css",
+      "sha256": "47c7a2dffee762611e4e24389755da015942b58fdf3a5b45b180890518017165"
+    },
+    {
+      "file": "master-shared/quantity-alignment.css",
+      "sha256": "bf03fb177c9ecb2971c3f1b6533002e5a60cda6dcfb807d9e20ba468bf14f551"
+    },
+    {
+      "file": "purchase-live/split-rows.css",
+      "sha256": "569163f625195f6af54a30d8c3fd8a7ece0f6f77ec105e2704871a9aa2b0fed9"
+    },
+    {
+      "file": "master-shared/action-affordances.css",
+      "sha256": "db46db36dfc5a8a7b8aceb77936ee71047676922b4b759cf51c93523e6e6e1b0"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.css",
+      "sha256": "29d7a0bf8db04a8a1f5e96ba0f655e5eb4fa4b741d0344a076e75a8ebc13d6d9"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.css",
+      "sha256": "9ae6c764ff6b2640133e4400fdb7cfd52b33217c3af702c1f5c65517670530ed"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.css",
+      "sha256": "106c44eadb3b72ee172a6ad43406d428deb4ceb0b11f23c6ba9d4d70358501bf"
+    },
+    {
+      "file": "master-shared/task-signals.js",
+      "sha256": "bc95ab18acd49933daebf883c23ccf21275ccbebd20aea31818bc39a23bd3dfe"
+    },
+    {
+      "file": "master-shared/fixed-header.js",
+      "sha256": "4142e6b4be92eae6db38540273da3b80cc5f0e51202f499bd8bd5d3cbfa8a369"
+    },
+    {
+      "file": "master-shared/shipment-batches.js",
+      "sha256": "f14ba801e45ee0bff6bfd14a37ce642116538e1dee15f923005bcfd55380a7f4"
+    },
+    {
+      "file": "purchase-live/display-rows.js",
+      "sha256": "b84c3c4f03ac9fa4989e6e900825554b7a951db0f66b396576353560d699d67d"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
+      "sha256": "aad0ad5e8db701517b73eba560fdd065677383414f46b6ae0d3c73a279dceb7b"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",
+      "sha256": "463e77551d2b33a04056fbaa2d0241c3bebf1be00845ab7b07c9ec93c2e13c32"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.js",
+      "sha256": "51d67bea71fe777c5fe5fca3018618a8e71cc827480f53795ecccc141b415f4c"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-return.js",
+      "sha256": "24b6530d05a909428d634b62453e9822b02b33b65d737bbcf36dd36be0d9afc9"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.js",
+      "sha256": "005eb6c428cc0984ec3abb8ea40522582a3e12297b25bff32a633fec6bdd92df"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/supplier-allocation.js",
+      "sha256": "37f81b40ecc452dc18c7a3dfed229a4e29ad44cc68c87223416276e19d6361ac"
+    },
+    {
+      "file": "purchase-live/dashboard.js",
+      "sha256": "bfc1f51fd15842b3fa044fad4afbfc5249ccc0957d5cea22cc2ca73f57dd8d02"
+    },
+    {
+      "file": "master-shared/task-chat.js",
+      "sha256": "0256c72d84394bbcb786d8c7fd5605fde98f01673feec868a916199c63e6bb85"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/purchase-resume.js",
+      "sha256": "9d359441ccb12e759eb1924df332e442d8b15eb954e4c9e5dbd7c3d7a44ea0c9"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/app.js",
+      "sha256": "2eaa0ae5f2cf7c67e592e500395ddec2180e47be3e36239bee951949e082e433"
+    },
+    {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/stock-exceptions.js",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae"
+    },
+    {
+      "file": "master-shared/mobile-menu.js",
+      "sha256": "13e4d8725a5287172c9c060f3c29d1d93be6b8abd7067523d6e40465eb7ab09f"
+    }
+  ]
+}

@@ -1,5 +1,19 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 FIRST ACTUAL PURCHASE CANDIDATE PACKAGE, USER VISUAL CHECK PENDING:
+PURCHASE_WORKBENCH_UI_REVIEW.txt. New mechanical builder packages EXACT32existing
+candidate/original Purchase assets into preview/purchase-workbench-review.html.
+Full original Purchase shell/table/person/supplier dialog/borrow components, not a
+separate UI or alternate stock calculation. Explicit example customers/POs and
+NOT PUBLISHED/no real saves banner; isolated read fixture, CSP connect/form DENY,
+no successful mutation response/optimistic halo/receipt/generation fabrication.
+Three targeted packaging/refusal checks pass259.3798ms; NO native/fullstock tests.
+Chrome visibility option unsupported before opening; corrected option ONCE. Then
+file: navigation explicitly DENIED by browser security policy (http/https only),
+no local URL authority. STOPPED; no localhost/other browser/surface/indirect bypass.
+No browser visual pass or screenshot claimed. Deliver file for USER to open manually;
+do not use denial as reason to resume backend tests. Current business sites unchanged.
+
 USER PRIORITY OVERRIDE 2026-10-23 — INTERFACE AND VISIBLE BUSINESS FLOW FIRST:
 User explicitly rejected continued invisible backend testing before usable UX.
 Stop expanding/running broad native/capacity/recovery tests as the next deliverable.
