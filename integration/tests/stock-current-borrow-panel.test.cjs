@@ -70,9 +70,10 @@ test('panel resource/relay builds are exact original overlays, preserve original
     assert.match(execFileSync(process.execPath, [path.join(root, file), '--check'], { encoding: 'utf8' }), /verified/);
   }
   const bridge = fs.readFileSync(path.join(root, 'purchase-room-page.candidate.js'), 'utf8'), originalBridge = fs.readFileSync(path.join(__dirname, '../wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
-  const stripped = bridge.replace("import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n", '')
+  const stripped = bridge.replace("import { getPurchaseStockTransfersCurrent, getPurchaseStockControlCurrent, getPurchaseStockSourcesCurrent } from 'backend/stockCurrentRead.web';\n", '')
     .replace("import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent, getPurchaseResumeContextCurrent } from 'backend/stockCurrentBorrow.web';\n", '')
     .replace(/\n    if\(message.type==='PURCHASE_RESUME_CONTEXT_REQUEST'\)\{[\s\S]*?\n    \}/, '')
+    .replace(/\n    if\(\['PURCHASE_STOCK_CONTROL_REQUEST','PURCHASE_STOCK_SOURCES_REQUEST'\].includes\(message.type\)\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_RETURN_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_BORROW_OPTIONS_REQUEST'\)\{[\s\S]*?\n    \}/, '')
     .replace(/\n    if\(message.type==='PURCHASE_SAVE_REQUEST'&&\['BORROW_APPROVE','BORROW_RETURN'\].includes\(message.operation\)\)\{[\s\S]*?\n    \}/, '')
@@ -84,7 +85,9 @@ test('panel resource/relay builds are exact original overlays, preserve original
     .replace(/\n    if\(message.type==='STOCK_SAVE_REQUEST'&&message.stockProtocol!==undefined\)\{[\s\S]*?\n    \}/,'');
   assert.equal(stripped, originalBridge);
   const index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
-  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js', 'task-grid.js', 'supplier-allocation.js', 'app.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
+  for (const file of ['borrow-relations.js', 'borrow-relations.css', 'purchase-resume.js', 'task-grid.js', 'supplier-allocation.js']) assert.ok(index.includes(file + '?v=20261022-stock-current-candidate-v2'));
+  assert.ok(index.includes('app.js?v=20261023-purchase-current-stock-v1'));
+  assert.ok(index.includes('stock-control.js?v=20261023-purchase-current-stock-v1'));
   const candidate = fs.readFileSync(path.join(root, 'purchase-ui/app.js'), 'utf8'), originalApp = fs.readFileSync(path.join(__dirname, '../../purchase-live/app.js'), 'utf8');
   for (const marker of ['if(control.dataset.planSource)', 'if(control.dataset.planTask)']) {
     const line = originalApp.split('\n').find(line => line.includes(marker)); assert.ok(candidate.includes(line.trim()));

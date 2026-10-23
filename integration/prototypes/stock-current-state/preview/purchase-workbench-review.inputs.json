@@ -120,8 +120,12 @@
       "sha256": "9d359441ccb12e759eb1924df332e442d8b15eb954e4c9e5dbd7c3d7a44ea0c9"
     },
     {
+      "file": "integration/prototypes/stock-current-state/purchase-ui/stock-control.js",
+      "sha256": "3b92fe30e446a5d47a1c5b762b7f5ee2967763d66c631cfbc98dba25918560ae"
+    },
+    {
       "file": "integration/prototypes/stock-current-state/purchase-ui/app.js",
-      "sha256": "2eaa0ae5f2cf7c67e592e500395ddec2180e47be3e36239bee951949e082e433"
+      "sha256": "3d43c574894dd58031c4e91448671300797645333aa2e76701ebd93bc7903e67"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/stock-exceptions.js",

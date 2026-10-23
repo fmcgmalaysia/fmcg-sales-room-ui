@@ -9,17 +9,25 @@ index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-
 index = index.replaceAll('borrow-approval.css?v=20261022-stock-current-candidate-v2', 'borrow-approval.css?v=20261023-borrow-context-v3')
   .replaceAll('borrow-approval.js?v=20261022-stock-current-candidate-v2', 'borrow-approval.js?v=20261023-borrow-context-v3');
 index = once(index, '<script src="app.js', '<script src="purchase-resume.js?v=20261022-stock-current-candidate-v2"></script><script src="app.js');
+index = once(index, '<script src="app.js', '<script src="stock-control.js?v=20261023-purchase-current-stock-v1"></script><script src="app.js');
+index = once(index, '<button data-view="payments">', '<button data-view="inventory">Stock Control 库存管理</button><button data-view="payments">');
 index = once(index, '<button data-view="payments">', '<button data-view="borrowing" hidden>Outstanding Borrowing 未结调货</button><button data-view="payments">');
-index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-22-stock-current-candidate-v2"');
+index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-23-stock-current-candidate-v3"');
 for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
   const pattern = new RegExp('(<script src="' + file.replace('.', '\\.') + '\\?v=)[^"]+');
   if ((index.match(new RegExp(pattern.source, 'g')) || []).length !== 1) throw Error('Original Purchase script marker changed');
-  index = index.replace(pattern, (_, prefix) => prefix + '20261022-stock-current-candidate-v2');
+  index = index.replace(pattern, (_, prefix) => prefix + (file === 'app.js' ? '20261023-purchase-current-stock-v1' : '20261022-stock-current-candidate-v2'));
 }
 let bridge = fs.readFileSync(path.join(root, 'integration/wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
-bridge = "import { getPurchaseStockTransfersCurrent } from 'backend/stockCurrentRead.web';\n" + bridge;
+bridge = "import { getPurchaseStockTransfersCurrent, getPurchaseStockControlCurrent, getPurchaseStockSourcesCurrent } from 'backend/stockCurrentRead.web';\n" + bridge;
 bridge = "import { getPurchaseBorrowOptionsCurrent, getPurchaseBorrowReturnOptionsCurrent, savePurchaseBorrowingCurrent, savePurchaseTasksCurrent, getPurchaseResumeContextCurrent } from 'backend/stockCurrentBorrow.web';\n" + bridge;
 bridge = once(bridge, '    const message = event.data || {};', `    const message = event.data || {};
+    if(['PURCHASE_STOCK_CONTROL_REQUEST','PURCHASE_STOCK_SOURCES_REQUEST'].includes(message.type)){
+      const detail=message.type==='PURCHASE_STOCK_SOURCES_REQUEST',type=detail?'PURCHASE_STOCK_SOURCES_RESULT':'PURCHASE_STOCK_CONTROL_RESULT';
+      try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message.input||{}).length>6000)throw Error('Invalid Purchase stock request.');
+        const result=await (detail?getPurchaseStockSourcesCurrent:getPurchaseStockControlCurrent)(message.company,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});
+      }catch(_){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:'Current stock unavailable 当前库存暂不可读取。'});}return;
+    }
     if(message.type==='PURCHASE_RESUME_CONTEXT_REQUEST'){
       try{if(!['NCT','GHR'].includes(message.company)||!/^[a-f0-9-]{36}$/i.test(message.requestId||'')||JSON.stringify(message).length>1000)throw Error('Invalid Purchase resume context request.');
         const result=await getPurchaseResumeContextCurrent(message.company);room.postMessage({type:'PURCHASE_RESUME_CONTEXT_RESULT',company:message.company,requestId:message.requestId,ok:true,result});

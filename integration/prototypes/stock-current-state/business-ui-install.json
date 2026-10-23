@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "1533469955bfc972d2f0c1bf320bc4de3357c7d5590a1af668d0af25fdc58a8d",
+  "backendInstallManifestSha256": "83dad8ba92b94f46d7f3b9c1d17616a3f218b290e364bb202301cacd9cd44367",
   "install": [
     {
       "source": "source-ui/index.html",
@@ -53,14 +53,14 @@
       "source": "purchase-ui/index.html",
       "target": "purchase-live/index.html",
       "kind": "PAGES",
-      "sha256": "f73450a3e48620fc18425f46a27165b8cc01272cb2c7fd8a9d251cae1eb04677",
+      "sha256": "1e5c8ae9de97ab8a3c9e3e78c67519571f8b4cdc35fed5df1f1d8d811b091b78",
       "beforeSha256": "5442caabd60a43eb9170b86297d10da15a0ad7b7af13eaa5b3f1eaa70f61a988"
     },
     {
       "source": "purchase-ui/app.js",
       "target": "purchase-live/app.js",
       "kind": "PAGES",
-      "sha256": "2eaa0ae5f2cf7c67e592e500395ddec2180e47be3e36239bee951949e082e433",
+      "sha256": "3d43c574894dd58031c4e91448671300797645333aa2e76701ebd93bc7903e67",
       "beforeSha256": "25d4e21c41573b53816576e5726d2b2be64c4f43f344ad15a9b0726d755b4461"
     },
     {
@@ -138,6 +138,13 @@
       "target": "purchase-live/stock-exceptions.js",
       "kind": "PAGES",
       "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/stock-control.js",
+      "target": "purchase-live/stock-control.js",
+      "kind": "PAGES",
+      "sha256": "3b92fe30e446a5d47a1c5b762b7f5ee2967763d66c631cfbc98dba25918560ae",
       "beforeSha256": null
     },
     {
@@ -270,7 +277,7 @@
       "source": "purchase-room-page.candidate.js",
       "target": "integration/wix/purchase-room-page.js",
       "kind": "WIX_PAGE",
-      "sha256": "c5c22825a137b7cfcdb6678c0182b846843ad3f5388138c1ac9f71aff16bb4b6",
+      "sha256": "5d1d4460ecaab40ce7c6646d18344e325c01781d485ed7399f4d5011a56674f9",
       "beforeSha256": "c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f"
     },
     {

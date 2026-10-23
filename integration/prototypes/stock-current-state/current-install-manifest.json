@@ -259,7 +259,7 @@
       "source": "stockCurrentRead.web.js",
       "target": "stockCurrentRead.web.js",
       "kind": "NEW",
-      "sha256": "99028f6f430e9af963e0ea2525af4ef3c173ebfd77a2cfec3b09cf6bc3198d43",
+      "sha256": "4a371cc2dbcf049bbef8bb433fc873dce172c196506a14fa1bb6a63678aca612",
       "beforeSha256": null
     },
     {
@@ -1604,8 +1604,10 @@
       "system": "MASTER",
       "target": "stockCurrentRead.web.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentRead.web.js",
-      "sha256": "99028f6f430e9af963e0ea2525af4ef3c173ebfd77a2cfec3b09cf6bc3198d43",
+      "sha256": "4a371cc2dbcf049bbef8bb433fc873dce172c196506a14fa1bb6a63678aca612",
       "exports": [
+        "getPurchaseStockControlCurrent",
+        "getPurchaseStockSourcesCurrent",
         "getPurchaseStockTransfersCurrent",
         "getWarehouseStockControlCurrent",
         "getWarehouseStockSourcesCurrent"
@@ -1613,6 +1615,7 @@
       "dependencies": [
         "MASTER/customerNamesClient.js",
         "MASTER/purchaseAccess.js",
+        "MASTER/purchaseProjection.js",
         "MASTER/warehouseReceiving.js"
       ]
     },

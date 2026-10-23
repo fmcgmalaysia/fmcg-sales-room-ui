@@ -6,7 +6,7 @@ const folder = path.join(__dirname, '../prototypes/stock-current-state');
 test('real Sales/Purchase/Warehouse/Support asset destinations and four paired Wix relays are complete without installing any preview', () => {
   const report = inspectBusinessUiInstall();
   assert.deepEqual(report.errors, []); assert.equal(report.activationAllowed, false); assert.equal(report.deployPerformed, false);
-  assert.equal(report.install.filter(row => row.kind === 'PAGES').length, 37);
+  assert.equal(report.install.filter(row => row.kind === 'PAGES').length, 38);
   assert.equal(report.install.filter(row => row.kind !== 'PAGES').length, 4);
   for (const target of ['index.html', 'sales-room/order-adjustment.js', 'purchase-live/index.html', 'purchase-live/borrow-approval.js',
     'purchase-live/borrow-relations.js', 'warehouse-room/workroom.js', 'support-room/packing-workbench.js', 'integration/wix/packingListBridge.js']) {
@@ -40,7 +40,7 @@ test('formal Pages packaging installs exact static paths, preserves original Wix
   const files = [...new Set([...report.install.map(row => 'integration/prototypes/stock-current-state/' + row.source),
     ...report.install.filter(row => row.beforeSha256).map(row => row.target), 'buyer-room.html', '.github/workflows/pages-v64-same-origin.yml'])];
   const release = stageBusinessUiInstall(destination, files, 'a'.repeat(40));
-  assert.equal(release.resources.length, 37); assert.equal(release.backendInstalled, false);
+  assert.equal(release.resources.length, 38); assert.equal(release.backendInstalled, false);
   assert.equal(release.wixSourcesInstalled, false); assert.equal(release.currentStockActivated, false);
   assert.equal(release.realBorrowingEnabled, false); assert.equal(release.loadedAcceptanceCompleted, false);
   for (const row of report.install.filter(row => row.kind === 'PAGES')) {

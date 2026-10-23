@@ -4,6 +4,7 @@ import { currentMember } from 'wix-members-backend';
 import { requireWarehouseStaff } from 'backend/warehouseReceiving.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
+import { requirePurchaseStaff } from 'backend/purchaseProjection.js';
 import { createHash } from 'crypto';
 const hash = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32);
 const WRITERS = Object.freeze(["RECEIPT","ALLOCATION","BORROWING","SALES_DEMAND","PURCHASE_SOURCE","PURCHASE_PLAN","PURCHASE_TASK","STOCK_EXCEPTION","STOCK_RESOLUTION","PACKING","WAREHOUSE_PREPARATION","SHIPMENT","ORDER_INTAKE","ORDER_UPDATE","COST_REFERENCE","MARGIN_REFERENCE","SHIPMENT_PLAN","QUANTITY_CASE","PURCHASE_ORDER_RECORD","ACCOUNT_PURCHASE_RECORD"]);
@@ -128,7 +129,7 @@ const { createCurrentQuery } = (() => {
 // No Activity access, mutation methods, history fallback or production imports.
 const fields = {
   StockProducts: ['_id', 'company', 'stockKey', 'barcode', 'name', 'packing', 'ea', 'onHand', 'isolated', 'reservedUsable', 'available', 'reviewRequired', 'status', 'revision', 'checkpointGeneration'],
-  StockPositions: ['_id', 'company', 'stockKey', 'barcode', 'name', 'packing', 'ea', 'sourceKind', 'sourceId', 'sourceTaskId', 'poId', 'onHand', 'isolated', 'reservedUsable', 'available', 'reviewCodes', 'status', 'revision', 'checkpointGeneration'],
+  StockPositions: ['_id', 'company', 'stockKey', 'barcode', 'name', 'packing', 'ea', 'sourceKind', 'sourceId', 'sourceTaskId', 'poId', 'poNumber', 'onHand', 'isolated', 'reservedUsable', 'available', 'reviewCodes', 'status', 'revision', 'checkpointGeneration'],
   StockClaims: ['_id', 'company', 'stockKey', 'positionId', 'taskId', 'customerId', 'orderId', 'sourceLineId', 'reservedUsable', 'isolatedAttributed', 'reviewCodes', 'status', 'revision', 'checkpointGeneration']
 };
 const count = n => Number.isSafeInteger(n) && n >= 0;
@@ -420,11 +421,11 @@ async function staffRecords() {
   let page = await wixData.query('StaffMasterAccess').limit(1000).find({ suppressAuth: true, consistentRead: true }), rows = [...page.items];
   while (page.hasNext()) { page = await page.next(); rows.push(...page.items); } return rows;
 }
-async function read(company, input, detail) {
+async function read(company, input, detail, authorize = requireWarehouseStaff) {
   try {
     if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded stock request required');
     const items = privateItems(company), protocol = createCurrentReadBarrier({ company, items, coverage: writerCoverage });
-    const service = createCurrentStockControlService({ company, items, protocol, requireWarehouseStaff,
+    const service = createCurrentStockControlService({ company, items, protocol, requireWarehouseStaff: authorize,
       readMember: () => currentMember.getMember({ fieldsets: ['FULL'] }), readStaffRecords: staffRecords, now: () => new Date() });
     const result = await service[detail ? 'detail' : 'read'](company, input);
     if (detail && input?.kind === 'claims') {
@@ -439,6 +440,8 @@ async function read(company, input, detail) {
 }
 export const getWarehouseStockControlCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, false));
 export const getWarehouseStockSourcesCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, true));
+export const getPurchaseStockControlCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, false, requirePurchaseStaff));
+export const getPurchaseStockSourcesCurrent = webMethod(Permissions.SiteMember, (company, input) => read(company, input, true, requirePurchaseStaff));
 export const getPurchaseStockTransfersCurrent = webMethod(Permissions.SiteMember, async (company, input) => {
   try {
     if (JSON.stringify(input || {}).length > 6000) throw Error('Bounded relation request required');

@@ -9,10 +9,10 @@ function snapshot() {
   limits: { regular: 3, unique: 1 }, indexes: entry.indexes.map(index => ({ ...structuredClone(index), source: 'USER', type: 'REGULAR', status: 'ACTIVE' })) }));
 }
 const codes = result => result.issues.map(issue => issue.code);
-test('review plan has three new private tables, six additive existing scopes and only feasible three-field regular index candidates', () => {
+test('review plan has three new private tables, seven additive existing scopes and only feasible three-field regular index candidates', () => {
  const contract = currentNativeSetupContract();
- assert.equal(contract.entries.length, 9); assert.equal(contract.entries.filter(row => row.kind === 'NEW_PRIVATE').length, 3);
- assert.equal(contract.entries.filter(row => row.kind === 'EXISTING_AUGMENT').length, 6);
+ assert.equal(contract.entries.length, 10); assert.equal(contract.entries.filter(row => row.kind === 'NEW_PRIVATE').length, 3);
+ assert.equal(contract.entries.filter(row => row.kind === 'EXISTING_AUGMENT').length, 7);
  assert.equal(contract.addUniqueIndexes, false); assert.equal(contract.preserveUnlistedDefinitions, true); assert.equal(contract.semanticTypesOnly, true);
  for (const row of contract.entries) {
   assert.ok(row.indexes.length <= 3); assert.equal(new Set(row.indexes.map(index => index.name)).size, row.indexes.length);
@@ -34,11 +34,28 @@ test('matching normalized mock metadata remains ONLY review parity, never native
 });
 
 test('missing collections, unknown completeness, missing fields/types and private public/member permissions cannot pass', () => {
- const absent = reviewCurrentNativeSetup(); assert.equal(absent.metadataMatches, false); assert.equal(absent.issueCount, 9);
+ const absent = reviewCurrentNativeSetup(); assert.equal(absent.metadataMatches, false); assert.equal(absent.issueCount, 10);
  const collections = snapshot(); delete collections[0].fieldsComplete; delete collections[1].indexesComplete; delete collections[2].permissionsComplete;
  collections[0].fields.receiptAccepted = 'TEXT'; collections[1].permissions.update = 'MEMBER'; delete collections[2].fields.nextBorrowSequence;
  const result = reviewCurrentNativeSetup({ collections }); assert.equal(result.metadataMatches, false);
  for (const code of ['COMPLETE_NATIVE_METADATA_UNCONFIRMED', 'COMPLETE_PRIVATE_PERMISSION_READBACK_UNCONFIRMED', 'FIELD_MISSING_OR_TYPE_CONFLICT', 'PRIVATE_PERMISSION_UNCONFIRMED']) assert.ok(codes(result).includes(code));
+});
+
+test('actual shared PO list normalization requires the shared PO version in the setup contract', async () => {
+ const { createCurrentPurchaseTables } = require('../prototypes/stock-current-state/current-purchase-tables.cjs');
+ const contract = currentNativeSetupContract(), entry = contract.entries.find(row => row.id === 'PurchaseOrders');
+ assert.deepEqual(entry.fields, { company: 'TEXT', stockCommitVersion: 'TEXT' });
+ for (const company of ['NCT', 'GHR']) {
+  const normalized = [];
+  const read = createCurrentPurchaseTables({ company, readOriginalTable: async table => table === 'PurchaseOrders'
+   ? [{ _id: 'PO', company, stockCommitVersion: 'PO-V1' }, { _id: 'OTHER', company: company === 'NCT' ? 'GHR' : 'NCT' }] : [],
+   store: { normalizeListedRow: (table, row) => { normalized.push(table); assert.ok(row.stockCommitVersion); return row; } } });
+  const rows = await read(company, { memberId: 'M', staffId: 'S' });
+  assert.deepEqual(normalized, ['PurchaseOrders']); assert.equal(rows.PurchaseOrders.length, 1);
+ }
+ const collections = snapshot(); delete collections.find(row => row.id === 'PurchaseOrders').fields.stockCommitVersion;
+ const result = reviewCurrentNativeSetup({ collections });
+ assert.ok(result.issues.some(issue => issue.collection === 'PurchaseOrders' && issue.field === 'stockCommitVersion'));
 });
 
 test('actual occupied/failed index slots, unavailable quotas, non-active indexes and name conflicts refuse without delete or overwrite', () => {

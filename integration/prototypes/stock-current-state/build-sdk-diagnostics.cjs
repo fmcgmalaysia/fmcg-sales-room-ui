@@ -13,6 +13,13 @@ for (const name of ['stockProtocolAdapterTest.web.js', 'stockProtocolCommitTest.
   const pattern = /(?:const sdkFieldCodecFactory = \(\(\) => \{[\s\S]*?return createSdkFieldCodec;\n\}\)\(\);\n)?const stockAdapterFactory = \(\(\) => \{[\s\S]*?return createSdkConditionalStore;\n\}\)\(\);/;
   if (!pattern.test(source)) throw Error('Exact diagnostic adapter boundary required');
   let out = source.replace(pattern, () => codec + adapter);
+  if (name === 'stockProtocolAdapterTest.web.js') {
+    const query = 'const stockQueryFactory = (() => {\n' + body('current-query.cjs', 'createCurrentQuery, readCurrentDetailPage')
+      + '\nreturn createCurrentQuery;\n})();';
+    const queryPattern = /const stockQueryFactory = \(\(\) => \{[\s\S]*?return createCurrentQuery;\n\}\)\(\);/;
+    if (!queryPattern.test(out)) throw Error('Exact diagnostic query boundary required');
+    out = out.replace(queryPattern, () => query);
+  }
   if (!/import \{[^}]*createHash[^}]*\} from 'crypto';/.test(out)) out = out.replace("import { items } from '@wix/data';", "import { items } from '@wix/data';\nimport { createHash } from 'crypto';");
   if (process.argv.includes('--check')) {
     if (out !== source) throw Error('Diagnostic SDK source differs');

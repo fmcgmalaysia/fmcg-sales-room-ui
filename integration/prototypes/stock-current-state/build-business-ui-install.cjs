@@ -12,7 +12,7 @@ function definition() {
     ...group('source-ui', 'sales-room', ['current-requests.js', 'current-dates.js', 'order-adjustment.js', 'shipment-ui.js', 'customer-documents.js']),
     ...group('purchase-ui', 'purchase-live', ['index.html', 'app.js', 'task-grid.js', 'supplier-allocation.js', 'purchase-resume.js',
       'borrow-approval.js', 'borrow-approval.css', 'borrow-relations.js', 'borrow-relations.css', 'borrow-return.js',
-      'borrow-outstanding.js', 'borrow-outstanding.css', 'stock-exceptions.js']),
+      'borrow-outstanding.js', 'borrow-outstanding.css', 'stock-exceptions.js', 'stock-control.js']),
     ...group('warehouse-ui', 'warehouse-room', ['index.html', 'app.js', 'workroom.js', 'dispatch.js', 'packing-list-link.js',
       'stock-control-app.js', 'stock-control.css', 'stock-control-embedded.css', 'stock-control.html', 'stock-control-link.js',
       'warehouse-cbm-resume.js', 'warehouse-dispatch-resume.js', 'warehouse-preparation-resume.js', 'warehouse-receipt-resume.js', 'stock-exceptions.js']),

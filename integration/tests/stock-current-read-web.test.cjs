@@ -33,8 +33,8 @@ function fixture(coverage = true) {
   let source = fs.readFileSync(file, 'utf8').replace(/^import[^\n]+\r?\n/gm, '').replace(/^export /gm, '');
   if (coverage !== false) source = source.replace('const writerCoverage = Object.freeze({});', 'const writerCoverage = Object.freeze('
     + JSON.stringify(coverage === true ? Object.fromEntries(WRITERS.map(writer => [writer, { verified: true, build: 'TEST' }])) : coverage) + ');');
-  const api = vm.runInNewContext('(function(){' + source + '\nreturn {getWarehouseStockControlCurrent,getWarehouseStockSourcesCurrent,getPurchaseStockTransfersCurrent};})()', {
-    wixData, currentMember: { getMember: async () => member }, requireWarehouseStaff, readCustomerShortNames: async () => [], createHash, Date, JSON, Object, Array, Number, String, Set, Map, WeakMap,
+  const api = vm.runInNewContext('(function(){' + source + '\nreturn {getWarehouseStockControlCurrent,getWarehouseStockSourcesCurrent,getPurchaseStockTransfersCurrent,getPurchaseStockControlCurrent,getPurchaseStockSourcesCurrent};})()', {
+    wixData, currentMember: { getMember: async () => member }, requireWarehouseStaff, requirePurchaseStaff, readCustomerShortNames: async () => [], createHash, Date, JSON, Object, Array, Number, String, Set, Map, WeakMap,
     getPurchaseStaffContext: async () => ({ ...requirePurchaseStaff(member, [staff]), memberId: member._id }),
     webMethod: (permission, fn) => { permissions.push(permission); return fn; }, Permissions: { SiteMember: 'MEMBER' }
   });
@@ -67,7 +67,33 @@ test('current read barrier includes writer build in the same snapshot, not just 
 
 test('generated gateway matches source and exposes only original staff-guarded SiteMember reads', () => {
   assert.match(execFileSync(process.execPath, [path.join(__dirname, '../prototypes/stock-current-state/build-current-stock-read-web.cjs'), '--check'], { encoding: 'utf8' }), /matches exact source/);
-  const f = fixture(); assert.deepEqual(f.permissions, ['MEMBER', 'MEMBER', 'MEMBER']);
+  const f = fixture(); assert.deepEqual(f.permissions, ['MEMBER', 'MEMBER', 'MEMBER', 'MEMBER', 'MEMBER']);
+});
+
+test('Purchase sees the same current stock through its original role; neither departmental entry grants the other role', async () => {
+  const f = fixture();
+  assert.equal((await f.api.getPurchaseStockControlCurrent('NCT', {})).ok, false);
+  assert.ok(f.calls.every(call => call.collection === 'StaffMasterAccess'));
+  f.staff.departments = ['PURCHASE']; f.calls.length = 0;
+  const page = await f.api.getPurchaseStockControlCurrent('NCT', {});
+  assert.equal(page.ok, true); assert.equal(page.items[0].onHand, 20);
+  assert.equal((await f.api.getWarehouseStockControlCurrent('NCT', {})).ok, false);
+  f.data.StockPositions.push({ _id: hash('NCT', f.data.StockProducts[0].stockKey, 'PURCHASE_SOURCE', 'T'), company: 'NCT',
+    stockKey: f.data.StockProducts[0].stockKey, sourceTaskId: 'T', poId: 'PO-INTERNAL', poNumber: 'NCT-PO-000001',
+    status: 'ACTIVE', revision: 0, checkpointGeneration: 0, onHand: 20, reservedUsable: 0, available: 20, isolated: 0, privateCost: 999 });
+  const detail = await f.api.getPurchaseStockSourcesCurrent('NCT', { kind: 'positions', stockKey: f.data.StockProducts[0].stockKey });
+  assert.equal(detail.ok, true); assert.equal(detail.total, 1); assert.equal(detail.items[0].poNumber, 'NCT-PO-000001');
+  assert.equal(detail.items[0].privateCost, undefined);
+  assert.equal(/PRIVATE|netCost|secretPlan|stockCommitVersion/.test(JSON.stringify(page)), false);
+});
+
+test('new Purchase stock endpoints keep writer coverage, company and pending barriers', async () => {
+  const closed = fixture(false); closed.staff.departments = ['PURCHASE'];
+  assert.equal((await closed.api.getPurchaseStockControlCurrent('NCT', { verified: true })).ok, false);
+  assert.equal(closed.calls.some(call => call.collection.startsWith('Stock')), false);
+  const f = fixture(); f.staff.departments = ['PURCHASE']; f.control.pending = { key: 'P' };
+  assert.equal((await f.api.getPurchaseStockControlCurrent('NCT', {})).ok, false);
+  assert.equal((await f.api.getPurchaseStockControlCurrent('OTHER', {})).ok, false);
 });
 
 test('generated relation gateway retains original Purchase authorization and refuses unverified index as unknown', async () => {

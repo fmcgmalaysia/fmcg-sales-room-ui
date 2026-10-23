@@ -14,7 +14,7 @@ test('review mechanically packages exact existing candidate assets and parses ev
   execFileSync(process.execPath, [path.join(folder, 'build-purchase-ux-review.cjs'), '--check']);
   const html = fs.readFileSync(path.join(folder, 'preview/purchase-workbench-review.html'), 'utf8');
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, 'preview/purchase-workbench-review.inputs.json'), 'utf8'));
-  assert.equal(manifest.cmsWrites, false); assert.equal(manifest.inputs.length, 32);
+  assert.equal(manifest.cmsWrites, false); assert.equal(manifest.inputs.length, 33);
   for (const entry of manifest.inputs) {
     const source = fs.readFileSync(path.join(folder, '../../..', entry.file), 'utf8').replace(/\r\n/g, '\n');
     assert.equal(crypto.createHash('sha256').update(source).digest('hex'), entry.sha256);
