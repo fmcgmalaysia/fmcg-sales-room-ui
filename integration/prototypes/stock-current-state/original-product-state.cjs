@@ -40,7 +40,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
       const n = line.sources.find(s => s.sourceTaskId === source.id)?.quantity || 0;
       if (n) dispatchedByTask[line.taskId] = (dispatchedByTask[line.taskId] || 0) + n;
     }
-    return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, orderId: source.orderId, sourceLineId: source.sourceLineId,
+    return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, poNumber: po[0].number, orderId: source.orderId, sourceLineId: source.sourceLineId,
       poValid: true, reviewRequired: false, receiptPolicy: ownerTaskId === null || allocations.some(a => a.sourceTaskId === source.id) ? 'EXPLICIT_ONLY' : 'OWNER_DEMAND',
       ownerShare: customerShare, planned: source.procurement.totalCtn,
       accepted: source.warehouse?.hasPhysicalReceipt === true ? source.warehouse.accepted : 0, dispatchedByTask };

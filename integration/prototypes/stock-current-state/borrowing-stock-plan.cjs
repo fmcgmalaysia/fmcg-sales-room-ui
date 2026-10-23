@@ -70,7 +70,8 @@ function mapTransition({ before, after, rows, event, generation }) {
       const base = old || { _id: id, schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing,
         ea: before.ea, name: before.name || '', sourceKind: 'PURCHASE_SOURCE', sourceId: source.id, sourceTaskId: source.id,
         poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
-      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId, receiptAccepted: next.accepted,
+      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId,
+        ...(typeof next.poNumber === 'string' && next.poNumber ? { poNumber: next.poNumber } : {}), receiptAccepted: next.accepted,
         replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
         ...(after.lifecycleVersion === 2 ? { borrowRepaidCumulative: next.borrowRepaidCumulative } : {}),
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,

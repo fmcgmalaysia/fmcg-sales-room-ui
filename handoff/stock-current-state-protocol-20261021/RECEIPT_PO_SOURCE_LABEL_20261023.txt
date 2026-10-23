@@ -1,0 +1,34 @@
+2026-10-23 — RECEIPT SOURCE PO LABEL, CANDIDATE ONLY
+
+User is away and asked to continue independent work. Reused same-version project
+framework/spec; fresh checkout AGENTS/current STATUS/read-write/UI dependencies
+read. No browser or retry of either stopped Wix path. Recovery8465ce8.
+
+Confirmed defect: convertProjectedStock migration already stores poNumber and the
+shared current display query whitelists it, but originalProductState dropped the
+already-confirmed original PO number and mapTransition omitted it for new sources.
+Thus a source created by actual receipt could show an opaque internal PO identity
+while otherwise identical migrated stock shows the readable PO number.
+
+Before fix four focused assertions failed with undefined readable PO labels,
+including NCT and GHR authoritative state->receipt->StockPositions display pipeline.
+Smallest correction: retain exact matched server PO.number in source state and
+copy its nonempty string to the existing position after-image on actual changes.
+Missing optional label preserves the old label; event/browser text cannot override.
+No extra lookup, business save, historical rewrite, collection/field/index addition,
+quantity, ownership, financial lock, PO identity or borrowing rule changes.
+Current runtime and paired backend/UI manifest hashes regenerated mechanically.
+Same116modules/60exports,39backend targets/95dependencies,38Pages+4Wix relays.
+
+50affected authority/receipt/borrow-plan/query checks pass537.5179ms. Additional
+actual original Warehouse validator+two-product fenced receipt assertions confirm
+both saved PO labels. Final26focused runtime/install/authority/display checks pass
+1225.5317ms. Overlapping, NOT a new full-suite/native acceptance total. Previous
+1290full output remains previous8465ce8 evidence; final shared regression to follow.
+Original production backend/pages unchanged. No native test/CMS/ACL/UI/release.
+Actual Credit UNKNOWN. ExistingPR220, no main/force push/verified tag.
+
+Four states: code candidate fixed/tested; Pages unchanged rollback baseline; Wix
+not synchronized/published for new inventory; public borrowing/Loaded unverified.
+ACTIVE/invoice/physical exitOFF; heartbeatPAUSED. Continue independent review, not
+ordinary-stage authorization waiting. Native schema/drain/capacity/recovery gatesOPEN.

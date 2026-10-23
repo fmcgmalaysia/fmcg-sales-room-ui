@@ -1,4 +1,19 @@
-CURRENT 2026-10-23 — ACTUAL ADMIN/NATIVE COMPOSITION AND GUARDED ABSENT CONTROL INITIALIZER
+CURRENT 2026-10-23 — RECEIPT-CREATED STOCK SOURCE RETAINS READABLE PO NUMBER
+
+RECEIPT_PO_SOURCE_LABEL_20261023.txt records reproduced NCT/GHR missing label:
+original PO authority dropped readable number while migration already retained it.
+Minimal source->position mapping fixed; shared detail query now receives the same
+original label. No quantity/ownership/PO identity/rule change. Actual original
+Warehouse authority and fenced two-product receipt checked.50affected checks pass;
+final26focused runtime/install/authority/display pass1225.5317ms, overlapping.
+Previous1290full belongs8465ce8, NOT this patch; final shared regression stilldue.
+Same116modules/60exports,39targets/95dependencies,38Pages+4Wix relays. All20writer
+categoriesUNVERIFIED, coverageEMPTY/ACTIVEOFF. No browser/native/CMS/ACL/release;
+original production unchanged. User away; continue independent review, no ordinary
+consent wait. Both stopped native UI paths remainSTOPPED, native300UNKNOWN.
+HeartbeatPAUSED; invoice/exitOFF; existingPR220. Recovery8465ce8.
+
+PREVIOUS 2026-10-23 — ACTUAL ADMIN/NATIVE COMPOSITION AND GUARDED ABSENT CONTROL INITIALIZER
 
 MAINTENANCE_NATIVE_ADMIN_20261023.txt records eight real Permissions.Admin exports,
 actual member ownership and direct @wix/data/existing private pipeline composition.

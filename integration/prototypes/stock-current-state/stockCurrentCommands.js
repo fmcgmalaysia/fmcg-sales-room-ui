@@ -445,7 +445,7 @@ module.exports = { stockKey, convertProjectedStock, readProductPage };
 "commit-proof.cjs": (load, module) => {
 module.exports = { hash: (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 32) };
 },
-// original-product-state.cjs sha256:d7cc4dd2cf7cf7d14b1254ff8f0301d84a327114d43db0c5d3080e2b42d8b42b
+// original-product-state.cjs sha256:c4623ab91a9b23ad891ae124b26997901b4fa773d50d56240916db69a7fe99cc
 "original-product-state.cjs": (load, module) => {
 'use strict';
 
@@ -489,7 +489,7 @@ function originalProductState({ company, context, orders, identity, readAllocati
       const n = line.sources.find(s => s.sourceTaskId === source.id)?.quantity || 0;
       if (n) dispatchedByTask[line.taskId] = (dispatchedByTask[line.taskId] || 0) + n;
     }
-    return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, orderId: source.orderId, sourceLineId: source.sourceLineId,
+    return { ...identity, id: source.id, ownerTaskId, poId: po[0].id, poNumber: po[0].number, orderId: source.orderId, sourceLineId: source.sourceLineId,
       poValid: true, reviewRequired: false, receiptPolicy: ownerTaskId === null || allocations.some(a => a.sourceTaskId === source.id) ? 'EXPLICIT_ONLY' : 'OWNER_DEMAND',
       ownerShare: customerShare, planned: source.procurement.totalCtn,
       accepted: source.warehouse?.hasPhysicalReceipt === true ? source.warehouse.accepted : 0, dispatchedByTask };
@@ -1136,7 +1136,7 @@ function prepareWarehouseReceipt({ validated, products, generation, planFormat =
 module.exports = { prepareWarehouseReceipt };
 
 },
-// borrowing-stock-plan.cjs sha256:40ea244d76fc5d0875eaf1d941ee779060c55ed5adc1b329e39fac4b09c736fe
+// borrowing-stock-plan.cjs sha256:33127f5044ad293e62bb7c230a79b973e3dd363eb163261919dce7a468c72247
 "borrowing-stock-plan.cjs": (load, module) => {
 'use strict';
 
@@ -1210,7 +1210,8 @@ function mapTransition({ before, after, rows, event, generation }) {
       const base = old || { _id: id, schemaVersion: 1, company, stockKey: key, barcode: before.barcode, packing: before.packing,
         ea: before.ea, name: before.name || '', sourceKind: 'PURCHASE_SOURCE', sourceId: source.id, sourceTaskId: source.id,
         poId: source.poId, replacementReceived: 0, supplierReturned: 0, reviewCodes: [] };
-      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId, receiptAccepted: next.accepted,
+      writes.push({ collection: 'StockPositions', before: copy(old), after: { ...copy(base), poId: next.poId,
+        ...(typeof next.poNumber === 'string' && next.poNumber ? { poNumber: next.poNumber } : {}), receiptAccepted: next.accepted,
         replacementReceived: next.replacementReceived || 0, supplierReturned: next.supplierReturned || 0,
         ...(after.lifecycleVersion === 2 ? { borrowRepaidCumulative: next.borrowRepaidCumulative } : {}),
         dispatched: total(Object.values(next.dispatchedByTask || {})), onHand: next.onHand, isolated: next.isolated,

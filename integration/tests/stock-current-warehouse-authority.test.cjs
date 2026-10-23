@@ -41,6 +41,7 @@ test('original Warehouse authority resolves both products once; browser actor ca
   assert.equal(saved.states.reduce((n, s) => n + s.sources[0].onHand, 0), 200);
   assert.deepEqual(saved.plan.writes.filter(w => w.collection === 'StockProducts').map(w => w.after.name).sort(), ['Product A', 'Product B']);
   assert.deepEqual(saved.plan.writes.filter(w => w.collection === 'StockPositions').map(w => w.after.name).sort(), ['Product A', 'Product B']);
+  assert.deepEqual(saved.plan.writes.filter(w => w.collection === 'StockPositions').map(w => w.after.poNumber), ['PO-001', 'PO-001']);
   assert.equal(f.context.activity.length, 0);
 });
 test('Purchase/Support cannot receive; pending member does not cause private reads', async () => {
@@ -120,6 +121,7 @@ test('authenticated current save composes original PO authority and fenced two-p
   const rows = [...db.values()];
   assert.equal(rows.filter(r => r.action === 'WAREHOUSE_RECEIPT_SAVED').length, 1);
   assert.equal(rows.filter(r => r.sourceKind === 'PURCHASE_SOURCE').reduce((n, r) => n + r.onHand, 0), 200);
+  assert.ok(rows.filter(r => r.sourceKind === 'PURCHASE_SOURCE').every(r => r.poNumber === 'PO-001'));
   assert.equal((await protocol.readControl()).generation, 1);
   // In-memory composition, not a real Wix webMethod or verified production coverage.
 });
