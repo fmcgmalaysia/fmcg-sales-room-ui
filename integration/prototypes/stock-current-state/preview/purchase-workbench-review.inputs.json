@@ -85,7 +85,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
-      "sha256": "d52944dcfb6cc76de23e85ebd359c52e32109909c593416d4532c311526b2c10"
+      "sha256": "59a2e291a6e6a80ee93a5277b8dcbe253fa3c7202f417294049f0bb2414e8f89"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",
@@ -93,7 +93,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.js",
-      "sha256": "3e5991c2dfd5c7723f9ccdbe6c2cd43fc3b0a9f87248d4bbd9e1f5b21a4d5068"
+      "sha256": "45130bb4560702d5a939968837c005758dbc3bd7fbc084d33bbd7d509395d0d0"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-return.js",

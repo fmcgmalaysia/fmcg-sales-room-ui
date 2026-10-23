@@ -1,11 +1,19 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST ALLOC PURCHASED BOUNDARY: ALLOC_PURCHASED_BOUNDARY_20261024.txt reproduces
+and fixes main/split false ALERT for unpurchased demand and Borrow entry after90
+alreadycovers purchased90. Actual stock/save rules unchanged.3new cases; final
+full1340pass0fail30756.0567ms;41affected checks overlap. Main RCV owed-qty badge
+still needs explicit same-snapshot binding; next independent concrete UI work.
+Inventory correction:5Wixrelays=4MASTER+1SourceSales, not2SourceUIrelays. No native/
+deploy/export changes. Existing borrower packing-hold guard retained, not relaxed.
+
 LATEST MASTER PARITY COMPLETE: MASTER_ALL_BACKEND_PARITY_20261024.txt and JSON
 MASTER_NATIVE_PREINSTALL_READBACK_INDEX_20261024.json record78exact original native
 readbacks/private copies:23patch before-images+all55unchangedMASTER dependencies.
 This closes MASTER backend pre-install comparison ONLY, not installation/native
 writer/capacity/recovery/cutover or published-runtime proof.15newMASTER modules
-not installed; Source7backend originals and2UI relays still blocked. No code or
+not installed; Source7backend originals and1Sales UI relay still blocked. No code or
 release/export changes;1337business/4review tests reused. Next focused final G3
 semantic review, then blocker audit; no peripheral tests merely to keep running.
 

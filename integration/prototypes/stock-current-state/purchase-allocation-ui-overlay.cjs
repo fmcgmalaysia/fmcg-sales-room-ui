@@ -35,7 +35,11 @@ function grid(source) {
         const raw=split?batch?.allocated:row.stockAllocatedCumulative;
         const amount=known&&Number.isSafeInteger(raw)&&raw>=0?raw:null;
         const links=sources(row,tasks).some(t=>t.stockTransferOutstanding===true);
-        const deficit=amount!==null&&amount<(split?batch.demand:row.ord);
+        const entitlement=split?row.batchEntitlements?.find(entry=>escape(entry.id)===batchId):null;
+        const purchased=split?(Array.isArray(entitlement?.sources)&&entitlement.sources.every(s=>Number.isSafeInteger(s.quantity)&&s.quantity>=0)
+          ?entitlement.sources.reduce((n,s)=>n+s.quantity,0):null):totals(sources(row,tasks)).customerQty;
+        // Unpurchased demand belongs to ORDER, not an ALLOC borrowing alert.
+        const deficit=amount!==null&&Number.isSafeInteger(purchased)&&purchased>=0&&amount<Math.min(split?batch.demand:row.ord,purchased);
         cell='<td class="allocated-quantity">'+(amount===null?'':quantity(amount))
           +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" '+(split?'data-current-batch="'+batchId+'" ':'')+'aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
       }

@@ -15,6 +15,27 @@ test('100 demand / 90 purchased / 80 received exposes borrowing while 10 unpurch
 test('fully received purchase does not authorize borrowing to cover unpurchased demand; unknown allocation cannot quote',()=>{
   for(const args of [{planned:80,received:80},{current:false}]){const f=fixture(args);f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),0);assert.match(f.container.innerHTML,/data-alloc-borrow disabled/);}
 });
+test('borrowed coverage that already fills purchased90cannot reopen borrowing for the10unpurchased demand',()=>{
+  const f=fixture({planned:90,received:80,allocated:90,facts:{usable:90,held:0,dispatched:0,availableToArrange:90,review:false}});
+  assert.match(f.container.innerHTML,/Unpurchased 未采购 10/);assert.match(f.container.innerHTML,/Awaiting receipt 待到货 10/);
+  f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),0);assert.match(f.container.innerHTML,/data-alloc-borrow disabled/);
+});
+test('main ALLOC alerts compare purchased coverage, not unpurchased customer demand; debt links and real shortfalls remain visible',()=>{
+  const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/task-grid.js'),'utf8'),{window});
+  for(const item of [{planned:80,received:80,allocated:80,expected:'PLAIN'},
+    {planned:90,received:80,allocated:80,expected:'ALERT'},
+    {planned:90,received:80,allocated:90,linked:true,expected:'Links 关系'},
+    {planned:90,received:80,allocated:90,expected:'PLAIN'},
+    {planned:80,received:80,allocated:70,expected:'ALERT'}]){
+    const row={id:'A',customerId:'C',ord:100,barcode:'BAR',packing:'24x1',name:'Product',po:'PO-A',supplierId:'S',
+      stockActualReceived:item.received,stockAllocatedCumulative:item.allocated,stockTransferOutstanding:item.linked,
+      procurement:{totalCtn:item.planned,customerCtn:item.planned,revision:'P'},warehouse:{hasPhysicalReceipt:true,accepted:item.received}};
+    const args={rows:[row],tasks:[row],customers:[{id:'C'}],suppliers:[{id:'S'}],selected:new Set(),selectedSources:new Set(),expanded:new Set(),active:true,canMove:false,orders:[],age:()=>'',
+      quantityCells:()=>'<td class="order-quantity">100 | '+item.planned+'</td><td class="received-quantity">'+item.received+'</td>',drafts:new Map(),riskDeal:()=>false,allocations:[],stockAllocationView:'CURRENT_V2'};
+    const cell=window.purchaseTaskGrid.render(args).match(/<td class="allocated-quantity">[\s\S]*?<\/td>/)[0];
+    if(item.expected==='PLAIN')assert.doesNotMatch(cell,/data-current-allocation/,JSON.stringify(item));else assert.ok(cell.includes('>'+item.expected+'</button>'),JSON.stringify(item));
+  }
+});
 test('allocation dialog uses own customer receipts, not gross PO receipts including extra stock from another source',()=>{
   const f=fixture({planned:70,received:80,ownReceived:80,sources:[{id:'AS',customerDemandTaskId:'A',procurement:{customerCtn:20,totalCtn:20},warehouse:{accepted:10}}]});
   assert.match(f.container.innerHTML,/Purchased 采购 <b>90<\/b> · Received 实收 <b>80<\/b>/);
@@ -85,4 +106,16 @@ test('actual split grid never displays borrowed coverage as Warehouse RCV; both 
  assert.match(split[0],/<td class="allocated-quantity">30/);assert.match(split[1],/<td class="allocated-quantity">0/);
  row.warehouse=undefined;row.stockHasReceipt=false;args.shipmentPlans=[];
  const main=window.purchaseTaskGrid.render(args).match(/<tr\b[\s\S]*?<\/tr>/)[0];assert.match(main,/<td class="received-quantity"><\/td>/);assert.match(main,/<td class="allocated-quantity">30/);
+});
+test('split ALLOC keeps read-only batch view without shortage ALERT when confirmed purchased80is fully covered as50and30',()=>{
+ const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/task-grid.js'),'utf8'),{window});
+ const row={id:'A',orderId:'O',customerId:'C',ord:100,barcode:'BAR',packing:'24x1',name:'Product',po:'PO-A',supplierId:'S',inc:80,
+   stockAllocatedCumulative:80,stockActualReceived:80,stockHasReceipt:true,procurement:{totalCtn:80,customerCtn:80,revision:'P'},warehouse:{hasPhysicalReceipt:true,accepted:80},
+   stockAllocatedBatches:[{id:'PLAN|1',demand:50,allocated:50},{id:'PLAN|2',demand:50,allocated:30}],stockReceiptBatches:[{id:'PLAN|1',received:50},{id:'PLAN|2',received:30}],
+   batchEntitlements:[1,2].map((n)=>({id:'PLAN|'+n,quantity:50,metrics:{committed:50,received:n===1?50:30},sources:[{id:'A',quantity:n===1?50:30}]}))};
+ const args={rows:[row],tasks:[row],customers:[{id:'C'}],suppliers:[{id:'S'}],selected:new Set(),selectedSources:new Set(),expanded:new Set(),active:true,canMove:false,orders:[],age:()=>'',
+   quantityCells:r=>'<td class="order-quantity">100</td><td class="received-quantity">'+(r.sourcing?.receivedCtn??'')+'</td>',drafts:new Map(),riskDeal:()=>false,allocations:[],stockAllocationView:'CURRENT_V2',
+   shipmentPlans:[{id:'PLAN',customerId:'C',orderId:'O',batches:[1,2].map(sequence=>({sequence,label:'Batch '+sequence,lines:[{taskId:'A',quantity:50}]}))}]};
+ const split=window.purchaseTaskGrid.render(args).match(/<tr class="split-demand-row"[\s\S]*?<\/tr>/g);assert.equal(split.length,2);
+ for(const html of split){const cell=html.match(/<td class="allocated-quantity">[\s\S]*?<\/td>/)[0];assert.doesNotMatch(cell,/>ALERT</);assert.match(cell,/>View 查看<\/button>/);}
 });

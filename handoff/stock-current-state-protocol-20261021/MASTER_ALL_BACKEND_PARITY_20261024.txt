@@ -50,8 +50,8 @@ files byte-for-byte with an exact private saved-editor readback, then matched
 the required manifest original hash. No tolerance for extra finalLF or trimmed code.
 Machine-readable index: MASTER_NATIVE_PREINSTALL_READBACK_INDEX_20261024.json.
 78matches =23PATCH before-images +55unchanged dependency originals. The15NEW MASTER
-candidate targets are NOT installed. Source5unchanged+2PATCH originals and2Source
-UI relays still require fresh actual Source access. Existing3MASTER department
+candidate targets are NOT installed. Source5unchanged+2PATCH originals and1Source
+Sales UI relay still require fresh actual Source access. Existing3MASTER department
 page/1Public bridge preimages remain separately documented, not included in78.
 
 This closes ONLY the complete MASTER backend pre-install parity evidence gap.

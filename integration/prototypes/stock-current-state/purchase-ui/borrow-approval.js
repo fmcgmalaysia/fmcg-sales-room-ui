@@ -143,7 +143,7 @@
     const received=known&&count(root.stockActualReceived)?root.stockActualReceived:null;
     const batch=batchId?root.stockAllocatedBatches?.find(b=>b.id===batchId):null;
     const batchKnown=!batchId||batch&&count(batch.demand)&&count(batch.allocated)&&batch.allocated<=batch.demand;
-    const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received!==null&&received<planned&&(!batchId||batch.allocated<batch.demand);
+    const canBorrow=batchKnown&&allocated!==null&&allocated<Math.min(root.ord,planned)&&received!==null&&received<planned&&(!batchId||batch.allocated<batch.demand);
     const facts=root.stockAllocationFacts,available=known&&facts&&['usable','held','dispatched','availableToArrange'].every(k=>count(facts[k]))
       &&typeof facts.review==='boolean'&&facts.usable+facts.dispatched===allocated
       &&facts.availableToArrange===(facts.review?0:Math.max(0,facts.usable-facts.held))?facts.availableToArrange:null;
