@@ -1577,12 +1577,14 @@ return haloSvg;
       let cell='<td class="allocated-quantity"></td>';
       if(row){
         const known=stockAllocationView==='CURRENT_V2'&&Array.isArray(allocations);
-        const targets=known?allocations.flatMap(a=>a.targets||[]).filter(t=>t.taskId===row.id):[];
-        const amount=known&&Number.isSafeInteger(row.stockAllocatedCumulative)&&row.stockAllocatedCumulative>=0?row.stockAllocatedCumulative:null;
+        const batchId=split?attrs.match(/data-split-batch="([^"]+)"/)?.[1]:null;
+        const batch=split?row.stockAllocatedBatches?.find(b=>escape(b.id)===batchId):null;
+        const raw=split?batch?.allocated:row.stockAllocatedCumulative;
+        const amount=known&&Number.isSafeInteger(raw)&&raw>=0?raw:null;
         const links=sources(row,tasks).some(t=>t.stockTransferOutstanding===true);
-        const deficit=amount!==null&&amount<row.ord;
-        cell='<td class="allocated-quantity">'+(split?'':amount===null?'':quantity(amount))
-          +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
+        const deficit=amount!==null&&amount<(split?batch.demand:row.ord);
+        cell='<td class="allocated-quantity">'+(amount===null?'':quantity(amount))
+          +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" '+(split?'data-current-batch="'+batchId+'" ':'')+'aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
       }
       return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">[\s\S]*?<\/td>)/,'$1'+cell)+'</tr>';
     });
@@ -1791,7 +1793,7 @@ return haloSvg;
       try { openRoot(rootId); } catch (error) { status.textContent = error?.message || 'Customer borrowing unavailable 本客户借货暂不可打开。'; }
     };
   }
-  function mountAllocation({container,workspace,rootId,esc,canSubmit,showBorrow}) {
+  function mountAllocation({container,workspace,rootId,batchId,esc,canSubmit,showBorrow}) {
     if(!container)return;
     const root=workspace.tasks.find(t=>t.id===rootId);if(!root)return;
     const known=workspace.stockAllocationView==='CURRENT_V2'&&Array.isArray(workspace.allocations);
@@ -1800,8 +1802,11 @@ return haloSvg;
     const group=workspace.tasks.filter(t=>t.id===rootId||t.customerDemandTaskId===rootId);
     const planned=group.reduce((n,t)=>n+(t.procurement?.customerCtn??Math.max(0,(t.procurement?.totalCtn||0)-(t.procurement?.expectedExtra||0))),0);
     const received=group.reduce((n,t)=>n+(t.warehouse?.accepted||0),0);
-    const canBorrow=allocated!==null&&allocated<root.ord&&received<planned;
-    container.innerHTML='<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
+    const batch=batchId?root.stockAllocatedBatches?.find(b=>b.id===batchId):null;
+    const batchKnown=!batchId||batch&&count(batch.demand)&&count(batch.allocated)&&batch.allocated<=batch.demand;
+    const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received<planned&&(!batchId||batch.allocated<batch.demand);
+    container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
+      +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '
       +'<button type="button" class="btn" data-alloc-existing>2 Use available stock 按现有数量安排</button><p data-alloc-message role="status"></p>';
@@ -3481,7 +3486,7 @@ const stages=[
       const rowLabel=id=>{const entries=[...document.querySelectorAll('#taskRows tr')],entry=entries.find(el=>el.dataset.id===id||el.dataset.splitParent===id);return entry?'ROW '+(entry.querySelector('.row-number')?.textContent||''):'';};
       formDialog('Allocation 调配',row.barcode,'<p>'+esc(row.name)+'</p><div id="currentAllocationChoice"></div><div id="currentAllocationRelations"></div><div id="currentAllocationApproval"></div>','','task');
       const canSubmit=()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty();
-      window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,esc,canSubmit,
+      window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,batchId:control.dataset.currentBatch,esc,canSubmit,
         showBorrow:()=>window.purchaseBorrowApproval.mount({container:document.querySelector('#currentAllocationApproval'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submit:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}})});
       window.purchaseBorrowRelations?.mount({container:document.querySelector('#currentAllocationRelations'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submitReturn:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});return;
     }

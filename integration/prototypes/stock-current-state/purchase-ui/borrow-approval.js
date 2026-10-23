@@ -130,7 +130,7 @@
       try { openRoot(rootId); } catch (error) { status.textContent = error?.message || 'Customer borrowing unavailable 本客户借货暂不可打开。'; }
     };
   }
-  function mountAllocation({container,workspace,rootId,esc,canSubmit,showBorrow}) {
+  function mountAllocation({container,workspace,rootId,batchId,esc,canSubmit,showBorrow}) {
     if(!container)return;
     const root=workspace.tasks.find(t=>t.id===rootId);if(!root)return;
     const known=workspace.stockAllocationView==='CURRENT_V2'&&Array.isArray(workspace.allocations);
@@ -139,8 +139,11 @@
     const group=workspace.tasks.filter(t=>t.id===rootId||t.customerDemandTaskId===rootId);
     const planned=group.reduce((n,t)=>n+(t.procurement?.customerCtn??Math.max(0,(t.procurement?.totalCtn||0)-(t.procurement?.expectedExtra||0))),0);
     const received=group.reduce((n,t)=>n+(t.warehouse?.accepted||0),0);
-    const canBorrow=allocated!==null&&allocated<root.ord&&received<planned;
-    container.innerHTML='<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
+    const batch=batchId?root.stockAllocatedBatches?.find(b=>b.id===batchId):null;
+    const batchKnown=!batchId||batch&&count(batch.demand)&&count(batch.allocated)&&batch.allocated<=batch.demand;
+    const canBorrow=batchKnown&&allocated!==null&&allocated<root.ord&&received<planned&&(!batchId||batch.allocated<batch.demand);
+    container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
+      +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '
       +'<button type="button" class="btn" data-alloc-existing>2 Use available stock 按现有数量安排</button><p data-alloc-message role="status"></p>';

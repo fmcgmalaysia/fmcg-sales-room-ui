@@ -1,5 +1,10 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST BATCH: ALLOC_BATCH_20261024.txt adds explicit verified per-batch ALLOC
+metadata and grid display, selected-batch context and unconfirmed/covered guard.
+83affectedchecks pass913.0975ms; original1307full result below is prior coverage.
+No native work, deployment or export; second arrange choice remains unfinished.
+
 LATEST: ALLOC_ENTRY_20261024.txt supersedes supplier-dialog borrowing placement.
 Candidate ALLOC column/own dialog and explicit current cumulative allocation added;
 local review rebuilt33assets. No Pages/Wix/native/CMS writes. Second option still

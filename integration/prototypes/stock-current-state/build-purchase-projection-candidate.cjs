@@ -3,6 +3,7 @@ const fs=require('node:fs'),path=require('node:path');
 let source=fs.readFileSync(path.join(__dirname,'../../backend/purchaseProjection.js'),'utf8').replace(/\r\n/g,'\n');
 function once(before,after){if(source.split(before).length!==2)throw Error('Original Purchase projection anchor changed');source=source.replace(before,()=>after);}
 const helper=`export const PURCHASE_CURRENT_PROJECTION_VERSION = 2;
+const verifiedBatchAllocation=${require('./purchase-batch-allocation.cjs').batchAllocation.toString()};
 function verifiedCurrentPurchaseProjection(view,company){
   if(view===undefined)return null;
   const count=value=>Number.isSafeInteger(value)&&value>=0;
@@ -36,6 +37,11 @@ once(anchor,`  // Original shortage/receipt facts above stay unchanged. Current 
   }
 `+anchor);
 once('    company, staff: { staffId:',"    ...(current?{stockAllocationView:'CURRENT_V2'}:{}),\n    company, staff: { staffId:");
+once('  return {\n    ...(current?',`  if(current)for(const row of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const amounts=verifiedBatchAllocation(row);if(amounts)row.stockAllocatedBatches=amounts;
+  }
+  return {
+    ...(current?`);
 new Function(source.replace(/^import[^\n]+\n/gm,'').replace(/^export /gm,''));
 const target=path.join(__dirname,'purchaseProjection.candidate.js');
 if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==source)throw Error('Purchase current projector differs');}

@@ -67,6 +67,8 @@ test('original split-row receipt metrics use current customer ownership, while P
   const result=(await f.read()).rows.workspace,a=result.tasks.find(row=>row.id==='A');
   assert.equal(a.inc,30);assert.equal(a.po,'PO-A');assert.equal(a.requested,100);
   assert.deepEqual(copy(a.batchEntitlements.map(row=>row.metrics.received)),[30,0]);
+  assert.equal(a.stockAllocatedCumulative,30);
+  assert.deepEqual(copy(a.stockAllocatedBatches),a.batchEntitlements.map(row=>({id:row.id,demand:row.quantity,allocated:row.metrics.received})));
   assert.deepEqual(copy(a.batchEntitlements.map(row=>row.metrics.committed)),[50,50]);
   assert.equal(result.tasks.find(row=>row.id==='B').warehouse.accepted,100);
   assert.equal(f.originalArguments.tasks.length,2);assert.equal([...f.db.values()].filter(row=>row.action==='STOCK_TRANSFER_CURRENT').length,1);

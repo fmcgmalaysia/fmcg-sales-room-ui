@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "4279e61fd86581e183cd2cf818bc6f6d84dca676296244c7c7917b11eb893cb9",
+  "backendInstallManifestSha256": "a01baa4455b6b6123d493fc258cb8e9f23092eafb78a259350c1e7b8ec67319d",
   "install": [
     {
       "source": "source-ui/index.html",
@@ -60,14 +60,14 @@
       "source": "purchase-ui/app.js",
       "target": "purchase-live/app.js",
       "kind": "PAGES",
-      "sha256": "9c9424f85986e6b5540392d21a868b191cf706e0fe750a0562783d69145e3a34",
+      "sha256": "5c5748f7baba1640d7822f0413a73bf436e48e82cb745acf6873671a48daba6a",
       "beforeSha256": "25d4e21c41573b53816576e5726d2b2be64c4f43f344ad15a9b0726d755b4461"
     },
     {
       "source": "purchase-ui/task-grid.js",
       "target": "purchase-live/task-grid.js",
       "kind": "PAGES",
-      "sha256": "c9de2ba15f6cc3358ece463820c8fc9767c129953634c413e6a03f905acf4399",
+      "sha256": "26573150f96acae814fdfff944b13ce81414372fd5068e83015aed2ca905a533",
       "beforeSha256": "b1f1e7b07aab3f6ca73c01c65387416a73d29fd34b3cdf8fa6f2401f50f7ee6c"
     },
     {
@@ -88,7 +88,7 @@
       "source": "purchase-ui/borrow-approval.js",
       "target": "purchase-live/borrow-approval.js",
       "kind": "PAGES",
-      "sha256": "a6708db92a90d3db244603ef076ddc05a9b49e6860174fabc2cae9f0dfe791b1",
+      "sha256": "4bb01bcce86ef995d4720c4fb29e8eb20bf2b9689c87c9182f7bad620c178d20",
       "beforeSha256": null
     },
     {

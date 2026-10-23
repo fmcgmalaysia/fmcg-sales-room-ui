@@ -32,6 +32,18 @@ export function requirePurchaseStaff(member, records) {
   return { staffId: text(row.title), staffName: text(row.staffName), role };
 }
 export const PURCHASE_CURRENT_PROJECTION_VERSION = 2;
+const verifiedBatchAllocation=function batchAllocation(root) {
+  const whole=n=>Number.isSafeInteger(n)&&n>=0,entries=root.batchEntitlements;
+  if(!whole(root.stockAllocatedCumulative)||!Array.isArray(entries)||!entries.length)return undefined;
+  const seen=new Set(),result=[];
+  for(const entry of entries){
+    if(!entry.id||seen.has(entry.id)||!whole(entry.quantity)||!whole(entry.metrics?.received)
+      ||entry.metrics.received>entry.quantity)return undefined;
+    seen.add(entry.id);result.push({id:entry.id,demand:entry.quantity,allocated:entry.metrics.received});
+  }
+  const sum=result.reduce((n,e)=>n+e.allocated,0);
+  return Number.isSafeInteger(sum)&&sum===root.stockAllocatedCumulative?result:undefined;
+};
 function verifiedCurrentPurchaseProjection(view,company){
   if(view===undefined)return null;
   const count=value=>Number.isSafeInteger(value)&&value>=0;
@@ -161,6 +173,9 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     const stock=allocations.flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===root.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,activity)}]:[];});
     if(stock.length&&root.batchEntitlements.some(row=>row.coverage)){const received=resolveBatchStock(plan,root.id,stock);root.batchEntitlements.forEach((row,index)=>{row.metrics.received=Math.min(row.metrics.committed,received[index]);});}
     root.batchAllocationVersion=purchaseBatchVersion({tasks:rows},root);
+  }
+  if(current)for(const row of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const amounts=verifiedBatchAllocation(row);if(amounts)row.stockAllocatedBatches=amounts;
   }
   return {
     ...(current?{stockAllocationView:'CURRENT_V2'}:{}),

@@ -12,12 +12,14 @@ function grid(source) {
       let cell='<td class="allocated-quantity"></td>';
       if(row){
         const known=stockAllocationView==='CURRENT_V2'&&Array.isArray(allocations);
-        const targets=known?allocations.flatMap(a=>a.targets||[]).filter(t=>t.taskId===row.id):[];
-        const amount=known&&Number.isSafeInteger(row.stockAllocatedCumulative)&&row.stockAllocatedCumulative>=0?row.stockAllocatedCumulative:null;
+        const batchId=split?attrs.match(/data-split-batch="([^"]+)"/)?.[1]:null;
+        const batch=split?row.stockAllocatedBatches?.find(b=>escape(b.id)===batchId):null;
+        const raw=split?batch?.allocated:row.stockAllocatedCumulative;
+        const amount=known&&Number.isSafeInteger(raw)&&raw>=0?raw:null;
         const links=sources(row,tasks).some(t=>t.stockTransferOutstanding===true);
-        const deficit=amount!==null&&amount<row.ord;
-        cell='<td class="allocated-quantity">'+(split?'':amount===null?'':quantity(amount))
-          +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
+        const deficit=amount!==null&&amount<(split?batch.demand:row.ord);
+        cell='<td class="allocated-quantity">'+(amount===null?'':quantity(amount))
+          +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" '+(split?'data-current-batch="'+batchId+'" ':'')+'aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
       }
       return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">[\\s\\S]*?<\\/td>)/,'$1'+cell)+'</tr>';
     });
@@ -35,7 +37,7 @@ function app(source) {
       const rowLabel=id=>{const entries=[...document.querySelectorAll('#taskRows tr')],entry=entries.find(el=>el.dataset.id===id||el.dataset.splitParent===id);return entry?'ROW '+(entry.querySelector('.row-number')?.textContent||''):'';};
       formDialog('Allocation 调配',row.barcode,'<p>'+esc(row.name)+'</p><div id="currentAllocationChoice"></div><div id="currentAllocationRelations"></div><div id="currentAllocationApproval"></div>','','task');
       const canSubmit=()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty();
-      window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,esc,canSubmit,
+      window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,batchId:control.dataset.currentBatch,esc,canSubmit,
         showBorrow:()=>window.purchaseBorrowApproval.mount({container:document.querySelector('#currentAllocationApproval'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submit:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}})});
       window.purchaseBorrowRelations?.mount({container:document.querySelector('#currentAllocationRelations'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submitReturn:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});return;
     }
