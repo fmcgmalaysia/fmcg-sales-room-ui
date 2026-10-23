@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {prepareArrangement,readArrangements,arrangementLimit}=require('../prototypes/stock-current-state/purchase-arrangement.cjs');
-const {linkArrangement}=require('../prototypes/stock-current-state/purchase-arrangement.cjs');
+const {linkArrangement,projectArrangementLinks}=require('../prototypes/stock-current-state/purchase-arrangement.cjs');
 const copy=v=>JSON.parse(JSON.stringify(v));
 function fixture(){const staff={memberId:'M',staffId:'P',staffName:'Purchaser'},task={id:'A',customerId:'C',orderId:'O',stockAllocatedCumulative:80,
  stockAllocationFacts:{usable:80,held:0,dispatched:0,availableToArrange:80,review:false}};
@@ -48,7 +48,24 @@ test('Support draft links exact pending instruction in the same plan and cannot 
  assert.throws(()=>linkArrangement({...args,before:{...link.writes[0].after,_version:'V2'}}),/pending/);
  for(const patch of [{reference:{...reference,revision:'OLD'}},{staff:{...args.staff,packingDepartment:'WAREHOUSE'}},
   {list:{...args.list,lines:[{taskId:'A',quantity:79}]}},{list:{...args.list,status:'SENT'}}])assert.throws(()=>linkArrangement({...args,...patch}),/pending/);
- assert.throws(()=>prepareArrangement({...f,before:link.writes[0].after,input:{...f.input,expectedRevision:link.writes[0].after.details.revision}}),/already linked/);
+ const linkedPackingRecord={_id:require('../prototypes/stock-current-state/commit-proof.cjs').hash('NCT','PACK','PACKING_CURRENT'),company:'NCT',action:'SUPPORT_PACKING_LIST_CURRENT',details:{list:{...args.list,lines:[{taskId:'A',quantity:80,packed:0,loaded:0}]}}};
+ assert.throws(()=>prepareArrangement({...f,before:link.writes[0].after,linkedPackingRecord,input:{...f.input,expectedRevision:link.writes[0].after.details.revision}}),/already linked/);
+});
+test('linked list state is read from actual packing, never equated to original requested qty or shipment; terminal list allows fresh bounded instruction',()=>{
+ const f=fixture(),instruction=prepareArrangement(f).writes[0].after;
+ const linked={...instruction,_version:'V2',details:{...instruction.details,status:'LINKED',packingListId:'PACK',packingRevision:'OLD'}};
+ const record={_id:require('../prototypes/stock-current-state/commit-proof.cjs').hash('NCT','PACK','PACKING_CURRENT'),company:'NCT',action:'SUPPORT_PACKING_LIST_CURRENT',
+   details:{list:{id:'PACK',company:'NCT',customerId:'C',revision:'NEW',status:'PROCESSING',lines:[{taskId:'A',quantity:60,packed:50,loaded:40}]}}};
+ let view=projectArrangementLinks('NCT',readArrangements('NCT',[linked]),[record])[0];
+ assert.equal(view.quantity,80);assert.equal(view.currentPlanned,60);assert.equal(view.currentLoaded,40);assert.equal(view.mayRequestAgain,false);
+ record.details.list.status='COMPLETED';view=projectArrangementLinks('NCT',readArrangements('NCT',[linked]),[record])[0];assert.equal(view.mayRequestAgain,true);
+ f.requestId='77777777-7777-4777-8777-777777777777';f.input.expectedRevision=linked.details.revision;
+ f.workspace.tasks[0].stockAllocationFacts={usable:80,held:40,dispatched:0,availableToArrange:40,review:false};f.input.quantity=40;
+ const next=prepareArrangement({...f,before:linked,linkedPackingRecord:record});assert.equal(next.writes[0].after.details.quantity,40);
+ assert.equal(next.writes[1].after.details.previousPackingRevision,'NEW');assert.equal(next.writes[1].after.details.previousPackingListId,'PACK');
+ record.details.list.change={lines:[]};assert.throws(()=>prepareArrangement({...f,before:linked,linkedPackingRecord:record}),/already linked/);
+ assert.throws(()=>projectArrangementLinks('NCT',readArrangements('NCT',[linked]),[]),/review/);
+ const native={...instruction,activityTime:new Date(instruction.activityTime)};assert.equal(readArrangements('NCT',[native])[0].at,f.at);
 });
 test('private arrangement service uses original Purchase authorization and common current admission; no direct writes or Support impersonation',async()=>{
  const {createCurrentPurchaseArrangementSave}=require('../prototypes/stock-current-state/current-purchase-arrangement-save.cjs');

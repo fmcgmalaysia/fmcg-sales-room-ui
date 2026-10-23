@@ -1,5 +1,10 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST LIFECYCLE: ARRANGEMENT_LIFECYCLE_20261024.txt derives actual linked
+packing quantities/status, preserves original requested qty and permits new bounded
+instruction after terminal/removal-without-pending-change. Original CREATE/replay/
+CANCEL chain checked; full1322pass30032.6697ms. No native/deploy/export changes.
+
 LATEST UI LINK: ARRANGEMENT_UI_LINK_20261024.txt wires Purchase second choice to
 original save tracker and Support instruction selection to original draft editor;
 same fenced CREATE plan links instruction to actual draft ID plus audit. No direct

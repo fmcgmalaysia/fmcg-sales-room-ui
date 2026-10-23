@@ -10,7 +10,7 @@ const { preparePackingStock } = require('./packing-stock-plan.cjs');
 const {captureOriginalPackingPhotoPlan}=require('./packing-photo-plan.cjs');
 const {prependPackingPhotoReceipts}=require('./packing-photo-fenced-store.cjs');
 const {hash}=require('./commit-proof.cjs');
-const {readArrangements,linkArrangement,identity:arrangementIdentity}=require('./purchase-arrangement.cjs');
+const {readArrangements,projectArrangementLinks,linkArrangement,identity:arrangementIdentity}=require('./purchase-arrangement.cjs');
 // Private candidate for the existing authenticated read/save gateways. Every read
 // shares the company control barrier. No legacy apply or file upload in prepare.
 function createPackingStockPreparation(deps) {
@@ -62,7 +62,7 @@ function createPackingStockPreparation(deps) {
         products.push({ state: builder.buildState(rows), rows });
       }
       const context = currentPackingContext({ context: packing, states: products.map(p => p.state) });
-      if(current){const instructions=readArrangements(company,original.activity);
+      if(current){const instructions=projectArrangementLinks(company,readArrangements(company,original.activity),original.activity);
         context.tasks=context.tasks.map(task=>({...task,purchaseArrangements:instructions.filter(i=>i.taskId===task.taskId)}));}
       if (context.stockDamageVersion === 1 && deps.currentDamageVersion !== 1) throw Error('Paired original isolated packing model required');
       if (!save) return { context, ...(current ? { stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1,

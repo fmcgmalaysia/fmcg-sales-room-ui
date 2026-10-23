@@ -1,10 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),root=path.join(__dirname,'../prototypes/stock-current-state');
-function fixture({planned=90,received=80,allocated=80,current=true,facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
+function fixture({planned=90,received=80,allocated=80,current=true,instructions=[],facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
   const controls=new Map(),container={innerHTML:'',querySelector(s){if(!controls.has(s))controls.set(s,{});return controls.get(s);}};
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/borrow-approval.js'),'utf8'),{window});
   let opened=0,ready=true;const arranged=[];
-  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockArrangements:[],stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}}]};
+  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockArrangements:instructions,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}}]};
   window.purchaseBorrowApproval.mountAllocation({container,workspace,rootId:'A',esc:String,canSubmit:()=>ready,showBorrow:()=>opened++,submitArrangement:input=>arranged.push(input)});
   return {container,controls,arranged,open:()=>opened,busy:()=>ready=false};
 }
@@ -27,6 +27,13 @@ test('cumulative allocated80cannot be offered again when shipped, held or unconf
     assert.match(f.container.innerHTML,/data-alloc-existing disabled/);assert.equal(f.controls.get('[data-alloc-message]')?.textContent,undefined);
   }
   const f=fixture({facts:{usable:80,held:50,dispatched:0,availableToArrange:30,review:false}});assert.match(f.container.innerHTML,/可安排 <b>30/);
+});
+test('active linked packing disables another instruction; terminal list reuses exact current revision and only remaining unheld quantity',()=>{
+ const instruction={batchId:'',revision:'CURRENT',status:'LINKED',packingListId:'PACK',packingStatus:'PROCESSING',currentPlanned:60,currentLoaded:40,mayRequestAgain:false};
+ const active=fixture({instructions:[instruction]});active.controls.get('[data-alloc-existing]').onclick();assert.equal(active.arranged.length,0);
+ const completed=fixture({instructions:[{...instruction,packingStatus:'COMPLETED',mayRequestAgain:true}],facts:{usable:80,held:40,dispatched:0,availableToArrange:40,review:false}});
+ completed.controls.get('[data-alloc-existing]').onclick();assert.equal(completed.arranged[0].quantity,40);assert.equal(completed.arranged[0].expectedRevision,'CURRENT');
+ assert.match(completed.container.innerHTML,/Planned 计划 60/);assert.match(completed.container.innerHTML,/Loaded 已装柜 40/);
 });
 test('actual grid inserts one aligned ALLOC cell per row; receipts stay 80 when current allocation becomes 90',()=>{
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/task-grid.js'),'utf8'),{window});

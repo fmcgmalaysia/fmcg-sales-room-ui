@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "a513bc3c155bd9ea1d86b1a0998138ea6c2672ad2823feb25cb6e12cf94a2809",
+  "backendInstallManifestSha256": "790a2b6c447d241203c72826e53d1f21c9f3680aeb17e5b097c5c6bf2e989c3c",
   "install": [
     {
       "source": "source-ui/index.html",
@@ -88,7 +88,7 @@
       "source": "purchase-ui/borrow-approval.js",
       "target": "purchase-live/borrow-approval.js",
       "kind": "PAGES",
-      "sha256": "a4326464f3adeb899edad878adc87aae5e67e07313b48af5254596b1d64ef864",
+      "sha256": "e37c8ba0775bf95c0cf612c3cad11ec649661a64e90565d953d614942c90f5b5",
       "beforeSha256": null
     },
     {

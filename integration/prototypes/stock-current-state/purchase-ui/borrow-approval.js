@@ -149,13 +149,14 @@
     const previous=Array.isArray(root.stockArrangements)?root.stockArrangements.filter(a=>a.batchId===(batchId||'')):null;
     const meta=workspace.stockCurrent,capability=meta?.schema==='PURCHASE_TRANSFERS_V2'&&meta.stockProtocol===1&&meta.stockBuild
       &&count(meta.stockGeneration)&&meta.stockGeneration===meta.generation;
-    const canArrange=capability&&arrangeQty>0&&previous&&previous.length<=1&&previous.every(i=>i.status==='PENDING_SUPPORT')&&typeof submitArrangement==='function';
+    const canArrange=capability&&arrangeQty>0&&previous&&previous.length<=1&&previous.every(i=>i.status==='PENDING_SUPPORT'||i.status==='LINKED'&&i.mayRequestAgain===true)&&typeof submitArrangement==='function';
     let submitted=false;
     container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
       +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
       +'<p>Available to arrange 可安排 <b>'+esc(available??'Unconfirmed 尚未确认')+'</b>'+(available===null?'':' · Held 备货占用 '+esc(facts.held)+' · Dispatched 已发货 '+esc(facts.dispatched))+'</p>'
-      +(previous?.[0]?.status==='LINKED'?'<p>Packing draft created 已接备货草稿 '+esc(previous[0].packingListId)+'</p>':'')
+      +(previous?.[0]?.status==='LINKED'?'<p>Packing list 备货单 '+esc(previous[0].packingListId)+' · '+esc(previous[0].packingStatus||'Review 待核对')
+        +' · Planned 计划 '+esc(previous[0].currentPlanned??'')+' · Loaded 已装柜 '+esc(previous[0].currentLoaded??'')+(previous[0].changePending?' · Change pending 变更待确认':'')+'</p>':'')
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '
       +'<button type="button" class="btn" data-alloc-existing '+(canArrange?'':'disabled')+'>2 Send '+esc(arrangeQty??'')+' CTN to Support 提交现货安排</button>'
       +'<p>Support will prepare a packing draft after checking stock again. This request retains the remaining demand. Support重新核对库存后安排备货，剩余需求保留。</p><p data-alloc-message role="status"></p>';

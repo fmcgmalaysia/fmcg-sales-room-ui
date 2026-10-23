@@ -4,7 +4,7 @@ const { prepareMarginReferenceGroup, collectMarginCurrencies } = require('./marg
 const { createPurchaseTransferWorkspace } = require('./purchase-transfer-workspace.cjs');
 const { domainCollections } = require('./domain-scope.cjs');
 const { copy } = require('./segmented-plan.cjs');
-const {readArrangements}=require('./purchase-arrangement.cjs');
+const {readArrangements,projectArrangementLinks}=require('./purchase-arrangement.cjs');
 // READ ONLY. Refresh suggestions contain no draft GP/rate/order data. The caller
 // must durably retain an original authenticated save request BEFORE acting on one.
 function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, readCurrentContext, readRates,
@@ -44,7 +44,7 @@ function createCurrentPurchaseWorkspaceRead({ company, protocol, authenticate, r
       try {names=await readCustomerShortNames(workspace.customers.map(row=>row.id));}
       catch (_) {customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。';}
       if(!Array.isArray(names))throw Error('Original customer short names required');
-      const arrangements=readArrangements(company,tables[journal]);
+      const arrangements=projectArrangementLinks(company,readArrangements(company,tables[journal]),tables[journal]);
       const result={...copy(workspace),customerNamesError,
         customers:workspace.customers.map(row=>({...copy(row),shortName:names.find(item=>item.customerId===row.id)?.shortName||''})),
         tasks:workspace.tasks.map(row=>({...copy(row),stockArrangements:arrangements.filter(a=>a.taskId===row.id),gp:refreshTaskId?null:margins.get(row.id)??null,sourceGp:refreshTaskId?null:margins.get('SOURCE:'+row.id)??null}))};

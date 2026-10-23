@@ -51,6 +51,14 @@ test('real original Support CREATE links one Purchase instruction atomically; re
  const fresh=await f.service.read({department:'SUPPORT'});
  await assert.rejects(f.service.save({...request,requestId:'66666666-6666-4666-8666-666666666666',stockGeneration:fresh.stockCurrent.stockGeneration,
    input:{...request.input,version:fresh.version}}),/pending|instruction|Exact/);
+ const beforeCancel=await f.service.read({department:'SUPPORT'}),created=beforeCancel.lists.find(l=>l.id===result.id);
+ assert.equal(beforeCancel.tasks[0].purchaseArrangements[0].mayRequestAgain,false);
+ const cancelled=await f.service.save({department:'SUPPORT',requestId:'77777777-7777-4777-8777-777777777777',stockProtocol:1,stockBuild:'TEST',
+   stockGeneration:beforeCancel.stockCurrent.stockGeneration,input:{action:'CANCEL',id:created.id,revision:created.revision,version:beforeCancel.version,reason:'Rearrange later'}});
+ assert.equal(cancelled.ok,true);const afterCancel=await f.service.read({department:'SUPPORT'});
+ assert.equal(afterCancel.tasks[0].purchaseArrangements[0].packingStatus,'CANCELLED');
+ assert.equal(afterCancel.tasks[0].purchaseArrangements[0].mayRequestAgain,true);
+ assert.equal(afterCancel.tasks[0].purchaseArrangements[0].quantity,50);
 });
 test('Support sends and Warehouse accepts the same current packing task without touching physical balances', async () => {
   const f = await fixture(), beforePhysical = [...f.db.entries()].filter(([key]) => key.startsWith('StockPositions:')).map(([, row]) => JSON.stringify(row));
