@@ -1,4 +1,23 @@
-CURRENT 2026-10-23 — INSTALLED COHORT READER AND FULL PRIVATE MIGRATION PIPELINE CONNECTED
+CURRENT 2026-10-23 — ACTUAL ADMIN/NATIVE COMPOSITION AND GUARDED ABSENT CONTROL INITIALIZER
+
+MAINTENANCE_NATIVE_ADMIN_20261023.txt records eight real Permissions.Admin exports,
+actual member ownership and direct @wix/data/existing private pipeline composition.
+Existing journal privacy and control fields verified through actual metadata reader
+callbacks, not browser flags. ONE absent MAINTENANCE control may be initialized;
+existing controls/modes/generation/locks are never overwritten or released.
+Root deliberately refuses BEFORE any native I/O because provider drain/sufficient
+legacy fencing is unresolved. Candidate binding is implemented, NOT native accepted
+or usable as an alternate route around stopped UI. Native identity/member behavior,
+privacy/schema/index, measured capacity, recovery, semantic/native writer review,
+migration/shadow/cutover and public Loaded gates remainOPEN. No ACTIVE/mode toggle.
+Runtime116modules/60exports,39backend targets/95dependencies; same38Pages+4Wix relays.
+Final1290stock-current tests pass31663.5474ms; original production paths unchanged
+against d447185. No native/browser/CMS/ACL/release action. One nonblocking question
+requests specific authority for Wix support technical coordination; no ticket sent,
+no ordinary-stage consent wait. Both native UI paths staySTOPPED, native300UNKNOWN.
+HeartbeatPAUSED; ACTIVE/invoice/exitOFF; existingPR220 only. Recovery6423d5d.
+
+PREVIOUS 2026-10-23 — INSTALLED COHORT READER AND FULL PRIVATE MIGRATION PIPELINE CONNECTED
 
 MAINTENANCE_INSTALLED_READBACK_20261023.txt records the missing complete readInstalled
 adapter, used in both original migration validate and post-result lifecycle inspect.

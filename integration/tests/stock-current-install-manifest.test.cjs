@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {execFileSync}=require('node:child_process'),{inspectInstall,definition}=require('../prototypes/stock-current-state/build-current-install-manifest.cjs');
 const {WRITERS}=require('../prototypes/stock-current-state/stock-admission.cjs'),folder=path.join(__dirname,'../prototypes/stock-current-state');
 test('explicit two-system installation review links actual existing routes and all paired exports, without activation evidence',()=>{
- const report=inspectInstall();assert.deepEqual(report.errors,[]);assert.equal(report.install.length,38);assert.equal(report.modules.length,94);
+ const report=inspectInstall();assert.deepEqual(report.errors,[]);assert.equal(report.install.length,39);assert.equal(report.modules.length,95);
  assert.equal(report.candidateOnly,true);assert.equal(report.activationAllowed,false);assert.equal(report.verifiedCoverage,false);
  assert.deepEqual(Object.keys(report.writerReview).sort(),[...WRITERS].sort());assert.equal(Object.values(report.writerReview).every(row=>row.verified===false),true);
  const source=report.install.filter(row=>row.system==='FMCGMALAYSIA');assert.deepEqual(source.map(row=>row.target),['nctSubmissionDelivery.js']);

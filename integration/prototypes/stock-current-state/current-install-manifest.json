@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "a021aacc3bd4765ee7f6232813977b30e7d13b0f0088da77bbeb7f5af8c9f542",
+      "sha256": "30a04c2a853779e76b7730ab568d7418b2644803f90a3348d676433d6cb5f053",
       "beforeSha256": null
     },
     {
@@ -285,6 +285,14 @@
       "kind": "PATCH",
       "sha256": "7948f562900c9ecbb12ca186c6521da7a71e5bf7622ed5246550ee5a4ff5f285",
       "beforeSha256": "1bca13e0478ef2ea8b9b3b58793173373b6be237e738b853116f5fb43c016334"
+    },
+    {
+      "system": "MASTER",
+      "source": "stockMaintenanceAdmin.web.js",
+      "target": "stockMaintenanceAdmin.web.js",
+      "kind": "NEW",
+      "sha256": "cb049f7fc77c0337e240f1070077fc0b9ce20fa7ba1ce5f2d2849a3324493414",
+      "beforeSha256": null
     },
     {
       "system": "MASTER",
@@ -1395,7 +1403,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "a021aacc3bd4765ee7f6232813977b30e7d13b0f0088da77bbeb7f5af8c9f542",
+      "sha256": "30a04c2a853779e76b7730ab568d7418b2644803f90a3348d676433d6cb5f053",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1438,6 +1446,7 @@
         "createCustomerDocumentFencedStore",
         "createFencedProof",
         "createMaintenanceBackupStore",
+        "createMaintenanceControlInitializer",
         "createMaintenanceInstalledReader",
         "createMaintenanceMetadataInitializer",
         "createMaintenanceMigration",
@@ -1741,6 +1750,28 @@
       "dependencies": [
         "MASTER/inventoryExceptions.js",
         "MASTER/stockExceptionResolution.js"
+      ]
+    },
+    {
+      "system": "MASTER",
+      "target": "stockMaintenanceAdmin.web.js",
+      "source": "integration/prototypes/stock-current-state/stockMaintenanceAdmin.web.js",
+      "sha256": "cb049f7fc77c0337e240f1070077fc0b9ce20fa7ba1ce5f2d2849a3324493414",
+      "exports": [
+        "applyStockMaintenanceMigration",
+        "captureStockMaintenance",
+        "initializeStockMaintenanceControl",
+        "initializeStockMaintenanceMetadata",
+        "inspectStockMaintenanceBackup",
+        "inspectStockMaintenanceControl",
+        "inspectStockMaintenanceMigration",
+        "retainStockMaintenanceBackup"
+      ],
+      "dependencies": [
+        "MASTER/purchaseOrderWorkflow.js",
+        "MASTER/purchaseProjection.js",
+        "MASTER/stockCardProjection.js",
+        "MASTER/stockCurrentCommands.js"
       ]
     },
     {

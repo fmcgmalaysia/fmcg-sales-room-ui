@@ -10,7 +10,7 @@ const masterPatches=['accountPurchase.web','customerFulfilment','customerFulfilm
  'stockCardProjection','stockControl.web','stockExceptions.web','warehousePreparation','warehouseReceiving.web'];
 const masterNew=['stockCurrentAccountPurchase','stockCurrentBorrow.web','stockCurrentCommands','stockCurrentCostReference','stockCurrentExceptions',
  'stockCurrentFulfilment','stockCurrentOrderIntake','stockCurrentPacking','stockCurrentPurchaseOrders','stockCurrentQuantityRead','stockCurrentRead.web',
- 'stockCurrentSourceSales','stockCurrentWarehouse.web','stockRecoveryRead.web'];
+ 'stockCurrentSourceSales','stockCurrentWarehouse.web','stockRecoveryRead.web','stockMaintenanceAdmin.web'];
 const definition=()=>[...masterPatches.map(name=>({system:'MASTER',source:name+'.candidate.js',target:name+'.js',kind:'PATCH'})),
  ...masterNew.map(name=>({system:'MASTER',source:name+'.js',target:name+'.js',kind:'NEW'})),
  {system:'FMCGMALAYSIA',source:'nctSubmissionDelivery.candidate.js',target:'nctSubmissionDelivery.js',kind:'PATCH'}];
