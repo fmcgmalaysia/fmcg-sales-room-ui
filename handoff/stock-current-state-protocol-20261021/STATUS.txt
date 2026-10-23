@@ -1,5 +1,11 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST NATIVE WAREHOUSE: MASTER_WAREHOUSE_BACKEND_PARITY_20261024.txt adds full
+saved-editor readback of warehouseReceiving.web/warehousePreparation/
+stockControl.web/stockCardProjection. All4match originals and install before-images;
+exact preimages privately preserved. Overnight backend set now10of23MASTERpatch
+preimages, NOT installations. Code unchanged;1337result reused. No writes/publish.
+
 LATEST NATIVE PURCHASE: MASTER_PURCHASE_BACKEND_PARITY_20261024.txt preserves
 full saved-editor readback of purchaseProjection/purchaseWorkspace.web/
 purchaseOperations.web. All3match repository and install-before hashes; private
