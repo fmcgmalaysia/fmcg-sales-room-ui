@@ -1,0 +1,64 @@
+2026-10-23 — FOCUSED CUTOVER DECISION; NOT RELEASE ACCEPTANCE
+
+User objective: finish real Sales split -> Purchase approve borrowing -> Warehouse
+receipt automatically repays -> both original person icons keep halos while any
+debt remains, through Loaded. Do not reopen departmental policy or add finance.
+Current local checkpoint da664323625e5e1893cbc86f88f1ab3babb47380.
+Latest business code11a7d89; final1299pass evidence unchanged. No rerun this review.
+NCT/GHR required native fields and index definitions now UI-confirmed, including
+user-created NCT SC_TASK_REL. Native metadata/type/performance acceptance remains open.
+
+ONE DECISION NEEDED
+What supported boundary can prevent every pre-cutover original writer, including
+an execution paused before it creates its lock, from changing migration inputs
+after capture? Establish the guarantee BEFORE implementing/removing the refusal.
+If no supported guarantee is established, state that release remains blocked;
+do not substitute a time delay, successful Publish, empty locks or another read.
+
+SMALLEST REQUIRED SOURCE SET (relative to this checkout)
+ integration/prototypes/stock-current-state/stockCurrentCostReference.js:17-21
+  Reads control once, returns LEGACY. Awaited return can arrive after mode changed.
+ integration/prototypes/stock-current-state/purchaseCostRetry.web.candidate.js:22
+  Enters unchanged original retry after receiving that LEGACY result.
+ integration/backend/purchaseCostRetry.js:38,59,62,73
+  Lock begins later; task/order writes are unconditional. Original protected source.
+ integration/tests/stock-current-legacy-admission-witness.test.cjs
+  Retained exact-root/original-factory witness. Its PASS demonstrates unsafe
+  interleaving, not safety; no need rerun unchanged merely to inspect the result.
+ integration/prototypes/stock-current-state/stockMaintenanceAdmin.web.js:17-18,51
+  All maintenance entries deliberately refuse before native data/metadata access.
+ handoff/stock-current-state-protocol-20261021/WRITER_ENTRY_REVIEW_20261023.txt
+  All20mandatory categories structurally mapped, NONE native-verified. A fix for
+  cost retry alone is not all-writer admission/fencing completion.
+
+REQUIRED REVIEW OUTPUT
+1. Select provider-supported old-execution/storage-drain guarantee OR demonstrate
+   an equivalent complete legacy fencing design with its introduction boundary.
+2. Address already accepted writes as well as future calls from old executions.
+3. Name exact files and necessary live evidence; preserve original authorities,
+   unknown-outcome records, same current inventory and verified workflows.
+4. Give a counterexample-resistant acceptance test and failure/restore behavior.
+5. If neither is established, identify the exact Wix provider question still needed.
+No broad rewrite, alternate inventory, Boolean proof, lock deletion or ACTIVE flag.
+
+THIS CONTINUATION'S OTHER BOUNDED READS
+Confirmed relation query ignores task archive flag; Purchase composition preserves
+original archive/progress and overlays outstanding links independently. Original
+Warehouse authority retains PO/receipt/finance validation before current planning.
+No new semantic defect established by these reads; no speculative code patch made.
+Official SDK eq() explicitly matches a value in an array; participantTaskIds query
+does not require changing to another operator based on guesswork:
+ https://dev.wix.com/docs/sdk/backend-modules/data/items/wix-data-query/eq
+Official backend timeout still permits execution after client closure; no newly
+established drain API or termination bound from this bounded source search:
+ https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+
+SUBSEQUENT RELEASE WORK, NOT DISAPPEARED BY THIS DECISION
+Focused G3 review; fresh live/repo comparison; native schema/type/index/capacity/
+recovery and all-writer acceptance; retained backup, migration and shadow parity;
+complete paired installation/resources; four-stage publish and public real test.
+No Wix support ticket sent. No model switch/agent, UI input, business write,
+permission change, deployment or GitHub export attempted in this continuation.
+GitHub handoff export refusal remains unresolved; do not retry another route.
+Four states: code candidate; Pages baseline; Wix new flow unpublished; public
+borrowing unaccepted/not testable. ACTIVE/invoice/physical departure remain OFF.
