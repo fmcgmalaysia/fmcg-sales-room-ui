@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "2bf0dd4c5a4d825215dbab6ec519358dc39df78c768c3113fb357a86271bd6c7",
+  "backendInstallManifestSha256": "60c537a1a2b65a12280da601617b95e6a56d45b016793c33b5843690fb7b3c1d",
   "install": [
     {
       "source": "source-ui/index.html",
@@ -310,9 +310,76 @@
       "beforeSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777"
     }
   ],
+  "retainedRelayDependencies": [
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "fxRates.web.js",
+      "export": "getFxRateSettings",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "fxRates.web.js",
+      "export": "saveAndSyncFxRates",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "getCurrentStaffContext",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "recordStaffPresence",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "getStaffPresenceForAdmin",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "getSalesRoomQuoteSignals",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "processSalesRoomSelectionQueue",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "routeSalesRoomCustomerSelections",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    }
+  ],
   "errors": [],
   "releaseGates": [
     "Fresh live source and static-resource comparison",
+    "Retained original relay dependencies need native verification",
     "Paired real backend and authorized current data",
     "Required writer/recovery/capacity gates",
     "Exact branch deployment authority at action time",

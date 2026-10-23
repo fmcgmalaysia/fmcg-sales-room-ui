@@ -13,7 +13,8 @@ const masterNew=['stockCurrentAccountPurchase','stockCurrentBorrow.web','stockCu
  'stockCurrentSourceSales','stockCurrentWarehouse.web','stockRecoveryRead.web','stockMaintenanceAdmin.web'];
 const definition=()=>[...masterPatches.map(name=>({system:'MASTER',source:name+'.candidate.js',target:name+'.js',kind:'PATCH'})),
  ...masterNew.map(name=>({system:'MASTER',source:name+'.js',target:name+'.js',kind:'NEW'})),
- {system:'FMCGMALAYSIA',source:'nctSubmissionDelivery.candidate.js',target:'nctSubmissionDelivery.js',kind:'PATCH'}];
+ {system:'FMCGMALAYSIA',source:'nctSubmissionDelivery.candidate.js',target:'nctSubmissionDelivery.js',kind:'PATCH'},
+ {system:'FMCGMALAYSIA',source:'source-onboarding.candidate.js',target:'onboarding.web.js',kind:'PATCH'}];
 const writers={RECEIPT:['stockCurrentWarehouse.web.js'],ALLOCATION:['stockCurrentBorrow.web.js'],BORROWING:['stockCurrentBorrow.web.js'],
  SALES_DEMAND:['stockCurrentSourceSales.js'],PURCHASE_SOURCE:['stockCurrentBorrow.web.js'],PURCHASE_PLAN:['stockCurrentBorrow.web.js'],PURCHASE_TASK:['stockCurrentBorrow.web.js'],
  STOCK_EXCEPTION:['stockCurrentExceptions.js'],STOCK_RESOLUTION:['stockCurrentExceptions.js'],PACKING:['stockCurrentPacking.js'],
@@ -24,6 +25,10 @@ const writers={RECEIPT:['stockCurrentWarehouse.web.js'],ALLOCATION:['stockCurren
 function inspectInstall({entries=definition(),readFile=file=>fs.readFileSync(file,'utf8')}={}){
  const registry=new Map(),modules=new Map(),external=new Set(),errors=[],emptyCoverageRoots=[];
  const roots={MASTER:path.join(checkout,'integration/backend'),FMCGMALAYSIA:path.join(checkout,'backend')};
+ // This existing Source module is versioned in its original Wix snapshot folder,
+ // not backend/. Keep the actual deployment identity; never copy it to MASTER.
+ const originalFile=(system,target)=>system==='FMCGMALAYSIA'&&target==='onboarding.web.js'
+  ?path.join(checkout,'sales-room/wix/onboarding.web.js'):path.join(roots[system],target);
  const text=file=>readFile(file).replace(/\r\n/g,'\n'),digest=source=>createHash('sha256').update(source).digest('hex');
  const exportsOf=source=>{
   const names=new Set([...source.matchAll(/^export\s+(?:async\s+)?(?:function|const|let|class|var)\s+(\w+)/gm)].map(match=>match[1]));
@@ -33,7 +38,7 @@ function inspectInstall({entries=definition(),readFile=file=>fs.readFileSync(fil
  for(const item of entries){
   if(!Object.hasOwn(roots,item.system)||!/^[A-Za-z][A-Za-z0-9.-]*\.js$/.test(item.target)||!/^[A-Za-z][A-Za-z0-9.-]*\.js$/.test(item.source)||!['PATCH','NEW'].includes(item.kind))throw Error('Explicit install source/target required');
   const key=item.system+'/'+item.target;if(registry.has(key))throw Error('Duplicate install target '+key);
-  const source=text(path.join(__dirname,item.source)),originalPath=path.join(roots[item.system],item.target);
+  const source=text(path.join(__dirname,item.source)),originalPath=originalFile(item.system,item.target);
   const originalExists=fs.existsSync(originalPath);
   if(item.kind==='PATCH'&&!originalExists||item.kind==='NEW'&&originalExists)throw Error('Install target kind conflict '+key);
   registry.set(key,{...item,path:path.join(__dirname,item.source),sha256:digest(source),beforeSha256:originalExists?digest(text(originalPath)):null});
@@ -44,7 +49,7 @@ function inspectInstall({entries=definition(),readFile=file=>fs.readFileSync(fil
  for(const required of definition())if(!registry.has(required.system+'/'+required.target))errors.push('Required candidate omitted '+required.system+'/'+required.target);
  function visit(system,target){
   const key=system+'/'+target;if(modules.has(key))return modules.get(key);
-  const installed=registry.get(key),file=installed?.path||path.join(roots[system],target);
+  const installed=registry.get(key),file=installed?.path||originalFile(system,target);
   if(!fs.existsSync(file)){errors.push('Missing backend module '+key);return null;}
   const source=text(file),module={system,target,source:relative(file),sha256:digest(source),exports:[...exportsOf(source)].sort(),dependencies:[]};modules.set(key,module);
   for(const match of source.matchAll(/^import\s+([^;]+?)\s+from\s+['"]([^'"]+)['"];?/gm)){

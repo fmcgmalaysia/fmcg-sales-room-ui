@@ -1,5 +1,15 @@
 CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
 
+LATEST INSTALL PAIRING: added missing Source onboarding.web.js candidate to backend
+install graph, exact original snapshot resolver;40targets/100modules. UI relay named
+imports checked against same-system graph; retained original nonstock bindings are
+explicitly UNVERIFIED. Full current1303pass0fail42924.3592ms; subsequent affected
+manifest8pass1370.0736ms overlap. Fresh Master Purchase page full editor readback
+matches repo SHA c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f.
+Source editor new51427279 initial+one refresh remains Loading, path stopped after
+two unsuccessful loads; no more reloads. SOURCE_INSTALL_PAIRING_20261023.txt has
+private evidence and next work. No native installation/write, publish or export.
+
 LATEST UI IMPLEMENTATION: user requested continued independent work while Wix
 answers. Fixed missing split-batch route to same customer/product borrowing root,
 preserving dirty/pending drafts and original approval tracker. Added omitted Source

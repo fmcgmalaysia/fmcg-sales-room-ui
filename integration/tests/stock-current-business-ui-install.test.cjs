@@ -12,6 +12,9 @@ test('real Sales/Purchase/Warehouse/Support asset destinations and five paired W
   assert.equal(sourceRelay.system, 'FMCGMALAYSIA');
   assert.equal(sourceRelay.source, 'source-sales-room-page.candidate.js');
   assert.match(sourceRelay.beforeSha256, /^[a-f0-9]{64}$/);
+  assert.ok(report.retainedRelayDependencies.some(row => row.system === 'FMCGMALAYSIA' && row.target === 'staffAuth.web.js'));
+  assert.ok(report.retainedRelayDependencies.every(row => row.verified === false && row.originalPageSha256));
+  assert.ok(!report.retainedRelayDependencies.some(row => row.target === 'onboarding.web.js'));
   for (const target of ['index.html', 'sales-room/order-adjustment.js', 'purchase-live/index.html', 'purchase-live/borrow-approval.js',
     'purchase-live/borrow-relations.js', 'warehouse-room/workroom.js', 'support-room/packing-workbench.js', 'integration/wix/packingListBridge.js']) {
     assert.ok(report.install.some(row => row.target === target));

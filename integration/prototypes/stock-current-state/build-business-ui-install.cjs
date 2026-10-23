@@ -48,10 +48,34 @@ function inspectBusinessUiInstall(entries = definition()) {
     }
   }
   const backend = read(path.join(__dirname, 'current-install-manifest.json'));
+  const backendReport = JSON.parse(backend);
+  const retainedRelayDependencies = [];
+  // Page relays and backend modules are separate installation surfaces. Verify
+  // their actual named imports together, including the separate Source site.
+  for (const row of rows.filter(row => row.kind !== 'PAGES')) {
+    const system = row.system || 'MASTER', source = read(path.join(__dirname, row.source));
+    const originalBindings = new Set();
+    const originalPath = path.join(checkout, row.target);
+    if (fs.existsSync(originalPath)) for (const match of read(originalPath).matchAll(/^import\s+\{([^}]+)\}\s+from\s+['"]backend\/([^'"]+)['"];?/gm)) {
+      const target = match[2].endsWith('.js') ? match[2] : match[2] + '.js';
+      for (const spec of match[1].split(',')) originalBindings.add(target + ':' + spec.trim().split(/\s+as\s+/)[0]);
+    }
+    for (const match of source.matchAll(/^import\s+\{([^}]+)\}\s+from\s+['"]backend\/([^'"]+)['"];?/gm)) {
+      const target = match[2].endsWith('.js') ? match[2] : match[2] + '.js';
+      const module = backendReport.modules?.find(item => item.system === system && item.target === target);
+      for (const spec of match[1].split(',')) {
+        const name = spec.trim().split(/\s+as\s+/)[0];
+        if (!module && originalBindings.has(target + ':' + name)) {
+          retainedRelayDependencies.push({ page: row.target, system, target, export: name,
+            originalPageSha256: row.beforeSha256, verified: false });
+        } else if (!module?.exports.includes(name)) errors.push('Missing paired relay backend ' + row.target + ' -> ' + system + '/' + target + ':' + name);
+      }
+    }
+  }
   return { schema: 'BUSINESS_UI_INSTALL_V1', hashFormat: 'SHA256_UTF8_LF', noPreviewFixtures: true,
     originalPathsUntouched: true, deployPerformed: false, activationAllowed: false,
-    backendInstallManifestSha256: hash(backend), install: rows, errors,
-    releaseGates: ['Fresh live source and static-resource comparison', 'Paired real backend and authorized current data',
+    backendInstallManifestSha256: hash(backend), install: rows, retainedRelayDependencies, errors,
+    releaseGates: ['Fresh live source and static-resource comparison', 'Retained original relay dependencies need native verification', 'Paired real backend and authorized current data',
       'Required writer/recovery/capacity gates', 'Exact branch deployment authority at action time',
       'Pages resource versions, Wix published-live and public Loaded acceptance'] };
 }

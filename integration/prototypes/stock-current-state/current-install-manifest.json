@@ -15,6 +15,14 @@
       "beforeSha256": "beae78e7345474931dea936112e5bcf7da0b21676b205ef31d4ea00b93a16a34"
     },
     {
+      "system": "FMCGMALAYSIA",
+      "source": "source-onboarding.candidate.js",
+      "target": "onboarding.web.js",
+      "kind": "PATCH",
+      "sha256": "9d117a6f228d9d3268bd3acbcda6e53e15806b7ca0be26122920759f19246efd",
+      "beforeSha256": "3e5100e5fbe12f91f6bcb259beff4d8d0db37b3a5f45a990b2019b33461d9f21"
+    },
+    {
       "system": "MASTER",
       "source": "accountPurchase.web.candidate.js",
       "target": "accountPurchase.web.js",
@@ -322,6 +330,50 @@
   "modules": [
     {
       "system": "FMCGMALAYSIA",
+      "target": "masterFulfilmentClient.js",
+      "source": "backend/masterFulfilmentClient.js",
+      "sha256": "5cc8b1d8b3b32cfa560ccb41021be1af99f206685a9fa0e90a2c3d093e0c477a",
+      "exports": [
+        "requestMasterFulfilment"
+      ],
+      "dependencies": []
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "masterQuantityClient.js",
+      "source": "backend/masterQuantityClient.js",
+      "sha256": "878a91d8855968a145f4d43edc0efb327d88e921f8c2e93240294c80416995a4",
+      "exports": [
+        "withMasterQuantities"
+      ],
+      "dependencies": [
+        "FMCGMALAYSIA/masterQuantityProjection.js"
+      ]
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "masterQuantityProjection.js",
+      "source": "backend/masterQuantityProjection.js",
+      "sha256": "85f3676b715228bc0d66223fe2bb2da531e9cb4322d13c30756ff6d85e0cd1eb",
+      "exports": [
+        "applyMasterQuantities"
+      ],
+      "dependencies": []
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "nctSalesIntake.js",
+      "source": "backend/nctSalesIntake.js",
+      "sha256": "143246e81a689b2a4fa87e314314f3ca8c27265f9897dea780ffc2cf52b08c27",
+      "exports": [
+        "submitNctSalesOrder"
+      ],
+      "dependencies": [
+        "FMCGMALAYSIA/nctSubmissionDelivery.js"
+      ]
+    },
+    {
+      "system": "FMCGMALAYSIA",
       "target": "nctSubmissionDelivery.js",
       "source": "integration/prototypes/stock-current-state/nctSubmissionDelivery.candidate.js",
       "sha256": "0fc1533c5e04c73ff706c9da1fdb9ec393af5e5541cb7ff6966a3ec21f3b1342",
@@ -341,6 +393,47 @@
         "buildNctSubmission"
       ],
       "dependencies": []
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "onboarding.web.js",
+      "source": "integration/prototypes/stock-current-state/source-onboarding.candidate.js",
+      "sha256": "9d117a6f228d9d3268bd3acbcda6e53e15806b7ca0be26122920759f19246efd",
+      "exports": [
+        "addSalesRoomCustomerUser",
+        "checkSalesRoomOrderReceipt",
+        "confirmSalesRoomOrderForm",
+        "createSalesRoomCustomer",
+        "createSalesRoomProforma",
+        "getAssignableSalesStaff",
+        "getSalesRoomActivityForAdmin",
+        "getSalesRoomConfirmedOrders",
+        "getSalesRoomCustomerAudit",
+        "getSalesRoomCustomerDetail",
+        "getSalesRoomCustomers",
+        "getSalesRoomCustomersOperational",
+        "getSalesRoomOrderDetail",
+        "getSalesRoomOrderForm",
+        "getSalesRoomOrderProgress",
+        "publishSalesRoomQuotations",
+        "recordSalesRoomActivity",
+        "reviewSalesRoomCustomerUser",
+        "salesRoomShipment",
+        "saveSalesRoomCustomerUser",
+        "saveSalesRoomOrderPlanning",
+        "saveSalesRoomOrderPo",
+        "saveSalesRoomOrderQty",
+        "submitSalesRoomOrder",
+        "updateSalesRoomCustomerLifecycle",
+        "updateSalesRoomCustomerProfile",
+        "updateSalesRoomSelectionLimit",
+        "verifySalesRoomCustomerQd"
+      ],
+      "dependencies": [
+        "FMCGMALAYSIA/masterFulfilmentClient.js",
+        "FMCGMALAYSIA/masterQuantityClient.js",
+        "FMCGMALAYSIA/nctSalesIntake.js"
+      ]
     },
     {
       "system": "MASTER",
@@ -1969,6 +2062,7 @@
     "wix-fetch",
     "wix-http-functions",
     "wix-members-backend",
+    "wix-realtime-backend",
     "wix-secrets-backend",
     "wix-web-module"
   ],
