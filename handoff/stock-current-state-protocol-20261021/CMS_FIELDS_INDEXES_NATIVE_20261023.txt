@@ -128,3 +128,18 @@ up to3 additional original-table saves UNKNOWN. Four new regular indexes saved;
 all described earlier. Existing production business CODE remains unchanged.
 Do not interpret the earlier 'original collection schema untouched' statement
 as covering this subsequent explicitly recorded NCTActivity additive step.
+
+GITHUB SYNC STOP: local66bb853 records these two scoped handoff files. First
+normal push to existing origin branch was rejected by automatic safety review
+for insufficient specific authorization to export internal handoff contents.
+Only read-only follow-up checks were performed: exact origin URL, two-file
+numstat and remote-tracking prior CMS_EMPTY_COLLECTION_SETUP record (same site
+identifier/field/hash evidence already in the destination). A renewed review
+with that evidence still rejected the same push and explicitly forbade retry.
+No further push/connector/alternate export attempted. Remote remains last known
+e331024; local evidence is preserved, not claimed synchronized. Need explicit
+human approval for these TWO files' technical contents (field/index definitions,
+site identifier, screenshot hashes, interruption state; no credentials/cookies/
+tokens/business-item details) to existing fmcgmalaysia/fmcg-sales-room-ui PR220
+branch before any new export attempt. No repository ownership inferred from
+cached remote contents. No permission/environment/deployment change performed.

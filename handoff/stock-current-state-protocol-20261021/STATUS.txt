@@ -1,5 +1,12 @@
 CURRENT 2026-10-23 — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
 
+SYNC STOP: local66bb853 contains two exact handoff records; origin/PR220 remains
+last-known e331024. Normal push rejected by safety review, then rejected again
+after read-only scope/remote/prior-record checks. NO further retry or alternate
+export. Explicit user approval of these two technical handoff files to existing
+fmcgmalaysia/fmcg-sales-room-ui PR220 branch required. No business data/secrets
+included. Local evidence retained. Separate from browser connection stop below.
+
 LATEST CONNECTION STOP: subsequent NCTActivity additive setup confirmed9fields
 (7Text+schemaVersion/revisionNumber). Existing action/details/activityTime types
 read and preserved. Next3Number fields checkpointGeneration/generation/
