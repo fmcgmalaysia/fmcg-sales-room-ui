@@ -1,4 +1,29 @@
-CURRENT 2026-10-23 — RECEIPT-CREATED STOCK SOURCE RETAINS READABLE PO NUMBER
+CURRENT 2026-10-23 — THREE NEW STOCK TABLE FIELDS AND INDEX DEFINITIONS SAVED IN NATIVE CMS
+
+LATEST CONNECTION STOP: subsequent NCTActivity additive setup confirmed9fields
+(7Text+schemaVersion/revisionNumber). Existing action/details/activityTime types
+read and preserved. Next3Number fields checkpointGeneration/generation/
+transferIndexVersion attempted but tool timed out/reset: all3outcomesUNKNOWN.
+Do not repeat Save or refresh pending Wix form. Same Chrome extension nowbrowser3,
+same51426657tab; getTab and freshclaim bothDebugger unattached. UI pathSTOPPED
+aftertwo connection failures. User asked for extension popup screenshot only.
+No other original table/index augmented; no business data/ACL/publish change.
+Details and exact pre-change evidence appended to CMS_FIELDS_INDEXES_NATIVE file.
+
+CMS_FIELDS_INDEXES_NATIVE_20261023.txt records user-restored native CMS access,
+49 additive fields saved: Positions14more ->26required, Claims16, Products19.
+All3empty; original fields/Title/system indexes/ACL/business rows preserved.
+Products1+Claims3regular indexes saved/listed; Positions1fromprior step retained.
+UI exposes quota3regular/1unique; Claims3regular slots now occupied. No deletion.
+SDK metadata/type/query acceptance and explicit index ACTIVE remainUNCONFIRMED.
+Only native field-UI path recovered after changed login/chooser state; schema
+tester remainsSTOPPED and old300continuationUNKNOWN. No Run/oldlock cleanup.
+Code e331024 unchanged,1295candidate checks reused, not native acceptance.
+Original schema augmentation/drain/fence/real sync/writer capacity/recovery/
+backup/init/migration/shadow/four-stage Loaded acceptance stillOPEN. No release.
+HeartbeatPAUSED; ACTIVE/invoice/physical exitOFF; existing draftPR220.
+
+PREVIOUS 2026-10-23 — RECEIPT-CREATED STOCK SOURCE RETAINS READABLE PO NUMBER
 
 FINAL:1295stock-current checks pass41245.0809ms. Historical native300fixture/probes
 kept unchanged; current actual300MOCK plan differs ONLY by confirmed PO labels,

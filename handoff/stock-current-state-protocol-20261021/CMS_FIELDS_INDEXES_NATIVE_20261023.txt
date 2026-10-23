@@ -1,0 +1,130 @@
+2026-10-23 — NATIVE CMS FIELD CONFIGURATION RECOVERED AND THREE NEW TABLES COMPLETED
+
+Recovery code/checkpoint: e331024, existing branch and draft PR220. No business
+code changed in this increment. Same native-setup-review.cjs contract inspected.
+User recovered their Wix login/refresh and opened actual StockPositions CMS.
+Previously stale editor list/401 screenshots followed by fresh sixteen-table
+list and actual StockPositions field chooser are changed-state evidence for
+resuming ONLY the native field UI. No auth credentials accessed or entered.
+Native schema function-testing timeout and old300 UNKNOWN paths remain STOPPED.
+
+MASTER metaSite f80870fd-a3d8-47c0-9917-1bfd9c16ea44, original editor tab51426657.
+Native CMS Add Field form used, exact field name/ID/type checked BEFORE each Save;
+form closure and resulting field list checked after each Save. Defaults,
+validations/encryption and existing field definitions untouched. Title preserved.
+No business rows added, original collection schema/ACL untouched in this increment.
+
+StockPositions: existing12 custom fields preserved; added14:
+ TEXT: sourceId sourceTaskId poId poNumber
+ TAGS: reviewCodes
+ NUMBER: receiptAccepted replacementReceived supplierReturned dispatched
+  borrowRepaidCumulative onHand isolated reservedUsable available
+Total26 required custom fields now represented in native CMS.
+
+StockClaims: added all16 required custom fields:
+ TEXT: company stockCommitVersion status stockKey positionId taskId customerId
+  orderId sourceLineId
+ NUMBER: schemaVersion revision checkpointGeneration reservedUsable
+  isolatedAttributed dispatchedCumulative
+ TAGS: reviewCodes
+
+StockProducts: added all19 required custom fields:
+ TEXT: company stockCommitVersion status stockKey barcode name packing
+ NUMBER: schemaVersion revision checkpointGeneration ea onHand isolated
+  reservedUsable available lifecycleVersion nextBorrowSequence
+ TAGS: reviewCodes
+ BOOLEAN: reviewRequired
+
+Total49 fields ADDED this increment,61 required custom fields across three new
+tables. Tags UI chosen for semantic TEXT_ARRAY per existing native wire mapping.
+This is native UI form/list evidence, NOT a successful SDK metadata inspection,
+typed data-item roundtrip, migration or activation acceptance. No rows inserted.
+Fresh CMS directory after field additions lists all three tables with0items.
+
+Native index setup: read existing system indexes and actual UI quota first:
+up to3 regular and1 unique USER indexes per table. No unique indexes added,
+no index dropped/overwritten. All new ordered fields ASC:
+ StockProducts SC_PRODUCT_PAGE(company,status,barcode) — saved/listed.
+ StockClaims SC_ACTIVE_PRODUCT(company,stockKey,status) — saved/listed.
+ StockClaims SC_SOURCE_DISPATCH(company,positionId,dispatchedCumulative) — saved/listed.
+ StockClaims SC_TASK_ACTIVE(company,taskId,status) — saved/listed.
+Both original system indexes preserved on each table. StockClaims now occupies
+all3 regular USER slots. Existing StockPositions SC_ACTIVE_PRODUCT from prior
+increment retained. New-table required5index definitions now present through UI;
+explicit SDK ACTIVE status remains UNCONFIRMED for all, not inferred from list.
+
+Transient UI handling, no mutation retries:
+poId Save closed form and listed field, but helper expected a nonexistent
+ALL CHANGES SAVED label; inspected field list, did NOT repeat Save.
+After Claims positionId saved, table Add Field virtualized offscreen; next taskId
+click found no button. Inspected screenshot/DOM and opened existing Manage Fields
+toolbar. taskId was absent and then added once from restored visible entry.
+One navigation raced collection-list rendering and opened list-level More Actions;
+Indexes had no match. Read actual list menu, closed it, entered Claims and verified
+its heading before using its actual Indexes menu. No duplicate index Save.
+
+Private screenshot evidence kept OUTSIDE public checkout/Pages at root handoff
+stock-current-state-spec-20261021/private-evidence/:
+ stockpositions-fields-native-20261023.png
+ SHA256 d031652b2a22c3e872e9d2ea6485e1fa45ac6454c736b6f2c02cac00950f8144
+ stockclaims-fields-native-20261023.png
+ SHA256 1e57d0cc0bd757ac778f6bd9c967d7d8f81fb85e039ed2b5aa6ccedff9d78076
+ stockproducts-fields-native-20261023.png
+ SHA256 e6a22d9aac38968ee9e6ee6524d4f4ecdd2fd08a5af8f07c151e4bbc40333b50
+ stockproducts-index-native-20261023.png
+ SHA256 0d2ee9d0d4b29381cfff7f55231f4cac4ff99300e4816539f469df6cb2fe8f74
+ stockclaims-indexes-native-20261023.png
+ SHA256 be10c181b343ae31fc6b218fca977feac4591ec9ebc15e669a7e99c92337f6cc
+Do not save token-bearing CMS iframe URLs from full accessibility output.
+
+Unchanged candidate1295-test evidence reused; no redundant regression run for
+schema-only UI work. No code deployment, Pages resource update, Wix whole-site
+Publish or public borrowing/Loaded acceptance. ACTIVE/invoice/physical exitOFF.
+Remaining: original-table additive schema/index review, explicit native metadata/
+index/typed-query acceptance, provider drain/sufficient legacy fencing, real
+installation/writer capacity/recovery, retained backup/initialization/migration/
+shadow, and four-stage public acceptance. No Wix support ticket sent.
+
+SUBSEQUENT ORIGINAL-TABLE STEP — PARTIAL, CONNECTION LOST; DO NOT REPEAT SAVES
+
+After completing the three new empty tables above, inspected NCTActivity native
+Manage Fields. Existing custom IDs: title(Activity ID), description(Order ID),
+image(Source Line ID), imageAltText(Task ID), action, activityTime, actorType,
+initiatedByStaffId, initiatedByStaffName, message, result, details. System fields
+_id/_createdDate/_updatedDate/_owner/_publishDate/_draftDate also listed.
+Opened existing Details, Activity Time and Action forms READONLY, confirmed exact
+IDs/types details Object, activityTime Date and Time, action Text; Cancel each,
+no Save/definition change. This prevents duplicate or conflicting additions.
+Pre-change screenshot nctactivity-fields-before-20261023.png SHA256
+0cfbd4ad411cefb231a4750c6144f1461aef553fdf5a853a2a32c49e794aebc7
+retained in the same private evidence directory.
+
+NCTActivity additions CONFIRMED through exact-ID Manage Fields list after Save:
+ TEXT company stockCommitVersion status stockKey mode lenderSourceId
+  replacementSourceId
+ NUMBER schemaVersion revision
+Nine fields confirmed. No existing field edited, business item added/updated,
+permission/index change or publish performed on the original activity table.
+
+Next batch attempted Number fields checkpointGeneration, generation,
+transferIndexVersion. Browser tool execution timed out at60seconds and reset
+the JavaScript kernel; no per-field output returned. These THREE field outcomes
+are UNKNOWN, not counted saved or absent. Browser may have an open Add Field
+form. DO NOT repeat any Save or refresh/close it before actual native readback.
+repaidQuantity, participantTaskIds and pending NOT attempted. Other original
+collections and their indexes have NOT been augmented in this increment.
+
+Read-only recovery: old browser6 unavailable after kernel reset; fresh inventory
+shows browser3 with SAME extensionInstanceId9d477b56-0827-4286-89bd-858741eb0b36
+and SAME user tab51426657. No different profile/endpoint used. Selected that same
+connection; direct getTab then documented fresh user.claimTab each reported
+Debugger unattached. Same connection failure twice: browser UI path STOPPED.
+No extra retry, reload, new tab, alternative control mechanism or Run invoked.
+Asked user only to open existing Chrome Codex control extension and screenshot
+its connection popup, keeping Wix page and any unsaved form unchanged.
+
+Total THIS TURN:49 new-table fields +9 original-table fields CONFIRMED saved;
+up to3 additional original-table saves UNKNOWN. Four new regular indexes saved;
+all described earlier. Existing production business CODE remains unchanged.
+Do not interpret the earlier 'original collection schema untouched' statement
+as covering this subsequent explicitly recorded NCTActivity additive step.
