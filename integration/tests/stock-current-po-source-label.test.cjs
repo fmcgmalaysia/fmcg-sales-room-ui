@@ -63,3 +63,11 @@ test('missing optional label never erases an existing label and browser event te
   const second = prepareBorrowingReceipt({ state, rows, event, generation: 1 });
   assert.equal(second.plan.writes.find(row => row.collection === 'StockPositions').after.poNumber, f.poNumber);
 });
+test('readable label changes only source display metadata, not any original event, stock, claim or product after-image', () => {
+  const f = fixture(), labelled = prepareBorrowingReceipt(f), withoutLabel = clone(f.state);
+  withoutLabel.sources.forEach(source => { delete source.poNumber; });
+  const originalShape = prepareBorrowingReceipt({ ...f, state: withoutLabel });
+  const sameBusinessPlan = clone(labelled.plan);
+  for (const write of sameBusinessPlan.writes) if (write.collection === 'StockPositions') delete write.after.poNumber;
+  assert.deepEqual(sameBusinessPlan, originalShape.plan);
+});

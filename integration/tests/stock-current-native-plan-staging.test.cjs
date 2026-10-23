@@ -18,8 +18,17 @@ function setup({lostReply=false,corruptRead=false}={}){
   patch:()=>assert.fail('No native patch'),remove:()=>assert.fail('No native deletion')};
  return{rows,calls,items,run:input=>verifyNativePlanStaging({items,createSdkConditionalStore,createSegmentedPlanCodec,same,fixture,input,now:()=>++tick})};
 }
-test('fixture is mechanically identical to existing actual300 root plan, not a handwritten movement simulation',async()=>{
- assert.deepEqual(await build(),fixture);
+test('frozen native fixture retains exact original business plan; current actual300 root adds only confirmed PO display labels',async()=>{
+ const current=await build(),positions=current.plan.writes.filter(w=>w.collection==='StockPositions');
+ assert.equal(positions.length,300);assert.ok(positions.every(w=>w.after.poNumber==='PO-001'));
+ // The native continuation/outcome is UNKNOWN. Never regenerate its retained
+ // fixture or compiled probe just to accommodate newer display-only metadata.
+ const businessOnly=copy(current);
+ for(const write of businessOnly.plan.writes)if(write.collection==='StockPositions')delete write.after.poNumber;
+ assert.deepEqual(businessOnly,fixture);
+ assert.ok(fixture.plan.writes.filter(w=>w.collection==='StockPositions').every(w=>!Object.hasOwn(w.after,'poNumber')));
+ assert.equal(crypto.createHash('sha256').update(fs.readFileSync(require.resolve('../prototypes/stock-current-state/native-plan-staging.fixture.json'),'utf8').replace(/\r\n/g,'\n')).digest('hex'),
+  '85144205ea40633f4f3556e4ed44afc7003d28ec8cc99a35851114e86d59bae1');
  assert.equal(fixture.plan.writes.length,901);assert.equal(fixture.plan.writes.filter(w=>w.after.action==='WAREHOUSE_RECEIPT_SAVED').length,1);
  assert.equal(fixture.plan.writes.filter(w=>w.collection==='StockProducts').length,300);
  assert.equal(fixture.plan.writes.filter(w=>w.collection==='StockPositions').length,300);

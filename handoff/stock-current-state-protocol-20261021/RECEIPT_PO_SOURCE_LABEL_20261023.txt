@@ -1,5 +1,36 @@
 2026-10-23 — RECEIPT SOURCE PO LABEL, CANDIDATE ONLY
 
+FINAL CLOSEOUT (supersedes intermediate full-regression-pending note below)
+Single shared final stock-current regression:1295pass/0fail41245.0809ms.
+Private output outside public repository:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/receipt-po-source-label-final-full-tests-20261023.txt
+First full1295run:1294pass1fail37059.1781ms. Exact failure was the OLD fixed native
+300fixture expected to equal the newer source plan: new300position after-images
+now carry PO-001. It was NOT a quantity/ownership/event change. Retained failing log:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/receipt-po-source-label-full-tests-20261023.txt
+Native continuation remainsUNKNOWN: did NOT regenerate historical fixture or old
+compiled probes. Test now requires every new position's exact original PO label,
+then removes ONLY that one display field and demands exact equality of ALL901old
+after-images plus original request/digest/identity metadata. Frozen fixture hashLF
+85144205ea40633f4f3556e4ed44afc7003d28ec8cc99a35851114e86d59bae1
+is separately asserted. An initial copied hash literal missed one character;
+corrected from exact observed hash, no fixture bytes changed.
+Old local fixture exporter no longer overwrites this fixed namespace while native
+outcome is unknown. build() still provides current MOCK plan for comparison; CLI
+replacement refuses. Actual local CLI refusal/exit1 and unchanged before/after file
+hash verified; no native SDK operation. --check still reports exact current drift,
+not silent equivalence. No old fixed native grant renewed/lock released.
+Additional full-plan equality test proves removing only PO display metadata makes
+new receipt plan identical to its unlabeled business plan. All original event/
+quantity/claim/product/PO identity fields remain exact. Final focused new-label5pass
+182.9692ms, frozen MOCK staging8pass5005.7001ms, overlapping with final1295suite.
+New WRITER_ENTRY_REVIEW_20261023.txt captures bounded20entry/authority/fence inspection
+using unchanged prior reads + selected remaining adapters. It explicitly is NOT
+full semantic G3/native coverage/user acceptance and no coverage flags changed.
+Interim feature commitf6d9175; production original paths remain zero diff against
+d447185. Historical native fixture/probes unchanged versus8465ce8. No UI/native/
+CMS/ACL/file deletion/release. Heartbeat staysPAUSED; no ordinary consent wait.
+
 User is away and asked to continue independent work. Reused same-version project
 framework/spec; fresh checkout AGENTS/current STATUS/read-write/UI dependencies
 read. No browser or retry of either stopped Wix path. Recovery8465ce8.

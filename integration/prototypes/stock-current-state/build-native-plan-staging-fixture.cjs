@@ -26,7 +26,7 @@ async function build(){
 if(require.main===module)build().then(fixture=>{
  const target=path.join(__dirname,'native-plan-staging.fixture.json'),out=JSON.stringify(fixture)+'\n';
  if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8').replace(/\r\n/g,'\n')!==out)throw Error('Actual300 fixture drift');}
- else fs.writeFileSync(target,out);
+ else throw Error('Retained fixed native fixture is frozen while native continuation is UNKNOWN; no regeneration');
  process.stdout.write('Actual300 plan fixture '+(process.argv.includes('--check')?'verified':'built')+';901 images; no native action\n');
 }).catch(error=>{process.stderr.write(error.message+'\n');process.exitCode=1;});
 module.exports={build};

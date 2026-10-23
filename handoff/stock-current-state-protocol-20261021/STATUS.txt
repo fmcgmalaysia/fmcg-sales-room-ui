@@ -1,5 +1,14 @@
 CURRENT 2026-10-23 — RECEIPT-CREATED STOCK SOURCE RETAINS READABLE PO NUMBER
 
+FINAL:1295stock-current checks pass41245.0809ms. Historical native300fixture/probes
+kept unchanged; current actual300MOCK plan differs ONLY by confirmed PO labels,
+all901business images/request identities otherwise exact. Frozen fixture SHA asserted
+and old local exporter refuses replacement; native continuation/lock remainUNKNOWN.
+WRITER_ENTRY_REVIEW_20261023.txt records20candidate entry/authority/fence inspection,
+NOT completeG3/native coverage. All20stillUNVERIFIED; actual setup/drain/installation/
+capacity/recovery/migration/public Loaded gatesOPEN. No browser/native/CMS/ACL/release.
+The focused-only and full-regression-pending lines below are INTERMEDIATE history.
+
 RECEIPT_PO_SOURCE_LABEL_20261023.txt records reproduced NCT/GHR missing label:
 original PO authority dropped readable number while migration already retained it.
 Minimal source->position mapping fixed; shared detail query now receives the same
