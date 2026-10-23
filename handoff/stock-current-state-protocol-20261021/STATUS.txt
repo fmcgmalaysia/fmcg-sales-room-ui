@@ -1,4 +1,17 @@
-CURRENT 2026-10-23 — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
+CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
+
+User explicitly switched to ASTRA High. Focused review is now completed, NOT a
+request to switch models again. See ASTRA_CUTOVER_DECISION_20261023.txt. New exact
+original-factory lock-barrier witness:2pass0fail182.5796ms. Company fixed-ID barrier
+blocks the tested preinsert writer, BUT original cost retry's stale expiry deletion
+can remove a newly held barrier and subsequently update the task. PASS demonstrates
+this unsafe counterexample, not permission to migrate. No complete drain/fencing
+boundary established; verifyLegacyDrain hard refusal stays. Need a Wix-supported
+old-runtime AND accepted-datastore-write settlement guarantee before capture.
+No support message sent, production code changed, native mutation, publish or push.
+All four release stages remain incomplete for the new inventory/borrowing flow.
+
+PREVIOUS — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
 
 LATEST FOCUSED RELEASE REVIEW: native definition task closed; bounded candidate
 archive/relationship/receipt authority reads found no new demonstrated defect.
