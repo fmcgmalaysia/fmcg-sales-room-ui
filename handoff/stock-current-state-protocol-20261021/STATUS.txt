@@ -1,4 +1,20 @@
-CURRENT 2026-10-23 — IMPLEMENTATION CONTINUED, PURCHASE CURRENT STOCK CONNECTED IN CANDIDATE
+CURRENT 2026-10-23 — THREE EMPTY STOCK TABLES CREATED, ADMIN-ONLY SAVED/REOPENED
+
+CMS_EMPTY_COLLECTION_SETUP_20261023.txt records actual MASTER creation of empty
+StockPositions/StockClaims/StockProducts, persisted Admin-only matrix verified
+for all3. Exact human grant for Claims+Products completed; no original ACL changed.
+Positions12fields saved via nativeCMS; Claims/Products defaultTitle, all3zero rows.
+Field chooser opened no form twice; field-add UI path STOPPED/no workaround.
+Fixed additive schema
+Admin module implemented,22affected checks pass, new saved-editor module exact
+readback verified; no existing business module or whole-site Publish changed.
+Schema inspector invoked ONCE READONLY, called-only/no result; no repeat or SDK
+mutation. Schema/native capability unconfirmed. Positions regular SC_ACTIVE_PRODUCT
+company/stockKey/status ASC saved and visible with original2system indexes preserved;
+explicit native ACTIVE status not exposed/unconfirmed. Other indexes unchanged.
+ACTIVE/invoice/exitOFF. Previous NO CMS action below is historical code-step only.
+
+PREVIOUS 2026-10-23 — IMPLEMENTATION CONTINUED, PURCHASE CURRENT STOCK CONNECTED IN CANDIDATE
 
 User renewed authority to complete work through release without ordinary-stage
 confirmation. New MAINTENANCE_MIGRATION_CORE_20261023.txt records executable private
