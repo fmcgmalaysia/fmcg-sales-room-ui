@@ -1,5 +1,12 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST NATIVE SUPPORT: MASTER_SUPPORT_PACKING_PARITY_20261024.txt records fresh
+complete editor readback of Support page, Public packingListBridge and backend
+packingLists.web/packingListModel/packingListOperations. All5exact original hashes
+also match candidate manifests' before-images. Full preimages privately preserved.
+This is pre-install parity ONLY; no native code/CMS/Run/publish or activation.
+20writer categories remainUNVERIFIED; no public borrowing acceptance inferred.
+
 LATEST DIALOG RECEIPTS: ALLOC_RECEIPT_GATE_20261024.txt reproduces and fixes
 gross multi-PO receipts wrongly closing borrowing despite own customer shortage.
 Dialog now uses the same explicit stockActualReceived as main RCV; unknown never
