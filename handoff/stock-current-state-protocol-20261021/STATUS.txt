@@ -1,5 +1,14 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST RCV REPAYMENT: RCV_REPAYMENT_STATUS_20261024.txt adds borrower-only owed
+quantity from ALL same-generation relations, independent of own RCV/ALLOC. Actual
+grid shows80+owed10withALLOC90; partial repayment only reduces owed; split whole-line
+debt appears once, unknown not false0. Pale red readonly states, original people/
+halo unchanged. Explicit existing-fictional-loan ExampleC added to local review,
+never fake approval.8newcases; final full1348pass0fail31882.8326ms;44affected and
+22overlapping checks recorded, fifth review test included separately. No native/
+deploy/export/ACTIVE changes; complete G3/native or visible acceptance not claimed.
+
 LATEST ALLOC PURCHASED BOUNDARY: ALLOC_PURCHASED_BOUNDARY_20261024.txt reproduces
 and fixes main/split false ALERT for unpurchased demand and Borrow entry after90
 alreadycovers purchased90. Actual stock/save rules unchanged.3new cases; final

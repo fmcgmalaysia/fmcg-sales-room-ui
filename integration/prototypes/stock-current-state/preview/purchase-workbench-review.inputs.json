@@ -61,7 +61,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.css",
-      "sha256": "59814d2e353478b2c13aa0e40e1f5d149aca32de71314261e552278cc4c95490"
+      "sha256": "aee55f0d428b638470c495fe52db47a10a58cf7b8632e5e876a1679ad6baccb0"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.css",
@@ -85,7 +85,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
-      "sha256": "59a2e291a6e6a80ee93a5277b8dcbe253fa3c7202f417294049f0bb2414e8f89"
+      "sha256": "18ba427acc017e941f7f656011174cef573047f6cc31894626c8e521ddf2de00"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",

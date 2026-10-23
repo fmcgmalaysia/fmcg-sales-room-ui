@@ -57,3 +57,13 @@ test('review cannot fake an approved save, new generation, halo, receipt or real
   f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '3' });
   assert.equal(JSON.stringify(f.posted.at(-1).workspace), before);
 });
+test('clearly fictional existing-loan example C shows RCV80owing10and ALLOC90 without granting any save or changing the initial A borrowing example',()=>{
+ const f=fixture();f.send({type:'PURCHASE_WORKSPACE_REQUEST',company:'NCT',requestId:'1'});const w=f.posted.at(-1).workspace,before=JSON.stringify(w),c=w.tasks.find(t=>t.customerId==='EXAMPLE-C');
+ assert.equal(c.stockActualReceived,80);assert.equal(c.stockBorrowedOutstanding,10);assert.equal(c.stockAllocatedCumulative,90);assert.equal(c.stockTransferOutstanding,true);
+ assert.equal(w.tasks.find(t=>t.customerId==='EXAMPLE-A').stockBorrowedOutstanding,0);assert.equal(w.tasks.find(t=>t.customerId==='EXAMPLE-B').stockAllocatedCumulative,90);
+ assert.equal(w.tasks.reduce((n,t)=>n+t.stockActualReceived,0),w.tasks.reduce((n,t)=>n+t.stockAllocatedCumulative,0));
+ f.send({type:'PURCHASE_BORROW_RELATIONS_REQUEST',company:'NCT',requestId:'2',input:{view:'TASK',taskId:c.id}});const relation=f.posted.at(-1).result.items[0];
+ assert.equal(relation.borrowerTaskId,c.id);assert.equal(relation.remaining,10);
+ f.send({type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'3',operation:'BORROW_APPROVE',input:{quantity:10}});assert.equal(f.posted.at(-1).ok,false);
+ f.send({type:'PURCHASE_WORKSPACE_REQUEST',company:'NCT',requestId:'4'});assert.equal(JSON.stringify(f.posted.at(-1).workspace),before);
+});

@@ -26,8 +26,9 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
           || expectedTotal !== undefined && (page.total !== expectedTotal || page.version !== expectedVersion)) throw Error('Complete current transfer workspace required');
         expectedTotal = page.total; expectedVersion = page.version;
         for (const r of page.items) {
-          if (!r.id || seen.has(r.id) || !r.borrowerTaskId || !r.lenderTaskId || !r.lenderSourceId || !r.replacementSourceId
-            || !count(r.quantity) || !r.quantity || !count(r.repaid) || !count(r.returned) || r.repaid + r.returned >= r.quantity) throw Error('Known outstanding relation required');
+          if (!r.id || seen.has(r.id) || !r.borrowerTaskId || !r.lenderTaskId || r.borrowerTaskId === r.lenderTaskId || !r.lenderSourceId || !r.replacementSourceId
+            || !count(r.quantity) || !r.quantity || !count(r.repaid) || !count(r.returned) || r.repaid + r.returned >= r.quantity
+            || r.remaining !== undefined && r.remaining !== r.quantity - r.repaid - r.returned) throw Error('Known outstanding relation required');
           seen.add(r.id); relations.push(r);
         }
         cursor = page.nextCursor;
@@ -35,9 +36,19 @@ function createPurchaseTransferWorkspace({ company, protocol, authenticate, read
           || relations.length === expectedTotal && cursor) throw Error('Transfer workspace cursor incomplete');
       } while (cursor);
       const sourceIds = new Set(relations.flatMap(r => [r.lenderSourceId, r.replacementSourceId]));
+      // Borrower obligation only, not Warehouse receipt or additional allocation.
+      // Publish only after every same-generation relation page was verified.
+      const repayments = new Map();
+      for (const r of relations) {
+        const remaining = r.quantity - r.repaid - r.returned;
+        const due = (repayments.get(r.borrowerTaskId) || 0) + remaining;
+        if (!count(due)) throw Error('Known outstanding repayment total required');
+        repayments.set(r.borrowerTaskId, due);
+      }
       return { ...copy(workspace), stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: control.generation,
         stockProtocol: 1, stockBuild: control.writerBuild, stockGeneration: control.generation },
         tasks: workspace.tasks.map(task => ({ ...copy(task), stockTransferOutstanding: sourceIds.has(task.id),
+          stockBorrowedOutstanding: repayments.get(task.id) || 0,
           stockTransferTaskId: task.customerDemandTaskId || task.id })) };
     });
     return snapshot.rows;

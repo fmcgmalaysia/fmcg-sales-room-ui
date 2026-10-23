@@ -24,10 +24,10 @@ function grid(source) {
   const anchor = '    return active&&window.purchaseDisplayRows';
   if (source.split(anchor).length !== 2) throw Error('Allocation grid return anchor changed');
   source = source.replace('    const markup=roots.map', '    let markup=roots.map');
-  return source.replace(anchor, `    if(active)markup=markup.replace(/<tr\\b([^>]*)>([\\s\\S]*?)<\\/tr>/g,(all,attrs,body)=>{
+  return source.replace(anchor, `    if(active){const repaymentShown=new Set();markup=markup.replace(/<tr\\b([^>]*)>([\\s\\S]*?)<\\/tr>/g,(all,attrs,body)=>{
       const rootId=(attrs.match(/data-id="([^"]+)"/)||attrs.match(/data-split-parent="([^"]+)"/))?.[1];
       const row=tasks.find(t=>t.id===rootId),split=/data-split-parent=/.test(attrs);
-      let cell='<td class="allocated-quantity"></td>';
+      let cell='<td class="allocated-quantity"></td>',repaymentBadge='',repaymentRow=false;
       if(row){
         const known=stockAllocationView==='CURRENT_V2'&&Array.isArray(allocations);
         const batchId=split?attrs.match(/data-split-batch="([^"]+)"/)?.[1]:null;
@@ -42,9 +42,17 @@ function grid(source) {
         const deficit=amount!==null&&Number.isSafeInteger(purchased)&&purchased>=0&&amount<Math.min(split?batch.demand:row.ord,purchased);
         cell='<td class="allocated-quantity">'+(amount===null?'':quantity(amount))
           +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" '+(split?'data-current-batch="'+batchId+'" ':'')+'aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
+        const owed=known&&Number.isSafeInteger(row.stockBorrowedOutstanding)&&row.stockBorrowedOutstanding>=0?row.stockBorrowedOutstanding:null;
+        if(known&&!repaymentShown.has(row.id)){
+          if(owed>0){const label=(split?'Whole line owed 整行待补回 ':'To repay 待补回 ')+owed+' CTN';
+            repaymentBadge='<span class="borrow-repay-status" aria-label="'+label+'" title="Outstanding borrowing only; not Warehouse receipt 借货待补回，不属于货仓实收">'+quantity(owed)+'</span><span class="borrow-repay-caption">'+(split?'Line total 整行待补回':'To repay 待补回')+'</span>';
+            repaymentRow=!split;
+          }else if(owed===null&&links)repaymentBadge='<span class="borrow-repay-unknown" aria-label="Borrowing repayment unconfirmed 待补回尚未确认">Unconfirmed 待核对</span>';
+          if(repaymentBadge)repaymentShown.add(row.id);
+        }
       }
-      return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">[\\s\\S]*?<\\/td>)/,'$1'+cell)+'</tr>';
-    });
+      return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">)([\\s\\S]*?)(<\\/td>)/,(_,open,receipt,close)=>(repaymentRow?open.replace('received-quantity','received-quantity has-borrow-repay'):open)+receipt+repaymentBadge+close+cell)+'</tr>';
+    });}
 ` + anchor);
 }
 function app(source) {

@@ -23,7 +23,8 @@ html = html.replace(/<script(?: defer)? src="([^"]+)"><\/script>/g, (_, url) => 
 const bridge = read(path.join(__dirname, 'purchase-ux-review-bridge.js'));
 const banner = '<aside id="uxReviewBanner" role="note"><strong>UI REVIEW 界面候选 · NOT PUBLISHED 尚未发布</strong>'
   + '<span>Example customers and P.O.s only 示例客户与采购单 · No real saves 不保存真实数据</span>'
-  + '<span>Active Orders → EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P.O.s 在ALLOC列点击ALERT，再选择借货及查看可借货采购单</span></aside>'
+  + '<span>Active Orders → EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P.O.s 在ALLOC列点击ALERT，再选择借货及查看可借货采购单</span>'
+  + '<span>EXAMPLE C: existing fictional loan only · RCV 80 + To repay 10 · ALLOC 90 示例C为既有借货展示，不代表批准成功</span></aside>'
   + '<p id="uxReviewResult" role="status" hidden></p>';
 html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'">'
   + '<style>#uxReviewBanner{padding:10px 20px;background:#fff3d6;color:#654b13;display:flex;flex-wrap:wrap;gap:6px 20px;font:12px Arial,sans-serif}#uxReviewBanner span{display:block}#uxReviewResult{padding:10px 20px;color:#92202e;background:#fff1f2;font:12px Arial,sans-serif}</style></head>');

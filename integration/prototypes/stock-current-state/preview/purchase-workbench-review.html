@@ -1335,6 +1335,9 @@ body :is(button,a):is(.po-number-link,.po-reference.complete,.acc-po,[data-wh-re
 
 </style><style>
 .allocated-quantity{font-variant-numeric:tabular-nums;white-space:nowrap}.allocated-quantity .btn{display:block;margin-top:4px;min-height:26px;font:inherit}.purchase-borrow-approval{margin-top:8px;padding:8px 0;border-top:1px solid #c6d8e8;color:#17314f;font:inherit}
+#app .active-order-table .received-quantity>.borrow-repay-status{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:34px;padding:0 6px;margin-left:4px;border:1px solid #FECACA;border-radius:12px;background:#FEE2E2;color:#991B1B;font:inherit;font-weight:600;vertical-align:middle;cursor:default}
+#app .active-order-table .received-quantity.has-borrow-repay>span.quantity-reference{background:#FEE2E2!important;color:#991B1B!important;border-radius:12px}
+.borrow-repay-caption{display:block;margin-top:3px;color:#991B1B;font-size:9px;line-height:1.2}.borrow-repay-unknown{display:block;margin-top:3px;color:#607d98;font-size:9px;line-height:1.2}
 .purchase-borrow-approval h4{margin:0 0 6px;font:inherit;font-weight:600}.purchase-borrow-approval .btn,.purchase-borrow-approval input,.purchase-borrow-approval select{font:inherit;min-height:28px}
 .borrow-approval-fields{display:grid;grid-template-columns:minmax(220px,2fr) minmax(70px,.5fr) minmax(150px,1fr);gap:8px}.borrow-approval-fields label{display:flex;flex-direction:column;gap:4px;min-width:0}.borrow-approval-fields select,.borrow-approval-fields input{min-width:0;box-sizing:border-box;max-width:100%;border:1px solid #b8cde0;border-radius:4px;padding:5px 7px;background:#fff;color:#17314f}
 .borrow-approval-consent{display:flex;align-items:center;gap:6px;margin-top:8px;line-height:1.4}.borrow-approval-consent input{flex:0 0 auto}.borrow-approval-status{margin:6px 0;font:inherit;line-height:1.4}.borrow-approval-status.error{color:#E51B2B}
@@ -1348,30 +1351,37 @@ body :is(button,a):is(.po-number-link,.po-reference.complete,.acc-po,[data-wh-re
 .borrow-outstanding-scroll{overflow:auto;border:1px solid #b8cde0;border-radius:5px;background:#fff}.borrow-outstanding-scroll table{width:100%;border-collapse:collapse;font:inherit}.borrow-outstanding-scroll th{padding:8px 10px;background:#d4e1eb;color:#17314f;font-weight:600;white-space:nowrap;text-align:left}.borrow-outstanding-scroll td{padding:9px 10px;border-top:1px solid #d6e3ee;vertical-align:top}.borrow-outstanding-scroll td:nth-child(n+4){text-align:right;font-variant-numeric:tabular-nums}.borrow-outstanding-scroll strong,.borrow-outstanding-scroll small{display:block}.borrow-outstanding-scroll small{margin-top:3px;color:#607d98;font-size:inherit}.borrow-outstanding-scroll strong{font-weight:600}.borrow-outstanding-qty{display:inline-block;padding:2px 7px;border-radius:4px;background:#fff3d6;color:#805b16}
 .borrow-outstanding-pages{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-top:10px}.borrow-outstanding-pages .btn{font:inherit;min-height:28px}
 
-</style><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><style>#uxReviewBanner{padding:10px 20px;background:#fff3d6;color:#654b13;display:flex;flex-wrap:wrap;gap:6px 20px;font:12px Arial,sans-serif}#uxReviewBanner span{display:block}#uxReviewResult{padding:10px 20px;color:#92202e;background:#fff1f2;font:12px Arial,sans-serif}</style></head><body><aside id="uxReviewBanner" role="note"><strong>UI REVIEW 界面候选 · NOT PUBLISHED 尚未发布</strong><span>Example customers and P.O.s only 示例客户与采购单 · No real saves 不保存真实数据</span><span>Active Orders → EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P.O.s 在ALLOC列点击ALERT，再选择借货及查看可借货采购单</span></aside><p id="uxReviewResult" role="status" hidden></p><script>
+</style><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><style>#uxReviewBanner{padding:10px 20px;background:#fff3d6;color:#654b13;display:flex;flex-wrap:wrap;gap:6px 20px;font:12px Arial,sans-serif}#uxReviewBanner span{display:block}#uxReviewResult{padding:10px 20px;color:#92202e;background:#fff1f2;font:12px Arial,sans-serif}</style></head><body><aside id="uxReviewBanner" role="note"><strong>UI REVIEW 界面候选 · NOT PUBLISHED 尚未发布</strong><span>Example customers and P.O.s only 示例客户与采购单 · No real saves 不保存真实数据</span><span>Active Orders → EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P.O.s 在ALLOC列点击ALERT，再选择借货及查看可借货采购单</span><span>EXAMPLE C: existing fictional loan only · RCV 80 + To repay 10 · ALLOC 90 示例C为既有借货展示，不代表批准成功</span></aside><p id="uxReviewResult" role="status" hidden></p><script>
 /* UI review fixture only. No CMS/HTTP capability and no successful save reply.
    The real candidate app, supplier dialog and borrowing components are unchanged. */
 (() => {
-  const idA = 'a'.repeat(32), idB = 'b'.repeat(32), generation = 8;
+  const idA = 'a'.repeat(32), idB = 'b'.repeat(32), idC = 'c'.repeat(32), generation = 8;
   const base = { barcode: '9556404007035', name: '7 UP (CAN)', packing: '320ML x 24', ea: 24,
     ord: 100, requested: 100, inc: 0, lpPc: 1.5, lpCtn: 36, disc1: 0, disc2: 0, disc3: 0,
     netCostCtn: 36, costStatus: 'CAPTURED', history: [], masterReceivedAt: '2026-10-23T01:00:00Z',
     stage: 'NEW_INCOMING', gp: .2, transactionCurrency: 'USD', estimatedShipmentDate: '2026-10-30',
-    editVersion: 'UX-REVIEW-V1', stockTransferOutstanding: false,stockArrangements:[],
+    editVersion: 'UX-REVIEW-V1', stockTransferOutstanding: false,stockBorrowedOutstanding:0,stockArrangements:[],
     procurement: { totalCtn: 100, customerCtn: 100, expectedExtra: 0, revision: 'UX-REVIEW-P1',
       draftPlan: false, transportMode: 'SUPPLIER_DELIVER' } };
   const workspace = { company: 'NCT', staff: { staffId: 'UX-REVIEW-ONLY', memberId: 'UX-REVIEW-ONLY',
       staffName: 'UI REVIEW · 示例', canEditCustomerDemand: false }, fetchedAt: '2026-10-23T01:00:00Z',
     sourcesVersion: 'UX-REVIEW-S1', customers: [{ id: 'EXAMPLE-A', name: 'Example Customer A', shortName: 'EXAMPLE A 示例客户A' },
-      { id: 'EXAMPLE-B', name: 'Example Customer B', shortName: 'EXAMPLE B 示例客户B' }],
+      { id: 'EXAMPLE-B', name: 'Example Customer B', shortName: 'EXAMPLE B 示例客户B' },
+      { id: 'EXAMPLE-C', name: 'Example Customer C', shortName: 'EXAMPLE C 示例客户C' }],
     suppliers: [{ id: 'EXAMPLE-SUP-A', name: 'Example Supplier A', shortName: 'EXAMPLE SUPPLIER A' },
-      { id: 'EXAMPLE-SUP-B', name: 'Example Supplier B', shortName: 'EXAMPLE SUPPLIER B' }],
+      { id: 'EXAMPLE-SUP-B', name: 'Example Supplier B', shortName: 'EXAMPLE SUPPLIER B' },
+      { id: 'EXAMPLE-SUP-C', name: 'Example Supplier C', shortName: 'EXAMPLE SUPPLIER C' }],
     stockAllocationView:'CURRENT_V2',allocations:[],
     tasks: [{ ...base, id: idA, customerId: 'EXAMPLE-A', orderId: 'EXAMPLE-ORDER-A', sourceLineId: 'EXAMPLE-LINE-A',
       stockActualReceived:80,stockHasReceipt:true,stockAllocatedCumulative:80,stockAllocationFacts:{usable:80,held:0,dispatched:0,availableToArrange:80,review:false},procurement:{...base.procurement,totalCtn:90,customerCtn:90},
       supplierId: 'EXAMPLE-SUP-A', po: 'EXAMPLE-PO-A', warehouse: { hasPhysicalReceipt: true, accepted: 80 } },
       { ...base, id: idB, customerId: 'EXAMPLE-B', orderId: 'EXAMPLE-ORDER-B', sourceLineId: 'EXAMPLE-LINE-B',
-        stockActualReceived:100,stockHasReceipt:true,stockAllocatedCumulative:100,stockAllocationFacts:{usable:100,held:0,dispatched:0,availableToArrange:100,review:false},supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } }],
+        stockActualReceived:100,stockHasReceipt:true,stockTransferOutstanding:true,stockAllocatedCumulative:90,stockAllocationFacts:{usable:90,held:0,dispatched:0,availableToArrange:90,review:false},supplierId: 'EXAMPLE-SUP-B', po: 'EXAMPLE-PO-B', warehouse: { hasPhysicalReceipt: true, accepted: 100 } },
+      // Independently labelled READ-ONLY example of an already existing loan.
+      // It never results from a fake successful approval in this review.
+      { ...base, id:idC,customerId:'EXAMPLE-C',orderId:'EXAMPLE-ORDER-C',sourceLineId:'EXAMPLE-LINE-C',stockTransferOutstanding:true,stockBorrowedOutstanding:10,
+        stockActualReceived:80,stockHasReceipt:true,stockAllocatedCumulative:90,stockAllocationFacts:{usable:90,held:0,dispatched:0,availableToArrange:90,review:false},
+        procurement:{...base.procurement,totalCtn:90,customerCtn:90},supplierId:'EXAMPLE-SUP-C',po:'EXAMPLE-PO-C',warehouse:{hasPhysicalReceipt:true,accepted:80} }],
     shipmentPlans: [], stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', stockProtocol: 1,
       stockBuild: 'UX-REVIEW-ONLY', stockGeneration: generation, generation } };
   const summary = document.querySelector('#uxReviewResult');
@@ -1407,9 +1417,11 @@ body :is(button,a):is(.po-number-link,.po-reference.complete,.acc-po,[data-wh-re
           replacementPoNumber: 'EXAMPLE-PO-A', maximumQuantity: 10 }] : [] }); return;
     }
     if (m.type === 'PURCHASE_BORROW_RELATIONS_REQUEST') {
+      const linked=m.input?.view==='OUTSTANDING'||[idB,idC].includes(m.input?.taskId),items=linked?[{id:'EXAMPLE-EXISTING-LOAN',borrowerTaskId:idC,lenderTaskId:idB,
+        lenderSourceId:idB,replacementSourceId:idC,quantity:10,repaid:0,returned:0,remaining:10,revision:1}]:[];
       result(m, 'PURCHASE_BORROW_RELATIONS_RESULT', { ok: true, schema: 'CURRENT_BORROW_RELATIONS_V1', company: 'NCT',
         view: m.input?.view, taskId: m.input?.view === 'TASK' ? m.input.taskId : null,
-        generation, version: 'c'.repeat(32), offset: 0, total: 0, items: [], halo: false, nextCursor: null }); return;
+        generation, version: 'c'.repeat(32), offset: 0, total: items.length, items, halo: linked, nextCursor: null }); return;
     }
     if (m.type === 'PURCHASE_SAVE_REQUEST' || m.type === 'PURCHASE_ORDER_SAVE_REQUEST') {
       // The original app may retain its attempted request as an unconfirmed draft.
@@ -1571,10 +1583,10 @@ return haloSvg;
       }).join('');
     }
     let markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');
-    if(active)markup=markup.replace(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/g,(all,attrs,body)=>{
+    if(active){const repaymentShown=new Set();markup=markup.replace(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/g,(all,attrs,body)=>{
       const rootId=(attrs.match(/data-id="([^"]+)"/)||attrs.match(/data-split-parent="([^"]+)"/))?.[1];
       const row=tasks.find(t=>t.id===rootId),split=/data-split-parent=/.test(attrs);
-      let cell='<td class="allocated-quantity"></td>';
+      let cell='<td class="allocated-quantity"></td>',repaymentBadge='',repaymentRow=false;
       if(row){
         const known=stockAllocationView==='CURRENT_V2'&&Array.isArray(allocations);
         const batchId=split?attrs.match(/data-split-batch="([^"]+)"/)?.[1]:null;
@@ -1589,9 +1601,17 @@ return haloSvg;
         const deficit=amount!==null&&Number.isSafeInteger(purchased)&&purchased>=0&&amount<Math.min(split?batch.demand:row.ord,purchased);
         cell='<td class="allocated-quantity">'+(amount===null?'':quantity(amount))
           +((deficit||links||split)?'<button class="btn '+(deficit?'danger':'')+'" data-current-allocation="'+escape(row.id)+'" '+(split?'data-current-batch="'+batchId+'" ':'')+'aria-label="Allocation 调配 '+escape(row.barcode)+'">'+(deficit?'ALERT':split?'View 查看':'Links 关系')+'</button>':'')+'</td>';
+        const owed=known&&Number.isSafeInteger(row.stockBorrowedOutstanding)&&row.stockBorrowedOutstanding>=0?row.stockBorrowedOutstanding:null;
+        if(known&&!repaymentShown.has(row.id)){
+          if(owed>0){const label=(split?'Whole line owed 整行待补回 ':'To repay 待补回 ')+owed+' CTN';
+            repaymentBadge='<span class="borrow-repay-status" aria-label="'+label+'" title="Outstanding borrowing only; not Warehouse receipt 借货待补回，不属于货仓实收">'+quantity(owed)+'</span><span class="borrow-repay-caption">'+(split?'Line total 整行待补回':'To repay 待补回')+'</span>';
+            repaymentRow=!split;
+          }else if(owed===null&&links)repaymentBadge='<span class="borrow-repay-unknown" aria-label="Borrowing repayment unconfirmed 待补回尚未确认">Unconfirmed 待核对</span>';
+          if(repaymentBadge)repaymentShown.add(row.id);
+        }
       }
-      return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">[\s\S]*?<\/td>)/,'$1'+cell)+'</tr>';
-    });
+      return '<tr'+attrs+'>'+body.replace(/(<td class="received-quantity">)([\s\S]*?)(<\/td>)/,(_,open,receipt,close)=>(repaymentRow?open.replace('received-quantity','received-quantity has-borrow-repay'):open)+receipt+repaymentBadge+close+cell)+'</tr>';
+    });}
     return active&&window.purchaseDisplayRows&&Object.keys(purchaseDisplayOrder).length?window.purchaseDisplayRows.decorate(markup,{tasks,shipmentPlans,purchaseDisplayOrder,draft:displayDraft,selected:selectedDisplayRows,canMove}):markup;
   }
   window.purchaseTaskGrid={render,totals,sources,progress,progressStates,summaryProgressStates,labels,cost};
