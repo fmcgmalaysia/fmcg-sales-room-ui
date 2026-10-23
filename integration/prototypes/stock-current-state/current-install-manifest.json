@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "e2bb6d01645057ff049d7844da9fb9c948f7b9c3b4f7fe9182a061eef92fc33a",
+      "sha256": "ef685dbcdfea054f86fe69ab0a7e0461ed2c5c00bd1e47a001f4784ed9a05fb8",
       "beforeSha256": null
     },
     {
@@ -1395,7 +1395,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "e2bb6d01645057ff049d7844da9fb9c948f7b9c3b4f7fe9182a061eef92fc33a",
+      "sha256": "ef685dbcdfea054f86fe69ab0a7e0461ed2c5c00bd1e47a001f4784ed9a05fb8",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1437,6 +1437,7 @@
         "createCurrentWarehouseShipmentRead",
         "createCustomerDocumentFencedStore",
         "createFencedProof",
+        "createMaintenanceSnapshotReader",
         "createOrderFileFencedStore",
         "createPackingPhotoFencedStore",
         "createPurchaseBorrowOptions",

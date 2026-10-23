@@ -44,7 +44,8 @@ const entries = {
   dispatchCurrentSalesGateway: 'sales-gateway-current.cjs',
   requireOriginalSalesDelegation:'sales-delegation.cjs',
   createCurrentOrderIntakeOperations: 'current-order-intake.cjs',
-  createCurrentCostTables: 'current-cost-tables.cjs'
+  createCurrentCostTables: 'current-cost-tables.cjs',
+  createMaintenanceSnapshotReader: 'maintenance-snapshot-reader.cjs'
 };
 const sources = new Map();
 function collect(name) {

@@ -45,7 +45,7 @@ test('new current Purchase read and original margin co-writer exports are execut
   assert.throws(()=>api.createCurrentOrderFileSave({}),/dependencies/);
   assert.throws(()=>api.createOrderFileFencedStore({}),/fence/);
   await assert.rejects(api.readCurrentPurchaseProjection({}),/snapshot/);
-  assert.equal([...source.matchAll(/^export const /gm)].length,53);
+  assert.equal([...source.matchAll(/^export const /gm)].length,54);
 });
 for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) test(`generated ${protocolName} coordinator replays once, reauthorizes and cannot bypass default writer coverage`, async () => {
   const api = runtime(), rows = new Map(), copy = x => JSON.parse(JSON.stringify(x)); let prepared = 0, authorized = 0;
@@ -64,4 +64,31 @@ for (const protocolName of ['createFencedProof', 'createSegmentedFencedProof']) 
   delete deps.coverage;
   await assert.rejects(api.createCurrentStockSave(deps)({ ...request, requestId: '22222222-1111-4111-8111-111111111111', stockGeneration: 1 }), /coverage incomplete/);
   assert.equal(prepared, 1);
+});
+
+test('generated private maintenance reader executes complete capture and typed cross-realm backup without a public route', async () => {
+  const source = fs.readFileSync(path.join(folder, 'stockCurrentCommands.js'), 'utf8');
+  const api = vm.runInNewContext('(function(){' + source.replace(/^import[^\n]+\n/gm, '').replace(/^export /gm, '')
+    + '\nreturn {createMaintenanceSnapshotReader};})()', { createHash: crypto.createHash, randomBytes: crypto.randomBytes, StockRuntimeBuffer: Buffer });
+  const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
+  const control = { _id: hash('NCT', 'STOCK_CONTROL'), company: 'NCT', mode: 'MAINTENANCE', schemaVersion: 1,
+    transferIndexVersion: 2, generation: 0, _version: 'C0', pending: null };
+  const names = ['NCTOrders', 'NCTTasks', 'NCTActivity', 'PurchaseOrders', 'SharedSuppliers', 'StockPositions', 'StockClaims', 'StockProducts'];
+  const date = new Date('2026-10-23T05:00:00.000Z'); let queries = 0;
+  const reader = api.createMaintenanceSnapshotReader({ company: 'NCT', maxBackupBytes: 100000, limits: Object.fromEntries(names.map(name => [name, 20])),
+    items: { query: collection => {
+      const q = { eq: () => q, ascending: () => q, skip: () => q, limit: () => q, find: async () => {
+        queries++; return { totalCount: collection === 'SharedSuppliers' ? 1 : 0,
+          items: collection === 'SharedSuppliers' ? [{ _id: 'S', _updatedDate: date }] : [] };
+      } }; return q;
+    } }, store: { normalizeListedRow: () => { throw Error('No current rows'); } },
+    protocol: { readControl: async () => control, readSnapshot: async fn => ({ generation: 0, rows: await fn(control) }) },
+    authenticateAdmin: async () => ({ memberId: 'ADMIN', isAdmin: true }), verifyLegacyDrain: async () => true,
+    projectPurchaseWorkspace: () => ({ company: 'NCT', tasks: [], customers: [], suppliers: [], fetchedAt: 'DISPLAY_ONLY' }),
+    projectStockCard: () => ({ company: 'NCT', items: [] }), projectPurchaseOrders: () => [] });
+  const result = await reader.read();
+  assert.equal(queries, 16); assert.equal(result.complete, true); assert.equal(result.expected.canPlan, true);
+  assert.equal(result.durableBackupConfirmed, false); assert.equal(result.activationReady, false);
+  assert.match(JSON.stringify(result.backup), /\["DATE","2026-10-23T05:00:00.000Z"\]/);
+  assert.equal(Object.hasOwn(result.context, 'fetchedAt'), false);
 });

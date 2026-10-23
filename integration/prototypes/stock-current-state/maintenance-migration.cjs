@@ -82,6 +82,7 @@ function createMaintenanceMigration({ company, store, authenticateAdmin, verifyL
       prepare: async () => {
         const observed = await capture({ company, checkpointId: input.checkpointId });
         if (observed?.expected?.checkpointId !== input.checkpointId || observed.emptyCurrentConfirmed !== true) throw Error('Original complete empty-current checkpoint required');
+        if (observed.durableBackupConfirmed !== true) throw Error('Durable private original migration backup required');
         const control = await protocol.readControl();
         if (!same(control, observed.control)) throw Error('Migration capture changed');
         return prepareMaintenanceMigration({ company, ...observed, control });

@@ -43,7 +43,7 @@ function fixture(company = 'NCT', empty = false) {
   const service = createMaintenanceMigration({ company, store, authenticateAdmin: async () => admin,
     verifyLegacyDrain: async () => drain, capture: async () => {
       captureCount++;
-      return { expected: copy(expected), taskRows: copy(taskRows), control: copy(control), emptyCurrentConfirmed: true };
+      return { expected: copy(expected), taskRows: copy(taskRows), control: copy(control), emptyCurrentConfirmed: true, durableBackupConfirmed: true };
     }, readInstalled, protocolOptions: { stepsPerInvocation: 2 } });
   const input = { requestId: '77777777-1111-4111-8111-111111111111', checkpointId: expected.checkpointId };
   const finish = async () => {
@@ -109,4 +109,15 @@ test('browser-supplied authority or captured row images are rejected', async () 
   await assert.rejects(f.apply({ ...f.input, drained: true }), /Original migration/);
   await assert.rejects(f.apply({ ...f.input, expected: f.expected }), /Original migration/);
   assert.equal(f.calls.length, 0); assert.equal(same(f.taskRows, (await f.readInstalled()).taskRows), true);
+});
+
+test('a complete in-memory capture cannot migrate without a separately retained private backup', async () => {
+  const f = fixture();
+  const service = createMaintenanceMigration({ company: 'NCT', store: f.store, authenticateAdmin: async () => ({ isAdmin: true, memberId: 'ADMIN' }),
+    verifyLegacyDrain: async () => true, readInstalled: f.readInstalled,
+    capture: async () => ({ expected: f.expected, taskRows: f.taskRows, control: f.control, emptyCurrentConfirmed: true, durableBackupConfirmed: false }) });
+  await assert.rejects(service.apply(f.input), /Durable private/);
+  assert.equal([...f.rows.keys()].some(key => key.startsWith('StockPositions/')), false);
+  assert.equal((await f.store.read(f.journal, f.control._id)).generation, 0);
+  assert.equal(f.calls.some(call => call[0] === 'CAS'), false);
 });

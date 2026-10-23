@@ -7277,6 +7277,346 @@ function createCurrentCostTables({ company, items, store }) {
 }
 module.exports = { createCurrentCostTables };
 
+},
+// maintenance-snapshot-reader.cjs sha256:f3760f6e35394c016fd6d7abe4f5f63ffe057cd3b8b0c96ba91e6f816013e3c5
+"maintenance-snapshot-reader.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { copy, same } = load("segmented-plan.cjs");
+const { domainCollections } = load("domain-scope.cjs");
+const { stockBootstrapPreflight } = load("bootstrap-preflight.cjs");
+const { lifecycleBootstrapPreflight } = load("lifecycle-bootstrap-preflight.cjs");
+const { encodeMaintenanceNativeImage, decodeMaintenanceNativeImage } = load("maintenance-native-images.cjs");
+const Buffer=StockRuntimeBuffer;
+
+// Private maintenance reader only, not a public method or a mode/drain authority.
+// Uses original business projectors; all pages (including archived/unprojected
+// rows) are retained for review/backup. A browser cannot supply rows or budgets.
+function createMaintenanceSnapshotReader({ company, items, store, protocol, authenticateAdmin, verifyLegacyDrain,
+  projectPurchaseWorkspace, projectStockCard, projectPurchaseOrders, limits, maxBackupBytes, pageSize = 100 }) {
+  const [orders, tasks, purchaseOrders] = domainCollections(company), journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  const legacy = [orders, tasks, journal, 'SharedSuppliers', purchaseOrders];
+  const current = { positions: 'StockPositions', claims: 'StockClaims', products: 'StockProducts' };
+  const names = [...legacy, ...Object.values(current)];
+  if (typeof items?.query !== 'function' || typeof store?.normalizeListedRow !== 'function'
+    || ['readControl', 'readSnapshot'].some(method => typeof protocol?.[method] !== 'function')
+    || [authenticateAdmin, verifyLegacyDrain, projectPurchaseWorkspace, projectStockCard, projectPurchaseOrders].some(fn => typeof fn !== 'function')
+    || !limits || names.some(name => !Number.isSafeInteger(limits[name]) || limits[name] < 1)
+    || !Number.isSafeInteger(maxBackupBytes) || maxBackupBytes < 1
+    || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw Error('Explicit private maintenance snapshot dependencies/budgets required');
+
+  async function read() {
+    if (arguments.length) throw Error('Maintenance capture accepts no browser images or authority');
+    const admin = await authenticateAdmin();
+    if (admin?.isAdmin !== true || typeof admin.memberId !== 'string' || !admin.memberId) throw Error('Administrator maintenance capture required');
+    const requireDrain = async () => {
+      if (await verifyLegacyDrain({ company, purpose: 'MAINTENANCE_CAPTURE' }) !== true) throw Error('Legacy request drain is not verified');
+    };
+    await requireDrain();
+    let queries = 0;
+    const snapshot = await protocol.readSnapshot(async control => {
+      if (control?._id !== hash(company, 'STOCK_CONTROL') || control.company !== company || control.mode !== 'MAINTENANCE'
+        || control.schemaVersion !== 1 || control.transferIndexVersion !== 2 || !control._version || control.pending !== null
+        || !Number.isSafeInteger(control.generation) || control.generation < 0) throw Error('Verified maintenance capture control required');
+      const tables = {}, capturedTables = {}; let retainedBytes = 0;
+      for (const collection of names) {
+        const rows = [], seen = new Set(); let expected = null, previous = null;
+        do {
+          let query = items.query(collection);
+          // Historical company-specific tables include original rows with no
+          // company metadata. Shared POs are scanned completely before filtering;
+          // missing ownership is a review error, never silently omitted.
+          if (Object.values(current).includes(collection)) query = query.eq('company', company);
+          const page = await query.ascending('_id').skip(rows.length).limit(pageSize)
+            .find({ consistentRead: true, returnTotalCount: true });
+          queries++;
+          if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.totalCount) || page.totalCount < rows.length
+            || page.totalCount > limits[collection] || expected !== null && expected !== page.totalCount
+            || page.items.length !== Math.min(pageSize, page.totalCount - rows.length)) throw Error('Incomplete or over-budget maintenance table: ' + collection);
+          expected = page.totalCount;
+          for (const row of page.items) {
+            if (typeof row?._id !== 'string' || !row._id || seen.has(row._id) || previous !== null && previous >= row._id
+              || Object.hasOwn(row, '_version')) throw Error('Distinct ordered native maintenance rows required');
+            if (collection === purchaseOrders ? !['NCT', 'GHR'].includes(row.company)
+              : collection !== 'SharedSuppliers' && (Object.values(current).includes(collection) ? row.company !== company
+                : Object.hasOwn(row, 'company') && row.company !== company)) throw Error('Maintenance collection company conflict');
+            seen.add(row._id); previous = row._id;
+            const image = encodeMaintenanceNativeImage(row);
+            retainedBytes += Buffer.byteLength(JSON.stringify(image), 'utf8');
+            if (retainedBytes > maxBackupBytes) throw Error('Maintenance backup exceeds explicit byte budget');
+            rows.push(decodeMaintenanceNativeImage(image));
+          }
+        } while (rows.length < expected);
+        capturedTables[collection] = rows;
+        tables[collection] = collection === purchaseOrders ? rows.filter(row => row.company === company) : rows;
+      }
+      const metadataRows = [];
+      for (const collection of [orders, tasks, purchaseOrders]) for (const row of tables[collection]) {
+        if (!Object.hasOwn(row, 'stockCommitVersion')) {
+          if (Object.prototype.toString.call(row._updatedDate) !== '[object Date]' || !Number.isFinite(row._updatedDate.getTime())
+            || row.stockOperationProtocol != null) throw Error('Typed original metadata checkpoint required');
+          metadataRows.push({ collection, row });
+        }
+      }
+      const normalized = (collection, row) => Object.hasOwn(row, 'stockCommitVersion') ? store.normalizeListedRow(collection, row) : copy(row);
+      const projectedTables = Object.fromEntries(legacy.map(collection => [collection, tables[collection].map(row =>
+        collection === 'SharedSuppliers' || collection === journal ? copy(row) : normalized(collection, row))]));
+      const workspace = projectPurchaseWorkspace({ company, orders: projectedTables[orders], tasks: projectedTables[tasks],
+        activity: projectedTables[journal], suppliers: projectedTables.SharedSuppliers, staff: {} });
+      if (workspace?.company !== company || !Array.isArray(workspace.tasks)) throw Error('Original complete maintenance workspace required');
+      const context = { ...workspace, activity: projectedTables[journal] };
+      // These are display/session metadata, not source business evidence. The
+      // original projector's fetchedAt must not change a checkpoint on each read.
+      delete context.staff; delete context.fetchedAt; delete context.readAt;
+      const existing = { company, complete: true, transfers: tables[journal].filter(row => row.action === 'STOCK_TRANSFER_CURRENT').map(row => normalized(journal, row)) };
+      for (const [kind, collection] of Object.entries(current)) existing[kind] = tables[collection].map(row => store.normalizeListedRow(collection, row));
+      const taskRows = projectedTables[tasks], base = stockBootstrapPreflight({ company, context,
+        purchaseRecords: projectedTables[purchaseOrders], existing, control, projectStockCard, projectPurchaseOrders, includeProjection: true });
+      const expected = base.canBootstrap ? lifecycleBootstrapPreflight({ company, context, base, taskRows, generation: control.generation }) : base;
+      if (metadataRows.length) expected.blockers = [...new Set([...expected.blockers, 'LEGACY_VERSION_INITIALIZATION_NOT_VERIFIED'])];
+      const payload = encodeMaintenanceNativeImage({ company, control, tables });
+      if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > maxBackupBytes) throw Error('Maintenance backup exceeds explicit byte budget');
+      const backup = { schema: 'STOCK_MAINTENANCE_TYPED_BACKUP_V1', company, backupId: hash('MAINTENANCE_NATIVE_BACKUP_V1', payload), payload };
+      // Strong pages are not a cross-table transaction. Re-read the complete
+      // cohort and compare native images, not only counts, so an edit or same-size
+      // replacement during capture cannot be mistaken for the original backup.
+      // This is an additional freshness check, NOT proof of old-request drain.
+      for (const collection of names) {
+        const captured = capturedTables[collection]; let offset = 0;
+        do {
+          let query = items.query(collection);
+          if (Object.values(current).includes(collection)) query = query.eq('company', company);
+          const page = await query.ascending('_id').skip(offset).limit(pageSize)
+            .find({ consistentRead: true, returnTotalCount: true });
+          queries++;
+          if (!Array.isArray(page?.items) || page.totalCount !== captured.length
+            || page.items.length !== Math.min(pageSize, captured.length - offset)
+            || page.items.some((row, index) => JSON.stringify(encodeMaintenanceNativeImage(row))
+              !== JSON.stringify(encodeMaintenanceNativeImage(captured[offset + index])))) throw Error('Maintenance native cohort changed during capture');
+          offset += page.items.length;
+        } while (offset < captured.length);
+      }
+      const currentAdmin = await authenticateAdmin();
+      if (currentAdmin?.isAdmin !== true || currentAdmin.memberId !== admin.memberId) throw Error('Maintenance capture administrator changed');
+      await requireDrain();
+      if (!same(control, await protocol.readControl())) throw Error('Maintenance capture control changed');
+      return { company, control, context, taskRows, expected, existing, backup, metadataRows,
+        complete: true, emptyCurrentConfirmed: ['positions', 'claims', 'products', 'transfers'].every(kind => !existing[kind].length),
+        activationReady: false, durableBackupConfirmed: false };
+    });
+    return { ...snapshot.rows, metrics: { queries } };
+  }
+  // Direct composition seam for createMaintenanceMigration.capture. A different
+  // current cohort never adopts a previously displayed checkpoint. Durability
+  // and the actual Admin/drain binding remain installation prerequisites.
+  async function capture(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,company' || input.company !== company
+      || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')) throw Error('Original maintenance checkpoint identity required');
+    const result = await read();
+    if (result.expected.checkpointId !== input.checkpointId) throw Error('Maintenance checkpoint changed');
+    return result;
+  }
+  return { read, capture };
+}
+module.exports = { createMaintenanceSnapshotReader };
+
+},
+// bootstrap-preflight.cjs sha256:9083326a4282f92713e1587e671923ea425c4432615ebf045b8d9be2b80fb50e
+"bootstrap-preflight.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { convertProjectedStock } = load("current-model.cjs");
+const copy = value => JSON.parse(JSON.stringify(value));
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
+const fingerprint = value => hash(canonical(value));
+// Pure maintenance-window preflight ONLY. Produces private candidate images but
+// performs no CMS/schema/index changes, tags, writes, chunking or mode transition.
+function stockBootstrapPreflight({ company, context, purchaseRecords, existing, control, projectStockCard, projectPurchaseOrders, includeProjection = false }) {
+  if (typeof includeProjection !== 'boolean') throw Error('Private projection option required');
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks) || !Array.isArray(context.activity)
+    || !Array.isArray(purchaseRecords) || typeof projectStockCard !== 'function' || typeof projectPurchaseOrders !== 'function'
+    || existing?.complete !== true || !['positions', 'claims', 'products', 'transfers'].every(k => Array.isArray(existing[k]))) throw Error('Complete private bootstrap snapshots required');
+  const blockers = [], expectedControlId = hash(company, 'STOCK_CONTROL'), expectedLockId = hash(company + '/PURCHASE', 'LOCK');
+  if (control?._id !== expectedControlId || control.company !== company || control.mode !== 'MAINTENANCE' || control.schemaVersion !== 1
+    || !control._version || !Number.isSafeInteger(control.generation) || control.generation < 0 || control.pending) blockers.push('VERIFIED_MAINTENANCE_CONTROL_REQUIRED');
+  if (['positions', 'claims', 'products', 'transfers'].some(k => existing[k].length)) blockers.push('CURRENT_ROWS_ALREADY_EXIST_NO_OVERWRITE');
+  const activity = new Map();
+  for (const row of context.activity) {
+    if (!row._id || activity.has(row._id) || row.company && row.company !== company) throw Error('Complete unique company journal snapshot required');
+    activity.set(row._id, row);
+    if (row._id === expectedLockId || ['PURCHASE_OPERATION_LOCK','PURCHASE_TASK_COST_LOCK','COST_RETRY_LOCK'].includes(row.action)) blockers.push('BUSINESS_LOCK_PRESENT');
+    if (row.action === 'STOCK_TRANSFER_CURRENT') blockers.push('BORROWING_FACTS_REQUIRE_CURRENT_CHECKPOINT');
+    if (row.stockOperationProtocol === 2 && row.action === 'STOCK_PLAN_MANIFEST') blockers.push('SEGMENTED_FACTS_REQUIRE_CURRENT_CHECKPOINT');
+  }
+  for (const task of context.tasks) {
+    if (activity.has(hash(company, task.id, 'COST_LOCK'))) blockers.push('BUSINESS_COST_LOCK_PRESENT');
+    if (activity.has(hash(company, task.id, 'GP_LOCK'))) blockers.push('BUSINESS_GP_LOCK_PRESENT');
+  }
+  for (const row of context.activity) {
+    if (row.action === 'PURCHASE_OPERATION_PREPARED') {
+      const result = activity.get(hash(row._id, 'RESULT'));
+      if (row.details?.kind !== 'PREPARED' || !row.details.digest || !result || result.action !== 'PURCHASE_OPERATION_RESULT'
+        || result.result !== 'SAVED' || result.details?.kind !== 'RESULT' || result.details.digest !== row.details.digest
+        || result.details.outcome?.ok !== true) blockers.push('LEGACY_SAVE_NOT_CONFIRMED');
+    } else if (row.plan && Number.isSafeInteger(row.baseGeneration)) {
+      const result = activity.get(hash(row._id, 'RESULT'));
+      if (!row.digest || !result || result.digest !== row.digest || result.baseGeneration !== row.baseGeneration || result.outcome?.ok !== true
+        || result.outcome.operationId !== row._id || result.outcome.generation !== row.baseGeneration + 1
+        || control.generation < result.outcome.generation) blockers.push('CURRENT_SAVE_NOT_CONFIRMED');
+    }
+  }
+  const businessContext = { ...context }; delete businessContext.readAt;
+  const sourceHash = fingerprint({ company, context: businessContext, purchaseRecords }), currentHash = fingerprint(existing), controlHash = fingerprint(control);
+  const checkpointId = hash('STOCK_BOOTSTRAP', company, sourceHash, currentHash, controlHash);
+  if (blockers.length) return { checkpointId, sourceHash, currentHash, controlHash, canBootstrap: false, activationReady: false,
+    blockers: [...new Set(blockers)], rows: null };
+  const orders = projectPurchaseOrders({ company, workspace: context, records: purchaseRecords });
+  const tasks = context.tasks.map(task => {
+    if (task.warehouse?.hasPhysicalReceipt !== true) return copy(task);
+    const matches = orders.filter(po => po.company === company && po.taskIds.includes(task.id) && po.number === task.po);
+    if (matches.length !== 1) throw Error('One resolved authoritative source PO required');
+    return { ...copy(task), poId: matches[0].id };
+  });
+  const projection = projectStockCard({ ...context, tasks }), candidate = convertProjectedStock({ snapshot: projection, tasks, generation: control.generation });
+  const rows = Object.fromEntries(['positions', 'claims', 'products'].map(k => [k, candidate[k].map(row => ({ ...row,
+    _version: hash(checkpointId, k, row._id) }))]));
+  return { company, generation: control.generation, checkpointId, sourceHash, currentHash, controlHash, canBootstrap: true, activationReady: false, blockers: [], rows,
+    ...(includeProjection ? { privateProjection: copy(projection) } : {}),
+    reviewRequired: !candidate.activationReady, counts: Object.fromEntries(Object.entries(rows).map(([k, values]) => [k, values.length])),
+    // This is a PRIVATE dry-run parity aid, not evidence that production has been migrated.
+    parity: { sources: rows.positions.length, products: rows.products.length, legacyProjectionHash: fingerprint(projection) } };
+}
+module.exports = { stockBootstrapPreflight };
+
+},
+// lifecycle-bootstrap-preflight.cjs sha256:f5a5606014f498c0ea9c6cce5aa535f1ddc250e083243cb9f607b0b67deeba99
+"lifecycle-bootstrap-preflight.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { stockKey } = load("current-model.cjs");
+const { copy } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+// Private maintenance DRY RUN. Reuses the original bootstrap projection, never
+// fabricates counters from an incomplete current page. NO database capability.
+function lifecycleBootstrapPreflight({ company, context, base, taskRows, generation }) {
+  if (!['NCT', 'GHR'].includes(company) || context?.company !== company || !Array.isArray(context.tasks)
+    || base?.canBootstrap !== true || base.company !== company || base.generation !== generation || !base.checkpointId || base.privateProjection?.company !== company
+    || !Array.isArray(base.privateProjection.items) || !Array.isArray(base.rows?.positions) || !Array.isArray(base.rows.claims)
+    || !Array.isArray(base.rows.products) || !Array.isArray(taskRows) || !count(generation)) throw Error('Complete original maintenance bootstrap evidence required');
+  const raw = new Map(taskRows.map(row => [row._id, row])), tasks = new Map(context.tasks.map(t => [t.id, t]));
+  if (raw.size !== taskRows.length || tasks.size !== context.tasks.length || raw.size !== tasks.size) throw Error('Complete exact legacy task snapshot required');
+  const dispatched = new Map(), sourceDispatch = new Map(), products = new Map(base.rows.products.map(p => [p.stockKey, copy(p)]));
+  for (const item of base.privateProjection.items) for (const source of item.sources) {
+    if (!tasks.has(source.sourceTaskId) || sourceDispatch.has(source.sourceTaskId) || !Array.isArray(source.reservations)) throw Error('Bootstrap source provenance conflict');
+    let total = 0;
+    for (const reservation of source.reservations) {
+      if (!tasks.has(reservation.taskId) || !count(reservation.dispatched) || !count(total + reservation.dispatched)) throw Error('Known historical dispatch provenance required');
+      total += reservation.dispatched;
+      const key = source.sourceTaskId + '/' + reservation.taskId;
+      if (dispatched.has(key)) throw Error('Duplicate bootstrap dispatch claim');
+      dispatched.set(key, reservation.dispatched);
+    }
+    if (total !== source.dispatched) throw Error('Bootstrap source dispatch total differs');
+    sourceDispatch.set(source.sourceTaskId, total);
+  }
+  const taskTotals = new Map([...tasks.keys()].map(id => [id, 0]));
+  const positionMap = new Map(base.rows.positions.map(p => [p._id, p]));
+  const claims = base.rows.claims.map(claim => {
+    const position = positionMap.get(claim.positionId), source = position?.sourceTaskId;
+    if (!source || !dispatched.has(source + '/' + claim.taskId)) throw Error('Bootstrap claim dispatch evidence missing');
+    const amount = dispatched.get(source + '/' + claim.taskId), prior = taskTotals.get(claim.taskId);
+    if (!count(prior) || !count(prior + amount)) throw Error('Bootstrap task dispatch overflow');
+    taskTotals.set(claim.taskId, prior + amount);
+    return { ...copy(claim), dispatchedCumulative: amount };
+  });
+  const positions = base.rows.positions.map(position => {
+    if (sourceDispatch.get(position.sourceTaskId) !== position.dispatched) throw Error('Bootstrap exact source dispatch conflict');
+    return { ...copy(position), borrowRepaidCumulative: 0 };
+  });
+  const blockers = base.reviewRequired ? ['STOCK_ATTRIBUTION_REQUIRES_REVIEW'] : [], taskInitializations = [];
+  for (const task of context.tasks) {
+    const row = raw.get(task.id), amount = taskTotals.get(task.id), version = row?._version || row?.stockCommitVersion;
+    if (!row || row.company && row.company !== company || row.description !== task.orderId || row.imageAltText !== task.sourceLineId
+      || !count(amount) || typeof (task.requested ?? task.ord) !== 'number' || amount > (task.requested ?? task.ord)) throw Error('Legacy task identity/dispatch conflict');
+    if (row.stockCounterSchema != null && (row.stockCounterSchema !== 2 || row.stockDispatchedCumulative !== amount
+      || !count(row.stockCounterGeneration) || row.stockCounterGeneration > generation)) blockers.push('EXISTING_TASK_COUNTER_REQUIRES_REVIEW');
+    if (!version) blockers.push('TASK_VERSION_INITIALIZATION_NOT_VERIFIED');
+    else if (typeof version !== 'string' || row._version && row.stockCommitVersion && row._version !== row.stockCommitVersion) throw Error('Legacy task version conflict');
+    taskInitializations.push({ id: task.id, observedHash: hash(row), observedVersion: version || null,
+      fields: { company, stockCounterSchema: 2, stockDispatchedCumulative: amount, stockCounterGeneration: generation } });
+    // Existing real order products with no physical receipt still need one zero
+    // identity/high-water checkpoint. Never create rows for the whole catalogue.
+    const identity = { company, barcode: task.barcode, packing: task.packing, ea: task.ea }, key = stockKey(identity);
+    if (!products.has(key)) products.set(key, { _id: hash(company, key), schemaVersion: 1, ...identity, stockKey: key, name: task.name || '',
+      onHand: 0, isolated: 0, reservedUsable: 0, available: 0, reviewRequired: false, reviewCodes: [], revision: 0,
+      checkpointGeneration: generation, status: 'CLOSED' });
+  }
+  const productRows = [...products.values()].map(p => ({ ...p, lifecycleVersion: 2, nextBorrowSequence: 1 }));
+  const checkpointId = hash(base.checkpointId, 'LIFECYCLE_V2', taskInitializations);
+  const rows = Object.fromEntries(Object.entries({ positions, claims, products: productRows }).map(([kind, values]) => [kind,
+    values.map(row => ({ ...row, _version: hash(checkpointId, kind, row._id) }))]));
+  return { company, generation, checkpointId, baseCheckpointId: base.checkpointId, canPlan: true,
+    canApply: false, activationReady: false, blockers: [...new Set([...blockers, 'ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED'])],
+    rows, taskInitializations, proposedTransferIndexVersion: 2,
+    // No immutable prepared plan/endpoint may treat these fields as executable CAS
+    // evidence until missing legacy version initialization and freshness are proven.
+    counts: { positions: positions.length, claims: claims.length, products: productRows.length, tasks: taskInitializations.length } };
+}
+module.exports = { lifecycleBootstrapPreflight };
+
+},
+// maintenance-native-images.cjs sha256:f662e475f8b771034d4f37fad72dda7267724fd30d29db1d447280e0c7afc02b
+"maintenance-native-images.cjs": (load, module) => {
+'use strict';
+
+// Explicit private backup encoding. Dates are tagged by their actual native type,
+// never by field-name or ISO-looking text. JSON persistence cannot erase the
+// _updatedDate Date needed by the existing metadata initialization condition.
+function encodeMaintenanceNativeImage(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    if (!Number.isFinite(value.getTime())) throw Error('Valid native backup Date required');
+    return ['DATE', value.toISOString()];
+  }
+  if (value === null) return ['NULL'];
+  if (typeof value === 'string') return ['TEXT', value];
+  if (typeof value === 'boolean') return ['BOOLEAN', value];
+  if (typeof value === 'number' && Number.isFinite(value)) return ['NUMBER', Object.is(value, -0) ? '-0' : value];
+  if (Array.isArray(value)) {
+    if (Object.keys(value).length !== value.length) throw Error('Dense native backup array required');
+    return ['ARRAY', value.map(encodeMaintenanceNativeImage)];
+  }
+  const proto = value && typeof value === 'object' && Object.getPrototypeOf(value);
+  if (value && typeof value === 'object' && (proto === null || Object.getPrototypeOf(proto) === null
+    && Object.getOwnPropertyDescriptor(proto, 'constructor')?.value?.name === 'Object') && !Object.getOwnPropertySymbols(value).length) {
+    return ['OBJECT', Object.keys(value).sort().map(key => [key, encodeMaintenanceNativeImage(value[key])])];
+  }
+  throw Error('Supported native backup value required');
+}
+
+function decodeMaintenanceNativeImage(value) {
+  if (!Array.isArray(value)) throw Error('Tagged native backup image required');
+  const [type, data] = value;
+  if (type === 'NULL' && value.length === 1) return null;
+  if (value.length !== 2) throw Error('Exact tagged native backup image required');
+  if (type === 'TEXT' && typeof data === 'string' || type === 'BOOLEAN' && typeof data === 'boolean') return data;
+  if (type === 'NUMBER' && (typeof data === 'number' && Number.isFinite(data) && !Object.is(data, -0) || data === '-0')) return data === '-0' ? -0 : data;
+  if (type === 'DATE' && typeof data === 'string') {
+    const date = new Date(data);
+    if (Number.isFinite(date.getTime()) && date.toISOString() === data) return date;
+  }
+  if (type === 'ARRAY' && Array.isArray(data)) return data.map(decodeMaintenanceNativeImage);
+  if (type === 'OBJECT' && Array.isArray(data) && data.every((entry, i) => Array.isArray(entry) && entry.length === 2
+    && typeof entry[0] === 'string' && (i === 0 || data[i - 1][0] < entry[0]))) {
+    return Object.fromEntries(data.map(([key, image]) => [key, decodeMaintenanceNativeImage(image)]));
+  }
+  throw Error('Valid exact native backup image required');
+}
+module.exports = { encodeMaintenanceNativeImage, decodeMaintenanceNativeImage };
+
 }
 };
 const modules = new Map();
@@ -7338,3 +7678,4 @@ export const dispatchCurrentSalesGateway = load("sales-gateway-current.cjs").dis
 export const requireOriginalSalesDelegation = load("sales-delegation.cjs").requireOriginalSalesDelegation;
 export const createCurrentOrderIntakeOperations = load("current-order-intake.cjs").createCurrentOrderIntakeOperations;
 export const createCurrentCostTables = load("current-cost-tables.cjs").createCurrentCostTables;
+export const createMaintenanceSnapshotReader = load("maintenance-snapshot-reader.cjs").createMaintenanceSnapshotReader;
