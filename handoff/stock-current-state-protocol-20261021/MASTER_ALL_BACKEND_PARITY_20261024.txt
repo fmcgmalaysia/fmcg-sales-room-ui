@@ -1,0 +1,82 @@
+2026-10-24 — All MASTER backend original preimages/dependencies read back
+
+Parented92bd9; business candidate50212f4/copy-only review0f0573c unchanged.
+Same framework/spec/ownership and computer-use skill reused. Bounded final16
+unchanged MASTER dependencies from current-install-manifest, not a project scan.
+Recovery d447185/runtime32b812c retained. SameChrome3/Master51427123 only.
+Selected actual Backend & Public filenames, confirmed loaded editor/imports, then
+full select-all/copy. List pane scrolled upward before initial financial files
+so target was visible. No editor typing, Save, Run, Publish or site mutation.
+
+Final16native CRLF / LF lengths and SHA256:
+accountReadIndex.js 9493/9394
+9713b7265b13412e4b85991c76ecfec8b88f522c9d2a984f8212c666a80194d7
+accountReadQuery.js 5283/5222
+a4c6b825afe812eb0c91929f1b8db031f2e5c8b31943d3b6e463163086c1e654
+adminFxClient.js 1256/1239
+e54943e4bba0fa20ffc3a97d9e3e3982d39b6caa139ca3dfa2023f96e292a03b
+customerNamesClient.js 1047/1034
+6b7cad33bd7264a2e1241820376722943d3934147ac0e73a83be47a665e0f7b2
+departmentMessages.js 8641/8566
+92d9b4f1c328c5f3a1dba310d760fa6c4e846f2e1cae0366493a399e590405f6
+packingListPhotos.js 1150/1137
+ebda7350c83986d63ba6d9bda638ec3e024b4249cbaf0e580022a2d561ec6a71
+pointbaseBrandClient.js 2993/2952
+201091f51d7f3503d0b853ba0a2c18aa6ba0c06b018e9a79b4b27cdfa82522f2
+pointbaseCostClient.js 2951/2911
+e0246e7cd26cf26b53f5c4c12bbbcb432f04622597547f5b792c75cc2acfd3d6
+purchaseAccess.js 751/740
+b11db6605b6b5d69345a57bac5f576612180ca6036934def97cd4b064292bcfd
+purchaseDocumentClient.js 3356/3317
+dd9aa74d059c22533e2fb7f16258f8383f35ede832262e021bf5041d563fdeea
+sharedSupplierOperations.js 5870/5803
+1800bc5c838bad8be8f443af93da6325d9749657fa27d46106ee1efe55d57b0e
+supplierCredit.js 3549/3520
+8d71dd3022cb78764272b5293b38fd97fd934ece0bee7d476573c20fb61bf3d7
+taskChat.web.js 7757/7690
+9c673648634a37a986b186f68e28673b6a0103b7ec89c2696201fc152325e7b2
+taskChatClient.js 2147/2127
+a59f33c0fb950811371a36c723ce5d72034eb944f405019fe67707b402c0c2d3
+taskChatService.js 10768/10686
+7b9e503342d286e4aa476323efedc3d799715af4f0bc7538423fa56bcdabf998
+taskChatWorkspace.js 4430/4396
+c96b838354b7685a0f471852f1d554949c26fb0054bfa1b9a1c7758aa890e6d5
+
+All16full native normalized hashes match repository and manifest. Private exact
+LF copies saved using apply_patch under root stock-current-state-spec private-
+evidence, named master-<original filename dots replaced by hyphens>-dependency-
+readback-20261024.txt. Final aggregate check compared each of78original MASTER
+files byte-for-byte with an exact private saved-editor readback, then matched
+the required manifest original hash. No tolerance for extra finalLF or trimmed code.
+Machine-readable index: MASTER_NATIVE_PREINSTALL_READBACK_INDEX_20261024.json.
+78matches =23PATCH before-images +55unchanged dependency originals. The15NEW MASTER
+candidate targets are NOT installed. Source5unchanged+2PATCH originals and2Source
+UI relays still require fresh actual Source access. Existing3MASTER department
+page/1Public bridge preimages remain separately documented, not included in78.
+
+This closes ONLY the complete MASTER backend pre-install parity evidence gap.
+It does NOT close semantic all-writer review, native schema/index/typed query/
+capacity/recovery/migration/shadow tests, installation, old-runtime drain, published
+runtime parity or public real borrowing/partial repayment/Sales split acceptance.
+20writer categories stayUNVERIFIED, activationAllowedfalse; ACTIVE OFF.
+Actual Support invoice/dispatch OFF. Known late legacy writer still unresolved;
+no elapsed-time or empty-lock inference. Wix technical request already submitted,
+no engineering reply verified, not resubmitted/static confirmation not polled.
+Prior precise GitHub technical-export approval unanswered; no push or other route.
+Stopped Source51427279/localhost8986/local-file paths not retried or replaced.
+
+No source/business tests rerun because code unchanged. Existing1337business checks
+and4copy-only review checks retained with original scopes, not native proof.
+No backend/page/business directory diff, CMS/schema/index/permission/test/lock
+mutation, diagnostic Run, Pages dispatch, Publish, main merge or user-data deletion.
+Four release stages: local candidate; new Pages build not deployed; new Wix flow
+unsynchronized/unpublished; public new borrowing unavailable/unverified.
+Editor left on taskChatWorkspace for continuation. No user action needed merely
+for this completed read-only comparison.
+
+Next meaningful independent work: focused semantic review of final ALLOC/current
+writer/read/arrangement consumers against existing G3 requirements, reusing1337
+tests; only add tests/patches for a demonstrated uncovered defect, not heartbeat
+activity. Native Source/unknown-test continuation and safe cutover cannot be
+claimed by local review. If independent review/preparation exhausted, preserve
+blocker packet, notify once and pause heartbeat per user's explicit instruction.
