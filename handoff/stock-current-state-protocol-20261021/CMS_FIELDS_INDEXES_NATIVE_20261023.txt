@@ -317,3 +317,44 @@ Private logs same evidence directory:
  SHA256 b90895fd125146f7c3c427ee755383693fd1d812f86a8fee72572fcdfe4bd8c3
 No actual CMS item roundtrip, native tester replay, permission change, external
 export or deployment. Code/Pages/Wix/public remain separate, not published.
+
+GHR SAME-FIELD-LIST REUSE — PARTIAL ACTIVITY SETUP, NEW CONNECTION STOP
+
+User suggested DUPLICATE NCT to accelerate. GHR NCTTasks1/NCTOrders1/NCTActivity1
+already exist and original backend binds those exact IDs. Reused NCT's required
+additive list on existing GHR tables, did NOT create competing duplicate tables,
+rename/rebind collections or copy NCT business rows into another company.
+
+NCTTasks1 existing lastCostCaptureTime exact ID Date and Time read-only confirmed,
+canceled. Added company/stockCommitVersion Text, stockCounterSchema/
+stockDispatchedCumulative/stockCounterGeneration Number, ONE Save per field,
+each exact Manage Fields ID count1 readback. All required task fields now in UI.
+Private screenshot ghrtasks-stock-fields-saved-20261023.png
+SHA256 c8f5674faa7bfa4733c6b2a1b3c3090c9e717d21658ff0ecb2784bee27c5fdef
+
+NCTActivity1 original ID list captured; existing action Text, activityTime Date
+and Time, details Object exact IDs/types opened read-only and canceled. Added
+these SEVEN missing Text fields, each exact form type/name/ID, saved ONCE and
+exact native field-list ID count1 confirmed:
+ company stockCommitVersion status stockKey mode lenderSourceId replacementSourceId
+No business rows or existing field definitions changed. GHR Activity indexes NOT
+inspected/created yet; do not infer its quota/ACTIVE from NCT table's observations.
+
+Next stockPrepareField(GHR Activity,schemaVersion,Number) failed with native
+pipe closed after5.68seconds, before any stockFinishField/Save invocation. Do not
+infer current dialog state or list presence: preparation outcome UNKNOWN, no
+field Save issued. Read official packaged browser-troubleshooting guidance;
+ONE existing-tab getAX read-only diagnostic then reported browser3 unavailable.
+Two connection failures -> STOP UI path, no reselect/rebind/new endpoint, no
+refresh/Save replay or repeated reinstall. User informed connection lost and
+that saved fields are retained. On changed user-visible connection state, FIRST
+read exact native ID list and open-form state; reconcile before further writes.
+
+GHR remaining required fields: NUMBER schemaVersion revision checkpointGeneration
+generation transferIndexVersion repaidQuantity; TAGS participantTaskIds; OBJECT
+pending. Original Date-only order rule remains as user specified and implemented
+in local11a7d89. Final1299test evidence reused unchanged; no rerun for these native
+field-only additions. Actual native original-table metadata/typed queries/index
+ACTIVE/capacity/recovery/install/drain/migration/shadow/public acceptance remain
+OPEN. No main merge, push/export retry, permissions, Pages/Wix Publish, test item
+creation or historical native300 continuation/lock release. Heartbeat PAUSED.

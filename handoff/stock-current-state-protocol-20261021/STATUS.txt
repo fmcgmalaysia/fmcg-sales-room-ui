@@ -1,5 +1,22 @@
 CURRENT 2026-10-23 — DATE-ONLY SHIPMENT MAPPING CORRECTED; NOT DEPLOYED
 
+LATEST NATIVE PROGRESS/CONNECTION STOP: user suggested duplicating NCT. Reused
+the SAME required field list on EXISTING fixed-ID GHR tables instead of creating
+duplicate tables or copying NCT items. NCTTasks1 now has all5new stock fields
+saved/exact-ID read back; original lastCostCaptureTime Date and Time preserved.
+NCTActivity1 original action Text/activityTime Date and Time/details Object
+read-only confirmed/canceled; seven missing Text fields added once/read back:
+company,stockCommitVersion,status,stockKey,mode,lenderSourceId,replacementSourceId.
+Next schemaVersion Number PREPARATION failed: native pipe closed. No finish/Save
+called. One read-only getAX then browser3 unavailable. STOP this browser UI path;
+do not retry/reselect/refresh or replay saves. Current unsaved form state UNKNOWN;
+fresh actual field-ID/form readback required after changed human-visible state.
+Remaining GHR activity6Number+participantTaskIdsTags+pendingObject, activity
+indexes (NCT1stopped/GHR3notattempted), then native metadata/type/index/capacity/
+recovery/install/drain/migration/shadow/public gates. No duplicate table/items,
+old native tester/300 replay, ACL change or publish. Code locally11a7d89, remote
+last known e331024; export refusal remains, no push workaround. Heartbeat PAUSED.
+
 User clarified estimated shipment date needs date only. Actual NCT/GHR original
 estimatedShipmentDate fields are Date, preserved. Candidate schema now separates
 DATE_ONLY -> native DATE from existing semantic DATE -> DATETIME. Removed this
