@@ -1,7 +1,7 @@
 'use strict';
 // Candidate-only exact existing child/bridge overlays. No layout/font redesign.
 const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'../../..'),out=path.join(__dirname,'packing-ui');
-const read=file=>fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'),marker='20261023-current-packing-damage-v1';
+const read=file=>fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'),marker='20261024-packing-arrangement-v1';
 function replace(source,before,after){if(source.split(before).length!==2)throw Error('Exact original packing UI anchor changed: '+before.slice(0,70));return source.replace(before,()=>after);}
 let app=replace(read('support-room/packing-workbench.js'),'createPackingTransport({company:()=>company,onBusy:', 'createPackingTransport({company:()=>company,department:()=>actor,onBusy:');
 const damageWarning="Damage recheck required 待复核破损影响 · Inspect usable goods, correct Packed and Loaded with a reason, then save progress. 检查实货，更正备货与装柜数量，填写原因后保存进度。";
@@ -9,8 +9,9 @@ app=replace(app,"$('pending-change').hidden=!list.change;", "$('pending-change')
 app=replace(app,"$('pending-change').textContent=list.change?", "$('pending-change').textContent=(list.stockDamageReviewRequired?"+JSON.stringify(damageWarning+' · ')+":'')+(list.change?");
 app=replace(app,".join(' · '):'';", ".join(' · '):'');");
 for(const field of ['Packed','Loaded'])app=replace(app,"max=\"'+line.quantity+'\" aria-label=\""+field, "max=\"'+Math.min(line.quantity,line.stockUsableForList??line.quantity)+'\" aria-label=\""+field);
+app=require('./packing-arrangement-ui-overlay.cjs')(app);
 let html=read('support-room/packing-workbench.html');
-html=html.replace('2026-10-21-packing-candidate-v1','2026-10-23-current-packing-damage-v1');
+html=html.replace('2026-10-21-packing-candidate-v1','2026-10-24-packing-arrangement-v1');
 html=replace(html,'packing-transport.js?v=20261021-packing-v1','packing-transport.js?v='+marker);
 html=replace(html,'packing-workbench.js?v=20261021-packing-company-v1','packing-workbench.js?v='+marker);
 let bridge=read('integration/wix/packingListBridge.js');

@@ -831,6 +831,7 @@ const stages=[
       formDialog('Allocation 调配',row.barcode,'<p>'+esc(row.name)+'</p><div id="currentAllocationChoice"></div><div id="currentAllocationRelations"></div><div id="currentAllocationApproval"></div>','','task');
       const canSubmit=()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty();
       window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,batchId:control.dataset.currentBatch,esc,canSubmit,
+        submitArrangement:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'ARRANGE_AVAILABLE',input});},
         showBorrow:()=>window.purchaseBorrowApproval.mount({container:document.querySelector('#currentAllocationApproval'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submit:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_APPROVE',input});}})});
       window.purchaseBorrowRelations?.mount({container:document.querySelector('#currentAllocationRelations'),workspace:data,rootId,read:readOperation,rowLabel,esc,canSubmit,submitReturn:input=>{if(!canSubmit())throw Error('Existing save pending');mutate('PURCHASE_SAVE_REQUEST',{operation:'BORROW_RETURN',input});}});return;
     }

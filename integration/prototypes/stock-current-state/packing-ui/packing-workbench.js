@@ -36,7 +36,8 @@ function render(){
   const rows=filtered(available().filter(row=>row.unarranged>0));
   $('head').innerHTML='<tr><th></th><th>Customer 客户</th><th>Description 产品</th><th class="num">Remaining 待发</th><th class="num">Held 已安排</th><th class="num">To Arrange 未安排</th><th class="num">Ready 可备</th><th class="num">CBM/CTN</th><th class="num">Net kg/CTN</th></tr>';
   const selectedTask=taskFor([...selection][0]);
-  $('rows').innerHTML=rows.map(row=>'<tr class="'+(selection.has(row.taskId)?'selected':'')+'"><td><input type="checkbox" data-select="'+esc(row.taskId)+'" aria-label="Select '+esc(row.name)+'" '+(selection.has(row.taskId)?'checked ':'')+(selectedTask&&selectedTask.customerId!==row.customerId?'disabled':'')+'></td><td>'+esc(row.customerName)+'</td><td class="product">'+product(row)+'</td><td class="num">'+row.remaining+'</td><td class="num">'+row.held+'</td><td class="num">'+row.unarranged+'</td><td class="num">'+(row.review?'Review 待核对':row.readyToArrange)+'</td><td class="num">'+(row.cbm??'')+'</td><td class="num">'+(row.weight??'')+'</td></tr>').join('');$('count').textContent=rows.length+' rows 行';
+  $('rows').innerHTML=rows.map(row=>'<tr class="'+(selection.has(row.taskId)?'selected':'')+'"><td><input type="checkbox" data-select="'+esc(row.taskId)+'" aria-label="Select '+esc(row.name)+'" '+(selection.has(row.taskId)?'checked ':'')+(selectedTask&&selectedTask.customerId!==row.customerId?'disabled':'')+'></td><td>'+esc(row.customerName)+'</td><td class="product">'+product(row)+(row.purchaseArrangements||[]).map(i=>'<small>Purchase 采购安排 '+esc(i.quantity)+' CTN'+(i.batchId?' · '+esc(i.batchId):'')+'</small>'
+   +(i.status==='PENDING_SUPPORT'&&live&&actor==='SUPPORT'?'<button type="button" class="row-action" data-purchase-arrangement="'+esc(i.revision)+'" data-arrangement-task="'+esc(row.taskId)+'">Prepare draft 创建备货草稿</button>':i.packingListId?'<small>Linked 已接备货单 '+esc(i.packingListId)+'</small>':'')).join('')+'</td><td class="num">'+row.remaining+'</td><td class="num">'+row.held+'</td><td class="num">'+row.unarranged+'</td><td class="num">'+(row.review?'Review 待核对':row.readyToArrange)+'</td><td class="num">'+(row.cbm??'')+'</td><td class="num">'+(row.weight??'')+'</td></tr>').join('');$('count').textContent=rows.length+' rows 行';
  }else{
   const rows=filtered(context().lists.filter(list=>actor==='SUPPORT'||list.status!=='DRAFT'));
   $('head').innerHTML='<tr><th>Packing List 备货单</th><th>Customer 客户</th><th class="num">Products 项数</th><th class="num">Plan 计划</th><th class="num">Packed 已备</th><th class="num">Loaded 实装</th><th class="num">Unloaded 未装</th><th>Status 状态</th></tr>';
@@ -45,7 +46,9 @@ function render(){
  if(!$('rows').innerHTML)$('rows').innerHTML='<tr><td colspan="9">No matching tasks 没有符合条件的任务</td></tr>';
  notifyLayout();
 }
+let purchaseArrangementDraft=null;
 function openEdit(list=null){
+ purchaseArrangementDraft=null;
  editing=list;const ids=list?list.lines.map(line=>line.taskId):[...selection],rows=available(list?.id).filter(row=>list?row.customerId===list.customerId&&row.currency===list.currency&&(row.unarranged>0||ids.includes(row.taskId)):ids.includes(row.taskId));
  $('edit-customer').textContent=rows[0]?.customerName||'';$('edit-title').textContent=list?.status==='PROCESSING'?'Change Request 提交变更':'Packing Draft 备货草稿';
  $('edit-help').textContent=list?.status==='PROCESSING'?'Warehouse must acknowledge the change before it takes effect. 变更经货仓确认后生效。':'Plan may include waiting stock. Sending requires usable customer stock. 可先安排待到货需求，发送时必须已有可备货。';
@@ -72,8 +75,21 @@ function openDetail(list){
  $('detail-actions').innerHTML=actions;if(!$('detail').open)$('detail').showModal();notifyLayout();
 }
 $('create').onclick=()=>openEdit();
-$('save-edit').onclick=async()=>{if(busy)return;try{const included=new Set([...document.querySelectorAll('[data-include]')].filter(input=>input.checked).map(input=>input.dataset.include)),lines=[...document.querySelectorAll('[data-plan]')].filter(input=>included.has(input.dataset.plan)).map(input=>({taskId:input.dataset.plan,quantity:Number(input.value)})),task=taskFor(lines[0]?.taskId);if(!task)throw Error('Choose at least one product. 至少勾选一项产品。');await act(editing,editing?.status==='PROCESSING'?'CHANGE':editing?'EDIT':'CREATE',{customerId:task.customerId,currency:task.currency,lines,reason:$('edit-reason').value});$('edit').close();selection.clear();view='lists';render();}catch(error){$('edit-error').textContent=error.message;}};
-$('rows').onclick=event=>{const button=event.target.closest('[data-open]');if(button)openDetail(lists.find(list=>list.id===button.dataset.open));};
+$('save-edit').onclick=async()=>{if(busy)return;try{const included=new Set([...document.querySelectorAll('[data-include]')].filter(input=>input.checked).map(input=>input.dataset.include)),lines=[...document.querySelectorAll('[data-plan]')].filter(input=>included.has(input.dataset.plan)).map(input=>({taskId:input.dataset.plan,quantity:Number(input.value)})),task=taskFor(lines[0]?.taskId);if(!task)throw Error('Choose at least one product. 至少勾选一项产品。');await act(editing,editing?.status==='PROCESSING'?'CHANGE':editing?'EDIT':'CREATE',{...(purchaseArrangementDraft&&!editing?{purchaseArrangement:purchaseArrangementDraft}:{}),customerId:task.customerId,currency:task.currency,lines,reason:$('edit-reason').value});$('edit').close();selection.clear();view='lists';render();}catch(error){$('edit-error').textContent=error.message;}};
+$('rows').onclick=event=>{
+ const arrange=event.target.closest('[data-purchase-arrangement]');
+ if(arrange){
+   if(!live||actor!=='SUPPORT'||busy||needsRead||transport?.hasPending()||$('edit').open||$('detail').open)return;
+   try{const task=available().find(t=>t.taskId===arrange.dataset.arrangementTask),instruction=task?.purchaseArrangements?.find(i=>i.revision===arrange.dataset.purchaseArrangement&&i.status==='PENDING_SUPPORT');
+     if(!task||task.review||!instruction||!Number.isSafeInteger(instruction.quantity)||instruction.quantity<1
+       ||instruction.quantity>task.readyToArrange||instruction.quantity>task.unarranged)throw Error('Purchase instruction or available stock changed. Refresh before arranging. 采购安排或可用库存已变化，请刷新。');
+     selection.clear();selection.add(task.taskId);openEdit();
+     purchaseArrangementDraft={taskId:task.taskId,batchId:instruction.batchId,revision:instruction.revision};
+     const quantity=[...document.querySelectorAll('[data-plan]')].find(el=>el.dataset.plan===task.taskId);quantity.value=String(instruction.quantity);
+     $('edit-help').textContent='Purchase requested '+instruction.quantity+' CTN. Saving creates a draft; sending still checks current usable stock. 采购要求'+instruction.quantity+'箱；保存仅建立草稿，发送仍核对当前可用库存。';
+   }catch(error){$('notice').textContent=error.message;}return;
+ }
+const button=event.target.closest('[data-open]');if(button)openDetail(lists.find(list=>list.id===button.dataset.open));};
 $('rows').onchange=event=>{const id=event.target.dataset.select;if(id){if(event.target.checked)selection.add(id);else selection.delete(id);render();}};
 $('detail-actions').onclick=async event=>{const button=event.target.closest('[data-action]');if(!button||busy)return;const action=button.dataset.action;
  if(action==='EDIT'||action==='CHANGE'){$('detail').close();openEdit(opened);return;}

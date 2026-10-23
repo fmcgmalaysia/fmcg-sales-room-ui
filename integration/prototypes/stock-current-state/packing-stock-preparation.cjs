@@ -10,7 +10,7 @@ const { preparePackingStock } = require('./packing-stock-plan.cjs');
 const {captureOriginalPackingPhotoPlan}=require('./packing-photo-plan.cjs');
 const {prependPackingPhotoReceipts}=require('./packing-photo-fenced-store.cjs');
 const {hash}=require('./commit-proof.cjs');
-const {readArrangements}=require('./purchase-arrangement.cjs');
+const {readArrangements,linkArrangement,identity:arrangementIdentity}=require('./purchase-arrangement.cjs');
 // Private candidate for the existing authenticated read/save gateways. Every read
 // shares the company control barrier. No legacy apply or file upload in prepare.
 function createPackingStockPreparation(deps) {
@@ -81,14 +81,24 @@ function createPackingStockPreparation(deps) {
       if (JSON.stringify(currentRecord?.details?.list || null) !== JSON.stringify(prior || null)) throw Error('Packing current record changed');
       // Reuse original stored-list validation, including evidence/bounds, before mapping.
       readPackingLists([{ ...validated.record, company }], company);
+      let arrangementPlan;
+      if(request.input.purchaseArrangement!==undefined){
+        if(!current||request.department!=='SUPPORT'||request.input.action!=='CREATE')throw Error('Purchase instruction requires original Support create');
+        const reference=request.input.purchaseArrangement;
+        if(!reference||typeof reference.taskId!=='string'||typeof reference.batchId!=='string')throw Error('Exact Purchase instruction reference required');
+        const before=await store.read(journal,arrangementIdentity(company,reference.taskId,reference.batchId));
+        arrangementPlan=linkArrangement({company,before,reference,list:validated.record.details.list,
+          staff:{...staff,memberId:member._id},requestId:request.requestId,at:validated.record.activityTime});
+      }
       const lines = new Set([...(prior?.lines || []), ...(prior?.change?.lines || []), ...validated.record.details.list.lines,
         ...(validated.record.details.list.change?.lines || [])].map(l => l.taskId));
-      return { validated, currentRecord, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
+      return { validated, currentRecord, arrangementPlan, products: products.filter(p => p.state.tasks.some(t => lines.has(t.id))) };
     });
     const originalStaff={memberId:staff.memberId,staffId:staff.staffId,staffName:staff.staffName,packingDepartment:staff.packingDepartment};
     if (!save) return { ...snapshot.rows, staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };
     const mapped=preparePackingStock({ company, ...snapshot.rows, validated:photos?{...snapshot.rows.validated,uploads:[]}:snapshot.rows.validated,generation: snapshot.generation, packingHeld,
       planFormat: current ? 'SEGMENTED_V2' : 'PROOF_V1' });
+    if(snapshot.rows.arrangementPlan)mapped.plan.writes.push(...snapshot.rows.arrangementPlan.writes);
     if(photos)mapped.plan=prependPackingPhotoReceipts({company,staff,requestId:request.requestId,input:request.input,prepared:snapshot.rows.validated,plan:mapped.plan});
     return { ...mapped,
       staff:originalStaff, memberId: staff.memberId, generation: snapshot.generation, metrics };

@@ -25,6 +25,7 @@ function prepareArrangement({company,staff,requestId,input,workspace,before,at})
    ||input.quantity>arrangementLimit(task,batchId)||typeof input.expectedRevision!=='string')throw Error('Available arrangement quantity changed');
  const reason=String(input.reason||'').trim();if(!reason||reason.length>1000||typeof at!=='string'||!Number.isFinite(Date.parse(at)))throw Error('Arrangement reason and time required');
  const id=identity(company,task.id,batchId);
+ if(before&&before.details?.status!=='PENDING_SUPPORT')throw Error('Arrangement already linked to packing; review that list first');
  if(before&&(before._id!==id||before.company!==company||before.action!==action||before.details?.taskId!==task.id||before.details.batchId!==batchId||!before._version)
    ||(before?.details?.revision||'')!==input.expectedRevision)throw Error('Arrangement instruction changed');
  const revision=hash(company,requestId,staff.memberId,'ARRANGEMENT');
@@ -42,9 +43,23 @@ function readArrangements(company,activity){
  return activity.filter(r=>r.action===action).map(r=>{
   const d=r.details;
   if(r.company!==company||r.title!==r._id||r.result!=='SAVED'||!d?.taskId||typeof d.batchId!=='string'||r._id!==identity(company,d.taskId,d.batchId)||seen.has(r._id)
-    ||r.description!==d.orderId||!d.customerId||!d.revision||d.status!=='PENDING_SUPPORT'||!whole(d.quantity)||d.quantity<1||d.quantity>9999||!d.reason||!r.initiatedByStaffId
+    ||r.description!==d.orderId||!d.customerId||!d.revision||!['PENDING_SUPPORT','LINKED'].includes(d.status)||d.status==='LINKED'&&(!d.packingListId||!d.packingRevision)||!whole(d.quantity)||d.quantity<1||d.quantity>9999||!d.reason||!r.initiatedByStaffId
     ||typeof r.activityTime!=='string'||!Number.isFinite(Date.parse(r.activityTime)))throw Error('Arrangement instruction requires review');
   seen.add(r._id);return {...copy(d),by:r.initiatedByStaffName,at:r.activityTime};
  });
 }
-module.exports={arrangementLimit,prepareArrangement,readArrangements,identity};
+function linkArrangement({company,before,reference,list,staff,requestId,at}){
+ const [instruction]=readArrangements(company,before?[before]:[]);
+ if(!instruction||!before._version||instruction.status!=='PENDING_SUPPORT'||reference?.revision!==instruction.revision
+   ||reference.taskId!==instruction.taskId||reference.batchId!==instruction.batchId||Object.keys(reference).some(k=>!['taskId','batchId','revision'].includes(k))
+   ||staff?.packingDepartment!=='SUPPORT'||!staff.staffId||!staff.memberId||!list?.id||list.status!=='DRAFT'||list.company!==company
+   ||list.customerId!==instruction.customerId||list.lines.length!==1||list.lines[0].taskId!==instruction.taskId||list.lines[0].quantity!==instruction.quantity
+   ||!/^[a-f0-9-]{36}$/i.test(requestId||'')||typeof at!=='string'||!Number.isFinite(Date.parse(at)))throw Error('Exact pending Purchase instruction and Support draft required');
+ const revision=hash(company,requestId,staff.memberId,'ARRANGEMENT_LINKED'),after={...copy(before),activityTime:at,
+   details:{...copy(before.details),revision,status:'LINKED',packingListId:list.id,packingRevision:list.revision,linkedByStaffId:staff.staffId}};
+ const audit={...copy(after),_id:revision,title:revision,action:'PURCHASE_ARRANGEMENT_LINKED',initiatedByStaffId:staff.staffId,
+   initiatedByStaffName:staff.staffName,details:{...copy(after.details),beforeRevision:instruction.revision}};
+ return {writes:[{collection:company==='NCT'?'NCTActivity':'NCTActivity1',before:copy(before),after},
+   {collection:company==='NCT'?'NCTActivity':'NCTActivity1',before:null,after:audit}]};
+}
+module.exports={arrangementLimit,prepareArrangement,readArrangements,identity,linkArrangement};

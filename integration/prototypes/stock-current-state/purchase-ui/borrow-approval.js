@@ -130,7 +130,7 @@
       try { openRoot(rootId); } catch (error) { status.textContent = error?.message || 'Customer borrowing unavailable 本客户借货暂不可打开。'; }
     };
   }
-  function mountAllocation({container,workspace,rootId,batchId,esc,canSubmit,showBorrow}) {
+  function mountAllocation({container,workspace,rootId,batchId,esc,canSubmit,showBorrow,submitArrangement}) {
     if(!container)return;
     const root=workspace.tasks.find(t=>t.id===rootId);if(!root)return;
     const known=workspace.stockAllocationView==='CURRENT_V2'&&Array.isArray(workspace.allocations);
@@ -145,16 +145,29 @@
     const facts=root.stockAllocationFacts,available=known&&facts&&['usable','held','dispatched','availableToArrange'].every(k=>count(facts[k]))
       &&typeof facts.review==='boolean'&&facts.usable+facts.dispatched===allocated
       &&facts.availableToArrange===(facts.review?0:Math.max(0,facts.usable-facts.held))?facts.availableToArrange:null;
+    const arrangeQty=available===null?null:batchId?(batchKnown?Math.min(available,Math.max(0,batch.allocated-facts.held-facts.dispatched)):null):available;
+    const previous=Array.isArray(root.stockArrangements)?root.stockArrangements.filter(a=>a.batchId===(batchId||'')):null;
+    const meta=workspace.stockCurrent,capability=meta?.schema==='PURCHASE_TRANSFERS_V2'&&meta.stockProtocol===1&&meta.stockBuild
+      &&count(meta.stockGeneration)&&meta.stockGeneration===meta.generation;
+    const canArrange=capability&&arrangeQty>0&&previous&&previous.length<=1&&previous.every(i=>i.status==='PENDING_SUPPORT')&&typeof submitArrangement==='function';
+    let submitted=false;
     container.innerHTML=(batchId?'<p>Shipment batch 发货批次 '+esc(batchId)+' · Demand 需求 '+esc(batch?.demand??'Unconfirmed 尚未确认')+' · Allocated 已分配 '+esc(batch?.allocated??'Unconfirmed 尚未确认')+'</p><p>Borrowing is approved for the customer product line. Confirmed shipment batches are retained. 借货按客户产品行批准，已确认的发货批次保持原安排。</p>':'')
       +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received)+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(Math.max(0,planned-received))+'</p>'
       +'<p>Available to arrange 可安排 <b>'+esc(available??'Unconfirmed 尚未确认')+'</b>'+(available===null?'':' · Held 备货占用 '+esc(facts.held)+' · Dispatched 已发货 '+esc(facts.dispatched))+'</p>'
+      +(previous?.[0]?.status==='LINKED'?'<p>Packing draft created 已接备货草稿 '+esc(previous[0].packingListId)+'</p>':'')
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '
-      +'<button type="button" class="btn" data-alloc-existing '+(available>0?'':'disabled')+'>2 Use available stock 按现有数量安排</button><p data-alloc-message role="status"></p>';
+      +'<button type="button" class="btn" data-alloc-existing '+(canArrange?'':'disabled')+'>2 Send '+esc(arrangeQty??'')+' CTN to Support 提交现货安排</button>'
+      +'<p>Support will prepare a packing draft after checking stock again. This request retains the remaining demand. Support重新核对库存后安排备货，剩余需求保留。</p><p data-alloc-message role="status"></p>';
     container.querySelector('[data-alloc-borrow]').onclick=()=>{if(canBorrow&&canSubmit())showBorrow();};
     container.querySelector('[data-alloc-existing]').onclick=()=>{
-      if(!(available>0)||!canSubmit())return;
-      container.querySelector('[data-alloc-message]').textContent='Continue through the confirmed shipment and Support packing workflow. This choice does not confirm dispatch or change a shipment batch. 请按已确认的发货批次进入Support备货；此处不确认实物发货或修改批次。';
+      if(!canArrange||submitted||container.isConnected===false||!canSubmit())return;
+      const button=container.querySelector('[data-alloc-existing]'),message=container.querySelector('[data-alloc-message]');
+      submitted=true;button.disabled=true;
+      try{submitArrangement({taskId:rootId,batchId:batchId||'',quantity:arrangeQty,expectedRevision:previous[0]?.revision||'',
+        reason:'Arrange available stock first; retain remaining demand. 先安排现货，剩余需求保留。'});
+        message.textContent='Confirm through the original save tracker. Awaiting Support; this does not confirm dispatch. 请通过原保存进度核对，待Support处理；不确认实物发货。';
+      }catch(error){submitted=false;button.disabled=false;message.textContent=error?.message||'Arrangement not submitted 安排尚未提交。';}
     };
   }
   window.purchaseBorrowApproval = { mount, mountBatchEntry, mountAllocation };

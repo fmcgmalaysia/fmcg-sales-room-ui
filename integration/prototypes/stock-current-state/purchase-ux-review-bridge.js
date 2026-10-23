@@ -6,7 +6,7 @@
     ord: 100, requested: 100, inc: 0, lpPc: 1.5, lpCtn: 36, disc1: 0, disc2: 0, disc3: 0,
     netCostCtn: 36, costStatus: 'CAPTURED', history: [], masterReceivedAt: '2026-10-23T01:00:00Z',
     stage: 'NEW_INCOMING', gp: .2, transactionCurrency: 'USD', estimatedShipmentDate: '2026-10-30',
-    editVersion: 'UX-REVIEW-V1', stockTransferOutstanding: false,
+    editVersion: 'UX-REVIEW-V1', stockTransferOutstanding: false,stockArrangements:[],
     procurement: { totalCtn: 100, customerCtn: 100, expectedExtra: 0, revision: 'UX-REVIEW-P1',
       draftPlan: false, transportMode: 'SUPPLIER_DELIVER' } };
   const workspace = { company: 'NCT', staff: { staffId: 'UX-REVIEW-ONLY', memberId: 'UX-REVIEW-ONLY',

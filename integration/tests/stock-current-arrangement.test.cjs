@@ -1,5 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {prepareArrangement,readArrangements,arrangementLimit}=require('../prototypes/stock-current-state/purchase-arrangement.cjs');
+const {linkArrangement}=require('../prototypes/stock-current-state/purchase-arrangement.cjs');
 const copy=v=>JSON.parse(JSON.stringify(v));
 function fixture(){const staff={memberId:'M',staffId:'P',staffName:'Purchaser'},task={id:'A',customerId:'C',orderId:'O',stockAllocatedCumulative:80,
  stockAllocationFacts:{usable:80,held:0,dispatched:0,availableToArrange:80,review:false}};
@@ -36,6 +37,18 @@ test('actor, reason, extra client fields and archived demand never grant packing
  for(const kind of ['actor','reason','extra','archived']){const f=fixture();if(kind==='actor')f.workspace.staff={...f.staff,staffId:'OTHER'};
  if(kind==='reason')f.input.reason='';if(kind==='extra')f.input.department='SUPPORT';if(kind==='archived')f.workspace.tasks[0].archived=true;
  assert.throws(()=>prepareArrangement(f));}
+});
+test('Support draft links exact pending instruction in the same plan and cannot consume it again or for a different quantity',()=>{
+ const f=fixture(),before={...prepareArrangement(f).writes[0].after,_version:'V1'},reference={taskId:'A',batchId:'',revision:before.details.revision};
+ const args={company:'NCT',before,reference,staff:{...f.staff,packingDepartment:'SUPPORT'},requestId:'33333333-3333-4333-8333-333333333333',at:f.at,
+   list:{id:'PACK',company:'NCT',customerId:'C',revision:'PACKV1',status:'DRAFT',lines:[{taskId:'A',quantity:80}]}};
+ const link=linkArrangement(args);assert.equal(link.writes.length,2);assert.equal(link.writes[0].before._version,'V1');
+ assert.equal(link.writes[0].after.details.status,'LINKED');assert.equal(link.writes[0].after.details.packingListId,'PACK');
+ assert.equal(readArrangements('NCT',[link.writes[0].after])[0].packingListId,'PACK');
+ assert.throws(()=>linkArrangement({...args,before:{...link.writes[0].after,_version:'V2'}}),/pending/);
+ for(const patch of [{reference:{...reference,revision:'OLD'}},{staff:{...args.staff,packingDepartment:'WAREHOUSE'}},
+  {list:{...args.list,lines:[{taskId:'A',quantity:79}]}},{list:{...args.list,status:'SENT'}}])assert.throws(()=>linkArrangement({...args,...patch}),/pending/);
+ assert.throws(()=>prepareArrangement({...f,before:link.writes[0].after,input:{...f.input,expectedRevision:link.writes[0].after.details.revision}}),/already linked/);
 });
 test('private arrangement service uses original Purchase authorization and common current admission; no direct writes or Support impersonation',async()=>{
  const {createCurrentPurchaseArrangementSave}=require('../prototypes/stock-current-state/current-purchase-arrangement-save.cjs');
