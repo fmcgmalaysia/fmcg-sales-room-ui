@@ -125,7 +125,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/app.js",
-      "sha256": "596f5603d69005f230bc1b2a0dc9ed5c9d9b45b8547ce7a81edbfabb10edad67"
+      "sha256": "92538e16b5763930855c5ec80c7e82ad2b95ff13dbbee2b3958a8b46cdc3ac36"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/stock-exceptions.js",

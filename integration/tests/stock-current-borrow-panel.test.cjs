@@ -2,7 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { execFileSync } = require('node:child_process');
 const root = path.join(__dirname, '../prototypes/stock-current-state');
 const flush = () => new Promise(resolve => setImmediate(resolve));
-function fixture() {
+function fixture({ rowLabel = id => id === 'B' ? 'ROW 158' : 'ROW 001' } = {}) {
   const window = {}, requests = [], container = { children: [], appendChild(node) { this.children.push(node); node.isConnected = true; } };
   const document = { createElement: () => {
     const nodes = new Map(); let html = '';
@@ -16,7 +16,7 @@ function fixture() {
     customers: [{ id: 'CA', shortName: 'Customer A' }, { id: 'CB', shortName: '<img onerror=bad>' }] };
   const read = (type, args) => new Promise((resolve, reject) => requests.push({ type, args, resolve, reject }));
   const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const mount = rootId => window.purchaseBorrowRelations.mount({ container, workspace, rootId, read, esc, rowLabel: id => id === 'B' ? 'ROW 158' : 'ROW 001' });
+  const mount = rootId => window.purchaseBorrowRelations.mount({ container, workspace, rootId, read, esc, rowLabel });
   const relation = i => ({ id: 'R' + i, borrowerTaskId: 'A', lenderTaskId: 'B', lenderSourceId: 'B', replacementSourceId: 'A', quantity: 30, repaid: 10, returned: 5, remaining: 15 });
   function reply(total = 1, offset = 0, patch = {}) {
     const req = requests.at(-1), items = Array.from({ length: Math.min(5, total - offset) }, (_, i) => relation(i + offset));
@@ -44,6 +44,21 @@ test('relation panel pages all links without treating first page as a complete t
   f.reply(6, 5); await flush(); assert.match(f.section().innerHTML, /6–6 · 6/); assert.equal(f.section().querySelector('[data-borrow-link-next]'), undefined);
   f.section().querySelector('[data-borrow-link-prev]').onclick(); assert.equal(f.requests.at(-1).args.input.cursor, undefined);
   f.reply(6); await flush(); assert.match(f.section().innerHTML, /1–5 · 6/);
+});
+
+test('actual relation panel resolves current split references after a late read and retains debt when row is filtered or archived', async () => {
+  const { allocationRowLabel } = require('../prototypes/stock-current-state/purchase-allocation-ui-overlay.cjs');
+  let numbers = ['158'];
+  const document = { querySelectorAll: () => numbers.map(textContent => ({ dataset: { splitParent: 'B' }, querySelector: () => ({ textContent }) })) };
+  const f = fixture({ rowLabel: id => allocationRowLabel(document, f.workspace, id) });
+  f.mount('A'); numbers = ['007', '102']; f.reply(6); await flush();
+  assert.match(f.section().innerHTML, /ROWS 007, 102/); assert.doesNotMatch(f.section().innerHTML, /ROW 158/);
+  f.section().querySelector('[data-borrow-link-next]').onclick(); numbers = []; f.reply(6, 5); await flush();
+  assert.match(f.section().innerHTML, /Not in current view 当前未显示/); assert.match(f.section().innerHTML, /PO-B/);
+  f.workspace.tasks[1].archived = true; f.section().querySelector('[data-borrow-link-prev]').onclick(); f.reply(6); await flush();
+  assert.match(f.section().innerHTML, /Archived 已归档/); assert.match(f.section().innerHTML, /待补回 <b>15/);
+  assert.equal(f.workspace.tasks[0].stockTransferOutstanding, true);
+  assert.equal(f.requests.at(-1).args.input.taskId, 'A');
 });
 
 test('generation mismatch, incomplete links or read failure do not clear halo or fabricate settled relationship', async () => {

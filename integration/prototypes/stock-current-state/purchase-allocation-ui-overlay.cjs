@@ -1,6 +1,19 @@
 'use strict';
 // Candidate-only integration: cumulative allocation is supplied by CURRENT_V2,
 // never inferred from receipt counts. Batch quantities require their own proof.
+function allocationRowLabel(document, workspace, taskId) {
+  // Display references are resolved anew; never persisted as relationship keys.
+  if (workspace.tasks?.find(task => task.id === taskId)?.archived) return 'Archived 已归档';
+  const numbers = [];
+  for (const row of document.querySelectorAll('#taskRows tr')) {
+    if (row.dataset.id !== taskId && row.dataset.splitParent !== taskId) continue;
+    const number = row.querySelector('.row-number')?.textContent?.trim();
+    if (/^\d+$/.test(number || '') && Number(number) > 0 && !numbers.includes(number)) numbers.push(number);
+  }
+  // A task may occupy several independently moved shipment rows. Showing only
+  // its first row would incorrectly imply the loan belongs to that one batch.
+  return numbers.length ? (numbers.length === 1 ? 'ROW ' : 'ROWS ') + numbers.join(', ') : 'Not in current view 当前未显示';
+}
 function grid(source) {
   function once(before,after){if(source.split(before).length!==2)throw Error('Physical receipt grid anchor changed');source=source.replace(before,()=>after);}
   once('const received=group.length===1&&!row.warehouse?row.inc:', 'const received=!child&&Number.isSafeInteger(row.stockActualReceived)?row.stockActualReceived:group.length===1&&!row.warehouse?row.inc:');
@@ -39,7 +52,7 @@ function app(source) {
   once('    if(control.dataset.planTask)', `    if(control.dataset.currentAllocation){
       if(savePending||drafts.size||sequenceDraft||costRetry||allocationUi()?.dirty()){showStatus('Save or cancel existing edits first 请先处理现有修改或保存。',true);return;}
       const rootId=control.dataset.currentAllocation,row=data.tasks.find(t=>t.id===rootId&&!t.procurementSource);if(!row)return;
-      const rowLabel=id=>{const entries=[...document.querySelectorAll('#taskRows tr')],entry=entries.find(el=>el.dataset.id===id||el.dataset.splitParent===id);return entry?'ROW '+(entry.querySelector('.row-number')?.textContent||''):'';};
+      const rowLabel=id=>(${allocationRowLabel.toString()})(document,data,id);
       formDialog('Allocation 调配',row.barcode,'<p>'+esc(row.name)+'</p><div id="currentAllocationChoice"></div><div id="currentAllocationRelations"></div><div id="currentAllocationApproval"></div>','','task');
       const canSubmit=()=>!savePending&&!drafts.size&&!sequenceDraft&&!costRetry&&!allocationUi()?.dirty();
       window.purchaseBorrowApproval?.mountAllocation({container:document.querySelector('#currentAllocationChoice'),workspace:data,rootId,batchId:control.dataset.currentBatch,esc,canSubmit,
@@ -50,4 +63,4 @@ function app(source) {
     if(control.dataset.planTask)`);
   return source;
 }
-module.exports={grid,app};
+module.exports={grid,app,allocationRowLabel};
