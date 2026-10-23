@@ -20,7 +20,8 @@ function definition() {
     { source: 'purchase-room-page.candidate.js', target: 'integration/wix/purchase-room-page.js', kind: 'WIX_PAGE' },
     { source: 'warehouse-ui/warehouse-department-page.js', target: 'integration/wix/warehouse-department-page.js', kind: 'WIX_PAGE' },
     { source: 'packing-ui/support-department-page.js', target: 'integration/wix/support-department-page.js', kind: 'WIX_PAGE' },
-    { source: 'packing-ui/packingListBridge.js', target: 'integration/wix/packingListBridge.js', kind: 'WIX_PUBLIC' }
+    { source: 'packing-ui/packingListBridge.js', target: 'integration/wix/packingListBridge.js', kind: 'WIX_PUBLIC' },
+    { source: 'source-sales-room-page.candidate.js', target: 'sales-room/wix/sales-room-page.js', kind: 'WIX_PAGE', system: 'FMCGMALAYSIA' }
   ];
 }
 function inspectBusinessUiInstall(entries = definition()) {

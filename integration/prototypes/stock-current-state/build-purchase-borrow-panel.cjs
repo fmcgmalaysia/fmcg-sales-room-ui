@@ -6,8 +6,8 @@ const root = path.join(__dirname, '../../..');
 let index = fs.readFileSync(path.join(root, 'purchase-live/index.html'), 'utf8').replace(/\r\n/g, '\n');
 index = once(index, '</head>', '<link rel="stylesheet" href="borrow-relations.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-approval.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-outstanding.css?v=20261022-stock-current-candidate-v2"></head>');
 index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-approval.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-return.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-outstanding.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
-index = index.replaceAll('borrow-approval.css?v=20261022-stock-current-candidate-v2', 'borrow-approval.css?v=20261023-borrow-context-v3')
-  .replaceAll('borrow-approval.js?v=20261022-stock-current-candidate-v2', 'borrow-approval.js?v=20261023-borrow-context-v3');
+index = index.replaceAll('borrow-approval.css?v=20261022-stock-current-candidate-v2', 'borrow-approval.css?v=20261023-split-borrow-entry-v4')
+  .replaceAll('borrow-approval.js?v=20261022-stock-current-candidate-v2', 'borrow-approval.js?v=20261023-split-borrow-entry-v4');
 index = once(index, '<script src="app.js', '<script src="purchase-resume.js?v=20261022-stock-current-candidate-v2"></script><script src="app.js');
 index = once(index, '<script src="app.js', '<script src="stock-control.js?v=20261023-purchase-current-stock-v1"></script><script src="app.js');
 index = once(index, '<button data-view="payments">', '<button data-view="inventory">Stock Control 库存管理</button><button data-view="payments">');
@@ -16,7 +16,7 @@ index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-
 for (const file of ['task-grid.js', 'supplier-allocation.js', 'app.js']) {
   const pattern = new RegExp('(<script src="' + file.replace('.', '\\.') + '\\?v=)[^"]+');
   if ((index.match(new RegExp(pattern.source, 'g')) || []).length !== 1) throw Error('Original Purchase script marker changed');
-  index = index.replace(pattern, (_, prefix) => prefix + (file === 'app.js' ? '20261023-purchase-current-stock-v1' : '20261022-stock-current-candidate-v2'));
+  index = index.replace(pattern, (_, prefix) => prefix + (file === 'app.js' ? '20261023-purchase-current-stock-v1' : file === 'supplier-allocation.js' ? '20261023-split-borrow-entry-v4' : '20261022-stock-current-candidate-v2'));
 }
 let bridge = fs.readFileSync(path.join(root, 'integration/wix/purchase-room-page.js'), 'utf8').replace(/\r\n/g, '\n');
 bridge = "import { getPurchaseStockTransfersCurrent, getPurchaseStockControlCurrent, getPurchaseStockSourcesCurrent } from 'backend/stockCurrentRead.web';\n" + bridge;

@@ -53,7 +53,7 @@
       "source": "purchase-ui/index.html",
       "target": "purchase-live/index.html",
       "kind": "PAGES",
-      "sha256": "1e5c8ae9de97ab8a3c9e3e78c67519571f8b4cdc35fed5df1f1d8d811b091b78",
+      "sha256": "5eddfd2b37fa40287a591327d1f92288c289ab0dfc8cd869e86ae5367fe5a98c",
       "beforeSha256": "5442caabd60a43eb9170b86297d10da15a0ad7b7af13eaa5b3f1eaa70f61a988"
     },
     {
@@ -74,7 +74,7 @@
       "source": "purchase-ui/supplier-allocation.js",
       "target": "purchase-live/supplier-allocation.js",
       "kind": "PAGES",
-      "sha256": "37f81b40ecc452dc18c7a3dfed229a4e29ad44cc68c87223416276e19d6361ac",
+      "sha256": "258fd5d1c3c47b94193ce3c9aa8c6c926fc94984415e28b1749967dae78bd9d7",
       "beforeSha256": "2654729f8bcbbb69c41ebc92ca567d0e0acc65cf0239f7bbdddc8f974fee4a28"
     },
     {
@@ -88,7 +88,7 @@
       "source": "purchase-ui/borrow-approval.js",
       "target": "purchase-live/borrow-approval.js",
       "kind": "PAGES",
-      "sha256": "2833feda14159ec72c16eefd4e22050125ba58830a9afcf5664562df9c0788c8",
+      "sha256": "092ef17419ce39fd4db950e603533d355c649293fce6be68296472b3b5b8b4b4",
       "beforeSha256": null
     },
     {
@@ -300,6 +300,14 @@
       "kind": "WIX_PUBLIC",
       "sha256": "2b44cbd3233656346171fbb9bb790b524e13e0533c4a5e2fb190c34a4a280cfc",
       "beforeSha256": "911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9"
+    },
+    {
+      "source": "source-sales-room-page.candidate.js",
+      "target": "sales-room/wix/sales-room-page.js",
+      "kind": "WIX_PAGE",
+      "system": "FMCGMALAYSIA",
+      "sha256": "af6076eed0c9571e71e0d82c5b87ac0e0570caa44a323a8fa056e506e46428c2",
+      "beforeSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777"
     }
   ],
   "errors": [],

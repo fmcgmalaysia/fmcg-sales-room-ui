@@ -112,5 +112,23 @@
     }
     entry();
   }
-  window.purchaseBorrowApproval = { mount };
+  function mountBatchEntry({ container, workspace, rootId, canSubmit, openRoot, esc }) {
+    if (!container || [canSubmit, openRoot, esc].some(fn => typeof fn !== 'function')) return;
+    const root = workspace?.tasks?.find(task => task.id === rootId);
+    if (!root || root.procurementSource || root.specialPurchase) return;
+    const previous = mounted.get(container); if (previous) { previous.cancelled = true; previous.section.remove(); }
+    const section = document.createElement('section'); section.className = 'purchase-borrow-approval';
+    const customer = workspace.customers?.find(item => item.id === root.customerId);
+    section.innerHTML = '<h4>Borrow Stock 借货调配</h4><p>Borrowing belongs to this customer product line across its shipment batches. 借货按本客户产品行核对，分批不会增加订单或采购单数量。</p>'
+      + '<p>'+esc(customer?.shortName || customer?.name || root.customerId || '')+' · '+esc(root.name || root.barcode || '')+'</p>'
+      + '<button type="button" class="btn" data-borrow-open-root>Open customer borrowing 进入本客户借货</button><p role="status" data-borrow-navigation-status></p>';
+    const state = { section, cancelled: false }; mounted.set(container, state); container.appendChild(section);
+    section.querySelector('[data-borrow-open-root]').onclick = () => {
+      if (state.cancelled || section.isConnected === false) return;
+      const status = section.querySelector('[data-borrow-navigation-status]');
+      if (!canSubmit()) { status.textContent = 'Save or cancel existing edits first 请先保存或取消现有修改。'; return; }
+      try { openRoot(rootId); } catch (error) { status.textContent = error?.message || 'Customer borrowing unavailable 本客户借货暂不可打开。'; }
+    };
+  }
+  window.purchaseBorrowApproval = { mount, mountBatchEntry };
 })();

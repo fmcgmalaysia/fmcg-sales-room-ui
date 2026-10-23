@@ -7,7 +7,7 @@ function fixture() {
   function node() { const nodes = new Map(); let html = '';
     return { isConnected: false, value: '', checked: false, textContent: '', setAttribute() {}, children: [], appendChild(n) { this.children.push(n); },
       remove() { this.isConnected = false; container.children = container.children.filter(n => n !== this); }, querySelector: selector => nodes.get(selector),
-      get innerHTML() { return html; }, set innerHTML(value) { html = value; nodes.clear(); for (const m of value.matchAll(/data-(borrow-[a-z]+)/g)) nodes.set('[data-'+m[1]+']', node()); } };
+      get innerHTML() { return html; }, set innerHTML(value) { html = value; nodes.clear(); for (const m of value.matchAll(/data-(borrow-[a-z-]+)/g)) nodes.set('[data-'+m[1]+']', node()); } };
   }
   vm.runInNewContext(fs.readFileSync(path.join(root, 'purchase-ui/borrow-approval.js'), 'utf8'), { window, document: { createElement: node } });
   const workspace = { company: 'NCT', stockCurrent: { schema: 'PURCHASE_TRANSFERS_V2', generation: 8, stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 8 },
@@ -23,7 +23,7 @@ function fixture() {
   const reply = patch => requests.at(-1).resolve({ ok: true, schema: 'CURRENT_BORROW_OPTIONS_V2', company: 'NCT', borrowerTaskId: 'A', expectedRevision: 11,
     options: [copy(option)], stockCurrent: { schema: 'CURRENT_STOCK_V2', stockProtocol: 1, stockBuild: 'TEST', stockGeneration: 8 }, ...patch });
   const complete = () => { element('pair').value = '0'; element('quantity').value = '12'; element('reason').value = ' Fill this container '; element('consent').checked = true; };
-  return { args, workspace, option, requests, submissions, mount, section, element, reply, complete, container,
+  return { args, workspace, option, requests, submissions, mount, section, element, reply, complete, container, batch: openRoot => window.purchaseBorrowApproval.mountBatchEntry({ ...args, openRoot }),
     setReady: value => { ready = value; }, submitError: value => { submissionError = value; } };
 }
 
@@ -98,6 +98,22 @@ test('installed interface remains display-only for every missing or malformed CU
   }
 });
 
+test('split batch navigation retains customer product identity, blocks pending edits, and reaches normal approval without saving or quoting in batch context', async () => {
+  const f = fixture(), opened = [];
+  f.batch(id => { opened.push(id); f.mount(); });
+  assert.match(f.section().innerHTML, /分批不会增加订单/);
+  const oldButton = f.element('open-root');
+  f.setReady(false); oldButton.onclick(); assert.deepEqual(opened, []);
+  assert.match(f.element('navigation-status').textContent, /Save or cancel/);
+  assert.equal(f.requests.length, 0); assert.equal(f.submissions.length, 0);
+  f.setReady(true); oldButton.onclick(); assert.deepEqual(opened, ['A']);
+  assert.equal(f.requests.length, 0); assert.ok(f.element('options'));
+  oldButton.onclick(); assert.deepEqual(opened, ['A']);
+  f.element('options').onclick(); f.reply(); await flush(); f.complete(); f.element('approve').onclick();
+  assert.equal(f.submissions.length, 1); assert.equal(f.submissions[0].borrowerTaskId, 'A');
+  assert.equal('batchId' in f.submissions[0], false);
+});
+
 test('candidate original overlays include approval assets and existing save mechanism without reworking the original dialog', () => {
   for (const file of ['build-purchase-borrow-panel.cjs', 'build-transfer-person-overlays.cjs', 'build-purchase-current-ui.cjs']) {
     assert.match(execFileSync(process.execPath, [path.join(root, file), '--check'], { encoding: 'utf8' }), /verified/);
@@ -105,5 +121,37 @@ test('candidate original overlays include approval assets and existing save mech
   const supplier = fs.readFileSync(path.join(root, 'purchase-ui/supplier-allocation.js'), 'utf8'), index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
   assert.match(supplier, /api.mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
   assert.match(supplier, /if\(!state.batchId\)window.purchaseBorrowApproval/); assert.match(supplier, /api.stockActionReady\?\.\(\)!==true/);
-  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261023-borrow-context-v3'));
+  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261023-split-borrow-entry-v4'));
+});
+
+test('actual generated supplier dialog routes split-batch entry to the same root and refuses to abandon dirty or pending batch edits', () => {
+  const nodes = new Map(), node = key => {
+    if (!nodes.has(key)) nodes.set(key, { innerHTML: '', textContent: '', value: '', insertAdjacentHTML(_, html) { this.innerHTML += html; }, querySelector: selector => node(key + selector) });
+    return nodes.get(key);
+  };
+  const batches = [], roots = [], document = { activeElement: null, querySelector: selector => selector.includes('data-allocation-extra=') ? null : node(selector) };
+  const window = { purchaseBorrowApproval: { mountBatchEntry: args => batches.push(args), mount: args => roots.push(args) } };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'purchase-ui/supplier-allocation.js'), 'utf8'), { window, document });
+  const task = { id: 'A', customerId: 'C', barcode: 'BAR-A', ord: 100, ea: 24, supplierId: 'S', editVersion: 'V1',
+    lpPc: 2, lpCtn: 48, disc1: 0, disc2: 0, disc3: 0,
+    procurement: { totalCtn: 100, revision: 'P1', transportMode: 'SUPPLIER_DELIVER' },
+    batchAllocationVersion: 'BV', batchEntitlements: [{ id: 'PLAN|1', label: 'This shipment', quantity: 40, metrics: { committed: 40 }, sources: [{ id: 'A', quantity: 40 }] }] };
+  const workspace = { company: 'NCT', customers: [{ id: 'C', shortName: 'Customer' }], suppliers: [{ id: 'S', shortName: 'Supplier' }], tasks: [task] };
+  let pending = false;
+  const ui = window.purchaseSupplierAllocation.create({ workspace: () => workspace, company: () => 'NCT', esc: String,
+    num: String, dialog() {}, modal: () => ({ classList: { add() {}, contains: () => true } }), cache() {}, status() {},
+    savePending: () => pending, stockActionReady: () => !pending, handIcon: () => '' });
+  const before = JSON.stringify(workspace);
+  ui.open('A', 'PLAN|1'); assert.equal(batches.length, 1); assert.equal(roots.length, 0);
+  assert.equal(batches[0].rootId, 'A'); pending = true; assert.equal(batches[0].canSubmit(), false);
+  assert.throws(() => batches[0].openRoot('A'), /pending/); pending = false;
+  ui.edit({ target: { id: 'allocationReason', value: 'Unsaved reason' } });
+  assert.equal(batches[0].canSubmit(), false); assert.throws(() => batches[0].openRoot('A'), /pending/);
+  // Reopen a fresh independent dialog to verify the clean navigation path.
+  const clean = window.purchaseSupplierAllocation.create({ workspace: () => workspace, company: () => 'NCT', esc: String,
+    num: String, dialog() {}, modal: () => ({ classList: { add() {}, contains: () => true } }), cache() {}, status() {},
+    savePending: () => false, stockActionReady: () => true, handIcon: () => '' });
+  clean.open('A', 'PLAN|1'); batches.at(-1).openRoot('A');
+  assert.equal(roots.length, 1); assert.equal(roots[0].rootId, 'A');
+  assert.equal(JSON.stringify(workspace), before);
 });

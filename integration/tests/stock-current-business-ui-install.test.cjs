@@ -3,11 +3,15 @@ const { execFileSync } = require('node:child_process');
 const { definition, inspectBusinessUiInstall } = require('../prototypes/stock-current-state/build-business-ui-install.cjs');
 const { stageBusinessUiInstall } = require('../prototypes/stock-current-state/stage-business-ui-install.cjs');
 const folder = path.join(__dirname, '../prototypes/stock-current-state');
-test('real Sales/Purchase/Warehouse/Support asset destinations and four paired Wix relays are complete without installing any preview', () => {
+test('real Sales/Purchase/Warehouse/Support asset destinations and five paired Wix relays include the separate Source Sales page', () => {
   const report = inspectBusinessUiInstall();
   assert.deepEqual(report.errors, []); assert.equal(report.activationAllowed, false); assert.equal(report.deployPerformed, false);
   assert.equal(report.install.filter(row => row.kind === 'PAGES').length, 38);
-  assert.equal(report.install.filter(row => row.kind !== 'PAGES').length, 4);
+  assert.equal(report.install.filter(row => row.kind !== 'PAGES').length, 5);
+  const sourceRelay = report.install.find(row => row.target === 'sales-room/wix/sales-room-page.js');
+  assert.equal(sourceRelay.system, 'FMCGMALAYSIA');
+  assert.equal(sourceRelay.source, 'source-sales-room-page.candidate.js');
+  assert.match(sourceRelay.beforeSha256, /^[a-f0-9]{64}$/);
   for (const target of ['index.html', 'sales-room/order-adjustment.js', 'purchase-live/index.html', 'purchase-live/borrow-approval.js',
     'purchase-live/borrow-relations.js', 'warehouse-room/workroom.js', 'support-room/packing-workbench.js', 'integration/wix/packingListBridge.js']) {
     assert.ok(report.install.some(row => row.target === target));
@@ -24,7 +28,7 @@ test('omitted paired asset, duplicate destination, fixture input and path escape
 });
 test('approval JS and CSS use matching fresh resource versions and retain real CURRENT-only mounting and original mutation route', () => {
   const html = fs.readFileSync(path.join(folder, 'purchase-ui/index.html'), 'utf8');
-  for (const file of ['borrow-approval.js', 'borrow-approval.css']) assert.ok(html.includes(file + '?v=20261023-borrow-context-v3'));
+  for (const file of ['borrow-approval.js', 'borrow-approval.css']) assert.ok(html.includes(file + '?v=20261023-split-borrow-entry-v4'));
   const approval = fs.readFileSync(path.join(folder, 'purchase-ui/borrow-approval.js'), 'utf8');
   assert.match(approval, /const enabled = meta\?\.schema === 'PURCHASE_TRANSFERS_V2' && meta.stockProtocol === 1/);
   assert.match(approval, /if \(!enabled\) \{[\s\S]*?data-borrow-availability[\s\S]*?return;/);

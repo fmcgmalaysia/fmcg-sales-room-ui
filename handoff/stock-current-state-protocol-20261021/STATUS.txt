@@ -1,5 +1,16 @@
 CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
 
+LATEST UI IMPLEMENTATION: user requested continued independent work while Wix
+answers. Fixed missing split-batch route to same customer/product borrowing root,
+preserving dirty/pending drafts and original approval tracker. Added omitted Source
+Sales page to unified business UI install inventory:38Pages +5Wixrelays. New assets
+20261023-split-borrow-entry-v4. Final affected regression231pass0fail2569.9772ms;
+latest approval/manifest13pass682.7965ms overlap, not additive. Details and next
+installation/native/public requirements: SPLIT_BORROW_ENTRY_20261023.txt.
+Fresh public Purchase read still original iframe v20261020-split-controls-v2.
+No native edit, business write, publish, deployment or export retry. New real UI
+candidate is more complete; real public borrowing remains unavailable/unverified.
+
 LATEST WIX SUPPORT: user authorized continued questioning after the disclosed
 terms stop. Submitted SAME prepared technical ticket ONCE. Fresh Wix result:
 Request submitted! A Customer Care Expert will be in touch soon! Email response
