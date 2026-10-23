@@ -33,6 +33,10 @@ test('Purchase approval quotes exact task, displays both POs safely and submits 
   f.reply(); await flush(); assert.match(f.section().innerHTML, /ROW 158/); assert.match(f.section().innerHTML, /POB.*POA/);
   assert.equal(f.section().innerHTML.includes('<img'), false); assert.match(f.section().innerHTML, /&lt;img/);
   f.complete(); f.element('pair').onchange(); assert.equal(f.element('quantity').max, '20');
+  assert.equal(f.element('consent').checked, false); f.element('consent').checked = true;
+  assert.match(f.element('detail').innerHTML, /Borrow from.*POB.*Repay from.*POA/);
+  assert.equal(f.element('detail').innerHTML.includes('<img'), false);
+  assert.match(f.element('limit').textContent, /20 CTN/);
   f.element('approve').onclick(); f.element('approve').onclick(); assert.equal(f.submissions.length, 1);
   assert.deepEqual(f.submissions[0], { borrowerTaskId: 'A', lenderSourceId: 'SB', replacementSourceId: 'SA', expectedRevision: 11, quantity: 12, reason: 'Fill this container' });
   assert.equal('approvedBy' in f.submissions[0], false); assert.equal('requestId' in f.submissions[0], false);
@@ -65,8 +69,33 @@ test('no PO pair is a known empty result, not zero stock; replaced dialogs and l
   assert.match(f.section().innerHTML, /No eligible P.O. pair/); assert.equal(f.element('approve'), undefined);
   const g = fixture(); g.mount(); g.element('options').onclick(); const old = g.requests[0]; g.mount(); const fresh = g.section();
   old.resolve({ ok: false }); await flush(); assert.equal(g.section(), fresh); assert.ok(g.element('options')); assert.equal(g.container.children.length, 1);
-  delete g.workspace.stockCurrent; g.mount(); assert.equal(g.container.children.length, 0);
+  delete g.workspace.stockCurrent; g.mount(); assert.equal(g.container.children.length, 1);
+  assert.equal(g.element('options'), undefined); assert.equal(g.element('approve'), undefined);
+  const priorRequests = g.requests.length; g.element('availability').onclick();
+  assert.match(g.element('closed').innerHTML, /not enabled yet/); assert.match(g.element('closed').innerHTML, /disabled/);
+  assert.equal(g.requests.length, priorRequests); assert.equal(g.submissions.length, 0);
   const h = fixture(); h.setReady(false); h.mount(); h.element('options').onclick(); assert.equal(h.requests.length, 0);
+});
+
+test('changing the selected pair clears repayment consent and empty selection never preserves a previous obligation summary', async () => {
+  const f = fixture(); f.mount(); f.element('options').onclick(); f.reply(); await flush();
+  f.complete(); f.element('pair').onchange(); f.element('consent').checked = true;
+  f.element('quantity').value = '12'; f.element('pair').value = ''; f.element('pair').onchange();
+  assert.equal(f.element('consent').checked, false); assert.equal(f.element('quantity').value, '12');
+  assert.equal(f.element('limit').textContent, ''); assert.match(f.element('detail').textContent, /Select the P.O. pair/);
+  f.element('approve').onclick(); assert.equal(f.submissions.length, 0);
+});
+
+test('installed interface remains display-only for every missing or malformed CURRENT capability, without querying or saving stock', () => {
+  for (const patch of [null, {}, { schema: 'LEGACY' }, { stockProtocol: 0 }, { stockBuild: '' }, { stockGeneration: -1 }, { stockGeneration: 9 }]) {
+    const f = fixture(); f.workspace.stockCurrent = patch === null ? undefined : { ...f.workspace.stockCurrent, ...patch };
+    if (patch && Object.keys(patch).length === 0) f.workspace.stockCurrent = {};
+    f.mount(); assert.ok(f.element('availability')); f.element('availability').onclick();
+    assert.equal(f.element('options'), undefined); assert.equal(f.element('approve'), undefined);
+    assert.equal(f.requests.length, 0); assert.equal(f.submissions.length, 0);
+    assert.match(f.element('closed').innerHTML, /Not checked/);
+    assert.match(f.element('closed').innerHTML, /input type="number" disabled/);
+  }
 });
 
 test('candidate original overlays include approval assets and existing save mechanism without reworking the original dialog', () => {
@@ -76,5 +105,5 @@ test('candidate original overlays include approval assets and existing save mech
   const supplier = fs.readFileSync(path.join(root, 'purchase-ui/supplier-allocation.js'), 'utf8'), index = fs.readFileSync(path.join(root, 'purchase-ui/index.html'), 'utf8');
   assert.match(supplier, /api.mutate\('PURCHASE_SAVE_REQUEST',\{operation:'BORROW_APPROVE',input\}\)/);
   assert.match(supplier, /if\(!state.batchId\)window.purchaseBorrowApproval/); assert.match(supplier, /api.stockActionReady\?\.\(\)!==true/);
-  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261022-stock-current-candidate-v2'));
+  for (const file of ['borrow-approval.css', 'borrow-approval.js']) assert.ok(index.includes(file+'?v=20261023-borrow-context-v3'));
 });

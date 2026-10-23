@@ -1,4 +1,39 @@
-CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
+CURRENT 2026-10-23 — DIRECT FORMAL INTERFACE IMPLEMENTATION; ACTIVE OFF
+
+LATEST USER OVERRIDE: "你干脆直接把界面做出来吧。不需要草稿了".
+No more draft/replay/local candidate delivery or waiting for UX-draft approval.
+DIRECT_BUSINESS_INTERFACE_20261023.txt records the actual interface changes and
+the formal static-install path. Purchase original supplier dialog now has both
+customer/PO summaries, checked limit and explicit future-repayment consent; a
+changed pair clears consent without silently changing the entered quantity.
+Unverified CURRENT capability displays unavailable borrowing, no quotes/saves.
+37 actual Pages asset destinations and4 future Wix relays are hash paired. New
+optional workflow static_ui=stock-interface packages ONLY the static overlay in
+a dedicated artifact, preserving source originals and unchanged Wix/backend.
+Existing push-main/default baseline publication unchanged. No dispatch performed.
+69 affected UI checks passed1128.6357ms; after packaging addition16 targeted checks
+passed1082.2169ms. These are not native/full-release/public acceptance results.
+Fresh public static check: all21existing affected resources match original repo
+LF hashes;16new resources correctly404. No live-vs-repo conflict found. Initial
+sandbox network failed; reviewed read-only network access succeeded. No UI retry.
+Exact existing github-pages environment remains7branches/0tags; stock branch is
+not allowed. A new temporary branch permission still needs action-time approval.
+Interface publication does NOT activate stock or establish real borrowing/Loaded
+acceptance. No half-stock ACTIVE, real invoicing or physical dispatch permitted.
+
+NATIVE300 FINAL GATE CLOSURE VERIFIED (supersedes older armed/manual-close note):
+Existing Wix stockProtocol300Commit.web.js was read in full; ONLY unique
+NATIVE_TEST_LOCK_RELEASE_GRANTED true->false changed, no Run/Publish. Full visible
+editor readback equals local closed module, SHA256LF
+4fcd0cb92710517b50a82d0ab5ce9e9a7695651f24b63a96120833990be8f126.
+Private exact source and native300-gate-final-closed-20261023.png preserved.
+Call20 later visibly reports Request timed out; side effects/termination UNKNOWN,
+no repeat/lock release/cleanup. Closing future admission does not settle call20.
+Native Purchase page readback also matches original repo,c103628769b2ba0917faf154
+38bc9819188efaaa8855489fcd3d84cb254e381f. One normal Wix Preview opened a blank
+iframe pointing to original production resource, then exited Edit Site. Platform
+console warnings/errors observed but causal diagnosis UNKNOWN; no repeat/bypass.
+User subsequently cancelled draft route; do not revive it.
 
 2026-10-23 FIRST ACTUAL PURCHASE CANDIDATE PACKAGE, USER VISUAL CHECK PENDING:
 PURCHASE_WORKBENCH_UI_REVIEW.txt. New mechanical builder packages EXACT32existing
@@ -50,11 +85,10 @@ reserve up to200queries/33inserts/30patches/1removal. Fixed exact grant NOT rene
 Private native300-execution-results-20261023.json is authoritative:stoppedtrue,
 inFlight ADVANCE sequence20. Old primitive helper counters are obsolete; shared
 native300State object/log corrected earlier labels from the preserved result array.
-Local compiled test gate restoredCLOSED. Wix last exact saved readback was ARMED,
-SHA256LF ae1ea2d3efb5beecd78bc3d9646ce6a34a033e17a310323973c2aceb80615374;
-closing it could not be performed through the unavailable UI. User asked ONCE to
-set unique NATIVE_TEST_LOCK_RELEASE_GRANTED=false in existing MASTER module, save,
-NO Publish/Run. Await closure confirmation; do not assume old execution terminated.
+Local compiled test gate restoredCLOSED. Historical Wix ARMED readback was
+ae1ea2d3efb5beecd78bc3d9646ce6a34a033e17a310323973c2aceb80615374;
+later FINAL CLOSED readback confirmed above. No manual closure remains pending.
+Do not assume old execution terminated; no rerun or additional lock deletion.
 Batch-read minimum patch kept SAME plan/request/20steps/fence/CAS. Full1192pass0fail
 32174.7612ms after17affectedpass; original protected production paths unchanged.
 Actual new BEFORE calls16queries/~2.7-3.3s versus old43queries/~6-7s; no production

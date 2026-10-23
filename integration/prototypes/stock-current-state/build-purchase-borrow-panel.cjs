@@ -6,6 +6,8 @@ const root = path.join(__dirname, '../../..');
 let index = fs.readFileSync(path.join(root, 'purchase-live/index.html'), 'utf8').replace(/\r\n/g, '\n');
 index = once(index, '</head>', '<link rel="stylesheet" href="borrow-relations.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-approval.css?v=20261022-stock-current-candidate-v2"><link rel="stylesheet" href="borrow-outstanding.css?v=20261022-stock-current-candidate-v2"></head>');
 index = once(index, '<script src="supplier-allocation.js', '<script src="borrow-relations.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-approval.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-return.js?v=20261022-stock-current-candidate-v2"></script><script src="borrow-outstanding.js?v=20261022-stock-current-candidate-v2"></script><script src="supplier-allocation.js');
+index = index.replaceAll('borrow-approval.css?v=20261022-stock-current-candidate-v2', 'borrow-approval.css?v=20261023-borrow-context-v3')
+  .replaceAll('borrow-approval.js?v=20261022-stock-current-candidate-v2', 'borrow-approval.js?v=20261023-borrow-context-v3');
 index = once(index, '<script src="app.js', '<script src="purchase-resume.js?v=20261022-stock-current-candidate-v2"></script><script src="app.js');
 index = once(index, '<button data-view="payments">', '<button data-view="borrowing" hidden>Outstanding Borrowing 未结调货</button><button data-view="payments">');
 index = once(index, 'content="2026-10-20-split-controls-v1"', 'content="2026-10-22-stock-current-candidate-v2"');

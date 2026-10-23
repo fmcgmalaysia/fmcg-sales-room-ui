@@ -1,0 +1,65 @@
+Objective
+User rejected more drafts and invisible backend tests. Implement the existing real
+Sales split, Purchase borrowing and Warehouse/Support Loaded interface; do not
+claim functional borrowing or published acceptance before actual installation.
+
+This increment
+Purchase approval stays in the existing supplier/person dialog. It identifies
+the borrowing customer, lender customer + actual lender PO, replacement customer
++ actual future PO, exact checked maximum, quantity, reason and explicit combined
+transfer/automatic-repayment approval. Pair changes invalidate only consent;
+no hidden quantity edits or original PO/customer-demand changes. All customer
+and PO text escaped. Current save still uses original request/tracker route.
+Without exact CURRENT capability the installed interface explicitly says saving
+is unavailable. Zero network quote/save in that state, no fake stock/halo/receipt.
+Original person colour/body retained; halo remains driven by real relationships.
+
+Actual installation path
+business-ui-install.json pairs37real static destinations and4Wix relay sources.
+stage-business-ui-install.cjs prepares a new external dedicated artifact folder
+from versioned files only, overlays37static files, verifies exact hashes and emits
+stock-interface-release.json. It does NOT install candidate Wix/backend files.
+Existing normal Pages workflow gains optional manual input stock-interface;
+default baseline and normal main-push behavior unchanged. No workflow dispatch,
+permission change, Wix business synchronization or site Publish performed here.
+This interface-only resource release leaves current-stock activation OFF. It is
+not a shortcut around writer/native/recovery/capacity/migration acceptance.
+
+Protected checkpoint and comparison
+Recovery production d447185987fecbb81bcaf6b25c170f631f767f9f,
+runtime32b812c655e1083306037c008314c72373a15f72. Protected original directories,
+backend and main interface source files still unchanged. Fresh public reads of
+all37affected paths:21existing return200 and equal LF SHA256 of repository
+originals;16new resources return404, matching absent originals. Exact original
+hashes are beforeSha256 entries of paired business-ui-install.json. No conflict.
+Wix Purchase page fresh visible-editor full read equals original repo SHA256LF
+c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f.
+
+Verification
+69affectedUI checks pass1128.6357ms. Packaging added afterward;16targeted checks
+pass1082.2169ms, including all37exact artifact outputs, preservation of four
+original Wix sources and Buyer page, no untracked evidence, no output overwrite,
+no path escape and no unversioned source. No native/stress/fullstock test rerun.
+Old canceled preview artifact is mechanically refreshed only for existing test
+parity. It is not installed as a business resource or delivered again.
+
+Current release boundary
+Current branch is absent from freshly read github-pages selected branch rules.
+Original7: feat/master-gp-margin; feat/nct-order-submit-room6;
+feat/purchase-adjustment-cost; fix/purchase-approved-ux-layout; main;
+style/purchase-icons-spacing-feedback; style/purchase-table-track.0tags.
+Do not alter reviewer/bypass/security settings or add any rule without exact
+action-time human confirmation. Temporary branch rule removal must restore7.
+Do not dispatch until exact release commit is pushed and user scope is clear.
+
+Four statuses now
+Code: interface increment implemented and locally verified, not whole system done.
+Pages: original resources still live; new interface NOT deployed.
+Wix: original business page remains; no whole-site Publish.
+Public acceptance: new interface/real borrowing/Loaded NOT accepted.
+
+Not completed by this increment
+Actual CURRENT backend installation, authoritative writer admission/drain,
+real schema/ACL/index and native capacity/recovery acceptance, Admin migration
+apply/resume, shadow parity and full cutover. ACTIVE remains OFF; real Support
+invoicing and physical dispatch remain OFF. Do not enlarge UI work into finance.
