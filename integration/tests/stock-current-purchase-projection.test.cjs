@@ -45,6 +45,7 @@ test('same-generation current reader uses actual borrowing ownership before orig
   const before=JSON.stringify([...f.db]),legacy=load('purchaseProjection.js').projectPurchaseWorkspace(f.originalArguments),result=(await f.read()).rows;
   assert.deepEqual(copy(legacy.tasks.map(row=>[row.id,row.inc])),[['A',null],['B',100]]);
   assert.deepEqual(copy(result.workspace.tasks.map(row=>[row.id,row.inc])),[['A',30],['B',70]]);
+  assert.deepEqual(copy(result.workspace.tasks.map(row=>[row.id,row.stockActualReceived,row.stockHasReceipt])),[['A',0,false],['B',100,true]]);
   assert.deepEqual(copy(result.workspace.tasks.find(row=>row.id==='A').stockAllocationFacts),{usable:30,held:0,dispatched:0,availableToArrange:30,review:false});
   assert.deepEqual(copy(result.workspace.tasks.find(row=>row.id==='B').stockAllocationFacts),{usable:70,held:0,dispatched:0,availableToArrange:70,review:false});
   assert.equal(result.workspace.tasks.find(row=>row.id==='B').warehouse.accepted,100);
@@ -69,6 +70,7 @@ test('original split-row receipt metrics use current customer ownership, while P
   const result=(await f.read()).rows.workspace,a=result.tasks.find(row=>row.id==='A');
   assert.equal(a.inc,30);assert.equal(a.po,'PO-A');assert.equal(a.requested,100);
   assert.deepEqual(copy(a.batchEntitlements.map(row=>row.metrics.received)),[30,0]);
+  assert.deepEqual(copy(a.stockReceiptBatches.map(row=>row.received)),[0,0]);
   assert.equal(a.stockAllocatedCumulative,30);
   assert.deepEqual(copy(a.stockAllocatedBatches),a.batchEntitlements.map(row=>({id:row.id,demand:row.quantity,allocated:row.metrics.received})));
   assert.deepEqual(copy(a.batchEntitlements.map(row=>row.metrics.committed)),[50,50]);

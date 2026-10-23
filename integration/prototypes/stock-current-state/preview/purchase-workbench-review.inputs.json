@@ -85,7 +85,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
-      "sha256": "26573150f96acae814fdfff944b13ce81414372fd5068e83015aed2ca905a533"
+      "sha256": "d52944dcfb6cc76de23e85ebd359c52e32109909c593416d4532c311526b2c10"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",

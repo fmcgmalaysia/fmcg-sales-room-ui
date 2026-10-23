@@ -2,6 +2,11 @@
 // Candidate-only integration: cumulative allocation is supplied by CURRENT_V2,
 // never inferred from receipt counts. Batch quantities require their own proof.
 function grid(source) {
+  function once(before,after){if(source.split(before).length!==2)throw Error('Physical receipt grid anchor changed');source=source.replace(before,()=>after);}
+  once('const received=group.length===1&&!row.warehouse?row.inc:', 'const received=!child&&Number.isSafeInteger(row.stockActualReceived)?row.stockActualReceived:group.length===1&&!row.warehouse?row.inc:');
+  once('group.length===1&&Number.isFinite(row.inc)', 'group.length===1&&(row.stockHasReceipt??Number.isFinite(row.inc))');
+  once('const shownReceived=!child&&', 'const shownReceived=!child&&Number.isSafeInteger(row.stockActualReceived)?Math.min(row.stockActualReceived,row.ord,sum.customerQty):!child&&');
+  once('entitlement?.metrics.received??take(Math.min(received,row.ord))',"stockAllocationView==='CURRENT_V2'?(row.stockReceiptBatches?.find(entry=>entry.id===batchId)?.received??''):entitlement?.metrics.received??take(Math.min(received,row.ord))");
   source = source.replace('selectedDisplayRows=new Set()}', 'selectedDisplayRows=new Set(),allocations,stockAllocationView}');
   const anchor = '    return active&&window.purchaseDisplayRows';
   if (source.split(anchor).length !== 2) throw Error('Allocation grid return anchor changed');

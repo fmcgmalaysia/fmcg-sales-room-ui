@@ -5,7 +5,7 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "790a2b6c447d241203c72826e53d1f21c9f3680aeb17e5b097c5c6bf2e989c3c",
+  "backendInstallManifestSha256": "50437a90f5e1f1b128d89927e7a8623c40b9a170a6a3761081de0ed46fb2a1ee",
   "install": [
     {
       "source": "source-ui/index.html",
@@ -67,7 +67,7 @@
       "source": "purchase-ui/task-grid.js",
       "target": "purchase-live/task-grid.js",
       "kind": "PAGES",
-      "sha256": "26573150f96acae814fdfff944b13ce81414372fd5068e83015aed2ca905a533",
+      "sha256": "d52944dcfb6cc76de23e85ebd359c52e32109909c593416d4532c311526b2c10",
       "beforeSha256": "b1f1e7b07aab3f6ca73c01c65387416a73d29fd34b3cdf8fa6f2401f50f7ee6c"
     },
     {

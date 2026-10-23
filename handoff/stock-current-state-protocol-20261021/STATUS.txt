@@ -1,5 +1,11 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST RCV: RCV_ALLOC_SEPARATION_20261024.txt fixes candidate main/split RCV
+mistaking current ownership/borrowing coverage for own Warehouse receipts. Separate
+actual receipt and allocation fields now drive each column; original inc/stock
+consumer contract retained. Actual render/integration checked; full1323pass
+29593.9127ms. No native/deployment/export or ACTIVE changes.
+
 LATEST LIFECYCLE: ARRANGEMENT_LIFECYCLE_20261024.txt derives actual linked
 packing quantities/status, preserves original requested qty and permits new bounded
 instruction after terminal/removal-without-pending-change. Original CREATE/replay/

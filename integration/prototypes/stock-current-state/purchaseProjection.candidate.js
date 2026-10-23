@@ -183,6 +183,19 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   }
   if(current)for(const row of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
     const amounts=verifiedBatchAllocation(row);if(amounts)row.stockAllocatedBatches=amounts;
+    const owned=rows.filter(source=>source.id===row.id||source.customerDemandTaskId===row.id);
+    const receiptSources=owned.map(source=>{
+      const has=source.warehouse?.hasPhysicalReceipt===true,accepted=has?source.warehouse.accepted:0;
+      const share=source.procurement?.customerCtn??Math.max(0,(source.procurement?.totalCtn||0)-(source.procurement?.expectedExtra||0));
+      if(!Number.isSafeInteger(accepted)||accepted<0||!Number.isSafeInteger(share)||share<0)throw Error('Actual customer receipt requires review');
+      return {id:source.id,quantity:Math.min(accepted,share),batchId:preferredSourceBatch(source.id,activity)};
+    });
+    row.stockHasReceipt=owned.some(source=>source.warehouse?.hasPhysicalReceipt===true);
+    row.stockActualReceived=receiptSources.reduce((sum,source)=>sum+source.quantity,0);
+    if(!Number.isSafeInteger(row.stockActualReceived))throw Error('Actual receipt total overflow');
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));
+    if(plan&&row.batchEntitlements){const physical=resolveBatchStock(plan,row.id,receiptSources);
+      row.stockReceiptBatches=row.batchEntitlements.map((batch,i)=>({id:batch.id,received:physical[i]}));}
   }
   return {
     ...(current?{stockAllocationView:'CURRENT_V2'}:{}),

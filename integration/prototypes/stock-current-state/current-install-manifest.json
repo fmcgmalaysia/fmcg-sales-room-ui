@@ -139,7 +139,7 @@
       "source": "purchaseProjection.candidate.js",
       "target": "purchaseProjection.js",
       "kind": "PATCH",
-      "sha256": "1352ce352ca28516a0173f719a9c80193a95099f3e032824d62b19a726b3e84f",
+      "sha256": "ac0c2ab39f218104a1790e9bf0f65f6b6c06b75a9bb4684916512693f289d73b",
       "beforeSha256": "eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf"
     },
     {
@@ -1195,7 +1195,7 @@
       "system": "MASTER",
       "target": "purchaseProjection.js",
       "source": "integration/prototypes/stock-current-state/purchaseProjection.candidate.js",
-      "sha256": "1352ce352ca28516a0173f719a9c80193a95099f3e032824d62b19a726b3e84f",
+      "sha256": "ac0c2ab39f218104a1790e9bf0f65f6b6c06b75a9bb4684916512693f289d73b",
       "exports": [
         "PURCHASE_COLLECTIONS",
         "PURCHASE_CURRENT_PROJECTION_VERSION",

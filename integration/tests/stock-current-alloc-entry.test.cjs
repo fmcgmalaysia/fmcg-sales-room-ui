@@ -49,3 +49,18 @@ test('actual grid inserts one aligned ALLOC cell per row; receipts stay 80 when 
   row.stockTransferOutstanding=true;assert.match(window.purchaseTaskGrid.render(args),/Links 关系/);
   delete row.stockAllocatedCumulative;assert.doesNotMatch(window.purchaseTaskGrid.render(args),/<td class="allocated-quantity">80/);
 });
+test('actual split grid never displays borrowed coverage as Warehouse RCV; both explicit zero receipt and allocated30remain visible',()=>{
+ const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/task-grid.js'),'utf8'),{window});
+ const row={id:'A',orderId:'O',customerId:'C',ord:100,barcode:'BAR',packing:'24x1',name:'Product',po:'PO-A',supplierId:'S',inc:30,
+   stockAllocatedCumulative:30,stockActualReceived:0,stockHasReceipt:true,procurement:{totalCtn:100,customerCtn:100,revision:'P'},warehouse:{hasPhysicalReceipt:true,accepted:0},
+   stockAllocatedBatches:[{id:'PLAN|1',demand:50,allocated:30},{id:'PLAN|2',demand:50,allocated:0}],stockReceiptBatches:[{id:'PLAN|1',received:0},{id:'PLAN|2',received:0}],
+   batchEntitlements:[1,2].map((n)=>({id:'PLAN|'+n,quantity:50,metrics:{committed:50,received:n===1?30:0},sources:[{id:'A',quantity:50}]}))};
+ const args={rows:[row],tasks:[row],customers:[{id:'C'}],suppliers:[{id:'S'}],selected:new Set(),selectedSources:new Set(),expanded:new Set(),active:true,canMove:false,orders:[],age:()=>'',
+   quantityCells:r=>'<td class="order-quantity">100</td><td class="received-quantity">'+(r.sourcing?.hasReceipt?r.sourcing.receivedCtn:'')+'</td>',drafts:new Map(),riskDeal:()=>false,
+   allocations:[],stockAllocationView:'CURRENT_V2',shipmentPlans:[{id:'PLAN',customerId:'C',orderId:'O',batches:[1,2].map(sequence=>({sequence,label:'Batch '+sequence,lines:[{taskId:'A',quantity:50}]}))}]};
+ const split=window.purchaseTaskGrid.render(args).match(/<tr class="split-demand-row"[\s\S]*?<\/tr>/g);
+ assert.equal(split.length,2);for(const html of split)assert.match(html,/<td class="received-quantity">0<\/td>/);
+ assert.match(split[0],/<td class="allocated-quantity">30/);assert.match(split[1],/<td class="allocated-quantity">0/);
+ row.warehouse=undefined;row.stockHasReceipt=false;args.shipmentPlans=[];
+ const main=window.purchaseTaskGrid.render(args).match(/<tr\b[\s\S]*?<\/tr>/)[0];assert.match(main,/<td class="received-quantity"><\/td>/);assert.match(main,/<td class="allocated-quantity">30/);
+});
