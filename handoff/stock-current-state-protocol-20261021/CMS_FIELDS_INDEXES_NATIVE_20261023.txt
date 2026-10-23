@@ -425,3 +425,53 @@ No Wix support communication/ticket sent. A platform answer can establish a next
 step, but cannot substitute native boundary rehearsal and all-writer acceptance.
 Independent schema/index completion still in progress, not exhausted. No release,
 GitHub export retry, native tester/300 replay, mode switch or business item write.
+
+GHR ACTIVITY MISSING-EIGHT COMPLETED — NATIVE SCREENSHOT INPUT
+
+User exposed unobscured actual Chrome MASTER/GHR Activity, same selected window.
+Used documented screenshot-backed coordinate API, each ONE input followed by fresh
+observation; stopped AX-index path not retried. Existing missing-field plan and
+types reused. Six Number fields saved ONCE each after exact form name/ID/type
+visual verification: schemaVersion revision checkpointGeneration generation
+transferIndexVersion repaidQuantity. Tags participantTaskIds and Object pending
+likewise saved ONCE. Each settled list displays correct Number/Tags/Object icon
+and exact camelCase name after SAVING indicator disappeared. Default validations
+and value tabs unchanged. Table still No items. All18required definitions now UI
+confirmed (prior7Text plus existing action/activityTime/details preserved).
+Top editor tooltip Last saved12minutes ago is NOT used as field-save evidence.
+
+Private retained screenshot:
+ C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/ghractivity-six-number-tags-object-saved-20261023.png
+ SHA256 b9a5f13f7f5f4a314765ee9fedb130c6b4b32d24fa8f53de117420d05833c541
+Shows all6Number + Tags + Object together in settled GHR Manage Fields panel.
+No existing field edits, business items, duplicate tables, ACL changes or publish.
+No native tester/300 replay or old lock deletion. Reuse1299pass final tests because
+candidate code unchanged. GHR indexes NOT yet inspected/created; NCT SC_TASK_REL
+specific stopped UI path remains stopped. SDK schema/index ACTIVE, native typed
+queries/capacity/recovery, provider drain, installation/migration/shadow/public
+acceptance still OPEN. No claim of fixed extension connection or safe cutover.
+
+GHR ACTIVITY THREE REGULAR INDEXES — SAVED ONCE / SETTLED UI READBACK
+
+Original list showed only System index1(Created date Descending) and System
+index2(ID Ascending), retained unchanged. Add Index native form explicitly says
+up to3regular/1unique, Regular max3fields. Added only the planned3Regular indexes:
+ SC_ACTIVE_PRODUCT: company,stockKey,status
+ SC_REPAID_SOURCE: company,replacementSourceId,repaidQuantity
+ SC_TASK_REL: company,participantTaskIds,status
+All fields Ascending, exact name/ordered selected fields checked before each Save;
+each Save invoked ONCE. New row readback retained during asynchronous building.
+First2explicit toast creation receipts observed. Final list shows all3names,
+ordered fields/Ascending/Regular and Delete controls, with no building spinners.
+No Delete invoked, no unique index, permissions, data, native tester or Publish.
+This is actual native UI creation acceptance, NOT SDK index-state ACTIVE or native
+query/capacity acceptance. Independent schema definitions now complete for required
+new/augment fields in these tables; metadata/runtime gates remain as listed above.
+Private screenshot ghractivity-three-regular-indexes-settled-20261023.png retained
+outside public checkout; hash recorded in subsequent evidence entry.
+ SHA256 163bf9fa2cae7ec1d99f8855f8d686a169ce03b53fb41abee6d27b41ff031e4b
+
+NCTActivity SC_TASK_REL remains NOT saved, stopped earlier third-field UI path
+not retried. Asked human once to add exactly Regular SC_TASK_REL(company,
+participantTaskIds,status), allAscending, preserving other indexes. Await readback;
+do not infer that the manual action or all native gates are complete.
