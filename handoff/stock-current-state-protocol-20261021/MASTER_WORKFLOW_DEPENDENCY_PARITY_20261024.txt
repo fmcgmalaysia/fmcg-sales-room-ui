@@ -1,0 +1,70 @@
+2026-10-24 — Purchase/Sales/financial unchanged dependencies, pre-install only
+
+Parent0b00422; business candidate50212f4 and copy-only review0f0573c unchanged.
+Same framework, specification, ownership and computer-use skill reused. Reread
+current STATUS and bounded manifest, no projectwide scan or business edits.
+Single scope:15additional unchanged MASTER dependencies required by actual paired
+Purchase/Sales split and original financial workflows. Native full editor copy
+after observed file selection and loaded editor/imports confirmation, sameChrome3
+Master51427123. No editor typing/Save/Run/Publish or new tab/reload.
+
+Full nativeCRLF / LF lengths and SHA256:
+purchaseOperations.js 28242/28030
+b1c749a81e3130a4fa603aeb266cf4a8251f16a9c6f99352e464111692792fd9
+purchaseSources.js 10210/10154
+d7c0b053dab3c35ba5d0eb2bc1c58c2008380ddb8964d8a374d047566c09f930
+purchasePlan.js 5794/5742
+c56967e4efd921804a2f6537339e240a4ad1133553eddfedbd40ae2ebd04969a
+purchaseTaskIdentity.js 963/953
+d2b1b724fb1efc8e099b5cfb745e15683734b14fca868f8bc7da840301ca41e2
+salesOrderAdjustment.js 11836/11747
+d37ae8ba0483bdd9f0bf64265113f6f80b4ce4074bc6d6623df05662fcd3849a
+customerShipmentPlan.js 11896/11812
+539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d
+customerShipmentLedger.js 2811/2793
+4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170
+purchaseQuantityCases.js 7743/7668
+e31995582a2d009c910d7933e1da0325496261cdd60ff6eaa10f88c8c57f5048
+purchaseShortage.js 4430/4392
+320be7ce1641d2a3429b0698b25a7c75a1c73e9d7026b5323131f11e431535fd
+purchaseOrderWorkflow.js 24296/24097
+1e41500131c973b25ed4576a3e46a9b603de5e2acf4da192a1d514e048c2c948
+accountPurchaseReview.js 4822/4771
+791e7a05197b4fd7b06f699165db997f537dc65100994683324d7e0ee94adceb
+accountSettlement.js 33016/32783
+8a007abcf6b3810555876647c5593ac39f2fb90e87a02f85681bf8533e16ce7b
+paymentHandoff.js 13818/13715
+940bb4e99e709719868183d1edcf4c693df87e1f483ab6b722a548dd104049ca
+purchaseDocumentPolicy.js 1878/1851
+1b6d69de59fc97da18b7899b7dda415ab1f6d350e9d09cbd3d3883472be9edea
+purchaseClaimEvidence.js 4271/4232
+39d93ee60f69ac794d3fa00729178ff5fca37ecea27d1b2f003589718fe48c9a
+
+All15full native normalized hashes match exact integration/backend originals and
+current-install-manifest module hashes. Exact private LF copies saved through
+apply_patch at root handoff/stock-current-state-spec-20261021/private-evidence/
+using master-<original filename with dots replaced by hyphens>-dependency-readback-
+20261024.txt. Final byte equality and private SHA checked for all15. Not exported,
+not staged. Only code text read; no secret values, cookies or password access.
+
+Together with prior8unchanged dependencies and23patch before-images,46existing
+MASTER backend originals now have fresh exact copies. Of55unchanged MASTER
+dependencies23read back,32remain;5Sourceunchanged and2Sourcepatch originals remain
+outside this overnight evidence.15newMASTERmodules not installed. This comparison
+does NOT prove installed100module graph, live runtime or all20writer coverage.
+Protected procurement identity/financial submission locks/settlement/documents/
+customer shipment and stable split plan rules unchanged; RCV authority unchanged.
+Recovery d447185/runtime32b812c retained; original production dirs still no diff.
+
+No application code change or unchanged test rerun. Existing final1337business
+checks and4copy-only review checks reused, not relabeled as native acceptance.
+No CMS/schema/index/permission mutation, test/lock deletion, new support message,
+GitHub push/export, Pages dispatch, Wix synchronization/publish or main merge.
+Old execution late-write cutover remains unresolved, no verified Wix engineering
+reply, no elapsed-time/empty-lock inference. Precise prior export approval still
+unanswered, stopped Source51427279/localhost8986/local-file paths not retried.
+ACTIVE and real invoice/dispatch remainOFF. Four release states: local candidate
+only / Pages unchanged / new Wix flow unsynchronized and unpublished / public
+new borrowing unavailable and unverified. Editor retained on purchaseClaimEvidence.
+Continue remaining32MASTER dependency comparisons and independent preparation;
+no user action needed from this read-only group.
