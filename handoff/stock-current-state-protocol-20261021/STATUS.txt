@@ -1,4 +1,19 @@
-CURRENT 2026-10-23 — THREE EMPTY STOCK TABLES CREATED, ADMIN-ONLY SAVED/REOPENED
+CURRENT 2026-10-23 — SCHEMA DIAGNOSTIC ERROR VISIBILITY PATCHED, NATIVE PATH STOPPED
+
+SCHEMA_NATIVE_READ_BLOCKER_20261023.txt records14focused checks pass,4unique native
+Find/Replace patches and exact14722character saved-module readback SHA256LF
+d81e89a9db14e831b1844fdb4e0638f1129ab285653445288fdaaf8e72fbb271.
+ONE additional READONLY diagnostic call after instrumentation changed: no stages/
+result, then actual Request timed out. Same schema execution-result fault nowTWICE;
+native schema function-testing path STOPPED, no further Run/reload/alternateendpoint.
+Read-only WixLogs/Monitoring showed no diagnostic details; absence is not proof of
+nonexecution/termination. Original field-add UI path also remainsSTOPPED. No CMS/
+permission/business mutation or publish in this increment. Three-table state below
+unchanged. User autonomous authorization remains valid; this is not an ordinary
+permission wait. Real native setup/drain/migration/capacity/recovery/release gatesOPEN.
+Heartbeat remainsPAUSED; no automatic resume or chat archive. ACTIVE/invoice/exitOFF.
+
+PREVIOUS 2026-10-23 — THREE EMPTY STOCK TABLES CREATED, ADMIN-ONLY SAVED/REOPENED
 
 CMS_EMPTY_COLLECTION_SETUP_20261023.txt records actual MASTER creation of empty
 StockPositions/StockClaims/StockProducts, persisted Admin-only matrix verified

@@ -91,3 +91,27 @@ test('generated endpoint is Admin-only, metadata-only, mechanically executable a
  assert(!/suppressAuth|elevate\(|wixData|(?:collections|indexes)\.(?:delete|drop|remove)|updateDataCollection\(/.test(source));
  new vm.Script(source.replace(/^import .*;\n/gm, '').replace(/^export const /gm, 'const '));
 });
+function nativeModule(collections, indexes) {
+ const source = fs.readFileSync(path.join(__dirname, '../prototypes/stock-current-state/stockSchemaAdmin.web.js'), 'utf8')
+  .replace(/^import .*;\n/gm, '').replace(/^export const /gm, 'const ');
+ const logs = [], context = vm.createContext({ collections, indexes, Permissions: { Admin: 'ADMIN' },
+  webMethod: (permission, method) => { assert.equal(permission, 'ADMIN'); return method; }, console: { info: (...args) => logs.push(args) } });
+ return { logs, api: new vm.Script(source + '\n;({inspectStockSchema,addStockSchemaField,addStockSchemaIndex});').runInContext(context) };
+}
+test('native read reports stage of denied SDK read without changing permissions or retrying', async () => {
+ const f = fixture(); f.collections.getDataCollection = async () => { throw Object.assign(Error('Metadata read permission denied'), { code: 'PERMISSION_DENIED' }); };
+ const native = nativeModule(f.collections, f.indexes), result = await native.api.inspectStockSchema({ collection: 'StockPositions' });
+ assert.equal(result.ok, false); assert.equal(result.stage, 'READ_COLLECTION'); assert.equal(result.code, 'PERMISSION_DENIED');
+ assert.deepEqual(native.logs.map(row => row[1]), ['INITIALIZE', 'READ_COLLECTION']); assert.deepEqual(f.calls, []);
+});
+test('unsupported SDK methods produce an observable initialization failure, not a module-load crash', async () => {
+ const native = nativeModule({}, {}), result = await native.api.inspectStockSchema({ collection: 'StockPositions' });
+ assert.equal(result.ok, false); assert.equal(result.stage, 'INITIALIZE'); assert.match(result.message, /Native metadata SDK/);
+});
+test('native read stage distinguishes index failure; native mutation errors remain errors', async () => {
+ const f = fixture(); f.indexes.listIndexes = async () => { throw Error('Index reader unavailable'); };
+ const native = nativeModule(f.collections, f.indexes), result = await native.api.inspectStockSchema({ collection: 'StockPositions' });
+ assert.equal(result.ok, false); assert.equal(result.stage, 'READ_INDEXES');
+ await assert.rejects(native.api.addStockSchemaField({ collection: 'StockPositions', key: 'company', revision: '1' }), /Index reader unavailable/);
+ assert.equal(f.calls.filter(row => row[0] === 'field').length, 0);
+});

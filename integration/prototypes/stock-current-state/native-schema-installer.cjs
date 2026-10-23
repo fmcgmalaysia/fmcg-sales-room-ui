@@ -7,7 +7,7 @@ const stable = value => JSON.stringify(value, function (key, item) {
  if (item && typeof item === 'object' && !Array.isArray(item)) return Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]]));
  return item;
 });
-function createNativeSchemaInstaller({ collections, indexes }) {
+function createNativeSchemaInstaller({ collections, indexes, onReadStage = () => {} }) {
  if (typeof collections?.getDataCollection !== 'function' || typeof collections?.updateDataCollectionField !== 'function'
   || typeof indexes?.listIndexes !== 'function' || typeof indexes?.createIndex !== 'function') throw Error('Native metadata SDK required');
  const scope = new Map(currentNativeSetupContract().entries.map(entry => [entry.id, entry]));
@@ -18,11 +18,15 @@ function createNativeSchemaInstaller({ collections, indexes }) {
   return scope.get(input.collection);
  }
  async function read(id) {
+  onReadStage('READ_COLLECTION');
   const collection = await collections.getDataCollection(id, { consistentRead: true });
+  onReadStage('CHECK_COLLECTION');
   if (collection?._id !== id || !Array.isArray(collection.fields) || collection.fields.length > 500
    || !['string', 'number'].includes(typeof collection.revision) || !collection.permissions
    || new Set(collection.fields.map(field => field.key)).size !== collection.fields.length) throw Error('Complete native collection metadata required');
+  onReadStage('READ_INDEXES');
   const response = await indexes.listIndexes(id, { paging: { limit: 100, offset: 0 } });
+  onReadStage('CHECK_INDEXES');
   if (!Array.isArray(response?.indexes) || response.indexes.length > 50 || response.pagingMetadata?.hasNext === true
    || response.pagingMetadata?.tooManyToCount === true
    || (response.pagingMetadata?.total != null && response.pagingMetadata.total !== response.indexes.length)) throw Error('Complete native index metadata required');
