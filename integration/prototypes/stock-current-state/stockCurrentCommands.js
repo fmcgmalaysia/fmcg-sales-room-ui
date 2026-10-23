@@ -3364,7 +3364,7 @@ function createCurrentPurchaseArrangementSave({company,store,protocol,coverage,a
 module.exports={createCurrentPurchaseArrangementSave};
 
 },
-// purchase-arrangement.cjs sha256:a238090271ec4e84a1395ea1e56acca79d61bf9537f7042c52c095d542dd7e90
+// purchase-arrangement.cjs sha256:722d7d6b53020309b11e85258f239b35568a108f01aab54d41edba2fbf0e4cb6
 "purchase-arrangement.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs");
@@ -3380,6 +3380,14 @@ function arrangementLimit(task,batchId=''){
  if(!batchId)return f.availableToArrange;
  const batch=task.stockAllocatedBatches?.find(b=>b.id===batchId);
  if(!batch||!whole(batch.allocated)||!whole(batch.demand)||batch.allocated>batch.demand)throw Error('Confirmed arrangement batch required');
+ if(task.stockBatchAllocationFacts!==undefined){
+  const entries=task.stockBatchAllocationFacts,b=Array.isArray(entries)&&entries.find(row=>row.id===batchId);
+  if(!b||entries.filter(row=>row.id===batchId).length!==1||b.demand!==batch.demand||b.allocated!==batch.allocated
+    ||!['held','unscopedHeld','unscopedDispatched','availableToArrange'].every(k=>whole(b[k]))||b.review!==f.review
+    ||b.held+b.unscopedHeld>f.held||b.unscopedDispatched!==f.dispatched
+    ||b.availableToArrange!==(f.review?0:Math.min(f.availableToArrange,Math.max(0,b.allocated-b.held-b.unscopedHeld-f.dispatched))))throw Error('Confirmed batch availability required');
+  return b.availableToArrange;
+ }
  // Until per-batch physical holds are explicit, subtract ALL task holds/shipped
  // amounts. This can restrict availability, but cannot reuse another batch's stock.
  return Math.min(f.availableToArrange,Math.max(0,batch.allocated-f.held-f.dispatched));
@@ -5677,7 +5685,7 @@ function createBorrowCurrentQuery({ company, items, protocol, authenticate }) {
 module.exports = { createBorrowCurrentQuery };
 
 },
-// purchase-current-projection.cjs sha256:f384ad437607cb59d7ef5c5307cd8a80e6fe2be0a27b603d2fe931d861e421a8
+// purchase-current-projection.cjs sha256:7953732dc3e02d50fb23d7719846f3527aba9caa11e5c9814e9e83a5c268d2b4
 "purchase-current-projection.cjs": (load, module) => {
 'use strict';
 
@@ -5686,6 +5694,7 @@ const { currentAllocationContext } = load("current-allocation-context.cjs");
 const { originalProductState } = load("original-product-state.cjs");
 const { readScopedCurrentProduct } = load("scoped-current-reader.cjs");
 const { copy } = load("segmented-plan.cjs");
+const { attachBatchAvailability } = load("purchase-batch-availability.cjs");
 // Private snapshot adapter. It does not authenticate, refresh GP, apply a save,
 // create a workspace route, mark writer coverage or authorize activation.
 function prepareCurrentPurchaseProjection({ context, states, readAllocations, generation }) {
@@ -5764,9 +5773,65 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
       || (row.customerDemandTaskId||null)!==(original.customerDemandTaskId||null)
       || row.procurement?.totalCtn!==original.procurement?.totalCtn) throw Error('Original current Purchase authority changed');
   }
+  attachBatchAvailability({company,workspace,activity:context.activity,readPackingLists,packingHeld});
   return {workspace,products,metrics};
 }
 module.exports={prepareCurrentPurchaseProjection,readCurrentPurchaseProjection};
+
+},
+// purchase-batch-availability.cjs sha256:afab3830a2d882003c5659a913b5251c282997a485ff5db7383fba489d003f20
+"purchase-batch-availability.cjs": (load, module) => {
+'use strict';
+const {readArrangements,projectArrangementLinks}=load("purchase-arrangement.cjs");
+const whole=n=>Number.isSafeInteger(n)&&n>=0;
+// Read-only attribution of existing CURRENT instruction links to actual list holds.
+// Immutable link audit retains identity after the CURRENT instruction is replaced.
+// No quantity comes from audit; actual holds still come only from current lists.
+function attachBatchAvailability({company,workspace,activity,readPackingLists,packingHeld}){
+ if(workspace?.company!==company||!Array.isArray(workspace.tasks)||!Array.isArray(activity)
+   ||typeof readPackingLists!=='function'||typeof packingHeld!=='function')throw Error('Current batch availability context required');
+ const linked=projectArrangementLinks(company,readArrangements(company,activity),activity).filter(i=>i.status==='LINKED');
+ const bindings=new Map();
+ function bind(d){
+  const prior=bindings.get(d.packingListId);
+  if(prior&&['taskId','batchId','customerId','orderId'].some(k=>prior[k]!==d[k]))throw Error('Ambiguous batch packing link');
+  bindings.set(d.packingListId,d);
+ }
+ for(const d of linked)bind(d);
+ const audits=new Set();
+ for(const row of activity.filter(r=>r.action==='PURCHASE_ARRANGEMENT_LINKED')){
+  const d=row.details;
+  if(!d||row.company!==company||row.result!=='SAVED'||row.title!==row._id||row._id!==d.revision||audits.has(row._id)
+    ||row.description!==d.orderId||d.status!=='LINKED'||!d.taskId||typeof d.batchId!=='string'||!d.customerId
+    ||!d.orderId||!d.packingListId||!d.packingRevision||!d.linkedByStaffId||!row.initiatedByStaffId
+    ||!whole(d.quantity)||d.quantity<1)throw Error('Batch packing link audit requires review');
+  audits.add(row._id);bind(d);
+ }
+ const lists=readPackingLists(activity,company);
+ for(const task of workspace.tasks.filter(t=>!t.procurementSource&&!t.specialPurchase&&Array.isArray(t.stockAllocatedBatches))){
+  const f=task.stockAllocationFacts,batches=task.stockAllocatedBatches;
+  if(!f||!['usable','held','dispatched','availableToArrange'].every(k=>whole(f[k]))||typeof f.review!=='boolean'
+    ||f.usable+f.dispatched!==task.stockAllocatedCumulative||f.availableToArrange!==(f.review?0:Math.max(0,f.usable-f.held))
+    ||new Set(batches.map(b=>b.id)).size!==batches.length||batches.some(b=>!b.id||!whole(b.demand)||!whole(b.allocated)||b.allocated>b.demand)
+    ||batches.reduce((n,b)=>n+b.allocated,0)!==task.stockAllocatedCumulative)throw Error('Current batch allocation requires review');
+  const held=new Map(batches.map(b=>[b.id,0]));
+  for(const instruction of [...bindings.values()].filter(i=>i.taskId===task.id&&held.has(i.batchId))){
+   const list=lists.find(l=>l.id===instruction.packingListId);
+   if(!list||list.company!==company||list.customerId!==task.customerId||instruction.customerId!==task.customerId
+     ||instruction.orderId!==task.orderId)throw Error('Actual batch packing list required');
+   const quantity=packingHeld(list,task.id);
+   if(!whole(quantity))throw Error('Actual batch packing hold required');
+   held.set(instruction.batchId,held.get(instruction.batchId)+quantity);
+  }
+  const known=[...held.values()].reduce((n,q)=>n+q,0),unscopedHeld=f.held-known;
+  if(!whole(known)||!whole(unscopedHeld))throw Error('Batch hold exceeds authoritative task holds');
+  task.stockBatchAllocationFacts=batches.map(b=>({id:b.id,demand:b.demand,allocated:b.allocated,held:held.get(b.id),unscopedHeld,
+    unscopedDispatched:f.dispatched,review:f.review,
+    availableToArrange:f.review?0:Math.min(f.availableToArrange,Math.max(0,b.allocated-held.get(b.id)-unscopedHeld-f.dispatched))}));
+ }
+ return workspace;
+}
+module.exports={attachBatchAvailability};
 
 },
 // current-purchase-workspace-read.cjs sha256:ccf83a35439e0268fcefc52b6ee08406f2c440edbc44eeb261df1be9c5dbe28b

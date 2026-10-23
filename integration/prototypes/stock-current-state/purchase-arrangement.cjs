@@ -12,6 +12,14 @@ function arrangementLimit(task,batchId=''){
  if(!batchId)return f.availableToArrange;
  const batch=task.stockAllocatedBatches?.find(b=>b.id===batchId);
  if(!batch||!whole(batch.allocated)||!whole(batch.demand)||batch.allocated>batch.demand)throw Error('Confirmed arrangement batch required');
+ if(task.stockBatchAllocationFacts!==undefined){
+  const entries=task.stockBatchAllocationFacts,b=Array.isArray(entries)&&entries.find(row=>row.id===batchId);
+  if(!b||entries.filter(row=>row.id===batchId).length!==1||b.demand!==batch.demand||b.allocated!==batch.allocated
+    ||!['held','unscopedHeld','unscopedDispatched','availableToArrange'].every(k=>whole(b[k]))||b.review!==f.review
+    ||b.held+b.unscopedHeld>f.held||b.unscopedDispatched!==f.dispatched
+    ||b.availableToArrange!==(f.review?0:Math.min(f.availableToArrange,Math.max(0,b.allocated-b.held-b.unscopedHeld-f.dispatched))))throw Error('Confirmed batch availability required');
+  return b.availableToArrange;
+ }
  // Until per-batch physical holds are explicit, subtract ALL task holds/shipped
  // amounts. This can restrict availability, but cannot reuse another batch's stock.
  return Math.min(f.availableToArrange,Math.max(0,batch.allocated-f.held-f.dispatched));

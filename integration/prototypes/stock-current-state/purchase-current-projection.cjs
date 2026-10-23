@@ -5,6 +5,7 @@ const { currentAllocationContext } = require('./current-allocation-context.cjs')
 const { originalProductState } = require('./original-product-state.cjs');
 const { readScopedCurrentProduct } = require('./scoped-current-reader.cjs');
 const { copy } = require('./segmented-plan.cjs');
+const { attachBatchAvailability } = require('./purchase-batch-availability.cjs');
 // Private snapshot adapter. It does not authenticate, refresh GP, apply a save,
 // create a workspace route, mark writer coverage or authorize activation.
 function prepareCurrentPurchaseProjection({ context, states, readAllocations, generation }) {
@@ -83,6 +84,7 @@ async function readCurrentPurchaseProjection({ company, context, staff, control,
       || (row.customerDemandTaskId||null)!==(original.customerDemandTaskId||null)
       || row.procurement?.totalCtn!==original.procurement?.totalCtn) throw Error('Original current Purchase authority changed');
   }
+  attachBatchAvailability({company,workspace,activity:context.activity,readPackingLists,packingHeld});
   return {workspace,products,metrics};
 }
 module.exports={prepareCurrentPurchaseProjection,readCurrentPurchaseProjection};

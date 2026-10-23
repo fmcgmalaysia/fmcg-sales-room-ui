@@ -1810,7 +1810,12 @@ return haloSvg;
     const facts=root.stockAllocationFacts,available=known&&facts&&['usable','held','dispatched','availableToArrange'].every(k=>count(facts[k]))
       &&typeof facts.review==='boolean'&&facts.usable+facts.dispatched===allocated
       &&facts.availableToArrange===(facts.review?0:Math.max(0,facts.usable-facts.held))?facts.availableToArrange:null;
-    const arrangeQty=available===null?null:batchId?(batchKnown?Math.min(available,Math.max(0,batch.allocated-facts.held-facts.dispatched)):null):available;
+    const perBatch=root.stockBatchAllocationFacts,batchFact=Array.isArray(perBatch)&&perBatch.find(b=>b.id===batchId);
+    const verifiedBatch=!!batchId&&available!==null&&batchKnown&&batchFact&&perBatch.filter(b=>b.id===batchId).length===1&&batchFact.demand===batch.demand&&batchFact.allocated===batch.allocated
+      &&['held','unscopedHeld','unscopedDispatched','availableToArrange'].every(k=>count(batchFact[k]))&&batchFact.review===facts?.review
+      &&batchFact.held+batchFact.unscopedHeld<=facts.held&&batchFact.unscopedDispatched===facts.dispatched
+      &&batchFact.availableToArrange===(facts.review?0:Math.min(available,Math.max(0,batch.allocated-batchFact.held-batchFact.unscopedHeld-facts.dispatched)));
+    const arrangeQty=available===null?null:batchId?(perBatch!==undefined?(verifiedBatch?batchFact.availableToArrange:null):(batchKnown?Math.min(available,Math.max(0,batch.allocated-facts.held-facts.dispatched)):null)):available;
     const previous=Array.isArray(root.stockArrangements)?root.stockArrangements.filter(a=>a.batchId===(batchId||'')):null;
     const meta=workspace.stockCurrent,capability=meta?.schema==='PURCHASE_TRANSFERS_V2'&&meta.stockProtocol===1&&meta.stockBuild
       &&count(meta.stockGeneration)&&meta.stockGeneration===meta.generation;
@@ -1820,6 +1825,8 @@ return haloSvg;
       +'<p>Demand 需求 <b>'+esc(root.ord)+'</b> · Purchased 采购 <b>'+esc(planned)+'</b> · Received 实收 <b>'+esc(received??'Unconfirmed 尚未确认')+'</b> · Allocated 已分配 <b>'+esc(allocated??'Unconfirmed 尚未确认')+'</b></p>'
       +'<p>Unpurchased 未采购 '+esc(Math.max(0,root.ord-planned))+' · Awaiting receipt 待到货 '+esc(received===null?'Unconfirmed 尚未确认':Math.max(0,planned-received))+'</p>'
       +'<p>Available to arrange 可安排 <b>'+esc(available??'Unconfirmed 尚未确认')+'</b>'+(available===null?'':' · Held 备货占用 '+esc(facts.held)+' · Dispatched 已发货 '+esc(facts.dispatched))+'</p>'
+      +(batchId?'<p>Batch available to arrange 本批可安排 <b>'+esc(arrangeQty??'Unconfirmed 尚未确认')+'</b>'+(verifiedBatch?' · Batch held 本批占用 '+esc(batchFact.held)
+        +(batchFact.unscopedHeld||batchFact.unscopedDispatched?' · Unscoped holds and dispatch stay conservatively deducted 未分批占用与出库继续保守扣除':''):'')+'</p>':'')
       +(previous?.[0]?.status==='LINKED'?'<p>Packing list 备货单 '+esc(previous[0].packingListId)+' · '+esc(previous[0].packingStatus||'Review 待核对')
         +' · Planned 计划 '+esc(previous[0].currentPlanned??'')+' · Loaded 已装柜 '+esc(previous[0].currentLoaded??'')+(previous[0].changePending?' · Change pending 变更待确认':'')+'</p>':'')
       +'<button type="button" class="btn primary" data-alloc-borrow '+(canBorrow?'':'disabled')+'>1 Borrow stock 借货</button> '

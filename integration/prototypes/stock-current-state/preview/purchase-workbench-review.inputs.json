@@ -93,7 +93,7 @@
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.js",
-      "sha256": "6eaccf2f9637fb189a1664325fc9e0713381e35e719ec6dc5f90ca13a4e99a84"
+      "sha256": "3e5991c2dfd5c7723f9ccdbe6c2cd43fc3b0a9f87248d4bbd9e1f5b21a4d5068"
     },
     {
       "file": "integration/prototypes/stock-current-state/purchase-ui/borrow-return.js",

@@ -1,5 +1,13 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST BATCH HOLDS: BATCH_HOLD_ATTRIBUTION_20261024.txt adds same-generation
+batch availability from existing instruction/current packing links plus immutable
+link identity audit (never audit quantities). First batch hold80no longer consumes
+confirmed second20; old Loaded40stays attributed after CURRENT replacement.
+Unlinked/whole/unknown-batch holds and dispatch remain conservative. Server and
+actual ALLOC UI use matching bounds. Final full1337pass30538.2904ms; runtime119.
+No native/deploy/export/permission changes; all20writer categories UNVERIFIED.
+
 LATEST NATIVE SUPPORT: MASTER_SUPPORT_PACKING_PARITY_20261024.txt records fresh
 complete editor readback of Support page, Public packingListBridge and backend
 packingLists.web/packingListModel/packingListOperations. All5exact original hashes

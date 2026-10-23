@@ -1,0 +1,81 @@
+2026-10-24 — Confirmed batch arrangement availability, candidate only
+Parent5b0384a; same overnight authorization/checkouts/ownership/recovery, no model
+or agent changes. Reused framework/spec and prior native Support/packing parity.
+Inspected actual packingHeld/parser, current Purchase projector/read/arrangement
+service and original stable shipment batch/source calculation; no full project scan.
+
+Single objective: task-level holds were conservatively subtracted from EVERY Sales
+batch. Once batch1's linked Support list holds80, batch2's confirmed20allocation
+was also reduced by80and could not be arranged, despite actual global free20.
+Correct this only where stored identity evidence exists, without changing physical
+stock ownership, source balances, Sales batch allocation or original packing rules.
+
+Implementation
+-purchase-batch-availability.cjs attaches stockBatchAllocationFacts to paired
+ readCurrentPurchaseProjection inside the existing company generation barrier.
+ Stable task/order/customer/batch/packing-list identity comes from existing CURRENT
+ Purchase instruction plus immutable PURCHASE_ARRANGEMENT_LINKED audit. Actual
+ quantity comes ONLY from the original validated CURRENT list and packingHeld.
+ Audit requested80is NEVER used as an80hold after actual Loaded becomes40.
+-Immutable link audit keeps the old list identity after CURRENT instruction is
+ replaced by a fresh remaining-quantity request. Identical current/audit identity
+ deduplicates; conflicting identity, duplicate audit, malformed link, foreign order
+ or attributed hold larger than authoritative task total stops for review.
+-Known batch holds are deducted only from that batch. Unlinked/whole-task/changed
+ Sales-batch identities remain unscoped and conservatively deducted from every
+ batch. Actual dispatch remains unscoped here; no invented physical batch mapping.
+-Every batch is still capped by global availableToArrange, and existing review
+ state yields0. Sum of known holds is checked against authoritative task held.
+-Existing prepareArrangement freshly reads this paired workspace and validates
+ exact per-batch facts before admitting the instruction. Browser only submits
+ task/batch/qty/revision/reason; it cannot supply availability or staff authority.
+-Actual ALLOC component uses the same verified batch facts, shows Batch available
+ and Batch held explicitly, and retains original saved instruction/Support draft
+ flow. Missing metadata from an older snapshot retains only the prior conservative
+ task-total bound; malformed new metadata disables action, not a permissive fallback.
+ No competing stock ledger, new business collection, new physical hold writer,
+ batch-specific dispatch assumption or invoice/dispatch action introduced.
+
+Checks
+-Original packing parser/model exercised for DRAFT0, SENT80, larger pending90,
+ COMPLETED Loaded40. Valid first batch hold80leaves second20arrangeable both in
+ real ALLOC click callback and server prepareArrangement. Current first80cannot be
+ requested again. Replacement CURRENT preserves earlier Loaded40via identity-only
+ immutable audit, leaving other batch20rather than falsely0. Unscoped legacy and
+ dispatched40remain conservative; conflict/malformed/foreign-order cases refuse.
+-Actual borrowing/Sales split projector now emits matching per-batch availability
+ for30/0coverage, not root30on both batches. Underlying PO/RCV/borrow quantities and
+ original stock claims unchanged. Original Support CREATE/replay/CANCEL tests pass.
+-Initial new fixture missed required currency and failed parser (4fail); corrected
+ fixture, not parser. Later test accidentally supplied duplicate CURRENT identity
+ and hit original validation before intended conflict assertion; corrected fixture.
+-First full suite before immutable-link addition:1335pass29814.8855ms.
+ After addition,1336run had1334pass/2paired-manifest failures29438.2454ms; exact
+ errors were stale business UI install source/checksum after backend runtime rebuild.
+ Rebuilt in dependency order (runtime -> backend manifest -> UI manifest -> review),
+ not a production-workflow regression or skipped test. Final results recorded below.
+ Final focused batch/package/review14pass660.1256ms overlaps full coverage.
+
+Artifacts and boundaries
+Runtime119scopedmodules, backend manifest40targets/100modules, UI38Pages-assets/
+5Wixrelays, local self-contained review33exactassets.20writer categories remain
+UNVERIFIED and activationAllowedfalse. Original production dirs have no diff.
+No native/browser/Wix/CMS operation this turn, no diagnostic Run, publish/sync,
+Pages dispatch, GitHub push/export, permissions change or deletion. Exact previous
+native Support/packing before-images remain unchanged; fresh checks still required
+at actual installation. Prior export rejection remains unanswered/no bypass.
+
+Not claimed: complete physical per-batch provenance for old/unlinked orders or
+dispatch; native actual borrowing/partial repayment/split/movement/archive visual
+acceptance; complete native schema/index/writer/read/capacity/recovery/shadow install;
+safe initial cutover. Old-request late-write refusal stays, Wix reply not verified.
+Four release states remain local candidate / Pages unchanged / new Wix flow not
+synchronized or published-live / public new borrowing unavailable and unverified.
+ACTIVE, Support real invoice and physical dispatch remainOFF. Continue independent
+installation and acceptance work; do not repeat stopped Source/editor/local paths.
+
+Final stock-current full suite1337pass0fail30538.2904ms after all source guards,
+immutable-link handling and correct packaging order. No further source changes
+after this run; documentation only. Earlier90UI checks803.9704ms and33targeted
+660.709ms were intermediate overlapping coverage. Actual Credit/cached-token
+attribution UNKNOWN; no savings claim. Local tests are not native/live acceptance.

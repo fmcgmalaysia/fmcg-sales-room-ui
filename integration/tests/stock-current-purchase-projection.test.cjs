@@ -73,6 +73,7 @@ test('original split-row receipt metrics use current customer ownership, while P
   assert.deepEqual(copy(a.stockReceiptBatches.map(row=>row.received)),[0,0]);
   assert.equal(a.stockAllocatedCumulative,30);
   assert.deepEqual(copy(a.stockAllocatedBatches),a.batchEntitlements.map(row=>({id:row.id,demand:row.quantity,allocated:row.metrics.received})));
+  assert.deepEqual(copy(a.stockBatchAllocationFacts.map(row=>[row.allocated,row.held,row.availableToArrange])),[[30,0,30],[0,0,0]]);
   assert.deepEqual(copy(a.batchEntitlements.map(row=>row.metrics.committed)),[50,50]);
   assert.equal(result.tasks.find(row=>row.id==='B').warehouse.accepted,100);
   assert.equal(f.originalArguments.tasks.length,2);assert.equal([...f.db.values()].filter(row=>row.action==='STOCK_TRANSFER_CURRENT').length,1);

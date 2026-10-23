@@ -1,11 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),root=path.join(__dirname,'../prototypes/stock-current-state');
-function fixture({planned=90,received=80,ownReceived=received,sources=[],allocated=80,current=true,instructions=[],facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
+function fixture({planned=90,received=80,ownReceived=received,sources=[],allocated=80,current=true,batchId,batches,batchFacts,instructions=[],facts={usable:80,held:0,dispatched:0,availableToArrange:80,review:false}}={}){
   const controls=new Map(),container={innerHTML:'',querySelector(s){if(!controls.has(s))controls.set(s,{});return controls.get(s);}};
   const window={};vm.runInNewContext(fs.readFileSync(path.join(root,'purchase-ui/borrow-approval.js'),'utf8'),{window});
   let opened=0,ready=true;const arranged=[];
-  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockActualReceived:ownReceived,stockArrangements:instructions,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,procurement:{customerCtn:planned},warehouse:{accepted:received}},...sources]};
-  window.purchaseBorrowApproval.mountAllocation({container,workspace,rootId:'A',esc:String,canSubmit:()=>ready,showBorrow:()=>opened++,submitArrangement:input=>arranged.push(input)});
+  const workspace={stockCurrent:{schema:'PURCHASE_TRANSFERS_V2',stockProtocol:1,stockBuild:'TEST',generation:1,stockGeneration:1},stockAllocationView:current?'CURRENT_V2':undefined,allocations:[],tasks:[{id:'A',ord:100,stockActualReceived:ownReceived,stockArrangements:instructions,stockAllocatedCumulative:allocated,stockAllocationFacts:facts,stockAllocatedBatches:batches,stockBatchAllocationFacts:batchFacts,procurement:{customerCtn:planned},warehouse:{accepted:received}},...sources]};
+  window.purchaseBorrowApproval.mountAllocation({container,workspace,rootId:'A',batchId,esc:String,canSubmit:()=>ready,showBorrow:()=>opened++,submitArrangement:input=>arranged.push(input)});
   return {container,controls,arranged,open:()=>opened,busy:()=>ready=false};
 }
 test('100 demand / 90 purchased / 80 received exposes borrowing while 10 unpurchased remains explicit',()=>{
@@ -25,6 +25,16 @@ test('missing or malformed own receipt facts cannot be replaced by gross receipt
     const f=fixture({ownReceived,received:0});f.controls.get('[data-alloc-borrow]').onclick();assert.equal(f.open(),0);
     assert.match(f.container.innerHTML,/Received 实收 <b>Unconfirmed 尚未确认<\/b>/);
     assert.match(f.container.innerHTML,/Awaiting receipt 待到货 Unconfirmed 尚未确认/);
+  }
+});
+test('actual ALLOC batch choice uses verified linked holds, not another batch80as this batch20occupied',()=>{
+  const args={planned:100,received:100,allocated:100,batchId:'P|2',batches:[{id:'P|1',demand:80,allocated:80},{id:'P|2',demand:20,allocated:20}],
+    facts:{usable:100,held:80,dispatched:0,availableToArrange:20,review:false},
+    batchFacts:[{id:'P|2',demand:20,allocated:20,held:0,unscopedHeld:0,unscopedDispatched:0,availableToArrange:20,review:false}]};
+  const f=fixture(args);assert.match(f.container.innerHTML,/2 Send 20 CTN/);assert.match(f.container.innerHTML,/本批可安排 <b>20<\/b> · Batch held 本批占用 0/);f.controls.get('[data-alloc-existing]').onclick();assert.equal(f.arranged[0].quantity,20);assert.equal(f.arranged[0].batchId,'P|2');
+  const conservative=fixture({...args,batchFacts:undefined});conservative.controls.get('[data-alloc-existing]').onclick();assert.equal(conservative.arranged.length,0);
+  for(const batchFacts of [null,[],[{...args.batchFacts[0],availableToArrange:21}]]){
+    const bad=fixture({...args,batchFacts});bad.controls.get('[data-alloc-existing]').onclick();assert.equal(bad.arranged.length,0);assert.match(bad.container.innerHTML,/data-alloc-existing disabled/);
   }
 });
 test('existing quantity choice requests Support once through callback without simulating dispatch',()=>{
