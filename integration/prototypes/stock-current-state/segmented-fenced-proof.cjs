@@ -30,6 +30,16 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
     if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
   }
   const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
+  async function readImages(collection, ids) {
+    // Same complete exact-ID adapter already used during preparation. A failed
+    // or malformed batch NEVER falls back to individual queries or partial rows.
+    const rows = [];
+    if (typeof store.readMany === 'function') rows.push(...await store.readMany(collection, ids));
+    else for (const id of ids) rows.push(await store.read(collection, id));
+    if (rows.length !== ids.length || rows.some((row, index) => row !== null
+      && (!row || row._id !== ids[index] || row.company !== company))) throw Error('Exact complete image batch required');
+    return rows;
+  }
   async function readSnapshot(readRows) {
     const before = await readControl();
     if (before.pending) throw Error('Inventory pending');
@@ -79,9 +89,8 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
         await transition(journal, null, manifest);
       }
       if (manifest.baseGeneration !== control.generation) throw Error('Prepared generation stale');
-      const fragments = [];
       if (!Array.isArray(manifest.fragments) || manifest.fragments.length > maxStagedFragments) throw Error('Manifest capacity conflict');
-      for (const ref of manifest.fragments) fragments.push(await store.read(journal, ref.id));
+      const fragments = await readImages(journal, manifest.fragments.map(ref => ref.id));
       const plan = codec.decode({ manifest, fragments, key, digest, memberId, requestId });
       const count = plan.writes.length;
       if (!control.pending) {
@@ -100,6 +109,23 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
           // an interrupted APPLY cannot accidentally re-enter BEFORE verification.
           const next = nextControl(control, { pending: { ...p, phase, cursor } });
           await transition(journal, control, next); control = next;
+          continue;
+        }
+        if (phase !== 'APPLY' && typeof store.readMany === 'function') {
+          const span = plan.writes.slice(cursor, cursor + Math.min(count - cursor, stepsPerInvocation - steps));
+          const groups = new Map(), found = new Map();
+          for (const change of span) {
+            if (!groups.has(change.collection)) groups.set(change.collection, []);
+            groups.get(change.collection).push(change.after._id);
+          }
+          for (const [collection, ids] of groups) {
+            const rows = await readImages(collection, ids);
+            ids.forEach((id, index) => found.set(collection + '/' + id, rows[index]));
+          }
+          for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), phase === 'BEFORE' ? change.before : change.after)) {
+            throw Error(phase === 'BEFORE' ? 'Prepared before-image stale' : 'Final image conflict');
+          }
+          cursor += span.length; steps += span.length;
           continue;
         }
         const change = plan.writes[cursor], current = await store.read(change.collection, change.after._id);

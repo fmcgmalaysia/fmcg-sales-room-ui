@@ -1,5 +1,28 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 NATIVE300 STOPPED ON UNKNOWN UI OUTCOME, DO NOT RUN AGAIN:
+NATIVE_300_COMMIT_REHEARSAL.txt + BATCHED_IMAGE_READS.txt. Nineteen native executor
+calls CONFIRMED, last BEFORE380/901, generation0/pending. Call20 ADVANCE was marked
+in-flight before Run; browser pipe closed without response. Next READ-ONLY UI
+observation failed browser unavailable. Two failures: this UI path STOPPED, no
+reselection/retry/new request/lock deletion. No APPLY phase was confirmed.
+Confirmed scenario totals incl15seed batches+two readonly checks:891queries/
+332inserts/20patches/19owned-lock removals. Call20 outcome/counts UNKNOWN, not zero;
+reserve up to200queries/33inserts/30patches/1removal. Fixed exact grant NOT renewed.
+Private native300-execution-results-20261023.json is authoritative:stoppedtrue,
+inFlight ADVANCE sequence20. Old primitive helper counters are obsolete; shared
+native300State object/log corrected earlier labels from the preserved result array.
+Local compiled test gate restoredCLOSED. Wix last exact saved readback was ARMED,
+SHA256LF ae1ea2d3efb5beecd78bc3d9646ce6a34a033e17a310323973c2aceb80615374;
+closing it could not be performed through the unavailable UI. User asked ONCE to
+set unique NATIVE_TEST_LOCK_RELEASE_GRANTED=false in existing MASTER module, save,
+NO Publish/Run. Await closure confirmation; do not assume old execution terminated.
+Batch-read minimum patch kept SAME plan/request/20steps/fence/CAS. Full1192pass0fail
+32174.7612ms after17affectedpass; original protected production paths unchanged.
+Actual new BEFORE calls16queries/~2.7-3.3s versus old43queries/~6-7s; no production
+latency/capacity acceptance claimed. Native full application/recovery NOT complete.
+CoverageEMPTY/ACTIVEOFF, invoice/physicalexitOFF; no Pages/business Wix publication.
+
 2026-10-23 AUTONOMOUS TESTING + VISIBLE NATIVE300 STAGING:
 TESTING_AUTHORITY_AND_VISIBLE_ACCEPTANCE.txt records user's ordinary test autonomy;
 no repeated routine consent; destructive/security protections remain. Existing

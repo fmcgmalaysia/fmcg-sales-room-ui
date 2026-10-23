@@ -1,6 +1,15 @@
 2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
 
 LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- NATIVE_300_COMMIT_REHEARSAL.txt + BATCHED_IMAGE_READS.txt: new fixed namespace,
+ 19actual executor calls confirmed BEFORE380/901; call20 UI outcomeUNKNOWN, stopped
+ with original pending/request retained, no rerun/cleanup. Local diagnostic gate
+ CLOSED; Wix last saved armed gate requires manual close after two browser failures.
+ NOT full native application/recovery acceptance. Exact read batching reduces
+ actual BEFORE43->16queries without changing20step budget/CAS/plan identities;
+ FULL1192pass0fail32174.7612ms. Original production paths unchanged. Review failed/
+ short/foreign/reordered batch refusals; native business setup/migration/drain and
+ whole300business preparation/capacity/recovery remain OPEN. ACTIVE staysOFF.
 - NATIVE_300_PLAN_STAGING_ACCEPTANCE.txt: actual mock-prepared original300receipt
   plan901images/596928bytes now EXACT native SDK staged/readback: intentional first
   fragment interruption then same plan continuation;4queries/12inserts total,

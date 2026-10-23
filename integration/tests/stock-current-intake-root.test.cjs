@@ -188,7 +188,18 @@ test('generated intake uses the actual conditional SDK adapter and explicit Date
   const { createSdkConditionalStore } = require('../prototypes/stock-current-state/sdk-conditional-store.cjs');
   const native = new Map(), conditions = [];
   const items = {
-    query: collection => { let id; return { eq: (_, value) => { id = value; return { limit: () => ({ find: async () => ({ items: native.has(collection + '/' + id) ? [structuredClone(native.get(collection + '/' + id))] : [] }) }) }; } }; },
+    query: collection => {
+      let ids = [], limit = 2;
+      const query = { eq: (_, value) => { ids = [value]; return query; },
+        hasSome: (_, values) => { ids = [...values]; return query; },
+        limit: value => { limit = value; return query; },
+        find: async options => {
+          assert.equal(options.consistentRead, true);
+          const rows = ids.flatMap(id => native.has(collection + '/' + id) ? [structuredClone(native.get(collection + '/' + id))] : []);
+          return { items: rows.slice(0, limit), ...(options.returnTotalCount ? { totalCount: rows.length } : {}) };
+        } };
+      return query;
+    },
     insert: async (collection, row) => { const key = collection + '/' + row._id; if (native.has(key)) throw Error('Duplicate'); native.set(key, structuredClone(row)); return structuredClone(row); },
     patch: (collection, id) => {
       const fields = {}, removed = [], patch = { setField: (key, value) => { fields[key] = value; return patch; },

@@ -89,8 +89,12 @@ test('actual 300-product receipt preparation stays within the new offline query 
   const report = await measureWarehouseInvocationBudget(300, 20), [first, second] = report.snapshots;
   assert.equal(report.productionCapacityAccepted, false);
   assert.equal(first.result.pending, true); assert.equal(first.result.completedCount, 20); assert.equal(first.result.totalRecords, 901);
-  assert.ok(first.operations.find <= 45); assert.ok(first.operations.read <= 55); assert.ok(first.countedDataRoundTripLowerBound <= 120);
-  assert.equal(second.result.completedCount, 40); assert.equal(second.operations.find, 0);
+  // Exact image/fragment batches now count as find calls instead of per-row
+  // reads. Keep the preparation bound and tighten TOTAL round-trip/read limits;
+  // a changed query category must not disguise increased aggregate work.
+  assert.ok(first.operations.find <= 49); assert.ok(first.operations.read <= 20); assert.ok(first.countedDataRoundTripLowerBound <= 90);
+  assert.equal(second.result.completedCount, 40); assert.ok(second.operations.find <= 4);
+  assert.ok(second.operations.read <= 4); assert.ok(second.countedDataRoundTripLowerBound <= 12);
 });
 test('snapshot byte and aggregate input budgets stop before memory grows with huge images or scopes', async () => {
   await assert.rejects(batched(factory(), { maxSnapshotBytes: 100 }), /byte policy/);
