@@ -1,0 +1,71 @@
+2026-10-23 — actual isolated Wix INIT and TYPE acceptance; NOT stock activation
+
+Supersedes the historical NOT INSTALLED/EXECUTED and consent-PENDING statements
+in the two probe design records. Exact human grants were received separately.
+MASTER saved draft now contains two NEW Permissions.Admin isolated modules.
+No existing business backend was replaced; no ACL/schema/site Publish action.
+Both functions were invoked ONCE under their respective grant; no replay/reset.
+
+INIT verifyStockInitialization:
+ stage ISOLATED_CONJUNCTION_CONFIRMED, ok true
+ reads10/inserts2/patch attempts7 (within exact authorized budget)
+ checks WRONG_DATE_REJECTED, INITIALIZE_ABSENT_COMPANY,
+ LATE_INITIALIZATION_REJECTED, INTERVENING_SYNTHETIC_LEGACY_EDIT,
+ STALE_BEFORE_EDIT_REJECTED, COMPETING_INITIALIZATIONS
+ Two granted fixed StockProtocolTest synthetic records retained, no deletion.
+ Visible-editor source matches repository after CRLF normalization,9433chars.
+ Source SHA256 LF b819b075172ff66e494af0daf0c920a2e35e5bdc166b16397f3827e9b5a1c983
+ Native copied JSON SHA256
+ 866c8e264a48cb1e04df289313298109c1f1ef149a4a41c0b30790a722a168f3
+ Result PNG SHA256
+ fc0e81b7e3c6c19492af72cc47b26ece94c89e329202a3c5c3530b6850889514
+ Prior toolbar Run opened PAGE preview, not this function. First final-function
+ Run attempt was denied by safety review; stopped and obtained exact human grant.
+ Only the subsequent authorized final-function Run executed. No bypass/retry.
+
+TYPE verifyStockTypedRoundtrip:
+ stage ISOLATED_TYPED_VALUES_CONFIRMED, ok true
+ queries9/inserts1/patch attempts1 (exact authorized maximum)
+ INSERT_NATIVE_TYPES, SHARED_ADAPTER_READ_AND_BATCH,
+ CONDITIONAL_NATIVE_PATCH, INVALID_DATE_REFUSES_BEFORE_TRANSPORT all confirmed.
+ Actual shared codec/store preserve five top-level native Dates, explicit null,
+ real zero, ordered arrays, nested values, boolean and leading-zero text.
+ Invalid February30 refuses before another native mutation. Only obsoleteFlag
+ removed from the same new granted fixture; record retained, no record/lock delete.
+ Visible-editor source matches repository after CRLF normalization,17206chars.
+ Source SHA256 LF 11a5d8443c8a557d665fcedfee8a02a6658c260c2c89c64ed709f1981c3d15b8
+ Native copied JSON SHA256
+ 1afdeaaedfe77187d2b57b977e131906cffeccd24ee3704e37c231ab6692c8cb
+ Result PNG SHA256
+ 7bc2c241f4f0ba4a345a945738cb603cd8e6b84595ae94126f6790de319986f2
+ Parameter readback initially differed ONLY by CRLF; normalized exact equality
+ confirmed before the one Run. No function was run on the initial mismatch.
+
+Evidence private directory (outside public checkout): ROOT handoff/
+stock-current-state-spec-20261021/private-evidence/
+native-initialization-{before-run,result}-20261023.png,
+native-initialization-result-20261023.json,
+native-initialization-draft-readback-20261023.js,
+native-typed-{before-run,result}-20261023.png,
+native-typed-result-20261023.json,native-typed-draft-readback-20261023.js.
+Public record intentionally contains no actual customer/order/task payloads.
+User-prepared business order observations are private and were not modified.
+
+Both exact grants are CONSUMED once. Fixed fixtures must not be adopted, reset,
+deleted or rerun under these grants. Existing old lock grants remain exhausted.
+Generated INIT/TYPE --check passed against unchanged source; no repeated full suite.
+Prior FULL1166 belongs027e285; prior affected replay9 belongsd362e73. Neither
+offline test total is a native capacity/recovery or complete safety acceptance.
+
+Still OPEN: original business collection types/private ACL/indexes; supported old
+LEGACY writer termination/drain (timestamp ABA not proved); all-writer semanticG3;
+native whole300line preparation/commit/recovery; actual Admin migration/apply/resume
+(NOT IMPLEMENTED), fresh backup/capture/shadow parity and controlled cutover.
+Generic Wix support contact consent still PENDING, no ticket/question sent.
+Reports keep businessInitializationAccepted/originalBusinessCollectionsAccepted,
+productionCapacityAccepted and activationReady false. CoverageEMPTY/ACTIVEOFF;
+real Support invoice and physical exitOFF. Initial human acceptance throughLoaded.
+
+Four release states: code candidate on task branch; new stock Pages version NOT
+deployed; Wix saved isolated diagnostic draft ONLY, NOT site published-live;
+real public stock/borrow/split/halo/Loaded acceptance NOT performed.

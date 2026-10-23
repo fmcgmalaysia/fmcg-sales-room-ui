@@ -1,4 +1,9 @@
-2026-10-23 — one retained synthetic typed roundtrip candidate, NOT live evidence
+2026-10-23 — historical probe design; actual native pass now recorded separately
+
+CURRENT: exact user grant including obsoleteFlag removal received and consumedONCE;
+Wix isolated native pass. See NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt for result,
+counts, source/evidence hashes and limits. Remaining NOT INSTALLED/UNKNOWN/PENDING
+wording below is historical pre-execution design, not current fact. No rerun/reset.
 
 Purpose: use the EXACT existing sdk-field-codec + sdk-conditional-store at the
 real native boundary, not another replacement/mock business writer. No original

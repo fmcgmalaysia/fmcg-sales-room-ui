@@ -1,4 +1,9 @@
-2026-10-23 — isolated initialization conjunction diagnostic READY OFFLINE ONLY
+2026-10-23 — historical probe design; actual native pass now recorded separately
+
+CURRENT: exact user grant received and consumedONCE; Wix isolated native pass.
+See NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt for result, counts, source/evidence
+hashes and limits. Remaining NOT INSTALLED/UNKNOWN/PENDING wording below records
+the pre-execution design state, not current fact. No replay under consumed grant.
 
 Problem: existing original legacy tasks can lack company/stockCommitVersion. Ordinary
 version-equality CAS cannot initialize an absent version. Read-then-unconditional-write

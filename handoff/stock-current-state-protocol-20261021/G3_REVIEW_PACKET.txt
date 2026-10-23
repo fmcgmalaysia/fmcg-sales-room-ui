@@ -1,6 +1,14 @@
 2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
 
 LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt: exact separate human grants received;
+  actual Wix INIT+TYPE each ranONCE and passed.10reads/2inserts/7patch attempts and
+  9queries/1insert/1patch respectively.3fixed fixtures retained, only granted TYPE
+  obsoleteFlag removed; no record/lock delete. Visible-editor source exact/readback
+  hashes and private result JSON/screenshots preserved. Both grantsCONSUMED, no rerun.
+  Synthetic missing-version/date conjunction and exact shared typed adapter now
+  accepted IN ISOLATION; NOT business initialization, timestampABA/legacy drain,
+  business schema/ACL/indexes, native300capacity/recovery or activation proof.
 - BORROW_SPLIT_LOADED_REPAY_COMPOSITION.txt: sameDB both-company same/different PO
   borrow then BOTH parties' Sales30/70 splits, borrowerLoaded30, own receipt20/80
   automatically repays30 and ends halos. Full positions/claims/rawtasks/transfer
@@ -23,8 +31,8 @@ LATEST bounded evidence additions (reuse source and outputs, not a new whole sca
 - CMS actual total item maximum10000 known; native execution/RPM/whole300business
   prepare/commit/recovery remainUNKNOWN. See NATIVE_STORAGE_QUOTA_AND_FOOTPRINT.txt
   and ITEM_QUOTA_RECOVERY_MATRIX.txt; arithmetic/fake quota are not native acceptance.
-- INIT/TYPE three-row exact test consent and generic Wix support contact consent
-  are PENDING. Do not repeat questions, run probes or contact Wix without human reply.
+- INIT/TYPE exact test grants CONSUMED; generic Wix support contact consent remains
+  PENDING. Do not rerun probes or contact Wix without the missing human reply.
   Migration APPLY still explicitly NOT IMPLEMENTED. Native/old-execution drain/G3/
   schema/capacity/recovery/shadow/cutover/public release gates are not complete.
 - Packing ownership/hold review found no basis to change existing max pending hold/
@@ -115,15 +123,15 @@ Next independent implementation prep: bounded native-capacity/read/typed roundtr
 diagnostic and actual schema/index installation/recovery checklist; no execution of
 new synthetic writes or deletes without exact remaining authority. Existing original
 StockProtocolTest lock deletion grants exhausted, preserve all previous records.
-NATIVE_INITIALIZATION_PROBE.txt now defines the reviewable new2retained-row Admin
-candidate (10reads/2inserts/7patchattempts maximum) and11new offline tests. No fresh
-mutation grant or native test claimed; missing-version/date conjunction still unknown.
+NATIVE_INITIALIZATION_PROBE.txt defines the new2retained-row Admin diagnostic
+(10reads/2inserts/7patchattempts maximum) and11offline tests. Its actual one-time
+native pass is now recorded in NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt.
 Do not equate WQL exists:false with strict missing/null or synthetic date proof with
 whole-company writer quiescence/ABA/migration recovery. Not in production packet.
 NATIVE_TYPED_ROUNDTRIP_PROBE.txt adds1fixed retained-row exact shared codec/adapter
-value test.13affectedpass; NOT native evidence. Current consolidated request is ONLY
-3new SCPT rows/2Admin functions once/<=19queries+3inserts+8patchattempts, new TYPE
-obsoleteFlag removal only, no record/lock delete or production ACL/Pages grant.
-Consolidate truly missing platform permission questions after reviewable probe ready.
+value test.13affectedpass plus actual isolated native pass in acceptance record.
+Both exact grants now consumed:3new StockProtocolTest rows/2Admin functions once/
+19queries+3inserts+8patchattempts total, new TYPE obsoleteFlag removal only. No
+record/lock delete or production ACL/Pages grant. Do not reuse these permissions.
 Do not repeat unchanged tests/23UIcaptures or claim publication. GitHub push/Pages/
 Wix published-live/public verification/user Loaded acceptance remain distinct.

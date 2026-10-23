@@ -1,5 +1,18 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 ACTUAL NATIVE INIT+TYPE: NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt.
+Exact human grants received separately; two new Admin diagnostic modules saved
+and full visible-editor readbacks match repository. Each function executed ONCE.
+INIT oktrue ISOLATED_CONJUNCTION_CONFIRMED,10reads/2inserts/7patch attempts. TYPE
+oktrue ISOLATED_TYPED_VALUES_CONFIRMED,9queries/1insert/1patch; Dates/null/zero/
+leading-zero text/arrays verified through exact shared adapter. Only approved new
+TYPE obsoleteFlag removed; all3synthetic records retained, no record/lock deletion.
+Private JSON/screenshots/source hashes saved outside public checkout. Both grants
+CONSUMED/no replay/reset. Historical pending/not-executed statements superseded.
+No business/ACL/schema/Publish change; production capacity/recovery/schema, legacy
+drain/ABA, semanticG3 and NOT-IMPLEMENTED Admin migration remainOPEN. CoverageEMPTY/
+ACTIVEOFF, invoice/physicalexitOFF. Generic Wix support contact consent stillPENDING.
+
 2026-10-23 VISIBLE USER RESULTS: VISIBLE_ACCEPTANCE_REPLAY.txt.
 User requested to see work. New read-only exporter runs existing composition callback
 with unchanged assertions and captures4cases/28steps; observer reads cannot mutate mock
