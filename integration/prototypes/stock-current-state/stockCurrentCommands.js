@@ -7278,7 +7278,7 @@ function createCurrentCostTables({ company, items, store }) {
 module.exports = { createCurrentCostTables };
 
 },
-// maintenance-snapshot-reader.cjs sha256:c5e5e33e8be4591ba70b4252e398cdffcde3188d3911a846931f194e07cd5e38
+// maintenance-snapshot-reader.cjs sha256:56c3025b038c2f194e444da05941059e361d22fb102d6caa0788019aa51c4690
 "maintenance-snapshot-reader.cjs": (load, module) => {
 'use strict';
 
@@ -7307,8 +7307,7 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     || !Number.isSafeInteger(maxBackupBytes) || maxBackupBytes < 1
     || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw Error('Explicit private maintenance snapshot dependencies/budgets required');
 
-  async function read() {
-    if (arguments.length) throw Error('Maintenance capture accepts no browser images or authority');
+  async function readState(ownedMigration = null) {
     const admin = await authenticateAdmin();
     if (admin?.isAdmin !== true || typeof admin.memberId !== 'string' || !admin.memberId) throw Error('Administrator maintenance capture required');
     const requireDrain = async () => {
@@ -7350,8 +7349,17 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
           }
         } while (rows.length < expected);
         capturedTables[collection] = rows;
+        const ownedLock = row => {
+          if (!ownedMigration || row._id !== hash(company + '/PURCHASE', 'LOCK')) return false;
+          const fields = Object.keys(row).filter(key => !['_createdDate', '_updatedDate', '_owner', '_ownerId'].includes(key)).sort().join(',');
+          if (fields !== '_id,attempt,company,owner' || row.company !== company
+            || row.owner !== hash(company + '/PURCHASE', ownedMigration.requestId, admin.memberId)
+            || typeof row.attempt !== 'string' || !row.attempt) throw Error('Exact owned migration capture lock required');
+          return true;
+        };
+        if (ownedMigration && collection === journal && !rows.some(ownedLock)) throw Error('Owned migration capture lock missing');
         tables[collection] = collection === purchaseOrders ? rows.filter(row => row.company === company)
-          : collection === journal ? rows.filter(row => !isMaintenanceBackupRecord(row, company)) : rows;
+          : collection === journal ? rows.filter(row => !isMaintenanceBackupRecord(row, company) && !ownedLock(row)) : rows;
       }
       const metadataRows = [];
       for (const collection of [orders, tasks, purchaseOrders]) for (const row of tables[collection]) {
@@ -7409,6 +7417,17 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     });
     return { ...snapshot.rows, metrics: { queries } };
   }
+  async function read() {
+    if (arguments.length) throw Error('Maintenance capture accepts no browser images or authority');
+    return readState();
+  }
+  async function readOwnedMigration(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,requestId'
+      || !/^[a-f0-9-]{36}$/i.test(input.requestId || '') || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')) throw Error('Original owned migration capture identity required');
+    const result = await readState(input);
+    if (result.expected.checkpointId !== input.checkpointId) throw Error('Owned migration checkpoint changed');
+    return result;
+  }
   // Direct composition seam for createMaintenanceMigration.capture. A different
   // current cohort never adopts a previously displayed checkpoint. Durability
   // and the actual Admin/drain binding remain installation prerequisites.
@@ -7419,7 +7438,7 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     if (result.expected.checkpointId !== input.checkpointId) throw Error('Maintenance checkpoint changed');
     return result;
   }
-  return { read, capture };
+  return { read, capture, readOwnedMigration };
 }
 module.exports = { createMaintenanceSnapshotReader };
 
@@ -7622,7 +7641,7 @@ function decodeMaintenanceNativeImage(value) {
 module.exports = { encodeMaintenanceNativeImage, decodeMaintenanceNativeImage };
 
 },
-// maintenance-backup-store.cjs sha256:39d4b3b2f7d276775d78ed27547c27ed51e5e11f0c4ecbcc56a06a8b55e60763
+// maintenance-backup-store.cjs sha256:ccec4096f1518fa17f4a5701c117d7e6c5a4ef65de287888c2c40c3da76c733c
 "maintenance-backup-store.cjs": (load, module) => {
 'use strict';
 
@@ -7828,8 +7847,10 @@ function createRetainedMaintenanceCapture({ company, backupStore, readSnapshot, 
   const originalRequest = copy(backupRequest), domain = new Set(domainCollections(company));
   const withoutMetadata = row => Object.fromEntries(Object.entries(row).filter(([key]) => !['company', 'stockCommitVersion', '_updatedDate'].includes(key)));
   return async request => {
-    if (!keys(request, 'company checkpointId') || request.company !== company || !hex(request.checkpointId)) throw Error('Original migration capture identity required');
-    const retained = await backupStore.inspect(originalRequest), fresh = await readSnapshot();
+    if ((!keys(request, 'company checkpointId') && !keys(request, 'company checkpointId requestId')) || request.company !== company
+      || !hex(request.checkpointId) || Object.hasOwn(request, 'requestId') && !uuid(request.requestId)) throw Error('Original migration capture identity required');
+    const retained = await backupStore.inspect(originalRequest), fresh = Object.hasOwn(request, 'requestId')
+      ? await readSnapshot({ requestId: request.requestId, checkpointId: request.checkpointId }) : await readSnapshot();
     if (retained?.company !== company || retained.durableBackupConfirmed !== true || !retained.retainedBy
       || fresh?.company !== company || fresh.complete !== true || fresh.expected?.checkpointId !== request.checkpointId
       || fresh.emptyCurrentConfirmed !== true || !same(fresh.control, retained.raw?.control)) throw Error('Fresh migration capture and original durable backup required');
@@ -7858,6 +7879,558 @@ function createRetainedMaintenanceCapture({ company, backupStore, readSnapshot, 
   };
 }
 module.exports = { createMaintenanceBackupStore, isMaintenanceBackupRecord, createRetainedMaintenanceCapture };
+
+},
+// maintenance-installed-reader.cjs sha256:fe96f23fdbd7faadf295bcce826700c25c82e979381374255704c00f12d7f4db
+"maintenance-installed-reader.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { same, copy, utf8Bytes } = load("segmented-plan.cjs");
+const { readCompanyCurrentSnapshot } = load("company-current-snapshot.cjs");
+const { encodeMaintenanceNativeImage } = load("maintenance-native-images.cjs");
+
+// PRIVATE original migration validate/inspect adapter, not a normal stock read.
+// Unlike readSnapshot(), it may inspect an owned FINALIZE checkpoint, but never
+// a different pending operation or an APPLY/VERIFY partial cohort. It has NO
+// write, release, retry, mode-switch or activation capability.
+function createMaintenanceInstalledReader({ company, items, store, authenticateAdmin, verifyLegacyDrain,
+  readControl, limits, maxSnapshotBytes, pageSize = 100 }) {
+  if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function'
+    || ['read', 'normalizeListedRow'].some(method => typeof store?.[method] !== 'function')
+    || [authenticateAdmin, verifyLegacyDrain, readControl].some(fn => typeof fn !== 'function')
+    || !limits || ['positions', 'claims', 'products', 'transfers', 'taskRows'].some(kind => !Number.isSafeInteger(limits[kind]) || limits[kind] < 1)
+    || !Number.isSafeInteger(maxSnapshotBytes) || maxSnapshotBytes < 1
+    || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw Error('Explicit private installed-reader dependencies/budgets required');
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', tasks = company === 'NCT' ? 'NCTTasks' : 'NCTTasks1';
+  const lockId = hash(company + '/PURCHASE', 'LOCK');
+  return async request => {
+    if (!request || Object.keys(request).sort().join(',') !== 'checkpointId,company,requestId' || request.company !== company
+      || !/^[a-f0-9-]{36}$/i.test(request.requestId || '') || !/^[a-f0-9]{32}$/.test(request.checkpointId || '')) throw Error('Original installed migration identity required');
+    const admin = await authenticateAdmin();
+    if (admin?.isAdmin !== true || typeof admin.memberId !== 'string' || !admin.memberId) throw Error('Administrator installed migration read required');
+    const key = hash(company + '/PURCHASE', request.requestId, admin.memberId);
+    const digest = hash({ kind: 'INITIAL_STOCK_MIGRATION_V2', checkpointId: request.checkpointId });
+    async function boundary() {
+      const currentAdmin = await authenticateAdmin();
+      if (currentAdmin?.isAdmin !== true || currentAdmin.memberId !== admin.memberId) throw Error('Installed migration administrator changed');
+      if (await verifyLegacyDrain({ company, checkpointId: request.checkpointId }) !== true) throw Error('Legacy request drain is not verified');
+      const control = await readControl();
+      if (control?._id !== hash(company, 'STOCK_CONTROL') || control.company !== company || control.mode !== 'MAINTENANCE'
+        || control.schemaVersion !== 1 || control.transferIndexVersion !== 2 || !control._version
+        || !Number.isSafeInteger(control.generation) || control.generation < 0) throw Error('Installed migration maintenance control required');
+      const manifest = await store.read(journal, key), result = await store.read(journal, hash(key, 'RESULT'));
+      const lock = await store.read(journal, lockId);
+      if (manifest?._id !== key || manifest.company !== company || manifest.stockOperationProtocol !== 2 || manifest.action !== 'STOCK_PLAN_MANIFEST'
+        || manifest.memberId !== admin.memberId || manifest.requestId !== request.requestId || manifest.digest !== digest
+        || !/^[a-f0-9]{32}$/.test(manifest.planHash || '') || !Number.isSafeInteger(manifest.baseGeneration) || manifest.baseGeneration < 0
+        || !Number.isSafeInteger(manifest.writeCount) || manifest.writeCount < 1) throw Error('Original installed migration manifest required');
+      if (control.pending !== null) {
+        const p = control.pending;
+        if (!p || p.key !== key || p.digest !== digest || p.planHash !== manifest.planHash || p.phase !== 'FINALIZE'
+          || p.cursor !== manifest.writeCount || p.count !== manifest.writeCount || control.generation !== manifest.baseGeneration
+          || lock?.company !== company || lock._id !== lockId || lock.owner !== key || typeof lock.attempt !== 'string' || !lock.attempt
+          || result !== null) throw Error('Owned FINALIZE migration read required');
+      } else if (lock !== null || result?._id !== hash(key, 'RESULT') || result.company !== company || result.stockOperationProtocol !== 2
+        || result.digest !== digest || result.baseGeneration !== manifest.baseGeneration || result.outcome?.ok !== true
+        || result.outcome.operationId !== key || result.outcome.generation !== manifest.baseGeneration + 1
+        || control.generation !== result.outcome.generation) throw Error('Confirmed original migration read required');
+      return { control, manifest, result, lock };
+    }
+    const before = await boundary(), metrics = { queries: 0, exactReads: 0 };
+    async function cohort() {
+      // Reuse the existing complete all-status stock reader. Its ordinary barrier
+      // is NOT weakened; this explicit private wrapper is bounded by boundary().
+      const current = await readCompanyCurrentSnapshot({ company, items, store, limits, pageSize,
+        protocol: { readSnapshot: async readRows => ({ rows: await readRows(), generation: before.control.generation }) } });
+      metrics.queries += current.metrics.queries; metrics.exactReads += current.metrics.exactReads;
+      const taskRows = [], seen = new Set(); let total = null;
+      do {
+        // Scan the exact company-owned task table WITHOUT filtering out missing
+        // company/version metadata. Such a row is an error, never silently absent.
+        const page = await items.query(tasks).ascending('_id').skip(taskRows.length).limit(pageSize)
+          .find({ consistentRead: true, returnTotalCount: true });
+        metrics.queries++;
+        if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.totalCount) || page.totalCount < taskRows.length
+          || page.totalCount > limits.taskRows || total !== null && total !== page.totalCount
+          || page.items.length !== Math.min(pageSize, page.totalCount - taskRows.length)) throw Error('Incomplete or over-budget installed task cohort');
+        total = page.totalCount;
+        for (const raw of page.items) {
+          if (typeof raw?._id !== 'string' || !raw._id || seen.has(raw._id) || raw.company !== company) throw Error('Installed task scope conflict');
+          seen.add(raw._id);
+          const listed = store.normalizeListedRow(tasks, raw), row = await store.read(tasks, raw._id); metrics.exactReads++;
+          if (!row || row._id !== raw._id || row.company !== company || !same(listed, row)) throw Error('Installed exact task image changed');
+          taskRows.push(copy(row));
+        }
+      } while (taskRows.length < total);
+      const rows = { company, positions: current.positions, claims: current.claims, products: current.products,
+        transfers: current.transfers, taskRows, complete: true, taskRowsComplete: true };
+      if (utf8Bytes(JSON.stringify(encodeMaintenanceNativeImage(rows))) > maxSnapshotBytes) throw Error('Installed migration snapshot byte policy exceeded');
+      return rows;
+    }
+    const first = await cohort(), second = await cohort(), after = await boundary();
+    if (!same(before, after)) throw Error('Installed migration boundary changed during read');
+    if (JSON.stringify(encodeMaintenanceNativeImage(first)) !== JSON.stringify(encodeMaintenanceNativeImage(second))) throw Error('Installed migration cohort changed during read');
+    return { ...second, generation: after.control.generation, operationId: key, checkpointId: request.checkpointId,
+      inspectionStage: after.control.pending === null ? 'CONFIRMED' : 'OWNED_FINALIZE', metrics, activationReady: false };
+  };
+}
+module.exports = { createMaintenanceInstalledReader };
+
+},
+// company-current-snapshot.cjs sha256:61cbc68a6917ce730674641d5c50753c7c63704e8ea840ed37583172ed5881fb
+"company-current-snapshot.cjs": (load, module) => {
+'use strict';
+
+// Private explicit shadow/maintenance snapshot, NOT a normal page read. Operator
+// supplies measured read budgets; exceeding them refuses rather than truncates.
+async function readCompanyCurrentSnapshot({ company, items, store, protocol, limits, pageSize = 100 }) {
+  const names = ['positions', 'claims', 'products', 'transfers'];
+  if (!['NCT', 'GHR'].includes(company) || typeof items?.query !== 'function' || typeof store?.read !== 'function'
+    || typeof protocol?.readSnapshot !== 'function' || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100
+    || !limits || names.some(k => !Number.isSafeInteger(limits[k]) || limits[k] < 1)) throw Error('Explicit private snapshot read budgets required');
+  const metrics = { queries: 0, exactReads: 0 };
+  const snapshot = await protocol.readSnapshot(async () => {
+    const result = { company, complete: true };
+    for (const [name, collection, action] of [['positions', 'StockPositions'], ['claims', 'StockClaims'], ['products', 'StockProducts'],
+      ['transfers', company === 'NCT' ? 'NCTActivity' : 'NCTActivity1', 'STOCK_TRANSFER_CURRENT']]) {
+      const rows = [], seen = new Set(); let expected = null;
+      do {
+        let query = items.query(collection).eq('company', company);
+        if (action) query = query.eq('action', action);
+        const page = await query.ascending('_id').skip(rows.length).limit(pageSize).find({ consistentRead: true, returnTotalCount: true });
+        metrics.queries++;
+        if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.totalCount) || page.totalCount < 0 || page.totalCount > limits[name]
+          || expected !== null && expected !== page.totalCount || page.items.length !== Math.min(pageSize, page.totalCount - rows.length)) throw Error('Incomplete or over-budget current company snapshot');
+        expected = page.totalCount;
+        for (const listed of page.items) {
+          if (typeof listed._id !== 'string' || !listed._id || seen.has(listed._id) || listed.company !== company || action && listed.action !== action) throw Error('Company snapshot list scope conflict');
+          seen.add(listed._id); metrics.exactReads++;
+          const row = await store.read(collection, listed._id);
+          if (!row || row._id !== listed._id || row.company !== company || action && row.action !== action) throw Error('Company snapshot exact read changed');
+          rows.push(JSON.parse(JSON.stringify(row)));
+        }
+      } while (rows.length < expected);
+      result[name] = rows;
+    }
+    return result;
+  });
+  return { ...snapshot.rows, generation: snapshot.generation, metrics };
+}
+module.exports = { readCompanyCurrentSnapshot };
+
+},
+// maintenance-metadata-initializer.cjs sha256:c9316ada88b7b2a39f2f7eddf06d9a2bc0e77119631c841fac8fcf25d69f9013
+"maintenance-metadata-initializer.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const own = (row, field) => Object.prototype.hasOwnProperty.call(row, field);
+const nativeDate = value => Object.prototype.toString.call(value) === '[object Date]' && Number.isFinite(value.getTime());
+const typed = value => {
+  if (nativeDate(value)) return ['date', value.toISOString()];
+  if (value === null || typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value)) return [typeof value, value];
+  if (Array.isArray(value)) return ['array', value.map(typed)];
+  if (value && Object.prototype.toString.call(value) === '[object Object]') return ['object', Object.keys(value).sort().map(key => [key, typed(value[key])])];
+  throw Error('Unsupported native migration value');
+};
+const image = value => JSON.stringify(typed(value));
+const business = row => Object.fromEntries(Object.entries(row).filter(([key]) => !['_updatedDate', 'company', 'stockCommitVersion'].includes(key)));
+
+// Private one-record step. It never scans, deletes, changes business fields, or
+// treats timestamps as a substitute for proof that old writers have stopped.
+// The server checkpoint owns collection/ID/images; browser input is only ordinal.
+function createMaintenanceMetadataInitializer({ company, items, authenticateAdmin, verifyLegacyDrain, readControl, readCapturedRow }) {
+  if (!['NCT', 'GHR'].includes(company) || ['query', 'patch'].some(method => typeof items?.[method] !== 'function')
+    || [authenticateAdmin, verifyLegacyDrain, readControl, readCapturedRow].some(fn => typeof fn !== 'function')) throw Error('Private metadata initialization dependencies required');
+  // Existing journal history is immutable and already supported by the current
+  // readers. It is deliberately excluded from blanket metadata initialization.
+  const allowed = new Set(company === 'NCT' ? ['NCTTasks', 'NCTOrders', 'PurchaseOrders'] : ['NCTTasks1', 'NCTOrders1', 'PurchaseOrders']);
+  async function step(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,ordinal' || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')
+      || !Number.isSafeInteger(input.ordinal) || input.ordinal < 0) throw Error('Captured migration row ordinal required');
+    const admin = await authenticateAdmin();
+    if (admin?.isAdmin !== true || !admin.memberId) throw Error('Administrator metadata initialization required');
+    const requireMaintenance = async () => {
+      const control = await readControl();
+      if (control?._id !== hash(company, 'STOCK_CONTROL') || control.company !== company || control.mode !== 'MAINTENANCE'
+        || control.schemaVersion !== 1 || !control._version || control.pending !== null) throw Error('Unchanged maintenance metadata control required');
+      if (await verifyLegacyDrain({ company, checkpointId: input.checkpointId }) !== true) throw Error('Legacy request drain is not verified');
+      return image(control);
+    };
+    const controlImage = await requireMaintenance(), captured = await readCapturedRow({ company, ...input });
+    const collection = captured?.collection, before = captured?.row;
+    if (!allowed.has(collection) || captured.checkpointId !== input.checkpointId || captured.ordinal !== input.ordinal
+      || typeof before?._id !== 'string' || !before._id || !nativeDate(before._updatedDate)
+      || own(before, 'stockCommitVersion') || own(before, '_version') || own(before, 'company') && before.company !== company
+      || before.stockOperationProtocol != null) throw Error('Exact unversioned captured business row required');
+    image(before);
+    const read = async () => {
+      const page = await items.query(collection).eq('_id', before._id).limit(2).find({ consistentRead: true, returnTotalCount: true });
+      if (!Array.isArray(page?.items) || page.totalCount !== 1 || page.items.length !== 1 || page.items[0]?._id !== before._id) throw Error('Complete exact metadata read required');
+      image(page.items[0]); return page.items[0];
+    };
+    const version = hash('STOCK_METADATA_V2', company, input.checkpointId, collection, before._id);
+    const afterMatches = row => row.company === company && row.stockCommitVersion === version && nativeDate(row._updatedDate)
+      && image(business(row)) === image(business(before));
+    const current = await read();
+    if (afterMatches(current)) return { ok: true, initialized: false, alreadyConfirmed: true, ordinal: input.ordinal };
+    if (image(current) !== image(before)) throw Error('Captured legacy row changed; no metadata written');
+    if (await requireMaintenance() !== controlImage) throw Error('Maintenance control changed before initialization');
+    // Date conjunction is the exact installed-SDK primitive already checked in
+    // isolation. It is only used after independent old-writer quiescence proof.
+    let patch = items.patch(collection, before._id).setField('company', company).setField('stockCommitVersion', version);
+    await patch.run({ condition: { company: own(before, 'company') ? { $eq: company } : { $exists: false },
+      stockCommitVersion: { $exists: false }, _updatedDate: { $eq: { $date: before._updatedDate.toISOString() } } } });
+    // No catch/retry on an unknown result. A later explicit step first inspects
+    // the durable exact metadata token; it never overwrites a different version.
+    if (!afterMatches(await read())) throw Error('Metadata initialization image unconfirmed');
+    if (await requireMaintenance() !== controlImage) throw Error('Maintenance changed; retain initialized row for review');
+    return { ok: true, initialized: true, alreadyConfirmed: false, ordinal: input.ordinal };
+  }
+  return { step };
+}
+module.exports = { createMaintenanceMetadataInitializer };
+
+},
+// maintenance-migration.cjs sha256:68f579c288f8c486f695a9c3888e5e33c6aa56b067ab1f4978c04277145b07d9
+"maintenance-migration.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const { same, copy } = load("segmented-plan.cjs");
+const { createSegmentedFencedProof } = load("segmented-fenced-proof.cjs");
+const { compareStockLifecycleShadow } = load("lifecycle-shadow-parity.cjs");
+const tables = { positions: 'StockPositions', claims: 'StockClaims', products: 'StockProducts' };
+const taskTable = company => company === 'NCT' ? 'NCTTasks' : 'NCTTasks1';
+const count = n => Number.isSafeInteger(n) && n >= 0;
+
+// Server-only migration of an already versioned, complete captured cohort. Missing
+// legacy versions require the separate conditional metadata initializer first.
+// This does not create schema, assert old requests stopped, or enable ACTIVE.
+function prepareMaintenanceMigration({ company, expected, taskRows, control, backupIdentity }) {
+  if (!['NCT', 'GHR'].includes(company) || expected?.company !== company || expected.canPlan !== true
+    || !expected.checkpointId || !expected.baseCheckpointId || expected.proposedTransferIndexVersion !== 2
+    || !Array.isArray(expected.blockers) || expected.blockers.some(code => code !== 'ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED')
+    || !count(expected.generation) || !count(expected.generation + 1) || !Array.isArray(expected.taskInitializations)
+    || !Array.isArray(taskRows) || control?._id !== hash(company, 'STOCK_CONTROL') || control.company !== company
+    || control.mode !== 'MAINTENANCE' || control.schemaVersion !== 1 || control.transferIndexVersion !== 2
+    || !control._version || control.pending !== null || control.generation !== expected.generation
+    || Object.keys(tables).some(kind => !Array.isArray(expected.rows?.[kind]))) throw Error('Verified maintenance migration capture required');
+  const raw = new Map(taskRows.map(row => [row._id, row]));
+  if (raw.size !== taskRows.length || raw.size !== expected.taskInitializations.length) throw Error('Complete migration task cohort required');
+  const generation = expected.generation + 1, writes = [], seen = new Set();
+  const target = copy(expected); target.generation = generation;
+  target.blockers = []; target.canApply = false; target.activationReady = false;
+  for (const kind of Object.keys(tables)) target.rows[kind] = expected.rows[kind].map(row => {
+    if (row.company !== company || !row._id || row.checkpointGeneration !== expected.generation) throw Error('Captured migration stock scope conflict');
+    const after = { ...copy(row), checkpointGeneration: generation };
+    writes.push({ collection: tables[kind], before: null, after });
+    return after;
+  });
+  target.taskInitializations = expected.taskInitializations.map(entry => {
+    const before = raw.get(entry.id);
+    if (!before || seen.has(entry.id) || before.company !== company || typeof before._version !== 'string' || !before._version
+      || before.stockCommitVersion !== undefined || hash(before) !== entry.observedHash || before._version !== entry.observedVersion
+      || entry.fields?.company !== company || entry.fields.stockCounterSchema !== 2
+      || !count(entry.fields.stockDispatchedCumulative) || entry.fields.stockCounterGeneration !== expected.generation) {
+      throw Error('Exact versioned migration task image required');
+    }
+    seen.add(entry.id);
+    const fields = { ...copy(entry.fields), stockCounterGeneration: generation };
+    writes.push({ collection: taskTable(company), before: copy(before), after: { ...copy(before), ...fields } });
+    return { ...copy(entry), fields };
+  });
+  // Even an empty company uses a durable metadata checkpoint, not a fake product.
+  const journal = company === 'NCT' ? 'NCTActivity' : 'NCTActivity1';
+  writes.push({ collection: journal, before: null, after: { _id: hash(company, 'MIGRATION', expected.checkpointId), company,
+    action: 'STOCK_INITIALIZATION_CHECKPOINT', checkpointId: expected.checkpointId, generation,
+    counts: copy(expected.counts), lifecycleVersion: 2 } });
+  return { writes, migration: { company, checkpointId: expected.checkpointId, baseGeneration: expected.generation,
+    expected: target, legacyTaskRows: copy(taskRows), ...(backupIdentity ? { backupIdentity: copy(backupIdentity) } : {}) } };
+}
+
+function createMaintenanceMigration({ company, store, authenticateAdmin, verifyLegacyDrain, capture,
+  readInstalled, protocolOptions = {} }) {
+  if (!['NCT', 'GHR'].includes(company) || [authenticateAdmin, verifyLegacyDrain, capture, readInstalled].some(fn => typeof fn !== 'function')) {
+    throw Error('Private migration authority, drain verification and snapshot readers required');
+  }
+  const protocol = createSegmentedFencedProof({ ...protocolOptions, company, store, domainWrites: true });
+  async function requireDrain(checkpointId) {
+    if (await verifyLegacyDrain({ company, checkpointId }) !== true) throw Error('Legacy request drain is not verified');
+  }
+  async function apply(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,requestId'
+      || !/^[a-f0-9-]{36}$/i.test(input.requestId || '') || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')) throw Error('Original migration request and checkpoint required');
+    const admin = await authenticateAdmin();
+    if (!admin?.memberId || admin.isAdmin !== true) throw Error('Administrator migration authority required');
+    // Verify before any lock/staging write as well as under the owned protocol.
+    // A missing provider/installed admission verifier is an error, never a flag
+    // accepted from the browser or an inference from elapsed time/empty locks.
+    await requireDrain(input.checkpointId);
+    return protocol.commit({ requestId: input.requestId, memberId: admin.memberId,
+      input: { kind: 'INITIAL_STOCK_MIGRATION_V2', checkpointId: input.checkpointId },
+      authorize: async operation => {
+        const currentAdmin = await authenticateAdmin(), control = operation.control;
+        if (currentAdmin?.isAdmin !== true || currentAdmin.memberId !== admin.memberId
+          || control.mode !== 'MAINTENANCE' || control.schemaVersion !== 1 || control.transferIndexVersion !== 2) throw Error('Migration maintenance authority changed');
+        await requireDrain(input.checkpointId);
+      },
+      prepare: async () => {
+        const observed = await capture({ company, requestId: input.requestId, checkpointId: input.checkpointId });
+        if (observed?.expected?.checkpointId !== input.checkpointId || observed.emptyCurrentConfirmed !== true) throw Error('Original complete empty-current checkpoint required');
+        if (observed.durableBackupConfirmed !== true) throw Error('Durable private original migration backup required');
+        const proof = observed.backupIdentity;
+        if (!proof || Object.keys(proof).sort().join(',') !== 'backupId,checkpointId,requestId,retainedBy'
+          || !/^[a-f0-9-]{36}$/i.test(proof.requestId || '') || !/^[a-f0-9]{32}$/.test(proof.backupId || '')
+          || !/^[a-f0-9]{32}$/.test(proof.checkpointId || '') || proof.retainedBy !== admin.memberId) throw Error('Original retained backup identity required');
+        const control = await protocol.readControl();
+        if (!same(control, observed.control)) throw Error('Migration capture changed');
+        return prepareMaintenanceMigration({ company, ...observed, control });
+      },
+      validate: async plan => {
+        // Before RESULT/generation publication require the entire installed cohort,
+        // not sums from one display page. The protocol has already checked each
+        // after-image; this also detects extra rows not present in the plan.
+        const installed = await readInstalled({ company, requestId: input.requestId, checkpointId: input.checkpointId });
+        if (installed?.company !== company || installed.complete !== true || installed.taskRowsComplete !== true
+          || !Array.isArray(installed.transfers) || installed.transfers.length) throw Error('Complete initial migration readback required');
+        for (const [kind, collection] of Object.entries({ ...tables, taskRows: taskTable(company) })) {
+          const actual = installed[kind], expectedRows = plan.writes.filter(w => w.collection === collection).map(w => w.after);
+          if (!Array.isArray(actual) || actual.length !== expectedRows.length || new Set(actual.map(row => row._id)).size !== actual.length
+            || expectedRows.some(row => !same(row, actual.find(value => value._id === row._id)))) throw Error('Initial migration cohort differs');
+        }
+      } });
+  }
+  async function inspect(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,requestId'
+      || !/^[a-f0-9-]{36}$/i.test(input.requestId || '') || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')) throw Error('Original migration inspection required');
+    const admin = await authenticateAdmin();
+    if (admin?.isAdmin !== true || !admin.memberId) throw Error('Administrator migration authority required');
+    const before = await protocol.readControl();
+    if (before.mode !== 'MAINTENANCE' || before.pending) throw Error('Completed maintenance migration required');
+    const key = hash(company + '/PURCHASE', input.requestId, admin.memberId), result = await store.read(protocol.ids.journal, hash(key, 'RESULT'));
+    const manifest = await store.read(protocol.ids.journal, key);
+    if (result?.company !== company || result._id !== hash(key, 'RESULT') || result.stockOperationProtocol !== 2
+      || result.outcome?.ok !== true || result.outcome.operationId !== key
+      || result.digest !== hash({ kind: 'INITIAL_STOCK_MIGRATION_V2', checkpointId: input.checkpointId })
+      || manifest?.digest !== result.digest || result.baseGeneration !== manifest.baseGeneration
+      || result.outcome.generation !== result.baseGeneration + 1 || before.generation !== result.outcome.generation) throw Error('Confirmed original migration result required');
+    // Decode the exact retained operation; never recapture a different baseline.
+    const { createSegmentedPlanCodec } = load("segmented-plan.cjs");
+    const codec = createSegmentedPlanCodec({ ...protocolOptions.codecPolicy, company, domainWrites: true });
+    const fragments = [];
+    for (const ref of manifest.fragments || []) fragments.push(await store.read(protocol.ids.journal, ref.id));
+    const plan = codec.decode({ manifest, fragments, key, digest: result.digest, memberId: admin.memberId, requestId: input.requestId });
+    if (plan.migration?.checkpointId !== input.checkpointId) throw Error('Migration checkpoint identity differs');
+    const current = await readInstalled({ company, requestId: input.requestId, checkpointId: input.checkpointId }), after = await protocol.readControl();
+    return compareStockLifecycleShadow({ company, expected: plan.migration.expected, legacyTaskRows: plan.migration.legacyTaskRows,
+      current: { ...current, generation: result.outcome.generation }, controlBefore: before, controlAfter: after });
+  }
+  return { apply, inspect };
+}
+module.exports = { prepareMaintenanceMigration, createMaintenanceMigration };
+
+},
+// lifecycle-shadow-parity.cjs sha256:b3732560fa61f88cb7253f10261192fc93c4f13a3133df505a63f76459bfbbe5
+"lifecycle-shadow-parity.cjs": (load, module) => {
+'use strict';
+
+// Private initial-cutover READ ONLY proof. The original shadow comparison covers
+// physical/customer fields, not v2 lifetime counters. This adds those requirements
+// without changing that legacy diagnostic, selecting an authority or enabling mode.
+const { hash } = load("commit-proof.cjs");
+const { compareStockShadow } = load("shadow-parity.cjs");
+const { same, copy } = load("segmented-plan.cjs");
+const count = n => Number.isSafeInteger(n) && n >= 0;
+const taskMetadata = new Set(['_createdDate', '_updatedDate', '_owner', '_ownerId', '_version', 'stockCommitVersion',
+  'company', 'stockCounterSchema', 'stockDispatchedCumulative', 'stockCounterGeneration']);
+const businessImage = row => Object.fromEntries(Object.entries(copy(row)).filter(([field]) => !taskMetadata.has(field)));
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+function compareStockLifecycleShadow({ company, expected, legacyTaskRows, current, controlBefore, controlAfter }) {
+  if (!['NCT', 'GHR'].includes(company) || expected?.company !== company || expected.canPlan !== true
+    || !expected.checkpointId || !expected.baseCheckpointId || !count(expected.generation)
+    || expected.proposedTransferIndexVersion !== 2 || !Array.isArray(expected.taskInitializations)
+    || !Array.isArray(legacyTaskRows) || current?.taskRowsComplete !== true || !Array.isArray(current.taskRows)
+    || ['positions', 'claims', 'products'].some(table => !Array.isArray(expected.rows?.[table]))) throw Error('Complete lifecycle maintenance snapshots required');
+  const base = compareStockShadow({ company, expected: { company, generation: expected.generation, ...expected.rows },
+    current, controlBefore, controlAfter });
+  const result = { ...base, schema: 'STOCK_INITIAL_LIFECYCLE_SHADOW_V2', lifecycleVerified: false, activationReady: false };
+  if (!base.parity) return result;
+  if (controlBefore.transferIndexVersion !== 2) return { ...result, parity: false, status: 'TRANSFER_INDEX_NOT_VERIFIED', fingerprint: hash(result.fingerprint, 'TRANSFER_INDEX_NOT_VERIFIED') };
+  const differences = [...base.differences]; let differenceCount = base.differenceCount;
+  const difference = (table, id, field, reason) => {
+    differenceCount++;
+    if (differences.length < 100) differences.push({ table, id, field, reason });
+  };
+  const fields = { positions: ['borrowRepaidCumulative'], claims: ['dispatchedCumulative'], products: ['lifecycleVersion', 'nextBorrowSequence'] };
+  const fingerprints = {};
+  for (const [table, critical] of Object.entries(fields)) {
+    const observed = new Map(current[table].map(row => [row._id, row]));
+    for (const row of expected.rows[table]) {
+      if (table === 'positions' && row.borrowRepaidCumulative !== 0
+        || table === 'claims' && !count(row.dispatchedCumulative)
+        || table === 'products' && (row.lifecycleVersion !== 2 || row.nextBorrowSequence !== 1)) throw Error('Initial lifecycle baseline counters required');
+      const after = observed.get(row._id);
+      if (typeof after?._version !== 'string' || !after._version) difference(table, row._id, '_version', 'CURRENT_LIFECYCLE_METADATA_INVALID');
+      for (const field of critical) if (!same(row[field], after?.[field])) difference(table, row._id, field, 'LIFECYCLE_COUNTER_MISMATCH');
+      if (after?.checkpointGeneration !== expected.generation) difference(table, row._id, 'checkpointGeneration', 'INITIAL_CHECKPOINT_GENERATION_MISMATCH');
+    }
+    fingerprints[table] = current[table].map(row => [row._id, ...critical.map(field => row[field]), row.checkpointGeneration]).sort((a,b) => a[0].localeCompare(b[0]));
+  }
+  const initializations = new Map(), legacy = new Map(), actual = new Map();
+  for (const entry of expected.taskInitializations) {
+    if (typeof entry?.id !== 'string' || !entry.id || initializations.has(entry.id)
+      || entry.fields?.company !== company || entry.fields.stockCounterSchema !== 2 || !count(entry.fields.stockDispatchedCumulative)
+      || entry.fields.stockCounterGeneration !== expected.generation || !entry.observedHash) throw Error('Exact lifecycle task baseline required');
+    initializations.set(entry.id, entry);
+  }
+  for (const row of legacyTaskRows) {
+    if (!row?._id || legacy.has(row._id) || !initializations.has(row._id) || row.company && row.company !== company
+      || hash(row) !== initializations.get(row._id).observedHash) throw Error('Captured legacy task evidence differs');
+    legacy.set(row._id, row);
+  }
+  if (legacy.size !== initializations.size) throw Error('Complete captured legacy tasks required');
+  for (const row of current.taskRows) {
+    if (!row?._id || actual.has(row._id)) throw Error('Unique current task identities required');
+    actual.set(row._id, row);
+    if (!initializations.has(row._id)) difference('tasks', row._id, '_id', 'UNEXPECTED_CURRENT_TASK');
+  }
+  for (const [id, entry] of initializations) {
+    const row = actual.get(id);
+    if (!row) { difference('tasks', id, '_id', 'CURRENT_TASK_MISSING'); continue; }
+    const version = row._version || row.stockCommitVersion;
+    if (row.company !== company || typeof version !== 'string' || !version
+      || row._version && row.stockCommitVersion && row._version !== row.stockCommitVersion) difference('tasks', id, '_version', 'CURRENT_TASK_METADATA_INVALID');
+    for (const field of ['stockCounterSchema', 'stockDispatchedCumulative', 'stockCounterGeneration']) {
+      if (!same(row[field], entry.fields[field])) difference('tasks', id, field, 'TASK_COUNTER_MISMATCH');
+    }
+    if (!same(businessImage(legacy.get(id)), businessImage(row))) difference('tasks', id, 'businessImage', 'ORIGINAL_TASK_CHANGED');
+  }
+  // Equality of two caches is insufficient: independently prove cumulative source
+  // and task totals against exact claims, including CLOSED fully dispatched ones.
+  const checkDispatch = (rows, tasks, label) => {
+    const bySource = new Map(), byTask = new Map();
+    for (const row of rows.claims) {
+      if (!count(row.dispatchedCumulative)) { difference('claims', row._id, 'dispatchedCumulative', label + '_DISPATCH_INVALID'); continue; }
+      for (const [map, id] of [[bySource, row.positionId], [byTask, row.taskId]]) {
+        const total = (map.get(id) || 0) + row.dispatchedCumulative;
+        if (!count(total)) throw Error('Lifecycle dispatch aggregate overflow');
+        map.set(id, total);
+      }
+      if (!initializations.has(row.taskId)) difference('claims', row._id, 'taskId', label + '_TASK_MISSING');
+    }
+    for (const row of rows.positions) if ((bySource.get(row._id) || 0) !== row.dispatched) difference('positions', row._id, 'dispatched', label + '_CLAIM_DISPATCH_TOTAL_MISMATCH');
+    for (const [id, task] of tasks) if ((byTask.get(id) || 0) !== task.stockDispatchedCumulative) difference('tasks', id, 'stockDispatchedCumulative', label + '_CLAIM_DISPATCH_TOTAL_MISMATCH');
+  };
+  checkDispatch(expected.rows, new Map([...initializations].map(([id, entry]) => [id, entry.fields])), 'EXPECTED');
+  checkDispatch(current, actual, 'CURRENT');
+  fingerprints.tasks = [...actual].map(([id, row]) => [id, row.company, row.stockCounterSchema, row.stockDispatchedCumulative,
+    row.stockCounterGeneration, hash(canonical(businessImage(row)))]).sort((a,b) => a[0].localeCompare(b[0]));
+  const parity = differenceCount === 0, status = parity ? base.status === 'PARITY_WITH_REVIEW_REQUIRED'
+    ? 'LIFECYCLE_PARITY_WITH_REVIEW_REQUIRED' : 'LIFECYCLE_PARITY_CONFIRMED_KNOWN' : 'LIFECYCLE_DIFFERENCE_REVIEW_REQUIRED';
+  const dataFingerprint = hash(base.dataFingerprint, expected.checkpointId, fingerprints);
+  return { ...result, status, parity, lifecycleVerified: parity, differences, differenceCount, dataFingerprint,
+    fingerprint: hash(base.fingerprint, status, dataFingerprint, differences, differenceCount) };
+}
+module.exports = { compareStockLifecycleShadow };
+
+},
+// shadow-parity.cjs sha256:a8ceb7a99b67057ee4ba2a79ed135bc7f81867b2c0d1f2cce46810566c027362
+"shadow-parity.cjs": (load, module) => {
+'use strict';
+
+const { hash } = load("commit-proof.cjs");
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
+const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+const fields = {
+  positions: ['schemaVersion', 'company', 'stockKey', 'sourceKind', 'sourceId', 'sourceTaskId', 'poId', 'receiptAccepted', 'replacementReceived', 'supplierReturned', 'dispatched', 'onHand', 'isolated', 'reservedUsable', 'available', 'reviewCodes', 'status'],
+  claims: ['schemaVersion', 'company', 'stockKey', 'positionId', 'taskId', 'customerId', 'orderId', 'sourceLineId', 'reservedUsable', 'isolatedAttributed', 'reviewCodes', 'status'],
+  products: ['schemaVersion', 'company', 'stockKey', 'barcode', 'packing', 'ea', 'onHand', 'isolated', 'reservedUsable', 'available', 'reviewRequired', 'status']
+};
+const quantities = ['onHand', 'isolated', 'reservedUsable', 'available'];
+const count = n => Number.isSafeInteger(n) && n >= 0;
+const sum = (rows, field) => {
+  let n = 0;
+  for (const row of rows) { if (row[field] === null) return null; if (!count(row[field]) || !count(n + row[field])) throw Error('Shadow quantity invalid'); n += row[field]; }
+  return n;
+};
+// Explicit private maintenance/shadow diagnostic. Never called on normal stock
+// reads, never writes, never elects a winner or grants activation permission.
+function compareStockShadow({ company, expected, current, controlBefore, controlAfter }) {
+  const report = { company, activationReady: false, parity: false, status: null, differenceCount: 0, differences: [] };
+  const finish = status => ({ ...report, status, fingerprint: hash(canonical({ ...report, status })) });
+  if (!['NCT', 'GHR'].includes(company) || expected?.company !== company || current?.company !== company || current.complete !== true
+    || !count(expected.generation) || !count(current.generation) || !Array.isArray(current.transfers)
+    || Object.keys(fields).some(k => !Array.isArray(expected[k]) || !Array.isArray(current[k]))) throw Error('Complete company shadow snapshots required');
+  if (!same(controlBefore, controlAfter)) return finish('SNAPSHOT_CHANGED_RECHECK');
+  if (controlBefore?._id !== hash(company, 'STOCK_CONTROL') || controlBefore.company !== company || !controlBefore._version
+    || controlBefore.schemaVersion !== 1 || !count(controlBefore.generation)) return finish('CONTROL_NOT_VERIFIED');
+  if (controlBefore.pending) return finish('SAVE_PENDING_STAY_BLOCKED');
+  if (!['MAINTENANCE', 'SHADOW'].includes(controlBefore.mode)) return finish('MODE_NOT_ELIGIBLE');
+  if (expected.generation !== current.generation || current.generation !== controlBefore.generation) return finish('GENERATION_MISMATCH');
+  if (current.transfers.length) return finish('RELATION_AWARE_BASELINE_REQUIRED');
+  const differences = (table, id, field, reason = 'FIELD_MISMATCH') => {
+    report.differenceCount++;
+    if (report.differences.length < 100) report.differences.push({ table, id, field, reason });
+  };
+  const maps = {}, fingerprintRows = {};
+  let reviewRequired = false;
+  for (const table of Object.keys(fields)) {
+    const left = new Map(), right = new Map();
+    for (const [rows, map] of [[expected[table], left], [current[table], right]]) for (const row of rows) {
+      const id = table === 'positions' ? hash(company, row.stockKey, 'PURCHASE_SOURCE', row.sourceTaskId)
+        : table === 'claims' ? hash(company, row.positionId, row.taskId) : hash(company, row.stockKey);
+      let key; try { key = JSON.parse(row.stockKey); } catch (_) { throw Error('Shadow stock identity conflict'); }
+      if (!row._id || row._id !== id || map.has(row._id) || row.company !== company || row.schemaVersion !== 1
+        || !Array.isArray(key) || key.length !== 4 || key[0] !== company || typeof key[1] !== 'string' || !key[1]
+        || typeof key[2] !== 'string' || !key[2] || !Number.isSafeInteger(key[3]) || key[3] <= 0
+        || !['ACTIVE', 'CLOSED'].includes(row.status)) throw Error('Shadow row identity conflict');
+      map.set(row._id, row);
+    }
+    maps[table] = right;
+    const ids = [...new Set([...left.keys(), ...right.keys()])].sort();
+    for (const id of ids) {
+      const before = left.get(id), after = right.get(id);
+      if (!before || !after) { differences(table, id, '_id', before ? 'CURRENT_ROW_MISSING' : 'UNEXPECTED_CURRENT_ROW'); continue; }
+      if (!after._version || !count(after.revision) || !count(after.checkpointGeneration) || after.checkpointGeneration > current.generation) differences(table, id, '_version', 'CURRENT_METADATA_INVALID');
+      for (const field of fields[table]) {
+        const normalize = value => field === 'reviewCodes' && Array.isArray(value) ? [...value].sort() : value;
+        if (!same(normalize(before[field]), normalize(after[field]))) differences(table, id, field);
+      }
+      if (after.reviewRequired === true || after.reviewCodes?.length || quantities.some(k => after[k] === null) || after.isolatedAttributed === null) reviewRequired = true;
+    }
+    const select = row => ({ _id: row._id, ...Object.fromEntries(fields[table].map(k => [k, row[k]])) });
+    fingerprintRows[table] = { expected: expected[table].map(select).sort((a, b) => a._id.localeCompare(b._id)),
+      current: current[table].map(select).sort((a, b) => a._id.localeCompare(b._id)) };
+  }
+  const claimsByPosition = new Map(), sourcesByProduct = new Map(), productKeys = new Set([...maps.products.values()].map(p => p.stockKey));
+  for (const claim of maps.claims.values()) { if (!claimsByPosition.has(claim.positionId)) claimsByPosition.set(claim.positionId, []); claimsByPosition.get(claim.positionId).push(claim); }
+  for (const position of maps.positions.values()) { if (!sourcesByProduct.has(position.stockKey)) sourcesByProduct.set(position.stockKey, []); sourcesByProduct.get(position.stockKey).push(position); }
+  for (const position of maps.positions.values()) {
+    const claims = claimsByPosition.get(position._id) || [];
+    if (!productKeys.has(position.stockKey)) differences('positions', position._id, 'stockKey', 'PRODUCT_CHECKPOINT_MISSING');
+    const usable = sum(claims, 'reservedUsable');
+    if (usable !== null && position.reservedUsable !== null && usable !== position.reservedUsable) differences('positions', position._id, 'reservedUsable', 'CLAIM_TOTAL_MISMATCH');
+    if (quantities.every(k => count(position[k])) && position.onHand !== position.available + position.isolated + position.reservedUsable) differences('positions', position._id, 'onHand', 'PHYSICAL_BALANCE_MISMATCH');
+    if ([position.onHand, position.supplierReturned, position.dispatched, position.receiptAccepted, position.replacementReceived].every(count)
+      && position.onHand + position.supplierReturned + position.dispatched !== position.receiptAccepted + position.replacementReceived) differences('positions', position._id, 'onHand', 'MOVEMENT_TOTAL_MISMATCH');
+  }
+  for (const claim of maps.claims.values()) {
+    const position = maps.positions.get(claim.positionId);
+    if (!position || claim.stockKey !== position.stockKey) differences('claims', claim._id, 'positionId', 'ORPHANED_CLAIM');
+  }
+  for (const product of maps.products.values()) {
+    const sources = sourcesByProduct.get(product.stockKey) || [];
+    for (const field of quantities) if (sum(sources, field) !== product[field]) differences('products', product._id, field, 'SOURCE_TOTAL_MISMATCH');
+  }
+  report.dataFingerprint = hash(canonical(fingerprintRows));
+  report.parity = report.differenceCount === 0;
+  return finish(report.parity ? reviewRequired ? 'PARITY_WITH_REVIEW_REQUIRED' : 'PARITY_CONFIRMED_KNOWN' : 'DIFFERENCE_REVIEW_REQUIRED');
+}
+module.exports = { compareStockShadow };
 
 }
 };
@@ -7923,3 +8496,6 @@ export const createCurrentCostTables = load("current-cost-tables.cjs").createCur
 export const createMaintenanceSnapshotReader = load("maintenance-snapshot-reader.cjs").createMaintenanceSnapshotReader;
 export const createMaintenanceBackupStore = load("maintenance-backup-store.cjs").createMaintenanceBackupStore;
 export const createRetainedMaintenanceCapture = load("maintenance-backup-store.cjs").createRetainedMaintenanceCapture;
+export const createMaintenanceInstalledReader = load("maintenance-installed-reader.cjs").createMaintenanceInstalledReader;
+export const createMaintenanceMetadataInitializer = load("maintenance-metadata-initializer.cjs").createMaintenanceMetadataInitializer;
+export const createMaintenanceMigration = load("maintenance-migration.cjs").createMaintenanceMigration;

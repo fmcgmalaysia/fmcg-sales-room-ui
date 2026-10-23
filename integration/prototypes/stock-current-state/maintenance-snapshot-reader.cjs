@@ -25,8 +25,7 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     || !Number.isSafeInteger(maxBackupBytes) || maxBackupBytes < 1
     || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw Error('Explicit private maintenance snapshot dependencies/budgets required');
 
-  async function read() {
-    if (arguments.length) throw Error('Maintenance capture accepts no browser images or authority');
+  async function readState(ownedMigration = null) {
     const admin = await authenticateAdmin();
     if (admin?.isAdmin !== true || typeof admin.memberId !== 'string' || !admin.memberId) throw Error('Administrator maintenance capture required');
     const requireDrain = async () => {
@@ -68,8 +67,17 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
           }
         } while (rows.length < expected);
         capturedTables[collection] = rows;
+        const ownedLock = row => {
+          if (!ownedMigration || row._id !== hash(company + '/PURCHASE', 'LOCK')) return false;
+          const fields = Object.keys(row).filter(key => !['_createdDate', '_updatedDate', '_owner', '_ownerId'].includes(key)).sort().join(',');
+          if (fields !== '_id,attempt,company,owner' || row.company !== company
+            || row.owner !== hash(company + '/PURCHASE', ownedMigration.requestId, admin.memberId)
+            || typeof row.attempt !== 'string' || !row.attempt) throw Error('Exact owned migration capture lock required');
+          return true;
+        };
+        if (ownedMigration && collection === journal && !rows.some(ownedLock)) throw Error('Owned migration capture lock missing');
         tables[collection] = collection === purchaseOrders ? rows.filter(row => row.company === company)
-          : collection === journal ? rows.filter(row => !isMaintenanceBackupRecord(row, company)) : rows;
+          : collection === journal ? rows.filter(row => !isMaintenanceBackupRecord(row, company) && !ownedLock(row)) : rows;
       }
       const metadataRows = [];
       for (const collection of [orders, tasks, purchaseOrders]) for (const row of tables[collection]) {
@@ -127,6 +135,17 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     });
     return { ...snapshot.rows, metrics: { queries } };
   }
+  async function read() {
+    if (arguments.length) throw Error('Maintenance capture accepts no browser images or authority');
+    return readState();
+  }
+  async function readOwnedMigration(input) {
+    if (!input || Object.keys(input).sort().join(',') !== 'checkpointId,requestId'
+      || !/^[a-f0-9-]{36}$/i.test(input.requestId || '') || !/^[a-f0-9]{32}$/.test(input.checkpointId || '')) throw Error('Original owned migration capture identity required');
+    const result = await readState(input);
+    if (result.expected.checkpointId !== input.checkpointId) throw Error('Owned migration checkpoint changed');
+    return result;
+  }
   // Direct composition seam for createMaintenanceMigration.capture. A different
   // current cohort never adopts a previously displayed checkpoint. Durability
   // and the actual Admin/drain binding remain installation prerequisites.
@@ -137,6 +156,6 @@ function createMaintenanceSnapshotReader({ company, items, store, protocol, auth
     if (result.expected.checkpointId !== input.checkpointId) throw Error('Maintenance checkpoint changed');
     return result;
   }
-  return { read, capture };
+  return { read, capture, readOwnedMigration };
 }
 module.exports = { createMaintenanceSnapshotReader };

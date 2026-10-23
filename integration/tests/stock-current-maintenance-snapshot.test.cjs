@@ -176,3 +176,14 @@ test('same-count native edits and replacements during capture are refused, not d
     await assert.rejects(f.reader().read(), /native cohort changed/);
   }
 });
+
+test('only exact server-owned migration capture may exclude its own transient lock; ordinary capture stays blocked', async () => {
+  const f = fixture(), initial = await f.reader().read(), requestId = '77777777-1111-4111-8111-111111111111';
+  const id = hash('NCT/PURCHASE', 'LOCK'), lock = { _id: id, company: 'NCT', owner: hash('NCT/PURCHASE', requestId, 'ADMIN'), attempt: 'OWNED' };
+  f.db[f.journal].push(lock);
+  const ordinary = await f.reader().read(); assert.ok(ordinary.expected.blockers.includes('BUSINESS_LOCK_PRESENT'));
+  const owned = await f.reader().readOwnedMigration({ requestId, checkpointId: initial.expected.checkpointId });
+  assert.equal(owned.expected.checkpointId, initial.expected.checkpointId); assert.equal(owned.backup.backupId, initial.backup.backupId);
+  lock.owner = 'OTHER'; await assert.rejects(f.reader().readOwnedMigration({ requestId, checkpointId: initial.expected.checkpointId }), /Exact owned/);
+  f.db[f.journal].pop(); await assert.rejects(f.reader().readOwnedMigration({ requestId, checkpointId: initial.expected.checkpointId }), /lock missing/);
+});

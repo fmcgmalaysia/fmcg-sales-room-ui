@@ -195,7 +195,7 @@
       "source": "stockCurrentCommands.js",
       "target": "stockCurrentCommands.js",
       "kind": "NEW",
-      "sha256": "acb13951d45a3bdfa9c8bbbe70d96b80a9e59b4598e7b97391985304bcda1975",
+      "sha256": "a021aacc3bd4765ee7f6232813977b30e7d13b0f0088da77bbeb7f5af8c9f542",
       "beforeSha256": null
     },
     {
@@ -1395,7 +1395,7 @@
       "system": "MASTER",
       "target": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sha256": "acb13951d45a3bdfa9c8bbbe70d96b80a9e59b4598e7b97391985304bcda1975",
+      "sha256": "a021aacc3bd4765ee7f6232813977b30e7d13b0f0088da77bbeb7f5af8c9f542",
       "exports": [
         "createBorrowCurrentQuery",
         "createCurrentAccountAuxiliarySave",
@@ -1438,6 +1438,9 @@
         "createCustomerDocumentFencedStore",
         "createFencedProof",
         "createMaintenanceBackupStore",
+        "createMaintenanceInstalledReader",
+        "createMaintenanceMetadataInitializer",
+        "createMaintenanceMigration",
         "createMaintenanceSnapshotReader",
         "createOrderFileFencedStore",
         "createPackingPhotoFencedStore",

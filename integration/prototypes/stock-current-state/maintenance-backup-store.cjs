@@ -202,8 +202,10 @@ function createRetainedMaintenanceCapture({ company, backupStore, readSnapshot, 
   const originalRequest = copy(backupRequest), domain = new Set(domainCollections(company));
   const withoutMetadata = row => Object.fromEntries(Object.entries(row).filter(([key]) => !['company', 'stockCommitVersion', '_updatedDate'].includes(key)));
   return async request => {
-    if (!keys(request, 'company checkpointId') || request.company !== company || !hex(request.checkpointId)) throw Error('Original migration capture identity required');
-    const retained = await backupStore.inspect(originalRequest), fresh = await readSnapshot();
+    if ((!keys(request, 'company checkpointId') && !keys(request, 'company checkpointId requestId')) || request.company !== company
+      || !hex(request.checkpointId) || Object.hasOwn(request, 'requestId') && !uuid(request.requestId)) throw Error('Original migration capture identity required');
+    const retained = await backupStore.inspect(originalRequest), fresh = Object.hasOwn(request, 'requestId')
+      ? await readSnapshot({ requestId: request.requestId, checkpointId: request.checkpointId }) : await readSnapshot();
     if (retained?.company !== company || retained.durableBackupConfirmed !== true || !retained.retainedBy
       || fresh?.company !== company || fresh.complete !== true || fresh.expected?.checkpointId !== request.checkpointId
       || fresh.emptyCurrentConfirmed !== true || !same(fresh.control, retained.raw?.control)) throw Error('Fresh migration capture and original durable backup required');

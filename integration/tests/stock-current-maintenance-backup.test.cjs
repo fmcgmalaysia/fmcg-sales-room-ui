@@ -3,7 +3,8 @@ const { hash } = require('../prototypes/stock-current-state/commit-proof.cjs');
 const { same, copy, utf8Bytes } = require('../prototypes/stock-current-state/segmented-plan.cjs');
 const { encodeMaintenanceNativeImage: encode, decodeMaintenanceNativeImage: decode } = require('../prototypes/stock-current-state/maintenance-native-images.cjs');
 const { createMaintenanceBackupStore, isMaintenanceBackupRecord, createRetainedMaintenanceCapture } = require('../prototypes/stock-current-state/maintenance-backup-store.cjs');
-const { prepareMaintenanceMigration } = require('../prototypes/stock-current-state/maintenance-migration.cjs');
+const { prepareMaintenanceMigration, createMaintenanceMigration } = require('../prototypes/stock-current-state/maintenance-migration.cjs');
+const { createMaintenanceInstalledReader } = require('../prototypes/stock-current-state/maintenance-installed-reader.cjs');
 const { createMaintenanceSnapshotReader } = require('../prototypes/stock-current-state/maintenance-snapshot-reader.cjs');
 const { createMaintenanceMetadataInitializer } = require('../prototypes/stock-current-state/maintenance-metadata-initializer.cjs');
 const { createSdkConditionalStore } = require('../prototypes/stock-current-state/sdk-conditional-store.cjs');
@@ -30,15 +31,29 @@ function fixture(company = 'NCT') {
   let admin = { isAdmin: true, memberId: 'ADMIN' }, privateRetention = true, drain = true, lose = null, captureCount = 0, afterInsert = null;
   const writes = [], reads = [], items = { query: collection => {
     const filters = []; let skip = 0, size = 100;
-    const q = { eq: (key, value) => { filters.push([key, value]); return q; }, ascending: () => q, skip: value => { skip = value; return q; },
+    const q = { eq: (key, value) => { filters.push([key, value]); return q; }, hasSome: (key, values) => { filters.push([key, values]); return q; },
+      ascending: () => q, skip: value => { skip = value; return q; },
       limit: value => { size = value; return q; }, find: async () => {
-        const all = db[collection].filter(row => filters.every(([key, value]) => row[key] === value)).sort((a, b) => a._id < b._id ? -1 : 1);
+        const all = db[collection].filter(row => filters.every(([key, value]) => Array.isArray(value) ? value.includes(row[key]) : row[key] === value)).sort((a, b) => a._id < b._id ? -1 : 1);
         return { totalCount: all.length, items: all.slice(skip, skip + size).map(clone) }; } }; return q;
-  }, insert() {}, remove() {}, patch: (collection, id) => {
-    const fields = {}; const p = { setField: (key, value) => { fields[key] = value; return p; }, run: async ({ condition }) => {
+  }, insert: async (collection, row) => {
+    if (db[collection].some(value => value._id === row._id)) throw Error('Occupied native ID');
+    db[collection].push(clone(row)); return clone(row);
+  }, remove: async (collection, id, { condition }) => {
+    const row = db[collection].find(value => value._id === id);
+    assert.equal(row.company, condition.company.$eq); assert.equal(row.attempt, condition.attempt.$eq);
+    db[collection].splice(db[collection].indexOf(row), 1); return clone(row);
+  }, patch: (collection, id) => {
+    const fields = {}, removed = []; const p = { setField: (key, value) => { fields[key] = value; return p; },
+      removeField: key => { removed.push(key); return p; }, run: async ({ condition }) => {
       const row = db[collection].find(row => row._id === id);
-      assert.equal(condition._updatedDate.$eq.$date, row._updatedDate.toISOString());
-      assert.equal(Object.hasOwn(row, 'stockCommitVersion'), false); assert.deepEqual(condition.stockCommitVersion, { $exists: false });
+      if (condition.stockCommitVersion.$exists === false) {
+        assert.equal(condition._updatedDate.$eq.$date, row._updatedDate.toISOString());
+        assert.equal(Object.hasOwn(row, 'stockCommitVersion'), false);
+      } else assert.equal(row.stockCommitVersion, condition.stockCommitVersion.$eq);
+      if (condition.company.$exists === false) assert.equal(Object.hasOwn(row, 'company'), false);
+      else assert.equal(row.company, condition.company.$eq);
+      for (const key of removed) delete row[key];
       Object.assign(row, fields); row._updatedDate = new Date('2026-10-23T07:00:00.000Z'); return clone(row);
     } }; return p;
   } };
@@ -52,7 +67,7 @@ function fixture(company = 'NCT') {
     return copy(row);
   } };
   const authenticateAdmin = async () => clone(admin), verifyLegacyDrain = async () => drain, readControl = async () => copy(control);
-  const sdkStore = createSdkConditionalStore({ company, items, collections: Object.keys(db) });
+  const sdkStore = createSdkConditionalStore({ company, items, collections: Object.keys(db), dateTimeFields: { [journal]: ['activityTime'], [tasks]: ['lastCostCaptureTime'] } });
   const reader = createMaintenanceSnapshotReader({ company, items, store: sdkStore,
     protocol: { readControl, readSnapshot: async fn => ({ rows: await fn(copy(control)), generation: control.generation }) },
     authenticateAdmin, verifyLegacyDrain, projectPurchaseWorkspace, projectStockCard, projectPurchaseOrders,
@@ -65,7 +80,7 @@ function fixture(company = 'NCT') {
     for (let i = 0; i < 64; i++) { const result = await target.retain(request); if (result.durableBackupConfirmed) return result; assert.equal(result.pending, true); }
     throw Error('Backup did not finish');
   };
-  return { args, service, finish, db, company, orders, tasks, journal, control, writes, reads, items, reader,
+  return { args, service, finish, db, company, orders, tasks, journal, control, writes, reads, items, reader, sdkStore,
     authenticateAdmin, verifyLegacyDrain, readControl, get captureCount() { return captureCount; },
     setAdmin: value => { admin = value; }, setPrivacy: value => { privateRetention = value; }, setDrain: value => { drain = value; },
     lose: action => { lose = action; }, afterInsert: fn => { afterInsert = fn; } };
@@ -192,4 +207,43 @@ test('retained capture rejects missing/wrong initialization tokens, demand edits
       readSnapshot: () => f.reader.read(), backupRequest: request });
     await assert.rejects(capture({ company: f.company, checkpointId: fresh.expected.checkpointId }), /metadata initialization|cohort changed|Original bounded/);
   }
+});
+
+for (const company of ['NCT', 'GHR']) test(company + ' complete candidate pipeline retains native input, initializes, migrates under its own lock and verifies installed lifecycle', async () => {
+  const f = fixture(company), control = clone(f.control); control.stockCommitVersion = control._version; delete control._version;
+  f.db[f.journal].push(control);
+  // Use only actual declared native DateTime fields in the conditional domain
+  // images; nested JSON text stays JSON, not an invented schema conversion.
+  delete f.db[f.tasks][0].native.date; f.db[f.tasks][0].lastCostCaptureTime = new Date('2026-10-23T06:00:00.000Z');
+  const original = clone(f.db[f.tasks][0]), readControl = () => f.sdkStore.read(f.journal, f.control._id);
+  const reader = createMaintenanceSnapshotReader({ company, items: f.items, store: f.sdkStore,
+    protocol: { readControl, readSnapshot: async fn => {
+      const before = await readControl(); assert.equal(before.pending, null); const rows = await fn(before);
+      assert.ok(same(before, await readControl())); return { rows, generation: before.generation };
+    } }, authenticateAdmin: f.authenticateAdmin, verifyLegacyDrain: f.verifyLegacyDrain,
+    projectPurchaseWorkspace, projectStockCard, projectPurchaseOrders,
+    limits: Object.fromEntries(Object.keys(f.db).map(name => [name, 1000])), maxBackupBytes: 200000, pageSize: 10 });
+  Object.assign(f.args, { store: f.sdkStore, readControl, readSnapshot: () => reader.read() });
+  const backups = f.service(), saved = await f.finish(backups);
+  const initialize = createMaintenanceMetadataInitializer({ company, items: f.items, authenticateAdmin: f.authenticateAdmin,
+    verifyLegacyDrain: f.verifyLegacyDrain, readControl, readCapturedRow: backups.metadataReader(request) });
+  for (const ordinal of [0, 1]) await initialize.step({ checkpointId: saved.checkpointId, ordinal });
+  const beforeMigration = await reader.read(), migrationInput = { requestId: '77777777-1111-4111-8111-111111111111', checkpointId: beforeMigration.expected.checkpointId };
+  const installed = createMaintenanceInstalledReader({ company, items: f.items, store: f.sdkStore, readControl,
+    authenticateAdmin: f.authenticateAdmin, verifyLegacyDrain: f.verifyLegacyDrain,
+    limits: { positions: 100, claims: 100, products: 100, transfers: 100, taskRows: 100 }, maxSnapshotBytes: 200000, pageSize: 10 });
+  const migration = createMaintenanceMigration({ company, store: f.sdkStore, authenticateAdmin: f.authenticateAdmin,
+    verifyLegacyDrain: f.verifyLegacyDrain, readInstalled: installed, protocolOptions: { stepsPerInvocation: 2 },
+    capture: createRetainedMaintenanceCapture({ company, backupStore: backups, backupRequest: request,
+      readSnapshot: owned => owned ? reader.readOwnedMigration(owned) : reader.read() }) });
+  let outcome;
+  for (let i = 0; i < 30; i++) { outcome = await migration.apply(migrationInput); if (outcome.ok) break; assert.equal(outcome.pending, true); }
+  assert.equal(outcome.ok, true); assert.equal((await migration.inspect(migrationInput)).lifecycleVerified, true);
+  const after = f.db[f.tasks][0];
+  assert.equal(after.quantity, original.quantity); assert.equal(after.purchaseQtyInCtn, original.purchaseQtyInCtn);
+  assert.equal(hash(after.originalCostSnapshot), hash(original.originalCostSnapshot));
+  assert.deepEqual(after.lastCostCaptureTime, original.lastCostCaptureTime);
+  assert.equal(after.stockCounterSchema, 2); assert.equal(after.stockCounterGeneration, 1); assert.equal(after.stockDispatchedCumulative, 0);
+  assert.equal(f.db.StockProducts[0].onHand, 0); assert.equal(f.db.StockProducts[0].status, 'CLOSED');
+  assert.equal((await readControl()).mode, 'MAINTENANCE'); assert.equal((await readControl()).generation, 1);
 });

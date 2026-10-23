@@ -47,7 +47,10 @@ const entries = {
   createCurrentCostTables: 'current-cost-tables.cjs',
   createMaintenanceSnapshotReader: 'maintenance-snapshot-reader.cjs',
   createMaintenanceBackupStore: 'maintenance-backup-store.cjs',
-  createRetainedMaintenanceCapture: 'maintenance-backup-store.cjs'
+  createRetainedMaintenanceCapture: 'maintenance-backup-store.cjs',
+  createMaintenanceInstalledReader: 'maintenance-installed-reader.cjs',
+  createMaintenanceMetadataInitializer: 'maintenance-metadata-initializer.cjs',
+  createMaintenanceMigration: 'maintenance-migration.cjs'
 };
 const sources = new Map();
 function collect(name) {

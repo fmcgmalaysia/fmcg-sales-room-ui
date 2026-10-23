@@ -1,4 +1,29 @@
-CURRENT 2026-10-23 — BACKUP RETENTION/READBACK AND METADATA-TO-MIGRATION CAPTURE IMPLEMENTED
+CURRENT 2026-10-23 — INSTALLED COHORT READER AND FULL PRIVATE MIGRATION PIPELINE CONNECTED
+
+MAINTENANCE_INSTALLED_READBACK_20261023.txt records the missing complete readInstalled
+adapter, used in both original migration validate and post-result lifecycle inspect.
+Only original Admin-owned FINALIZE+lock or original confirmed-result/no-lock state
+may read. Two complete all-status stock/task passes, exact field normalization and
+stable control/manifest/result/owner checks; no normal readSnapshot barrier relaxed.
+Found/fixed candidate wiring defect: protocol acquires its own lock before capture.
+Explicit private readOwnedMigration verifies that exact request/member/attempt lock
+and omits ONLY that transient record from business evidence; ordinary capture and
+all foreign/legacy-lock protection stay unchanged. Lock is neither removed nor
+modified by the reader. Original request identity now travels through capture/read.
+NCT/GHR full candidate backup->metadata->owned-lock migration->installed lifecycle
+pipeline passes using the actual SDK adapter over an isolated native-shaped test
+store. NCT100physical/80reserved/20available and GHRclosed-zero readback pass too.
+Generated runtime115scoped modules/59exports now includes the previously unbundled
+private initializer/migration cores. Same38backend targets/94dependency modules,
+38Pages paths+4Wix relays;20writer categories stillUNVERIFIED.
+FINAL1272stock-current tests pass32840.2997ms. No native test/CMS/UI/ACL/release action;
+production originals unchanged against d447185. Recoveryfac16cd. Admin/root native
+binding, privacy, provider drain/fence, schema/index, measured capacity, real native
+migration/recovery/shadow and four-stage release/user Loaded acceptance remainOPEN.
+Exact-row read costs are NOT native capacity acceptance. Both stopped UI paths stay
+STOPPED; heartbeatPAUSED; ACTIVE/invoice/physical exitOFF. ExistingPR220 only.
+
+PREVIOUS 2026-10-23 — BACKUP RETENTION/READBACK AND METADATA-TO-MIGRATION CAPTURE IMPLEMENTED
 
 User remains away and asked to continue background work. No browser/desktop used.
 MAINTENANCE_BACKUP_RETENTION_20261023.txt records bounded immutable journal backup

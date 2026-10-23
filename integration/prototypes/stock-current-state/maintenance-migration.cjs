@@ -80,7 +80,7 @@ function createMaintenanceMigration({ company, store, authenticateAdmin, verifyL
         await requireDrain(input.checkpointId);
       },
       prepare: async () => {
-        const observed = await capture({ company, checkpointId: input.checkpointId });
+        const observed = await capture({ company, requestId: input.requestId, checkpointId: input.checkpointId });
         if (observed?.expected?.checkpointId !== input.checkpointId || observed.emptyCurrentConfirmed !== true) throw Error('Original complete empty-current checkpoint required');
         if (observed.durableBackupConfirmed !== true) throw Error('Durable private original migration backup required');
         const proof = observed.backupIdentity;
@@ -95,7 +95,7 @@ function createMaintenanceMigration({ company, store, authenticateAdmin, verifyL
         // Before RESULT/generation publication require the entire installed cohort,
         // not sums from one display page. The protocol has already checked each
         // after-image; this also detects extra rows not present in the plan.
-        const installed = await readInstalled({ company });
+        const installed = await readInstalled({ company, requestId: input.requestId, checkpointId: input.checkpointId });
         if (installed?.company !== company || installed.complete !== true || installed.taskRowsComplete !== true
           || !Array.isArray(installed.transfers) || installed.transfers.length) throw Error('Complete initial migration readback required');
         for (const [kind, collection] of Object.entries({ ...tables, taskRows: taskTable(company) })) {
@@ -126,7 +126,7 @@ function createMaintenanceMigration({ company, store, authenticateAdmin, verifyL
     for (const ref of manifest.fragments || []) fragments.push(await store.read(protocol.ids.journal, ref.id));
     const plan = codec.decode({ manifest, fragments, key, digest: result.digest, memberId: admin.memberId, requestId: input.requestId });
     if (plan.migration?.checkpointId !== input.checkpointId) throw Error('Migration checkpoint identity differs');
-    const current = await readInstalled({ company }), after = await protocol.readControl();
+    const current = await readInstalled({ company, requestId: input.requestId, checkpointId: input.checkpointId }), after = await protocol.readControl();
     return compareStockLifecycleShadow({ company, expected: plan.migration.expected, legacyTaskRows: plan.migration.legacyTaskRows,
       current: { ...current, generation: result.outcome.generation }, controlBefore: before, controlAfter: after });
   }
