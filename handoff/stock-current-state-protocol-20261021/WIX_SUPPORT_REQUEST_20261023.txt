@@ -1,4 +1,18 @@
-2026-10-23 — AUTHORIZED TECHNICAL QUESTION SENT TO HELPMATE; TICKET NOT YET SUBMITTED
+2026-10-23 — WIX SUPPORT REQUEST SUBMITTED AND VISIBLY ACCEPTED
+
+LATEST: after the disclosed terms/submission stop, user explicitly said
+"允许继续提问WIX". Resumed the SAME existing conversation, freshly observed the
+Submit a ticket button and clicked ONCE. Wix visibly confirmed:
+"Request submitted! A Customer Care Expert will be in touch soon!"
+Email channel was selected by the available Submit a ticket option. No ticket
+number shown, no human reply or engineering guarantee yet. No duplicate request.
+Receipt private/local:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/wix-support-request-submitted-20261023.png
+Support result tab51427275 marked deliverable. No site/code/data/permission/plan
+changes made. No automatic monitoring started. All preceding pending-submission
+notes below are historical and superseded by this explicit acceptance receipt.
+
+PREVIOUS — TECHNICAL QUESTION SENT; AWAITED SUBMISSION CONSENT
 
 User explicitly authorized assistant to ask Wix directly, not ask user to fill it.
 User also asked when to return to Sol. Recommended Sol High now because focused

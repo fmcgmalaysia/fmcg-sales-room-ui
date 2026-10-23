@@ -1,5 +1,14 @@
 CURRENT 2026-10-23 — ASTRA CUTOVER REVIEW CONCLUDED; RELEASE BLOCKED
 
+LATEST WIX SUPPORT: user authorized continued questioning after the disclosed
+terms stop. Submitted SAME prepared technical ticket ONCE. Fresh Wix result:
+Request submitted! A Customer Care Expert will be in touch soon! Email response
+pending; no ticket number shown and no engineering guarantee received. See
+WIX_SUPPORT_REQUEST_20261023.txt and private submitted receipt. No site mutation,
+new deployment, duplicate ticket or automatic monitor. Earlier "not sent" notes
+are historical; release gates remain open. Test business data is disposable per
+user; this does not mark existing workflows or future write consistency disposable.
+
 User explicitly switched to ASTRA High. Focused review is now completed, NOT a
 request to switch models again. See ASTRA_CUTOVER_DECISION_20261023.txt. New exact
 original-factory lock-barrier witness:2pass0fail182.5796ms. Company fixed-ID barrier
