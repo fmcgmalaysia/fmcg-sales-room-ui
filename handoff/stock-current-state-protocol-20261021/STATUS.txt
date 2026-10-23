@@ -1,5 +1,16 @@
 CURRENT 2026-10-21 — LIVE CONDITIONAL UPDATE AND LOCK RELEASE PASSED; ACTIVE OFF
 
+2026-10-23 VISIBLE USER RESULTS: VISIBLE_ACCEPTANCE_REPLAY.txt.
+User requested to see work. New read-only exporter runs existing composition callback
+with unchanged assertions and captures4cases/28steps; observer reads cannot mutate mock
+DB. Literal inline replay shows actual borrow/splits/Loaded/receipt quantities and
+original person halos, no freeform save/CMS. Final affected9pass4325.1383ms, no business
+module/original test edits; priorFULL1166 reused, not updated. Headless visual QA failed
+binary/profile startup; stopped, no screenshot/browser visual pass. Thread-owned
+stock-borrowing-results.html40567bytes; template/data/generator versioned PR220.
+No native/UI/CMS/Pages/Wix action or new permission. Real publication/migration/drain/
+capacity/recovery/G3/cutover stillOPEN. CoverageEMPTY/ACTIVEOFF, invoice/physicalexitOFF.
+
 2026-10-23 BORROW/SPLIT/REPAY: BORROW_SPLIT_LOADED_REPAY_COMPOSITION.txt.
 Extended sameDB NCT/GHR x same/differentPO witness: borrow30, bothparties split30/70,
 Loaded30 stillowes30, receipt20/80 repaysonce/endsbothhalos. Splits preserve full
