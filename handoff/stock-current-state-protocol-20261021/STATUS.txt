@@ -1,5 +1,16 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST DEPENDENCY AUDIT: OVERNIGHT_DEPENDENCY_AUDIT_20261024.txt classifies each
+original overnight independent UI task against later implementation/evidence.
+No further evidenced independent patch identified in this bounded pass; complete
+G3/native/public acceptance NOT certified. G3 NO-GO still has concrete old-runtime
+late-write witness. Next progress requires provider boundary, restored Source
+readback and precise rejected-export answer, then unfinished native install/
+capacity/recovery/migration/shadow/release work. User's conditional heartbeat-pause
+instruction applies; pause receipt only after tool confirmation, not task complete.
+PAUSE CONFIRMED: existing automation idautomation updatedPAUSED; fresh config
+readback preserves name/prompt/cadence/target. No duplicate/deletion/chat archive.
+
 LATEST OUTSTANDING ROUTE: OUTSTANDING_ROW_BINDING_20261024.txt fixes actual app
 route omitting rowLabel although component tests supplied one. New route regression
 failed first, now SAME fresh resolver bound: visible split refs follow moves;
