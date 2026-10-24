@@ -1,0 +1,36 @@
+2026-10-22 CURRENT PURCHASE RELATION READ — CANDIDATE, NOT LIVE
+
+Borrow relationship current row now writes participantTaskIds[borrower,lender] in the
+SAME atomic transition as the relation. This is a two-ID query index, not another
+quantity authority or an extra per-receipt CMS row. Details remain canonical and every
+returned row must match the exact two participants, stable transfer ID, ACTIVE/outstanding
+quantities, revision and checkpoint. Private plans/costs/commit versions withheld.
+
+Purchase-only task detail and company OUTSTANDING page query only current ACTIVE
+relationships. No archived flag or completed task is used to erase debt. Page<=50,
+cursor binds company/generation/view/task/page-size.10,000 synthetic CLOSED relations
+do not enter returned active page; this is query-contract evidence, not Wix timing.
+Missing relation index capability is an ERROR, not false zero/ordinary person.
+
+New control transferIndexVersion must be1 before this endpoint is enabled. Current
+query-only barrier preserves it. No code here sets it or grants activation: deployment
+must first verify ALL current relation rows and required index/schema in maintenance.
+No bootstrap over existing borrowing facts: original legacy projection cannot represent
+them, so preflight explicitly refuses that unsafe conversion even if supplied target
+row snapshot appears empty. Real migration/index installation remains incomplete.
+
+Generated stockCurrentRead.web.js now additionally exposes SiteMember Purchase relation
+read using ORIGINAL getPurchaseStaffContext; Warehouse/Support role cannot read it.
+Existing Warehouse read methods unchanged. Builtin Wix Data only, no new SDK use/scope.
+Primary array-query contract: https://dev.wix.com/docs/velo/apis/wix-data/wix-data-query/eq
+Array eq matches an element; live schema/query/index acceptance still required.
+
+Affected19tests pass373.2836ms; source/claim/read/borrow regression22pass390.9618ms
+earlier (overlap). Initial exact generated-source check correctly failed after barrier
+source changed; regenerated mechanically, no assertion weakened. No live probes/deletes.
+
+This closes the read boundary only. Purchase person/grid/details/approval UI and actual
+Wix integration are NOT completed. Mutation reader still includes CLOSED records under
+proof bounds; production lifecycle/capacity is NOT solved by active READ filtering.
+All remaining writer/recovery/migration/G3/release gates remain OPEN/OFF. No business
+data or permission change, no deployment. Unrelated original files unchanged.

@@ -1,0 +1,46 @@
+2026-10-24 — Purchase instruction to original Support draft, candidate only
+Parent de067c8; same overnight authorization/framework/production boundaries.
+
+Purchase second ALLOC choice now submits ARRANGE_AVAILABLE with exact task/batch,
+actual arrangeable quantity, current instruction revision and explicit retained
+remainder reason through ORIGINAL cached save tracker. The button displays its
+quantity. Missing paired current capability/known instruction index/stock, pending
+edits, disconnected host or repeated click cannot submit. No mock save success.
+Existing LINKED instruction displays packing ID and disables duplicate request.
+
+Support actual original Unarranged row now displays Purchase requested quantity
+and stable batch context. Prepare draft opens ORIGINAL editor with one task,
+exact quantity and retained instruction revision after checking current
+readyToArrange/unarranged/review. A changed quantity, open form, pending save or
+wrong department cannot adopt the instruction. Save still uses original CREATE,
+role, customer/currency, versions, request-ID persistence and transport.
+
+Server packing CREATE with purchaseArrangement reference rechecks exact pending
+record, Support role, revision, customer, task and quantity. It conditionally marks
+instruction LINKED to actual draft ID/revision and writes immutable link audit in
+the SAME fenced plan as original packing/current stock-hold checkpoint updates.
+No separate post-save flag; replay uses retained original plan/result. Stale/linked
+instruction cannot create another instructed draft; Purchase cannot impersonate
+Support. DRAFT still occupies no physical stock, no receipt or dispatch is posted.
+
+Actual existing model CREATE and segmented service exercised in local integration:
+instruction50 -> same original Support draft50, physical balances unchanged,
+same-request replay same draft, stale reference cannot create another. Unrelated
+existing draft is not treated as consumption. Original SEND/Warehouse flows and
+quantity guards retained. Status LINKED means draft linkage only, never shipment.
+
+Assets: generated Support/Warehouse child links refreshed to
+20261024-packing-arrangement-v1, package manifest and local Purchase review rebuilt.
+Original production directories remain untouched. Existing HTTPS preview still
+earlier rejected placement; local artifact is not deployed or visually verified.
+
+Verification: full current1319pass0fail30198.2651ms before final UI handler test;
+actual generated Support click test included in4childUIpass317.361ms. Earlier
+affected18pass876.9265ms and7service/childpass327.7115ms overlap. No native proof.
+
+Next: instruction lifecycle after linked draft EDIT/CHANGE/CANCEL/COMPLETED and
+new arrivals; avoid permanently blocking a later legitimate arrangement or falsely
+marking a partial/changed draft as full fulfillment. Selected-batch hold provenance
+remains conservative, not a guarantee of per-source shipment. Native full-chain
+acceptance, all-writer installation and initial-cutover hard block remain. No
+Pages dispatch, Wix write/publish, CMS mutation/delete, permissions or export/push.

@@ -1,0 +1,38 @@
+2026-10-22 Protected business JSON order regression found/fixed offline
+
+While wiring actual original Warehouse DISPATCH (new uncommitted candidate files),
+the first real-core test committed its in-memory event/task/physical plan but the next
+original readCustomerShipments failed: Shipment transition requires review.
+Evidence: original customerShipmentLedger hashes prior.lines/sources with operationId
+(JSON.stringify insertion order). Segmented codec serialized the whole plan with sorted
+canonical keys, changing {sourceTaskId,quantity} to {quantity,sourceTaskId}. Prior immutable
+legacy invoice had original order. Guaranteed mismatch, despite semantic deep equality.
+This was isolated mock data ONLY; no actual protected production workflow regressed.
+
+Feature work paused immediately. Production d447185/runtime32b812c was unchanged, so
+no production rollback was necessary or attempted. Smallest repair: encode the plan's
+business payload with JSON.stringify preserving original field insertion order; decode
+requires that exact JSON roundtrip. Protocol canonical equality/metadata integrity and
+raw payload hashes/bytes/fragments/version/fencing remain unchanged. No global operationId
+replacement, original business hash refactor, invoice edit or migration. Two-line codec
+repair plus explanatory comment; runtime/recovery generated copies rebuilt.
+
+Old already-canonical staged manifests still decode exactly with their original raw
+payload/hash; decoder does not rewrite a pending plan. No real v2 business manifest has
+been deployed, and historical v1 isolated proofs are not changed/rerun/deleted.
+New exact nested-source JSON hash/key order test and canonical-oldmanifest compatibility
+test pass. Actual original in-memory dispatch now commits once, reads history successfully,
+retains old invoice bytes, changes onHand50->30 and task cumulative0->20 once after replay.
+Those new dispatch factory files are still a separate uncommitted continuation at this
+repair checkpoint; their two tests are included in the full working-tree count below.
+
+Full working-tree518current candidate tests pass0fail5169.5878ms. Earlier failing result
+was original real parser test, not a financial-policy assertion. Original production files
+still exactly match d447185. This repairs a candidate regression, not a live publication.
+
+G0/G4 actual SDK transport gate MUST additionally compare nested object key order seen by
+both original Wix Data reader and new SDK insert/patch/read, including immutable invoice
+and shipment snapshot hashes. Avoiding our own forced reordering does not prove the real
+platform preserves transport order. DateTime roundtrip/schema checks still required.
+Do not solve unknown live transport order by globally changing protected operationId or
+silently rewriting old financial snapshots. ACTIVE and all4release stages remain OFF.

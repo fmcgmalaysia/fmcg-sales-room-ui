@@ -1,0 +1,80 @@
+ASTRA HIGH — R2 PHOTO RESUME, 2026-10-24
+Scope: user accepted focused review/repair of the still-running photo callback.
+Starting code df5fcb1. Recovery remains d447185987fecbb81bcaf6b25c170f631f767f9f,
+runtime32b812c655e1083306037c008314c72373a15f72. Original production unchanged.
+
+BUSINESS CLARIFICATION
+Existing photographs belong to Warehouse PACKING/LOADING evidence, not physical
+receiving quantity. Earlier conversational shorthand "receiving photos" corrected
+to user. No new receiving photo requirement, new UI or physical stock edit added.
+
+FRESH AUTHORITATIVE EXTERNAL CONTRACT (READ ONLY)
+Chrome51427125, MASTER PURCHASE DOCUMENTS Apps Script project
+1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO.
+Manage Deployments confirms active immutable version8, Oct20 2026 8:08PM;
+description Sales P S W task chat; preserve existing private storage and PDF/photo routing.
+Deployment AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU.
+Fresh saved code AND separately selected Project History Version8 match repository:
+Code.gs SHA256 UTF8 LF 43c9add55c6a27666541fedc30599b1d8733d2a1cfb61a4f972686c369dcd7b8
+WarehousePhotos.gs SHA256 UTF8 LF 36738eea6a797444dc288cc2916eee133cb8d44577ddfeefdd588c54a22836f6.
+PHOTO_UPLOAD uses original server-generated immutable file ID. Duplicate create
+reads that exact ID, checks company/PO/type/hash/name/folder/MIME/size and refuses
+trashed or mismatching files. It never replaces/untrashes a file. Shared script
+lock still waits up to20seconds; unchanged and not claimed to eliminate504.
+No Apps Script edit, deploy, Run, secret read, new Drive file or permission change.
+
+REPRODUCTION AND MINIMUM REPAIR
+New negative test really suspends the original exclusive-lock invocation; another
+same-operation invocation cannot proceed while old finally has not run.
+Optional private server-owned CONTROL_CAS_CANDIDATE added to two photo adapters.
+Generic defaults remain EXCLUSIVE_LOCK. R2 compiler pairs both adapters and both
+photo coordinator constructors to the option, retaining one APPLY write per call.
+Immutable manifest/digest/actor/generation/phase and original receipt-prefix checks
+remain. After upload, reread exact control before insert/CAS. A late callback may
+confirm the same immutable file but cannot publish stale business state. Mutable
+packing records retain original _version condition even if DB mutation itself is
+delayed beyond the control reread. No lock delete/adoption/TTL or new data authority.
+PDF/upload/delete callbacks and maintenance are NOT switched by this photo patch.
+
+VERIFICATION
+20 focused tests pass, including actual deployed Apps Script photo source in VM,
+old request held before/after remote upload, second request completes while old
+promise remains unresolved, newer product/packing edit, then late old return.
+Separate mutable packing CAS held after callback validation also cannot overwrite
+newer loaded45 after earlier40. Exact file ID remains single; one original event,
+one receipt per photo; no physical stock edits or extra invoice capability.
+Replay/unknown reply/receipt acknowledgement loss and changed actor/digest/direct
+write checks cover both default and CAS options. One initial test assertion wrongly
+classified manifest.attempt as a lock; corrected to exact lock ID, not business code.
+Generated-root/mixed-coordination tests10pass. Final entire stock suite1521pass,
+0fail/0skip/0cancel,36850.4071ms. Output (local, not staged):
+C:/FMCG-WIX-LOCAL/tmp-astra-photo-stock-tests-20261024.txt.
+This is controlled local concurrency, NOT a real Wix504/native upload acceptance.
+
+NATIVE SAVED DRAFTS — THREE COMPLETE BEFORE/AFTER READBACKS
+All three entire before-images freshly copied and equal df5fcb1 generated files.
+MASTER r2stockCurrentCommands.js: two scoped photo adapter factory sections only.
+ before76e0b8d47800e0cbd59c879577536656822ff370c8846372e77f398c1a4109ea
+ after fd7f5676b8299e755365ee285462bbfb68bc4f2291eee9760136abd6c79f22ec
+MASTER r2stockCurrentWarehouse.web.js: two constructor options only.
+ before62d5c175bcab5213a69925e9e300a713245b38a97861bc28605aa534f85745cc
+ after 29022e03669cf7f0620ae174f5ab6d482ea20755adee94d969bae065fc3e650c
+MASTER r2stockCurrentPacking.js: two constructor options only.
+ beforecbdb31ebb6b4a26a4413b4dbc7d3b0e73764101e098fff82935125e1fe7e6c69
+ after 81268c71179c05fd6dcb9e395d46745fc61362e0d77943c5dc675ca42e5e41b3
+All after-images independently copied in full and exact matched. Autosave on.
+Private screenshot C:/FMCG-WIX-LOCAL/tmp-astra-photo-draft-20261024.png; not exported.
+Editor embedded page still displays prior DNS/undefined preview failure; unrelated
+to code readback and NOT public acceptance evidence. No refresh/reinstall attempted.
+
+FOUR RELEASE STATES AND REMAINING WORK
+Code: scoped repair + full regression + exact native saved drafts complete.
+Pages: NOT deployed/version-verified by this turn; photo patch has no UI asset change.
+Wix: saved drafts only, NOT published/live. ACTIVE remains closed, coverage EMPTY.
+Public: actual Buyer/split/borrow/repay/photograph acceptance NOT completed.
+Remaining: PDF/delete hung-callback paths, actual native intake capacity and staff
+SDK conditional-write authority, all-writer evidence, server-owned activation
+verifier/control audit schema, paired Pages/Wix publish and real public workflow.
+Do not claim all504 fixed. Prior UNKNOWN prefixes and CLOSED probes untouched.
+No lock deletion, CMS cleanup, broad grant, dispatch, invoice, main merge, model
+switch or subagent. Automation remains PAUSED. No manual action currently pending.

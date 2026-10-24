@@ -1,0 +1,35 @@
+2026-10-22 continuation after6f6ce99 — Purchase quantity-case decision
+
+Scope/evidence
+- Reused same-version framework/known original mismatch record; no repeat broad test.
+- Read original purchaseQuantityCases.js and real purchaseOperations.web.js dispatch:
+  getPurchaseStaffContext then canDecideQuantityCase:true, separate from SHORTAGE.
+- New quantity-case-preparation.cjs uses original member/staff/company boundary and
+  original projector to resolve exact UNPLACED/RECEIPT case, PO/source authority and
+  current product snapshot under common read barrier.
+- Original DECIDE prepare captured privately before legacy apply. Event identity/
+  reason/date/customer-safe feedback/stale version/department checks remain unchanged.
+- Maps exact original event + current product checkpoint, never source/claim/physical
+  change. Case supplier responsibility is based on original PO and accepted receipts,
+  not borrowed customer ownership; no fake cumulative allocation rewrite of liability.
+- STOP is not Sales cancellation, CREDIT is not stock disposal/release, REPLENISH
+  decision is not an actual receipt, and none clears an outstanding borrowing promise.
+
+Tests
+- New4 + original quantity6 + current shortage3 + original shortage2:
+  15pass,0fail,289.9382ms. Existing baseline scenario failure remains separate, NOT fixed
+  or reclassified as passing by this affected test selection.
+- Unplaced10 and received-short10 independent; original UNPLACED supplier decision
+  NOT_APPLICABLE preserved, receipt CREDIT responsibility preserved.
+- Borrowed20 retains T70/A20 usable claims and remaining promise20; physical90 unchanged.
+- Stale/date/message, wrong/pending/unconfigured staff, foreign company refusal tested.
+- Same request common fence replay emits one decision, generation1, no stock release.
+- Only in-memory fixtures. No CMS records, original modules, secrets or permissions used.
+
+Status/recovery
+Original protected code remains d447185/runtime32b812c unchanged. Candidate only.
+Pages NOT deployed; Wix NOT synchronized/published; public page NOT verified. ACTIVE OFF.
+Actual gateway/client/admission/all co-writers/final apply checks/photo/routing/capacity/
+lifecycle/operational recovery/private schema/metadata/migration/shadow/UI/halo/focused
+review remain open. Original PAID vs INSTALLMENT_PAID test mismatch still recorded as
+release/review gate, no financial policy/test change. Support real invoice remains OFF.

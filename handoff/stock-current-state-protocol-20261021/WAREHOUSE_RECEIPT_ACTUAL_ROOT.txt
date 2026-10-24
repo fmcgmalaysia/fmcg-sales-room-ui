@@ -1,0 +1,66 @@
+2026-10-22 — ORIGINAL WAREHOUSE RECEIPT ROOT + SERVER MODE ROUTING CANDIDATE
+
+Recovery: pushedf5d55f8/PR220 candidate, protected productiond447185/runtime32b812c.
+Scope: bind existing tested current receipt authority/reader/planner/protocol to actual
+original module imports, retain original result shape, fence the old receipt entry.
+No new permission, CMS/native schema/data/lock mutation, Wix/browser/install or publish.
+
+Implementation
+- build-warehouse-receipt-web.cjs generates stockCurrentWarehouse.web.js. One SiteMember
+  entry saveWarehouseReceiptCurrent; approved member + ORIGINAL requireWarehouseStaff
+  before SDK/company reads, and ORIGINAL auth again on every save/replay/preparation.
+  It uses original read-only fulfilment context, PurchaseOrders projection, Warehouse
+  PO/receipt validation, original allocation/packing/dispatch parsers and same scoped
+  current reader/task checkpoints/automatic repayment plan. Does not call old save.
+- Same @wix/data conditional store + company segmented protocol; exact existing
+  journal DateTime schema supplied for both companies. Other schema/SDK permissions
+  still unverified, package production use not assumed authorized by isolated test.
+  Default writerCoverage EMPTY; no mode initialization/activation in endpoint.
+- Browser envelope excludes forged top-level actor/grant, bounds original1..300lines
+  and transport1Mcharacters; original accepted/rejected/kind/reason/POversion/correction
+  financial checks retained, no over-approved extras enter stock. This transport
+  budget is not proof that all possible serialized inputs meet platform limits.
+- createCurrentWarehouseReceiptSave now verifies exact committed ORIGINAL receipt
+  event under read barrier before returning original company/poId/receiptId/savedAt
+  plus current generation. Same UUID/member/company and event role/identity/time
+  required. Pending phases reveal only counts, never final receipt/partial success.
+  Actor capture is per invocation, not shared mutable identity across concurrent calls.
+- Current Warehouse router reads exact native company control after original auth.
+  Confirmed LEGACY/no pending/no current-form metadata alone runs old receipt once.
+  ACTIVE always routes to guarded current root, including missing browser metadata
+  (then rejects there). SHADOW/maintenance/corrupt/missing control fail closed. Pending
+  ownership/replay checked by common coordinator, not guessed by outer router.
+- Minimal warehouseReceiving.web.candidate.js wrapper changes only receipt signature/
+  call. Stripping it produces exact original file; original getWarehouseOrders,
+  preparation/document/CBM paths not changed or claimed current-safe by this patch.
+  MUST NOT install wrapper alone; paired native controls/all20writers/UI/read gates
+  still required. Runtime now81modules38exports; generated sources mechanically checked.
+
+Evidence
+Actual root/authority/runtime17pass0fail1308.8956ms before final boundary additions.
+300-line original PO receipt witness: same retained UUID/envelope throughout bounded
+BEFORE/APPLY/VERIFY invocations, only one context/plan capture, mixed reads blocked,
+one final original event/generation and30000onhand, exact replay.7308.5079ms offline
+test body, NOT per-invocation/platform latency/RPM/timeout acceptance. No real records.
+Both companies original receipt contract, two partial deliveries40+60, role-revoked
+completed replay, invalid metadata/company/envelope/overreceipt, empty coverage tested.
+Actual original wrapper VM test proves original auth before native control read and
+ACTIVEonlyCURRENT/LEGACYonlyoldsave; failed staff config fixture gained missing original
+staffName, no production auth weakening. Generator originally found duplicate function
+signature anchor (receipt+preparation); now exact exported receipt anchor only.
+Original Warehouse receiving7pass0fail113.1656ms. All stock-current734pass0fail
+13702.4053ms. Protected directories exactd447185; diff whitespace check passed.
+Tests use original module code and VM/in-memory SDK/protocol dependencies. No actual
+SDK permissions/native field roundtrip/public behavior or user acceptance claimed.
+
+Next / open
+Current Warehouse workspace must return complete consistent Ready ownership/current
+generation; client must retain original receipt+metadata and bounded replay/refresh
+without touching old receipts. Original preparation/doc/CBM and other relevant writers
+still need actual routing/durable file handling. All20writer/native schema/index/CMS
+init/quiescent cutover/in-flight legacy proof/current recovery/platform capacity/shadow
+and public acceptance remain OPEN. Receipt validation compatibility bridge still needs
+final focused production diff review; no parallel old apply. No new business theory.
+No half-stock installation. Support real invoice OFF. main unchanged.
+Four statuses: code incomplete candidate; Pages unchanged; Wix not synchronized/
+published; new public inventory/borrowing unavailable/unverified. ACTIVE OFF.

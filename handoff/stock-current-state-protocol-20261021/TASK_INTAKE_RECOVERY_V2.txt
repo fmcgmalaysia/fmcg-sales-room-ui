@@ -1,0 +1,50 @@
+2026-10-22 Continued v2 initialization/context/recovery candidates
+
+New order-intake segmented mode retains ORIGINAL core/receipt/cost capture and final
+ORDER_RECEIVED marker. Newly inserted tasks only receive stockCounterSchema2,
+stockDispatchedCumulative0 and stockCounterGeneration. Existing manual supplier/PO/
+cumulative data is not reset on original accepted replay. Exact productRows are now
+mandatory for a fresh v2 plan: existing product preserved, new order product gets
+zero/CLOSED metadata + lifecycle2/high-water1 before accepted marker. No receipt,
+customer reservation, free cartons or catalogue placeholders are fabricated.
+100line original intake candidate passes beyond old proof cap; actual gateway/capacity
+still not installed. Old existing tasks still need verified maintenance initialization.
+
+Current task context adapter adds only exact raw versioned counter fields to original
+business projection, with original order/source-line identity checks. Concrete v2
+Purchase/Warehouse factories require private readCurrentTaskRows. Authority captures
+verified staff; after current source/claim closure is known, it loads ONLY necessary
+task IDs, not every old task. Original state builder consumes these exact counters,
+rejects missing/foreign/future metadata, never substitutes projected browser-like values.
+Test preserves20already dispatched from omitted CLOSED source: later receipt/repayment
+does not allocate those20again. v1 projection behaviour stays unchanged.
+
+Read-only recovery supports segmented manifest/hash verification and bounded private
+image pages. Cursor binds control/lock/root/result; changed guard requires restart.
+901image page is labelled PAGED_INSPECTION_ONLY, never whole-operation verification.
+Missing chunk/conflict/unknown lock remains blocked. Original save protocol alone can
+revalidate/resume; inspector has NO recovery write, delete, retry, TTL stealing or unlock.
+Generated standalone Admin read gateway includes exact codec+v2inspector+query-only store;
+VM endpoint test confirms private input/images are not exposed and nothing is mutated.
+This endpoint is still a candidate, not deployed or a production elevation grant.
+
+Full current regression465pass0fail4854.2921ms before final added20outside-source test;
+then12original-auth/borrow tests pass256.3207ms. One earlier full run463/464caught exact
+bundle-source test needing its new dependency removal/coverage list; added all new source
+bodies and generated Admin execution test, not weakened byte/source assertions.
+
+Generation overflow is refused before v2 preparation/initial counter creation. v1 proof
+unchanged. New official docs inspected for future batching feasibility only, no batching
+or runtime capability claimed: SDK hasSome supports matching listed scalar values. SDK
+intro says max item500kb; separate data features state request512KB. These are distinct
+limits; conservative64kfragment policy is below both, NOT real platform acceptance.
+https://dev.wix.com/docs/sdk/business-solutions/data/items/wix-data-query/has-some
+https://dev.wix.com/docs/sdk/business-solutions/data/items/introduction
+
+ACTIVE OFF. No business CMS mutation/deletion, new privilege, Wix sync, Pages dispatch
+or publication. Remaining old-task version/counter parity and schema/index installation,
+actual all-writer gateways/readers/file protocols and Purchase halo/approval connection,
+preparation/staging/fanout/time production measurements (300line route still prepares
+product queries sequentially; in-memory901write proof is NOT a Wix latency proof),
+maintenance/shadow/recovery acceptance, focused final implementation diff and four release
+stages. Do not publish half-stock or report ready for real borrowing tests.

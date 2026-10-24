@@ -1,0 +1,74 @@
+2026-10-23 — bounded private backup retention and original migration capture
+
+Scope/recovery
+User is still away and asked to continue independent background work. Same-version
+framework/spec/boundaries and current handoff reused.
+Recovery61fd80a8b109dec854fc092febe1d44d067323cd.
+Original production d447185/runtime32b812c untouched. No UI,
+agents/model switch, permissions, automation resume or release action.
+
+Candidate implementation, not native acceptance
+maintenance-backup-store.cjs adds private read/insert-only storage over the existing
+company journal capability. No new collection, quantity algorithm, overwrite,
+delete, lock, generation/mode change or stock authority. Existing journal ACL is
+UNKNOWN: a server-owned actual private-retention verifier is mandatory BEFORE any
+storage read, and before each write. No browser flag or guessed Admin-only ACL.
+If existing native privacy is insufficient the gate remains closed; this code
+does NOT authorize changing ACLs, selecting a workaround store or publishing.
+
+Fixed request/member ownership binds an immutable header to the original complete
+typed snapshot/checkpoint/control. Explicit server byte/fragment/per-call policies
+bound storage; these are NOT measured Wix capacity. Unicode-safe parts are inserted
+and strongly read back. A separate final confirmation is inserted only after all
+parts are retained; inspection re-reads the entire payload and typed native scope.
+Unknown write replies propagate immediately, with no retry, overwrite or cleanup.
+A later explicit same request first inspects existing records. Changed source
+cannot adopt a partial header. Completed replay reads the original backup instead
+of recapturing. No successful durable flag is returned for partial/corrupt/missing/
+foreign data or changed owner. This has only run against isolated test stores.
+
+Only exact reserved header/part/confirmation frames are omitted from business
+projection/checkpoint input and recursive backups. Original business events remain.
+Raw pages/counts/two-pass checks still cover reserved frames; malformed frames
+refuse. Native system metadata is allowed, but extra application fields are not.
+metadataReader supplies original retained ordinal/Date images to the EXISTING
+metadata initializer. Native image encoding now retains nested JSON property order
+as well as actual Date/text/zero types, preserving original business snapshot hashes.
+
+createRetainedMaintenanceCapture connects the retained backup to the existing
+migration.capture seam: compare complete exact table cohorts against a fresh full
+snapshot, permit ONLY company/stockCommitVersion/native updatedDate changes with
+the exact existing initialization token. Other business changes, new/missing rows,
+wrong tokens and another owner refuse. The final owner is rechecked. Migration now
+requires original owner/request/checkpoint/backup identity, not a bare durable
+boolean, and preserves that identity in its prepared immutable plan.
+No actual Admin web root, native SDK permissions/drain verifier or readInstalled
+binding is fabricated. Native retention/migration/shadow/recovery still unaccepted.
+
+Verification
+One new test-file syntax typo corrected after actual parser error; no blind retry.
+First53affected tests pass1193.8325ms. Then1259full stock-current tests passed
+30486.9926ms. Subsequent new retained-capture/migration-proof CODE justified another
+full run, not summary retrieval: FINAL1260full tests pass32030.0814ms. After that,
+added missing/foreign-owner proof-negative TEST only; final9migration tests pass
+186.2186ms. These overlap; do not claim a single1269case full run or entire-project
+green. All original protected production paths still have zero diff against
+d447185. Runtime109scoped modules/56exports, paired manifests mechanically updated;
+38backend targets/94dependency modules/20UNVERIFIEDwriters and38Pages paths+4Wix
+relays unchanged. No static UI resource/Wix page/original backend file changed.
+Private logs outside public repo:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+maintenance-backup-full-tests-20261023.txt
+maintenance-backup-final-full-tests-20261023.txt
+Final builders --check and git diff --check passed. Actual Credit UNKNOWN.
+
+Release states / next dependency
+Code: implemented/tested private candidate in existing feature branch/PR220.
+Pages: rollback baseline unchanged; this increment NOT deployed.
+Wix: no sync or whole-site Publish; native backup has NOT run.
+Public: original restored-task-list evidence retained; new borrowing/Loaded NOT
+accepted. ACTIVE/invoice/physical exit OFF; both stopped UI paths staySTOPPED.
+Still need real Admin/privacy/native binding, schema/index setup, independently
+proven legacy-writer drain/fence, complete readInstalled adapter, native capacity/
+recovery/migration/shadow acceptance and four-stage release/user Loaded test.
+Heartbeat remainsPAUSED; user needs no ordinary authorization for ongoing code work.

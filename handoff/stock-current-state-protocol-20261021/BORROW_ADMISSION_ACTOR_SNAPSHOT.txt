@@ -1,0 +1,54 @@
+2026-10-23 — BORROWING SAME-INVOCATION STAFF IDENTITY, OFFLINE CANDIDATE ONLY
+
+Objective: prevent one borrowing approval/unused return from being admitted as one
+Purchase staff record and prepared under a reissued staff record on the same member.
+Recovery before this increment:a872fb3 (pushed PR220), originals remain d447185.
+
+Concrete evidence
+Existing createCurrentStockSave authenticated member/staff, but passed only memberId
+into prepare. Borrow authority independently reread original member/staff and returned
+an event with initiatedByStaffId. Only the memberId/generation was compared by common
+save. A same-member staff identity change between those reads could stage a plan whose
+event actor differed from the admitted identity, even with stockIdentity:{M1,P1}.
+
+New test stock-current-borrow-actor-snapshot.test.cjs reuses actual Purchase gateway,
+original requirePurchaseStaff/PO projections and segmented commit fixture. APPROVE
+and RETURN each read P1 at admission and REISSUED at authority; database equality
+checks ensure no manifest/pending/domain mutation survives a rejection. Protocol may
+take/release its OWN transient lock in the in-memory fixture, not any native lock.
+
+Initial test construction replaced the dependency AFTER authority had captured the
+function; those runs are not valid identity-drift evidence. Corrected construction
+installs the controlled server reader BEFORE constructing actual gateway/authority.
+Valid prepatch run:3tests0pass3fail266.0201ms; both actual paths failed to reject.
+Third case showed trusted prepare payload omitted staffId. First earlier synthetic
+parallel stub lacked control _version; corrected before the valid prepatch run.
+
+Minimal correction
+- common current save forwards its already authenticated staffId into its PRIVATE
+  per-invocation prepare payload. No browser identity, permission, coverage or mode
+  becomes trusted; immutable request digest and optional old identity contract unchanged.
+- Borrow prepare compares original authority event staffId with that server-captured
+  staffId before reading ownership rows or producing/staging a plan. Both APPROVE and
+  RETURN use this same guard. Existing original department authorization still runs
+  at both points. No role grant, auth replacement, new promise or stock algorithm.
+- No mutable shared actor capture: parallel same-member calls preserve their respective
+  server staff identities. Existing scopes/replay/PO/invoice/packing/repayment unchanged.
+
+Validation
+24affected tests pass0fail1172.7054ms (new3, gateway2, authority12, identity7).
+Generated command runtime rebuilt exact104scoped modules; install manifest38targets/
+94dependencies/20UNVERIFIED writer categories. FULL stock-current suite1143pass0fail
+29097.468ms. Includes retained UNSAFE witnesses; test count is not native/G3 proof.
+Protected production path diff vsd447185 empty; diff--check clean. No UI/native call,
+real test record/lock deletion, deployment permission, Pages or Wix publish action.
+
+Limits and next bounded review
+This closes the borrowing same-invocation staff drift, not every department's repeated
+authority read or all20writer review flags. Next independent review may inspect exact
+receipt/allocation repeated-auth preparation boundaries for the same demonstrated
+class; do not infer a global pass or add another policy architecture.
+Native INIT/TYPE consent and Wix support contact consent both PENDING; do not repeat
+questions or execute either scope before a matching actual human reply. Migration
+APPLY/native capacity/drain/G3/cutover remain OPEN. CoverageEMPTY/ACTIVEOFF;
+realinvoice/physicalexitOFF. No four-stage release completed.

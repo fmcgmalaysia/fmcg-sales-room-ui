@@ -1,0 +1,46 @@
+2026-10-24 — outstanding-view row label wiring, candidate only
+
+Single objective / evidence
+Parent184a370; protected d447185/runtime32b812c retained. Reused same-version
+framework/spec/ownership; reread current STATUS/ALLOC entry and actual generated
+app, row resolver, display decorator, relationship/return components and tests.
+Focused movement/filter/archive acceptance inspection found that the ALLOC dialog
+had rowLabel, but the independent Outstanding Borrowing route passed none. Its
+component then fell back to the internal task ID. Existing component tests supplied
+mock labels themselves and therefore did not detect the actual route omission.
+
+Minimum patch
+One added binding in build-purchase-current-ui.cjs embeds the SAME tested fresh
+allocationRowLabel(document,data,id), mechanically rebuilding candidate app only.
+If active task rows exist, all distinct current split ROW numbers are resolved at
+each call. The independent borrowing view normally replaces that grid, so it
+honestly shows Not in current view instead of an invented/stale row number. Known
+archived tasks show Archived; customer/PO identity remains. This does NOT claim
+that the independent debt view now contains the active grid or its hidden row nums.
+Callback also reaches the existing unused-return selector through normal component
+composition. Stable task/source/relation submit IDs, quantities, halos, original
+person colors, original display order/drag/save and all backend code unchanged.
+No second row index or persisted row numbers added.
+
+Verification actually run
+New actual generated route test first failed: typeof mounted.rowLabel undefined,
+4other tests passed,98.8418ms. After patch,43affected relation/row/return/halo/RCV/
+package/review tests pass0fail942.6489ms. Additional17Purchase save/progress/PO/
+acceptance-replay checks pass645.3624ms and63original Purchase/split workflow
+replay checks pass397.5617ms. These groups are separate; no synthetic full total.
+Prior full1348pass31882.8326ms at184a370 reused unchanged for backend; no full rerun
+merely to reprint evidence. New route test not relabelled as part of that old total.
+Rebuilt38Pages assets/5paired relays manifest and33asset local review. Exact overlay
+checks and git diff --check pass; original production paths zero diff vs d447185.
+
+Limits / next boundary
+This is local route execution/render wiring, NOT browser/native/public movement,
+partial-loan/repayment acceptance. Existing cutover late-writer UNSAFE witness and
+hard drain refusal remain; no verified Wix reply. Source stopped editor path and
+precise GitHub handoff-export rejection remain unresolved. No retry/bypass/export.
+78MASTER pre-install original hashes remain pre-install evidence only. All20writer
+native verification/capacity/recovery/migration/shadow gates still incomplete.
+ACTIVE/real invoicing/physical departureOFF. No native/UI/CMS/permission/delete,
+support message, Pages deploy, Wix sync/publish, main merge or automation action.
+Four stages: local code candidate / Pages unchanged / new Wix flow unsynchronized-
+unpublished / public new ALLOC/borrowing not testable-unverified.

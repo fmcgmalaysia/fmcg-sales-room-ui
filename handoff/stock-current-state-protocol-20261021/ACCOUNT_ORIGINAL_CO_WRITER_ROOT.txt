@@ -1,0 +1,95 @@
+2026-10-22 ORIGINAL ACCOUNT SHARED CO-WRITER ROOT — CANDIDATE ONLY
+
+Objective and recovery
+Continue approved inventory co-writer safety, not a new financial feature. Recovery
+candidate66714f5 was pushed before this patch; production runtime32b812c/baseline
+d447185 unchanged. Reused framework/spec/Astra decision; reread original Account
+web/review/settlement/credit/read-query/index/operation journal and existing tests.
+All edits isolated to prototypes/tests/task evidence. No protected original changed.
+
+Original auxiliary writers (previously separate, NOT the non-file settlement saver)
+- account-original-auxiliary-plan.cjs captures ORIGINAL createAccountReviewOperations
+  INVOICE_CHECK and createSupplierCreditOperations APPLY_CREDIT preparation. Original
+  validation, actor, versions, supplier/company scope, finance eligibility, closed
+  target and positive available amount rules all execute. No original apply or
+  external action runs during capture; only exact authorized after-images retained.
+- Legacy invoice entry still cannot approve an invoice. Original separate legacy
+  invoiceCheck cancellation field/audit is preserved, not silently converted into a
+  financial CHECK action or a newly implemented finance policy.
+- Supplier credit remains one original immutable SUPPLIER_CREDIT_APPLIED journal
+  event, not a copied PO or invented stock movement. Only required company tag is
+  added to the current conditional row. Original event identity, details, amounts,
+  reason, actor, time and ledger interpretation remain unchanged.
+- current-account-auxiliary-save.cjs uses original Account authorization on EVERY
+  invocation/replay and SAME company fenced protocol/ACCOUNT_PURCHASE_RECORD writer.
+  Original audit/event must be found exactly before success; missing/duplicate or
+  conflicting original receipt never infers completion from current row state.
+  Preexisting credit event without this protocol receipt requires review; no empty
+  plan or silently adopted pre-migration action. Files and bank operations forbidden.
+
+Actual original web/private root connection
+- build-current-account-purchase.cjs produces accountPurchase.web.candidate.js and
+  stockCurrentAccountPurchase.js, NOT installed on Wix. Original Account personal
+  authorization precedes all inventory/control reads; no new public endpoint/role.
+- Original settlement and legacy review web methods accept optional fourth metadata
+  only for the current path; original error sanitization and clean LEGACY dispatch
+  remain. ACTIVE/SHADOW/MAINTENANCE/missing control do not fall back to old writers.
+- All17 original non-file settlement actions use the existing tested record saver;
+  the two distinct auxiliary actions use their own original preparations under the
+  same barrier. Existing document upload/payment-file deletion remain release gates,
+  explicitly refused under current mode rather than bypassing the barrier.
+- Original full/paged/index authority reads now use the same guarded current
+  projector/PO financial projector with original bank/file/customer decorations,
+  versions and supplier-credit ledger. The existing derived Account read index is
+  NOT a second stock authority; its original SUPER ADMIN maintenance rule unchanged.
+- Exact current task reads, original paged non-stock tables and same SDK metadata
+  normalization retained. Not a claim all historical non-stock reads disappeared.
+- Native DateTime field declarations remain UNVERIFIED against actual Wix schema.
+- Writer coverage remains EMPTY. All20 original writers and paired projector are
+  still mandatory. No mode switch or activation added. No real financial save run.
+
+Evidence actually run — NODE / VM / MOCK ONLY
+- New auxiliary7: both companies/generated runtime; exact original audits/ledger;
+  source remainder; interruption/same request; revoked role/member/forged actor;
+  no premature invoice approval; stale versions/reason/supplier/company/closed
+  target/amount refusal; no double spend; preexisting/missing/duplicate receipt;
+  file/unmigrated preparation refusal and no domain writes during private capture.
+- New original-root7: exact reproducible overlays/original auth; both companies
+  original full/paged/index reads/decorations; actual original financial projectors
+  and credit ledger; original separate legacy cancellation audit; file/coverage/
+  mode/stale/actor refusal; interrupted shared record; clean LEGACY routes only;
+  original credit journal and Purchase PO save cannot interleave under shared fence.
+- Root fixture mocks ONLY raw original/current-stock workspace assembly (covered
+  separately by actual current/borrow/split projector suite). It executes original
+  PO/financial/credit factories, actual web/private roots and generated runtime.
+  Do not describe mocks as real Wix SDK or browser end-to-end acceptance.
+- A fixture initially retained an old control object reference. Corrected test
+  getter to read the latest conditional control row; implementation was not loosened.
+- Related original/current64pass0fail1027.71ms before last added shared-fence test;
+  final new root7pass0fail737.8403ms.
+- FINAL complete current suite957pass0fail19574.1807ms. Runtime98modules50exports.
+- No real CMS/business/test data, native lock deletion, bank/file action, permission,
+  Drive grant, employee, browser, main merge or deployment used. Actual Credit UNKNOWN.
+
+Next precise implementation dependency
+Pair the ORIGINAL Account client/panel with current read metadata and durable exact
+request/phase/reload recovery. Existing account-room/settlement.js has one in-memory
+pending request and existing purchase-payments.js has a separate legacy CHECK save;
+neither currently has durable session recovery. Do not pretend Purchase's cache is
+their cache, or enable the root while old clients still send unprotected requests.
+Reuse original dialogs/handlers/pending state and original Account authentication;
+no new finance UI or broadened role. Then complete original Purchase/Account file
+co-writers, not a legacy file fallback. No new business decision currently required.
+
+Remaining release gates
+Account durable clients and original shared file writers; actual Wix stock CMS
+schemas/indexes/permissions/Date roundtrip; operational recovery/unknown file/lock
+outcomes; real platform capacity/relationship lifecycle; migration/shadow parity/
+maintenance/single-authority cutover; complete order→PO→receiving→packing→Loaded
+and borrow/partial repay/unsettled halo/customer split regression; review; four-stage
+release. First user test ends Loaded. Real Support invoice/physical exit OFF.
+
+Release states
+Code: this isolated original shared non-file backend connection tested; overall
+implementation incomplete. Pages unchanged. Wix not installed/published. Public
+new stock/borrowing unverified. Coverage EMPTY, ACTIVE OFF. Production unchanged.

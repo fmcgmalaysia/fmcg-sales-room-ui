@@ -1,0 +1,35 @@
+2026-10-23 — current user's testing/visibility instruction
+
+User explicitly authorized autonomous testing without repeated consent requests,
+until the user gives new restrictions. Also requested that successful background
+tests be demonstrated through real Wix operations, because backend reasoning is
+not a substitute for visible results. Earlier user also permitted creating actual
+test business data; data is disposable in this test phase. Historical heartbeat
+text forbidding synthetic business data is superseded within this authorized scope.
+
+Execution policy
+- Continue ordinary in-scope tests autonomously. Do not ask again for each normal
+  fixture creation, safe modification, readback or visible test step.
+- Prefer existing isolated StockProtocolTest for deliberate failure injection.
+  User-prepared business customers/orders are not fault-injection scratch space.
+- Prepare/verify in background first, then use existing Wix UI for actual native
+  operations and human-observable outcomes; save source readback/result/screenshots.
+- Clearly distinguish mock tests, real native isolated tests, installed business
+  behavior, Wix saved draft, published-live and actual public Loaded acceptance.
+  Never present a fixed replay or an Admin diagnostic as a deployed borrowing UI.
+- Exact INIT/TYPE one-time fixtures remain consumed/not replayable. A broader new
+  testing instruction does not make a fixed occupied test safe to reset or adopt.
+- Permanent deletion, security-sensitive ACL/deployment permission expansion,
+  credentials and safety denials retain their exact action-time protections.
+  No forced unlock, main merge, unreviewed ACTIVE, clear-CMS or whole-page overwrite.
+- Testing authorization does not authorize external support contact. The specific
+  generic Wix support question remains pending, not silently sent or re-asked.
+- Stop commands and future user restrictions take immediate precedence.
+
+Next bounded native test: exact actual-root synthetic300 receipt plan,901images,
+596928bytes. Same shared segmented codec/SDK adapter;11fragments+1manifest retained
+in a NEW fixed StockProtocolTest namespace. INSERT-ONLY; no patch/delete/lock/ACL/
+business collection/site Publish. Confirm first-fragment interruption and then one
+explicit exact continuation; fail/unknown stops without automatic retry or reset.
+This closes native staged-payload acceptance ONLY, not whole300business preparation,
+901image application/recovery, native business schema, migration or release gates.

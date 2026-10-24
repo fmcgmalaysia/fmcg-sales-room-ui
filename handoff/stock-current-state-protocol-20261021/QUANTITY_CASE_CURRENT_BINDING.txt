@@ -1,0 +1,34 @@
+2026-10-22 — original Purchase shortage decision current binding; candidate only
+
+Recovery: preceding candidate2475076 pushed, production d447185/runtime32b812c unchanged.
+Single objective: finish original quantity-case co-writer current binding, not modify
+supplier/finance policy. Read existing quantity preparation/test, original quantity-case
+factory/projector, scoped reader/current mapper. Reused original authority and framework.
+
+Added v2 scoped preparation: explicit selected PO source and customer demand, complete
+ACTIVE relation/source closure, exact raw task counters/generation, mandatory existing
+product lifecycle checkpoint. Unrelated lifetime CLOSED rows never enter the stock plan.
+Old isolated v1 behavior retained for existing regression tests, not ACTIVE fallback.
+
+Concrete createCurrentQuantityCaseSave uses original authenticated Purchase staff on
+every attempt and completed replay, common QUANTITY_CASE admission/fence/segmented
+recovery. Confirm original immutable committed event before returning original caseId.
+Browser staff/company/stock generation cannot replace original authority. Quantity
+case decision changes original event plus product revision checkpoint only: STOP/CREDIT
+does NOT cancel demand, release customer reservation, physically return goods, clear
+repayment or grant Warehouse allocation rights. No financial policy implementation.
+
+Offline evidence: original+new targeted10pass0fail284.3533ms; full current candidate
+529pass0fail5595.5008ms after shared runtime change. Runtime61modules22exports exact
+generated source. New current tests use actual original Purchase role/case operations,
+bounded phase resume/preparation once, confirmed/replayed case receipt, reject absent
+raw task checkpoint and revoked member. Fifteen out-of-scope CLOSED source records
+are deliberately excluded; ACTIVE20 debt/source/claims remain byte-identical after
+STOP/CREDIT. This demonstrates scoped behavior, NOT measured production capacity.
+
+Production directory diff d447185 remains clean. No CMS data/schema/permission writes,
+no actual Wix/SDK test, no source gateway/department webMethod install, no ACTIVE,
+no Support invoice, no Pages/Wix publication/main merge. Remaining quantity READ
+snapshot/gateway/relay/client wiring still required along with other existing release
+gates. Continue all independently executable implementation before permission request.
+Token/cache/actual Credit UNKNOWN. Existing automation unchanged.

@@ -1,0 +1,74 @@
+2026-10-22 — ORIGINAL WAREHOUSE CBM CURRENT ROOT AND DURABLE CLIENT
+
+Recovery6a262f8/PR220. Productiond447185/runtime32b812c remains unchanged.
+No native Wix/CMS/POINTBASE/Drive/test-lock writes, install, activation, permission
+change, browser manipulation or publication. All proof below Node/VM/in-memory only.
+
+Implemented original reference-only co-writer
+- Private current-warehouse-cbm-save captures the ACTUAL original warehouseCbm
+  validator/POINTBASE response contract and its single immutable task supplement.
+  Original active task/company/barcode/source/date/role remain authoritative. No
+  second validator, quantity allocation, cost/price/money/source task or physical
+  product mutation. Accepted original source metadata/time are frozen in the plan.
+- Same company segmented fence/digest/manifest and original UUID; COST_REFERENCE
+  coverage must include BOTH Purchase reference save and this Warehouse co-writer.
+  Writer registry remains20, verified coverage EMPTY. Current mode unavailable or
+  incomplete coverage refuses before native task/POINTBASE read. No legacy fallback.
+- Original already-positive CBM is an authenticated same-checkpoint READ, even from
+  an older form: zero source request, zero CMS manifest/receipt/supplement, zero
+  generation bump. Writable old generation still refuses. Original request metadata
+  is never silently rewritten. Existing request manifest ALWAYS uses coordinator
+  replay, even after its event becomes visible; no premature retained success.
+- Same staff/member identity frozen into shared digest. Reissued employee cannot
+  adopt prior CBM plan; same identity renamed can resume original audit. Original
+  Warehouse auth rechecked on every invocation, including completed replay.
+- Native-import stockCurrentWarehouse fifth SiteMember method composes original
+  validator/POINTBASE client + existing guarded current Warehouse read and fence.
+  Original captureWarehouseCbm wrapper is server-mode routed AFTER unchanged staff
+  auth. LEGACY only actual original CBM, ACTIVE only guarded current CBM. Other
+  original wrapper bodies proven exact after removing explicit current seams.
+
+Original UI and relay
+- Original CBM modal/font/button/source and legacy save retained. New own-tab helper
+  fmcg-warehouse-cbm-v1/company/staff/member retains complete original request BEFORE
+  network, exact readback, no key enumeration/replacement. No stock/auth grant.
+- Same bounded BEFORE/APPLY/VERIFY requests, strict final task/company/UUID/positive
+  scalar/generation confirmation. Only original known retained READ may return same
+  generation. Unknown/retryable-false/foreign/malformed/late replies keep original.
+- Cache cleanup failure retains exact request. Pending CBM cannot be closed/replaced
+  by another modal or rebound by background workspace/version; old timers cannot
+  restart save. Refresh current generation before next preparation/reference action.
+- Reload behind current read barrier reuses existing original own Warehouse auth-only
+  context; checks only own prep/CBM keys. Never auto sends recovered request; explicit
+  retry keeps original UUID. No fake task/workspace generated for recovery.
+- Paired existing Wix relay forwards exact fourth metadata/expected-identity argument.
+  Helper/version loaded before workroom. Protected production files not edited.
+
+Verification and limitations
+- Original validator/core6cases: both companies, immutable once-only lost reply and
+  replay, no stock/cost writes, no-op zero rows, stale/version/coverage/source/role,
+  bounded visible event never early success, changed staff adoption refused.
+- Native-import root composition test uses a PRIVATE FACTORY SPY to verify original
+  validator/client/guarded read dependencies; core tests separately run actual original
+  validator and actual segmented coordinator. No native positive full task-root claim.
+- Original workroom/helper6CBM cases plus9preparation regressions15pass559.9959ms.
+  Original-mode router checks and private runtime43exports included.
+- Final ALL stock-current suite797pass0fail15995.4729ms. Independent ORIGINAL CBM/
+  preparation/receiving/packing-host27pass0fail260.8257ms. Prior focused27pass0fail
+  9585.9622ms. Generator checks/whitespace pass; production paths exactd447185.
+- First focused stale rejection expected /admission/ but actual correct original
+  "Stock form changed" message; test expectation fixed, no authorization relaxed.
+  First combined test patch had context mismatch and applied no changes; reissued
+  smaller exact-context patch, not shell rewrite. Actual Credit UNKNOWN.
+
+Next / release truth
+Packing-list actual service/root and child durable client next. Source Sales actual
+root/transport, intake/order/other actual writers+identity coverage; native schema/
+index/date/SDK permissions/init; all20verified coverage; cross-session/admin unknown
+lock termination proof; in-flight legacy/quiescent switch; capacity/shadow parity;
+SHIPPED/history/orphan-loaded acceptance and four-stage release remain OPEN.
+Support real invoice remains OFF; user's invoice-vs-Loaded test scope answer pending,
+not a blocker to independent local work. No duplicate question raised this round.
+Code incomplete candidate; Pages unchanged; Wix not installed/published; new public
+current inventory/borrowing unavailable/unverified. Exact branch Pages permission
+still required at final release readiness; no claim this task is fully complete.

@@ -1,0 +1,21 @@
+2026-10-22 CURRENT STOCK UI CANDIDATE — NOT SYNCED OR PUBLISHED
+
+Paired mechanical overlay now connects existing Warehouse stock tab -> nested stock
+iframe -> original #html1 Wix bridge -> current read service. Protected source files
+are read-only inputs. Original order/receipt/packing/chat routes remain unchanged.
+Product totals are never computed from a detail page. Same compact typography/theme,
+same modal; positions and customer claims load only on demand, 25/page, no polling.
+Wrong origin/frame/company/request/type, old schema, incomplete page, late/closed
+dialog and generation/summary mismatch are rejected. Changed stock requires closing
+and refreshing; unknown quantities remain Review Required, real zero remains zero.
+
+17 new+original UI/navigation tests pass329.3381ms. Generator --check passes. Initial
+7 tests passed, then tightened incomplete-page guard correctly rejected three invalid
+test fixtures (one row falsely labelled2000-row full page). Fixtures now provide25
+rows; no server validation weakened. No browser visual acceptance claimed.
+Read-only START_HERE attempt in checkout failed: entry belongs to root and was already
+read earlier; no repeated framework scan. Existing unrelated untracked files preserved.
+
+All writer, capacity/lifecycle, recovery, migration/shadow/ACTIVE and release gates
+remain open. UI overlays are candidate artifacts, not production authority. No Pages,
+Wix synchronization, CMS writes, business tests or permission changes occurred.

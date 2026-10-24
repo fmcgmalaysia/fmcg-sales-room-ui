@@ -1,0 +1,10 @@
+import { getPackingLists, savePackingList } from 'backend/r2packingLists.web.js';
+export async function handlePackingList(message,department,reply){
+ if(!['PACKING_READ_REQUEST','PACKING_SAVE_REQUEST','PACKING_RESUME_CONTEXT_REQUEST'].includes(message?.type))return false;
+ if(!['SUPPORT','WAREHOUSE'].includes(department)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!/^[a-f0-9-]{36}$/i.test(message.requestId)||JSON.stringify(message).length>(department==='WAREHOUSE'&&message.input?.action==='PHOTOS'?3100000:150000))return true;
+ if(message.type==='PACKING_RESUME_CONTEXT_REQUEST'&&Object.keys(message).some(key=>!['type','company','requestId'].includes(key)))return true;
+ const type=message.type==='PACKING_RESUME_CONTEXT_REQUEST'?'PACKING_RESUME_CONTEXT_RESULT':message.type==='PACKING_READ_REQUEST'?'PACKING_READ_RESULT':'PACKING_SAVE_RESULT';
+ try{const result=message.type==='PACKING_RESUME_CONTEXT_REQUEST'?await getPackingLists(message.company,department,{resume:'PACKING_V1'}):message.type==='PACKING_READ_REQUEST'?await getPackingLists(message.company,department):await savePackingList(message.company,department,message.requestId,message.input,message.stockProtocol===1?{stockProtocol:1,stockBuild:message.stockBuild,stockGeneration:message.stockGeneration,stockIdentity:message.stockIdentity}:undefined);reply({type,company:message.company,requestId:message.requestId,ok:true,result});}
+ catch(error){const safe=String(error?.message||''),known=/^(Sign in with an approved Master staff account\.|Master staff access is not configured\.|This packing department is not authorized\.|Packing department is not authorized\.|Select NCT or GHR\.|Packing (list identity|change|evidence) requires review\.|Demand or physical stock requires review\.)$/.test(safe);reply({type,company:message.company,requestId:message.requestId,ok:false,error:known?safe:'Packing request could not be confirmed. Check staff access and retry the same save.'});}
+ return true;
+}

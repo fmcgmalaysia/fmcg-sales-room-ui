@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-21",
+  "site": "Master",
+  "collection": "StockProtocolTest",
+  "sdkVersion": "1.0.528",
+  "entry": "inspectStockSdkAdapter",
+  "passed": true,
+  "readOnly": true,
+  "countContract": { "defaultType": "undefined", "explicitCount": 2 },
+  "retainedFixtureState": {
+    "ADAPTER-c61f7e82-S": { "_version": "V1", "onHand": 19, "reservedUsable": 9, "available": 10, "obsoleteAbsent": true },
+    "ADAPTER-c61f7e82-C": { "_version": "V1", "reservedUsable": 9, "isolatedAttributed": 0 },
+    "ADAPTER-c61f7e82-P": { "_version": "V1", "onHand": 19, "reservedUsable": 9, "available": 10 },
+    "ADAPTER-c61f7e82-Q": { "onHand": null, "reservedUsable": null, "available": null, "isolated": 0 }
+  },
+  "returnedPages": {
+    "products": { "ids": ["ADAPTER-c61f7e82-P"], "totalCount": 2, "page": 0, "pageSize": 1 },
+    "next": { "ids": ["ADAPTER-c61f7e82-Q"], "totalCount": 2, "page": 1, "pageSize": 1 },
+    "positions": { "ids": ["ADAPTER-c61f7e82-S"], "totalCount": 1, "page": 0, "pageSize": 1 },
+    "claims": { "ids": ["ADAPTER-c61f7e82-C"], "totalCount": 1, "page": 0, "pageSize": 1 }
+  },
+  "evidenceFormat": "Selected fields faithfully transcribed from actual returned JSON; not a complete raw response.",
+  "limitation": "No actual timeout injection/full protocol recovery/production migration or activation."
+}

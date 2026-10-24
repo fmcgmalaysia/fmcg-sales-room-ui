@@ -1,0 +1,48 @@
+2026-10-24 — linked arrangement lifecycle and later-arrival continuation
+Parent7fe8c1b. Continued authorized local implementation; no native actions.
+
+Concrete prior defect: LINKED always disabled another Purchase instruction, even
+after its original draft was cancelled/completed. Its displayed requested80 also
+did not describe a later edit to60with40Loaded. Do not clear the original request
+or claim80were shipped to address this.
+
+New projectArrangementLinks derives actual linked packing status/revision and
+current planned/packed/loaded quantities from exact original current-list ID.
+Requested quantity remains immutable in instruction/audit. Missing/duplicate/
+foreign/malformed linked lists refuse instead of showing0or clearing linkage.
+Pending changes remain blocked. DRAFT/SENT/PROCESSING with the task still present
+cannot be replaced. CANCELLED/COMPLETED or explicit removal of task from list,
+without pending change, allow a NEW instruction after current available-stock
+revalidation. A list change is not physical dispatch or evidence of debt repayment.
+
+Private Purchase save reads exact linked packing record under same generation
+snapshot before replacing instruction. Expected current instruction revision and
+conditional before image still mandatory; new quantity bounded by actual current
+usable minus ALL packing holds. Prior linked list ID/current revision retained in
+immutable new request audit. No old packing list or history is rewritten.
+
+Purchase/Support read contexts use same derived list state; Purchase UI displays
+requested link plus current planned/Loaded, permits fresh instruction only when
+server says terminal/removed and actual remaining quantity exists. Example:
+requested80, plan60, Loaded40 => shows60/40; completed list with40still held and
+usable80 permits40more, not80. Fully held/actually dispatched stock still cannot
+be offered again. Selected-batch conservative bounds retained.
+
+Native Date-valued Activity timestamps now normalize to ISO for display alongside
+already-normalized SDK strings. Invalid timestamp/type still rejected; business
+Date/DateTime schemas and stored receipts unchanged. This is codec compatibility,
+not a claim of a new native roundtrip test.
+
+Verification full stock-current1322pass0fail30032.6697ms. Includes actual original
+Support CREATE/link/replay/stale refusal then CANCEL; fresh read marks linked
+list CANCELLED and permits another request. Pure tests cover partial edited plan,
+Loaded40, completed/review/pending/missing records and exact old-link audit. UI
+test confirms correct expected revision and40remaining rather than original80.
+This is local integration/mock transport evidence, not published/live acceptance.
+
+Candidate runtime/manifest/local preview regenerated. Protected original dirs no
+diff; no CMS/permissions/delete/Publish/Pages/GitHub push. Existing Source editor
+two-failure stop, export-specific review rejection and initial-cutover late-writer
+block remain. Next: full exact per-batch physical holds/source provenance and
+new Purchase/Support UI acceptance; installation/production scale/shadow/recovery
+and four release gates remain incomplete. Keep ACTIVE/invoice/dispatch closed.

@@ -1,0 +1,43 @@
+2026-10-22 continuation after69dce08 — original Account non-file PO co-writer
+
+Scope/evidence
+- Read current STATUS and reused same-version framework/closeout/spec. Read original
+  accountSettlement non-file prepare/apply and accountPurchase.web auth dispatch.
+- No original finance/permission/test/state rule changed; production recovery remains
+  d447185/runtime32b812c. PAID vs INSTALLMENT_PAID baseline issue remains separate.
+
+Candidate implementation
+- account-order-record-plan.cjs authenticates current approved member through ORIGINAL
+  requireAccountStaff/StaffMasterAccess, then reads original Account orders and exact
+  target record inside common snapshot barrier. Browser actor flags ignored.
+- Captures ORIGINAL non-file Account settlement prepare in private journal only;
+  no legacy apply, file allocation/upload/trash, real bank action or stock movement.
+- Exact company/version/hash/row-version/actor/embedded audit required. Only action-
+  specific finance fields, handoff or issue metadata may change. Existing monetary
+  payment records and unrelated file/quantity/identity fields must remain unchanged.
+- Original paper review, request/CN reconciliation, bank-unknown lock, financial check,
+  closure/reopening, shortage claim and instalment validation not replaced by formulas.
+- Original approved replacement-document review may change existing issue/document
+  association as before; no file upload or deletion is performed by this candidate.
+- Single original PO image under domainWrites fence + shared generation; no competing
+  stock authority/product placeholder. All real endpoint/read/final recheck/admission
+  integration remains pending; coverage flags NOT set verified.
+- File actions and APPLY_CREDIT explicitly excluded. Original supplier-credit transfer
+  and separate legacy invoice-review entry point still need classification/integration;
+  this candidate does not falsely cover them or expand Account authority.
+
+Evidence
+- New4 + original Account settlement/review/payment30:34pass,0fail,355.385ms.
+- AMOUNTS100000 exact original audit + no payment/file creation; paper Reviewing is not
+  financial clearance or bank payment; incomplete supplier account closure refuses.
+- Pending/unconfigured staff, unsupported file/credit action, stale version and
+  unmigrated target refuse; no private Account read before failed authorization.
+- Conditional save/replay: one embedded audit, generation1, original demand100 intact.
+- Original file/payment tests use mocks; no real business records or Drive operations.
+- Protected production directories still byte-identical to d447185 by Git diff.
+
+Release states
+Candidate code only; Pages NOT deployed; Wix NOT synchronized/published; public page
+NOT verified. ACTIVE OFF, Support real invoice OFF. Remaining actual all-writer/read/
+file/photo/routing/capacity/lifecycle/operational recovery/schema/metadata/migration/
+shadow/UI/halo/focused review and known baseline test gates remain OPEN.

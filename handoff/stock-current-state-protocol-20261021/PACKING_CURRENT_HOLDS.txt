@@ -1,0 +1,34 @@
+CURRENT after30d9ac3 — isolated packing current-ownership/hold composition; ACTIVE OFF
+
+currentPackingContext overrides ONLY Ready/remaining from known complete server stock
+claims and actual dispatch. No incoming/free/legacy aggregate can count as customer Ready.
+Original company/customer/currency/identity/chats/review and legacy collision guards remain;
+remaining mismatch refuses. Conservative original review is intentionally not cleared;
+valid borrowing read parity still needs final authority integration.
+
+validateOriginalPacking captures unchanged original non-photo prepare against current
+context, private memory journal only, never legacy apply/external upload. Original version,
+department action, quantity, pending-change/reopen rules retained. PHOTOS explicitly not
+supported here: protected external allocate/upload/retry mechanism must be preserved before
+all-writer gate can pass, not bypassed through old independent writer.
+
+preparePackingStock saves original single current list row with exact before revision/
+conditional version and product checkpoint in ONE plan. Task hold delta comes from the
+ORIGINAL packingHeld(prior/next), not proposed numbers; other lists/legacy holds retained.
+Complete old/current/pending-line product coverage required. All source balances/claims/
+borrowing records unchanged. Loaded/invoice is NOT physical outflow; Support invoice remains
+disabled. Completed40of50 releases packing hold10, leaves onHand50/customer-reserved50 and
+available0. Remaining10 is rearrangeable for same customer, NOT free inventory.
+
+Evidence:5focused118.4907ms. Final affected original packing operations + current packing/
+hold/borrow/receipt/dispatch/Sales/Purchase mapper44pass0fail356.7324ms. Prior43 run is
+overlapping pre-final-slice evidence, not additional coverage. No real data writes/deletes.
+Initial Windows rg directory wildcard failed; corrected to literal directory with -g
+filters. No retry of denied UI, no preview reopen, no source files scanned unrelatedly.
+
+OPEN: authenticated real packing service/gateway and read adapters; fully migrated list
+versions/current schema; preserved photo external protocol under common fence; actual
+packing outflow (existing new list has NO dispatch action), all other writer/read coverage,
+capacity/lifecycle/recovery operational proof, reserved exceptions/migration/shadow/ACTIVE,
+UI and four-stage release. No claim that warehouse physical departure is now implemented.
+Existing production directories still matchd447185; no Pages/Wix/public behavior changed.

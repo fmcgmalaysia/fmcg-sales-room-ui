@@ -1,0 +1,77 @@
+2026-10-23 — complete installed-cohort readback and owned migration wiring
+
+Single objective / recovery
+User requested continued work while away. Close the readInstalled dependency of
+the existing private maintenance migration; no browser/native test or production
+operation. Same-version framework/spec/boundaries and current handoff reused.
+Recovery fac16cdb96b79e442339e34378e7e395e61cb6a4; original d447185/runtime32b812c
+unchanged. No agents/model switch, permissions, automation or release action.
+
+maintenance-installed-reader.cjs
+Private read-only factory. Actual original Admin identity and independent drain
+verifier mandatory. MAINTENANCE/schema1/transferIndex2 required. Original manifest
+must bind company/member/request/checkpoint digest. Pending read is allowed ONLY
+for the same owned FINALIZE/count/cursor/planHash with the actual matching lock and
+no RESULT. Completed inspection requires the exact original RESULT/generation and
+no lock. Any other pending or APPLY/VERIFY state refuses before business queries.
+Does not change or weaken ordinary protocol.readSnapshot(), release locks or enable
+mode. These are private composition rules, not native ownership/drain acceptance.
+
+Reuses existing readCompanyCurrentSnapshot for ALL stock statuses and relations.
+Reads the entire actual company task table WITHOUT a company filter that could
+hide missing metadata. Exact native field normalization + exact row read; missing
+company/version, duplicate/missing/truncated pages and explicit budget violations
+refuse. Performs two complete cohort passes and rechecks Admin/control/manifest/
+RESULT/lock/drain boundary. Same-count edits and late changes refuse, not partial
+success. Explicit byte/row policies and exact-read counts are NOT measured native
+production capacity; actual latency/capacity acceptance remains required.
+Original migration.validate and inspect now pass original request/checkpoint to
+this reader. Extra rows prevent RESULT/generation publication. Lifecycle shadow
+remains read-only; zero/unknown/closed rows are not dropped or relabelled healthy.
+
+Concrete wiring defect found and corrected within this same scope
+The existing fenced protocol acquires its own company lock BEFORE prepare/capture.
+The new complete snapshot adapter originally treated that lock as another business
+lock, so direct full-pipeline composition could not prepare migration. Added private
+readOwnedMigration(requestId/checkpointId): actual Admin and exact native scoped
+lock application fields/member-derived owner/nonempty attempt required. The exact
+owned transient lock is omitted from business snapshot/backup input ONLY; both raw
+page passes still check it. Ordinary read() still reports BUSINESS_LOCK_PRESENT;
+another/malformed/missing lock refuses. No flag accepted from browser, no lock
+cleanup, no competing stock path. Original request identity flows through the
+existing retained capture. Native binding must use the explicit owned method.
+
+Candidate integration and verification
+Generated command runtime now includes existing private metadata initializer and
+migration factories alongside the new reader:115scoped modules/59exports. It still
+has no public webMethod/permission/mode route. Same38backend targets/94dependency
+modules,38Pages paths+4Wix relays;20writer categories remainUNVERIFIED. Mechanical
+paired hashes updated only; original page/stock/business backend sources unchanged.
+NCT/GHR full candidate pipeline now exercises actual SDK conditional adapter over
+an isolated native-shaped test store: original capture->immutable backup->metadata
+initialization->owned-lock segmented migration->complete installed read->lifecycle
+inspection. Original business JSON hash and declared actual DateTime fields retained.
+NCT100physical/80reserved/20available and GHRclosed-zero readback both pass; generated
+VM runtime executes the same migration/readback/lifecycle path. NO Wix invocation.
+Test-fixture errors corrected after actual evidence: cross-realm assertion used
+JSON metadata comparison; fake SDK gained the existing hasSome primitive. No
+production fallback or workaround. One handoff patch path typo failed before any
+edit; corrected to the exact checkout path, not an alternate target.
+34affected pipeline/reader/backup/snapshot checks passed1369.4836ms; after adding
+positive physical100 case final8reader checks pass298.624ms. Overlapping, not additive.
+ONE final full stock-current run:1272pass/0fail32840.2997ms. Not entire-project/native
+green. Retained private log (outside public repository):
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/maintenance-installed-full-tests-20261023.txt
+Builders --check and git diff --check passed; protected original paths still have
+zero diff against d447185. Actual Credit UNKNOWN.
+
+Release states / remaining
+Code: implemented/tested candidate in existing branch/PR220.
+Pages: original rollback baseline unchanged; no deployment.
+Wix: no synchronization, native schema/test/data mutation or whole-site Publish.
+Public: original task-list restoration evidence retained; new borrowing/Loaded
+NOT accepted. ACTIVE/invoice/physical exitOFF. Both stopped UI paths staySTOPPED.
+Still need actual Admin root/native/private-retention binding, independent old
+request drain/fence, schema/index setup, measured native capacity and recovery/
+migration/shadow acceptance, then all four release stages and user Loaded test.
+No ACL or deletion authority inferred. Heartbeat staysPAUSED; no chat archive.

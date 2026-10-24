@@ -1,0 +1,11 @@
+/* The Warehouse owns company, staff and navigation; the pane owns only its stock view. */
+@font-face{font-family:'Stock Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
+.warehouse-embedded{font-family:'Stock Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;font-size:11px;line-height:1.35}
+.warehouse-embedded body>header,.warehouse-embedded body>nav{display:none}
+.warehouse-embedded main{padding:0;max-width:none}
+.warehouse-embedded .heading{margin-bottom:12px}.warehouse-embedded .heading p{display:none}
+.warehouse-embedded .scope-note{padding:7px 10px;margin-bottom:12px;font-size:10px}
+.warehouse-embedded .cards{gap:12px;margin-bottom:12px}.warehouse-embedded .cards button{min-height:56px;padding:9px 12px}
+.warehouse-embedded .tools{padding:9px 11px;margin-bottom:9px}.warehouse-embedded th{padding:9px 11px}.warehouse-embedded td{padding:10px 11px}
+.warehouse-embedded dialog{width:720px}.warehouse-embedded .dialog-heading{padding:12px 16px}.warehouse-embedded .dialog-heading h2{font-size:14px}.warehouse-embedded .dialog-body{padding:15px}.warehouse-embedded footer{padding:11px 16px}
+.warehouse-embedded .sources{min-width:580px}

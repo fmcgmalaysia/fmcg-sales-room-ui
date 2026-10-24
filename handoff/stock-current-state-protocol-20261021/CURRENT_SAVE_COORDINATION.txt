@@ -1,0 +1,27 @@
+2026-10-22 AUTHENTICATED CURRENT SAVE COORDINATION — CANDIDATE ONLY
+
+New server coordinator composes original department authentication, mandatory all-writer
+coverage and exact current plan with existing fenced protocol. It grants no permission
+and defaults to empty coverage (blocked). No LEGACY/SHADOW fallback is implemented.
+Every invocation reauthorizes, including completed replays. Under owned lock, protocol
+checks exact company/request/digest/base-generation receipts, then invokes admission.
+Only this server-proven replay can continue its own pending save with original form
+generation. Another request, changed payload/build, maintenance or missing writer stays
+blocked. Preparation actor/generation must match the admitted authenticated operation.
+Public result withholds private plan/operation key. Original two-product Warehouse PO
+authority now exercised through this coordinator, not just direct protocol.commit.
+
+42 targeted tests pass407.7402ms. Related66pass460.5724ms (overlapping). All383 current
+candidate tests pass2209.7264ms after shared protocol change. Embedded Admin diagnostic
+is updated to exact algorithm and3offline harness checks pass143.4197ms; NOT re-synced
+or rerun against Wix. Prior live evidence applies to prior captured version only.
+Borrowing reader now propagates original authenticated memberId for coordinator binding.
+
+This is the composition boundary, not installed production webMethods. Actual gateway
+mapping, all19 writer coverage, lifecycle/production capacity, recovery, CMS/indexes,
+migration/shadow/G3 and four-stage publication remain incomplete. Original baseline
+financial assertion mismatch remains separate;383current tests do not erase it.
+No business CMS mutation, new staff permission, lock test deletion, deployment or main
+change. Unsuccessful speculative readonly filenames were not evidence; subsequent
+test discovery used actual returned paths. Root specification tail reread due context
+loss; same-version full framework was not scanned again.

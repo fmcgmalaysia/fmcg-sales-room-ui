@@ -1,0 +1,36 @@
+CURRENT after6c261d5 — explicit shadow snapshot/parity candidates, NOT activation
+
+compareStockShadow compares exact source PO/movement/physical balance, per-position
+customer claims including order/line identity, and product cached totals. Independently
+checks claim/source/product sums and physical conservation; equal grand total cannot
+hide swapped customer ownership or offset source differences. Stable row IDs/company/
+schema/status and current version/checkpoint metadata required. Unknown remains unknown,
+equal nulls produce PARITY_WITH_REVIEW_REQUIRED, never activationReady. Pending/changed
+control/generation/unsupported mode refuses parity. Existing borrowing relation rows
+require relation-aware baseline, not silent legacy overwrite or false discrepancy claims.
+
+Diagnostic output capped100 difference entries but counts ALL differences; plaintext
+customer/order/product values excluded, private source/current fingerprint retained.
+Do not commit real private images/reports to public repo. Operation never elects a
+winner, rewrites data, activates stock or runs as daily history recomputation.
+
+readCompanyCurrentSnapshot is an explicit PRIVATE diagnostic reader under existing
+readSnapshot barrier: fixed company current tables plus STOCK_TRANSFER_CURRENT filter,
+includes CLOSED/unknown rows, exact row read, stable totalCount across all pages, no
+foreign/unrelated activity reads. Explicit operator-configured per-table budgets; excess,
+missing/duplicate/page-count changes or pending barrier refuse, never truncate silently.
+This is not a page endpoint, does not authenticate an admin or prove absence of unfenced
+writers; real maintenance quiescence and writer coverage still prerequisites.
+
+Evidence: bootstrap+shadow+snapshot18pass0fail440.7504ms before two trivial final changes
+(clone exact-read output, strengthen no-input-mutation assertion); final affected11pass
+386.9453ms after them, not an additional independent coverage total. Offline1000-source
+comparison counts1000 wrong-customer claims while returning100 entries; this is JS-only
+diagnostic coverage, NOT Wix query/write capacity or the production model cap resolved.
+Reader5positions+5claims+1product uses6queries11exactreads with pageSize3. Error/budget/
+pending cases refuse. All original live directories unchanged; no real CMS access or writes.
+
+OPEN: actual authenticated legacy/current snapshot collection and schema/index setup,
+private recovery capture, migration installer/rollback, all writer/read coverage, model
+production-capacity/relationship lifecycle, operational recovery, halo UI/admission/
+shadow operation integration and four-stage release. Production unchanged/ACTIVE OFF.

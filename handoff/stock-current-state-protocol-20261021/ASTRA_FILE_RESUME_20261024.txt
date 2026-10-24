@@ -1,0 +1,85 @@
+ASTRA FILE RESUME — 2026-10-24 — LOCAL PROOF + FOUR SAVED DRAFTS, NOT RELEASED
+
+SCOPE / AUTHORITY / RECOVERY
+User requested continuing scoped R2 recovery and explicitly announcing the SOL
+handoff point. No model switch or agents. Reviewed current handoff, framework,
+efficiency rules and exact file/deletion consumers. Generic/original defaults and
+integration/backend, backend, deployed Apps Script remain unchanged. Recovery for
+this patch: 48baab8, already pushed; protected production d447185/runtime32b812c.
+Reuse same-version deployed Apps Script v8 evidence in ASTRA_PHOTO_RESUME_20261024:
+Code.gs UTF8-LF sha25643c9add55c6a27666541fedc30599b1d8733d2a1cfb61a4f972686c369dcd7b8.
+No secrets, real file calls, deletion, permission change or old UNKNOWN retry.
+
+EVIDENCE AND MINIMUM REPAIR
+All five actual local file paths reproduce the same failure: suspend the first
+external callback without rejecting it, and a same-request retry cannot acquire
+the still-owned exclusive lock. These witnesses retain the original default.
+Optional server-selected CONTROL_CAS_CANDIDATE added only to OrderFile adapter,
+CustomerDocument adapter, and Purchase staged-delete wrapper; R2 compiler enables
+both coordinator and paired adapter in Purchase/Account/SourceSales roots only.
+Exact manifest/digest/member/staff/company/build/generation remain mandatory.
+Callbacks recheck captured control; mutable CMS images still use original-version
+CAS and customer document evidence is insert-only. No timeout-based lock takeover.
+Original Purchase order of unlink -> exact TRASH -> completed audit is preserved.
+Original Account proof and financial-role guards are unchanged.
+Fixed server allocated IDs and immutable file identity are essential: deployed v8
+UPLOAD creates-or-verifies, never overwrites/untrashes; TRASH targets exact identity
+and is monotonic/recoverable, never permanent delete. Existing global ScriptLock
+and all shared chat/photo routing remain untouched. No storage redesign.
+
+TESTS
+New stock-current-file-resume.test.cjs: 24pass. Includes 5 strict-lock witnesses,
+10 genuine held before/after external effects (Purchase PDF, Account multifile,
+Account proof deletion, customer document, Purchase deletion), 5 wrong receipt/
+changed payload/revoked actor checks, and 4 delayed mutable CMS writes AFTER all
+callback fences. Retry finishes while old promise is unresolved, then a later
+record version survives its return. One audit/result and same allocated file IDs.
+Actual Code.gs VM regression additionally proves late UPLOAD cannot resurrect a
+trashed ID and repeated old TRASH cannot affect a replacement's new ID.
+Focused six suites: 65pass0fail0cancel0skip797.496ms.
+Entire stock suite after final rebuild:1545pass0fail0cancel0skip36766.0139ms.
+Output retained locally, not staged:
+C:/FMCG-WIX-LOCAL/tmp-astra-file-stock-tests-20261024.txt
+These are controlled local proofs, NOT native504/real file acceptance. Six-file
+Account upload retains its existing bounded loop; its actual platform duration
+still needs capacity evidence. Do not call CAS a cure for every504 or latency.
+
+NATIVE SAVED DRAFTS — FULL BEFORE/AFTER READBACK
+All four whole before-images freshly copied from MASTER Studio and matched48baab8.
+Core patched only three scoped module sections; roots only constructor options.
+r2stockCurrentCommands.js
+ before fd7f5676b8299e755365ee285462bbfb68bc4f2291eee9760136abd6c79f22ec
+ after  a51c1c55a2f578660b349fac5dbf43182d630a3ae4535937d414990d480e2ff4
+r2stockCurrentPurchaseOrders.js
+ before 9e805ffb34015aa56013eaf8fd99b5aaa5831d45f086355ccef9f8266fce94df
+ after  b914293b329e279d9a3c87ceb0c1cd9e377ff2c91654564ca088e232a9e09866
+r2stockCurrentAccountPurchase.js
+ before 777604493a41e3f886341ccbda1acf668abb3e6b8a9704c41c6b6d2fe9176724
+ after  b0f563ea23853e729d48df987ae659d5aee2f13b9b83547c2a78c340fbe12899
+r2stockCurrentSourceSales.js
+ before faeb13616e8eff2e5dce24efe30debcb4a4c69a84a5aaf2e8509b985119c0cfa
+ after  8efbfe20898c879d395f2c1da65566a338de7469429a1dead47d64f0fc0f7ad4
+Each after-image independently copied in full and exact matched; Autosave on.
+Private screenshot C:/FMCG-WIX-LOCAL/tmp-astra-file-draft-20261024.png not exported.
+Browser MASTER51427447 marked handoff. Prior embedded undefined/DNS preview issue
+is not public acceptance or a new code-failure diagnosis. No Publish clicked.
+
+HANDOFF TO SOL / REMAINING GATES
+Explicitly told user now suitable to switch back to SOL: scoped reasoning/repair
+and local interleaving review complete. Continue normal implementation/acceptance
+on user's selected model, not wait for another stage approval or auto-switch.
+Code: patch/tests/generated artifacts and four exact saved draft installations.
+Pages: current resources NOT deployed/version-verified this turn.
+Wix: saved drafts only, NOT published/live; ACTIVE OFF, writerCoverage EMPTY.
+Public: Buyer Room order -> split/borrow/repay acceptance NOT complete.
+Next: actual native staff SDK conditional-write authority, real intake/file capacity,
+all writer/read/recovery evidence, server-owned activation verifier/control audit
+schema, exact remaining installation, paired Pages/Wix publish, real public flows.
+Support actual invoice/dispatch stays disabled. Preserve old UNKNOWN prefixes and
+CLOSED probes. Do not reuse lock-delete grants, unlock, clear CMS, expand access,
+merge main or claim all504 fixed. Automation stays PAUSED; no manual action pending.
+Current public-code/technical-handoff export authorization applies; stage exact
+files only, no private screenshot/CSV/client data. Record sync only after success.
+Tool/read efficiency: fresh native copies required after new task state; actual
+callback/protocol/fixtures read for dependencies. One full regression after patch.
+Credit/token/cache totals UNKNOWN; no savings claim.

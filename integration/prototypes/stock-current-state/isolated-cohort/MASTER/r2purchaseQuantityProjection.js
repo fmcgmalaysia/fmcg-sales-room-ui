@@ -1,0 +1,46 @@
+export const PURCHASE_CURRENT_QUANTITY_PROJECTION_VERSION = 2;
+// Read-only customer projection. Only customer-allocated receipt quantities leave Master.
+import { readWarehouseTask } from 'backend/r2warehouseReceiving.js';
+import { customerCompletion } from 'backend/r2customerCompletionProjection.js';
+import { readSalesShipmentDate, shipmentDateLocked, readShipmentPlans } from 'backend/r2customerShipmentPlan.js';
+import { readShortage } from 'backend/r2purchaseShortage.js';
+import { preparationSummary } from 'backend/r2warehousePreparation.js';
+import { resolveBatchEntitlements } from 'backend/r2shipmentBatchAllocation.js';
+export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity,purchaseOrders=[],workspace=null}) {
+  if(typeof customerId!=='string'||!customerId||!Array.isArray(requests)||!requests.length||requests.length>100)throw Error('Invalid quantity request.');
+  if(activity.some(event=>event.action==='PURCHASE_QUANTITY_CASE_DECIDED'&&event.result==='SAVED')&&!workspace)throw Error('Current quantity case feedback is required.');
+  const output=[];
+  for(const request of requests){
+    if(!request.orderId||!request.submissionId)throw Error('Accepted order identity is required.');
+    const receipts=activity.filter(row=>row.description===request.orderId&&row.action==='ORDER_RECEIVED'&&row.result==='ACCEPTED'&&row.details?.submissionId===request.submissionId);
+    if(receipts.length!==1||!Array.isArray(receipts[0].details.taskIds))throw Error('Master receipt is unavailable.');
+    const receipt=receipts[0],lines=[];
+    for(const taskId of receipt.details.taskIds){
+      const matches=tasks.filter(row=>row.title===taskId&&row.description===request.orderId&&!row.specialPurchase);
+      if(matches.length!==1)throw Error('Master task identity is incomplete.');
+      const task=matches[0],source=orders.filter(row=>row.title===request.orderId&&row.sourceLineId===task.imageAltText&&row.submissionId===request.submissionId&&row.customerId===customerId);
+      if(source.length!==1)throw Error('Customer/order identity mismatch.');
+      const order=source[0],events=activity.filter(row=>row.imageAltText===taskId&&row.description===request.orderId&&row.action==='PURCHASE_QTY_REDUCED'&&row.result==='SAVED');
+      let quantity=order.orderQtyInCtn;const remaining=[...events],history=[];
+      while(remaining.length){const next=remaining.filter(row=>row.details?.before===quantity);if(next.length!==1)throw Error('Quantity history requires review.');const event=next[0],detail=event.details;
+        if(!Number.isSafeInteger(detail.after)||detail.after<0||detail.after>=quantity||!detail.reason)throw Error('Invalid quantity change.');
+        history.push({auditId:event.title,action:'PURCHASE_QTY_REDUCED',orderId:request.orderId,customerId,at:new Date(event.activityTime).toISOString(),actorName:event.initiatedByStaffName,detail:{lineId:task.imageAltText,originalQuantityCtn:order.orderQtyInCtn,previousQuantityCtn:quantity,newQuantityCtn:detail.after,reason:detail.reason}});
+        quantity=detail.after;remaining.splice(remaining.indexOf(event),1);
+      }
+      if(!Number.isSafeInteger(quantity)||quantity<0||task.purchaseQtyInCtn!==quantity)throw Error('Quantity save is still being confirmed.');
+      const adjusted=workspace?.tasks.find(row=>row.id===task.title),demandAdjustment=adjusted?.salesDemandRevision?{quantity:adjusted.requested,revision:adjusted.salesDemandRevision,original:order.orderQtyInCtn}:null;
+      if(demandAdjustment)quantity=adjusted.salesCommittedQty;
+      const originalWarehouse=readWarehouseTask(task,activity),current=workspace?.stockAllocationView==='CURRENT_V2';
+      if(current&&(!adjusted||!Number.isSafeInteger(adjusted.inc)||adjusted.inc<0||adjusted.inc>quantity||!Number.isFinite(Date.parse(workspace.stockQuantityUpdatedAtByTask?.[task.title]))))throw Error('Verified current customer quantity required');
+      const warehouse=current?{...(originalWarehouse||{}),customerReceived:adjusted.inc,allocationAt:originalWarehouse&&originalWarehouse.customerReceived===adjusted.inc&&!activity.some(event=>event.action==='STOCK_TRANSFER_CURRENT'&&event.participantTaskIds?.includes(task.title)||event.action==='STOCK_EXCEPTION_REPORTED'&&event.stockAttribution==='CUSTOMER'&&event.stockCustomerTaskId===task.title)?originalWarehouse.allocationAt||originalWarehouse.at:workspace.stockQuantityUpdatedAtByTask[task.title]}:originalWarehouse,decision=workspace?.tasks.find(row=>row.id===task.title)?.shortage||readShortage(task.title,activity),completion=customerCompletion(task.title,activity,purchaseOrders);if(completion&&(completion.invoicedQty>quantity||completion.invoicedQty>(warehouse?.customerReceived||0)))throw Error('Invoice quantities require review.');
+      const preparation=workspace?preparationSummary(task.title,{...workspace,activity}):null;
+      const shipmentPlan=readShipmentPlans(activity).find(plan=>plan.customerId===customerId&&plan.orderId===request.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===task.title)));
+      const entitlements=adjusted?.batchEntitlements||(shipmentPlan?resolveBatchEntitlements(shipmentPlan,task.title,{committed:quantity,received:warehouse?.customerReceived||0}):[]);
+      const shipmentBatches=entitlements.map(row=>({id:row.id,label:row.label,quantity:row.quantity,metrics:row.metrics,at:shipmentPlan.at,by:shipmentPlan.by}));
+      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:quantity,...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===(warehouse?.customerReceived||0)?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse?{receivedQtyCtn:warehouse.customerReceived,receivedUpdatedAt:warehouse.allocationAt||warehouse.at}:{})});
+    }
+    const ownedOrders=orders.filter(row=>row.title===request.orderId&&row.customerId===customerId&&row.submissionId===request.submissionId);const date=readSalesShipmentDate(request.orderId,customerId,request.submissionId,ownedOrders[0]?.estimatedShipmentDate,activity);
+    output.push({orderId:request.orderId,submissionId:request.submissionId,lines,shipmentDate:{...date,locked:workspace?shipmentDateLocked(workspace.tasks.filter(row=>row.orderId===request.orderId&&row.customerId===customerId)):false}});
+  }
+  return {ok:true,customerId,orders:output};
+}
