@@ -12,7 +12,7 @@ const text = file => fs.readFileSync(path.join(checkout, file), 'utf8').replace(
 const hash = value => createHash('sha256').update(value).digest('hex');
 // User authorized this R2-only policy after the second native timeout. Match
 // ONLY each plain database constructor. Immutable photo retries opt in separately
-// below; PDF/delete callbacks and maintenance retain their existing lock fences.
+// below; exact-ID PDF/trash callbacks opt in separately. Maintenance stays strict.
 const casDatabaseRoots = new Set(['stockCurrentAccountPurchase.js', 'stockCurrentBorrow.web.js',
   'stockCurrentCostReference.js', 'stockCurrentExceptions.js', 'stockCurrentFulfilment.js',
   'stockCurrentOrderIntake.js', 'stockCurrentPacking.js', 'stockCurrentPurchaseOrders.js',
@@ -31,6 +31,18 @@ function r2PhotoPolicy(source,target){
     "createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,coordination:'CONTROL_CAS_CANDIDATE',");
   return once(source,'create'+kind+'PhotoFencedStore({company,staff,request',
     "create"+kind+"PhotoFencedStore({company,staff,coordination:'CONTROL_CAS_CANDIDATE',request");
+}
+const casFileRoots=new Set(['stockCurrentPurchaseOrders.js','stockCurrentAccountPurchase.js','stockCurrentSourceSales.js']);
+function r2FilePolicy(source,target){
+  if(!casFileRoots.has(target))return source;
+  const adapter=target==='stockCurrentSourceSales.js'?'CustomerDocument':'OrderFile';
+  source=once(source,'createSegmentedFencedProof({company,store:create'+adapter+'FencedStore',
+    "createSegmentedFencedProof({company,coordination:'CONTROL_CAS_CANDIDATE',store:create"+adapter+'FencedStore');
+  source=once(source,'create'+adapter+'FencedStore({company,',
+    "create"+adapter+"FencedStore({company,coordination:'CONTROL_CAS_CANDIDATE',");
+  if(target==='stockCurrentPurchaseOrders.js')source=once(source,'createPurchaseDeleteProtocol({company,',
+    "createPurchaseDeleteProtocol({company,coordination:'CONTROL_CAS_CANDIDATE',");
+  return source;
 }
 function controlGuard() {
   const ids = ['NCT', 'GHR'].map(company => hash(JSON.stringify([company, 'STOCK_CONTROL'])).slice(0, 32));
@@ -69,7 +81,7 @@ function buildIsolatedCohort() {
       dependencies.push(system + '/' + resolved);
       return resolved;
     });
-    if (system === 'MASTER') generated = r2PhotoPolicy(r2DatabasePolicy(generated, target), target);
+    if (system === 'MASTER') generated = r2FilePolicy(r2PhotoPolicy(r2DatabasePolicy(generated, target), target), target);
     if (system === 'FMCGMALAYSIA') generated = require('./r2-source-conditional-overlay.cjs')(generated, target);
     if (system === 'FMCGMALAYSIA' && ['nctSalesIntake.js', 'masterFulfilmentClient.js', 'masterQuantityClient.js'].includes(target)) {
       let headers = 0;
@@ -176,7 +188,7 @@ function buildIsolatedCohort() {
     originalModulesUntouched: true, originalHttpHandlersUntouched: true, collections: COLLECTIONS, routes: ROUTES,
     coordinationPolicy: { databaseRoots: [...casDatabaseRoots].sort(), database: 'CONTROL_CAS_CANDIDATE',
       batchApplyReads: true, photoRoots: [...casPhotoRoots.keys()].sort(), photos: 'CONTROL_CAS_CANDIDATE',
-      otherExternalCallbacks: 'EXCLUSIVE_LOCK', maintenance: 'EXCLUSIVE_LOCK', nativeAccepted: false },
+      fileRoots: [...casFileRoots].sort(), files: 'CONTROL_CAS_CANDIDATE', maintenance: 'EXCLUSIVE_LOCK', nativeAccepted: false },
     backend: [...modules.values()].sort((a, b) => (a.system + a.target).localeCompare(b.system + b.target)),
     relays, publicModules: [...publicModules.values()], bootstrapModules, staticResources, retainedDependencies: [...retained.values()],
     additionalControlFields: { cohort: 'TEXT', bootstrapMemberId: 'TEXT', bootstrapRequestId: 'TEXT' },

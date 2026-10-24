@@ -50,7 +50,7 @@ test('generated native bootstrap roots are Admin-only, independent of the old mi
   }
 });
 
-test('R2 database and immutable photo roots opt in explicitly while PDF/delete and original/default coordination remain unchanged', () => {
+test('R2 database, immutable photo and exact-ID file roots opt in explicitly while maintenance and original defaults remain unchanged', () => {
   const policy = packet.report.coordinationPolicy;
   assert.equal(policy.nativeAccepted, false); assert.equal(policy.databaseRoots.length, 11);
   for (const target of policy.databaseRoots) {
@@ -63,14 +63,16 @@ test('R2 database and immutable photo roots opt in explicitly while PDF/delete a
   }
   for (const target of ['stockCurrentAccountPurchase.js', 'stockCurrentPurchaseOrders.js', 'stockCurrentSourceSales.js']) {
     const source = packet.output.get('MASTER/' + moduleName(target));
-    assert.match(source, /createSegmentedFencedProof\(\{company,store:create(?:OrderFile|CustomerDocument)FencedStore/);
+    assert.match(source, /createSegmentedFencedProof\(\{company,coordination:'CONTROL_CAS_CANDIDATE',store:create(?:OrderFile|CustomerDocument)FencedStore\(\{company,coordination:'CONTROL_CAS_CANDIDATE',/);
+    if(target==='stockCurrentPurchaseOrders.js')assert.match(source,/createPurchaseDeleteProtocol\(\{company,coordination:'CONTROL_CAS_CANDIDATE',/);
   }
   for (const target of ['stockCurrentPacking.js', 'stockCurrentWarehouse.web.js']) {
     const source=packet.output.get('MASTER/' + moduleName(target));
     assert.match(source, /createPhotoProtocol:[\s\S]*createSegmentedFencedProof\(\{company,domainWrites:true,stepsPerInvocation:1,coordination:'CONTROL_CAS_CANDIDATE',/);
     assert.match(source, /create(?:Packing|Warehouse)PhotoFencedStore\(\{company,staff,coordination:'CONTROL_CAS_CANDIDATE',request/);
   }
-  assert.equal(policy.photos,'CONTROL_CAS_CANDIDATE');assert.equal(policy.photoRoots.length,2);assert.equal(policy.otherExternalCallbacks,'EXCLUSIVE_LOCK');
+  assert.equal(policy.photos,'CONTROL_CAS_CANDIDATE');assert.equal(policy.photoRoots.length,2);
+  assert.equal(policy.files,'CONTROL_CAS_CANDIDATE');assert.equal(policy.fileRoots.length,3);assert.equal(policy.maintenance,'EXCLUSIVE_LOCK');
   const commands = packet.output.get('MASTER/r2stockCurrentCommands.js');
   assert.match(commands, /coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false/);
   for (const message of ['Durable pending packing photo operation required', 'Durable pending']) assert.ok(commands.includes(message));

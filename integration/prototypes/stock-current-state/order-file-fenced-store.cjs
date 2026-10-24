@@ -4,7 +4,9 @@ const {Buffer}=require('node:buffer');
 const { hash } = require('./commit-proof.cjs'), { copy,same,createSegmentedPlanCodec } = require('./segmented-plan.cjs');
 // Private original file callbacks under the SAME pending manifest/owner. No lease
 // theft, automatic cleanup, PDF journal payload, new collection, or legacy write.
-function createOrderFileFencedStore({ company,department,staff,request,store,documentService,codecPolicy={} }) {
+function createOrderFileFencedStore({ company,department,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK' }) {
+  if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server file coordination required');
+  const exclusive=coordination==='EXCLUSIVE_LOCK';
   const purchase=department==='PURCHASE',upload=request?.input?.action===(purchase?'DOCUMENT':'DOCUMENT_UPLOAD');
   if (!['NCT','GHR'].includes(company)||!['PURCHASE','ACCOUNT'].includes(department)||!staff?.staffId||!staff.memberId
     ||request?.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
@@ -15,11 +17,11 @@ function createOrderFileFencedStore({ company,department,staff,request,store,doc
   const key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:purchase?'PURCHASE_ORDER_RECORD':'ACCOUNT_PURCHASE_RECORD',input:request.input,
     stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
   async function beforeWrite(collection,row,expectedVersion) {
-    const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+    const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
     if(collection!=='PurchaseOrders'||row?._id!==request.input.id||row.company!==company||!control?._version||control.company!==company||control.mode!=='ACTIVE'
       ||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration||control.pending?.key!==key||control.pending.digest!==digest
       ||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
-      ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original order file APPLY fence required');
+      ||manifest.baseGeneration!==request.stockGeneration||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Durable original order file APPLY fence required');
     if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>codec.policy.maxFragments)throw Error('Bounded original order file manifest required');
     const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
     const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId}),change=plan.writes[0],side=change?.orderFile;
@@ -29,7 +31,9 @@ function createOrderFileFencedStore({ company,department,staff,request,store,doc
     const auditId=hash(company,request.requestId,staff.memberId,purchase?'PO_AUDIT':'FINANCE'),audit=row.details?.audit?.at(-1);
     if(audit?.id!==auditId||audit.actorStaffId!==staff.staffId||audit.result!=='SAVED'||audit.action!==(purchase?'SUPPLIER_DOCUMENT_UPLOADED':'ACCOUNT_'+request.input.action)
       ||!same(row.details.audit.slice(0,-1),change.before?.details?.audit||[]))throw Error('Original file audit fence conflict');
-    const assertFence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original order file callback fence changed; retain request');};
+    // Fixed upload IDs cannot overwrite/untrash an existing file; exact TRASH is
+    // monotonic. A late callback still cannot authorize a stale CMS after-image.
+    const assertFence=async()=>{if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original order file callback fence changed; retain request');};
     if(upload){
       const payloads=[request.input.base64,...(!purchase&&Array.isArray(request.input.attachments)?request.input.attachments.map(file=>file.base64):[])];
       if(side.trash!==null||side.uploads.length!==payloads.length||!payloads.length||payloads.length>(purchase?1:6)||new Set(side.uploads.map(command=>command.fileId)).size!==payloads.length)throw Error('Original upload count conflict');

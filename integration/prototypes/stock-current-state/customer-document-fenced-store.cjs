@@ -5,7 +5,9 @@ const unversion=row=>{const result=copy(row);delete result._version;delete resul
 // The ORIGINAL document event is already immutable and contains its file receipt.
 // Upload then conditional INSERT that event: no extra CMS file-confirmation row,
 // no mutable ledger rewrite, no separate stock authority or legacy apply.
-function createCustomerDocumentFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+function createCustomerDocumentFencedStore({company,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server document coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  requireOriginalSalesDelegation(staff,request?.input?.customerId);
  if(!['NCT','GHR'].includes(company)||staff.canUploadCustomerDocument!==true||request.input?.action!=='DOCUMENT'
   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.stockProtocol!==1||typeof request.stockBuild!=='string'||!request.stockBuild
@@ -17,11 +19,11 @@ function createCustomerDocumentFencedStore({company,staff,request,store,document
   stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
  const documentId=hash(company,request.requestId,staff.memberId,'CUSTOMER_DOCUMENT');
  async function beforeDocumentInsert(collection,row){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(collection!==journal||row?._id!==documentId||row.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'||row.company!==company
    ||!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
-   ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original customer document APPLY fence required');
+   ||manifest.baseGeneration!==request.stockGeneration||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Durable original customer document APPLY fence required');
   if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded original document manifest required');const fragments=[];
   for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
   if(plan.writes.length!==1||plan.writes[0].collection!==journal||plan.writes[0].before!==null||!same(plan.writes[0].after,row))throw Error('Exact immutable original document insertion required');
@@ -31,7 +33,7 @@ function createCustomerDocumentFencedStore({company,staff,request,store,document
   await uploadCustomerDocumentSlot({company,staff:recordedStaff,requestId:request.requestId,input:request.input,plan:prepared,documentService});
   // A late file callback does not authorize a late CMS write. Never take/renew/
   // steal any lease or accept a changed owner, checkpoint, mode or generation.
-  if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original document callback fence changed; retain request');
+  if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original document callback fence changed; retain request');
  }
  const metadata=(collection,row)=>collection===journal&&row?._id!==documentId&&row?.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
  return{read:(...args)=>store.read(...args),

@@ -5111,7 +5111,7 @@ async function prepareOriginalOrderFileWrite(args) {
 module.exports = { captureOriginalOrderFilePlan,prepareOriginalOrderFileWrite };
 
 },
-// purchase-delete-protocol.cjs sha256:ca2893619cc8f37bd45f8a405d0aaf693a31fc90d1b7543e0dddcd1067c7f854
+// purchase-delete-protocol.cjs sha256:62e197580907c691a7a08ffe8917ec935a2ed346c6b7c444feb186f65990f2f0
 "purchase-delete-protocol.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs"),{copy,same,createSegmentedPlanCodec}=load("segmented-plan.cjs");
@@ -5126,19 +5126,21 @@ async function prepareOriginalPurchaseDeletionWrite(args){
 // Existing segmented coordinator, same company lock/manifest/admission. Its private
 // final validation hook completes ORIGINAL unlink→trash→final audit under FINALIZE.
 // No duplicate plan identity, second authority/collection or inverse rollback.
-function createPurchaseDeleteProtocol({company,staff,request,store,documentService,now=()=>new Date(),codecPolicy={},stepsPerInvocation=20}){
+function createPurchaseDeleteProtocol({company,staff,request,store,documentService,now=()=>new Date(),codecPolicy={},stepsPerInvocation=20,coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server deletion coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||request?.input?.action!=='DELETE_DOCUMENT'
   ||request.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
   ||typeof request.stockBuild!=='string'||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||typeof documentService!=='function'||typeof now!=='function')throw Error('Private original Purchase staged deletion required');
- const base=createSegmentedFencedProof({company,store,domainWrites:true,codecPolicy,stepsPerInvocation}),codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true});
+ const base=createSegmentedFencedProof({company,store,domainWrites:true,codecPolicy,stepsPerInvocation,coordination}),codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true});
  const {journal,lockId,controlId}=base.ids,key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:'PURCHASE_ORDER_RECORD',input:request.input,
   stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
  async function complete(originalPlan){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='FINALIZE'||control.pending.cursor!==1||control.pending.count!==1
-   ||manifest?.digest!==digest||manifest.baseGeneration!==request.stockGeneration||manifest.planHash!==control.pending.planHash||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Original Purchase deletion FINALIZE fence required');
+   ||manifest?.digest!==digest||manifest.baseGeneration!==request.stockGeneration||manifest.planHash!==control.pending.planHash||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Original Purchase deletion FINALIZE fence required');
   if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>32)throw Error('Bounded original deletion manifest required');
   const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
   const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
@@ -5147,7 +5149,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
   if(change.after.company!==company||change.after._id!==request.input.id||change.purchaseDeletion.requestId!==request.requestId
    ||prepared.expectedVersion!==request.input.version||prepared.document.fileId!==request.input.fileId||prepared.event.actorStaffId!==staff.staffId
    ||prepared.event.id!==hash(company,request.requestId,staff.memberId,'PO_DELETE_AUDIT'))throw Error('Original deletion request/audit identity conflict');
-  const fence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original Purchase deletion callback fence changed; retain request');};
+  const fence=async()=>{if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original Purchase deletion callback fence changed; retain request');};
   const image=classifyPurchaseDeletionImage(change,current,key);
   if(image==='FILE_DELETE_COMPLETED'){await fence();return;}
   if(image!=='PENDING_UNLINK')throw Error('Original pending or completed deletion image conflict');
@@ -5420,7 +5422,7 @@ function classifyPurchaseDeletionImage(change,current,key){
 module.exports = {pendingImage,finalImage,deletionPlan,classifyPurchaseDeletionImage};
 
 },
-// order-file-fenced-store.cjs sha256:f38f2281189b846f54d0ba674051b8ed55c936e7efb2e19ac0a1739415b74313
+// order-file-fenced-store.cjs sha256:ab472a6fd6d4e81b758254491aeff8a2b5f1f1c8d7a61d6c6bfb528a5239362f
 "order-file-fenced-store.cjs": (load, module) => {
 'use strict';
 
@@ -5428,7 +5430,9 @@ const Buffer=StockRuntimeBuffer;
 const { hash } = load("commit-proof.cjs"), { copy,same,createSegmentedPlanCodec } = load("segmented-plan.cjs");
 // Private original file callbacks under the SAME pending manifest/owner. No lease
 // theft, automatic cleanup, PDF journal payload, new collection, or legacy write.
-function createOrderFileFencedStore({ company,department,staff,request,store,documentService,codecPolicy={} }) {
+function createOrderFileFencedStore({ company,department,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK' }) {
+  if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server file coordination required');
+  const exclusive=coordination==='EXCLUSIVE_LOCK';
   const purchase=department==='PURCHASE',upload=request?.input?.action===(purchase?'DOCUMENT':'DOCUMENT_UPLOAD');
   if (!['NCT','GHR'].includes(company)||!['PURCHASE','ACCOUNT'].includes(department)||!staff?.staffId||!staff.memberId
     ||request?.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
@@ -5439,11 +5443,11 @@ function createOrderFileFencedStore({ company,department,staff,request,store,doc
   const key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:purchase?'PURCHASE_ORDER_RECORD':'ACCOUNT_PURCHASE_RECORD',input:request.input,
     stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
   async function beforeWrite(collection,row,expectedVersion) {
-    const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+    const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
     if(collection!=='PurchaseOrders'||row?._id!==request.input.id||row.company!==company||!control?._version||control.company!==company||control.mode!=='ACTIVE'
       ||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration||control.pending?.key!==key||control.pending.digest!==digest
       ||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
-      ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original order file APPLY fence required');
+      ||manifest.baseGeneration!==request.stockGeneration||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Durable original order file APPLY fence required');
     if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>codec.policy.maxFragments)throw Error('Bounded original order file manifest required');
     const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
     const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId}),change=plan.writes[0],side=change?.orderFile;
@@ -5453,7 +5457,9 @@ function createOrderFileFencedStore({ company,department,staff,request,store,doc
     const auditId=hash(company,request.requestId,staff.memberId,purchase?'PO_AUDIT':'FINANCE'),audit=row.details?.audit?.at(-1);
     if(audit?.id!==auditId||audit.actorStaffId!==staff.staffId||audit.result!=='SAVED'||audit.action!==(purchase?'SUPPLIER_DOCUMENT_UPLOADED':'ACCOUNT_'+request.input.action)
       ||!same(row.details.audit.slice(0,-1),change.before?.details?.audit||[]))throw Error('Original file audit fence conflict');
-    const assertFence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original order file callback fence changed; retain request');};
+    // Fixed upload IDs cannot overwrite/untrash an existing file; exact TRASH is
+    // monotonic. A late callback still cannot authorize a stale CMS after-image.
+    const assertFence=async()=>{if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original order file callback fence changed; retain request');};
     if(upload){
       const payloads=[request.input.base64,...(!purchase&&Array.isArray(request.input.attachments)?request.input.attachments.map(file=>file.base64):[])];
       if(side.trash!==null||side.uploads.length!==payloads.length||!payloads.length||payloads.length>(purchase?1:6)||new Set(side.uploads.map(command=>command.fileId)).size!==payloads.length)throw Error('Original upload count conflict');
@@ -6976,7 +6982,7 @@ async function uploadCustomerDocumentSlot({company,staff,requestId,input,plan,do
 module.exports={captureOriginalCustomerDocumentPlan,assertCustomerDocumentPlan,uploadCustomerDocumentSlot};
 
 },
-// customer-document-fenced-store.cjs sha256:3bc2cc3183c53c52529c4b5f5d668638d52d92fe7724e8ff778bc8f711421428
+// customer-document-fenced-store.cjs sha256:0f856dfa0e7089483c53c62c67e462e3a53279c2958e9f722e96f5c993ed80b1
 "customer-document-fenced-store.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs"),{createSegmentedPlanCodec,copy,same}=load("segmented-plan.cjs");
@@ -6985,7 +6991,9 @@ const unversion=row=>{const result=copy(row);delete result._version;delete resul
 // The ORIGINAL document event is already immutable and contains its file receipt.
 // Upload then conditional INSERT that event: no extra CMS file-confirmation row,
 // no mutable ledger rewrite, no separate stock authority or legacy apply.
-function createCustomerDocumentFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+function createCustomerDocumentFencedStore({company,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server document coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  requireOriginalSalesDelegation(staff,request?.input?.customerId);
  if(!['NCT','GHR'].includes(company)||staff.canUploadCustomerDocument!==true||request.input?.action!=='DOCUMENT'
   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.stockProtocol!==1||typeof request.stockBuild!=='string'||!request.stockBuild
@@ -6997,11 +7005,11 @@ function createCustomerDocumentFencedStore({company,staff,request,store,document
   stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
  const documentId=hash(company,request.requestId,staff.memberId,'CUSTOMER_DOCUMENT');
  async function beforeDocumentInsert(collection,row){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(collection!==journal||row?._id!==documentId||row.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'||row.company!==company
    ||!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'||control.pending.cursor!==0||control.pending.count!==1||manifest?.digest!==digest||manifest.planHash!==control.pending.planHash
-   ||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable original customer document APPLY fence required');
+   ||manifest.baseGeneration!==request.stockGeneration||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Durable original customer document APPLY fence required');
   if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded original document manifest required');const fragments=[];
   for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
   if(plan.writes.length!==1||plan.writes[0].collection!==journal||plan.writes[0].before!==null||!same(plan.writes[0].after,row))throw Error('Exact immutable original document insertion required');
@@ -7011,7 +7019,7 @@ function createCustomerDocumentFencedStore({company,staff,request,store,document
   await uploadCustomerDocumentSlot({company,staff:recordedStaff,requestId:request.requestId,input:request.input,plan:prepared,documentService});
   // A late file callback does not authorize a late CMS write. Never take/renew/
   // steal any lease or accept a changed owner, checkpoint, mode or generation.
-  if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original document callback fence changed; retain request');
+  if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original document callback fence changed; retain request');
  }
  const metadata=(collection,row)=>collection===journal&&row?._id!==documentId&&row?.action!=='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&(row?._id===lockId||row?._id===controlId||row?.stockOperationProtocol===2);
  return{read:(...args)=>store.read(...args),

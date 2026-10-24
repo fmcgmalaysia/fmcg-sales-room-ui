@@ -59,8 +59,8 @@ export async function createCurrentPurchaseOrders(company) {
     readOriginalContext:async(selected,staff)=>({context:await readContext(selected,staff,await protocol.readControl()),records:await readRecords(selected)}),
     allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original file allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
     createFileProtocol:({request,staff})=>{const file=request.input.action==='DELETE_DOCUMENT'
-      ?createPurchaseDeleteProtocol({company,request,staff,store,documentService:requestPurchaseDocument})
-      :createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'PURCHASE',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true});
+      ?createPurchaseDeleteProtocol({company,coordination:'CONTROL_CAS_CANDIDATE',request,staff,store,documentService:requestPurchaseDocument})
+      :createSegmentedFencedProof({company,coordination:'CONTROL_CAS_CANDIDATE',store:createOrderFileFencedStore({company,coordination:'CONTROL_CAS_CANDIDATE',department:'PURCHASE',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true});
       return{...file,readSnapshot:protocol.readSnapshot};}});
   return{mode:'ACTIVE',save:request=>{
     if(!request||!request.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT'?4400000:200000))throw Error('Original identified purchase order request required');

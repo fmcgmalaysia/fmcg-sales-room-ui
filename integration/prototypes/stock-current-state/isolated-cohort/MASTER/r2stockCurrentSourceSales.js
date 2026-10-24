@@ -42,7 +42,7 @@ export async function createCurrentSourceSales({company,authenticateOriginalDele
    const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'R2NCTTasks':'R2NCTTasks1',id));return rows;
   },projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,
   createSalesOrderAdjustmentOperations,createCustomerFulfilmentOperations,currentAllocationVersion:SHIPMENT_CURRENT_ALLOCATION_VERSION,createCustomerAccountOperations,
-  createDocumentProtocol:({request,staff})=>createSegmentedFencedProof({company,store:createCustomerDocumentFencedStore({company,staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true,stepsPerInvocation:1}),
+  createDocumentProtocol:({request,staff})=>createSegmentedFencedProof({company,coordination:'CONTROL_CAS_CANDIDATE',store:createCustomerDocumentFencedStore({company,coordination:'CONTROL_CAS_CANDIDATE',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true,stepsPerInvocation:1}),
   allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original document company conflict');const allocated=await requestPurchaseDocument({action:'ALLOCATE',company});if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('Original document identity unavailable');return allocated.fileId;},
   readPlans:readShipmentPlans,planVersion:shipmentPlanVersion,createShipmentPlanOperations,createSalesShipmentDateOperations,now:()=>new Date()};
  const protect=(save,actions)=>request=>{

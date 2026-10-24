@@ -11,19 +11,21 @@ async function prepareOriginalPurchaseDeletionWrite(args){
 // Existing segmented coordinator, same company lock/manifest/admission. Its private
 // final validation hook completes ORIGINAL unlink→trash→final audit under FINALIZE.
 // No duplicate plan identity, second authority/collection or inverse rollback.
-function createPurchaseDeleteProtocol({company,staff,request,store,documentService,now=()=>new Date(),codecPolicy={},stepsPerInvocation=20}){
+function createPurchaseDeleteProtocol({company,staff,request,store,documentService,now=()=>new Date(),codecPolicy={},stepsPerInvocation=20,coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server deletion coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||request?.input?.action!=='DELETE_DOCUMENT'
   ||request.stockProtocol!==1||request.stockIdentity?.staffId!==staff.staffId||request.stockIdentity?.memberId!==staff.memberId
   ||typeof request.stockBuild!=='string'||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||typeof documentService!=='function'||typeof now!=='function')throw Error('Private original Purchase staged deletion required');
- const base=createSegmentedFencedProof({company,store,domainWrites:true,codecPolicy,stepsPerInvocation}),codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true});
+ const base=createSegmentedFencedProof({company,store,domainWrites:true,codecPolicy,stepsPerInvocation,coordination}),codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true});
  const {journal,lockId,controlId}=base.ids,key=hash(company+'/PURCHASE',request.requestId,staff.memberId),digest=hash({company,writer:'PURCHASE_ORDER_RECORD',input:request.input,
   stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,stockIdentity:request.stockIdentity});
  async function complete(originalPlan){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.writerBuild!==request.stockBuild||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='FINALIZE'||control.pending.cursor!==1||control.pending.count!==1
-   ||manifest?.digest!==digest||manifest.baseGeneration!==request.stockGeneration||manifest.planHash!==control.pending.planHash||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Original Purchase deletion FINALIZE fence required');
+   ||manifest?.digest!==digest||manifest.baseGeneration!==request.stockGeneration||manifest.planHash!==control.pending.planHash||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Original Purchase deletion FINALIZE fence required');
   if(!Array.isArray(manifest.fragments)||!manifest.fragments.length||manifest.fragments.length>32)throw Error('Bounded original deletion manifest required');
   const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
   const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId:request.requestId});
@@ -32,7 +34,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
   if(change.after.company!==company||change.after._id!==request.input.id||change.purchaseDeletion.requestId!==request.requestId
    ||prepared.expectedVersion!==request.input.version||prepared.document.fileId!==request.input.fileId||prepared.event.actorStaffId!==staff.staffId
    ||prepared.event.id!==hash(company,request.requestId,staff.memberId,'PO_DELETE_AUDIT'))throw Error('Original deletion request/audit identity conflict');
-  const fence=async()=>{if(!same(await store.read(journal,controlId),control)||!same(await store.read(journal,lockId),lock))throw Error('Original Purchase deletion callback fence changed; retain request');};
+  const fence=async()=>{if(!same(await store.read(journal,controlId),control)||exclusive&&!same(await store.read(journal,lockId),lock))throw Error('Original Purchase deletion callback fence changed; retain request');};
   const image=classifyPurchaseDeletionImage(change,current,key);
   if(image==='FILE_DELETE_COMPLETED'){await fence();return;}
   if(image!=='PENDING_UNLINK')throw Error('Original pending or completed deletion image conflict');

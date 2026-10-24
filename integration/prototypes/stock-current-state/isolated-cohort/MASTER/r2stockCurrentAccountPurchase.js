@@ -60,7 +60,7 @@ export async function createCurrentAccountPurchase(company){
     readOriginalContext:async(selected,staff)=>{if(selected!==company)throw Error('Original Account file company conflict');const tables=await readTables(company,staff);
       return{rows:await readRows(selected,staff,await protocol.readControl()),records:tables.R2PurchaseOrders,suppliers:tables.SharedSuppliers};},
     allocateDocumentSlot:async selected=>{if(selected!==company)throw Error('Original Account allocation company conflict');return(await requestPurchaseDocument({action:'ALLOCATE',company})).fileId;},
-    createFileProtocol:({request,staff})=>({...createSegmentedFencedProof({company,store:createOrderFileFencedStore({company,department:'ACCOUNT',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true}),readSnapshot:protocol.readSnapshot})});
+    createFileProtocol:({request,staff})=>({...createSegmentedFencedProof({company,coordination:'CONTROL_CAS_CANDIDATE',store:createOrderFileFencedStore({company,coordination:'CONTROL_CAS_CANDIDATE',department:'ACCOUNT',staff,request,store,documentService:requestPurchaseDocument}),domainWrites:true}),readSnapshot:protocol.readSnapshot})});
   return{mode:'ACTIVE',save:request=>{
     if(!request?.stockIdentity||JSON.stringify(request).length>(request.input?.action==='DOCUMENT_UPLOAD'?4400000:200000))throw Error('Original identified shared Account request required');
     if(['DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE'].includes(request.input?.action))return fileSave(request);

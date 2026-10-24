@@ -57,7 +57,12 @@
       "stockCurrentWarehouse.web.js"
     ],
     "photos": "CONTROL_CAS_CANDIDATE",
-    "otherExternalCallbacks": "EXCLUSIVE_LOCK",
+    "fileRoots": [
+      "stockCurrentAccountPurchase.js",
+      "stockCurrentPurchaseOrders.js",
+      "stockCurrentSourceSales.js"
+    ],
+    "files": "CONTROL_CAS_CANDIDATE",
     "maintenance": "EXCLUSIVE_LOCK",
     "nativeAccepted": false
   },
@@ -1011,7 +1016,7 @@
         "MASTER/r2supplierCredit.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "777604493a41e3f886341ccbda1acf668abb3e6b8a9704c41c6b6d2fe9176724"
+      "sha256": "b0f563ea23853e729d48df987ae659d5aee2f13b9b83547c2a78c340fbe12899"
     },
     {
       "system": "MASTER",
@@ -1049,9 +1054,9 @@
       "target": "r2stockCurrentCommands.js",
       "originalTarget": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sourceSha256": "271a15f0c6c3aa228d1937175bb8ff9162f142212ad028b778b3481107caa941",
+      "sourceSha256": "f739268ad02f0f60f0fa5e6d77e8b1690cdae329960de8aea58d3b7118503dde",
       "dependencies": [],
-      "sha256": "fd7f5676b8299e755365ee285462bbfb68bc4f2291eee9760136abd6c79f22ec"
+      "sha256": "a51c1c55a2f578660b349fac5dbf43182d630a3ae4535937d414990d480e2ff4"
     },
     {
       "system": "MASTER",
@@ -1169,7 +1174,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "9e805ffb34015aa56013eaf8fd99b5aaa5831d45f086355ccef9f8266fce94df"
+      "sha256": "b914293b329e279d9a3c87ceb0c1cd9e377ff2c91654564ca088e232a9e09866"
     },
     {
       "system": "MASTER",
@@ -1229,7 +1234,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "faeb13616e8eff2e5dce24efe30debcb4a4c69a84a5aaf2e8509b985119c0cfa"
+      "sha256": "8efbfe20898c879d395f2c1da65566a338de7469429a1dead47d64f0fc0f7ad4"
     },
     {
       "system": "MASTER",
