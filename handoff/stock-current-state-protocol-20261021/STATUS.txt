@@ -1,5 +1,15 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+USER REDIRECTED PRIORITY: FIX504 ITSELF, NOT ONLY RECOVER FROM IT
+Read R2_504_PERFORMANCE_20261024.txt. Native 7day Monitoring confirms workspace
+EXECUTION_TIMEOUT47 and intake DispatcherRuntimeTimeout3.293total failures are not
+alltimeouts. Saved native original workspace exact matched baseline (SHA256 in
+record); no original file edit. New opt-in LOCAL APPLY batch-read candidate reduces
+20-update domain query calls62->24 with same20conditional writes/full readback.
+Affected51checks+generated6pass; no native speed/504fix claim. Default batchingfalse,
+new R2 native modules remain prior versions/gatesCLOSED. Scope decision for adopting
+control-CAS recovery is stillpending; user challenge is not assumed approval.
+
 LOCAL REVIEW CANDIDATE AFTER504 — R2_CAS_COORDINATION_REVIEW_20261024.txt
 Default EXCLUSIVE_LOCK behavior preserved. Optional constructor-only
 CONTROL_CAS_CANDIDATE omits company lock insert/remove and selects immutable plan

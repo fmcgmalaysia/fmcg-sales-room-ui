@@ -5171,7 +5171,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
 module.exports={prepareOriginalPurchaseDeletionWrite,createPurchaseDeleteProtocol,classifyPurchaseDeletionImage};
 
 },
-// segmented-fenced-proof.cjs sha256:00a51ef0a36b323b69a71210efc465641125b767b94d7645f8764483363e366b
+// segmented-fenced-proof.cjs sha256:567ec0398e6337ef4db861fa2ba1bbc3206183fb0e333b20499606396998da88
 "segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
@@ -5182,13 +5182,14 @@ const { hash } = load("commit-proof.cjs");
 const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
 function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
   domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32,
-  coordination = 'EXCLUSIVE_LOCK' }) {
+  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false }) {
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
   }
   if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
     || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1
-    || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)) throw Error('Bounded execution policy required');
+    || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)
+    || typeof batchApplyReads !== 'boolean') throw Error('Bounded execution policy required');
   const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
   const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
   async function readControl() {
@@ -5197,13 +5198,16 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
     return row;
   }
   async function initialize() { await store.insert(journal, { _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' }); }
-  async function transition(collection, before, after) {
+  async function writeExpected(collection, before, after) {
     try {
       if (before) await store.compareAndSet(collection, after._id, before._version, copy(after));
       else await store.insert(collection, copy(after));
     } catch (error) {
       if (!same(await store.read(collection, after._id), after)) throw error;
     }
+  }
+  async function transition(collection, before, after) {
+    await writeExpected(collection, before, after);
     if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
   }
   const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
@@ -5305,6 +5309,34 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
           for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), phase === 'BEFORE' ? change.before : change.after)) {
             throw Error(phase === 'BEFORE' ? 'Prepared before-image stale' : 'Final image conflict');
           }
+          cursor += span.length; steps += span.length;
+          continue;
+        }
+        if (phase === 'APPLY' && batchApplyReads && typeof store.readMany === 'function') {
+          const span = plan.writes.slice(cursor, cursor + Math.min(count - cursor, stepsPerInvocation - steps));
+          const groups = new Map(), found = new Map();
+          for (const change of span) {
+            if (!groups.has(change.collection)) groups.set(change.collection, []);
+            groups.get(change.collection).push(change.after._id);
+          }
+          for (const [collection, ids] of groups) {
+            const rows = await readImages(collection, ids);
+            ids.forEach((id, index) => found.set(collection + '/' + id, rows[index]));
+          }
+          for (const change of span) {
+            const current = found.get(change.collection + '/' + change.after._id);
+            if (!same(current, change.before) && !same(current, change.after)) throw Error('Write version conflict');
+          }
+          for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) {
+            await writeExpected(change.collection, change.before, change.after);
+          }
+          // Exact complete strong readback precedes the durable cursor. A failed
+          // batch or partial write leaves the original checkpoint unchanged.
+          for (const [collection, ids] of groups) {
+            const rows = await readImages(collection, ids);
+            ids.forEach((id, index) => found.set(collection + '/' + id, rows[index]));
+          }
+          for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) throw Error('Conditional batch write unconfirmed');
           cursor += span.length; steps += span.length;
           continue;
         }

@@ -5,7 +5,7 @@ const { createSegmentedFencedProof } = require('../prototypes/stock-current-stat
 const { copy } = require('../prototypes/stock-current-state/segmented-plan.cjs');
 const uuid = n => String(n).padStart(8, '0') + '-1111-4111-8111-111111111111';
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
-async function fixture(pauseMatches, { insertDomain = false, steps = 100 } = {}) {
+async function fixture(pauseMatches, { insertDomain = false, steps = 100, batch = false } = {}) {
   const rows = new Map(), entered = deferred(), release = deferred(), calls = [];
   let armed = false, paused = false, attempt = 0;
   const read = async (c, id) => copy(rows.get(c + '/' + id) ?? null);
@@ -18,12 +18,12 @@ async function fixture(pauseMatches, { insertDomain = false, steps = 100 } = {})
     if (kind === 'insert' && current || kind === 'cas' && current?._version !== expected) throw Error('CONDITION');
     rows.set(address, copy(row)); return copy(row);
   }
-  const store = { read,
+  const store = { read, readMany: (c, ids) => Promise.all(ids.map(id => read(c, id))),
     insert: (c, row) => mutate('insert', c, row._id, row),
     compareAndSet: (c, id, version, row) => mutate('cas', c, id, row, version),
     compareAndRemove: async () => { throw Error('NO_LOCK_REMOVAL_ALLOWED'); } };
   const api = createSegmentedFencedProof({ store, coordination: 'CONTROL_CAS_CANDIDATE',
-    stepsPerInvocation: steps, newAttempt: () => 'ATTEMPT-' + ++attempt });
+    stepsPerInvocation: steps, batchApplyReads: batch, newAttempt: () => 'ATTEMPT-' + ++attempt });
   await api.initialize();
   if (!insertDomain) for (let n = 0; n < 3; n++) await store.insert('StockPositions', {
     _id: 'S' + n, company: 'NCT', onHand: 100, _version: 'INITIAL-' + n });
@@ -46,8 +46,8 @@ const boundaries = [
   ['result receipt', e => e.row?.outcome?.ok === true, false],
   ['generation control', e => e.row?.generation === 1 && e.row.pending === null, false]
 ];
-for (const [name, matches, insertDomain] of boundaries) test(`local CAS candidate: old ${name} resumes after two newer completions without overwrite or lock deletion`, async () => {
-  const f = await fixture(matches, { insertDomain });
+for (const [name, matches, insertDomain] of boundaries) for (const batch of [false, true]) test(`local CAS candidate batch=${batch}: old ${name} resumes after two newer completions without overwrite or lock deletion`, async () => {
+  const f = await fixture(matches, { insertDomain, batch });
   const old = f.api.commit(f.request(1)).then(value => ({ value }), error => ({ error }));
   await f.entered.promise;
   assert.equal((await f.finish(1)).generation, 1);

@@ -1,0 +1,77 @@
+2026-10-24 — user redirects priority to preventing recurring504
+
+User correctly distinguishes timeout prevention from data recovery. A recovery
+protocol is not evidence that504is solved. No native retry or new300scenario.
+
+Measured existing native evidence: successful APPLY segments commonly20rows,
+59..60database queries,22domain/protocol inserts+patches and1conditional temporary
+lock release, typically11..14seconds. Next call after APPLY639 returned504. These
+figures establish high round-trip cost in THIS diagnostic, not every historical
+504cause. Exact current account/plan backend deadline not yet read; do not assume
+the free-site14second quota applies. Wix official compute docs confirm request
+execution limits can produce504while execution continues; official optimization
+docs recommend reducing repeated reads, timing slow sections and bounded chunks.
+
+Local performance candidate
+segmented-fenced-proof.cjs adds constructor-only batchApplyReads=false by default.
+Opt-in APPLY reads each collection's complete exact-ID batch, conditionally writes
+the same immutable after-images, then strongly reads every changed row in batches
+BEFORE advancing cursor. No unconditional bulkUpdate, skipped verification,
+removed version checks, larger work limit or changed quantity. Existing SDK CAS
+extra per-update read remains accounted for. Error confirmation preserves original
+exact-after-image check. Interrupted batch retains original cursor; same prepared
+request skips verified applied rows. This is independent of optional control-CAS
+coordination; native adoption of that mechanism remains pending scope decision.
+
+Actual-core local measurement:20updates, same20conditional writes, identical final
+images. Domain query calls62serial ->24batched (38fewer); metadata queries excluded
+from BOTH counts. This is request-count evidence, NOT native elapsed-time savings.
+Known8th-write failure +7applied rows recover without duplicate quantities. Partial
+batch readback cannot acknowledge or advance. Joint late-execution cases exercised
+under both batched and serial policies. Affected51pass1052.6485ms. Rebuilt local
+119module command bundle; generated-runtime6pass292.7653ms. No native installation,
+Pages dispatch, WixPublish or user Buyer acceptance. Existing native gates CLOSED.
+
+Required next evidence
+Read native Monitoring historical timeout functions/runtime, not only realtime
+logs. Identify actual slow phase and plan limits. Measure improved scoped requests
+in a separately approved changed-policy native acceptance path; stopped UNKNOWN
+requests remain untouched. Make normal Buyer/split/borrow requests reliably finish
+within observed runtime limit, then separately verify exceptional recovery. Other
+week-old504paths require their own function/timing evidence before attributing cause.
+
+Official sources read2026-10-24:
+https://dev.wix.com/docs/develop-websites-sdk/maintain-your-site/scale-your-site/about-compute-feature-limitations
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/optimizing-your-code
+
+Fresh native Monitoring read-only evidence, period2026-10-18..24:
+Backend40010successful/293failed/40303total. Failures are not all504.
+purchaseWorkspace.web.js/getPurchaseWorkspace10767calls, median3407ms/P9513478ms.
+Function drilldown explicitly EXECUTION_TIMEOUT47(lastdisplayedOct21 08:05AM),
+INTERNAL_ERROR1(lastOct20 11:59PM). This is actual historical timeout evidence.
+http-functions.js/post_nctIntake10calls,30%failed,median785ms/P9516143ms;
+drilldown DispatcherRuntimeTimeout3(lastdisplayedOct23 09:22AM).
+Data requests397160successful/1failed/397161total. Large read volume alone does not
+establish throttling; no429 diagnosis without error evidence. Realtime log view
+was empty and used only as navigation; no business request triggered for logs.
+Private screenshots master-workspace-timeouts-monitoring-20261024.png and
+master-intake-timeouts-monitoring-20261024.png outside checkout, not public export.
+
+Fresh saved native purchaseWorkspace.web.js complete clipboard matches current
+protected repository original exactly, SHA256LF
+afe69bc077f8c072d2ce821a45d93ae0198f44f8a28e08d8e02092d0838d2059.
+It loads full orders/tasks/activity/suppliers/PO lists then awaits short-name and
+margin refresh before returning. Margin refresh may call externalFX and perform
+per-task cache/lock queries/writes. These are identified hot-path candidates, not
+yet measured per-stage attribution or approval to omit correct financial values.
+Original pointbaseCostClient permits20000msPERHOP (POST plusup to3redirects), so its
+own timeout is not a total backend budget. No existing caller deadlines or public
+behavior changed. Original intake serially persists3records/line with reads before
+insert and costs first; current R2 has bounded staging but native acceptance missing.
+
+Post-change whole stock test run(dot reporter) exited1 with exactly one reported
+failure: current-install-manifest.json retained old command-bundle hashes. Rebuilt
+LOCAL review metadata only (40targets/100dependencies/20UNVERIFIEDwriters, activation
+false). Affected manifest4+command6+querybudget3 checks13pass943.8743ms. No native
+packet rewrite. Whole output retained in tool execution sessions76616; do not label
+an unperformed post-repair whole run green or count failed requests as all504.
