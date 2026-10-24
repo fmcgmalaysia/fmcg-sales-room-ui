@@ -1,0 +1,36 @@
+{
+  "system": "MASTER",
+  "cohort": "MASTER_20261024_R2",
+  "savedDraftOnly": true,
+  "originalCodeUnchanged": true,
+  "published": false,
+  "active": false,
+  "initialized": false,
+  "files": {
+    "r2cohortBootstrap.web.js": "f36e3108eac00b7041372813ac7e52cc41e925f91df2d974bf891f55d565d291",
+    "r2nctIntake.js": "3ddeca7841492bb89e3706874e94256e6f58890ecf13300887014f378f95c72b",
+    "r2purchaseTaskIdentity.js": "4eedca81fd82335bc363cd170e46db9212c4b1cb9108ce18d93078afc49fe052"
+  },
+  "newFields": {
+    "R2NCTActivity": { "cohort": "TEXT", "bootstrapMemberId": "TEXT", "bootstrapRequestId": "TEXT" },
+    "R2NCTActivity1": { "cohort": "TEXT", "bootstrapMemberId": "TEXT", "bootstrapRequestId": "TEXT" }
+  },
+  "nativeInspectResult": {
+    "emptyBusiness": true,
+    "activationAllowed": false,
+    "rows": [
+      ["R2NCTOrders", 0, null, "4e58d6ed1e62457ee56b4f203861894b"],
+      ["R2NCTTasks", 0, null, "bf1ec3408465e80e213fdc102341dea4"],
+      ["R2NCTActivity", 0, null, "c1e5d94f0e963b88e7689c3f96712159"],
+      ["R2NCTOrders1", 0, null, "750b2303ec38078f084e52f6955daf02"],
+      ["R2NCTTasks1", 0, null, "e34177685d3f4be2c07f7b98971a0901"],
+      ["R2NCTActivity1", 0, null, "e4baf16fd88360f8a33d1cc660848327"],
+      ["R2PurchaseOrders", 0, null, "53f8217c399cf1c15d8d19434ee526b4"],
+      ["R2StockPositions", 0, null, "2a3b9518642e926926490acdd4472c8d"],
+      ["R2StockClaims", 0, null, "a58ce2d709d305c66bd5146c6d3ce79d"],
+      ["R2StockProducts", 0, null, "3a960520f4cee196512c0e26ffcdf262"],
+      ["R2DepartmentChatIndex", 0, null, "4aa3249e6cc9aaab4f8d7aabcc8a6f49"],
+      ["R2AccountReadIndex", 0, null, "c3651b7b17771342a5d466a3e59a711d"]
+    ]
+  }
+}

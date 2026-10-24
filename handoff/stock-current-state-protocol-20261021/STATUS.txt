@@ -1,5 +1,51 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST RECOVERY POINT — BROWSER CONTROL DISCONNECTED; USER ASKS ABOUT APP RESTART
+Local code9b84114 (cohort9dcbbaa + static LF fix). No push/Pages/Wix publication.
+Source14new files exact/saved, original pages/modules/HTTP unchanged. MASTER new
+r2cohortBootstrap.web.js/r2nctIntake.js/r2purchaseTaskIdentity.js exact/saved; only
+2of92business modules installed, remaining90NOT uploaded. No ACTIVE or genesis.
+NCT/GHR NEW activities each now have cohort/bootstrapMemberId/bootstrapRequestId
+TEXT fields saved. Native MASTER inspectFreshCohort({}) returned all12newtables
+total0/controlnull,Admin-only metadata validated, activationAllowedfalse. Old
+tables/schema/ACL/data untouched. New Source inspect failed missing @wix/data;
+official npm Wix-only packagev1.0.534 Install clicked, completion NOT read back.
+Recheck installed dependency before rerunning Source inspect. No business write.
+
+Static artifact112resources prepared locally at
+C:/FMCG-WIX-LOCAL/release-artifacts/r2-static-normalized-20261024
+Exact committed static hash checks passed. Initial staging refused WindowsCRLF
+versus GitLF; diagnosed normalization-only, minimum packaging fix and5focused
+tests passed1422.4296ms. No folder written before failed precheck.150generatedJS
+parse earlier;65focused+2quote tests retained (static now5replaces earlier4).
+
+User-opened MASTER Studio51427394 worked. Optional agent IDE51427403stalled,
+closed without edits. User IDE51427410showed paused; native Reload Wix IDE opened
+51427414and oldtab disappeared (not an auth/security denial). Fresh IDE51427414
+fully loaded original purchasePlan; ORIGINAL FILE NOT MODIFIED. backend context
+menu actually exposes Upload..., native new3files visible. Prepared exact90new
+module allowlist (exclude originals/existing3/bootstrap/HTTP/public/retired/private).
+Attempt to obtain file chooser caused Detached command/unhandled rejection and
+CUA kernel reset. setFiles WAS NEVER CALLED: no automatic bulk upload submitted.
+Fresh inventory still51427414, but getTab then failed Debugger unattached. Do NOT
+blindly repeat/upload/overwrite. Recheck actual IDE file list after reconnection.
+All CUA variables/helpers lost in reset. Browser3 retained, no browser reselection.
+Source Studio51427367; MASTER CMS51427129R2GHRfields; SourceCMS51427122 retained.
+
+User reports repeated page failure immediately on agent takeover, asks force
+close GPT. Browser inputs stopped. OpenAI Docs read/fetched official browser
+extension troubleshooting: restart app is a supported check, NOT proven fix.
+Prefer normal full app exit, force close only if it will not exit. KeepChrome/
+Wix open; no extension reinstall/fullCDP/settings expansion requested. Root cause
+UNKNOWN; cannot relabel actual detach/loading failures as security protection.
+Official upload docs also require extension file-URL access, older user screenshot
+showedOFF; not changed, not asserted current or cause of unrelated loading issue.
+If future upload needs new security-sensitive access, exact action-time approval
+still required. Do not workaround stopped control via directCDP/cookies/terminal.
+Restart continuation: rebind existing actual tabs, FIRST read only (no reload or
+write), check Sourcepackage install, exact R2new file set, then resume install.
+Heartbeat remainsPAUSED. No same-cohort drain/oldUNKNOWN replay/newprovider ticket.
+
 LATEST ACTUAL INSTALL — SOURCE14 NEW FILES SAVED/EXACT; MASTER INSTALL STARTED
 Source13paired backend modules + inspect-only bootstrap now saved as NEW native
 files, each exact LF hash verified. SOURCE_R2_NATIVE_INSTALL_20261024.json records
