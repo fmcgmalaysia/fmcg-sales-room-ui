@@ -1,5 +1,13 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST CLOSED DIAGNOSTIC INSTALLATION — see R2_ACTIVATION_AND_CAPACITY_20261024.txt
+New r2CapacityAcceptance.web.js fully installed as CLOSED saved draft and native
+whole-source hash matched; no test execution/activation/Pages dispatch/Publish.
+Fresh bounded own-test-lock-release permission requested, pending answer.
+Local activation guard reviewed, affected tests8pass; native activation integration
+and genuine capacity/recovery/writer evidence remain incomplete. Old UNKNOWN test
+untouched. Do not treat index completion or saved drafts as permission to activate.
+
 LATEST 2026-10-24 — USER COMPLETED ALL REMAINING INDEX DEFINITIONS
 User screenshots confirm all three R2 NCT Activity and all three R2 GHR Activity
 indexes with exact three fields in the specified order, Regular and Ascending.
