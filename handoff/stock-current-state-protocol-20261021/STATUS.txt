@@ -1,5 +1,15 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST 2026-10-25 — R2 SDK AUTHORITY BLOCKED ON OFFICIAL DEPENDENCY
+Read R2_SDK_AUTHORITY_20261025.txt first. User authorized original-checked R2
+read/write elevation, not old tables/deletion/Packing/dispatch/invoices/ACLs.
+Legacy wix-auth constructor route failed twice BEFORE any writes; route stopped.
+Official SDK auth.elevate uses @wix/essentials (source verified), but native MASTER
+cannot load it because dependency is missing. No package installed automatically.
+New Admin diagnostic CLOSED, exact b3835bd6...d58ef; all3test records untouched.
+Business providers unchanged. Local probe6pass, no ordinary-staff acceptance.
+Specific dependency-install approval needed; no Publish/ACTIVE/public order test.
+
 LATEST NATIVE REAL300INTAKE COMPLETE (retained fixture only)
 Read R2_INSERT_QUOTA_NATIVE_20261024.json first. New native insert batching passed
 all1202APPLY images without anotherWDE0014. VERIFY1138 client504 stopped serial
