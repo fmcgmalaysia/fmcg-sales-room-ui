@@ -1,6 +1,7 @@
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { getPurchaseStaffContext } from 'backend/r2purchaseAccess.js';
 import { requirePurchaseStaff, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/r2purchaseProjection.js';
 import { createPurchaseMarginRefresh } from 'backend/r2purchaseMarginRefresh.js';
@@ -34,6 +35,7 @@ async function privateGateway(company, taskCommands = false, workspaceRead = fal
   await getPurchaseStaffContext(); // Original authorization BEFORE any stock data.
   const journal = company === 'NCT' ? 'R2NCTActivity' : 'R2NCTActivity1';
   if (!Object.hasOwn(verifiedDateFields, journal)) throw Error('Current company schema not verified');
+  const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:auth.elevate(sdkItems.insert),bulkInsert:auth.elevate(sdkItems.bulkInsert),patch:auth.elevate(sdkItems.patch),remove:()=>{throw Error('R2 privileged deletion not enabled');}});
   const store = createSdkConditionalStore({ company, items, collections: planCollections(company, true),
     dateTimeFields: { [journal]: verifiedDateFields[journal],
       [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],

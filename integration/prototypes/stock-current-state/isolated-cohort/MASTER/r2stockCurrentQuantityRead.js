@@ -1,4 +1,5 @@
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { fulfilmentStore } from 'backend/r2customerFulfilmentService.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace, PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/r2purchaseProjection.js';
 import { projectPurchaseOrders } from 'backend/r2purchaseOrderWorkflow.js';
@@ -21,6 +22,7 @@ export async function createCurrentPurchaseQuantityRead(company){
  if(control.mode==='LEGACY'){if(control.pending!==null)throw Error('Original quantity legacy pending');return{mode:'LEGACY'};}
  if(control.mode!=='ACTIVE')return{mode:control.mode};
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||PURCHASE_CURRENT_QUANTITY_PROJECTION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired current quantity calculators required');
+ const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:()=>{throw Error('R2 privileged mutation not enabled');},bulkInsert:()=>{throw Error('R2 privileged mutation not enabled');},patch:()=>{throw Error('R2 privileged mutation not enabled');},remove:()=>{throw Error('R2 privileged deletion not enabled');}});
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[names.activity]:['activityTime'],
   [names.orders]:['masterReceivedTime','salesSubmissionTime'],[names.tasks]:['lastCostCaptureTime']}}),protocol=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});
  const readTables=createCurrentPurchaseTables({company,store,readOriginalTable:collection=>fulfilmentStore.all(collection)});

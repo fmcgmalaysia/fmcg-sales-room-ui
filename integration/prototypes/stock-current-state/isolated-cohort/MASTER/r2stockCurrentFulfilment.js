@@ -1,4 +1,5 @@
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { fulfilmentStore, readFulfilmentContext, readCustomerFulfilment, CUSTOMER_CURRENT_FULFILMENT_VERSION } from 'backend/r2customerFulfilmentService.js';
 import { createCustomerFulfilmentOperations, SHIPMENT_CURRENT_ALLOCATION_VERSION } from 'backend/r2customerFulfilment.js';
 import { PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/r2purchaseProjection.js';
@@ -22,6 +23,7 @@ export async function createCurrentMasterFulfilment({company,authenticateOrigina
   ||staff.customerId||staff.canDispatchShipment!==true&&staff.readFinancial!==true)throw Error('Original Master fulfilment grant required');
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||CUSTOMER_CURRENT_FULFILMENT_VERSION!==2||SHIPMENT_CURRENT_ALLOCATION_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2)throw Error('Paired original current fulfilment modules required');
  const journal=company==='NCT'?'R2NCTActivity':'R2NCTActivity1';
+ const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:()=>{throw Error('R2 privileged mutation not enabled');},bulkInsert:()=>{throw Error('R2 privileged mutation not enabled');},patch:()=>{throw Error('R2 privileged mutation not enabled');},remove:()=>{throw Error('R2 privileged deletion not enabled');}});
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
   [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime']}});

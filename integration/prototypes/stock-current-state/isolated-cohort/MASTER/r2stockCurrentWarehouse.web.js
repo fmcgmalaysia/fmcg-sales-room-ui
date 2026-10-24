@@ -1,6 +1,7 @@
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { requireWarehouseStaff, projectWarehouseOrders, createWarehouseOperations } from 'backend/r2warehouseReceiving.js';
 import { fulfilmentStore, readFulfilmentContext } from 'backend/r2customerFulfilmentService.js';
 import { projectPurchaseOrders } from 'backend/r2purchaseOrderWorkflow.js';
@@ -31,6 +32,7 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null,prepar
   const identity=await warehouseIdentity(); // Original grant BEFORE current storage or company data.
   if(!readOrders&&(expectedIdentity?.staffId!==identity.staffId||expectedIdentity?.memberId!==identity.memberId))throw Error('Original Warehouse receipt session changed');
   const journal=company==='NCT'?'R2NCTActivity':'R2NCTActivity1';
+  const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:auth.elevate(sdkItems.insert),bulkInsert:auth.elevate(sdkItems.bulkInsert),patch:auth.elevate(sdkItems.patch),remove:()=>{throw Error('R2 privileged deletion not enabled');}});
   const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:verifiedDateFields[journal],
     [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
     [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime']}});

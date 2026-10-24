@@ -21,9 +21,13 @@ function readSource(file, encoding) {
     // that synthetic policy and mark its TEST control for the new SDK guard.
     source = source.replace("{ mode: 'ACTIVE', schemaVersion: 1, writerBuild: 'TEST' }",
       "{ mode: 'ACTIVE', cohort: '" + COHORT + "', schemaVersion: 1, writerBuild: 'TEST' }");
+    // The actual R2-only roots now import SDK-native auth and alias sdkItems.
+    // Preserve this fixture's injected protocol/store, without native elevation.
+    source = source.replace('items: {}, fulfilmentStore:', 'items: {}, sdkItems: {}, auth: {elevate: fn => fn}, fulfilmentStore:');
   }
   if (path.basename(file) === 'stock-current-intake-loaded-composition.test.cjs') {
     source = source.replaceAll('/^Stock(Positions|Claims)\\//', '/^R2Stock(Positions|Claims)\\//');
+    source = source.replace('Buffer,Date,Math,items,fulfilmentStore,', 'Buffer,Date,Math,items,sdkItems:items,auth:{elevate:fn=>fn},fulfilmentStore,');
   }
   return encoding ? source : Buffer.from(source);
 }

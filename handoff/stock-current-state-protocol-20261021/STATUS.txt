@@ -1,5 +1,18 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST AUTHORITY INSTALL 2026-10-25 — OFFICIAL SDK NATIVE PASS; TEN ROOTS EXACT
+User explicitly allowed only MASTER @wix/essentials1.0.15 installation; native
+Installed list confirms it and original @wix/data1.0.528 unchanged. Fixed3record
+StockProtocolTest native query/insert/bulkInsert/conditional patch passed853ms,
+staleversion rejected; CLOSED inspection166ms confirms3complete/zero mutations.
+Gate exact CLOSED b3835bd6...d58ef. Ten R2 roots scoped at original-authorized store
+boundary now whole native before/after exact. Eight read/write; QuantityRead and
+Fulfilment READ_ONLY; deletion denied, physical dispatch false, Packing unchanged.
+No original business/ACL/staff/Source quote change. Final stock1586pass0fail after
+adapting ONLY isolated VM SDK bindings (initial1584pass2fail, focused50then pass).
+Read R2_SDK_AUTHORITY_INSTALL_20261025.json. Ordinary-staff native rights, actual
+business schema/allwriter/activation and four release gates remain; ACTIVE OFF.
+
 LATEST 2026-10-25 — R2 SDK AUTHORITY BLOCKED ON OFFICIAL DEPENDENCY
 Read R2_SDK_AUTHORITY_20261025.txt first. User authorized original-checked R2
 read/write elevation, not old tables/deletion/Packing/dispatch/invoices/ACLs.

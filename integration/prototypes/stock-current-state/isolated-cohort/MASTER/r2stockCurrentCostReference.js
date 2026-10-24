@@ -1,4 +1,5 @@
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { currentMember } from 'wix-members-backend';
 import { getPurchaseStaffContext } from 'backend/r2purchaseAccess.js';
 import { requirePurchaseStaff } from 'backend/r2purchaseProjection.js';
@@ -21,6 +22,7 @@ export async function createCurrentCostReference(company) {
   if (control.mode === 'LEGACY') { if (control.pending !== null) throw Error('Legacy reference save pending'); return {mode:'LEGACY'}; }
   if (control.mode !== 'ACTIVE') return {mode:control.mode};
   const [orders,tasks] = company === 'NCT' ? ['R2NCTOrders','R2NCTTasks'] : ['R2NCTOrders1','R2NCTTasks1'];
+  const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:auth.elevate(sdkItems.insert),bulkInsert:auth.elevate(sdkItems.bulkInsert),patch:auth.elevate(sdkItems.patch),remove:()=>{throw Error('R2 privileged deletion not enabled');}});
   const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
     [journal]:['activityTime'],[tasks]:['lastCostCaptureTime'],[orders]:['masterReceivedTime','salesSubmissionTime']}});
   const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});

@@ -24,6 +24,21 @@ function r2DatabasePolicy(source, target) {
     : 'createSegmentedFencedProof({company,store,domainWrites:true})';
   return once(source, anchor, "createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true})");
 }
+// New R2 only. Construct AFTER the existing original identity/control checks,
+// immediately before its scoped store. Do not elevate any delete method, expose
+// a web method, alter original action checks or grant deferred Packing access.
+const r2AuthorityReadOnly = new Set(['stockCurrentQuantityRead.js','stockCurrentFulfilment.js']);
+function r2AuthorityPolicy(source,target){
+  if(!casDatabaseRoots.has(target)||target==='stockCurrentPacking.js')return source;
+  source=once(source,"import { items } from '@wix/data';","import { items as sdkItems } from '@wix/data';\nimport { auth } from '@wix/essentials';");
+  const matches=[...source.matchAll(/^( +)const store\s*=\s*createSdkConditionalStore\(/gm)];
+  if(matches.length!==1)throw Error('Exact authorized R2 store boundary required: '+target);
+  const indent=matches[0][1],readOnly=r2AuthorityReadOnly.has(target);
+  const blocked="()=>{throw Error('R2 privileged mutation not enabled');}";
+  const members=['query:auth.elevate(sdkItems.query)',...['insert','bulkInsert','patch'].map(method=>method+':'+(readOnly?blocked:'auth.elevate(sdkItems.'+method+')')),
+    "remove:()=>{throw Error('R2 privileged deletion not enabled');}"];
+  return once(source,matches[0][0],indent+'const items=Object.freeze({'+members.join(',')+'});\n'+matches[0][0]);
+}
 const casPhotoRoots = new Map([['stockCurrentWarehouse.web.js','Warehouse'],['stockCurrentPacking.js','Packing']]);
 function r2PhotoPolicy(source,target){
   const kind=casPhotoRoots.get(target);if(!kind)return source;
@@ -81,7 +96,7 @@ function buildIsolatedCohort() {
       dependencies.push(system + '/' + resolved);
       return resolved;
     });
-    if (system === 'MASTER') generated = r2FilePolicy(r2PhotoPolicy(r2DatabasePolicy(generated, target), target), target);
+    if (system === 'MASTER') generated = r2AuthorityPolicy(r2FilePolicy(r2PhotoPolicy(r2DatabasePolicy(generated, target), target), target),target);
     if (system === 'FMCGMALAYSIA') generated = require('./r2-source-conditional-overlay.cjs')(generated, target);
     if (system === 'FMCGMALAYSIA' && ['nctSalesIntake.js', 'masterFulfilmentClient.js', 'masterQuantityClient.js'].includes(target)) {
       let headers = 0;

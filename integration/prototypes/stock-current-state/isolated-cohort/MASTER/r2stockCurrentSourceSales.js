@@ -1,4 +1,5 @@
-import { items } from '@wix/data';
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
 import { fulfilmentStore, readFulfilmentContext, readCustomerFulfilment, CUSTOMER_CURRENT_FULFILMENT_VERSION } from 'backend/r2customerFulfilmentService.js';
 import { projectPurchaseOrders } from 'backend/r2purchaseOrderWorkflow.js';
 import { PURCHASE_CURRENT_PROJECTION_VERSION } from 'backend/r2purchaseProjection.js';
@@ -27,6 +28,7 @@ export async function createCurrentSourceSales({company,authenticateOriginalDele
  if(control.mode==='LEGACY'){if(control.pending!==null)throw Error('Source Sales legacy inventory pending');return{mode:'LEGACY'};}
  if(control.mode!=='ACTIVE')return{mode:control.mode};
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2||CUSTOMER_CURRENT_FULFILMENT_VERSION!==2||WAREHOUSE_CURRENT_READY_VERSION!==2||SHIPMENT_CURRENT_ALLOCATION_VERSION!==2)throw Error('Paired original current Sales calculators required');
+ const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:auth.elevate(sdkItems.insert),bulkInsert:auth.elevate(sdkItems.bulkInsert),patch:auth.elevate(sdkItems.patch),remove:()=>{throw Error('R2 privileged deletion not enabled');}});
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
   [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime']}});
