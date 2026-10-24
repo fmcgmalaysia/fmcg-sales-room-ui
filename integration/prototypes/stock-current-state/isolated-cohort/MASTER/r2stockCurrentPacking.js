@@ -32,8 +32,8 @@ export async function createCurrentMasterPacking({company,department,authenticat
    if(selected!==company||!Array.isArray(ids)||new Set(ids).size!==ids.length||ids.length>2000||ids.some(id=>typeof id!=='string'||!id||id.length>128))throw Error('Exact current packing task scope required');
    const rows=[];for(const id of ids)rows.push(await store.read(company==='NCT'?'R2NCTTasks':'R2NCTTasks1',id));return rows;
   },projectPurchaseOrders,readAllocations,readCustomerShipments,readPackingLists,packingHeld,readPreparation,projectPreparation,now:()=>new Date(),
-  createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,
-    store:createPackingPhotoFencedStore({company,staff,request,store,documentService:requestPurchaseDocument})}),readSnapshot:protocol.readSnapshot}),
+  createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,coordination:'CONTROL_CAS_CANDIDATE',
+    store:createPackingPhotoFencedStore({company,staff,coordination:'CONTROL_CAS_CANDIDATE',request,store,documentService:requestPurchaseDocument})}),readSnapshot:protocol.readSnapshot}),
   allocatePhotoSlots:async count=>{if(!Number.isSafeInteger(count)||count<1||count>3)throw Error('Bounded packing photo allocation required');
    const slots=[];for(let index=0;index<count;index++){const result=await requestPurchaseDocument({action:'ALLOCATE',company});if(result?.ok!==true)throw Error('Packing photo ID allocation unconfirmed');slots.push(result.fileId);}return slots;}};
  const service=createCurrentPackingService({company,items,store,protocol,coverage:writerCoverage,authorityDependencies});

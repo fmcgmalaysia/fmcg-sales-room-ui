@@ -52,7 +52,12 @@
     ],
     "database": "CONTROL_CAS_CANDIDATE",
     "batchApplyReads": true,
-    "externalCallbacks": "EXCLUSIVE_LOCK",
+    "photoRoots": [
+      "stockCurrentPacking.js",
+      "stockCurrentWarehouse.web.js"
+    ],
+    "photos": "CONTROL_CAS_CANDIDATE",
+    "otherExternalCallbacks": "EXCLUSIVE_LOCK",
     "maintenance": "EXCLUSIVE_LOCK",
     "nativeAccepted": false
   },
@@ -1044,9 +1049,9 @@
       "target": "r2stockCurrentCommands.js",
       "originalTarget": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sourceSha256": "67a3c9c8c7bb6e60c869935577d17c7de118134cdfc4102749bbf92db79b6f61",
+      "sourceSha256": "271a15f0c6c3aa228d1937175bb8ff9162f142212ad028b778b3481107caa941",
       "dependencies": [],
-      "sha256": "76e0b8d47800e0cbd59c879577536656822ff370c8846372e77f398c1a4109ea"
+      "sha256": "fd7f5676b8299e755365ee285462bbfb68bc4f2291eee9760136abd6c79f22ec"
     },
     {
       "system": "MASTER",
@@ -1142,7 +1147,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "cbdb31ebb6b4a26a4413b4dbc7d3b0e73764101e098fff82935125e1fe7e6c69"
+      "sha256": "81268c71179c05fd6dcb9e395d46745fc61362e0d77943c5dc675ca42e5e41b3"
     },
     {
       "system": "MASTER",
@@ -1249,7 +1254,7 @@
         "MASTER/r2warehousePreparation.js",
         "MASTER/r2warehouseReceiving.js"
       ],
-      "sha256": "62d5c175bcab5213a69925e9e300a713245b38a97861bc28605aa534f85745cc"
+      "sha256": "29022e03669cf7f0620ae174f5ab6d482ea20755adee94d969bae065fc3e650c"
     },
     {
       "system": "MASTER",

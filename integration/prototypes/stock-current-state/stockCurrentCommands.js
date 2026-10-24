@@ -3952,7 +3952,7 @@ async function uploadWarehousePhotoSlot({company,staff,requestId,input,plan,inde
 module.exports={captureOriginalWarehousePhotoPlan,assertWarehousePhotoUploads,uploadWarehousePhotoSlot};
 
 },
-// warehouse-photo-fenced-store.cjs sha256:3c59fe1ee7149beb732924d709d5d7ac96cd8c325bedca085833bfef75cfea45
+// warehouse-photo-fenced-store.cjs sha256:6007cb90b32fb52dfbc95cf723671a2ae34c28e55aa80e077d888efcf07db3c6
 "warehouse-photo-fenced-store.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs");
@@ -3981,7 +3981,9 @@ function prependWarehousePhotoReceipts({company,staff,requestId,input,prepared,p
 // PRIVATE request-scoped adapter. Use only with the existing SEGMENTED_V2 protocol
 // and <=1 APPLY write per invocation for bounded external work. No protocol rewrite,
 // allocation/trash/update-file/TTL unlock or alternate stock authority is introduced.
-function createWarehousePhotoFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+function createWarehousePhotoFencedStore({company,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server photo coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||staff.canPrepareWarehouse!==true
   ||!/^[a-f0-9-]{36}$/i.test(request?.requestId||'')||request.stockProtocol!==1||!request.stockBuild
   ||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0||!Array.isArray(request.input?.photos)||request.input.photos.length>3
@@ -3989,11 +3991,11 @@ function createWarehousePhotoFencedStore({company,staff,request,store,documentSe
  const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids,requestId=request.requestId;
  const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'WAREHOUSE_PREPARATION',input:request.input,stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{})});
  async function boundPlan(collection,row){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'
    ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration
-   ||lock?.company!==company||lock.owner!==key||typeof lock.attempt!=='string'||!lock.attempt)throw Error('Durable pending photo operation required');
+   ||exclusive&&(lock?.company!==company||lock.owner!==key||typeof lock.attempt!=='string'||!lock.attempt))throw Error('Durable pending photo operation required');
   if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded photo manifest required');
   const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
   const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId});
@@ -4024,7 +4026,9 @@ function createWarehousePhotoFencedStore({company,staff,request,store,documentSe
   if(!Number.isSafeInteger(index)||index<0||index>state.receipts.length||isReceipt&&index===state.receipts.length)throw Error('Exact bounded photo receipt required');
   for(let prior=0;prior<index;prior++)if(!same(await store.read(journal,state.receipts[prior].after._id),state.receipts[prior].after))throw Error('Earlier photo receipt unconfirmed');
   if(isReceipt)await uploadWarehousePhotoSlot({company,staff:state.recordedStaff,requestId,input:request.input,plan:state.prepared,index,documentService});
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId);
+  // R2 resumes the same immutable upload ID; a late callback still cannot apply
+  // business evidence after control advances. Database writes remain insert/CAS.
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null;
   if(!same(control,state.control)||!same(lock,state.lock))throw Error('Photo callback fence changed; original request remains pending');
  }
  return{
@@ -4121,7 +4125,7 @@ function createCurrentWarehouseCbmSave({company,store,protocol,coverage,authenti
 module.exports={captureOriginalWarehouseCbm,createCurrentWarehouseCbmSave};
 
 },
-// packing-photo-fenced-store.cjs sha256:0c8f91663af1622b1a014b8a62521fe0b732960fee17ded3d1edfd2373cb4e1f
+// packing-photo-fenced-store.cjs sha256:246f33a3a06259b5354c3bc857d62e43771a7066099f56096f1cdc10f876bae3
 "packing-photo-fenced-store.cjs": (load, module) => {
 'use strict';
 const {hash}=load("commit-proof.cjs"),{createSegmentedPlanCodec,copy,same}=load("segmented-plan.cjs");
@@ -4143,7 +4147,9 @@ function prependPackingPhotoReceipts({company,staff,requestId,input,prepared,pla
 // Request-scoped private adapter, paired to segmented coordinator with one APPLY
 // write per invocation. Mutable original packing record remains conditional CAS;
 // file receipts insert-only. No allocation/file update/trash/lock theft capability.
-function createPackingPhotoFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+function createPackingPhotoFencedStore({company,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server photo coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  if(!['NCT','GHR'].includes(company)||staff?.packingDepartment!=='WAREHOUSE'||!staff.staffId||!staff.memberId||!staff.staffName||request?.department!=='WAREHOUSE'
   ||request.input?.action!=='PHOTOS'||!Array.isArray(request.input.photos)||request.input.photos.length<1||request.input.photos.length>3
   ||!/^[a-f0-9-]{36}$/i.test(request.requestId||'')||request.stockProtocol!==1||!request.stockBuild||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0
@@ -4152,9 +4158,9 @@ function createPackingPhotoFencedStore({company,staff,request,store,documentServ
  const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'PACKING',input:{department:'WAREHOUSE',details:request.input},stockProtocol:request.stockProtocol,
   stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{})});
  async function boundPlan(collection,row){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'
-   ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration||lock?.company!==company||lock.owner!==key||!lock.attempt)throw Error('Durable pending packing photo operation required');
+   ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration||exclusive&&(lock?.company!==company||lock.owner!==key||!lock.attempt))throw Error('Durable pending packing photo operation required');
   if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded packing photo manifest required');const fragments=[];
   for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId});
   if(!plan.writes.some(change=>change.collection===collection&&same(change.after,row)))throw Error('Packing photo write absent from immutable plan');
@@ -4179,7 +4185,9 @@ function createPackingPhotoFencedStore({company,staff,request,store,documentServ
   if(!Number.isSafeInteger(index)||index<0||index>state.receipts.length||receipt&&index===state.receipts.length)throw Error('Exact packing photo receipt required');
   for(let prior=0;prior<index;prior++)if(!same(await store.read(journal,state.receipts[prior].after._id),state.receipts[prior].after))throw Error('Earlier packing photo receipt unconfirmed');
   if(receipt)await uploadPackingPhotoSlot({company,staff:state.recordedStaff,requestId,input:request.input,plan:state.prepared,index,documentService});
-  if(!same(await store.read(journal,controlId),state.control)||!same(await store.read(journal,lockId),state.lock))throw Error('Packing photo callback fence changed; retain request');
+  // The immutable file slot is retryable; mutable packing after-images are not:
+  // they still require the original version even if a callback returns late.
+  if(!same(await store.read(journal,controlId),state.control)||exclusive&&!same(await store.read(journal,lockId),state.lock))throw Error('Packing photo callback fence changed; retain request');
  }
  return{read:(...args)=>store.read(...args),compareAndRemove:(collection,id,attempt)=>{if(collection!==journal||id!==lockId)throw Error('Only exact owned packing protocol lock release allowed');return store.compareAndRemove(collection,id,attempt);},
   insert:async(collection,row)=>{if(!metadata(collection,row))await beforeDomainWrite(collection,row);return store.insert(collection,row);},

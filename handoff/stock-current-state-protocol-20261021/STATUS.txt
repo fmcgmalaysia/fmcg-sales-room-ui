@@ -1,5 +1,17 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST ASTRA PHOTO RESUME — TWO R2 PHOTO ROOTS + SHARED ADAPTERS EXACT SAVED
+Read ASTRA_PHOTO_RESUME_20261024.txt before older entries. Fresh saved AND deployed
+Apps Script version8 Code.gs/WarehousePhotos.gs exact match local. Genuine suspended
+old upload reproduced; optional control-CAS retry tested before/after upload and
+after callback before mutable packing CAS. Retry completes while old invocation
+is still running; later edit survives late return, same file IDs/receipt ordering.
+Three MASTER draft after-images exact; original defaults and PDF/delete paths remain
+unchanged. Full stock1521pass0fail36850.4071ms. This is local concurrency proof, not
+native504/photo acceptance. Physical receipt quantity never changed: existing photos
+are PACKING/LOADING. Remaining file/delete/native auth/capacity/allwriter/activation/
+Pages/Wix/public gates remain. ACTIVE OFF, not published, no manual action pending.
+
 LATEST ASTRA HIGH REVIEW — THREE REAL DEFECTS PATCHED; THREE DRAFT FILES EXACT
 Read ASTRA_RELEASE_REVIEW_20261024.txt before older entries. Actual300distinct-line
 intake preparation1203->27queries (local parity), UI no longer stops healthy progress

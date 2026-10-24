@@ -25,7 +25,9 @@ function prependWarehousePhotoReceipts({company,staff,requestId,input,prepared,p
 // PRIVATE request-scoped adapter. Use only with the existing SEGMENTED_V2 protocol
 // and <=1 APPLY write per invocation for bounded external work. No protocol rewrite,
 // allocation/trash/update-file/TTL unlock or alternate stock authority is introduced.
-function createWarehousePhotoFencedStore({company,staff,request,store,documentService,codecPolicy={}}){
+function createWarehousePhotoFencedStore({company,staff,request,store,documentService,codecPolicy={},coordination='EXCLUSIVE_LOCK'}){
+ if(!['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'].includes(coordination))throw Error('Explicit server photo coordination required');
+ const exclusive=coordination==='EXCLUSIVE_LOCK';
  if(!['NCT','GHR'].includes(company)||!staff?.staffId||!staff.memberId||!staff.staffName||staff.canPrepareWarehouse!==true
   ||!/^[a-f0-9-]{36}$/i.test(request?.requestId||'')||request.stockProtocol!==1||!request.stockBuild
   ||!Number.isSafeInteger(request.stockGeneration)||request.stockGeneration<0||!Array.isArray(request.input?.photos)||request.input.photos.length>3
@@ -33,11 +35,11 @@ function createWarehousePhotoFencedStore({company,staff,request,store,documentSe
  const codec=createSegmentedPlanCodec({...codecPolicy,company,domainWrites:true}),{journal,lockId,controlId}=codec.ids,requestId=request.requestId;
  const key=hash(company+'/PURCHASE',requestId,staff.memberId),digest=hash({company,writer:'WAREHOUSE_PREPARATION',input:request.input,stockProtocol:request.stockProtocol,stockBuild:request.stockBuild,stockGeneration:request.stockGeneration,...(request.stockIdentity!==undefined?{stockIdentity:request.stockIdentity}:{})});
  async function boundPlan(collection,row){
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId),manifest=await store.read(journal,key);
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null,manifest=await store.read(journal,key);
   if(!control?._version||control.company!==company||control.mode!=='ACTIVE'||control.generation!==request.stockGeneration
    ||control.pending?.key!==key||control.pending.digest!==digest||control.pending.phase!=='APPLY'
    ||manifest?.planHash!==control.pending.planHash||manifest.digest!==digest||manifest.baseGeneration!==request.stockGeneration
-   ||lock?.company!==company||lock.owner!==key||typeof lock.attempt!=='string'||!lock.attempt)throw Error('Durable pending photo operation required');
+   ||exclusive&&(lock?.company!==company||lock.owner!==key||typeof lock.attempt!=='string'||!lock.attempt))throw Error('Durable pending photo operation required');
   if(!Array.isArray(manifest.fragments)||manifest.fragments.length>32)throw Error('Bounded photo manifest required');
   const fragments=[];for(const ref of manifest.fragments)fragments.push(await store.read(journal,ref.id));
   const plan=codec.decode({manifest,fragments,key,digest,memberId:staff.memberId,requestId});
@@ -68,7 +70,9 @@ function createWarehousePhotoFencedStore({company,staff,request,store,documentSe
   if(!Number.isSafeInteger(index)||index<0||index>state.receipts.length||isReceipt&&index===state.receipts.length)throw Error('Exact bounded photo receipt required');
   for(let prior=0;prior<index;prior++)if(!same(await store.read(journal,state.receipts[prior].after._id),state.receipts[prior].after))throw Error('Earlier photo receipt unconfirmed');
   if(isReceipt)await uploadWarehousePhotoSlot({company,staff:state.recordedStaff,requestId,input:request.input,plan:state.prepared,index,documentService});
-  const control=await store.read(journal,controlId),lock=await store.read(journal,lockId);
+  // R2 resumes the same immutable upload ID; a late callback still cannot apply
+  // business evidence after control advances. Database writes remain insert/CAS.
+  const control=await store.read(journal,controlId),lock=exclusive?await store.read(journal,lockId):null;
   if(!same(control,state.control)||!same(lock,state.lock))throw Error('Photo callback fence changed; original request remains pending');
  }
  return{

@@ -66,8 +66,8 @@ async function receiptSave(company,readOrders=false,expectedIdentity=null,prepar
   };
   if(preparation)return createCurrentWarehousePreparationSave({...authorityDependencies,company,items,store,protocol:guardedProtocol,
     coverage:writerCoverage,authenticateOriginalWarehouse:warehouseIdentity,readCurrentContext,createPreparationOperations,
-    createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,
-      store:createWarehousePhotoFencedStore({company,staff,request:{...request,input:{...request.input,photos:request.input.photos||[]}},store,documentService:requestPurchaseDocument})}),readSnapshot:guardedProtocol.readSnapshot}),
+    createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company,domainWrites:true,stepsPerInvocation:1,coordination:'CONTROL_CAS_CANDIDATE',
+      store:createWarehousePhotoFencedStore({company,staff,coordination:'CONTROL_CAS_CANDIDATE',request:{...request,input:{...request.input,photos:request.input.photos||[]}},store,documentService:requestPurchaseDocument})}),readSnapshot:guardedProtocol.readSnapshot}),
     allocatePhotoSlots:async count=>{if(!Number.isSafeInteger(count)||count<0||count>3)throw Error('Bounded original photo allocation required');
       const slots=[];for(let index=0;index<count;index++){const result=await requestPurchaseDocument({action:'ALLOCATE',company});if(result?.ok!==true)throw Error('Photo ID allocation unconfirmed');slots.push(result.fileId);}return slots;},
     currentReadyVersion:WAREHOUSE_CURRENT_READY_VERSION});

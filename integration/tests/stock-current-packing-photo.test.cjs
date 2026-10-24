@@ -13,15 +13,15 @@ function originalCapture(company='NCT'){
  const input={action:'PHOTOS',id:'LIST',taskId:'T',revision:'REV0',version:packingVersion(context),photoStage:'PACKING',photos:[photo()]};
  return{company,staff,input,context,requestId:'11111111-1111-4111-8111-111111111111',createPackingListOperations,now:()=>new Date('2026-10-22T12:00:00Z'),slots:['original-packing-slot-00001']};
 }
-async function fixture(){
+async function fixture(coordination='EXCLUSIVE_LOCK'){
  const f=await original(),commands=[],allocated=[],files=new Map();let lose=false,waiter=null,entered;
  const documentService=async command=>{
   commands.push(copy(command));if(files.has(command.fileId))assert.deepEqual(files.get(command.fileId),copy(command));else files.set(command.fileId,copy(command));
-  if(waiter){entered();await waiter;waiter=null;}
+  if(waiter){const pending=waiter;waiter=null;entered();await pending;}
   if(lose){lose=false;throw Error('Lost packing upload reply');}const result={ok:true,...command};delete result.base64;return result;
  };
- const deps={...f.deps,createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company:'NCT',domainWrites:true,stepsPerInvocation:1,
-  store:createPackingPhotoFencedStore({company:'NCT',staff,request,store:f.store,documentService})}),readSnapshot:f.protocol.readSnapshot}),
+ const deps={...f.deps,createPhotoProtocol:({request,staff})=>({...createSegmentedFencedProof({company:'NCT',domainWrites:true,stepsPerInvocation:1,coordination,
+  store:createPackingPhotoFencedStore({company:'NCT',staff,request,store:f.store,documentService,coordination})}),readSnapshot:f.protocol.readSnapshot}),
   allocatePhotoSlots:async count=>{const result=Array.from({length:count},(_,index)=>'original-packing-slot-'+String(allocated.length+index+1).padStart(5,'0'));allocated.push(...result);return result;}};
  const service=createCurrentPackingService({company:'NCT',items:deps.items,store:f.store,protocol:f.protocol,coverage:Object.fromEntries(WRITERS.map(writer=>[writer,{verified:true,build:'TEST'}])),authorityDependencies:deps});
  let ids=10;
@@ -33,6 +33,25 @@ async function fixture(){
  return{...f,deps,service,command,complete,commands,allocated,files,documentService,lose:()=>lose=true,
   wait:()=>{let release;waiter=new Promise(resolve=>release=resolve);return{entered:new Promise(resolve=>entered=resolve),release};}};
 }
+
+for(const stage of ['upload','businessCAS'])test('R2 real packing flow resumes hanging '+stage+' then refuses stale completion after a newer packing edit', {timeout:5000},async()=>{
+ const f=await fixture('CONTROL_CAS_CANDIDATE'),request=await f.command('WAREHOUSE','PHOTOS',{taskId:'T',photoStage:'LOADING',photos:[photo()]}),physical=JSON.stringify([...f.db].filter(([key])=>key.startsWith('StockPositions:')));
+ let held;
+ if(stage==='upload')held=f.wait();else{
+  let enter,release,once=true;const gate=new Promise(resolve=>release=resolve),entered=new Promise(resolve=>enter=resolve),atomic=f.store.compareAndSet;
+  f.store.compareAndSet=async(c,id,version,row)=>{if(once&&row.action==='SUPPORT_PACKING_LIST_CURRENT'){once=false;enter();await gate;}return atomic(c,id,version,row);};held={entered,release};
+ }
+ let settled=false;const old=f.complete(request).then(value=>({value}),error=>({error})).finally(()=>settled=true);await held.entered;
+ try{
+  await assert.rejects(f.service.save({...request,input:{...request.input,photoStage:'PACKING'}}),/pending|reused|conflict/);
+  assert.equal((await f.complete(request)).ok,true);assert.equal(settled,false);
+  assert.equal(f.allocated.length,1);assert.equal(f.files.size,1);
+  await f.complete(await f.command('WAREHOUSE','PROGRESS',{lines:[{taskId:'T',packed:50,loaded:45,reason:'Later loading'}]}));
+  const current=JSON.stringify([...f.db]);held.release();assert.ok((await old).error);assert.equal(JSON.stringify([...f.db]),current);
+  const read=await f.service.read({department:'WAREHOUSE'});assert.equal(read.lists[0].lines[0].loaded,45);assert.equal(read.lists[0].lines[0].photos.length,1);
+  assert.equal([...f.db.values()].filter(row=>row.action==='PACKING_PHOTO_CONFIRMED').length,1);assert.equal(JSON.stringify([...f.db].filter(([key])=>key.startsWith('StockPositions:'))),physical);
+ }finally{held.release();await old;}
+});
 test('both-company photo capture runs original validation with fixed server IDs, no legacy apply or physical quantity edit',async()=>{
  for(const company of ['NCT','GHR']){
   const f=originalCapture(company),before=JSON.stringify(f.context),plan=await captureOriginalPackingPhotoPlan(f);assert.equal(plan.uploads[0].fileId,f.slots[0]);
@@ -63,8 +82,8 @@ test('actual packing service photo slots survive lost upload reply and bounded r
  assert.equal([...f.db.values()].filter(row=>row.action==='PACKING_PHOTO_CONFIRMED').length,2);assert.equal(JSON.stringify([...f.db]).includes(photo().base64),false);
  assert.equal(JSON.stringify([...f.db].filter(([key])=>key.startsWith('StockPositions:'))),physical);assert.equal(read.lists[0].invoiceId,undefined);
 });
-test('reissued employee cannot adopt photo plan; same original employee renamed resumes original audit and keeps slot IDs',async()=>{
- const f=await fixture(),request=await f.command('WAREHOUSE','PHOTOS',{taskId:'T',photoStage:'PACKING',photos:[photo()]});f.lose();await assert.rejects(f.complete(request));
+for(const coordination of ['EXCLUSIVE_LOCK','CONTROL_CAS_CANDIDATE'])test(coordination+' reissued employee cannot adopt photo plan; same original employee renamed resumes original audit and keeps slot IDs',async()=>{
+ const f=await fixture(coordination),request=await f.command('WAREHOUSE','PHOTOS',{taskId:'T',photoStage:'PACKING',photos:[photo()]});f.lose();await assert.rejects(f.complete(request));
  const originalRead=f.deps.readStaffRecords,records=await originalRead();f.deps.readStaffRecords=async()=>records.map(row=>({...row,title:'S2',staffName:'Replacement'}));
  await assert.rejects(f.service.save(request),/identity/);await assert.rejects(f.service.save({...request,stockIdentity:{staffId:'S2',memberId:'M'}}),/pending|identity/);
  f.deps.readStaffRecords=async()=>records.map(row=>({...row,staffName:'Renamed'}));assert.equal((await f.complete(request)).ok,true);assert.equal(f.allocated.length,1);
