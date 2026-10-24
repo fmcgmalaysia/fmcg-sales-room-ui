@@ -1,5 +1,123 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST AUTH DIAGNOSIS — ORIGINAL AND R2 GETTER SAME STAFF REFUSAL
+Fresh originalstockControl.web.js nativeFULL clipboard exact repository SHA
+bc6805fd2328f8988b1cdfb0419f901bc3e75629250decfd03e4c032341904f7. Source inspected:
+readmember/staff/context only, no oldtest/UNKNOWN/write. Ran original counterpart
+ONCE with sameNCT/{}params in sameStudio: same Master staff access is not configured.
+New getter source guard matches.length!==1, not stock/control corruption. This
+narrows to existing staff match/test identity context, NOT newR2auth regression.
+Do not assert exact account/cause beyond observed guard, create staff, alter auth,
+or claim actual staff/public acceptance. Both finalreceipts/screenshot preserved.
+Old/new getter1call each, no datawrites. Native originalcompare screenshot saved
+r2-stock-read-original-comparison-20261024.png. All109new backend/Admin/publicfiles
+across bothsystems now have exact native saved-draft receipts (Source14earlier,
+MASTER95thisphase), plus MASTER9lineHTTPappend. Source npm completion,8page relays,
+native operational/capacity/recovery/schemaindex/writer/activation/release gates
+still remain. No frontend switch/Publish/ACTIVE, no newBuyerorder yet. SourceStudio
+manual-open request outstanding. Original tests reused; code candidates unchanged.
+
+LATEST NATIVE READ RESULT — EXISTING STAFF CHECK REFUSED, NO STOCK WRITES
+Getter calledONCE in successful userMASTERStudio51427447: r2stockControl.web.js
+getWarehouseStockControl({company:NCT,input:{}}). Actual final native error Master
+staff access is not configured, r2warehouseReceiving.jsline12. It reached original
+staffcheck, proving this entrypoint/module chain loaded, NOT stock-read/business/
+authorization/platform/allwriter acceptance. BABELnote deoptimisedstyling because
+r2stockCurrentCommands exceeds500KB observed too; not the staff-error cause, no
+claim about capacity. Saved/embedded r2-stock-read-native-auth-guard-20261024.png.
+No retry, identitychange/staffgrant/authrelaxation/stockoperation. Actual test identity
+versus existing staff configuration remains to diagnose without changing records.
+SourceStudio currently absent; async user asked only to open FMCGMALAYSIA Studio,
+not publish. MASTERIDE51427414stillopen/saved; actualStudio testentry works despite
+it. Both normal tools usable now; no reason for another restart/reinstall/permission.
+
+LATEST MASTER INSTALL — BACKEND/PUBLIC/ADDITIVE HTTP SAVED AND SYNCED, NOT PUBLISHED
+All90new uploads + prior2businessmodules + Adminbootstrap =93exact native backend
+file receipts. Added ONLY public/r2taskChatBridge.js and r2packingListBridge.js after
+native no-matching-results checks, full native clipboard SHAexact both. Original
+public bridges intact. Backend and public native Sync site each gave lastsyncedjustnow.
+Fresh originalMASTER http-functions.js LF SHA401d71f...exact manifest/preimage.
+Appended ONLY9generated code lines+separator usingCtrlEnd/paste (not whole-file
+replace), new3post_r2... paths. FULL native after-image exact expected concatenation
+SHA6ac364ecd12b95e63eb3f93be40d7727b2cf0684ba3e57e976034dd8def1e908;
+old prefix byte-for-byte LF unchanged. NativeSync lastsyncedjustnow. Old handlers,
+original pages/otherbackend/public/quotation preserved. This is original-file append,
+NOT alloriginalcodeunchanged. JSON corrected accordingly. No Publish/businesssave/
+genesis/ACTIVE/frontend relay switch. Code artifacts/tests unchanged; reuse tests.
+Screenshots rootprivate r2-master-sync-draft, r2-master-public-sync-draft,
+r2-master-http-sync-draft-20261024.png saved (first already embedded).
+
+Agent dashboard EditSite openedMASTERStudio51427444reached98, notrefreshed/retried;
+user opened new successfulMASTER51427447and oldfailedtabgone. Current fullyreadable
+newStudio Backend&Public independently lists allnewr2modules/public. IDE51427414
+stillopen; Studio functiontester available. Selected ONLY r2stockControl.web.js
+getWarehouseStockControl, exact native params {company:NCT,input:{}} read back.
+Run clicked ONCE; calledwith(NCT,{...})receipt seen, finalresult stillpending.
+This getter source inspected: readmember/staff/control/context only; no insert/
+update/remove/capacity/oldUNKNOWN/initialization. Do NOT click Run again to get result.
+No nativebusiness/activation/public acceptance claimed. Source editor still absent.
+
+LATEST NATIVE READBACK COMPLETE — ALL90 UPLOADED MODULES EXACT, NO REUPLOAD
+After user's extension screenshots, existing browser3/IDE51427414 rebound and fully
+readable without reload. Prior fault was batch>30sec timeout resetting control session,
+not evidence user permissions wrong. New3file batches with40sec ceiling succeeded.
+Remaining80FULL native editor clipboard hashes exact; all90new uploads plus prior
+2businessmodules+Adminbootstrap now93exact saved-draft receipts in JSON. Original
+code untouched, native Sync site NOT clicked yet, no publication/ACTIVE/genesis.
+Screenshot private-evidence/r2-master-upload-readback-complete-20261024.png saved
+and embedded in commentary. Earlier ten-only/disconnected status superseded.
+
+Opening all modules exposed250native Problems entries:249errors+1info. IMPORTANT
+info says Not showing768further errors/warnings;250is NOT complete diagnostic total.
+Native SelectAll/contextCopy returned96285charJSON via UIclipboard, parsed250actual
+records. No hidden editor/provider APIs used. Summary/types in JSON. Most are JS
+inference/old-target-library reports (Object.hasOwn34, optionalactor/now56, dynamic
+properties119, missing optionalparams22), but NOT certified harmless/runtime valid.
+Largest r2stockCurrentCommands168/r2purchaseProjection26. FilterCannotfindmodule0
+among reported set, NOT proof all dependencies/native semantics correct. No ts-ignore,
+check disabling, generated config/library edits or business-code fixes. Native saved
+graph validation and precise minimal remediation remain. Source package result still
+unknown; Source editor absent from inventory. Keep original workflows/newACTIVEOFF.
+
+LATEST NATIVE UPLOAD — 90 SUBMITTED; FIRST10 EXACT; READBACK CONNECTION LOST
+User screenshot confirms extension Allow access to file URLs ON. Original browser3
+unavailable; fresh inventory showed browser4 same extension/provider with old IDE.
+Rebound existing51427414 without refresh. New native chooser multiple=true;
+setFiles90 succeeded ONCE, selected ONLY exact generated missing MASTER r2modules,
+no original/existing3/bootstrap/HTTP/public/private/retired files. Native editor
+then displayed r2accountPurchaseReview, previously absent. This is an upload
+submission receipt, NOT proof all90saved/synchronized or callable. First10 new
+modules copied fully through native editor and each LF SHA exactly matched manifest;
+hashes recorded in MASTER_R2_NATIVE_INSTALL_20261024.json. Original3 receipts remain.
+Next readonly batch indexes10..14 exceeded30sec cell limit, kernel reset. Partial
+readback progress in that cell LOST; do not count it. Remaining80NOT certified.
+Fresh inventory after reset retains same IDE/provider; fresh bind failed Debugger
+unattached. Browser inputs stopped; no reupload/refresh/Sync site/Publish. Not a
+repeat file-permission denial, not evidence Wix code failed. No reason to ask user
+to reinstall/change permissions/reboot again. Next connection needs actual extension
+status evidence. Screenshot of uploaded file was displayed but not saved before
+kernel reset; do NOT cite a nonexistent screenshot. Original quote/login/HTTP/page
+paths unchanged, no ACTIVE/genesis/business record/public test. Source editor absent
+from latest inventory; its package-install completion remains unverified.
+Readback helper copied only, no editor text mutation. If connection restored, use
+smaller bounded batches and explicit tool timeout below60sec; resume80, never upload90
+again merely to recover a failed read. Local static/code tests reused unchanged.
+
+LATEST RESTART CHECK — READ WORKS; EXACT LOCAL-UPLOAD PERMISSION BLOCK
+After user restarted GPT App, existing Chrome3/MASTER IDE51427414 claimed and
+fully readable without reload/editor mutation. Native backend menu works. Folder
+Download clicked ONCE, no download event/receipt; NOT a new backup. Prior exact
+per-file recovery copies retained. Native Upload chooser opened successfully and
+reported multiple=true. Exact90new MASTER backend files verified against manifest,
+excluding existing3/bootstrap/HTTP/public/private/retired/original files. setFiles
+failed explicitly because ChatGPT Chrome extension Allow access to file URLs is
+OFF. No files submitted/installed, no native business/control/Publish/Sync write.
+Do not retry, bypass or change permissions silently. Ask user to enable ONLY this
+specific extension permission if willing; explain it permits local-file access.
+This is proven cause of upload refusal, NOT proven cause of earlier Wix loading
+or debugger disconnections. Source npm install completion still NOT read back.
+Code/local112asset artifact unchanged; no push/Pages/public acceptance/ACTIVE.
+
 LATEST RECOVERY POINT — BROWSER CONTROL DISCONNECTED; USER ASKS ABOUT APP RESTART
 Local code9b84114 (cohort9dcbbaa + static LF fix). No push/Pages/Wix publication.
 Source14new files exact/saved, original pages/modules/HTTP unchanged. MASTER new
