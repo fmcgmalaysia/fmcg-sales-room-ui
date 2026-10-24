@@ -169,7 +169,7 @@
       "dependencies": [
         "FMCGMALAYSIA/r2nctSubmissionDelivery.js"
       ],
-      "sha256": "a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b"
+      "sha256": "d22a886252c68e89400ba546a6668c113e80096294d916e808dcfc6948e63807"
     },
     {
       "system": "FMCGMALAYSIA",
@@ -202,7 +202,7 @@
         "FMCGMALAYSIA/r2masterQuantityClient.js",
         "FMCGMALAYSIA/r2nctSalesIntake.js"
       ],
-      "sha256": "31f03a7d7b3f61ae7f92c77907d981d3a3b15085d91db9612e30d4c770c58b2c"
+      "sha256": "a791bd4d10f9f5e1cd6ee03ea9e22241ed7c853f2f3a678808956d5182b1a444"
     },
     {
       "system": "MASTER",

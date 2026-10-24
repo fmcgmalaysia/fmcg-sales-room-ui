@@ -1,4 +1,5 @@
 import { items as r2Items } from '@wix/data';
+import { auth as r2Auth } from '@wix/essentials';
 import { randomBytes as r2RandomBytes } from 'crypto';
 // Install only in the FMCGMALAYSIA source site backend. Existing auth and payload writers are injected.
 import wixData from 'wix-data';
@@ -42,7 +43,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         const current = await ownLock(key);
         if (!current.record || current.value.action !== 'ORDER_MUTATION_LOCK' || current.value.source ||
             current.value.orderId !== key || current.value.customerId !== proposal.customerId || !lockedOrderEntry.r2MutationOwner || current.value.r2Owner !== lockedOrderEntry.r2MutationOwner) throw new Error('Existing Sales lock changed.');
-        const record = await r2Items.patch(AUDIT, current.record._id).setField('payload', JSON.stringify({ ...proposal, r2Owner: current.value.r2Owner })).run({ condition: { payload: { $eq: current.record.payload } } });
+        const record = await r2Auth.elevate(r2Items.patch)(AUDIT, current.record._id).setField('payload', JSON.stringify({ ...proposal, r2Owner: current.value.r2Owner })).run({ condition: { payload: { $eq: current.record.payload } } });
         return data(record);
       }
       const record = await wixData.insert(AUDIT, {
@@ -54,7 +55,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       const current = await ownLock(key);
       if (!current.record || current.value.source !== 'NCT MASTER INTAKE' || current.value.orderId !== key ||
           current.value.customerId !== proposal.customerId || current.value.preparedBody) throw new Error('Submission lock changed.');
-      await r2Items.patch(AUDIT, current.record._id).setField('payload', JSON.stringify(proposal)).run({ condition: { payload: { $eq: current.record.payload } } });
+      await r2Auth.elevate(r2Items.patch)(AUDIT, current.record._id).setField('payload', JSON.stringify(proposal)).run({ condition: { payload: { $eq: current.record.payload } } });
     },
     async releaseOwnLock(key, submissionId) {
       if (lockedOrderEntry) return; // The original Sales wrapper owns cleanup for this call.
@@ -62,7 +63,8 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       if (!current.record) return;
       if (current.value.source !== 'NCT MASTER INTAKE' || current.value.orderId !== key ||
           (current.value.preparedBody && current.value.preparedBody.submissionId !== submissionId)) return;
-      await r2Items.remove(AUDIT, current.record._id, { condition: { payload: { $eq: current.record.payload } } });
+      if (current.value.action !== 'ORDER_MUTATION_LOCK' || !/^[a-f0-9]{32}$/.test(current.value.r2Owner || '')) throw Error('Exact new R2 order-lock owner required');
+      await r2Auth.elevate(r2Items.remove)(AUDIT, current.record._id, { condition: { payload: { $eq: current.record.payload } } });
     },
     async writeAcceptedAuditOnce(body, receipt) {
       const eventId = body.destination + '-SUBMITTED-' + createHash('sha256').update(body.orderId).digest('hex').slice(0, 32);
@@ -93,7 +95,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         destination: body.destination, submittedAt: body.submittedAt, submittedBy: body.submittedByEmail,
         submittedByStaffId: body.submittedByStaffId, submittedByStaffName: body.submittedByStaffName,
         nctSubmissionBody: body, masterReceipt: receipt };
-      await r2Items.patch(ORDERS, current.record._id)
+      await r2Auth.elevate(r2Items.patch)(ORDERS, current.record._id)
         .setField('title', text(current.record.title)).setField('payload', JSON.stringify(next))
         .setField('customerId', text(next.customerId)).setField('orderId', text(next.orderId))
         .setField('orderSortKey', text(next.confirmedAt) + '|' + text(next.orderId))

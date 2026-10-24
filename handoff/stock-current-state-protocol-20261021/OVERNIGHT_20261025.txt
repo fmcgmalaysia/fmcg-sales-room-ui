@@ -1,0 +1,127 @@
+2026-10-25 — renewed autonomous continuation while user rests
+
+User requests continued implementation, native acceptance, publication and GitHub
+sync; blockers must not prevent independent background work. No relaxation of
+per-action sensitive grants, protected original flows, no main merge, no Packing
+scope, actual dispatch/invoices or UNKNOWN-operation rules. Same actual checkout
+and branch. Fresh root framework/START_HERE/system boundaries/checkout supplement
+and efficiency guide read; selected historical output truncations reread by range.
+Recovery original d447185/runtime32b812c, main live149 unchanged at start; candidate
+82e011c confirmed successfully synced to origin PR220 before this continuation.
+
+EMPLOYEE READ ACCEPTANCE — actual native log receipts, not title inference
+Release Manager official Test Open link is /master?siteRevision=153. Previous
+?rc=test-site page URL was not the native page link (that syntax is documented for
+HTTP-function test endpoints). Changed to actual native version URL, not a guessed
+URL parameter grid. Both earlier Chrome and IAB attempts on old URL gave no result.
+Native log stream opened and exactly one readonly reload on correct153 observed:
+PURCHASE489ms + WAREHOUSE543ms; each queries2, inserts0/bulkInserts0/patchAttempts0,
+mutationAttempted:false, complete:true, ordinaryStaffReadAccepted:true,
+ordinaryReadDenied:true; all six fixed records remain original complete versions.
+The raw permission-denied messages are EXPECTED negative-control reads, followed
+by successful elevated reads under original role authorization. Native backend
+AND frontend PAGE_PURCHASE/PAGE_WAREHOUSE receipts seen in Wix Logs. Title remains
+old; title alone is not acceptance or failure. No completed RUN was replayed.
+No full ordinary write-terminal/stale-attempt acceptance inferred; no ACTIVE.
+Private screenshot C:/FMCG-WIX-LOCAL/tmp-r2-ordinary-read-native-20261025.png.
+Original pending manual-new-tab request is now unnecessary; user need not act.
+
+Closed native page with ONE true->false unique replacement, full clipboard equals
+local CLOSED hash45d9f220a71d9c89ea6ae2d2b041346b7d253b938fb273d0b5c7da23736ffa79.
+Backend mutation gate remained false throughout. Test-site update attempted via
+Create Test Site after closing page; awaiting independent native version receipt,
+do NOT claim new Test154 yet or all deployed gates closed. Test153 itself is READ
+ONLY at0%, no business writer active. No main Publish or Pages dispatch.
+
+Real Purchase test153 navigation initially showed original-identity error, then
+automated navigation yielded about:blank embed. Only page-running message seen in
+fresh Wix Logs; do not diagnose it as security or SDK rejection. IAB correct-version
+comparison attempted independently, no refresh loop. Original public user forms
+and existing signed-in IAB Purchase tab1 untouched.
+
+SOURCE SDK AUTHORITY — LOCAL candidate only, not installed
+Fresh native Source Packages lists @wix/data1.0.534, @wix/site-window1.59.0 and no
+@wix/essentials. No package installed/upgraded. Native r2nctSalesIntake.js entire
+clipboard exactly equals prepatch generated a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b.
+Compiler r2-source-conditional-overlay.cjs now minimally imports official SDK auth
+and elevates ONLY three conditional patches after original delivery authorization.
+Expected candidate hash0603924ea913ac0d36699ac1943252a91a0124767c8d2c299e350bbdeff97a45.
+No elevated remove, no query/insert/update/save/truncate capability, no new public
+method, no Source quotation/selection/FX/identity changes. Existing exact source
+payload conditions, owner identity and receipt mappings unchanged. Original Source
+onboarding module remains untouched. This is explicit local/native candidate drift,
+not an unapproved silent sync. Keep original native copy until dependency/grant.
+
+Precise async question sent once: install SOURCE official @wix/essentials1.0.15 and
+allow ONLY original-authorized conditional OWN temporary order-lock release, not
+business records/old or UNKNOWN locks, no generic delete or staff/CMS permission.
+No answer yet; do not equate blanket autonomy with action-time sensitive grant.
+Continue independent work without waiting or repeated questions.
+
+Tests: focused37pass0fail496.8237ms after correcting ONE new test's nonexistent
+ordinary onboarding path to packet's actual source input (initial36pass1ENOENT,
+not a business defect). Existing late-finalization/delayed-lock/newer-date scenarios
+all retained and pass. Final full stock1596pass0fail0skip0cancelled51200.8561ms,
+retained C:/FMCG-WIX-LOCAL/tmp-r2-source-authority-full-tests-20261025.txt.
+Initial Windows rg glob errors corrected to scoped real paths; no identical retry.
+Token/cache/Credit task attribution UNKNOWN; no saving claim.
+
+NEXT independent tasks: native business/schema/allwriter acceptance and server-owned
+activation verifier integration; no fabricated coverage flags. Review latest actual
+ALLOC app ARRANGE_AVAILABLE route before treating old ALLOC_ENTRY missing-button
+notes as current; it is now wired at app.js:859, actual native/public acceptance
+still pending. Existing HTTPS review obsolete, do not hand it off as final UI.
+Remaining original-role Source SDK component/own-lock grant, conditional release
+scope, precise paired installation, current manifest/staged Pages artifacts, native
+allwriter evidence, activation gates and public Buyer/split/borrow/repay remain.
+Original production code/resources preserved; no permanent data deletion.
+
+SUBSEQUENT EXACT GRANT AND NATIVE SOURCE INSTALL
+User answered "允许上述精确范围" to official Source dependency1.0.15 + existing
+original-authorized, condition-protected OWN temporary order-lock releases only.
+No business-row, old/UNKNOWN lock deletion, ACL/staff/quote change authorized.
+Both remove call sites retain exact existing payload condition, exact collection
+and stable order-lock ID. Sales wrapper retains local random-owner equality;
+standalone adapter also requires ORDER_MUTATION_LOCK +32hex R2 owner marker.
+This adds no generic remove export or unconditional cleanup/recovery path.
+
+Installed SOURCE @wix/essentials1.0.15; original data1.0.534/site-window1.59.0
+remain unchanged in fresh actual list. One Installed-tab click timed out after
+the package action, old editor then disappeared from inventory. Fresh observed
+editor51427514 was claimed, not repeated install/refresh or alternate failure
+URL. New editor package list independently confirms all three exact versions.
+Private tmp-r2-source-dependency-20261025.png records native proof.
+
+Fresh full-native before images match previous generated originals. Applied only
+Source intake3match patch-elevation replacement +unique import +unique guarded
+lock removal; onboarding only unique import +unique owner-checked remove call.
+EVERY entire native after-image equals local generated source:
+intake before a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b
+after d22a886252c68e89400ba546a6668c113e80096294d916e808dcfc6948e63807
+onboarding before31f03a7d7b3f61ae7f92c77907d981d3a3b15085d91db9612e30d4c770c58b2c
+after a791bd4d10f9f5e1cd6ee03ea9e22241ed7c853f2f3a678808956d5182b1a444
+Autosave icon checked; screenshot tmp-r2-source-authority-installed-20261025.png.
+No Source order submitted, no native lock deletion, no old table edited.
+
+Latest focused37pass0fail595.2667ms; full stock1596pass0fail0skip0cancelled80181.529ms
+after the new narrowly authorized own-lock elevation, not reuse of earlier count.
+Retained C:/FMCG-WIX-LOCAL/tmp-r2-source-owned-lock-full-tests-20261025.txt.
+build-isolated-cohort --check passes105new backend modules/8relays; inventory only.
+
+MASTER Release Manager independently confirms Test1540%, Live149100%; closed page
+installed before Test154 update. Private tmp-r2-test154-closed-20261025.png. This
+supersedes earlier test-update-pending text above. No native Run/mutation reopened.
+
+SOURCE Release Manager BEFORE test update: Live766100%, pre-existing Test5830%.
+Preserved screenshot tmp-r2-source-before-test-20261025.png. This was an old zero
+traffic test revision, not current published flow. Normal task-scoped Create Test
+Site action requested after exact two-module sync; native final new-version receipt
+still pending at this entry. Do not claim Source main Publish or accepted business
+rights from the action; fixed actual siteRevision link must come from native Open.
+
+Existing heartbeat automation idautomation resumed ACTIVE under newest explicit
+request to keep working during rest, same15min interval/name/target; no duplicate
+or other monitors touched. Prompt points to actual STATUS/latest handoff and keeps
+no-agent/no-model-switch/current protections. It initially mentioned pending Source
+grant; THIS explicit reply/install supersedes that text. Continue independent work,
+do not ask identical permission again. Record current native/runtime facts first.

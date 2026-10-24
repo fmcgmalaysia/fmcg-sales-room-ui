@@ -51,9 +51,10 @@ for(const [target,definition]of Object.entries(roots)){
   const f=fixture(target,{deny:true});await assert.rejects(f.run(),/ORIGINAL_DENIED/);assert.equal(f.elevations.length,0);assert.equal(f.requests.length,0);assert.equal(f.getItems(),undefined);
  });
 }
-test('Packing, Admin diagnostics, ordinary originals and Source quotation dependencies are not elevated by this policy',()=>{
+test('Packing, Admin diagnostics, ordinary originals and Source quotation dependencies are not elevated by the Master policy',()=>{
  for(const [key,source]of packet.output){
   if(!key.endsWith('.js')||!source.includes("from '@wix/essentials'"))continue;
+  if(['FMCGMALAYSIA/r2nctSalesIntake.js','FMCGMALAYSIA/r2onboarding.web.js'].includes(key))continue;
   assert.equal(key.startsWith('MASTER/r2'),true);assert.ok(roots[key.slice('MASTER/r2'.length)],key);
  }
  const packing=packet.output.get('MASTER/r2stockCurrentPacking.js');assert.doesNotMatch(packing,/auth\.elevate|sdkItems|privileged deletion/);

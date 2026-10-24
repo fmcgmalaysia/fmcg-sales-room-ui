@@ -1,4 +1,5 @@
 import { items as r2Items } from '@wix/data';
+import { auth as r2Auth } from '@wix/essentials';
 import { randomBytes as r2RandomBytes } from 'crypto';
 import { requestMasterFulfilment } from 'backend/r2masterFulfilmentClient.js';
 import { withMasterQuantities } from 'backend/r2masterQuantityClient.js';
@@ -807,7 +808,7 @@ async function withSalesOrderMutation(orderId, staff, action) {
       if (!Array.isArray(page.items) || page.items.length > 1) throw Error('Exact R2 order lock read required');
       const held = page.items[0];
       if (held && payloadData(held)?.r2Owner === r2MutationOwner) {
-        await r2Items.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { condition: { payload: { $eq: held.payload } } });
+        await r2Auth.elevate(r2Items.remove)(BUYER_ORDER_AUDIT_COLLECTION, lockId, { condition: { payload: { $eq: held.payload } } });
       }
     }
   }

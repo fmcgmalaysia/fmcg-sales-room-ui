@@ -1,5 +1,25 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST OVERNIGHT 2026-10-25 — EMPLOYEE READ NATIVE RECEIPTS CONFIRMED; SOURCE PATCH LOCAL
+UPDATE: user exact Source grant received; official Source essentials1.0.15 installed,
+data1.0.534/site-window1.59.0 unchanged. Two native Source minimal whole after-images
+exact: intaked22a8862...63807/onboardinga791bd4d...1a444; ordinary identity/quote/CAS
+and own-lock guard retained. No native order/lock deletion. Final fullstock1596pass
+0fail80181.529ms; generated graph --check pass. MASTER Test1540%/Live149100% native
+confirmed CLOSED. Source original Live766100%/oldTest5830% preserved; new Test update
+requested but version receipt pending. Automation resumedACTIVE/same15min. Read
+latest append of OVERNIGHT_20261025.txt; pending-grant/local-only text below historical.
+Read OVERNIGHT_20261025.txt FIRST. Correct official Test153 page link siteRevision=153;
+Wix Logs actual Purchase489ms/Warehouse543ms readonly/complete/ordinaryStaffReadAccepted
+receipts confirmed, no test mutation/replay. Manual-new-tab help no longer needed.
+Closed native page exact45d9f220...ffa79; backend writes stayedfalse. Test-site update
+receipt pending, do not assume154/all deployed gatesclosed; main149unchanged/ACTIVEOFF.
+Fresh Source intake native exacta8f9c6...d52b; Source @wix/data1.0.534/noessentials.
+LOCAL ONLY three conditional patch elevations; no removals/quote/identity changes.
+New Source dependency + narrowly owned conditional temporary lock scope question
+pending; no Source native write. Focused37pass; fullstock1596pass0fail51200.8561ms.
+Latest82e011c already synced PR220 before this local increment; preserve GitHub sync.
+
 LATEST EMPLOYEE TEST 2026-10-25 — SIX FIXED ROWS COMPLETE; TEST153 READONLY/0%
 Read R2_EMPLOYEE_NATIVE_20261025.txt FIRST. e425bba10root authority install pushed.
 Original grant refuses editor/Preview administrator; no staff/ACL edit. Created

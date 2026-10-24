@@ -9,8 +9,8 @@ let source = fs.readFileSync(filename, 'utf8').replace("const { test } = require
   .replaceAll('WixBuyerOrders', 'R2WixBuyerOrders').replaceAll('WixBuyerOrderLines', 'R2WixBuyerOrderLines')
   .replaceAll('WixOrderAudit', 'R2WixOrderAudit').replace('/_functions/nctIntake', '/_functions/r2NctIntake')
   .replace("await import('../backend/nctReceiver.js')", 'receiver')
-  .replace("new Function('wixData',", "new Function('r2Items', 'r2RandomBytes', 'wixData',")
-  .replace(')(wixData, fetch,', ")(r2Items, require('node:crypto').randomBytes, wixData, fetch,")
+  .replace("new Function('wixData',", "new Function('r2Auth', 'r2Items', 'r2RandomBytes', 'wixData',")
+  .replace(')(wixData, fetch,', ")({elevate:fn=>fn}, r2Items, require('node:crypto').randomBytes, wixData, fetch,")
   .replace('  const receive = createNctReceiver(', `  let r2Hook = async () => {};
   const locate = (collection, id) => [...rows].find(([key, row]) => key.startsWith(collection + '/') && row._id === id);
   const r2Items = {
@@ -42,7 +42,7 @@ function mutationWrapper(f) {
     normalize: value => String(value || '').trim(), readAllPayloadRows: f.args.readPayloadRows,
     BUYER_ORDER_COLLECTION: 'R2WixBuyerOrders', BUYER_ORDER_AUDIT_COLLECTION: 'R2WixOrderAudit',
     findAuthorizedCustomer: f.args.authorizeCustomer, payloadData: row => JSON.parse(row.payload),
-    r2RandomBytes: require('node:crypto').randomBytes, r2Items: f.r2Items,
+    r2RandomBytes: require('node:crypto').randomBytes, r2Items: f.r2Items, r2Auth: {elevate:fn=>fn},
     wixData: { ...f.wixData, get: async (collection, id) => {
       const result = await f.wixData.query(collection).eq('_id', id).limit(2).find();
       if (result.items.length !== 1) throw Error('Missing exact source record'); return result.items[0];
