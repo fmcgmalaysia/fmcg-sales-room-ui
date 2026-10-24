@@ -76,6 +76,20 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     scope(collection, row?._id);
     return normalize(collection, await items.insert(collection, encode(collection, row)));
   }
+  // Optional insert-only capability. Never bulkSave/bulkUpdate: duplicate IDs
+  // must not overwrite a newer version. Caller confirms ALL exact after-images.
+  async function insertMany(collection, rows) {
+    if (!Array.isArray(rows) || !rows.length || rows.length > 32
+      || new Set(rows.map(row => row?._id)).size !== rows.length) throw Error('Bounded distinct insert images required');
+    const payload = rows.map(row => { scope(collection, row?._id); return encode(collection, row); });
+    const bytes = text => { let size = 0; for (const char of text) { const code = char.codePointAt(0);
+      size += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4; } return size; };
+    if (payload.some(row => bytes(JSON.stringify(row)) > 450000)
+      || bytes(JSON.stringify(payload)) > 3500000) throw Error('Insert batch payload requires review');
+    // No auth/hook suppression. A resolved bulk result may still be partial;
+    // it is deliberately NOT converted into an acknowledgement here.
+    await items.bulkInsert(collection, payload);
+  }
   async function compareAndSet(collection, id, expectedVersion, after) {
     scope(collection, id);
     if (typeof expectedVersion !== 'string' || !expectedVersion || after?._id !== id
@@ -112,7 +126,8 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
     return normalize(collection, row);
   }
-  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow };
+  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow,
+    ...(typeof items.bulkInsert === 'function' ? { insertMany } : {}) };
 }
 
 module.exports = { createSdkConditionalStore };

@@ -28,7 +28,7 @@ export async function createCurrentStockExceptions(company){
  if(PURCHASE_CURRENT_PROJECTION_VERSION!==2)throw Error('Original paired current stock projector required');
  const [orders,tasks]=company==='NCT'?['R2NCTOrders','R2NCTTasks']:['R2NCTOrders1','R2NCTTasks1'];
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],[orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
- const base=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true}),protocol={...base,readSnapshot:read=>base.readSnapshot(control=>{
+ const base=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true}),protocol={...base,readSnapshot:read=>base.readSnapshot(control=>{
   if(control.company!==company||control.mode!=='ACTIVE'||control.schemaVersion!==1||!control.writerBuild||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==control.writerBuild))throw Error('All original stock exception co-writers required');return read(control);
  })};
  const readTables=createCurrentPurchaseTables({company,store,readOriginalTable:collection=>fulfilmentStore.all(collection)});

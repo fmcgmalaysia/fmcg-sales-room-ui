@@ -1,4 +1,39 @@
-2026-10-24 — REAL300INTAKE PREPARATION NATIVE CHECKPOINT; BROWSER DISCONNECTED
+2026-10-24 — REAL300INTAKE PARTIAL RECOVERY CONFIRMED; NATIVE RPM QUOTA STOP
+
+LATEST CONFIRMED STATE (supersedes earlier disconnected/UNKNOWN gate entry)
+Fresh user MASTER tab51427471 restored control; old51427447 remains unusable.
+Native diagnostic recovered whole ARMED source then read-only BEFORE20/1202.
+New unpublished R2 Capacity Test page f3l9j.js invokes only this fixed Admin test
+serially, stops on every unconfirmed result, never seeds/resets/deletes/retries.
+69 confirmed receipts:252715ms total,938queries/140inserts/67patches/0deletes.
+BEFORE phase completed. Deliberate KNOWN_INTAKE_INTERRUPTION confirmed APPLY0
+after exactly3business inserts, read barrier confirmed, same immutable request
+recovered to APPLY140/1202. Last key5a7eb83b6d6e7a1cb390c9f258b8b219,
+digest8c8260ce8b951aa7e8704361bb4911b5,planHash4b841011c2e29deab7ec45a1771253ad.
+Next ADVANCE terminal diagnostic returned okfalse with WDE0014: Requests per
+minute quota exceeded;5373ms,attempted15queries/20inserts/1patch/0deletes.
+Do NOT infer no writes or cursor140 from that failure; strong INSPECT required
+before any scoped same-request continuation. No automatic retry was performed.
+Both native whole source gates subsequently CLOSED and exact:
+diagnostic1eb06f56a643a87a030e786cfca83bb1c379d553636e62db982182668b179aba
+pagec95074daa45d082c5f5d99a497725f46c445195a3c2ec491be02d49eb7b0b6b6.
+Native core remains4a29871d...6aa3b. Test page never published; ACTIVE OFF.
+Original business collection shape and staff authorization remain unaccepted.
+Private screenshot outside checkout tmp-r2-quota-stopped-closed-20261024.png.
+Rendered DOM console is current; AX console cache was stale near BEFORE1100.
+Use fresh domSnapshot for growing logs, not AX no-change as execution evidence.
+
+Fresh Source frontend copies: Sales Room c3cdc210...08559 exact generated;
+Buyer Room14dc1620...ccfca4 and Catalogue747cad83...48d5 equal business body,
+only terminal-newline difference versus generated files. No Source edits.
+Active Buyer download uses existing createBuyerOrderDownload/base64 mechanism;
+do not redesign HTTP routes based on unreachable prepareBuyerOrderDownload.
+
+Current next scoped fault: native request quota, not a permission/security stop.
+Official Wix Data quota documentation confirms individual and bulk inserts each
+count one write request, site traffic shares quotas; site-specific limit UNKNOWN.
+Investigate bounded insert-only R2 batching; existing-row writes must retain CAS,
+all strong image/barrier checks/default/file adapters remain protected. No fix yet.
 
 Read R2_REAL_INTAKE_CAPACITY_20261024.json for exact hashes and confirmed receipts.
 Parent recovery32b62b9, protected production d447185/runtime32b812c unchanged.

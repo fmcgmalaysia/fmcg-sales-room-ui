@@ -30,7 +30,7 @@ export async function createCurrentSourceSales({company,authenticateOriginalDele
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
   [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime']}});
- const protocol=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true}),guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(checkpoint=>{
+ const protocol=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true}),guardedProtocol={...protocol,readSnapshot:read=>protocol.readSnapshot(checkpoint=>{
   if(!checkpoint.writerBuild||requiredWriters.some(writer=>writerCoverage[writer]?.verified!==true||writerCoverage[writer].build!==checkpoint.writerBuild))throw Error('All original writers required before current Sales read');return read(checkpoint);
  })};
  const authenticate=async()=>{const staff=await authenticateOriginalDelegation();requireOriginalSalesDelegation(staff,actor.customerId);

@@ -18,7 +18,7 @@ export async function createCurrentOrderIntake({ company, captureCosts }) {
   const [orders, tasks] = company === 'NCT' ? ['R2NCTOrders','R2NCTTasks'] : ['R2NCTOrders1','R2NCTTasks1'];
   const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
     [journal]:['activityTime'],[orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
-  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true});
+  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});
   const operations = createCurrentOrderIntakeOperations({company,store,protocol,coverage:writerCoverage,createNctIntake,createNctReceiptReader,captureCosts,
     readOppositePreparation:async(collection,id)=>{
       if (collection !== (company === 'NCT' ? 'R2NCTActivity1' : 'R2NCTActivity')) throw Error('Opposite intake preparation read only');

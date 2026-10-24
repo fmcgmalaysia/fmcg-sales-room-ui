@@ -22,7 +22,7 @@ export async function createCurrentMasterPacking({company,department,authenticat
  const store=createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{[journal]:['activityTime'],
   [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
   [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime']}});
- const protocol=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true});
+ const protocol=createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});
  const authorityDependencies={currentDamageVersion:typeof PACKING_CURRENT_DAMAGE_VERSION==='number'&&typeof PACKING_CURRENT_DAMAGE_READ_VERSION==='number'&&PACKING_CURRENT_DAMAGE_VERSION===PACKING_CURRENT_DAMAGE_READ_VERSION?PACKING_CURRENT_DAMAGE_VERSION:0,readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),
   requirePackingStaff:(member,records,selected)=>{const employee=requirePackingStaff(member,records,selected);
    if(employee.staffId!==staff.staffId||employee.memberId!==staff.memberId||employee.packingDepartment!==department)throw Error('Original packing session changed');return employee;},

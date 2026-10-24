@@ -38,7 +38,7 @@ async function privateGateway(company, taskCommands = false, workspaceRead = fal
     dateTimeFields: { [journal]: verifiedDateFields[journal],
       [company==='NCT'?'R2NCTOrders':'R2NCTOrders1']:['masterReceivedTime','salesSubmissionTime'],
       [company==='NCT'?'R2NCTTasks':'R2NCTTasks1']:['lastCostCaptureTime'] } });
-  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true});
+  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});
   const guardedProtocol = { ...protocol, readSnapshot: read => protocol.readSnapshot(control => {
     if (!control.writerBuild || requiredWriters.some(writer => writerCoverage[writer]?.verified !== true
       || writerCoverage[writer].build !== control.writerBuild)) throw Error('All current writers must be verified before actionable borrowing reads');

@@ -22,7 +22,7 @@ function r2DatabasePolicy(source, target) {
   const anchor = target === 'stockCurrentBorrow.web.js'
     ? 'createSegmentedFencedProof({ company, store, domainWrites: true })'
     : 'createSegmentedFencedProof({company,store,domainWrites:true})';
-  return once(source, anchor, "createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true})");
+  return once(source, anchor, "createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true})");
 }
 const casPhotoRoots = new Map([['stockCurrentWarehouse.web.js','Warehouse'],['stockCurrentPacking.js','Packing']]);
 function r2PhotoPolicy(source,target){

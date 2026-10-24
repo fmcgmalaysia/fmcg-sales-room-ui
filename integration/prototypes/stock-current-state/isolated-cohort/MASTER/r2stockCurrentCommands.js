@@ -2840,7 +2840,7 @@ function createShortageStockPreparation(deps) {
 module.exports = { validateOriginalShortage, createShortageStockPreparation };
 
 },
-// sdk-conditional-store.cjs sha256:544fec0c865dcf841a5766d2e36e50718afc32a7a41c74fafc0a4523c161c5a8
+// sdk-conditional-store.cjs sha256:0c3b1f093de846dfaa108b6244ed536cd3102fe46db9316fc0c1164775a23a35
 "sdk-conditional-store.cjs": (load, module) => {
 'use strict';
 
@@ -2921,6 +2921,20 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     scope(collection, row?._id);
     return normalize(collection, await items.insert(collection, encode(collection, row)));
   }
+  // Optional insert-only capability. Never bulkSave/bulkUpdate: duplicate IDs
+  // must not overwrite a newer version. Caller confirms ALL exact after-images.
+  async function insertMany(collection, rows) {
+    if (!Array.isArray(rows) || !rows.length || rows.length > 32
+      || new Set(rows.map(row => row?._id)).size !== rows.length) throw Error('Bounded distinct insert images required');
+    const payload = rows.map(row => { scope(collection, row?._id); return encode(collection, row); });
+    const bytes = text => { let size = 0; for (const char of text) { const code = char.codePointAt(0);
+      size += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4; } return size; };
+    if (payload.some(row => bytes(JSON.stringify(row)) > 450000)
+      || bytes(JSON.stringify(payload)) > 3500000) throw Error('Insert batch payload requires review');
+    // No auth/hook suppression. A resolved bulk result may still be partial;
+    // it is deliberately NOT converted into an acknowledgement here.
+    await items.bulkInsert(collection, payload);
+  }
   async function compareAndSet(collection, id, expectedVersion, after) {
     scope(collection, id);
     if (typeof expectedVersion !== 'string' || !expectedVersion || after?._id !== id
@@ -2957,7 +2971,8 @@ function createSdkConditionalStore({ items, company, collections, dateTimeFields
     if (!companyLock && (typeof row.stockCommitVersion !== 'string' || !row.stockCommitVersion)) throw Error('Listed current row requires migrated version');
     return normalize(collection, row);
   }
-  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow };
+  return { read, readMany, insert, compareAndSet, compareAndRemove, normalizeListedRow,
+    ...(typeof items.bulkInsert === 'function' ? { insertMany } : {}) };
 }
 
 module.exports = { createSdkConditionalStore };
@@ -5184,7 +5199,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
 module.exports={prepareOriginalPurchaseDeletionWrite,createPurchaseDeleteProtocol,classifyPurchaseDeletionImage};
 
 },
-// segmented-fenced-proof.cjs sha256:567ec0398e6337ef4db861fa2ba1bbc3206183fb0e333b20499606396998da88
+// segmented-fenced-proof.cjs sha256:aded6267d97c2ebf3c32df25de44b682699cc21b4dabc55707d043b9eaa43a6e
 "segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
@@ -5195,14 +5210,16 @@ const { hash } = load("commit-proof.cjs");
 const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
 function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
   domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32,
-  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false }) {
+  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false, batchNewInserts = false }) {
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
   }
   if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
     || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1
     || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)
-    || typeof batchApplyReads !== 'boolean') throw Error('Bounded execution policy required');
+    || typeof batchApplyReads !== 'boolean' || typeof batchNewInserts !== 'boolean') throw Error('Bounded execution policy required');
+  if (batchNewInserts && (typeof store.insertMany !== 'function' || typeof store.readMany !== 'function'
+    || !batchApplyReads || stepsPerInvocation > 32)) throw Error('Exact bounded insert batching capability required');
   const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
   const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
   async function readControl() {
@@ -5233,6 +5250,12 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
     if (rows.length !== ids.length || rows.some((row, index) => row !== null
       && (!row || row._id !== ids[index] || row.company !== company))) throw Error('Exact complete image batch required');
     return rows;
+  }
+  async function insertImages(collection, images) {
+    let failure;
+    try { await store.insertMany(collection, copy(images)); } catch (error) { failure = error; }
+    const found = await readImages(collection, images.map(row => row._id));
+    if (images.some((row, index) => !same(row, found[index]))) throw failure || Error('Insert batch unconfirmed');
   }
   async function readSnapshot(readRows) {
     const before = await readControl();
@@ -5281,7 +5304,8 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
         // Refuse before staging, never silently truncate or pretend this is a measured
         // production limit. All fragments must be durable before unique root insert.
         if (encoded.fragments.length > maxStagedFragments) throw Error('Staging capacity requires review');
-        for (const fragment of encoded.fragments) await transition(journal, null, fragment);
+        if (batchNewInserts) await insertImages(journal, encoded.fragments);
+        else for (const fragment of encoded.fragments) await transition(journal, null, fragment);
         manifest = encoded.manifest;
         await transition(journal, null, manifest);
       }
@@ -5340,9 +5364,14 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
             const current = found.get(change.collection + '/' + change.after._id);
             if (!same(current, change.before) && !same(current, change.after)) throw Error('Write version conflict');
           }
+          const newImages = new Map();
           for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) {
-            await writeExpected(change.collection, change.before, change.after);
+            if (batchNewInserts && change.before === null) {
+              if (!newImages.has(change.collection)) newImages.set(change.collection, []);
+              newImages.get(change.collection).push(change.after);
+            } else await writeExpected(change.collection, change.before, change.after);
           }
+          for (const [collection, images] of newImages) await insertImages(collection, images);
           // Exact complete strong readback precedes the durable cursor. A failed
           // batch or partial write leaves the original checkpoint unchanged.
           for (const [collection, ids] of groups) {

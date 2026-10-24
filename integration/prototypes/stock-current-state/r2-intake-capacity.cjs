@@ -4,7 +4,7 @@ async function verifyR2IntakeCapacity({items,createSdkConditionalStore,createSeg
  createNctIntake,createNctReceiptReader,hash,copy,same,input,enabled=false,now=()=>Date.now()}){
  if(!input||Array.isArray(input)||Object.keys(input).join(',')!=='step'||!['SEED','ADVANCE','FAULT','INSPECT','REPLAY'].includes(input.step))throw Error('Fixed intake capacity step required');
  const prefix='SPT-R2INTAKE300-20261024-4f8c:',collection='StockProtocolTest',company='NCT',journal='R2NCTActivity',started=now();
- const counts={queries:0,inserts:0,patches:0,deletes:0};let stage='PREFLIGHT',mutationAttempted=false;
+ const counts={queries:0,inserts:0,bulkInserts:0,patches:0,deletes:0};let stage='PREFLIGHT',mutationAttempted=false;
  const report=(ok,extra={})=>({ok,schema:'R2_REAL_INTAKE_CAPACITY_V1',step:input.step,stage,elapsedMs:now()-started,operationsAttempted:{...counts},mutationAttempted,
   fixedLineCount:300,distinctProducts:300,coordination:'CONTROL_CAS_CANDIDATE',stepsPerInvocation:20,
   originalBusinessCollectionsAccepted:false,staffAuthorizationAccepted:false,activationReady:false,...extra});
@@ -13,6 +13,7 @@ async function verifyR2IntakeCapacity({items,createSdkConditionalStore,createSeg
  const address=(name,id)=>{if(!allowed.has(name)||typeof id!=='string'||!id)throw Error('Fixed intake logical scope');return prefix+name+':'+id;};
  const bounded={query:name=>{if(name!==collection||++counts.queries>200)throw Error('Intake query scope/budget');return items.query(name);},
   insert:async(name,row)=>{if(name!==collection||!row?._id?.startsWith(prefix)||++counts.inserts>40)throw Error('Intake insert scope/budget');mutationAttempted=true;return items.insert(name,row);},
+  bulkInsert:async(name,rows)=>{if(name!==collection||!Array.isArray(rows)||!rows.length||rows.length>32||rows.some(row=>!row?._id?.startsWith(prefix))||++counts.bulkInserts>8)throw Error('Intake bulk insert scope/budget');mutationAttempted=true;return items.bulkInsert(name,rows);},
   patch:(name,id)=>{if(name!==collection||!id?.startsWith(prefix)||++counts.patches>26)throw Error('Intake patch scope/budget');mutationAttempted=true;return items.patch(name,id);},
   remove:()=>{throw Error('NO_DELETE_CAPABILITY');}};
  const raw=createSdkConditionalStore({items:bounded,company,collections:[collection]});
@@ -22,9 +23,10 @@ async function verifyR2IntakeCapacity({items,createSdkConditionalStore,createSeg
  const store={read:async(name,id)=>unpack(name,id,await raw.read(collection,address(name,id))),
   readMany:async(name,ids)=>(await raw.readMany(collection,ids.map(id=>address(name,id)))).map((row,index)=>unpack(name,ids[index],row)),
   insert:async(name,row)=>unpack(name,row._id,await raw.insert(collection,pack(name,row))),
+  insertMany:async(name,rows)=>raw.insertMany(collection,rows.map(row=>pack(name,row))),
   compareAndSet:async(name,id,version,row)=>{if(row?._id!==id)throw Error('Exact intake conditional image required');return unpack(name,id,await raw.compareAndSet(collection,address(name,id),version,pack(name,row)));},
   compareAndRemove:()=>{throw Error('NO_LOCK_REMOVAL_CAPABILITY');}};
- const policy={company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,stepsPerInvocation:20};
+ const policy={company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true,stepsPerInvocation:20};
  const protocol=createSegmentedFencedProof(policy),controlId=protocol.ids.controlId;
  const body={sourceSiteId:'5292b63a-30e5-4c0e-8762-a1b127bbc651',destination:company,orderId:'CAPACITY-4F8C-300',
   customerId:'CAPACITY-CUSTOMER',customerCompanyName:'Capacity test fixture',submissionId:'CAPACITY-SUBMISSION-4F8C',submittedByStaffId:'CAPACITY-SALES',submittedByStaffName:'Capacity fixture',
@@ -35,7 +37,12 @@ async function verifyR2IntakeCapacity({items,createSdkConditionalStore,createSeg
  // as business writer coverage or native authorization/installation evidence.
  const coverage=Object.fromEntries(writers.map(name=>[name,{verified:true,build:'CAPACITY-FIXTURE-ONLY'}]));
  let captures=0,writes=0,injected=false;
- const executionStore=input.step==='FAULT'?{...store,insert:async(name,row)=>{if(!row.stockOperationProtocol&&name!==journal){if(writes===3){injected=true;throw Error('KNOWN_INTAKE_INTERRUPTION');}writes++;}return store.insert(name,row);}}:store;
+ const executionStore=input.step==='FAULT'?{...store,insertMany:async(name,rows)=>{
+  if(name===journal)return store.insertMany(name,rows);
+  const partial=rows.slice(0,Math.max(0,3-writes));
+  if(partial.length){await store.insertMany(name,partial);writes+=partial.length;}
+  if(partial.length<rows.length){injected=true;throw Error('KNOWN_INTAKE_INTERRUPTION');}
+ }}:store;
  const operations=createCurrentOrderIntakeOperations({company,store:executionStore,protocol:createSegmentedFencedProof({...policy,store:executionStore}),coverage,
   createNctIntake,createNctReceiptReader,readOppositePreparation:(name,id)=>store.read(name,id),now:()=>new Date('2026-10-24T03:00:01Z'),
   captureCosts:async barcodes=>{captures++;return Object.fromEntries(barcodes.map(unitBarcode=>[unitBarcode,{unitBarcode,capturedAt:'2026-10-24T03:00:01Z',costCurrency:'MYR',costStatus:'CAPTURED',costIssues:[],lpPc:1,lpCtn:12,disc1:0,disc2:0,disc3:0,netCostCtn:12,cbmPerCtn:0.1}]));}});

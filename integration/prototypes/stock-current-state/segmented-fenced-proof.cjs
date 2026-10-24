@@ -7,14 +7,16 @@ const { hash } = require('./commit-proof.cjs');
 const { createSegmentedPlanCodec, same, copy } = require('./segmented-plan.cjs');
 function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
   domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32,
-  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false }) {
+  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false, batchNewInserts = false }) {
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
   }
   if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
     || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1
     || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)
-    || typeof batchApplyReads !== 'boolean') throw Error('Bounded execution policy required');
+    || typeof batchApplyReads !== 'boolean' || typeof batchNewInserts !== 'boolean') throw Error('Bounded execution policy required');
+  if (batchNewInserts && (typeof store.insertMany !== 'function' || typeof store.readMany !== 'function'
+    || !batchApplyReads || stepsPerInvocation > 32)) throw Error('Exact bounded insert batching capability required');
   const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
   const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
   async function readControl() {
@@ -45,6 +47,12 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
     if (rows.length !== ids.length || rows.some((row, index) => row !== null
       && (!row || row._id !== ids[index] || row.company !== company))) throw Error('Exact complete image batch required');
     return rows;
+  }
+  async function insertImages(collection, images) {
+    let failure;
+    try { await store.insertMany(collection, copy(images)); } catch (error) { failure = error; }
+    const found = await readImages(collection, images.map(row => row._id));
+    if (images.some((row, index) => !same(row, found[index]))) throw failure || Error('Insert batch unconfirmed');
   }
   async function readSnapshot(readRows) {
     const before = await readControl();
@@ -93,7 +101,8 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
         // Refuse before staging, never silently truncate or pretend this is a measured
         // production limit. All fragments must be durable before unique root insert.
         if (encoded.fragments.length > maxStagedFragments) throw Error('Staging capacity requires review');
-        for (const fragment of encoded.fragments) await transition(journal, null, fragment);
+        if (batchNewInserts) await insertImages(journal, encoded.fragments);
+        else for (const fragment of encoded.fragments) await transition(journal, null, fragment);
         manifest = encoded.manifest;
         await transition(journal, null, manifest);
       }
@@ -152,9 +161,14 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
             const current = found.get(change.collection + '/' + change.after._id);
             if (!same(current, change.before) && !same(current, change.after)) throw Error('Write version conflict');
           }
+          const newImages = new Map();
           for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) {
-            await writeExpected(change.collection, change.before, change.after);
+            if (batchNewInserts && change.before === null) {
+              if (!newImages.has(change.collection)) newImages.set(change.collection, []);
+              newImages.get(change.collection).push(change.after);
+            } else await writeExpected(change.collection, change.before, change.after);
           }
+          for (const [collection, images] of newImages) await insertImages(collection, images);
           // Exact complete strong readback precedes the durable cursor. A failed
           // batch or partial write leaves the original checkpoint unchanged.
           for (const [collection, ids] of groups) {

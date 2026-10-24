@@ -1,6 +1,20 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
-LATEST SOL REAL300INTAKE — NATIVE PREPARATION CHECKPOINT, CONNECTION LOST
+LATEST SOL REAL300INTAKE — CONNECTION RESTORED; NATIVE QUOTA STOP; GATES CLOSED
+UPDATE: read R2_INSERT_QUOTA_20261024.txt first. Insert-only bounded R2 repair
+locally passes11new tests/real300mock. Core scoped sync interrupted, final native
+core UNKNOWN; neither diagnostic nor page reopened, no backend call. User asked
+once to open a fresh MASTER Studio/code tab. Original ACTIVE OFF/not published.
+Read latest top of R2_REAL_INTAKE_PROGRESS_20261024.txt before older entries.
+69 native receipts confirmed BEFORE complete, known3insert fault/read barrier and
+same-request recovery through APPLY140/1202. Next call returned definite WDE0014
+RPM quota failure, not a completed300acceptance. No automatic retry/reset/deletion.
+Do not infer final cursor after that failed call. Whole diagnostic/page CLOSED
+hashes recorded. ACTIVE OFF, not published. New unpublished fixed test pagef3l9j
+is isolated Admin-only and CLOSED. Current minimum fault is R2 request reduction;
+preserve CAS for all existing rows and original production/file/photo defaults.
+
+EARLIER SOL REAL300INTAKE — NATIVE PREPARATION CHECKPOINT, CONNECTION LOST
 Read R2_REAL_INTAKE_PROGRESS_20261024.txt and R2_REAL_INTAKE_CAPACITY_20261024.json.
 New dedicated StockProtocolTest fixture uses actual R2 intake/core,300distinct lines,
 1202images. NativeSEED884ms confirmed; firstADVANCE504 then exact terminal receipt

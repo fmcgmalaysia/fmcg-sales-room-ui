@@ -9,6 +9,7 @@ function fixture(){
  const name=require.resolve('./stock-r2-cas-native-acceptance.test.cjs');
  const base=vm.runInNewContext(fs.readFileSync(name,'utf8').replace("const test=require('node:test')",'const test=()=>{}')+';fixture;',{require:createRequire(name),Map,Buffer,__dirname});
  const f=base('SPT-R2INTAKE300-20261024-4f8c:'),query=f.items.query;
+ f.items.bulkInsert=async(c,rows)=>{for(const row of rows)if(!f.rows.has(row._id))await f.items.insert(c,row);return{inserted:rows.length};};
  f.items.query=c=>{const q=query(c);q.startsWith=(k,prefix)=>{let limit=1;q.limit=n=>{limit=n;return q;};q.find=async()=>{const all=[...f.rows.values()].filter(row=>String(row[k]).startsWith(prefix));return{items:copy(all.slice(0,limit)),totalCount:all.length};};return q;};return q;};
  return{...f,run:(step,enabled=true)=>verifyR2IntakeCapacity({...runtime,...intake,items:f.items,hash,copy,same,input:{step},enabled})};
 }
