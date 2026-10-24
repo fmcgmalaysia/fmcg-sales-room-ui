@@ -44,7 +44,7 @@ copies, not business logic; rebuilt with existing scripts. Final shared rerun
 C:/FMCG-WIX-LOCAL/tmp-r2-bulk-final-stock-tests-20261024.txt. Reuse this result;
 rerun only after relevant code changes. No public/native capacity implied.
 
-NATIVE PATCH INTERRUPTION — DO NOT ASSUME EXACT INSTALL
+NATIVE PATCH INTERRUPTION (resolved below; retain historical evidence)
 Fresh native core whole before4a29871d429f2f134822f9895953225ec6745de2de1c32aeb92f689d6616aa3b.
 New core890658ad682033b4eb10af629931f052d8478b280f343402692a90aa45b2daa5.
 Only SDK and segmented coordinator factory changes projected to exact new core.
@@ -60,6 +60,27 @@ no refresh/reinstall/permission change/Publish. Do not repeat failed old tab pat
 On return: read whole core FIRST; classify old/partial/exact candidate, patch only
 remaining known sections after evidence. Do not overwrite whole file or infer
 success from local tests. Save screenshot of confirmed native result.
+
+USER NEW TAB RECOVERY AND EXACT SAVED CORE
+User opened51427484. Fresh whole core equals890658ad...2daa5: both scoped
+factory edits had saved completely; NO reapplication. New diagnostic5scoped
+edits saved, whole CLOSED hash27442172929e75b4c3d840734c32738ffe65fc636f41b90cc3bf5b8b1ce9fc88.
+Temporarily ARMED only for scoped test. INSPECT694ms/3queries/zero mutations
+strongly confirmed original APPLY140/1202, same key/digest/planHash,gen0 and
+mixedReadBlockedtrue. No progress adopted by elapsed time or assumed no-write.
+Dedicated unpublished page changed only to resume that exact APPLY140 checkpoint;
+earlier known3insert fault remains prerequisite evidence, not repeated. New whole
+CLOSED page hashb9ba2e15824e3685acb3e9571eabfe0d22606aabe6b4b197751a0b8f9e87a509.
+Focused harness3pass227.996ms. No business/core change after full1561regression.
+Page temporarily ARMED and Run started: observed native APPLY220 confirmed;
+per20images4551ms/20queries/3bulkInserts/1patch/0single inserts/0deletes.
+This is IN PROGRESS, not completed capacity or latency guarantee. Both gates
+currently ARMED during active serial test; MUST close/read back on completion
+or stop. Do not sync other core versions while test is running. No Wix Publish.
+
+797d8e9 committed/push20ad028..797d8e9 succeeded to existing PR220 branch under
+explicit export authorization. No main merge/private data export. Later native
+continuation record/page guard update not yet included in that commit.
 
 Release: code candidate only; Pages not deployed; Wix not published; public
 Buyer/split/borrow/repay unverified. Staff authority/allwriter/schema/activation

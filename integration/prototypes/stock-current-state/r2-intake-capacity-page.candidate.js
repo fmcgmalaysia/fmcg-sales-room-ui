@@ -13,10 +13,12 @@ $w.onReady(async function () {
     receipts.push(result); return result;
   };
   try {
-    let state = await call('INSPECT'), injected = false;
+    // Resume ONLY the same operation whose native three-insert interruption and
+    // blocked mixed read were already recorded before the quota stop.
+    let state = await call('INSPECT'), injected = true;
     if (state.generation !== 0 || state.pending?.key !== '5a7eb83b6d6e7a1cb390c9f258b8b219'
       || state.pending.digest !== '8c8260ce8b951aa7e8704361bb4911b5' || state.pending.planHash !== '4b841011c2e29deab7ec45a1771253ad'
-      || state.pending.count !== 1202 || state.pending.phase !== 'BEFORE' || state.pending.cursor !== 20) throw Error('Exact saved intake checkpoint required; no automatic adoption');
+      || state.pending.count !== 1202 || state.pending.phase !== 'APPLY' || state.pending.cursor !== 140) throw Error('Exact saved intake checkpoint required; no automatic adoption');
     for (let round = 0; round < 190; round++) {
       const pending = state.pending || state.control?.pending;
       const step = !injected && pending?.phase === 'BEFORE' && pending.count - pending.cursor < 20 ? 'FAULT' : 'ADVANCE';
