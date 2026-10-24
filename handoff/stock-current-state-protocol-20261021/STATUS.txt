@@ -1,5 +1,16 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST WIX REPLY: WIX_REPLY_AND_COLD_START_DECISION_20261024.txt records user-supplied
+provider response Ref031000264: no supported old-execution/data-operation drain.
+Reply dependency closed, unsafe same-table cutover NOT solved. Proposed fresh empty
+MASTER business cohort retaining old test tables requires explicit architecture/
+authority scope approval; no implementation/native write or gate removal performed.
+User exact export consent fulfilled: normal pushONLY66bb853, direct child of fresh
+remotee331024, to existingPR220. ONLY two previously identified technical records
+uploaded. Later local code/docs remain unpushed, no blanket export permission.
+User reports editor open; fresh Source readback not yet performed this turn.
+Heartbeat stillPAUSED; no need to keep waiting/recontacting Wix for same drain ask.
+
 LATEST DEPENDENCY AUDIT: OVERNIGHT_DEPENDENCY_AUDIT_20261024.txt classifies each
 original overnight independent UI task against later implementation/evidence.
 No further evidenced independent patch identified in this bounded pass; complete
