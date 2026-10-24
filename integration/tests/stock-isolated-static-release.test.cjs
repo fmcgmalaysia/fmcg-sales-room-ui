@@ -18,6 +18,19 @@ test('a resource edit or uncommitted overlay cannot be labelled with an older va
   assert.deepEqual(paths, ['buyer-room.html', 'integration/prototypes/stock-current-state/isolated-cohort/PAGES/purchase-live/borrow-approval.js']);
   assert.throws(() => verifyVersionedStatic(plan, () => 'OLD'), /recorded committed/);
 });
+
+test('Windows text checkout endings do not invent a content change or alter binary assets', () => {
+  const fs = require('node:fs'), path = require('node:path'), root = path.join(__dirname, '../..');
+  const tracked = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+  const plan = planIsolatedStatic({ tracked, commit: 'a'.repeat(40), read: file => {
+    const bytes = fs.readFileSync(path.join(root, file));
+    return /\.(?:html|js|css|svg)$/.test(file) ? Buffer.from(String(bytes).replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')) : bytes;
+  } });
+  const actual = plan.assets.get('account-room/customer-debtors.js');
+  assert.equal(String(actual).includes('\r\n'), false);
+  assert.equal(String(actual), fs.readFileSync(path.join(root, 'account-room/customer-debtors.js'), 'utf8').replace(/\r\n/g, '\n'));
+  for (const [file, bytes] of plan.assets) if (/\.(?:png|jpg|jpeg|ico|webp)$/.test(file)) assert.deepEqual(bytes, fs.readFileSync(path.join(root, file)));
+});
 test('new workflow option keeps original baseline/interface path and permissions, and stages isolated files before its upload', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../.github/workflows/pages-v64-same-origin.yml'), 'utf8');
   assert.match(source, /- isolated-stock-interface/); assert.match(source, /- stock-interface/); assert.match(source, /default: baseline/);

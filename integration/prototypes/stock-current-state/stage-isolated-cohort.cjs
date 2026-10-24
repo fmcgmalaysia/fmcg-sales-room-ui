@@ -6,13 +6,17 @@ const { execFileSync } = require('node:child_process');
 const { buildIsolatedCohort } = require('./build-isolated-cohort.cjs');
 const checkout = path.resolve(__dirname, '../../..');
 const hash = source => createHash('sha256').update(source).digest('hex');
+// Git normalizes these text blobs to LF, while Windows checkouts can be CRLF.
+// Publish the same LF bytes on either host; binary assets remain byte-exact.
+const staticBytes = (file, source) => /\.(?:html|js|css|svg)$/.test(file)
+  ? Buffer.from(String(source).replace(/\r\n/g, '\n')) : Buffer.from(source);
 const rootFiles = new Set(['index.html', 'buyer-room.html', 'buyer-login.html', 'catalogue-sidebar-v1.html']);
 const staticPath = file => typeof file === 'string' && !file.includes('..') && !file.includes('\\')
   && (rootFiles.has(file) || /^(?:assets|master-shared|purchase-live|warehouse-room|support-room|account-room|sales-room)\/[A-Za-z0-9._-]+\.(?:html|js|css|png|jpg|jpeg|svg|ico|webp)$/.test(file));
 function planIsolatedStatic({ tracked, commit, read = file => fs.readFileSync(path.join(checkout, file)), packet = buildIsolatedCohort() }) {
   if (!/^[a-f0-9]{40}$/.test(commit || '') || !Array.isArray(tracked) || new Set(tracked).size !== tracked.length) throw Error('Exact code version and distinct tracked file set required');
   const assets = new Map();
-  for (const file of tracked.filter(staticPath)) assets.set(file, read(file));
+  for (const file of tracked.filter(staticPath)) assets.set(file, staticBytes(file, read(file)));
   for (const row of packet.report.staticResources) {
     if (!staticPath(row.target)) throw Error('Cohort resource outside public static allowlist');
     const source = packet.output.get('PAGES/' + row.target);
@@ -51,7 +55,7 @@ function verifyVersionedStatic(plan, readVersioned) {
   const overlays = new Set(buildIsolatedCohort().report.staticResources.map(row => row.target));
   for (const [file, source] of plan.assets) {
     const versioned = overlays.has(file) ? 'integration/prototypes/stock-current-state/isolated-cohort/PAGES/' + file : file;
-    if (hash(readVersioned(plan.release.codeCommit, versioned)) !== hash(source)) throw Error('Asset is not the recorded committed version: ' + file);
+    if (hash(staticBytes(file, readVersioned(plan.release.codeCommit, versioned))) !== hash(source)) throw Error('Asset is not the recorded committed version: ' + file);
   }
 }
 if (require.main === module) {
