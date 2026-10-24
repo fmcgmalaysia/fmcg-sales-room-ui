@@ -1,5 +1,23 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST MODEL-SWITCH CHECKPOINT — new R2 capacity test, NOT old UNKNOWN test
+User explicitly approved this fresh scenario's at-most145 conditional own-lock
+releases. Completed SEED batches0..14 (300products) and exactly ONE ADVANCE.
+All16 native receipts ok:true; totals queries427/inserts314/patches2/deletes1.
+Latest acknowledged progress BEFORE20/901, generation0 pending, mixed read blocked,
+lockAbsent:true. No UNKNOWN outcome in this new scenario. Old scenario untouched.
+At user's Sol question, closed native gate and exact full readback matched closed
+9a79204cc02cb051cf9a70401f6305e79df536d60909cf58bdac8244cc4b669a.
+No invocation outstanding. Continue SAME new request after inspecting exact state;
+DO NOT reseed, reset or restart. Same-scenario grant has144removals remaining; gate
+closed for model handoff, not grant exhausted. Do not ask same authorization again.
+CUA variable r2CapacityReceipts retains16 complete JSON receipts; r2RunOnce helper
+must only run while function tester is selected, verifies input and copies result.
+Relevant test prefix SPT-R2CAPACITY-20261024-9e72:. Original SPT-COMMIT300 remains
+UNKNOWN and may not be resumed. Read R2_ACTIVATION_AND_CAPACITY_20261024.txt.
+Code5b2e7df local, latest known remote39d6550. Pages unchanged; Wix draft only;
+Buyer/split/borrow public acceptance incomplete, ACTIVE stays off.
+
 LATEST CLOSED DIAGNOSTIC INSTALLATION — see R2_ACTIVATION_AND_CAPACITY_20261024.txt
 New r2CapacityAcceptance.web.js fully installed as CLOSED saved draft and native
 whole-source hash matched; no test execution/activation/Pages dispatch/Publish.

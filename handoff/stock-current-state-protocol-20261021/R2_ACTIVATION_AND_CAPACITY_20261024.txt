@@ -52,3 +52,20 @@ Reviewed local-only activation request guard: disallow string-coercible objects,
 arrays and malformed 36-character pseudo-UUIDs before any store access.
 This is NOT installed activation or evidence that native gates have passed.
 Affected activation and capacity-identity tests:8pass0fail170.1827ms.
+
+USER SUBSEQUENTLY APPROVED exact new scenario own-lock release maximum145.
+Armed native source by only false->true gate change; full clipboard exact matched.
+Executed SEED0..14 once each:300products, each batch confirmed. Batch0 queries26
+inserts21; batches1..14 each queries26/inserts20; all patches0/deletes0.
+ONE ADVANCE returned ok:true SAME_REQUEST_PENDING_CONFIRMED, elapsed7540ms,
+queries37/inserts13/patches2/deletes1, BEFORE20/901, mixedActionableReadBlocked:true,
+lockAbsent:true. Total16receipts:queries427/inserts314/patches2/deletes1.
+All results confirmed, no UNKNOWN outcome. Do not rerun seed batches. Next step
+is read-only INSPECT and continue SAME new operation, not reset/new identity.
+Exactly1test-only temporary lock removed; other records retained. Business tables
+untouched; all business/native capacity acceptance flags remainfalse.
+User asked whether to switch to Sol. Saved progress; native gate closed by restoring
+exact CLOSED candidate, full clipboard matched hash9a79204...b669a. Autosave checked.
+Private proof r2-capacity-switch-checkpoint-20261024.png. No test invocation active.
+Same-scenario145grant remains valid with144remaining; closing for handoff does not
+require repeat consent. Stop at first unconfirmed test execution; no replay/reset.
