@@ -69,3 +69,13 @@ allwriter/read/recovery proof, activation verifier/schema, release still outstan
 Original Quote/QD/identity/finance/dispatch flows untouched. Automation stays PAUSED.
 Current permission/export scope applies; stage exact authorized files only. No
 private screenshots, CSV, credentials, client business data or main merge.
+
+SUBSEQUENT CONFIRMED SYNC AND STATIC PACKAGING
+e3d83178b8a3e01e7a80981474a6bfabb9d64b38 committed and push succeeded32b62b9..e3d8317
+to existing PR220 branch. No main merge. Dedicated local static artifact prepared
+by existing stage-isolated-cohort.cjs,112resources exact against committed blobs:
+C:/FMCG-WIX-LOCAL/release-staging/r2-e3d8317-20261024/isolated-stock-release.json.
+Allowlist excludes backend, handoff, CSV, native/private evidence and credentials.
+This is packaging only, NOT Pages deployment or a live build verification.
+Native final gate remains UNKNOWN after connection loss; no additional backend
+invocations and no browser retry while awaiting the user's one reconnect action.
