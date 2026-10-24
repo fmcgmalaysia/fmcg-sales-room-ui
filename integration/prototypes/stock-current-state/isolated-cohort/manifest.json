@@ -36,6 +36,26 @@
     "salesFulfilment": "r2SalesFulfilment",
     "purchaseQuantities": "r2PurchaseQuantities"
   },
+  "coordinationPolicy": {
+    "databaseRoots": [
+      "stockCurrentAccountPurchase.js",
+      "stockCurrentBorrow.web.js",
+      "stockCurrentCostReference.js",
+      "stockCurrentExceptions.js",
+      "stockCurrentFulfilment.js",
+      "stockCurrentOrderIntake.js",
+      "stockCurrentPacking.js",
+      "stockCurrentPurchaseOrders.js",
+      "stockCurrentQuantityRead.js",
+      "stockCurrentSourceSales.js",
+      "stockCurrentWarehouse.web.js"
+    ],
+    "database": "CONTROL_CAS_CANDIDATE",
+    "batchApplyReads": true,
+    "externalCallbacks": "EXCLUSIVE_LOCK",
+    "maintenance": "EXCLUSIVE_LOCK",
+    "nativeAccepted": false
+  },
   "backend": [
     {
       "system": "FMCGMALAYSIA",
@@ -986,7 +1006,7 @@
         "MASTER/r2supplierCredit.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "78b925454c2ad99359bd49f4d17bcae09e3035d97c41642d67554585c5a9a296"
+      "sha256": "777604493a41e3f886341ccbda1acf668abb3e6b8a9704c41c6b6d2fe9176724"
     },
     {
       "system": "MASTER",
@@ -1017,16 +1037,16 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "dce78885e56bca366ac5c1d69ca7972d92ff15770561b1d6e405f72872797b8a"
+      "sha256": "98824d68f051cefa401f740e4345f30c8fd89493446bb23e9955faaf525c5404"
     },
     {
       "system": "MASTER",
       "target": "r2stockCurrentCommands.js",
       "originalTarget": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sourceSha256": "c70289c74d14894fcd9cb0fe03e16f9e4570c911203a246d6a881c27249f50d5",
+      "sourceSha256": "44eb7133e9c3ac6642831dac3ddb3ab3b0e5d2010e1bba0f6c85513192c0ebf6",
       "dependencies": [],
-      "sha256": "f123fea6fcaf121eb4689ba663dc634be844d40c892aeb3674bca7c6d4f1acf6"
+      "sha256": "2ff974630461fe4a183db8fa89b2411f10eb8eb4d3b86d6f81eb8fba59a39c76"
     },
     {
       "system": "MASTER",
@@ -1043,7 +1063,7 @@
         "MASTER/r2purchaseProjection.js",
         "MASTER/r2stockCurrentCommands.js"
       ],
-      "sha256": "16587d55890b2ec7e63dd947f38a0cd08656fc9fa9bc4b24ff2fc1eb5ee46c1a"
+      "sha256": "b926902d2215374366ee755df4725517b87cb53ec8a87496e6313e3b0ab82b71"
     },
     {
       "system": "MASTER",
@@ -1067,7 +1087,7 @@
         "MASTER/r2stockExceptionWorkspace.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "0254cd8338ed34cc25ce2ff6b3e944f341cab80264f5856dcb85f4e4a88e48eb"
+      "sha256": "aff656bfee2219755d4372a3fdda15e144e01a10615921a8e0b501d2e3482440"
     },
     {
       "system": "MASTER",
@@ -1087,7 +1107,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "bcf9ead5f6f7c6d1819d66a20c8e818b47809ebfad618dba3677fcfbe2a7a119"
+      "sha256": "85254b392897f0919f02c87adbf99aeeb96d8145b5bfd61f67223792507ab6d9"
     },
     {
       "system": "MASTER",
@@ -1101,7 +1121,7 @@
         "MASTER/r2purchaseOperationJournal.js",
         "MASTER/r2stockCurrentCommands.js"
       ],
-      "sha256": "16e4a4dc5e7efad6046928e55048be8aec4ee96dc5fc27c6f5bd02e18a129a95"
+      "sha256": "60c1585b8d30b64f005ce82d45e3f1ee9205d32e6849d6af542748aa0b504157"
     },
     {
       "system": "MASTER",
@@ -1122,7 +1142,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "e3f4b83692b2fa94ea810879768801e257b60b0aba8029e362af0f96ee81aac5"
+      "sha256": "cbdb31ebb6b4a26a4413b4dbc7d3b0e73764101e098fff82935125e1fe7e6c69"
     },
     {
       "system": "MASTER",
@@ -1144,7 +1164,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "63fe7ae53d719728a2b2dd0f663145264c2b74b586d7ed7ef76f6a0bd93b0275"
+      "sha256": "9e805ffb34015aa56013eaf8fd99b5aaa5831d45f086355ccef9f8266fce94df"
     },
     {
       "system": "MASTER",
@@ -1165,7 +1185,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "8410fc574dbee7142d875627f577b2d3fec4471381c91cd4f6b1b4e1736f4f90"
+      "sha256": "359a8635e06960dd1402092721d44c3a8094f9767598e2914c6434978683b819"
     },
     {
       "system": "MASTER",
@@ -1204,7 +1224,7 @@
         "MASTER/r2stockCurrentCommands.js",
         "MASTER/r2warehousePreparation.js"
       ],
-      "sha256": "a4c72f85ba2d19120a2c8efc019e8eff8586efe4ec629874e45c619e9486b621"
+      "sha256": "faeb13616e8eff2e5dce24efe30debcb4a4c69a84a5aaf2e8509b985119c0cfa"
     },
     {
       "system": "MASTER",
@@ -1229,7 +1249,7 @@
         "MASTER/r2warehousePreparation.js",
         "MASTER/r2warehouseReceiving.js"
       ],
-      "sha256": "057d134bdc9f8657f23c99a95bc96605ecd02d3102a4d4de585ff69c5e8ad7f2"
+      "sha256": "62d5c175bcab5213a69925e9e300a713245b38a97861bc28605aa534f85745cc"
     },
     {
       "system": "MASTER",

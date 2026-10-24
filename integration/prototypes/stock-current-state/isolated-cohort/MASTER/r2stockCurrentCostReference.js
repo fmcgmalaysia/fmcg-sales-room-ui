@@ -23,7 +23,7 @@ export async function createCurrentCostReference(company) {
   const [orders,tasks] = company === 'NCT' ? ['R2NCTOrders','R2NCTTasks'] : ['R2NCTOrders1','R2NCTTasks1'];
   const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
     [journal]:['activityTime'],[tasks]:['lastCostCaptureTime'],[orders]:['masterReceivedTime','salesSubmissionTime']}});
-  const protocol = createSegmentedFencedProof({company,store,domainWrites:true});
+  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true});
   const save = createCurrentCostReferenceSave({company,store,protocol,coverage:writerCoverage,authorityDependencies:{
     readMember:()=>currentMember.getMember({fieldsets:['FULL']}),readStaffRecords:()=>fulfilmentStore.all('StaffMasterAccess'),requirePurchaseStaff,
     readCostTables:createCurrentCostTables({company,store,items}),createPurchaseCostRetry,captureCosts:capturePointbaseCosts,now:()=>new Date()}});

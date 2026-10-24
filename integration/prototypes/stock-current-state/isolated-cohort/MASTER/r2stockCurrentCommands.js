@@ -5174,7 +5174,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
 module.exports={prepareOriginalPurchaseDeletionWrite,createPurchaseDeleteProtocol,classifyPurchaseDeletionImage};
 
 },
-// segmented-fenced-proof.cjs sha256:25740a0388f4d55b297c06286e9a08b27b54bd30a5fd24fc637d48f43a6300cb
+// segmented-fenced-proof.cjs sha256:567ec0398e6337ef4db861fa2ba1bbc3206183fb0e333b20499606396998da88
 "segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
@@ -5184,12 +5184,15 @@ const randomUUID = () => randomBytes(16).toString('hex');
 const { hash } = load("commit-proof.cjs");
 const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
 function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
-  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32 }) {
+  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32,
+  coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false }) {
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
   }
   if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
-    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1) throw Error('Bounded execution policy required');
+    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1
+    || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)
+    || typeof batchApplyReads !== 'boolean') throw Error('Bounded execution policy required');
   const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
   const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
   async function readControl() {
@@ -5198,13 +5201,16 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
     return row;
   }
   async function initialize() { await store.insert(journal, { _id: controlId, company, generation: 0, pending: null, _version: 'GENESIS' }); }
-  async function transition(collection, before, after) {
+  async function writeExpected(collection, before, after) {
     try {
       if (before) await store.compareAndSet(collection, after._id, before._version, copy(after));
       else await store.insert(collection, copy(after));
     } catch (error) {
       if (!same(await store.read(collection, after._id), after)) throw error;
     }
+  }
+  async function transition(collection, before, after) {
+    await writeExpected(collection, before, after);
     if (!same(await store.read(collection, after._id), after)) throw Error('Conditional write unconfirmed');
   }
   const nextControl = (before, fields) => ({ ...before, ...fields, _version: hash(before._version, fields) });
@@ -5230,8 +5236,11 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       || typeof prepare !== 'function' || typeof validate !== 'function' || typeof authorize !== 'function') throw Error('Operation identity required');
     const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT'), attempt = newAttempt();
     if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
-    // Unknown acquisition is never stolen or auto-removed, including a lost reply.
-    await store.insert(journal, { _id: lockId, company, owner: key, attempt });
+    // Default deployed candidate retains its original lock contract. The opt-in
+    // LOCAL review policy coordinates through the existing conditional control
+    // transition; it never touches, releases or adopts a native UNKNOWN lock.
+    const exclusive = coordination === 'EXCLUSIVE_LOCK';
+    if (exclusive) await store.insert(journal, { _id: lockId, company, owner: key, attempt });
     try {
       let control = await readControl();
       if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
@@ -5306,6 +5315,34 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
           cursor += span.length; steps += span.length;
           continue;
         }
+        if (phase === 'APPLY' && batchApplyReads && typeof store.readMany === 'function') {
+          const span = plan.writes.slice(cursor, cursor + Math.min(count - cursor, stepsPerInvocation - steps));
+          const groups = new Map(), found = new Map();
+          for (const change of span) {
+            if (!groups.has(change.collection)) groups.set(change.collection, []);
+            groups.get(change.collection).push(change.after._id);
+          }
+          for (const [collection, ids] of groups) {
+            const rows = await readImages(collection, ids);
+            ids.forEach((id, index) => found.set(collection + '/' + id, rows[index]));
+          }
+          for (const change of span) {
+            const current = found.get(change.collection + '/' + change.after._id);
+            if (!same(current, change.before) && !same(current, change.after)) throw Error('Write version conflict');
+          }
+          for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) {
+            await writeExpected(change.collection, change.before, change.after);
+          }
+          // Exact complete strong readback precedes the durable cursor. A failed
+          // batch or partial write leaves the original checkpoint unchanged.
+          for (const [collection, ids] of groups) {
+            const rows = await readImages(collection, ids);
+            ids.forEach((id, index) => found.set(collection + '/' + id, rows[index]));
+          }
+          for (const change of span) if (!same(found.get(change.collection + '/' + change.after._id), change.after)) throw Error('Conditional batch write unconfirmed');
+          cursor += span.length; steps += span.length;
+          continue;
+        }
         const change = plan.writes[cursor], current = await store.read(change.collection, change.after._id);
         if (phase === 'BEFORE') {
           if (!same(current, change.before)) throw Error('Prepared before-image stale');
@@ -5330,7 +5367,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
       return outcome;
     } finally {
-      await store.compareAndRemove(journal, lockId, attempt);
+      if (exclusive) await store.compareAndRemove(journal, lockId, attempt);
     }
   }
   return { initialize, readControl, readSnapshot, commit, ids: codec.ids, planFormat: 'SEGMENTED_V2' };

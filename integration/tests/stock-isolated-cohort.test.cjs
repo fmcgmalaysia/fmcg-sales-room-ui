@@ -49,6 +49,30 @@ test('generated native bootstrap roots are Admin-only, independent of the old mi
     assert.match(source, /createFreshCohortBootstrap/);
   }
 });
+
+test('R2 database roots opt in explicitly while file/photo/delete fences and original/default coordination remain unchanged', () => {
+  const policy = packet.report.coordinationPolicy;
+  assert.equal(policy.nativeAccepted, false); assert.equal(policy.databaseRoots.length, 11);
+  for (const target of policy.databaseRoots) {
+    const row = packet.report.backend.find(row => row.system === 'MASTER' && row.originalTarget === target);
+    const source = packet.output.get('MASTER/' + row.target);
+    assert.equal(source.split("coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true").length, 2, target);
+    assert.doesNotMatch(read(row.source), /coordination:'CONTROL_CAS_CANDIDATE'/, 'Generic root must not change');
+    // A caller/browser must not be able to override these server-owned options.
+    assert.doesNotMatch(source, /coordination:\s*(?:request|input)\./);
+  }
+  for (const target of ['stockCurrentAccountPurchase.js', 'stockCurrentPurchaseOrders.js', 'stockCurrentSourceSales.js']) {
+    const source = packet.output.get('MASTER/' + moduleName(target));
+    assert.match(source, /createSegmentedFencedProof\(\{company,store:create(?:OrderFile|CustomerDocument)FencedStore/);
+  }
+  for (const target of ['stockCurrentPacking.js', 'stockCurrentWarehouse.web.js']) {
+    assert.match(packet.output.get('MASTER/' + moduleName(target)), /createPhotoProtocol:[\s\S]*createSegmentedFencedProof\(\{company,domainWrites:true,stepsPerInvocation:1,/);
+  }
+  const commands = packet.output.get('MASTER/r2stockCurrentCommands.js');
+  assert.match(commands, /coordination = 'EXCLUSIVE_LOCK', batchApplyReads = false/);
+  for (const message of ['Durable pending packing photo operation required', 'Durable pending']) assert.ok(commands.includes(message));
+  assert.doesNotMatch(packet.output.get('MASTER/r2stockMaintenanceAdmin.web.js'), /CONTROL_CAS_CANDIDATE/);
+});
 test('one token pass pairs storage names with projection keys without changing partial function names or shared identity', () => {
   assert.equal(collectionTokens("tables.PurchaseOrders; 'StockClaims/id'; const getPurchaseOrders=1; 'StaffMasterAccess'; 'SharedSuppliers'; 'R2StockClaims'", 'MASTER'),
     "tables.R2PurchaseOrders; 'R2StockClaims/id'; const getPurchaseOrders=1; 'StaffMasterAccess'; 'SharedSuppliers'; 'R2StockClaims'");

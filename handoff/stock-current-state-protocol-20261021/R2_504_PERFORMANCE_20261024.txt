@@ -1,5 +1,17 @@
 2026-10-24 — user redirects priority to preventing recurring504
 
+SUBSEQUENT NATIVE EVIDENCE (not a replacement for the historical facts below):
+User explicitly authorized R2-only control-CAS adoption. Core and all11database
+constructor patches complete with fresh native before/after hashes. Separate
+twenty-image ten-step native test confirms known3write interruption and exact
+same-request recovery;641..4563ms/call. Separate actual20step native test confirms
+20conditional domain updates in9264ms,34total queries/22patches (includescontrol),
+full20image readback, single result and zero-write replay. No504in either small
+scenario, both gates CLOSED. This is measured native elapsed time, not merely mock
+query count; however901image/large-manifest capacity, genuine504late recovery and
+all business/auth paths remain unverified. No historical504elimination claim.
+See R2_CAS_NATIVE_ACCEPTANCE_20261024.json and R2_CAS20_NATIVE_ACCEPTANCE_20261024.json.
+
 User correctly distinguishes timeout prevention from data recovery. A recovery
 protocol is not evidence that504is solved. No native retry or new300scenario.
 

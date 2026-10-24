@@ -10,6 +10,20 @@ const { createFreshCohortBootstrap, createFreshCohortDefinitionInspector, contro
 const checkout = path.resolve(__dirname, '../../..');
 const text = file => fs.readFileSync(path.join(checkout, file), 'utf8').replace(/\r\n/g, '\n');
 const hash = value => createHash('sha256').update(value).digest('hex');
+// User authorized this R2-only policy after the second native timeout. Match
+// ONLY each plain database constructor. File/photo/delete constructors retain
+// their existing exclusive-lock callback fences, as does maintenance tooling.
+const casDatabaseRoots = new Set(['stockCurrentAccountPurchase.js', 'stockCurrentBorrow.web.js',
+  'stockCurrentCostReference.js', 'stockCurrentExceptions.js', 'stockCurrentFulfilment.js',
+  'stockCurrentOrderIntake.js', 'stockCurrentPacking.js', 'stockCurrentPurchaseOrders.js',
+  'stockCurrentQuantityRead.js', 'stockCurrentSourceSales.js', 'stockCurrentWarehouse.web.js']);
+function r2DatabasePolicy(source, target) {
+  if (!casDatabaseRoots.has(target)) return source;
+  const anchor = target === 'stockCurrentBorrow.web.js'
+    ? 'createSegmentedFencedProof({ company, store, domainWrites: true })'
+    : 'createSegmentedFencedProof({company,store,domainWrites:true})';
+  return once(source, anchor, "createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true})");
+}
 function controlGuard() {
   const ids = ['NCT', 'GHR'].map(company => hash(JSON.stringify([company, 'STOCK_CONTROL'])).slice(0, 32));
   return 'const r2ControlIds = new Set(' + JSON.stringify(ids) + ');\n'
@@ -47,6 +61,7 @@ function buildIsolatedCohort() {
       dependencies.push(system + '/' + resolved);
       return resolved;
     });
+    if (system === 'MASTER') generated = r2DatabasePolicy(generated, target);
     if (system === 'FMCGMALAYSIA' && ['nctSalesIntake.js', 'masterFulfilmentClient.js', 'masterQuantityClient.js'].includes(target)) {
       let headers = 0;
       generated = generated.replace(/(['"]Content-Type['"]\s*:\s*['"]application\/json['"])/g, match => {
@@ -150,6 +165,8 @@ function buildIsolatedCohort() {
     retiredLocalOutputs: ['relays/integration/wix/packingListBridge.js',
       'FMCGMALAYSIA/r2catalogueSelection.web.js', 'FMCGMALAYSIA/r2fxRates.web.js'],
     originalModulesUntouched: true, originalHttpHandlersUntouched: true, collections: COLLECTIONS, routes: ROUTES,
+    coordinationPolicy: { databaseRoots: [...casDatabaseRoots].sort(), database: 'CONTROL_CAS_CANDIDATE',
+      batchApplyReads: true, externalCallbacks: 'EXCLUSIVE_LOCK', maintenance: 'EXCLUSIVE_LOCK', nativeAccepted: false },
     backend: [...modules.values()].sort((a, b) => (a.system + a.target).localeCompare(b.system + b.target)),
     relays, publicModules: [...publicModules.values()], bootstrapModules, staticResources, retainedDependencies: [...retained.values()],
     additionalControlFields: { cohort: 'TEXT', bootstrapMemberId: 'TEXT', bootstrapRequestId: 'TEXT' },

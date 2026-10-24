@@ -1,4 +1,11 @@
-2026-10-24 — LOCAL REVIEW CANDIDATE ONLY, NOT INSTALLED OR ACTIVATED
+2026-10-24 — USER AUTHORIZED R2-ONLY ADOPTION; NATIVE ACCEPTANCE STILL REQUIRED
+
+Explicit answer: permits only new R2 repair, continued acceptance and release.
+Compiler-only opt-in for eleven database roots, batchApplyReads true. Generic
+roots/default/maintenance and external file/photo/delete callback fences retained.
+Their lock-dependent pre/post checks were read before selection; do not select
+CAS for those callbacks or count unchanged strict paths as recovery accepted.
+The earlier pending-scope paragraphs below are retained historical evidence.
 
 Trigger: second distinct native300 diagnostic returned504 while applying its plan.
 Last confirmed APPLY639/901. Closed its native gate; retain UNKNOWN request/records.

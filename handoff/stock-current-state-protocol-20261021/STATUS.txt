@@ -1,5 +1,61 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST RUNTIME PARITY — ACTUAL20STEP SMALL NATIVE SCENARIO COMPLETED/CLOSED
+Read R2_CAS20_NATIVE_ACCEPTANCE_20261024.json. Distinct fixed StockProtocolTest
+prefix SPT-R2CAS20-20261024-73b4:, seven confirmed receipts, no deletions or locks.
+Twenty conditional domain updates in one invocation9264ms/34queries/22patches
+(includes control). Full20image final readback2200/generation1/single result and
+zero-write replay verified. Native complete CLOSED source8cbb21f5...650b1a and
+Autosave. No actual504in this small scenario. Not901capacity/real504late recovery,
+business/auth/allwriter or release. Keep both earlier UNKNOWN scenarios untouched.
+Whole stock regression1498pass0fail37615.8208ms, tool20816. New twenty-step generated
+wrapper and prior test paths focused3pass132.3641ms. Defaults and original business
+files remain untouched. No current user action needed. Remaining actual300line
+capacity, staff/public authorization, external callback recovery, activation
+verifier/schema/coverage integration and operational/public release gates remain.
+
+LATEST INSTALLATION — USER MANUAL REPLACE SUCCEEDED; ALL11 DATABASE ROOTS EXACT
+User clicked prepared SourceSales Replace All. Fresh entire source equals generated
+faeb1361...0cfa, not inferred from user reply alone. Changed state permitted one
+preflighted unique Replace All for seven remaining independent roots; EACH original
+and whole afterimage exact, Autosave on. Core plus all11R2 database roots now saved
+drafts; R2_CAS_INSTALL_20261024.json records all12before/after hashes. File/photo/
+delete/maintenance lock constructors unchanged. No current manual action pending.
+Private screenshot r2-cas-eleven-roots-saved-20261024.png outside checkout. No Publish,
+Pages change, activation or public Buyer order test; native capacity/auth/external
+recovery and allwriter evidence still mandatory. Earlier partial-install handoff
+below is superseded, preserved audit only.
+
+LATEST NATIVE R2 CAS — TWENTY SYNTHETIC IMAGES ACCEPTED, PARTIAL INSTALL
+Read R2_CAS_NATIVE_ACCEPTANCE_20261024.json and R2_CAS_INSTALL_20261024.json.
+Twelve actual native receipts: seed, bounded advance, known three-write interruption,
+read barrier, same-request recovery, full20images/generation1/single result, replay
+with ZERO writes. Each backend call641..4563ms; no504in this small scenario.144queries,
+24inserts/31patches/0deletes. No locks created or removed; all test rows retained.
+Diagnostic gate CLOSED, exact whole source a9ff8e85...bc6d0. Both earlier UNKNOWN
+scenarios untouched. NOT native901capacity/all-writer/business/real504late recovery.
+Native core plus OrderIntake/Borrow/Warehouse one-constructor patches exact saved.
+SourceSales Replace twice unchanged; pathSTOPPED and user asked ONE manual Replace
+All of prepared unique constructor. Browser released, current51427447 marked handoff.
+Other eight roots not confirmed installed; no blind retry/alternate input. Native
+test steps10versus business default20performance parity still pending. File/photo/
+delete strict callbacks not silently switched. Allwriter coverage EMPTY/ACTIVE OFF.
+Local affected28pass1243.1553ms; diagnostic2pass185.2399ms after repairing local mock
+phase assertion. Whole stock dot run35637 exited1 with exactly2stale UI-manifest hash
+failures; rebuilt local business-ui-install.json, affected14pass850.3373ms. No clean
+post-repair whole run claimed. No Pages deployment/WixPublish/public Buyer acceptance.
+
+LATEST AUTHORIZATION — user explicitly permits new R2 coordination repair and
+continued paired installation/acceptance/release. Supersedes pending-scope text
+below. Original production and two UNKNOWN exclusive-lock scenarios untouched.
+R2 compiler selects server-only control-CAS plus APPLY batch reads for eleven plain
+database constructors. File/photo/delete callback constructors still require their
+exact original exclusive-lock fences; maintenance remains strict. No claim that
+those external paths have passed timeout recovery. ACTIVE remains closed until
+actual all-writer/native gates pass. Context-loss re-read of current handoffs and
+callback dependencies; reuse unchanged root framework. Recoverable originals remain
+d447185/runtime32b812c; prior R2 packet recorded in ad3aaef, local precursor5746585.
+
 USER REDIRECTED PRIORITY: FIX504 ITSELF, NOT ONLY RECOVER FROM IT
 Read R2_504_PERFORMANCE_20261024.txt. Native 7day Monitoring confirms workspace
 EXECUTION_TIMEOUT47 and intake DispatcherRuntimeTimeout3.293total failures are not

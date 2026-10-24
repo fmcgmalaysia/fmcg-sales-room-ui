@@ -1,10 +1,10 @@
 {
   "cohort":"MASTER_20261024_R2",
-  "codeCheckpoint":"83e0cd5 plus local CAS coordination review candidate",
+  "codeCheckpoint":"5746585 plus authorized R2 CAS compiler/policy and native twenty-image acceptance; partial installation recorded separately",
   "protectedRecovery":"d447185987fecbb81bcaf6b25c170f631f767f9f",
   "protectedRuntime":"32b812c655e1083306037c008314c72373a15f72",
   "fourStages":{
-    "codeVersion":"Candidate implemented; native seven page relays and 109 new backend/Admin/public files saved with exact readbacks; operational/native release acceptance incomplete",
+    "codeVersion":"Candidate implemented; new R2 core plus all eleven database constructor patches exact saved, Autosave on. SourceSales manual Replace All resolved and full source independently verified. Operational/native release acceptance incomplete; external callbacks retain original strict fences",
     "githubPages":"112-resource code-only artifact local; NOT deployed or fresh public marker verified; broader technical-handoff public export explicitly approved by user",
     "wixStudio":"Both systems saved DRAFTS only; no whole-site Publish/live receipt; both new company controls MAINTENANCE, not ACTIVE",
     "publicVerification":"New Buyer order, split, borrow, partial/full repay, moved/archived relations and Loaded have NOT been accepted on public pages"
@@ -24,6 +24,7 @@
     "indexPendingManual":"None. User screenshots confirm exact definitions; final Products spinner replaced by Delete",
     "indexActiveStatus":"UNCONFIRMED: native API WDE0144 twice including approved narrow elevation; API path stopped, unused privilege removed; CMS list is not SDK ACTIVE proof",
     "actualStoredControlTypes":"Builtin readback validates company/cohort/version TEXT, generation/schema/transfer NUMBER and pending null; NOT all stored business date/array/CAS/capacity/recovery acceptance",
+    "casAcceptance":"Distinct ten-step/twenty-image native scenario: twelve receipts, known three-write interruption, same-request recovery, complete readback and zero-write replay.641..4563ms per call. Separate actual twenty-step runtime scenario: seven receipts,20updates9264ms/34queries/22patches, final20images and zero-write replay. Neither observed504; both diagnostic gates CLOSED and full source exact. NOT901capacity/business/genuine504late recovery. See both R2_CAS_NATIVE_ACCEPTANCE_20261024.json and R2_CAS20_NATIVE_ACCEPTANCE_20261024.json",
     "newCapacityScenario":{
       "prefix":"SPT-R2CAPACITY-20261024-9e72:",
       "confirmedReceipts":94,
@@ -43,7 +44,7 @@
   "remainingMandatory":[
     "Explicit native index status verification; all requested definitions visibly complete",
     "Resolve native tester staff identity mismatch without staff creation or auth relaxation; actual staff/public authorization acceptance",
-    "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance; exclusive-lock scenario stopped at504, local control-CAS alternative requires scope decision and further evidence",
+    "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance; R2 control-CAS adoption explicitly authorized, small native test passes, complete installation/real business/runtime-capacity and external callback recovery remain unverified",
     "Real split/ALLOC borrow/repay/reload/moved-row/archived relationship and Loaded visible acceptance",
     "Approved paired Pages build, Wix publish/live receipt and force-refreshed public verification; public technical-export consent already received"
   ],
