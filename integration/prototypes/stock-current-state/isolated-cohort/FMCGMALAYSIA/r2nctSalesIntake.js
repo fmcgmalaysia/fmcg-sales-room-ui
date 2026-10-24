@@ -1,3 +1,5 @@
+import { items as r2Items } from '@wix/data';
+import { randomBytes as r2RandomBytes } from 'crypto';
 // Install only in the FMCGMALAYSIA source site backend. Existing auth and payload writers are injected.
 import wixData from 'wix-data';
 import { fetch } from 'wix-fetch';
@@ -39,12 +41,12 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         // The protected withSalesOrderMutation already acquired this exact ordinary Sales lock.
         const current = await ownLock(key);
         if (!current.record || current.value.action !== 'ORDER_MUTATION_LOCK' || current.value.source ||
-            current.value.orderId !== key || current.value.customerId !== proposal.customerId) throw new Error('Existing Sales lock changed.');
-        const record = await wixData.update(AUDIT, { ...current.record, payload: JSON.stringify(proposal) }, { suppressAuth: true });
+            current.value.orderId !== key || current.value.customerId !== proposal.customerId || !lockedOrderEntry.r2MutationOwner || current.value.r2Owner !== lockedOrderEntry.r2MutationOwner) throw new Error('Existing Sales lock changed.');
+        const record = await r2Items.patch(AUDIT, current.record._id).setField('payload', JSON.stringify({ ...proposal, r2Owner: current.value.r2Owner })).run({ condition: { payload: { $eq: current.record.payload } } });
         return data(record);
       }
       const record = await wixData.insert(AUDIT, {
-        _id: lockId(key), title: lockId(key), payload: JSON.stringify(proposal)
+        _id: lockId(key), title: lockId(key), payload: JSON.stringify({ ...proposal, r2Owner: r2RandomBytes(16).toString('hex') })
       }, { suppressAuth: true });
       return data(record);
     },
@@ -52,7 +54,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       const current = await ownLock(key);
       if (!current.record || current.value.source !== 'NCT MASTER INTAKE' || current.value.orderId !== key ||
           current.value.customerId !== proposal.customerId || current.value.preparedBody) throw new Error('Submission lock changed.');
-      await wixData.update(AUDIT, { ...current.record, payload: JSON.stringify(proposal) }, { suppressAuth: true });
+      await r2Items.patch(AUDIT, current.record._id).setField('payload', JSON.stringify(proposal)).run({ condition: { payload: { $eq: current.record.payload } } });
     },
     async releaseOwnLock(key, submissionId) {
       if (lockedOrderEntry) return; // The original Sales wrapper owns cleanup for this call.
@@ -60,7 +62,7 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
       if (!current.record) return;
       if (current.value.source !== 'NCT MASTER INTAKE' || current.value.orderId !== key ||
           (current.value.preparedBody && current.value.preparedBody.submissionId !== submissionId)) return;
-      await wixData.remove(AUDIT, current.record._id, { suppressAuth: true });
+      await r2Items.remove(AUDIT, current.record._id, { condition: { payload: { $eq: current.record.payload } } });
     },
     async writeAcceptedAuditOnce(body, receipt) {
       const eventId = body.destination + '-SUBMITTED-' + createHash('sha256').update(body.orderId).digest('hex').slice(0, 32);
@@ -87,10 +89,16 @@ export async function submitNctSalesOrder({ orderId, staff, authorizeCustomer, r
         return;
       }
       if (current.data.destination || current.data.submittedAt) throw new Error('Order was transferred without this receipt.');
-      await putPayload(ORDERS, current.record.title, { ...current.data, status: 'SUBMITTED TO ' + body.destination,
+      const next = { ...current.data, status: 'SUBMITTED TO ' + body.destination,
         destination: body.destination, submittedAt: body.submittedAt, submittedBy: body.submittedByEmail,
         submittedByStaffId: body.submittedByStaffId, submittedByStaffName: body.submittedByStaffName,
-        nctSubmissionBody: body, masterReceipt: receipt });
+        nctSubmissionBody: body, masterReceipt: receipt };
+      await r2Items.patch(ORDERS, current.record._id)
+        .setField('title', text(current.record.title)).setField('payload', JSON.stringify(next))
+        .setField('customerId', text(next.customerId)).setField('orderId', text(next.orderId))
+        .setField('orderSortKey', text(next.confirmedAt) + '|' + text(next.orderId))
+        .setField('status', text(next.status).toUpperCase()).setField('isComplete', Boolean(next.isComplete))
+        .run({ condition: { payload: { $eq: current.record.payload } } });
     }
   };
   if (reconcileOnly) {

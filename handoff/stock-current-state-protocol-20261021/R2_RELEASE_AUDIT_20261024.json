@@ -1,10 +1,10 @@
 {
   "cohort":"MASTER_20261024_R2",
-  "codeCheckpoint":"5746585 plus authorized R2 CAS compiler/policy and native twenty-image acceptance; partial installation recorded separately",
+  "codeCheckpoint":"bb0b9aa plus ASTRA_RELEASE_REVIEW_20261024 patches: bounded intake preparation, long UI progress, Source conditional finalization/owner release; 1511 stock tests pass",
   "protectedRecovery":"d447185987fecbb81bcaf6b25c170f631f767f9f",
   "protectedRuntime":"32b812c655e1083306037c008314c72373a15f72",
   "fourStages":{
-    "codeVersion":"Candidate implemented; new R2 core plus all eleven database constructor patches exact saved, Autosave on. SourceSales manual Replace All resolved and full source independently verified. Operational/native release acceptance incomplete; external callbacks retain original strict fences",
+    "codeVersion":"R2 core and all eleven database roots saved. Astra follow-up MASTER core and Source intake/onboarding minimal patches exact read back, Autosave on; native staff/operational acceptance incomplete. External callbacks retain strict fences; see ASTRA_RELEASE_REVIEW_20261024.txt",
     "githubPages":"112-resource code-only artifact local; NOT deployed or fresh public marker verified; broader technical-handoff public export explicitly approved by user",
     "wixStudio":"Both systems saved DRAFTS only; no whole-site Publish/live receipt; both new company controls MAINTENANCE, not ACTIVE",
     "publicVerification":"New Buyer order, split, borrow, partial/full repay, moved/archived relations and Loaded have NOT been accepted on public pages"
@@ -42,9 +42,10 @@
     "quotation":"Original selection/QD callback, staff and FX native dependencies preserved; three optional display mapping lines excluded"
   },
   "remainingMandatory":[
-    "Explicit native index status verification; all requested definitions visibly complete",
+    "Native required query acceptance; all requested index definitions visibly complete, SDK ACTIVE status unconfirmed and denied path remains stopped",
     "Resolve native tester staff identity mismatch without staff creation or auth relaxation; actual staff/public authorization acceptance",
     "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance; R2 control-CAS adoption explicitly authorized, small native test passes, complete installation/real business/runtime-capacity and external callback recovery remain unverified",
+    "Native activation wrapper/server-owned verifier, required control audit fields and all20 exact-build writer coverage; pure local activation module is not installed readiness",
     "Real split/ALLOC borrow/repay/reload/moved-row/archived relationship and Loaded visible acceptance",
     "Approved paired Pages build, Wix publish/live receipt and force-refreshed public verification; public technical-export consent already received"
   ],

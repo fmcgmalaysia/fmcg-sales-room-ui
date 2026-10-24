@@ -1118,10 +1118,17 @@ window.addEventListener('message',event=>{
     if(pending.phase!=='SUBMIT')return;
     const valid=message.ok===false&&message.destination===pending.destination&&message.submissionId===pending.destination+'-'+order.orderId
       &&['BEFORE','APPLY','VERIFY'].includes(message.phase)&&Number.isSafeInteger(message.completedCount)&&Number.isSafeInteger(message.totalRecords)
-      &&message.totalRecords>0&&message.completedCount>=0&&message.completedCount<=message.totalRecords;
+      &&message.totalRecords>0&&message.totalRecords<=10000&&message.completedCount>=0&&message.completedCount<=message.totalRecords;
     if(!valid){pending.error='Master intake progress is unconfirmed. Original order retained.';checkNctReceipt(pending);return;}
-    pending.continuations=(pending.continuations||0)+1;
-    if(pending.continuations>64){pending.error='Automatic progress paused. Retry only this same order.';finishNctUncertainty(pending);return;}
+    const position=['BEFORE','APPLY','VERIFY'].indexOf(message.phase)*(message.totalRecords+1)+message.completedCount;
+    if(pending.progressTotal!==undefined&&(pending.progressTotal!==message.totalRecords||position<pending.progressPosition)){
+      pending.error='Master intake progress changed unexpectedly. Original order retained.';checkNctReceipt(pending);return;
+    }
+    pending.unchangedProgress=position===pending.progressPosition?(pending.unchangedProgress||0)+1:0;
+    pending.progressTotal=message.totalRecords;pending.progressPosition=position;
+    // Bounded by the immutable plan and strictly increasing phase/cursor, not an
+    // arbitrary call count that stops a healthy 300-line order halfway through.
+    if(pending.unchangedProgress>=3){pending.error='Automatic progress paused. Retry only this same order.';finishNctUncertainty(pending);return;}
     pending.phase='CONTINUE';salesQtyBusy(true);
     const text='Master receiving 正在接收订单 · '+message.phase+' · '+message.completedCount+' / '+message.totalRecords;
     const status=document.getElementById('salesQtyStatus');if(status)status.textContent=text;

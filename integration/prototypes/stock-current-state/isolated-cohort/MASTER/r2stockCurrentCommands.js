@@ -7257,7 +7257,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
 module.exports = { dispatchCurrentSalesGateway };
 
 },
-// current-order-intake.cjs sha256:a75380d8ac17df4d208801e67a5edb71205984e9b3eb8109a82c0f72fa84790c
+// current-order-intake.cjs sha256:55970d5172a60e2a4c5213f995711e4d98896349da38cd4af4dc3c4ec40e5a7b
 "current-order-intake.cjs": (load, module) => {
 'use strict';
 
@@ -7332,17 +7332,28 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
           await exact(journal, hash(...base, 'PREPARED'));
           await exact(journal, hash(...base, 'ACCEPTED'));
           await exact(otherJournal, hash(...base, 'PREPARED'));
-          for (const line of input.lines) {
-            await exact(orders, hash(...base, line.sourceLineId, 'ORDER'));
-            await exact(tasks, hash(...base, line.sourceLineId, 'TASK'));
-            await exact(journal, hash(...base, line.sourceLineId, 'INITIAL_COST'));
+          // Native SDK readMany uses complete strong exact-ID batches of fifty.
+          // Keep the same snapshot barrier and fail on incomplete/foreign data;
+          // a batch failure must never turn an existing row into an absent row.
+          const exactMany = async (collection, ids) => {
+            const rows = typeof store.readMany === 'function'
+              ? await store.readMany(collection, ids)
+              : await (async () => { const values = []; for (const id of ids) values.push(await store.read(collection, id)); return values; })();
+            if (!Array.isArray(rows) || rows.length !== ids.length || rows.some((row, index) => row !== null
+              && (!row || row._id !== ids[index] || row.company !== company))) throw Error('Complete exact intake batch required');
+            return rows;
+          };
+          for (const [collection, suffix] of [[orders, 'ORDER'], [tasks, 'TASK'], [journal, 'INITIAL_COST']]) {
+            tables[collection].push(...(await exactMany(collection, input.lines.map(line => hash(...base, line.sourceLineId, suffix)))).filter(row => row !== null));
           }
           const products = new Map();
           for (const line of input.lines) {
             const product = { company, barcode: line.unitBarcode, packing: line.packingSize, ea: line.eaPerCtn };
             const key = stockKey(product);
-            if (!products.has(key)) products.set(key, { identity: product, row: await store.read('R2StockProducts', hash(company, key)) });
+            if (!products.has(key)) products.set(key, { identity: product, row: null });
           }
+          const productRows = await exactMany('R2StockProducts', [...products.keys()].map(key => hash(company, key)));
+          [...products.values()].forEach((entry, index) => { entry.row = productRows[index]; });
           return prepareOrderIntake({ company, body: input, tables, createNctIntake, createNctReceiptReader,
             captureCosts, now, planFormat: 'SEGMENTED_V2', generation: control.generation, productRows: [...products.values()] });
         });

@@ -1,3 +1,5 @@
+import { items as r2Items } from '@wix/data';
+import { randomBytes as r2RandomBytes } from 'crypto';
 import { requestMasterFulfilment } from 'backend/r2masterFulfilmentClient.js';
 import { withMasterQuantities } from 'backend/r2masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
@@ -786,8 +788,8 @@ async function withSalesOrderMutation(orderId, staff, action) {
   if (!initial) throw new Error('Order was not found.');
   await findAuthorizedCustomer(initial.data.customerId, staff);
   if (initial.data.receiptOnly) throw new Error('This submission is a receipt. Open its active order task instead.');
-  const lockId = 'ORDER-LOCK-' + id;
-  try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString() }) }, { suppressAuth: true }); }
+  const lockId = 'ORDER-LOCK-' + id, r2MutationOwner = r2RandomBytes(16).toString('hex');
+  try { await wixData.insert(BUYER_ORDER_AUDIT_COLLECTION, { _id: lockId, title: lockId, payload: JSON.stringify({ action: 'ORDER_MUTATION_LOCK', orderId: id, customerId: initial.data.customerId, at: new Date().toISOString(), r2Owner: r2MutationOwner }) }, { suppressAuth: true }); }
   catch (error) {
     let lock = null;
     try { lock = await wixData.get(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true, consistentRead: true }); } catch (_) { /* Preserve the actual insert error when no lock exists. */ }
@@ -797,10 +799,17 @@ async function withSalesOrderMutation(orderId, staff, action) {
   let release = true;
   try {
     const record = await wixData.get(BUYER_ORDER_COLLECTION, initial.record._id, { suppressAuth: true, consistentRead: true });
-    return await action({ record, data: payloadData(record) });
+    return await action({ record, data: payloadData(record), r2MutationOwner });
   } catch (error) { release = !error.keepOrderMutationLock; throw error; }
   finally {
-    if (release) await wixData.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { suppressAuth: true });
+    if (release) {
+      const page = await wixData.query(BUYER_ORDER_AUDIT_COLLECTION).eq('_id', lockId).limit(2).find({ suppressAuth: true, consistentRead: true });
+      if (!Array.isArray(page.items) || page.items.length > 1) throw Error('Exact R2 order lock read required');
+      const held = page.items[0];
+      if (held && payloadData(held)?.r2Owner === r2MutationOwner) {
+        await r2Items.remove(BUYER_ORDER_AUDIT_COLLECTION, lockId, { condition: { payload: { $eq: held.payload } } });
+      }
+    }
   }
 }
 

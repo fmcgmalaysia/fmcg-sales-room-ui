@@ -62,6 +62,7 @@ function buildIsolatedCohort() {
       return resolved;
     });
     if (system === 'MASTER') generated = r2DatabasePolicy(generated, target);
+    if (system === 'FMCGMALAYSIA') generated = require('./r2-source-conditional-overlay.cjs')(generated, target);
     if (system === 'FMCGMALAYSIA' && ['nctSalesIntake.js', 'masterFulfilmentClient.js', 'masterQuantityClient.js'].includes(target)) {
       let headers = 0;
       generated = generated.replace(/(['"]Content-Type['"]\s*:\s*['"]application\/json['"])/g, match => {

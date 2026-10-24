@@ -1,5 +1,18 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST ASTRA HIGH REVIEW — THREE REAL DEFECTS PATCHED; THREE DRAFT FILES EXACT
+Read ASTRA_RELEASE_REVIEW_20261024.txt before older entries. Actual300distinct-line
+intake preparation1203->27queries (local parity), UI no longer stops healthy progress
+at64calls, actual R2 Source delayed finalization/lock-release defects reproduced and
+patched with conditions/owners while preserving all list projection fields. Final
+stock regression1511pass0fail35588.3949ms. MASTER core and Source intake/onboarding
+minimal patches saved and whole-source exact readback; hashes in review. Pages UI
+only rebuilt locally. No Publish/ACTIVE/public acceptance. Mixed file/CAS safety
+passes local tests, but still-running file/photo504 recovery remains UNPROVEN, not
+silently switched. Native real-intake capacity/staff SDK authorization/allwriter proof,
+activation verifier/schema/coverage and visible business flow remain. No current
+manual UI action pending; no old UNKNOWN replay/unlock, no permission expansion.
+
 LATEST RUNTIME PARITY — ACTUAL20STEP SMALL NATIVE SCENARIO COMPLETED/CLOSED
 Read R2_CAS20_NATIVE_ACCEPTANCE_20261024.json. Distinct fixed StockProtocolTest
 prefix SPT-R2CAS20-20261024-73b4:, seven confirmed receipts, no deletions or locks.

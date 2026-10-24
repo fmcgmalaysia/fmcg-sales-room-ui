@@ -5,13 +5,13 @@
   "originalPathsUntouched": true,
   "deployPerformed": false,
   "activationAllowed": false,
-  "backendInstallManifestSha256": "d52bbb8eca64340822f0c69feb355f0779806cb626f3c20ac6590dafd7b356a2",
+  "backendInstallManifestSha256": "c8b5751914c0ba9c0c0e44fe366b39a07da2ae40d1aad30812cadba5a3305c08",
   "install": [
     {
       "source": "source-ui/index.html",
       "target": "index.html",
       "kind": "PAGES",
-      "sha256": "0fcb2b9be0ec35af9035459b48d76d3cdd9b9055ea96653de3b3714f72e8a238",
+      "sha256": "c135957abca15b49aa84b89f982ee82eaf6cc26d26604deadad1759c39780073",
       "beforeSha256": "d5b411d6796967608fcc7ab257c64d0664d12013115ab9b5344c8466e09430de"
     },
     {

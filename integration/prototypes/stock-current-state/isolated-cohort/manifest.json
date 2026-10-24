@@ -159,7 +159,7 @@
       "dependencies": [
         "FMCGMALAYSIA/r2nctSubmissionDelivery.js"
       ],
-      "sha256": "f2cefe5acb9d60ed97bae6921ac12703597f65886cdd8fffae10058a8ef62c9f"
+      "sha256": "a8f9c6c91d86deebaa1323cc1ba923d3eb3cfdb5dcd7c63ca5b6cd372a34d52b"
     },
     {
       "system": "FMCGMALAYSIA",
@@ -192,7 +192,7 @@
         "FMCGMALAYSIA/r2masterQuantityClient.js",
         "FMCGMALAYSIA/r2nctSalesIntake.js"
       ],
-      "sha256": "4e91ee3ac6c7edba3d0e778ff01cf4ce5a50c389ec2983288d1646c133fb1c61"
+      "sha256": "31f03a7d7b3f61ae7f92c77907d981d3a3b15085d91db9612e30d4c770c58b2c"
     },
     {
       "system": "MASTER",
@@ -1044,9 +1044,9 @@
       "target": "r2stockCurrentCommands.js",
       "originalTarget": "stockCurrentCommands.js",
       "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
-      "sourceSha256": "44eb7133e9c3ac6642831dac3ddb3ab3b0e5d2010e1bba0f6c85513192c0ebf6",
+      "sourceSha256": "67a3c9c8c7bb6e60c869935577d17c7de118134cdfc4102749bbf92db79b6f61",
       "dependencies": [],
-      "sha256": "2ff974630461fe4a183db8fa89b2411f10eb8eb4d3b86d6f81eb8fba59a39c76"
+      "sha256": "76e0b8d47800e0cbd59c879577536656822ff370c8846372e77f398c1a4109ea"
     },
     {
       "system": "MASTER",
@@ -1563,8 +1563,8 @@
     {
       "source": "integration/prototypes/stock-current-state/source-ui/index.html",
       "target": "index.html",
-      "sourceSha256": "0fcb2b9be0ec35af9035459b48d76d3cdd9b9055ea96653de3b3714f72e8a238",
-      "sha256": "560174eaa5b242994c7c1b7481710c59283639f8602f6f42e386c4c847c26b20"
+      "sourceSha256": "c135957abca15b49aa84b89f982ee82eaf6cc26d26604deadad1759c39780073",
+      "sha256": "45a88b17be018b1760cb607524a1a894f83e344b495e4cd988342fb0c9cc7fc5"
     },
     {
       "source": "integration/prototypes/stock-current-state/source-ui/current-requests.js",

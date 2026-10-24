@@ -103,3 +103,22 @@ test('actual Source browser/parent/wrapper/adapter/generated Master intake compl
   assert.equal(ui.renders.length, 1); assert.equal(f.master.captures(), 1); assert.equal(f.source.state().order.masterReceipt.taskIds.length, 100); assert.equal(f.source.rows.has('WixOrderAudit/ORDER-LOCK-ORDER'), false);
   assert.match(ui.dialog.innerHTML, /交单成功/); assert.equal(f.master.control().generation, 1);
 });
+
+test('healthy 1202-image progress passes 64 continuations; duplicate progress, regressions and changed totals remain bounded', () => {
+  const f = browserFixture(); f.start(); let continuations = 0;
+  for (const phase of ['BEFORE', 'APPLY', 'VERIFY']) for (let cursor = 20; cursor <= 1220; cursor += 20) {
+    const request = f.requests.at(-1), before = f.requests.length;
+    f.respond({ ...progress(request), requestId: request.requestId, phase, totalRecords: 1202, completedCount: Math.min(cursor, 1202) });
+    f.timers.at(-1)(); assert.equal(f.requests.length, before + 1);
+    assert.equal(f.requests.at(-1).type, 'SALES_ROOM_SUBMIT_ORDER'); continuations++;
+  }
+  assert.equal(continuations, 183); assert.equal(f.renders.length, 0);
+  f.respond({ ok: true, requestId: f.requests.at(-1).requestId, receiptId: 'R', destination: 'NCT', masterReceivedAt: '2026-10-24T03:00:00Z' });
+  assert.equal(f.renders.length, 1);
+  for (const extra of [{ completedCount: 5 }, { totalRecords: 101 }, { totalRecords: 10001 }]) {
+    const g = browserFixture(); g.start(); g.respond(progress(g.requests.at(-1))); g.timers.at(-1)();
+    const request = g.requests.at(-1);
+    g.respond({ ...progress(request, extra), requestId: request.requestId });
+    assert.equal(g.requests.at(-1).type, 'SALES_ROOM_NCT_RECEIPT_REQUEST'); assert.equal(g.renders.length, 0);
+  }
+});
