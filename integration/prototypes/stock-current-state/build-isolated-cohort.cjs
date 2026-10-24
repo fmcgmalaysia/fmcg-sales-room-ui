@@ -6,7 +6,7 @@ const fs = require('node:fs'), path = require('node:path'), { createHash } = req
 const { inspectInstall } = require('./build-current-install-manifest.cjs');
 const { definition: uiDefinition } = require('./build-business-ui-install.cjs');
 const { COHORT, COLLECTIONS, ROUTES, moduleName, imports, transformModule } = require('./isolated-cohort.cjs');
-const { createFreshCohortBootstrap, controlFields } = require('./fresh-cohort-bootstrap.cjs');
+const { createFreshCohortBootstrap, createFreshCohortDefinitionInspector, controlFields } = require('./fresh-cohort-bootstrap.cjs');
 const checkout = path.resolve(__dirname, '../../..');
 const text = file => fs.readFileSync(path.join(checkout, file), 'utf8').replace(/\r\n/g, '\n');
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -135,7 +135,10 @@ function buildIsolatedCohort() {
       "async function authenticateAdmin(){const member=await currentMember.getMember({fieldsets:['FULL']});if(member?.status!=='APPROVED'||typeof member._id!=='string'||!member._id||member._id.length>200)throw Error('Actual approved administrator identity required');return{isAdmin:true,memberId:member._id};}",
       'const service=createFreshCohortBootstrap({system:' + JSON.stringify(system) + ',items,collections,authenticateAdmin});',
       'export const inspectFreshCohort=webMethod(Permissions.Admin,input=>service.inspect(input));',
-      ...(system === 'MASTER' ? ['export const initializeFreshCohort=webMethod(Permissions.Admin,input=>service.initialize(input));'] : []), ''
+      ...(system === 'MASTER' ? ['export const initializeFreshCohort=webMethod(Permissions.Admin,input=>service.initialize(input));'] : []),
+      createFreshCohortDefinitionInspector.toString(),
+      'const definitions=createFreshCohortDefinitionInspector({system:' + JSON.stringify(system) + ',collections,authenticateAdmin});',
+      'export const inspectFreshCollectionDefinition=webMethod(Permissions.Admin,input=>definitions.inspect(input));', ''
     ].join('\n');
     output.set(system + '/r2cohortBootstrap.web.js', source);
     bootstrapModules.push({ system, target: 'r2cohortBootstrap.web.js', source: 'integration/prototypes/stock-current-state/fresh-cohort-bootstrap.cjs',

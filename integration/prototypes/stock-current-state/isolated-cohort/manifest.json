@@ -1528,14 +1528,14 @@
       "system": "MASTER",
       "target": "r2cohortBootstrap.web.js",
       "source": "integration/prototypes/stock-current-state/fresh-cohort-bootstrap.cjs",
-      "sha256": "f36e3108eac00b7041372813ac7e52cc41e925f91df2d974bf891f55d565d291",
+      "sha256": "a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507",
       "activationAllowed": false
     },
     {
       "system": "FMCGMALAYSIA",
       "target": "r2cohortBootstrap.web.js",
       "source": "integration/prototypes/stock-current-state/fresh-cohort-bootstrap.cjs",
-      "sha256": "d9a9d2202c85165266bcfe18b57f780c02664c039df54eb7f10f063d1593d8be",
+      "sha256": "8bf3967b63797e9e3b6d65adaa39c2075e0a7f1e2c550f5afa21fe69215635c0",
       "activationAllowed": false
     }
   ],

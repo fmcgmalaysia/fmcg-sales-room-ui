@@ -82,3 +82,33 @@ async function authenticateAdmin(){const member=await currentMember.getMember({f
 const service=createFreshCohortBootstrap({system:"MASTER",items,collections,authenticateAdmin});
 export const inspectFreshCohort=webMethod(Permissions.Admin,input=>service.inspect(input));
 export const initializeFreshCohort=webMethod(Permissions.Admin,input=>service.initialize(input));
+function createFreshCohortDefinitionInspector({ system, collections, authenticateAdmin }) {
+  if (!Object.hasOwn(COLLECTIONS, system) || typeof collections?.getDataCollection !== 'function'
+    || typeof authenticateAdmin !== 'function') throw Error('Native definition-read dependencies required');
+  async function admin(owner) {
+    const actor = await authenticateAdmin();
+    if (actor?.isAdmin !== true || typeof actor.memberId !== 'string' || !actor.memberId || owner && actor.memberId !== owner) throw Error('Actual same administrator required');
+    return actor.memberId;
+  }
+  async function inspect(input) {
+    if (!input || Array.isArray(input) || Object.keys(input).join(',') !== 'collection'
+      || !Object.values(COLLECTIONS[system]).includes(input.collection)) throw Error('Exact new-cohort collection definition required');
+    const owner = await admin(), target = input.collection;
+    const before = await collections.getDataCollection(target, { consistentRead: true });
+    if (before?._id !== target || !['string', 'number'].includes(typeof before.revision) || !String(before.revision)
+      || !Array.isArray(before.fields) || before.fields.length > 500 || new Set(before.fields.map(field => field.key)).size !== before.fields.length
+      || ['read', 'insert', 'update', 'remove'].some(op => before.permissions?.[op] !== 'ADMIN')) throw Error('Complete private collection metadata required');
+    // Index API path stopped after native WDE0144 both normally and with the
+    // user's narrowly approved elevation. Do not repeat it or infer ACTIVE.
+    const after = await collections.getDataCollection(target, { consistentRead: true });
+    if (!same(before, after)) throw Error('Collection definition changed during readback');
+    await admin(owner);
+    return { cohort: COHORT, system, collection: target, metadata: before, indexes: null,
+      fieldsComplete: true, indexesComplete: false, permissionsComplete: true,
+      indexReadStatus: 'NOT_READ_API_PATH_STOPPED_WDE0144',
+      activationAllowed: false, businessRowsRead: false, mutationCapability: false };
+  }
+  return { inspect };
+}
+const definitions=createFreshCohortDefinitionInspector({system:"MASTER",collections,authenticateAdmin});
+export const inspectFreshCollectionDefinition=webMethod(Permissions.Admin,input=>definitions.inspect(input));

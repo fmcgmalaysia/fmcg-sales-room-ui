@@ -13,7 +13,7 @@
   ],
   "published": false,
   "active": false,
-  "initialized": false,
+  "initialized": "NCT_AND_GHR_MAINTENANCE_ONLY_SEE_R2_EMPTY_GENESIS",
   "restartConnectionCheck": {
     "existingIdeReadable": true,
     "reloaded": false,
@@ -116,7 +116,7 @@
     "r2customerCompletionProjection.js": "4b29b5746e2ac9712204cc95adfe394d8f747f5ad35930fe857142b97e2dd913",
     "r2customerDebtor.js": "71f1fc47b67adea1cf0e887ed48ef7c8bcd4e39e9e95496ab9634d620c5e20cb",
     "r2customerFulfilment.js": "9a8119f6fd6a42eeec8470a53df16cb44e9010f3f7a85fd7fee0b586ef31e534",
-    "r2cohortBootstrap.web.js": "f36e3108eac00b7041372813ac7e52cc41e925f91df2d974bf891f55d565d291",
+    "r2cohortBootstrap.web.js": "a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507",
     "r2nctIntake.js": "3ddeca7841492bb89e3706874e94256e6f58890ecf13300887014f378f95c72b",
     "r2purchaseTaskIdentity.js": "4eedca81fd82335bc363cd170e46db9212c4b1cb9108ce18d93078afc49fe052"
   },

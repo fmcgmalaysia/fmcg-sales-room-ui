@@ -1,0 +1,32 @@
+{
+  "cohort":"MASTER_20261024_R2",
+  "system":"MASTER",
+  "function":"r2cohortBootstrap.web.js/inspectFreshCollectionDefinition",
+  "nativeModuleSha256":"a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507",
+  "method":"One native fields-only call per exact collection; complete native Copy JSON; two matching metadata reads; no business-item capability or index API call",
+  "reference":"integration/prototypes/stock-current-state/native-setup-review.cjs currentNativeSetupContract().entries.fields",
+  "wireTypes":{"DATETIME":"DATE","DATE":"DATE_ONLY","ARRAY_STRING":"TEXT_ARRAY","OBJECT":"OBJECT_OR_NULL storage schema"},
+  "collectionsReviewed":10,
+  "requiredFieldsReviewed":121,
+  "requiredFieldConflicts":[],
+  "allFourPermissions":"ADMIN",
+  "indexesComplete":false,
+  "indexReadStatus":"NOT_READ_API_PATH_STOPPED_WDE0144",
+  "nativeStoredValueRoundtripsAccepted":false,
+  "allWriterCoverageAccepted":false,
+  "activationAllowed":false,
+  "rows":[
+    {"collection":"R2StockClaims","totalSchemaFields":21,"requiredFieldsReviewed":16,"metadataSha256":"6472f058ec6b51605ef2d1473a9073ba7a7bc8372c16f382d19fe1b0f44012af"},
+    {"collection":"R2StockPositions","totalSchemaFields":31,"requiredFieldsReviewed":26,"metadataSha256":"4805a65ce52c9771456340734b0353cbb941997006b960112d0666a68965309c"},
+    {"collection":"R2StockProducts","totalSchemaFields":24,"requiredFieldsReviewed":19,"metadataSha256":"7aa51131a9dd500cfbe921e842dceddde49c5eb9ae15412f9b4fcb669975bb85"},
+    {"collection":"R2NCTActivity","totalSchemaFields":37,"requiredFieldsReviewed":18,"metadataSha256":"46ae11abddb519492ffc93ec43d649d2d8466c17ca4c38a476fd2c56db83543b"},
+    {"collection":"R2NCTActivity1","totalSchemaFields":37,"requiredFieldsReviewed":18,"metadataSha256":"9b052cfb44a418c884c55b44c1e012b1455d85193ee6f2eb2a3d384fb3e32d81"},
+    {"collection":"R2NCTTasks","totalSchemaFields":38,"requiredFieldsReviewed":6,"metadataSha256":"752d57d86df9c740694a8e034cdfc4b0b722c571a0c9653f1bdd18ed2c2d3473"},
+    {"collection":"R2NCTTasks1","totalSchemaFields":38,"requiredFieldsReviewed":6,"metadataSha256":"a3260e2d4db8a7048d33d7bb4ec07e20483cb13086578b7ba7c554fa3274f3d1"},
+    {"collection":"R2NCTOrders","totalSchemaFields":36,"requiredFieldsReviewed":5,"metadataSha256":"dd94aa82cd26fe2c50bb54c805ef87d9556055fca5120eae100e3a373b32a563","estimatedShipmentDateWireType":"DATE"},
+    {"collection":"R2NCTOrders1","totalSchemaFields":36,"requiredFieldsReviewed":5,"metadataSha256":"310ea6c9b9d524da069e579fd53f3d032573b6f294bf1d6e6d77208692592951","estimatedShipmentDateWireType":"DATE"},
+    {"collection":"R2PurchaseOrders","totalSchemaFields":8,"requiredFieldsReviewed":2,"metadataSha256":"febc39204f679989f8dc75713d39e86aa76e472c4b382efb5ae6c1c3e62eed36"}
+  ],
+  "qualification":"This checks the existing installation contract, not every application field or stored-value constraint; no whole-business/schema/index/capacity/recovery/public acceptance implied.",
+  "screenshot":"C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-native-field-definitions-readback-20261024.png"
+}
