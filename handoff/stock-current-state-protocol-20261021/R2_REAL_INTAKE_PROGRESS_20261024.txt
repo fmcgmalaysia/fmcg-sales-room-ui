@@ -1,0 +1,71 @@
+2026-10-24 — REAL300INTAKE PREPARATION NATIVE CHECKPOINT; BROWSER DISCONNECTED
+
+Read R2_REAL_INTAKE_CAPACITY_20261024.json for exact hashes and confirmed receipts.
+Parent recovery32b62b9, protected production d447185/runtime32b812c unchanged.
+User continues scoped R2 install/acceptance/release, model SOL, no agents.
+Reused framework/current handoffs. Read actual intake/SDK/coordinator dependencies.
+
+NEW FIXED DIAGNOSTIC
+New Admin-only r2IntakeCapacityAcceptance.web.js imports real generated R2 core and
+original R2 intake; fixed300distinct lines,1202images. All storage physically fixed
+StockProtocolTest/SPT-R2INTAKE300-20261024-4f8c:. No remove/lock-delete capability.
+Test-only fixed admission never contributes real business coverage. In-memory
+known interruption, strong final300order/task/product checks and zero-write replay
+pass;182local calls. Finalfullstock1547pass0fail44455.0168ms. Detailed local outputs
+tmp-r2-real-intake-local-20261024.txt and tmp-r2-intake-complete-stock-tests-20261024.txt
+outside checkout, not export. Exact native template preserved by hash in record;
+new file installed CLOSED then temporarily armed for ordinary scoped test.
+
+NATIVE FINDING
+SEED exact receipt884ms/queries3/inserts1. FirstADVANCE client504 then exact terminal
+receipt appeared:14483ms,queries70/inserts21/patches2/deletes0,captures1,BEFORE20/1202.
+Diagnostic wrapper awaits complete operation, logs fullJSON and directly returns;
+there is no subsequent write after this terminal receipt. It confirms THIS save,
+not other old executions/site-wide drain. Last pending key/digest/planHash retained.
+No repeat seed, no new identity, no reset/unlock. Final capacity NOT accepted.
+
+SMALL PERFORMANCE PATCH SAVED
+current-order-intake.cjs only: independent3marker reads and independent3table batch
+reads now Promise.all within same original readSnapshot. Exact same complete
+strong IDs, failed queries still reject, no partial plan/fallback. Original product
+read and final barrier remain. Focused6pass; fullstock1547pass0fail. New generated
+core patched only current-order-intake factory; fresh entire before and after copies
+exact. after4a29871d429f2f134822f9895953225ec6745de2de1c32aeb92f689d6616aa3b.
+Initial query count remains70; actual cold-preparation improvement NOT measured.
+Shared generic candidates rebuilt mechanically; no original production file changed.
+
+CURRENT BROWSER BLOCKER — DO NOT ASSUME GATE CLOSED
+After504, diagnostic exact CLOSED source confirmed1eb06...79aba. Then attempted
+reopen for confirmed same-request continuation following terminal receipt. CUA
+timed out at30s during this UI-only sequence and reset JS state. Fresh getTab for
+MASTER51427447/browser3 failed Debugger unattached. No next backend function call
+was sent; latest armed/closed state UNKNOWN. User asked once through async to click
+ChatGPT Chrome extension/reconnect, retain MASTER, no refresh/reinstall. Do not
+repeat request or browser failure path while waiting. No screenshot of gate update
+after timeout exists. Earlier private504screenshot exists, not public export.
+On reconnect: fresh read native new diagnostic whole source FIRST, confirm exact
+closed/armed candidate. Close unless actively doing scoped test. Rebuild CUA fs/hash
+helpers because kernel reset. Do NOT seed again. Existing terminal receipt permits
+only same immutable request at BEFORE20; do not infer progress from elapsed time.
+Do not resume other two UNKNOWN prefixes or completed CAS20/cas probes.
+
+UI NOTES
+File Run toolbar starts page preview, not native function test. Dedicated function
+tester opens blue gutter triangle at exported function, then parameter editor.
+Always Ctrl+A before paste JSON {input:{step}}; paste alone appends invalid JSON.
+Result JSON can be read from terminal log line text R2INTAKE_RECEIPT. For initial
+object-only SEED, AX/DOM virtual text expansion did not resolve; screenshot-grounded
+arrow then visible CopyJSON succeeded. Do not repeat those failed selectors.
+Native source helpers require LF normalization of before/after replacement lines;
+literal trailingCR made a Find setValue fail once, corrected before any code write.
+
+RELEASE STATES
+Code: new diagnostic and minimum preparation parallel patch locally complete/tests.
+Core + new checker saved drafts exact before disconnect. This continuation not yet
+committed/pushed at time of record. Update after actual sync, not inferred.
+Pages not deployed/verified. Wix not published, ACTIVEOFF, writerCoverageEMPTY.
+Public Buyer/split/borrow/repay not accepted. Native staff SDK authority, full capacity,
+allwriter/read/recovery proof, activation verifier/schema, release still outstanding.
+Original Quote/QD/identity/finance/dispatch flows untouched. Automation stays PAUSED.
+Current permission/export scope applies; stage exact authorized files only. No
+private screenshots, CSV, credentials, client business data or main merge.

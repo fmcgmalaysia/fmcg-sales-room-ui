@@ -1,5 +1,17 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST SOL REAL300INTAKE — NATIVE PREPARATION CHECKPOINT, CONNECTION LOST
+Read R2_REAL_INTAKE_PROGRESS_20261024.txt and R2_REAL_INTAKE_CAPACITY_20261024.json.
+New dedicated StockProtocolTest fixture uses actual R2 intake/core,300distinct lines,
+1202images. NativeSEED884ms confirmed; firstADVANCE504 then exact terminal receipt
+14483ms/70queries/21inserts/2patches/0deletes confirms BEFORE20/1202/costcapture1.
+Minimum same-snapshot parallel read patch saved in core, whole hash4a29871d...6aa3b.
+Fullstock1547pass0fail44455.0168ms; actual postpatch cold timing/capacity unaccepted.
+Browser timed out during diagnostic reopen, JSreset then Debugger unattached; NO
+next backend call sent. Latest test gate UNKNOWN, must read back FIRST on reconnect.
+User asked once to reconnect extension; continue independent background work.
+Do not reseed/reset or touch other UNKNOWN tests. ACTIVEOFF/not published.
+
 LATEST ASTRA FILE RESUME — FOUR R2 SAVED DRAFTS EXACT; SUITABLE TO RETURN TO SOL
 Read ASTRA_FILE_RESUME_20261024.txt before older entries. Purchase/Account/customer
 PDF and exact trash operations now explicitly opt into conditional R2 coordination;

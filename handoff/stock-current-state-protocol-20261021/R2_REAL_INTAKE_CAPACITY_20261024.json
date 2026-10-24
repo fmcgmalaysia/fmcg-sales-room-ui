@@ -1,0 +1,30 @@
+{
+  "schema":"R2_REAL_INTAKE_CAPACITY_RECORD_V1",
+  "collection":"StockProtocolTest",
+  "prefix":"SPT-R2INTAKE300-20261024-4f8c:",
+  "module":"r2IntakeCapacityAcceptance.web.js",
+  "coordinator":"Actual installed r2stockCurrentCommands.js exports",
+  "intake":"Actual installed r2nctIntake.js exports",
+  "initialCoreSha256Lf":"a51c1c55a2f578660b349fac5dbf43182d630a3ae4535937d414990d480e2ff4",
+  "intakeSha256Lf":"3ddeca7841492bb89e3706874e94256e6f58890ecf13300887014f378f95c72b",
+  "parallelPreparationCoreSha256Lf":"4a29871d429f2f134822f9895953225ec6745de2de1c32aeb92f689d6616aa3b",
+  "diagnosticClosedSha256Lf":"1eb06f56a643a87a030e786cfca83bb1c379d553636e62db982182668b179aba",
+  "diagnosticArmedSha256Lf":"876feccf174bb27be2c2e9e737db28bbcddcacb43351fca67b9d34bc403f9199",
+  "nativeReceipts":[
+    {"step":"SEED","stage":"SEEDED","elapsedMs":884,"operationsAttempted":{"queries":3,"inserts":1,"patches":0,"deletes":0},"generation":0,"seededControls":1},
+    {"step":"ADVANCE","stage":"CHECKPOINT_CONFIRMED","client504":true,"receivedLate":true,"elapsedMs":14483,"operationsAttempted":{"queries":70,"inserts":21,"patches":2,"deletes":0},"captures":1,"generation":0,"pending":{"count":1202,"digest":"8c8260ce8b951aa7e8704361bb4911b5","planHash":"4b841011c2e29deab7ec45a1771253ad","phase":"BEFORE","cursor":20,"key":"5a7eb83b6d6e7a1cb390c9f258b8b219"},"noLockCreated":true}
+  ],
+  "lateReceiptEvidence":"Exact terminal R2INTAKE_RECEIPT JSON observed in Wix function tester after initial504. Wrapper logs only after await of whole fixed diagnostic and then returns, with no subsequent storage operation. This confirms this specific checkpoint; not site-wide drain or completion of other invocations.",
+  "nativeAttemptedTotalsConfirmed":{"queries":73,"inserts":22,"patches":2,"deletes":0},
+  "lastConfirmedCheckpoint":"BEFORE20/1202, generation0; original300-line plan and costs retained",
+  "latestGateState":"UNKNOWN after browser tooling timed out during authorized reopen. Previously exact CLOSED, then reopen attempt. Need fresh UI readback before any new native invocation.",
+  "lastAction":"No subsequent ADVANCE/FAULT/REPLAY was sent. Browser connection unavailable: Debugger unattached. User asked once to reconnect.",
+  "localFullScenario":{"passed":true,"calls":182,"domainImages":1202,"orders":300,"tasks":300,"products":300,"costCaptures":1,"knownInterruption":true,"zeroWriteReplay":true},
+  "finalWholeStockSuite":{"pass":1547,"fail":0,"cancelled":0,"skipped":0,"durationMs":44455.0168},
+  "nativeCapacityAccepted":false,
+  "nativeRealCollectionTypesAccepted":false,
+  "nativeStaffAuthorizationAccepted":false,
+  "activationReady":false,
+  "limitations":"Physical test rows wrap original images in details to restrict access to StockProtocolTest; not proof of every actual business collection's SDK type or authorization. First preparation504 is measured. Parallel read optimization saved, but cold-first native timing after patch not yet measured. Old UNKNOWN prefixes and closed probes untouched. No deletions, grants, publication, business activation or actual dispatch.",
+  "privateScreenshot":"C:/FMCG-WIX-LOCAL/tmp-r2-intake-capacity-504-20261024.png; not exported"
+}

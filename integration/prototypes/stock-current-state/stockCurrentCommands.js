@@ -7270,7 +7270,7 @@ async function dispatchCurrentSalesGateway({ body, staff, resolveCurrentSales, l
 module.exports = { dispatchCurrentSalesGateway };
 
 },
-// current-order-intake.cjs sha256:55970d5172a60e2a4c5213f995711e4d98896349da38cd4af4dc3c4ec40e5a7b
+// current-order-intake.cjs sha256:8824b6020af432cc49b193d308521bc28d560bdaf7feacf23c9001d1588389c2
 "current-order-intake.cjs": (load, module) => {
 'use strict';
 
@@ -7342,9 +7342,8 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
               tables[collection].push(copy(row));
             }
           };
-          await exact(journal, hash(...base, 'PREPARED'));
-          await exact(journal, hash(...base, 'ACCEPTED'));
-          await exact(otherJournal, hash(...base, 'PREPARED'));
+          await Promise.all([exact(journal, hash(...base, 'PREPARED')),
+            exact(journal, hash(...base, 'ACCEPTED')),exact(otherJournal, hash(...base, 'PREPARED'))]);
           // Native SDK readMany uses complete strong exact-ID batches of fifty.
           // Keep the same snapshot barrier and fail on incomplete/foreign data;
           // a batch failure must never turn an existing row into an absent row.
@@ -7356,9 +7355,12 @@ function createCurrentOrderIntakeOperations({ company, store, protocol, coverage
               && (!row || row._id !== ids[index] || row.company !== company))) throw Error('Complete exact intake batch required');
             return rows;
           };
-          for (const [collection, suffix] of [[orders, 'ORDER'], [tasks, 'TASK'], [journal, 'INITIAL_COST']]) {
+          // Independent exact-ID table reads share the same surrounding snapshot.
+          // Await every complete result before preparation; failed reads still fail
+          // the whole operation, with no partial plan or absent-row fallback.
+          await Promise.all([[orders, 'ORDER'], [tasks, 'TASK'], [journal, 'INITIAL_COST']].map(async ([collection, suffix]) => {
             tables[collection].push(...(await exactMany(collection, input.lines.map(line => hash(...base, line.sourceLineId, suffix)))).filter(row => row !== null));
-          }
+          }));
           const products = new Map();
           for (const line of input.lines) {
             const product = { company, barcode: line.unitBarcode, packing: line.packingSize, ea: line.eaPerCtn };
