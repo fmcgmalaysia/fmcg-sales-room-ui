@@ -3,7 +3,14 @@
   "cohort": "MASTER_20261024_R2",
   "savedDraftOnly": true,
   "originalCodeUnchanged": false,
-  "originalCodeScope": "Only original MASTER http-functions.js appended 9 generated lines plus separator; entire original prefix verified unchanged. Original pages, other backend files, public files and quote chain unchanged.",
+  "originalCodeScope": "Original MASTER http-functions.js appended 9 generated lines plus separator; entire original prefix verified unchanged. Four original page relays minimally patched after fresh native baseline comparison; every full native afterimage exactly matches the specified patch and generated candidate. Other original backend/public files and quote chain unchanged.",
+  "pageRelaysSavedDraftOnly": true,
+  "pageRelayReadbacks": [
+    {"page":"Purchase Department","beforeSha256":"c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f","afterSha256":"e8d4ef5865d1f2d6664742cc3b6f357250228e1d75978ec162b6e753036bcbd6","nativeBeforeEqualsRepository":true,"minimalReplacementGroups":9,"fullNativeExactPatch":true,"candidateExact":true,"autosaveSuccess":true},
+    {"page":"Warehouse Department","beforeSha256":"ff80639d4e0cc015453d26313e6922281df452d2bfbe24ce9bc8e624c99c57a3","afterSha256":"2110ff53d32f98098fa02f1b26a1aa3796afcbedde136d3096e374fbfdaf1e60","nativeBeforeEqualsRepository":true,"minimalReplacementGroups":11,"fullNativeExactPatch":true,"candidateExact":true,"autosaveSuccess":true},
+    {"page":"Support Department","beforeSha256":"ca2c23c99ca01ac8b110d4c0844f688b5aa13900dac03de708e81f6845046be4","afterSha256":"857dd3b73e501bbeafd2a68b7ca7311488f83f468ed80387cee0db0a7e04abe1","nativeBeforeEqualsRepository":true,"literalReplacementGroups":4,"fullNativeExactPatch":true,"candidateExact":true,"autosaveSuccess":true},
+    {"page":"Finance Department (Account)","beforeSha256":"76b3290ebee2890dab1e70362415d26c3bb7b8d191c6882ffc8322c2d7a22c71","afterSha256":"087a1a65191700327b5c95cb786a78ede8ec6f9f9ff0029cf5c233f6ae78b57a","nativeBeforeEqualsRepository":true,"minimalReplacementGroups":4,"fullNativeExactPatch":true,"candidateExact":true,"autosaveSuccess":true}
+  ],
   "published": false,
   "active": false,
   "initialized": false,

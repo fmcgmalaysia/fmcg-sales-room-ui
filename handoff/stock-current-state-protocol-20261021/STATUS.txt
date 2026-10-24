@@ -1,5 +1,50 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST MASTER FOUR PAGE RELAYS SAVED — ALL SEVEN CHANGED RELAYS NOW EXACT DRAFTS
+Purchase/Warehouse/Support/Finance native full beforeimages exact original repo,
+then native Find/Replace only9/11/4/4small groups (no full-page overwrite). FULL
+afterimages exact expected minimal patch AND generated candidate hashes; Autosave
+success each. Added only specified current-stock/borrow/resume/version links while
+retaining original handlers. MASTER_R2_NATIVE_INSTALL_20261024.json records hashes.
+Four private r2-master-{purchase,warehouse,support,account}-relay-draft screenshots
+saved. Combined Source3+MASTER4changed relays saved; Source OrderReceived identical
+and NOT edited. This closes page INSTALL, NOT native operational/public acceptance.
+No Publish/genesis/ACTIVE/business rows. Pages112assets LOCAL ONLY; no push/export/
+dispatch. Full metadata/index, allwriters, recovery, capacity and four-stage release
+remain. Original recovery d447185/runtime32b812c intact. Existing tests reused,
+no application candidate changes or fresh full-suite claim.
+
+LATEST SOURCE PAGE RELAYS SAVED — THREE EXACT MINIMAL DRAFT PATCHES
+Fresh native Buyer/Sales/Catalogue before hashes exact private baseline. Native
+Find/Replace only: Buyer2literals; Sales2onboarding imports+3original dependency
+extension spellings+version+stockCurrent argument; Catalogue3imports. FULL native
+afterimages exact original plus specified replacements and generated candidates
+(Buyer/Catalogue terminal-LF-only distinction retained). Autosave success observed.
+SOURCE_R2_NATIVE_INSTALL_20261024.json has before/after hashes and exact counts.
+No whole-page overwrite, optional3displaylines, original quote/selection/FX/staff
+logic/data changes, initialization or Publish. OrderReceived lightbox identical,
+not edited. OriginalCodeUnchanged now FALSE because3draftpages changed. Saved
+private screenshots r2-source-buyer/sales/catalogue-relay-draft-20261024.png.
+MASTER4relays/native operational+schemaindex+writer+recovery+capacity and full
+four-stage release remain. User must NOT place new Buyer order yet. No push.
+
+LATEST SOURCE NATIVE CHECK PASSED — SDK INSTALLED, THREE EMPTY ADMIN-ONLY TABLES
+UsermanualSourceStudio51427457fullyreadable without refresh/reopen. Packages&Apps
+native lists@wix/data(v1.0.534)INSTALLED; no reinstall. Source inspect-only bootstrap
+FULL native code SHA d9a9d220...exact priorreceipt; no initialize export. Native
+inspectFreshCohort(input:{})calledONCE and returnedCOHORTMASTER_20261024_R2,
+systemFMCGMALAYSIA,emptyBusinesstrue,activationAllowedfalse; R2WixBuyerOrders/
+OrderLines/OrderAudit totals0/controlnull with3metadata digests. Inspector enforced
+completeADMIN metadata onread. CopyJSON via actual visible output control parsed;
+no hidden application state. Details in SOURCE_R2_NATIVE_INSTALL_20261024.json.
+Saved/embedded r2-source-native-empty-receipt-20261024.png. One stale AX735 output
+toggle refused; fresh screenshot-coordinate arrow opened actual returned object,
+no rerun. No business/init/control/permission/originalcode/Page/Publish changes.
+This closes Source npm/empty-private inspector evidence only, not fullfields/index/
+neworder/allwriter/public goldenpath. Next minimum Source3page relays; fourth
+Source OrderReceived lightbox generated identical, do NOT edit it. MASTER4relays
+also pending. Originalquote/selection/FX/staff remain authoritative/unchanged.
+
 LATEST AUTH DIAGNOSIS — ORIGINAL AND R2 GETTER SAME STAFF REFUSAL
 Fresh originalstockControl.web.js nativeFULL clipboard exact repository SHA
 bc6805fd2328f8988b1cdfb0419f901bc3e75629250decfd03e4c032341904f7. Source inspected:

@@ -1,13 +1,39 @@
 {
   "system": "FMCGMALAYSIA",
   "cohort": "MASTER_20261024_R2",
-  "editorTab": "51427367",
+  "editorTab": "51427457",
+  "originalInstallEditorTab": "51427367",
   "hashFormat": "SHA256_UTF8_LF",
   "savedDraftOnly": true,
-  "originalCodeUnchanged": true,
-  "pagesSwitched": false,
+  "originalCodeUnchanged": false,
+  "pagesSwitched": "three_saved_draft_only_not_published",
+  "pageRelayReadbacks": [
+    {"page":"Buyer Room","beforeSha256":"a7f2061f6b79c9bead0edca45648227ad796100afbcac9f236662ecc49cb06a6","afterSha256":"14dc162030d86bba3d81c765a97b3beacdee426635b0a73acc0ec53f47ccfca4","literalReplacementCounts":[1,1],"fullNativeExactMinimalPatch":true,"candidateEqualIgnoringTerminalWhitespaceOnly":true,"autosaveSuccess":true},
+    {"page":"Sales Room","beforeSha256":"940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777","afterSha256":"c3cdc2107424c74f069b6e3bf8b876358c4b40ecb5e0776f0a1febbc8cc08559","literalReplacementCounts":[2,1,1,1,1,1],"fullNativeExactMinimalPatch":true,"candidateExact":true,"autosaveSuccess":true},
+    {"page":"Catalogue","beforeSha256":"817acc21ad8248ed7e3ef0a056fa8b9bf26f9e8d985c1760b8a8e3e2cc4838dd","afterSha256":"747cad838cf4a150a1b84dc4308526903e03edc5892aaec538b3604043a848d5","literalReplacementCounts":[1,1,1],"fullNativeExactMinimalPatch":true,"candidateEqualIgnoringTerminalWhitespaceOnly":true,"autosaveSuccess":true}
+  ],
+  "unchangedLightbox":"Order Received - generated relay identical, not edited",
+  "preservedOriginalDependencies":["staffAuth.web.js","catalogueSelection.web.js","fxRates.web.js","original quotation callback and selection tables"],
   "published": false,
   "active": false,
+  "nativeDependencyReadback": {"package":"@wix/data","version":"1.0.534","installed":true,"reinstalled":false},
+  "nativeInspectReceipt": {
+    "function":"backend/r2cohortBootstrap.web.js/inspectFreshCohort",
+    "parameters":{"input":{}},
+    "callsThisCheck":1,
+    "cohort":"MASTER_20261024_R2",
+    "system":"FMCGMALAYSIA",
+    "emptyBusiness":true,
+    "activationAllowed":false,
+    "completeAdminOnlyMetadataValidated":true,
+    "businessRowsWritten":false,
+    "rows":[
+      {"original":"WixBuyerOrders","target":"R2WixBuyerOrders","total":0,"control":null,"metadataDigest":"660d6093cedde45025b05fdb4fb6ede2"},
+      {"original":"WixBuyerOrderLines","target":"R2WixBuyerOrderLines","total":0,"control":null,"metadataDigest":"89dfb5608c7f27b33109e7a468f7eab6"},
+      {"original":"WixOrderAudit","target":"R2WixOrderAudit","total":0,"control":null,"metadataDigest":"764df49d83ea49498e6a5170358e0adb"}
+    ],
+    "screenshot":"C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-source-native-empty-receipt-20261024.png"
+  },
   "files": {
     "r2nctSubmissionPayload.js": "8535234f848b2599992d1a15975aacc926e24958d875da75594c3c600703eccc",
     "r2masterQuantityProjection.js": "85f3676b715228bc0d66223fe2bb2da531e9cb4322d13c30756ff6d85e0cd1eb",
