@@ -1,4 +1,11 @@
-2026-10-24 — user supplied Wix response; change of implementation scope NOT approved
+2026-10-24 — provider reply preserved; fresh-cohort scope NOW AUTHORIZED
+
+SUPERSEDING RESPONSE: user explicitly requested completion of new/old write
+isolation, native install and publish through real Buyer/split/borrow tests without
+routine confirmation pauses. Agent proceeded with fresh same-site business cohort,
+preserving original modules/tables and reference/auth identities. Actual16-table
+setup in ISOLATED_COHORT_20261024.txt. Approval-pending statements below are history,
+not a current stop. No provider drain claimed and no same-cohort migration enabled.
 
 New evidence
 User pasted Wix Customer Care response titled Backend executions and Wix Data

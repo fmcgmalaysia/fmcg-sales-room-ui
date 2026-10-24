@@ -1,4 +1,95 @@
-CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
+CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
+
+LATEST ACTUAL INSTALL — SOURCE14 NEW FILES SAVED/EXACT; MASTER INSTALL STARTED
+Source13paired backend modules + inspect-only bootstrap now saved as NEW native
+files, each exact LF hash verified. SOURCE_R2_NATIVE_INSTALL_20261024.json records
+receipts. Original modules, HTTP, pages untouched; no Source Run/Publish/ACTIVE.
+MASTER user-opened51427394 now working, new r2cohortBootstrap saved/exact. Invoked
+ONLY inspectFreshCohort({}) once in native tester; real result: New cohort control
+field missing or mistyped: R2NCTActivity.cohort (line36). SDK metadata and initial
+empty/private checks reached this real field gate. No initialization was called;
+adding three required TEXT fields to each NEW activity table next. MASTER92business modules
+not installed yet.150generated JS parse;65focused+2new quote-boundary tests pass.
+No GitHub push/Pages/Wix publication/public transaction. User may prepare a fresh
+quote on the original program; explicitly advised not submit Buyer order yet.
+
+LATEST USER DECISION — RETAIN QUOTATION PROGRAM; FRESH QUOTES/ORDERS FOR ACCEPTANCE
+User explicitly approved: retain original quotation chain, isolate orders/stock.
+Then requested start with entirely fresh quotations to shorten the path. Treat
+this as fresh test business inputs, NOT permission to replace the QD program,
+delete reference data or migrate old quotes. Source active cohort is Orders,
+OrderLines,OrderAudit3; MASTER12. Native selection/FX/staff imports retained.
+R2WixBuyerListItems remains unused/empty; no deletion. Three optional repository
+Catalogue labels explained to user, not included. Candidate revision in progress.
+Same-version framework reused; relevant scope/compiler/consumer reread after
+context loss. Original d447185/runtime32b812c recovery and exact native Source
+before-images retained. No installed code, ACTIVE, push or release yet.
+
+HISTORICAL NATIVE EVIDENCE — SCOPE DECISION NOW ANSWERED ABOVE
+User opened Source Studio tab51427367 successfully, unlike agent-created98%tab.
+Claim/read existing successful tab without refresh/navigation; stable full backend
+and Sales/Buyer/Catalogue code reads.20exact private before-images/index retained
+ROOT/private-evidence/r2-source-native-preinstall-index-20261024.json. Source7core
+originals match exactly except onboarding terminalLF; BuyerAuth/orderdownload/token/
+Excel and Buyer/Catalogue page differences terminalLF only; selectiondownload11
+blank-only lines. NOT all raw byte-identical. No original Source writes.
+Meaningful catalogueSelection difference: repository-only companyName/actorName
+return lines40/41 and context.companyName line436. Native preserved; no winner
+silently selected. fxRates is structurally different; out of stock scope, retain
+original native module, do not install candidate clone or change FX/QD auth.
+
+CRITICAL new dependency: actual native Source http-functions EXACTLY matches repo,
+post_quotationSync writes ORIGINAL WixBuyerListItems. Switching that reference table
+would break frozen QD quote publication unless extending external quote routing.
+Recommended smaller scope: retain original selection/QD/FX/staff reference modules;
+isolate Source Orders/Lines/Audit3 + MASTER12. Existing new R2WixBuyerListItems can
+remain unused empty (do not delete). No extra QD synchronizer or provider wait.
+This changes the proposed4Source-table scope; explicit async choice requested:
+retain original quotation reference chain vs also starting selection/quotes anew.
+Earlier three-display-line question is superseded by this more complete boundary
+choice; no feature edits or native code installation after meaningful conflict.
+Existing107-module/16-table compiler is a REVIEW CANDIDATE ONLY until revised after
+scope choice, not something to install/publish as-is. All old originals untouched.
+Background static-only packaging code/tests prepared before conflict: exact public
+allowlist, no backend/handoff/CSV/screenshots/retired files, committed asset hashes;
+new optional workflow path keeps baseline/default/permissions unchanged, not run.
+4packaging tests pass1033.8324ms;61isolated tests plus8existing structural checks
+passed in focused dot run, not new full regression/activation evidence. No push.
+
+Earlier Source editor blocked/native-not-read statements below are superseded;
+actual blocker is now the precise protected quotation-boundary choice above.
+
+LATEST AUTHORITY: user explicitly requested new/old write isolation, native install
+and release through real Buyer split/borrow testing. This answers fresh-cohort
+scope, not another drain request. See ISOLATED_COHORT_20261024.txt. New candidate
+MASTER_20261024_R2 uses new backend identities and HTTP paths; original modules/
+handlers intact.107versioned backend modules+2Admin bootstrap roots+2public bridges,
+8paired page relays and43static overlays compiled locally; none installed yet.
+All20coverage flags empty, no ACTIVE.60focused checks pass0fail1265.9247ms including
+paired NCT/GHR intake->PO->split->RCV->Loaded and borrow/repayment/boundary/bootstrap;
+not a new full-suite or native result.152generated JS parsed.
+
+NATIVE: MASTER12+Source4new R2 tables created ONCE by empty schema/settings copy.
+Each original freshly No items;11MASTER+4Source original Admin-only matrices read.
+Original AccountReadIndex showed Show content/Everyone, unchanged. ONLY new index
+R2AccountReadIndex tightened Admin-only, saved/reopened16nonAdmin0+4Admin1 confirmed.
+All16new tables No items. Copying does NOT certify native fields/index/type parity.
+No business/control insert/import/delete. Source4old ordinary test-table zeros now
+independently confirmed, superseding user-report-only. Auth/reference data retained.
+
+SOURCE EDITOR: new dashboard Edit Site opened51427363;49->83->94->98then remained98
+during independent work. No refresh/path variant; no Source code readback. User
+asked asynchronously to open FMCGMALAYSIA Studio to code panel; browser handed over,
+background work continued. Loading failure, NOT proven security denial. Retained
+staffAuth.web has no repo source and remains explicitly native/isolation unverified.
+Old51427279/300UNKNOWN/lock restrictions remain unchanged. Heartbeat stillPAUSED.
+
+RELEASE: new code local only, remote66bb853 unchanged; no Pages deploy, new Wix code
+install/publish, fresh control init/ACTIVE/business save or public acceptance.
+Do not ask user to submit a fresh Buyer order yet. d447185/runtime32b812c retained.
+
+Earlier chronological entries below are superseded where they say new scope not
+approved or tables not created. Provider same-cohort drain refusal still applies.
 
 LATEST TEST RESET COMPLETE: exact user confirmed MASTER63business rows deleted
 Tasks17/Orders16/Activity30through native CMS once each; three distinct deletion

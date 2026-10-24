@@ -12,6 +12,7 @@ on:
         options:
           - baseline
           - stock-interface
+          - isolated-stock-interface
 
 permissions:
   contents: read
@@ -41,9 +42,20 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
+        if: inputs.static_ui != 'isolated-stock-interface'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
+
+      - name: Prepare isolated static resources (no backend or private evidence)
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        run: node integration/prototypes/stock-current-state/stage-isolated-cohort.cjs "$RUNNER_TEMP/isolated-stock-interface-site"
+
+      - name: Upload isolated static site
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/isolated-stock-interface-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment
