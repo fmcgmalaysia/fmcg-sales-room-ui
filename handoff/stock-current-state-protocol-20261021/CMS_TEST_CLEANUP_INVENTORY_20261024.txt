@@ -1,0 +1,62 @@
+2026-10-24 — fresh read-only MASTER inventory; NO deletion
+
+User reaffirmed prelaunch test business data has no ongoing value and must be
+cleared before launch. Do not treat preservation/migration of old test business
+rows as a requirement. Cleanup and isolation from old runtime writes are separate.
+This record grants no change of stock authority or reset of unknown protocol saves.
+
+Actual site: MASTER meta f80870fd-a3d8-47c0-9917-1bfd9c16ea44.
+Existing dashboard tab51427129, Chrome3. Exact visible all16collections inventory:
+NCTOrders16; NCTTasks17; NCTActivity30.
+NCTOrders1/GHR Orders0; NCTTasks1/GHR Tasks0; NCTActivity1/GHR Activity0.
+PurchaseOrders0; DepartmentChatIndex0; AccountReadIndex0.
+StockPositions0; StockClaims0; StockProducts0.
+SharedSuppliers3; SharedSupplierActivity4; StaffMasterAccess1.
+StockProtocolTest341.
+Native NCTActivity table separately confirms30items; full collection export
+explicitly30rows, including hidden/system fields. Native NCTOrders confirms16.
+Counts are current observation, NOT proof all old requests have stopped.
+
+Candidate ordinary test cleanup cohort:63rows in NCTOrders/NCTTasks/NCTActivity,
+subject to complete export inspection and exact pre-delete identity/count check.
+No item/collection deleted, no schema/index/ACL/role edits or publication.
+Keep supplier/staff/reference records, fields/indexes/permissions. Shared supplier
+history4not included in the63row instruction. Empty collections need no deletion.
+StockProtocolTest341contains retained diagnostic/unknown-operation fixtures, not
+ordinary order rows; existing hard stops remain, no reuse of old deletion grants.
+No implication that clearing these63would make same-table stock cutover safe.
+
+Private screenshot (not for GitHub/Pages):
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/master-cms-inventory-before-cleanup-20261024.jpg
+Screenshot shows ordinary16/17/30and separate341 plus supplier/reference counts.
+Source editor availability was NOT tested by this MASTER dashboard navigation.
+
+Backups in progress; final actual paths/counts/hashes to be recorded after download.
+CSV parser note: PowerShell Import-Csv rejected duplicate case-insensitive Status
+headers in native export. No file changed; .NET TextFieldParser parsed quoted CSV
+and correctly counted30records/34columns. Do not use raw line count for multiline
+JSON fields or silently drop colliding fields on any recovery import.
+
+Actual completed downloads / independent parser checks
+NCTActivity: C:/Users/User/Downloads/NCT+Activity (2).csv,66997bytes,
+ 30records,34fields,SHA2563675948A6F047988EC4AB03EF5EF15C3231756B0B152456D4F30B5CA931CB078.
+NCTOrders: user said '帮你下载好了'; fresh specific Downloads listing confirms
+ C:/Users/User/Downloads/NCT+Orders (1).csv,9274bytes,16records,36fields,
+ 2distinct actual Order IDs,SHA256B8384915E25E8B9FBE02E321035981BE17D1B76442ADD05EFCB0720B6C632091.
+Native exports retain original duplicate-case fields; no normalized CSV rewrite.
+All record field counts checked with .NET quoted/multiline CSV parser.
+Activity actions: COST_CAPTURE16,INTAKE_PREPARED2,ORDER_RECEIVED2,
+ PURCHASE_OPERATION_PREPARED2,PURCHASE_OPERATION_RESULT2,PURCHASE_PLAN_SAVED2,
+ PURCHASE_PRICE_SAVED1,PURCHASE_SOURCE_ADDED1,PURCHASE_SOURCE_SHARES_SAVED2.
+No LOCK/Stock current action in this complete30row exported action list. This is
+NOT evidence of old-execution drain. Activity includes company result/prepared
+history, not new stock diagnostic namespace. No raw business rows put in GitHub.
+
+Orders export state read timed out once at Page.getFrameTree. Fresh tab inventory
+then one full read succeeded; user had completed Download File. No repeated export,
+no browser reset/reload/alternate control route. User then visibly navigated existing
+dashboard to StockProtocolTest while agent inspected local downloads. Pause UI
+inputs to avoid competing with user. NCTTasks17backup NOT yet downloaded/verified;
+old Oct18task files are not current backups. No claim all63restorable from current
+exports yet. Do not delete until complete backup/exact scope and native confirmation.
+No old protocol fixture/lock deletion permission reused. No data deleted anywhere.

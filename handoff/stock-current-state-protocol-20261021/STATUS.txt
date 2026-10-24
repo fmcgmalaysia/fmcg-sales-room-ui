@@ -1,5 +1,13 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST CLEANUP INVENTORY: CMS_TEST_CLEANUP_INVENTORY_20261024.txt records fresh
+MASTER16collection UI inventory. Ordinary NCTOrders16/NCTTasks17/NCTActivity30
+total63test rows, not341StockProtocolTest diagnostic rows; supplier/staff/schema/
+permissions retained. Current Orders16andActivity30CSV downloads parsed/hash checked;
+Tasks17backup still missing, no deletion. User browsingStockProtocolTest, UI inputs
+paused to avoid competing. Disposable old test business data need NOT be migrated;
+cleanup does not solve late old writes. No cold-start authority change approved.
+
 LATEST WIX REPLY: WIX_REPLY_AND_COLD_START_DECISION_20261024.txt records user-supplied
 provider response Ref031000264: no supported old-execution/data-operation drain.
 Reply dependency closed, unsafe same-table cutover NOT solved. Proposed fresh empty
