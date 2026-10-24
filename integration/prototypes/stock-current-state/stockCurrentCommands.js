@@ -5171,7 +5171,7 @@ function createPurchaseDeleteProtocol({company,staff,request,store,documentServi
 module.exports={prepareOriginalPurchaseDeletionWrite,createPurchaseDeleteProtocol,classifyPurchaseDeletionImage};
 
 },
-// segmented-fenced-proof.cjs sha256:25740a0388f4d55b297c06286e9a08b27b54bd30a5fd24fc637d48f43a6300cb
+// segmented-fenced-proof.cjs sha256:00a51ef0a36b323b69a71210efc465641125b767b94d7645f8764483363e366b
 "segmented-fenced-proof.cjs": (load, module) => {
 'use strict';
 
@@ -5181,12 +5181,14 @@ const randomUUID = () => randomBytes(16).toString('hex');
 const { hash } = load("commit-proof.cjs");
 const { createSegmentedPlanCodec, same, copy } = load("segmented-plan.cjs");
 function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = randomUUID,
-  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32 }) {
+  domainWrites = false, codecPolicy = {}, stepsPerInvocation = 20, maxStagedFragments = 32,
+  coordination = 'EXCLUSIVE_LOCK' }) {
   for (const method of ['read', 'insert', 'compareAndSet', 'compareAndRemove']) {
     if (typeof store?.[method] !== 'function') throw Error('Conditional storage required');
   }
   if (!Number.isSafeInteger(stepsPerInvocation) || stepsPerInvocation < 1
-    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1) throw Error('Bounded execution policy required');
+    || !Number.isSafeInteger(maxStagedFragments) || maxStagedFragments < 1
+    || !['EXCLUSIVE_LOCK', 'CONTROL_CAS_CANDIDATE'].includes(coordination)) throw Error('Bounded execution policy required');
   const codec = createSegmentedPlanCodec({ ...codecPolicy, company, domainWrites });
   const { journal, lockId, controlId } = codec.ids, scope = company + '/PURCHASE';
   async function readControl() {
@@ -5227,8 +5229,11 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       || typeof prepare !== 'function' || typeof validate !== 'function' || typeof authorize !== 'function') throw Error('Operation identity required');
     const key = hash(scope, requestId, memberId), digest = hash(input), resultId = hash(key, 'RESULT'), attempt = newAttempt();
     if (typeof attempt !== 'string' || !attempt) throw Error('Attempt identity required');
-    // Unknown acquisition is never stolen or auto-removed, including a lost reply.
-    await store.insert(journal, { _id: lockId, company, owner: key, attempt });
+    // Default deployed candidate retains its original lock contract. The opt-in
+    // LOCAL review policy coordinates through the existing conditional control
+    // transition; it never touches, releases or adopts a native UNKNOWN lock.
+    const exclusive = coordination === 'EXCLUSIVE_LOCK';
+    if (exclusive) await store.insert(journal, { _id: lockId, company, owner: key, attempt });
     try {
       let control = await readControl();
       if (control.pending && (control.pending.key !== key || control.pending.digest !== digest)) throw Error('Prior inventory save pending');
@@ -5327,7 +5332,7 @@ function createSegmentedFencedProof({ store, company = 'NCT', newAttempt = rando
       await transition(journal, control, nextControl(control, { generation: manifest.baseGeneration + 1, pending: null }));
       return outcome;
     } finally {
-      await store.compareAndRemove(journal, lockId, attempt);
+      if (exclusive) await store.compareAndRemove(journal, lockId, attempt);
     }
   }
   return { initialize, readControl, readSnapshot, commit, ids: codec.ids, planFormat: 'SEGMENTED_V2' };

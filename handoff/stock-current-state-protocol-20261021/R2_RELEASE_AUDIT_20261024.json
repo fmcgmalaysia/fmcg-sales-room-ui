@@ -1,6 +1,6 @@
 {
   "cohort":"MASTER_20261024_R2",
-  "codeCheckpoint":"180ef1a",
+  "codeCheckpoint":"83e0cd5 plus local CAS coordination review candidate",
   "protectedRecovery":"d447185987fecbb81bcaf6b25c170f631f767f9f",
   "protectedRuntime":"32b812c655e1083306037c008314c72373a15f72",
   "fourStages":{
@@ -23,7 +23,16 @@
     },
     "indexPendingManual":"None. User screenshots confirm exact definitions; final Products spinner replaced by Delete",
     "indexActiveStatus":"UNCONFIRMED: native API WDE0144 twice including approved narrow elevation; API path stopped, unused privilege removed; CMS list is not SDK ACTIVE proof",
-    "actualStoredControlTypes":"Builtin readback validates company/cohort/version TEXT, generation/schema/transfer NUMBER and pending null; NOT all stored business date/array/CAS/capacity/recovery acceptance"
+    "actualStoredControlTypes":"Builtin readback validates company/cohort/version TEXT, generation/schema/transfer NUMBER and pending null; NOT all stored business date/array/CAS/capacity/recovery acceptance",
+    "newCapacityScenario":{
+      "prefix":"SPT-R2CAPACITY-20261024-9e72:",
+      "confirmedReceipts":94,
+      "confirmedOperationTotals":{"queries":3079,"inserts":818,"patches":291,"deletes":78},
+      "lastConfirmed":"APPLY639/901; known injected interruption and same-request recovery previously confirmed",
+      "nextInvocation":"HTTP504; UNKNOWN execution/storage outcome; not replayed or unlocked",
+      "nativeGate":"CLOSED and full source readback matched",
+      "accepted":false
+    }
   },
   "protectedFlowAudit":{
     "localOriginalSourceDiff":"Fresh git diff d447185..HEAD empty for integration/backend, integration/wix, sales-room/wix, buyer-room/wix and catalogue/wix",
@@ -34,7 +43,7 @@
   "remainingMandatory":[
     "Explicit native index status verification; all requested definitions visibly complete",
     "Resolve native tester staff identity mismatch without staff creation or auth relaxation; actual staff/public authorization acceptance",
-    "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance",
+    "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance; exclusive-lock scenario stopped at504, local control-CAS alternative requires scope decision and further evidence",
     "Real split/ALLOC borrow/repay/reload/moved-row/archived relationship and Loaded visible acceptance",
     "Approved paired Pages build, Wix publish/live receipt and force-refreshed public verification; public technical-export consent already received"
   ],

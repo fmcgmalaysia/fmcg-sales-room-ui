@@ -1,0 +1,56 @@
+2026-10-24 — LOCAL REVIEW CANDIDATE ONLY, NOT INSTALLED OR ACTIVATED
+
+Trigger: second distinct native300 diagnostic returned504 while applying its plan.
+Last confirmed APPLY639/901. Closed its native gate; retain UNKNOWN request/records.
+Wix cannot give an execution-drain receipt. Repeating a new namespace with the same
+exclusive-lock policy did not make timeout recovery reliable. Do not repeat it.
+
+Concrete local candidate
+segmented-fenced-proof.cjs adds server-construction option coordination, default
+EXCLUSIVE_LOCK unchanged. Opt-in CONTROL_CAS_CANDIDATE skips company lock insert
+and removal and relies on the existing conditional control record transition to
+select one immutable plan for the generation. No expiry, wait, lock takeover,
+cleanup, inferred stop or rollback. Browser cannot choose the option. No generated
+Wix modules or native code were changed to use this opt-in; all remain old default.
+
+Why this differs from old unconditional-writer migration
+The segmented codec makes each after-image version unique to operation key and row;
+same UUID/member retains the same immutable manifest/result identity. Domain writes
+are insert-if-absent or exact before-version CAS. Control transitions likewise use
+exact versions. A late same-plan request can observe identical applied data but
+cannot overwrite a later generation. Competing different operation may stage an
+orphan plan but cannot win an occupied/stale control CAS or rebase its frozen plan.
+Original pre-R2 unconditional writers have no such contract; old namespaces remain
+isolated. This review does not remove verifyLegacyDrain or permit old-table reuse.
+
+Evidence
+Two actual-factory diagnostic witnesses show delayed domain/control CAS cannot
+overwrite two newer completed generations after an explicit OFFLINE intervention.
+They are not native lock-release authority.2pass256.3732ms.
+Opt-in candidate tests exercise suspended full executions at domainCAS/domaininsert,
+pending-control/phase-control/result-insert/generation-CAS, plus delayed staged
+fragment/manifest and competing first requests. Old execution resumes AFTER two
+newer completions; business data/control preserved, no lock calls/removal at all.
+Also unchanged-input identity/pending-reader barriers/bounded sequential replay.
+11candidate checks pass192.6004ms. Initial shared/default proof regression with first
+8candidate+2witness+31default checks:41pass1035.572ms. Three added candidates passed
+in subsequent focused11run. No native correctness/latency acceptance implied.
+
+Review limits before installation
+Not a complete all-writer/native proof. Must cover overlap at every mutation,
+new/updated rows, complete preparation/orphan limits, actual authorization, native
+SDK conditional semantics and runtime capacity with the candidate. Require exact
+paired cohort installation and all original protected-flow regression. Product
+callbacks with nonconditional side effects must never be admitted by this policy.
+Unknown prior exclusive-lock scenarios remain untouched. Native adoption changes
+the reviewed R2 coordination mechanism and requires the project's explicit scope
+decision after this concrete candidate/evidence is presented. Existing deployment,
+Pages, controls and user Buyer entry remain unchanged/closed.
+
+Broader regression: stock*.test.cjs1486checks,1485pass/1fail58914.9313ms. The one
+failure was the expected mechanical source/bundle check after editing the source.
+Rebuilt LOCAL stockCurrentCommands.js with119scoped modules, never synchronized
+that changed bundle to native or rebuilt the installed isolated-cohort graph.
+Affected command-runtime6+candidate11checks17pass358.0488ms after rebuild. Retain
+the original broader output; do not report a fully clean1486run that did not run.
+Public/native Source/Master bundles remain prior versions, not this local bundle.

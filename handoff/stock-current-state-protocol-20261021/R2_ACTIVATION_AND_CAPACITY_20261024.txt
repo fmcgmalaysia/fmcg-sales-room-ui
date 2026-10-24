@@ -69,3 +69,27 @@ exact CLOSED candidate, full clipboard matched hash9a79204...b669a. Autosave che
 Private proof r2-capacity-switch-checkpoint-20261024.png. No test invocation active.
 Same-scenario145grant remains valid with144remaining; closing for handoff does not
 require repeat consent. Stop at first unconfirmed test execution; no replay/reset.
+
+SOL continuation: closed full-source readback matched. One INSPECT confirmed exact
+BEFORE20/pending/generation0 with5queries0mutations. Same authorized gate reopened,
+full source matched. Continued SAME new operation through BEFORE901 and APPLY19.
+Explicit INTERRUPT_APPLY returned KNOWN_APPLY_INTERRUPTION_CONFIRMED:true,
+appliedBeforeFault10, cursor remains19, mixedActionableReadBlocked:true,
+lockAbsent:true. Partial images19..28after/29before verified by native code.
+63complete receipts all ok:true retained in CUA r2CapacityReceipts. Total attempted
+queries1243/inserts380/patches57/deletes47; grant remaining98removals. No UNKNOWN
+execution outcome. Next ADVANCE must resume original plan at APPLY19 and account
+for those10already applied images; never reset/reseed. Gate currentlyTRUE for this
+authorized ongoing test. All business/activation acceptance flags remainfalse.
+
+SUBSEQUENT HARD STOP: same-request recovery succeeded through APPLY639. NEXT
+ADVANCE invoked exactlyONCE; helper observed no returned result, subsequent native
+tester read shows 'Request failed with status code504'. UNKNOWN execution/storage
+outcome. No rerun/reset/unlock/other300identity. Closed gate immediately, complete
+native clipboard matched original CLOSED SHA2569a79204...b669a; Autosave checked.
+94confirmed receipts retained:queries3079/inserts818/patches291/deletes78. These
+exclude unknown invocation (per-call upper bound200/33/30/1). Authorization ceiling
+145 does NOT authorize releasing that unconfirmed invocation's lock. Original old
+UNKNOWN test untouched. Private screenshot r2-capacity-504-closed-20261024.png.
+Native300 capacity/recovery completion not accepted. Business activation remains
+blocked. Do not equate absent lock/later image progress with invocation completion.

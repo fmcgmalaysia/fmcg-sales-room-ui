@@ -1,5 +1,32 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LOCAL REVIEW CANDIDATE AFTER504 — R2_CAS_COORDINATION_REVIEW_20261024.txt
+Default EXCLUSIVE_LOCK behavior preserved. Optional constructor-only
+CONTROL_CAS_CANDIDATE omits company lock insert/remove and selects immutable plan
+through existing control CAS. Not selected in generated runtime/native/Wix.
+11 focused local late-execution/competing-operation/staging/replay checks pass.
+Actual default regression31+initialcandidate8+witness2 passed41; broader stock
+suite running. New native adoption scope question pending user answer. No changed
+native test identity, no new300trial and no unknown lock deletion/resumption.
+Broader suite completed1485/1486pass; sole generated-command drift repaired via
+local119module rebuild. Affected17checks pass; no native sync or clean whole-suite
+claim. Architecture scope answer stillpending. Existing new/native gateCLOSED.
+
+LATEST HARD CHECKPOINT — NEW R2 CAPACITY EXECUTION ALSO RETURNED504
+New SPT-R2CAPACITY-20261024-9e72: test completed BEFORE901; known controlled
+interruption at APPLY19 verified10partial images; same-request recovery then
+confirmed through APPLY639. Next ADVANCE invoked ONCE returned HTTP504 in native
+tester, no function return. Execution/storage outcomeUNKNOWN; DO NOT ADVANCE,
+INTERRUPT, REPLAY, RESET, UNLOCK, RESEED or make another identical300scenario.
+94confirmed receipts retained in CUA r2CapacityReceipts; totals of CONFIRMED calls
+only:queries3079/inserts818/patches291/deletes78. Unknown invocation attempts are
+additional/unmeasured (bounded at200/33/30/1), not counted as zero.145grant is not
+permission to remove UNKNOWN locks. Native new diagnostic restoredCLOSED and full
+readback exactly9a79204cc02cb051cf9a70401f6305e79df536d60909cf58bdac8244cc4b669a.
+Private proof r2-capacity-504-closed-20261024.png. Old SPT-COMMIT300 untouched.
+User informed; independent installation/contract/operational review continues.
+No production activation, Pages dispatch, WixPublish or public Buyer acceptance.
+
 LATEST MODEL-SWITCH CHECKPOINT — new R2 capacity test, NOT old UNKNOWN test
 User explicitly approved this fresh scenario's at-most145 conditional own-lock
 releases. Completed SEED batches0..14 (300products) and exactly ONE ADVANCE.
