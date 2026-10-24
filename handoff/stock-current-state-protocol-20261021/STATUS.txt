@@ -1,5 +1,71 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST 2026-10-24 — USER COMPLETED ALL REMAINING INDEX DEFINITIONS
+User screenshots confirm all three R2 NCT Activity and all three R2 GHR Activity
+indexes with exact three fields in the specified order, Regular and Ascending.
+SC_TASK_REL includes status as third field in both collections. Final Products
+screenshot confirms SC_PRODUCT_PAGE(company,status,barcode), all ASC Regular;
+spinner replaced by Delete. No further creation, deletion or repair is required.
+These are visible definition/save receipts, not SDK ACTIVE status certification.
+Earlier partial-index/manual-assistance entries below are historical, superseded.
+User explicitly approved public synchronization of this implementation, tests and
+technical handoffs to the existing PR220 branch; credentials, customer order data,
+backup CSVs and private screenshots remain excluded. No main merge authorized.
+User requested continuation through installation, acceptance and publication.
+Fresh read of existing public Purchase tab shows LAW with original resource token
+20261020-split-controls-v2 and zero orders. This proves that session is signed in,
+not new R2 acceptance. Studio still shows saved MAINTENANCE genesis receipt.
+Read current handoffs again due to context loss; same-version framework reused.
+
+LATEST FIELD SELECTION HANDOFF — USER ASSISTING SIX REMAINING INDEXES
+DistinctNCT SC_REPAID_SOURCE semanticcompanyclick selectedDetails instead; EACH
+prefix assertion STOPPED before Save. Wrong field-selection fault repeated across
+mechanisms => FIELDSELECTION pathSTOPPED, no keyboard/coordinate retry. UNSAVED
+current form51427460 retained/markedHandoff, screenshot saved. User asked grouped6
+remaining new indexes with exactRegularASCfields and skip-if-existing; no Publish/
+ACL/delete. Do NOT control Chrome while user assists. NCTSC_ACTIVE_PRODUCT remains
+user-confirmed/readback correct, confirmedindex total5. Products outcomeUNKNOWN.
+Background only: exact original source diffs vsd447185empty; actual Buyer direct
+base64 download flow retained. R2_RELEASE_AUDIT_20261024.json lists four states and
+real pending gates, not published. Outgoing180ef1a vs lastknown66bb853:312files,
+42technicalhandoff. Repo metadata confirmsPUBLIC. Specific broader technical-export
+consent asked async, no push/newconnector write/history/package workaround. Email
+shaped text scan flagged only Wixreply; broad keywordscan not a full privacy audit.
+
+USER NCT INDEX SAVE CONFIRMED AND READ BACK
+User manuallySave returnedlist/indexshown. Agent readonly native list independently
+confirms newR2NCTActivity SC_ACTIVE_PRODUCT(company,stockKey,status) allASC USER
+Regular. Screenshot saved; preserve setup. No repeated agent Save for that index.
+Human changed-state evidence allows ONE next distinct missing-index operation via
+fresh native element Save (earlier4successful mechanism), not failed semanticSave.
+Rootcause of two unconfirmed semanticSave clicks remainsUNKNOWN, not claimed Wix
+or data fault. Product index unresolved; if newnativeSaveunconfirmed STOPimmediately.
+Independent bounded download audit: actual Buyer relay imports/calls direct
+createBuyerOrderDownload -> generated R2builder -> base64, NOT old HTTP export token
+route; no hypothesized regression proven and no repair. Original mechanism kept.
+
+LATEST INDEX SAVE HANDOFF — FOUR CONFIRMED, TWO SAVE OUTCOMES UNCONFIRMED
+Claims3+Positions1 confirmed native lists. ProductsSC_PRODUCT_PAGE and newNCT
+SC_ACTIVE_PRODUCT each SaveONCE, same form-remains/no-receipt fault after exact
+semantic field preflight. Products subsequent readonly list stillONLYSYSTEM; not
+proof delayed request ended, do not repeat. NCT correct unconfirmed form retained
+51427460/markedHandoff. TWO save-faults => SAVE pathSTOPPED, no alternate input/API
+retry. Asked user one manualSave of current NCT form and actual list/error receipt;
+screen released, no Chrome actions while user assists. R2_INDEX_INSTALL has details.
+GHR3and NCTremaining2notattempted. All index ACTIVEstatus stillUNCONFIRMED. Existing
+maintenance controls unchanged. Background records only while awaiting human.
+
+LATEST NATIVE INDEX INSTALL — COPYING DID NOT INCLUDE USER INDEXES
+CMS actualR2StockClaims/R2StockPositions each initiallyONLY2SYSTEM indexes. Added
+only missing new-table USER RegularASC3Claims+1Positions, singleSave each after
+exact preflight; listed definitions/fieldorder after Save. No oldtable/unique/
+delete/overwrite. R2_INDEX_INSTALL_20261024.txt records scopes/fields/UIcorrections.
+Native CMS index list available via Studio collection menu opening51427460, so
+continue this normal native management path; deniedSDKindex path remainsSTOPPED.
+Products1and both R2journal3each still need actual read/add-if-missing. Native API
+ACTIVEstate stillUNCONFIRMED, do not infer. Images saved/embedded for completed4.
+Local code180ef1a plusthese2docs uncommitted, no push/Pages/WixPublish/ACTIVE.
+
 LATEST NEW COHORT NATIVE FIELDS AND EMPTY GENESIS CONFIRMED
 Seven page relay drafts preserved25c8bfc. Readonly fixed-new-table Admin inspector
 added to both new bootstraps; exact native finalMASTERa026b693.../Source8bf3967b....
