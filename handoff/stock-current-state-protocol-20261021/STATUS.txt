@@ -1,5 +1,20 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST EMPLOYEE TEST 2026-10-25 — SIX FIXED ROWS COMPLETE; TEST153 READONLY/0%
+Read R2_EMPLOYEE_NATIVE_20261025.txt FIRST. e425bba10root authority install pushed.
+Original grant refuses editor/Preview administrator; no staff/ACL edit. Created
+Test151/152, Live149100% unchanged/Test0%. Test152RUN terminal not captured; later
+accidental PagePreview504UNKNOWN, no rerun/reset. Exact Admin readonly inspection
+confirms P3/W3 fixed rows complete/V1 (212/81ms,0mutations), NOT full terminal proof.
+OUR temporary page lacked SSR guard; now browser-only INSPECT, backend writes CLOSED.
+Native backend exacteab17710...b8b2d; combined CLOSEDpage45d9f220...ffa79. Test153
+front READ gate enabled, Live149100%/Test1530% confirmed; no business ACTIVE. Title
+still old under automation; asked user ONCE manual newChrome tab, no Buyer order.
+Browser controls stopped pending reply. Diagnostic13pass; final fullstock1593pass
+0fail0skip0cancelled48922.4316ms; both new diagnostic builder checks pass.
+Source raw SDK patch/own-lock-remove authority still requires fresh check/separate
+scope as needed; MASTER-only install/delete exclusion is not Source permission.
+
 LATEST AUTHORITY INSTALL 2026-10-25 — OFFICIAL SDK NATIVE PASS; TEN ROOTS EXACT
 User explicitly allowed only MASTER @wix/essentials1.0.15 installation; native
 Installed list confirms it and original @wix/data1.0.528 unchanged. Fixed3record

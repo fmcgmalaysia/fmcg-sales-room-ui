@@ -1,8 +1,10 @@
 'use strict';
 // Fresh fixed retained records only. No production/employee/CMS ACL mutation.
-async function verifyR2SdkAuthority({items,elevate,input,enabled=false,now=()=>Date.now()}){
+async function verifyR2SdkAuthority({items,elevate,input,enabled=false,fixture='ADMIN',requireUnprivileged=false,now=()=>Date.now()}){
  if(!input||Array.isArray(input)||Object.keys(input).join(',')!=='step'||!['RUN','INSPECT'].includes(input.step))throw Error('Exact authority probe step required');
- const table='StockProtocolTest',prefix='SPT-R2AUTH-20261024-c281:',ids=['CONDITIONAL','BULK-A','BULK-B'].map(id=>prefix+id);
+ const prefixes={ADMIN:'SPT-R2AUTH-20261024-c281:',PURCHASE:'SPT-R2AUTH-PURCHASE-20261025-a581:',WAREHOUSE:'SPT-R2AUTH-WAREHOUSE-20261025-f281:'};
+ if(!Object.hasOwn(prefixes,fixture)||fixture!=='ADMIN'&&input.step!=='INSPECT'&&requireUnprivileged!==true)throw Error('Fixed original employee authority fixture required');
+ const table='StockProtocolTest',prefix=prefixes[fixture],ids=['CONDITIONAL','BULK-A','BULK-B'].map(id=>prefix+id);
  const started=now(),operations={queries:0,inserts:0,bulkInserts:0,patchAttempts:0};let mutationAttempted=false,stage='PREFLIGHT';
  const report=(ok,extra={})=>({ok,schema:'R2_SDK_AUTHORITY_PROBE_V1',step:input.step,stage,elapsedMs:now()-started,operations:{...operations},mutationAttempted,
   fixedCollection:table,fixedRecordCount:3,ordinaryStaffAuthorizationAccepted:false,businessAuthorizationAccepted:false,activationReady:false,...extra});
@@ -17,7 +19,13 @@ async function verifyR2SdkAuthority({items,elevate,input,enabled=false,now=()=>D
  function complete(rows){return rows.length===3&&expected.every(wanted=>{const row=rows.find(row=>row._id===wanted._id);return row?.stockCommitVersion===wanted.stockCommitVersion
   &&JSON.stringify(stable(row.details))===JSON.stringify(stable(wanted.details));});}
  try{
-  const before=await read();if(input.step==='INSPECT'){stage='READ_ONLY_INSPECTION';return report(true,{retainedRecords:before.length,complete:complete(before),versions:before.map(row=>({id:row._id,version:row.stockCommitVersion}))});}
+  if(requireUnprivileged){
+   stage='ORDINARY_PERMISSION_BASELINE';operations.queries++;let denied=false;
+   try{await items.query(table).hasSome('_id',ids).limit(4).find({consistentRead:true,returnTotalCount:true});}
+   catch(error){denied=/\bWDE0027\b/.test(String(error?.message||''))||error?.code==='PERMISSION_DENIED'||error?.details?.applicationError?.code==='PERMISSION_DENIED';if(!denied)throw error;}
+   if(!denied)return report(false,{stage:'PRIVILEGED_CONTEXT',blocked:true,error:'Ordinary SDK read denial required; administrator context is not employee acceptance'});
+  }
+  const before=await read();if(input.step==='INSPECT'){stage='READ_ONLY_INSPECTION';return report(true,{retainedRecords:before.length,complete:complete(before),ordinaryStaffReadAccepted:requireUnprivileged,ordinaryReadDenied:requireUnprivileged,versions:before.map(row=>({id:row._id,version:row.stockCommitVersion}))});}
   if(before.length)throw Error('Occupied dedicated authority fixture; no reset, adoption or retry');
   stage='INSERT';mutationAttempted=true;operations.inserts++;await insert(table,{...expected[0],stockCommitVersion:'AUTH-V0',details:data(10)});
   stage='BULK_INSERT';operations.bulkInserts++;await bulkInsert(table,expected.slice(1));
@@ -30,7 +38,8 @@ async function verifyR2SdkAuthority({items,elevate,input,enabled=false,now=()=>D
   catch(error){staleRejected=/WDE0193|[Cc]ondition (?:not met|mismatch)/.test(String(error?.message||''));if(!staleRejected)throw error;}
   if(!staleRejected||!complete(await read()))throw Error('Elevated stale version was not safely rejected');
   stage='NATIVE_METHODS_CONFIRMED';return report(true,{retainedRecords:3,elevatedQueryConfirmed:true,elevatedInsertConfirmed:true,elevatedBulkInsertConfirmed:true,
-   elevatedPatchConfirmed:true,staleConditionRejected:true,finalValue:17,deletions:0,permissionsChanged:false});
+   elevatedPatchConfirmed:true,staleConditionRejected:true,finalValue:17,deletions:0,permissionsChanged:false,
+   ordinaryStaffAuthorizationAccepted:requireUnprivileged,ordinaryReadDenied:requireUnprivileged});
  }catch(error){return report(false,{error:error.message,retainRecords:true,noAutomaticRetryResetOrCleanup:true});}
 }
 module.exports={verifyR2SdkAuthority};
