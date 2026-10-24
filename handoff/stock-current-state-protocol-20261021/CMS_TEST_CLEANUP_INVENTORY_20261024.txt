@@ -60,3 +60,46 @@ inputs to avoid competing with user. NCTTasks17backup NOT yet downloaded/verifie
 old Oct18task files are not current backups. No claim all63restorable from current
 exports yet. Do not delete until complete backup/exact scope and native confirmation.
 No old protocol fixture/lock deletion permission reused. No data deleted anywhere.
+
+BACKUPS COMPLETE, DELETION STILL NOT EXECUTED
+User supplied download screenshot including NCT+Tasks (2).csv. Actual known file
+C:/Users/User/Downloads/NCT+Tasks (2).csv,28333bytes,17records,38fields, every quoted
+CSV record has exact field count; SHA25681761B38EB0F4130DDC9CB0E9E21718EA095AF048150328B148DA1575B4FE929.
+Previously parsed Orders16/Activity30files' hashes freshly match above values.
+Fresh same MASTER overview again confirms NCTOrders16/NCTTasks17/NCTActivity30,
+StockProtocolTest341,SharedSuppliers3,StaffMasterAccess1. No deletion or mutation.
+Private action-scope screenshot master-cms-cleanup-confirmation-20261024.jpg in
+same private-evidence folder. Three source CSVs are retained in Downloads, NOT
+uploaded to GitHub/Pages. Exact63row deletion confirmation requested before action;
+never treat download screenshot as an instruction to delete other341diagnostics,
+supplier/staff/reference/schema/ACL or Source-site records. Cleanup is not cutover.
+
+MASTER DELETION EXECUTED AND VERIFIED — supersedes NO deletion notes above
+User explicitly confirmed the exact63row/3table scope, then separately requested
+Source cleanup. Same current native MASTER table counts matched backups immediately
+before each selection. Selected/deleted Tasks17,Orders16,Activity30in that order;
+each Wix final Delete items? confirmation clicked ONCE under that exact user grant.
+Each operation showed its distinct17/16/30items deleted receipt and No items.
+Activity selection confirmed30, not merely20visible rows. No unknown deletion
+response, repeat save/delete, backend call or protocol lock removal occurred.
+Final native MASTER overview independently confirms all3zero, SharedSuppliers3,
+SharedSupplierActivity4,StaffMasterAccess1,StockProtocolTest341retained. Stock* and
+PurchaseOrders remain0. No collection/schema/index/ACL, Source/Drive member or file
+deletion, staff/permission edits, publication or authority switch performed.
+Private result screenshot:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/master-cms-cleanup-complete-20261024.jpg
+Three CSV backups remain in Downloads at exact paths/hashes above. These are CSV
+recovery material; no claim of verified one-click native restore/system metadata.
+
+Source read-only inventory and user takeover
+Actual Source dashboard5292b63a-30e5-4c0e-8762-a1b127bbc651/tab51427122has16collections.
+Candidate test reset scope: WixBuyerOrders2,WixBuyerOrderLines16,WixOrderAudit5,
+WixBuyerListItems16(total39). User then said only tell which CMS can be cleared;
+agent STOPPED Source cleanup and identified those four only. No Source record
+was deleted by agent. Preserve customers2/customerUsers2/staff4/catalogue6750/
+FX3/categories4+38/CatalogueBuyers1 and customer identity/profile/assignment audit.
+Source user now says '清空了，需要我回到BUYER ROOM下单吗？': record USER-REPORTED
+four-table cleanup only, NOT fresh independently verified zero counts. No automatic
+new order requested; new ALLOC/borrow/current version still not published/active.
+Source CMS reset does not clear Drive/QD/quote or other retained customer metadata.
+Do not request fresh business orders merely to refill empty tables before release.

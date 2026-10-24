@@ -1,5 +1,16 @@
 CURRENT 2026-10-24 — ALLOC ENTRY CANDIDATE; RELEASE STILL BLOCKED
 
+LATEST TEST RESET COMPLETE: exact user confirmed MASTER63business rows deleted
+Tasks17/Orders16/Activity30through native CMS once each; three distinct deletion
+receipts+No items and final overview all3zero verified. Supplier3/history4/staff1/
+diagnostic341and schemas/indexes/ACL retained. Three current CSV backups/hashes and
+private after screenshot in CMS_TEST_CLEANUP_INVENTORY_20261024.txt. No neworder.
+Source read-only inventory identified4test tables39rows; user took over and now
+reports them cleared. Agent did NOT delete Source or independently reread zeros.
+Do not confuse user-reported Source reset, MASTER cleanup or empty Stock* with a
+safe authority switch, ACTIVE coverage or release. New Buyer order would still use
+old flow; don't ask user to create it until a specific appropriate test is ready.
+
 LATEST CLEANUP INVENTORY: CMS_TEST_CLEANUP_INVENTORY_20261024.txt records fresh
 MASTER16collection UI inventory. Ordinary NCTOrders16/NCTTasks17/NCTActivity30
 total63test rows, not341StockProtocolTest diagnostic rows; supplier/staff/schema/
