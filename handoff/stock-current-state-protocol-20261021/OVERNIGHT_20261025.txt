@@ -337,3 +337,67 @@ Local full1606result remains reusable; no unchanged tests rerun. Native activati
 factory has no deployed server-owned verifier; callback booleans or synthetic
 fixture coverage cannot count as actual installation/all-writer acceptance.
 Original business ACTIVE OFF, two live versions/Pages/public tests unchanged.
+
+2026-10-25 CONTINUATION — READ-ONLY AUDIT SUBGATE / NATIVE DIAGNOSTIC FIX INSTALLED
+Implemented fresh-cohort-activation-schema.cjs plus standalone compiled Admin-only
+r2activationSchema.web.js and builder. Reads only R2NCTActivity/R2NCTActivity1
+metadata twice each with stable same-admin checks; no items/index API, elevation,
+field/ACL mutation, bootstrap, activation or coverage capability. Reports exact
+missing/mistyped persisted control and activation audit fields, never full native
+business acceptance. Prior bootstrap/schema check did not require writerBuild,
+activationRequestId/MemberId/EvidenceDigest. This is a contract gap, NOT proof that
+those fields are missing from the actual live schemas; fresh read still required.
+ALLOC stockAllocatedCumulative is derived by the original paired Purchase
+projection from current stock, NOT a CMS counter to add; no redundant field added.
+New actual generated endpoint and original bootstrap/activation regression:
+24pass0fail0skip0cancelled266.3571ms. Build --check passes. Existing1606baseline
+reused, NOT rerun or relabelled as a larger full-suite native result. This audit
+reader is local-only, NOT installed or used as complete activation evidence.
+
+User clicked code area as requested. Fresh native Wix explicitly showed other-tab
+read-only and Take Control. Normal screenshot click restored editing after delayed
+UI response. AX focused_element remains address bar even when actual code selection
+is verified, so it is not reliable alone for this embedded editor. No blind typing.
+Documented sky.set_value works for native Find/Replace/JSON parameter fields; no
+long typeText retry. This is normal native UI, not browser debugger/hidden state.
+
+Full old diagnostic compared in23 disjoint700-character normal Find selections;
+all15648content characters match old OPEN, with UI selection omitting final LF.
+Canonical single-EOF-LF old hash971e3426...f2860. Applied exactly3unique prepared
+Find/Replace groups (419->1451,136->496,365->417 chars), one Replace All each.
+Full after-image compared in19 disjoint900-character normal Find selections;
+all17092content characters exact, same omitted selection EOF-LF qualification.
+Canonical new OPENcd1e66118cb6f89260bb5824d21cdeea41ca15f0cd1f5ecc08f222777296c101;
+new CLOSED7a1787740e1f78e11c961990756756da5de33b90499749e5c0027f3f9a00e72d.
+No full-file overwrite, business root/code edit, SEED/BORROW replay or Publish.
+
+Native INSPECT successfully returned8queries/0writes, generation1 physical100,
+A30/B70/repaid0/receiptCount0. Retained partial request hash stored and
+originalFieldOrder both8b5ed8aacdfdf94d9957569a6829174a; observed reordered
+18ca187ba2dd90c7887965a12ce5ef67. Field-order diagnosis now NATIVE CONFIRMED.
+Then fixed RECEIVE_PARTIAL selected in actual inner Set Parameters editor7777;
+inner Run7756 clicked ONCE. Terminal pending at this entry; do not resubmit until
+actual terminal receipt is known. Test-only gate remains OPEN, no public automatic
+caller; close after round or UNKNOWN. Business ACTIVE remains OFF. New audit
+subgate alone is explicitly tested to FAIL actual activation with zero CAS.
+
+SUBSEQUENT PARTIAL RECEIPT TERMINAL CONFIRMED
+Four bounded same-request calls confirmed BEFORE4/5 -> APPLY3/5 -> VERIFY2/5 ->
+OPERATION_COMPLETE generation2 pendingnull. Same request6c930002...0002,
+digest874ea3fe2a36e2f49f1b652c147f215d,
+planHash77e0353807084f0dd384920eadaf01f7,
+key29a9c080516d71d946098cab61f7a01f throughout. No new request or lock removal.
+Terminal receipt4a4926f18b6210cb5f6dd927e6a227e9, PO
+f3f6285c64d776b11b03cfa798d02d3d. A new read-only INSPECT invoked once after
+terminal; pending at this append. Do NOT repeat RECEIVE_PARTIAL. Full remaining
+receipt not started yet. Local audit-reader16ebd17 successfully pushed PR220.
+
+PARTIAL CONSERVATION VERIFIED / FINAL RECEIPT STARTED
+Native readonly INSPECT8queries/0writes generation2 confirmed onHand120, A30/B90,
+repaid20, one receipt, debtClosedfalse. No duplicate borrower ALLOC. Then fixed
+RECEIVE_REST request6c930003...0003 started; first known BEFORE4/6,
+digest7fb8a2c7217ecd6b6112bc1539687e42,
+planHash4126203363a5ad7eda4dc31bf8972d5a,
+keyeb7a11d281b028fb57979ec2a2fbea11. Same-request continuation invoked once from
+that confirmed checkpoint; terminal pending here. Do not repeat partial receipt
+or seed/borrow, no auto-reset/cleanup on UNKNOWN. Packing/dispatch still disabled.
