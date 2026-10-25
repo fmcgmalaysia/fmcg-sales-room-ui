@@ -562,3 +562,28 @@ Native UI parameters reset/readback lag across tool cells; two combined helper
 guards stopped before typing/Run when selection not yet visible. No wrong request
 or duplicate execution. Use separate native observations after reset/selection;
 do not repeat input just because immediate AX state is stale.
+
+BOTH COMPANIES NATIVE READ PREREQUISITES COMPLETE; PAGES SCOPE EXACTLY AUTHORIZED
+All7GHR scopes now separately returned positive native receipts too. Together14
+company-scope calls on10actual R2 tables,310required field checks/44query executions,
+zero business or schema mutations. See updated R2_READ_PREFLIGHT_NATIVE_20261025.json.
+Full reader nativea23452ea...6b58e unchanged after the two inspector enum fixes.
+This qualifies EMPTY native query shapes/metadata, not populated query semantics,
+actual ordinary staff terminal writes, allwriter/activation/public acceptance.
+Stopped coordinate-only combined parameter helper after selection guards failed;
+no incorrect input dispatched. Actual JSON first character578,655 often focuses,
+but role/selection may update later than AX. Supported parameter-control set_value
+can INSERT/leave trailing text, not replace full model. Before any Run use CtrlA,
+fresh selected_text equal to WHOLE short parameter Value, replace ONLY that short
+JSON with type_text, then independently confirm exact Value and actual inner Run.
+One temporary incomplete/malformed parameter draft was repaired before any Run;
+not a source/business data change. Avoid speculative coordinate/focus retries.
+Native typed DATE/NULL/zero/arrays shared-adapter proof already exists from20261023
+NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt; fixed consumed fixtures must never rerun.
+New table metadata does not retroactively turn that into actual business-row proof.
+Public GitHub API READONLY confirms original7Pages policies unchanged. Local gh
+not installed/onPATH; no credential extraction or tool installation. User explicitly
+allowed adding ONLY taskbranch feat/stock-current-state-protocol-20261021 temporarily
+at deployment, then delete newrule/restore original7; exact async answer received.
+No policy added/removed, no dispatch/Pages/WixmainPublish. Keep this precise grant,
+do not ask it again; fresh policy comparison before use and preserve original7IDs.

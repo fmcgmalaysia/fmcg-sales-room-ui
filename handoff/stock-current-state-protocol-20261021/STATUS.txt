@@ -1,14 +1,16 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
-LATEST 2026-10-25 — NCT SEVEN-SCOPE READ PREREQUISITES NATIVE PASS; NOT PUBLISHED
+LATEST 2026-10-25 — BOTH COMPANIES READ PREREQUISITES NATIVE PASS; NOT PUBLISHED
 See R2_READ_PREFLIGHT_NATIVE_20261025.json. New Admin-only read inspector installed
 whole-source exact a23452ea...6b58e, no item/schema/permission mutation capability.
-All7NCT scopes/155required-field checks/22query executions passed natively. Existing
+All14company scopes/310field checks/44query executions passed natively. Existing
 manualCostField is ARRAY; corrected ONLY inspector's two expectation constants,
-never changed CMS type. GHR counterpart readbacks still pending at this entry.
+never changed CMS type. NCT and GHR both complete; all actual10tables Admin-only.
 This is NOT populated semantic/typed business write/allwriter/activation proof.
 New+audit23pass214.98ms; related original23pass546.3654ms;1606full reused.
 BusinessACTIVE remainsOFF, writerCoverage EMPTY; Pages/Wix/public release pending.
+User precisely allowed one temporary Pages task-branch rule, restore original7
+after use. Public GitHub API confirmed7unchanged; permission NOT yet added.
 
 NATIVE BORROW/PARTIAL/FULL REPAYMENT VERIFIED; NOT PUBLISHED
 Read OVERNIGHT_20261025.txt LAST APPEND. Actual git log supersedes recorded hashes.

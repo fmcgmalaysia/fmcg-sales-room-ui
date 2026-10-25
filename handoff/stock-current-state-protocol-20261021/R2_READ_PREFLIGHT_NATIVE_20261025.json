@@ -273,15 +273,278 @@
       "typedRoundtripsAccepted": false,
       "writerCoverageAccepted": false,
       "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "ORDERS",
+      "collection": "R2NCTOrders1",
+      "metadataSha256": "ae5ebf0fe0b78b2f1f1332b6045d44f298da0aba9cb8a3d91498b5e689a0dafc",
+      "requiredFieldsReviewed": 27,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "TASKS",
+      "collection": "R2NCTTasks1",
+      "metadataSha256": "843b67d14ed3445bec807503ab73a029f80ed963cda6466606ade16e8b5e2592",
+      "requiredFieldsReviewed": 29,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "JOURNAL",
+      "collection": "R2NCTActivity1",
+      "metadataSha256": "ccb78f89636b5264f7d5a4875ede0c493097335e8254f1e6b47ba01fd6860155",
+      "requiredFieldsReviewed": 34,
+      "schemaMatches": true,
+      "queriesExecuted": 5,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_TASK_RELATIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_OUTSTANDING_RELATIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "REPAID_SOURCE",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "PURCHASE_ORDERS",
+      "collection": "R2PurchaseOrders",
+      "metadataSha256": "f9eff79adfc8eadffa1a951ca0fe3dd016f30ff3d0624ea3a184792fbb9eb562",
+      "requiredFieldsReviewed": 4,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "PRODUCTS",
+      "collection": "R2StockProducts",
+      "metadataSha256": "13aaceb5d84cf8f30fdc83e85184a4f6965102989f564f93ad707412beecfd94",
+      "requiredFieldsReviewed": 19,
+      "schemaMatches": true,
+      "queriesExecuted": 4,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_PAGE",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_SEARCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "POSITIONS",
+      "collection": "R2StockPositions",
+      "metadataSha256": "0e1f4e073f2d3105fdd30c3cdb949844824d2e14fd026300bfe953470d4e9b63",
+      "requiredFieldsReviewed": 26,
+      "schemaMatches": true,
+      "queriesExecuted": 3,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_POSITIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "GHR",
+      "scope": "CLAIMS",
+      "collection": "R2StockClaims",
+      "metadataSha256": "86f5ccd4419a28f7c6354b6847155df83f93a2de873e069b72bd918b0c185a7e",
+      "requiredFieldsReviewed": 16,
+      "schemaMatches": true,
+      "queriesExecuted": 4,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_POSITION_CLAIMS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_TASK_CLAIMS",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
     }
   ],
   "remaining": [
-    "GHR native prerequisite readbacks",
     "Populated semantic query witnesses and actual typed business writes",
     "All writer/root acceptance and server-owned activation evidence integration",
     "Pages assets deployment, Wix publish-live receipts and public Buyer split/borrow acceptance"
   ],
   "businessActive": false,
   "writerCoverageAccepted": false,
-  "published": false
+  "published": false,
+  "nativeTotals": {
+    "companyScopes": 14,
+    "uniqueCollections": 10,
+    "requiredFieldChecks": 310,
+    "queryExecutions": 44,
+    "businessWrites": 0
+  },
+  "pagesDeploymentConsent": {
+    "userConfirmed": true,
+    "temporaryBranch": "feat/stock-current-state-protocol-20261021",
+    "originalRuleCount": 7,
+    "addedRule": false,
+    "requireRestoreOriginalSevenAfterUse": true
+  }
 }
