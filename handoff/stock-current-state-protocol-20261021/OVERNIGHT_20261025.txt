@@ -251,3 +251,30 @@ same retained RECEIVE_PARTIAL, fixed RECEIVE_REST, readonly final conservation;
 close gate with exact full equality. No repeated SEED/BORROW or UNKNOWN fixtures.
 Then remaining genuine allwriter/paired/readiness/activation/UI/public gates;
 never fabricate writerCoverage to unblock Buyer orders. Packing deferred.
+
+USER SCREENSHOT / BRIEF CONTROL RECOVERY / STOP LONG INPUT PATH
+User supplied codex-clipboard-a868bf1d...png showing original MASTER code and blank
+ChatGPT sidebar; screenshot alone is not permission/connection proof. One focused
+fresh getTab succeeded. Actual AX explicitly said code panel read-only because
+editing code in another tab, offering Take Control. Normal Take Control cleared
+read-only; full native code copied again EXACT old OPEN hash971e3426...f2860.
+No helper/INSPECT-digests/new check present: FIRST timed-out edit was NOT applied.
+This ownership message is evidence for that read-only event, not an explanation
+for every subsequent failure or claimed security block.
+Second attempt ONLY filled419char Find then1451char Replace via typeText; timed
+out60s with kernel reset again. NO Replace All call or function Run was in that
+attempt, so none invoked. Stop long typeText path after2failures. A future restored
+session should use small normal paste input, fresh focus and exact full readback,
+not repeat long typing, whole-file overwrite, another failed URL or security change.
+After reset actual browser IDs invalidated again; nameChrome original-tab binding
+returned Debugger unattached. No further control attempts. Asked once whether
+Chrome currently has the ChatGPT started debugging banner; await new external
+evidence, don't instruct repeated refresh/reinstall. Native gate closure remains
+unconfirmed, business ACTIVE staysOFF, no test auto-run or public new version.
+
+Existing automation idautomation kept same name/target/ACTIVE15min, prompt UPDATED
+through app tool, receipt statusACTIVE. Replaced stale pending Source grant and
+old1596/local-only claims, preserved quiet notification preference and all existing
+boundaries. No duplicate/model/agent/other-schedule changes. Latest user permits
+actual Buyer orders/fake data, but native business allwriter/activation/UI acceptance
+still incomplete. No new test/deployment permission sought or inferred.

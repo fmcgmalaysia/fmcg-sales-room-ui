@@ -1,5 +1,19 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST 2026-10-25 — 6630b1a SYNCED; 1606 PASS; NATIVE BORROW ACCEPTED, REPAYMENT NOT YET
+Read OVERNIGHT_20261025.txt LAST APPEND before older entries below. Source exact
+grant/install complete; MASTER Live149/Test154, SOURCE Live766/Test767 confirmed.
+Dedicated borrow fixture generation1: physical100/A30/B70 confirmed. No reseed or
+reborrow. Partial receipt stopped before stock patch on retained-command identity;
+local diagnostic fix synced, 1606pass0fail62693.9667ms. Native fix not installed.
+Control connection recovered briefly after user screenshot; Wix explicitly showed
+another-tab code ownership/read-only. Take Control cleared it; full old OPEN hash
+971e3426...f2860 reconfirmed, no first patch applied. Long Find/Replace typeText
+then timed out again; STOP that input path. No later Run/Replace All invoked.
+Test-only gate closing unconfirmed; business ACTIVE OFF. User asked once whether
+Chrome debugging banner is visible. No refresh/reinstall/repeated failed control.
+Existing ACTIVE15min automation prompt updated to these facts, no duplicate.
+
 LATEST OVERNIGHT 2026-10-25 — EMPLOYEE READ NATIVE RECEIPTS CONFIRMED; SOURCE PATCH LOCAL
 UPDATE: user exact Source grant received; official Source essentials1.0.15 installed,
 FINAL: code2072b73 successfully synced PR220. Source native Release Manager confirms
