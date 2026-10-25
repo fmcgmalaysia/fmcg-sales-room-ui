@@ -1,0 +1,22 @@
+{
+  "schema": "R2_PAIRED_TRANSPORT_NATIVE_EVIDENCE_V1",
+  "date": "2026-10-25",
+  "sourceComponent": "r2PairedTransportAcceptance.web.js",
+  "nativeSourceSha256": "475d7cb30e783e560bec16734206731ccffc50cff3a963ff91a48d9301bfbc3d",
+  "execution": "Source saved-editor Admin function tester; not ordinary Buyer acceptance",
+  "target": "MASTER latest Test-site read-only r2PurchaseQuantities with rc=test-site",
+  "masterRelease": {"live":149,"livePercent":100,"test":158,"testPercent":0},
+  "steps": [
+    {"step":"COHORT_REJECTION","calls":1,"ok":true,"httpStatus":409,"cohortRejected":true},
+    {"step":"AUTH_REJECTION","calls":1,"ok":true,"httpStatus":401,"unauthorizedRejected":true},
+    {"step":"AUTHORIZED_READ","calls":1,"ok":true,"httpStatus":503,"authorizedHandlerReached":true,"businessReadConfirmed":false,"maintenanceCauseProven":false}
+  ],
+  "credentialHandling": "Existing server integration key used internally by Source to the same existing Master origin only; no value returned, logged, copied or exported",
+  "inventoryMutationCapability": false,
+  "sourceOrderMutationCapability": false,
+  "ordinarySourceUserAccepted": false,
+  "writerCoverageAccepted": false,
+  "activationAllowed": false,
+  "releaseComplete": false,
+  "limitations": "Specific handler-owned 503 proves its authorization passed but does not prove inventory reading, the reason for the later read failure, all backend parity, or an ordinary Buyer order. No production publish or activation."
+}

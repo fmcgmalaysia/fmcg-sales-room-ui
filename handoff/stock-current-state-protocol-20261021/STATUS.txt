@@ -1,5 +1,16 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST PAIRED READ TRANSPORT — THREE NATIVE SOURCE TO MASTER TEST CHECKS COMPLETE
+R2_PAIRED_TRANSPORT_20261025.json records one each COHORT_REJECTION409,
+AUTH_REJECTION401 and AUTHORIZED_READ503 with the exact handler-owned error.
+Source new Admin-only read diagnostic entire native saved source exact475d7cb3...
+bfbc3d. Existing server integration credential remains internal; no disclosure,
+orders or inventory mutation. This proves cohort/auth routing to latest MASTER
+Test158, NOT a usable inventory read, maintenance cause, ordinary Buyer order,
+all-backend parity, activation or release. No need to repeat these three calls.
+Purchase workflow A479 remains completed gen3/pendingnull and both gates CLOSED,
+Test1580%/Live149100%. Continue actual receipt/borrow/repayment linked acceptance.
+
 LATEST NATIVE PASS — ORDER100 / PROCUREMENT90 / PO; BOTH GATES CLOSED TEST158
 R2_PURCHASE_WORKFLOW_20261025.json now contains actual Wix backend native receipts
 from ordinary-member Test1570% (not editor Admin). New prefix A479 seeded ONCE,
