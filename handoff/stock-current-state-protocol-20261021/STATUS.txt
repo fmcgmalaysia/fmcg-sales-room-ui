@@ -1,18 +1,27 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
-LATEST 2026-10-25 — 6630b1a SYNCED; 1606 PASS; NATIVE BORROW ACCEPTED, REPAYMENT NOT YET
-Read OVERNIGHT_20261025.txt LAST APPEND before older entries below. Source exact
-grant/install complete; MASTER Live149/Test154, SOURCE Live766/Test767 confirmed.
-Dedicated borrow fixture generation1: physical100/A30/B70 confirmed. No reseed or
-reborrow. Partial receipt stopped before stock patch on retained-command identity;
-local diagnostic fix synced, 1606pass0fail62693.9667ms. Native fix not installed.
-Control connection recovered briefly after user screenshot; Wix explicitly showed
-another-tab code ownership/read-only. Take Control cleared it; full old OPEN hash
-971e3426...f2860 reconfirmed, no first patch applied. Long Find/Replace typeText
-then timed out again; STOP that input path. No later Run/Replace All invoked.
-Test-only gate closing unconfirmed; business ACTIVE OFF. User asked once whether
-Chrome debugging banner is visible. No refresh/reinstall/repeated failed control.
-Existing ACTIVE15min automation prompt updated to these facts, no duplicate.
+LATEST 2026-10-25 — NATIVE BORROW/PARTIAL/FULL REPAYMENT VERIFIED; NOT PUBLISHED
+Read OVERNIGHT_20261025.txt LAST APPEND. Actual git log supersedes recorded hashes.
+34b4c32 synced PR220; local audit-reader16ebd17 included,24focused pass0fail.
+Existing full1606pass62693.9667ms reused, not rerun or called full native acceptance.
+Normal Wix Take Control restored editing after user clicked code. Documented sky
+set_value + unique Replace All installed3diagnostic-only patches; full before/after
+normal Find-selection readback matches canonical LF versions (UI omits final LF).
+New OPENcd1e6611...6c101, CLOSED target7a178774...0e72d. No long typeText retry.
+Native field-order hash diagnosis confirmed, then SAME retained partial request
+completed generation2/pendingnull. INSPECT: physical120/A30/B90/repaid20/1receipt.
+Fixed remaining request completed generation3/pendingnull; final readonly INSPECT
+FINAL_VERIFIED: physical200/A100/B100/repaid30/debtClosedtrue/exactly2receipts.
+One final READ-ONLY Network Error was followed by one safe readonly retry; no write
+replayed. No SEED/BORROW/partial/final completed operation may be repeated.
+Test-only gate CLOSED source now fully readback-canonical-exact7a178774...0e72d;
+CLOSED runtime receipt CONFIRMED0queries/0writes/blockedtrue. Business
+ACTIVE remains OFF; actual business/employee/allwriter/public acceptance NOT implied.
+New standalone Admin-only activation audit schema reader local-only, NOT installed;
+14required fields incl4persisted activation fields, no index/item/write capability.
+ALLOC cumulative is DERIVED, not a new CMS field. No original workflow or ACL change.
+MASTER Live149/Test154 and Source Live766/Test767 unchanged; Pages not deployed,
+Wix main sites not newly published, Buyer->split/borrow real public tests pending.
 
 LATEST OVERNIGHT 2026-10-25 — EMPLOYEE READ NATIVE RECEIPTS CONFIRMED; SOURCE PATCH LOCAL
 UPDATE: user exact Source grant received; official Source essentials1.0.15 installed,

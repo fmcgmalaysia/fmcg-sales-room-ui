@@ -401,3 +401,41 @@ planHash4126203363a5ad7eda4dc31bf8972d5a,
 keyeb7a11d281b028fb57979ec2a2fbea11. Same-request continuation invoked once from
 that confirmed checkpoint; terminal pending here. Do not repeat partial receipt
 or seed/borrow, no auto-reset/cleanup on UNKNOWN. Packing/dispatch still disabled.
+
+FINAL RECEIPT TERMINAL CONFIRMED (FINAL INSPECT STILL PENDING)
+Same fixed6c930003...0003 confirmed BEFORE4/6 -> APPLY2/6 -> APPLY6/6 -> VERIFY4/6
+-> OPERATION_COMPLETE generation3 pendingnull, same digest/planHash/key above.
+Receiptb2d5ae89bafd3115b8ea338e667908f9, same original PO. Final readonly INSPECT
+invoked ONCE after terminal, await result before claiming full conservation/debt
+closure. Do not repeat RECEIVE_REST/RECEIVE_PARTIAL/BORROW/SEED. Gate remains OPEN
+until this read completes, then close and confirm CLOSED with zero operations.
+
+Final INSPECT first invocation displayed explicit Network Error with no result.
+This is READ-ONLY in the exact installed source (all8operations are queries), not
+an ambiguous warehouse write; neither completed receipt was resubmitted. One
+bounded READ-ONLY INSPECT retry invoked after confirming this distinction. If it
+also fails, stop that read path, close gate and retain final conservation as NOT
+observed. Network Error is not proof an old execution terminated. All actual
+receipt mutations already have generation3/pendingnull terminal completion.
+
+FINAL CONSERVATION VERIFIED / GATE SOURCE CLOSED
+The ONE read-only retry returned FINAL_VERIFIED generation3, queries8/inserts0/
+patches0/deletes0, physical200/A100/B100/repaid30/debtClosedtrue/receiptCount2.
+Thus partial and full repayment conservation passed natively on this dedicated
+fixture; NOT ordinary-staff business-table/public UI acceptance. No further
+SEED/BORROW/receipt execution allowed for this completed fixture.
+Only enabledtrue->false unique literal replaced. Full CLOSED code compared in19
+900-character normal Find selections:17093content chars, canonical singleEOF-LF
+hash7a1787740e1f78e11c961990756756da5de33b90499749e5c0027f3f9a00e72d.
+No other code delta. Opening same function parameter panel for INSPECT CLOSED
+zero-operation receipt; terminal pending at this append. Business ACTIVE OFF.
+
+CLOSED RUNTIME RECEIPT CONFIRMED
+Actual same function INSPECT after closure returned stageCLOSED/blockedtrue,
+queries0/inserts0/patches0/deletes0/mutationAttemptedfalse. Source and runtime gate
+closure BOTH confirmed; no further open/fixture replay needed. This supersedes
+all prior gate-unconfirmed/native-repayment-missing entries. New dedicated
+borrow->partial20->rest80->closed-debt native fixture composition is now complete.
+Still not real employee/business tables/UI/public release acceptance. Continue
+new audit-schema reader installation and actual allwriter/paired/release gates;
+never fill coverage from this synthetic fixture. Both live sites/Pages unchanged.
