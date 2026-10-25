@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-26",
+  "request": "Hide the extra minus-five receipt difference badge",
+  "recovery": "cc95dfd1011fcbb29db526415de9db6dc7fc873b",
+  "codeCommit": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
+  "build": "20261026-receipt-gap-hidden-v2",
+  "change": "One Active Orders source-row CSS rule hides the extra data-quantity-case badge. Follow-up aligns the red numeric button from 21px to the existing normal 19px. Numeric values, handlers and underlying data are unchanged.",
+  "changedPublicResources": ["purchase-live/active-layout.css", "purchase-live/index.html"],
+  "otherPublicResourcesUnchanged": 93,
+  "firstPagesRun": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/40210456233",
+  "pagesRun": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/40211347149",
+  "pagesConclusion": "success",
+  "publicAssets": {"checked":95,"allMatch":true},
+  "wix": "Existing published page and backend retained; only its referenced static presentation changed. Unverified Studio R2 drafts were not published.",
+  "temporaryPublishPermission": "Explicit user approval obtained for this release; exact temporary task-branch rule removed afterwards; original seven rules confirmed.",
+  "firstReleaseVisualVerified": true,
+  "firstReleaseBuild": "20261026-receipt-gap-hidden-v1",
+  "observedBeforeHeightCorrection": {"redHeightPx":21,"normalHeightPx":19,"extraBadgeDisplay":"none"},
+  "publicVisualVerified": false,
+  "remaining": "The hidden extra badge is verified on the real public page. The final 19px CSS is deployed and all 95 asset hashes match. The currently open public tab still has v1 / red21px / normal19px; extension keyboard refresh did not update its build. Do not claim final v2 visual verification until a fresh usable public page loads it. Do not disturb the user's active Buyer Room window.",
+  "businessDataWritten": false
+}

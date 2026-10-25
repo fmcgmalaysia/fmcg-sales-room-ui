@@ -1,0 +1,30 @@
+2026-10-24 Asia/Kuala_Lumpur — ADDITIONAL NATIVE READBACK, NOT INSTALLATION
+
+Continued after environment date update; no new task/model/agent. Same current
+framework and Source install review reused. Master editor51427123 is accessible.
+Closed the existing read-only CMS window with its fresh screenshot Close control.
+Selected Warehouse Department from the real page selector and waited until the
+code textbox displayed Warehouse imports before select-all/copy. No typing or Run.
+
+Exact full Warehouse page readback:6693CRLFcharacters. Normalized LF SHA256 live
+and repository integration/wix/warehouse-department-page.js match:
+ff80639d4e0cc015453d26313e6922281df452d2bfbe24ce9bc8e624c99c57a3
+Private complete native source retained at:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/master-warehouse-page-live-readback-20261024-install.txt
+Prior fresh Purchase page exact match remains in SOURCE_INSTALL_PAIRING_20261023.txt.
+These are two actual saved-editor parity checks, not published runtime evidence.
+
+Attempted to reopen page selector for Support next. Observed CMS panel instead of
+the requested page menu; read-only DOM inspection confirmed no Support/menu entry.
+Stopped this unexpected input path, no repeated click or guessed element. No saved
+code/data/permissions/Run/Publish changed, no protected baseline overridden. Support
+page/public bridge and remaining backend fresh readback still required.
+Source editor earlier two unsuccessful loads remain stopped; tab51427279 retained
+for later external state change, not repeatedly refreshed. No public borrow save
+can be accepted until paired backend/current state actually installed and gated.
+
+All implementation from preceding continuation retained locally atf692cda;
+full1303pass plus later affected8pass results reused, not rerun unchanged. No new
+tests warranted for read-only native parity. No GitHub export, deploy, activation,
+new Wix support question or monitor. Four release states remain local candidate /
+Pages baseline / Wix new flow unpublished / public borrowing not testable.

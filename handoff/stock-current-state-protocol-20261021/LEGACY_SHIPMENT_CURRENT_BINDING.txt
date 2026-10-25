@@ -1,0 +1,45 @@
+2026-10-22 Protected legacy shipment selection/cancellation current binding
+
+Existing customerFulfilment core reads allocation history in3places, independently of
+already converted task.inc. With borrowing this would still select old source A instead
+of current borrowed source B. New mechanically exact candidate introduces a CURRENT_V2
+array accessor at those3expressions only. Legacy shipmentVersion unchanged. Capability2
+required by current validator. Original customer/role/reason/currency/packing release/
+invoice/physical-exception/FX snapshot rules are not replaced. Real invoice not enabled.
+
+New original-shipment-validation captures original prepare into private scratch map.
+Only SELECT/CANCEL/DISPATCH validation accepted; INVOICE/FX explicitly disabled. No
+legacy apply/CMS mutation. Tests actual core selects current B30, not old A90 allocation;
+cancel same selected source, stale/current missing view/revoked grant/invoice reject.
+
+Concrete PRIVATE createCurrentSalesShipmentSave handles SOURCE_SALES SELECT/CANCEL via
+same complete customer-product current workspace used by source READ/ADJUST, preserving
+original shipmentVersion contract. It reauthenticates every attempt/replay, records the
+actual original immutable shipment event plus affected product hold checkpoints in the
+same common coordinator. Product/position claims, borrowed relationships, physical stock,
+customer requested quantity and unrelated products unchanged. It cannot dispatch or
+invoice. Original REQUESTED selection adds hold; original CANCEL removes that hold only.
+After commit, exact immutable own event read-confirmed to return shipmentId/status to
+original client; not inferred from a later mutable shipment state.
+
+Source current dispatcher now supports a separately supplied shipmentSave for SELECT/
+CANCEL; it cannot fall into ADJUST or legacy writer. Missing route still fails closed.
+PLAN/ORDER_DATE/DOCUMENT and actual source non-adjustment UI/HTTP binding still unfinished.
+Actual Source READ must import paired current shipmentVersion at installation. This is
+NOT a replacement for Support packing lists; existing protected legacy flows still need
+coordinated writes while newer packing flow is introduced.
+
+Test full SELECT5 from current U10 ->same request replay ->CANCEL, original real parser,
+zero physical StockPositions/Claims changes, original requested10 unchanged, only2events.
+First fake Sales fixture omitted transactionCurrency needed by original core; added USD
+to fixture read context rather than weakening original single-currency check.
+Final full514current candidate tests pass0fail5087.7647ms. Runtime54modules18exports.
+No user-facing invoice/finance change, no actual gateways installed or CMS writes, no
+ACTIVE/Pages/Wix/public release. Protected baseline d447185/runtime32b812c unchanged.
+
+Remaining production gates from BORROW_OPTIONS_AND_PACKING_V2.txt still OPEN. In particular
+old intake prepare explicitly blocks original source auth/cross-company routing/capacity;
+do not set activationReady true merely because these new source operations pass. Actual
+allwriter adapters, relays/read surfaces, reload-safe resume, relation UI, missing-version
+init/apply, actual datatype/SDK tests, production time/rate/capacity, shadow/cutover/final
+proof and4release stages still required. Continue background implementation.

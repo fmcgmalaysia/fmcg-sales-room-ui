@@ -1,0 +1,60 @@
+2026-10-25 — R2 SDK AUTHORITY DIAGNOSTIC CLOSED; OFFICIAL DEPENDENCY MISSING
+
+User explicitly authorized original-authorized R2 backend elevation for reads and
+writes, preserving Admin-only CMS and identity/department/company/action checks.
+No old tables/new delete capability/Packing/real dispatch/invoices. Packing work
+deferred by user. Protected baseline d447185/runtime32b812c unchanged; ACTIVE OFF.
+
+Only a new Admin-only diagnostic was saved in MASTER; business providers/ACLs/
+employees have NOT changed. Fixed StockProtocolTest prefix
+SPT-R2AUTH-20261024-c281: (CONDITIONAL,BULK-A,BULK-B), no delete/reset route.
+No test record was written in any invocation below.
+
+Native results:
+1. Legacy wix-auth elevate(items.query), immediate chaining: definite PREFLIGHT
+failure query(...).hasSome is not a function, elapsed26ms; queries1, mutations0.
+2. Awaiting legacy elevated constructor: definite PREFLIGHT failure
+(intermediate value).hasSome is not a function, elapsed262ms; queries1, mutations0.
+The legacy-constructor route is STOPPED, not retried or routed around.
+
+Official evidence identifies a different SDK elevation mechanism:
+https://dev.wix.com/docs/develop-websites-sdk/code-your-site/authorization/elevate-api-call-permissions
+https://dev.wix.com/docs/sdk/core-modules/essentials/auth
+Official npm @wix/essentials1.0.15 source implements auth.elevate as
+createRESTModule(sourceFunction,true), rather than the legacy asynchronous Velo
+bridge. Data items1.0.559 uses createRESTModule(query/patch) and captures the
+provided HTTP client in builders. Essentials sdk-runtime1.0.25/sdk-types1.17.12
+are compatible declared ranges of data items (^1.0.25/^1.17.12); this is source
+evidence, NOT installed-version/native authorization certification.
+Official archives downloaded read-only outside checkout, not installed/executed.
+
+3. Minimal diagnostic import changed to auth from @wix/essentials; full saved
+source matched generated. RUN failed to LOAD before diagnostic invocation:
+Cannot find module '@wix/essentials'; dependency is not declared. No mutations.
+No automatic package installation or indirect/internal-import workaround.
+Adding official dependency requires explicit separate scope under AGENTS law.
+
+Final native diagnostic CLOSED whole-source SHA256:
+b3835bd681dc84d0def8a153b2b89740053640c25b559d761e66c264de1d58ef
+Private proof outside checkout:
+C:/FMCG-WIX-LOCAL/tmp-r2-authority-closed-20261025.png
+Original closed legacy diagnostic before official import:
+b841e168b0180348931eec7c8ebd6e8b8d465fc5ef1ba6b99717f6a0a9f55e1b
+No other gate reopened, Wix Publish or business SDK permission change.
+
+Local probe tests6pass0fail112.589ms. Mock preserves SDK synchronous builder
+contract; this does NOT certify native behavior or ordinary employee rights.
+
+Next: seek specific permission to add only official @wix/essentials1.0.15 to
+MASTER, no upgrades/removals to existing dependencies, no ACL changes. Capture
+native dependency state first; if package manager proposes shared upgrades or
+terms/other material expansion, stop. Then use same fixed EMPTY probe once,
+inspect exact records/stale WDE0193 and close. No need for deferred builder
+facade based on the disproven legacy-wrapper assumption. Only after native SDK
+proof wire original-authorized R2 consumers with minimal patches and regression.
+
+Release: code db8d62f plus uncommitted diagnostic; Pages unchanged; Wix draft
+only; public Buyer/split/borrow/repay NOT accepted or released. Do not ask user to
+order yet. Root STATUS long historical portion is superseded by latest top;
+this continuation reread overlarge STATUS output accidentally truncated, so
+reused same-version framework and complete prior latest handoff evidence.

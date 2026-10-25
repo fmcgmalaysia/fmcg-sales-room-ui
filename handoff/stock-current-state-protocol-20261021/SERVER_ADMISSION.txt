@@ -1,0 +1,45 @@
+2026-10-22 — optional domain write scope and server-only activation admission candidate
+
+Protected production d447185; previous candidate81aeac5. No production module/Wix/CMS/
+permissions/branch deployment changes. Actual legacy callers still not fenced.
+
+domain-scope.cjs verified against ORIGINAL purchaseProjection.PURCHASE_COLLECTIONS:
+NCTOrders/NCTTasks/NCTActivity and NCTOrders1/NCTTasks1/NCTActivity1. Optional domainWrites
+is explicit SERVER boolean defaultfalse; true extends existing conditional plan to own
+Orders/Tasks and company-scoped PurchaseOrders ONLY. Foreign-company tables, employees
+and SharedSuppliers remain forbidden. Every before/after requires correct company/version.
+This is not adding CMS/employee access or replacing actual original operation validation.
+Legacy rows lacking company/stockCommitVersion must be initialized under approved G4
+maintenance snapshot/migration; no silent inference/unconditional first mutation fallback.
+Read-only recovery inspector accepts same explicit scope, default alsofalse.
+
+stock-admission.cjs accepts actual control only from server callback, not browser mode.
+Recognizes required stock-affecting/overlapping row-writer families incl order intake/update,
+Purchase task edits (including reorder sharing mutable rows), source/plan, receive, allocate,
+Sales demand, exceptions/resolutions, preparation/packing/shipment. LEGACY explicit only;
+MAINTENANCE/pending stop writes; absent/unknown/control read errors never downgrade.
+SHADOW/ACTIVE require ALL compiled server writer coverage evidence at SAME build plus
+request stock protocol/build/generation; missing one family, old cached form or generation
+rejects with retained-input refresh. This grants NO staff role. Test fixtures saying
+verified:true are NOT actual coverage certification. Production coverage remains incomplete.
+No new public gateway/client form wiring or mode switch exists yet, no ACTIVE permission.
+
+Evidence
+New admission+recovery13pass196.9857ms. Broader focused proof/SDK test identified stale
+embedded isolated protocol copy (equality test FAIL); patched only candidate bundle helper
+and protocol scope/default signature and extended exact helper equality check. No weakening
+of test or change to actual isolated namespace: harness stilldefaultfalse and cannot map
+domain tables into StockProtocolTest. Final67pass345.6829ms includes admission/recovery/
+fenced-proof/sdk-store/protocol-live simulation. This is LOCAL simulation, NOT fresh live
+Wix capability evidence. Old live conditional/protocol receipts belong to preserved older
+version, not relabeled. Exhausted real deletion grants NOT reused. Actual Credit UNKNOWN.
+
+Changes to stockProtocolCommitTest.web.js are candidate only; do NOT synchronize/run it
+automatically. Three existing Admin harness methods/namespace remain exact. Recoverable
+old copy is priorGit81aeac5 and existing live evidence hashes. No more synthetic mutations.
+
+Pending: true gateway mode and all-writer dispatch, original full task/PO mutable plan
+composition, schema initialization/maintenance, practical capacity/lifecycle, server auth
+on replay, operational stuck-execution recovery, migration/shadow and actual UI/release.
+Four statuses: isolated candidate code; Pages unchanged; Wix unchanged; public new stock/
+borrowing workflow unavailable/unverified. No assertion that a registry proves integration.

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>拆单与借货 · 操作测试</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; frame-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0;font:14px 'Segoe UI',Arial,sans-serif;color:#17314f;background:#edf3f9}body{display:flex;flex-direction:column}
+.practice-header{padding:12px 18px;background:#17314f;color:white;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.practice-header b{font-size:16px}.practice-header span{color:#dce8f5}.practice-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px;background:white;border-bottom:1px solid #c6d5e4}
+button{border:0;border-radius:5px;padding:9px 12px;font:inherit;background:#2563eb;color:white;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#344d63}select,input{padding:7px;font:inherit;border:1px solid #b8cbdc;border-radius:4px}iframe{border:0;width:100%;flex:1;min-height:580px;background:white}#practiceStatus{padding:8px 18px;margin:0;background:#e6efff;color:#17314f}#practiceStatus.error{background:#ffe8ec;color:#9c1123}dialog{border:0;border-radius:8px;color:#17314f;padding:22px;max-width:450px;width:calc(100% - 32px)}dialog::backdrop{background:#17314f99}dialog h2{margin-top:0;font-size:19px}dialog label{display:block;margin:12px 0}dialog input,dialog select{display:block;margin-top:5px;width:100%}dialog footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}.practice-hint{font-size:12px;color:#344d63}#practiceFacts{margin-left:auto;font-variant-numeric:tabular-nums}
+</style></head><body>
+<header class="practice-header"><b>拆单与借货 · 操作测试</b><span>假数据 · 未连接 Wix · 刷新后重新开始</span></header>
+<section class="practice-tools" aria-label="Test controls 测试操作">
+<button id="practiceSplit">拆单计划</button><button id="practiceReceive">测试到货与自动补回</button><button class="secondary" id="practiceMove">移动示例行</button><button class="secondary" id="practiceArchive">归档示例A</button><button class="secondary" id="practiceRestart">重新开始</button>
+<span id="practiceFacts"></span></section>
+<p id="practiceStatus" role="status">示例A：客户100、采购90、实收80。进入 ALLOC 的 ALERT 可借10；同客户的“收齐示例”采购80、实收80，不能借20。</p>
+<iframe id="practiceFrame" title="Existing Purchase candidate 采购候选实际界面"></iframe>
+<dialog id="practiceReceipt"><h2>测试到货与自动补回</h2><p class="practice-hint">这是测试数据控制器，用来观察采购界面的更新，不代表正式货仓收货界面。</p><label>来源采购单<select id="practiceSource"><option value="A">示例A · 采购90箱</option><option value="B">示例B · 采购100箱</option><option value="C">收齐示例 · 采购80箱</option></select></label><label>累计实收箱数<input id="practiceAccepted" type="number" min="0" step="1" value="85"></label><p id="practiceReceiptError" role="alert"></p><footer><button class="secondary" id="practiceReceiptCancel">取消</button><button id="practiceReceiptSave">保存测试到货</button></footer></dialog>
+<!--PRACTICE_RUNTIME-->
+<!--PRACTICE_BRIDGE-->
+<script>document.getElementById('practiceFrame').srcdoc=/*PRACTICE_UI*/null;</script>
+</body></html>

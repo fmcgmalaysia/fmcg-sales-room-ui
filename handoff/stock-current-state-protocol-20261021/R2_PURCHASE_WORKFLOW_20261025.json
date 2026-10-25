@@ -1,0 +1,105 @@
+{
+  "schema": "R2_PURCHASE_WORKFLOW_NATIVE_PROGRESS_V1",
+  "fixture": "SPT-R2PURCHASEFLOW-20261025-a479:",
+  "acceptanceBuild": "b1d3dcf828d848b6c25d0eaab90a7b50666a12a5",
+  "businessBuild": "f9fe1c19caa991b166ab2852956cd7f47712117c",
+  "backendClosedSha256": "33a5826d3751988c2feae08605c76ff79411b15c564eda6254346b2eb433b861",
+  "backendOpenSha256": "990a584872641d00d1f4518ed444fc431fa1e72188c337b19bb4286e92a5620f",
+  "pageBeforeSha256": "58728f7ff951fc3c44b1cf658ba5d34a9a148de2cbfcb7402873b7a04cb55e67",
+  "pageClosedSha256": "0cb0fa95ca3002e0caea78a9f94c542c9fc69b5af7aa5276a42bdcc145cd0c93",
+  "pageOpenSha256": "4ec921dd75b758732bdc1aa4eaacec5d1180e4ba9f08912573992fc1d2173c56",
+  "oldEmployeeGateClosed": true,
+  "oldIntakeGateClosed": true,
+  "newFixtureSeeded": true,
+  "testSiteUpdated": true,
+  "nativeOutcome": "PURCHASE_WORKFLOW_VERIFIED",
+  "localTests": {
+    "passed": 9,
+    "failed": 0,
+    "durationMs": 630.8305,
+    "actualIsolatedFactories": true,
+    "customerDemand": 100,
+    "purchaseQuantity": 90,
+    "physicalStock": 0,
+    "lostPatchReplyReadback": true,
+    "knownInterruptionSameRequest": true,
+    "transportUnknownReloadDoesNotRetry": true,
+    "nativeAcceptanceImplied": false
+  },
+  "guards": {
+    "scope": "StockProtocolTest fixed new prefix only",
+    "originalPurchaseIdentityRequired": true,
+    "originalGrantBeforeElevation": true,
+    "deleteCapability": false,
+    "packingChanged": false,
+    "realDispatchEnabled": false,
+    "realInvoiceEnabled": false,
+    "actualBusinessWriterCoverageEmpty": true,
+    "businessActiveEnabled": false,
+    "pairedSourceTransportAccepted": false
+  },
+  "next": "Do not SEED/INTAKE/PLAN/PO again for this completed prefix. Preserve immutable receipts. Continue actual split/Warehouse receipt/ALLOC borrow and partial/full repayment linked acceptance, then remaining writer/read/activation gates and paired publication. This native fixture is not real Buyer/cross-site acceptance and does not fill writerCoverage.",
+  "testVersionUsed": 157,
+  "testExposurePercent": 0,
+  "nativeTerminal": {
+    "schema": "R2_PURCHASE_WORKFLOW_ACCEPTANCE_V1",
+    "fixture": "PURCHASEFLOW-20261025-a479",
+    "step": "INSPECT",
+    "activationAllowed": false,
+    "writerCoverageAccepted": false,
+    "pairedSourceTransportAccepted": false,
+    "originalBusinessCollectionsAccepted": false,
+    "realInvoiceEnabled": false,
+    "physicalDispatchEnabled": false,
+    "ok": true,
+    "stage": "PURCHASE_WORKFLOW_VERIFIED",
+    "generation": 3,
+    "pending": null,
+    "nextStep": null,
+    "complete": true,
+    "taskCount": 1,
+    "orderCount": 1,
+    "physicalStock": 0,
+    "customerDemand": 100,
+    "purchaseQuantity": 90,
+    "originalPurchaseActorVerified": true,
+    "observationsHash": "1d9441fc960f804d23c2d8c7253cd378",
+    "operationsAttempted": {
+      "queries": 10,
+      "inserts": 0,
+      "bulkInserts": 0,
+      "patches": 0
+    },
+    "mutationAttempted": false,
+    "acceptanceBuild": "b1d3dcf828d848b6c25d0eaab90a7b50666a12a5"
+  },
+  "nativeStepCounts": {
+    "INSPECT": {
+      "calls": 4,
+      "mutatingReplies": 0
+    },
+    "PO": {
+      "calls": 3,
+      "mutatingReplies": 3
+    },
+    "PLAN": {
+      "calls": 4,
+      "mutatingReplies": 4
+    },
+    "INTAKE": {
+      "calls": 5,
+      "mutatingReplies": 5
+    },
+    "SEED": {
+      "calls": 1,
+      "mutatingReplies": 1
+    }
+  },
+  "nativeReceiptSeriesSha256": "38e493cababd0cd5a3fc75b9113b7f989d3e498e921fffd90862eed916654d46",
+  "savedNativeBackendClosedExact": true,
+  "savedNativePageClosedExact": true,
+  "closedTestVersion": 158,
+  "closedTestExposurePercent": 0,
+  "liveVersion": 149,
+  "liveExposurePercent": 100
+}

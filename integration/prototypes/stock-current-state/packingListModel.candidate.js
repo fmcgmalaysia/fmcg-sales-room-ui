@@ -1,0 +1,123 @@
+// One list identity is shared by Support and Warehouse. No stock or invoice posting.
+const copy=value=>JSON.parse(JSON.stringify(value));
+const quantity=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
+const fail=message=>{throw Error(message);};
+const reason=value=>typeof value==='string'&&value.trim().length>0&&value.trim().length<=1000;
+const active=list=>!['DRAFT','CANCELLED'].includes(list.status);
+export function packingHeld(list,taskId){
+ if(!active(list))return 0;
+ const current=list.lines.find(line=>line.taskId===taskId),pending=list.change?.lines.find(line=>line.taskId===taskId);
+ return Math.max(current?(list.status==='COMPLETED'?current.loaded:current.quantity):0,pending?.quantity||0);
+}
+export function packingAvailability({tasks,lists},excludeId=''){
+ return tasks.map(task=>{
+  if(!task.taskId||!quantity(task.remaining)||!quantity(task.ready))fail('Demand or physical stock requires review.');
+  const held=lists.filter(list=>list.id!==excludeId).reduce((sum,list)=>sum+packingHeld(list,task.taskId),0);
+  return {...copy(task),held,unarranged:Math.max(0,task.remaining-held),readyToArrange:Math.max(0,Math.min(task.remaining,task.ready)-held),review:held>task.remaining||held>task.ready||Boolean(task.review)};
+ });
+}
+function planLines(input,list,context){
+ if(!Array.isArray(input)||!input.length||input.length>300||new Set(input.map(line=>line.taskId)).size!==input.length)fail('Choose 1–300 distinct customer lines.');
+ const available=packingAvailability(context,list.id);
+ return input.map(entry=>{
+  const task=available.find(task=>task.taskId===entry.taskId),previous=list.lines?.find(line=>line.taskId===entry.taskId);
+  if(!task||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||!quantity(entry.quantity)||entry.quantity===0)fail('Choose valid quantities for one company, customer and currency.');
+  if(entry.quantity>task.unarranged)fail('Quantity exceeds unarranged customer demand.');
+  return {taskId:task.taskId,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',quantity:entry.quantity,packed:previous?.packed||0,loaded:previous?.loaded||0,reason:previous?.reason||'',photos:copy(previous?.photos||[])};
+ });
+}
+function checkSupply(list,context,lines=list.lines){
+ const available=packingAvailability(context,list.id);
+ for(const line of lines){const task=available.find(task=>task.taskId===line.taskId);
+  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity>task.readyToArrange)fail('Usable customer stock changed. Review allocation before proceeding.');
+ }
+}
+export const PACKING_CURRENT_DAMAGE_VERSION=1;
+function checkDamageSupply(list,context,physical=false){
+ if(context.stockDamageVersion!==1)return checkSupply(list,context);
+ const available=packingAvailability(context,list.id);
+ for(const line of list.lines){const task=available.find(task=>task.taskId===line.taskId),isolated=task?.stockDamageIsolation||0;
+  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency
+   ||!quantity(isolated)||line.quantity>task.readyToArrange+isolated||physical&&Math.max(line.packed,line.loaded)>task.readyToArrange)fail('Isolated stock cannot be packed or loaded. Correct physical quantities and explain the shortage.');
+ }
+}
+function checkExecuted(lines){
+ for(const line of lines)if(line.loaded>line.quantity||line.packed>line.quantity)fail('Warehouse must confirm the physical reduction before accepting this change.');
+}
+export function changePackingList({list,input,context,actor,id,revision,at}){
+ if(!['SUPPORT','WAREHOUSE'].includes(actor)||!input||!revision||!at)fail('Verified packing action is required.');
+ const support=['CREATE','EDIT','SEND','CHANGE','CANCEL'].includes(input.action);
+ if(support&&actor!=='SUPPORT'||!support&&actor!=='WAREHOUSE')fail('This action belongs to the other department.');
+ const next=list?copy(list):null;
+ if(input.action==='CREATE'){
+  if(list||!id||!['NCT','GHR'].includes(input.company)||!input.customerId||!input.currency)fail('Packing draft identity is required.');
+  const draft={id,company:input.company,customerId:input.customerId,customerName:context.tasks.find(task=>task.customerId===input.customerId)?.customerName||input.customerId,currency:input.currency,status:'DRAFT',lines:[],createdAt:at,revision};
+  draft.lines=planLines(input.lines,draft,context);return draft;
+ }
+ if(!next||next.revision!==input.revision)fail('Packing list changed. Refresh before saving.');
+ if(next.status==='CANCELLED'||next.invoiceId||next.dispatchedAt)fail('This list is closed or has an invoice. Use its correction workflow.');
+ if(input.action==='EDIT'){
+  if(!['DRAFT','SENT'].includes(next.status))fail('Warehouse has started. Submit a change for acknowledgement.');
+  next.lines=planLines(input.lines,next,context);checkExecuted(next.lines);if(next.status==='SENT')checkSupply(next,context);
+ }else if(input.action==='SEND'){
+  if(next.status!=='DRAFT')fail('Only a draft can be sent.');checkSupply(next,context);next.status='SENT';next.sentAt=at;
+ }else if(input.action==='START'){
+  if(next.status!=='SENT')fail('Only a sent list can be started.');checkDamageSupply(next,context);next.status='PROCESSING';next.startedAt=at;
+ }else if(input.action==='CHANGE'){
+  if(next.status!=='PROCESSING'||next.change||!reason(input.reason))fail('A processing list and change reason are required.');
+  const lines=planLines(input.lines,next,context);checkSupply(next,context,lines);
+  next.change={lines,reason:input.reason.trim(),at};
+ }else if(input.action==='ACCEPT_CHANGE'){
+  if(next.status!=='PROCESSING'||!next.change||!reason(input.reason))fail('A pending change and Warehouse acknowledgement are required.');
+  checkSupply(next,context,next.change.lines);checkExecuted(next.change.lines);
+  if(next.lines.some(line=>!next.change.lines.some(entry=>entry.taskId===line.taskId)&&(line.packed||line.loaded)))fail('Warehouse must confirm physical removal before deleting a product.');
+  const retired=next.lines.filter(line=>!next.change.lines.some(entry=>entry.taskId===line.taskId)&&line.photos?.length).map(line=>({...copy(line),retiredAt:at}));
+  if(retired.length){next.retiredLines=[...(next.retiredLines||[]),...retired];if(next.retiredLines.length>300)fail('Warehouse evidence history is full. Contact Admin.');}
+  next.lines=next.change.lines;next.lastChange={reason:next.change.reason,acknowledgement:input.reason.trim(),at};delete next.change;
+ }else if(input.action==='REJECT_CHANGE'){
+  if(next.status!=='PROCESSING'||!next.change||!reason(input.reason))fail('Explain the rejected change.');
+  next.lastChange={reason:next.change.reason,rejection:input.reason.trim(),at};delete next.change;
+ }else if(input.action==='PROGRESS'){
+  if(next.status!=='PROCESSING')fail('Start Warehouse processing first.');
+  if(context.stockDamageVersion!==1)checkSupply(next,context);
+  if(!Array.isArray(input.lines)||input.lines.length!==next.lines.length||new Set(input.lines.map(line=>line.taskId)).size!==next.lines.length)fail('Confirm every packing line exactly once.');
+  next.lines=next.lines.map(line=>{const update=input.lines.find(entry=>entry.taskId===line.taskId);
+   if(!update||!quantity(update.packed)||!quantity(update.loaded)||update.loaded>update.packed||update.packed>line.quantity)fail('Loaded must not exceed packed or planned quantity.');
+   if((update.packed<line.packed||update.loaded<line.loaded)&&!reason(update.reason))fail('Explain the physical quantity correction.');
+   return {...line,packed:update.packed,loaded:update.loaded,reason:reason(update.reason)?update.reason.trim():line.reason};
+  });
+  if(context.stockDamageVersion===1)checkDamageSupply(next,context,true);
+  if(next.stockDamageReviewRequired===true){
+   if(context.stockDamageVersion!==1||!Array.isArray(next.stockDamageCases)||!next.stockDamageCases.length||next.stockDamageCases.some(item=>!item?.caseId||!next.lines.some(line=>line.taskId===item.taskId&&reason(input.lines.find(update=>update.taskId===item.taskId)?.reason))))fail('Explain the physical damage recheck for every affected product.');
+   next.stockDamageReview={cases:copy(next.stockDamageCases),at};next.stockDamageCases=[];next.stockDamageReviewRequired=false;
+  }
+  // A proposed change keeps old quantities until Warehouse acknowledges it.
+  if(next.change)next.change.lines=next.change.lines.map(line=>{const current=next.lines.find(entry=>entry.taskId===line.taskId);return {...line,packed:current?.packed||0,loaded:current?.loaded||0};});
+ }else if(input.action==='PHOTOS'){
+  const line=next.lines.find(line=>line.taskId===input.taskId);
+  if(!['PROCESSING','COMPLETED'].includes(next.status)||!line||!['PACKING','LOADING'].includes(input.photoStage)||!Array.isArray(input.attachments)||!input.attachments.length||input.attachments.length>3||input.photoStage==='PACKING'&&!line.packed||input.photoStage==='LOADING'&&!line.loaded)fail('Warehouse confirm packed or loaded cartons before saving this evidence.');
+  if(input.attachments.some(photo=>!photo.fileId||!photo.sha256||photo.stage!==input.photoStage))fail('Warehouse photo identity requires review.');
+  line.photos=[...(line.photos||[]),...copy(input.attachments)];if(line.photos.length>30)fail('Warehouse photo history is full. Contact Admin.');
+  const pending=next.change?.lines.find(entry=>entry.taskId===line.taskId);if(pending)pending.photos=copy(line.photos);
+ }else if(input.action==='COMPLETE'){
+  if(next.status!=='PROCESSING'||next.change)fail('Resolve changes before confirming loading complete.');
+  if(next.stockDamageReviewRequired===true)fail('Warehouse must recheck damaged packing before confirming loading complete.');
+  checkDamageSupply(next,context,true);
+  if(next.lines.some(line=>line.loaded<line.quantity&&!reason(line.reason)))fail('Explain every unshipped remainder before closing loading.');
+  next.status='COMPLETED';next.completedAt=at;
+  next.remainders=next.lines.filter(line=>line.quantity>line.loaded).map(line=>({taskId:line.taskId,quantity:line.quantity-line.loaded,packed:Math.max(0,line.packed-line.loaded),reason:line.reason}));
+ }else if(input.action==='REOPEN'){
+  if(next.status!=='COMPLETED'||!reason(input.reason))fail('Explain reopening before invoicing.');
+  checkDamageSupply(next,context);next.status='PROCESSING';delete next.completedAt;delete next.remainders;next.reopenedAt=at;next.reopenReason=input.reason.trim();
+ }else if(input.action==='CANCEL'){
+  if(!['DRAFT','SENT'].includes(next.status)||next.lines.some(line=>line.packed||line.loaded)||!reason(input.reason))fail('Only an unstarted list can be cancelled with a reason.');
+  next.status='CANCELLED';next.cancelReason=input.reason.trim();next.cancelledAt=at;
+ }else fail('Unknown packing action.');
+ next.revision=revision;next.updatedAt=at;return next;
+}
+export function packingInvoiceLines(list){
+ if(list.status!=='COMPLETED'||list.change||list.invoiceId||list.dispatchedAt||list.stockDamageReviewRequired===true)fail('Confirm loading complete before invoicing the whole list.');
+ const lines=list.lines.filter(line=>line.loaded>0).map(line=>({...copy(line),quantity:line.loaded}));
+ if(!lines.length)fail('An empty loading result cannot create an invoice.');
+ return lines;
+}

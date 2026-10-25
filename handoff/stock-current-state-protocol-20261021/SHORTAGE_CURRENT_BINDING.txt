@@ -1,0 +1,35 @@
+2026-10-22 — remaining original SHORTAGE co-writer; candidate only
+
+Continuation from8204c1c; production d447185/runtime32b812c unchanged. Discovery of
+actual purchaseOperations.web.js confirms distinct original SHORTAGE and QUANTITY_CASE
+routes; neither is financial save. Reused framework/Astra decision; targeted original
+purchaseShortage factory and existing shortage preparation/read tests. No broad scan.
+
+Original SHORTAGE v2 preparation now scoped: selected original PO source + owner task,
+ACTIVE current relation closure, existing product lifecycle and exact raw task counters.
+Original currentAllocationContext supplies cumulative ownership/inc, not source history
+or physical onHand pretending to equal lifetime received. Original shortageVersion and
+date/message/active PO validation remain authoritative.
+
+Concrete createCurrentShortageSave authenticates actual original Purchase staff at
+every attempt and replay, uses existing QUANTITY_CASE admission category for this
+shortage-decision co-writer and same company segmented fence, returns original taskId/
+savedAt only after exact immutable committed event confirmation. No new role, writes
+from UI-supplied employee, account policy, automatic demand cancellation or stock/debt
+release. Event + product checkpoint only; actual source/claims/transfer unchanged.
+
+Evidence: affected15tests pass0fail474.6252ms; all current candidate531pass0fail
+5493.6426ms after shared runtime regeneration,62modules23exports exact. New tests reuse
+the same existing v2 quantity fixture (rather than invent another business authority),
+actual original SHORTAGE validator, bounded phases/replay/preparation once. For borrower
+A20 taken from T, original shortCtn80/allocated20 preserved and borrowing relation/source
+claims byte-identical. Own T90 also correct. Stale version, invalid expected date, blank
+customer message, missing task and revoked completed replay rejected. Fifteen irrelevant
+CLOSED sources excluded as before; offline behavior only, not production quota evidence.
+
+Original production directories still exact d447185. No real CMS/SDK schema/data/role/
+permission writes, no ACTIVE, Support invoice OFF, no Pages/Wix sync/publish/main merge.
+Actual Purchase relay/gateway bindings and current workspace read/version deployment,
+remaining co-writers, reload durability/UI, SDK Date+nested-order proof, initialization/
+routing/capacity/shadow/G3 and four publication phases still OPEN. Continue independent
+implementation. Model unchanged/no agents. Token/cache/actual Credit UNKNOWN.

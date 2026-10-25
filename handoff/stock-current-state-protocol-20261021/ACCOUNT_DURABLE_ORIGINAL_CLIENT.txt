@@ -1,0 +1,47 @@
+2026-10-22 ORIGINAL ACCOUNT DURABLE CLIENT/PANEL — CANDIDATE ONLY
+
+Scope and recovery
+Continue inventory co-writer integration, not new finance. Recovery candidate5bba277
+already pushed to draftPR220. Production runtime32b812c/baselined447185 untouched.
+Original protected Account files unchanged; reproducible narrow overlays only.
+
+Implementation
+- Original settlement and distinct legacy invoice-check controllers keep their own
+  dialogs, validation, permissions, requested changes and completion refreshes.
+- One Account current request is cached before first network send/read back under
+  company plus authenticated staff/member. No business-record mirror, storage scan,
+  fake success, replacement request ID/input or error-text unlock.
+- Existing Account reader has optional bounded context-only authorization response,
+  after original role check, without reading current/finance data. No new endpoint
+  or role. Reload reads only that freshly authorized user's own pending key; retry
+  is explicit. Wrong actor, malformed cache or storage quota prevents new save.
+- Exact immutable request continues bounded phases with separate transport segment;
+  delayed/foreign packets cannot advance it. Final receipt requires original PO,
+  company, request ID and advanced generation, then fresh same actor/build/state
+  read before cache removal or original dialog closure. Cleanup uncertainty retains
+  exact replay. Browser company changes and another save blocked while pending.
+- Parent adds only bounded context/current branches; removing those branches gives
+  original parent byte-for-byte after LF normalization. Existing legacy path alone
+  remains original. Active file operations still refused until separately paired.
+- Fixed current web seam so settlement cannot adopt INVOICE_CHECK; distinct original
+  legacy review endpoint remains required, even though private dispatcher is shared.
+- account-ui is overlay output, NOT a standalone publication bundle. Original app,
+  CSS/font/layout and other script references remain; release assembly still needed.
+
+Evidence actually run — Node/VM/mock ONLY
+- Targeted18pass0fail1069.8412ms: exact builders/parent equality, before-network
+  retention, quota/cache conflicts, phases/correlation/budget, malformed/foreign
+  receipts, no error-text unlock, auth-only own-key recovery, verification timeout,
+  cleanup failure, wrong endpoint/file refusal, actual original settlement dialog,
+  actual legacy-check controller and actual settlement→parent→web→private runtime.
+- Complete stock-current suite968pass0fail19889.0615ms; runtime98modules50exports
+  unchanged. No real browser/native Wix or real file acceptance inferred.
+- No business rows/test CMS writes/deletions, external file actions, permissions,
+  bank changes, employee/Drive grants, main merge or deployment. Actual Credit UNKNOWN.
+
+Next
+Original Purchase/Account FILE co-writers and corresponding durable request bodies.
+Then native schema/index/permission/Date roundtrip, operational recovery, measured
+capacity/relation lifecycle, migration/shadow/cutover, complete Loaded flow and
+borrow/repayment/halo/split regression, review and all four release stages.
+Coverage EMPTY/ACTIVE OFF. Real invoice/physical exit OFF. No user choice needed now.

@@ -1,0 +1,63 @@
+2026-10-22 — ORIGINAL SOURCE DOCUMENT FIXED-ID FILE FENCE / PRIVATE ROOT
+Recovery104225e/PR220; productiond447185/runtime32b812c unchanged. No real CMS/Drive/
+native/Wix writes, employee grants, permission edits, sync, deployment or publication.
+First user test ends Loaded; real invoice/physical departure OFF. This preserves the
+existing Source document entry, NOT new financial functionality.
+
+Existing fulfilment co-writer category SHIPMENT now includes original DOCUMENT.
+Original bearer/Source customer authorization still runs first. Original document
+factory validates frozen original context/version, exact Support invoice matching,
+duplicate/PDF/date/amount rules with unused placeholder BEFORE actual server-only
+file slot allocation. Second capture uses same context/time and real allocated slot.
+No legacy apply. Same original immutable event is the ONLY domain plan write; PDF bytes
+not stored in journal or fragments. All20coverage remains EMPTY and ACTIVE blocked.
+
+Request-scoped private file adapter decodes exact immutable manifest under own company
+APPLY fence, expected build/generation/digest/member/request and one-write cursor.
+Uploads exact original bytes to fixed original file ID; original matching receipt
+mandatory before immutable original event INSERT. Rechecks complete checkpoint/lock
+after file callback. No mutable document update or delete, lock theft, TTL stealing,
+file replacement/trash or new sharing. Original event already contains immutable file
+identity/hash/size/name: no extra CMS file-confirmation row needed (unlike mutable
+packing/photo list, whose separate receipt is necessary before conditional update).
+
+Lost file reply resumes same manifest/slot, never reallocates; lost event reply reads
+back exact insertion. Renamed employee retains original prepared actor/file name.
+Changed UUID payload/member, stale version, wrong receipt, changed callback checkpoint/
+owner or metadata disguise cannot append event. Original owned protocol lock only
+conditionally released; another owner survives. Stable original documentId receipt.
+
+Actual private Source root binds original customerAccountOperations + existing
+requestPurchaseDocument, conditional SDK and segmented adapter, one APPLY write per
+invocation. Original gateway routes DOCUMENT to it, never old fallback in ACTIVE.
+Original3MiB PDF limit retained: private request cap4.3M characters only for DOCUMENT,
+normal non-file cap200K unchanged. Real Wix HTTP/runtime capacity still unverified.
+Command generator explicitly maps existing crypto/Buffer builtins, PDF byte work lazy
+inside file function.92scoped modules47PRIVATE exports; no new webMethod/package grant.
+
+Evidence actually run
+- ALL current860pass0fail16919.7491ms; final shared source and runtime included.
+- Focused file fence7pass213.3924ms; root/runtime12pass743.4445ms before last additional
+  wrong-upload-receipt case, then final ALL includes that case. Original customeraccount/
+  fulfilment14pass0fail312.6195ms. Node/VM/conditional store/file mock only.
+- Actual original one-argument bearer gateway/private root test uploads >200K-character
+  ORIGINAL receipt PDF into synthetic file map, loses reply, resumes renamed actor,
+  posts exactly one original event and replays stable result. No stock/PO/task/order
+  mutation, invoice posting or legacy entry. This is NOT native/browsed/real upload.
+- Generated runtime executes original document capture/save with explicit buffer/crypto
+  binding, no Node require. Generator --check exact; original production document/
+  gateway/service/UI diff againstd447185 empty. Whitespace diff check pass.
+- First full859 run had one STATIC expected-export-count45 vs intentionally added47;
+  updated exact count and constructor scope checks for two new private capabilities,
+  not relaxed production validators. File negative tests initially injected after
+  APPLY already occurred; aligned injections to actual bounded phase. No protected
+  real workflow regression or baseline restoration needed. Credit UNKNOWN.
+
+NEXT original Source document BROWSER durable client/3MiB own-cache/reload and shared
+widget recovery. Old client lacks current metadata: root refuses before file work;
+do NOT install this partial path. Then remaining intake/order/other native authorities.
+Native CMS/schema/date/index/SDK, all20writer verification, safe unknown-lock/cross-
+session recovery, production capacity/relationship lifecycle, quiescent cutover/shadow
+parity, Loaded end-to-end and four release gates OPEN. Coverage EMPTY; ACTIVE OFF.
+Four statuses: code incomplete candidate; Pages unchanged; Wix not installed/published;
+public current inventory/borrowing unavailable/unverified. No partial stock release.

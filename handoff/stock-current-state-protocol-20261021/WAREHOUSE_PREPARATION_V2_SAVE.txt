@@ -1,0 +1,55 @@
+2026-10-22 — PRIVATE V2 ORIGINAL NON-FILE WAREHOUSE PREPARATION SAVE
+
+Recovery pusheda94e8fd and local682ffda mapping fix on PR220; protected production
+d447185/runtime32b812c untouched. Scope original non-photo PACK/LOAD/UNPACK co-writer,
+not new packing-list architecture, invoice activation or physical stock movement.
+
+Implemented new private createCurrentWarehousePreparationSave
+- Actual original Warehouse authentication callback, every call including replay;
+  derived canPrepareWarehouse exactly matches original wrapper, never input staff flag.
+- SEGMENTED_V2/common company admission, original full current context/scoped v2 product
+  rows/counters. Paired original Ready marker2 required. Same original preparation batch
+  ID/signature/version/source/current available and current cumulative dispatch fields.
+- Original createPreparationOperations validates against private current Ready context;
+  original scratch-prepare boundary stops before legacy apply/documents. Existing stale
+  PO/batch, incomplete allocation, mutual packing-list guard, partial-load reason, unload
+  before UNPACK, already dispatched and other original rules remain, no copied policy.
+- Rebuild only affected product's ORIGINAL packing/legacy preparation guard with newly
+  validated original event and same exact current rows; reuse existing pure hold mapping.
+  One original preparation event plus product revision/fence under same save; sources/
+  claims/physical balances do NOT move. Stock hold remains original evidence, not another
+  ledger. Debt/PO/requested quantity unchanged, no hidden other-customer allocation.
+- Same-request bounded phases and once-only receipt. Confirm exact original committed
+  event/member/staff/batch/action/time before returning original id/savedAt/current gen.
+- PHOTOS or any nonempty/null photo payload rejects BEFORE authority/context/file calls.
+  No external document capability is provided. Actual protected file protocol still OPEN.
+
+Evidence
+3newfocusedpass0fail966.5124ms. Original real Ready + createPreparationOperations:
+PACK -> partial LOAD40 with reason -> LOAD0 with correction reason -> UNPACK. Every
+save replays same UUID once; original source records stay byte-equivalent/onhand100;
+no CUSTOMER_SHIPMENT_CHANGED/invoice, original events4. Completed replay revokes with
+original Warehouse access. Borrow approval A30/B70 then A full100PACK fails insufficient;
+does not steal B70 or fabricate dispatch. Photos, absent coverage, old Ready marker,
+stale form, missing partial reason and UNPACK while loaded reject. Private read callback
+fixture initially omitted original preparation parser; added real paired parser, no
+production guard weakened. Normal-PO share mapping fault was separately fixed/tested/
+committed682ffda; this factory does not special-case fixture stock shares.
+Prior EXACT TRACKED747full suite14856.4875ms belongs preceding mapping commit. This
+new3test focused run is not labelled750full. Runtime82modules40exports unchanged and
+DOES NOT YET export this factory; actual Web/relay/client connection is next. No native
+SDK/browser/business data/permission/schema/lock test or deployed behavior claimed.
+Protected production sources remain untouched, main unchanged. An erroneous assistant-
+created one-line temporary file at a wrong sibling worktree path was removed immediately
+with exact apply_patch; no user file, recursive deletion or business data involved.
+
+Next
+Bind same original Warehouse root/context to non-file current save, server-mode gate
+old preparation entry, same-request UI metadata/progress. Then original photo/Drive
+callback durability/termination, CBM, dispatch and remaining current co-writers. This
+factory must not be installed alongside old unfenced apply or used to enable only
+part of inventory. All native schemas/indexes/SDK grants/CMS initialization/all20writer
+coverage, cross-session/unknown-lock recovery, quiescent cutover/in-flight old writes,
+measured platform capacity/shadow parity/focused regression/visual acceptance remain.
+Support real invoicing OFF. ACTIVE OFF. Four states: code incomplete candidate; Pages
+unchanged; Wix not synchronized/published; new public inventory/borrowing unavailable.

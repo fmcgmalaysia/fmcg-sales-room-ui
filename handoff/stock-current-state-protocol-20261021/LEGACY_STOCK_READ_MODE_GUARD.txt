@@ -1,0 +1,23 @@
+2026-10-23 — bounded G3 actual old stock read endpoint candidate
+
+Evidence: original integration/backend/stockControl.web.js directly constructed its
+historical readFulfilmentContext reader. New stock UI targets stockCurrentRead.web,
+but the old endpoint still existed and had no current-mode protection. After ACTIVE,
+that endpoint must not independently advertise history-derived ownership as stock.
+
+Minimum candidate generator build-legacy-stock-read-guard.cjs changes ONLY original
+readContext dependency, after original filter/member/employee checks. Uses existing
+current Warehouse read mode router and exact company control ID/version/generation.
+Explicit clean LEGACY preserves original response and quantity/privacy projection;
+compares control again after historical read. ACTIVE refuses with updated Stock
+Control refresh instruction, not an incompatible response or silent history fallback.
+Missing/pending/maintenance/shadow/unknown/corrupt or changed control refuses.
+No original API names, permissions, forms, filtering, data or stock writes changed.
+
+New4tests pass0fail893.5794ms. Original service7tests passed in first affected run;
+new test harness initially had one missing object-closing brace, fixed before4pass.
+No shared runtime/business model changes after retained FULL1038pass. Protected
+production source remains unchanged. Candidate wrapper not installed or published.
+Previous reserved-damage df616d8 confirmed pushed PR220. Sync this separate read gap
+there. Coverage EMPTY/ACTIVE OFF; realinvoice/physical exit OFF; native/capacity/
+recovery/shadow/cutover/review and four-stage release still OPEN.

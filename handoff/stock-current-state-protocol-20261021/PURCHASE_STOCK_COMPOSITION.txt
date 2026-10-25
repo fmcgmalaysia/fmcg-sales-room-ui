@@ -1,0 +1,36 @@
+CURRENT after9942abf — original Purchase -> conditional stock composition candidate
+
+Added private createPurchaseStockPreparation: original approved-member/Purchase check,
+same-barrier company tables, original prepare, exact conditional domain after-images,
+original before/after Purchase and PO projectors, original packing/shipment readers,
+scoped current product reads, then source/share guard and one composed save plan.
+Browser actor/state/PO-valid flags do not become authority. No new staff entitlement.
+Pending/unapproved/wrong department/invoice lock refuse before current stock reads.
+
+preparePurchaseStock requires distinct complete coverage of all changed task products,
+same company, original domain events once, unchanged physical/customer demand facts,
+exact current row versions, one product revision and atomic proof limits. Existing empty
+unreceived PO position updates its poId when original validated source changes; borrowing
+or receipts block substitution. New PO alone never creates physical receipt/claims.
+
+Integration test found real candidate lock collision: original journal and conditional
+protocol deliberately share company PURCHASE lock ID. Read-only original validation now
+omits ONLY matching new-format lock from PRIVATE copied tables, after exact live reread,
+same request/member owner, company and execution identity checks. Real lock is not deleted
+or altered. Foreign, legacy and changed locks refuse. No core protocol or live lock change.
+Another test initially asserted Procurement error but invalid new task failed earlier
+packing coverage; fixture corrected to test desired later guard. No production regression.
+
+Evidence: original identity/prepare/projectors -> current read -> conditional commit test
+interrupts after task/event before stock checkpoint, blocks reads, resumes exact plan,
+same request replay creates one event/one generation and does not repeat original prepare.
+All in-memory conditional storage, no real Wix mutations or deletion authorization used.
+Final affected53pass0fail481.8744ms (shared mapper Borrow/receipt/Sales/dispatch/exception
+and new Purchase tests). Prior full251 output reused, not claimed rerun this version.
+
+OPEN: actual gateway wiring/admission/version clients; all Purchase source/add/order/
+cost-lock co-writers and old apply-only second guards; real stocked PLAN/FOC/multi-source
+end-to-end migration parity; production scale/lifecycle/recovery operational tool;
+all current read consumers, reserved exception attribution, new packing outflow, UI,
+schema/migration/shadow/ACTIVE and four-stage release. This adapter is NOT production
+coverage certification. No Pages dispatch, Wix sync, ACTIVE, business data or main change.

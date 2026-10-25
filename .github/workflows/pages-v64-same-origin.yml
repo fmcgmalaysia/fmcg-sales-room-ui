@@ -4,6 +4,16 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      static_ui:
+        description: Static interface installation only; does not activate current-stock writes
+        type: choice
+        default: baseline
+        options:
+          - baseline
+          - stock-interface
+          - isolated-stock-interface
+          - purchase-layout-only
 
 permissions:
   contents: read
@@ -24,14 +34,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
+      - name: Prepare paired stock interface resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-interface'
+        run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
+
       - name: Upload static site
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .
+          path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
+
+      - name: Prepare isolated static resources (no backend or private evidence)
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        run: node integration/prototypes/stock-current-state/stage-isolated-cohort.cjs "$RUNNER_TEMP/isolated-stock-interface-site"
+
+      - name: Upload isolated static site
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/isolated-stock-interface-site', runner.temp) }}
+
+      - name: Prepare approved Purchase layout on current live static baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-layout-only'
+        run: node integration/prototypes/purchase-active-layout-20261025/stage.cjs "$RUNNER_TEMP/purchase-layout-site"
+
+      - name: Upload approved Purchase layout only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-layout-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-layout-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

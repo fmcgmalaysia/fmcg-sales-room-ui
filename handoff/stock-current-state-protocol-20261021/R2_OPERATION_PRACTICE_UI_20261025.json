@@ -1,0 +1,19 @@
+{
+  "schema": "LOCAL_OPERATION_PRACTICE_UI_QA_V1",
+  "build": "LOCAL-OPERATION-PRACTICE-20261025",
+  "htmlSha256": "a5fb5897c432dcf5f9d0424afce3bbc040064375397e4292ea66e2f0337fe49c",
+  "passed": true,
+  "stages": [
+    "Saved split40/60; invalid40/59 refused",
+    "Borrow10 saved; borrow11 refused; RCV80 and split allocated40/50",
+    "Moved and archived borrower retained in Outstanding Borrowing",
+    "Receipt85/90 repaid5/10; ALLOC90 unchanged; outstanding list cleared",
+    "Fresh local session restart restores initial example"
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "actualCandidateComponents": true,
+  "cmsWrites": false,
+  "nativeAcceptance": false,
+  "published": false
+}

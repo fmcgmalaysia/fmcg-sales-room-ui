@@ -1,0 +1,65 @@
+2026-10-23 — RECEIPT SOURCE PO LABEL, CANDIDATE ONLY
+
+FINAL CLOSEOUT (supersedes intermediate full-regression-pending note below)
+Single shared final stock-current regression:1295pass/0fail41245.0809ms.
+Private output outside public repository:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/receipt-po-source-label-final-full-tests-20261023.txt
+First full1295run:1294pass1fail37059.1781ms. Exact failure was the OLD fixed native
+300fixture expected to equal the newer source plan: new300position after-images
+now carry PO-001. It was NOT a quantity/ownership/event change. Retained failing log:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/receipt-po-source-label-full-tests-20261023.txt
+Native continuation remainsUNKNOWN: did NOT regenerate historical fixture or old
+compiled probes. Test now requires every new position's exact original PO label,
+then removes ONLY that one display field and demands exact equality of ALL901old
+after-images plus original request/digest/identity metadata. Frozen fixture hashLF
+85144205ea40633f4f3556e4ed44afc7003d28ec8cc99a35851114e86d59bae1
+is separately asserted. An initial copied hash literal missed one character;
+corrected from exact observed hash, no fixture bytes changed.
+Old local fixture exporter no longer overwrites this fixed namespace while native
+outcome is unknown. build() still provides current MOCK plan for comparison; CLI
+replacement refuses. Actual local CLI refusal/exit1 and unchanged before/after file
+hash verified; no native SDK operation. --check still reports exact current drift,
+not silent equivalence. No old fixed native grant renewed/lock released.
+Additional full-plan equality test proves removing only PO display metadata makes
+new receipt plan identical to its unlabeled business plan. All original event/
+quantity/claim/product/PO identity fields remain exact. Final focused new-label5pass
+182.9692ms, frozen MOCK staging8pass5005.7001ms, overlapping with final1295suite.
+New WRITER_ENTRY_REVIEW_20261023.txt captures bounded20entry/authority/fence inspection
+using unchanged prior reads + selected remaining adapters. It explicitly is NOT
+full semantic G3/native coverage/user acceptance and no coverage flags changed.
+Interim feature commitf6d9175; production original paths remain zero diff against
+d447185. Historical native fixture/probes unchanged versus8465ce8. No UI/native/
+CMS/ACL/file deletion/release. Heartbeat staysPAUSED; no ordinary consent wait.
+
+User is away and asked to continue independent work. Reused same-version project
+framework/spec; fresh checkout AGENTS/current STATUS/read-write/UI dependencies
+read. No browser or retry of either stopped Wix path. Recovery8465ce8.
+
+Confirmed defect: convertProjectedStock migration already stores poNumber and the
+shared current display query whitelists it, but originalProductState dropped the
+already-confirmed original PO number and mapTransition omitted it for new sources.
+Thus a source created by actual receipt could show an opaque internal PO identity
+while otherwise identical migrated stock shows the readable PO number.
+
+Before fix four focused assertions failed with undefined readable PO labels,
+including NCT and GHR authoritative state->receipt->StockPositions display pipeline.
+Smallest correction: retain exact matched server PO.number in source state and
+copy its nonempty string to the existing position after-image on actual changes.
+Missing optional label preserves the old label; event/browser text cannot override.
+No extra lookup, business save, historical rewrite, collection/field/index addition,
+quantity, ownership, financial lock, PO identity or borrowing rule changes.
+Current runtime and paired backend/UI manifest hashes regenerated mechanically.
+Same116modules/60exports,39backend targets/95dependencies,38Pages+4Wix relays.
+
+50affected authority/receipt/borrow-plan/query checks pass537.5179ms. Additional
+actual original Warehouse validator+two-product fenced receipt assertions confirm
+both saved PO labels. Final26focused runtime/install/authority/display checks pass
+1225.5317ms. Overlapping, NOT a new full-suite/native acceptance total. Previous
+1290full output remains previous8465ce8 evidence; final shared regression to follow.
+Original production backend/pages unchanged. No native test/CMS/ACL/UI/release.
+Actual Credit UNKNOWN. ExistingPR220, no main/force push/verified tag.
+
+Four states: code candidate fixed/tested; Pages unchanged rollback baseline; Wix
+not synchronized/published for new inventory; public borrowing/Loaded unverified.
+ACTIVE/invoice/physical exitOFF; heartbeatPAUSED. Continue independent review, not
+ordinary-stage authorization waiting. Native schema/drain/capacity/recovery gatesOPEN.

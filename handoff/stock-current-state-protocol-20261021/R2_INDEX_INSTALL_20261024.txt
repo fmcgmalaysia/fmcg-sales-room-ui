@@ -1,0 +1,96 @@
+2026-10-24 — R2 COPY DID NOT RETAIN REQUIRED USER INDEXES; PARTIAL ADDITIVE INSTALL
+
+SUPERSEDING USER RECEIPTS 2026-10-24
+R2NCTActivity and R2NCTActivity1: screenshots show all three required indexes
+SC_ACTIVE_PRODUCT(company,stockKey,status),
+SC_REPAID_SOURCE(company,replacementSourceId,repaidQuantity),
+SC_TASK_REL(company,participantTaskIds,status), each Regular/allAscending.
+R2StockProducts: final screenshot shows SC_PRODUCT_PAGE(company,status,barcode),
+Regular/allAscending, Delete action visible instead of spinner. All manual index
+definition work now complete. Do not repeat or delete any of these indexes.
+Images remain user-supplied private evidence, not public repository attachments.
+No API ACTIVE status claim, publication or business acceptance follows from this.
+
+Working MASTER Studio Databases collection menu > Indexes opened actual CMS tab
+51427460 at manage.wix.com/.../wix-cms/data/R2StockClaims/indexes. This is normal
+existing Admin CMS navigation, no denied SDK request/token/new permission. Fresh
+R2StockClaims list ONLY2SYSTEM indexes: Created date DESC and ID ASC. Therefore
+copying the old schema/settings did NOT establish copied USER indexes. Preserved
+before screenshot r2-stockclaims-indexes-before-20261024.png. Old tables untouched.
+
+R2StockClaims native form preflight Regular/nonunique, exact name, exact3fields,
+allAscending BEFORE each single Save; final list includes USER/Regular/fieldorder:
+ SC_ACTIVE_PRODUCT(company,stockKey,status)
+ SC_SOURCE_DISPATCH(company,positionId,dispatchedCumulative)
+ SC_TASK_ACTIVE(company,taskId,status)
+Original2SYSTEM indexes preserved. New table uses actualUI3regular/1unique quota;
+no unique/deletion/overwrite. Screenshot r2-stockclaims-indexes-saved-20261024.png
+saved and embedded. Native list does NOT expose SDK ACTIVE, do NOT infer it.
+
+R2StockPositions actual fresh list also ONLY2SYSTEM indexes. Added ONCE:
+ SC_ACTIVE_PRODUCT(company,stockKey,status), allASC Regular/nonunique.
+Exact full pre-save3field+sort/type/name and post-save native list verified.
+Screenshot r2-stockpositions-index-saved-20261024.png saved and embedded.
+
+UI/helper corrections BEFORE Save, no wrong index persisted:
+1 Claims second form preflight helper falsely counted focused-UI repeated last
+combo asfourthfield. Actual form3fields correct. Fixed parsing to start-of-line
+numeric AXnodes and manually verified; SaveONCE, not recreated/retried.
+2 Positions second field selected status instead of stockKey after native dropdown
+AXnumber shifted asynchronously. Third desiredstatus absent => helper STOPPED
+before Save. Actual form read showed company/status/blank. Closed third dropdown,
+used visible semantic combobox position + exact stockKey/status TEXT options,
+verified EACH selected value; final preflight exact then SaveONCE. Do not reuse
+numeric option IDs for this dynamic selector. Existing user oldNCT stopped path
+not retried; no old index/form changes. Native/semantic selection path now used.
+
+R2StockProducts fresh listONLY2SYSTEM. Filled SC_PRODUCT_PAGE(company,status,
+barcode), allASC Regular, every semantic field selection and finalpreflight exact.
+Clicked SaveONCE via native visible button. Form remained; no explicit error or
+success, normal Save enabled. Devlogs only unrelated maps/draft warnings. DO NOT
+repeat Save, recreate index or mark completed. Navigated existing Indexes breadcrumb
+READONLY: fresh list stillONLY2SYSTEM, requested USER index not shown. Status remains
+UNCONFIRMED, not a receipt that a delayed operation cannot finish. No refresh/retry.
+Native tab then CMSdirectory, continue independent activity indexes. Native semantic
+selector fixed actual AXnumber drift; this Save outcome separate from field selection.
+
+R2NCTActivity fresh native list ONLY2SYSTEM. Filled SC_ACTIVE_PRODUCT company,
+stockKey,status, allASC Regular with semantic text and EACHselected prefix checked.
+Clicked SaveONCE. SAME no-receipt/form-remains fault as product; fresh native form
+still has exact correct3fields/name/type/sorts, no success/error shown. TWO save
+outcome failures => index SAVE path STOPPED, no coordinate/keyboard/endpoint retry.
+Current tab51427460 stays this unconfirmed AddIndex form, markedHandoff. Screenshot
+r2-nct-index-save-unconfirmed-20261024.png saved/embedded. Async user requested ONLY
+one humanSave/currentform and real list/error outcome; do not occupy browser while
+waiting. Do not treat unconfirmed indexes as installed; no task data/ACL changes.
+
+USER NEW-STATE EVIDENCE: user replied manualSave returned to list and index shown.
+Fresh native readonly list confirms R2NCTActivity SC_ACTIVE_PRODUCT USER/Regular,
+company/stockKey/status allASC; no Save repeated by agent. Saved screenshot
+r2-nct-index-user-save-confirmed-20261024.png. Preserve this user-confirmed setup.
+This establishes manual native UI Save works, NOT exact cause of failed automated
+semanticSave. Last4confirmed automatic saves used native element button actions;
+last2unconfirmed used Playwright Save. Causation unproven. Limited next distinct
+missing-index operation may use fresh observed native Save once; stop immediately
+if again unconfirmed. Do not recreate existingNCT/product pending index or claim
+Wix/indexdefinition broken. Products original outcome stillUNCONFIRMED.
+
+SUBSEQUENT DISTINCT NCT SC_REPAID_SOURCE attempt: semantic exact company option
+click produced actual Details. EACH-prefix assertion stopped BEFORE any Save;
+fresh native form confirms Details/only1field. Current new SC_REPAID_SOURCE form
+is UNSAVED, not an index. This joins prior Positions wrong-selection fault;
+automatic FIELD SELECTION path nowSTOPPED too. No keyboard/coordinate workaround,
+no additional Save/cancel/reload. Screenshot r2-nct-repaid-index-unsaved-handoff-
+20261024.png saved; nativeIndexTab markedHandoff. User asked grouped manual6missing
+indexes with exact fields/Regular/ASC and skip-if-existing, no Publish/ACL/deletes.
+No browser operation while assisting. Product outcome remainsUNCONFIRMED.
+
+REMAINING: fresh R2StockProducts required1 UNCONFIRMED and both R2NCTActivity journals required
+3each: SC_ACTIVE_PRODUCT(company,stockKey,status), SC_REPAID_SOURCE(company,
+replacementSourceId,repaidQuantity), SC_TASK_REL(company,participantTaskIds,status).
+Read actual list first; add only absent new-table indexes. New products fields
+SC_PRODUCT_PAGE(company,status,barcode). No assumption remaining definitions absent.
+Do NOT retry SDK indexes WDE0144 path. No new business/test records, controls remain
+MAINTENANCE, ACTIVE/coverage/invoice/physicalexitOFF. Next nativeIndexTab at CMS
+directory after clicking CMS; userMasterStudio remains saved, Source remains saved.
+Local code180ef1a, no push/Pages deploy/WixPublish/public acceptance.

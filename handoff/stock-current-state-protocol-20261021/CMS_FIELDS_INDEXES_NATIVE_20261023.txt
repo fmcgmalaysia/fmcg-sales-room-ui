@@ -1,0 +1,497 @@
+2026-10-23 — NATIVE CMS FIELD CONFIGURATION RECOVERED AND THREE NEW TABLES COMPLETED
+
+Recovery code/checkpoint: e331024, existing branch and draft PR220. No business
+code changed in this increment. Same native-setup-review.cjs contract inspected.
+User recovered their Wix login/refresh and opened actual StockPositions CMS.
+Previously stale editor list/401 screenshots followed by fresh sixteen-table
+list and actual StockPositions field chooser are changed-state evidence for
+resuming ONLY the native field UI. No auth credentials accessed or entered.
+Native schema function-testing timeout and old300 UNKNOWN paths remain STOPPED.
+
+MASTER metaSite f80870fd-a3d8-47c0-9917-1bfd9c16ea44, original editor tab51426657.
+Native CMS Add Field form used, exact field name/ID/type checked BEFORE each Save;
+form closure and resulting field list checked after each Save. Defaults,
+validations/encryption and existing field definitions untouched. Title preserved.
+No business rows added, original collection schema/ACL untouched in this increment.
+
+StockPositions: existing12 custom fields preserved; added14:
+ TEXT: sourceId sourceTaskId poId poNumber
+ TAGS: reviewCodes
+ NUMBER: receiptAccepted replacementReceived supplierReturned dispatched
+  borrowRepaidCumulative onHand isolated reservedUsable available
+Total26 required custom fields now represented in native CMS.
+
+StockClaims: added all16 required custom fields:
+ TEXT: company stockCommitVersion status stockKey positionId taskId customerId
+  orderId sourceLineId
+ NUMBER: schemaVersion revision checkpointGeneration reservedUsable
+  isolatedAttributed dispatchedCumulative
+ TAGS: reviewCodes
+
+StockProducts: added all19 required custom fields:
+ TEXT: company stockCommitVersion status stockKey barcode name packing
+ NUMBER: schemaVersion revision checkpointGeneration ea onHand isolated
+  reservedUsable available lifecycleVersion nextBorrowSequence
+ TAGS: reviewCodes
+ BOOLEAN: reviewRequired
+
+Total49 fields ADDED this increment,61 required custom fields across three new
+tables. Tags UI chosen for semantic TEXT_ARRAY per existing native wire mapping.
+This is native UI form/list evidence, NOT a successful SDK metadata inspection,
+typed data-item roundtrip, migration or activation acceptance. No rows inserted.
+Fresh CMS directory after field additions lists all three tables with0items.
+
+Native index setup: read existing system indexes and actual UI quota first:
+up to3 regular and1 unique USER indexes per table. No unique indexes added,
+no index dropped/overwritten. All new ordered fields ASC:
+ StockProducts SC_PRODUCT_PAGE(company,status,barcode) — saved/listed.
+ StockClaims SC_ACTIVE_PRODUCT(company,stockKey,status) — saved/listed.
+ StockClaims SC_SOURCE_DISPATCH(company,positionId,dispatchedCumulative) — saved/listed.
+ StockClaims SC_TASK_ACTIVE(company,taskId,status) — saved/listed.
+Both original system indexes preserved on each table. StockClaims now occupies
+all3 regular USER slots. Existing StockPositions SC_ACTIVE_PRODUCT from prior
+increment retained. New-table required5index definitions now present through UI;
+explicit SDK ACTIVE status remains UNCONFIRMED for all, not inferred from list.
+
+Transient UI handling, no mutation retries:
+poId Save closed form and listed field, but helper expected a nonexistent
+ALL CHANGES SAVED label; inspected field list, did NOT repeat Save.
+After Claims positionId saved, table Add Field virtualized offscreen; next taskId
+click found no button. Inspected screenshot/DOM and opened existing Manage Fields
+toolbar. taskId was absent and then added once from restored visible entry.
+One navigation raced collection-list rendering and opened list-level More Actions;
+Indexes had no match. Read actual list menu, closed it, entered Claims and verified
+its heading before using its actual Indexes menu. No duplicate index Save.
+
+Private screenshot evidence kept OUTSIDE public checkout/Pages at root handoff
+stock-current-state-spec-20261021/private-evidence/:
+ stockpositions-fields-native-20261023.png
+ SHA256 d031652b2a22c3e872e9d2ea6485e1fa45ac6454c736b6f2c02cac00950f8144
+ stockclaims-fields-native-20261023.png
+ SHA256 1e57d0cc0bd757ac778f6bd9c967d7d8f81fb85e039ed2b5aa6ccedff9d78076
+ stockproducts-fields-native-20261023.png
+ SHA256 e6a22d9aac38968ee9e6ee6524d4f4ecdd2fd08a5af8f07c151e4bbc40333b50
+ stockproducts-index-native-20261023.png
+ SHA256 0d2ee9d0d4b29381cfff7f55231f4cac4ff99300e4816539f469df6cb2fe8f74
+ stockclaims-indexes-native-20261023.png
+ SHA256 be10c181b343ae31fc6b218fca977feac4591ec9ebc15e669a7e99c92337f6cc
+Do not save token-bearing CMS iframe URLs from full accessibility output.
+
+Unchanged candidate1295-test evidence reused; no redundant regression run for
+schema-only UI work. No code deployment, Pages resource update, Wix whole-site
+Publish or public borrowing/Loaded acceptance. ACTIVE/invoice/physical exitOFF.
+Remaining: original-table additive schema/index review, explicit native metadata/
+index/typed-query acceptance, provider drain/sufficient legacy fencing, real
+installation/writer capacity/recovery, retained backup/initialization/migration/
+shadow, and four-stage public acceptance. No Wix support ticket sent.
+
+SUBSEQUENT ORIGINAL-TABLE STEP — PARTIAL, CONNECTION LOST; DO NOT REPEAT SAVES
+
+After completing the three new empty tables above, inspected NCTActivity native
+Manage Fields. Existing custom IDs: title(Activity ID), description(Order ID),
+image(Source Line ID), imageAltText(Task ID), action, activityTime, actorType,
+initiatedByStaffId, initiatedByStaffName, message, result, details. System fields
+_id/_createdDate/_updatedDate/_owner/_publishDate/_draftDate also listed.
+Opened existing Details, Activity Time and Action forms READONLY, confirmed exact
+IDs/types details Object, activityTime Date and Time, action Text; Cancel each,
+no Save/definition change. This prevents duplicate or conflicting additions.
+Pre-change screenshot nctactivity-fields-before-20261023.png SHA256
+0cfbd4ad411cefb231a4750c6144f1461aef553fdf5a853a2a32c49e794aebc7
+retained in the same private evidence directory.
+
+NCTActivity additions CONFIRMED through exact-ID Manage Fields list after Save:
+ TEXT company stockCommitVersion status stockKey mode lenderSourceId
+  replacementSourceId
+ NUMBER schemaVersion revision
+Nine fields confirmed. No existing field edited, business item added/updated,
+permission/index change or publish performed on the original activity table.
+
+Next batch attempted Number fields checkpointGeneration, generation,
+transferIndexVersion. Browser tool execution timed out at60seconds and reset
+the JavaScript kernel; no per-field output returned. These THREE field outcomes
+are UNKNOWN, not counted saved or absent. Browser may have an open Add Field
+form. DO NOT repeat any Save or refresh/close it before actual native readback.
+repaidQuantity, participantTaskIds and pending NOT attempted. Other original
+collections and their indexes have NOT been augmented in this increment.
+
+Read-only recovery: old browser6 unavailable after kernel reset; fresh inventory
+shows browser3 with SAME extensionInstanceId9d477b56-0827-4286-89bd-858741eb0b36
+and SAME user tab51426657. No different profile/endpoint used. Selected that same
+connection; direct getTab then documented fresh user.claimTab each reported
+Debugger unattached. Same connection failure twice: browser UI path STOPPED.
+No extra retry, reload, new tab, alternative control mechanism or Run invoked.
+Asked user only to open existing Chrome Codex control extension and screenshot
+its connection popup, keeping Wix page and any unsaved form unchanged.
+
+Total THIS TURN:49 new-table fields +9 original-table fields CONFIRMED saved;
+up to3 additional original-table saves UNKNOWN. Four new regular indexes saved;
+all described earlier. Existing production business CODE remains unchanged.
+Do not interpret the earlier 'original collection schema untouched' statement
+as covering this subsequent explicitly recorded NCTActivity additive step.
+
+GITHUB SYNC STOP: local66bb853 records these two scoped handoff files. First
+normal push to existing origin branch was rejected by automatic safety review
+for insufficient specific authorization to export internal handoff contents.
+Only read-only follow-up checks were performed: exact origin URL, two-file
+numstat and remote-tracking prior CMS_EMPTY_COLLECTION_SETUP record (same site
+identifier/field/hash evidence already in the destination). A renewed review
+with that evidence still rejected the same push and explicitly forbade retry.
+No further push/connector/alternate export attempted. Remote remains last known
+e331024; local evidence is preserved, not claimed synchronized. Need explicit
+human approval for these TWO files' technical contents (field/index definitions,
+site identifier, screenshot hashes, interruption state; no credentials/cookies/
+tokens/business-item details) to existing fmcgmalaysia/fmcg-sales-room-ui PR220
+branch before any new export attempt. No repository ownership inferred from
+cached remote contents. No permission/environment/deployment change performed.
+
+USER EXTENSION REINSTALL AND NATIVE READBACK — FOLLOW-UP
+
+User explicitly reported REINSTALL completed. Fresh browser inventory identified
+new extension instance f71fb06d-4d92-4e27-add5-2fd2906933bb, browser4, SAME original
+Wix tab51426657. Actual getTab succeeded and returned native NCTActivity CMS.
+No browser reload, fresh website/login, security/permission/CDP change or Run.
+Exact Manage Fields DOM IDs confirmed checkpointGeneration and generation ARE
+saved; transferIndexVersion absent. Existing open Add a field form still Number,
+name Number, ID number. This resolves the previous THREE unknown outcomes:
+firstTWO already persisted, third not saved. Filled exact transferIndexVersion
+name/ID, Save ONCE, native list then contains allTHREE exact IDs. No prior Save
+repeated and no unintended default number field created. NCTActivity now has12
+confirmed added fields, including the previously confirmed9.
+
+Following batch attempted repaidQuantity Number and participantTaskIds Tags via
+the same native form. Whole browser-tool call timed out at55seconds and reset
+the JavaScript kernel, returning NO per-field result. BOTH outcomes UNKNOWN:
+neither assume saved nor assume absent, and do not repeat either Save. pending
+Object NOT attempted. Prior default-form outcome cannot be reused for this batch.
+
+Immediately STOPPED batch mutation. Read-only inventory after timeout shows the
+SAME reinstalled extension instance, re-enumerated browser3, SAME user tab51426657.
+One direct read-only getTab again reports Debugger unattached. No further attach,
+claim, reload, mutation retry, alternative control route or repeated reinstall.
+This is recurring browser-tool execution/connection failure; actual site/data
+cause not established. User should NOT repeatedly reinstall or broaden access.
+Request only unchanged current Wix screenshot for human-visible reconciliation.
+
+This follow-up adds ONE confirmed field transferIndexVersion; TWO previously
+unknown saves confirmed by actual readback; TWO later attempts remainUNKNOWN.
+No new tests/code changes/Pages/Wix Publish/public acceptance/GitHub push.
+Local-only evidence update; exact export authorization remains outstanding.
+
+USER SCREENSHOT RECONCILES THE LAST TWO SAVE OUTCOMES
+
+User supplied codex-clipboard-cb4731b2-7aa8-4879-966b-84c0ab155085.png.
+Actual native NCT Activity Manage Fields visibly lists repaidQuantity with
+Number(#) icon, participantTaskIds with Tags icon, plus prior checkpointGeneration,
+generation and transferIndexVersion. No Add a field modal remains open. Table
+still displays30items. These TWO field-save outcomes are now CONFIRMED_UI; this
+image does NOT expose SDK field-ID metadata or prove typed item roundtrips/index
+readiness. No further browser tool calls/inputs, repeated Save or native retries.
+pending Object remains NOT attempted. NCTActivity14new fields now confirmed in
+total across prior exact-ID readbacks/form checks and this human visual evidence.
+
+User image copied unchanged into root private evidence, not repository/Pages:
+ nctactivity-repaid-participants-user-confirmed-20261023.png
+ SHA256 a26c44535fdc0840d46b4b39f8af0d4e21797feaf3a27bc3ba3020d8f1cbf3b3
+Prior user screenshot remains unmodified. Human visual evidence settles the
+unknown saves without re-running the failed browser-control path.
+
+No settings/permission change requested. OpenAI official Browser extension
+troubleshooting says restarting the desktop app is a connection recovery step:
+ https://learn.chatgpt.com/docs/chrome-extension
+Request user normal fully exit/reopen desktop app, keeping Chrome/Wix OPEN, then
+return to SAME chat and say continue. No force-kill/reboot/Chrome restart/new chat,
+automatic agent creation or repeated extension reinstall. This is a proposed
+recovery, not claimed to resolve the fault. After user changed-state confirmation,
+only fresh read-only browser binding first; no automatic mutation/test replay.
+All prior native schema tester/300 stops, ACTIVE OFF and no-publication gates
+remain. Local text record only; no further push/export attempted.
+
+AFTER USER DESKTOP-APP RESTART — NATIVE CONNECTION AND ADDITIVE SETUP
+
+Same extension f71fb06d-4d92-4e27-add5-2fd2906933bb, browser3, original51426657
+Wix tab. Initial read-only field-ID reconciliation succeeded without reload or
+settings/permission/CDP changes. Exact IDs checkpointGeneration/generation/
+transferIndexVersion/repaidQuantity/participantTaskIds present, no field modal.
+pending absent. Added pending Object ONCE after exact type/name/ID checks and
+confirmed native list exact-ID count1. NCTActivity required18fields now present
+in native UI; SDK metadata/typed query/roundtrip still UNCONFIRMED.
+
+Original activity index list had only two system indexes. Created and read back
+REGULAR indexes SC_ACTIVE_PRODUCT(company,stockKey,status) and SC_REPAID_SOURCE
+(company,replacementSourceId,repaidQuantity), all ASC. No unique/system change.
+SC_TASK_REL attempted but NOT SAVED: name/company/participantTaskIds entered;
+third status dropdown click did not expand, no option found. Fresh visible-input
+inspection then input fill failed with timeout. Two failures STOP this exact
+third-field selector path. Read-only state confirmed third field blank; canceled
+form. Final native list contains only original2system +above2regular indexes,
+not SC_TASK_REL. No Save attempted/repeated for the incomplete index. Connection
+remains usable for independent native field work; not globally disconnected.
+
+NCTTasks original field-ID list captured. Existing lastCostCaptureTime exactID
+and Date and Time type opened read-only, Cancel, no Save. Missing required fields
+then added individually via short type-form and fill/Save/readback calls:
+ TEXT company stockCommitVersion
+ NUMBER stockCounterSchema stockDispatchedCumulative stockCounterGeneration
+All FIVE saved ONCE and exact native Manage Fields ID count1 confirmed. Original
+fields/definitions/rows/quantities/ACL unchanged. Other original tables not yet
+augmented in this increment. No new business items, native tests/Run, old-lock
+release, permissions, Pages resources, Wix whole-site Publish or public acceptance.
+
+Private PNG evidence in root stock-current-state-spec-20261021/private-evidence:
+ nctactivity-pending-saved-after-app-restart-20261023.png
+ SHA256 6bd9b6db8e0d033f9651b6f127036376d706c2bae30c103c1983583c34849d9f
+ nctactivity-two-indexes-after-app-restart-20261023.png
+ SHA256 00579341848af7bde6a27e6e8ebb4b3aead4d8651f7a89414ef112173a4ba878
+ ncttasks-fields-before-stock-20261023.png
+ SHA256 29f0b47b19741e0cb6a4341f880d6ac90fbbce933d31b967c9130c0c58719c27
+ ncttasks-stock-fields-saved-20261023.png
+ SHA256 6b51ab8237718c92d9b85d942a74d35d915646fd815e95831230ced8af41fa99
+
+Unchanged candidate1295-test output reused, not native acceptance. Code remains
+e331024; local documentation only. GitHub export refusal not retried/bypassed.
+All legacy drain/fence/native type/index/capacity/recovery/install/migration/
+shadow/four-stage public gates remain, ACTIVE/invoice/physical exit OFF.
+
+SUBSEQUENT ORDER/PO SCHEMA — EXACT UI READBACK, NO ITEM WRITES
+
+NCTOrders and NCTOrders1 native original fields inspected. For BOTH companies,
+estimatedShipmentDate exact ID has Date type; masterReceivedTime and
+salesSubmissionTime exact IDs have Date and Time type. All opened read-only and
+canceled, no definition Save. User explicitly clarified estimated shipment date
+needs date only, no time. Existing Date definition preserved, NOT a schema fault
+to repair. Added company and stockCommitVersion Text to EACH order table, once
+per field, exact native Manage Fields ID readback confirmed.
+
+PurchaseOrders original company exactID/type Text confirmed read-only, canceled;
+stockCommitVersion Text added once/readback confirmed. One ambiguous Company
+text locator matched table header and Manage Fields list before any click; scoped
+to the observed exact company field row, then successful readonly inspection.
+No duplicate field, business row, ACL, original quantity or payment change.
+
+Evidence same private directory:
+ nctorders-stock-fields-date-only-20261023.png
+ SHA256 ea2f9f66794c4ba382aeb6150bfbd92d14f792bf63727dd654cc39508fe8c1fc
+ ghrorders-stock-fields-date-only-20261023.png
+ SHA256 ccdd4d0e0f9046719e0474fcc7581389d7906f4da45b2d4a40f387fcb2775379
+ purchaseorders-stock-version-20261023.png
+ SHA256 440d2d7be043f8f0e0c67bd56cf4e3ac9cdebe8f902fd1bb3587c3eb16e901e1
+
+GHR Tasks currently open in Manage Fields, original IDs captured, no additions
+there yet. No field modal remains open. GHR Activity still untouched. Candidate
+date-only mapping correction separately in progress; original production code
+unchanged. No stopped index/schema/300 retry, GitHub export or deployment.
+
+DATE-ONLY USER RULE IMPLEMENTED IN LOCAL CANDIDATE
+
+Recovery before correction e726019; native evidence checkpoint2c3c55a.
+One objective: preserve original Date-only estimatedShipmentDate in NCT/GHR,
+without altering other timestamps, existing business core, quantities, original
+authentication or any live item/field definition. Actual native UI readback plus
+user clarification, not an assumed schema replacement, determines the contract.
+Wix official primary documentation confirms Date is YYYY-MM-DD string, distinct
+from Date and Time JavaScript Date:
+ https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/data-api/working-with-the-data-api#date-fields
+
+native-setup-review semantic DATE_ONLY maps native DATE; existing semantic DATE
+continues mapping DATETIME for all original timestamps. All12 business/recovery
+roots and maintenance omit only estimatedShipmentDate from dateTimeFields.
+Original intake validation retained; candidate after-image normalizes ONLY the
+order estimatedShipmentDate to already validated source YYYY-MM-DD/null, rather
+than original core's Date object. Original production core untouched. Paired
+generators/runtime/backend/UI manifests refreshed mechanically; no live install.
+
+Affected120checks pass15049.1199ms. Shared full first run1299tests/1297pass/2fail
+53179.6656ms: BOTH failures stale paired UI install manifest hash after backend
+manifest change. Original full failure log retained, not erased or called pass.
+Rebuilt dependent business-ui-install.json. Final shared regression:
+1299tests/1299pass/0fail52566.4742ms,173stock-current test files. Includes tests
+for both companies/all13bindings, leap/date/null/absent preservation through CAS,
+timestamp native Date retention, real original intake with shared adapter, and
+schema installer Date-only/no-overwrite behavior. Two retained counterexamples
+are witnesses, not extra native acceptance. Old typed synthetic probe/fixtures
+remain frozen and are NOT proof of original order Date schema compatibility.
+
+Private logs same evidence directory:
+ shipment-date-only-full-tests-20261023.txt (first failed packaging run retained)
+ shipment-date-only-final-full-tests-20261023.txt
+ SHA256 b90895fd125146f7c3c427ee755383693fd1d812f86a8fee72572fcdfe4bd8c3
+No actual CMS item roundtrip, native tester replay, permission change, external
+export or deployment. Code/Pages/Wix/public remain separate, not published.
+
+GHR SAME-FIELD-LIST REUSE — PARTIAL ACTIVITY SETUP, NEW CONNECTION STOP
+
+User suggested DUPLICATE NCT to accelerate. GHR NCTTasks1/NCTOrders1/NCTActivity1
+already exist and original backend binds those exact IDs. Reused NCT's required
+additive list on existing GHR tables, did NOT create competing duplicate tables,
+rename/rebind collections or copy NCT business rows into another company.
+
+NCTTasks1 existing lastCostCaptureTime exact ID Date and Time read-only confirmed,
+canceled. Added company/stockCommitVersion Text, stockCounterSchema/
+stockDispatchedCumulative/stockCounterGeneration Number, ONE Save per field,
+each exact Manage Fields ID count1 readback. All required task fields now in UI.
+Private screenshot ghrtasks-stock-fields-saved-20261023.png
+SHA256 c8f5674faa7bfa4733c6b2a1b3c3090c9e717d21658ff0ecb2784bee27c5fdef
+
+NCTActivity1 original ID list captured; existing action Text, activityTime Date
+and Time, details Object exact IDs/types opened read-only and canceled. Added
+these SEVEN missing Text fields, each exact form type/name/ID, saved ONCE and
+exact native field-list ID count1 confirmed:
+ company stockCommitVersion status stockKey mode lenderSourceId replacementSourceId
+No business rows or existing field definitions changed. GHR Activity indexes NOT
+inspected/created yet; do not infer its quota/ACTIVE from NCT table's observations.
+
+Next stockPrepareField(GHR Activity,schemaVersion,Number) failed with native
+pipe closed after5.68seconds, before any stockFinishField/Save invocation. Do not
+infer current dialog state or list presence: preparation outcome UNKNOWN, no
+field Save issued. Read official packaged browser-troubleshooting guidance;
+ONE existing-tab getAX read-only diagnostic then reported browser3 unavailable.
+Two connection failures -> STOP UI path, no reselect/rebind/new endpoint, no
+refresh/Save replay or repeated reinstall. User informed connection lost and
+that saved fields are retained. On changed user-visible connection state, FIRST
+read exact native ID list and open-form state; reconcile before further writes.
+
+GHR remaining required fields: NUMBER schemaVersion revision checkpointGeneration
+generation transferIndexVersion repaidQuantity; TAGS participantTaskIds; OBJECT
+pending. Original Date-only order rule remains as user specified and implemented
+in local11a7d89. Final1299test evidence reused unchanged; no rerun for these native
+field-only additions. Actual native original-table metadata/typed queries/index
+ACTIVE/capacity/recovery/install/drain/migration/shadow/public acceptance remain
+OPEN. No main merge, push/export retry, permissions, Pages/Wix Publish, test item
+creation or historical native300 continuation/lock release. Heartbeat PAUSED.
+
+FOLLOW-UP HUMAN RESTART / CURRENT NATIVE READ-ONLY DIAGNOSTIC
+
+User screenshot a75f3368 shows unsaved Choose field type dialog, no new field
+name/ID or Save stage. User subsequently canceled and confirmed AUTOSAVE, then
+fully restarted Chrome/GPT as guided. Later screenshot068b4645 shows actual HTTPS
+MASTER GHR Activity empty table, no field modal, Last saved12minutes ago. This
+settles the prior preparation state without any field Save replay. It does not
+prove the missing8fields exist or give SDK schema/index acceptance.
+
+Current tool surface exposes native Windows @oai/sky instead of former CUA browser
+extension API. Used current computer-use26.1016.62342 guidance/API/confirmations.
+Read-only list_apps finds ONE Chrome window66680. First attempt on user's Chrome
+internal extension settings page stopped because current browser URL could not
+be reliably established by safety enforcement. Did not bypass or change settings.
+After user independently returned to actual authorized HTTPS MASTER, native
+get_window_state reads actual editor URL and GHR Activity table successfully.
+Do not describe all these distinct outcomes as extension disconnection.
+
+One Manage Fields AX click failed coordinate input geometry unavailable. Fresh
+screenshot/text then exposed mismatch: text was Chrome while screenshot captured
+GPT in foreground. No input on that mismatched image. Activated ONLY returned
+Chrome window, refreshed; actual Chrome screenshot and AX then aligned. Second
+AX click failed element874 unavailable in cached app state for chrome.exe. Both
+were ordinary input/location errors, not safety denial; no Save/data write and
+no repeated same failed click. Asked human to open Manage Fields. Subsequent
+native read confirms heading Manage Fields and Add Field; screenshot shows GPT
+window covering Chrome right side. Asked human to move/minimize GPT before any
+further UI input. No invented coordinates, other browser profile, CDP or bypass.
+Do not persist signed CMS iframe instance URLs or unrelated chat screenshots.
+
+FOCUSED OLD-EXECUTION REVIEW — NO SAFE CUTOVER CLAIM
+
+Reused actual retained original cost/GP admission witnesses, current native Admin
+root and existing bootstrap checks; no witness rerun or full tests for this review.
+Recovered current authoritative code remains11a7d89, local record checkpointd193ee1.
+The latest general authorization does not itself prove a platform guarantee.
+
+Primary docs retrieved (not third-party snippets):
+ https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+ Backend request timeout can close client connection while server code continues.
+ https://dev.wix.com/docs/develop-websites-sdk/code-your-site/work-with-data/data-api/about-data-hooks
+ Hooks cover Velo, SDK, REST, datasets/manual operations and can reject mutations.
+ https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/hooks/using-data-hooks
+ Hooks live in backend data.js and run before/after collection operations.
+None of those retrieved pages establishes that an old paused execution must use
+newly published hooks, a database-admitted old write is canceled, or a publish/
+empty-lock/elapsed wait proves per-site all-execution drain. These points remain
+UNKNOWN; this is not a claim that Wix has no supported mechanism.
+
+Decision: keep verifyLegacyDrain refusal and EMPTY native writer coverage. Do not
+replace it with true, a timestamp, an administrator checkbox, another mode read,
+unverified new data.js hooks or data-clearing workaround. No new competing table,
+ID renaming, original writer refactor, API/ACL change, lock stealing or cleanup.
+Minimum provider questions needed for an implementation decision:
+ 1. Supported operation or documented guarantee to prevent ALL old site-code
+    executions, including ones awaiting upstream HTTP/DB calls, from issuing any
+    later collection mutation; exact acknowledgement/failure semantics.
+ 2. Whether already accepted Wix Data requests may finish after that boundary,
+    and how their completion or cancellation can be positively established.
+ 3. If hooks are suggested, which deployed hook version an already-running old
+    execution uses, how suppressHooks/SDK calls behave, and whether the check and
+    final write can race a cutover; exact supported server-side guarantee required.
+No Wix support communication/ticket sent. A platform answer can establish a next
+step, but cannot substitute native boundary rehearsal and all-writer acceptance.
+Independent schema/index completion still in progress, not exhausted. No release,
+GitHub export retry, native tester/300 replay, mode switch or business item write.
+
+GHR ACTIVITY MISSING-EIGHT COMPLETED — NATIVE SCREENSHOT INPUT
+
+User exposed unobscured actual Chrome MASTER/GHR Activity, same selected window.
+Used documented screenshot-backed coordinate API, each ONE input followed by fresh
+observation; stopped AX-index path not retried. Existing missing-field plan and
+types reused. Six Number fields saved ONCE each after exact form name/ID/type
+visual verification: schemaVersion revision checkpointGeneration generation
+transferIndexVersion repaidQuantity. Tags participantTaskIds and Object pending
+likewise saved ONCE. Each settled list displays correct Number/Tags/Object icon
+and exact camelCase name after SAVING indicator disappeared. Default validations
+and value tabs unchanged. Table still No items. All18required definitions now UI
+confirmed (prior7Text plus existing action/activityTime/details preserved).
+Top editor tooltip Last saved12minutes ago is NOT used as field-save evidence.
+
+Private retained screenshot:
+ C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/ghractivity-six-number-tags-object-saved-20261023.png
+ SHA256 b9a5f13f7f5f4a314765ee9fedb130c6b4b32d24fa8f53de117420d05833c541
+Shows all6Number + Tags + Object together in settled GHR Manage Fields panel.
+No existing field edits, business items, duplicate tables, ACL changes or publish.
+No native tester/300 replay or old lock deletion. Reuse1299pass final tests because
+candidate code unchanged. GHR indexes NOT yet inspected/created; NCT SC_TASK_REL
+specific stopped UI path remains stopped. SDK schema/index ACTIVE, native typed
+queries/capacity/recovery, provider drain, installation/migration/shadow/public
+acceptance still OPEN. No claim of fixed extension connection or safe cutover.
+
+GHR ACTIVITY THREE REGULAR INDEXES — SAVED ONCE / SETTLED UI READBACK
+
+Original list showed only System index1(Created date Descending) and System
+index2(ID Ascending), retained unchanged. Add Index native form explicitly says
+up to3regular/1unique, Regular max3fields. Added only the planned3Regular indexes:
+ SC_ACTIVE_PRODUCT: company,stockKey,status
+ SC_REPAID_SOURCE: company,replacementSourceId,repaidQuantity
+ SC_TASK_REL: company,participantTaskIds,status
+All fields Ascending, exact name/ordered selected fields checked before each Save;
+each Save invoked ONCE. New row readback retained during asynchronous building.
+First2explicit toast creation receipts observed. Final list shows all3names,
+ordered fields/Ascending/Regular and Delete controls, with no building spinners.
+No Delete invoked, no unique index, permissions, data, native tester or Publish.
+This is actual native UI creation acceptance, NOT SDK index-state ACTIVE or native
+query/capacity acceptance. Independent schema definitions now complete for required
+new/augment fields in these tables; metadata/runtime gates remain as listed above.
+Private screenshot ghractivity-three-regular-indexes-settled-20261023.png retained
+outside public checkout; hash recorded in subsequent evidence entry.
+ SHA256 163bf9fa2cae7ec1d99f8855f8d686a169ce03b53fb41abee6d27b41ff031e4b
+
+NCTActivity SC_TASK_REL remains NOT saved, stopped earlier third-field UI path
+not retried. Asked human once to add exactly Regular SC_TASK_REL(company,
+participantTaskIds,status), allAscending, preserving other indexes. Await readback;
+do not infer that the manual action or all native gates are complete.
+
+NCT SC_TASK_REL — HUMAN SAVE AND FRESH NATIVE CREATION RECEIPT
+
+User requested exclusive screen control; automation relinquished the screen.
+User manually selected company,participantTaskIds,status, all Ascending, Regular,
+then reported SAVE. Fresh read-only get_window_state of returned existing Chrome
+MASTER window66680 shows Index "SC_TASK_REL" was created toast plus exact ordered
+three-field row, Regular, Delete control, no building spinner. Original2system
+indexes and SC_ACTIVE_PRODUCT/SC_REPAID_SOURCE remain listed. No input, replayed
+Save, alternate automated selection route, delete, permission or business write.
+Prior twice-failed automated field-selector path remains stopped; human completed
+that definition. All required additive native field/index definitions now have UI
+evidence across both companies. SDK state ACTIVE, typed queries, native capacity/
+recovery, old-writer drain, installation/migration/shadow and public acceptance
+remain OPEN. No claim that borrowing can yet be tested on the public MASTER.
+Private retained screenshot outside public checkout:
+ C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/nctactivity-three-regular-indexes-user-saved-20261023.png
+ SHA256 678d3d7485c63708f2585b887c4243ab1185f12458ab5542f9c84a8022bdbc15
+No candidate code change; existing final1299pass evidence reused, no test rerun.
+Pages/Wix publish unchanged, ACTIVE/invoice/physical exit OFF. No export retry.

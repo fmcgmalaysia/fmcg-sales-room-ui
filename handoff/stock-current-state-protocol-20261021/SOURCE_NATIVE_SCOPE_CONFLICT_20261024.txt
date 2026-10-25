@@ -1,0 +1,93 @@
+2026-10-24 — APPROVED RESOLUTION
+User approved retaining the original quotation chain and isolating only orders
+and inventory. User then requested fresh quotations rather than old-data work.
+Use fresh quotation/order inputs on the retained program; no QD rewrite, quote
+migration or reference deletion. Source3order tables + MASTER12, unchanged native
+selection/FX/staff modules. Three Catalogue additions only replace buyer header
+fallbacks Buyer Account/Buyer with actual company/actor, no order/stock authority;
+explained, excluded from this patch. Existing unused R2selection table retained.
+
+2026-10-24 — USER-OPENED SOURCE STUDIO WORKS; QUOTATION DEPENDENCY FOUND
+
+User evidence: agent-created Source tab stuck98%; refreshing that failed, while
+user opening another tab succeeded. Do not generalize to a permission/security
+denial, extension defect or all automation causing failure. Fresh inventory found
+user tab51427367 fully loaded. Claimed directly, no goto/reload/browser reselect;
+normal existing editor/Page Code/Backend navigation and read-only copy worked.
+Source originals were NOT changed. Native function testing/Publish NOT invoked.
+
+Root private evidence folder:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/
+r2-source-native-preinstall-index-20261024.json captures19module/page records plus
+separately retained staffAuth source. Individual r2-source-before-*.txt exact LF
+copies retained, no CSV/customer business data exposed/exported. Native code is
+saved-editor evidence, NOT independently proven published runtime parity.
+
+Onboarding native111949chars/c1b603c87d8fef0cb062333fb38a9099a27be8dc7255c2e3bdc9f8e1cf5c017d
+Repo111950chars/3e5100e5fbe12f91f6bcb259beff4d8d0db37b3a5f45a990b2019b33461d9f21.
+Exact difference only finalLF; no business difference, original left untouched.
+Other originally scoped Source intake/transmission/payload/quantity dependencies
+all raw-LF exact matches. Added BuyerAuth/orderDownload/orderToken/selectionExcel/
+BuyerPage/CataloguePage are terminalLF-only, not raw exact. SelectionDownload has
+11extra native blank lines, retained; never equate a hash mismatch to logic drift.
+SalesPage27169chars/940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777
+raw exact repo. First copy attempted during page code loading yielded <100chars;
+no write/record, fresh visible editor then complete exact capture, not blind retry.
+
+Meaningful native/repo catalogueSelection conflict
+Native27403chars/SHA853233a1f7ceb6bc666f258678f6e51090adaf8747fdbac64a52cb130db71ff8.
+Repo27523chars/SHAac840b73167d3013c289215813cbde67b83abfdf747c39b3582213efac7b3a00.
+LCS exact repository-only lines:
+ 40 companyName: context.companyName,
+ 41 actorName: context.actorName,
+ 436 companyName: normalize(customer.title),
+No native-only business lines. Installation writes stopped, both sides retained.
+Asked async whether to preserve native behavior rather than add these display
+mappings. No permission to choose a winner inferred from generic continue.
+
+Native fxRates5301chars/SHAbeeed51949c4bc7dfe0f422bde68d9820f3be6ddce677fd4d203c64ce1558c72
+versus repo7147chars/SHA866090186906cab11bea465affad013ed4af6e54dd7c6c311323840c974d9d45.
+Structurally different helper naming/composition, not asserted equivalent. It only
+operates StaffMaster/WixFxRates and existing QD synchronization. Not part of stock
+authority; recommend keep ORIGINAL native fxRates module/import, never clone repo
+implementation into the new page for convenience. No FX/QD/auth edits performed.
+
+Retained staffAuth full source7717rawCRLFchars, LF hash
+b2b138ee14d676b6d40ecbabf48b9148bb6643352a6624ed9db5cde5348a0a7d.
+Only StaffMaster identity linking/presence reads/writes, original roles retained;
+no orders/tasks/stock/selection storage calls. No native permission/new employee
+or sign-in action. This fills missing native source evidence; compiler's generic
+unverified flag not silently changed to activation coverage.
+
+Critical external writer — requires smaller scope or explicit expanded QD work
+Repo inspection revealed Source post_quotationSync uses WixBuyerListItems. Then
+fresh actual native http-functions.js19924chars SHA
+77854994b4bb98cd96400d133e0ab3c0f6ea463329b54abf86e189c813eb6407 EXACT repo.
+Thus the EXISTING QD quotation callback really targets original selection table.
+Current proposed compiler mapping of all4Source tables would strand fresh selected
+items from original quote publication; new isolated local tests did not exercise
+external QD callbacks. Do NOT call the candidate release-ready based on60tests.
+
+Minimal recommendation: quotation/selection is a retained reference authority,
+like customer/FX/catalogue, not an inventory/order ledger. Retain original selection
+module and its table/QD callback unchanged; Source new version only Orders/Lines/
+Audit3tablecohort, all12MASTER business/stock tables isolated. No new external QD
+synchronizer, shared template change or parallel quote authority. New order intake
+uses only fresh order/line/audit snapshots, original catalogued quote reference.
+Old delayed order/stock requests still cannot address those new order/stock tables.
+Already-created R2WixBuyerListItems remains unused private/empty, no deletion needed.
+This also avoids carrying the3uninstalled display mappings and foreign FX rewrite.
+
+As required on new evidence invalidating plan, no direction change edited yet.
+Asked user one superseding scope choice: allow retain original quotation reference
+chain while isolating new orders/stock, or require selection/quotation also fresh.
+Await this exact choice, not another blanket continue or provider drain. Background
+work may be read-only; do not stack feature edits/native install on known mismatch.
+No source original or new namespace code installed; no Publish, ACTIVE, new Buyer
+order, invoice/physical dispatch, push or deployment permission change.
+
+Local static packaging independently prepared BEFORE conflict: four new tests pass,
+only allowed direct public UI resources; no backend/handoff/CSV/native evidence or
+retired outputs; exact committed static hashes; optional workflow path leaves
+baseline/default and all permissions unchanged. Not dispatched/published. Feature
+candidate and native16emptytables retained for the scope decision, not certified.

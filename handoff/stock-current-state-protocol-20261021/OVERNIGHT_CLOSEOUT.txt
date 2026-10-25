@@ -1,0 +1,96 @@
+CURRENT OVERRIDE — 2026-10-22 — candidate work synchronized; NOT PRODUCTION COMPLETE
+
+CONFIRMED GITHUB UPDATE: functional candidate7b216ddda4f40d4bbc1d3cfa55e803059db1a8a9
+pushed successfully. Draft PR220 created/attached:
+https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/220
+Base exactd447185 on feat/support-packing-lists-20261021; main untouched. This closing
+commit additionally fixes zero-take claim insertion: shortage/rejected-only delivery no
+longer creates an empty physical source/repayment claim. Related36tests pass226.8564ms;
+12plan+22model+2preview. Browser bundle rebuilt from exact same model. Previous broad
+162run retained; do not sum repeated36as new coverage. Final closing commit ID is in
+Git history and final push output; no additional feature deployment inferred.
+
+User asked to continue while resting, sync GitHub, publish when complete and audit all
+remaining work before stopping. Existing authorization reused; no repeated user questions.
+This record distinguishes actual work from a release promise. Do not report this inventory/
+borrowing feature published or ask user to test it on production based on these tests.
+
+Work completed this continuation
+- Pure unused borrowing return: purchaser approval/reason, physical ownership restored,
+  future promise released; original borrowed quantity retained with separate returned count.
+  Shipped or packing-held borrowed stock cannot be silently undone. No fabricated repayment.
+- Pure receipt correction: free stock then unheld owner claims then newest applicable
+  repayment claims; reversed repayment reopens outstanding relationship. Shipped, isolated
+  or unrelated allocation reductions refuse. Original financial/PO guards still mandatory.
+- Return/correction maps into the same existing fenced-plan contract; one current transfer
+  record is updated, not appended each receipt. Correction/return event remains traceable.
+- Halo includes still-outstanding quantities after actual repayment AND approved unused
+  return; correction restoring debt restores halo. No triangle, base colour unchanged.
+- Local-only interactive preview bundles the exact tested model/person shapes; demo
+  approval/receipt/dispatch/unusedreturn/correction; no network business writes or storage.
+  File: integration/prototypes/stock-current-state/preview/index.html. Explicit sample-data
+  label. This is a simulator, not the completed Purchase feature or a production endpoint.
+
+Verification actually run
+All stock-current-*.test.cjs at that point:162/162pass0fail674.2392ms; includes retained
+unsafe-overwrite counterexample witness, not162proofs that production is safe. Later added
+preview bundle/interaction-contract tests2/2pass120.5728ms. Last updated plan tests11/11
+pass193.625ms are included in162; do not add them again as independent tests.
+Protected original Warehouse receipt/packing/packingguards/stock-save tests32/32pass
+284.1527ms. No unrelated full-repository suite rerun. Actual Credits UNKNOWN.
+Protected production directories still matchd447185; no live business source edited.
+
+Fresh UI check
+Existing Master editor51426657 remains accessible. Read warehouseReceiving.js through
+visible editor/clipboard only, no edit/run/publish. LF-normalized12664characters/FNV32
+2536189563 matches repository. This is a length+noncryptographic fingerprint comparison,
+NOT a full cryptographic fresh capture of every required live file. UI diagnostic result
+remains the prior replayed:true test; no synthetic mutations/deletions repeated.
+No general Wix connection blocker was found. Publication is blocked by unfinished
+implementation/gates, NOT by inability to open the editor.
+
+Preview delivery limits
+Chrome localhost attempt timed out; background sandbox server had socket access denial.
+One hidden host launch was attempted, followed by one refresh (second visible failure).
+Stopped browser retries per user's two-failure limit, no firewall/proxy/browser bypass.
+Sandbox server session68048 terminated; hidden process69180 no longer running. No
+unusable server claimed as a deliverable. Static local index.html can be opened manually;
+browser visual QA and actual halo dimensions/click flow NOT verified this continuation.
+
+GitHub/release facts
+Repo fmcgmalaysia/fmcg-sales-room-ui public; existing account has push/admin access.
+Ordinary shell network was restricted; authorized git push via reviewed escalation
+succeeded. Current candidate branch feat/stock-current-state-protocol-20261021 created
+remotely at21fbbeb before this continuation's final commit. Final commit/push/PR references
+must be appended after their actual confirmations. No main merge, Pages dispatch, new
+deployment permission, live stock collection creation, migration, ACTIVE switch or Wix
+Publish. Four stages: code isolated candidate only; Pages unchanged; Wix unchanged;
+new public borrowing workflow unavailable/unverified.
+
+Final remaining-work audit — NOT CLOSED
+1. Real server authority builder: current PO/demand/dispatch/allocation/packing snapshot;
+   actual permissions and existing finance locks, including Planner entitlement if any.
+   Injectable callback/complete/poValid/approvedBy strings never prove authorization.
+2. Production writer coverage: original receive/correct, allocation, Sales adjustment,
+   purchase plan/source/quantity/shortage, exceptions/returns/replacements, packing and
+   dispatch plus intake dependencies. Existing live journal/legacy stores remain unchanged;
+   they must not coexist as independent unfenced writers after ACTIVE.
+3. Production read adapters and cumulative compatibility: Ready Stock, stock view,
+   Purchase/Sales progress, packing holds and history/financial source provenance.
+4. Production-capacity relation lifecycle/query/indexes: candidate14sources/30relations/
+   30writes proof bounds are NOT acceptable silently as final scale; closed-relation
+   queries cannot eventually prevent ordinary receipts. Private internal record exposure
+   and exact-ID archival/reopen path still need consumer review.
+5. Controlled PO substitution, cancelled customer demand and authorized exceptional
+   release/reassignment beyond unused physical return; costs/financial locks preserved.
+6. Admin recovery tooling/termination proof and operational restore rehearsal; no unsafe
+   age-based lock stealing. Actual multi-collection setup, bounds/indexes and migration
+   evidence; focused G3 review, maintenance/shadow/parity/ACTIVE gates from specification.
+7. Minimal actual Purchase UI integration, same person halo, click relationship details,
+   request/approval controls, Purchase outstanding view separate from shared archived flag.
+8. Only then authorized Pages/Wix synchronization and four-stage public verification,
+   temporary exact-branch deployment permission if required, original-seven restoration.
+
+These are concrete dependencies, not a new architecture proposal or a request to rewrite
+working departments. All prior implementation stays isolated until the release gates pass.
+No statement that all work is finished is justified by the evidence above.

@@ -1,0 +1,54 @@
+2026-10-23 — PURCHASE PREPARATION ADMISSION STAFF, OFFLINE CANDIDATE ONLY
+
+Objective: preserve the actual admitted Purchase staff across the second original
+authority read in task/source/quantity/shortage preparation. Same inventory scope,
+not a finance feature, broader auth replacement or new business entitlement.
+Recovery:3dbcf91 pushed PR220. Protected original paths remain d447185.
+
+Evidence before patch
+Private common save carries server staffId sincecb85f50. Three current-department
+wrappers dropped it when rewrapping commands for PurchaseStock, QuantityCase and
+Shortage preparation. All three reread original Purchase staff. Only memberId was
+compared on returned preparation. Combined EDIT/QTY and decisions also have some
+AFTER-commit receipt actor checks, which are too late to prevent a wrong-actor plan.
+
+stock-current-purchase-preparation-actor.test.cjs uses existing actual root source,
+original auth/validators and real segmented coordinator fixtures, all INMEMORY:
+- Actual combined EDIT root: outer/auth P, admitted P, preparation REISSUED on memberM.
+  Prepatch ok:false did not mean safe refusal; database already changed.
+- Concrete v2 EDIT and ADD_SOURCE: prepatch did not reject; QTY reached AFTER-commit
+  receipt error instead of refusing before original tables. QTY still uses original
+  SUPER ADMIN grant; no widened procurement/customer quantity authority.
+- Actual QuantityCase/Shortage roots retain an existing outstanding borrowing relation
+  and current customer claims. Prepatch preparation entered business context under
+  REISSUED. Tests require refusal before context plus exact unchanged DB.
+Controlled staff reader is installed BEFORE constructing captured preparation/root
+dependencies. This is a same-invocation server reissue, not browser role substitution.
+Valid prepatch6tests0pass6fail671.5954ms, compact output retained by tool result.
+
+Minimal correction
+Three wrappers forward command.staffId from common server authentication. Three private
+preparers compare that field to original requirePurchaseStaff output before readSnapshot
+and private table/context reads. Browser input cannot set the trusted top-level field:
+wrappers explicitly construct the command instead of spreading the request/input actor.
+Direct private standalone preparation callers without the optional field retain their
+old contract; actual current-department save paths always pass authenticated staffId.
+No role/coverage grant, input digest change, shared mutable actor, new PO, stock release,
+promise cancellation, auto-repayment change, quantity policy or legacy fallback added.
+Original receipt checks, all borrowing obligations and company isolation remain.
+
+Validation
+29affectedpass0fail1020.6771ms: six new cases plus existing v2 Purchase/SuperAdminQTY,
+source, quantity-case, shortage and expected-identity/replay safeguards. FULL current
+suite1157pass0fail28814.2022ms. Generated runtime104modules, install38targets/94deps;
+20writer review flags remainUNVERIFIED. Rebuilt/check builders; diff--check and exact
+protected production path diff clean. No native/UI/permission/CMS/Pages/Wix action.
+Full-suite count includes unsafe witnesses, not native capacity/G3/release evidence.
+
+Boundaries
+No claim every remaining writer's actor/lifecycle semantics are reviewed. Next bounded
+independent audit may inspect packing/Loaded authority, claims and holds; no unrelated
+finance development or new architecture. Native INIT/TYPE and Wix support-contact
+consents remain PENDING/no repeat/run/send. Migration APPLY/drain/schema/capacity/
+recovery/G3/shadow/cutover remain OPEN. ACTIVE OFF, realinvoice/physicalexitOFF; no
+new inventory Pages version, Wix published-live or public Loaded acceptance.

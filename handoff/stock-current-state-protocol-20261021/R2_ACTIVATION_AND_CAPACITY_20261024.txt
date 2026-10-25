@@ -1,0 +1,95 @@
+2026-10-24 — continuation after user-confirmed R2 indexes
+
+Ordinary Git push succeeded: 66bb853..39d6550 to existing PR220 branch, under the
+user's explicit public code/tests/technical-handoff consent. No main merge/Pages
+dispatch/Wix Publish. Sandbox DNS/thread failure was resolved by approved network
+execution, not an alternate export path. No private images/CSV added.
+
+Existing public Purchase session shows LAW/original resource version, zero orders.
+This does not establish R2 employee acceptance. MASTER IDE showed 'Wix IDE is
+paused' and 'All changes were saved'. Closed that saved paused tab and clicked
+Studio Start Coding; readonly ownership banner cleared, no reload/reinstall.
+
+Actual original native300 module full readback SHA256 LF
+4fcd0cb92710517b50a82d0ab5ce9e9a7695651f24b63a96120833990be8f126
+matches current CLOSED repository source. Old test deletion gate remains false.
+ONE read-only INSPECT returned ok:true, queries5/inserts0/patches0/deletes0,
+mutationAttempted:false, elapsed989ms. Still generation0/pendingtrue/BEFORE380,
+mixedActionableReadBlocked:true. This does not prove call20 terminated or permit
+resuming that UNKNOWN request. No old grant reused and no old mutation executed.
+
+Fresh-cohort activation implementation added as LOCAL ONLY module, not a native
+web endpoint. One CAS of a verified empty MAINTENANCE genesis, server-owned build,
+all20 writer evidence and native schema/query/CAS/capacity/recovery/installation
+verification required. No browser coverage flags, automatic retry, generation
+reset, lock deletion, legacy migration or reactivation. Lost response is inspected
+by exact original request; invoice/physical dispatch remain prohibited.
+Five new activation tests plus four existing bootstrap tests:9pass0fail163.3547ms.
+Mocks are algorithm evidence only, NOT accepted native evidence or activation.
+Native wrapper/actual verifier/evidence/coverage integration still required.
+
+Prepared separate CLOSED capacity diagnostic r2CapacityAcceptance.web.js:
+SHA256 9a79204cc02cb051cf9a70401f6305e79df536d60909cf58bdac8244cc4b669a
+StockProtocolTest prefix SPT-R2CAPACITY-20261024-9e72: distinct from interrupted
+SPT-COMMIT300-20261023-b19d:. Exact same executor/budgets, fixed retained immutable
+staging inputs; does not adopt/reset/delete/resume the old operation. Two identity
+tests pass167.8129ms; original module unchanged. No native execution yet.
+Any lock-release execution requires fresh precise confirmation, never reuse the
+previous scenario's exhausted/closed grant. Business activation remains blocked.
+
+Four release stages: candidate implementation advanced; Pages not updated;
+Wix saved drafts and MAINTENANCE only; public Buyer/split/borrow not accepted.
+
+Continuation after interruption: existing new r2CapacityAcceptance.web.js was
+still Wix's default template. Replaced only that new template with the CLOSED
+candidate. Complete native clipboard readback matches SHA256
+9a79204cc02cb051cf9a70401f6305e79df536d60909cf58bdac8244cc4b669a.
+Studio Autosave on/check icon observed; no test executed and no Publish.
+Private screenshot: r2-capacity-closed-installed-20261024.png, outside checkout.
+Asked fresh precise permission for this new test's at-most145 conditional own-lock
+releases; pending answer. Old UNKNOWN scenario remains untouched.
+Reviewed local-only activation request guard: disallow string-coercible objects,
+arrays and malformed 36-character pseudo-UUIDs before any store access.
+This is NOT installed activation or evidence that native gates have passed.
+Affected activation and capacity-identity tests:8pass0fail170.1827ms.
+
+USER SUBSEQUENTLY APPROVED exact new scenario own-lock release maximum145.
+Armed native source by only false->true gate change; full clipboard exact matched.
+Executed SEED0..14 once each:300products, each batch confirmed. Batch0 queries26
+inserts21; batches1..14 each queries26/inserts20; all patches0/deletes0.
+ONE ADVANCE returned ok:true SAME_REQUEST_PENDING_CONFIRMED, elapsed7540ms,
+queries37/inserts13/patches2/deletes1, BEFORE20/901, mixedActionableReadBlocked:true,
+lockAbsent:true. Total16receipts:queries427/inserts314/patches2/deletes1.
+All results confirmed, no UNKNOWN outcome. Do not rerun seed batches. Next step
+is read-only INSPECT and continue SAME new operation, not reset/new identity.
+Exactly1test-only temporary lock removed; other records retained. Business tables
+untouched; all business/native capacity acceptance flags remainfalse.
+User asked whether to switch to Sol. Saved progress; native gate closed by restoring
+exact CLOSED candidate, full clipboard matched hash9a79204...b669a. Autosave checked.
+Private proof r2-capacity-switch-checkpoint-20261024.png. No test invocation active.
+Same-scenario145grant remains valid with144remaining; closing for handoff does not
+require repeat consent. Stop at first unconfirmed test execution; no replay/reset.
+
+SOL continuation: closed full-source readback matched. One INSPECT confirmed exact
+BEFORE20/pending/generation0 with5queries0mutations. Same authorized gate reopened,
+full source matched. Continued SAME new operation through BEFORE901 and APPLY19.
+Explicit INTERRUPT_APPLY returned KNOWN_APPLY_INTERRUPTION_CONFIRMED:true,
+appliedBeforeFault10, cursor remains19, mixedActionableReadBlocked:true,
+lockAbsent:true. Partial images19..28after/29before verified by native code.
+63complete receipts all ok:true retained in CUA r2CapacityReceipts. Total attempted
+queries1243/inserts380/patches57/deletes47; grant remaining98removals. No UNKNOWN
+execution outcome. Next ADVANCE must resume original plan at APPLY19 and account
+for those10already applied images; never reset/reseed. Gate currentlyTRUE for this
+authorized ongoing test. All business/activation acceptance flags remainfalse.
+
+SUBSEQUENT HARD STOP: same-request recovery succeeded through APPLY639. NEXT
+ADVANCE invoked exactlyONCE; helper observed no returned result, subsequent native
+tester read shows 'Request failed with status code504'. UNKNOWN execution/storage
+outcome. No rerun/reset/unlock/other300identity. Closed gate immediately, complete
+native clipboard matched original CLOSED SHA2569a79204...b669a; Autosave checked.
+94confirmed receipts retained:queries3079/inserts818/patches291/deletes78. These
+exclude unknown invocation (per-call upper bound200/33/30/1). Authorization ceiling
+145 does NOT authorize releasing that unconfirmed invocation's lock. Original old
+UNKNOWN test untouched. Private screenshot r2-capacity-504-closed-20261024.png.
+Native300 capacity/recovery completion not accepted. Business activation remains
+blocked. Do not equate absent lock/later image progress with invocation completion.

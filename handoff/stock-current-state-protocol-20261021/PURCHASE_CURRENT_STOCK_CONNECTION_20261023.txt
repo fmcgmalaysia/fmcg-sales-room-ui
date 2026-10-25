@@ -1,0 +1,51 @@
+2026-10-23 — actual Purchase stock-view candidate connection, NOT deployment
+
+Confirmed implementation gap: Purchase had the original Stock Allocation view
+and borrowing panels, but no current-stock list/detail reader or navigation.
+
+Implementation
+- Added Stock Control navigation and a Purchase-owned read-only pane to the real
+  candidate Purchase app/index. Original Stock Allocation and saves remain intact.
+- Pane reuses the existing Warehouse current-stock list/source/customer renderer.
+  Same StockProducts/Positions/Claims and snapshot barrier; no parallel inventory.
+- New getPurchaseStockControlCurrent/getPurchaseStockSourcesCurrent exports use
+  ORIGINAL requirePurchaseStaff. Warehouse exports retain requireWarehouseStaff.
+  Both departments get public quantity/detail projections only, never costs/plans.
+- Existing Wix Purchase page relay validates company, UUID and bounded input and
+  forwards only the corresponding Purchase read. Pane checks child source, exact
+  origin, company, duplicate IDs and replaced view; old replies cannot enter a
+  new company. Login stays on original Purchase login. No stock save in the pane.
+- Explicit display projection now retains existing poNumber for source labels.
+- Actual setup contract omitted shared PurchaseOrders metadata although the current
+  list normalizer and PO co-writers require it. Added ONLY existing company/version
+  fields to the additive contract: 3new private +7existing scopes, NOT ACL changes.
+- Candidate marker2026-10-23-stock-current-candidate-v3; new app/pane query marker
+  20261023-purchase-current-stock-v1. Existing borrowed-person/approval code retained.
+
+Artifacts
+38backend installation targets/94dependency modules and20UNVERIFIED writer groups
+remain. Commands runtime still104modules. UI manifest now38Pages paths +4Wix relays
+(previous RELEASE/ROLLBACK was37; do not rewrite historical release counts).
+Retired local review package mechanically refreshed33assets for existing parity
+checks only; not delivered/opened or revived as requested product. Diagnostic SDK
+query copy mechanically refreshed locally; NO old native probe executed/synced.
+
+Verification
+Initial51affected checks:49passed,2pane harness async callback failures; returning
+the existing receive promise fixed correlation in the harness, final pane/package
+7passed726.3998ms. Backend/auth/query/runtime/setup final36passed402.015ms.
+Full stock-current run1220tests:1219pass1fail55289.937ms. The sole remaining failure
+was old exact-overlay expectation omitting the NEW read-only import/relay and old
+app version. Updated that expected additive seam while retaining byte equality of
+all ORIGINAL handlers. Final affected12passed464.4275ms, includes new actual Wix
+relay list/detail/company/UUID/bounds test and retired-package parity. Do not call
+this a new full1221pass run. Reuse full output; no full rerun just for summary.
+The earlier first full output was truncated; known diagnostic copy fixed before
+the logged full run. Failed log retained privately, not pushed as production proof.
+
+Release state
+No public UI, Wix, native CMS, permissions or Pages operation in this increment.
+CoverageEMPTY/ACTIVEOFF; invoice/physical dispatchOFF. The user-observed restored
+original Purchase list remains last public acceptance. New inventory/borrowing/
+Loaded not accepted. Actual Admin migration binding, safe legacy drain, native
+setup/capacity/recovery, all-writer operational review and paired release remain.

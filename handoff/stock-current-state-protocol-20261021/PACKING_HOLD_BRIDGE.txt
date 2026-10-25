@@ -1,0 +1,56 @@
+Task-total packing bridge — 2026-10-22 — candidate only
+
+Recovery996d3ab. Reuses same-version framework and prior evidence; targeted rereads of
+packingListModel/Operations/Guards, Warehouse prepare, receipt prototype/tests only.
+No production/backend/Wix/CMS or release writes. No new source-lock architecture.
+
+Evidence and decision
+Existing packingHeld returns0 forDRAFT/CANCELLED; SENT/PROCESSING holds planned;
+pending changes holdmax(old,new); COMPLETED holds loaded. Existing allocation guard
+blocks a reduction of a held task without proving any per-source distribution.
+New packing-hold-snapshot.cjs injects/reuses readPackingLists and packingHeld unchanged,
+parses existing server context once and reports complete selected TASK_TOTAL quantities,
+company and list-revision signature. It never claims a source identity or writes data.
+Production integration must supply an authoritative complete context under existing
+permission/commit validation; neither complete:true nor a version string is authorization.
+Actual context reader still uses existing activity; this does not eliminate all-history
+reads by itself or install a bounded packing-list reader.
+
+Borrowing model changes
+Now requires verified task-total evidence covering all modeled tasks. Both lender and
+borrower must have zero task packing holds for approval; intentionally keeps broad
+existing protection even when another source might cover a task's held cartons.
+Source-specific held quantities are no longer invented/required for borrowing. Pure
+dispatch helper retains existing task hold exclusion; real packing-to-dispatch integration
+remains separate and must transfer holds explicitly before dispatch, not bypass them.
+Receipt auto-repayment may add claims to a lender with packing holds; it never takes
+away the held claims. Normal received stock and repayment continue without user action.
+
+Receipt prototype changes
+receipt-stock-reader supports either existing SOURCE_CONFIRMED or explicit TASK_TOTAL
+evidence; task totals remain task totals, not copied into heldByTask source quantities.
+TASK_TOTAL company/version/complete/map required. Planner checks all affected claim task
+IDs/owner have nonnegative explicit totals. Positive receipts and non-reducing changes
+may proceed. Implicit claim reduction with any task-total hold rejects conservatively.
+With zero task hold, ordinary correction still obeys all physical balance/claim/version
+guards. Explicit planner allocations remain intact; free stock can only reduce while
+remaining nonnegative. Original financial/PO/cumulative receipt guards still mandatory.
+This removes the former universal source-hold evidence obstacle for these cases; it
+does not complete actual receipt authority adapter or cross-source borrowing mapper.
+
+Tests
+node --test integration/tests/stock-current-packing-holds.test.cjs integration/tests/stock-current-borrowing.test.cjs integration/tests/stock-current-receipt-plan.test.cjs integration/tests/stock-current-receipt-reader.test.cjs
+45/45pass0fail343.1636ms.17borrowing+3actual-parser bridge+17receiptplan+8reader.
+No unchanged broader suites rerun. Test helper imports actual existing backend parser
+and model. Malformed records/cross-company/missing task evidence fail rather than zero.
+Cases distinguish task-total150 from source80 (other sources can hold the remainder),
+monotonic increase vs reducing correction, pending reduction, completed loaded-only,
+multisource lender-held block, repayment while lender packing. All local synthetic only.
+
+Remaining dependent work
+Map controlled transfer relationships into bounded existing-store current records;
+compose repayment with original receipt and position/claim/product changes in one fenced
+plan. Do not call legacy per-source implicit receipt ownership when a bound transfer
+requires different allocation. Handle correction/cancellation/PO replacement explicitly.
+Original all-writer coverage, actual authorization/source context, recovery tooling,
+platform bounds and fresh live/repository checks before production edits remain required.

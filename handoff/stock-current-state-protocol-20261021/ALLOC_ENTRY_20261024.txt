@@ -1,0 +1,63 @@
+2026-10-24 — ALLOC UI revision, candidate only
+
+User authorization: continue implementation while user rests; ordinary scoped work
+does not need repeated permission. Supersedes supplier-dialog borrowing UX; user
+rejected that placement. No user acceptance of new ALLOC UI yet.
+
+Recovery: parent local commit557c6ec; protected original baseline d447185 and prior
+live runtime32b812c retained. Original production directories have no diff. This
+continuation edits candidate generators/assets/tests only, not Wix/CMS/runtime.
+Reused same-version specification/ownership/cutover review; reread task status and
+targeted current ownership projection because ALLOC requires an explicit quantity.
+
+Implemented
+- Current Purchase projection exposes stockAllocatedCumulative from the same
+  verified taskReceived compatibility value that includes dispatchedOutsideScope.
+  Does not infer allocation by summing only active source rows or copying RCV.
+- Candidate Active Orders gains ALLOC column after RCV, with plain cumulative qty,
+  independent ALERT / relationship entry. Child/waiting rows have aligned blank
+  cells. Split rows currently expose View without an unverified per-batch number.
+- Borrow approval/unused-return/relation panels move out of procurement editing
+  to ALLOC dialog; original parent save UUID, replay and current generation remain.
+- Allocation dialog distinguishes demand, purchased, actual received, allocated,
+  unpurchased and awaiting-receipt amounts. 100/90/80 can query eligible borrowing;
+  100/80/80 cannot query merely to fill the20unpurchased cartons. Backend exact
+  PO/packing/claim/future promise validation remains decisive at save.
+- Row references resolve against current displayed rows; hidden/archived references
+  retain customer/PO identity rather than inventing an obsolete row number.
+- New candidate JS/CSS resource token20261024-alloc-entry-v1. Existing local review
+  rebuilt33exactassets with explicit example100/90/80 and maximum borrow10. Review
+  continues to refuse all saves; no simulated success used as actual acceptance.
+
+Verification
+24affected UI/package/preview checks passed861.0364ms before extra grid test.
+New allocation file4pass94.1509ms includes actual grid alignment and RCV80/ALLOC90.
+Original projection/allocation/split tests34pass601.2953ms.
+Candidate protected workflow replay63pass329.4539ms after adapting ONLY new column
+count, receipt-cell fixture markup and shifted amount-column index. Original
+production tests/files unchanged. Full suite final result recorded in STATUS.
+
+Not complete / next concrete work
+1. Current second choice still only explains existing Support flow. It does NOT
+   persist a request, create packing, alter Sales batch or dispatch. Must wire an
+   explicit authorized Purchase-to-existing-Support arrangement path before calling
+   this a completed operational interface. Do not pretend the informational choice
+   is an executed80carton shipment.
+2. Resolve actual confirmed batch demand, per-batch usable coverage/holds and
+   displayed ALLOC quantities. Existing totals alone do not prove this wiring.
+3. Relations currently load on original workspace refresh; need native repeated
+   movement/filter/archived-link acceptance, partial borrowing and partial repayment
+   UI acceptance. Base people/halo contract retained; no genuine live loans created.
+4. Native Source editor failure path remains stopped after two failures. Master
+   fresh Purchase/Warehouse parity is saved-editor only; remaining backend/pages,
+   schema/index runtime checks and exact paired install remain incomplete.
+5. ASTRA_CUTOVER_DECISION_20261023 remains blocking: already-running old unconditional
+   writers can mutate after cutover. Wix request submitted, no reply verified here.
+   ACTIVE and actual invoice/dispatch remain OFF; do not remove hard drain refusal.
+6. GitHub export-specific automatic rejection remains unresolved; do NOT push these
+   handoffs through another route. Prior specific question is still unanswered.
+
+Release facts: local candidate only; Pages unchanged; Wix not synchronized/published;
+public ALLOC/borrowing unavailable and unverified. Existing HTTPS review still shows
+earlier rejected placement, not this local build. No dispatch, permissions change,
+main merge, test-lock deletion, user-data deletion or native mutations performed.

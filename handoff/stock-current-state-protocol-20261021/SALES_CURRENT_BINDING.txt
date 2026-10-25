@@ -1,0 +1,62 @@
+2026-10-22 Concrete delegated Sales save/read candidate
+
+Actual original boundary inspected: customerFulfilmentGateway verifies existing shared
+secret BEFORE constructing SOURCE_SALES/staffId actor and customer scope, then delegates
+ADJUST to customerFulfilmentService/salesOrderAdjustment. No secret value, cookie or token
+was read. New PRIVATE createCurrentSalesDemandSave must be called only after that same
+boundary. No Master employee lookup/new role/Drive permission/SiteMember staff input.
+requireOriginalSalesDelegation is a scope assertion, NOT authentication; cannot replace
+original bearer authorization. Each invocation/replay reobtains original trusted actor;
+per-call capture avoids parallel request actor sharing. Wrong Master identity, revoked
+capability or cross-customer input rejects before private company data reads.
+
+Under shared v2 snapshot, exact current product/source/claim/task counters plus original
+PO projection/packing guards feed unchanged original Sales adjustment validation and
+prepareSalesDemand. Original INCREASE/SPLIT/REDUCE rules, version, plan/batch identities,
+customer source/order-line, invoice/packing locks and actual event are retained. No new
+item creation, Buyer bypass for new items, PO/source row copy or physical receipt.
+Test100->150quantity, split70+80, once-only replays, unchanged supplier PO/raw order/task
+rows and no StockPositions/Claims invented. Current product checkpoint/event only.
+
+readCurrentSalesWorkspace is shared by READ and SAVE over all active products of this
+customer. Exact actor scope, complete current rows/counters and CURRENT_V2 merge required.
+This preserves original single global adjustmentVersion contract across multi-product
+customer forms; do NOT build READ with all products but SAVE with only selected SKU, or
+versions diverge after another product's ownership changes. Unrelated original business/
+account context fields are retained, not recalculated by a new financial implementation.
+
+build-sales-fulfilment-candidate adds only capability export + optional private fourth
+currentContext parameter/guard to original readCustomerFulfilment. Original3argument
+flow remains unchanged, original public filtering/account/document/currency calculations
+stay in original function. New createCurrentSalesRead passes verified full current view,
+forces original actor customer, and adds stockCurrent build/generation protocol metadata.
+No public route installed. Source controller/HTML still needs actual metadata forwarding
+and retained-request UI; do not claim source page connected/live yet.
+
+Tests execute original Sales core, actual optional read function with only unrelated
+account/routing helpers stubbed (NOT whole-finance acceptance), two current SKU stocks
+(second has10owned cartons while original context inc0), original adjustmentVersion from
+READ then SAVE succeeds and other product10remains. Account response shape preserved;
+does not replace required original financial regressions/public verification.
+Full current candidate482pass0fail4830.5231ms, generated runtime37modules/13exports.
+No original backend/Wix source edit, no CMS business data write/delete, no ACTIVE switch,
+no Pages deployment/publication. Production runtime32b812c and baseline d447185 unchanged.
+
+Additional explicit G0/G4 verification item (no speculative codec installed): prepared
+plans normalize via JSON while real legacy stores create Date objects for fields such
+as Activity Time, receipt/cost timestamps. Current sdk store encode copies JSON. Must
+verify fresh actual CMS field schemas and SDK business-field roundtrip/normalization,
+including Date vs DateTime, before real writer activation. SDK conditional numeric lock
+proof is NOT proof of every domain field datatype. Official docs distinguish Date string
+and DateTime object/SDK Date handling; do not guess schema by field name or mechanically
+convert every ISO-looking string. Exact schema/transport adapter still pending.
+https://dev.wix.com/docs/sdk/backend-modules/data/data-types-in-wix-data
+https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/data-api/working-with-the-data-api
+Direct open of large SDK datatype page exceeded tool size; used official indexed section
+instead, no repeated identical open or third-party snippets as authority.
+
+Remaining actual original gateways for all identified writers/read consumers, private
+file/callback phases and old-request/quiescent cutover, initialization apply/version
+capability, domain codec/schema and preparation/staging/time capacity (still sequential
+current product reads), Purchase relation/approval popup and client resume wiring,
+maintenance/shadow/focused final diff/proof and four release stages. ACTIVE OFF.

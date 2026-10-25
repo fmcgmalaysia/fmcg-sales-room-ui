@@ -1,0 +1,59 @@
+{
+  "cohort":"MASTER_20261024_R2",
+  "codeCheckpoint":"bb0b9aa plus ASTRA_RELEASE_REVIEW_20261024 patches: bounded intake preparation, long UI progress, Source conditional finalization/owner release; 1511 stock tests pass",
+  "protectedRecovery":"d447185987fecbb81bcaf6b25c170f631f767f9f",
+  "protectedRuntime":"32b812c655e1083306037c008314c72373a15f72",
+  "fourStages":{
+    "codeVersion":"R2 core and all eleven database roots saved. Astra follow-up MASTER core and Source intake/onboarding minimal patches exact read back, Autosave on; native staff/operational acceptance incomplete. External callbacks retain strict fences; see ASTRA_RELEASE_REVIEW_20261024.txt",
+    "githubPages":"112-resource code-only artifact local; NOT deployed or fresh public marker verified; broader technical-handoff public export explicitly approved by user",
+    "wixStudio":"Both systems saved DRAFTS only; no whole-site Publish/live receipt; both new company controls MAINTENANCE, not ACTIVE",
+    "publicVerification":"New Buyer order, split, borrow, partial/full repay, moved/archived relations and Loaded have NOT been accepted on public pages"
+  },
+  "nativeEvidence":{
+    "masterFieldContract":"10 collections, 121 required fields, no field type conflicts; all four permissions ADMIN per collection",
+    "sourceDefinitions":"3 complete metadata captures and private ACL; complete Source application-field parity NOT asserted",
+    "dateOnly":"Both new company order estimatedShipmentDate wire DATE, original business timestamps DATETIME",
+    "emptyGenesis":"One successful native new request each NCT/GHR; only two new MAINTENANCE control records; no business inventory/order rows",
+    "indexDefinitionsConfirmed":{
+      "R2StockClaims":["SC_ACTIVE_PRODUCT","SC_SOURCE_DISPATCH","SC_TASK_ACTIVE"],
+      "R2StockPositions":["SC_ACTIVE_PRODUCT"],
+      "R2NCTActivity":["SC_ACTIVE_PRODUCT","SC_REPAID_SOURCE","SC_TASK_REL"],
+      "R2NCTActivity1":["SC_ACTIVE_PRODUCT","SC_REPAID_SOURCE","SC_TASK_REL"],
+      "R2StockProducts":["SC_PRODUCT_PAGE"]
+    },
+    "indexPendingManual":"None. User screenshots confirm exact definitions; final Products spinner replaced by Delete",
+    "indexActiveStatus":"UNCONFIRMED: native API WDE0144 twice including approved narrow elevation; API path stopped, unused privilege removed; CMS list is not SDK ACTIVE proof",
+    "actualStoredControlTypes":"Builtin readback validates company/cohort/version TEXT, generation/schema/transfer NUMBER and pending null; NOT all stored business date/array/CAS/capacity/recovery acceptance",
+    "casAcceptance":"Distinct ten-step/twenty-image native scenario: twelve receipts, known three-write interruption, same-request recovery, complete readback and zero-write replay.641..4563ms per call. Separate actual twenty-step runtime scenario: seven receipts,20updates9264ms/34queries/22patches, final20images and zero-write replay. Neither observed504; both diagnostic gates CLOSED and full source exact. NOT901capacity/business/genuine504late recovery. See both R2_CAS_NATIVE_ACCEPTANCE_20261024.json and R2_CAS20_NATIVE_ACCEPTANCE_20261024.json",
+    "newCapacityScenario":{
+      "prefix":"SPT-R2CAPACITY-20261024-9e72:",
+      "confirmedReceipts":94,
+      "confirmedOperationTotals":{"queries":3079,"inserts":818,"patches":291,"deletes":78},
+      "lastConfirmed":"APPLY639/901; known injected interruption and same-request recovery previously confirmed",
+      "nextInvocation":"HTTP504; UNKNOWN execution/storage outcome; not replayed or unlocked",
+      "nativeGate":"CLOSED and full source readback matched",
+      "accepted":false
+    }
+  },
+  "protectedFlowAudit":{
+    "localOriginalSourceDiff":"Fresh git diff d447185..HEAD empty for integration/backend, integration/wix, sales-room/wix, buyer-room/wix and catalogue/wix",
+    "nativeIntentionalOriginalEdits":"MASTER HTTP nine-line append plus seven minimum page relay patches; other original native dependencies retained",
+    "buyerOrderExcel":"Actual Buyer relay imports and invokes createBuyerOrderDownload; generated R2 builder reads new order/lines and returns original base64 file mechanism. prepareBuyerOrderDownload/old token HTTP is not this active relay path. No speculative change",
+    "quotation":"Original selection/QD callback, staff and FX native dependencies preserved; three optional display mapping lines excluded"
+  },
+  "remainingMandatory":[
+    "Native required query acceptance; all requested index definitions visibly complete, SDK ACTIVE status unconfirmed and denied path remains stopped",
+    "Resolve native tester staff identity mismatch without staff creation or auth relaxation; actual staff/public authorization acceptance",
+    "Native typed domain/conditional-write capacity, all writer/read and operational recovery acceptance; R2 control-CAS adoption explicitly authorized, small native test passes, complete installation/real business/runtime-capacity and external callback recovery remain unverified",
+    "Native activation wrapper/server-owned verifier, required control audit fields and all20 exact-build writer coverage; pure local activation module is not installed readiness",
+    "Real split/ALLOC borrow/repay/reload/moved-row/archived relationship and Loaded visible acceptance",
+    "Approved paired Pages build, Wix publish/live receipt and force-refreshed public verification; public technical-export consent already received"
+  ],
+  "writerCoverage":"EMPTY",
+  "active":false,
+  "realInvoiceEnabled":false,
+  "physicalDispatchEnabled":false,
+  "published":false,
+  "userShouldOrderNow":false,
+  "noWorkarounds":"No main merge, force push, CMS clear, old UNKNOWN/type/300 replay, lock removal, alternate token/index endpoint, browser refresh/reinstall or new agent/model"
+}

@@ -37,3 +37,12 @@ test('Our PO PDFs upload to each fixed Purchase folder and can be trashed with e
 test('Account proof trash requires Account routing and exact company folder, and retries safely',()=>{
  for(const company of ['NCT','GHR']){const f=service(),input={...f.input,company,type:'PAYMENT',department:'ACCOUNT'};assert.equal(f.run(input).ok,true);assert.equal(f.run({...input,action:'TRASH',department:'PURCHASE'}).error,'INVALID_DOCUMENT');assert.equal(f.run({...input,action:'TRASH'}).trashed,true);assert.equal(f.run({...input,action:'TRASH'}).trashed,true);}
 });
+
+test('late upload cannot resurrect trashed ID and repeated old trash cannot touch a newly uploaded replacement',()=>{
+ for(const extra of [{},{type:'PAYMENT',department:'ACCOUNT'}]){
+  const f=service(),old={...f.input,...extra};assert.equal(f.run(old).ok,true);assert.equal(f.run({...old,action:'TRASH'}).trashed,true);
+  const replacement={...old,fileId:'new_replacement_id_123'};assert.equal(f.run(replacement).ok,true);
+  assert.equal(f.run(old).error,'FILE_IDENTITY_CONFLICT');assert.equal(f.files.get(old.fileId).trashed,true);
+  assert.equal(f.run({...old,action:'TRASH'}).trashed,true);assert.notEqual(f.files.get(replacement.fileId).trashed,true);assert.equal(f.files.size,2);
+ }
+});

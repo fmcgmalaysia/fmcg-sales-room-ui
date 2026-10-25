@@ -1,0 +1,63 @@
+2026-10-23 — REAL UI CANDIDATE: SPLIT-BATCH BORROWING ENTRY AND SOURCE RELAY
+
+User requested continued independent UI implementation while Wix answers. Reused
+unchanged framework, specification and source reads. Recovery before this patch:
+0920060 local; business11a7d89; protected original baseline d447185/runtime32b812c.
+No original protected source edits, Wix synchronization, native business mutations,
+Pages dispatch, permission changes or GitHub export retry. Current site is not new UI.
+
+Fresh public Purchase read, existing Chrome tab51427130, confirmed original Pages
+iframe purchase-live/?v=20261020-split-controls-v2. Dashboard has original navigation
+and17tasks; no new borrowing/current-stock navigation present. Did not refresh an
+unsaved form or invoke a business save. Test business records are disposable per
+user; code/workflow invariants and correctness of future saves remain protected.
+
+Concrete route defect
+Task-grid split rows use data-plan-task plus data-plan-batch. Existing app passes
+both into supplierAllocation.open. Candidate mounted approval ONLY when !batchId.
+Thus clicking the ordinary person in a split shipment did not expose approval.
+
+Fix
+Candidate batch dialog now mounts Open customer borrowing / 进入本客户借货.
+It identifies original customer/product and explains borrowing belongs to the
+customer product line across shipment batches. Clean navigation calls the existing
+open(rootId) with no batch argument. Original customer/product identity remains;
+the normal approval still obtains actual eligible PO pairs, quantity/reason and
+explicit future-repayment consent, and uses the original save tracker/UUID route.
+Dirty/current/running/pending edits block navigation; no implicit save, quote,
+quantity duplication, new batch obligation, or change to backend borrowing policy.
+Old detached button cannot redirect a subsequent dialog. Supplier totals/PO/
+receipt/financial checks and original head/halo shapes stay unchanged.
+Asset versions changed for borrowing JS/CSS AND supplier-allocation to
+20261023-split-borrow-entry-v4; candidate generated from minimal original overlay.
+
+Second assembly defect
+Unified business-ui-install definition included four Master relays but omitted
+the EXISTING source-sales-room-page.candidate.js relay. Added exact separate-system
+destination sales-room/wix/sales-room-page.js with systemFMCGMALAYSIA, original-before
+and candidate hashes. Now38Pagespaths +5Wixrelays. This is a review/install inventory,
+not an automatic Source backend installer or proof of native installation. Source
+onboarding/date/backend installation dependencies remain required, not waived.
+
+Verification retained
+Initial new test fixture missed multi-hyphen data attributes; corrected fixture.
+Actual generated supplier integration fixture lacked classList.contains; corrected
+fixture only. Final affected regression231pass0fail2569.9772ms covers Sales/current
+transports, original Sales adjustment/shipment batches, Purchase allocations,
+borrow/halo/UI and Warehouse UI. Latest approval+business-install13pass0fail
+682.7965ms covers updated5relay manifest. Counts overlap; do not add as244 coverage.
+Actual generated supplier open(batch)->root mount tested with unchanged workspace,
+dirty/pending refusal. UI module batch->normal quote->one approval also tested.
+Manifest generator exact check and git diff --check passed. Protected original
+directories/entry pages still have no tracked difference from d447185.
+Tests are offline and do NOT establish browser layout/native saves/public release.
+
+Remaining execution, not a new user-policy question
+Fresh Source+Master live/repo comparisons and complete paired installation (including
+Source backend/page); native metadata/typed/index/capacity and recovery acceptance;
+all-writer/cutover boundary, migration/shadow; exact authorized resource deployment,
+Wix published-live and actual public split/borrow/receipt-repay/Loaded acceptance.
+Wix ticket is already accepted, no duplicate. GitHub export refusal still needs its
+specific resolution before exporting pending handoff history; no alternate route.
+Four stages: code candidate with this UI fix; Pages baseline; Wix new flow not
+published; public borrowing not testable. ACTIVE/invoice/physical departure OFF.

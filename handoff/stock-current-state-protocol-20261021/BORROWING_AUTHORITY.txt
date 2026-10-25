@@ -1,0 +1,65 @@
+Purchase authority preparation candidate — 2026-10-22 — NOT PRODUCTION WIRED
+
+Recovery5b49750; current heartbeat reuses same-version root framework/spec/ownership
+already read and reads current handoff overrides. Targeted current-row/PO/auth/parser
+consumers only, no whole-project scan, no browser/CMS calls or production modifications.
+
+New borrowing-authority.cjs
+Server factory uses existing requirePurchaseStaff, projectPurchaseOrders, readAllocations,
+readCustomerShipments, readPackingLists/packingHeld implementations. Existing approved
+member and unique ACTIVE staff record required. Invalid member rejects before staff read.
+Warehouse/Support-only staff denied; no invented Planner entitlement or added access.
+Caller browser staff/approvedBy/poValid/complete fields never copied as authority. IDs,
+actor and event derive from verified member/staff/request. Duplicate/foreign company
+contexts, invalid/draft PO association, unknown saved customer share and existing Sales
+invoice locks reject. Return resolves stable server transfer identity/product first.
+
+State building is deferred until exact current position/claim/relationship rows have been
+read WITHIN protocol pending/generation barrier. Original projected task.inc is NOT used
+as current stock. Supply planned/share/accepted fields come from original Purchase context
+and PO projector. Dispatch/source attribution uses original immutable shipment parser;
+packing task-total guards include BOTH real packing lists and legacy REQUESTED/INVOICED
+shipments. No new source hold mechanism or frozen arbitrary source split introduced.
+Receipt policy keeps manual allocation explicit. No source metadata is read from browser.
+
+Saved share correction
+Pure borrowing model now requires source.ownerShare (saved customerCtn), not total PO
+quantity as unrestricted pledge. Future capacity = max(0,ownerShare-accepted) minus other
+outstanding promises. Repayment consumes this share before new owner allocation; already
+repaid cartons cannot be counted again as own-source capacity. CasePO100/customer80/FOC20:
+borrow81refuses; borrow30then receive100 gives lender30/owner50/free20, not owner70.
+This preserves existing paid/FOC stock separation and avoids silently using extra inventory.
+
+Actual identity mismatch found during integration
+Existing pure converter put display source.po into poId, but real warehouse receipt
+event.description is projectPurchaseOrders.id (stable internal ID). Candidates now require
+trusted task.poId resolved by that original projector and store separate poNumber display.
+No display-number fallback, renaming, actual PO migration or production data write.
+Conversion refuses missing internal ID; fixtures deliberately use different ID/number.
+Real migration must annotate tasks from original projected PO associations before conversion.
+
+Verification
+8actual-auth/parser/state-building checks plus affected borrowing/plan/preview total45/45
+pass0fail276.7792ms. Includes successful original auth+PO projector→current exact rows→
+approved per-row save plan; same plan rejects legacy shipment-held donor. An initial test
+expected wrong error text for empty received-source rows; actual provenance rejection was
+correct; corrected expectation, did not relax implementation. Separate converter/receipt
+27/27pass176.5161ms after internal-PO identity correction. No duplicate sum of reruns.
+Generated demo bundle rebuilt mechanically from exact updated tested model.
+
+Not completed by this factory
+Dependencies still require actual Wix route/store composition; no endpoint installed.
+Current context still uses existing legacy history readers: no claim those scans eliminated.
+Factory only prepares Purchase APPROVE/RETURN; Warehouse RECEIVE/CORRECT authority must
+retain original createWarehouseOperations validators/finance/version logic separately.
+Special standalone procurement sources/unknown old ownership require explicit handling;
+do not invent a customer owner or silently omit their physical rows. Current full-product
+snapshot/proof limits and closed relations need production-scale resolution before ACTIVE.
+All-writer hooks, actual SDK row/query/index/recovery coverage, migration/shadow checks,
+UI and four publishing stages remain open. Original invoice/price/PO/source facts protected.
+
+Next dependency
+Prepare original Warehouse receipt validation adapter using same internal PO IDs and exact
+current model/claims, without maintaining a second ownership calculation. Then inventory
+writer coverage and journal-mode integration from original specification; only fresh live
+comparison plus review/coverage/recovery gates permit protected backend edits/activation.

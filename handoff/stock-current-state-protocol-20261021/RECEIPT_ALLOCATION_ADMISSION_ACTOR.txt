@@ -1,0 +1,54 @@
+2026-10-23 — RECEIPT/ALLOCATION ADMISSION IDENTITY, OFFLINE CANDIDATE
+
+Recovery before patch:cb85f50, pushed PR220. Same approved inventory scope; not finance
+work, new auth design, production installation or native acceptance. Original protected
+paths still d447185; no live source changed in this increment.
+
+Demonstrated issue
+Common current save now captures server staffId per invocation (cb85f50), but original
+Warehouse and allocation authority independently reread staff without comparing it.
+Warehouse's existing AFTER-commit receipt readback did compare the event staffId:
+under a reissue it could return ok:false AFTER the offline current stock committed.
+An error response alone is therefore not evidence of safe refusal/no stock mutation.
+Allocation admitted as P could stage/commit its event under REISSUED on the same member.
+
+New actual-root/model tests
+stock-current-receipt-allocation-actor.test.cjs uses exact saved candidate Warehouse
+web source/import bindings + original requireWarehouseStaff/PO/receipt validators and
+real segmented coordinator against an INMEMORY store. Both NCT/GHR, RECEIVE/CORRECT.
+First successful receipt establishes a real fixture for the correction version.
+Outer root and admission see W; authority sees REISSUED. Refusal must leave DB EXACT
+and must not read business context. No native execution or business records created.
+Separate allocation v1/v2 uses actual current-department save, original/candidate
+allocation validators and real respective coordinator, original Purchase auth. Both
+stable-identity positive controls successfully assign free5; staff-drift controls must
+refuse before context/staging with unchanged DB. Synthetic coverage only in tests.
+
+Valid prepatch8tests:2pass/6fail791.2511ms. Four Warehouse paths returned false but
+database equality failed (committed changes); both allocation paths did not reject.
+Large assertion payload output was truncated; final tests use boolean equality to
+avoid printing entire synthetic manifests. No weakening of compared DB contents.
+
+Minimum change
+Only warehouse-authority.cjs and allocation-authority.cjs source guards changed.
+They accept private command staffId already supplied by common save, and compare the
+new original department grant before business context reads. No browser input value
+is trusted: common save constructs its own top-level prepare command. Existing direct
+private standalone authority contract without that optional field remains unchanged;
+real current department saves always provide their original authenticated staffId.
+No changes to original roles, PO/receipt quantities, allocation ownership, invoices,
+packing, borrowing promises, automatic repayment, archival or actual commit protocol.
+Warehouse AFTER-commit receipt validation remains, now not the first actor check.
+
+Validation and release boundaries
+Affected30pass0fail888.2158ms, including previous Borrow actor tests and original
+Warehouse/allocation auth/PO/packing/borrowing rules. Full stock-current suite:
+1151pass0fail27120.3917ms. Runtime rebuilt104modules; install38targets/94dependencies,
+all20writer flags remainUNVERIFIED; builders --check before commit. Tests include
+unsafe witnesses and do not prove native safety or G3 completion. diff--check clean,
+original protected path diff empty. No native calls/UI/CMS/permission/Pages/Wix action.
+Both pending INIT/TYPE test consent and Wix support-contact consent remain unanswered;
+do not repeat or execute. Migration APPLY/drain/native schema/capacity/recovery/G3/
+cutover and four-stage publication still OPEN. CoverageEMPTY/ACTIVEOFF, invoice/exitOFF.
+Next bounded independent review: Purchase task/source/plan and quantity/shortage
+preparation's repeated original-authority identity, not unrelated finance features.
