@@ -1,0 +1,33 @@
+#app .active-order-table.draft-column-layout{min-width:1320px}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(7){text-align:left!important}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(8){text-align:right!important}
+#app .active-order-table.draft-column-layout :is(th,td):is(:nth-child(6),:nth-child(9),:nth-child(10)){text-align:center!important}
+#app .active-order-table.draft-column-layout :is(th,td):nth-child(11){text-align:right!important}
+#app .active-order-table.draft-column-layout .supplier-plan-link{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11px;line-height:1.45;overflow-wrap:normal;word-break:normal}
+#app .active-order-table.draft-column-layout .supplier-plan-link[data-draft-heads-only]{flex-wrap:wrap;min-height:24px}
+#app .active-order-table.draft-column-layout .supplier-head{flex:0 0 16px;margin-right:0}
+#app .active-order-table.draft-column-layout .draft-cost-stack{font-variant-numeric:tabular-nums;font-size:11px;font-weight:400;line-height:1.5}
+#app .active-order-table.draft-column-layout .draft-cost-stack>span{display:flex;align-items:baseline;justify-content:flex-end;gap:6px;min-height:17px;color:#203047;font-size:11px;font-weight:400}
+#app .active-order-table.draft-column-layout :is([data-id],[data-split-parent]) .draft-cost-net::before{content:'Avg';font-size:9px;color:#64758a}
+#app .active-order-table.draft-column-layout :is([data-id],[data-split-parent]) .draft-cost-line::before{content:'Total';font-size:9px;color:#64758a}
+#app .active-order-table.draft-column-layout [data-source-id] .draft-cost-stack>span::before{content:none}
+#app .active-order-table.draft-column-layout [data-draft-has-sources] .received-quantity>span.quantity-reference{background:none!important;color:inherit!important;border:0;padding:0;min-width:0;cursor:default}
+#app .active-order-table.draft-column-layout .draft-receipt-shortfall{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:21px;padding:0 8px;border:0;border-radius:14px;background:#E51B2B;color:white;font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:pointer}
+dialog.draft-receipt-dialog{position:fixed;inset:0;margin:auto;transform:none;width:360px;max-width:calc(100vw - 32px);height:fit-content;padding:0;border:0;border-radius:8px;color:#17314f;box-shadow:0 18px 55px #17314f40}
+dialog.draft-receipt-dialog::backdrop{background:#17314f66}
+.draft-receipt-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:#e5eff8}
+.draft-receipt-head h2{margin:0;font-size:15px;font-weight:600}
+.draft-receipt-head button{border:0;background:none;color:#17314f;padding:0 3px;font-size:20px;cursor:pointer}
+.draft-receipt-body{padding:16px}
+.draft-receipt-body p{margin:0 0 15px;font-size:11px;color:#52687e}
+.draft-receipt-body label{display:block;margin-bottom:6px;font-size:11px}
+.draft-receipt-body select{box-sizing:border-box;width:100%;min-height:34px;border:1px solid #b9ccdf;border-radius:4px;padding:6px 8px;background:white;color:#17314f;font-size:12px}
+.draft-receipt-foot{display:flex;justify-content:flex-end;gap:8px;padding:11px 16px;border-top:1px solid #dae4ef;background:#f8fafc}
+.draft-receipt-foot button{border:1px solid #c3d2e0;border-radius:4px;padding:6px 13px;background:white;color:#17314f;font-size:12px;cursor:pointer}
+.draft-receipt-foot button.draft-receipt-confirm{border-color:#2563EB;background:#2563EB;color:white}
+#app .active-order-table.draft-column-layout .draft-allocation-warning{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;min-width:25px;padding:2px;border:0;border-radius:4px;background:transparent;color:#E51B2B;cursor:pointer;vertical-align:middle}
+#app .active-order-table.draft-column-layout .draft-allocation-warning svg{display:block;width:21px;height:21px}
+#app .active-order-table.draft-column-layout .draft-allocation-warning:hover{color:#c91425;transform:translateY(-1px)}
+#app .active-order-table.draft-column-layout .draft-allocation-warning:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
+
+#app .active-order-table.draft-column-layout .draft-cost-stack>span:empty{display:none}
