@@ -1,5 +1,26 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST 2026-10-25 — REAL NATIVE ACTIVATION EVIDENCE CHECKER SAVED; NOT READY
+Read NATIVE_ACTIVATION_VERIFIER_20261025.json. New server-owned verifier feeds the
+existing one-CAS activation factory in tests; actual Admin endpoint is READ-ONLY,
+with no activation export. Fresh whole native saved source exact96a7e836...b504cb.
+First native NCT+GHR reports returned fresh schema/query/emptyBusiness passes,
+25missing native bindings/all20writer flagsfalse/activationAllowedfalse. These
+are genuine native reports, NOT a completed activation gate or Buyer acceptance.
+Employee SDK evidence reuse reads the8existing completed fixed records only;
+no RUN/reset/reseed/new record/deletion/elevation/business write. Full updated
+readiness invocation hit2native504s; STOP that whole-call path, no blind retry or
+drain inference. Separate ONE-query inspectRetainedEmployeeEvidence({}) launched
+once; actual returned result now CONFIRMS both original completed terminals,
+4records/profile, no mutation, nativeMethodsVerifiedtrue, digestb2f65b7b...a177a.
+This is retained SDK-method subproof ONLY, NOT business-writer acceptance. Do not
+re-run the whole504path. Source unchanged, coverage remains
+honestlyEMPTY/ACTIVEOFF. Last Main149/Test156 unchanged; no new Pages/Test/Publish.
+Latest11affected tests pass722.0955ms; earlier20activation/audit and1606full results
+reused. Existing pinned staticc4bc72d package and8native relay parity still valid.
+Next actual writer/read/recovery evidence and final admission binding; DO NOT
+produce another exercise/demo or turn the missing bindings into manualtrue flags.
+
 LATEST PAGE PARITY 2026-10-25 — EIGHT REAL RELAYS ALREADY INSTALLED; NO OVERWRITE
 R2_PAGE_RELAY_NATIVE_20261025.json: fresh whole-source copies of MASTER Purchase/
 Warehouse/Support/Finance and Source Sales/Buyer/Catalogue/OrderReceived. Five
