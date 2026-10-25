@@ -278,3 +278,35 @@ old1596/local-only claims, preserved quiet notification preference and all exist
 boundaries. No duplicate/model/agent/other-schedule changes. Latest user permits
 actual Buyer orders/fake data, but native business allwriter/activation/UI acceptance
 still incomplete. No new test/deployment permission sought or inferred.
+
+2026-10-25 10:51 MYT HEARTBEAT — INDEPENDENT RELEASE ARTIFACT PREFLIGHT
+Latest Git before this incrementbb72a0bc4edbaaea94c46405a93bb626b6182c94, tracked
+checkout clean. Reused already-read framework and1606passing result, no rerun.
+No fresh native/browser attempts: user then answered debugging-banner question
+"没有横条". This agrees with unattached control, not a new restored connection;
+do not retry the stopped path or ask repeat install/permissions/ordinary test grant.
+The unfinished test-only native gate remains explicitly unconfirmed, no new Run.
+
+Completed a separate genuine release-preparation gate WITHOUT browser/upload:
+build-isolated-cohort --check105backend/8relays passes. Read actual static-only
+stage-isolated-cohort.cjs and existing static-release tests; use R2 packager, NOT
+the older non-isolated stage-business-ui-install path. Existing1606result includes
+the packaging guard tests, no need to rerun for seeing their summary.
+Created NEW dedicated local directory (nonexistent verified before generation):
+C:/FMCG-WIX-LOCAL/release-candidates/r2-20261025-bb72a0b
+Actual packager verifies every source against gitshow exact codeCommit, includes
+only public static allowlist, excludes backend/handoff/CSV/native evidence/.git/
+untracked and retired artifacts. Artifact112resources,113files including manifest.
+Independent full112byte-hash/path check PASSES; no extra file. Manifest:
+isolated-stock-release.json SHA256
+ee14a190f740a57292c81c81194f0a770dd8f64754be8afa947a278a62d31a13
+versionbb72a0bc4edbaaea94c46405a93bb626b6182c94. All acceptance fields remain false:
+backendInstalled,wixPublished,currentStockActivated,realBorrowingVerified.
+This is local packaging ONLY: Pages unchanged, no upload/dispatch/permissions,
+no Wix Test/main publish, public/Buyer actual tests not completed. Generated
+artifact outside checkout is NOT staged to Git. Reuse manifest and checks until
+asset sources change; a later actual deployment must build its exact selected Git
+ref, not relabel this artifact as a newer commit or claim it installed backend.
+Production recovery/current native state unchanged. Continue genuine independent
+readiness/allwriter work while control unavailable, not cosmetic preview work or
+another copy of completed tests. No new required user action notification.
