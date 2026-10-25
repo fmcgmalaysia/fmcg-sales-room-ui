@@ -1,5 +1,19 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST 2026-10-25 — INTERACTIVE LOCAL SPLIT/BORROW EXERCISE DELIVERED; NOT WIX
+Read OPERATION_PRACTICE_20261025.txt. User prioritizes actual clickable interface.
+New standalone preview/split-borrow-practice.html uses actual candidate Purchase/
+Source forms and existing domain validators with isolated in-memory fake data.
+Headless actual UI: split40/60, reject99/borrow11, borrow10, move/archive relation,
+receipt85/90 repays5/10 without raising ALLOC90 twice;0pageErrors/0external requests.
+42affected+17packaging tests pass. This is NOT real Buyer/Wix acceptance. Local
+only460px reason-input overflow repaired with2CSS rules, candidate manifests rebuilt.
+No SDK/native fixture/permission/ACTIVE writes. Existing backend/page new employee
+gates still last confirmed CLOSED845165d1...f692/58728f7f...5e67. Work Chrome control
+URL-confidence stop recurred; stopped UI immediately, continued background work.
+Precise Pages task-branch grant remains unused, original7rules unchanged. Main
+149/766 and Test154/767 last receipts. Actual Git log/remote determines sync version.
+
 LATEST RESUME 2026-10-25 — PRIORITIZE REAL INTERFACES; NEW EMPLOYEE TERMINAL INSTALLED CLOSED
 Read R2_EMPLOYEE_TERMINAL_20261025.txt. User resumed after battery charging;
 same15min automation ACTIVE. New dedicated diagnostic20focused pass reused.
