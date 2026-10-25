@@ -1,0 +1,287 @@
+{
+  "schema": "R2_NATIVE_READ_PREREQUISITES_RECORD_V1",
+  "cohort": "MASTER_20261024_R2",
+  "module": "r2readPreflight.web.js",
+  "nativeCanonicalLfSha256": "a23452ea25e8ecc3c17a3e2dd10ea21fceaa89908766efa018d6ddd58826b58e",
+  "nativeReadbackMethod": "All 58 disjoint 250-character normal Find selections matched source; only observed terminal LF omission normalized. Before correction source 08251f9afcd7a5d48dd6f8420589c153d3775f2e272e5e85f2932d563ae36678 separately whole-source exact.",
+  "inspectorCorrection": "First NCT TASKS observation showed existing manualCostField wire type ARRAY, not ARRAY_STRING. Only two inspector contract constants patched; no CMS/business code changed. Rechecked TASKS passes. PRODUCTS and ORDERS receipts precede that unrelated contract-only correction.",
+  "tests": {
+    "newAndAudit": {
+      "pass": 23,
+      "fail": 0,
+      "milliseconds": 214.98
+    },
+    "relatedOriginalQueryBorrowIntake": {
+      "pass": 23,
+      "fail": 0,
+      "milliseconds": 546.3654
+    },
+    "unchangedFullStock": {
+      "pass": 1606,
+      "fail": 0,
+      "milliseconds": 62693.9667,
+      "reused": true
+    }
+  },
+  "rows": [
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "ORDERS",
+      "collection": "R2NCTOrders",
+      "metadataSha256": "b66fb2b561d8c09c00996ff6810eec675e079388fc70934ca59de4460b997c9d",
+      "requiredFieldsReviewed": 27,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "TASKS",
+      "collection": "R2NCTTasks",
+      "metadataSha256": "d3582a8fc5f1913526254e2b6e294633efdf512be866006f668d7c23e5702157",
+      "requiredFieldsReviewed": 29,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "JOURNAL",
+      "collection": "R2NCTActivity",
+      "metadataSha256": "460bdbe64dc36f4f6e7aa1076809f9219c46e394c182aa8188c532135c26687e",
+      "requiredFieldsReviewed": 34,
+      "schemaMatches": true,
+      "queriesExecuted": 5,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_TASK_RELATIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_OUTSTANDING_RELATIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "REPAID_SOURCE",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "PURCHASE_ORDERS",
+      "collection": "R2PurchaseOrders",
+      "metadataSha256": "f9eff79adfc8eadffa1a951ca0fe3dd016f30ff3d0624ea3a184792fbb9eb562",
+      "requiredFieldsReviewed": 4,
+      "schemaMatches": true,
+      "queriesExecuted": 2,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "PRODUCTS",
+      "collection": "R2StockProducts",
+      "metadataSha256": "13aaceb5d84cf8f30fdc83e85184a4f6965102989f564f93ad707412beecfd94",
+      "requiredFieldsReviewed": 19,
+      "schemaMatches": true,
+      "queriesExecuted": 4,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_PAGE",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_SEARCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "POSITIONS",
+      "collection": "R2StockPositions",
+      "metadataSha256": "0e1f4e073f2d3105fdd30c3cdb949844824d2e14fd026300bfe953470d4e9b63",
+      "requiredFieldsReviewed": 26,
+      "schemaMatches": true,
+      "queriesExecuted": 3,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_PRODUCT_POSITIONS",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    },
+    {
+      "schema": "R2_NATIVE_READ_PREFLIGHT_V1",
+      "cohort": "MASTER_20261024_R2",
+      "company": "NCT",
+      "scope": "CLAIMS",
+      "collection": "R2StockClaims",
+      "metadataSha256": "86f5ccd4419a28f7c6354b6847155df83f93a2de873e069b72bd918b0c185a7e",
+      "requiredFieldsReviewed": 16,
+      "schemaMatches": true,
+      "queriesExecuted": 4,
+      "queries": [
+        {
+          "name": "EXACT_ID",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "EXACT_ID_BATCH",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_POSITION_CLAIMS",
+          "totalCount": 0,
+          "returnedRows": 0
+        },
+        {
+          "name": "ACTIVE_TASK_CLAIMS",
+          "totalCount": 0,
+          "returnedRows": 0
+        }
+      ],
+      "issues": [],
+      "mutationCapability": false,
+      "indexesRead": false,
+      "populatedQuerySemanticsAccepted": false,
+      "typedRoundtripsAccepted": false,
+      "writerCoverageAccepted": false,
+      "activationAllowed": false
+    }
+  ],
+  "remaining": [
+    "GHR native prerequisite readbacks",
+    "Populated semantic query witnesses and actual typed business writes",
+    "All writer/root acceptance and server-owned activation evidence integration",
+    "Pages assets deployment, Wix publish-live receipts and public Buyer split/borrow acceptance"
+  ],
+  "businessActive": false,
+  "writerCoverageAccepted": false,
+  "published": false
+}

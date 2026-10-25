@@ -536,3 +536,29 @@ all element IDs must be fresh. Existing Chrome window66680 still same editor.
 New ownership read-only/TakeControl shown; no edit/control change attempted during
 this result check. Borrow fixture COMPLETE/CLOSED; do not re-run completed steps.
 Continue actual remaining server-owned acceptance/allwriter/paired/public work.
+
+NCT BUSINESS READ PREREQUISITES — ORIGINAL INTAKE FIELDS AND REAL QUERY SHAPES
+Added standalone Admin-only r2readPreflight.web.js, no ordinary business imports,
+index API, SDK elevation, writes, schema/ACL mutation or activation capability.
+Expanded prior stock-only metadata contract with actual original nctIntake fields
+and PurchaseOrders title/details; actual intake after-images fit typed contract.
+Actual runtime product search/page query trace matches diagnostic predicates and
+stable barcode/_id order. Never invokes workspace/GP refresh or fakes ACTIVE.
+Each fixed company/scope observes two complete stable Admin metadata images,
+executes bounded strong exact/compound/array queries, exports counts only/no rows.
+New9tests pass; new+existing audit23pass214.98ms; related originalquery/borrow/intake
+23pass546.3654ms. Unchanged full1606pass62693.9667ms reused, not rerun or added up.
+Whole original native inspector08251f9a...36678 exact in58disjoint250char selections.
+Native NCT TASKS first identified actual manualCostField ARRAY, not the inspector's
+over-strict ARRAY_STRING expectation. Corrected ONLY two new inspector constants
+using2-match exact ReplaceAll; no business/CMS change. Full revised14266char native
+source again58/58canonical-exact a23452ea25e8ecc3c17a3e2dd10ea21fceaa89908766efa018d6ddd58826b58e.
+All7NCT scopes now positive native receipt: ORDERS27/TASKS29/JOURNAL34/PO4/
+PRODUCTS19/POSITIONS26/CLAIMS16 field checks, all155present,22queries executed.
+See R2_READ_PREFLIGHT_NATIVE_20261025.json for exact metadata hashes and receipts.
+Query pages empty; populated semantics/typed business writes/allwriter coverage
+are expressly NOT inferred. GHR readbacks next. ACTIVE OFF, no Publish/Pages.
+Native UI parameters reset/readback lag across tool cells; two combined helper
+guards stopped before typing/Run when selection not yet visible. No wrong request
+or duplicate execution. Use separate native observations after reset/selection;
+do not repeat input just because immediate AX state is stale.
