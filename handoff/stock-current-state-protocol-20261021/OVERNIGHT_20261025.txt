@@ -490,3 +490,49 @@ contract. Next scoped install: add these8TEXT fields via existing CMS admin UI,
 no new mutation endpoint, permission/index changes or old table edits; then repeat
 the read-only verifier. New reader native source exacte28d3336...251a, no template.
 Borrow native fixture COMPLETE/CLOSED; no more completed-command replay.
+
+NCT AUDIT FIELD INSTALL COMPLETE IN CMS UI, METADATA RECHECK STILL REQUIRED
+In exact R2 NCT Activity CMS (one existing maintenance control row), Manage Fields
+->AddField->Text->ChooseFieldType, saved each once with exact matching Field name
+and Field ID: writerBuild,activationRequestId,activationMemberId,
+activationEvidenceDigest. Each returned Manage Fields and appeared in the new
+field list/tree; no defaults/validations/encryption/ACL/index/row edits. No Save
+UNKNOWN. No existing field replaced. GHR four fields NOT installed at this entry;
+returning CMS breadcrumb to select R2 GHR Activity next. Final native readonly
+audit inspector must run again after both tables, not rely only on UI success.
+
+GHR AUDIT FIELD INSTALL COMPLETE IN CMS UI — BOTH TABLES RECHECK NEXT
+Exact R2 GHR Activity selected from native CMS list/title, not original GHR. Added
+and saved once each Text writerBuild,activationRequestId,activationMemberId,
+activationEvidenceDigest, exact same Field name/Field ID. All4names visible after
+last Save returned Manage Fields, no uncertain save. Total8additive TEXT fields
+installed across two NEW R2 tables only. No row/default/validation/encryption/ACL/
+index/old-table edit. Both maintain original one control row; no business ACTIVE.
+Closing CMS viewer to re-run the unchanged Admin readonly audit inspector once.
+Native post-install metadata receipt still pending; do not infer from UI alone.
+Raw native accessibility frames may expose signed instance URLs; never copy/use/
+export those URLs or whole raw logs. Output scoped labels with URL values omitted.
+
+NETWORK PAUSE / RESUME — POST-INSTALL NATIVE SCHEMA CHECK PASSED
+User explicitly paused for network outage. All app input/Git writes stopped;
+automation idautomation setPAUSED, receipt confirmed. At pause only the unchanged
+readonly audit metadata call was pending; no order/stock mutation in flight from
+our current action. User explicitly resumed after network recovery.
+Initial restored reads exposed stale cached UI IDs; one attempted readonly Run
+click rejected element21893 unavailable, so no new native call dispatched. Normal
+selection recovery then reported user input detected; complied with required fresh
+get_window_state. Fresh actual UI contains completed post-install native receipt:
+activationAuditSchemaMatchestrue, issues[],14required fields per exact table.
+R2NCTActivity metadataSha256
+460bdbe64dc36f4f6e7aa1076809f9219c46e394c182aa8188c532135c26687e;
+R2NCTActivity1 metadataSha256
+ccb78f89636b5264f7d5a4875ede0c493097335e8254f1e6b47ba01fd6860155.
+Both paired metadata reads stable/Admin-only, all8new TEXT fields confirmed.
+No field Save repeated. No index/business-row read or mutation, full-business-
+schema/writer/activation flags remainfalse. This completes ONLY native activation
+audit-field installation/subgate, not all business schema or server-owned verifier.
+Actual reader parameter UI now innerRun28670/input28689 (not old21893/21912);
+all element IDs must be fresh. Existing Chrome window66680 still same editor.
+New ownership read-only/TakeControl shown; no edit/control change attempted during
+this result check. Borrow fixture COMPLETE/CLOSED; do not re-run completed steps.
+Continue actual remaining server-owned acceptance/allwriter/paired/public work.
