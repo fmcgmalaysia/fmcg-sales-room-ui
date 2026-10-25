@@ -52,4 +52,4 @@ function requireFrom(file) {
 }
 for (const file of ['stock-current-intake-loaded-composition.test.cjs', 'stock-current-borrow-gateway.test.cjs',
   'stock-current-borrowing.test.cjs', 'stock-current-borrow-options.test.cjs', 'stock-current-rcv-repayment.test.cjs',
-  'stock-current-alloc-entry.test.cjs']) requireFrom(__filename)('./' + file);
+  'stock-current-alloc-entry.test.cjs', 'stock-r2-borrow-repayment-acceptance.test.cjs']) requireFrom(__filename)('./' + file);
