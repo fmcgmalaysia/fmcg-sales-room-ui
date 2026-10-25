@@ -8,13 +8,11 @@
   "pageBeforeSha256": "58728f7ff951fc3c44b1cf658ba5d34a9a148de2cbfcb7402873b7a04cb55e67",
   "pageClosedSha256": "0cb0fa95ca3002e0caea78a9f94c542c9fc69b5af7aa5276a42bdcc145cd0c93",
   "pageOpenSha256": "4ec921dd75b758732bdc1aa4eaacec5d1180e4ba9f08912573992fc1d2173c56",
-  "savedNativeBackendOpenExact": true,
-  "savedNativePageOpenExact": true,
   "oldEmployeeGateClosed": true,
   "oldIntakeGateClosed": true,
-  "newFixtureSeeded": false,
-  "testSiteUpdated": false,
-  "nativeOutcome": "NOT_STARTED",
+  "newFixtureSeeded": true,
+  "testSiteUpdated": true,
+  "nativeOutcome": "PURCHASE_WORKFLOW_VERIFIED",
   "localTests": {
     "passed": 9,
     "failed": 0,
@@ -40,5 +38,68 @@
     "businessActiveEnabled": false,
     "pairedSourceTransportAccepted": false
   },
-  "next": "Create Test Site ONCE, inspect actual revision0% while Live149 stays100%, then use explicit blank?siteRevision=<actual>&r2PurchaseFlow=20261025-a479 under original member. Only this NEW fixture may seed once. Any unknown result stops page with session INFLIGHT; inspect without reset/reseed. After native complete close page then backend and update Test Site0%."
+  "next": "Do not SEED/INTAKE/PLAN/PO again for this completed prefix. Preserve immutable receipts. Continue actual split/Warehouse receipt/ALLOC borrow and partial/full repayment linked acceptance, then remaining writer/read/activation gates and paired publication. This native fixture is not real Buyer/cross-site acceptance and does not fill writerCoverage.",
+  "testVersionUsed": 157,
+  "testExposurePercent": 0,
+  "nativeTerminal": {
+    "schema": "R2_PURCHASE_WORKFLOW_ACCEPTANCE_V1",
+    "fixture": "PURCHASEFLOW-20261025-a479",
+    "step": "INSPECT",
+    "activationAllowed": false,
+    "writerCoverageAccepted": false,
+    "pairedSourceTransportAccepted": false,
+    "originalBusinessCollectionsAccepted": false,
+    "realInvoiceEnabled": false,
+    "physicalDispatchEnabled": false,
+    "ok": true,
+    "stage": "PURCHASE_WORKFLOW_VERIFIED",
+    "generation": 3,
+    "pending": null,
+    "nextStep": null,
+    "complete": true,
+    "taskCount": 1,
+    "orderCount": 1,
+    "physicalStock": 0,
+    "customerDemand": 100,
+    "purchaseQuantity": 90,
+    "originalPurchaseActorVerified": true,
+    "observationsHash": "1d9441fc960f804d23c2d8c7253cd378",
+    "operationsAttempted": {
+      "queries": 10,
+      "inserts": 0,
+      "bulkInserts": 0,
+      "patches": 0
+    },
+    "mutationAttempted": false,
+    "acceptanceBuild": "b1d3dcf828d848b6c25d0eaab90a7b50666a12a5"
+  },
+  "nativeStepCounts": {
+    "INSPECT": {
+      "calls": 4,
+      "mutatingReplies": 0
+    },
+    "PO": {
+      "calls": 3,
+      "mutatingReplies": 3
+    },
+    "PLAN": {
+      "calls": 4,
+      "mutatingReplies": 4
+    },
+    "INTAKE": {
+      "calls": 5,
+      "mutatingReplies": 5
+    },
+    "SEED": {
+      "calls": 1,
+      "mutatingReplies": 1
+    }
+  },
+  "nativeReceiptSeriesSha256": "38e493cababd0cd5a3fc75b9113b7f989d3e498e921fffd90862eed916654d46",
+  "savedNativeBackendClosedExact": true,
+  "savedNativePageClosedExact": true,
+  "closedTestVersion": 158,
+  "closedTestExposurePercent": 0,
+  "liveVersion": 149,
+  "liveExposurePercent": 100
 }

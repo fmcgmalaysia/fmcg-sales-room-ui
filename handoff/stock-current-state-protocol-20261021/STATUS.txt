@@ -1,5 +1,23 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST NATIVE PASS — ORDER100 / PROCUREMENT90 / PO; BOTH GATES CLOSED TEST158
+R2_PURCHASE_WORKFLOW_20261025.json now contains actual Wix backend native receipts
+from ordinary-member Test1570% (not editor Admin). New prefix A479 seeded ONCE,
+INTAKE/PLAN/PO completed, final INSPECT PURCHASE_WORKFLOW_VERIFIED generation3,
+pendingnull,1order/1task/customerDemand100/purchaseQuantity90/physicalStock0,
+originalPurchaseActorVerifiedtrue,0mutation inspect, observationsHash
+1d9441fc960f804d23c2d8c7253cd378. Native receipt steps are retained in the JSON;
+do NOT rerun SEED/INTAKE/PLAN/PO or reset this completed case. Earlier OPEN hashes
+below are HISTORICAL. Page closed FIRST whole exact0cb0fa95...5cd0c93, backend
+closed SECOND whole exact33a5826d...433b861. CreateTest once then actual Release
+Manager CONFIRMED CLOSEDTest1580%/Live149100%. Acceptance tab51427606 closed.
+Original raw task.purchaseQtyInCtn remains100; actual original procurement
+projection/event total is90. Do not 'fix' the raw legacy field to90 or mix demand
+with procurement. This is a native initial Purchase transition proof only, NOT
+all Purchase operations, all writers, real Source/Buyer transport or release.
+Global writerCoverage remainsEMPTY/ACTIVEOFF; Source/Pages unchanged. Continue
+linked split/receipt80/borrow10/repay5+5, remaining gates and paired release.
+
 LATEST TEMPORARY TEST STATE — NEW PURCHASE WORKFLOW GATES OPEN, NO TEST RUN YET
 Read R2_PURCHASE_WORKFLOW_20261025.json. NEW fixed StockProtocolTest prefix
 SPT-R2PURCHASEFLOW-20261025-a479: only. Native backend OPEN990a5848...a5620f and
