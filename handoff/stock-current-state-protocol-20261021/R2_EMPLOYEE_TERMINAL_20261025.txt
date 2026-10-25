@@ -1,0 +1,55 @@
+2026-10-25 — NEW ORDINARY EMPLOYEE TERMINAL RECEIPT; CLOSED NATIVE INSTALL
+
+User resumed after charging and prioritizes actual split/borrow interfaces. No more
+ordinary consent wait. Existing root framework reused; scoped UI/native parity only.
+Recovery: production d447185/runtime32b812c; task before6bff12e; old temporary page
+45d9f220a71d9c89ea6ae2d2b041346b7d253b938fb273d0b5c7da23736ffa79.
+
+New dedicated StockProtocolTest only, no business table/permission/delete access.
+Prefixes SPT-R2TERMINAL-PURCHASE-20261025-d491: and
+SPT-R2TERMINAL-WAREHOUSE-20261025-b381:, each CONDITIONAL/BULK-A/BULK-B/TERMINAL.
+No old occupied employee, UNKNOWN capacity, completed borrowing or typed fixture
+is reset, reseeded, replayed or adopted. Each new RUN rejects ANY occupied fixture.
+Original Purchase/Warehouse staff grant and same actor/staff identity retained;
+raw SDK denial, elevated insert/bulk/CAS and stale rejection precede terminal proof.
+Only after exact after-images and all assertions does one immutable receipt insert.
+Lost final reply propagates, INSPECT alone may verify receipt; no automatic rerun.
+Three after-images alone without terminal receipt cannot be accepted as write proof.
+Business authority/allwriter/activation remainfalse even after this diagnostic pass.
+
+Content marker (NOT Git commit):03ca8d21023736f45e2526f0d503989ab29bcea6.
+Probe source SHA256:93f04d5946b74481eff770786c958ffe53488955df15e2d3aa280bea3306ec9a.
+20new+existing focused assertions pass0fail416.4079ms, retained/reused after pause;
+no unchanged full-suite rerun. Page tests include SSR suppression, session flag
+BEFORE RUN, no second RUN after unknown reply, readonly lost-receipt recovery,
+and paired backend build refusal. Official storage API:
+https://dev.wix.com/docs/velo/apis/wix-storage-frontend/introduction
+https://dev.wix.com/docs/velo/apis/wix-storage-frontend/storage/set-item
+
+Native new backend r2EmployeeTerminalAcceptance.web.js CLOSED installed exact,
+13484chars SHA845165d15da3a5bdd561f043fb9e9b5138daeb3a31bf40dcee47d7878f24f692,
+54/54disjoint250char selections (one skipped49 subsequently literal exact verified).
+No function RUN/INSPECT or new fixture data yet. Not a native runtime CLOSED receipt.
+
+After resume native Page Code navigation indexed geometry unavailable. Stopped
+that indexed-click route; fresh screenshots + normal coordinates opened existing
+R2 Capacity Test, not a business Purchase page. Actual whole original4354char page
+18/18segments matches45d9f220...ffa79 before edit. Appended ONLY own2820char addition
+via unique180char tail ReplaceAll once; retained original old gatesfalse/body exact.
+New CLOSED7175char page whole29/29segments exact
+58728f7ff951fc3c44b1cf658ba5d34a9a148de2cbfcb7402873b7a04cb55e67.
+Current native state BOTH new backend/page gatesfalse, old test gatesfalse.
+No Test-site update/main Publish/Pages/fixture invocation. MASTER149/Test154,
+Source766/Test767 are last release receipts; no new revision assumed.
+
+Next: fresh native backend comparison before opening ONLY new test gate, then
+fresh temp page compare/open ONLY new browser gate. Update own Test Site at0%,
+read actual revision, invoke one public browser page (editor ADMIN cannot certify
+employee). Check durable receipts, close both new gates and update Test Site.
+If unknown before terminal: retain fixed IDs and INSPECT only, never RUN again.
+Then continue allwriter/server-owned activation/paired installation and actual
+Buyer->split/partial receipt/ALLOC borrowing/repayment UI. Do not call test proof
+public business acceptance, nor show old rejected HTTPS supplier-borrow preview.
+Precise Pages temporary task-branch rule approval already granted; add at actual
+deployment only and restore original7rules. No main merge or employee/Drive ACL.
+

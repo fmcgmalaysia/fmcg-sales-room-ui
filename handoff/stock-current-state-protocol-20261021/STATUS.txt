@@ -1,5 +1,13 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST RESUME 2026-10-25 — PRIORITIZE REAL INTERFACES; NEW EMPLOYEE TERMINAL INSTALLED CLOSED
+Read R2_EMPLOYEE_TERMINAL_20261025.txt. User resumed after battery charging;
+same15min automation ACTIVE. New dedicated diagnostic20focused pass reused.
+Backend CLOSED nativeexact845165d1...f692; own temporary page minimal append
+from exact45d9f220...ffa79, CLOSED whole nativeexact58728f7f...5e67. No new RUN/
+INSPECT/rows/Test update/Publish yet. Next original-staff native terminal check,
+then actual UI installation/activation/Buyer acceptance. Do not rerun old fixtures.
+
 LATEST 2026-10-25 — BOTH COMPANIES READ PREREQUISITES NATIVE PASS; NOT PUBLISHED
 See R2_READ_PREFLIGHT_NATIVE_20261025.json. New Admin-only read inspector installed
 whole-source exact a23452ea...6b58e, no item/schema/permission mutation capability.
