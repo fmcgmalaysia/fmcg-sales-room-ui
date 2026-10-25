@@ -13,6 +13,7 @@
 #app .active-order-table.draft-column-layout [data-source-id] .draft-cost-stack>span::before{content:none}
 #app .active-order-table.draft-column-layout [data-draft-has-sources] .received-quantity>span.quantity-reference{background:none!important;color:inherit!important;border:0;padding:0;min-width:0;cursor:default}
 #app .active-order-table.draft-column-layout .draft-receipt-shortfall{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:21px;padding:0 8px;border:0;border-radius:14px;background:#E51B2B;color:white;font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:pointer}
+#app .active-order-table.draft-column-layout [data-source-id] .received-quantity [data-quantity-case]{display:none}
 dialog.draft-receipt-dialog{position:fixed;inset:0;margin:auto;transform:none;width:360px;max-width:calc(100vw - 32px);height:fit-content;padding:0;border:0;border-radius:8px;color:#17314f;box-shadow:0 18px 55px #17314f40}
 dialog.draft-receipt-dialog::backdrop{background:#17314f66}
 .draft-receipt-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:#e5eff8}

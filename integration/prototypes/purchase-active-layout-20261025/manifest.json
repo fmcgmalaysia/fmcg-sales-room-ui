@@ -1,7 +1,7 @@
 {
   "schema": "APPROVED_PURCHASE_LAYOUT_V1",
   "baseline": "6926ae01ea3db56d38d920aa8ca1144f7e82f71d",
-  "build": "20261025-approved-active-layout-v1",
+  "build": "20261026-receipt-gap-hidden-v1",
   "files": [
     {
       "target": "purchase-live/active-layout.js",
@@ -9,7 +9,7 @@
     },
     {
       "target": "purchase-live/active-layout.css",
-      "sha256": "6b358a9910a48740c5e5a29b053ac10e050b44d87289ad4e0e413bde6b685c54"
+      "sha256": "b248943f6e67b53670144d85f97664240d84196521e4a5a7ffae3b1986cea73c"
     },
     {
       "target": "purchase-live/task-grid.js",
@@ -17,7 +17,7 @@
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "8d1184001276b946117f7ca6b4092982027e500c5c36e09428ddfc603bce060a"
+      "sha256": "c5621a9e5c0e2668c3592bc8804e6163b6d901608759a7069738c03388ba18f8"
     }
   ],
   "preserved": [
