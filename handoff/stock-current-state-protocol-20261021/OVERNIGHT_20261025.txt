@@ -641,3 +641,47 @@ native UI request, test fixture or ACTIVE mutation attempted. Native URL-policy
 stop remains respected; user needs no new action for this background preparation.
 Next handoff-only commit does not invalidate this pinned code package. Do not
 regenerate solely for a new documentation hash or call local staging publication.
+
+2026-10-25 AFTER FORCED RESTART — NATIVE EMPLOYEE TERMINAL PASS; CLOSEDTEST156
+User returned; new cua browser extension2 resumes existing Master51427484. Reads,
+semantic clicks, ordinary editor CtrlA/C source copies and minimal FindReplace now
+work. Full before/after copies confirm only2new gates changed forTest155 then both
+restored exactly CLOSED845165d1...f692/58728f7f...5e67. Temporary same-account Start
+Coding prompt handled normally, not a permission expansion. Initial transient
+Find field failures made no source writes; state inspected before proceeding.
+ReleaseManager confirms Test1550%, then after closing Test1560%; Live149100% stays.
+Actual native Wix Logs durable INSPECT receipts for P+W both4records/terminaltrue/
+ordinaryStaffWriteAcceptedtrue/mutationAttemptedfalse with exact build/source.
+Eight fixed terminal rows retained, no RUN replay/reset/deletion. Old fixtures
+untouched. Explicit blank?siteRevision=155 same-session reload retained the page's
+BEFORE-RUN session guard and recovered by readonly inspection. No success inferred
+from browser title or empty console. Native JSON/source exact evidence in
+R2_EMPLOYEE_TERMINAL_NATIVE_20261025.json and R2_EMPLOYEE_TERMINAL_20261025.txt.
+Our explicit155 test tab closed; Master51427484 and ReleaseManager51427584 kept.
+Private screenshots thread-only, not exported. Browser control failure no longer
+blocks native continuation. NEXT true allwriter/read/typed-business/recovery/
+server-owned verifier, paired install/Pages then Buyer functional acceptance.
+Not authorization to fillverified from this SDK-only subgate; ACTIVE/coverage
+remainOFF/EMPTY. No packing expansion/mainPublish/Pages rule/dispatch/ACL change.
+SourceLive766/Test767 unchanged. Reuse pinned c4bc72d112asset package across these
+evidence-only commits. No unchanged tests rerun or new model/agent.
+
+SAME RESUME — FRESH EIGHT-PAGE PAIRING CONFIRMED WITHOUT REINSTALLATION
+Actual relay manifest defines8pages. Read every existing saved Wix page through
+normal visible code-editor selection/copy, full contents hashed off-page; never
+hidden Monaco objects/DOM application state. MASTER Purchase17569chars exacte8d4...
+bcbd6, Warehouse10763exact2110...f1e60, Support1824exact857d...4abe1, Finance10564
+exact087a...8b57a. SourceSales27195exactc3cd...08559. SourceBuyer13144sha14dc...cfca4,
+Catalogue29346sha747c...48d5, OrderReceived830sha8282...3120 initially differed.
+Stopped writes, preserved actual native copies privately, compared each exact
+candidate; ALL THREE were candidate===native+'\n' only. No semantic conflict or
+reason to overwrite current source. JSON preserves BOTH raw/native and candidate
+hashes and explicit comparison; no global trimming or unexamined normalization.
+R2_PAGE_RELAY_NATIVE_20261025.json records all8functional text matches. No page
+code/quote/download/customer mapping/finance/packing/auth/CMS change. No native
+backend dependency or business/public verification inferred. Source51427514 now
+OrderReceived editor retained; Master51427484 Finance editor retained; saved code
+is correct, so do not reinstall these8identical relays in subsequent turns.
+Real remaining gap is native allwriter/read/typed records/recovery/server-owned
+activation verifier, not missing real UI relay code. Pages still not deployed,
+SourceLive766/Test767 last receipts, MASTERLive149/Test1560%closed confirmed.

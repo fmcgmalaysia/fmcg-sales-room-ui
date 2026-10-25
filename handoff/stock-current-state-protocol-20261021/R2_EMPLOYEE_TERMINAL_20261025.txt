@@ -53,3 +53,39 @@ public business acceptance, nor show old rejected HTTPS supplier-borrow preview.
 Precise Pages temporary task-branch rule approval already granted; add at actual
 deployment only and restore original7rules. No main merge or employee/Drive ACL.
 
+NATIVE COMPLETED AFTER USER RESTART — 2026-10-25
+See R2_EMPLOYEE_TERMINAL_NATIVE_20261025.json, not earlier pending lines above.
+cua browser2 existing Master tab51427484 successfully read and clicked. Fresh
+whole ordinary editor CtrlA/C -> documented browser clipboard source matched both
+CLOSED baselines. No hidden Monaco/runtime API or machine/browser workaround.
+One transient editing-ownership prompt Start Coding restored this same account;
+Find replacement stayed non-mutating until ownership restored and1of1 confirmed.
+Only backend/page ENABLEDfalse->true changed; complete after-images matched exact
+single replacements (451c3e96...b3bcd /28f5d7d2...60c08). Old gates stayedfalse.
+
+Create Test Site once made actualTest1550%, Live149100% retained. Wix auto-opened
+rc=test-site tabs; do not treat those links as correct-version acceptance. Our one
+explicit public page used blank?siteRevision=155. Its browser title/dev log capture
+remained uninformative, so neither was used as success evidence. Opened actual
+Wix Logs through ReleaseManager ->GetStarted/DeveloperTools. Same-session reload
+of that one explicit page retained BEFORE-RUN session markers, inspected existing
+durable results and did not replay RUN. No new fixture identity/reset/cleanup.
+Native backend actual INSPECT receipts, PURCHASE+WAREHOUSE, both verified4records,
+terminaltrue, ordinaryStaffWriteAcceptedtrue, mutationAttemptedfalse. Log details
+also showed current backend source and repeat readonly inspection only. Terminal
+proof asserts all3data after-images, actor hash, rawSDK refusal, elevated methods,
+successful CAS and stale CAS rejection before permitting the immutable receipt.
+The initial complete RUN transcript was not captured; durable terminal inspection
+is the accepted recovery evidence, unlike the prior3images-only old fixture.
+
+Closed PAGE gate first, backend second, preserving whole exact original sources;
+both CLOSED hashes fully read back. One further CreateTestSite updated actual
+Test1560%, Live149100% unchanged. No mainPublish/Pages/ACL/ACTIVE mutation. Eight
+new dedicated rows remain, with no deletion ability and no repeated RUN allowed.
+This completes the ordinary-employee SDK terminal subgate only. Allwriter/business
+typed rows/server-owned activation/paired UI/liveBuyer tests remain mandatory.
+Private screenshots saved only in thread visualization folder; not Git:
+r2-employee-terminal-native-155.png, r2-test156-closed-live149.png.
+No unchanged tests rerun; existing20focused/1606full retained. Static artifact
+c4bc72d remains valid through this evidence-only commit; do not regenerate it.
+

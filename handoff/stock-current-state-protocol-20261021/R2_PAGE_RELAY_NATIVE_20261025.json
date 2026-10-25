@@ -1,0 +1,24 @@
+{
+  "schema": "R2_PAGE_RELAY_NATIVE_PARITY_V1",
+  "candidateCodeCommit": "c4bc72d97341c10269a8bb0a993ff3576ccfdb9a",
+  "inspectionSurface": "Saved Wix editor source, ordinary visible editor Select All and Copy",
+  "codeWritesPerformed": false,
+  "pairedPageCount": 8,
+  "pages": [
+    { "system": "MASTER", "page": "Purchase Department", "candidatePath": "integration/wix/purchase-room-page.js", "nativeLength": 17569, "nativeSha256": "e8d4ef5865d1f2d6664742cc3b6f357250228e1d75978ec162b6e753036bcbd6", "candidateSha256": "e8d4ef5865d1f2d6664742cc3b6f357250228e1d75978ec162b6e753036bcbd6", "comparison": "EXACT_UTF8_LF" },
+    { "system": "MASTER", "page": "Warehouse Department", "candidatePath": "integration/wix/warehouse-department-page.js", "nativeLength": 10763, "nativeSha256": "2110ff53d32f98098fa02f1b26a1aa3796afcbedde136d3096e374fbfdaf1e60", "candidateSha256": "2110ff53d32f98098fa02f1b26a1aa3796afcbedde136d3096e374fbfdaf1e60", "comparison": "EXACT_UTF8_LF" },
+    { "system": "MASTER", "page": "Support Department", "candidatePath": "integration/wix/support-department-page.js", "nativeLength": 1824, "nativeSha256": "857dd3b73e501bbeafd2a68b7ca7311488f83f468ed80387cee0db0a7e04abe1", "candidateSha256": "857dd3b73e501bbeafd2a68b7ca7311488f83f468ed80387cee0db0a7e04abe1", "comparison": "EXACT_UTF8_LF" },
+    { "system": "MASTER", "page": "Finance Department", "candidatePath": "integration/wix/account-department-page.js", "nativeLength": 10564, "nativeSha256": "087a1a65191700327b5c95cb786a78ede8ec6f9f9ff0029cf5c233f6ae78b57a", "candidateSha256": "087a1a65191700327b5c95cb786a78ede8ec6f9f9ff0029cf5c233f6ae78b57a", "comparison": "EXACT_UTF8_LF" },
+    { "system": "FMCGMALAYSIA", "page": "Sales Room", "candidatePath": "sales-room/wix/sales-room-page.js", "nativeLength": 27195, "nativeSha256": "c3cdc2107424c74f069b6e3bf8b876358c4b40ecb5e0776f0a1febbc8cc08559", "candidateSha256": "c3cdc2107424c74f069b6e3bf8b876358c4b40ecb5e0776f0a1febbc8cc08559", "comparison": "EXACT_UTF8_LF" },
+    { "system": "FMCGMALAYSIA", "page": "Buyer Room", "candidatePath": "buyer-room/wix/buyer-room-page.js", "nativeLength": 13144, "candidateLength": 13145, "nativeSha256": "14dc162030d86bba3d81c765a97b3beacdee426635b0a73acc0ec53f47ccfca4", "candidateSha256": "070d00143d116d0f70c3be41159a6f4700ade23132a3c0cda69450a7469e8ae6", "comparison": "CANDIDATE_EQUALS_NATIVE_PLUS_ONE_FINAL_LF", "unilateralSyncPerformed": false },
+    { "system": "FMCGMALAYSIA", "page": "Catalogue", "candidatePath": "buyer-room/catalogue/wix/catalogue-page-v3.js", "nativeLength": 29346, "candidateLength": 29347, "nativeSha256": "747cad838cf4a150a1b84dc4308526903e03edc5892aaec538b3604043a848d5", "candidateSha256": "ae4ad0b7275a6ddf415b0e21d1df6c102f447197d4609e1e5bb372fcec9a1e55", "comparison": "CANDIDATE_EQUALS_NATIVE_PLUS_ONE_FINAL_LF", "unilateralSyncPerformed": false },
+    { "system": "FMCGMALAYSIA", "page": "Order Received popup", "candidatePath": "buyer-room/wix/order-received-lightbox.js", "nativeLength": 830, "candidateLength": 831, "nativeSha256": "8282d7d8e515fd077aae6965cf3f2da0ff278e4262ecd8f8590b53a633c63120", "candidateSha256": "d35528de6e5245872b7589596cc7af87035e1c609906e5459b3f87e224228936", "comparison": "CANDIDATE_EQUALS_NATIVE_PLUS_ONE_FINAL_LF", "unilateralSyncPerformed": false }
+  ],
+  "allFunctionalTextMatches": true,
+  "privateNativeCopiesExported": false,
+  "allBackendDependenciesVerifiedByThisInspection": false,
+  "publishedLiveParityProved": false,
+  "writerCoverageAccepted": false,
+  "activationAllowed": false,
+  "buyerFunctionalAcceptance": false
+}

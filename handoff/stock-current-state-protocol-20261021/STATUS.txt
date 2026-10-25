@@ -1,5 +1,44 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST PAGE PARITY 2026-10-25 — EIGHT REAL RELAYS ALREADY INSTALLED; NO OVERWRITE
+R2_PAGE_RELAY_NATIVE_20261025.json: fresh whole-source copies of MASTER Purchase/
+Warehouse/Support/Finance and Source Sales/Buyer/Catalogue/OrderReceived. Five
+EXACT LF hashes; three Source files each differ ONLY by one terminalLF, proven
+candidate===native+'\n' after preserving private native originals. Functional
+text of all8 matches c4bc72d relay manifest. No business page write or unilateral
+synchronization. These are SAVED editor copies, not all-backend/live/public proof.
+No repeat relay install needed at this version. Keep employee CLOSEDTest156,
+honest coverage EMPTY/ACTIVEOFF and pinned static artifact while finishing native
+all-writer/read/recovery/server-owned activation and actual release/Buyer path.
+
+LATEST NATIVE RESULT 2026-10-25 — BOTH EMPLOYEE TERMINALS VERIFIED; BOTH GATES CLOSED
+R2_EMPLOYEE_TERMINAL_NATIVE_20261025.json: actual Wix Logs INSPECT receipts for
+PURCHASE and WAREHOUSE each retainedRecords4/terminalReceiptVerifiedtrue/
+ordinaryStaffWriteAcceptedtrue/mutationAttemptedfalse. Correct build/source bound;
+durable terminal compares actor identity, all3data images and native method proof.
+No RUN replay/reset/delete;8new fixed rows retained. This is native employee SDK
+method acceptance only, NOT business/allwriter/activation/public Buyer coverage.
+Both code flags restored via exact single replacements; whole clipboard source
+readback returns original CLOSED hashes845165d1...f692 and58728f7f...5e67.
+ReleaseManager actual CLOSEDTest1560%, Live149100%; Source766/Test767 unchanged.
+New cua extension browser2 works after restart; browser policy stop is historical.
+Master existing tab51427484 + ReleaseManager51427584 kept for continuation. No
+Pages change/permission use/mainPublish/ACTIVE. Reuse pinned c4bc72d static package.
+
+HISTORICAL INTERMEDIATE RESUME — NEW TEST GATES WERE TEMPORARILY OPEN
+User returned after forced desktop restart. New cua browser2/tab51427484 reads
+and clicks succeeded. Full ordinary editor CtrlA/C clipboard readback (no hidden
+editor API) confirmed BOTH CLOSED original hashes845165d1...f692/58728f7f...5e67.
+Normal Start Coding resumed same-account editor. Two unique Find/Replace patches
+only: R2_EMPLOYEE_TERMINAL_ENABLED=true; PAGE_ENABLED=true. Whole after-images
+equal exact single replacements: backend451c3e96906c027d01d9428ef63237b26f2decaff5d1d4ba51f4eb56233b3bcd,
+page28f5d7d28caf24d7491b6f12ffaff60012ba4adda5c5c4cc1ebe4404f8d60c08.
+Old intake/employee gates remainfalse. No RUN/INSPECT/new fixture yet. Create Test
+Site menu invoked ONCE; release receipt pending, do not assume155 or retry create.
+ReleaseManager51427584 initially Live149100%/Test1540%; currently reloading read-only.
+This intermediate state is superseded by the CLOSEDTest156 result above.
+These diagnostic gates never granted businessACTIVE.
+
 LATEST STATIC PACKAGE 2026-10-25 — READY LOCAL ARTIFACT ONLY
 R2_STATIC_PACKAGE_20261025.json: committed code c4bc72d97341c10269a8bb0a993ff3576ccfdb9a
 staged outside checkout as r2-20261025-c4bc72d.112static assets+1manifest all match
