@@ -310,3 +310,30 @@ ref, not relabel this artifact as a newer commit or claim it installed backend.
 Production recovery/current native state unchanged. Continue genuine independent
 readiness/allwriter work while control unavailable, not cosmetic preview work or
 another copy of completed tests. No new required user action notification.
+
+2026-10-25 11:08 MYT RESTART READBACK / NATIVE INPUT STILL UNCONFIRMED
+User restarted the desktop chat app. Dedicated browser extension API is no longer
+available in this session; the supported Windows computer-use skill was read in
+full (current 26.1021.31345 including API/guidance/confirmations). Native Chrome
+window66680/MASTER Studio is readable via the desktop API, not proof that the old
+extension debugger reattached. Existing code panel still shows the old coverage
+line immediately followed by try, with the unmodified retained borrowing fixture.
+This visible excerpt is NOT a whole-file equality or confirmed gate closure.
+
+No refresh, navigation, Replace, function Run, code typing or Publish performed.
+Fresh indexed editor click failed before input: coordinate input geometry is
+unavailable. One fresh screenshot-backed coordinate click at visible editor did
+not confirm editor focus: AX still reports address bar. Stop that input path;
+do not issue Ctrl+A, type, Replace or Run while focus is wrong. No inference about
+Wix auth/safety/root cause; desktop screenshot includes another app overlay, which
+was not controlled. Whole native source comparison and diagnostic gate closure
+remain outstanding. No SEED/BORROW/recovery replay or business writes occurred.
+
+After restart the chat's writable workspace is only its visualization directory,
+not this checkout. Ordinary git status was denied/incomplete; properly approved
+read-only escalation confirmed tracked worktree CLEAN at cb1c0af. Do not treat an
+incomplete ordinary-sandbox result as repository corruption or change Git config.
+Local full1606result remains reusable; no unchanged tests rerun. Native activation
+factory has no deployed server-owned verifier; callback booleans or synthetic
+fixture coverage cannot count as actual installation/all-writer acceptance.
+Original business ACTIVE OFF, two live versions/Pages/public tests unchanged.
