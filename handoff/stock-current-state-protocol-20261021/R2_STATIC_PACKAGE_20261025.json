@@ -1,0 +1,21 @@
+{
+  "schema": "R2_STATIC_PACKAGE_VERIFICATION_V1",
+  "codeCommit": "c4bc72d97341c10269a8bb0a993ff3576ccfdb9a",
+  "package": "C:/FMCG-WIX-LOCAL/release-candidates/r2-20261025-c4bc72d",
+  "manifest": "isolated-stock-release.json",
+  "manifestSha256": "c350a3a4c5d110632901bb67adeeb17f7af3e800587e1039a199873129f54a83",
+  "resources": 112,
+  "filesIncludingManifest": 113,
+  "allHashesMatch": true,
+  "allAssetsMatchRecordedCommit": true,
+  "previousPackage": "r2-20261025-bb72a0b",
+  "changesSincePreviousPackage": ["purchase-live/borrow-approval.css"],
+  "reviewFixturesIncluded": false,
+  "backendOrHandoffIncluded": false,
+  "permissionsChanged": false,
+  "deployed": false,
+  "backendInstalled": false,
+  "wixPublished": false,
+  "currentStockActivated": false,
+  "realBorrowingVerified": false
+}

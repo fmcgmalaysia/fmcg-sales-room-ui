@@ -1,5 +1,14 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST STATIC PACKAGE 2026-10-25 — READY LOCAL ARTIFACT ONLY
+R2_STATIC_PACKAGE_20261025.json: committed code c4bc72d97341c10269a8bb0a993ff3576ccfdb9a
+staged outside checkout as r2-20261025-c4bc72d.112static assets+1manifest all match
+recorded commit and disk hashes; only borrow-approval.css differs from bb72a0b.
+Manifest SHA c350a3a4c5d110632901bb67adeeb17f7af3e800587e1039a199873129f54a83.
+Local exercise/backend/handoff/CSV excluded. No permission/deploy/native/ACTIVE
+change. Reuse this package after documentation-only commits; do not rebuild it
+merely for the later handoff commit. Actual Pages/Wix/native gates still pending.
+
 LATEST 2026-10-25 — INTERACTIVE LOCAL SPLIT/BORROW EXERCISE DELIVERED; NOT WIX
 Read OPERATION_PRACTICE_20261025.txt. User prioritizes actual clickable interface.
 New standalone preview/split-borrow-practice.html uses actual candidate Purchase/

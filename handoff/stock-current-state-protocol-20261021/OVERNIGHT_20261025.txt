@@ -624,3 +624,20 @@ Original native terminal gates CLOSED, ACTIVE off/coverage EMPTY. No new CMS/ACL
 Pages grant/dispatch/Test update/Publish. Main149/766/Test154/767 last receipts.
 Deliver local exercise honestly; continue true staff/allwriter/verifier/paired
 Wix/Pages/Buyer path. Precise temporary Pages branch grant already approved.
+
+2026-10-25 09:52 UTC HEARTBEAT — ACTUAL STATIC RELEASE PACKAGE PREPARED
+The prior package bb72a0b predated the demonstrated dialog CSS correction; this
+is a real static change, not a documentation-only rebuild. Reused framework,
+native receipts and all unchanged test outputs. Normal stage-isolated-cohort.cjs
+verified every source asset against committed c4bc72d97341c10269a8bb0a993ff3576ccfdb9a
+then created NEW outside-checkout folder C:/FMCG-WIX-LOCAL/release-candidates/
+r2-20261025-c4bc72d. No original package overwritten/deleted. Separate complete
+disk audit confirms112asset hashes plus one manifest; no unlisted extra files.
+Compared with previous112assets: only purchase-live/borrow-approval.css changed.
+Manifest SHA256c350a3a4c5d110632901bb67adeeb17f7af3e800587e1039a199873129f54a83.
+R2_STATIC_PACKAGE_20261025.json preserves the exact artifact. Standalone exercise,
+backend/handoff/private evidence/CSV are absent. No Pages rule, dispatch, release,
+native UI request, test fixture or ACTIVE mutation attempted. Native URL-policy
+stop remains respected; user needs no new action for this background preparation.
+Next handoff-only commit does not invalidate this pinned code package. Do not
+regenerate solely for a new documentation hash or call local staging publication.
