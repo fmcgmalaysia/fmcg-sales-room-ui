@@ -75,6 +75,11 @@ async function verifyR2BorrowRepayment({ items, runtime, original, hash, copy, i
     readTransfer: async (_company, id) => store.read(journal, hash(company, 'STOCK_TRANSFER_CURRENT', id)),
     now: () => new Date('2026-10-25T04:00:00Z') });
   const coverage = Object.fromEntries(['RECEIPT','ALLOCATION','BORROWING','SALES_DEMAND','PURCHASE_SOURCE','PURCHASE_PLAN','PURCHASE_TASK','STOCK_EXCEPTION','STOCK_RESOLUTION','PACKING','WAREHOUSE_PREPARATION','SHIPMENT','ORDER_INTAKE','ORDER_UPDATE','COST_REFERENCE','MARGIN_REFERENCE','SHIPMENT_PLAN','QUANTITY_CASE','PURCHASE_ORDER_RECORD','ACCOUNT_PURCHASE_RECORD'].map(name => [name, { verified: true, build }]));
+  // CMS may reorder object keys. Rebuild ONLY the original fixed JSON field
+  // order for its already-retained hash; reject extra/missing fields and never
+  // replace the retained version or accept changed values as a new request.
+  const orderedFields = (row, fields) => { if (!row || Array.isArray(row) || Object.keys(row).length !== fields.length || fields.some(key => !Object.prototype.hasOwnProperty.call(row, key))) throw Error('Retained fixture command shape conflict'); return Object.fromEntries(fields.map(key => [key, row[key]])); };
+  const receiptImage = request => { const row = orderedFields(request, ['requestId','stockProtocol','stockBuild','stockGeneration','input']); row.input = orderedFields(row.input, ['id','version','action','lines']); if (!Array.isArray(row.input.lines) || row.input.lines.length !== 1) throw Error('Retained fixture line scope conflict'); row.input.lines = row.input.lines.map(line => orderedFields(line, ['taskId','accepted','rejected','kind','reason','resolveIssue'])); return row; };
   try {
     if (await store.read(journal, protocol.ids.lockId)) throw Error('Unexpected fixture lock; retain without removal');
     if (input.step === 'SEED') {
@@ -101,7 +106,9 @@ async function verifyR2BorrowRepayment({ items, runtime, original, hash, copy, i
       if (!expected || JSON.stringify([product.onHand,total('A'),total('B'),relation[0]?.details.relation.repaid || 0]) !== JSON.stringify(expected)
         || relation.length !== (control.generation ? 1 : 0) || relation.some(row => row.details.relation.quantity !== 30)
         || control.generation === 3 && relation[0].status !== 'CLOSED') throw Error('Borrowing/repayment conservation failed');
-      return report(true, { stage: control.generation === 3 ? 'FINAL_VERIFIED' : 'CHECKPOINT_VERIFIED', generation: control.generation,
+      const retainedCommand = await store.read(journal, hash(company, 'FIXTURE_COMMAND', 'RECEIVE_PARTIAL'));
+      const retainedCommandIdentity = retainedCommand ? { stored: retainedCommand._version, observed: hash(retainedCommand.details?.request), originalFieldOrder: hash(receiptImage(retainedCommand.details?.request)) } : null;
+      return report(true, { stage: control.generation === 3 ? 'FINAL_VERIFIED' : 'CHECKPOINT_VERIFIED', generation: control.generation, retainedCommandIdentity,
         onHand: product.onHand, borrowerAllocated: total('A'), lenderAllocated: total('B'), repaid: relation[0]?.details.relation.repaid || 0,
         debtClosed: relation[0]?.status === 'CLOSED', receiptCount: (await list(journal)).filter(row => row.action === 'WAREHOUSE_RECEIPT_SAVED').length });
     }
@@ -126,8 +133,9 @@ async function verifyR2BorrowRepayment({ items, runtime, original, hash, copy, i
             kind: partial ? 'PARTIAL' : 'DELIVERY', reason: partial ? 'Remaining delivery later' : '', resolveIssue: !partial }] } };
         retained = await store.insert(journal, { _id: commandId, company, _version: hash(request), action: 'FIXTURE_COMMAND', details: { request } });
       }
-      if (retained.action !== 'FIXTURE_COMMAND' || retained._version !== hash(retained.details?.request)) throw Error('Retained fixture command identity conflict');
-      outcome = await runtime.createCurrentWarehouseReceiptSave({ company, items: logicalItems, store, protocol, coverage, authorityDependencies: deps('WAREHOUSE') })(copy(retained.details.request));
+      const originalRequest = receiptImage(retained.details?.request);
+      if (retained.action !== 'FIXTURE_COMMAND' || retained._version !== hash(originalRequest)) throw Error('Retained fixture command identity conflict');
+      outcome = await runtime.createCurrentWarehouseReceiptSave({ company, items: logicalItems, store, protocol, coverage, authorityDependencies: deps('WAREHOUSE') })(copy(originalRequest));
     }
     const after = await protocol.readControl();
     return report(true, { stage: outcome.pending ? 'CHECKPOINT_CONFIRMED' : 'OPERATION_COMPLETE', outcome,

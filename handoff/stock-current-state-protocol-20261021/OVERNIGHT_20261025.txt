@@ -193,3 +193,61 @@ SEED terminal native receipt subsequently CONFIRMED: oktrue stageSEEDED generati
 queries3 inserts6 patches0 deletes0. Borrow step invoked next, terminal pending.
 No business ACTIVE, Pages deployment, site Test refresh/main Publish or Buyer
 order yet. No changes to protected original workflows or old UNKNOWN fixtures.
+
+SUBSEQUENT NATIVE BORROW SUCCESS / RETAINED RECEIPT CHECK
+User asked "能继续吗" after intentional interruption; resumed same task. Full
+fresh native read confirmed old CLOSED image intact before opening test-only gate.
+No new test permission needed. SEED above is confirmed, never seed again.
+BORROW request6c930001-2026-4250-8250-000000000001 reached known checkpoints:
+BEFORE4/6, APPLY2/6, APPLY6/6, VERIFY4/6; same digest/planHash throughout.
+Then native OPERATION_COMPLETE stockGeneration1 pendingnull. Actual INSPECT:
+queries7 writes0, onHand100 borrowerAllocated30 lenderAllocated70 repaid0,
+debtClosedfalse receiptCount0; conservation VERIFIED, no physical stock invented.
+These fixed test commands use synthetic server-owned actors, NOT native employee
+or R2 business-table acceptance. Codebb27f1c pushed successfully(ab7b6bf..bb27f1c).
+
+RECEIVE_PARTIAL invoked ONCE: native terminal okfalse, queries4 inserts1 patches0
+deletes0, "Retained fixture command identity conflict". Thus only the immutable
+fixture command was inserted; no Warehouse receipt/current-stock commit started.
+Do not reseed, reborrow, delete/adopt records or claim receipt/repayment accepted.
+Local counterexample reproduced EXACT same failure when SDK reordered JSON keys.
+Minimum LOCAL diagnostic-only fix rebuilds exact original request field order
+before comparing its EXISTING hash, rejects missing/extra fields or changed values,
+and preserves saved request/version. No business runtime/coordinator patch.
+Read-only INSPECT now reports stored/observed/originalFieldOrder command digests
+to verify this inference natively BEFORE continuing RECEIVE_PARTIAL.
+Focused60pass0fail1111.8888ms includes actual generated R2 replay, reordered keys,
+changed quantity, injected fields, UNKNOWN single-write stop and original workflows.
+Final fullstock1606pass0fail0skip0cancelled62693.9667ms AFTER this fix/tests; retained
+C:/FMCG-WIX-LOCAL/tmp-r2-borrow-repayment-full-tests-20261025.txt. Reuse it unchanged.
+
+Native minimal fix NOT CONFIRMED INSTALLED. Prepared3unique edit groups against
+full-native OPEN hash971e3426...f2860: helper at coverage line, read-only INSPECT
+metadata, retained-request check/use. First group UI action timed out30s and CUA
+kernel reset. Could have only filled Find/Replace or partially applied; DO NOT
+assume no change/success or resend. Full native code read required before editing.
+The dedicated test gate was true at last CONFIRMED source read; closure is NOT
+confirmed. Public main/Test builds were not refreshed, no public test interface
+for this module, no automated invocation, Admin-only fixed diagnostic, no deletes.
+Close it once actual editor access returns. Business ACTIVE remains OFF.
+
+After CUA reset, actual Chrome extension browserID changed3=>2; old3 now IAB.
+Fresh inventory retained tab51427484. Selected actual Chrome2 by returned identity,
+not another profile/browser. getTab returned "Debugger unattached". Asked once for
+extension reconnect; user answered "已经链接". Subsequent getTab STILL unattached;
+fresh user.openTabs could list original editor, documented user.claimTab also
+returned unattached. Stop this path, no new-tab/refresh/reinstall/control bypass.
+No further browser write/test invocation since the timeout. User-facing distinction:
+extension inventory reachable, operational debugger connection unavailable; not a
+claimed security refusal or defect diagnosis. Other background work can proceed.
+Native current file name correct r2BorrowRepaymentAcceptance.web.js. This entry
+supersedes earlier "borrow terminal pending" text. Retained fake business state
+is generation1 with approved borrowing; partial receipt not yet committed.
+
+Next exact recovery: restored editor fresh full read => compare old OPEN, new
+OPEN/CLOSED and possible3patch combinations => minimum remaining diagnostic edit;
+native INSPECT confirms request digest originalFieldOrder equals stored; then
+same retained RECEIVE_PARTIAL, fixed RECEIVE_REST, readonly final conservation;
+close gate with exact full equality. No repeated SEED/BORROW or UNKNOWN fixtures.
+Then remaining genuine allwriter/paired/readiness/activation/UI/public gates;
+never fabricate writerCoverage to unblock Buyer orders. Packing deferred.

@@ -45,3 +45,25 @@ test('unknown insert response stops the fixture without a second write, delete, 
   assert.equal(attempts, 1); assert.equal(f.rows.size, 1);
   const before = copy([...f.rows]); assert.equal((await f.run('SEED')).ok, false); assert.deepEqual(copy([...f.rows]), before); assert.equal(attempts, 1);
 });
+test('retained fixture receipt identity tolerates SDK object-key reordering without changing its immutable request', async () => {
+  const f = fixture(), insert = f.items.insert;
+  const reorder = value => Array.isArray(value) ? value.map(reorder) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().reverse().map(key => [key, reorder(value[key])])) : value;
+  f.items.insert = async (...args) => { const row = reorder(await insert(...args)); f.rows.set(row._id, copy(row)); return row; };
+  assert.equal((await f.run('SEED')).ok, true);
+  for (const step of ['BORROW','RECEIVE_PARTIAL','RECEIVE_REST']) {
+    let result, rounds = 0;
+    do { result = await f.run(step); assert.equal(result.ok, true, JSON.stringify(result)); assert.ok(++rounds < 30); } while (result.pending);
+  }
+  assert.equal((await f.run('INSPECT')).stage, 'FINAL_VERIFIED');
+});
+test('retained fixture still rejects changed receipt values or injected fields without patching stock', async () => {
+  for (const change of [request => { request.input.lines[0].accepted = 21; }, request => { request.input.lines[0].extra = true; }]) {
+    const f = fixture(); await f.run('SEED'); let result;
+    do { result = await f.run('BORROW'); assert.equal(result.ok, true); } while (result.pending);
+    const insert = f.items.insert;
+    f.items.insert = async (...args) => { const row = await insert(...args); if (row.details?.action === 'FIXTURE_COMMAND') { change(row.details.details.request); f.rows.set(row._id, copy(row)); } return row; };
+    result = await f.run('RECEIVE_PARTIAL'); assert.equal(result.ok, false); assert.match(result.error, /command (identity|shape) conflict/);
+    assert.equal(result.operationsAttempted.patches, 0); assert.equal(result.retainRequest, true);
+  }
+});
