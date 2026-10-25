@@ -1,5 +1,23 @@
 CURRENT 2026-10-24 — ISOLATED FRESH COHORT AUTHORIZED; SIXTEEN NATIVE EMPTY TABLES CREATED; NOT RELEASED
 
+LATEST TEMPORARY TEST STATE — NEW PURCHASE WORKFLOW GATES OPEN, NO TEST RUN YET
+Read R2_PURCHASE_WORKFLOW_20261025.json. NEW fixed StockProtocolTest prefix
+SPT-R2PURCHASEFLOW-20261025-a479: only. Native backend OPEN990a5848...a5620f and
+page OPEN4ec921dd...173c56 both entire saved sources exact; old intake/employee
+page gates remainfalse. No CreateTest/SEED/INTAKE/PLAN/PO/native write yet at this
+append. Main149/Test156 unchanged; business coverageEMPTY/ACTIVEOFF. Next one
+CreateTest, actual0%revision receipt, then explicit blank?siteRevision=<actual>
+&r2PurchaseFlow=20261025-a479 original-member run. Dedicated page guards SSR,
+prior uncertain attempts and wrong builds; no reset/reseed/lock removal.9local
+tests pass630.8305ms using actual isolated R2 factories: demand100/procure90/PO,
+physical0, original employee grant before elevation, lost patch reply after-image,
+known interruption fixed request and transport-unknown reload stops. Local tests
+are NOT native acceptance. This is preactivation real-staff native fixture only,
+NOT real Buyer/cross-site transport acceptance. Close page THEN backend and
+refresh Test0% after completion; exact CLOSED hashes are in the JSON. No Packing,
+Source, Pages, real dispatch/invoice or employee permission changes.7eb6647 already
+synced; subsequent new workflow files not yet committed at this append.
+
 LATEST 2026-10-25 — REAL NATIVE ACTIVATION EVIDENCE CHECKER SAVED; NOT READY
 Read NATIVE_ACTIVATION_VERIFIER_20261025.json. New server-owned verifier feeds the
 existing one-CAS activation factory in tests; actual Admin endpoint is READ-ONLY,
