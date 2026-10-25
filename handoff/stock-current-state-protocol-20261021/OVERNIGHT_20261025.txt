@@ -439,3 +439,54 @@ borrow->partial20->rest80->closed-debt native fixture composition is now complet
 Still not real employee/business tables/UI/public release acceptance. Continue
 new audit-schema reader installation and actual allwriter/paired/release gates;
 never fill coverage from this synthetic fixture. Both live sites/Pages unchanged.
+
+AUDIT READER NATIVE INSTALL IN PROGRESS — DO NOT PUBLISH PLACEHOLDER
+New absent-name check passed, created exactly r2activationSchema.web.js via Add
+web module. Not an existing/protected file. Native code-editor set_value4553chars
+inserted the intended source before Wix default template instead of replacing
+the whole model; UI value/AX initially stale. Ctrl+A actual selection reveals
+intended source plus original multiply example. No reader function invoked, no
+site/Test/main Publish. Correct ONLY this newly created file with normal exact
+Find/Replace whole-new-file content, then full readback before any execution.
+Do not repeat code-editor set_value or long typeText; Find/Replace field set_value
+has already yielded canonical-exact source on the previous diagnostic. Native
+reader target canonical SHA256e28d3336d9a918a455b251b3246b89f5325ade27c0cbfc3231ee488407cf251a,
+4553characters. No production code/ACL/employee/data mutation. Borrow diagnostic
+remains CLOSED with zero-operation receipt, completed fixture never re-executed.
+
+AUDIT READER SOURCE NOW EXACT — TEMPLATE RESIDUE RESOLVED BEFORE ANY RUN
+Normal Find/Replace whole-content match applied ONCE to this NEW own file only,
+not an existing module; exact4553char candidate supplied in Replace field. Native
+Find selection readback confirms all19disjoint250char ranges match canonical
+sourcee28d3336...251a, including sole Permissions.Admin export and no multiply/
+default example. UI selected_text omits a selected range's terminal LF and can
+summarize long MULTILINE selections with an ellipsis even below900chars. Therefore
+use250char ranges for formatted files; never treat condensed selection as source.
+All ranges verified, only observed terminal-LF omission normalized; short raw
+content not guessed/reformatted. No native execution occurred before exact check.
+Browser window now1037px wide; fresh screenshot coordinates used, not old1536px.
+Wix shows Other users have stopped editing/Start Coding (ownership state only).
+New inspector gutter clicked once to open parameter panel, await actual panel;
+no metadata operation yet. Do not claim schema fields present or missing natively.
+
+Audit-reader inner Set Parameters confirmed inspectActivationAuditSchema(input).
+Code-editor set_value is not model replacement: initial parameter input included
+both own JSON and default null input. Never ran malformed input. Ctrl+A observed
+only that short parameter JSON, then short11-character type_text replaced it;
+fresh native Value exactly{"input":{}}. This is NOT a repeat of stopped long-text
+typing. Actual inner Run21893 invoked ONCE after parameter and full-source check.
+Read-only metadata terminal pending. No item/index/elevation/schema mutation.
+
+NATIVE AUDIT SCHEMA READ COMPLETE — EXACT8MISSING TEXT FIELDS
+Native R2ACTIVATION_SCHEMA_RECEIPT returned activationAuditSchemaMatchesfalse,
+two matching metadata observations per table,14required fields/table. Both
+R2NCTActivity and R2NCTActivity1 lack writerBuild, activationRequestId,
+activationMemberId,activationEvidenceDigest, all expectedTEXT. No type conflicts.
+Metadata hashes5b4222be7834c58fc2d4cd905b0ae9c8adbb5ccca310246d3fb99062747bf398
+and737c061f022767ab5dc8544b55b397409b0362e3d9c343500ca1b7d2ed7dde53.
+No business rows/index API read, no field/ACL/record mutation. This is now actual
+native evidence, not a guessed missing-field conclusion from the old121field
+contract. Next scoped install: add these8TEXT fields via existing CMS admin UI,
+no new mutation endpoint, permission/index changes or old table edits; then repeat
+the read-only verifier. New reader native source exacte28d3336...251a, no template.
+Borrow native fixture COMPLETE/CLOSED; no more completed-command replay.
