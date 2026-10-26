@@ -65,6 +65,7 @@
     if(hasSources){row.dataset.draftHasSources='true';receipt.querySelectorAll('button').forEach(button=>button.remove());}
    }
    if(!row.hasAttribute('data-source-id')||receipt.querySelector('.draft-receipt-shortfall'))continue;
+   if(receipt.querySelector('.receipt-stopped'))continue;
    const ordered=count(row.cells[5]),value=receipt.querySelector('.quantity-reference'),received=count(value||receipt);
    if(!Number.isSafeInteger(ordered)||!Number.isSafeInteger(received)||received<0||ordered<=received)continue;
    const button=document.createElement('button');button.type='button';button.className='draft-receipt-shortfall';button.textContent=String(received);

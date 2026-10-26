@@ -55,3 +55,18 @@ test('receipt corrections append history and cannot undercut allocated stock or 
  f.po.invoiceChecked=true;const locked=await next();await assert.rejects(f.operations.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:locked}),/financially locked/);
  assert.equal((await f.readOrders('NCT'))[0].lines[0].accepted,90);
 });
+
+for(const response of ['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'])test('STOP '+response+' locks fresh and stale receipt and correction without changing actual stock',async()=>{
+ const f=fixture();await f.operations.save({...f.base,input:await f.input(80,'SHORT')});const stale=await f.input(20,'DELIVERY');stale.lines[0].resolveIssue=true;
+ f.po.quantityCases=[{id:'CASE',kind:'RECEIPT',taskId:'T',decision:{supplierDeliveryDecision:'STOP',supplierDecision:response,revision:'STOP1',at:'2026-10-26T00:00:00Z'}}];
+ const row=(await f.readOrders('NCT'))[0];assert.equal(row.receivingStoppedWaiting,true);assert.equal(row.lines[0].receivingStoppedWaiting,true);assert.equal(row.workroomStatus,'COMPLETE');assert.equal(row.status,'ISSUE');assert.equal(row.lines[0].accepted,80);assert.equal(row.lines[0].planned,100);assert.notEqual(row.version,stale.version);
+ await assert.rejects(f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:stale}),/changed/);
+ for(const action of ['RECEIVE','CORRECT'])await assert.rejects(f.operations.save({...f.base,requestId:action==='RECEIVE'?'33333333-3333-4333-8333-333333333333':'44444444-4444-4444-8444-444444444444',input:{...stale,version:row.version,action}}),/stopped waiting/);
+ assert.equal((await f.readOrders('NCT'))[0].history.length,1);
+});
+test('mixed PO stop locks only the affected source line',async()=>{
+ const f=fixture();f.tasks.push({...f.tasks[0],id:'T2',sourceLineId:'L2'});f.po.taskIds.push('T2');
+ f.po.quantityCases=[{kind:'RECEIPT',taskId:'T',decision:{supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED',revision:'D',at:'2026-10-26T00:00:00Z'}}];
+ const row=(await f.readOrders('NCT'))[0];assert.equal(row.receivingStoppedWaiting,false);assert.notEqual(row.workroomStatus,'COMPLETE');assert.equal(row.lines[0].receivingStoppedWaiting,true);assert.equal(row.lines[1].receivingStoppedWaiting,false);
+ const input={id:'PO',version:row.version,action:'RECEIVE',lines:[{taskId:'T2',accepted:100,rejected:0,kind:'DELIVERY',reason:''}]};await f.operations.save({...f.base,input});assert.equal((await f.readOrders('NCT'))[0].lines[1].accepted,100);
+});
