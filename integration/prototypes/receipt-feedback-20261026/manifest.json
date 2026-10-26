@@ -1,0 +1,55 @@
+{
+  "build": "20261026-receipt-feedback-v1",
+  "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
+  "files": [
+    {
+      "target": "purchase-live/active-layout.css",
+      "sha256": "a490c12f13125a429c719620034d0e85985ea6a7811c89a89aefd1ccff76a9a6"
+    },
+    {
+      "target": "purchase-live/active-layout.js",
+      "sha256": "518673462d12a3e032d6e092bd017e3e9af19077534030c07ed1595d10d359d8"
+    },
+    {
+      "target": "purchase-live/app.js",
+      "sha256": "2781156672214c5be79e5bc4cc54817a6000ebfc5c7f092ab2c5e0b41ef68256"
+    },
+    {
+      "target": "purchase-live/index.html",
+      "sha256": "1ae46c58f6d93670e07c0333c633e6197748d6e70dfad1f541849accd58a5afb"
+    },
+    {
+      "target": "warehouse-room/app.js",
+      "sha256": "58dee9c9356a862485b7eb80e04c3058fac7cd42f1066f39f15aafd5c47691a7"
+    },
+    {
+      "target": "warehouse-room/index.html",
+      "sha256": "3936ba080c7ac3a0dcde1bfc56e96e29b17b1c6c759c4ad769b807810e2ef312"
+    },
+    {
+      "target": "warehouse-room/workroom.css",
+      "sha256": "62942dbcb771ca1e56476b02dcfdfba2fee3d89892b6450fd17f4e943cab9f33"
+    },
+    {
+      "target": "warehouse-room/workroom.js",
+      "sha256": "b6be08b0a6d5bb33a193d5f514c3ae2b14b65e01428012b3dda0447dac808619"
+    },
+    {
+      "target": "account-room/payment-layout.js",
+      "sha256": "ebfaa2bc4ba241a4f3284d0e342b9163be222f7cae73821cb3d1419d74e063ed"
+    },
+    {
+      "target": "account-room/payment-layout.css",
+      "sha256": "f61209036c691a9ead27d306a8771ad1a1db57a11a933ec2fa66e757cb2c2ad2"
+    },
+    {
+      "target": "account-room/index.html",
+      "sha256": "184cb79f58728f4fbdf2a53d44628e654608d3b852e8ea040409b670429622aa"
+    }
+  ],
+  "backendExpectedSha256": {
+    "purchaseQuantityCases.js": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
+    "warehouseReceiving.js": "1f0d1abcee72208624291fe8f5851d28d1c2661d8474f3696168ba474d5dd063",
+    "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa"
+  }
+}

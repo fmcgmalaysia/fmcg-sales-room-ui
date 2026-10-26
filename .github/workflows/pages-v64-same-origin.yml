@@ -14,6 +14,7 @@ on:
           - stock-interface
           - isolated-stock-interface
           - purchase-layout-only
+          - receipt-feedback-only
 
 permissions:
   contents: read
@@ -45,7 +46,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -69,6 +70,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-layout-site', runner.temp) }}
+
+      - name: Prepare scoped receipt feedback on the approved live baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'receipt-feedback-only'
+        run: node integration/prototypes/receipt-feedback-20261026/stage.cjs "$RUNNER_TEMP/receipt-feedback-site"
+
+      - name: Upload scoped receipt feedback resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'receipt-feedback-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/receipt-feedback-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment
