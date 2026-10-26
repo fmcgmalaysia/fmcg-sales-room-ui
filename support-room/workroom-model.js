@@ -4,9 +4,10 @@
   const key=(...parts)=>JSON.stringify(parts);
   const sum=(rows,field)=>rows.reduce((n,row)=>n+(finite(row[field])??0),0);
   // Read-only presentation. Missing reconciliation is never treated as zero paid.
-  function project(fulfilment,packing){
+  function project(fulfilment,packing,bookingResult){
     if(!fulfilment||!['NCT','GHR'].includes(fulfilment.company)||!Array.isArray(fulfilment.lines)||!Array.isArray(fulfilment.customers))throw Error('Customer orders are unavailable.');
     if(packing&&packing.company!==fulfilment.company)throw Error('Company changed. Refresh the workroom.');
+    if(bookingResult&&bookingResult.company!==fulfilment.company)throw Error('Company changed. Refresh the workroom.');
     const customerNames=new Map(fulfilment.customers.map(row=>[row.id,row.name]));
     const shipments=(fulfilment.shipments||[]).filter(row=>row.status!=='CANCELLED');
     const orders=new Map(),seen=new Set();
@@ -31,7 +32,7 @@
         orders.get(id).shipments.push(shipment);
       }
     }
-    const result=[...orders.values()].map(order=>({...order,items:new Set(order.lines.map(line=>key(line.barcode,line.packing))).size,
+    const result=[...orders.values()].map(order=>({...order,booking:bookingResult?.bookings?.find(row=>row.customerId===order.customerId&&row.orderId===order.orderId)||null,bookingAvailable:Boolean(bookingResult),items:new Set(order.lines.map(line=>key(line.barcode,line.packing))).size,
       orderQty:sum(order.lines,'orderQty'),loadedQty:packing?sum(order.lines,'loadedQty'):null,
       progress:order.lines.length?'In Progress':order.shipments.length&&order.shipments.every(row=>row.status==='DISPATCHED')?'Dispatched':'Awaiting Shipment',
       eta:[...new Set(order.lines.map(line=>line.estimatedShipmentDate).filter(Boolean))].join(' · ')}));
