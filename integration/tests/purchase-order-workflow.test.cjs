@@ -195,3 +195,10 @@ test('invalid or stale CN case is refused before allocating a file',async()=>{
   const row=(await f.operations.list('NCT',f.staff))[0];await assert.rejects(f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'DOCUMENT',type:'CN',date:'',number:'CN1',reason:'CN',declaredCents:5000,base64:Buffer.from('%PDF-test').toString('base64'),...extra}}),/CN reason|shortfall decision/);assert.equal(calls,0);
  }
 });
+
+for(const type of ['PO','PI','SO','DO','INV','CN'])test(type+' upload uses server date without client input and retries without duplicating the file',async()=>{
+ let calls=0;const f=fixture(async input=>{calls++;return input.action==='ALLOCATE'?{fileId:'AUTO-'+type}:{...input,ok:true};});const row=(await f.operations.list('NCT',f.staff))[0];
+ const input={id:row.id,version:row.version,action:'DOCUMENT',type,number:type+'-AUTO',reason:'Upload document',declaredCents:1000,...(type==='CN'?{cnReason:'DISCOUNT_REBATE'}:{}),base64:Buffer.from('%PDF-1.4 date fixture').toString('base64')};
+ await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});const current=(await f.operations.list('NCT',f.staff))[0],doc=current.documents[0],audit=current.history.find(e=>e.action==='SUPPLIER_DOCUMENT_UPLOADED');
+ assert.equal(calls,2);assert.equal(current.documents.length,1);assert.equal(doc.date,'2026-10-11');assert.equal(doc.uploadedAt,'2026-10-11T02:00:00.000Z');assert.equal(audit.changes.date,doc.date);assert.match(doc.name,/^2026-10-11 SUP /);assert.equal(current.invoiceChecked,false);assert.equal(current.canArchive,false);
+});
