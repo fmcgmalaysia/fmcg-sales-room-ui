@@ -99,6 +99,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:journalInput},prepare:async()=>{
       const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
+      if(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'&&!currentDocs(row).some(doc=>doc.type==='PO'))throw Error('Upload the P.O. before uploading a pay slip.');
       const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason)||(input.action==='PLAN'?'Payment plan updated':'')||(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'?'Payment recorded':'');
       if(!reason||reason.length>2000)throw Error('Enter a reason or reconciliation note.');
       const audit={id:operationId(company,requestId,staff.memberId,'FINANCE'),action:'ACCOUNT_'+input.action,time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:{}};
@@ -217,6 +218,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       if(!current?.details?.audit?.some(event=>event.id===plan.audit.id)){
         const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);
         if((current?operationId(current):null)!==plan.expected||row?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(row)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');
+        if(plan.upload?.type==='PAYMENT'&&!currentDocs(row).some(doc=>doc.type==='PO'))throw Error('Upload the P.O. before uploading a pay slip.');
         if(plan.upload){
           const receipt=await documentService({...plan.upload,base64:uploadBase64});
           if(receipt?.ok!==true||receipt.fileId!==plan.upload.fileId||receipt.sha256!==plan.upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.upload.name)throw Error('Document upload receipt mismatch.');

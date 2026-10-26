@@ -3,7 +3,7 @@ const {projectAccountSettlement,createAccountSettlementOperations}=load('account
 const {projectPurchaseOrders}=load('purchaseOrderWorkflow.js');
 const clone=x=>JSON.parse(JSON.stringify(x));
 function fixture(){
- const docs=[{fileId:'INV1',type:'INV',linked:true,sha256:'abc',number:'I1',date:'2026-10-11'},{fileId:'DO1',type:'DO',linked:true,sha256:'def'}];
+ const docs=[{fileId:'INV1',type:'INV',linked:true,sha256:'abc',number:'I1',date:'2026-10-11'},{fileId:'DO1',type:'DO',linked:true,sha256:'def'},{fileId:'PO1',type:'PO',linked:true,sha256:'po'}];
  const row={id:'PO',company:'NCT',version:'v1',contentVersion:'cost1',taskIds:['T'],documents:docs,warehouse:{complete:true,issues:false,receivedCtn:100},salesInvoiceComplete:false};
  const details={finance:{amounts:[{fileId:'INV1',sha256:'abc',cents:100000}],payments:[],cnNotApplicable:{enabled:true,byStaffId:'F',at:'2026-10-11T00:00:00Z'}}};
  return {row,details};
@@ -126,7 +126,7 @@ function proofFileHarness(){
  const request=async(input,actor=staff)=>({company:'NCT',staff:actor,requestId:require('node:crypto').randomUUID(),input:{id:'PO',version:(await listOrders())[0].version,...input}});
  const pdf=n=>Buffer.from('%PDF-1.4\nTEST ONLY '+n).toString('base64');
  const input={action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-17',number:'',cents:20000,base64:pdf(1),attachments:[{base64:pdf(2)}],recipientChoice:'SUPPLIER',recipientBank:{bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo},paymentSource:'CASH',reason:''};
- return {operations,request,input,calls,records,listOrders,supplier,failExtra:()=>failExtra=true};
+ return {row,operations,request,input,calls,records,listOrders,supplier,failExtra:()=>failExtra=true};
 }
 test('multi-file payment preserves one amount, server bank snapshot and the same files after a lost response',async()=>{
  const h=proofFileHarness(),req=await h.request(h.input);h.failExtra();await assert.rejects(h.operations.save(req),/lost upload/);assert.equal(h.records.get('PurchaseOrders/PO').details.finance.payments.length,0);
@@ -164,4 +164,9 @@ test('planning rejects incomplete instalments, excess balance and unresolved ban
 });
 test('a prior secondary proof cannot be recorded again as a new primary proof',async()=>{
  const h=proofFileHarness();await h.operations.save(await h.request(h.input));await assert.rejects(h.operations.save(await h.request({...h.input,base64:h.input.attachments[0].base64,attachments:[]})),/already recorded/);assert.equal((await h.listOrders())[0].finance.paidCents,20000);
+});
+
+
+test('pay slip upload requires a current uploaded PO before allocating or uploading files',async()=>{
+ for(const invalid of [null,{fileId:'PO1',type:'PO',linked:false},{fileId:'PO1',type:'PO',linked:true,superseded:true}]){const h=proofFileHarness();h.row.documents=h.row.documents.filter(doc=>doc.type!=='PO');if(invalid)h.row.documents.push(invalid);const before=clone(h.records.get('PurchaseOrders/PO'));await assert.rejects(h.operations.save(await h.request(h.input)),/Upload the P.O./);assert.equal(h.calls.length,0);assert.deepEqual(h.records.get('PurchaseOrders/PO'),before);}
 });

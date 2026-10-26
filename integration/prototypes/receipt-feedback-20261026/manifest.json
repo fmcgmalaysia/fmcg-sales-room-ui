@@ -1,10 +1,10 @@
 {
-  "build": "20261026-receipt-cn-alert-v1",
+  "build": "20261026-receipt-zero-po-slip-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
       "target": "purchase-live/active-layout.css",
-      "sha256": "a490c12f13125a429c719620034d0e85985ea6a7811c89a89aefd1ccff76a9a6"
+      "sha256": "319dfca6f431f4e463365bb01b6f28266797595ea8a3494309841ca31725c81c"
     },
     {
       "target": "purchase-live/active-layout.js",
@@ -12,11 +12,11 @@
     },
     {
       "target": "purchase-live/app.js",
-      "sha256": "8066ac2e491a11ea68712a0dff30aabc353de02b3967c365e362a1bce531025a"
+      "sha256": "95d021c0a8665bb503658c7087cc7ad60527a0df26064b14012ec39d9cff6e81"
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "e012502e95ddca374b2978b1b88031c4c976cf092d68c23f5adbb5468dda9a5f"
+      "sha256": "20cd416055bda1d33a8c274e30cda41f0e9b3e928f98e6cfad1a8b2db79f13e1"
     },
     {
       "target": "warehouse-room/app.js",
@@ -36,20 +36,21 @@
     },
     {
       "target": "account-room/payment-layout.js",
-      "sha256": "97b1d53637663a9fe54722b4eeafe19569e4735126f0ec38832988d0540055f1"
+      "sha256": "1cb000635ab1e30baf831a2559a92ba5b7fb6e7ea5115a895e97ed0119849eea"
     },
     {
       "target": "account-room/payment-layout.css",
-      "sha256": "f61209036c691a9ead27d306a8771ad1a1db57a11a933ec2fa66e757cb2c2ad2"
+      "sha256": "c29445a120efb81eddd6c50561458749956be4620cabb585099c27979bb320ea"
     },
     {
       "target": "account-room/index.html",
-      "sha256": "341ee794db2b3218558518045f5e7b458654a11178db5cde14a432426b549ea6"
+      "sha256": "14dac48b11dfe2a787e4155c5e93c2cb1f58e63618c44e87fbca84f828759e93"
     }
   ],
   "backendExpectedSha256": {
     "purchaseQuantityCases.js": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
     "warehouseReceiving.js": "1f0d1abcee72208624291fe8f5851d28d1c2661d8474f3696168ba474d5dd063",
-    "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa"
+    "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa",
+    "accountSettlement.js": "3222fbc5fd0f5f367ac7f60cad32f5b9afba4132463ab2e45b41f90142bcc6f6"
   }
 }
