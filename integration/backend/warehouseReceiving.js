@@ -63,10 +63,14 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     });
     if(receipt.lines.some(line=>!po.taskIds.includes(line.taskId)))throw Error('Received task no longer belongs to this purchase order.');
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;
+    const receivingCases=(po.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
+    const stopped=line=>receivingCases.find(item=>item.taskId===line.taskId&&item.decision?.supplierDeliveryDecision==='STOP'&&['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(item.decision.supplierDecision)&&Number.isFinite(Date.parse(item.decision.at)));
+    const receivingTaskComplete=lines.length>0&&lines.every(line=>line.remaining===0&&!line.issue||stopped(line));
+    const completionTimes=receivingTaskComplete?lines.map(line=>stopped(line)?.decision.at||receipt.lines.find(saved=>saved.taskId===line.taskId)?.at).filter(Boolean).sort():[];
     return {id:po.id,company,number:po.number,correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.version,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
   });
 }
 
