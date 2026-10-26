@@ -1,5 +1,5 @@
 {
-  "build": "20261026-parent-supplier-v1",
+  "build": "20261026-allocation-close-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
@@ -16,7 +16,7 @@
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "e66b53c3f08bf26a1c286b71c261c9032db60a194cbfeced2a9253f0677bc497"
+      "sha256": "37ea72281c0439f94d5550dc3e25b9d386e8d12b9737e1005b9e3e7ceadbd340"
     },
     {
       "target": "warehouse-room/app.js",
@@ -45,6 +45,10 @@
     {
       "target": "account-room/index.html",
       "sha256": "14dac48b11dfe2a787e4155c5e93c2cb1f58e63618c44e87fbca84f828759e93"
+    },
+    {
+      "target": "purchase-live/supplier-allocation.js",
+      "sha256": "ecc8ae1c1e203238e348f36a93028dd39d947684085967dbde21fd3dd62f27c3"
     }
   ],
   "backendExpectedSha256": {

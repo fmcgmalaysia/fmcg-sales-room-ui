@@ -13,7 +13,7 @@ function plan(){
  const prior=JSON.parse(git(['show',previous+':integration/prototypes/purchase-active-layout-20261025/manifest.json']).toString());
  for(const row of prior.files){const bytes=git(['show',previous+':integration/prototypes/purchase-active-layout-20261025/'+path.posix.basename(row.target)]);if(hash(bytes)!==row.sha256)throw Error('Previous approved overlay does not match');assets.set(row.target,bytes);}
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'manifest.json'),'utf8'));
- if(manifest.productionRecovery!==previous||manifest.files.length!==11)throw Error('Scoped receipt-feedback overlay required');
+ if(manifest.productionRecovery!==previous||manifest.files.length!==12)throw Error('Scoped receipt-feedback overlay required');
  for(const row of manifest.files){if(!allowed(row.target)||!assets.has(row.target))throw Error('New public entry not approved');const bytes=text(fs.readFileSync(path.join(__dirname,row.target)));if(hash(bytes)!==row.sha256)throw Error('Receipt overlay content changed: '+row.target);assets.set(row.target,bytes);}
  if(assets.size!==95||[...assets.keys()].some(file=>file.startsWith('integration/')))throw Error('Public resource boundary changed');
  return {assets,manifest};

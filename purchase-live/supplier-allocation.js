@@ -75,9 +75,10 @@
       if(!state&&parkedDrafts.has(key)){state=parkedDrafts.get(key);parkedDrafts.delete(key);}
       if(!state||draftKey(state)!==key||!state.dirty&&!state.running){const sources=[root,...data.tasks.filter(row=>row.customerDemandTaskId===root.id)];state={company:data.company,rootId:root.id,batchId,batchVersion:root.batchAllocationVersion,counter:0,reason:'',rows:sources.map(row=>rowDraft(row,row.id)),dirty:false,running:false,current:null,issue:'',reopen:true};if(batchId){for(const row of state.rows){const saved=data.tasks.find(task=>task.id===row.taskId);if(saved?.procurement?.totalCtn>0)row.status='saved';else {row.qty=String(pendingBatch());row.paid=row.qty;}}}}
       referenceSession={};caughtRows.clear();if(state.issue==='正在抓取成本，请稍候…'){state.issue='';state.issueTone='';}
-      state.rowLabel=api.rowLabel?.(root.id)||state.rowLabel||'';state.reopen=true;remainingRow();render();api.cache();
+      state.rowLabel=api.rowLabel?.(root.id)||state.rowLabel||'';state.reopen=true;remainingRow();render(true);api.cache();
     }
-    function render(){
+    function render(explicitOpen=false){
+      if(!explicitOpen&&(!api.modal().open||!api.modal().classList.contains('supplier-allocation-dialog')))return;
       const root=rootTask();if(!root||!state)return;
       const customer=workspace().customers.find(row=>row.id===root.customerId);
       api.dialog('供应商分单',(customer?.shortName||customer?.name||root.customerId)+' · '+(root.transactionCurrency||'')+(state.batchId?' · '+batchTask().label+' · Pending 待采购 '+pendingBatch()+' CTN · Saved supplier totals 已存供应商总数只读':''),
