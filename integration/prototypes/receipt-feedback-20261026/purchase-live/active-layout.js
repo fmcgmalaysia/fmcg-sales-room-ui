@@ -43,9 +43,10 @@
    if(row.cells.length===1){if(row.cells[0].colSpan===12)row.cells[0].colSpan=11;continue;}
    if(row.matches('[data-id],[data-split-parent]')){
     const button=row.querySelector('.supplier-cell .supplier-plan-link');
-    if(button&&!button.dataset.draftHeadsOnly){
-     const heads=[...button.querySelectorAll('.supplier-head')];
-     if(heads.length){button.replaceChildren(...heads);button.dataset.draftHeadsOnly='true';}
+    if(button){
+     let next=row.nextElementSibling,hasSources=false;
+     while(next&&!next.matches('[data-id],[data-split-parent]')){if(next.hasAttribute('data-source-id'))hasSources=true;next=next.nextElementSibling;}
+     row.toggleAttribute('data-draft-parent-sources',hasSources);
     }
    }
    if(row.cells.length!==12)continue;

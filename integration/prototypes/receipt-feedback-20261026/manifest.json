@@ -1,14 +1,14 @@
 {
-  "build": "20261026-receipt-zero-po-slip-v1",
+  "build": "20261026-parent-supplier-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
       "target": "purchase-live/active-layout.css",
-      "sha256": "319dfca6f431f4e463365bb01b6f28266797595ea8a3494309841ca31725c81c"
+      "sha256": "1cfae0054fa92d77e22ae559ff5f60e5e2906ce5fdff45277e6ea908dc5960a6"
     },
     {
       "target": "purchase-live/active-layout.js",
-      "sha256": "518673462d12a3e032d6e092bd017e3e9af19077534030c07ed1595d10d359d8"
+      "sha256": "342d5e782cfad4b86b5572010153764e05e5f75a136484f65f73b1d800effcd3"
     },
     {
       "target": "purchase-live/app.js",
@@ -16,7 +16,7 @@
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "20cd416055bda1d33a8c274e30cda41f0e9b3e928f98e6cfad1a8b2db79f13e1"
+      "sha256": "e66b53c3f08bf26a1c286b71c261c9032db60a194cbfeced2a9253f0677bc497"
     },
     {
       "target": "warehouse-room/app.js",
