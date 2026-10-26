@@ -1,0 +1,27 @@
+SUPPORT workroom implementation — 2026-10-27
+
+Scope: implement the user-approved Orders & Shipments / Customers / order detail layout. Existing Packing Lists remain independent. No Packing redesign, stock mutations, Finance reconciliation change or Buyer/Sales publication.
+
+Recovery: starting checkout c30336b, live static runtime d081bae / build 20261027-chat-latest-v1, prior protected verified/stop-waiting-cn-20261026 (911d31a). Native Support page freshly copied through editor and exact with integration/wix/support-department-page.js, normalized SHA256 ca2c23c99ca01ac8b110d4c0844f688b5aa13900dac03de708e81f6845046be4. Public Support remains original packing-workbench.html with three real rows, no business action performed. Private native backup outside repository.
+
+Implemented locally:
+- New additive support-room/workroom.html, workroom.css, workroom.js and workroom-model.js; original Support files unchanged.
+- Orders grouped by customer + original order + currency; customers; invoice/transactions views; order product details; missing-CBM dialog; original Packing Lists link preserves company.
+- Existing FULFILMENT_READ_REQUEST and PACKING_READ_REQUEST read-only contracts, validated parent origin/source and correlated request/company. No sample data in production candidate. Headless fixture exists only outside checkout for rendering checks.
+- Customer demand uses originalRequested, Committed remains null per user direction, Loaded uses actual noncancelled packing records. Failed Warehouse read yields unknown, not zero. Invoices remain visible beside unshipped orders; issued archived orders retained.
+- Existing customer account data has no per-invoice confirmed allocation/reconciliation state. Uploaded payment document stays pending. Paid/balance/outstanding remain unknown rather than fabricate reconciliation.
+
+Validation: 9 focused projection checks pass; isolated local headless browser customer/order/CBM/transactions navigation pass, 0 page errors. One font request blocked in isolated test; no real remote page or business request was sent. No live acceptance of new candidate yet.
+
+Known incomplete work — do not publish this as finished:
+- New page not installed in Wix or GitHub Pages; current entry unchanged.
+- Selection/select-all/move and Create Sales Invoice remain disabled pending approved quantity-to-invoice save connection; no actual invoice issuance or PDF generation implemented by this patch.
+- Shipment details and all document upload writes not connected; candidate explicitly labels these pending. Existing file links may be inspected if present in existing response.
+- Existing fulfilment read omits per-piece price, GP, CBM, country and port; missing values left blank/unknown. Need a minimal Support read projection using actual known sources, native compare before any shared backend modification.
+- Existing live service INVOICE requires prior REQUESTED shipment and explicit allocation; Support's canSelectShipment is false. Do not silently enable SELECT, infer usable quantities from receipt/Stop Waiting, change inventory coordination, or repurpose the obsolete invoice draft assumptions.
+- Payment receipt upload in old customerAccount ledger changes signed document totals without verified invoice allocation. Do not present this old total as Finance-confirmed paid balance; new transaction reconciliation needs scoped implementation against Finance authority.
+- New public assets must be added to a scoped Support release assembled on the exact current 95-resource deployed baseline. Do not publish all historical R2 candidates or change prior 16 overlays. No deployment rule change/dispatch performed.
+
+Next: finish actual read-field mapping, order selection/review and shipment/document saves using existing protected contracts wherever possible, then native installation, affected regression and release. No new mockup project; continue these actual integration files. User will test real UI. User asked whether Astra is needed: advised current implementation can proceed with SOL High; no automatic model switch or agent created.
+
+Git status required approved elevated read because sandbox cwd traversal denied; clean state confirmed before branching. Branch feat/support-workroom-20261027. Existing parent framework and latest chat release handoff read; no root historical record treated as current live authority.
