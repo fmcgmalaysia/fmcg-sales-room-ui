@@ -64,3 +64,10 @@ test('message access inherits the existing three department authorizers, includi
  assert.throws(()=>requireMessageStaff(member,[{...record,staffStatus:'INACTIVE'}],guards),/not authorized/);
  assert.throws(()=>requireMessageStaff({...member,status:'PENDING'},[record],guards),/not authorized/);
 });
+
+test('STOP decision is one authored purchasing conversation item from the existing event',()=>{
+ const f=setup(),event={title:'DECISION',action:'PURCHASE_QUANTITY_CASE_DECIDED',result:'SAVED',imageAltText:'T',activityTime:'2026-10-26T15:21:00.000Z',initiatedByStaffName:'Buyer',details:{company:'NCT',kind:'RECEIPT',supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED'}};
+ f.records.set('A/DECISION',event);const before=JSON.stringify([...f.records]);
+ for(const [staff,department]of [[f.warehouse,'WAREHOUSE'],[f.finance,'ACCOUNT'],[f.purchase,'PURCHASE']]){const t=f.project(staff,department).threads[0],d=t.updates.find(u=>u.id==='DECISION');assert.equal(d.presentation,'MESSAGE');assert.equal(d.from,'PURCHASE');assert.equal(d.by,'Buyer');assert.equal(d.at,event.activityTime);assert.equal(d.body,'Stop Waiting');assert.equal(d.bodyZh,'停止等货');assert.equal(t.messages.length,0);}
+ assert.equal(JSON.stringify([...f.records]),before);
+});
