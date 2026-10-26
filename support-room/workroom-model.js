@@ -4,10 +4,12 @@
   const key=(...parts)=>JSON.stringify(parts);
   const sum=(rows,field)=>rows.reduce((n,row)=>n+(finite(row[field])??0),0);
   // Read-only presentation. Missing reconciliation is never treated as zero paid.
-  function project(fulfilment,packing,bookingResult){
+  function project(fulfilment,packing,bookingResult,invoiceState,documentResult){
     if(!fulfilment||!['NCT','GHR'].includes(fulfilment.company)||!Array.isArray(fulfilment.lines)||!Array.isArray(fulfilment.customers))throw Error('Customer orders are unavailable.');
     if(packing&&packing.company!==fulfilment.company)throw Error('Company changed. Refresh the workroom.');
     if(bookingResult&&bookingResult.company!==fulfilment.company)throw Error('Company changed. Refresh the workroom.');
+    if(invoiceState&&invoiceState.company!==fulfilment.company)throw Error("Company changed. Refresh the workroom.");
+    if(documentResult&&documentResult.company!==fulfilment.company)throw Error("Company changed. Refresh the workroom.");
     const customerNames=new Map(fulfilment.customers.map(row=>[row.id,row.name]));
     const shipments=(fulfilment.shipments||[]).filter(row=>row.status!=='CANCELLED');
     const orders=new Map(),seen=new Set();
@@ -18,10 +20,10 @@
       if(!orders.has(orderKey))orders.set(orderKey,{id:orderKey,customerId:source.customerId,customerName:customerNames.get(source.customerId)||source.customerId,orderId:source.orderId,currency:source.currency||'',country:source.country||'',port:source.port||'',lines:[],shipments:[]});
       const loadedRecords=(packing?.lists||[]).filter(list=>list.status!=='CANCELLED'&&list.status!=='DRAFT').flatMap(list=>list.lines.filter(line=>line.taskId===source.taskId));
       const invoiceRecords=shipments.filter(row=>['INVOICED','DISPATCHED'].includes(row.status)).flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId));
-      const packingTask=packing?.tasks?.find(row=>row.taskId===source.taskId);
+      const packingTask=packing?.tasks?.find(row=>row.taskId===source.taskId),ready=invoiceState?.lines?.find(row=>row.taskId===source.taskId);
       orders.get(orderKey).lines.push({...source,orderQty:finite(source.originalRequested)??finite(source.requested),committedQty:null,
-        loadedQty:packing?sum(loadedRecords,'loaded'):null,invoicedQty:sum(invoiceRecords,'quantity'),
-        pricePc:finite(source.sellingPricePc),priceCtn:finite(source.sellingPriceCtn),gp:finite(source.gp),
+        loadedQty:loadedRecords.length?sum(loadedRecords,'loaded'):finite(ready?.loadedQty),invoiceReadyQty:finite(ready?.maxInvoiceQty)??0,invoiceIssue:ready?.reason||'',invoicedQty:sum(invoiceRecords,'quantity'),
+        pricePc:finite(source.sellingPricePc),priceCtn:finite(source.sellingPriceCtn),gp:finite(ready?.gpPercent),
         cbm:finite(source.cbmPerCtn)??finite(packingTask?.cbm)});
     }
     // Include invoiced/archived orders even when absent from the active task list.
@@ -33,14 +35,15 @@
       }
     }
     const result=[...orders.values()].map(order=>({...order,booking:bookingResult?.bookings?.find(row=>row.customerId===order.customerId&&row.orderId===order.orderId)||null,bookingAvailable:Boolean(bookingResult),items:new Set(order.lines.map(line=>key(line.barcode,line.packing))).size,
-      orderQty:sum(order.lines,'orderQty'),loadedQty:packing?sum(order.lines,'loadedQty'):null,
+      orderQty:sum(order.lines,'orderQty'),loadedQty:order.lines.every(line=>finite(line.loadedQty)!==null)?sum(order.lines,'loadedQty'):null,
       progress:order.lines.length?'In Progress':order.shipments.length&&order.shipments.every(row=>row.status==='DISPATCHED')?'Dispatched':'Awaiting Shipment',
       eta:[...new Set(order.lines.map(line=>line.estimatedShipmentDate).filter(Boolean))].join(' · ')}));
     const invoices=shipments.filter(row=>row.invoice).map(row=>({...row,number:row.invoice.number,date:row.invoice.date,amountCents:row.invoice.amountCents,
       shipmentStatus:row.status==='DISPATCHED'?'Dispatched':'Awaiting Shipment',paymentStatus:'Awaiting Reconciliation',paidCents:null,balanceCents:null}));
+    const workRows=result.filter(order=>order.lines.some(line=>(line.orderQty??0)>line.invoicedQty)).map(order=>({...order,lines:order.lines.filter(line=>(line.orderQty??0)>line.invoicedQty),items:new Set(order.lines.filter(line=>(line.orderQty??0)>line.invoicedQty).map(line=>key(line.barcode,line.packing))).size,shipments:[],progress:'To Invoice'})).concat(invoices.map(invoice=>{const order=result.find(row=>row.customerId===invoice.customerId&&invoice.lines.some(line=>line.orderId===row.orderId));return {...order,id:'INVOICE:'+invoice.id,bookingOrderId:order?.id,customerId:invoice.customerId,customerName:customerNames.get(invoice.customerId)||invoice.customerId,orderId:invoice.lines[0]?.orderId||'',currency:invoice.currency,lines:invoice.lines,items:new Set(invoice.lines.map(line=>key(line.barcode,line.packing))).size,shipments:[invoice],invoiceId:invoice.id,progress:invoice.shipmentStatus};}));
     const customers=fulfilment.customers.map(customer=>({...customer,orders:result.filter(order=>order.customerId===customer.id),invoices:invoices.filter(row=>row.customerId===customer.id),
-      transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id)}));
-    return {company:fulfilment.company,staff:fulfilment.staff,orders:result,customers,invoices,readAt:fulfilment.readAt};
+      transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id).concat((documentResult?.documents||[]).filter(row=>row.customerId===customer.id&&['$','CN'].includes(row.code)).map(row=>({...row,type:row.code==='$'?'PAYMENT_DOCUMENT':'CREDIT_NOTE_DOCUMENT',number:row.reference,date:row.at,pending:true})))}));
+    return {company:fulfilment.company,staff:fulfilment.staff,orders:result,workRows,customers,invoices,invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
   }
   return {project};
 });

@@ -46,3 +46,5 @@ test('late upload cannot resurrect trashed ID and repeated old trash cannot touc
   assert.equal(f.run({...old,action:'TRASH'}).trashed,true);assert.notEqual(f.files.get(replacement.fileId).trashed,true);assert.equal(f.files.size,2);
  }
 });
+
+test('Support document categories retain fixed customer roots without affecting supplier routing',()=>{for(const [company,folder] of [['NCT','1omU7-s3sntQoajBBvOKVXzwS40N5Lmm0'],['GHR','1uPcfFNLpXFDS5vn18hA5pbIdWRzxSzQ_']])for(const code of ['BC','SI','DO','CN','PL','INS','CF','PAYMENT']){const f=service(),input={...f.input,company,type:'SUPPORT_'+code};assert.equal(f.run(input).error,'INVALID_DOCUMENT');assert.equal(f.calls(),0);assert.equal(f.run({...input,department:'SUPPORT'}).ok,true);const file=[...f.files.values()][0];assert.equal(file.parents[0],folder);assert.equal(file.appProperties.department,'SUPPORT');assert.equal(f.run({...input,department:'SUPPORT',action:'TRASH'}).error,'INVALID_DOCUMENT');}});
