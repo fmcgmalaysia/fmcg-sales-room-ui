@@ -1,5 +1,5 @@
 {
-  "build": "20261026-receipt-feedback-v1",
+  "build": "20261026-receipt-cn-alert-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
@@ -12,11 +12,11 @@
     },
     {
       "target": "purchase-live/app.js",
-      "sha256": "2781156672214c5be79e5bc4cc54817a6000ebfc5c7f092ab2c5e0b41ef68256"
+      "sha256": "8066ac2e491a11ea68712a0dff30aabc353de02b3967c365e362a1bce531025a"
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "1ae46c58f6d93670e07c0333c633e6197748d6e70dfad1f541849accd58a5afb"
+      "sha256": "e012502e95ddca374b2978b1b88031c4c976cf092d68c23f5adbb5468dda9a5f"
     },
     {
       "target": "warehouse-room/app.js",
@@ -36,7 +36,7 @@
     },
     {
       "target": "account-room/payment-layout.js",
-      "sha256": "ebfaa2bc4ba241a4f3284d0e342b9163be222f7cae73821cb3d1419d74e063ed"
+      "sha256": "97b1d53637663a9fe54722b4eeafe19569e4735126f0ec38832988d0540055f1"
     },
     {
       "target": "account-room/payment-layout.css",
@@ -44,7 +44,7 @@
     },
     {
       "target": "account-room/index.html",
-      "sha256": "184cb79f58728f4fbdf2a53d44628e654608d3b852e8ea040409b670429622aa"
+      "sha256": "341ee794db2b3218558518045f5e7b458654a11178db5cde14a432426b549ea6"
     }
   ],
   "backendExpectedSha256": {
