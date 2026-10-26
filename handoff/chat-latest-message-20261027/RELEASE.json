@@ -25,10 +25,11 @@
     "tags": 0
   },
   "publicVerification": {
-    "warehouse": "new outer iframe reference confirmed; inner content remains about:blank in automation; user foreground requested once",
-    "finance": "reloaded after checking no unsaved fields; inner content pending",
-    "purchase": "current public refresh pending",
-    "sales": "new static JS/CSS/root verified by HTTP hash; actual public read-only check pending"
+    "warehouse": "user reopened tab51427755; exact new iframe build, completed-task MESSAGE Purchaser Dept: 停止等货 Stop Waiting; chat original author/time left-aligned white bubble confirmed; no centered STOP system row",
+    "finance": "user reopened tab51427751; exact new iframe build and incoming summary Purchaser Dept: Stop Waiting; English-only retained",
+    "purchase": "user reopened tab51427759; exact new iframe and actual script query20261027-chat-latest-v1; three PurchaseOrder MESSAGE cells show no own outgoing STOP preview",
+    "sales": "public root/messages JS/CSS HTTP hashes exact; incoming-only behavior verified offline, not a real Sales send/receive test",
+    "relevantPublicWarningsOrErrors": 0
   },
   "appsScript": {
     "deployedVersion": 8,
@@ -36,5 +37,6 @@
     "draftsRestoredExact": true
   },
   "businessWrites": 0,
-  "overall": "Public read-only appearance verification remains incomplete. Do not claim completed publication."
+  "overall": "Requested primary MASTER public read-only presentation verified. Four release stages complete for code d081bae; user business acceptance pending. Sales static client included; no real Sales chat transaction tested.",
+  "personalReadReceipts": "Opening the existing chat follows the existing automatic personal SYSTEM_READ behavior; no new business message/ACK was submitted."
 }
