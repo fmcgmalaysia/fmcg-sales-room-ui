@@ -166,7 +166,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
           }else if(input.receiptCaseSignature||input.receiptDecisionRevision)throw Error('Purchase order changed. Select the CN shortfall case.');
           cnMetadata.cnReason=input.cnReason;
         }
-        const uploadDate=now().toISOString(),documentDate=input.type==='CN'?uploadDate.slice(0,10):input.date;
+        const uploadDate=now().toISOString(),documentDate=uploadDate.slice(0,10);
         const name=purchaseDocumentName({date:documentDate,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
         if((before.documents||[]).some(doc=>doc.linked&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
         const allocated=await documentService({action:'ALLOCATE',company});
@@ -190,7 +190,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         if(input.termDays===row.termDays)throw Error('Payment term has not changed.');
         patch={termDays:input.termDays};
       }
-      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:input.date,fileId:upload.fileId,name:upload.name,reason,...(input.type==='CN'?{cnReason:input.cnReason,receiptCaseId:text(input.receiptCaseId),receiptCaseSignature:text(input.receiptCaseSignature),receiptDecisionRevision:text(input.receiptDecisionRevision),date:patch.documents.at(-1).date}:{})}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
+      const at=now().toISOString(),event={id:operationId(company,requestId,staff.memberId,'PO_AUDIT'),action:input.action==='ACK_PAYMENT'?'PAYMENT_NOTIFICATION_ACKNOWLEDGED':input.action==='DOCUMENT'?'SUPPLIER_DOCUMENT_UPLOADED':input.action==='CHASE'?'PAYMENT_CHASE_CHANGED':'PAYMENT_TERM_CHANGED',time:at,actor:staff.staffName,actorStaffId:staff.staffId,result:'SAVED',message:reason,changes:input.action==='DOCUMENT'?{type:input.type,number:text(input.number),date:patch.documents.at(-1).date,fileId:upload.fileId,name:upload.name,reason,...(input.type==='CN'?{cnReason:input.cnReason,receiptCaseId:text(input.receiptCaseId),receiptCaseSignature:text(input.receiptCaseSignature),receiptDecisionRevision:text(input.receiptDecisionRevision),date:patch.documents.at(-1).date}:{})}:{before:Object.fromEntries(Object.keys(patch).map(key=>[key,row[key]])),after:patch,reason}};
       const record={...(current||{}),_id:row.id,title:row.id,company,details:{...before,taskIds:row.taskIds,createdAt:row.createdAt,createdBy:row.createdBy,...patch,updatedAt:at,audit:[...(before.audit||[]),event]}};
       if('procurementHandoff' in patch&&patch.procurementHandoff)event.action='PROCUREMENT_'+input.action;
       if(input.action==='DOCUMENT_ISSUE_RESPONSE')event.action='SUPPLIER_DOCUMENT_ISSUE_RESPONSE';

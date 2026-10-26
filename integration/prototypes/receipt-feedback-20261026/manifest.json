@@ -1,5 +1,5 @@
 {
-  "build": "20261026-stop-waiting-cn-v1",
+  "build": "20261026-receipt-review-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
@@ -12,11 +12,11 @@
     },
     {
       "target": "purchase-live/app.js",
-      "sha256": "a7ba0df2966dec94618693d78a8a2c4e184050eeaa87e512ee77b6ddcc8d9096"
+      "sha256": "7fbd6188cfc7cf31834d168b487f4ac36d1c664e643a3160d0c7260e06d02777"
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "4ece2c5c9cff7f08dd3c54802e7ee6408bb3a90dd23db9da81e27b6d6b3f502e"
+      "sha256": "d15af380bb00bd5a9af1727385c673c56d451001006c5141a2477252a2947f38"
     },
     {
       "target": "warehouse-room/app.js",
@@ -24,11 +24,11 @@
     },
     {
       "target": "warehouse-room/index.html",
-      "sha256": "fc1fd2064ffc6cc5d95c2d21df3f9643fb2255263735b7d88a43deab8b913ce4"
+      "sha256": "b1207aca26431128701acd48aef4a37da8a083584b94927b40b5daf10708368f"
     },
     {
       "target": "warehouse-room/workroom.css",
-      "sha256": "32f035f1bd64b98655af7dc2beed09131b401dcf969f0e29e9fc56a72834e2e7"
+      "sha256": "38d2addfa44b9f3dff5ee5d15001b5883acfd9042de9872a7ef9c6c61ac6642c"
     },
     {
       "target": "warehouse-room/workroom.js",
@@ -36,15 +36,15 @@
     },
     {
       "target": "account-room/payment-layout.js",
-      "sha256": "82c77b65a24a9db45534208c3f84a63401b89421f4f87d507010e4c6b43bb97a"
+      "sha256": "9358e6c1da420309e2a2f7afa7e249836ccecfed8b7e85b8f0e6c0da340b64a5"
     },
     {
       "target": "account-room/payment-layout.css",
-      "sha256": "cea2dc829e14c29001a5e4bbf9404bc23bac08877aa924c969a09f2b0afb107f"
+      "sha256": "82006111952e1af5ca05c8cd31d7e8847f9fe27e99136aae46eca6c4f4c52914"
     },
     {
       "target": "account-room/index.html",
-      "sha256": "88de46dbc3da544ec7e7e4da93fa15f59168ffeed7e16e3d9a98244f3c0aa159"
+      "sha256": "ee0a0179f6e3543c2c4be3eb9eb7c2d4470c9148db3120698f41e6e4d3b6f38f"
     },
     {
       "target": "purchase-live/supplier-allocation.js",
@@ -56,6 +56,6 @@
     "warehouseReceiving.js": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
     "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa",
     "accountSettlement.js": "3222fbc5fd0f5f367ac7f60cad32f5b9afba4132463ab2e45b41f90142bcc6f6",
-    "purchaseOrderWorkflow.js": "68e7d8def7189b6e00cde560a68ad67b2d2718e4cac178c4118075823a102a51"
+    "purchaseOrderWorkflow.js": "4e8f70beecd5112b674847bc37b98264fdfec54a46337317dcd1c9e075493531"
   }
 }
