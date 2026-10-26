@@ -1,0 +1,40 @@
+{
+  "code": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
+  "branch": "feat/chat-latest-message-20261027",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/223",
+  "build": "20261027-chat-latest-v1",
+  "pages": {
+    "run": 40363174967,
+    "number": 275,
+    "status": "completed",
+    "conclusion": "success",
+    "dispatches": 1,
+    "resources": 95,
+    "overlayHashesVerified": 16,
+    "metadataCodeExact": true
+  },
+  "wix": {
+    "threeNativeEntries": "full readback exact, only version token changed",
+    "twoBackendDrafts": "full readback exact",
+    "receipt": "Congratulations This site is published and live online."
+  },
+  "temporaryPermission": {
+    "addedOnly": "feat/chat-latest-message-20261027",
+    "removed": true,
+    "restoredBranches": 7,
+    "tags": 0
+  },
+  "publicVerification": {
+    "warehouse": "new outer iframe reference confirmed; inner content remains about:blank in automation; user foreground requested once",
+    "finance": "reloaded after checking no unsaved fields; inner content pending",
+    "purchase": "current public refresh pending",
+    "sales": "new static JS/CSS/root verified by HTTP hash; actual public read-only check pending"
+  },
+  "appsScript": {
+    "deployedVersion": 8,
+    "changed": false,
+    "draftsRestoredExact": true
+  },
+  "businessWrites": 0,
+  "overall": "Public read-only appearance verification remains incomplete. Do not claim completed publication."
+}
