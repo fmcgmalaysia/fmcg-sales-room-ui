@@ -38,7 +38,8 @@ export function projectQuantityCases(workspace,activity){
   if(issues.length){
    const recordedPlans=issues.flatMap(event=>event.details.lines.filter(line=>line.taskId===row.id)).map(line=>line.planned).filter(integer);
    const planned=Math.max(row.procurement?.totalCtn||0,...recordedPlans),accepted=row.warehouse?.accepted||0,missing=Math.max(0,planned-accepted);
-   add(row,'RECEIPT',missing,operationId(row.id,planned,row.supplierId,issues.map(event=>event.title).sort()),{planned,accepted,receivingIssue:row.warehouse?.issue===true,referenceCostCents:Number.isFinite(row.netCostCtn)?Math.round(missing*row.netCostCtn*100):null,...(missing===0&&!row.warehouse?.issue?{owner:'ACCOUNT'}:{})});
+   const feedback=issues.slice().sort((a,b)=>String(a.activityTime||'').localeCompare(String(b.activityTime||''))||String(a.title).localeCompare(String(b.title))).at(-1)?.details.lines.find(line=>line.taskId===row.id&&line.issue);
+   add(row,'RECEIPT',missing,operationId(row.id,planned,row.supplierId,issues.map(event=>event.title).sort()),{planned,accepted,receivingIssue:row.warehouse?.issue===true,...(text(feedback?.reason)?{warehouseFeedback:{reason:text(feedback.reason),kind:feedback.kind||'',at:issues.find(event=>event.details.lines.includes(feedback))?.activityTime||null}}:{}),referenceCostCents:Number.isFinite(row.netCostCtn)?Math.round(missing*row.netCostCtn*100):null,...(missing===0&&!row.warehouse?.issue?{owner:'ACCOUNT'}:{})});
   }
  }
  return result;
@@ -58,13 +59,17 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
   return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{quantityCase:input},prepare:async()=>{
    const workspace=await readWorkspace(company,staff),activity=await store.all(collection),item=projectQuantityCases(workspace,activity).find(row=>row.id===input.id);
    if(workspace.company!==company||input.version!==quantityCasesVersion(workspace,activity)||!item)throw Error('Quantity case changed. Refresh before saving.');
-   const reason=text(input.reason),customerMessage=text(input.customerMessage),customerDecision=input.customerDecision;
-   if(!reason||reason.length>2000||!customerMessage||customerMessage.length>1000||!['WAIT','STOP','PENDING'].includes(customerDecision))throw Error('Enter an internal reason and a customer-safe update.');
+   const supplierDeliveryDecision=input.supplierDeliveryDecision,compact=supplierDeliveryDecision!==undefined;
+   if(compact&&(item.kind!=='RECEIPT'||!['WAIT','STOP'].includes(supplierDeliveryDecision)))throw Error('Select whether to wait for the supplier delivery.');
+   const reason=text(input.reason),customerMessage=text(compact?item.decision?.customerMessage:input.customerMessage),customerDecision=compact?(item.decision?.customerDecision||'PENDING'):input.customerDecision;
+   if(!reason||reason.length>2000||!customerMessage&&!compact||customerMessage.length>1000||!['WAIT','STOP','PENDING'].includes(customerDecision))throw Error('Enter an internal reason and a customer-safe update.');
    const supplierDecision=item.kind==='UNPLACED'?'NOT_APPLICABLE':input.supplierDecision;
-   if(item.kind==='RECEIPT'&&!['REPLENISH','REFUND','CREDIT','INTERNAL','PENDING'].includes(supplierDecision))throw Error('Select the supplier shortage resolution.');
-   if((customerDecision==='WAIT'||supplierDecision==='REPLENISH')&&(!/^\d{4}-\d{2}-\d{2}$/.test(input.expectedDate||'')||!Number.isFinite(Date.parse(input.expectedDate))||new Date(input.expectedDate).toISOString().slice(0,10)!==input.expectedDate))throw Error('Enter the expected replenishment date.');
+   if(compact){if(supplierDeliveryDecision==='WAIT'?supplierDecision!=='PENDING':!['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(supplierDecision))throw Error('Select exactly one supplier response.');}
+   else if(item.kind==='RECEIPT'&&!['REPLENISH','REFUND','CREDIT','INTERNAL','PENDING'].includes(supplierDecision))throw Error('Select the supplier shortage resolution.');
+   const expectedDate=compact?item.decision?.expectedDate:input.expectedDate;
+   if((customerDecision==='WAIT'||supplierDecision==='REPLENISH')&&(!/^\d{4}-\d{2}-\d{2}$/.test(expectedDate||'')||!Number.isFinite(Date.parse(expectedDate))||new Date(expectedDate).toISOString().slice(0,10)!==expectedDate))throw Error('Enter the expected replenishment date.');
    const id=operationId(company,requestId,staff.memberId,'QUANTITY_CASE_DECISION');
-   return {version:input.version,event:{_id:id,title:id,description:item.customerDemandTaskId,imageAltText:item.taskId,action:QUANTITY_CASE_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:reason,details:{caseId:item.id,kind:item.kind,quantity:item.quantity,signature:item.signature,beforeRevision:item.revision,customerDecision,supplierDecision,customerMessage,reason,expectedDate:input.expectedDate||null}}};
+   return {version:input.version,event:{_id:id,title:id,description:item.customerDemandTaskId,imageAltText:item.taskId,action:QUANTITY_CASE_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:reason,details:{caseId:item.id,kind:item.kind,quantity:item.quantity,signature:item.signature,beforeRevision:item.revision,customerDecision,supplierDecision,customerMessage,reason,expectedDate:expectedDate||null,...(compact?{supplierDeliveryDecision,company}:{})}}};
   },apply:async plan=>{
    const saved=await store.read(collection,plan.event._id);
    if(!saved){const workspace=await readWorkspace(company,staff),activity=await store.all(collection);if(quantityCasesVersion(workspace,activity)!==plan.version)throw Error('Quantity case changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}

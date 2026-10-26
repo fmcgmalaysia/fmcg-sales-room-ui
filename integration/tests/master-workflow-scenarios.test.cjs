@@ -46,10 +46,10 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   await purchase({ ...request('PURCHASE', { taskIds: receipt.taskIds, versions: Object.fromEntries((await workspace()).tasks.map(row=>[row.id,row.editVersion])), poNumber: company + '-PO-TEST' }), operation: 'PO' });
   const poOps = createPurchaseOrderOperations({ store, readWorkspace: workspace, names, documentService: documents, now });
   const po = async () => (await poOps.list(company, staff('PURCHASE'))).find(row=>row.taskIds.includes(id));
-  const upload = async (type, cents) => poOps.save(request('PURCHASE', { id: (await po()).id, version: (await po()).version, action: 'DOCUMENT', type, date: '2026-10-12', number: type + '-TEST', reason: 'Scenario document', base64: pdf(type), ...(cents ? { declaredCents: cents } : {}) }));
+  const upload = async (type, cents) => poOps.save(request('PURCHASE', { id: (await po()).id, version: (await po()).version, action: 'DOCUMENT', type, ...(type==='CN'?{cnReason:'SHORT_DELIVERY'}:{}), date: '2026-10-12', number: type + '-TEST', reason: 'Scenario document', base64: pdf(type), ...(cents ? { declaredCents: cents } : {}) }));
   const financeOps = createAccountSettlementOperations({ store, names, listOrders: poOps.list, documentService: documents, now });
   const finance = async input => financeOps.save(request('ACCOUNT', { id: (await po()).id, version: (await po()).version, reason: 'Scenario reconciliation', ...input }));
-  const pay = async (cents, number, direction = 'PAYMENT') => finance({ action: 'DOCUMENT_UPLOAD', type: 'PAYMENT', recipientChoice: 'OTHER', paymentSource: 'CASH', date: '2026-10-12', number, cents, direction, base64: pdf(number) });
+  const pay = async (cents, number, direction = 'PAYMENT') => {if(!(await po()).documents.some(doc=>doc.type==='PO'&&doc.linked))await upload('PO');return finance({ action: 'DOCUMENT_UPLOAD', type: 'PAYMENT', recipientChoice: 'OTHER', paymentSource: 'CASH', date: '2026-10-12', number, cents, direction, base64: pdf(number) });};
   const acknowledge=async paymentId=>{const current=await po(),req=request('PURCHASE',{id:current.id,version:current.version,action:'ACK_PAYMENT',paymentId,reason:'Payment proof received'}),result=await poOps.save(req);assert.deepEqual(await poOps.save(req),result);return result;};
   const warehouseOrders = async () => projectWarehouseOrders({ company, purchaseOrders: await poOps.list(company, staff('WAREHOUSE')), tasks: (await workspace()).tasks, activity: await store.all(n.activity) });
   const warehouseOps = createWarehouseOperations({ store, names, readOrders: warehouseOrders, now });
@@ -85,12 +85,12 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
 }
 
 test('payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance',async()=>{
- const f=await scenario();await f.upload('PI');
+ const f=await scenario();await f.upload('PO');await f.upload('PI');
  await f.finance({action:'PAYMENT_REVIEW',stage:'RECEIVED',paperReceived:true,requestedCents:1000000});assert.equal((await f.po()).paymentHandoff.status,'RECEIVED');
  await f.finance({action:'PAYMENT_REVIEW',stage:'REVIEWING',paperReceived:true,requestedCents:1000000});assert.equal((await f.po()).paymentHandoff.review.by,'ACCOUNT');
  await f.pay(300000,'FIRST-PAY');let current=await f.po();assert.equal(current.paymentHandoff.status,'PARTLY_PAID');assert.equal(current.paymentHandoff.unreadCount,1);assert.equal(current.invoiceChecked,false);
  await f.acknowledge(current.paymentHandoff.notices[0].paymentId);current=await f.po();assert.equal(current.paymentHandoff.unreadCount,0);assert.equal(current.paymentHandoff.notices[0].acknowledgement.by,'PURCHASE');assert.equal(current.finance.paidCents,300000);assert.equal(current.invoiceChecked,false);
- await f.pay(700000,'SECOND-PAY');current=await f.po();assert.equal(current.paymentHandoff.status,'PAID');assert.equal(current.paymentHandoff.unreadCount,1);assert.equal(current.finance.paymentCompleted,false,'paid PI is not final invoice reconciliation');
+ await f.pay(700000,'SECOND-PAY');current=await f.po();assert.equal(current.paymentHandoff.status,'INSTALLMENT_PAID');assert.equal(current.paymentHandoff.unreadCount,1);assert.equal(current.finance.paymentCompleted,false,'paid PI is not final invoice reconciliation');
  await f.upload('INV',1000000);current=await f.po();assert.equal(current.paymentHandoff.reviewStale,true);assert.equal(current.paymentHandoff.review,null);
 });
 

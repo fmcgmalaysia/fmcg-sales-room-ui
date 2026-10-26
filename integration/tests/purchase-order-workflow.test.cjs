@@ -172,3 +172,26 @@ test('retired CHASE rejects new actions without writes but returns an existing e
  assert.deepEqual(await f.operations.save({...f.base,input}),outcome);assert.equal(f.records.size,1);
  await assert.rejects(f.operations.save({...f.base,input:{...input,reason:'Changed reminder'}}),/different changes/);
 });
+
+test('CN requirement ignores old discount and wrong-case files and follows the current decision',()=>{
+ const {receiptCnRequirements}=load('purchaseOrderWorkflow.js');
+ const c={id:'CASE',kind:'RECEIPT',taskId:'T1',signature:'SIG',quantity:5,decision:{supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED',revision:'D'}};
+ const doc={type:'CN',fileId:'F',linked:true,cnReason:'SHORT_DELIVERY',receiptCaseId:'CASE',receiptCaseSignature:'SIG',receiptDecisionRevision:'D'};
+ for(const d of [{...doc,cnReason:'DISCOUNT_REBATE'},{...doc,receiptCaseId:'OTHER'},{...doc,receiptDecisionRevision:'OLD'},{...doc,receiptCaseSignature:'OLD'},{...doc,superseded:true},{...doc,linked:false}])assert.equal(receiptCnRequirements([c],[d])[0].pending,true);
+ assert.equal(receiptCnRequirements([c],[doc])[0].pending,false);
+ assert.equal(receiptCnRequirements([{...c,decision:{...c.decision,revision:'NEW'}}],[doc])[0].pending,true);
+});
+test('CN reason and current case are persisted only after confirmed upload; same request does not duplicate',async()=>{
+ let calls=0;const f=fixture(async input=>{calls++;return input.action==='ALLOCATE'?{fileId:'NEWCN'}:{...input,ok:true};});
+ const c={id:'CASE',kind:'RECEIPT',taskId:'T1',signature:'SIG',quantity:5,decision:{supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED',revision:'D'}};
+ f.workspace.tasks[0].quantityCases=[c];const row=(await f.operations.list('NCT',f.staff))[0];
+ const input={id:row.id,version:row.version,action:'DOCUMENT',type:'CN',number:'CN1',date:'',reason:'Short delivery CN',declaredCents:5000,cnReason:'SHORT_DELIVERY',receiptCaseId:'CASE',receiptCaseSignature:'SIG',receiptDecisionRevision:'D',base64:Buffer.from('%PDF-1.4 sample').toString('base64')};
+ await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});const saved=(await f.operations.list('NCT',f.staff))[0];assert.equal(calls,2);assert.equal(saved.documents.length,1);assert.equal(saved.documents[0].date,'2026-10-11');assert.equal(saved.documents[0].cnReason,'SHORT_DELIVERY');assert.equal(saved.cnRequirements[0].pending,false);assert.equal(saved.invoiceChecked,false);
+ await assert.rejects(f.operations.save({...f.base,input:{...input,cnReason:'GOODS_DAMAGED'}}),/different|conflict|changed|request/i);
+});
+test('invalid or stale CN case is refused before allocating a file',async()=>{
+ for(const extra of [{cnReason:''},{cnReason:'DISCOUNT_REBATE',receiptCaseId:'CASE',receiptCaseSignature:'SIG',receiptDecisionRevision:'D'},{cnReason:'SHORT_DELIVERY',receiptCaseId:'CASE',receiptCaseSignature:'SIG',receiptDecisionRevision:'OLD'}]){
+  let calls=0;const f=fixture(async()=>{calls++;throw Error('Unexpected upload');});f.workspace.tasks[0].quantityCases=[{id:'CASE',kind:'RECEIPT',taskId:'T1',signature:'SIG',decision:{supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED',revision:'D'}}];
+  const row=(await f.operations.list('NCT',f.staff))[0];await assert.rejects(f.operations.save({...f.base,input:{id:row.id,version:row.version,action:'DOCUMENT',type:'CN',date:'',number:'CN1',reason:'CN',declaredCents:5000,base64:Buffer.from('%PDF-test').toString('base64'),...extra}}),/CN reason|shortfall decision/);assert.equal(calls,0);
+ }
+});

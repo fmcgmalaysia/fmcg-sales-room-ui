@@ -1,0 +1,61 @@
+{
+  "build": "20261026-stop-waiting-cn-v1",
+  "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
+  "files": [
+    {
+      "target": "purchase-live/active-layout.css",
+      "sha256": "f3c10e29faef08c0a193eacd0234abb3117ae39ba6a82ca29f7f7cb2ca6df9fa"
+    },
+    {
+      "target": "purchase-live/active-layout.js",
+      "sha256": "8ff46d8a05c82a8291f466720c9b89417a0344b06be0e13be6a529af782df354"
+    },
+    {
+      "target": "purchase-live/app.js",
+      "sha256": "a7ba0df2966dec94618693d78a8a2c4e184050eeaa87e512ee77b6ddcc8d9096"
+    },
+    {
+      "target": "purchase-live/index.html",
+      "sha256": "4ece2c5c9cff7f08dd3c54802e7ee6408bb3a90dd23db9da81e27b6d6b3f502e"
+    },
+    {
+      "target": "warehouse-room/app.js",
+      "sha256": "dfeaac9bcfa466f87b6ff8558c53d3b201c0ef5d52d769e952d967baa1b00e08"
+    },
+    {
+      "target": "warehouse-room/index.html",
+      "sha256": "fc1fd2064ffc6cc5d95c2d21df3f9643fb2255263735b7d88a43deab8b913ce4"
+    },
+    {
+      "target": "warehouse-room/workroom.css",
+      "sha256": "32f035f1bd64b98655af7dc2beed09131b401dcf969f0e29e9fc56a72834e2e7"
+    },
+    {
+      "target": "warehouse-room/workroom.js",
+      "sha256": "1183b695b51c3f0bb3ac0104919694f0bfbae499e8e0458102c5566771ed605c"
+    },
+    {
+      "target": "account-room/payment-layout.js",
+      "sha256": "82c77b65a24a9db45534208c3f84a63401b89421f4f87d507010e4c6b43bb97a"
+    },
+    {
+      "target": "account-room/payment-layout.css",
+      "sha256": "cea2dc829e14c29001a5e4bbf9404bc23bac08877aa924c969a09f2b0afb107f"
+    },
+    {
+      "target": "account-room/index.html",
+      "sha256": "88de46dbc3da544ec7e7e4da93fa15f59168ffeed7e16e3d9a98244f3c0aa159"
+    },
+    {
+      "target": "purchase-live/supplier-allocation.js",
+      "sha256": "ecc8ae1c1e203238e348f36a93028dd39d947684085967dbde21fd3dd62f27c3"
+    }
+  ],
+  "backendExpectedSha256": {
+    "purchaseQuantityCases.js": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
+    "warehouseReceiving.js": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
+    "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa",
+    "accountSettlement.js": "3222fbc5fd0f5f367ac7f60cad32f5b9afba4132463ab2e45b41f90142bcc6f6",
+    "purchaseOrderWorkflow.js": "68e7d8def7189b6e00cde560a68ad67b2d2718e4cac178c4118075823a102a51"
+  }
+}

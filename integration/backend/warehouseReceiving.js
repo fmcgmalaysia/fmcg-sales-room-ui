@@ -50,6 +50,8 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
   return purchaseOrders.map(po=>{
     if(po.company!==company)throw Error('Warehouse purchase company mismatch.');
     const receipt=readWarehouseReceipts(po.id,activity);
+    const receivingCases=(po.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
+    const stopped=line=>receivingCases.find(item=>item.taskId===line.taskId&&item.decision?.supplierDeliveryDecision==='STOP'&&['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'].includes(item.decision.supplierDecision)&&Number.isFinite(Date.parse(item.decision.at)));
     const lines=po.taskIds.map(id=>{
       const matches=tasks.filter(task=>task.id===id);if(matches.length!==1)throw Error('Warehouse purchase task is missing.');
       const task=matches[0],saved=receipt.lines.find(line=>line.taskId===id),planned=task.procurement?.totalCtn;
@@ -59,14 +61,16 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
       const accepted=saved?.accepted||0,rejected=saved?.rejected||0;
       if(accepted>planned)throw Error('Received quantity exceeds the supplier purchase plan.');
       const fixedCustomer=task.procurement?.customerCtn;
-      return {taskId:id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,estimatedShipmentDate:task.estimatedShipmentDate,planned,shortage:task.shortage||null,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:allocatedTo(id,activity).quantity,extraReceived:Number.isSafeInteger(fixedCustomer)?Math.max(0,(task.warehouse?.stock?.usableReceived??accepted)-fixedCustomer):task.procurementSource?0:Math.max(0,accepted-task.ord),expectedExtra:Number.isSafeInteger(fixedCustomer)?planned-fixedCustomer:task.procurementSource?0:Math.max(0,planned-task.ord),costing:task.procurement?.costing||null,issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
+      return {taskId:id,receivingStoppedWaiting:Boolean(stopped({taskId:id})),stopDecisionRevision:stopped({taskId:id})?.decision.revision||null,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,estimatedShipmentDate:task.estimatedShipmentDate,planned,shortage:task.shortage||null,committed:task.ord,accepted,rejected,remaining:planned-accepted,customerReceived:allocatedTo(id,activity).quantity,extraReceived:Number.isSafeInteger(fixedCustomer)?Math.max(0,(task.warehouse?.stock?.usableReceived??accepted)-fixedCustomer):task.procurementSource?0:Math.max(0,accepted-task.ord),expectedExtra:Number.isSafeInteger(fixedCustomer)?planned-fixedCustomer:task.procurementSource?0:Math.max(0,planned-task.ord),costing:task.procurement?.costing||null,issue:saved?.issue===true,reason:saved?.reason||'',updatedAt:saved?.at||null,updatedBy:saved?.by||''};
     });
     if(receipt.lines.some(line=>!po.taskIds.includes(line.taskId)))throw Error('Received task no longer belongs to this purchase order.');
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;
+    const receivingTaskComplete=lines.length>0&&lines.every(line=>line.remaining===0&&!line.issue||stopped(line));
+    const completionTimes=receivingTaskComplete?lines.map(line=>stopped(line)?.decision.at||receipt.lines.find(saved=>saved.taskId===line.taskId)?.at).filter(Boolean).sort():[];
     return {id:po.id,company,number:po.number,correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.version,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
-      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
+      completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
   });
 }
 
@@ -82,6 +86,7 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
       if(new Set(input.lines.map(line=>line.taskId)).size!==input.lines.length)throw Error('A receipt line was repeated.');
       const changes=input.lines.map(entry=>{
         const line=po.lines.find(line=>line.taskId===entry.taskId),reason=text(entry.reason),kind=entry.kind;
+        if(line?.receivingStoppedWaiting)throw Error('Warehouse stopped waiting for this line. Further receipts and corrections are locked.');
         if(correcting){
           if(!line||!quantity(entry.accepted)||!quantity(entry.rejected)||entry.accepted>line.planned||!reason||reason.length>1000)throw Error('Warehouse enter corrected cumulative cartons and a correction reason.');
           const position=stockPosition(line.taskId,entry.accepted,activity),allocated=readAllocations(activity).find(row=>row.sourceTaskId===line.taskId)?.targets.reduce((n,row)=>n+row.quantity,0)||0;

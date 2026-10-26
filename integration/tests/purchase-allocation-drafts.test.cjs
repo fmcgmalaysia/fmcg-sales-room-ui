@@ -7,7 +7,7 @@ function fixture(){
  const modal={open:true,classList:{add(){},contains:()=>true},close(){this.open=false;}};
  const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm:()=>true,handIcon:()=>''});
  const edit=(id,field,value)=>ui.edit({target:{value,dataset:{allocationField:field},closest:()=>({dataset:{allocationRow:id}})}});
- return {ui,workspace,submissions,messages,pos,edit,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
+ return {ui,workspace,submissions,messages,pos,edit,modal,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
 }
 
 function twoSources(f,saved=false){
@@ -69,4 +69,18 @@ test('cancel only the current product; parked drafts remain restorable and forei
  assert.equal(f.ui.dirty(),true);const cache=f.ui.serialize();assert.equal(cache.rows,undefined);assert.equal(cache.parkedDrafts.length,1);assert.equal(cache.parkedDrafts[0].rootId,'A');
  const g=fixture();g.ui.restore(cache);g.ui.open('A');assert.equal(g.ui.serialize().rows[0].qty,'60');g.ui.open('B');assert.equal(g.ui.serialize().rootId,undefined);assert.equal(g.ui.serialize().parkedDrafts[0].rows[0].qty,'60');
  const other=fixture();other.workspace.company='GHR';other.ui.restore(cache);assert.equal(other.ui.serialize(),null);assert.equal(other.ui.dirty(),false);
+});
+
+
+test('closed supplier dialog stays closed across workspace refreshes and explicit open restores its draft',()=>{
+ const f=fixture();f.ui.open('A');f.edit('A','qty','60');const before=f.ui.serialize();f.modal.close();
+ for(let i=0;i<3;i++)f.ui.receivedWorkspace();
+ assert.equal(f.modal.open,false);assert.equal(f.ui.serialize().rows[0].qty,before.rows[0].qty);assert.equal(f.submissions.length,0);
+ f.ui.open('A');assert.equal(f.modal.open,true);assert.equal(f.ui.serialize().rows[0].qty,'60');assert.equal(f.submissions.length,0);
+});
+
+test('repeated stale saved-source refreshes cannot reopen a dismissed dialog or submit again',()=>{
+ const f=fixture(),root=twoSources(f,true),cache=f.ui.serialize();cache.rows[0].status='saved';f.ui.restore(cache);f.ui.open('A');f.modal.close();root.procurement.totalCtn=41;
+ for(let i=0;i<3;i++)f.ui.receivedWorkspace();
+ assert.equal(f.modal.open,false);assert.equal(f.submissions.length,0);assert.ok(f.ui.serialize());
 });
