@@ -63,3 +63,20 @@ test('Support receives every source task identity for a split delivery batch',as
  const list=await f.operations.list({...f.base,department:'SUPPORT',staff:f.support});
  assert.deepEqual(list.threads[0].sourceTaskIds,['DEMAND','SPLIT']);
 });
+
+test('incoming preview shows the saved Purchase STOP decision without copying it or showing own messages',async()=>{
+ const f=fixture();f.records[0].legacy=[];const d={id:'STOP',at:'2026-10-18T14:00:00.000Z',presentation:'MESSAGE',from:'PURCHASE',notify:true,body:'Stop Waiting',bodyZh:'停止等货',by:'Purchaser'};f.records[0].updates=[d];
+ let t=(await f.operations.list({...f.base,department:'WAREHOUSE',staff:f.warehouse})).threads[0];assert.equal(t.lastIncoming.id,'STOP');assert.equal(t.unread,1);assert.equal(f.pages.size,0);assert.equal(f.indices.size,0);
+ assert.equal((await f.operations.list(f.base)).threads.find(t=>t.peer==='WAREHOUSE').lastIncoming,null);
+ await f.operations.save({...f.base,department:'WAREHOUSE',staff:f.warehouse,requestId:f.uuid(301),input:{...f.input,peer:'PURCHASE',action:'SEND',body:'Own reply hidden from preview',requiresAck:false,baseSequence:0}});
+ t=(await f.operations.list({...f.base,department:'WAREHOUSE',staff:f.warehouse})).threads[0];assert.equal(t.lastIncoming.id,'STOP');assert.equal(f.pages.size,1);
+ await f.operations.save({...f.base,department:'WAREHOUSE',staff:f.warehouse,requestId:f.uuid(302),input:{...f.input,peer:'PURCHASE',action:'SYSTEM_READ',messageId:'STOP'}});
+ t=(await f.operations.list({...f.base,department:'WAREHOUSE',staff:f.warehouse})).threads[0];assert.equal(t.lastIncoming.id,'STOP');assert.equal(t.unread,0);
+ assert.equal((await f.operations.list({...f.base,department:'WAREHOUSE',staff:{...f.warehouse,staffId:'W2'}})).threads[0].unread,1);
+});
+test('a later peer chat replaces the STOP preview, retaining department and company separation',async()=>{
+ const f=fixture();f.records[0].legacy=[];f.records[0].updates=[{id:'STOP',at:'2026-10-18T12:00:00.000Z',presentation:'MESSAGE',from:'PURCHASE',notify:true,body:'Stop Waiting'}];
+ await f.operations.save({...f.base,requestId:f.uuid(303),input:{...f.input,peer:'WAREHOUSE',action:'SEND',body:'Later instruction',requiresAck:true,baseSequence:0}});
+ assert.equal((await f.operations.list({...f.base,department:'WAREHOUSE',staff:f.warehouse})).threads[0].lastIncoming.body,'Later instruction');
+ assert.equal(f.indices.size,1);assert.equal((await f.operations.list({...f.base,company:'GHR',department:'WAREHOUSE',staff:f.warehouse})).threads[0].lastIncoming?.id,'STOP');
+});

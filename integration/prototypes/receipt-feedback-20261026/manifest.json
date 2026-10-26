@@ -1,5 +1,5 @@
 {
-  "build": "20261026-receipt-review-v1",
+  "build": "20261027-chat-latest-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
@@ -16,7 +16,7 @@
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "d15af380bb00bd5a9af1727385c673c56d451001006c5141a2477252a2947f38"
+      "sha256": "36524e9c3c33fb6692809f62fc4a157fe36a693bdbfcebf7a51b1c317a92b864"
     },
     {
       "target": "warehouse-room/app.js",
@@ -24,7 +24,7 @@
     },
     {
       "target": "warehouse-room/index.html",
-      "sha256": "b1207aca26431128701acd48aef4a37da8a083584b94927b40b5daf10708368f"
+      "sha256": "3feefcbb94197e0fcb2e50f33e35f6e2a999b1f24d419a7c33c2c05ac3a9714e"
     },
     {
       "target": "warehouse-room/workroom.css",
@@ -44,18 +44,35 @@
     },
     {
       "target": "account-room/index.html",
-      "sha256": "ee0a0179f6e3543c2c4be3eb9eb7c2d4470c9148db3120698f41e6e4d3b6f38f"
+      "sha256": "9fc09bdaa05a56134ba3c8d2eeca3aad03620f8bfa2bb02dc85190fc0eac9708"
     },
     {
       "target": "purchase-live/supplier-allocation.js",
       "sha256": "ecc8ae1c1e203238e348f36a93028dd39d947684085967dbde21fd3dd62f27c3"
+    },
+    {
+      "target": "master-shared/task-chat.js",
+      "sha256": "0b19954ed2aaf44639ab5b7477379fd2d52ecfbea8cbc7633b8a143470b1aafe"
+    },
+    {
+      "target": "sales-room/messages.js",
+      "sha256": "772576fb86fcbb7affbe309af84d59686be05aabc428edb34653a65cf452c4ca"
+    },
+    {
+      "target": "sales-room/messages.css",
+      "sha256": "97df1358753a6e7104e035df9673bdae6972527242549c291e9483b937e7b757"
+    },
+    {
+      "target": "index.html",
+      "sha256": "728214cef727e6e86128a599474ee6e9e8b80fc1fe19af7ab0f065f098eec98c"
     }
   ],
   "backendExpectedSha256": {
     "purchaseQuantityCases.js": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
     "warehouseReceiving.js": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
-    "departmentMessages.js": "6d08a34e98fe15789b8ccd0fc2219d67c338c8de56a3b1f8125062bd1833ccaa",
+    "departmentMessages.js": "a7c339991bf9899ebc5325659dccf83f1baa28996fda28dc0d6ec6cc147c206d",
     "accountSettlement.js": "3222fbc5fd0f5f367ac7f60cad32f5b9afba4132463ab2e45b41f90142bcc6f6",
-    "purchaseOrderWorkflow.js": "4e8f70beecd5112b674847bc37b98264fdfec54a46337317dcd1c9e075493531"
+    "purchaseOrderWorkflow.js": "4e8f70beecd5112b674847bc37b98264fdfec54a46337317dcd1c9e075493531",
+    "taskChatService.js": "ea32501edc58d717b6c60112b3e3870ce6b0afc55521e576c4683749fe5f0baa"
   }
 }
