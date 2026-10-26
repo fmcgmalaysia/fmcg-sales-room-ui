@@ -1,10 +1,10 @@
 {
-  "build": "20261026-allocation-close-v1",
+  "build": "20261026-hide-shipment-labels-v1",
   "productionRecovery": "dd234f9d5e28227d5841a632acce4f7be583e1f6",
   "files": [
     {
       "target": "purchase-live/active-layout.css",
-      "sha256": "1cfae0054fa92d77e22ae559ff5f60e5e2906ce5fdff45277e6ea908dc5960a6"
+      "sha256": "997501ece7f66d0e3e08008471dddb64cf57f640d73cd73e3bc82b1af6c450d1"
     },
     {
       "target": "purchase-live/active-layout.js",
@@ -16,7 +16,7 @@
     },
     {
       "target": "purchase-live/index.html",
-      "sha256": "37ea72281c0439f94d5550dc3e25b9d386e8d12b9737e1005b9e3e7ceadbd340"
+      "sha256": "2b47b8cfa029d708d125f4d929d82355827066487a5c95bb1f1d118c35d6ae37"
     },
     {
       "target": "warehouse-room/app.js",
