@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-27",
+  "codeCommit": "dd53f7d6dcc803c3d74a440e43292dceeace7ebf",
+  "build": "20261027-support-order-progress-v1",
+  "pullRequest": 227,
+  "pages": {
+    "runId": 40480345523,
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "changed": 7,
+    "unchanged": 92
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-order-progress-20261027",
+    "removed": true,
+    "remainingBranches": 7,
+    "remainingTags": 0
+  },
+  "wix": {
+    "site": "MASTER",
+    "publishedLiveReceipt": true,
+    "nativeExactFiles": 5
+  },
+  "verification": {
+    "sharedRegressionPassed": 145,
+    "localSupportAndWarehouseUi": "passed",
+    "publicDisplay": "PENDING_USER_OPENED_TABS",
+    "businessMutations": 0
+  }
+}
