@@ -1,3 +1,4 @@
+import { requestSupportCustomers } from 'backend/supportCustomerClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import { fulfilmentStore, readFulfilmentContext, saveCustomerFulfilment } from 'backend/customerFulfilmentService.js';
@@ -22,3 +23,6 @@ export const withdrawSupportInvoice=webMethod(Permissions.SiteMember,async(compa
 const saveDocument=createSupportDocumentOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,documentService:requestPurchaseDocument});
 export const getSupportDocuments=webMethod(Permissions.SiteMember,async company=>{await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');const activity=await fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity);return {company,documents:readSupportDocuments(activity,company),version:supportDocumentVersion({company,activity})};});
 export const uploadSupportDocument=webMethod(Permissions.SiteMember,async(company,requestId,input)=>saveDocument({company,staff:await supportStaff(),requestId,input}));
+
+export const getSupportCustomers=webMethod(Permissions.SiteMember,async company=>requestSupportCustomers({company,staff:await supportStaff()}));
+export const saveSupportCustomer=webMethod(Permissions.SiteMember,async(company,requestId,input)=>requestSupportCustomers({company,staff:await supportStaff(),requestId,input}));

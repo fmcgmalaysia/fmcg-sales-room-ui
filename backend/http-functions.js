@@ -1,3 +1,4 @@
+import { handleMasterSupportCustomers } from 'backend/masterSupportCustomers.js';
 import { response } from 'wix-http-functions';
 import { readMasterFxRates } from 'backend/masterFxRead.js';
 import { readMasterCustomerNames } from 'backend/masterCustomerNames.js';
@@ -357,4 +358,9 @@ export async function post_masterCustomerNames(request) {
     const result=await readMasterCustomerNames(request);
     return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)});
   } catch (_) {return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Customer short names could not be confirmed.'})});}
+}
+
+export async function post_masterSupportCustomers(request) {
+ try { const result=await handleMasterSupportCustomers(request); return response({status:result.status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify(result.body)}); }
+ catch (_) {return response({status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({ok:false,error:'Customer profiles could not be confirmed.'})});}
 }

@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-27",
+  "published": false,
+  "files": [
+    {
+      "site": "master",
+      "file": "integration/wix/supportWorkroomBridge.js",
+      "sha256": "0ac317fe5428f85b35aeb2b144925b8edabc22153361e61b59f0fd5b9d515a04",
+      "exact": true
+    },
+    {
+      "site": "master",
+      "file": "integration/backend/supportWorkroom.web.js",
+      "sha256": "0b2d9f715f021f3ff7b5e25321375bd594048023b908d89c92966737d6348c1c",
+      "exact": true
+    },
+    {
+      "site": "master",
+      "file": "integration/backend/supportCustomerClient.js",
+      "sha256": "4b8089e50e4d33f95a74f09dcb1ee1ae24fb1b729556131d17f0ac2a487ea48f",
+      "exact": true
+    },
+    {
+      "site": "master",
+      "file": "integration/backend/supportShipmentBooking.js",
+      "sha256": "46689c74d6da04fe404aea58177d64ddf5a1d26f692b4c339b6a4da3bd743dfe",
+      "exact": true
+    },
+    {
+      "site": "master",
+      "file": "integration/backend/customerFulfilmentService.js",
+      "sha256": "c7354181729709686627ae4ab595183ef4aab759df94edc33526c23907798b44",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "backend/supportCustomerProfile.js",
+      "sha256": "4377f76f25d77231687425ec88748c56c24725e1da2b2b14c823906b2824187a",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "backend/masterSupportCustomers.js",
+      "sha256": "4b0d1e3d2accde55d52538ae08d15aad09d91ad605594c2ba7fd0f4584f7dba5",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "backend/http-functions.js",
+      "sha256": "8b4ad2250e2849a6bccdcae57daddcd70cd9d99ac67f93b376346578a7561de5",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "sales-room/wix/sales-room-page.js",
+      "sha256": "7de1f7272b1676ae7e060ee10ca91c21acf28ed2e0f4007b2ea9f7f630cd4c37",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "buyer-room/wix/buyer-room-page.js",
+      "sha256": "aa60daaa566bb50a4412cd12db71c4858a72994d788a8015db154a52cf26524a",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "buyer-room/catalogue/wix/catalogue-page-v3.js",
+      "sha256": "8ad22d86142c6bf71a54f61f9d5d0418af7b42f1be03e4d95af0691ff4c9c351",
+      "exact": true
+    },
+    {
+      "site": "source",
+      "file": "buyer-room/wix/order-received-lightbox.js",
+      "sha256": "8282d7d8e515fd077aae6965cf3f2da0ff278e4262ecd8f8590b53a633c63120",
+      "exact": true
+    }
+  ]
+}

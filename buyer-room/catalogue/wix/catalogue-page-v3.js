@@ -4,9 +4,9 @@ import { local, session } from 'wix-storage-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import wixData from 'wix-data';
 
-import { getCurrentStaffContext } from 'backend/staffAuth.web';
+import { getCurrentStaffContext } from 'backend/staffAuth.web.js';
 import { getSalesRoomCustomerDetail } from 'backend/onboarding.web';
-import { addCatalogueSelection, getCatalogueSelectionState, routeCatalogueSelection } from 'backend/catalogueSelection.web';
+import { addCatalogueSelection, getCatalogueSelectionState, routeCatalogueSelection } from 'backend/catalogueSelection.web.js';
 
 let catalogueContextMessage = null;
 let catalogueMenuMessage = null;
