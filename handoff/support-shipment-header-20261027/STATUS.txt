@@ -1,0 +1,28 @@
+SUPPORT per-Desk shipment header candidate
+Branch: feat/support-shipment-header-20261027
+Base: 2f12476841bc40a0178fb2f5e91a5cb75010343b
+Recovery runtime: 6fcba4ecbdc34893fdb8c14bad5fc671949dac42, 20261027-support-desks-v1
+
+Approved scope
+- Customer Entry is the Orders entry point. Customer name and Desk switcher remain above four separate header groups: Customer Details, Shipment Details, Documents, Totals.
+- SO/SI/DO/CN/$ and BC/PL/CF/INS/BL, five buttons per column.
+- Per-Desk SO/PO references and shipment metadata use the original Activity revision chain. They do not rewrite Sales source orders.
+- Newly split remainder tasks default to unassigned (Desk 0), shown as a blank orange selector in All. Explicit assignment restores the regular appearance. No automatic Support order-quantity split writer is added.
+- All remaining demand assigned to a Desk must be loaded before confirming SI. The existing Sales split flow produces separate loaded/unloaded task rows first. Confirmation freezes that Desk and uniquely binds its SI number. Original fulfilment/FX/accounting guards remain authoritative.
+- Documents and payment evidence remain uploadable after lock. Deposit Payment records evidence only; no automatic customer-payment reconciliation.
+
+Checks
+- 59 focused backend tests pass.
+- 54 shared document service, photo, chat, booking and workroom-model tests pass.
+- Actual frontend plus real backend functions passed an isolated fake-store flow: unassigned 20, assign loaded 80, references, shipment, deposit upload, SI lock, post-lock BL upload; six fake writes, zero external requests, zero page errors.
+- Four fresh native backend originals and Apps Script Code.gs matched the repository hashes before edits. Exact originals remain in the private local evidence directory.
+
+Installation status
+- supportWorkroom.web.js native draft installed and exact: 129930724dc099b2e86b8cd04a07adf0cd2c60a1f6246734316ef6646217c6c5.
+- supportDesk.js next edit attempt timed out; partial application UNKNOWN. Read back fully before resuming. Do not repeat its patches blindly.
+- supportDocuments.js and supportInvoice.js remain at the freshly read baseline, pending native patches.
+- Apps Script Code.gs remains saved/deployed version 9, unchanged. SO/BL one-line whitelist patch and existing deployment update are still pending.
+- Page token and final scoped release manifest are not updated. No Pages dispatch, no temporary environment rule change, no Wix Publish. Live site remains previous Desk version.
+- Browser control resumed after the user's Wix re-login, then disconnected again following an editor timeout. Do not substitute native/alternate-profile input or claim installation succeeded.
+
+Release must still complete Code/GitHub, scoped Pages, Wix published-live and formal public display verification separately. No main merge; user business acceptance remains pending.

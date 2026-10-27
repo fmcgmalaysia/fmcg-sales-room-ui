@@ -104,3 +104,71 @@ body.support-workroom .desk-task-table table.order-tasks{min-width:1080px}.desk-
 #booking-arrival{display:block;width:100%;margin-top:7px}#booking .date-label[hidden]{display:none}
 @media(max-width:800px){.desk-groups{grid-template-columns:1fr 1.2fr}.desk-groups .desk-totals{grid-column:1/-1;border-left:0;border-top:1px solid #dce6ef;padding:14px 0 0}.desk-totals dl{grid-template-columns:auto auto auto auto}.desk-amount{display:flex;justify-content:space-between;align-items:baseline}.desk-invoice-action{text-align:right}}
 @media(max-width:500px){.desk-heading{padding:16px}.desk-heading h2{font-size:18px}.desk-groups{grid-template-columns:1fr;padding:16px;gap:14px}.desk-groups>section+section{border-left:0;border-top:1px solid #dce6ef;padding:14px 0 0}.desk-totals dl{grid-template-columns:auto auto}.desk-navigation{min-width:152px}}
+
+/* Approved compact shipment header. Existing Purchase type roles and business controls remain authoritative. */
+body.support-orders-view .tools{display:none}
+body.support-workroom>nav .orders-tab{height:42px;display:inline-flex;align-items:center;padding:0 2px;font:600 12px var(--master-font);color:#203047;white-space:nowrap}
+body.support-workroom>nav .orders-tab.active{color:#3766a2;border-bottom:3px solid #3766a2}
+.customer-order-entry{display:inline-flex;align-items:center;gap:7px;background:transparent;border:0;color:#2563eb;font:600 11px var(--master-font);padding:0}
+.customer-order-entry .order-count{display:inline-flex;align-items:center;justify-content:center}
+.customer-order-entry svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.shipment-header .desk-heading{padding:13px 15px 9px;align-items:flex-start;flex-wrap:nowrap;min-height:0}
+.shipment-header .desk-heading h2{margin:0 0 6px}
+.shipment-header .desk-switcher{display:inline-flex;width:116px}
+.shipment-header .desk-switcher b{font-size:12px;min-width:54px}
+.shipment-header .desk-switcher button{width:28px;min-height:28px}
+.shipment-invoice{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;padding-top:3px;font-size:11px}
+.shipment-invoice>small{color:#647b93;font-size:10px}
+.shipment-invoice .invoice-number-link{color:#2563eb;background:#f5f9fd;border:1px solid #b7cde3;border-radius:4px;padding:5px 8px;font:600 11px var(--master-font)}
+.shipment-invoice .invoice-number-link:disabled{color:#8292a3;background:#eef3f7;cursor:not-allowed}
+.shipment-columns{display:grid;grid-template-columns:1fr 1.05fr 1.65fr 1fr;gap:0}
+.shipment-columns>section{min-width:0;padding:16px 20px 18px}
+.shipment-columns>section+section{border-left:1px solid #dce6ef}
+.shipment-detail-group{display:grid;gap:6px}
+.shipment-detail-group+.shipment-detail-group{margin-top:9px}
+.shipment-kv{display:grid;grid-template-columns:92px minmax(0,1fr);gap:5px;align-items:center;min-height:23px}
+.shipment-kv>span{color:#647b93;font-size:11px}
+.shipment-kv>strong{font-weight:600;font-size:11px;overflow-wrap:anywhere}
+.shipment-kv .shipment-field{display:inline-flex;align-items:center;gap:5px;justify-self:start;padding:0;border:0;background:transparent;text-align:left;color:#173557;font:600 11px var(--master-font);min-width:0}
+.shipment-field>b{font-weight:600;overflow-wrap:anywhere}.shipment-field>.edit-pencil{color:#2563eb;font-size:13px;flex-shrink:0}
+.shipment-field:disabled{opacity:1;cursor:default}.shipment-field:disabled>.edit-pencil{display:none}
+.shipment-field:hover:not(:disabled)>b{text-decoration:underline}
+.shipment-documents h3{font:600 11px/16px var(--master-font);margin:0 0 9px;color:#173557}
+.shipment-doc-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,minmax(28px,auto));grid-auto-flow:column;gap:5px 12px}
+.shipment-doc-grid>div{display:flex;align-items:center;gap:7px;font-size:11px;min-width:0}
+.shipment-doc-grid button{height:28px;min-width:32px;width:32px;padding:4px;border:0;border-radius:5px;background:#f58a00;color:#fff;font:700 11px/1 var(--master-font);flex:0 0 32px}
+.shipment-doc-grid button.available{background:#2563eb}.shipment-doc-grid button:disabled{background:#e8eef3;color:#8292a3;cursor:not-allowed}
+.shipment-doc-grid button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 2px 5px #17365124}
+.shipment-totals dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;margin:0;align-items:baseline}
+.shipment-totals dt{color:#647b93;font-size:11px}.shipment-totals dd{margin:0;text-align:right;font:700 15px/20px var(--master-font);font-variant-numeric:tabular-nums}
+.shipment-totals dd small{font:400 10px var(--master-font);color:#647b93}
+.shipment-totals .desk-amount>strong{font-size:20px;line-height:27px;overflow-wrap:anywhere}
+.shipment-deposit{display:grid;gap:5px;border-top:1px solid #dce6ef;margin-top:10px;padding-top:9px;font-size:11px}
+.shipment-deposit>div{display:flex;justify-content:space-between;gap:8px}.shipment-deposit span{color:#647b93}.shipment-deposit b{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.shipment-save-retry{text-align:right;padding:6px 15px}
+.shipment-task-count{display:flex;justify-content:space-between;gap:12px;margin:11px 0 7px;color:#647b93;font-size:10px}.shipment-task-count>span{text-align:right}
+.shipment-task-count+.desk-task-table{margin-top:0}
+body.support-workroom .desk-task-table .order-tasks{min-width:1100px}
+.desk-task-table .order-tasks :is(th,td):first-child{width:24px;min-width:24px;padding:0 2px 0 8px;text-align:left}
+.desk-task-table .order-tasks :is(th,td):nth-child(2){min-width:46px;width:46px;padding-left:3px;padding-right:5px}
+.desk-task-table .order-tasks :is(th,td):nth-child(3){min-width:220px;width:auto}
+.desk-task-table .order-tasks td:nth-child(4){min-width:75px}.desk-task-table .order-tasks td:nth-child(10){min-width:82px;white-space:nowrap}.desk-task-table .order-tasks td:nth-child(11){min-width:190px;white-space:normal}
+.desk-drag-cell .row-drag{font-size:17px;padding:0;min-width:16px}.desk-drag-cell .row-drag:disabled{color:#b8c4d0;cursor:default}
+.desk-cell select.unassigned{background:#f58a00;color:#fff;border-color:#f58a00}.desk-cell select.unassigned:disabled{background:#fff0d6;color:#825300;border-color:#f7dfb9}
+#invoice-review{width:520px;max-width:calc(100vw - 28px)}#invoice-review #invoice-fields{margin:0 0 12px}#invoice-number{width:100%}
+#invoice-review .work-table{table-layout:fixed}#invoice-review .work-table th:first-child,#invoice-review .work-table td:first-child{width:56%;min-width:0}
+#invoice-review .work-table th:nth-child(2),#invoice-review .work-table td:nth-child(2){width:16%}#invoice-review .work-table th:last-child,#invoice-review .work-table td:last-child{width:28%}
+#invoice-review .invoice-qty{width:46px;border:0;padding:0;background:transparent;color:#203047;font:600 11px var(--master-font);appearance:textfield}
+#invoice-review .invoice-qty::-webkit-inner-spin-button,#invoice-review .invoice-qty::-webkit-outer-spin-button{appearance:none}
+.invoice-lock-note{padding:9px 10px;background:#fff4df;color:#825000;border-radius:4px;font-size:11px}
+body.support-workroom #documents .deposit-check{display:flex;align-items:center;gap:7px}
+#documents .deposit-check input{width:auto;display:inline;margin:0}#documents .deposit-check[hidden]{display:none}
+#desk-references{width:420px;max-width:calc(100vw - 28px)}#desk-reference-fields{margin:0;padding:0;border:0}
+#desk-reference-fields label{display:block;margin-bottom:12px;font-weight:600}#desk-reference-fields input{display:block;margin-top:5px;width:100%}
+#desk-reference-fields small,#desk-original-po{color:#647b93;font-size:11px}#desk-reference-status{color:#b4232d}#desk-reference-save{background:#3766a2;color:#fff;border-color:#3766a2}
+@media(max-width:1150px){.shipment-columns{grid-template-columns:1fr 1fr}.shipment-columns>.shipment-documents{border-left:0;border-top:1px solid #dce6ef}.shipment-columns>.shipment-totals{grid-column:auto;border-left:0;border-top:1px solid #dce6ef;display:grid;grid-template-columns:1fr 1fr;gap:9px 22px}.shipment-totals .desk-amount{margin:0;padding:0;border:0}.shipment-deposit{grid-column:1/-1;grid-template-columns:1fr 1fr;margin:0}.shipment-invoice{max-width:45%}}
+@media(max-width:560px){.shipment-header .desk-heading{display:block}.shipment-invoice{max-width:none;justify-content:flex-start;margin-top:8px}.shipment-columns{grid-template-columns:1fr}.shipment-columns>section+section{border-left:0;border-top:1px solid #dce6ef}.shipment-columns>.shipment-totals{display:block}.shipment-totals .desk-amount{border-top:1px solid #dce6ef;margin-top:8px;padding-top:8px}.shipment-deposit{margin-top:8px;grid-template-columns:1fr}.shipment-task-count{flex-wrap:wrap}.shipment-kv{grid-template-columns:92px minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.shipment-doc-grid button:hover:not(:disabled){transform:none}}
+
+.shipment-details h3,.shipment-shipping h3{margin:0 0 14px;color:#647b93;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.shipment-shipping .shipment-detail-group{display:grid;gap:5px}
