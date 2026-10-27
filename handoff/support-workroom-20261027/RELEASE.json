@@ -32,12 +32,14 @@
     "immutableVersion": 9
   },
   "publicVerification": {
-    "userOpenedTab": "awaiting user new-tab opening",
+    "userOpenedTab": "User manually opened new formal Support tab; exact new workroom iframe, staff identity and three actual work rows displayed",
     "outerIframeNewBuild": true,
     "oldUserTab": "Tool refresh yielded about:blank inner frame, no error/warning logs",
-    "complete": false
+    "complete": true,
+    "detailRead": "Opened one actual order read-only: English headers, original demand, blank Committed placeholder, real Loaded zero, original prices, GP and CBM. Selection/invoice action disabled when no loaded quantity; no Save or business mutation.",
+    "relevantErrorsAndWarnings": 0
   },
   "businessWrites": 0,
   "mainMerged": false,
-  "overall": "Pages and Wix publish succeeded. Real public Support appearance remains incomplete; do not claim four-stage publication complete."
+  "overall": "All four release stages complete for scoped Support UI runtime a1a49a2. Business transaction acceptance is assigned to user; known scope limits remain as documented."
 }

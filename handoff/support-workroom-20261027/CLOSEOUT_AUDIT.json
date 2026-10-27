@@ -3,9 +3,22 @@
   "timezone": "Asia/Kuala_Lumpur",
   "scope": "Closeout audit of the 2026-10-26 and 2026-10-27 MASTER changes",
   "previousReleases": {
-    "stopWaitingAndCn": {"code": "911d31a59b6e6e44962dc678445f65ac192430a8", "userVerified": true, "record": "handoff/receipt-feedback-20261026/VERIFIED_STOP_CN_20261026.json"},
-    "receiptReview": {"code": "f9d453d2fd456cc98fad41cb64ca243074d42147", "fourReleaseStages": "complete", "userBusinessAcceptance": "not independently inferred", "record": "handoff/receipt-review-layout-20261026/RELEASE.txt"},
-    "incomingChat": {"code": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73", "fourReleaseStages": "complete for requested primary MASTER presentation", "record": "handoff/chat-latest-message-20261027/RELEASE.json"}
+    "stopWaitingAndCn": {
+      "code": "911d31a59b6e6e44962dc678445f65ac192430a8",
+      "userVerified": true,
+      "record": "handoff/receipt-feedback-20261026/VERIFIED_STOP_CN_20261026.json"
+    },
+    "receiptReview": {
+      "code": "f9d453d2fd456cc98fad41cb64ca243074d42147",
+      "fourReleaseStages": "complete",
+      "userBusinessAcceptance": "not independently inferred",
+      "record": "handoff/receipt-review-layout-20261026/RELEASE.txt"
+    },
+    "incomingChat": {
+      "code": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
+      "fourReleaseStages": "complete for requested primary MASTER presentation",
+      "record": "handoff/chat-latest-message-20261027/RELEASE.json"
+    }
   },
   "support": {
     "code": "57d153a096692dab704224680f0dfff58217473d",
@@ -14,14 +27,18 @@
     "githubHeadConfirmed": true,
     "userPublicExportApproval": "explicitly confirmed after distinguishing MASTER site from historical repository name",
     "quantityRule": "confirmed Warehouse Loaded Qty less reserved/invoiced quantities; bounded by allocated customer demand",
-    "affectedTests": {"pass": 174, "fail": 0, "rerunUnchanged": false},
+    "affectedTests": {
+      "pass": 174,
+      "fail": 0,
+      "rerunUnchanged": false
+    },
     "stagedResourceCount": 99,
     "stagedResourceHashMismatches": 0,
-    "pages": "not deployed; new workroom.html returns HTTP 404",
-    "wix": "eight backend/public drafts installed and exact; page bridge installed; old entry retained pending Pages",
-    "publicVerification": "not performed for the new Support UI",
+    "pages": "Published run40437486858/#276; exact runtime a1a49a2/build20261027-support-workroom-v1, all99public hashes exact",
+    "wix": "Exact Support entry and eight dependencies installed; Wix published/live receipt confirmed",
+    "publicVerification": "User-opened formal page shows actual orders and read-only detail; no relevant errors/warnings; business acceptance remains user testing",
     "appsScript": "document service active version 9; see DOCUMENT_SERVICE_V9.json",
-    "remainingReleaseGate": "Await explicit current-round temporary Pages rule for the Support task branch; original seven rules remain unchanged and no dispatch occurred",
+    "remainingReleaseGate": "None for this scoped release. Temporary permission removed, original seven restored. Known feature limits are retained, not represented as completed.",
     "knownScopeLimits": [
       "Country and port absent from current authoritative Master order read contract; unknown values remain visible as unknown",
       "Finance-confirmed invoice payment allocation and balances not connected; document upload is not payment reconciliation",
@@ -31,11 +48,11 @@
     ]
   },
   "publicPagesReadback": {
-    "build": "20261027-chat-latest-v1",
-    "code": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
-    "resources": 95,
+    "build": "20261027-support-workroom-v1",
+    "code": "a1a49a2c03572f5d30a7aa09655962bea0b55692",
+    "resources": 99,
     "backendFilesIncluded": false
   },
   "mainMerged": false,
-  "overall": "Previous scoped releases recorded; Support release not yet closed. Do not claim Support published or all requested business functions accepted."
+  "overall": "Scoped Support release closed through all four publishing stages; user business acceptance pending. Earlier releases retained; known country/port/payment-reconciliation limits remain."
 }
