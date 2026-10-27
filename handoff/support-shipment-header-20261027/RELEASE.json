@@ -1,0 +1,54 @@
+{
+  "build": "20261027-support-shipment-header-v1",
+  "code": "41995a386ff3ed0cc75ef2f60bd0111381403b85",
+  "pullRequest": 229,
+  "pages": {
+    "runId": 40517599541,
+    "runNumber": 282,
+    "input": "support-workroom-only",
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "differences": []
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-shipment-header-20261027",
+    "userApproved": true,
+    "added": true,
+    "removed": true,
+    "originalRules": [
+      "feat/master-gp-margin",
+      "feat/nct-order-submit-room6",
+      "feat/purchase-adjustment-cost",
+      "fix/purchase-approved-ux-layout",
+      "main",
+      "style/purchase-icons-spacing-feedback",
+      "style/purchase-table-track"
+    ],
+    "tags": 0,
+    "restoredOriginalSeven": true
+  },
+  "documentServiceVersion": 10,
+  "wix": {
+    "backendExact": 4,
+    "pageExact": true,
+    "publishedLive": true,
+    "pageHash": "27cb490ccd1eb8d49dd8d73f4552a1883d1a28f03e4b2bf3845d5250d45e175a",
+    "receipt": "Congratulations This site is published and live online."
+  },
+  "publicPage": {
+    "url": "https://fmcg999.wixstudio.com/master/support-department",
+    "status": "PENDING_USER_BOOKMARK_OPEN",
+    "iframeBuild": "20261027-support-shipment-header-v1",
+    "embeddedContent": "about:blank",
+    "capturedErrors": [],
+    "businessMutations": 0
+  },
+  "businessMutations": 0,
+  "businessAcceptance": "USER_TEST_PENDING",
+  "protectedResources": {
+    "baseline": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
+    "count": 95,
+    "differences": []
+  }
+}

@@ -29,7 +29,8 @@
   "page": {
     "beforeSha256": "f4c655b6856ed1970a08aab2899dcd9b434f4f51bbce09d43c2ca2c98a5d17e2",
     "candidateSha256": "27cb490ccd1eb8d49dd8d73f4552a1883d1a28f03e4b2bf3845d5250d45e175a",
-    "installed": false
+    "installed": true,
+    "exact": true
   },
-  "published": false
+  "published": true
 }
