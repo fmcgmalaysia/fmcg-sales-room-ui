@@ -1,0 +1,36 @@
+{
+  "build": "20261028-master-efficiency-v1",
+  "branch": "perf/master-redundant-work-20261028",
+  "baselineSource": "bae597a",
+  "recoveryRuntime": "ed8f3d157e146baaaad7cee1e47b4089f365cd0e",
+  "initialPublicResources": {
+    "resources": 99,
+    "exact": 99
+  },
+  "wixNativeOriginals": {
+    "purchase": "193e3f20840587c787dd5db53cff2e24b829d5aa162c39c779d24a339c98116f",
+    "account": "218c4158217e99b5662195bd689026e71994081d1734b302d7d87241c1dd0cc8",
+    "warehouse": "32ec00e5a2cc106b6cae7bd0fd6f7b6d74181de14ec3cb9c4b2ac78fc33599f3",
+    "support": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286"
+  },
+  "scope": {
+    "backendChanged": false,
+    "financialOrStockWrites": false,
+    "wixCodeChangeRequired": false,
+    "publicResources": 99,
+    "expectedChanged": 9,
+    "expectedProtected": 90
+  },
+  "stages": {
+    "code": "LOCAL_COMPLETE",
+    "pages": "PENDING",
+    "wix": "ORIGINALS_EXACT_RECEIPT_PENDING",
+    "public": "PENDING"
+  },
+  "temporaryPermission": {
+    "requiredForTaskBranch": true,
+    "added": false,
+    "restored": false
+  },
+  "mainMerged": false
+}

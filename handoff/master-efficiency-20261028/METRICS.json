@@ -1,0 +1,265 @@
+{
+  "chatPaint": {
+    "results": [
+      {
+        "consumer": "Purchase Department",
+        "cells": 100,
+        "baselineScans": 101,
+        "candidateScans": 2,
+        "baselineWrites": 10100,
+        "candidateWrites": 100,
+        "baselineUnchangedRefreshWrites": 100,
+        "candidateUnchangedRefreshWrites": 0,
+        "cellMarkupExact": true,
+        "companySwitch": true,
+        "openClose": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "consumer": "Account Department",
+        "cells": 100,
+        "baselineScans": 101,
+        "candidateScans": 2,
+        "baselineWrites": 10100,
+        "candidateWrites": 100,
+        "baselineUnchangedRefreshWrites": 100,
+        "candidateUnchangedRefreshWrites": 0,
+        "cellMarkupExact": true,
+        "companySwitch": true,
+        "openClose": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "consumer": "Warehouse Department",
+        "cells": 100,
+        "baselineScans": 101,
+        "candidateScans": 2,
+        "baselineWrites": 10100,
+        "candidateWrites": 100,
+        "baselineUnchangedRefreshWrites": 100,
+        "candidateUnchangedRefreshWrites": 0,
+        "cellMarkupExact": true,
+        "companySwitch": true,
+        "openClose": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "consumer": "Support Department",
+        "cells": 100,
+        "baselineScans": 101,
+        "candidateScans": 2,
+        "baselineWrites": 10100,
+        "candidateWrites": 100,
+        "baselineUnchangedRefreshWrites": 100,
+        "candidateUnchangedRefreshWrites": 0,
+        "cellMarkupExact": true,
+        "companySwitch": true,
+        "openClose": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "consumer": "Support Packing Lists",
+        "cells": 100,
+        "baselineScans": 101,
+        "candidateScans": 2,
+        "baselineWrites": 10100,
+        "candidateWrites": 100,
+        "baselineUnchangedRefreshWrites": 100,
+        "candidateUnchangedRefreshWrites": 0,
+        "cellMarkupExact": true,
+        "companySwitch": true,
+        "openClose": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      }
+    ],
+    "totalCases": 5,
+    "optimized": true
+  },
+  "dateFormat": {
+    "results": [
+      {
+        "file": "master-shared/task-chat.js",
+        "edgeCases": 15,
+        "outputsExact": true,
+        "repeatedRows": 100,
+        "baselineFormatterConstructions": 111,
+        "candidateFormatterConstructions": 1
+      },
+      {
+        "file": "support-room/workroom.js",
+        "edgeCases": 15,
+        "outputsExact": true,
+        "repeatedRows": 100,
+        "baselineFormatterConstructions": 109,
+        "candidateFormatterConstructions": 1
+      }
+    ],
+    "realExternalRequests": 0
+  },
+  "readBatch": {
+    "cases": 12,
+    "results": [
+      {
+        "department": "PURCHASE",
+        "scenario": "visible",
+        "baselineNormalReadRequests": 3,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "PURCHASE",
+        "scenario": "failure",
+        "baselineNormalReadRequests": 4,
+        "candidateNormalReadRequests": 2,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "PURCHASE",
+        "scenario": "partial",
+        "baselineNormalReadRequests": 1,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "ACCOUNT",
+        "scenario": "visible",
+        "baselineNormalReadRequests": 3,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "ACCOUNT",
+        "scenario": "failure",
+        "baselineNormalReadRequests": 4,
+        "candidateNormalReadRequests": 2,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "ACCOUNT",
+        "scenario": "partial",
+        "baselineNormalReadRequests": 1,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "WAREHOUSE",
+        "scenario": "visible",
+        "baselineNormalReadRequests": 3,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "WAREHOUSE",
+        "scenario": "failure",
+        "baselineNormalReadRequests": 4,
+        "candidateNormalReadRequests": 2,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "WAREHOUSE",
+        "scenario": "partial",
+        "baselineNormalReadRequests": 1,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "SUPPORT",
+        "scenario": "visible",
+        "baselineNormalReadRequests": 3,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "SUPPORT",
+        "scenario": "failure",
+        "baselineNormalReadRequests": 4,
+        "candidateNormalReadRequests": 2,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      },
+      {
+        "department": "SUPPORT",
+        "scenario": "partial",
+        "baselineNormalReadRequests": 1,
+        "candidateNormalReadRequests": 1,
+        "finalSummaryExact": true,
+        "finalMessagesAndReceiptsExact": true,
+        "explicitAckPreserved": true,
+        "realExternalRequests": 0,
+        "pageErrors": 0
+      }
+    ]
+  },
+  "existingMessageRegression": {
+    "tests": 45,
+    "pass": 45,
+    "fail": 0
+  },
+  "releaseBoundary": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "supportActualClientIsolated": {
+    "fakeWrites": 8,
+    "realExternalRequests": 0,
+    "pageErrors": 0,
+    "deskSwitchAndRestore": true,
+    "references": true,
+    "shipment": true,
+    "depositUpload": true,
+    "invoiceLock": true,
+    "postLockBlUpload": true,
+    "responsive": true
+  },
+  "actualCredits": "UNKNOWN",
+  "productionBusinessWrites": 0
+}
