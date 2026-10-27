@@ -90,8 +90,8 @@
       "sha256": "7b7092907cd241c2e353ed25f3cc538870270abfbe8a4fbcdfcfd56009fe5acd"
     }
   ],
-  "documentServiceVersion": 9,
-  "documentServiceUpdatePending": true,
+  "documentServiceVersion": 10,
+  "documentServiceUpdatePending": false,
   "documentServiceRequiredCategories": [
     "SUPPORT_SO",
     "SUPPORT_BL"
