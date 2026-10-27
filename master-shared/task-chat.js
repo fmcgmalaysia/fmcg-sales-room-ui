@@ -2,11 +2,14 @@
 const department=document.querySelector('nav[aria-label="Account navigation"]')?'ACCOUNT':document.querySelector('nav[aria-label="Warehouse navigation"]')?'WAREHOUSE':document.title.includes('Support')?'SUPPORT':'PURCHASE';
 const english=department==='ACCOUNT',copy=(en,zh)=>english?en:en+' '+zh,code={ACCOUNT:'ACC',PURCHASE:'P',WAREHOUSE:'W',SUPPORT:'S',SALES:'SALES'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';};
+const chatTimeFormat=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?chatTimeFormat.format(d):'';};
 const companyValue=()=>document.querySelector('#companySelect,#company')?.value||'NCT';
 const key=t=>[t.kind,t.taskId,t.peer,t.legacyOnly?'old':'new'].join('|');
 let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,pageState='loading',listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve(),listPeer=null;
 const requests=new Map(),drafts=new Map(),seen=new Set();
+let paintQueued=false;
+function queuePaint(){if(paintQueued)return;paintQueued=true;queueMicrotask(()=>{paintQueued=false;paintCells();});}
 const dialog=document.createElement('dialog');dialog.className='tc-dialog';dialog.setAttribute('aria-label',copy('Messages','留言'));document.body.append(dialog);
 const nav=document.createElement('button');nav.type='button';nav.className='tc-nav';nav.setAttribute('aria-label',copy('Messages','留言'));nav.innerHTML='<span aria-hidden="true">•••</span>'; // Task-row buttons remain the visible message entry points.
 const salesInbox=document.createElement('button');salesInbox.type='button';salesInbox.className='tc-peer tc-sales-inbox';salesInbox.hidden=true;salesInbox.onclick=()=>{if(!pending&&!document.querySelector('dialog[open]')){renderList(null,'SALES');dialog.showModal();}};
@@ -33,7 +36,8 @@ function paintCells(){
  document.querySelectorAll('[data-tc-cell]').forEach(el=>{const kind=el.dataset.tcKind||'PO',peer=el.dataset.tcPeer,ids=el.dataset.tcSources?JSON.parse(el.dataset.tcSources):null;
   const found=threads.filter(t=>!t.legacyOnly&&t.kind===kind&&(!peer||t.peer===peer)&&(ids?ids.some(id=>(t.sourceTaskIds||[t.sourceTaskId]).includes(id)):t.taskId===el.dataset.tcCell));
   const latest=found.map(t=>t.lastIncoming).filter(Boolean).sort((a,b)=>String(b.at).localeCompare(String(a.at)))[0];
-  el.innerHTML='<span class="tc-snippet">'+esc(messagePreview(latest)||'—')+'</span><span class="tc-actions">'+(found.length>1&&ids?'<button class="tc-peer" data-tc-source-list="'+esc(JSON.stringify(ids))+'">W'+badge(found.reduce((n,t)=>n+(t.unread||0),0))+'</button>':found.map(button).join(''))+'</span>';
+  const html='<span class="tc-snippet">'+esc(messagePreview(latest)||'—')+'</span><span class="tc-actions">'+(found.length>1&&ids?'<button class="tc-peer" data-tc-source-list="'+esc(JSON.stringify(ids))+'">W'+badge(found.reduce((n,t)=>n+(t.unread||0),0))+'</button>':found.map(button).join(''))+'</span>';
+  if(el.innerHTML!==html)el.innerHTML=html;
  });
  nav.innerHTML='<span aria-hidden="true">•••</span>'+badge(threads.reduce((n,t)=>n+(t.unread||0),0));
  const sales=threads.filter(t=>t.peer==='SALES'&&(t.sequence||t.unread||t.lastIncoming));salesInbox.hidden=!sales.length;salesInbox.innerHTML=esc(copy('Sales messages','销售留言'))+badge(sales.reduce((n,t)=>n+(t.unread||0),0));const host=document.querySelector('main');if(host&&!host.contains(salesInbox))host.prepend(salesInbox);
@@ -95,10 +99,11 @@ async function savePending(){
 function enqueue(input){if(pending||!current||pageReadOnly)return;remember();pending={id:crypto.randomUUID(),draftKey:draftKey(),input:{kind:current.kind,taskId:current.taskId,peer:current.peer,...input},inFlight:false};savePending();}
 function observeRead(){
  observer?.disconnect();if(!current||pageReadOnly)return;const identity=key(current),gen=generation;
- observer=new IntersectionObserver(entries=>{if(document.visibilityState!=='visible'||!dialog.open)return;for(const e of entries){if(!e.isIntersecting||e.intersectionRatio<1)continue;const systemId=e.target.dataset.tcSystem,m=systemId?(current.updates||[]).find(m=>m.id===systemId):messages.find(m=>m.id===e.target.dataset.tcMessage);if(!m||m.from===department||seen.has(company+'|'+identity+'|'+m.id)||m.byStaffId===staffId)continue;
-  seen.add(company+'|'+identity+'|'+m.id);const input={kind:current.kind,taskId:current.taskId,peer:current.peer,...(systemId?{action:'SYSTEM_READ',messageId:m.id}:m.legacy?{action:'LEGACY_READ',messageId:m.id}:{action:'READ',sequence:m.sequence})};
-  readQueue=readQueue.then(async()=>{if(gen!==generation)return;try{await request('SAVE',{input});refresh();}catch(_){seen.delete(company+'|'+identity+'|'+m.id);}});
- }},{root:dialog.querySelector('.tc-history'),threshold:1});dialog.querySelectorAll('[data-tc-message],[data-tc-system]').forEach(el=>observer.observe(el));
+ observer=new IntersectionObserver(entries=>{if(document.visibilityState!=='visible'||!dialog.open)return;const batch=[];let normal=null;for(const e of entries){if(!e.isIntersecting||e.intersectionRatio<1)continue;const systemId=e.target.dataset.tcSystem,m=systemId?(current.updates||[]).find(m=>m.id===systemId):messages.find(m=>m.id===e.target.dataset.tcMessage);if(!m||m.from===department||seen.has(company+'|'+identity+'|'+m.id)||m.byStaffId===staffId)continue;
+  const seenKey=company+'|'+identity+'|'+m.id;seen.add(seenKey);const input={kind:current.kind,taskId:current.taskId,peer:current.peer,...(systemId?{action:'SYSTEM_READ',messageId:m.id}:m.legacy?{action:'LEGACY_READ',messageId:m.id}:{action:'READ',sequence:m.sequence})};
+  if(input.action==='READ'&&Number.isSafeInteger(input.sequence)&&input.sequence>0){if(!normal){normal={input,seenKeys:[]};batch.push(normal);}if(input.sequence>normal.input.sequence)normal.input=input;normal.seenKeys.push(seenKey);}else batch.push({input,seenKeys:[seenKey]});
+ }for(const {input,seenKeys}of batch)readQueue=readQueue.then(async()=>{if(gen!==generation)return;try{await request('SAVE',{input});refresh();}catch(_){for(const seenKey of seenKeys)seen.delete(seenKey);}});
+ },{root:dialog.querySelector('.tc-history'),threshold:1});dialog.querySelectorAll('[data-tc-message],[data-tc-system]').forEach(el=>observer.observe(el));
 }
 function close(){if(pending){notice(copy('Confirm the pending save before closing.','请先确认待保存留言。'));return;}remember();observer?.disconnect();dialog.close();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});dialog.addEventListener('input',remember);
@@ -114,8 +119,8 @@ dialog.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)ret
 document.addEventListener('click',e=>{if(dialog.contains(e.target))return;const b=e.target.closest('[data-tc-key],[data-tc-source-list]');if(!b)return;if(b.dataset.tcSourceList){if(!pending){renderList(JSON.parse(b.dataset.tcSourceList));dialog.showModal();}}else{const t=threads.find(t=>key(t)===b.dataset.tcKey);if(t)open(t.taskId,t.peer,t.kind);}});nav.onclick=()=>open();
 document.addEventListener('change',e=>{if(!['company','companySelect'].includes(e.target.id))return;if(pending){e.stopImmediatePropagation();e.target.value=company;notice(copy('Confirm the pending save first.','请先确认待保存留言。'));return;}remember();generation++;company=e.target.value;threads=[];staffId='';current=null;messages=[];listBusy=false;pageBusy=false;seen.clear();dialog.close();paintCells();refresh();},true);
 window.addEventListener('beforeunload',e=>{if(pending||[...drafts.values()].some(d=>d.body.trim())){e.preventDefault();e.returnValue='';}});
-function cell(row,fallback='',peer=department==='PURCHASE'?'ACCOUNT':'PURCHASE',kind='PO'){queueMicrotask(paintCells);return '<div class="tc-cell" data-tc-cell="'+esc(row.id)+'" data-tc-kind="'+kind+'" data-tc-peer="'+peer+'"></div>';}
-window.departmentMessages={cell,open,refresh,isBusy:()=>Boolean(pending||dialog.open||[...drafts.values()].some(d=>d.body.trim())||dialog.querySelector('textarea')?.value.trim()),hasUnread:id=>threads.some(t=>t.taskId===id&&t.unread),deliveryCell:row=>cell(row,'','PURCHASE','DELIVERY')+cell(row,'','SUPPORT','DELIVERY'),sourceCell:ids=>{queueMicrotask(paintCells);return '<div class="tc-cell" data-tc-cell="sources" data-tc-kind="DELIVERY" data-tc-peer="WAREHOUSE" data-tc-sources="'+esc(JSON.stringify(ids))+'"></div>';}};
-new MutationObserver(paintCells).observe(document.querySelector('main'),{childList:true});
+function cell(row,fallback='',peer=department==='PURCHASE'?'ACCOUNT':'PURCHASE',kind='PO'){queuePaint();return '<div class="tc-cell" data-tc-cell="'+esc(row.id)+'" data-tc-kind="'+kind+'" data-tc-peer="'+peer+'"></div>';}
+window.departmentMessages={cell,open,refresh,isBusy:()=>Boolean(pending||dialog.open||[...drafts.values()].some(d=>d.body.trim())||dialog.querySelector('textarea')?.value.trim()),hasUnread:id=>threads.some(t=>t.taskId===id&&t.unread),deliveryCell:row=>cell(row,'','PURCHASE','DELIVERY')+cell(row,'','SUPPORT','DELIVERY'),sourceCell:ids=>{queuePaint();return '<div class="tc-cell" data-tc-cell="sources" data-tc-kind="DELIVERY" data-tc-peer="WAREHOUSE" data-tc-sources="'+esc(JSON.stringify(ids))+'"></div>';}};
+new MutationObserver(queuePaint).observe(document.querySelector('main'),{childList:true});
 setInterval(()=>{if(document.visibilityState==='visible'&&!pending){refresh();if(dialog.open&&current&&!dialog.querySelector('textarea')?.value.trim())loadPage();}},30000);refresh();
 })();
