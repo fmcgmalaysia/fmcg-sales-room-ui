@@ -99,7 +99,7 @@ export function createPreparationOperations({store,names,readContext,documentSer
    const {items,item}=await current(),note=text(input.note),at=now().toISOString();
    if(item.dispatched>0)throw Error('Warehouse this task has dispatched goods. Use the supervised correction process.');
    if(item.planMismatch||item.orphaned||item.stale&&item.loaded>0)throw Error('Warehouse loading no longer matches the current task. Ask Sales to restore or review its batch plan.');
-   if(input.action==='EXPIRY'&&(!validExpiry(input.expiryDate)||verified.length))throw Error('Warehouse enter a valid expiry date.');
+   if(input.action==='EXPIRY'&&(!validExpiry(input.expiryDate)||input.expiryDate<'1900-01-01'||verified.length))throw Error('Warehouse enter a valid expiry date.');
    if(note.length>1000)throw Error('Warehouse note is too long.');
    let prepared=item.prepared,loaded=item.loaded,preparedAt=item.preparedAt,loadedAt=item.loadedAt;
    if(input.action==='PACK'){

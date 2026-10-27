@@ -24,7 +24,7 @@
     },
     {
       "target": "warehouse-room/index.html",
-      "sha256": "f97e996d781f85d5f9b124a2c1d7dbd132bb016a8c2ba1d3bed4bf3002f9a321"
+      "sha256": "014a517a5ea4e0031f27bc4b708384490497862f805f33cc09f5c1853fd29c34"
     },
     {
       "target": "warehouse-room/workroom.css",
@@ -32,7 +32,7 @@
     },
     {
       "target": "warehouse-room/workroom.js",
-      "sha256": "f02ac4e880b8164000e7e35ed68406da1c7b5d056efbec78792e0a2956257834"
+      "sha256": "e0ab55eba751a175d7ce2d812a38b02c4f968d98dc2f1eceefcfd53b9bc684e5"
     },
     {
       "target": "account-room/payment-layout.js",

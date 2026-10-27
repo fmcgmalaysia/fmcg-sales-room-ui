@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  document.documentElement.dataset.supportBuild='20261027-support-order-progress-v1';
+  document.documentElement.dataset.supportBuild='20261027-support-order-progress-v2';
   const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number=(value,places=0)=>typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('en-GB',{minimumFractionDigits:places,maximumFractionDigits:places}):'—';
   const day=value=>{if(!value||!/^\d{4}-\d{2}-\d{2}/.test(value))return '—';return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'}).format(new Date(value.slice(0,10)+'T00:00:00Z'));};
