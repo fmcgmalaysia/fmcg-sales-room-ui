@@ -22,15 +22,42 @@
     "expectedProtected": 90
   },
   "stages": {
-    "code": "LOCAL_COMPLETE",
-    "pages": "PENDING",
-    "wix": "ORIGINALS_EXACT_RECEIPT_PENDING",
-    "public": "PENDING"
+    "code": "GITHUB_SYNCED",
+    "pages": {
+      "status": "SUCCESS",
+      "runId": 40563590792,
+      "number": 285,
+      "resources": 99,
+      "exact": 99,
+      "protectedResources": 90
+    },
+    "wix": {
+      "status": "PUBLISHED_AND_LIVE",
+      "codeChanged": false,
+      "originalProgramsExact": 4
+    },
+    "public": {
+      "status": "OPTIMIZATION_CHECKS_PASSED_WITH_EXISTING_ISSUES",
+      "nativeForceRefreshDepartments": 4,
+      "newBuildAndChatScriptConfirmed": 4,
+      "browserErrorsAfterNativeForceRefresh": 0,
+      "navigationStatesChecked": 18,
+      "supportReferencesAndUploadEntryVisible": true,
+      "packingNavigationRead": "FAILED_EXISTING_ORIGIN_MISMATCH",
+      "controlledReloadIssueRemains": true,
+      "wholeSiteAllTransactionsCertified": false,
+      "record": "PUBLIC_VERIFICATION.json"
+    }
   },
   "temporaryPermission": {
-    "requiredForTaskBranch": true,
-    "added": false,
-    "restored": false
+    "added": true,
+    "removed": true,
+    "originalSevenRulesExact": true,
+    "tags": 0,
+    "method": "Existing GitHub background API connection"
   },
-  "mainMerged": false
+  "mainMerged": false,
+  "codeCommit": "65601224978b88d19f120006383b08f0108f04a1",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/230",
+  "publicationConclusion": "Scoped optimization deployed and verified. Existing defects remain documented; this is not a claim that every MASTER workflow is fault-free."
 }
