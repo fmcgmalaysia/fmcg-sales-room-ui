@@ -25,8 +25,13 @@
   "verification": {
     "sharedRegressionPassed": 145,
     "localSupportAndWarehouseUi": "passed",
-    "publicDisplay": "V1_VERIFIED_V2_PENDING_FRESH_TABS",
-    "businessMutations": 0
+    "publicDisplay": "PASSED_DISPLAY_ONLY",
+    "businessMutations": 0,
+    "publicBuild": "20261027-support-order-progress-v2",
+    "support": "Formal fresh page shows All Dates/date filter and 11 task columns with authenticated data and Warehouse message entries.",
+    "warehouse": "Formal fresh Delivery Tasks shows editable Expiry inputs; DOM minimum1900-01-01 and maximum9999-12-31 confirmed.",
+    "consoleErrors": 0,
+    "businessAcceptance": "Pending user test; no business write performed by agent during final verification."
   },
   "expiryCorrection": "Save on blur or Enter; no save while typing; newly entered years before1900 rejected. Existing history remains readable. No agent business correction."
 }
