@@ -1,0 +1,50 @@
+{
+  "build": "20261027-support-shipment-header-v2",
+  "code": "ed8f3d157e146baaaad7cee1e47b4089f365cd0e",
+  "pullRequest": 229,
+  "recovery": "7b37819e00083279e3b3f82e99f7bdae70accefe",
+  "pages": {
+    "input": "support-workroom-only",
+    "dispatchedOnce": true,
+    "conclusion": "SUCCESS",
+    "runId": 40544281525,
+    "runNumber": 284,
+    "status": "COMPLETED",
+    "resources": 99,
+    "exact": 99
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-shipment-header-20261027",
+    "userApproved": true,
+    "added": true,
+    "removed": true,
+    "originalRules": [
+      "feat/master-gp-margin",
+      "feat/nct-order-submit-room6",
+      "feat/purchase-adjustment-cost",
+      "fix/purchase-approved-ux-layout",
+      "main",
+      "style/purchase-icons-spacing-feedback",
+      "style/purchase-table-track"
+    ],
+    "tags": 0,
+    "finalRulesExact": true
+  },
+  "wix": {
+    "backendExact": 4,
+    "pageInstalled": true,
+    "publishedLive": true,
+    "pageHash": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286"
+  },
+  "documentServiceVersion": 10,
+  "publicPage": {
+    "status": "PENDING_USER_BOOKMARK_OPEN",
+    "automatedReload": "iframe about:blank",
+    "requestedOnce": true
+  },
+  "liveDeskSwap": {
+    "status": "PENDING_V2_RELEASE",
+    "authorizedByUser": true,
+    "expected": "1 ->2 ->1; restore exact initial state; no quantity/stock/invoice/upload writes"
+  }
+}

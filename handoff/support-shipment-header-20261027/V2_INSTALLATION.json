@@ -22,8 +22,9 @@
       "exactReadback": true
     }
   ],
-  "pageInstalled": false,
-  "publishedLive": false,
+  "pageInstalled": true,
+  "publishedLive": true,
   "recovery": "7b37819e00083279e3b3f82e99f7bdae70accefe",
-  "documentServiceVersion": 10
+  "documentServiceVersion": 10,
+  "pageSha256": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286"
 }
