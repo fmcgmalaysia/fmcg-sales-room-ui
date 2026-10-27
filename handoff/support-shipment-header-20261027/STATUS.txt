@@ -26,3 +26,5 @@ Installation status
 - Browser control resumed after the user's Wix re-login, then disconnected again following an editor timeout. Do not substitute native/alternate-profile input or claim installation succeeded.
 
 Release must still complete Code/GitHub, scoped Pages, Wix published-live and formal public display verification separately. No main merge; user business acceptance remains pending.
+
+Publication preparation: GitHub candidate b15fa0b synced as draft PR229. Scoped release manifest and page-token candidate now prepared; documentServiceUpdatePending remains true and active version remains honestly 9. These are not installed/published. Native Desk patch progress remains UNKNOWN pending full readback.
