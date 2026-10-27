@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-27",
+  "codeCommit": "063d994cbaf45f70d12dbbbc2b59a1384dd10514",
+  "build": "20261027-support-customers-orders-v1",
+  "pullRequest": 226,
+  "pages": {
+    "runId": 40465197934,
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "backendFilesIncluded": false
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-customers-orders-20261027",
+    "removed": true,
+    "remainingBranches": 7,
+    "remainingTags": 0
+  },
+  "wix": {
+    "source": "Published and live receipt confirmed",
+    "master": "Published and live receipt confirmed",
+    "sourceEndpointUnauthenticatedStatus": 401
+  },
+  "publicVerification": {
+    "status": "PENDING",
+    "reason": "Agent-opened fresh Support tab remains blank embedded about:blank; no console errors captured. User asked once to open existing Support bookmark. No business mutation tested."
+  },
+  "limitations": [
+    "Amount Due and reconciled invoice balance remain unavailable and display dash.",
+    "Customer profile keeps existing Sales editable fields and update semantics; no atomic cross-department update guarantee."
+  ]
+}

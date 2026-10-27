@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "published": false,
+  "published": true,
   "files": [
     {
       "site": "master",
@@ -72,6 +72,12 @@
       "site": "source",
       "file": "buyer-room/wix/order-received-lightbox.js",
       "sha256": "8282d7d8e515fd077aae6965cf3f2da0ff278e4262ecd8f8590b53a633c63120",
+      "exact": true
+    },
+    {
+      "site": "master",
+      "file": "integration/wix/support-department-page.js",
+      "sha256": "859652f01dea286766424315dc9b702e287158bfc0e859a7d7fcc7d6b7f01b62",
       "exact": true
     }
   ]
