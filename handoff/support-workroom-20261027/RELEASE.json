@@ -1,0 +1,45 @@
+{
+  "code": "a1a49a2c03572f5d30a7aa09655962bea0b55692",
+  "branch": "feat/support-workroom-20261027",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/224",
+  "build": "20261027-support-workroom-v1",
+  "pages": {
+    "run": 40437486858,
+    "number": 276,
+    "conclusion": "success",
+    "hashesExact": 99,
+    "dispatches": 1,
+    "backendFilesIncluded": false,
+    "resources": 99,
+    "status": "completed"
+  },
+  "wix": {
+    "receipt": "Congratulations This site is published and live online.",
+    "entryHash": "3fe1dcc0b4d8be4bf085b6b565f32ed5dd77a97a294850e77394a10eda83486d",
+    "eightDependencies": "Installed exact drafts recorded in NATIVE_INSTALLATION.json",
+    "entryFullReadbackExact": true,
+    "onlyEntryUrlChanged": true
+  },
+  "temporaryPermission": {
+    "originalBranches": 7,
+    "tags": 0,
+    "removed": true,
+    "addedOnly": "feat/support-workroom-20261027"
+  },
+  "documentService": {
+    "activeVersion": 9,
+    "record": "DOCUMENT_SERVICE_V9.json",
+    "immutableVersion": 9
+  },
+  "publicVerification": {
+    "userOpenedTab": "User manually opened new formal Support tab; exact new workroom iframe, staff identity and three actual work rows displayed",
+    "outerIframeNewBuild": true,
+    "oldUserTab": "Tool refresh yielded about:blank inner frame, no error/warning logs",
+    "complete": true,
+    "detailRead": "Opened one actual order read-only: English headers, original demand, blank Committed placeholder, real Loaded zero, original prices, GP and CBM. Selection/invoice action disabled when no loaded quantity; no Save or business mutation.",
+    "relevantErrorsAndWarnings": 0
+  },
+  "businessWrites": 0,
+  "mainMerged": false,
+  "overall": "All four release stages complete for scoped Support UI runtime a1a49a2. Business transaction acceptance is assigned to user; known scope limits remain as documented."
+}

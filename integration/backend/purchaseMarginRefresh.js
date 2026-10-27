@@ -5,7 +5,7 @@ import { operationId } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { calculateGrossProfitMargin, calculateNetCartonCost } from 'backend/grossProfitMargin.js';
 const finite = value => typeof value === 'number' && Number.isFinite(value);
-function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
+export function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
   const sources = workspace.tasks.filter(source => source.id === row.id || !row.procurementSource && source.customerDemandTaskId === row.id);
   let quantity = 0, amount = 0;
   for (const source of sources) {
