@@ -38,11 +38,15 @@
   },
   "publicPage": {
     "url": "https://fmcg999.wixstudio.com/master/support-department",
-    "status": "PENDING_USER_BOOKMARK_OPEN",
-    "iframeBuild": "20261027-support-shipment-header-v1",
-    "embeddedContent": "about:blank",
-    "capturedErrors": [],
-    "businessMutations": 0
+    "status": "FAILED_REQUEST_ERROR",
+    "build": "20261027-support-shipment-header-v1",
+    "message": "Error: Unable to handle the request. Contact the site administrator or view site monitoring logs for more information.",
+    "observed": [
+      "Retry Desk Save",
+      "Desk selectors disabled"
+    ],
+    "businessAcceptance": "NOT_PASSED",
+    "businessMutationsByAgent": 0
   },
   "businessMutations": 0,
   "businessAcceptance": "USER_TEST_PENDING",
@@ -50,5 +54,14 @@
     "baseline": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
     "count": 95,
     "differences": []
+  },
+  "recovery": {
+    "runtime": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
+    "build": "20261027-support-desks-v1",
+    "status": "PREPARING_EXACT_RESTORE",
+    "candidatePreserved": "41995a386ff3ed0cc75ef2f60bd0111381403b85",
+    "documentServiceVersion": 9,
+    "nativeDraftsExact": true,
+    "pageDraftHash": "f4c655b6856ed1970a08aab2899dcd9b434f4f51bbce09d43c2ca2c98a5d17e2"
   }
 }

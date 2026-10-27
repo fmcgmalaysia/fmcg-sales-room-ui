@@ -1,4 +1,4 @@
-import { checkSupportDeskInvoice, reserveSupportDeskInvoice, releaseCancelledSupportDeskInvoice } from 'backend/supportDesk.js';
+import { checkSupportDeskInvoice } from 'backend/supportDesk.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { createCustomerFulfilmentOperations, shipmentVersion } from 'backend/customerFulfilment.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
@@ -33,7 +33,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
   if(!intent){
    const context=await readContext(company,staff),state=supportInvoiceState(context);
    if(context.company!==company||state.version!==input.version)throw Error('Order or loading changed. Refresh before creating the invoice.');
-   const desk=checkSupportDeskInvoice(context,state,input,{requestId,memberId:staff.memberId,digest});
+   const desk=checkSupportDeskInvoice(context,state,input);
    let amountCents=0;const currencies=new Set();
    for(const line of normalized.lines){
     const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&orderIds.includes(row.orderId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=state.lines.find(row=>row.taskId===line.taskId);
@@ -44,7 +44,6 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    if(input.orderIds&&new Set(normalized.lines.map(line=>context.tasks.find(task=>task.id===line.taskId).orderId)).size!==orderIds.length)throw Error('Selected order dates do not match invoice lines.');
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
    if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
-   await reserveSupportDeskInvoice({store,names,context,staff,requestId,input:normalized,digest,snapshot:desk,now});
    const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
    const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
@@ -82,14 +81,13 @@ export function createSupportInvoiceCancellation({store,names,readContext,saveFu
   if(!intent||intent.details?.memberId!==staff.memberId)throw Error('This pending invoice is unavailable.');
   const context=await readContext(company,staff),shipmentId=operationId(company,derived(id,'SELECT'),'SHIPMENT'),shipment=readCustomerShipments(context.activity).find(row=>row.id===shipmentId);
   if(!shipment)throw Error('The earlier selection is not confirmed. Retry its original save before withdrawing it.');
-  if(shipment.status==='CANCELLED'){await releaseCancelledSupportDeskInvoice({store,names,context,staff,requestId,intent,now});return {ok:true,company,requestId,cancelled:true};}
+  if(shipment.status==='CANCELLED')return {ok:true,company,requestId,cancelled:true};
   if(shipment.status!=='REQUESTED')throw Error('This invoice has already been issued. Refresh to view its saved details.');
   const cancelId=operationId(id,'CANCEL_INPUT');let retained=await store.read(names[company].activity,cancelId);
   if(!retained){const record={_id:cancelId,title:cancelId,description:shipment.id,image:shipment.customerId,action:'SUPPORT_INVOICE_CANCEL_INPUT_SAVED',result:'PREPARED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support retained invoice withdrawal',details:{input:{action:'CANCEL',id:shipment.id,version:shipmentVersion(context),reason:'Support withdrew an unissued invoice request'}}};try{retained=await store.insert(names[company].activity,record);}catch(error){retained=await store.read(names[company].activity,cancelId);if(!retained)throw error;}}
   if(retained.description!==shipment.id||retained.details?.input?.action!=='CANCEL')throw Error('Invoice withdrawal receipt requires review.');
   const result=await saveFulfilment({company,staff:{...staff,canSelectShipment:true},requestId:derived(id,'CANCEL'),input:retained.details.input});
   if(result?.ok!==true||result.status!=='CANCELLED')throw Error('Cancellation is not confirmed. Retry the same cancellation.');
-  await releaseCancelledSupportDeskInvoice({store,names,context:await readContext(company,staff),staff,requestId,intent,now});
   return {ok:true,company,requestId,cancelled:true};
  };
 }
