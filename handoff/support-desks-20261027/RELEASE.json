@@ -37,8 +37,17 @@
   },
   "publicPage": {
     "url": "https://fmcg999.wixstudio.com/master/support-department",
-    "status": "PENDING_MANUAL_TAB",
-    "observed": "Existing tab outer reload rendered about:blank embedded content. Asked user once to open original Support bookmark in a new tab; no repeated reload and no business mutation."
+    "status": "VERIFIED_DISPLAY",
+    "build": "20261027-support-desks-v1",
+    "method": "User bookmark-opened Support tab after one old-tab outer reload produced blank embedded content. Fresh formal AX and screenshot verified authenticated customer Orders.",
+    "checks": [
+      "Purchase-style grouped Customer Details, Shipment Details and Totals header",
+      "All overview and Desk1/Desk2 view navigation",
+      "Compact task Desk1/2/3 selectors; no checkbox, Row, search or order-date toolbar",
+      "Header Create Sales Invoice; All disabled, zero loaded quantities disabled",
+      "No relevant browser errors"
+    ],
+    "businessMutations": 0
   },
   "businessAcceptance": "USER_TEST_PENDING"
 }
