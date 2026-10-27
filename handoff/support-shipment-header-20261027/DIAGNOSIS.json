@@ -10,7 +10,7 @@
   "supportReadFunctionErrors": 0,
   "historicalLogsConnected": false,
   "loggingSettingsChanged": false,
-  "rootCause": "UNKNOWN",
+  "rootCause": "Order-sensitive Desk receipt comparison rejects identical persisted values when CMS object fields are reordered",
   "triggeringAction": "UNKNOWN_USER_NOT_SURE",
   "businessMutationsByAgent": 0,
   "review": {
@@ -19,5 +19,27 @@
     "namedLedgerExports": "PRESENT",
     "testCoverage": "Isolated store/backend tests passed; failing Wix runtime save exception not reproduced",
     "rootCause": "NOT_ESTABLISHED"
+  },
+  "actualCmsReadback": {
+    "sameFailedMinute": true,
+    "result": "SAVED",
+    "operation": "DESK_ASSIGN to Desk1",
+    "privateEvidenceRetained": true,
+    "objectFieldOrderDiffers": true
+  },
+  "regression": {
+    "beforePatch": "Fails after one insert with Desk save is not confirmed",
+    "afterPatch": "Passes and same-request retry makes no duplicate",
+    "tamperedValues": "Still rejected",
+    "relatedChecks": 53,
+    "isolatedActualClient": "PASS with CMS-style reordered Desk readbacks; zero external requests"
+  },
+  "fix": {
+    "files": [
+      "integration/backend/supportDesk.js"
+    ],
+    "scope": "Canonicalize object keys only for receipt state equality; preserve array order, values, digest, member/request identities, original storage and business logic",
+    "candidateBuild": "20261027-support-shipment-header-v2",
+    "publicVerification": "PENDING"
   }
 }

@@ -8,6 +8,12 @@ const {createSupportDeskOperations,readSupportDesks,readSupportDeskLocks}=load('
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const f=makeFixture(),customer={id:'C1',name:'CUSTOMER ABC LTD',currency:'USD',country:'UK',port:'SOUTHAMPTON'};
+ // Model the object-field reordering observed in the real CMS Desk receipt.
+ const ordered=value=>Array.isArray(value)?value.map(ordered):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,ordered(value[key])])):value;
+ const cmsRecord=row=>{if(row?.action==='SUPPORT_DESK_SAVED')row.details.state=ordered(row.details.state);return row;};
+ const readStored=f.store.read,allStored=f.store.all;
+ f.store.read=async(...args)=>cmsRecord(await readStored(...args));
+ f.store.all=async(...args)=>(await allStored(...args)).map(cmsRecord);
  f.tasks[0].requested=80;f.tasks[0].ord=80;f.tasks[0].inc=80;f.records.get('N/ALLOC').details.targets[0].quantity=80;
  f.tasks.push({...structuredClone(f.tasks[0]),id:'T2',orderId:'O2',sourceLineId:'L2',requested:20,ord:20,inc:0,name:'UNLOADED REMAINDER',warehouse:{accepted:0,hasPhysicalReceipt:false},procurement:{customerCtn:20,totalCtn:20}});
  await f.setLoad(80);
