@@ -1,8 +1,8 @@
 import { salesRoomShipment } from 'backend/onboarding.web';
 import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
-import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web';
-import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web';
-import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web';
+import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web.js';
+import { getCurrentStaffContext, recordStaffPresence, getStaffPresenceForAdmin } from 'backend/staffAuth.web.js';
+import { getSalesRoomQuoteSignals, processSalesRoomSelectionQueue, routeSalesRoomCustomerSelections } from 'backend/catalogueSelection.web.js';
 import wixLocationFrontend from 'wix-location-frontend';
 import { authentication } from 'wix-members-frontend';
 import wixRealtimeFrontend from 'wix-realtime-frontend';
@@ -522,7 +522,7 @@ $w.onReady(function () {
     }
     if (message.type === 'SALES_ROOM_ORDER_PLANNING_UPDATE') {
       try {
-        const result = await saveSalesRoomOrderPlanning(message.orderId || '', message.customerPoNumber, message.estimatedShipmentDate, message.expectedRevision, message.requestId || '', message.expectedShipmentRevision);
+        const result = await saveSalesRoomOrderPlanning(message.orderId || '', message.customerPoNumber, message.estimatedShipmentDate, message.expectedRevision, message.requestId || '', message.expectedShipmentRevision, message.stockCurrent);
         salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ...result });
       } catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_ORDER_PLANNING_RESULT', requestId: message.requestId, ok: false, error: error?.message || 'Order details could not be saved.' }); }
       return;
