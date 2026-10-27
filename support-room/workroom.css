@@ -70,3 +70,37 @@ body.support-workroom .doc-strip button:hover:not(:disabled){transform:translate
 
 /* Customer task list; numeric measures retain Purchase typography. */
 .work-table.order-tasks{min-width:1280px;table-layout:auto}.order-tasks td:nth-child(3){min-width:250px}.order-tasks td:nth-child(4){min-width:80px}.order-tasks td:nth-last-child(-n+2){width:auto}.order-tasks .price-cell span{display:block;line-height:17px}.order-tasks td:nth-child(11){min-width:190px}.order-tasks td:nth-child(10){white-space:nowrap}.customer-task-meta>strong{width:100%;font-size:16px;color:#173557}.order-tasks .issue{font-size:19px}#order-filter{min-width:170px;max-width:200px}
+
+/* Approved customer Desk workroom, scoped to Orders only. */
+body.support-orders-view .heading{display:none}
+body.support-orders-view .tools{padding:0;background:none;border:0;margin-bottom:12px}
+body.support-orders-view .tools #search,body.support-orders-view .tools #order-filter,body.support-orders-view .tools #count{display:none}
+body.support-orders-view #content{border:0;border-radius:0;background:transparent;overflow:visible}
+.desk-header{background:#fff;border:1px solid #bfd2e5;border-radius:6px;overflow:hidden;color:#173557}
+.desk-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px 16px;border-bottom:1px solid #dce6ef;flex-wrap:wrap}
+.desk-heading>div>small{display:block;color:#647b93;font-size:10px;letter-spacing:.3px;margin-bottom:5px}
+.desk-heading h2{font:800 20px/26px var(--master-font);margin:0;overflow-wrap:anywhere}
+.desk-navigation{min-width:152px;text-align:center}.desk-navigation>small{display:block;margin-top:5px;font-size:10px;color:#647b93}
+.desk-switcher{display:flex;align-items:center;border:1px solid #bfd2e5;border-radius:5px;background:#f5f9fd;overflow:hidden}
+.desk-switcher button{background:none;border:0;color:#2563eb;font-size:20px;line-height:1;width:32px;min-height:32px;padding:0}
+.desk-switcher button:disabled{color:#aabdd5;cursor:not-allowed}.desk-switcher b{font-size:14px;min-width:86px;padding:0 4px}
+.desk-groups{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:20px;padding:18px 20px}
+.desk-groups>section{min-width:0}.desk-groups>section+section{padding-left:20px;border-left:1px solid #dce6ef}
+.desk-groups h3{font:600 10px/15px var(--master-font);letter-spacing:.6px;color:#526e8a;margin:0 0 13px}
+.desk-groups dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px 14px;margin:0;align-items:baseline}
+.desk-groups dt{color:#647b93;font-size:11px}.desk-groups dd{font-size:11px;font-weight:600;margin:0;overflow-wrap:anywhere}
+.desk-groups .desk-edit{margin-top:12px}.desk-totals dd{text-align:right;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.desk-totals dd small{font:400 10px/14px var(--master-font);color:#647b93}.desk-amount{border-top:1px solid #dce6ef;margin-top:10px;padding-top:10px;text-align:right}
+.desk-amount>span{display:block;color:#647b93;font-size:10px}.desk-amount>strong{display:block;font:700 22px/30px var(--master-font);font-variant-numeric:tabular-nums}
+.desk-amount>strong>small{font:400 10px/14px var(--master-font);color:#647b93}
+.desk-scope{display:block;text-align:right;color:#647b93;font:400 10px/14px var(--master-font);margin-top:4px}
+.desk-invoice-action{text-align:right;margin-top:12px}.desk-invoice-action .primary{background:#3766a2;border:1px solid #3766a2;color:#fff;font:600 11px/15px var(--master-font);padding:7px 12px;min-height:30px}
+.desk-invoice-action .primary:disabled{background:#e8eef3;border-color:#d5e0e9;color:#8292a3;cursor:not-allowed}.desk-retry{display:block;margin-top:8px;margin-left:auto}
+.desk-task-table{overflow-x:auto;border:1px solid #b9d0e4;border-radius:6px;background:#fff;margin-top:12px}
+body.support-workroom .desk-task-table table.order-tasks{min-width:1080px}.desk-task-table .order-tasks :is(th,td):first-child{width:50px;text-align:center;min-width:50px;padding-left:6px;padding-right:6px}
+.desk-cell select{width:38px!important;min-width:38px;max-width:38px;font:600 11px/14px var(--master-font);color:#2563eb;min-height:28px;padding:4px 1px 4px 4px;background:#fff;border:1px solid #b7cde3;border-radius:4px}
+.desk-cell select:disabled{color:#8292a3;background:#eef3f7;cursor:not-allowed}.desk-description{display:flex;align-items:center;gap:5px}.desk-description .row-drag{font-size:17px;flex:0 0 auto;padding-right:0}
+.desk-task-table .order-tasks td:nth-child(2){min-width:220px}.desk-task-table .order-tasks td:nth-child(3){min-width:75px}.desk-task-table .order-tasks td:nth-child(4){min-width:75px}.desk-task-table .order-tasks td:nth-child(9){white-space:nowrap}.desk-task-table .order-tasks td:nth-child(10){min-width:190px;white-space:normal}
+#booking-arrival{display:block;width:100%;margin-top:7px}#booking .date-label[hidden]{display:none}
+@media(max-width:800px){.desk-groups{grid-template-columns:1fr 1.2fr}.desk-groups .desk-totals{grid-column:1/-1;border-left:0;border-top:1px solid #dce6ef;padding:14px 0 0}.desk-totals dl{grid-template-columns:auto auto auto auto}.desk-amount{display:flex;justify-content:space-between;align-items:baseline}.desk-invoice-action{text-align:right}}
+@media(max-width:500px){.desk-heading{padding:16px}.desk-heading h2{font-size:18px}.desk-groups{grid-template-columns:1fr;padding:16px;gap:14px}.desk-groups>section+section{border-left:0;border-top:1px solid #dce6ef;padding:14px 0 0}.desk-totals dl{grid-template-columns:auto auto}.desk-navigation{min-width:152px}}

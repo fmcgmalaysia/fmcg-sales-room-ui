@@ -1,0 +1,53 @@
+{
+  "build": "20261027-support-desks-v1",
+  "code": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
+  "pullRequest": 228,
+  "pages": {
+    "runId": 40495501619,
+    "runNumber": 281,
+    "input": "support-workroom-only",
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "differences": []
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-desks-20261027",
+    "userApproved": true,
+    "added": true,
+    "removed": true,
+    "restoredOriginalSeven": true,
+    "tags": 0,
+    "originalRules": [
+      "feat/master-gp-margin",
+      "feat/nct-order-submit-room6",
+      "feat/purchase-adjustment-cost",
+      "fix/purchase-approved-ux-layout",
+      "main",
+      "style/purchase-icons-spacing-feedback",
+      "style/purchase-table-track"
+    ]
+  },
+  "wix": {
+    "pageExact": true,
+    "pageHash": "f4c655b6856ed1970a08aab2899dcd9b434f4f51bbce09d43c2ca2c98a5d17e2",
+    "backendExact": 3,
+    "publishedLive": true,
+    "receipt": "Congratulations This site is published and live online."
+  },
+  "publicPage": {
+    "url": "https://fmcg999.wixstudio.com/master/support-department",
+    "status": "VERIFIED_DISPLAY",
+    "build": "20261027-support-desks-v1",
+    "method": "User bookmark-opened Support tab after one old-tab outer reload produced blank embedded content. Fresh formal AX and screenshot verified authenticated customer Orders.",
+    "checks": [
+      "Purchase-style grouped Customer Details, Shipment Details and Totals header",
+      "All overview and Desk1/Desk2 view navigation",
+      "Compact task Desk1/2/3 selectors; no checkbox, Row, search or order-date toolbar",
+      "Header Create Sales Invoice; All disabled, zero loaded quantities disabled",
+      "No relevant browser errors"
+    ],
+    "businessMutations": 0
+  },
+  "businessAcceptance": "USER_TEST_PENDING"
+}

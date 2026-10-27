@@ -1,3 +1,4 @@
+import { checkSupportDeskInvoice } from 'backend/supportDesk.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { createCustomerFulfilmentOperations, shipmentVersion } from 'backend/customerFulfilment.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
@@ -27,11 +28,12 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
   if(!uuid(requestId)||!input||typeof input.version!=='string'||typeof input.orderId!=='string'||!input.orderId||typeof input.customerId!=='string'||!input.customerId||typeof input.number!=='string'||!input.number.trim()||input.number.trim().length>100||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300||new Set(input.lines.map(row=>row.taskId)).size!==input.lines.length)throw Error('Select order lines and enter a Sales Invoice number.');
   const orderIds=input.orderIds===undefined?[input.orderId]:input.orderIds;
   if(!Array.isArray(orderIds)||!orderIds.length||orderIds.length>300||new Set(orderIds).size!==orderIds.length||orderIds.some(id=>typeof id!=='string'||!id||id.length>100)||!orderIds.includes(input.orderId))throw Error('Select valid customer order dates.');
-  const normalized={...(input.orderIds===undefined?{}:{orderIds:[...orderIds].sort()}),version:input.version,customerId:input.customerId,orderId:input.orderId,number:input.number.trim(),lines:input.lines.map(row=>({taskId:row.taskId,quantity:row.quantity}))},digest=operationId(normalized),collection=names[company].activity,id=operationId(company,requestId,staff.memberId,INTENT),readyId=operationId(id,READY);
+  const normalized={...(input.desk===undefined?{}:{desk:{number:input.desk?.number,revision:input.desk?.revision}}),...(input.orderIds===undefined?{}:{orderIds:[...orderIds].sort()}),version:input.version,customerId:input.customerId,orderId:input.orderId,number:input.number.trim(),lines:input.lines.map(row=>({taskId:row.taskId,quantity:row.quantity}))},digest=operationId(normalized),collection=names[company].activity,id=operationId(company,requestId,staff.memberId,INTENT),readyId=operationId(id,READY);
   let intent=await store.read(collection,id);
   if(!intent){
    const context=await readContext(company,staff),state=supportInvoiceState(context);
    if(context.company!==company||state.version!==input.version)throw Error('Order or loading changed. Refresh before creating the invoice.');
+   const desk=checkSupportDeskInvoice(context,state,input);
    let amountCents=0;const currencies=new Set();
    for(const line of normalized.lines){
     const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&orderIds.includes(row.orderId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=state.lines.find(row=>row.taskId===line.taskId);
@@ -43,7 +45,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
    if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
    const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
-   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
+   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
   }
   if(intent.details?.digest!==digest||intent.details?.memberId!==staff.memberId)throw Error('This invoice save was already used for different details.');
