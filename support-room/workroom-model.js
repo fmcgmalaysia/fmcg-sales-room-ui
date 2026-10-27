@@ -48,7 +48,7 @@
     const customers=[...customerRows.values()].map(customer=>({...customer,orders:result.filter(order=>order.customerId===customer.id),invoices:invoices.filter(row=>row.customerId===customer.id),
       openTaskCount:result.filter(order=>order.customerId===customer.id).reduce((total,order)=>total+order.lines.filter(line=>line.invoicedQty<(line.orderQty??0)).length,0),balanceCents:null,
       transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id).concat((documentResult?.documents||[]).filter(row=>row.customerId===customer.id&&['$','CN'].includes(row.code)).map(row=>({...row,type:row.code==='$'?'PAYMENT_DOCUMENT':'CREDIT_NOTE_DOCUMENT',number:row.reference,date:row.at,pending:true})))}));
-    return {company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
+    return {company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
   }
   return {project};
 });
