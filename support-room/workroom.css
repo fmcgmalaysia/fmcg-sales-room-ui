@@ -9,3 +9,58 @@ header>button{background:transparent;color:white;border:0;font-weight:600}nav a{
 .invoice-heading{display:flex;justify-content:space-between;align-items:center}.invoice-heading h2{font-size:18px}#information:has(.invoice-heading){width:760px}#information table{min-width:0}#print-invoice{padding:24px}#print-invoice table{width:100%;min-width:0}@media print{body.printing-invoice>*{display:none!important}body.printing-invoice>#print-invoice{display:block!important}#print-invoice{background:white;color:#173651}#print-invoice th{background:#e4edf6}#print-invoice td,#print-invoice th{padding:10px;border-bottom:1px solid #d3e0eb}}
 
 .selection-cell{white-space:nowrap}.row-drag{display:inline-flex;vertical-align:middle;padding:0 7px 0 0;border:0;background:none;color:#3766a2;font-size:19px;line-height:1;cursor:grab}.row-drag:active{cursor:grabbing}tr[data-task]{transition:background .12s}
+
+/* SUPPORT presentation follows the existing Purchase shell and shared MASTER type roles.
+   Keep all existing IDs, controls, document states and business handlers. */
+body.support-workroom{font-family:var(--master-font);font-size:11px;line-height:1.4;background:#f3f6f9;color:#203047}
+body.support-workroom>header{height:49px;min-height:49px;padding:0 24px;gap:18px;background:#133858;color:#fff;font:12px/1.3 var(--master-font);position:sticky;top:0;z-index:30}
+body.support-workroom>header .brand{font:700 20px/1 var(--master-font);letter-spacing:.3px;white-space:nowrap}
+body.support-workroom>header .department{border-left:1px solid #446781;padding-left:18px;font:500 13px/1.3 var(--master-font);white-space:nowrap}
+body.support-workroom>header select{height:32px;min-height:32px;min-width:240px;max-width:280px;padding:0 40px 0 12px;background:#fff;color:#203047;font:600 12px/1.3 var(--master-font)}
+body.support-workroom>header #staff{font:400 11px/1.3 var(--master-font);white-space:nowrap}
+body.support-workroom>header #refresh{min-height:32px;padding:6px 0;font:500 11px/1.3 var(--master-font);color:#fff}
+body.support-workroom>nav{height:42px;padding:0 20px;gap:24px;position:sticky;top:49px;z-index:29;font-size:12px;line-height:normal}
+body.support-workroom>nav :is(button,a){height:42px;display:inline-flex;align-items:center;padding:0 2px;margin:0;font:600 12px var(--master-font);color:#203047;text-decoration:none;white-space:nowrap}
+body.support-workroom>nav button.active{color:#3766a2;border-bottom:3px solid #3766a2}
+body.support-workroom>nav a:hover{text-decoration:underline;color:#2563eb}
+body.support-workroom>main{padding:18px 20px 36px;max-width:none}
+body.support-workroom .heading{min-height:56px;margin-bottom:18px}
+body.support-workroom h1{font:800 20px/26px var(--master-font);margin:0 0 5px}
+body.support-workroom .heading p{font:400 12px/18px var(--master-font);color:#647b93}
+body.support-workroom .guide{padding:12px 15px;margin-bottom:14px;border-color:#cbdced}
+body.support-workroom .guide>b{font-weight:700;color:#203047}
+body.support-workroom .guide-item strong{height:28px;min-width:28px;border-radius:5px;font:700 11px/1 var(--master-font)}
+body.support-workroom .guide-item span{font-size:11px;line-height:15px}
+body.support-workroom .tools{padding:9px 12px;gap:12px;margin-bottom:12px;border-color:#cbdced}
+body.support-workroom .tools :is(select,input){height:32px;font-size:11px}
+body.support-workroom .tools span{font-size:11px}
+body.support-workroom .table-frame{border-color:#b9d0e4;border-radius:6px}
+body.support-workroom .work-table th{height:32px;padding:7px 8px;font:700 11px/15.4px var(--master-font);color:#203047;background:#d2dfea}
+body.support-workroom .work-table td{height:44px;padding:6px 8px;font:400 11px/14px var(--master-font);color:#203047;border-color:#d4e2ef}
+body.support-workroom .work-table td small{font:400 10px/14px var(--master-font);margin-top:2px;color:#647b93}
+body.support-workroom .work-table .num{font-weight:600;font-variant-numeric:tabular-nums}
+body.support-workroom .work-table .description strong{font:700 11px/14px var(--master-font);color:#173557}
+body.support-workroom .work-table .description small{margin:0}
+body.support-workroom table.detail td{height:51px;padding:3px 8px}
+body.support-workroom .doc-strip button{height:28px;min-width:28px;padding:4px;border-radius:5px;font:700 11px/1 var(--master-font)}
+body.support-workroom .link{font:600 11px/14px var(--master-font);color:#2563eb}
+body.support-workroom [data-shipment]:not(:has(small)){color:#f58a00;font-size:18px}
+body.support-workroom .plain-status{font:600 11px/14px var(--master-font);padding:3px 8px}
+body.support-workroom .meta{margin:0;padding:12px 16px;border-bottom:1px solid #d4e2ef;background:#f5f9fd;font-size:11px}
+body.support-workroom .selection-bar{margin-top:0;padding:10px 12px;border:0;border-top:1px solid #d4e2ef}
+body.support-workroom .selection-bar button{min-height:30px;font-size:11px}
+body.support-workroom .subnav{margin-top:14px}
+body.support-workroom .subnav button{font-size:12px;font-weight:600}
+body.support-workroom .summary>div{padding:12px 15px}
+body.support-workroom .summary b{font:800 20px/26px var(--master-font)}
+body.support-workroom dialog{font:400 11px/1.5 var(--master-font);border-color:#b4cce1;border-radius:8px}
+body.support-workroom dialog .dialog-header{padding:14px 16px;background:#dceaf7}
+body.support-workroom dialog .dialog-header h2{font:700 14px/20px var(--master-font);margin:0}
+body.support-workroom dialog .dialog-body{padding:16px}
+body.support-workroom dialog footer{padding:12px 16px;background:#f5f9fd;gap:10px}
+body.support-workroom :is(#booking,#documents,#invoice-review) .primary{background:#3766a2;border-color:#3766a2;color:#fff;font-weight:600}
+body.support-workroom :is(#booking,#documents,#invoice-review) button.primary:disabled{background:#e8eef3;border-color:#d5e0e9;color:#8292a3;cursor:not-allowed}
+body.support-workroom .doc-strip button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 2px 5px #17365124}
+@media(max-width:800px){body.support-workroom>header{height:auto;min-height:49px;padding:10px 12px;gap:10px;flex-wrap:wrap;position:static}body.support-workroom>header .brand{font-size:16px}body.support-workroom>header .department{font-size:12px;padding-left:10px}body.support-workroom>header select{min-width:190px;max-width:220px;margin-left:auto}body.support-workroom>nav{position:static;overflow-x:auto;gap:18px;padding:0 12px;flex-shrink:0}body.support-workroom>nav a{display:inline-flex}body.support-workroom>main{padding:18px 12px 36px}body.support-workroom .heading{min-height:0}body.support-workroom .tools input[type=search]{min-width:150px;max-width:100%}}
+@media(max-width:560px){body.support-workroom>header select{margin-left:0;width:190px}body.support-workroom .tools select{min-width:150px}body.support-workroom .guide #guide-items{grid-template-columns:repeat(2,minmax(0,1fr))}body.support-workroom .meta{gap:8px 16px}}
+@media(prefers-reduced-motion:reduce){body.support-workroom .doc-strip button:hover:not(:disabled){transform:none}}
