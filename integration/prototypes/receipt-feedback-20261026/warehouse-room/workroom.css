@@ -23,3 +23,5 @@
 
 /* Remove auxiliary navigation labels; keep stock workflows and records intact. */
 nav[aria-label="Warehouse navigation"]>.preview,nav[aria-label="Warehouse navigation"]>.stock-entry{display:none!important}.wh-incoming .quantity-aligned{font-family:var(--master-font,Arial,sans-serif);font-size:11px;font-weight:600;line-height:14px}.wh-incoming .quantity-aligned>span{font:inherit}.wh-incoming .quantity-aligned>.wh-badge{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:19px;padding:0 6px;border-radius:12px}
+
+.wh-delivery .wh-expiry{font:inherit;color:#173557;border:1px solid #bbd0e1;border-radius:4px;background:#fff;min-width:122px;padding:4px}.wh-delivery .wh-expiry:disabled{background:#edf2f7;color:#667c92}

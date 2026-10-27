@@ -1,23 +1,23 @@
 {
-  "build": "20261027-support-customers-orders-v1",
+  "build": "20261027-support-order-progress-v2",
   "productionRecovery": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
   "previousBuild": "20261027-chat-latest-v1",
   "files": [
     {
       "target": "support-room/workroom.html",
-      "sha256": "a118f0ceaa0462393b3a46257f008c84b9ce69bfee116f7af540853920c691bf"
+      "sha256": "d09abc7e9f0e8b08c8446402d3a9696e5219127a4c84d66bade2fecfd61e5def"
     },
     {
       "target": "support-room/workroom.css",
-      "sha256": "9e1142e19711e2785ffd70f8470f0dd9886cb1d5c9e7060548bedca4be04498d"
+      "sha256": "047a726f7eea62227ea0a05f570384da0e5c06085fcd1ecd62140918ad18ef3e"
     },
     {
       "target": "support-room/workroom.js",
-      "sha256": "d847426e5e271586cecdaa4b2d20fb9404a3ddb4c5798cdea33a0dc568a44c76"
+      "sha256": "2214be6f4330ccc36a115f809d1c8d656f06a31dc0a9436704f6e3f382b8df27"
     },
     {
       "target": "support-room/workroom-model.js",
-      "sha256": "aab268a68bc94e44d3cd4fa453eb81f4e1b54445bccc5b501079656c159c25d3"
+      "sha256": "3fead07e89b5a18cc83c16a947485560fbe51cfb795ab7cb1c44d77811bdfb6f"
     },
     {
       "target": "support-room/packing-workbench.html",
@@ -31,7 +31,7 @@
     },
     {
       "file": "integration/backend/supportInvoice.js",
-      "sha256": "fbac5bf06fa163b4a0d3e27d3dfcff3b48b7602411752712fae630cb3b2c6be5"
+      "sha256": "e9c2187a25d542d4861c0cf331ea320b147d6549ccadc45165fd71bc38b1de0a"
     },
     {
       "file": "integration/backend/supportDocuments.js",
@@ -43,7 +43,7 @@
     },
     {
       "file": "integration/backend/customerFulfilmentService.js",
-      "sha256": "fee936011bd935340db18a9d336e139e9313456457f97b5ad4256431ca721f41"
+      "sha256": "31283152925ecc63a154ba4004e599fff775ee146500e737ce6796d485acb27d"
     },
     {
       "file": "integration/backend/customerFulfilment.web.js",
@@ -59,7 +59,7 @@
     },
     {
       "file": "integration/wix/support-department-page.js",
-      "sha256": "d626c21e22517d5cde42eac98cabb1cc2dc148679bda9df61754a3b6cae42814"
+      "sha256": "eab9c2bead4d496bea8cef8fb9e0fc38d63a3a971539eddd806f7b642c343816"
     },
     {
       "file": "integration/backend/supportCustomerClient.js",
@@ -76,6 +76,14 @@
     {
       "file": "backend/http-functions.js",
       "sha256": "439b70b53ed37f5da11e598d22491e1feb0f8f233857832689caa75f2299fb47"
+    },
+    {
+      "file": "integration/backend/warehousePreparation.js",
+      "sha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5"
+    },
+    {
+      "file": "integration/wix/warehouse-department-page.js",
+      "sha256": "32ec00e5a2cc106b6cae7bd0fd6f7b6d74181de14ec3cb9c4b2ac78fc33599f3"
     }
   ],
   "documentServiceVersion": 9
