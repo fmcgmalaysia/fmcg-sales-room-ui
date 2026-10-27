@@ -1,10 +1,10 @@
 {
   "date": "2026-10-27",
-  "codeCommit": "dd53f7d6dcc803c3d74a440e43292dceeace7ebf",
-  "build": "20261027-support-order-progress-v1",
+  "codeCommit": "d114871f2bc6c19d33896762741db1168a9b59f8",
+  "build": "20261027-support-order-progress-v2",
   "pullRequest": 227,
   "pages": {
-    "runId": 40480345523,
+    "runId": 40482562518,
     "conclusion": "success",
     "resources": 99,
     "exact": 99,
@@ -25,7 +25,8 @@
   "verification": {
     "sharedRegressionPassed": 145,
     "localSupportAndWarehouseUi": "passed",
-    "publicDisplay": "PENDING_USER_OPENED_TABS",
+    "publicDisplay": "V1_VERIFIED_V2_PENDING_FRESH_TABS",
     "businessMutations": 0
-  }
+  },
+  "expiryCorrection": "Save on blur or Enter; no save while typing; newly entered years before1900 rejected. Existing history remains readable. No agent business correction."
 }
