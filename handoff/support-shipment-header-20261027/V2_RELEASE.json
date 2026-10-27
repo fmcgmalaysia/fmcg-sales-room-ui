@@ -38,13 +38,82 @@
   },
   "documentServiceVersion": 10,
   "publicPage": {
-    "status": "PENDING_USER_BOOKMARK_OPEN",
-    "automatedReload": "iframe about:blank",
-    "requestedOnce": true
+    "status": "VERIFIED",
+    "build": "20261027-support-shipment-header-v2",
+    "method": "User original bookmark opened a new public page; all subsequent checks performed by agent",
+    "authenticated": true,
+    "deskOneTwoOne": "PASS",
+    "documentButtons": [
+      {
+        "label": "Sales Order",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Sales Invoice",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Delivery Order",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Credit Note",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Payment Slip",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Booking Confirmation",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Packing List",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Customs Form",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Insurance",
+        "uploadDialogVisible": true
+      },
+      {
+        "label": "Bill of Lading",
+        "uploadDialogVisible": true
+      }
+    ],
+    "soNoAndPoNoInputsVisible": true,
+    "nativeRelevantErrors": 0,
+    "browserErrors": 0,
+    "actualFileUpload": "NOT_PERFORMED",
+    "referenceSave": "NOT_PERFORMED",
+    "invoiceIssue": "NOT_PERFORMED",
+    "automatedReload": "Embedded about:blank remains unresolved; public acceptance used original bookmark new page"
   },
   "liveDeskSwap": {
-    "status": "PENDING_V2_RELEASE",
+    "status": "PASS",
     "authorizedByUser": true,
-    "expected": "1 ->2 ->1; restore exact initial state; no quantity/stock/invoice/upload writes"
-  }
+    "scenario": "One existing unlocked task Desk1 -> Desk2 -> Desk1",
+    "firstAcknowledgements": [
+      "SUCCESS",
+      "SUCCESS"
+    ],
+    "manualRetries": 0,
+    "freshReadRetainsDesk2": true,
+    "freshReadRetainsRestoredDesk1": true,
+    "newAuditRows": 2,
+    "entireDeskStateExactBefore": true,
+    "entireTaskTableExactBefore": true,
+    "otherTaskDeskPreserved": true,
+    "quantitiesPreserved": true,
+    "stockWrites": 0,
+    "invoicesCreated": 0,
+    "uploads": 0,
+    "finalRetryVisible": false,
+    "initialStateTakenFromLatestFreshRecord": true
+  },
+  "verifiedAt": "2026-10-27T17:05:52.802Z"
 }

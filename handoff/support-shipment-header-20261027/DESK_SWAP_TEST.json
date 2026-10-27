@@ -1,6 +1,6 @@
 {
   "testedEnvironment": "Live previous version 20261027-support-desks-v1",
-  "v2Published": false,
+  "v2Published": true,
   "userAuthorized": true,
   "scenario": "One existing unlocked task Desk1 -> Desk2 -> Desk1",
   "initialPendingRequest": "Confirmed using same request; no duplicate",
@@ -23,10 +23,32 @@
   "uploads": 0,
   "freshReadAfterRestore": true,
   "v2ActualClientIsolated": "Desk0 ->1 ->2, reload retains2, restore1 and reload retains1; other unassigned row and quantities preserved;8fakewrites/0externalrequests/0pageerrors",
-  "v2RealSaveAcceptance": "PENDING_V2_PUBLICATION",
+  "v2RealSaveAcceptance": "PASS_PUBLIC_V2",
   "actualPersistedStateProof": {
     "savedDigestMatchesExpected": true,
     "originalStateComparisonRejects": true,
     "v2ComparisonConfirmsSameValues": true
+  },
+  "v2LiveTest": {
+    "status": "PASS",
+    "authorizedByUser": true,
+    "scenario": "One existing unlocked task Desk1 -> Desk2 -> Desk1",
+    "firstAcknowledgements": [
+      "SUCCESS",
+      "SUCCESS"
+    ],
+    "manualRetries": 0,
+    "freshReadRetainsDesk2": true,
+    "freshReadRetainsRestoredDesk1": true,
+    "newAuditRows": 2,
+    "entireDeskStateExactBefore": true,
+    "entireTaskTableExactBefore": true,
+    "otherTaskDeskPreserved": true,
+    "quantitiesPreserved": true,
+    "stockWrites": 0,
+    "invoicesCreated": 0,
+    "uploads": 0,
+    "finalRetryVisible": false,
+    "initialStateTakenFromLatestFreshRecord": true
   }
 }
