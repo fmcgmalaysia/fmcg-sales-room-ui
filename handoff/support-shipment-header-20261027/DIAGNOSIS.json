@@ -11,6 +11,13 @@
   "historicalLogsConnected": false,
   "loggingSettingsChanged": false,
   "rootCause": "UNKNOWN",
-  "triggeringAction": "AWAITING_USER",
-  "businessMutationsByAgent": 0
+  "triggeringAction": "UNKNOWN_USER_NOT_SURE",
+  "businessMutationsByAgent": 0,
+  "review": {
+    "nativeCandidateHashes": "MATCHED",
+    "pageAndBridgeRoutes": "UNCHANGED_PROTOCOL",
+    "namedLedgerExports": "PRESENT",
+    "testCoverage": "Isolated store/backend tests passed; failing Wix runtime save exception not reproduced",
+    "rootCause": "NOT_ESTABLISHED"
+  }
 }
