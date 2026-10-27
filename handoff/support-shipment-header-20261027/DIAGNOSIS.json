@@ -1,0 +1,16 @@
+{
+  "candidate": "41995a386ff3ed0cc75ef2f60bd0111381403b85",
+  "publicRecovery": "7b37819e00083279e3b3f82e99f7bdae70accefe",
+  "recoveryDisplayVerified": true,
+  "failedFunction": "supportWorkroom.web.js/saveSupportBooking",
+  "totalRequests": 2,
+  "errorRate": 0.5,
+  "errorName": "UNKNOWN",
+  "lastOccurrenceMYT": "2026-10-27 22:14",
+  "supportReadFunctionErrors": 0,
+  "historicalLogsConnected": false,
+  "loggingSettingsChanged": false,
+  "rootCause": "UNKNOWN",
+  "triggeringAction": "AWAITING_USER",
+  "businessMutationsByAgent": 0
+}

@@ -58,7 +58,7 @@
   "recovery": {
     "runtime": "6fcba4ecbdc34893fdb8c14bad5fc671949dac42",
     "build": "20261027-support-desks-v1",
-    "status": "PENDING_PUBLIC_RESTORE_VERIFICATION",
+    "status": "RESTORED_AND_PUBLICLY_VERIFIED",
     "candidatePreserved": "41995a386ff3ed0cc75ef2f60bd0111381403b85",
     "documentServiceVersion": 9,
     "nativeDraftsExact": true,
@@ -74,6 +74,17 @@
     "resources": 99,
     "exact": 99,
     "wixPublishedLive": true,
-    "wixReceipt": "Congratulations This site is published and live online."
+    "wixReceipt": "Congratulations This site is published and live online.",
+    "publicPage": {
+      "status": "VERIFIED_DISPLAY",
+      "build": "20261027-support-desks-v1",
+      "checks": [
+        "Authenticated LAW customer directory with two customers",
+        "Customer Orders entry opens two existing tasks",
+        "Desk1 selectors enabled; original quantities preserved",
+        "No request error, Retry Desk Save or captured browser errors"
+      ],
+      "businessMutations": 0
+    }
   }
 }
