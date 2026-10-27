@@ -58,3 +58,9 @@ Git status required approved elevated read because sandbox cwd traversal denied;
 - User explicitly chose: 仅货仓已确认装货的 Loaded Qty.
 - This supersedes the earlier PENDING BUSINESS CHOICE. Keep the current Loaded-only candidate: the maximum is confirmed Warehouse-loaded quantity minus quantities already reserved/invoiced, also bounded by customer allocation/demand. No before-loading invoice path is approved. The existing code and already retained 174-check result match this choice; no business-code change or unchanged-suite rerun required.
 - Current public-export permission question remains unanswered; this response answers only the quantity question. Do not retry the rejected GitHub push or publish via another channel to bypass it. No Pages environment rule changed, no Pages deployment or Wix Publish performed.
+
+2026-10-27 closeout audit (supersedes stale export-pending notes):
+- User explicitly allowed publication of this MASTER SUPPORT scope to the existing public repository after repository/site clarification. Push succeeded; remote head57d153a confirmed, draft PR224 created and attached. No main merge.
+- Public HTTP readback confirms deployed Pages still chat-latest-v1/d081bae/95 resources. New Support workroom.html is404, so Support has NOT been released. Eight native dependencies and bridge are installed drafts; original page entry remains unchanged.
+- Current-round temporary Pages branch rule question remains pending. No rule mutation or workflow dispatch. Original seven remain protected; no prior round permission reused.
+- CLOSEOUT_AUDIT.json distinguishes closed prior releases, current Support release gap and first-version limitations. No unchanged tests rerun or business transactions performed. First ordinary network read lacked sandbox DNS access; authorized elevated public read succeeded, no site network failure inferred.
