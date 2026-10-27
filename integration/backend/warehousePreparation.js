@@ -8,6 +8,7 @@ import { allocateBatchMetric, resolveBatchStock, preferredSourceBatch } from 'ba
 
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
+const validExpiry=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 export const PREPARATION_ACTION='WAREHOUSE_PREPARATION_SAVED';
 
 // Separate physical preparation evidence. It never posts dispatch, invoices or stock allocations.
@@ -17,7 +18,7 @@ export function readPreparation(activity){
   const next=pending.filter(e=>(states.get(e.description)?.revision||'')===e.details?.beforeRevision);
   if(!next.length||new Set(next.map(e=>e.description)).size!==next.length)throw Error('Warehouse preparation history requires review.');
   for(const e of next){const d=e.details,s=d?.state;
-   if(!e.title||!s||s.id!==e.description||!s.taskId||!s.customerId||!['NCT','GHR'].includes(s.company)||!qty(s.quantity)||!qty(s.loaded)||s.loaded>s.quantity||!Array.isArray(s.photos)||!e.initiatedByStaffId||!Number.isFinite(Date.parse(e.activityTime)))throw Error('Warehouse preparation identity requires review.');
+   if(!e.title||!s||s.id!==e.description||!s.taskId||!s.customerId||!['NCT','GHR'].includes(s.company)||!qty(s.quantity)||!qty(s.loaded)||s.loaded>s.quantity||!Array.isArray(s.photos)||(s.expiryDate!==undefined&&s.expiryDate!==null&&!validExpiry(s.expiryDate))||!e.initiatedByStaffId||!Number.isFinite(Date.parse(e.activityTime)))throw Error('Warehouse preparation identity requires review.');
    states.set(s.id,{...s,revision:e.title,at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName});pending.splice(pending.indexOf(e),1);
   }
  }
@@ -63,7 +64,7 @@ export function projectPreparation(context){
    const sent=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines).filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0),batchStart=batchOffset;
    const dispatched=Math.min(batch.quantity,Math.max(0,sent-batchStart));batchOffset+=batch.quantity;
    const batchAllocated=allocatedByBatch?allocatedByBatch[batchIndex]:null;
-   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,batchAllocated,readyStock:readyByBatch?Math.max(0,readyByBatch[batchIndex]-dispatched):Math.min(Math.max(0,batch.quantity-dispatched),Math.max(0,readyStock-Math.max(0,batchStart-sent))),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
+   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,batchAllocated,readyStock:readyByBatch?Math.max(0,readyByBatch[batchIndex]-dispatched):Math.min(Math.max(0,batch.quantity-dispatched),Math.max(0,readyStock-Math.max(0,batchStart-sent))),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,expiryDate:saved?.expiryDate||null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
   }
  }
  for(const [id,s] of states)if(s.loaded>0&&!items.some(i=>i.id===id))items.push({...s,revision:s.revision,customerName:customers.get(s.customerId)||s.customerId,readyStock:null,allocated:0,prepared:false,stale:true,orphaned:true,dispatched:0,history:[]});
@@ -81,7 +82,7 @@ export function preparationSummary(taskId,context){
 export function createPreparationOperations({store,names,readContext,documentService,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
-  if(!names[company]||staff?.canPrepareWarehouse!==true||!['PACK','LOAD','UNPACK','PHOTOS'].includes(input?.action))throw Error('Warehouse preparation action is not authorized.');
+  if(!names[company]||staff?.canPrepareWarehouse!==true||!['PACK','LOAD','UNPACK','PHOTOS','EXPIRY'].includes(input?.action))throw Error('Warehouse preparation action is not authorized.');
   const photos=input.photos||[];
   if(!Array.isArray(photos)||photos.length>3)throw Error('Warehouse select up to three photos per save.');
   let total=0;
@@ -98,6 +99,7 @@ export function createPreparationOperations({store,names,readContext,documentSer
    const {items,item}=await current(),note=text(input.note),at=now().toISOString();
    if(item.dispatched>0)throw Error('Warehouse this task has dispatched goods. Use the supervised correction process.');
    if(item.planMismatch||item.orphaned||item.stale&&item.loaded>0)throw Error('Warehouse loading no longer matches the current task. Ask Sales to restore or review its batch plan.');
+   if(input.action==='EXPIRY'&&(!validExpiry(input.expiryDate)||verified.length))throw Error('Warehouse enter a valid expiry date.');
    if(note.length>1000)throw Error('Warehouse note is too long.');
    let prepared=item.prepared,loaded=item.loaded,preparedAt=item.preparedAt,loadedAt=item.loadedAt;
    if(input.action==='PACK'){
@@ -119,7 +121,7 @@ export function createPreparationOperations({store,names,readContext,documentSer
    if(verified.length&&(!['PACKING','LOADING'].includes(input.photoStage)||input.action==='PACK'&&input.photoStage!=='PACKING'||input.action==='LOAD'&&input.photoStage!=='LOADING'||input.photoStage==='LOADING'&&!loaded))throw Error('Warehouse photo stage is required.');
    const uploads=[];
    for(let index=0;index<verified.length;index++){const p=verified[index],allocated=await documentService({action:'ALLOCATE',company}),ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[p.mimeType];uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:item.id,fileId:allocated.fileId,type:input.photoStage,mimeType:p.mimeType,sha256:p.sha256,size:p.size,name:company+'-'+item.barcode+'-'+input.photoStage+'-'+requestId+'-'+index+'.'+ext});}
-   const state={id:item.id,taskId:item.taskId,orderId:item.orderId,customerId:item.customerId,company,barcode:item.barcode,name:item.name,packing:item.packing,batch:item.batch,quantity:item.quantity,sourceTaskIds:item.sourceTaskIds,signature:item.signature,prepared,preparedAt,loaded,loadedAt,note:note||item.note,photos:[...item.photos,...uploads.map(u=>({fileId:u.fileId,name:u.name,sha256:u.sha256,mimeType:u.mimeType,size:u.size,stage:u.type,at,by:staff.staffName}))]};
+   const state={id:item.id,taskId:item.taskId,orderId:item.orderId,customerId:item.customerId,company,barcode:item.barcode,name:item.name,packing:item.packing,batch:item.batch,quantity:item.quantity,sourceTaskIds:item.sourceTaskIds,signature:item.signature,...(input.action==='EXPIRY'?{expiryDate:input.expiryDate}:item.expiryDate?{expiryDate:item.expiryDate}:{}),prepared,preparedAt,loaded,loadedAt,note:note||item.note,photos:[...item.photos,...uploads.map(u=>({fileId:u.fileId,name:u.name,sha256:u.sha256,mimeType:u.mimeType,size:u.size,stage:u.type,at,by:staff.staffName}))]};
    if(state.photos.length>30)throw Error('Warehouse photo history is full. Contact Admin.');
    const id=operationId(company,requestId,staff.memberId,'WAREHOUSE_PREPARATION');
    return {version:item.version,uploads,event:{_id:id,title:id,description:item.id,image:item.customerId,imageAltText:item.taskId,action:PREPARATION_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:note,details:{action:input.action,beforeRevision:item.revision,state}}};

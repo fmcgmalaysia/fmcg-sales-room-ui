@@ -1,0 +1,31 @@
+{
+  "saved": true,
+  "published": false,
+  "files": [
+    {
+      "file": "integration/backend/supportInvoice.js",
+      "exact": true,
+      "sha256": "e9c2187a25d542d4861c0cf331ea320b147d6549ccadc45165fd71bc38b1de0a"
+    },
+    {
+      "file": "integration/backend/customerFulfilmentService.js",
+      "exact": true,
+      "sha256": "67499a6203184f1e998037994e37ae9a66648a93082a92d6f65e464d2f29f800"
+    },
+    {
+      "file": "integration/backend/warehousePreparation.js",
+      "exact": true,
+      "sha256": "2806375622bef2762afcc1c7ce7ca1c7c15b77dad2a20bec10832d81346ab60e"
+    },
+    {
+      "file": "integration/wix/support-department-page.js",
+      "exact": true,
+      "sha256": "aee7f25fd569714c3ef4176c54b00385b158d2e1e534e21ae5134fcbd3c8cbc7"
+    },
+    {
+      "file": "integration/wix/warehouse-department-page.js",
+      "exact": true,
+      "sha256": "38b8233e57ea5f9a6d371967b7cc7d59d13ba78108b404b33c492559d69cd85b"
+    }
+  ]
+}

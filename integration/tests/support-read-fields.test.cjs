@@ -4,7 +4,7 @@ const serviceSource=fs.readFileSync(path.join(__dirname,'../backend/customerFulf
 function fixture(){
  const task={id:'T1',customerId:'C1',orderId:'O1',sourceLineId:'L1',barcode:'001',name:'Product',packing:'24 x 1',ord:90,requested:100,inc:80,ea:24,sellingPricePc:1.25,transactionCurrency:'USD',cbmPerCtn:null};
  const context={company:'NCT',tasks:[task],customers:[{id:'C1',name:'Customer'}],activity:[]};
- const bindings={readFulfilmentContext:async()=>context,readCustomerShipments:()=>[],projectCustomerAccount:()=>({entries:[],balances:[]}),salesAdjustmentVersion:()=>'',shipmentPlanVersion:()=>'',readShipmentPlans:()=>[],customerAccountVersion:()=>'',projectCustomerDebtors:()=>[],shipmentVersion:()=>'',reservedCartons:()=>0,warehouseCbm,Date,Math};
+ const bindings={readFulfilmentContext:async()=>context,readCustomerShipments:()=>[],projectCustomerAccount:()=>({entries:[],balances:[]}),salesAdjustmentVersion:()=>'',shipmentPlanVersion:()=>'',readShipmentPlans:()=>[],customerAccountVersion:()=>'',projectCustomerDebtors:()=>[],shipmentVersion:()=>'',reservedCartons:()=>0,projectPreparation:load('warehousePreparation.js').projectPreparation,warehouseCbm,Date,Math};
  const read=vm.runInNewContext(serviceSource.slice(serviceSource.indexOf('export async function readCustomerFulfilment(')).replace(/^export /gm,'')+';readCustomerFulfilment;',bindings);
  return {task,context,read};
 }

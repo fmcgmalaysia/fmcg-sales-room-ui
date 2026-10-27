@@ -25,18 +25,21 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
  return async({company,staff,requestId,input})=>{
   if(!['NCT','GHR'].includes(company)||!names[company]||staff?.packingDepartment!=='SUPPORT'||!staff.memberId||!staff.staffId||!staff.staffName)throw Error('Support invoice access is required.');
   if(!uuid(requestId)||!input||typeof input.version!=='string'||typeof input.orderId!=='string'||!input.orderId||typeof input.customerId!=='string'||!input.customerId||typeof input.number!=='string'||!input.number.trim()||input.number.trim().length>100||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300||new Set(input.lines.map(row=>row.taskId)).size!==input.lines.length)throw Error('Select order lines and enter a Sales Invoice number.');
-  const normalized={version:input.version,customerId:input.customerId,orderId:input.orderId,number:input.number.trim(),lines:input.lines.map(row=>({taskId:row.taskId,quantity:row.quantity}))},digest=operationId(normalized),collection=names[company].activity,id=operationId(company,requestId,staff.memberId,INTENT),readyId=operationId(id,READY);
+  const orderIds=input.orderIds===undefined?[input.orderId]:input.orderIds;
+  if(!Array.isArray(orderIds)||!orderIds.length||orderIds.length>300||new Set(orderIds).size!==orderIds.length||orderIds.some(id=>typeof id!=='string'||!id||id.length>100)||!orderIds.includes(input.orderId))throw Error('Select valid customer order dates.');
+  const normalized={...(input.orderIds===undefined?{}:{orderIds:[...orderIds].sort()}),version:input.version,customerId:input.customerId,orderId:input.orderId,number:input.number.trim(),lines:input.lines.map(row=>({taskId:row.taskId,quantity:row.quantity}))},digest=operationId(normalized),collection=names[company].activity,id=operationId(company,requestId,staff.memberId,INTENT),readyId=operationId(id,READY);
   let intent=await store.read(collection,id);
   if(!intent){
    const context=await readContext(company,staff),state=supportInvoiceState(context);
    if(context.company!==company||state.version!==input.version)throw Error('Order or loading changed. Refresh before creating the invoice.');
    let amountCents=0;const currencies=new Set();
    for(const line of normalized.lines){
-    const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&row.orderId===input.orderId&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=state.lines.find(row=>row.taskId===line.taskId);
+    const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&orderIds.includes(row.orderId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=state.lines.find(row=>row.taskId===line.taskId);
     if(!task||!Number.isSafeInteger(line.quantity)||line.quantity<=0||line.quantity>9999||line.quantity>(available?.maxInvoiceQty||0))throw Error('Invoice quantity exceeds confirmed, uninvoiced loading.');
     if(!known(task.sellingPricePc)||task.sellingPricePc<=0||!Number.isSafeInteger(task.ea)||task.ea<=0)throw Error('Sales price or carton packing is incomplete.');
     currencies.add(task.transactionCurrency);amountCents+=Math.round(task.sellingPricePc*task.ea*line.quantity*100);
    }
+   if(input.orderIds&&new Set(normalized.lines.map(line=>context.tasks.find(task=>task.id===line.taskId).orderId)).size!==orderIds.length)throw Error('Selected order dates do not match invoice lines.');
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
    if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
    const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};

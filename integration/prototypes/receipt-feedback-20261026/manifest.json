@@ -24,15 +24,15 @@
     },
     {
       "target": "warehouse-room/index.html",
-      "sha256": "3feefcbb94197e0fcb2e50f33e35f6e2a999b1f24d419a7c33c2c05ac3a9714e"
+      "sha256": "f97e996d781f85d5f9b124a2c1d7dbd132bb016a8c2ba1d3bed4bf3002f9a321"
     },
     {
       "target": "warehouse-room/workroom.css",
-      "sha256": "38d2addfa44b9f3dff5ee5d15001b5883acfd9042de9872a7ef9c6c61ac6642c"
+      "sha256": "b2e4564f0a524b9610bf79a081d679917d46f3561810b7f6c87fce2cc1d69df4"
     },
     {
       "target": "warehouse-room/workroom.js",
-      "sha256": "1183b695b51c3f0bb3ac0104919694f0bfbae499e8e0458102c5566771ed605c"
+      "sha256": "f02ac4e880b8164000e7e35ed68406da1c7b5d056efbec78792e0a2956257834"
     },
     {
       "target": "account-room/payment-layout.js",
