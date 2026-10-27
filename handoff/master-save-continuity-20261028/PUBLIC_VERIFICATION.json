@@ -1,0 +1,165 @@
+{
+  "build": "20261028-master-save-continuity-v1",
+  "runtimeCommit": "e71bf4934f8c5347b13dd0802f9da227b5ccf83b",
+  "verifiedAtUtc": "2026-10-27T20:11:49.506Z",
+  "status": "CORE_CHECKS_PASSED_PACKING_PUBLIC_ACCEPTANCE_INCOMPLETE",
+  "departments": {
+    "support": {
+      "version": {
+        "build": "20261028-master-save-continuity-v1",
+        "chatScript": "../master-shared/task-chat.js?v=20261028-master-save-continuity-v1",
+        "supportBuild": "20261028-master-save-continuity-v1"
+      },
+      "nativeForceRefreshBeforeBinding": true,
+      "realAutosaveWithoutSaveButton": true,
+      "fieldsEditableAfterAutosave": true,
+      "referenceValuesRestored": true,
+      "desksAndQuantitiesExact": true,
+      "referenceRestoreFreshReadExact": true,
+      "browserErrors": 0,
+      "desksAndQuantitiesFreshReadExact": true,
+      "uploadEntryVisible": true,
+      "chatOpened": true,
+      "chatLoaded": true,
+      "views": [
+        {
+          "view": "Transactions",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Customers",
+          "headingObserved": true,
+          "requestError": false
+        }
+      ]
+    },
+    "purchase": {
+      "version": {
+        "appScript": "app.js?v=20261028-master-save-continuity-v1",
+        "build": "20261028-master-save-continuity-v1",
+        "chatScript": "../master-shared/task-chat.js?v=20261028-master-save-continuity-v1"
+      },
+      "nativeForceRefreshBeforeBinding": true,
+      "views": [
+        {
+          "view": "Active Orders",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Payment Follow-up",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Purchase History",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Activity History",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Purchase Order",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Dashboard",
+          "headingObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "knownUndefinedSystemRow": true,
+      "browserErrors": 0
+    },
+    "account": {
+      "version": {
+        "build": "20261028-master-save-continuity-v1",
+        "chatScript": "../master-shared/task-chat.js?v=20261028-master-save-continuity-v1"
+      },
+      "nativeForceRefreshBeforeBinding": true,
+      "views": [
+        {
+          "view": "Supplier Accounts",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Accounts Receivable",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Cash & Facilities",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Transaction History",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Audit Trail",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Financial Overview",
+          "headingObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "knownUndefinedSystemRow": true,
+      "browserErrors": 0
+    },
+    "warehouse": {
+      "version": {
+        "build": "20261028-master-save-continuity-v1",
+        "chatScript": "../master-shared/task-chat.js?v=20261028-master-save-continuity-v1"
+      },
+      "nativeForceRefreshBeforeBinding": true,
+      "views": [
+        {
+          "view": "Delivery Tasks",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "History",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Stock Control",
+          "headingObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Incoming Tasks",
+          "headingObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "knownUndefinedSystemRow": true,
+      "completedAndStopWaitingVisible": true,
+      "browserErrors": 0
+    }
+  },
+  "navigationStatesChecked": 18,
+  "metadataAcceptanceWritesOnly": true,
+  "originalValuesRestoredAndFreshReadExact": true,
+  "normalAuditHistoryRetained": true,
+  "financialOrStockWrites": false,
+  "messagesSent": false,
+  "packingPublicEntryPreexistingIssue": true,
+  "packingSaveContinuityAcceptance": "ISOLATED_BOTH_PARENT_STRUCTURES_ONLY",
+  "wholeSiteAllSavesCertified": false
+}

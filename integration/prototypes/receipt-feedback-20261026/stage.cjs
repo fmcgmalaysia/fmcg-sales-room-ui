@@ -7,14 +7,14 @@ const git=args=>cp.execFileSync('git',args,{cwd:checkout,maxBuffer:12000000});
 const text=bytes=>Buffer.from(String(bytes).replace(/\r\n/g,'\n'));
 const entrypoints=new Set(['index.html','buyer-room.html','buyer-login.html','catalogue-sidebar-v1.html']);
 const allowed=file=>entrypoints.has(file)||/^(?:assets|master-shared|purchase-live|warehouse-room|support-room|account-room|sales-room)\/[A-Za-z0-9._-]+\.(?:html|js|css|png|jpg|jpeg|svg|ico|webp)$/.test(file);
-function plan(){
+function plan(sourceCommit){
  const assets=new Map();
  for(const file of git(['ls-tree','-r','--name-only',original]).toString().trim().split('\n').filter(allowed))assets.set(file,git(['show',original+':'+file]));
  const prior=JSON.parse(git(['show',previous+':integration/prototypes/purchase-active-layout-20261025/manifest.json']).toString());
  for(const row of prior.files){const bytes=git(['show',previous+':integration/prototypes/purchase-active-layout-20261025/'+path.posix.basename(row.target)]);if(hash(bytes)!==row.sha256)throw Error('Previous approved overlay does not match');assets.set(row.target,bytes);}
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'manifest.json'),'utf8'));
  if(manifest.productionRecovery!==previous||manifest.files.length!==16)throw Error('Scoped receipt-feedback overlay required');
- for(const row of manifest.files){if(!allowed(row.target)||!assets.has(row.target))throw Error('New public entry not approved');const bytes=text(fs.readFileSync(path.join(__dirname,row.target)));if(hash(bytes)!==row.sha256)throw Error('Receipt overlay content changed: '+row.target);assets.set(row.target,bytes);}
+ for(const row of manifest.files){if(!allowed(row.target)||!assets.has(row.target))throw Error('New public entry not approved');const bytes=text(sourceCommit?git(['show',sourceCommit+':integration/prototypes/receipt-feedback-20261026/'+row.target]):fs.readFileSync(path.join(__dirname,row.target)));if(hash(bytes)!==row.sha256)throw Error('Receipt overlay content changed: '+row.target);assets.set(row.target,bytes);}
  if(assets.size!==95||[...assets.keys()].some(file=>file.startsWith('integration/')))throw Error('Public resource boundary changed');
  return {assets,manifest};
 }
