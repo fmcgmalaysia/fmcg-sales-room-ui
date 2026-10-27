@@ -1,19 +1,19 @@
 {
-  "build": "20261027-support-workroom-v1",
+  "build": "20261027-support-purchase-theme-v1",
   "productionRecovery": "d081bae2b07233e9d7b3a4da2e7a91cbb1695a73",
   "previousBuild": "20261027-chat-latest-v1",
   "files": [
     {
       "target": "support-room/workroom.html",
-      "sha256": "f9ce7a8f1a2ffd531e43a8bb4f1713872060eb745daed1463f630cbcda3dfa20"
+      "sha256": "c9d07c550f043e4e242fc9ad90e9d60b55a8087fa53348bbd512d532afeb237e"
     },
     {
       "target": "support-room/workroom.css",
-      "sha256": "8df8e67fd5010719072e2c83ee8724230648e8da72383bb78d3b165488e33c29"
+      "sha256": "43d8d14c15c5898712e13055b94921efb50995a7647921b98d55f212cfe3cc02"
     },
     {
       "target": "support-room/workroom.js",
-      "sha256": "b627aa096239b978d2036dbf3bf6bace0dc9371f6bea8479754ec90da9f94e16"
+      "sha256": "8a0588959465d4d6f7ebfad8b372c86a927bfbd508f6b77e9e24aa70b54ec240"
     },
     {
       "target": "support-room/workroom-model.js",
@@ -59,7 +59,7 @@
     },
     {
       "file": "integration/wix/support-department-page.js",
-      "sha256": "3fe1dcc0b4d8be4bf085b6b565f32ed5dd77a97a294850e77394a10eda83486d"
+      "sha256": "53068b619d8efd26bea0ed780b291dfb7f5e9ad9c8b2f82ac03a35d8655ea3d7"
     }
   ],
   "documentServiceVersion": 9

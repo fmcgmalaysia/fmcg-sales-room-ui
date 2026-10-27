@@ -1,0 +1,48 @@
+{
+  "code": "97fadc7f670c72fbbff4a029a287428a3bae254e",
+  "branch": "style/support-purchase-theme-20261027",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/225",
+  "build": "20261027-support-purchase-theme-v1",
+  "recovery": "a1a49a2c03572f5d30a7aa09655962bea0b55692",
+  "pages": {
+    "conclusion": "success",
+    "unchangedResources": 96,
+    "resources": 99,
+    "dispatches": 1,
+    "changedSupportResources": 3,
+    "number": 277,
+    "exactHashes": 99,
+    "run": 40450845272,
+    "backendFilesIncluded": false
+  },
+  "wix": {
+    "receipt": "Congratulations This site is published and live online.",
+    "entryHash": "53068b619d8efd26bea0ed780b291dfb7f5e9ad9c8b2f82ac03a35d8655ea3d7",
+    "onlyVersionTokenChanged": true,
+    "pageReadbackExact": true
+  },
+  "temporaryPermission": {
+    "addedOnly": "style/support-purchase-theme-20261027",
+    "removed": true,
+    "tags": 0,
+    "originalBranches": 7
+  },
+  "publicVerification": {
+    "companySelector": "32px dark text on white",
+    "exactNewBuild": true,
+    "tableBody": "11px line14px padding6px8px",
+    "pageTitle": "20px 800",
+    "documentDialog": "480px, title14px700, no overflow",
+    "sharedFont": "Purchase Dashboard Inter",
+    "headerHeight": 49,
+    "businessWrites": 0,
+    "masterBrand": "20px 700",
+    "userOpenedNewTab": true,
+    "relevantWarningsOrErrors": 0,
+    "navigationHeight": 42
+  },
+  "scope": "Presentation only; no backend/shared stylesheet changes; business JS only build marker; original controls, handlers and behavior retained",
+  "allFourReleaseStagesComplete": true,
+  "userAcceptance": "pending user testing",
+  "mainMerged": false
+}
