@@ -1,0 +1,48 @@
+{
+  "build": "20261028-master-save-continuity-v1",
+  "branch": "perf/master-save-continuity-20261028",
+  "recoveryRuntime": "65601224978b88d19f120006383b08f0108f04a1",
+  "baselineRecord": "466f0f2",
+  "initialPublicResources": {
+    "resources": 99,
+    "exact": 99
+  },
+  "wixNativeOriginals": [
+    {
+      "name": "Purchase Department",
+      "hash": "193e3f20840587c787dd5db53cff2e24b829d5aa162c39c779d24a339c98116f",
+      "exact": true
+    },
+    {
+      "name": "Finance Department",
+      "hash": "218c4158217e99b5662195bd689026e71994081d1734b302d7d87241c1dd0cc8",
+      "exact": true
+    },
+    {
+      "name": "Warehouse Department",
+      "hash": "32ec00e5a2cc106b6cae7bd0fd6f7b6d74181de14ec3cb9c4b2ac78fc33599f3",
+      "exact": true
+    },
+    {
+      "name": "Support Department",
+      "hash": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286",
+      "exact": true
+    }
+  ],
+  "scope": {
+    "runtimeSourcesChanged": 4,
+    "backendChanged": false,
+    "wixCodeChangeRequired": false,
+    "publicResources": 99,
+    "expectedChanged": 10,
+    "expectedProtected": 89
+  },
+  "stages": {
+    "code": "LOCAL_CHECKS_COMPLETE",
+    "pages": "NOT_DEPLOYED",
+    "wix": "NATIVE_ORIGINALS_EXACT",
+    "public": "NOT_VERIFIED"
+  },
+  "mainMerged": false,
+  "businessWritesSubmitted": false
+}

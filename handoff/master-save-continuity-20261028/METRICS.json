@@ -1,0 +1,92 @@
+{
+  "supportAutosave": {
+    "variant": "candidate",
+    "postSaveReads": 0,
+    "nextDeskDisabled": false,
+    "autosaveWithoutButton": true,
+    "typingDuringSave": true,
+    "latestDraftQueued": true,
+    "closeFlush": true,
+    "companyGuard": true,
+    "retryRequestAndPayloadExact": true,
+    "reloadPersisted": true,
+    "businessQuantitiesUnchanged": true,
+    "pageErrors": 0,
+    "realExternalRequests": 0
+  },
+  "supportRefreshScope": {
+    "baseline": {
+      "references": 6,
+      "shipment": 6,
+      "deposit": 6,
+      "profile": 6,
+      "invoice": 6,
+      "bill": 6
+    },
+    "candidate": {
+      "variant": "candidate",
+      "postSaveReads": {
+        "references": 0,
+        "shipment": 0,
+        "deposit": 1,
+        "profile": 1,
+        "invoice": 3,
+        "bill": 1
+      },
+      "originalProjectionPreserved": true,
+      "deskStateSurvivesPartialReads": true,
+      "invoiceLockAndDocumentsPass": true,
+      "profileContractFixture": true,
+      "pageErrors": 0,
+      "realExternalRequests": 0
+    }
+  },
+  "chat": {
+    "consumers": 5,
+    "baselineInputBlockedByHistory": true,
+    "candidateInputBlockedByHistory": false,
+    "lateReadAndNewDraftPreserved": true,
+    "unknownSaveAndExactRetryProtected": true
+  },
+  "purchase": {
+    "baselineWorkspaceCleared": true,
+    "candidateWorkspaceCleared": false,
+    "nextNavigationAndDraftPreserved": true
+  },
+  "packing": {
+    "actors": [
+      "SUPPORT",
+      "WAREHOUSE"
+    ],
+    "baselineCloseBlockedByPostSaveRead": true,
+    "candidateCloseBlockedByPostSaveRead": false,
+    "unconfirmedCloseStillBlocked": true,
+    "lateReadDoesNotReopen": true
+  },
+  "readRaces": {
+    "olderBookingDoesNotUndoReceipt": true,
+    "overlappingPartialRefreshesPreserveBothSaves": true
+  },
+  "protectedRegression": {
+    "tests": 268,
+    "passed": 267,
+    "failed": 1,
+    "unchangedBaselineFailure": "Sales/Buyer display test expects Chinese, unchanged current output is Awaiting balance."
+  },
+  "releaseBoundary": {
+    "tests": 2,
+    "passed": 2,
+    "publicResources": 99,
+    "expectedChanged": 10,
+    "protected": 89
+  },
+  "credits": "UNKNOWN",
+  "wholeSiteLatencyImprovement": "UNKNOWN",
+  "chatReadConsistency": {
+    "cases": 12,
+    "finalMessagesAndReceiptsExact": true,
+    "explicitAcknowledgementsPreserved": true,
+    "pageErrors": 0,
+    "realExternalRequests": 0
+  }
+}

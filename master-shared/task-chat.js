@@ -93,7 +93,7 @@ function setBusy(){dialog.querySelectorAll('[data-tc-send],textarea,[data-tc-ack
 async function savePending(){
  if(!pending||pending.inFlight)return;pending.inFlight=true;setBusy();notice(copy('Saving…','保存中…'));const record=pending;
  try{const result=await request('SAVE',{input:record.input},record.id);if(record!==pending)return;if(result.taskId!==record.input.taskId||result.peer!==record.input.peer)throw Error(copy('Save identity could not be confirmed.','保存身份尚未确认。'));
-  pending=null;dialog.querySelector('[data-tc-retry]')?.remove();if(record.input.action==='SEND'){drafts.delete(record.draftKey);replyTo=null;const text=dialog.querySelector('textarea');if(text)text.value='';}notice('');await loadPage();refresh();
+  pending=null;dialog.querySelector('[data-tc-retry]')?.remove();if(record.input.action==='SEND'){drafts.delete(record.draftKey);replyTo=null;const text=dialog.querySelector('textarea');if(text)text.value='';}notice('');setBusy();pageBusy=false;pageToken++;loadPage();refresh();
  }catch(error){if(record!==pending)return;record.inFlight=false;if(error.retryable===false)pending=null;notice(error.message);if(pending&&!dialog.querySelector('[data-tc-retry]'))dialog.querySelector('footer').insertAdjacentHTML('beforeend','<button data-tc-retry>'+esc(copy('Retry','重试'))+'</button>');}finally{setBusy();}
 }
 function enqueue(input){if(pending||!current||pageReadOnly)return;remember();pending={id:crypto.randomUUID(),draftKey:draftKey(),input:{kind:current.kind,taskId:current.taskId,peer:current.peer,...input},inFlight:false};savePending();}

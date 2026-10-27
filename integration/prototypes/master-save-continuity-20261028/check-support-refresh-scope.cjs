@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
+let source=fs.readFileSync(path.join(__dirname,'../support-shipment-header-20261027/check-ui.cjs'),'utf8');
+function change(old,next){if(source.split(old).length!==2)throw Error('Exact fixture marker: '+old.slice(0,70));source=source.replace(old,next);}
+change('const calls=[],pendingReads=[];',"customer.profile={revision:'PROFILE-1',preferredCurrency:'USD',destinationPortName:'SOUTHAMPTON'};const calls=[],pendingReads=[],trace=[];let phase='initial';");
+change('const bridge=async m=>{const company=',"const bridge=async m=>{trace.push({phase,type:m.type});const company=");
+change("case 'SUPPORT_BOOKING_SAVE_REQUEST':",`case 'SUPPORT_CUSTOMER_SAVE_REQUEST':calls.push(m);assert.equal(m.input.revision,customer.profile.revision);Object.assign(customer.profile,m.input.patch,{revision:'PROFILE-2'});result={company,requestId:m.requestId,customerId:customer.id,saved:true};break;
+ case 'SUPPORT_BOOKING_SAVE_REQUEST':`);
+change('local=path.join(candidate,rel)',"local=path.join(process.env.MASTER_BASELINE_DIR&&rel==='support-room/workroom.js'?process.env.MASTER_BASELINE_DIR:candidate,rel)");
+for(const [selector,label]of [['[data-desk-references]','references'],['[data-desk-shipment]','shipment'],['[data-desk-doc="$\"]','deposit'],['[data-create-invoice]','invoice'],['[data-desk-doc="BL\"]','bill']]){
+ const marker=" await frame.locator('"+selector+"')";change(marker," phase='"+label+"';"+marker);
+}
+change(" await frame.locator('[data-create-invoice]')",` phase='profile';await frame.getByRole('button',{name:'Customers',exact:true}).click();await frame.locator('[data-profile="C1"]').click();await frame.locator('[name="primaryEmail"]').fill('synthetic@example.test');await frame.locator('#profile-save').click();await frame.locator('#customer-profile').waitFor({state:'hidden'});await frame.locator('[data-profile="C1"]').click();assert.equal(await frame.locator('[name="primaryEmail"]').inputValue(),'synthetic@example.test');await frame.locator('#customer-profile footer [data-close]').click();await frame.locator('[data-customer-orders="C1"]').click();await frame.locator('[data-desk-step="1"]').click();assert.match(await frame.locator('.shipment-details').innerText(),/NCT-SO-260001/);phase='invoice';
+ await frame.locator('[data-create-invoice]')`);
+const output=" console.log(JSON.stringify({checks:'Actual client + real isolated backend functions: unassigned remainder, compact header, references, shipment, Deposit Payment upload, unique Desk SI lock, post-lock BL upload, responsive',pageErrors:errors.length,calls:calls.length,realExternalRequests:0}));";
+change(output,` const counts=Object.fromEntries(['references','shipment','deposit','profile','invoice','bill'].map(label=>[label,trace.filter(item=>item.phase===label&&item.type.endsWith('_READ_REQUEST')).length]));assert.deepEqual(counts,process.env.MASTER_BASELINE_DIR?{references:6,shipment:6,deposit:6,profile:6,invoice:6,bill:6}:{references:0,shipment:0,deposit:1,profile:1,invoice:3,bill:1});console.log(JSON.stringify({variant:process.env.MASTER_BASELINE_DIR?'baseline':'candidate',postSaveReads:counts,originalProjectionPreserved:true,deskStateSurvivesPartialReads:true,invoiceLockAndDocumentsPass:true,profileContractFixture:true,pageErrors:errors.length,realExternalRequests:0}));`);
+const run=new Module(__filename,module);run.filename=__filename;run.paths=module.paths;run._compile(source,__filename);
