@@ -22,8 +22,18 @@
     "sourceEndpointUnauthenticatedStatus": 401
   },
   "publicVerification": {
-    "status": "PENDING",
-    "reason": "Agent-opened fresh Support tab remains blank embedded about:blank; no console errors captured. User asked once to open existing Support bookmark. No business mutation tested."
+    "status": "PASSED_DISPLAY_ONLY",
+    "url": "https://fmcg999.wixstudio.com/master/support-department",
+    "build": "20261027-support-customers-orders-v1",
+    "observed": [
+      "Fresh user-opened formal page loads new Support iframe and authenticated staff.",
+      "Customers full-name/country/currency/port/count/transactions/profile columns display.",
+      "Orders metadata, logistics/date and task rows display; unloaded tasks cannot be selected for invoicing.",
+      "Transactions eight-document guide and invoice columns display; selected customer has no invoice records."
+    ],
+    "consoleErrors": 0,
+    "businessMutations": 0,
+    "userBusinessAcceptance": "Pending user testing"
   },
   "limitations": [
     "Amount Due and reconciled invoice balance remain unavailable and display dash.",
