@@ -2,7 +2,8 @@
 const department=document.querySelector('nav[aria-label="Account navigation"]')?'ACCOUNT':document.querySelector('nav[aria-label="Warehouse navigation"]')?'WAREHOUSE':document.title.includes('Support')?'SUPPORT':'PURCHASE';
 const english=department==='ACCOUNT',copy=(en,zh)=>english?en:en+' '+zh,code={ACCOUNT:'ACC',PURCHASE:'P',WAREHOUSE:'W',SUPPORT:'S',SALES:'SALES'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';};
+const chatTimeFormat=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+const time=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?chatTimeFormat.format(d):'';};
 const companyValue=()=>document.querySelector('#companySelect,#company')?.value||'NCT';
 const key=t=>[t.kind,t.taskId,t.peer,t.legacyOnly?'old':'new'].join('|');
 let company=companyValue(),staffId='',threads=[],nextHistory=null,current=null,messages=[],before=null,pageReadOnly=false,pageState='loading',listBusy=false,pageBusy=false,generation=0,pageToken=0,pending=null,replyTo=null,observer=null,readQueue=Promise.resolve(),listPeer=null;

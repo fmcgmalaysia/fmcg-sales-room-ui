@@ -3,7 +3,8 @@
   document.documentElement.dataset.supportBuild='20261027-support-shipment-header-v2';
   const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number=(value,places=0)=>typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('en-GB',{minimumFractionDigits:places,maximumFractionDigits:places}):'—';
-  const day=value=>{if(!value||!/^\d{4}-\d{2}-\d{2}/.test(value))return '—';return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'}).format(new Date(value.slice(0,10)+'T00:00:00Z'));};
+  const supportDayFormat=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'2-digit',timeZone:'UTC'});
+  const day=value=>{if(!value||!/^\d{4}-\d{2}-\d{2}/.test(value))return '—';return supportDayFormat.format(new Date(value.slice(0,10)+'T00:00:00Z'));};
   const guides=[['SO','Sales Order','销售订单'],['BL','Bill of Lading','海运提单'],['BC','Booking Confirmation','订舱确认'],['SI','Sales Invoice','销售发票'],['DO','Delivery Order','送货单'],['CN','Credit Note','贷项通知单'],['PL','Packing List','装箱单'],['INS','Insurance','保险'],['CF','Customs Form','报关单'],['$','Payment Slip','客户付款凭证']];
   let company=new URLSearchParams(location.search).get('company')==='GHR'?'GHR':'NCT',view='customers',tab='invoices',data=null,selectedCustomer='',selectedOrder='',busy=false,readSequence=0;
   let activeDesk=0,deskBusy=false;const deskAttempts=new Map();
