@@ -1,0 +1,33 @@
+{
+  "mainMerged": false,
+  "stages": {
+    "public": {
+      "preflightPacking": {
+        "GHRLists": 0,
+        "NCTLists": 0
+      },
+      "status": "POST_PUBLISH_CHECKS_PENDING",
+      "productionBusinessWrites": 0,
+      "supportForceRefreshBeforePublish": "CUSTOMERS_VISIBLE_NCT_2"
+    },
+    "wix": {
+      "syncedModules": 14,
+      "status": "BLOCKED_WIX_CDN_CONNECTION_RESET_NO_NEW_PUBLISH_RECEIPT",
+      "fullDocumentMatches": 14,
+      "note": "14/14 candidate sources matched saved editor and final local source hashes. beforePublish chunk 28038 advancedSeoClient failed with connection reset. One standard reload preserved drafts but did not resolve publish; one cache-bypassing reload then stalled editor initialization with Sentry and CSS connection resets. Background read-only HTTPS checks reproduced connection resets. Existing live-site tooltip is not a new-release receipt. No security/network configuration changes or certificate-check bypass."
+    },
+    "pages": {
+      "status": "SUCCESS",
+      "temporaryPermissionRemoved": true,
+      "runId": 40720416125,
+      "resources": 99,
+      "originalSevenRulesExact": true,
+      "exact": 99
+    },
+    "code": "GITHUB_SYNCED"
+  },
+  "build": "20261028-stock-loaded-v1",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/233",
+  "codeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
+  "updatedAt": "2026-10-28T17:30:17.268Z"
+}

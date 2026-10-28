@@ -38,9 +38,17 @@ Stock Position、Stock Card、分配下限、Warehouse 可装量、Packing 剩�
 
 ## 发布记录
 
-- 代码：候选实施及隔离回归完成，待提交与同步。
-- GitHub Pages：尚未部署本候选。
-- Wix Studio：尚未应用本候选及发布。
-- 正式页：尚未验证本候选，不能声称已发布或已可测试。
+- 代码：已提交并同步 `39bf0674694069cab05a511d414cea1e24a1cbd1`，实施 PR233 保持 draft，未合并 main。
+- GitHub Pages：run `40720416125` 成功，build `20261028-stock-loaded-v1`；99/99 资源精确匹配。临时分支放行已撤销，原7条规则精确恢复。见 PAGES_VERIFICATION.json。
+- Wix Studio：新增模块及13个最小修改模块全部完成全文匹配，14/14 哈希与候选源一致；重新载入后又确认 physicalOutflow 与 warehousePreparation 保存内容。见 WIX_SYNC.json 和 WIX_SOURCE_HASH_CHECK.json。尚未取得本轮发布成功回执。
+- 正式页：发布前只读确认 NCT 与 GHR 均无 Packing 清单；Support 原 iframe 的 Packing 入口可读取。Support 强制刷新后可正常显示客户资料。以上不能代替发布后验收；本轮仍不可声称已发布或已可测试。
+
+### 2026-10-29 发布阻碍与接续
+
+发布按钮无及时反馈后，先保留14个匹配记录，做一次普通编辑器重载并复核两份保存内容。仍无发布回执，随后通过可见 Chrome Console 只读取得真实错误：Wix 自身 `beforePublish` 路径发生 `ChunkLoadError`，chunk 28038（advancedSeoClient）加载失败，并有 `ERR_CONNECTION_RESET`。既有“site is published and live”提示只是站点现有线上状态，不当成本轮回执。
+
+依据该新证据做一次绕过缓存的标准编辑器重载，结果初始化停在 LOADING；Console 显示 Sentry bundle、classicEditorEntry 样式、base-ui 样式资源连接重置，随后 `Sentry is not defined`。没有修改网络、安全设置或绕过证书检查。后台只读检查同一公开 Sentry 与 classicEditorEntry 资源亦返回连接重置；HTTP/1.1 与标准 TLS 1.2 对照仍相同。另一个 GitHub 资源的 Windows curl 返回证书撤销检查不可用；未禁用该检查。没有依据错误猜测或改动业务代码。
+
+接续只需先确认 Wix 公开资源恢复连通，正常恢复同一编辑器，核对已保存候选及 autosave 后发布，取得本轮成功回执，再强制刷新正式工作间并核对数据读取、Packing 两个入口及相关无错误表现。GitHub Pages 已完成，无需重新放行分支、重新部署或重新应用14份补丁。生产 Loaded、开票与 Dispatch 的真实交易验收留给用户确认，不能以隔离测试代替。
 
 后续更新这四项状态，只有四阶段均完成才能通知用户测试。不能合并 main 或创建整个库存流程已获用户验证的标签。实际 Credit、缓存及 Token 归因 UNKNOWN。
