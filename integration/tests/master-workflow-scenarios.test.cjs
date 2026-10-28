@@ -18,6 +18,8 @@ const { createShipmentPlanOperations, shipmentPlanVersion, readShipmentPlans } =
 const { createPurchaseSourceOperations, purchaseSourcesVersion } = load('purchaseSources.js');
 const { projectPurchaseQuantities } = load('purchaseQuantityProjection.js');
 const { createQuantityCaseOperations, quantityCasesVersion } = load('purchaseQuantityCases.js');
+const { projectPackingContext } = load('packingListContext.js');
+const { createPackingListOperations, packingVersion } = load('packingListOperations.js');
 
 async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const rows = new Map(), clone = value => JSON.parse(JSON.stringify(value));
@@ -72,10 +74,17 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
   const plan=async totalCtn=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:(await task()).procurement.revision,totalCtn,supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
+  const packingContext=async()=>projectPackingContext(await context()),packingSave=createPackingListOperations({store,names,readContext:packingContext,now});
+  const loadForInvoice=async quantity=>{
+   const act=async(input,department='SUPPORT')=>packingSave({...request(department,{version:packingVersion(await packingContext()),...input}),staff:{...staff(department),packingDepartment:department}});
+   const created=await act({action:'CREATE',customerId:'C',currency:'MYR',lines:[{taskId:id,quantity}]});
+
+   for(const action of ['SEND','START','PROGRESS','COMPLETE']){const list=(await packingContext()).lists.find(row=>row.id===created.id);await act({action,id:list.id,revision:list.revision,...(action==='PROGRESS'?{lines:[{taskId:id,packed:quantity,loaded:quantity,reason:''}]}:{})},action==='SEND'?'SUPPORT':'WAREHOUSE');}
+  };
   const planOps=createShipmentPlanOperations({store,names,readContext:context,now});
   const split=async quantities=>planOps({...request('SALES',{action:'PLAN',customerId:'C',orderId:(await task()).orderId,version:shipmentPlanVersion(await context()),reason:'Customer requested split shipment',batches:quantities.map((quantity,index)=>({label:'Shipment '+(index+1),lines:[{taskId:id,quantity}]}))}),staff:{...staff('SALES'),customerId:'C',canSelectShipment:true}});
   const shipAction = async (who, input) => { const r = request(who, { version: shipmentVersion(await context()), reason: 'Scenario shipment', ...input }); r.staff = { ...r.staff, canSelectShipment: who === 'SALES', canInvoiceShipment: who === 'SUPPORT', canDispatchShipment: who === 'WAREHOUSE' }; return fulfilment(r); };
-  const invoice = async quantity => { const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: quantity * 15000 }); return selected.shipmentId; };
+  const invoice = async quantity => { await loadForInvoice(quantity); const selected = await shipAction('SALES', { action: 'SELECT', customerId: 'C', lines: [{ taskId: id, quantity }] }); await shipAction('SUPPORT', { action: 'INVOICE', id: selected.shipmentId, number: 'SI-' + sequence, date: '2026-10-12', amountCents: quantity * 15000 }); return selected.shipmentId; };
   const dispatch = async shipmentId => shipAction('WAREHOUSE', { action: 'DISPATCH', id: shipmentId, reference: 'TEST-CONTAINER' });
   const amounts = async () => finance({ action: 'AMOUNTS', amounts: (await po()).documents.filter(doc => ['INV','CN'].includes(doc.type)).map(doc => ({ fileId: doc.fileId, cents: doc.declaredCents, ...(doc.type === 'CN' ? { treatment: 'DEDUCT' } : {}) })) });
   const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
@@ -196,7 +205,7 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   let row=await f.task();assert.equal(row.ord,500);assert.equal(row.warehouse.accepted,480);
   assert.equal(row.warehouse.stock.held,10);assert.equal(row.warehouse.stock.shipped,300);assert.equal(row.warehouse.stock.availablePhysical,170);
   assert.deepEqual(Array.from(row.warehouse.stock.cases,item=>item.owner),['ADMIN','PURCHASE','PURCHASE']);
-  await assert.rejects(f.invoice(180),/Available stock changed/);
+  await assert.rejects(f.invoice(180),/Usable customer stock changed/);
   await assert.rejects(f.allocate(480),/quarantined stock/);
   await f.allocate(470);await f.shortage('STOP','PENDING',false);const second=await f.invoice(170);await f.dispatch(second);
   row=await f.task();assert.equal(row.ord,500);assert.equal(row.inc,470);assert.equal(row.warehouse.accepted,480);

@@ -74,10 +74,10 @@ function fixture() {
     const row = projectStockCard(await context()).items[0];
     return { onHand: row.onHand, reserved: row.reservedUsable, free: row.available };
   };
-  return { records, context, stock, prepSave, prepRequest, fulfil, packing, packingContext,
+  return { records, tasks, store, staff, nextId, fulfilSave, packingSave, context, stock, prepSave, prepRequest, fulfil, packing, packingContext,
     lose: action => { lostAction = action; } };
 }
-async function run() {
+async function run(candidate=false) {
   const checks = [], protections = [];
   const observe = (id, expected, actual, detail) => checks.push({ id, expected, actual,
     matchesConfirmedRule: actual === expected, detail });
@@ -108,7 +108,7 @@ async function run() {
       'Confirmed rule requires Loaded deduction already present before invoice.');
     await f.fulfil({ action: 'DISPATCH', id: selected.shipmentId, reference: 'SYNTHETIC-DO' });
     observe('legacy-loaded-' + loaded + '-after-dispatch', 150 - loaded, (await f.stock()).onHand,
-      'Legacy cumulative dispatch eventually matches quantity; this does not validate Loaded timing.');
+      'Dispatch must keep the already-confirmed physical balance unchanged.');
     const c = await f.context();
     protect('legacy-' + loaded + '-receipt-quantities-preserved', c.tasks[0].warehouse.accepted === 50 && c.tasks[1].warehouse.accepted === 100);
     protect('legacy-' + loaded + '-company-isolated', (await f.context('GHR')).activity.length === 0);
@@ -122,27 +122,28 @@ async function run() {
         ...(action === 'PROGRESS' ? { lines: [{ taskId: 'A', packed: 100, loaded, reason: 'Synthetic capacity' }] } : {}) },
       action === 'SEND' ? 'SUPPORT' : 'WAREHOUSE');
       if (action === 'PROGRESS') observe('packing-progress-' + loaded, 150 - loaded, (await f.stock()).onHand,
-        'Actual Packing PROGRESS save records cumulative Loaded but Stock Card ignores it.');
+        'Actual Packing PROGRESS writer followed by the physical Stock Card projection.');
     }
     const context = await f.context(), list = readPackingLists(context.activity, 'NCT')[0];
     protect('packing-' + loaded + '-single-current-row', context.activity.filter(e => e.action === 'SUPPORT_PACKING_LIST_CURRENT').length === 1);
     protect('packing-' + loaded + '-invoice-helper-uses-loaded', packingInvoiceLines(list)[0].quantity === loaded);
     observe('packing-completed-' + loaded, 150 - loaded, (await f.stock()).onHand,
-      'Completing the list also does not post stock.');
+      'Completion must preserve the balance already posted by Loaded.');
     observe('packing-support-invoice-ready-' + loaded, loaded,
       supportInvoiceState(context).lines.find(r => r.taskId === 'A').maxInvoiceQty,
-      'Main Support invoice reader uses legacy preparation, while active packing holds block it.');
+      'The main Support invoice reader must recognize the same completed Loaded evidence.');
     protect('packing-' + loaded + '-remainder-retained', (list.remainders[0]?.quantity || 0) === 100 - loaded);
   }
   return { schemaVersion: 1, at: new Date().toISOString(), sourceBaseline: '080d3578fbddc0995938a08d452828cc24e12f6d',
     environment: 'ISOLATED_MEMORY_STORE_ORIGINAL_BACKEND_MODULES', productionWrites: 0, networkCalls: 0,
-    candidateRuntimeImplemented: false, readyForRelease: checks.every(c => c.matchesConfirmedRule),
+    candidateRuntimeImplemented: candidate, contractsPassed: checks.every(c => c.matchesConfirmedRule),readyForRelease:false,
     checks, protections, unresolvedRules: ['LOADED_CORRECTION_VS_PHYSICAL_RETURN', 'LEGACY_TO_PACKING_IDENTITY',
       'SOURCE_ATTRIBUTION_AT_LOADING', 'HISTORICAL_DISPATCH_RECONCILIATION'] };
 }
-run().then(result => {
+if(require.main===module)run(process.argv.includes('--candidate')).then(result => {
   const out = process.argv.find(arg => arg.startsWith('--out='));
   if (out) fs.writeFileSync(path.resolve(out.slice(6)), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify(result, null, 2));
-  if (process.argv.includes('--require-ready') && !result.readyForRelease) process.exitCode = 2;
+  if (process.argv.includes('--require-ready') && !result.contractsPassed) process.exitCode = 2;
 }).catch(error => { console.error(error.stack); process.exitCode = 1; });
+module.exports={fixture,run};

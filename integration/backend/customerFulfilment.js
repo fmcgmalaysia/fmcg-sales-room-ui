@@ -3,12 +3,13 @@ import { requirePackingReleased, packingGuardVersion } from 'backend/packingList
 import { readAllocations } from 'backend/plannerAllocation.js';
 import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
+import { physicalOutflowVersion, selectLoadedForInvoice, validateInvoiceOutflows } from 'backend/physicalOutflow.js';
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 const cents=value=>Number.isSafeInteger(value)&&value>0&&value<=999999999999;
 import { FULFILMENT_ACTION, readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
-export function shipmentVersion(context){return packingGuardVersion(context,operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity)));}
+export function shipmentVersion(context){return packingGuardVersion(context,operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.sourceLineId,row.ord,row.inc,row.barcode,row.packing,row.ea,row.netCostCtn,row.sellingPricePc,row.transactionCurrency]),readAllocations(context.activity),readCustomerShipments(context.activity),readStockExceptions(context.activity),physicalOutflowVersion(context.activity)));}
 export function createCustomerFulfilmentOperations({store,names,readContext,readRates,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
@@ -21,12 +22,11 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
    const at=now().toISOString();let shipment,beforeRevision='';
    if(input.action==='SELECT'){
     if(!text(input.customerId)||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300||new Set(input.lines.map(row=>row.taskId)).size!==input.lines.length)throw Error('Select distinct customer lines and quantities.');
-    const allocations=readAllocations(context.activity),active=shipments.filter(row=>row.status!=='CANCELLED');
-    const lines=input.lines.map(entry=>{const task=context.tasks.find(row=>row.id===entry.taskId);if(!task||task.procurementSource||task.customerId!==input.customerId||task.archived||!qty(entry.quantity)||entry.quantity>Math.max(0,(task.inc||0)-reservedCartons(task.id,context.activity)))throw Error('Shipment exceeds available customer allocation.');
-     let remaining=entry.quantity;const sources=[];
-     for(const allocation of allocations.filter(row=>row.targets.some(target=>target.taskId===task.id)).sort((a,b)=>a.sourceTaskId.localeCompare(b.sourceTaskId))){const allocated=allocation.targets.find(row=>row.taskId===task.id).quantity,used=active.reduce((sum,row)=>sum+row.lines.filter(line=>line.taskId===task.id).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===allocation.sourceTaskId).reduce((n,source)=>n+source.quantity,0),0),take=Math.min(remaining,allocated-used);if(take<0)throw Error('Shipment allocation history requires review.');if(take>0){sources.push({sourceTaskId:allocation.sourceTaskId,quantity:take});remaining-=take;}if(!remaining)break;}
-     if(remaining)throw Error('Shipment requires explicit planner allocation.');
-     return {taskId:task.id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:entry.quantity,sources};});
+    const selectedTasks=input.lines.map(entry=>{const task=context.tasks.find(row=>row.id===entry.taskId);if(!task||task.procurementSource||task.customerId!==input.customerId||task.archived||!qty(entry.quantity)||entry.quantity>Math.max(0,(task.inc||0)-reservedCartons(task.id,context.activity)))throw Error('Shipment exceeds available customer allocation.');return task;});
+    requirePackingReleased({...context,activity:context.activity.filter(row=>!(row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.status==='COMPLETED'&&row.details.list.customerId===input.customerId&&!row.details.list.change))},input.lines.map(line=>line.taskId));
+    const lines=input.lines.map((entry,index)=>{const task=selectedTasks[index];
+     const physical=selectLoadedForInvoice(context,task.id,entry.quantity);
+     return {taskId:task.id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:entry.quantity,...physical};});
     const currencies=[...new Set(lines.map(line=>context.tasks.find(task=>task.id===line.taskId).transactionCurrency))];if(currencies.length!==1||!currencies[0])throw Error('Select one customer and one invoice currency.');
     shipment={id:operationId(company,requestId,'SHIPMENT'),company,customerId:input.customerId,currency:currencies[0],status:'REQUESTED',lines,requestedAt:at,requestedBy:staff.staffName,requestedByStaffId:staff.staffId,reason};
    }else{
@@ -45,7 +45,7 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
     }
     if(input.action==='DISPATCH'){if(current.status!=='INVOICED')throw Error('Sales Invoice is required before dispatch.');if(!text(input.reference)||text(input.reference).length>120)throw Error('Dispatch reference is required (maximum 120 characters).');shipment.status='DISPATCHED';shipment.dispatch={at,by:staff.staffName,byStaffId:staff.staffId,reference:text(input.reference),reason};}
    }
-   if(input.action!=='CANCEL')requirePackingReleased(context,shipment.lines.map(line=>line.taskId));
+   if(input.action!=='CANCEL')requirePackingReleased(validateInvoiceOutflows(context,shipment),shipment.lines.map(line=>line.taskId));
    if(staff.customerId&&staff.customerId!==shipment.customerId)throw Error('Shipment customer is not authorized.');
    if(input.action!=='CANCEL')for(const sourceId of new Set(shipment.lines.flatMap(line=>line.sources).map(source=>source.sourceTaskId))){
     const affected=readStockExceptions(context.activity).some(item=>item.sourceTaskId===sourceId);
@@ -56,6 +56,6 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
     if(input.action==='SELECT'&&readAllocations(context.activity).find(row=>row.sourceTaskId===sourceId)?.targets.reduce((sum,row)=>sum+row.quantity,0)>stock.usableReceived)throw Error('Available stock changed. Purchase must confirm allocation before invoicing or dispatch.');
    }
    const id=operationId(company,requestId,staff.memberId,'SHIPMENT_EVENT');return {expectedVersion:version,event:{_id:id,title:id,description:shipment.id,image:shipment.customerId,action:FULFILMENT_ACTION,result:'SAVED',activityTime:at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:reason,details:{beforeRevision,shipment}}};
-  },apply:async plan=>{const collection=names[company].activity,existing=await store.read(collection,plan.event._id);if(!existing){if(shipmentVersion(await readContext(company,staff))!==plan.expectedVersion)throw Error('Shipment changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Shipment receipt conflict.');return {ok:true,requestId,company,shipmentId:plan.event.description,status:plan.event.details.shipment.status};}});
+  },apply:async plan=>{const collection=names[company].activity,existing=await store.read(collection,plan.event._id);if(!existing){const context=await readContext(company,staff);if(shipmentVersion(context)!==plan.expectedVersion)throw Error('Shipment changed while saving.');if(plan.event.details.shipment.status!=='CANCELLED')requirePackingReleased(validateInvoiceOutflows(context,plan.event.details.shipment),plan.event.details.shipment.lines.map(line=>line.taskId));await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Shipment receipt conflict.');return {ok:true,requestId,company,shipmentId:plan.event.description,status:plan.event.details.shipment.status};}});
  };
 }

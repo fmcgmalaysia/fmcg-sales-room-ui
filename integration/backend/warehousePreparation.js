@@ -4,14 +4,15 @@ import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
-import { allocateBatchMetric, resolveBatchStock, preferredSourceBatch } from 'backend/shipmentBatchAllocation.js';
+import { allocateBatchMetric, resolveBatchStock, preferredSourceBatch, allocateBatchSources, stockBatchEntries } from 'backend/shipmentBatchAllocation.js';
+import { readPhysicalOutflows, loadingOutflowId, planLoadedSources, assertLoadedOutflows } from 'backend/physicalOutflow.js';
 
 const text=value=>String(value??'').trim();
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 const validExpiry=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 export const PREPARATION_ACTION='WAREHOUSE_PREPARATION_SAVED';
 
-// Separate physical preparation evidence. It never posts dispatch, invoices or stock allocations.
+// Preparation evidence and confirmed Loaded outflow share the original save journal.
 export function readPreparation(activity){
  const pending=activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'),states=new Map();
  while(pending.length){
@@ -27,7 +28,7 @@ export function readPreparation(activity){
 
 // Read physical stock for this customer demand; do not post or change allocations.
 function readyStockFor(task,context,shipments,onlySourceId){
- const dispatched=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines);
+ const dispatched=readPhysicalOutflows(context.activity);
  const shippedFrom=(sourceId,targetId)=>dispatched.filter(l=>l.taskId===targetId).flatMap(l=>l.sources).filter(s=>s.sourceTaskId===sourceId).reduce((n,s)=>n+s.quantity,0);
  const total=context.tasks.reduce((sum,source)=>{
   if(onlySourceId&&source.id!==onlySourceId)return sum;
@@ -56,19 +57,23 @@ export function projectPreparation(context){
   const plan=plans.find(p=>p.customerId===task.customerId&&p.orderId===task.orderId&&p.batches.some(b=>b.lines.some(l=>l.taskId===task.id)));
   const batches=plan?plan.batches.flatMap(b=>{const l=b.lines.find(l=>l.taskId===task.id);return l?[{key:plan.id+'|'+b.sequence,label:b.label,date:b.date,quantity:l.quantity,coverage:l.coverage,planRevision:plan.revision}]:[]}):[{key:'WHOLE',label:'',date:task.estimatedShipmentDate,quantity:goal,planRevision:''}];
   const anchored=batches.some(batch=>batch.coverage),stockSources=anchored?(context.allocations||[]).flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===task.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity)}]:[];}):[];
-  const readyByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id))}))):allocateBatchMetric(batches,Math.min(readyStock,task.inc||0),'received')):null,allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;
+  const outflows=readPhysicalOutflows(context.activity).filter(row=>row.taskId===task.id),sent=outflows.reduce((sum,row)=>sum+row.quantity,0);
+  const readyByBatch=anchored&&stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id)+outflows.flatMap(row=>row.sources).filter(row=>row.sourceTaskId===source.id).reduce((sum,row)=>sum+row.quantity,0))}))):allocateBatchMetric(batches,Math.min(readyStock+sent,task.inc||0),'received'),allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;
+  const sourceByBatch=anchored&&stockSources.length?allocateBatchSources(stockBatchEntries(plan,task.id),stockSources):null,stockVersion=operationId(context.allocations||[],outflows);
   const planTotal=batches.reduce((n,b)=>n+b.quantity,0),planMismatch=planTotal!==goal&&(!plan||task.shortage?.customerDecision==='STOP'||planTotal!==(task.requested??goal));
+  const commercialSent=shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines).filter(row=>row.taskId===task.id).reduce((sum,row)=>sum+row.quantity,0);
   let batchOffset=0;
+  let unassigned=outflows.filter(row=>row.kind!=='WAREHOUSE').reduce((sum,row)=>sum+row.quantity,0);
   for(const [batchIndex,batch] of batches.entries()){
    const id=operationId(context.company,task.id,batch.key),saved=states.get(id),signature=operationId(task.id,task.orderId,task.sourceLineId,goal,batch.quantity,batch.planRevision),valid=!planMismatch&&saved?.signature===signature;
-   const sent=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines).filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0),batchStart=batchOffset;
-   const dispatched=Math.min(batch.quantity,Math.max(0,sent-batchStart));batchOffset+=batch.quantity;
+   const ownLoaded=outflows.filter(row=>row.kind==='WAREHOUSE'&&row.loadingId===id).reduce((sum,row)=>sum+row.quantity,0),otherLoaded=Math.min(Math.max(0,batch.quantity-ownLoaded),unassigned);
+   const consumed=ownLoaded+otherLoaded;unassigned-=otherLoaded;const dispatched=Math.min(batch.quantity,Math.max(0,commercialSent-batchOffset));batchOffset+=batch.quantity;
    const batchAllocated=allocatedByBatch?allocatedByBatch[batchIndex]:null;
-   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,batchAllocated,readyStock:readyByBatch?Math.max(0,readyByBatch[batchIndex]-dispatched):Math.min(Math.max(0,batch.quantity-dispatched),Math.max(0,readyStock-Math.max(0,batchStart-sent))),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,expiryDate:saved?.expiryDate||null,loaded:saved?.loaded||0,loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
+   items.push({id,taskId:task.id,orderId:task.orderId,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:batch.quantity,sourceTaskIds:context.tasks.filter(t=>t.id===task.id||t.customerDemandTaskId===task.id).map(t=>t.id),planMismatch,batch:batch.label,estimatedShipmentDate:batch.date||task.estimatedShipmentDate||null,batchAllocated,sourceLimits:sourceByBatch?.[batchIndex],stockVersion,readyStock:Math.max(0,readyByBatch[batchIndex]-consumed),allocated:task.inc||0,signature,revision:saved?.revision||'',prepared:valid&&saved.prepared===true,preparedAt:valid?saved?.preparedAt||null:null,expiryDate:saved?.expiryDate||null,loaded:saved?.loaded||0,physicalSources:saved?.physicalSources||[],loadedAt:saved?.loadedAt||null,photos:saved?.photos||[],note:saved?.note||'',updatedAt:saved?.at||null,updatedBy:saved?.by||'',stale:Boolean(saved&&!valid)||planMismatch,dispatched,loadedOutflowQty:consumed,history:context.activity.filter(e=>e.action===PREPARATION_ACTION&&e.result==='SAVED'&&e.description===id).map(e=>({at:new Date(e.activityTime).toISOString(),by:e.initiatedByStaffName,action:e.details.action,note:e.details.state.note,loaded:e.details.state.loaded,photos:e.details.state.photos}))});
   }
  }
  for(const [id,s] of states)if(s.loaded>0&&!items.some(i=>i.id===id))items.push({...s,revision:s.revision,customerName:customers.get(s.customerId)||s.customerId,readyStock:null,allocated:0,prepared:false,stale:true,orphaned:true,dispatched:0,history:[]});
- return items.map(item=>{const stockChanged=items.filter(i=>i.taskId===item.taskId&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0)>item.allocated;return {...item,prepared:item.prepared&&!stockChanged,stale:item.stale||stockChanged,version:(item.batchAllocated===null?operationId(item.signature,item.revision,item.allocated,item.dispatched):operationId(item.signature,item.revision,item.allocated,item.dispatched,item.batchAllocated)),status:item.stale||stockChanged?'ISSUE':item.loaded===item.quantity?'LOADED':item.loaded>0?'PARTIAL':item.prepared?'READY':'PENDING'};});
+ return items.map(item=>{const stockChanged=items.filter(i=>i.taskId===item.taskId&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0)>item.allocated;return {...item,prepared:item.prepared&&!stockChanged,stale:item.stale||stockChanged,version:(item.batchAllocated===null?operationId(item.signature,item.revision,item.allocated,item.dispatched,item.loadedOutflowQty,item.stockVersion):operationId(item.signature,item.revision,item.allocated,item.dispatched,item.batchAllocated,item.loadedOutflowQty,item.stockVersion)),status:item.stale||stockChanged?'ISSUE':item.loaded===item.quantity?'LOADED':item.loaded>0?'PARTIAL':item.prepared?'READY':'PENDING'};});
 }
 
 export function preparationSummary(taskId,context){
@@ -96,12 +101,12 @@ export function createPreparationOperations({store,names,readContext,documentSer
   const safeInput={...input,photos:verified.map(({base64,...p})=>p)};
   async function current(){const context=await readContext(company,staff),items=projectPreparation(context),item=items.find(i=>i.id===input.id);if(context.company!==company||!item||item.version!==input.version)throw Error('Warehouse task changed. Refresh before saving; input is retained.');requirePackingReleased(context,[item.taskId]);return {context,items,item};}
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{preparation:safeInput},prepare:async()=>{
-   const {items,item}=await current(),note=text(input.note),at=now().toISOString();
-   if(item.dispatched>0)throw Error('Warehouse this task has dispatched goods. Use the supervised correction process.');
+   const {context,items,item}=await current(),note=text(input.note),at=now().toISOString();
+   if(readCustomerShipments(context.activity).some(row=>row.status==='DISPATCHED'&&row.lines.some(line=>line.taskId===item.taskId)))throw Error('Warehouse this task has dispatched goods. Use the supervised correction process.');
    if(item.planMismatch||item.orphaned||item.stale&&item.loaded>0)throw Error('Warehouse loading no longer matches the current task. Ask Sales to restore or review its batch plan.');
    if(input.action==='EXPIRY'&&(!validExpiry(input.expiryDate)||input.expiryDate<'1900-01-01'||verified.length))throw Error('Warehouse enter a valid expiry date.');
    if(note.length>1000)throw Error('Warehouse note is too long.');
-   let prepared=item.prepared,loaded=item.loaded,preparedAt=item.preparedAt,loadedAt=item.loadedAt;
+   let prepared=item.prepared,loaded=item.loaded,preparedAt=item.preparedAt,loadedAt=item.loadedAt,physicalSources=item.physicalSources;
    if(input.action==='PACK'){
     if(item.batchAllocated!==null&&item.quantity>item.batchAllocated)throw Error('This shipment batch has insufficient allocated cartons. Ask Purchase to arrange its pending quantity.');
     const other=items.filter(i=>i.taskId===item.taskId&&i.id!==item.id&&i.prepared&&!i.stale).reduce((n,i)=>n+i.quantity,0);
@@ -115,13 +120,14 @@ export function createPreparationOperations({store,names,readContext,documentSer
     if((input.loaded<item.quantity||input.loaded<loaded)&&!note)throw Error('Warehouse explain partial loading or a quantity correction.');
     const other=items.filter(i=>i.taskId===item.taskId&&i.id!==item.id).reduce((n,i)=>n+i.loaded,0);
     if(other+input.loaded>item.allocated)throw Error('Warehouse loaded cartons exceed the customer allocation.');
+    physicalSources=planLoadedSources(context,{id:loadingOutflowId(company,'WAREHOUSE',item.id,item.taskId),taskId:item.taskId,loaded:input.loaded,previous:item.physicalSources,sourceLimits:item.sourceLimits});
     loaded=input.loaded;loadedAt=at;
    }
    if(input.action==='PHOTOS'&&!prepared&&!loaded)throw Error('Warehouse confirm preparation or loading before adding evidence.');
    if(verified.length&&(!['PACKING','LOADING'].includes(input.photoStage)||input.action==='PACK'&&input.photoStage!=='PACKING'||input.action==='LOAD'&&input.photoStage!=='LOADING'||input.photoStage==='LOADING'&&!loaded))throw Error('Warehouse photo stage is required.');
    const uploads=[];
    for(let index=0;index<verified.length;index++){const p=verified[index],allocated=await documentService({action:'ALLOCATE',company}),ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[p.mimeType];uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:item.id,fileId:allocated.fileId,type:input.photoStage,mimeType:p.mimeType,sha256:p.sha256,size:p.size,name:company+'-'+item.barcode+'-'+input.photoStage+'-'+requestId+'-'+index+'.'+ext});}
-   const state={id:item.id,taskId:item.taskId,orderId:item.orderId,customerId:item.customerId,company,barcode:item.barcode,name:item.name,packing:item.packing,batch:item.batch,quantity:item.quantity,sourceTaskIds:item.sourceTaskIds,signature:item.signature,...(input.action==='EXPIRY'?{expiryDate:input.expiryDate}:item.expiryDate?{expiryDate:item.expiryDate}:{}),prepared,preparedAt,loaded,loadedAt,note:note||item.note,photos:[...item.photos,...uploads.map(u=>({fileId:u.fileId,name:u.name,sha256:u.sha256,mimeType:u.mimeType,size:u.size,stage:u.type,at,by:staff.staffName}))]};
+   const state={id:item.id,taskId:item.taskId,orderId:item.orderId,customerId:item.customerId,company,barcode:item.barcode,name:item.name,packing:item.packing,batch:item.batch,quantity:item.quantity,sourceTaskIds:item.sourceTaskIds,signature:item.signature,...(input.action==='EXPIRY'?{expiryDate:input.expiryDate}:item.expiryDate?{expiryDate:item.expiryDate}:{}),prepared,preparedAt,loaded,physicalSources,loadedAt,note:note||item.note,photos:[...item.photos,...uploads.map(u=>({fileId:u.fileId,name:u.name,sha256:u.sha256,mimeType:u.mimeType,size:u.size,stage:u.type,at,by:staff.staffName}))]};
    if(state.photos.length>30)throw Error('Warehouse photo history is full. Contact Admin.');
    const id=operationId(company,requestId,staff.memberId,'WAREHOUSE_PREPARATION');
    return {version:item.version,uploads,event:{_id:id,title:id,description:item.id,image:item.customerId,imageAltText:item.taskId,action:PREPARATION_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:note,details:{action:input.action,beforeRevision:item.revision,state}}};
@@ -134,7 +140,8 @@ export function createPreparationOperations({store,names,readContext,documentSer
      const upload=plan.uploads[i],receipt=await documentService({...upload,base64:verified[i].base64});
      if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Warehouse photo upload is unconfirmed. Retry the same save.');
     }
-    await current();
+    const checked=await current(),state=plan.event.details.state;
+    if(state.loaded>0)assertLoadedOutflows(checked.context,[{id:loadingOutflowId(company,'WAREHOUSE',state.id,state.taskId),taskId:state.taskId,quantity:state.loaded,sources:state.physicalSources}]);
     await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});
    }
    return {ok:true,company,requestId,id:plan.event.description,savedAt:plan.event.activityTime};

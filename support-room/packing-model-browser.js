@@ -14,7 +14,7 @@ function packingHeld(list,taskId){
 function packingAvailability({tasks,lists},excludeId=''){
  return tasks.map(task=>{
   if(!task.taskId||!quantity(task.remaining)||!quantity(task.ready))fail('Demand or physical stock requires review.');
-  const held=lists.filter(list=>list.id!==excludeId).reduce((sum,list)=>sum+packingHeld(list,task.taskId),0);
+  const held=lists.filter(list=>list.id!==excludeId).reduce((sum,list)=>sum+Math.max(0,packingHeld(list,task.taskId)-(list.lines.find(line=>line.taskId===task.taskId)?.loaded||0)),0);
   return {...copy(task),held,unarranged:Math.max(0,task.remaining-held),readyToArrange:Math.max(0,Math.min(task.remaining,task.ready)-held),review:held>task.remaining||held>task.ready||Boolean(task.review)};
  });
 }
@@ -24,14 +24,14 @@ function planLines(input,list,context){
  return input.map(entry=>{
   const task=available.find(task=>task.taskId===entry.taskId),previous=list.lines?.find(line=>line.taskId===entry.taskId);
   if(!task||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||!quantity(entry.quantity)||entry.quantity===0)fail('Choose valid quantities for one company, customer and currency.');
-  if(entry.quantity>task.unarranged)fail('Quantity exceeds unarranged customer demand.');
-  return {taskId:task.taskId,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',quantity:entry.quantity,packed:previous?.packed||0,loaded:previous?.loaded||0,reason:previous?.reason||'',photos:copy(previous?.photos||[])};
+  if(entry.quantity-(previous?.loaded||0)>task.unarranged)fail('Quantity exceeds unarranged customer demand.');
+  return {taskId:task.taskId,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',quantity:entry.quantity,packed:previous?.packed||0,loaded:previous?.loaded||0,...(previous?.physicalSources?{physicalSources:copy(previous.physicalSources)}:{}),reason:previous?.reason||'',photos:copy(previous?.photos||[])};
  });
 }
 function checkSupply(list,context,lines=list.lines){
  const available=packingAvailability(context,list.id);
  for(const line of lines){const task=available.find(task=>task.taskId===line.taskId);
-  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity>task.readyToArrange)fail('Usable customer stock changed. Review allocation before proceeding.');
+  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity-(list.lines.find(row=>row.taskId===line.taskId)?.loaded||0)>task.readyToArrange)fail('Usable customer stock changed. Review allocation before proceeding.');
  }
 }
 function checkExecuted(lines){
@@ -76,6 +76,7 @@ function changePackingList({list,input,context,actor,id,revision,at}){
   if(!Array.isArray(input.lines)||input.lines.length!==next.lines.length||new Set(input.lines.map(line=>line.taskId)).size!==next.lines.length)fail('Confirm every packing line exactly once.');
   next.lines=next.lines.map(line=>{const update=input.lines.find(entry=>entry.taskId===line.taskId);
    if(!update||!quantity(update.packed)||!quantity(update.loaded)||update.loaded>update.packed||update.packed>line.quantity)fail('Loaded must not exceed packed or planned quantity.');
+   if(update.loaded<line.loaded)fail('Loaded cartons have left stock. Use the supervised correction process.');
    if((update.packed<line.packed||update.loaded<line.loaded)&&!reason(update.reason))fail('Explain the physical quantity correction.');
    return {...line,packed:update.packed,loaded:update.loaded,reason:reason(update.reason)?update.reason.trim():line.reason};
   });

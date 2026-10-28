@@ -2,6 +2,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { changePackingList, packingAvailability } from 'backend/packingListModel.js';
 import { Buffer } from 'buffer';
 import { validatePackingPhotos } from 'backend/packingListPhotos.js';
+import { loadingOutflowId, planLoadedSources, assertLoadedOutflows } from 'backend/physicalOutflow.js';
 
 export const PACKING_CURRENT='SUPPORT_PACKING_LIST_CURRENT';
 const validEvidence=line=>line.photos===undefined||Array.isArray(line.photos)&&line.photos.length<=30&&line.photos.every(photo=>photo&&typeof photo.fileId==='string'&&photo.fileId.length>0&&typeof photo.sha256==='string'&&/^[a-f0-9]{64}$/i.test(photo.sha256)&&['PACKING','LOADING'].includes(photo.stage)&&Number.isSafeInteger(photo.size)&&photo.size>0&&photo.size<=2*1024*1024&&!Object.hasOwn(photo,'base64'));
@@ -46,6 +47,11 @@ export function createPackingListOperations({store,names,readContext,documentSer
    }
    const attachments=uploads.map(upload=>({fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at,by:staff.staffName}));
    const next=changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});
+   if(input.action==='PROGRESS')for(const line of next.lines){
+    if(!context.physicalContext)throw Error('Packing physical stock context is unavailable.');
+    line.physicalSources=planLoadedSources(context.physicalContext,{id:loadingOutflowId(company,'PACKING',id,line.taskId),taskId:line.taskId,loaded:line.loaded,previous:current.lines.find(row=>row.taskId===line.taskId)?.physicalSources||[]});
+   }
+   if(input.action==='PROGRESS')assertLoadedOutflows(context.physicalContext,next.lines.map(line=>({id:loadingOutflowId(company,'PACKING',id,line.taskId),taskId:line.taskId,quantity:line.loaded,sources:line.physicalSources})));
    next.updatedBy=staff.staffName;next.updatedByStaffId=staff.staffId;
    if(Buffer.byteLength(JSON.stringify(next),'utf8')>200000)throw Error('Packing list is too large. Use a smaller packing list.');
    return {uploads,expectedVersion:input.version,beforeRevision:current?.revision||'',record:{_id:operationId(company,id,'PACKING_CURRENT'),title:id,description:id,image:next.customerId,action:PACKING_CURRENT,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,details:{list:next}}};
@@ -55,7 +61,9 @@ export function createPackingListOperations({store,names,readContext,documentSer
     if(operationId(existing.details)!==operationId(plan.record.details))throw Error('Packing receipt conflict.');
    }else{
     if((existing?.details?.list?.revision||'')!==plan.beforeRevision)throw Error('Packing list changed while saving.');
-    if(packingVersion(await readContext(company,staff))!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
+    const checked=await readContext(company,staff);
+    if(packingVersion(checked)!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
+    if(list.lines.some(line=>line.loaded>0))assertLoadedOutflows(checked.physicalContext,list.lines.filter(line=>line.loaded>0).map(line=>({id:loadingOutflowId(company,'PACKING',list.id,line.taskId),taskId:line.taskId,quantity:line.loaded,sources:line.physicalSources})));
     for(let index=0;index<(plan.uploads||[]).length;index++){const upload=plan.uploads[index],receipt=await documentService({...upload,base64:verified[index].base64});if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Warehouse photo upload is unconfirmed. Retry this same save.');}
     if(packingVersion(await readContext(company,staff))!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
     const row={...plan.record,activityTime:new Date(plan.record.activityTime)};

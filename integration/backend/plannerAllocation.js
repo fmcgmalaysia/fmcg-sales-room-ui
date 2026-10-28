@@ -3,6 +3,7 @@ import { requirePackingReleased, requirePackingAllocationRetained, packingGuardV
 
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
+import { physicalOutflowQuantity, readPhysicalOutflows } from 'backend/physicalOutflow.js';
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 export function readAllocations(activity){
   const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED').concat(activity.filter(event=>event.action==='SALES_ORDER_ADJUSTMENT_SAVED'&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
@@ -38,7 +39,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       if(!reason||reason.length>2000)throw Error('Enter an allocation reason.');
       if(!Array.isArray(input.targets)||input.targets.length>300||new Set(input.targets.map(row=>row.taskId)).size!==input.targets.length)throw Error('Select distinct customer task allocations.');
       const prior=readAllocations(activity),old=prior.find(row=>row.sourceTaskId===source.id),shipments=readCustomerShipments(activity).filter(row=>row.status!=='CANCELLED');
-      const reservedFor=taskId=>shipments.flatMap(row=>row.lines).filter(line=>line.taskId===taskId).flatMap(line=>line.sources).filter(stock=>stock.sourceTaskId===source.id).reduce((sum,stock)=>sum+stock.quantity,0);
+      const reservedFor=taskId=>Math.max(physicalOutflowQuantity(activity,{sourceTaskId:source.id,taskId}),shipments.flatMap(row=>row.lines).filter(line=>line.taskId===taskId).flatMap(line=>line.sources).filter(stock=>stock.sourceTaskId===source.id).reduce((sum,stock)=>sum+stock.quantity,0));
       const targets=input.targets.map(entry=>{
         const target=workspace.tasks.find(row=>row.id===entry.taskId);
         if(!target||target.procurementSource||target.archived||target.specialPurchase||target.barcode!==source.barcode||target.packing!==source.packing||target.ea!==source.ea||!qty(entry.quantity))throw Error('Allocate only matching products to active customer tasks.');
@@ -50,7 +51,10 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       });
       for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&reservedFor(entry.taskId)>0)throw Error('Reserved or invoiced cartons cannot be removed.');if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
       if(!old)requirePackingReleased({...workspace,activity},[source.customerDemandTaskId||source.id]);
-      requirePackingAllocationRetained({...workspace,activity},old?.targets,targets);
+      // A completed list's posted Loaded cartons are protected by reservedFor.
+      // Preserve the original strict hold for every instruction still in progress.
+      const outflows=readPhysicalOutflows(activity),guardActivity=activity.filter(row=>{const list=row.action==='SUPPORT_PACKING_LIST_CURRENT'?row.details?.list:null;return !list||list.status!=='COMPLETED'||list.change||list.lines.some(line=>line.loaded&&!outflows.some(flow=>flow.kind==='PACKING'&&flow.loadingId===list.id&&flow.taskId===line.taskId&&flow.quantity===line.loaded));});
+      requirePackingAllocationRetained({...workspace,activity:guardActivity},old?.targets,targets);
       const stock=stockPosition(source.id,source.warehouse.accepted,activity);
       if(targets.reduce((total,row)=>total+row.quantity,0)>stock.usableReceived)throw Error('Allocate no more than usable received cartons; quarantined stock cannot be allocated.');
       if(operationId(targets)===operationId(old?.targets||[]))throw Error('Allocation has not changed.');

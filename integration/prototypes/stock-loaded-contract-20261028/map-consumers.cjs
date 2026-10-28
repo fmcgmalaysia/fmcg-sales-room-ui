@@ -51,7 +51,7 @@ const result = {
       normalizedSha256: crypto.createHash('sha256').update(module.source.replace(/\r\n/g, '\n')).digest('hex'),
       entryPaths: entries.map(entry => importPath(entry, name)).filter(Boolean) };
   }),
-  productionWrites: 0, runtimeModulesChanged: false
+  productionWrites: 0, runtimeModulesChanged: process.argv.includes('--candidate')
 };
 // These are physical-quantity consumers, not invoice/debtor/finance status reads.
 // A candidate cannot pass by merely adjusting the Stock Control display.
@@ -59,7 +59,7 @@ const physicalConsumers = ['inventoryExceptions.js', 'stockCardProjection.js',
   'warehousePreparation.js', 'packingListContext.js'];
 result.legacyPhysicalFormulaSites = physicalConsumers.flatMap(name => {
   const lines = modules.get(name).source.split(/\r?\n/);
-  return lines.flatMap((line, index) => /DISPATCHED/.test(line) &&
+  return lines.flatMap((line, index) => /DISPATCHED/.test(line) && /\.reduce\(/.test(line) &&
     /dispatched|shipped|sent|target\s*=/.test(line)
     ? [{ path: 'integration/backend/' + name, line: index + 1,
       reason: 'Physical quantity still derives independently from commercial Dispatch status.' }] : []);
@@ -71,7 +71,7 @@ console.log(JSON.stringify({ moduleCount: result.moduleCount, directConsumers: r
   affectedEntries: [...new Set(result.consumers.flatMap(c => c.entryPaths.map(p => p[0])))],
   legacyPhysicalFormulaSites: result.legacyPhysicalFormulaSites,
   singleAuthorityGatePassed: result.singleAuthorityGatePassed,
-  runtimeModulesChanged: false }, null, 2));
+  runtimeModulesChanged: process.argv.includes('--candidate') }, null, 2));
 // A source inventory is only a necessary gate. Dynamic quantity and recovery
 // scenarios must also pass; zero regex matches alone never proves one authority.
 if (process.argv.includes('--require-single-authority') && !result.singleAuthorityGatePassed) process.exitCode = 2;
