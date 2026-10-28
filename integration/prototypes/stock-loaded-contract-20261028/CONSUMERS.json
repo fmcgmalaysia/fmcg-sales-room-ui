@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-28T14:50:10.636Z",
+  "purpose": "READ_ONLY_DEPENDENCY_SCOPE_NOT_IMPLEMENTATION_OR_LIVE_VERIFICATION",
+  "scannedDirectory": "integration/backend",
+  "moduleCount": 84,
+  "requiredSingleAuthority": {
+    "successfulLoadedPostsPhysicalConsumption": true,
+    "invoiceAndDispatchMayPostPhysicalConsumption": false,
+    "legacyRuntimeFormulaFallbackAllowed": false,
+    "perPageStockFormulaAllowed": false,
+    "secondEditableBalanceAllowed": false,
+    "historicPhysicalFactsMustBeReconciled": true,
+    "historicOverlapMayBeGuessed": false,
+    "financialStateMustNotBeMechanicallyRewrittenAsStock": true
+  },
+  "consumers": [
+    {
+      "path": "integration/backend/inventoryExceptions.js",
+      "reason": "Physical remaining stock and quarantine admission currently use Dispatch totals.",
+      "normalizedSha256": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+      "entryPaths": [
+        [
+          "accountPurchase.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "purchaseCostRetry.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "purchaseOperations.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "purchaseOrders.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ],
+        [
+          "warehouseReceiving.web.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js",
+          "inventoryExceptions.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/stockCardProjection.js",
+      "reason": "Source/customer coverage currently subtracts Dispatch totals.",
+      "normalizedSha256": "1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300",
+      "entryPaths": [
+        [
+          "stockControl.web.js",
+          "stockControlService.js",
+          "stockCardProjection.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/warehousePreparation.js",
+      "reason": "Ready stock and batch sent quantities currently use Dispatch totals.",
+      "normalizedSha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5",
+      "entryPaths": [
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js"
+        ],
+        [
+          "warehouseReceiving.web.js",
+          "warehousePreparation.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/packingListContext.js",
+      "reason": "Remaining demand and Packing readiness currently use Dispatch totals.",
+      "normalizedSha256": "d33b0d6b435e6221c52bc843c67a59027c3c71a8d7eec88b85ce0fa9ecd13bc8",
+      "entryPaths": [
+        [
+          "packingLists.web.js",
+          "packingListContext.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "packingListContext.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/plannerAllocation.js",
+      "reason": "Uses source stock plus shipment reservations; must retain already-consumed allocation.",
+      "normalizedSha256": "b7c118918532104dcb4d7bdb856676a14ca1cae225c0799c59ac0bcd959de8fe",
+      "entryPaths": [
+        [
+          "accountPurchase.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "purchaseCostRetry.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "purchaseOperations.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "purchaseOrders.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ],
+        [
+          "warehouseReceiving.web.js",
+          "warehouseReceiving.js",
+          "plannerAllocation.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/customerFulfilment.js",
+      "reason": "SELECT source assignment and Dispatch must reference confirmed Loaded consumption.",
+      "normalizedSha256": "9827bb505d7d3bc56686d86b4b5dd1420fbebb562783adefa2d304b2cb1cd22d",
+      "entryPaths": [
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "customerFulfilment.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/supportInvoice.js",
+      "reason": "Main invoice readiness must consume the same Loaded identity, not a parallel preparation total.",
+      "normalizedSha256": "957ed56ba41873e7ca97fdd0551940e7b2e734225bd3b2149d6ec57fcf7f07c1",
+      "entryPaths": [
+        [
+          "supportWorkroom.web.js",
+          "supportInvoice.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/warehouseReceiving.js",
+      "reason": "Receipt correction must not reduce below confirmed consumed stock.",
+      "normalizedSha256": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
+      "entryPaths": [
+        [
+          "accountPurchase.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "purchaseCostRetry.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "purchaseOperations.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "purchaseOrders.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "purchaseProjection.js",
+          "warehouseReceiving.js"
+        ],
+        [
+          "warehouseReceiving.web.js",
+          "warehouseReceiving.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/purchaseProgress.js",
+      "reason": "Physical shipped facts and financial completion must remain distinct, with one physical authority.",
+      "normalizedSha256": "3e39171f2b56b4d1bfd2c49dee0ac0a3704af6bc2894cbebea4a59fd4a4ed641",
+      "entryPaths": [
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProgress.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/customerCompletionProjection.js",
+      "reason": "Reported physical shipped totals need the common result; invoice/payment checks remain financial.",
+      "normalizedSha256": "4f21cd9a7bff1cc4b5a8c77f67187102d1f1e86b952fc6b4f13dd785262e227b",
+      "entryPaths": [
+        [
+          "http-functions.js",
+          "purchaseQuantityRead.js",
+          "purchaseQuantityProjection.js",
+          "customerCompletionProjection.js"
+        ],
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProgress.js",
+          "customerCompletionProjection.js"
+        ]
+      ]
+    },
+    {
+      "path": "integration/backend/customerShipmentPlan.js",
+      "reason": "Version/admission must include the same consumption state across both loading entry points.",
+      "normalizedSha256": "539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d",
+      "entryPaths": [
+        [
+          "accountPurchase.web.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "customerFulfilment.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "http-functions.js",
+          "customerFulfilmentGateway.js",
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "packingLists.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "purchaseCostRetry.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "purchaseOperations.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "purchaseOrders.web.js",
+          "purchaseAccess.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "purchaseWorkspace.web.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "stockControl.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "stockExceptions.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "supportWorkroom.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "taskChat.web.js",
+          "customerFulfilmentService.js",
+          "warehousePreparation.js",
+          "customerShipmentPlan.js"
+        ],
+        [
+          "warehouseReceiving.web.js",
+          "purchaseProjection.js",
+          "customerShipmentPlan.js"
+        ]
+      ]
+    }
+  ],
+  "productionWrites": 0,
+  "runtimeModulesChanged": false,
+  "legacyPhysicalFormulaSites": [
+    {
+      "path": "integration/backend/inventoryExceptions.js",
+      "line": 26,
+      "reason": "Physical quantity still derives independently from commercial Dispatch status."
+    },
+    {
+      "path": "integration/backend/stockCardProjection.js",
+      "line": 54,
+      "reason": "Physical quantity still derives independently from commercial Dispatch status."
+    },
+    {
+      "path": "integration/backend/warehousePreparation.js",
+      "line": 30,
+      "reason": "Physical quantity still derives independently from commercial Dispatch status."
+    },
+    {
+      "path": "integration/backend/warehousePreparation.js",
+      "line": 64,
+      "reason": "Physical quantity still derives independently from commercial Dispatch status."
+    },
+    {
+      "path": "integration/backend/packingListContext.js",
+      "line": 16,
+      "reason": "Physical quantity still derives independently from commercial Dispatch status."
+    }
+  ],
+  "singleAuthorityGatePassed": false
+}

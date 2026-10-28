@@ -1,0 +1,129 @@
+{
+  "scope": "CURRENT_SAVED_WIX_EDITOR_CODE_NOT_INDEPENDENT_LIVE_DEPLOYMENT_READ",
+  "sourceBaseline": "080d3578fbddc0995938a08d452828cc24e12f6d",
+  "method": "Visible built-in editor Find with match case and regex enabled; escaped entire expected document with absolute start/end assertions; one match each. Selection/clipboard output was insufficient and is not claimed as full readback.",
+  "files": [
+    {
+      "name": "inventoryExceptions.js",
+      "at": "2026-10-28T14:37:19.060Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+      "chars": 6043,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "customerShipmentLedger.js",
+      "at": "2026-10-28T14:38:20.485Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170",
+      "chars": 2793,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "customerFulfilment.js",
+      "at": "2026-10-28T14:39:18.359Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "9827bb505d7d3bc56686d86b4b5dd1420fbebb562783adefa2d304b2cb1cd22d",
+      "chars": 9540,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "packingListContext.js",
+      "at": "2026-10-28T14:40:18.319Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "d33b0d6b435e6221c52bc843c67a59027c3c71a8d7eec88b85ce0fa9ecd13bc8",
+      "chars": 3271,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "packingListModel.js",
+      "at": "2026-10-28T14:41:18.071Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "e5be4fb0ce3d8105bf9f0adb325836a13b59073d7c2a0da6bae1f0a5baf94a1c",
+      "chars": 9760,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "packingListOperations.js",
+      "at": "2026-10-28T14:41:53.119Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "f10474c7ee5c1c2486b3a9cb29b40b6712dd1357bb130bb2004dc2ea29075991",
+      "chars": 7944,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "plannerAllocation.js",
+      "at": "2026-10-28T14:42:31.677Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "b7c118918532104dcb4d7bdb856676a14ca1cae225c0799c59ac0bcd959de8fe",
+      "chars": 7354,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "customerShipmentPlan.js",
+      "at": "2026-10-28T14:42:59.415Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d",
+      "chars": 11812,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "stockCardProjection.js",
+      "at": "2026-10-28T14:45:21.706Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300",
+      "chars": 8437,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "warehousePreparation.js",
+      "at": "2026-10-28T14:46:21.114Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5",
+      "chars": 16229,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "warehouseReceiving.js",
+      "at": "2026-10-28T14:46:53.908Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d",
+      "chars": 13737,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    },
+    {
+      "name": "supportInvoice.js",
+      "at": "2026-10-28T14:48:44.189Z",
+      "method": "VISIBLE_EDITOR_FIND_CASE_SENSITIVE_REGEX_WHOLE_DOCUMENT",
+      "normalizedSha256": "957ed56ba41873e7ca97fdd0551940e7b2e734225bd3b2149d6ec57fcf7f07c1",
+      "chars": 13309,
+      "fullDocumentMatch": true,
+      "matchCount": 1,
+      "publishedVersionFreshlyVerified": false
+    }
+  ],
+  "allFullDocumentMatches": true,
+  "productionCodeEdits": 0
+}
