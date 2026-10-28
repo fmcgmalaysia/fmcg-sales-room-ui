@@ -40,8 +40,8 @@ Stock Position、Stock Card、分配下限、Warehouse 可装量、Packing 剩�
 
 - 代码：已提交并同步 `39bf0674694069cab05a511d414cea1e24a1cbd1`，实施 PR233 保持 draft，未合并 main。
 - GitHub Pages：run `40720416125` 成功，build `20261028-stock-loaded-v1`；99/99 资源精确匹配。临时分支放行已撤销，原7条规则精确恢复。见 PAGES_VERIFICATION.json。
-- Wix Studio：新增模块及13个最小修改模块全部完成全文匹配，14/14 哈希与候选源一致；重新载入后又确认 physicalOutflow 与 warehousePreparation 保存内容。见 WIX_SYNC.json 和 WIX_SOURCE_HASH_CHECK.json。尚未取得本轮发布成功回执。
-- 正式页：发布前只读确认 NCT 与 GHR 均无 Packing 清单；Support 原 iframe 的 Packing 入口可读取。Support 强制刷新后可正常显示客户资料。以上不能代替发布后验收；本轮仍不可声称已发布或已可测试。
+- Wix Studio：新增模块及13个最小修改模块全部完成全文匹配，14/14 哈希与候选源一致；重新载入后又确认 physicalOutflow 与 warehousePreparation 保存内容。见 WIX_SYNC.json 和 WIX_SOURCE_HASH_CHECK.json。编辑器恢复后执行发布，已可见本轮明确的 Congratulations 对话框及“This site is published and live online.”，回执见 RELEASE_STATUS.json。
+- 正式页：本轮发布后刷新并进入 Warehouse 的收货、Delivery/Packing、Stock Control，能读取真实资料：7 UP 在手95、已分配95、自由0，来源50与45。Support 刷新曾因 Wix React 静态资源连接重置及 Scheduler 未定义而空白，普通重载后客户资料与新版 Packing 入口恢复。然而同一商品 Packing Ready 从发布前95变为0，待发100、占用0未变，故正式验收失败。本轮不能声称发布完成或交给用户交易测试。见 PUBLIC_CHECK.json。
 
 ### 2026-10-29 发布阻碍与接续
 
@@ -49,6 +49,16 @@ Stock Position、Stock Card、分配下限、Warehouse 可装量、Packing 剩�
 
 依据该新证据做一次绕过缓存的标准编辑器重载，结果初始化停在 LOADING；Console 显示 Sentry bundle、classicEditorEntry 样式、base-ui 样式资源连接重置，随后 `Sentry is not defined`。没有修改网络、安全设置或绕过证书检查。后台只读检查同一公开 Sentry 与 classicEditorEntry 资源亦返回连接重置；HTTP/1.1 与标准 TLS 1.2 对照仍相同。另一个 GitHub 资源的 Windows curl 返回证书撤销检查不可用；未禁用该检查。没有依据错误猜测或改动业务代码。
 
-接续只需先确认 Wix 公开资源恢复连通，正常恢复同一编辑器，核对已保存候选及 autosave 后发布，取得本轮成功回执，再强制刷新正式工作间并核对数据读取、Packing 两个入口及相关无错误表现。GitHub Pages 已完成，无需重新放行分支、重新部署或重新应用14份补丁。生产 Loaded、开票与 Dispatch 的真实交易验收留给用户确认，不能以隔离测试代替。
+随后编辑器恢复并执行发布；校正 Chrome 窗口尺寸后，可见明确的 Congratulations 成功回执。上述暂时连接错误保留作为历史诊断，不能继续视为当前发布阻碍。余下仅为强制刷新正式工作间并核对数据读取、Packing 两个入口及相关无错误表现。GitHub Pages 已完成，无需重新放行分支、重新部署或重新应用14份补丁。生产 Loaded、开票与 Dispatch 的真实交易验收留给用户确认，不能以隔离测试代替。
+
+### 正式数量回归与恢复进行中
+
+发布后出现上述 Ready 95→0 的真实回归，已停止后续功能工作及交易测试。13个既有模块的54项反向补丁先在后台模拟，证明逐字重建发布前现场原件，再通过可见 Wix 编辑器逐项恢复。全部13份已做绝对边界、大小写精确的全文原件匹配，见 WIX_RESTORE.json。新增 physicalOutflow 模块未删除；13份恢复后没有任何生产入口引用它，不能将未使用模块的存在说成两条运行库存逻辑。没有删除历史、迁移 CMS 或写入生产交易。
+
+静态恢复包已由原 master-save-continuity 配方构建并验证，业务资源99项；目标 build 为 20261028-master-save-continuity-v1。执行当前任务分支的临时 Pages 放行时，自动审批在进程启动前拒绝，理由是现有授权未明确涵盖该分支的具体临时部署权限。没有新增规则、绕过拒绝或通过另一分支发布。已向用户请求仅一次 master-save-continuity-only 恢复发布、成功后立即撤销并精确恢复原7条的批准，等待答复；不受影响的 Wix 原件恢复继续执行。
+
+后台恢复稿已取得 Wix 明确发布成功回执。恢复后强制刷新 Support，首次 Wix 页面程序预取 Failed to fetch，针对该真实错误做一次普通重载后，两个客户资料及 Packing 读取成功；同一商品剩余100、占用0、Ready95，确认后台回归已恢复。静态仍为 stock-loaded-v1，不能称为完整静态恢复。恢复过程中生产交易写入0。
+
+详细当前状态以 RECOVERY_STATUS.json 为准。完整静态恢复前，不另行叠加生产修补，不继续宣称 Loaded 候选可测试，也不合并 main。需先完成恢复，再以真实数据结构重现原因；不能只凭本地全绿或猜测把字段当作事实。
 
 后续更新这四项状态，只有四阶段均完成才能通知用户测试。不能合并 main 或创建整个库存流程已获用户验证的标签。实际 Credit、缓存及 Token 归因 UNKNOWN。

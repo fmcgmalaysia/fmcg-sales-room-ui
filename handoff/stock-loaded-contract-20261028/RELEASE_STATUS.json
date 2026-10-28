@@ -6,15 +6,30 @@
         "GHRLists": 0,
         "NCTLists": 0
       },
-      "status": "POST_PUBLISH_CHECKS_PENDING",
+      "status": "CANDIDATE_FAILED_BACKEND_RESTORED_READY95_STATIC_RECOVERY_PENDING",
       "productionBusinessWrites": 0,
-      "supportForceRefreshBeforePublish": "CUSTOMERS_VISIBLE_NCT_2"
+      "supportForceRefreshBeforePublish": "CUSTOMERS_VISIBLE_NCT_2",
+      "evidence": "PUBLIC_CHECK.json",
+      "restoredReady": 95
     },
     "wix": {
       "syncedModules": 14,
-      "status": "BLOCKED_WIX_CDN_CONNECTION_RESET_NO_NEW_PUBLISH_RECEIPT",
+      "status": "ORIGINAL_13_MODULES_RESTORED_AND_PUBLISHED",
       "fullDocumentMatches": 14,
-      "note": "14/14 candidate sources matched saved editor and final local source hashes. beforePublish chunk 28038 advancedSeoClient failed with connection reset. One standard reload preserved drafts but did not resolve publish; one cache-bypassing reload then stalled editor initialization with Sentry and CSS connection resets. Background read-only HTTPS checks reproduced connection resets. Existing live-site tooltip is not a new-release receipt. No security/network configuration changes or certificate-check bypass."
+      "note": "14/14 candidate sources matched saved editor and final local source hashes. beforePublish chunk 28038 advancedSeoClient failed with connection reset. One standard reload preserved drafts but did not resolve publish; one cache-bypassing reload then stalled editor initialization with Sentry and CSS connection resets. Background read-only HTTPS checks reproduced connection resets. Existing live-site tooltip is not a new-release receipt. No security/network configuration changes or certificate-check bypass. Editor subsequently recovered. After publish and correcting window size, the explicit Congratulations success dialog was observed. Earlier transient failures are retained for diagnosis.",
+      "receipt": {
+        "at": "2026-10-28T17:37:40.918Z",
+        "heading": "Congratulations",
+        "text": "This site is published and live online.",
+        "url": "https://fmcg999.wixstudio.com/master",
+        "method": "VISIBLE_WIX_PUBLISH_SUCCESS_DIALOG"
+      },
+      "recoveryReceipt": {
+        "at": "2026-10-28T18:56:48.457Z",
+        "heading": "Congratulations",
+        "text": "This site is published and live online.",
+        "source": "VISIBLE_RECOVERY_PUBLISH_DIALOG"
+      }
     },
     "pages": {
       "status": "SUCCESS",
@@ -22,12 +37,13 @@
       "runId": 40720416125,
       "resources": 99,
       "originalSevenRulesExact": true,
-      "exact": 99
+      "exact": 99,
+      "recoveryStatus": "PREPARED_99_ORIGINAL_ASSETS_PENDING_EXPLICIT_PERMISSION_AFTER_AUTO_REVIEW_REJECTION"
     },
     "code": "GITHUB_SYNCED"
   },
   "build": "20261028-stock-loaded-v1",
   "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/233",
   "codeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
-  "updatedAt": "2026-10-28T17:30:17.268Z"
+  "updatedAt": "2026-10-28T19:01:52.226Z"
 }
