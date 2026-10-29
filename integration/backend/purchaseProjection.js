@@ -14,6 +14,7 @@ import { resolveBatchEntitlements, preferredSourceBatch, purchaseBatchVersion, r
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 import { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';
+import { customerAllocationContext, readAllocationLoans } from 'backend/customerAllocationContext.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -134,8 +135,15 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     const plan=readShipmentPlans(activity).find(plan=>plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
     const stock=allocations.flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===root.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,activity)}]:[];});
     if(stock.length&&root.batchEntitlements.some(row=>row.coverage)){const received=resolveBatchStock(plan,root.id,stock);root.batchEntitlements.forEach((row,index)=>{row.metrics.received=Math.min(row.metrics.committed,received[index]);});}
+    const bound=allocations.flatMap(source=>{const target=source.targets.find(row=>row.taskId===root.id);return target?.batches?[target]:[];});
+    if(bound.length){
+      if(allocations.some(source=>{const target=source.targets.find(row=>row.taskId===root.id);return target?.quantity>0&&!target.batches;}))throw Error('Customer allocation batch binding requires review.');
+      for(const batch of root.batchEntitlements){const received=bound.reduce((n,target)=>n+(target.batches.find(row=>row.id===batch.id)?.quantity||0),0);if(received>batch.quantity)throw Error('Customer batch allocation exceeds demand.');batch.metrics.received=received;}
+    }
     root.batchAllocationVersion=purchaseBatchVersion({tasks:rows},root);
   }
+  const borrowing=readAllocationLoans(activity);
+  for(const row of rows){row.borrowingPayable=borrowing.filter(loan=>loan.borrowerTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingReceivable=borrowing.filter(loan=>loan.lenderTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingOutstanding=row.borrowingPayable+row.borrowingReceivable;if(row.borrowingOutstanding>0)row.archived=false;}
   return {
     company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
@@ -144,6 +152,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     shipmentPlans: readShipmentPlans(activity),
     purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
     paymentRequestsConnected: false,
-    deskDeliveries:projectDeskDeliverySummaries(activity)
+    deskDeliveries:projectDeskDeliverySummaries(activity),
+    allocationContext:customerAllocationContext({company,tasks:rows},activity,allocations,allocationVersion({company,tasks:rows},activity))
   };
 }

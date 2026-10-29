@@ -2,6 +2,7 @@ import { operationId, createOperationJournal } from 'backend/purchaseOperationJo
 import { requirePackingReleased, packingGuardVersion } from 'backend/packingListGuards.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { resolveBatchEntitlements, allocateBatchSources, batchEntries, preferredSourceBatch, stockBatchEntries } from 'backend/shipmentBatchAllocation.js';
+import { readAllocationLoans } from 'backend/customerAllocationContext.js';
 export const SALES_ADJUSTMENT_ACTION='SALES_ORDER_ADJUSTMENT_SAVED';
 const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 // Original intake, supplier P.O. and receipt rows remain immutable. Customer demand is a journal view.
@@ -26,6 +27,7 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{salesOrderAdjustment:input},prepare:async()=>{
    const context=await readContext(company,staff),task=context.tasks.find(row=>row.id===input.taskId&&row.customerId===input.customerId&&row.orderId===input.orderId&&!row.procurementSource&&!row.specialPurchase&&!row.archived);
    if(context.company!==company||!task)throw Error('Select an active customer order line.');
+   if(readAllocationLoans(context.activity).some(loan=>loan.outstanding>0&&[loan.borrowerTaskId,loan.lenderTaskId].includes(task.id)))throw Error('Return unshipped borrowed stock or complete its repayment before changing this customer demand.');
    if(input.mode!=='INCREASE')requirePackingReleased(context,[task.id]);
    if(salesAdjustmentVersion(context,planVersion)!==input.version)throw Error('Order or stock changed. Refresh before saving.');
    const total=task.requested??task.ord,prior=readPlans(context.activity).find(plan=>plan.customerId===task.customerId&&plan.orderId===task.orderId);
@@ -38,7 +40,7 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
    if(!alreadyPlanned&&!batches[index].lines.some(line=>line.taskId===task.id))batches[index].lines.push({taskId:task.id,quantity:total});
    const beforePlan={id:planId,batches},group=context.tasks.filter(row=>row.id===task.id||row.customerDemandTaskId===task.id);
    const sourceTotals=group.map(row=>({id:row.id,quantity:Math.max(0,(row.procurement?.totalCtn||0)-(row.procurement?.expectedExtra||0)),batchId:preferredSourceBatch(row.id,context.activity)})).filter(row=>row.quantity>0);
-   const stockSources=(context.allocations||[]).flatMap(allocation=>{const own=allocation.targets.find(row=>row.taskId===task.id);return own?[{id:allocation.sourceTaskId,quantity:own.quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity)}]:[];});
+   const stockSources=(context.allocations||[]).flatMap(allocation=>{const own=allocation.targets.find(row=>row.taskId===task.id);return own?[{id:allocation.sourceTaskId,quantity:own.quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity),...(own.batches?{bindings:alreadyPlanned?own.batches:[{id:planId+'|'+batches[index].sequence,quantity:own.quantity}]}:{})}]:[];});
    const stockBefore=allocateBatchSources(stockBatchEntries(beforePlan,task.id),stockSources);
    const entitlement=resolveBatchEntitlements(beforePlan,task.id,{committed:task.salesCommittedQty??task.ord,received:Math.max(0,task.inc||0)},sourceTotals);
    for(const batch of batches){const line=batch.lines.find(line=>line.taskId===task.id);if(!line)continue;const saved=entitlement.find(row=>row.id===planId+'|'+batch.sequence);line.coverage={...saved.metrics};line.sourceCoverage=saved.sources;line.stockCoverage=stockBefore[entitlement.indexOf(saved)];}
@@ -74,6 +76,15 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
      const own=allocation.targets.find(row=>row.taskId===task.id);if(!own)continue;
      const quantity=Math.min(own.quantity,stockAfter.flat().filter(row=>row.id===allocation.sourceTaskId).reduce((sum,row)=>sum+row.quantity,0));
      if(quantity!==own.quantity)allocations.push({sourceTaskId:allocation.sourceTaskId,beforeRevision:allocation.revision,targets:allocation.targets.map(row=>row.taskId===task.id?{...row,quantity}:row)});
+    }
+   }
+   if(stockSources.some(source=>source.bindings)){
+    const stockAfter=batchEntries({id:planId,batches},task.id);
+    for(const allocation of context.allocations||[]){
+     const own=allocation.targets.find(row=>row.taskId===task.id);if(!own?.quantity)continue;
+     const bindings=stockAfter.map(batch=>({id:batch.id,quantity:(batch.stockCoverage||[]).find(row=>row.id===allocation.sourceTaskId)?.quantity||0}));
+     const quantity=bindings.reduce((n,row)=>n+row.quantity,0),change={sourceTaskId:allocation.sourceTaskId,beforeRevision:allocation.revision,targets:allocation.targets.map(row=>row.taskId===task.id?{...row,quantity,batches:bindings}:row)};
+     const index=allocations.findIndex(row=>row.sourceTaskId===allocation.sourceTaskId);if(index>=0)allocations[index]=change;else allocations.push(change);
     }
    }
    const sourceBaselines=[...(prior?.sourceBaselines||[]).filter(row=>row.taskId!==task.id),{taskId:task.id,sources:group.map(source=>({id:source.id,totalCtn:source.procurement?.totalCtn||0,customerCtn:batches.flatMap(batch=>batch.lines.filter(line=>line.taskId===task.id)).flatMap(line=>line.sourceCoverage||[]).filter(row=>row.id===source.id).reduce((sum,row)=>sum+row.quantity,0)}))}];

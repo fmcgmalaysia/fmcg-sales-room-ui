@@ -16,6 +16,14 @@ export function allocateBatchMetric(entries,total,key){
 export function allocateBatchSources(entries,sources){
  const remaining=entries.map(row=>row.quantity),matrix=entries.map(()=>[]);
  if(sources.some(source=>!source.id||!whole(source.quantity))||new Set(sources.map(source=>source.id)).size!==sources.length)throw Error('Batch supplier quantities require review.');
+ if(sources.some(source=>source.bindings)){
+  for(const source of sources){
+   if(!source.quantity)continue;
+   if(!Array.isArray(source.bindings)||new Set(source.bindings.map(row=>row.id)).size!==source.bindings.length||source.bindings.some(row=>!entries.some(entry=>entry.id===row.id)||!whole(row.quantity))||source.bindings.reduce((sum,row)=>sum+row.quantity,0)!==source.quantity)throw Error('Explicit stock batch binding requires review.');
+   for(const binding of source.bindings){const index=entries.findIndex(row=>row.id===binding.id);if(binding.quantity>remaining[index])throw Error('Explicit stock exceeds shipment batch demand.');if(binding.quantity)matrix[index].push({id:source.id,quantity:binding.quantity});remaining[index]-=binding.quantity;}
+  }
+  return matrix;
+ }
  for(const source of sources){let available=source.quantity;
   for(let i=0;i<entries.length;i++){
    const held=entries[i].sourceCoverage?.find(row=>row.id===source.id)?.quantity??0;

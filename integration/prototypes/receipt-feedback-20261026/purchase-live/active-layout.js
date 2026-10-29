@@ -64,7 +64,7 @@
     while(next&&!next.matches('[data-id],[data-split-parent]')){if(next.hasAttribute('data-source-id'))hasSources=true;next=next.nextElementSibling;}
     if(hasSources){row.dataset.draftHasSources='true';receipt.querySelectorAll('button').forEach(button=>button.remove());}
    }
-   if(!row.hasAttribute('data-source-id')||receipt.querySelector('.draft-receipt-shortfall'))continue;
+   if(!(row.hasAttribute('data-source-id')||row.hasAttribute('data-receipt-source-id'))||receipt.querySelector('.draft-receipt-shortfall'))continue;
    if(receipt.querySelector('.receipt-stopped'))continue;
    const ordered=count(row.cells[5]),value=receipt.querySelector('.quantity-reference'),received=count(value||receipt);
    if(!Number.isSafeInteger(ordered)||!Number.isSafeInteger(received)||received<0||ordered<=received)continue;
@@ -83,9 +83,13 @@
    if(actual===requested){allocated.textContent=String(actual);}
    else{
     const warning=document.createElement('button');warning.type='button';warning.className='draft-allocation-warning';
+    warning.style.color=actual<requested?'#F58A00':'#E51B2B';
     warning.setAttribute('aria-label','分配数量与客户采购意向不相等');
     warning.innerHTML='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.4 2.7a1.85 1.85 0 0 1 3.2 0l7.2 12.5a1.85 1.85 0 0 1-1.6 2.8H2.8a1.85 1.85 0 0 1-1.6-2.8Z" fill="currentColor"/><path d="M10 6.5v5" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1" fill="white"/></svg>';
-    warning.onclick=event=>{event.preventDefault();event.stopPropagation();};allocated.append(warning);
+    warning.setAttribute('data-customer-allocate',row.getAttribute('data-split-parent')||row.getAttribute('data-id'));
+    warning.setAttribute('data-allocation-batch',row.getAttribute('data-split-batch')||'WHOLE');
+    warning.setAttribute('aria-label','Allocate stock 库存分配：已分配 '+actual+' 箱，需求 '+requested+' 箱');
+    warning.onclick=event=>{event.preventDefault();};allocated.append(warning);
    }
    allocated.dataset.draftAllocationDisplay='true';
   }

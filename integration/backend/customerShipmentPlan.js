@@ -72,6 +72,7 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
    for(const taskId of totals.keys()){
     const entries=list=>(list||[]).flatMap(batch=>{const line=batch.lines.find(line=>line.taskId===taskId);return line?[{label:batch.label,date:batch.date||null,quantity:line.quantity}]:[];});
     if(operationId(entries(prior?.batches))===operationId(entries(batches)))continue;
+    if((context.allocations||[]).some(source=>source.targets.some(target=>target.taskId===taskId&&target.batches)))throw Error('Use Order Adjustment to preserve this customer stock batch allocation.');
     if(physicalOutflowQuantity(context.activity,{taskId})>0)throw Error('Loaded stock has left the warehouse. Use the supervised correction process before changing this split.');
     if(readCustomerShipments(context.activity).some(shipment=>shipment.status!=='CANCELLED'&&shipment.lines.some(line=>line.taskId===taskId)))throw Error('Shipment already selected or invoiced. Resolve the shipment before changing its split.');
     const preparation=context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED'&&event.details?.state?.taskId===taskId);

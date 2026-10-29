@@ -1,12 +1,19 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
-import { requirePackingReleased, requirePackingAllocationRetained, packingGuardVersion } from 'backend/packingListGuards.js';
+import { packingGuardVersion } from 'backend/packingListGuards.js';
 
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
-import { stockPosition, readStockExceptions } from 'backend/inventoryExceptions.js';
-import { physicalOutflowQuantity, readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { readStockExceptions } from 'backend/inventoryExceptions.js';
+import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { customerAllocationContext, readAllocationLoans } from 'backend/customerAllocationContext.js';
+import { planCustomerAllocation, planCustomerRepayment, planCustomerReturn, planCustomerReconciliation } from 'backend/customerAllocationPlan.js';
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
 export function readAllocations(activity){
-  const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED').concat(activity.filter(event=>event.action==='SALES_ORDER_ADJUSTMENT_SAVED'&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
+ const pending=activity.filter(event=>event.action==='PLANNER_ALLOCATION_SAVED'&&event.result==='SAVED').flatMap(event=>{
+  if(!event.details?.allocations)return [event];
+  const changes=event.details.allocations;
+  if(!Array.isArray(changes)||!changes.length||new Set(changes.map(row=>row.sourceTaskId)).size!==changes.length)throw Error('Grouped allocation identity requires review.');
+  return changes.map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change}));
+ }).concat(activity.filter(event=>event.action==='SALES_ORDER_ADJUSTMENT_SAVED'&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
   while(pending.length){
     const candidates=pending.filter(event=>(sources.get(event.imageAltText)?.revision||'')===event.details?.beforeRevision);
     if(!candidates.length||new Set(candidates.map(event=>event.imageAltText)).size!==candidates.length)throw Error('Allocation history requires review.');
@@ -24,7 +31,7 @@ export function allocatedTo(taskId,activity){
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
-  return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity)));
+  return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber,row.procurement,row.batchEntitlements]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity),readAllocationLoans(activity),readPhysicalOutflows(activity),activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SUPPORT_DESK_SAVED'].includes(row.action))));
 }
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
@@ -34,32 +41,18 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
     return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{allocation:input},prepare:async()=>{
       const workspace=await readWorkspace(company,staff),activity=await store.all(collection),version=allocationVersion(workspace,activity);
       if(input.version!==version)throw Error('Stock or allocations changed. Refresh before allocating.');
-      const source=workspace.tasks.find(row=>row.id===input.sourceTaskId),reason=String(input.reason||'').trim();
-      if(!source?.warehouse||!source.po||!source.supplierId)throw Error('Warehouse receipt and source P.O. are required.');
-      if(!reason||reason.length>2000)throw Error('Enter an allocation reason.');
-      if(!Array.isArray(input.targets)||input.targets.length>300||new Set(input.targets.map(row=>row.taskId)).size!==input.targets.length)throw Error('Select distinct customer task allocations.');
-      const prior=readAllocations(activity),old=prior.find(row=>row.sourceTaskId===source.id),shipments=readCustomerShipments(activity).filter(row=>row.status!=='CANCELLED');
-      const reservedFor=taskId=>Math.max(physicalOutflowQuantity(activity,{sourceTaskId:source.id,taskId}),shipments.flatMap(row=>row.lines).filter(line=>line.taskId===taskId).flatMap(line=>line.sources).filter(stock=>stock.sourceTaskId===source.id).reduce((sum,stock)=>sum+stock.quantity,0));
-      const targets=input.targets.map(entry=>{
-        const target=workspace.tasks.find(row=>row.id===entry.taskId);
-        if(!target||target.procurementSource||target.archived||target.specialPurchase||target.barcode!==source.barcode||target.packing!==source.packing||target.ea!==source.ea||!qty(entry.quantity))throw Error('Allocate only matching products to active customer tasks.');
-        const other=prior.filter(row=>row.sourceTaskId!==source.id).reduce((total,row)=>total+(row.targets.find(item=>item.taskId===target.id)?.quantity||0),0);
-        if(entry.quantity<reservedFor(target.id))throw Error('Reserved or invoiced cartons cannot be reallocated.');
-        if(other+entry.quantity>target.ord)throw Error('Allocated cartons exceed customer demand.');
-        if(target.salesInvoiceNumber&&(old?.targets.find(row=>row.taskId===target.id)?.quantity||0)!==entry.quantity)throw Error('Invoiced allocation must be corrected through Support.');
-        return {taskId:target.id,orderId:target.orderId,sourceLineId:target.sourceLineId,customerId:target.customerId,quantity:entry.quantity};
-      });
-      for(const entry of old?.targets||[]){if(!targets.some(row=>row.taskId===entry.taskId)&&reservedFor(entry.taskId)>0)throw Error('Reserved or invoiced cartons cannot be removed.');if(!targets.some(row=>row.taskId===entry.taskId)&&workspace.tasks.find(row=>row.id===entry.taskId)?.salesInvoiceNumber)throw Error('Invoiced allocation cannot be removed.');}
-      if(!old)requirePackingReleased({...workspace,activity},[source.customerDemandTaskId||source.id]);
-      // A completed list's posted Loaded cartons are protected by reservedFor.
-      // Preserve the original strict hold for every instruction still in progress.
-      const outflows=readPhysicalOutflows(activity),guardActivity=activity.filter(row=>{const list=row.action==='SUPPORT_PACKING_LIST_CURRENT'?row.details?.list:null;return !list||list.status!=='COMPLETED'||list.change||list.lines.some(line=>line.loaded&&!outflows.some(flow=>flow.kind==='PACKING'&&flow.loadingId===list.id&&flow.taskId===line.taskId&&flow.quantity===line.loaded));});
-      requirePackingAllocationRetained({...workspace,activity:guardActivity},old?.targets,targets);
-      const stock=stockPosition(source.id,source.warehouse.accepted,activity);
-      if(targets.reduce((total,row)=>total+row.quantity,0)>stock.usableReceived)throw Error('Allocate no more than usable received cartons; quarantined stock cannot be allocated.');
-      if(operationId(targets)===operationId(old?.targets||[]))throw Error('Allocation has not changed.');
-      const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();
-      return {expectedVersion:version,event:{_id:id,title:id,description:source.orderId,image:source.customerId,imageAltText:source.id,action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:'Received stock allocated',details:{beforeRevision:old?.revision||'',sourceTaskId:source.id,targets,reason,accepted:source.warehouse.accepted}}};
+      if(input.planMode){
+        if(!['CUSTOMER','REPAY','RETURN','RECONCILE'].includes(input.planMode))throw Error('Select a customer allocation action.');
+        const prior=readAllocations(activity),context=customerAllocationContext(workspace,activity,prior,version);
+        const result=input.planMode==='CUSTOMER'?planCustomerAllocation(context,input):input.planMode==='RETURN'?planCustomerReturn(context,input):input.planMode==='RECONCILE'?planCustomerReconciliation(context,input):planCustomerRepayment(context,input);
+        for(const change of result.changes){const source=context.sources.find(row=>row.id===change.sourceTaskId);if(!source||change.targets.reduce((n,target)=>n+target.quantity,0)>source.usableReceived)throw Error('Allocate no more than usable received stock.');for(const target of change.targets){const before=source.targets.find(row=>row.taskId===target.taskId);if(target.quantity<(before?.protectedQuantity||0))throw Error('Loaded or invoiced cartons cannot be removed.');}}
+        const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();
+        const changes=result.changes.map(change=>({...change,targets:change.targets.map(target=>{const task=workspace.tasks.find(row=>row.id===target.taskId),{protectedQuantity,...claim}=target;return {...claim,orderId:task.orderId,sourceLineId:task.sourceLineId,customerId:task.customerId};}),beforeRevision:prior.find(row=>row.sourceTaskId===change.sourceTaskId)?.revision||''}));
+        const loan=result.loan?{...result.loan,id:result.loan.id||operationId(id,'BORROWING')}:null;
+        const beforeLoan=loan&&context.loans.find(row=>row.id===loan.id);if(loan)delete loan.revision;
+        return {expectedVersion:version,event:{_id:id,title:id,description:input.taskId||loan?.borrowerTaskId,image:context.tasks.find(row=>row.id===(input.taskId||loan?.borrowerTaskId))?.customerId||'',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:input.planMode==='REPAY'?'Borrowed stock repaid':'Customer received stock allocated',details:{company,mode:input.planMode,allocations:changes,loanChanges:loan?[{id:loan.id,beforeRevision:beforeLoan?.revision||'',state:loan}]:[],reason:input.planMode==='RECONCILE'?String(input.reason).trim():input.planMode==='REPAY'?'Explicit received stock repayment':input.planMode==='RETURN'?'Unshipped borrowed stock returned':'Customer allocation confirmed',taskId:input.taskId,batchId:input.batchId}}};
+      }
+      throw Error('Reload Purchase to use the customer allocation and borrowing workflow.');
     },apply:async plan=>{
       const existing=await store.read(collection,plan.event._id);
       if(!existing){
