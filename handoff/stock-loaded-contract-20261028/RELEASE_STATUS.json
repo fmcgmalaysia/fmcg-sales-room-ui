@@ -48,11 +48,37 @@
   "build": "20261028-stock-loaded-v1",
   "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/233",
   "codeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
-  "updatedAt": "2026-10-29T01:18:01.287Z",
+  "updatedAt": "2026-10-29T02:12:30.119Z",
   "currentLive": {
-    "backend": "080d357 originals; physicalOutflow unreachable",
-    "staticBuild": "20261028-master-save-continuity-v1",
-    "recipeHead": "e47218ca7c92764e289d869faa3739bf7d741737",
+    "backend": "Original 080d357 modules as last explicitly published; no new Wix publish since recovery",
+    "staticBuild": "20261029-stock-loaded-v2",
+    "recipeHead": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
     "loadedCandidateReadyForUserTest": false
+  },
+  "v2": {
+    "codeCommit": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+    "build": "20261029-stock-loaded-v2",
+    "stages": {
+      "code": "COMPLETE_GITHUB_SYNCED",
+      "pages": {
+        "status": "SUCCESS_99_OF_99_RECHECKED_AFTER_NETWORK",
+        "runId": 40800392382,
+        "temporaryPermissionRemoved": true,
+        "originalSevenRulesReobserved": true,
+        "evidence": "V2_PAGES_AFTER_NETWORK.json"
+      },
+      "wix": {
+        "status": "PARTIAL_DRAFT_NOT_PUBLISHED",
+        "fullCandidateMatches": 7,
+        "oneModulePendingFullMatch": true,
+        "remainingOriginalModules": 6,
+        "remainingHunks": 29
+      },
+      "public": {
+        "status": "V2_NOT_YET_VERIFIED",
+        "productionBusinessWrites": 0
+      }
+    },
+    "continuation": "V2_CONTINUATION.json"
   }
 }

@@ -87,4 +87,16 @@ Support一度保留旧缓存，临时使用正常DevTools Disable cache强制重
 
 正式原版资料同时显示实收95、Purchase待分配、Support Alloc Qty0，而Stock Control Reserved95可能依据PURCHASE_CUSTOMER_SHARE保留客户归属，并非PLANNER_ALLOCATION。后续必须经真实projectPurchaseWorkspace构建一致资料，比较未分配、已分配、追加来源及分次Loaded的读写门禁；不以手填inc掩盖合同。
 
+### 2026-10-29 v2已完成Pages，Wix中断后按用户要求仅后台接续
+
+用户明确批准9fb69be、stock-loaded-only、99资源的一次发布。run40800392382成功，build20261029-stock-loaded-v2；99/99公开资源精确匹配。临时规则64732450随即移除，原7条精确恢复。随后断网暂停，用户用物理Esc停止电脑工具，未再进行界面操作。网络恢复后用户明确要求现阶段仅后台工作，电脑空闲时由用户通知；本次接续没有调用电脑操作。
+
+恢复网络后重新读取99个公开资源仍全部一致；只读部署记录仍为同一次成功run，原7条分支规则仍在，当前任务分支不在放行列表。没有重复部署、重新申请放行或重跑不变的测试。已保存的152项相关检查仍为151通过、1项既有文案断言失败；另有22项重点检查、14项数量合同、18项保护及隔离浏览器场景通过，证据版本未变。
+
+现有Wix草稿：stockCardProjection、physicalOutflow、packingListContext、packingListModel、packingListOperations、plannerAllocation、purchaseProgress共7份完成全文候选匹配，其哈希与当前本地候选再次后台比对一致。customerCompletionProjection的3项补丁已应用，但最后的全文正则确认被Esc中断，必须先新鲜读回确认，不能重复应用。其余6份仍需确认原件后应用29项最小补丁：customerFulfilment、customerShipmentLedger、customerShipmentPlan、inventoryExceptions、supportInvoice、warehousePreparation。
+
+没有取得v2的Wix发布回执，线上后台最近一次明确发布仍为恢复原件。当前处于“v2静态、原后台、部分Wix草稿”的未完成发布状态，不交付生产装货测试，不宣称两套逻辑同时运行，也不能假称唯一Loaded逻辑已在正式页生效。详见V2_CONTINUATION.json、V2_PAGES_OPERATION.json、V2_PAGES_AFTER_NETWORK.json；RELEASE_STATUS.json的v2字段为当前进度。
+
+只在用户通知电脑空闲后继续受支持的可见编辑器核对、29个局部补丁、14份最终哈希、Wix发布回执和四个正式工作间验收。不要重放已完成的补丁、重用旧UI索引、重复Pages发布或将后台网络读取当成正式页面可视验收。Delivery Task仍在本轮Loaded验收之后。
+
 后续更新这四项状态，只有候选四阶段均完成才能通知用户测试。不能合并 main 或创建整个库存流程已获用户验证的标签。实际 Credit、缓存及 Token 归因 UNKNOWN。
