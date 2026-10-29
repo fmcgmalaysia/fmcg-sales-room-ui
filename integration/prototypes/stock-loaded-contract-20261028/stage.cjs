@@ -3,8 +3,8 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'../../..'),previous=require('../master-save-continuity-20261028/stage.cjs');
 const build='20261029-stock-loaded-v3',recovery='e71bf4934f8c5347b13dd0802f9da227b5ccf83b';
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
-function plan(){
- const assets=new Map(previous.plan().assets),baseline=new Map(assets);assert.equal(assets.size,99);
+function plan(sourceCommit){
+ const assets=new Map(previous.plan(sourceCommit).assets),baseline=new Map(assets);assert.equal(assets.size,99);
  const replace=(file,before,after,count=1)=>{const text=assets.get(file).toString();assert.equal(text.split(before).length-1,count,file+' exact patch');assets.set(file,Buffer.from(text.split(before).join(after)));};
  replace('warehouse-room/workroom.js','Loading does not mean dispatched. Confirm actual dispatch after the Sales Invoice is issued.<br>装柜不代表已发货。销售发票开出后，仍须确认实际发货。','Confirmed Loaded cartons leave stock once. Invoice and Dispatch record the same goods without another deduction.<br>Loaded 保存成功即扣一次库存；开票与 Dispatch 沿用同批货，不再扣量。');
  replace('warehouse-room/workroom.js','Enter actual loaded cartons. Loading does not confirm dispatch.<br>填写实际上车或入柜箱数。装货登记不代表已发货。','Enter cumulative actual loaded cartons. A successful save removes them from stock once. A decrease requires supervised correction.<br>填写累计实装箱数，保存成功即扣一次库存；减少已出库数量须经主管更正。');

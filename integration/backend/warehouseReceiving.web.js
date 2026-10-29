@@ -45,6 +45,7 @@ const savePreparation=createPreparationOperations({store,names:PURCHASE_COLLECTI
 },documentService:requestPurchaseDocument});
 export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
  const staff=await staffContext();
+ if(['PACK','LOAD'].includes(input?.action))return {ok:false,requestId,retryable:false,error:'Warehouse use Delivery Task authorized by Support Desk. The old preparation entry is retired.'};
  try{return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});}
  catch(error){const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
 });

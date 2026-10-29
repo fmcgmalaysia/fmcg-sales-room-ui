@@ -107,7 +107,7 @@ body.support-workroom .desk-task-table table.order-tasks{min-width:1080px}.desk-
 
 /* Approved compact shipment header. Existing Purchase type roles and business controls remain authoritative. */
 body.support-orders-view .tools{display:none}
-body.support-workroom>nav .orders-tab{height:42px;display:inline-flex;align-items:center;padding:0 2px;font:600 12px var(--master-font);color:#203047;white-space:nowrap}
+body.support-workroom>nav .orders-tab{height:42px;display:none;align-items:center;padding:0 2px;font:600 12px var(--master-font);color:#203047;white-space:nowrap}
 body.support-workroom>nav .orders-tab.active{color:#3766a2;border-bottom:3px solid #3766a2}
 .customer-order-entry{display:inline-flex;align-items:center;gap:7px;background:transparent;border:0;color:#2563eb;font:600 11px var(--master-font);padding:0}
 .customer-order-entry .order-count{display:inline-flex;align-items:center;justify-content:center}

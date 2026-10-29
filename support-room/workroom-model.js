@@ -26,7 +26,7 @@
       const invoiceRecords=shipments.filter(row=>['INVOICED','DISPATCHED'].includes(row.status)).flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId));
       const packingTask=packing?.tasks?.find(row=>row.taskId===source.taskId),ready=invoiceState?.lines?.find(row=>row.taskId===source.taskId);
       orders.get(orderKey).lines.push({...source,orderQty:finite(source.originalRequested)??finite(source.requested),committedQty:null,allocQty:finite(source.allocated),
-        loadedQty:loadedRecords.length?sum(loadedRecords,'loaded'):finite(ready?.loadedQty),invoiceReadyQty:finite(ready?.maxInvoiceQty)??0,invoiceIssue:ready?.reason||'',invoicedQty:sum(invoiceRecords,'quantity'),shippedQty:sum(shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId)),'quantity'),
+        loadedQty:finite(packing?.deskSummaries?.find(row=>row.taskId===source.taskId)?.loadedQty)??(loadedRecords.length?sum(loadedRecords,'loaded'):finite(ready?.loadedQty)),invoiceReadyQty:finite(ready?.maxInvoiceQty)??0,invoiceIssue:ready?.reason||'',invoicedQty:sum(invoiceRecords,'quantity'),shippedQty:sum(shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId)),'quantity'),
         pricePc:finite(source.sellingPricePc),priceCtn:finite(source.sellingPriceCtn),gp:finite(ready?.gpPercent),
         cbm:finite(source.cbmPerCtn)??finite(packingTask?.cbm)});
     }
@@ -48,7 +48,7 @@
     const customers=[...customerRows.values()].map(customer=>({...customer,orders:result.filter(order=>order.customerId===customer.id),invoices:invoices.filter(row=>row.customerId===customer.id),
       openTaskCount:result.filter(order=>order.customerId===customer.id).reduce((total,order)=>total+order.lines.filter(line=>line.invoicedQty<(line.orderQty??0)).length,0),balanceCents:null,
       transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id).concat((documentResult?.documents||[]).filter(row=>row.customerId===customer.id&&['$','CN'].includes(row.code)).map(row=>({...row,type:row.code==='$'?'PAYMENT_DOCUMENT':'CREDIT_NOTE_DOCUMENT',number:row.reference,date:row.at,pending:true})))}));
-    return {company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
+    return {delivery:packing,company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
   }
   return {project};
 });

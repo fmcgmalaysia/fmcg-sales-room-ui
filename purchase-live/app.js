@@ -146,7 +146,7 @@
     if(costRetry){const outcome=data.tasks.find(row=>row.id===costRetry.taskId)?.history.find(event=>event.action==='COST_RETRY_RESULT'&&event.requestId===costRetry.requestId)?.retryOutcome;
       if(outcome){costRetry=null;document.querySelector('#companySelect').disabled=false;modal.close();}
     }
-    showStatus(result.customerNamesError||''); document.querySelector('nav .demo').textContent='Master CMS · '+time(result.fetchedAt); render();allocationUi()?.receivedWorkspace();if(reopenSourcesTaskId){const id=reopenSourcesTaskId;reopenSourcesTaskId=null;if(data.tasks.some(row=>row.id===id))sourceEditor(id);}if(quiet&&(window.masterTaskSignals||['po','pohistory','payments'].includes(view)))loadPurchaseOrders();if(reviewAfterRefresh){reviewAfterRefresh=false;reviewDraft();}
+    showStatus(result.customerNamesError||''); document.querySelector('nav .demo').textContent='Master CMS · '+time(result.fetchedAt); render();window.DeskDelivery?.setPurchase(data);allocationUi()?.receivedWorkspace();if(reopenSourcesTaskId){const id=reopenSourcesTaskId;reopenSourcesTaskId=null;if(data.tasks.some(row=>row.id===id))sourceEditor(id);}if(quiet&&(window.masterTaskSignals||['po','pohistory','payments'].includes(view)))loadPurchaseOrders();if(reviewAfterRefresh){reviewAfterRefresh=false;reviewDraft();}
   });
   window.addEventListener('message', event => { if(event.source !== window.parent || event.data?.type !== 'PURCHASE_LOGIN_RESULT') return;
     if(event.data.ok) request(); else showStatus(event.data.error || 'Login was not completed.', true); });
