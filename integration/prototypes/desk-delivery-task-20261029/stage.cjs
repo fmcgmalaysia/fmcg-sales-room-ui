@@ -5,7 +5,7 @@ const build='20261029-desk-delivery-v1',hash=bytes=>crypto.createHash('sha256').
 const retired=['support-room/app.js','support-room/style.css','support-room/draft-app.js','support-room/invoice-draft-model.js','support-room/packing-workbench.js','support-room/packing-workbench.css','support-room/packing-model-browser.js','support-room/packing-transport.js','warehouse-room/packing-list-link.js'];
 const redirects=['support-room/index.html','support-room/draft.html','support-room/packing-workbench.html'];
 function redirect(){return Buffer.from('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="build" content="'+build+'"><title>MASTER Support</title></head><body><p>Open the current Desk workroom.</p><a id="desk-entry" href="workroom.html?live=1&amp;department=SUPPORT">Open MASTER Support</a><script>(()=>{const company=new URLSearchParams(location.search).get("company")==="GHR"?"GHR":"NCT";const target=parent===window?"https://fmcg999.wixstudio.com/master/support-department":"workroom.html?v='+build+'&live=1&department=SUPPORT&company="+company;document.getElementById("desk-entry").href=target;location.replace(target);})();</script></body></html>');}
-function plan(){
+function plan(sourceCommit){
  const baseline=previous.plan('9fb69be3ed20684e0bd9c64581b2c53091a4dacf').assets;
  for(const [file,bytes]of baseline)if(/\.(html|js)$/.test(file)){let source=bytes.toString().replaceAll('20261029-stock-loaded-v3','20261029-stock-loaded-v2');if(file==='support-room/workroom.js')source=source.replace('new URL(location.ancestorOrigins?.[0]||document.referrer)','new URL(document.referrer)');baseline.set(file,Buffer.from(source));}
  const frozen=JSON.parse(fs.readFileSync(path.join(__dirname,'baseline.json'),'utf8'));assert.equal(frozen.codeCommit,'9fb69be3ed20684e0bd9c64581b2c53091a4dacf');for(const row of frozen.resources)assert.equal(hash(baseline.get(row.path)),row.sha256,'Frozen v2 '+row.path);
@@ -22,7 +22,7 @@ function plan(){
  const warehouse=assets.get('warehouse-room/index.html').toString();assert.equal((warehouse.match(/<script src="packing-list-link\.js\?v=[^"]+"><\/script>/g)||[]).length,1);assets.set('warehouse-room/index.html',Buffer.from(warehouse.replace(/<script src="packing-list-link\.js\?v=[^"]+"><\/script>/,'')));
  replace('warehouse-room/index.html','>Delivery Tasks</button>','>Delivery Task</button>');
  const supportHtml=assets.get('support-room/workroom.html').toString(),oldLink=/<a id="packing"[^>]+>Packing Lists ↗<\/a>/g;assert.equal((supportHtml.match(oldLink)||[]).length,1);assets.set('support-room/workroom.html',Buffer.from(supportHtml.replace(oldLink,'')));
- for(const name of ['desk-delivery.js','desk-delivery.css'])assets.set('master-shared/'+name,Buffer.from(fs.readFileSync(path.join(root,'master-shared',name),'utf8').replace(/\r\n/g,'\n')));
+ for(const name of ['desk-delivery.js','desk-delivery.css'])assets.set('master-shared/'+name,Buffer.from((sourceCommit?cp.execFileSync('git',['show',sourceCommit+':master-shared/'+name],{cwd:root,encoding:'utf8'}):fs.readFileSync(path.join(root,'master-shared',name),'utf8')).replace(/\r\n/g,'\n')));
  for(const file of redirects){assert(assets.has(file));assets.set(file,redirect());}
  for(const file of retired){assert(assets.has(file));assets.delete(file);}
  for(const file of ['support-room/workroom.html','warehouse-room/index.html','purchase-live/index.html']){

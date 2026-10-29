@@ -34,6 +34,7 @@ export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
   return {...copy(list),status:'CANCELLED',revision,cancelledAt:at,cancelReason:input.reason.trim()};
  }
  if(actor!=='WAREHOUSE'||input.action!=='DESK_LOAD'||!qty(input.loaded))throw Error('Desk loading requires Warehouse and valid cumulative cartons.');
+ if(!readSupportDesks(context.physicalContext.activity,context.company).some(state=>state.customerId===list.customerId&&state.deliveryHolds?.some(hold=>hold.desk===list.desk.number&&hold.listId===list.id)))throw Error('Desk delivery is no longer open to Warehouse. Refresh before confirming.');
  const current=list.lines.find(line=>line.taskId===input.taskId),codes=input.reasonCodes||[],note=typeof input.note==='string'?input.note.trim():'';
  if(!current||input.loaded>current.quantity||input.loaded<current.loaded)throw Error('Desk Loaded must stay within authorized cartons and cannot reduce a confirmed outflow.');
  if(!Array.isArray(codes)||codes.length>3||new Set(codes).size!==codes.length||codes.some(code=>!issues.includes(code))||note.length>1000||codes.includes('OTHER')&&!note)throw Error('Desk select valid reasons and explain Other.');
