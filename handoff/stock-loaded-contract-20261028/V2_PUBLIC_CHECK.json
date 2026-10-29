@@ -1,0 +1,111 @@
+{
+  "at": "2026-10-29T04:33:35.168Z",
+  "codeCommit": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+  "productionBusinessWrites": 0,
+  "support": {
+    "forceRefreshed": true,
+    "buildLink": "20261029-stock-loaded-v2",
+    "customers": 2,
+    "deskSwitch": {
+      "sequence": [
+        1,
+        2,
+        1
+      ],
+      "taskCounts": [
+        2,
+        0,
+        2
+      ],
+      "retryDeskSave": false
+    },
+    "poSoLabelsPresent": true,
+    "uploadDialog": {
+      "customerAndDeskCorrect": true,
+      "chooseFilePresent": true,
+      "uploadButtonPresent": true,
+      "filesChosen": 0,
+      "uploads": 0
+    },
+    "packing": {
+      "sameFrameEntry": true,
+      "authenticatedStaff": "LAW",
+      "rows": 3,
+      "ready": 95,
+      "remaining": 100,
+      "held": 0,
+      "visibleError": false
+    },
+    "console": {
+      "relevantError": false,
+      "existingBrowserUnloadPolicyWarning": true
+    },
+    "returnNavigation": {
+      "passed": false,
+      "message": "Open this workroom from the MASTER Support page.",
+      "source": "VISIBLE_PUBLIC_RETURN_LINK",
+      "preexistingSourceConfirmed": true
+    }
+  },
+  "warehouse": {
+    "forceRefreshed": true,
+    "incomingProgress": 1,
+    "incomingCompleted": 2,
+    "onHand": 95,
+    "reserved": 95,
+    "available": 0,
+    "isolated": 0,
+    "reviewRequired": 0,
+    "delivery": {
+      "build": "20261029-stock-loaded-v2",
+      "embeddedEntry": true,
+      "department": "WAREHOUSE",
+      "lists": 0,
+      "expected": "No Support-sent lists exist",
+      "visibleError": false
+    },
+    "console": {
+      "relevantError": false,
+      "existingBrowserUnloadPolicyWarning": true
+    }
+  },
+  "purchase": {
+    "forceRefreshed": true,
+    "customers": 2,
+    "dashboardTasks": 3,
+    "shortReceivedCtn": 5,
+    "allocationActionPresent": true,
+    "received": 95,
+    "sourceReceipts": [
+      45,
+      50
+    ],
+    "visibleError": false
+  },
+  "account": {
+    "forceRefreshed": true,
+    "records": 3,
+    "statuses": [
+      "Awaiting Review",
+      "Awaiting Review",
+      "Awaiting Review"
+    ],
+    "warehouseQuantities": [
+      [
+        120,
+        0
+      ],
+      [
+        50,
+        50
+      ],
+      [
+        50,
+        45
+      ]
+    ],
+    "visibleError": false
+  },
+  "status": "QUANTITY_AND_ENTRY_CHECKS_PASSED_RETURN_NAVIGATION_FAILED",
+  "completedAt": "2026-10-29T04:46:54.853Z"
+}

@@ -1,0 +1,131 @@
+{
+  "at": "2026-10-29T02:12:30.119Z",
+  "objective": "Complete authorized Loaded v2 from existing drafts; preserve single physical outflow and all protected workflows",
+  "runtimeCommit": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+  "build": "20261029-stock-loaded-v2",
+  "mode": "BACKGROUND_ONLY_USER_WILL_NOTIFY_DESKTOP_AVAILABLE",
+  "desktopInputSinceResume": 0,
+  "liveBackend": "Original 080d357 modules as last explicitly published; no new Wix publish since recovery",
+  "pages": {
+    "at": "2026-10-29T02:11:13.173Z",
+    "build": "20261029-stock-loaded-v2",
+    "codeCommit": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+    "resources": 99,
+    "exact": 99,
+    "mismatches": []
+  },
+  "temporaryDeploymentPermission": "REMOVED; original seven re-read after outage; do not deploy again",
+  "wix": {
+    "fullCandidateMatches": [
+      {
+        "name": "stockCardProjection.js",
+        "sha256": "c867aeac9b26100ed644559dd94c7614e5ba05c665edeee37357824f3c6b87bb",
+        "at": "2026-10-29T01:31:29.996Z",
+        "exact": true
+      },
+      {
+        "name": "physicalOutflow.js",
+        "sha256": "5aac299d69de0a9ba16768394a2377ed74244d7f2f4c1c74c5761a01c9f696e4",
+        "at": "2026-10-29T01:33:14.534Z",
+        "exact": true
+      },
+      {
+        "name": "packingListContext.js",
+        "sha256": "d556547621b9b6e3aee889c04e5f2336ea30829639d551feeabe008056183311",
+        "at": "2026-10-29T01:36:14.717Z",
+        "exact": true
+      },
+      {
+        "name": "packingListModel.js",
+        "sha256": "2a5fd9c25b559c53c6cca0849c67b446ea80e48a2b6765c20b14603ce504a486",
+        "at": "2026-10-29T01:38:57.097Z",
+        "exact": true
+      },
+      {
+        "name": "packingListOperations.js",
+        "sha256": "d8f2f544c1f9b9658e33f3fb13225ec4e2862c345e337ec862e2d0d7f04311dd",
+        "at": "2026-10-29T01:41:06.913Z",
+        "exact": true
+      },
+      {
+        "name": "plannerAllocation.js",
+        "sha256": "f76ee9e4563d8b1d35fb74586a917d81bda1b017d5c1485de9d92bb4f65b628f",
+        "at": "2026-10-29T01:43:18.828Z",
+        "exact": true
+      },
+      {
+        "name": "purchaseProgress.js",
+        "sha256": "8b22e9a133b6b419af709c38be14d9cdbfc88300ac4aea2a6760a245622fb14c",
+        "at": "2026-10-29T01:45:35.727Z",
+        "exact": true
+      }
+    ],
+    "patchedPendingFullMatch": {
+      "name": "customerCompletionProjection.js",
+      "appliedHunks": 3,
+      "expectedSha256": "1caeaaec5c7f76b4fe4adf0be4ba8bd0d3ab4b057cf39cdf78baf88ab82a790c",
+      "reason": "Physical Escape stopped regex toggle before full-match confirmation; inspect current saved draft before any further write"
+    },
+    "untouchedOriginalModules": [
+      {
+        "name": "customerFulfilment.js",
+        "hunks": 5,
+        "beforeSha256": "9827bb505d7d3bc56686d86b4b5dd1420fbebb562783adefa2d304b2cb1cd22d",
+        "afterSha256": "1703a012b759645d3bcfd09cc39ac6793b067696a1109c5472a32164068b618d"
+      },
+      {
+        "name": "customerShipmentLedger.js",
+        "hunks": 1,
+        "beforeSha256": "4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170",
+        "afterSha256": "d93f5e45bb2326ea7dc0b34591cf521ed9272ca2efff137b799ff273672bf5ad"
+      },
+      {
+        "name": "customerShipmentPlan.js",
+        "hunks": 3,
+        "beforeSha256": "539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d",
+        "afterSha256": "96a2cf0b283d68877e3ab5a5edbce9d2aa45da6d2830e2ffdf3615690b9d4fb5"
+      },
+      {
+        "name": "inventoryExceptions.js",
+        "hunks": 3,
+        "beforeSha256": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+        "afterSha256": "8373560883e00feb77b33d3efee8593fdd24659a4c18e5cf120875a62f1c906f"
+      },
+      {
+        "name": "supportInvoice.js",
+        "hunks": 3,
+        "beforeSha256": "957ed56ba41873e7ca97fdd0551940e7b2e734225bd3b2149d6ec57fcf7f07c1",
+        "afterSha256": "7daa8f89256c42d5783e1c41f151259ebb43f82b9cbe404fc7797eceff2d32a9"
+      },
+      {
+        "name": "warehousePreparation.js",
+        "hunks": 14,
+        "beforeSha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5",
+        "afterSha256": "90e55aa6892bee8dd703736b046b49a806294d03d7c17a51799b34796f4f8e28"
+      }
+    ],
+    "remainingHunks": 29,
+    "publication": "NOT_YET"
+  },
+  "resume": [
+    "Read fresh current Wix source and Find state when user says desktop is available; do not trust old indexes or window dimensions",
+    "Verify customerCompletionProjection full candidate before applying anything; do not repeat its three patches",
+    "Validate remaining six originals and apply their 29 unique minimal hunks; verify each full candidate and final 14-module hashes",
+    "Publish Wix and capture explicit published/live receipt; Pages already matches v2 and needs no repeat dispatch",
+    "Force-refresh actual four public workrooms; check Ready95, stock95, Desk1→2→1, PO/SO/upload and both Packing entries; no production business writes",
+    "Record all four release stages and offer user transaction testing only after public checks pass"
+  ],
+  "testsReused": {
+    "report": "V2_VALIDATION.json",
+    "tests": 152,
+    "pass": 151,
+    "knownUnchangedWordingFailure": 1,
+    "reason": "No code changes since saved validation; network outage only requires fresh external-state checks"
+  },
+  "recovery": {
+    "backend": "WIX_RESTORE.json and private live-readback originals",
+    "static": "master-save-continuity original 99-resource package",
+    "note": "Pages permission already removed; cannot reuse consumed approval for another deployment"
+  },
+  "productionBusinessWrites": 0
+}

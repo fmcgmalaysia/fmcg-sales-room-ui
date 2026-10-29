@@ -1,5 +1,6 @@
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { customerCompletion } from 'backend/customerCompletionProjection.js';
+import { physicalOutflowQuantity } from 'backend/physicalOutflow.js';
 
 // Read-only workflow projection. Stored intake stages and all operational facts remain unchanged.
 export function applyPurchaseProgress(workspace, activity, purchaseOrders) {
@@ -11,10 +12,12 @@ export function applyPurchaseProgress(workspace, activity, purchaseOrders) {
   const sourceRequired=row.warehouse?.stock?.usableReceived??row.warehouse?.accepted??0;
   const required=row.procurementSource?sourceRequired:row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;
   const invoiced=row.procurementSource?sourceLines.reduce((sum,line)=>sum+line.quantity,0):(completion?.invoicedQty||0);
+  const sourceDispatchedQty=physicalOutflowQuantity(activity,{sourceTaskId:row.id});
+  // Commercial dispatch still gates department closure; it never changes stock.
   const dispatched=row.procurementSource?sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0):(completion?.dispatchedQty||0);
   const ownFinanceClosed=Boolean(ownPo?.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance?.receiptResolved);
-  row.progressFacts={sourceRequired,sourceDispatchedQty:sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0),receiptResolved:Boolean(ownPo?.invoiceChecked&&ownPo.finance?.receiptResolved)};
-  const completed=row.procurementSource?(ownFinanceClosed?dispatched:0):(completion?.completedQty||0);
+  row.progressFacts={sourceRequired,sourceDispatchedQty,receiptResolved:Boolean(ownPo?.invoiceChecked&&ownPo.finance?.receiptResolved)};
+  const completed=row.procurementSource?(ownFinanceClosed?sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0):0):(completion?.completedQty||0);
   row.archived=required>0&&completed===required&&ownFinanceClosed;
   for(const item of row.quantityCases||[])if(item.kind==='RECEIPT'&&ownPo?.invoiceChecked){item.status='RESOLVED';item.owner=null;item.checkedBy=ownPo.invoiceCheck?.by;item.checkedAt=ownPo.invoiceCheck?.at;}
   if(required>0&&dispatched===required){

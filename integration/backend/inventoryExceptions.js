@@ -1,6 +1,7 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readStockResolutions } from 'backend/stockExceptionState.js';
+import { physicalOutflowQuantity, physicalOutflowVersion } from 'backend/physicalOutflow.js';
 const text=value=>String(value??'').trim();
 const quantity=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 export const STOCK_EXCEPTION_ACTION='STOCK_EXCEPTION_REPORTED';
@@ -23,11 +24,11 @@ export function stockPosition(sourceTaskId,received,activity){
  const excluded=cases.filter(row=>row.resolution?.financeApproval?.outcome!=='RELEASED').reduce((sum,row)=>sum+row.quantity,0);
  const replacementReceived=cases.reduce((sum,row)=>sum+(row.resolution?.replacements||[]).reduce((n,entry)=>n+entry.quantity,0),0);
  const held=cases.filter(row=>row.status!=='RESOLVED').reduce((sum,row)=>sum+row.quantity-(row.resolution?.returns||[]).reduce((n,entry)=>n+entry.quantity,0),0);
- const shipped=readCustomerShipments(activity).filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===sourceTaskId).reduce((sum,row)=>sum+row.quantity,0);
+ const shipped=physicalOutflowQuantity(activity,{sourceTaskId});
  if(!Number.isSafeInteger(received)||received<0||excluded+shipped>received+replacementReceived)throw Error('Stock exception exceeds unshipped physical stock.');
  return {received,held,excluded,replacementReceived,shipped,usableReceived:received-excluded+replacementReceived,availablePhysical:received-excluded+replacementReceived-shipped,cases};
 }
-export function stockExceptionVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.warehouse?.accepted]),readStockExceptions(context.activity),readCustomerShipments(context.activity));}
+export function stockExceptionVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.warehouse?.accepted]),readStockExceptions(context.activity),readCustomerShipments(context.activity),physicalOutflowVersion(context.activity));}
 export function createStockExceptionOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{

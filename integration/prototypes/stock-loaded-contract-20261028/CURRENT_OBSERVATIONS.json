@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-28T11:04:31.486Z",
+  "sourceBaseline": "080d3578fbddc0995938a08d452828cc24e12f6d",
+  "environment": "ISOLATED_MEMORY_STORE_ORIGINAL_BACKEND_MODULES",
+  "productionWrites": 0,
+  "networkCalls": 0,
+  "candidateRuntimeImplemented": false,
+  "readyForRelease": false,
+  "checks": [
+    {
+      "id": "legacy-loaded-80",
+      "expected": 70,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Actual original LOAD writer followed by original Stock Card projection; no simulated deduction."
+    },
+    {
+      "id": "legacy-loaded-80-remaining-claim",
+      "expected": 70,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Customer physical coverage should be consumed with successful Loaded, once."
+    },
+    {
+      "id": "legacy-loaded-80-after-invoice",
+      "expected": 70,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Confirmed rule requires Loaded deduction already present before invoice."
+    },
+    {
+      "id": "legacy-loaded-80-after-dispatch",
+      "expected": 70,
+      "actual": 70,
+      "matchesConfirmedRule": true,
+      "detail": "Legacy cumulative dispatch eventually matches quantity; this does not validate Loaded timing."
+    },
+    {
+      "id": "legacy-loaded-100",
+      "expected": 50,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Actual original LOAD writer followed by original Stock Card projection; no simulated deduction."
+    },
+    {
+      "id": "legacy-loaded-100-remaining-claim",
+      "expected": 50,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Customer physical coverage should be consumed with successful Loaded, once."
+    },
+    {
+      "id": "legacy-loaded-100-after-invoice",
+      "expected": 50,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Confirmed rule requires Loaded deduction already present before invoice."
+    },
+    {
+      "id": "legacy-loaded-100-after-dispatch",
+      "expected": 50,
+      "actual": 50,
+      "matchesConfirmedRule": true,
+      "detail": "Legacy cumulative dispatch eventually matches quantity; this does not validate Loaded timing."
+    },
+    {
+      "id": "packing-progress-80",
+      "expected": 70,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Actual Packing PROGRESS save records cumulative Loaded but Stock Card ignores it."
+    },
+    {
+      "id": "packing-completed-80",
+      "expected": 70,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Completing the list also does not post stock."
+    },
+    {
+      "id": "packing-support-invoice-ready-80",
+      "expected": 80,
+      "actual": 0,
+      "matchesConfirmedRule": false,
+      "detail": "Main Support invoice reader uses legacy preparation, while active packing holds block it."
+    },
+    {
+      "id": "packing-progress-100",
+      "expected": 50,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Actual Packing PROGRESS save records cumulative Loaded but Stock Card ignores it."
+    },
+    {
+      "id": "packing-completed-100",
+      "expected": 50,
+      "actual": 150,
+      "matchesConfirmedRule": false,
+      "detail": "Completing the list also does not post stock."
+    },
+    {
+      "id": "packing-support-invoice-ready-100",
+      "expected": 100,
+      "actual": 0,
+      "matchesConfirmedRule": false,
+      "detail": "Main Support invoice reader uses legacy preparation, while active packing holds block it."
+    }
+  ],
+  "protections": [
+    {
+      "id": "legacy-80-lost-reply-single-save",
+      "passed": true
+    },
+    {
+      "id": "legacy-80-loaded-readback",
+      "passed": true
+    },
+    {
+      "id": "legacy-80-stale-version-rejected",
+      "passed": true
+    },
+    {
+      "id": "legacy-80-same-request-payload-immutable",
+      "passed": true
+    },
+    {
+      "id": "legacy-80-receipt-quantities-preserved",
+      "passed": true
+    },
+    {
+      "id": "legacy-80-company-isolated",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-lost-reply-single-save",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-loaded-readback",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-stale-version-rejected",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-same-request-payload-immutable",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-receipt-quantities-preserved",
+      "passed": true
+    },
+    {
+      "id": "legacy-100-company-isolated",
+      "passed": true
+    },
+    {
+      "id": "packing-80-single-current-row",
+      "passed": true
+    },
+    {
+      "id": "packing-80-invoice-helper-uses-loaded",
+      "passed": true
+    },
+    {
+      "id": "packing-80-remainder-retained",
+      "passed": true
+    },
+    {
+      "id": "packing-100-single-current-row",
+      "passed": true
+    },
+    {
+      "id": "packing-100-invoice-helper-uses-loaded",
+      "passed": true
+    },
+    {
+      "id": "packing-100-remainder-retained",
+      "passed": true
+    }
+  ],
+  "unresolvedRules": [
+    "LOADED_CORRECTION_VS_PHYSICAL_RETURN",
+    "LEGACY_TO_PACKING_IDENTITY",
+    "SOURCE_ATTRIBUTION_AT_LOADING",
+    "HISTORICAL_DISPATCH_RECONCILIATION"
+  ]
+}

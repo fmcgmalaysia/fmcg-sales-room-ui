@@ -1,5 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { physicalOutflowVersion, physicalOutflowQuantity } from 'backend/physicalOutflow.js';
 const text=value=>String(value??'').trim();
 const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 // Order dates remain immutable intake snapshots; later Sales amendments are read from this journal.
@@ -37,7 +38,7 @@ export function readShipmentPlans(activity){
  }
  return [...plans.values()];
 }
-export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord,row.requested,row.archived]),readShipmentPlans(context.activity),readCustomerShipments(context.activity),context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED').map(event=>event.title).sort());}
+export function shipmentPlanVersion(context){return operationId(context.company,context.tasks.map(row=>[row.id,row.customerId,row.orderId,row.ord,row.requested,row.archived]),readShipmentPlans(context.activity),readCustomerShipments(context.activity),context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED').map(event=>event.title).sort(),physicalOutflowVersion(context.activity));}
 // Plans express customer intent only: they never allocate stock, reserve cartons or post receivables.
 export function createShipmentPlanOperations({store,names,readContext,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
@@ -71,6 +72,7 @@ export function createShipmentPlanOperations({store,names,readContext,now=()=>ne
    for(const taskId of totals.keys()){
     const entries=list=>(list||[]).flatMap(batch=>{const line=batch.lines.find(line=>line.taskId===taskId);return line?[{label:batch.label,date:batch.date||null,quantity:line.quantity}]:[];});
     if(operationId(entries(prior?.batches))===operationId(entries(batches)))continue;
+    if(physicalOutflowQuantity(context.activity,{taskId})>0)throw Error('Loaded stock has left the warehouse. Use the supervised correction process before changing this split.');
     if(readCustomerShipments(context.activity).some(shipment=>shipment.status!=='CANCELLED'&&shipment.lines.some(line=>line.taskId===taskId)))throw Error('Shipment already selected or invoiced. Resolve the shipment before changing its split.');
     const preparation=context.activity.filter(event=>event.action==='WAREHOUSE_PREPARATION_SAVED'&&event.result==='SAVED'&&event.details?.state?.taskId===taskId);
     const latest=preparation.filter(event=>!preparation.some(next=>next.details?.beforeRevision===event.title));

@@ -7,16 +7,17 @@ import { packingTaskHeld } from 'backend/packingListGuards.js';
 import { openSourceCost } from 'backend/purchaseMarginRefresh.js';
 import { partialInvoiceMargin } from 'backend/partialInvoiceMargin.js';
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
+import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 const INTENT='SUPPORT_INVOICE_PREPARED',READY='SUPPORT_INVOICE_INPUT_SAVED';
 const uuid=value=>/^[a-f0-9-]{36}$/i.test(value||'');
 const derived=(...parts)=>{const h=operationId(...parts);return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};
 const known=value=>typeof value==='number'&&Number.isFinite(value);
 export function supportInvoiceState(context){
- const preparation=projectPreparation(context),lines=context.tasks.filter(row=>!row.archived&&!row.specialPurchase&&!row.procurementSource).map(task=>{
-  const items=preparation.filter(row=>row.taskId===task.id),loaded=items.reduce((n,row)=>n+row.loaded,0),reserved=reservedCartons(task.id,context.activity),held=packingTaskHeld(context,task.id);
-  const issue=items.some(row=>row.stale||row.orphaned||row.planMismatch)||held>0;
+ const preparation=projectPreparation(context),outflows=readPhysicalOutflows(context.activity),lines=context.tasks.filter(row=>!row.archived&&!row.specialPurchase&&!row.procurementSource).map(task=>{
+  const items=preparation.filter(row=>row.taskId===task.id),loaded=outflows.filter(row=>row.taskId===task.id&&(row.invoiceReady||row.kind==='HISTORICAL')).reduce((n,row)=>n+row.quantity,0),reserved=reservedCartons(task.id,context.activity),held=packingTaskHeld(context,task.id),completedPacking=outflows.filter(row=>row.taskId===task.id&&row.kind==='PACKING'&&row.invoiceReady).reduce((n,row)=>n+row.quantity,0);
+  const issue=items.some(row=>row.stale||row.orphaned||row.planMismatch)||held>completedPacking;
   const maxInvoiceQty=issue?0:Math.max(0,Math.min(loaded-reserved,(task.inc||0)-reserved,(task.requested??task.ord)-reserved));
-  return {taskId:task.id,loadedQty:loaded,maxInvoiceQty,reason:held>0?'Packing arrangement requires review':issue?'Warehouse loading requires review':maxInvoiceQty===0?'No uninvoiced loaded quantity':''};
+  return {taskId:task.id,loadedQty:loaded,maxInvoiceQty,reason:held>completedPacking?'Packing arrangement requires review':issue?'Warehouse loading requires review':maxInvoiceQty===0?'No uninvoiced loaded quantity':''};
  });
  return {company:context.company,version:operationId(shipmentVersion(context),lines),lines};
 }

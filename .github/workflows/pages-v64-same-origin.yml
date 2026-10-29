@@ -18,6 +18,7 @@ on:
           - support-workroom-only
           - master-efficiency-only
           - master-save-continuity-only
+          - stock-loaded-only
 
 permissions:
   contents: read
@@ -49,7 +50,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -113,6 +114,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/master-save-continuity-site', runner.temp) }}
+
+      - name: Prepare scoped Loaded stock resources on the current public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-loaded-only'
+        run: node integration/prototypes/stock-loaded-contract-20261028/stage.cjs "$RUNNER_TEMP/stock-loaded-site"
+
+      - name: Upload scoped Loaded stock resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-loaded-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/stock-loaded-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

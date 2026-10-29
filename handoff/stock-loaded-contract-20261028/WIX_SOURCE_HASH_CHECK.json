@@ -1,0 +1,76 @@
+{
+  "at": "2026-10-28T17:29:20.959Z",
+  "runtimeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
+  "checks": [
+    {
+      "name": "purchaseProgress.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "customerCompletionProjection.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "customerFulfilment.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "customerShipmentLedger.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "customerShipmentPlan.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "inventoryExceptions.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "packingListContext.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "packingListModel.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "packingListOperations.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "plannerAllocation.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "stockCardProjection.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "supportInvoice.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "physicalOutflow.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    },
+    {
+      "name": "warehousePreparation.js",
+      "fullDocumentMatch": true,
+      "hashMatchesSource": true
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { readAllocations } from 'backend/plannerAllocation.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
 import { projectPhysicalStock } from 'backend/stockPhysicalProjection.js';
+import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 
 const quantity = value => Number.isSafeInteger(value) && value >= 0;
 const identity = task => {
@@ -24,6 +25,7 @@ export function projectStockCard(context) {
   }
   const allocations = readAllocations(context.activity);
   const shipments = readCustomerShipments(context.activity);
+  const outflows = readPhysicalOutflows(context.activity);
   if (shipments.some(row => row.company !== context.company)) throw Error('Stock shipment company mismatch.');
   const groups = new Map();
   for (const source of context.tasks) {
@@ -48,10 +50,12 @@ export function projectStockCard(context) {
     // Cap the lifetime claim at actual receipts, while preserving damage shortfalls.
     if (canResolveSource && share > 0) claims.set(ownerId, Math.min(share, stock.received + stock.replacementReceived));
     const dispatched = new Map(), shipmentHeld = new Map();
+    for(const flow of outflows){const amount=flow.sources.find(row=>row.sourceTaskId===source.id)?.quantity||0;if(amount)dispatched.set(flow.taskId,(dispatched.get(flow.taskId)||0)+amount);}
     for (const shipment of shipments.filter(row => row.status !== 'CANCELLED')) {
       for (const line of shipment.lines) {
+        if(line.physicalOutflowRefs!==undefined||shipment.status==='DISPATCHED')continue;
         const amount = line.sources.find(row => row.sourceTaskId === source.id)?.quantity || 0;
-        const target = shipment.status === 'DISPATCHED' ? dispatched : shipmentHeld;
+        const target = shipmentHeld;
         target.set(line.taskId, (target.get(line.taskId) || 0) + amount);
       }
     }

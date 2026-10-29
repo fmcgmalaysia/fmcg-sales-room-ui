@@ -1,0 +1,148 @@
+{
+  "at": "2026-10-28T19:01:52.225Z",
+  "reason": "Packing Ready 95 before release became 0 after release while Warehouse remained 95 on hand and 95 reserved; no production business writes.",
+  "state": "ORIGINAL_BACKEND_AND_99_STATIC_RESOURCES_RESTORED_PUBLIC_RECHECK_PASSED",
+  "liveWix": "LOADED_CANDIDATE_PUBLISHED_RECEIPT_CONFIRMED",
+  "livePages": "20261028-master-save-continuity-v1",
+  "originalBackendBaseline": "080d3578fbddc0995938a08d452828cc24e12f6d",
+  "originalStaticRuntime": "e71bf49",
+  "originalStaticBuild": "20261028-master-save-continuity-v1",
+  "restoredSavedModules": [
+    {
+      "name": "customerCompletionProjection.js",
+      "at": "2026-10-28T17:59:24.552Z",
+      "sha256": "4f21cd9a7bff1cc4b5a8c77f67187102d1f1e86b952fc6b4f13dd785262e227b",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "customerFulfilment.js",
+      "at": "2026-10-28T18:04:13.034Z",
+      "sha256": "9827bb505d7d3bc56686d86b4b5dd1420fbebb562783adefa2d304b2cb1cd22d",
+      "fullDocumentMatch": true,
+      "hunks": 5
+    },
+    {
+      "name": "customerShipmentLedger.js",
+      "at": "2026-10-28T18:06:00.172Z",
+      "sha256": "4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170",
+      "fullDocumentMatch": true,
+      "hunks": 1
+    },
+    {
+      "name": "customerShipmentPlan.js",
+      "at": "2026-10-28T18:09:06.256Z",
+      "sha256": "539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "inventoryExceptions.js",
+      "at": "2026-10-28T18:12:02.584Z",
+      "sha256": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "packingListContext.js",
+      "at": "2026-10-28T18:15:46.767Z",
+      "sha256": "d33b0d6b435e6221c52bc843c67a59027c3c71a8d7eec88b85ce0fa9ecd13bc8",
+      "fullDocumentMatch": true,
+      "hunks": 4
+    },
+    {
+      "name": "packingListModel.js",
+      "at": "2026-10-28T18:19:22.658Z",
+      "sha256": "e5be4fb0ce3d8105bf9f0adb325836a13b59073d7c2a0da6bae1f0a5baf94a1c",
+      "fullDocumentMatch": true,
+      "hunks": 4
+    },
+    {
+      "name": "packingListOperations.js",
+      "at": "2026-10-28T18:23:18.548Z",
+      "sha256": "f10474c7ee5c1c2486b3a9cb29b40b6712dd1357bb130bb2004dc2ea29075991",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "plannerAllocation.js",
+      "at": "2026-10-28T18:26:28.334Z",
+      "sha256": "b7c118918532104dcb4d7bdb856676a14ca1cae225c0799c59ac0bcd959de8fe",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "purchaseProgress.js",
+      "at": "2026-10-28T18:30:17.136Z",
+      "sha256": "3e39171f2b56b4d1bfd2c49dee0ac0a3704af6bc2894cbebea4a59fd4a4ed641",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "supportInvoice.js",
+      "at": "2026-10-28T18:34:42.063Z",
+      "sha256": "957ed56ba41873e7ca97fdd0551940e7b2e734225bd3b2149d6ec57fcf7f07c1",
+      "fullDocumentMatch": true,
+      "hunks": 3
+    },
+    {
+      "name": "warehousePreparation.js",
+      "at": "2026-10-28T18:45:50.204Z",
+      "sha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5",
+      "fullDocumentMatch": true,
+      "hunks": 14
+    },
+    {
+      "name": "stockCardProjection.js",
+      "at": "2026-10-28T18:50:47.922Z",
+      "sha256": "1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300",
+      "fullDocumentMatch": true,
+      "hunks": 5
+    }
+  ],
+  "totalExistingModules": 13,
+  "totalReverseHunks": 54,
+  "newPhysicalModule": "Still present; will become unreachable after all 13 originals restored. Do not delete history or CMS.",
+  "next": "Recovery complete. Validate receipt/allocation semantics before next minimal runtime patch. This recovery-only approval is consumed and temporary permission removed.",
+  "wixReceipt": {
+    "at": "2026-10-28T18:56:48.457Z",
+    "heading": "Congratulations",
+    "text": "This site is published and live online.",
+    "source": "VISIBLE_RECOVERY_PUBLISH_DIALOG"
+  },
+  "pagesRecoveryApproval": {
+    "status": "USER_EXPLICITLY_APPROVED_EXECUTED_AND_REVOKED",
+    "branch": "fix/stock-loaded-single-authority-20261028",
+    "scope": "master-save-continuity-only",
+    "rulesChanged": false
+  },
+  "public": {
+    "forceRefreshAttempted": true,
+    "firstError": "Wix prefetchUserCode TypeError: Failed to fetch",
+    "normalRecoveryReloadRequestedAt": "2026-10-28T18:59:56.877Z",
+    "at": "2026-10-28T19:01:52.225Z",
+    "method": "VISIBLE_PUBLIC_UI_AFTER_FORCE_REFRESH_AND_RESOURCE_RECOVERY_RELOAD",
+    "supportCustomers": 2,
+    "packingRows": 3,
+    "remaining": 100,
+    "held": 0,
+    "ready": 95,
+    "observedBeforeRelease": 95,
+    "observedCandidate": 0,
+    "restoredBackendConfirmed": true,
+    "productionBusinessWrites": 0,
+    "pagesStillCandidate": "20261028-stock-loaded-v1"
+  },
+  "pagesRecovery": {
+    "runId": 40797000500,
+    "head": "e47218ca7c92764e289d869faa3739bf7d741737",
+    "build": "20261028-master-save-continuity-v1",
+    "resources": 99,
+    "exact": 99,
+    "temporaryPermissionRemoved": true,
+    "originalSevenRulesExact": true,
+    "restoredAt": "2026-10-29T00:54:43.83Z"
+  },
+  "updatedAt": "2026-10-29T01:18:01.287Z",
+  "publicRecoveryEvidence": "PUBLIC_RECOVERY_CHECK.json"
+}
