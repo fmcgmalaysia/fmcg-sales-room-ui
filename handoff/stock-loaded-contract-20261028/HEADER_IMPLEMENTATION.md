@@ -24,6 +24,8 @@ Current production remains9fb69be/build20261029-stock-loaded-v2;14published back
 
 ## Remaining release work
 
+2026-10-29 continuation: fresh Wix originals for all seven existing modules and the three page sources matched their preserved originals. Thirty backend/public hunks, three new modules, and five page hunks were synchronized through Wix Studio. All thirteen complete resulting sources matched the candidate. HEADER_WIX_SYNC.json preserves their hashes. The Warehouse root page now equals the already-tested prepared candidate; Support and Purchase changed only their cache version markers. The five scoped response/privacy tests passed again after applying these page hunks. This is saved draft evidence, not publication; Pages remains the old build and Wix has not yet been published for this candidate.
+
 1. Finish final scoped static/response verification, push the candidate and attach its draft PR. Retain all reports; do not commit private raw browser or transaction logs.
 2. Concentrated Chrome session: refresh target/control observations; read and compare originals, then add the3new backend modules and apply only isolated changed hunks. Read actual page pointers; synchronize Warehouse's prepared patch only after the original matches. Verify each complete expected source.
 3. Preserve the exact final commit and92-resource manifest. This new branch currently has no deployment permission; previous temporary approvals were consumed/revoked. Obtain the specific temporary branch permission only for this concrete tested release, deploy once with support-details-only, immediately remove the owned rule and verify the original7exact.

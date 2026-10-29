@@ -1,7 +1,7 @@
 import { handleTaskChat } from 'public/taskChatBridge.js';
 import { handlePackingList } from 'public/packingListBridge.js';
-import { getCustomerFulfilment, saveCustomerShipment } from 'backend/customerFulfilment.web';
-import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
+import { getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
+import { getWarehouseStockIssues as getStockExceptions, saveWarehouseStockIssue as saveStockException } from 'backend/warehouseStockIssues.web';
 import { getWarehouseOrders, saveWarehouseReceipt, saveWarehousePreparation, captureWarehouseCbm } from 'backend/warehouseReceiving.web';
 import { authentication } from 'wix-members-frontend';
 import { getWarehouseStockControl } from 'backend/stockControl.web';
@@ -43,13 +43,12 @@ $w.onReady(()=>{
       catch(_){room.postMessage({type:'WAREHOUSE_LOGIN_RESULT',ok:false});}return;
     }
     if(['FULFILMENT_READ_REQUEST','FULFILMENT_SAVE_REQUEST'].includes(message.type)){
-      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
-      const type=message.type==='FULFILMENT_READ_REQUEST'?'FULFILMENT_READ_RESULT':'FULFILMENT_SAVE_RESULT';try{const result=message.type==='FULFILMENT_READ_REQUEST'?await getCustomerFulfilment(message.company):await saveCustomerShipment(message.company,message.requestId,message.input);room.postMessage({type,company:message.company,requestId:message.requestId,ok:true,result});}catch(error){room.postMessage({type,company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Dispatch request could not be confirmed.'});}return;
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string')return;room.postMessage({type:message.type.replace('_REQUEST','_RESULT'),company:message.company,requestId:message.requestId,ok:false,error:'Use the Desk-authorized Delivery Task. The old Dispatch entry is retired.'});return;
     }
     if(!['WAREHOUSE_ORDERS_REQUEST','WAREHOUSE_RECEIPT_REQUEST'].includes(message.type)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
     const type=message.type==='WAREHOUSE_ORDERS_REQUEST'?'WAREHOUSE_ORDERS_RESULT':'WAREHOUSE_RECEIPT_RESULT';
     try{const result=message.type==='WAREHOUSE_ORDERS_REQUEST'?await getWarehouseOrders(message.company):await saveWarehouseReceipt(message.company,message.requestId,message.input);room.postMessage({type,ok:true,company:message.company,requestId:message.requestId,result});}
     catch(error){room.postMessage({type,ok:false,company:message.company,requestId:message.requestId,error:error?.message||'Warehouse request could not be confirmed.'});}
   });
-  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261027-support-order-progress-v2';
+  room.src='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261029-support-details-v1';
 });

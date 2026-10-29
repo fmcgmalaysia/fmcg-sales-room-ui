@@ -1,0 +1,70 @@
+{
+  "published": false,
+  "files": [
+    {
+      "name": "packingListBridge.js",
+      "sha256": "79ebe1f55100995b6ce4c6b19d374ad085ef0b5b4c9173cdb7ae16fc12d76f8e",
+      "at": "2026-10-29T08:48:17.490Z"
+    },
+    {
+      "name": "warehouseReceiving.web.js",
+      "sha256": "733e44f8372746469193572599582fac43c7e6059180e8b17d635edde2340070",
+      "at": "2026-10-29T08:50:15.592Z"
+    },
+    {
+      "name": "supportDesk.js",
+      "sha256": "b080fae339dc8c430631b139bcde86bdbf2a6901664f3d42028d8b7496b1dc65",
+      "at": "2026-10-29T08:54:25.432Z"
+    },
+    {
+      "name": "packingListOperations.js",
+      "sha256": "0f814ea591c59024b2eea655ae26b12ef91f22e631acab0bd21a9cb68dc8ff3d",
+      "at": "2026-10-29T09:13:21.964Z"
+    },
+    {
+      "name": "packingListService.js",
+      "sha256": "b815bcfab94bacea2be5a3007c85bd06caa1c0034fcdc364d5a68a077d4836f1",
+      "at": "2026-10-29T09:15:01.075Z"
+    },
+    {
+      "name": "packingLists.web.js",
+      "sha256": "45ee376af90cbfdef1269b8225cd1bfad2caaa5255aa87e4f048f1fb194e3950",
+      "at": "2026-10-29T09:16:14.674Z"
+    },
+    {
+      "name": "purchaseProjection.js",
+      "sha256": "0f09c3941513cad0ad260b79b9c49cc4630d90eb5b60750e35a08dfc27f813c6",
+      "at": "2026-10-29T09:18:25.624Z"
+    },
+    {
+      "name": "deskDelivery.js",
+      "sha256": "1c4f5fd0bcf3ac1fff15fa630d9b4735546701fb0f84bb18cfb051ee76ed5e0d",
+      "at": "2026-10-29T09:23:47.499Z"
+    },
+    {
+      "name": "warehouseDeliveryView.js",
+      "sha256": "2e44e03bda735977d6505b92c60c3939f41485d3f05ce787f3c8ecaebdbbfe2f",
+      "at": "2026-10-29T09:25:51.644Z"
+    },
+    {
+      "name": "warehouseStockIssues.web.js",
+      "sha256": "d5e24eed92d0f747dd435b01fac0cc11f3b87af3fb7a36a825320ce4bc276aa5",
+      "at": "2026-10-29T09:28:04.136Z"
+    },
+    {
+      "name": "warehouse-department-page.js",
+      "sha256": "526b8ad1e401d701f28c23b4c73eefdd7cf27ed7a0392f1c7805dde01892d8fd",
+      "at": "2026-10-29T09:31:58.306Z"
+    },
+    {
+      "name": "support-department-page.js",
+      "sha256": "61ab2168798716b0191817ccc7c2a005dd19f7261f74a536e4a54d85fe1b4744",
+      "at": "2026-10-29T09:33:50.093Z"
+    },
+    {
+      "name": "purchase-room-page.js",
+      "sha256": "0b326eff574854f16be66d7b7b8cdb87da42c3886e966d4933eb0380ff4e43ef",
+      "at": "2026-10-29T09:35:40.971Z"
+    }
+  ]
+}
