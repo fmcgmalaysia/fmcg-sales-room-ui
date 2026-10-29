@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-29T15:40:47.722Z",
+  "build": "20261029-purchase-quiet-refresh-v1",
+  "codeCommit": "0b61b6e878f64241b0d88142de2bec272ae55d40",
+  "resourcesExact": 94,
+  "retired": [
+    {
+      "path": "support-room/app.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/style.css",
+      "status": 404
+    },
+    {
+      "path": "support-room/draft-app.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/invoice-draft-model.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-workbench.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-workbench.css",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-model-browser.js",
+      "status": 404
+    },
+    {
+      "path": "support-room/packing-transport.js",
+      "status": 404
+    },
+    {
+      "path": "warehouse-room/packing-list-link.js",
+      "status": 404
+    }
+  ],
+  "productionWrites": 0
+}

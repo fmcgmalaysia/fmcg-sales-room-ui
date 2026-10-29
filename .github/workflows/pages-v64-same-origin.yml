@@ -22,6 +22,7 @@ on:
           - desk-delivery-only
           - support-details-only
           - purchase-allocation-only
+          - purchase-quiet-refresh-only
 
 permissions:
   contents: read
@@ -53,7 +54,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -157,6 +158,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-allocation-site', runner.temp) }}
+
+      - name: Prepare quiet Purchase background refresh on the pinned current baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-refresh-only'
+        run: node integration/prototypes/purchase-quiet-refresh-20261029/stage.cjs "$RUNNER_TEMP/purchase-quiet-refresh-site"
+
+      - name: Upload quiet Purchase refresh resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-refresh-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-quiet-refresh-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -462,7 +462,7 @@ const stages=[
     else if(view==='payments'){app.innerHTML=payments();if(!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();}
     else if(view==='stock') app.innerHTML=expectedStock();
     else {app.innerHTML=purchaseOrders();if(!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();}
-    if(poLoading&&['po','pohistory','payments','history'].includes(view))app.innerHTML='<div class="po-read-status" role="status" aria-live="polite">'+(poData?'Updating records 正在更新资料…':'Loading records 正在读取资料…')+'</div>'+app.innerHTML;
+    if(poLoading&&!poData&&['po','pohistory','payments','history'].includes(view))app.innerHTML='<div class="po-read-status" role="status" aria-live="polite">Loading records 正在读取资料…</div>'+app.innerHTML;
     paintSaveTracker();if(view==='dashboard')window.purchaseDashboard.bilingualDirectories(app);
   }
   function purchaseDueLabel(date){
