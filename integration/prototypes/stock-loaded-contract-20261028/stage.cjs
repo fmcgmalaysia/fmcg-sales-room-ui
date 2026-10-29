@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../../..'),previous=require('../master-save-continuity-20261028/stage.cjs');
-const build='20261029-stock-loaded-v2',recovery='e71bf4934f8c5347b13dd0802f9da227b5ccf83b';
+const build='20261029-stock-loaded-v3',recovery='e71bf4934f8c5347b13dd0802f9da227b5ccf83b';
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function plan(){
  const assets=new Map(previous.plan().assets),baseline=new Map(assets);assert.equal(assets.size,99);
@@ -13,6 +13,7 @@ function plan(){
  // Keep the existing host allowlist and event.source check. Same-frame navigation
  // changes document.referrer to the previous child; the real parent stays Wix.
  replace('support-room/packing-transport.js','new URL(document.referrer)','new URL(location.ancestorOrigins?.[0]||document.referrer)');
+ replace('support-room/workroom.js','new URL(document.referrer)','new URL(location.ancestorOrigins?.[0]||document.referrer)');
  replace('support-room/workroom.js','packing-workbench.html?v=20261028-master-save-continuity-v1','packing-workbench.html?v='+build,2);
  replace('support-room/workroom.js',"dataset.supportBuild='20261028-master-save-continuity-v1'","dataset.supportBuild='"+build+"'");
  const model=fs.readFileSync(path.join(root,'support-room/packing-model-browser.js'),'utf8').replace(/\r\n/g,'\n');
