@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-29T05:44:55.502Z",
+  "environment": "ISOLATED_ACTUAL_STAGED_BROWSER_PAGES",
+  "entry": "workroom.html",
+  "roundtrip": "Real Support workroom → real Packing → real Support workroom",
+  "customersBefore": 2,
+  "customersAfter": 2,
+  "fulfilmentReads": 2,
+  "originGuardCases": 4,
+  "eventSourceGuardPreserved": true,
+  "browserErrors": [],
+  "externalRequests": 0,
+  "productionWrites": 0
+}

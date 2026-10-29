@@ -25,7 +25,7 @@ const {projectPackingWorkroom}=load('packingListOperations.js'),prefix='https://
    return {type:message.type.replace('_REQUEST','_RESULT'),company,requestId:message.requestId,ok:true,result};
   });
   await page.route('**/*',route=>{const url=route.request().url();
-   if(url===outer)return route.fulfill({contentType:'text/html',body:'<!doctype html><script>addEventListener("message",async e=>{if(e.origin!=="https://fmcgmalaysia.github.io")return;const response=await window.readFixture(e.data);if(response)e.source.postMessage(response,e.origin);});</script><iframe style="width:1200px;height:900px" src="'+prefix+'support-room/workroom.html?live=1&department=SUPPORT&company=NCT"></iframe>'});
+   if(url===outer)return route.fulfill({contentType:'text/html',body:'<!doctype html><script>addEventListener("message",async e=>{if(e.origin!=="https://fmcgmalaysia.github.io")return;const response=await window.readFixture(e.data);if(response)e.source.postMessage(response,e.origin);});</script><iframe style="width:1200px;height:900px" src="'+prefix+'support-room/'+(process.env.SUPPORT_INITIAL_PAGE||'workroom.html')+'?live=1&department=SUPPORT&company=NCT"></iframe>'});
    if(url.startsWith(prefix)){const name=new URL(url).pathname.slice('/fmcg-sales-room-ui/'.length),bytes=assets.get(name);if(bytes)return route.fulfill({contentType:name.endsWith('.js')?'application/javascript':name.endsWith('.css')?'text/css':'text/html',body:name.endsWith('.css')?bytes.toString().replace(/@font-face\s*\{[^}]*\}/g,''):bytes});}
    blocked.push(url);return route.abort();
   });
@@ -33,7 +33,7 @@ const {projectPackingWorkroom}=load('packingListOperations.js'),prefix='https://
   await frame.locator('#packing').click();await frame.locator('#count').filter({hasText:'2 rows'}).waitFor();
   await frame.locator('#support-return').click();await frame.locator('#count').filter({hasText:'2 customers'}).waitFor();
   assert.equal(await frame.locator('#notice').innerText(),'');assert.equal(reads.filter(type=>type==='FULFILMENT_READ_REQUEST').length,2);assert.deepEqual(errors,[]);assert.deepEqual(blocked,[]);
-  const report={at:new Date().toISOString(),environment:'ISOLATED_ACTUAL_STAGED_BROWSER_PAGES',roundtrip:'Real Support workroom → real Packing → real Support workroom',customersBefore:2,customersAfter:2,fulfilmentReads:2,originGuardCases:4,eventSourceGuardPreserved:true,browserErrors:errors,externalRequests:0,productionWrites:0};
+  const report={at:new Date().toISOString(),environment:'ISOLATED_ACTUAL_STAGED_BROWSER_PAGES',entry:process.env.SUPPORT_INITIAL_PAGE||'workroom.html',roundtrip:'Real Support workroom → real Packing → real Support workroom',customersBefore:2,customersAfter:2,fulfilmentReads:2,originGuardCases:4,eventSourceGuardPreserved:true,browserErrors:errors,externalRequests:0,productionWrites:0};
   if(process.argv[2])fs.writeFileSync(path.resolve(process.argv[2]),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

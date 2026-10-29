@@ -19,6 +19,7 @@ on:
           - master-efficiency-only
           - master-save-continuity-only
           - stock-loaded-only
+          - support-desk-only
 
 permissions:
   contents: read
@@ -50,7 +51,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'support-desk-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -124,6 +125,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/stock-loaded-site', runner.temp) }}
+
+      - name: Prepare Desk-only Support resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-desk-only'
+        run: node integration/prototypes/support-desk-only-20261029/stage.cjs "$RUNNER_TEMP/support-desk-only-site"
+
+      - name: Upload Desk-only Support resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-desk-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/support-desk-only-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

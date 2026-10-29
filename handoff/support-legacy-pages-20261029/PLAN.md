@@ -1,0 +1,19 @@
+# Retire no-Desk Support pages
+
+The user explicitly requested complete cleanup of the old Support pages and clarified that the Desk version is the new version to retain. Latest resume authorizes the Packing return repair, old-page cleanup, release and public checks.
+
+This maintenance branch is separate from the Loaded implementation branch. Its parent6d339fd contains the narrowly tested return repair. No changes to the already-published14 backend modules, CMS, uploads, customer identity, allocations, journal, invoices, FX or physical stock. No main merge.
+
+Authority/evidence: the actual public Wix Support iframe points to support-room/workroom.html with Desk. Warehouse uses the active packing-workbench. The obsolete support-room/index.html is the old no-Desk Sales Invoicing interface; draft.html is a labeled synthetic design preview. Fresh public hashes of both pages, exclusive resources and shared styles match the v2 recovery package (8/8), see PREFLIGHT.json.
+
+Retire from the public deployment only: support-room/app.js, style.css, draft-app.js and invoice-draft-model.js. All retained published HTML, JavaScript and CSS were checked for incoming references to these exact resolved paths; zero remain. Current workroom and Packing still use draft.css and draft-compact.css, so those remain byte-identical. Do not delete a file simply because its name contains draft.
+
+The two obsolete HTML endpoints become small replacement redirects. Embedded Wix entry preserves NCT/GHR and opens the Desk workroom. Top-level bookmarks open the real Wix Support page rather than an unauthenticated standalone child. Neither old endpoint executes an invoice program or keeps a second Support UI. Historical repository sources and their tests remain recovery material, excluded from the released runnable site; they are not removed before user verification of the complete new path.
+
+The scoped support-desk-only recipe builds95 public resources instead of99. It includes no backend/private evidence, cannot upload the whole repository, and leaves all unrelated assets unchanged. The manifest records exact resources, four retired hashes, redirect paths and the unchanged Wix runtime9fb69be. This release also carries the parent’s one-expression parent-origin return repair and version markers.
+
+Validation:27 existing Desk/workroom checks passed; four retirement/reference/company checks passed; actual isolated browser pages pass the full Orders→Packing→Orders roundtrip from the normal workroom, old index and old draft entry. All four host-origin cases and original event.source check pass. No external browser requests or production writes. The earlier Loaded151/152 results retain the known unrelated wording failure; no unchanged backend suite was rerun just for its summary.
+
+Recovery: original v2 package at C:/FMCG-WIX-LOCAL/release-artifacts/stock-loaded-v2-20261029, runtime9fb69be,14 exact Wix hashes and explicit publish receipt in the parent handoff. Reverting this static package restores the four excluded assets; no data restore or backend synchronization is necessary. The existing verified Stop Waiting tag remains scoped to its original user-verified workflow, not this whole inventory system.
+
+Release gate: exact candidate commit/package must be pushed; obtain explicit approval for this maintenance branch’s temporary deployment permission, execute once with support-desk-only, immediately remove it and verify the original seven policies. Existing v2 approval was consumed and cannot be reused. Wix backend remains the already-published14-module version, so do not repeat54 patches or publish unchanged Wix code. Verify real refreshed Support Desk1→2→1, file dialog, Orders→Packing→Orders with real customers, Warehouse Ready/stock95 and both obsolete top-level URLs landing on the Desk version. Only then offer user transaction testing. Actual business saves remain for the user.

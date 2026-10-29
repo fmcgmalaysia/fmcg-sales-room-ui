@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-29T05:45:37.710Z",
+  "liveBuild": "20261029-stock-loaded-v2",
+  "liveCode": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+  "scope": "Legacy page and exclusive/shared dependency readback before maintenance",
+  "rows": [
+    {
+      "path": "support-room/index.html",
+      "status": 200,
+      "sha256": "d72773fefa40f1a90e4bc2e2e10f600091b1fd5175d20431b3aa48896413630f",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/draft.css",
+      "status": 200,
+      "sha256": "097adaed9c9c9bc5584cfbcc9444ecf3af70a94b331476672de90c0aedc57b68",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/invoice-draft-model.js",
+      "status": 200,
+      "sha256": "659f119d67bde96e519b1689435397f0c6c4f9b1f0f92f76403cd64306610a43",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/style.css",
+      "status": 200,
+      "sha256": "cbd40c1a18a9a72ccb4d1747e55101cbcdc73f360ad31d9e9973c6532bc74cda",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/app.js",
+      "status": 200,
+      "sha256": "30751500f4e11dc07df7f2205b6e6e26be614d3f449960745bfaadff7c48302d",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/draft.html",
+      "status": 200,
+      "sha256": "abe5e3969f87e3aca64650ad79845674e39e729e2f98bc6de35d18b2ffd835e1",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/draft-compact.css",
+      "status": 200,
+      "sha256": "e1e5535f6f4a37dd8fee593d35a42e1335db170e73611edb343b2ac5b0b76f26",
+      "exactV2": true
+    },
+    {
+      "path": "support-room/draft-app.js",
+      "status": 200,
+      "sha256": "20f6ead59a3535e5a82e8c8206f9d76ea1cb6f4ae6883a9b136163cb04a83ca0",
+      "exactV2": true
+    }
+  ],
+  "desktopOperations": 0,
+  "productionBusinessWrites": 0
+}
