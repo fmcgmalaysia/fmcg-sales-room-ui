@@ -1,0 +1,71 @@
+{
+  "environment": "ISOLATED_BROWSER_AND_REAL_BACKEND_FACTORIES",
+  "productionWrites": 0,
+  "externalRequests": 0,
+  "supportSameFrameEntry": true,
+  "warehouseExistingVersionEntry": true,
+  "loaded80OnHand": 70,
+  "invoiceOnHand": 70,
+  "dispatchOnHand": 70,
+  "remainderVisible": 20,
+  "browserErrors": [],
+  "requests": [
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_SAVE_REQUEST",
+      "action": "CREATE"
+    },
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_SAVE_REQUEST",
+      "action": "SEND"
+    },
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_SAVE_REQUEST",
+      "action": "START"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_SAVE_REQUEST",
+      "action": "PROGRESS"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_SAVE_REQUEST",
+      "action": "COMPLETE"
+    },
+    {
+      "actor": "WAREHOUSE",
+      "type": "PACKING_READ_REQUEST"
+    },
+    {
+      "actor": "SUPPORT",
+      "type": "PACKING_READ_REQUEST"
+    }
+  ]
+}

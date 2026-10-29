@@ -248,7 +248,7 @@
     {
       "name": "warehousePreparation.js",
       "beforeSha256": "b7dac2a37ba53fd075a34eea243430a92a9f20150259b0a82168ff2083c0d1e5",
-      "afterSha256": "3adc55c499494c2a213e78f3089ce0ec13a0c00784b809e9dc325b71819f4041",
+      "afterSha256": "90e55aa6892bee8dd703736b046b49a806294d03d7c17a51799b34796f4f8e28",
       "hunks": [
         {
           "find": "    }\n    await current();",
@@ -292,7 +292,7 @@
         },
         {
           "find": "  const readyByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id))}))):allocateBatchMetric(batches,Math.min(readyStock,task.inc||0),'received')):null,allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;",
-          "replace": "  const outflows=readPhysicalOutflows(context.activity).filter(row=>row.taskId===task.id),sent=outflows.reduce((sum,row)=>sum+row.quantity,0);\n  const readyByBatch=anchored&&stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id)+outflows.flatMap(row=>row.sources).filter(row=>row.sourceTaskId===source.id).reduce((sum,row)=>sum+row.quantity,0))}))):allocateBatchMetric(batches,Math.min(readyStock+sent,task.inc||0),'received'),allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;\n  const sourceByBatch=anchored&&stockSources.length?allocateBatchSources(stockBatchEntries(plan,task.id),stockSources):null,stockVersion=operationId(context.allocations||[],outflows);"
+          "replace": "  const outflows=readPhysicalOutflows(context.activity).filter(row=>row.taskId===task.id),sent=outflows.reduce((sum,row)=>sum+row.quantity,0);\n  const readyByBatch=anchored&&stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id)+outflows.flatMap(row=>row.sources).filter(row=>row.sourceTaskId===source.id).reduce((sum,row)=>sum+row.quantity,0))}))):allocateBatchMetric(batches,readyStock+sent,'received'),allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;\n  const sourceByBatch=anchored&&stockSources.length?allocateBatchSources(stockBatchEntries(plan,task.id),stockSources):null,stockVersion=operationId(context.allocations||[],outflows);"
         },
         {
           "find": " const dispatched=shipments.filter(s=>s.status==='DISPATCHED').flatMap(s=>s.lines);",

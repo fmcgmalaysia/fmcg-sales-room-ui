@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../../..'),previous=require('../master-save-continuity-20261028/stage.cjs');
-const build='20261028-stock-loaded-v1',recovery='e71bf4934f8c5347b13dd0802f9da227b5ccf83b';
+const build='20261029-stock-loaded-v2',recovery='e71bf4934f8c5347b13dd0802f9da227b5ccf83b';
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function plan(){
  const assets=new Map(previous.plan().assets),baseline=new Map(assets);assert.equal(assets.size,99);
