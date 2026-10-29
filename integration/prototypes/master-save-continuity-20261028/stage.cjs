@@ -3,11 +3,11 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'../../..'),previous=require('../master-efficiency-20261028/stage.cjs');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex'),normalized=bytes=>Buffer.from(String(bytes).replace(/\r\n/g,'\n'));
 function patch(bytes,pattern,replacement,count=1){const value=bytes.toString();assert.equal((value.match(new RegExp(pattern.source,'g'))||[]).length,count,'Exact cache marker count');return Buffer.from(value.replace(new RegExp(pattern.source,'g'),replacement));}
-function plan(){
+function plan(sourceCommit){
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'manifest.json'),'utf8')),assets=new Map(previous.plan(manifest.baselineRecord).assets);
  assert.equal(assets.size,99);for(const row of manifest.baselineResources)assert.equal(hash(assets.get(row.path)),row.sha256,'Recovery '+row.path);
  const before=new Map(assets),allowedSources=new Set(['master-shared/task-chat.js','support-room/workroom.js','support-room/packing-workbench.js','purchase-live/app.js']);
- assert.equal(manifest.files.length,4);for(const row of manifest.files){assert(allowedSources.has(row.target));const bytes=normalized(fs.readFileSync(path.join(root,row.source)));assert.equal(hash(bytes),row.sha256,row.source);assets.set(row.target,bytes);}
+ assert.equal(manifest.files.length,4);for(const row of manifest.files){assert(allowedSources.has(row.target));const bytes=normalized(sourceCommit?cp.execFileSync('git',['show',sourceCommit+':'+row.source],{cwd:root}):fs.readFileSync(path.join(root,row.source)));assert.equal(hash(bytes),row.sha256,row.source);assets.set(row.target,bytes);}
  const entries=['purchase-live/index.html','account-room/index.html','warehouse-room/index.html','support-room/index.html','support-room/workroom.html'];
  for(const file of entries){let bytes=assets.get(file);bytes=patch(bytes,/(\.\.\/master-shared\/task-chat\.js\?v=)[^"&]+/,'$1'+manifest.build);bytes=patch(bytes,/(<meta name="build" content=")[^"]+(">)/,'$1'+manifest.build+'$2');if(file==='support-room/workroom.html')bytes=patch(bytes,/(src="workroom\.js\?v=)[^"&]+/,'$1'+manifest.build);if(file==='purchase-live/index.html')bytes=patch(bytes,/(src="app\.js\?v=)[^"&]+/,'$1'+manifest.build);assets.set(file,bytes);}
  let support=assets.get('support-room/workroom.js');support=patch(support,/dataset\.supportBuild='20261027-support-shipment-header-v2'/,"dataset.supportBuild='"+manifest.build+"'");support=patch(support,/(packing-workbench\.html\?v=)20261021-packing-v1/,'$1'+manifest.build,2);assets.set('support-room/workroom.js',support);

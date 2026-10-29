@@ -13,6 +13,7 @@ import { readSalesDemand } from 'backend/salesOrderAdjustment.js';
 import { resolveBatchEntitlements, preferredSourceBatch, purchaseBatchVersion, resolveBatchStock, allocateBatchSources, batchEntries } from 'backend/shipmentBatchAllocation.js';
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
+import { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -142,6 +143,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
     shipmentPlans: readShipmentPlans(activity),
     purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
-    paymentRequestsConnected: false
+    paymentRequestsConnected: false,
+    deskDeliveries:projectDeskDeliverySummaries(activity)
   };
 }

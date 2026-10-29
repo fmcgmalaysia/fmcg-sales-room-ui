@@ -23,7 +23,7 @@
     if(message.type==='FULFILMENT_LOGIN_RESULT'&&message.ok){load();return;}
     if(!request||message.company!==request.company||message.type!==request.resultType)return;
     clearTimeout(request.timer);pending.delete(message.requestId);
-    if(message.ok!==true||message.result?.ok===false)request.reject(Error(message.error||message.result?.error||'Could not load current orders.'));
+    if(message.ok!==true||message.result?.ok===false){const error=Error(message.error||message.result?.error||'Could not load current orders.');error.retryable=message.result?.retryable;request.reject(error);}
     else request.resolve(message.result);
   });
   function info(title,html){$('print-saved-invoice').hidden=true;$('information-title').textContent=title;$('information-body').innerHTML=html;$('information').showModal();}
@@ -211,6 +211,9 @@
     if(!order){$('content').innerHTML='<div class="empty">No outstanding order tasks.</div>';$('count').textContent='0 tasks';return;}
     $('order-filter').hidden=true;
     $('content').innerHTML=orderContent(order);
+    const deliveryCompany=company;
+    window.DeskDelivery?.mountSupport({company,model:data,root:$('content'),customerId:selectedCustomer,desk:activeDesk,lines:viewLines(order),canSend:activeDesk>0&&!busy&&!deskBusy&&!deskPending()&&!invoiceBusy&&!deskLock(),send,
+      applyReceipt(result){if(company!==deliveryCompany||!data)return;deskReceiptEpoch++;if(result.deskState){data.desks=data.desks.filter(row=>row.customerId!==result.deskState.customerId).concat(result.deskState);if(readCache?.company===company&&readCache.results[2].status==='fulfilled')readCache.results[2].value.desks=data.desks;}data.delivery.pendingAuthorizations=(data.delivery.pendingAuthorizations||[]).filter(row=>row.requestId!==result.requestId);data.delivery.lists=data.delivery.lists.filter(row=>row.id!==result.list.id).concat(result.list);if(readCache?.company===company&&readCache.results[1].status==='fulfilled')readCache.results[1].value=data.delivery;$('notice').textContent=result.status==='CANCELLED'?'Warehouse task recalled.':'Desk authorized to Warehouse.';render();},invalidate(){if(company===deliveryCompany)load([0,1,2,3]);}});
   }
   const profileFields=[['preferredCurrency','Currency',['','USD','MYR','SGD','RMB','JPY']],['destinationPortName','Port Name'],['picTitle','Contact Title',['','MR','MRS','MS','DR']],['picName','Contact Name'],['mobileNo','Mobile No.'],['whatsapp','WhatsApp',['','YES','NO']],['primaryEmail','Email'],['companyWebsite','Website'],['address1','Address Line 1'],['address2','Address Line 2'],['address3','Address Line 3'],['natureOfBusiness','Business Type',['','WHOLESALE','RETAIL','E-COMMERCE','SOURCING AGENT','OTHERS']]];
   let profileCustomer='',profileBusy=false,profileSnapshot=null;const profileAttempts=new Map();
@@ -222,7 +225,7 @@
     const types=['FULFILMENT_READ_REQUEST','PACKING_READ_REQUEST','SUPPORT_BOOKING_READ_REQUEST','SUPPORT_INVOICE_READ_REQUEST','SUPPORT_DOCUMENT_READ_REQUEST','SUPPORT_CUSTOMER_READ_REQUEST'];
     const results=await Promise.all(types.map((type,index)=>cache&&!requested.has(index)?cache.results[index]:send(type).then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}))));
     activeReadSets.delete(sequence);if(sequence!==readSequence)return;
-    if(epoch!==deskReceiptEpoch&&readCache?.company===company)results[2]=readCache.results[2];
+    if(epoch!==deskReceiptEpoch&&readCache?.company===company){results[2]=readCache.results[2];results[1]=readCache.results[1];}
     readCache={company,results};
     busy=false;$('refresh').disabled=false;
     if(results[0].status==='rejected'){data=null;$('notice').textContent=results[0].reason.message;$('login').hidden=false;render();return;}
@@ -253,8 +256,7 @@
     if(button.dataset.doc)openDocument(button.dataset.doc,button.dataset.customer,button.dataset.orderId,button.dataset.invoiceId);
   });
   $('back').onclick=()=>{view=view==='customer'?'customers':'orders';$('search').value='';render();};$('search').oninput=render;$('customer-filter').onchange=()=>{chooseCustomer($('customer-filter').value);render();};$('order-filter').onchange=()=>{selectedOrder=$('order-filter').value;selectedLines.clear();render();};$('refresh').onclick=load;
-  $('company').onchange=()=>{$('customer-profile').close();$('desk-references').close();$('booking').close();$('invoice-review').close();$('documents').close();selectedLines.clear();company=$('company').value;data=null;view='customers';selectedCustomer='';selectedOrder='';activeDesk=0;readCache=null;activeReadSets.clear();$('search').value='';$('customer-filter').value='';$('staff').textContent='';$('packing').href='packing-workbench.html?v=20261021-packing-v1&live=1&department=SUPPORT&return=support&company='+company;load();};
-  $('company').value=company;$('packing').href='packing-workbench.html?v=20261021-packing-v1&live=1&department=SUPPORT&return=support&company='+company;
-  $('packing').onclick=event=>{if(bookingBusy||invoiceBusy||documentBusy||bookingAttempts.size||invoiceAttempts.size||documentAttempts.size||deskBusy||deskAttempts.size||profileBusy||profileAttempts.size){event.preventDefault();info('Save Pending','<p>Resolve the pending save before opening Packing Lists.</p><p>请先确认或处理尚未完成的保存。</p>');}};
+  $('company').onchange=()=>{if(window.DeskDelivery?.supportPending()){$('company').value=company;$('notice').textContent='Confirm the pending Warehouse authorization before changing company.';return;}$('customer-profile').close();$('desk-references').close();$('booking').close();$('invoice-review').close();$('documents').close();selectedLines.clear();company=$('company').value;data=null;view='customers';selectedCustomer='';selectedOrder='';activeDesk=0;readCache=null;activeReadSets.clear();$('search').value='';$('customer-filter').value='';$('staff').textContent='';load();};
+  $('company').value=company;
   $('login').onclick=()=>{if(parentOrigin)parent.postMessage({type:'FULFILMENT_LOGIN_REQUEST'},parentOrigin);};load();
 })();
