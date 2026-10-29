@@ -1,0 +1,32 @@
+# Approved compact Support header and operational Warehouse view
+
+2026-10-29. Active branch: feat/support-order-shipment-details-20261029, based on2960e9d. The user approved the compact concept and implementation, background modifications/tests/GitHub first, then publication and real public verification. They explicitly chose manual Desk deposit entry with no automatic financial posting.
+
+## Implemented candidate
+
+- Compact Customer/Order/Shipment header, PO before SO, two section-title pencils, one combined details dialog. Booked By remains blank/reserved. ETD and actual Departure Date are separate; Last Gate In retains date and time. Documents, actual quantity/CBM/amount summary and editable Our Sales Inv. No. occupy the compact footer. Top right authorizes the selected allocated Desk through Open Task to Warehouse.
+- All details use the existing DESK_SHIPMENT action and deterministic Desk revision chain. A versioned optional details payload updates the same Desk references/shipment in one event. No separate storage or quantity authority. Manual deposit is a declaration, not a payment receipt; uploaded payment documents and actual accounting are unchanged. Invoice-number draft does not issue an invoice or reserve a number. Formal review/issuance/locking stays on the original protected path.
+- A confirmed metadata receipt updates the local Desk/cache and sends only IDs to other workrooms. Warehouse rereads canonical data. Save closes the editor so users can continue; actual values remain unchanged until confirmed. Unknown saves retain their request identity. New metadata controls require the matching v2 delivery service during coordinated rollout.
+- warehouseDeliveryView.js explicitly selects operational fields. Both Warehouse list reads and save/retry receipts exclude currency, all prices/costs/amounts, deposit fields, invoice drafts, Desk financial state and financial documents. Only current opened Desk holds produce Delivery Task lists. Superseded/cancelled/unopened lists are excluded. A superseded task cannot create another Loaded movement.
+- The initial Warehouse Receiving response uses the same operational-only projection and exposes supplier DO only. Its old future customer-delivery/preparation lists are empty; customer delivery comes from the opened Desk service. Original receipt writers, their version checks and finance locks retain full internal facts.
+- The dedicated warehouseStockIssues.web.js authenticates Warehouse and reuses original stock report/return/replacement writers. Its reader strips reference costs and financial case state, and it rejects finance actions. Stock Control's existing quantity-only reader remains unchanged.
+- The Warehouse page candidate switches stock-issue reads/writes to those scoped endpoints and retires its old commercial Fulfilment/Dispatch bridge. This page patch is prepared separately until fresh Wix source comparison; it is not a whole-file synchronization instruction. Incoming, Stock Control, messages, receiving evidence and CBM mechanisms remain otherwise unchanged.
+
+## Validation and authority
+
+HEADER_BROWSER.json: actual staged Support and Warehouse pages with the real local backend factories, atomic header save, invoice draft before loading, existing SO upload dialog, Desk1→2→1, authorization without stock change, cumulative Loaded once, lost response and same-ID retry, queue revision receipts, photo failure/input retention and cross-room red quantities. No production transactions or network requests. Warehouse has9table columns after removing Price/Line Amount.
+
+HEADER_VALIDATION.json:242related tests,241passed, one pre-existing Sales/Buyer expectedChinese wording assertion (Awaiting balance vs 等待补货). New privacy tests inspect nested read, save and retry response objects, current-authorization replacement, GHR isolation, Receiving documents, stock-issue masking and the retired bridge. Original Desk invoice reservation also blocks new metadata edits.
+
+The seven previously modified live Wix originals were captured and matched before the Desk changes (six in the private20261029 live-readback, Packing operations in the published v2 hash record). Reuse them only while the live original still matches. Prepare-wix-patches produces30isolated hunks plus3new modules. The Warehouse page requires a fresh original comparison before its minimal patch; current root source is not assumed to supersede live Wix. Support and Purchase page pointers also require fresh reads.
+
+Current production remains9fb69be/build20261029-stock-loaded-v2;14published backend hashes and the99-resource recovery package are preserved. PR235/2960e9d is a parent candidate, not safe to deploy under the newly approved financial restriction. Old PR234 remains superseded. main is unchanged. No production business writes, new permissions or new Wix publication have occurred for this candidate.
+
+## Remaining release work
+
+1. Finish final scoped static/response verification, push the candidate and attach its draft PR. Retain all reports; do not commit private raw browser or transaction logs.
+2. Concentrated Chrome session: refresh target/control observations; read and compare originals, then add the3new backend modules and apply only isolated changed hunks. Read actual page pointers; synchronize Warehouse's prepared patch only after the original matches. Verify each complete expected source.
+3. Preserve the exact final commit and92-resource manifest. This new branch currently has no deployment permission; previous temporary approvals were consumed/revoked. Obtain the specific temporary branch permission only for this concrete tested release, deploy once with support-details-only, immediately remove the owned rule and verify the original7exact.
+4. Obtain Wix's explicit published/live receipt, refresh real affected public pages, check header/editors/documents/Desk switching, Warehouse authorization-only view and actual network responses for financial exclusion. Do not fabricate production loading or payment writes; offer user transaction testing only after all4publication stages are complete.
+
+Unchanged boundaries: red shortfall-resolution authority, mandatory-photo policy, complete Support remainder split/cancel/partial-invoice handling, borrowing/month closing and historical CMS/Drive archiving are separate unfinished work. No arbitrary clear-red action or ordinary reduction of already Loaded cartons was added.
