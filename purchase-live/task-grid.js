@@ -61,7 +61,7 @@
       const batches=plan.batches.flatMap(batch=>{const entry=batch.lines.find(entry=>entry.taskId===row.id);return entry?[{...batch,quantity:entry.quantity}]:[];});
       if(batches.length<2)return null;
       const original=line(row,index,null,0),cells=original.match(/<td\b[\s\S]*?<\/td>/g),group=sources(row,tasks),sum=totals(group),received=group.reduce((n,source)=>n+(source.warehouse?.stock?.usableReceived??source.warehouse?.accepted??0),0);
-      let offset=0;
+      let offset=0;const shownSources=new Set();
       return batches.map((batch,batchIndex)=>{
         const copy=[...cells],take=total=>Math.min(batch.quantity,Math.max(0,total-offset)),batchId=plan.id+'|'+batch.sequence,entitlement=row.batchEntitlements?.find(entry=>entry.id===batchId),planned=entitlement?(entitlement.sources||[]).reduce((sum,source)=>sum+source.quantity,0):take(sum.customerQty);
         copy[0]='<td></td>';copy[1]='<td class="row-number">'+String(index+1).padStart(3,'0')+'-'+batch.sequence+'</td>';
@@ -71,9 +71,19 @@
         const assignedHere=entitlement?group.filter(source=>entitlement.sources.some(item=>item.id===source.id&&item.quantity>0)):group.filter(assigned);
         copy[6]='<td class="supplier-cell"><button class="supplier-plan-link" data-plan-task="'+escape(row.id)+'" data-plan-batch="'+escape(batchId)+'" aria-label="Supplier plan '+escape(batch.label)+'" '+(row.archived?'disabled':'')+'>'+assignedHere.map(source=>person('complete',source)+escape(name(source.supplierId))).join(' ')+(planned<batch.quantity?person('pending'):'')+'</button></td>';
         copy[7]='<td class="amount net-cost-cell">—</td>';copy[8]='<td class="received-quantity">'+(group.some(source=>source.warehouse?.hasPhysicalReceipt)?entitlement?.metrics.received??take(Math.min(received,row.ord)):'—')+'</td>';copy[9]='<td class="amount">—</td>';
+        const inline=entitlement&&assignedHere.length===1&&planned===batch.quantity&&assigned(assignedHere[0])&&assignedHere[0].procurement.totalCtn===batch.quantity&&totals(assignedHere).customerQty===batch.quantity&&(row.batchEntitlements||[]).filter(entry=>entry.sources?.some(source=>source.id===assignedHere[0].id&&source.quantity>0)).length===1?assignedHere[0]:null;
+        if(entitlement){const numbers=[...new Set(assignedHere.map(source=>source.po).filter(Boolean))];copy[10]='<td>'+(assignedHere.length?'<span class="po-summary '+(assignedHere.every(source=>source.po)?'complete':'pending')+'">'+escape(numbers.length?numbers.length+' P.O.':assignedHere.length+' Sources')+'</span>':'')+'</td>';}
+        if(inline){
+          const sourceCells=line(inline,index,row,0).match(/<td\b[\s\S]*?<\/td>/g);for(const position of [7,8,9,10])copy[position]=sourceCells[position];shownSources.add(inline.id);
+          copy[4]=copy[4].replace(/<span class="gp gp-badge [^"]*"[\s\S]*?<\/span>/g,'');
+          const saved=inline.procurement.costing?Number.isSafeInteger(inline.procurement.costing.amountCents):['lpCtn','disc1','disc2','disc3'].every(key=>Number.isFinite(inline[key]));
+          if(saved&&!drafts.has(inline.id)&&Number.isFinite(inline.sourceGp)){const badge='<span class="gp gp-badge '+(inline.sourceGp<0.06?'gp-low':'gp-good')+'" aria-description="GP" aria-label="GP '+escape(number(inline.sourceGp*100)+'%')+'">'+(inline.sourceGp<0.06?'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 15 14H1Z"/><path d="M8 5.5v4"/><circle cx="8" cy="11.5" r=".7"/></svg>':'')+escape(number(inline.sourceGp*100)+'%')+'</span>';copy[4]=copy[4].replace('<span class="barcode">'+escape(row.barcode),'<span class="barcode">'+escape(row.barcode)+badge);}
+          const foc=sourceCells[4].match(/<small class="source-costing">[\s\S]*?<\/small>/)?.[0];if(foc)copy[4]=copy[4].replace('</td>',foc+'</td>');
+        }
         offset+=batch.quantity;
-        const html='<tr class="split-demand-row" data-split-parent="'+escape(row.id)+'" data-split-batch="'+escape(plan.id+'|'+batch.sequence)+'">'+copy.join('')+'</tr>';
-        return html+(batchIndex===0&&group.some(source=>source.procurement?.totalCtn>0)?group.map((source,i)=>line(source,index,row,i)).join(''):'');
+        const html='<tr class="split-demand-row" data-split-parent="'+escape(row.id)+'" data-split-batch="'+escape(plan.id+'|'+batch.sequence)+'"'+(inline?' data-receipt-source-id="'+escape(inline.id)+'"':'')+'>'+copy.join('')+'</tr>';
+        const children=(entitlement?assignedHere:batchIndex===0?group:[]).filter(source=>source.procurement?.totalCtn>0&&!shownSources.has(source.id));for(const source of children)shownSources.add(source.id);
+        return html+children.map((source,i)=>line(source,index,row,i)).join('');
       }).join('');
     }
     const markup=roots.map((row,index)=>{const plan=active&&shipmentPlans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));const split=plan&&splitRows(row,index,plan);return split||line(row,index,null,0)+(sources(row,tasks).length>1||active&&row.procurement?.revision&&totals(sources(row,tasks)).customerQty>0&&totals(sources(row,tasks)).customerQty<row.ord?sources(row,tasks).map((source,i)=>line(source,index,row,i)).join('')+waiting(row):'');}).join('').replace(/>—</g,'><');

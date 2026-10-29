@@ -116,6 +116,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(batchContext||{}),...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
+        if(s.workspace.tasks.find(row=>row.id===input.taskId)?.borrowingOutstanding>0)throw Error('Return unshipped borrowed stock or complete repayment before reducing this customer demand.');
         requireSettledPlan(task);
         if(task.procurementSource)throw Error('Customer demand can only be edited on the original customer line.');
         if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');

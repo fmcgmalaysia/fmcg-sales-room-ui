@@ -45,7 +45,7 @@ function readyStockFor(task,context,shipments,onlySourceId){
   return sum+(own?Math.min(available,ownLimit):Math.min(available,incoming));
  },0);
  const sent=dispatched.filter(l=>l.taskId===task.id).reduce((n,l)=>n+l.quantity,0);
- return Math.min(total,Math.max(0,(task.salesCommittedQty??task.ord)-sent));
+ return Math.min(total,Math.max(0,Math.min(task.ord,Math.max(task.salesCommittedQty??task.ord,task.inc||0))-sent));
 }
 
 export function projectPreparation(context){
@@ -56,9 +56,9 @@ export function projectPreparation(context){
   if(!qty(goal)||!goal)continue;
   const plan=plans.find(p=>p.customerId===task.customerId&&p.orderId===task.orderId&&p.batches.some(b=>b.lines.some(l=>l.taskId===task.id)));
   const batches=plan?plan.batches.flatMap(b=>{const l=b.lines.find(l=>l.taskId===task.id);return l?[{key:plan.id+'|'+b.sequence,label:b.label,date:b.date,quantity:l.quantity,coverage:l.coverage,planRevision:plan.revision}]:[]}):[{key:'WHOLE',label:'',date:task.estimatedShipmentDate,quantity:goal,planRevision:''}];
-  const anchored=batches.some(batch=>batch.coverage),stockSources=anchored?(context.allocations||[]).flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===task.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity)}]:[];}):[];
+  const explicit=Boolean(plan&&(context.allocations||[]).some(allocation=>allocation.targets.some(target=>target.taskId===task.id&&target.batches))),anchored=batches.some(batch=>batch.coverage)||explicit,stockSources=anchored?(context.allocations||[]).flatMap(allocation=>{const target=allocation.targets.find(target=>target.taskId===task.id),quantity=target?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,context.activity),...(target.batches?{bindings:target.batches}:{})}]:[];}):[];
   const outflows=readPhysicalOutflows(context.activity).filter(row=>row.taskId===task.id),sent=outflows.reduce((sum,row)=>sum+row.quantity,0);
-  const readyByBatch=anchored&&stockSources.length?resolveBatchStock(plan,task.id,stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id)+outflows.flatMap(row=>row.sources).filter(row=>row.sourceTaskId===source.id).reduce((sum,row)=>sum+row.quantity,0))}))):allocateBatchMetric(batches,readyStock+sent,'received'),allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;
+  const readyByBatch=anchored&&stockSources.length?resolveBatchStock(plan,task.id,explicit?stockSources:stockSources.map(source=>({...source,quantity:Math.min(source.quantity,readyStockFor(task,context,shipments,source.id)+outflows.flatMap(row=>row.sources).filter(row=>row.sourceTaskId===source.id).reduce((sum,row)=>sum+row.quantity,0))}))):allocateBatchMetric(batches,readyStock+sent,'received'),allocatedByBatch=anchored?(stockSources.length?resolveBatchStock(plan,task.id,stockSources):allocateBatchMetric(batches,task.inc||0,'received')):null;
   const sourceByBatch=anchored&&stockSources.length?allocateBatchSources(stockBatchEntries(plan,task.id),stockSources):null,stockVersion=operationId(context.allocations||[],outflows);
   const planTotal=batches.reduce((n,b)=>n+b.quantity,0),planMismatch=planTotal!==goal&&(!plan||task.shortage?.customerDecision==='STOP'||planTotal!==(task.requested??goal));
   const commercialSent=shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines).filter(row=>row.taskId===task.id).reduce((sum,row)=>sum+row.quantity,0);

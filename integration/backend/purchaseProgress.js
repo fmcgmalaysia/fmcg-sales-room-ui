@@ -18,7 +18,7 @@ export function applyPurchaseProgress(workspace, activity, purchaseOrders) {
   const ownFinanceClosed=Boolean(ownPo?.invoiceChecked&&ownPo.paymentCompleted&&ownPo.finance?.receiptResolved);
   row.progressFacts={sourceRequired,sourceDispatchedQty,receiptResolved:Boolean(ownPo?.invoiceChecked&&ownPo.finance?.receiptResolved)};
   const completed=row.procurementSource?(ownFinanceClosed?sourceLines.filter(line=>line.shipment.status==='DISPATCHED').reduce((sum,line)=>sum+line.quantity,0):0):(completion?.completedQty||0);
-  row.archived=required>0&&completed===required&&ownFinanceClosed;
+  row.archived=required>0&&completed===required&&ownFinanceClosed&&!(row.borrowingOutstanding>0);
   for(const item of row.quantityCases||[])if(item.kind==='RECEIPT'&&ownPo?.invoiceChecked){item.status='RESOLVED';item.owner=null;item.checkedBy=ownPo.invoiceCheck?.by;item.checkedAt=ownPo.invoiceCheck?.at;}
   if(required>0&&dispatched===required){
    row.stage=row.archived?'SHIPPED':ownPo?.paymentCompleted?'WAITING_FOR_ACC_REVIEW':'WAITING_FOR_PAYMENT';

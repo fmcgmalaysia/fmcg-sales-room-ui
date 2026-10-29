@@ -66,8 +66,9 @@ test('two callers that both read no lock still cannot both insert its fixed iden
 test('real allocation save refuses competing demand, then rejects its stale retry', async () => {
   const f = fixture();
   const tasks = ['SOURCE', 'A', 'B'].map(id => ({ id, customerId: id, orderId: id, sourceLineId: id,
-    barcode: '001', packing: '12x1', ea: 12, ord: 30, po: 'PO-1', supplierId: 'SUP',
-    warehouse: id === 'SOURCE' ? { accepted: 30 } : null }));
+    barcode: '001', packing: '12x1', ea: 12, ord: id==='SOURCE'?0:20, po: 'PO-1', supplierId: 'SUP',
+    ...(id==='SOURCE'?{procurementSource:true,customerDemandTaskId:'A',procurement:{totalCtn:30,customerCtn:0,expectedExtra:30}}:{}),
+    warehouse: id === 'SOURCE' ? { hasPhysicalReceipt:true,accepted: 30 } : null }));
   const workspace = { company: 'NCT', tasks };
   let entered, resume;
   const held = new Promise(resolve => { entered = resolve; });
@@ -77,7 +78,7 @@ test('real allocation save refuses competing demand, then rejects its stale retr
     readWorkspace: async () => { if (pause) { pause = false; entered(); await gate; } return workspace; } });
   const version = allocationVersion(workspace, []);
   const request = (n, target) => ({ company: 'NCT', staff: employee('P' + n), requestId: requestId(n),
-    input: { action: 'ALLOCATE', sourceTaskId: 'SOURCE', version, targets: [{ taskId: target, quantity: 20 }], reason: 'Safety test' } });
+    input: { action: 'ALLOCATE', planMode:'CUSTOMER',taskId:target,batchId:'WHOLE',borrow:false,version } });
   const first = save(request(1, 'A')); await held;
   await assert.rejects(save(request(2, 'B')), /processing/);
   resume(); await first;
@@ -97,10 +98,10 @@ test('lost reply after allocation event resumes original save without duplicate 
     return saved;
   };
   const workspace = { company: 'NCT', tasks: [{ id: 'A', customerId: 'C', orderId: 'O', sourceLineId: 'L',
-    barcode: '001', packing: '12x1', ea: 12, ord: 100, po: 'PO-1', supplierId: 'SUP', warehouse: { accepted: 120 } }] };
+    barcode: '001', packing: '12x1', ea: 12, ord: 100, po: 'PO-1', supplierId: 'SUP', warehouse: { hasPhysicalReceipt:true,accepted: 120 } }] };
   const save = createPlannerAllocationOperations({ store: f.store, names: { NCT: { activity: 'N' } }, readWorkspace: async () => workspace });
   const request = { company: 'NCT', staff: employee('P'), requestId: requestId(1), input: { action: 'ALLOCATE',
-    sourceTaskId: 'A', version: allocationVersion(workspace, []), targets: [{ taskId: 'A', quantity: 100 }], reason: 'Safety test' } };
+    planMode:'CUSTOMER',taskId:'A',batchId:'WHOLE',borrow:false,version: allocationVersion(workspace, []) } };
   await assert.rejects(save(request), /reply lost/);
   await save(request); await save(request);
   const rows = await f.store.all('N');
