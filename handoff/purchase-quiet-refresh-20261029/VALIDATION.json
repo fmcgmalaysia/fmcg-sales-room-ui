@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-29T15:40:22.069Z",
+  "tests": 130,
+  "passed": 127,
+  "failed": 3,
+  "failures": [
+    "save continuity package preserves exactly 89 public resources and excludes backend and evidence",
+    "planner allocation editor sends the selected receipt and explicit customer quantities with a reason",
+    "live page starts empty, requests real Master data and never seeds demo business records"
+  ],
+  "twoUIFailuresReproducedOnParent": true,
+  "legacySupportPackageSourceUnchanged": true,
+  "newFailures": [],
+  "protectedBusinessFilesUnchanged": [
+    "integration/backend/plannerAllocation.js",
+    "integration/backend/customerAllocationContext.js",
+    "integration/backend/customerAllocationPlan.js",
+    "integration/backend/warehousePreparation.js",
+    "support-room/workroom.js"
+  ]
+}

@@ -15,3 +15,14 @@ Browser evidence: the actual94-resource package, with real Purchase projection f
 Existing regression:130tests,127pass,3fail. Two UI failures (retired arbitrary allocation editor and old staff suffix) were reproduced with the untouched parent app. The third is an obsolete save-continuity package hash check against an older Support version; its actual Support source is identical to the parent and not touched by this patch. No new failure identified; stale assertions were not rewritten to manufacture a pass. Full logs remain private.
 
 Release preparation changes only app.js and the Purchase index among94public resources; the other92hashes are pinned and checked. No backend or private evidence is uploaded. One scoped workflow option is added for that package. Code/GitHub/Pages/Wix/public stages are pending until recorded below. Main remains unchanged and user acceptance is pending.
+
+## Publication and public verification completed
+
+- Code:0b61b6e878f64241b0d88142de2bec272ae55d40, build20261029-purchase-quiet-refresh-v1, draft PR238. This continuation made no runtime code or permission changes.
+- Pages:workflow40903779344 completed successfully. All94public resource hashes matched; the original nine retired paths remain404. Temporary policy64808400 was removed and the original seven deployment rules restored exactly.
+- Wix:the single Purchase entry version replacement was fully read back against the repository. Wix confirmed “This site is published and live online.” Source recovery copies, exact before/after files and publication screenshot are private in the root task handoff.
+- Public:new formal page51428379 was opened through the original Chrome shortcut and hard refreshed with native Ctrl+Shift+R. Employee LAW and all three real Purchase orders loaded using the new embedded build. Thirty-one read-only DOM samples over30.811seconds measured0px heading movement,0px table movement and0loading-notice samples; the three rows remained visible. Payment Follow-up, Purchase History and Activity History opened with their correct headings, no update notice and no visible error. No relevant console errors were captured, and no production business transaction was submitted.
+
+The earlier Windows URL-confirmation safety stop was respected. On the user's explicit continuation, fresh browser inventory identified the completed native-opened tab. The browser API reload again produced the previously observed blank embed. Normal Chrome shortcut navigation and native hard refresh succeeded without settings, login or business-code changes. This does not claim to resolve that separate automation/Wix interoperability issue.
+
+The verified formal Purchase Order page is left open for the user. User acceptance remains pending; do not merge into main or create a new user-verified baseline tag yet.

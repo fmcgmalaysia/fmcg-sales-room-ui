@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-29T15:48:24.428Z",
+  "codeCommit": "0b61b6e878f64241b0d88142de2bec272ae55d40",
+  "build": "20261029-purchase-quiet-refresh-v1",
+  "url": "https://fmcg999.wixstudio.com/master",
+  "iframe": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261029-purchase-quiet-refresh-v1",
+  "refresh": "Native Chrome Ctrl+Shift+R; real employee and P.O. data loaded",
+  "measurement": {
+    "durationMs": 30811,
+    "samples": 31,
+    "headingShift": 0,
+    "tableShift": 0,
+    "noticeSamples": 0,
+    "rows": [
+      3
+    ],
+    "titles": [
+      "Purchase Order 采购单"
+    ]
+  },
+  "otherViews": [
+    {
+      "view": "Payment Follow-up",
+      "notice": "",
+      "title": "Payment Follow-up 付款跟进",
+      "visibleError": []
+    },
+    {
+      "view": "Purchase History",
+      "notice": "",
+      "title": "Purchase History 采购历史",
+      "visibleError": []
+    },
+    {
+      "view": "Activity History",
+      "notice": "",
+      "title": "Activity History 活动历史",
+      "visibleError": []
+    }
+  ],
+  "errors": [],
+  "productionWrites": 0,
+  "userAcceptance": "PENDING",
+  "observation": "Browser API reload reproduced the known blank embed; normal Chrome shortcut opening and native hard refresh succeeded. No code or permission changes were made during continuation."
+}
