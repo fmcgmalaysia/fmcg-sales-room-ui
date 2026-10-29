@@ -71,4 +71,20 @@ Stock Position、Stock Card、分配下限、Warehouse 可装量、Packing 剩�
 
 此结果精确复现正式症状，但尚未取得导致本次正式差异的最小原始上下文，所以仍标为代码条件已定位、正式具体归因待核对。生产根因确认、修补与回归须在完整静态恢复后继续，不能把本轮诊断说成已修复或已发布。Delivery Task 的新设计仍排在当前恢复和 Loaded 验收完成之后。
 
-后续更新这四项状态，只有四阶段均完成才能通知用户测试。不能合并 main 或创建整个库存流程已获用户验证的标签。实际 Credit、缓存及 Token 归因 UNKNOWN。
+### 2026-10-29 本次批准的完整恢复已经完成
+
+用户明确批准当前分支仅一次 master-save-continuity-only 恢复。run40797000500 成功后立即移除临时规则64730410，原7条逐项一致。公开 build 为20261028-master-save-continuity-v1，99/99原静态资源哈希一致。配方执行头e47218c不代表Loaded候选仍在生产运行。见PAGES_RECOVERY_OPERATION.json、PAGES_RECOVERY_VERIFICATION.json。
+
+13份后台原件此前已精确恢复并取得Wix明确发布成功回执；本次没有新的Wix代码变化，不重复同步发布。四个正式工作间恢复核对通过：Support两个客户，Desk1→2→1任务数2→0→2，无Retry Desk Save；PO No.、SO No.与正确客户Desk的Choose File、Upload入口可见。Warehouse旧Delivery四条任务Loaded均0；7UP Ready95，Stock Control在手95、Reserved95、自由0。Account三项Awaiting Review。Purchase两个客户、三个Dashboard事项，包含实收待分配入口。没有上传、保存或提交生产交易。详见PUBLIC_RECOVERY_CHECK.json。
+
+Support一度保留旧缓存，临时使用正常DevTools Disable cache强制重载后，实际Packing链接返回master-save-continuity-v1；随后将选项恢复为原未勾选并关闭DevTools。没有清除浏览器资料或修改安全设置。
+
+恢复四阶段已完成；Loaded候选正式验收仍未通过，未交付交易测试，未合main。当前批准已消耗，临时权限已经撤销，不能重复用于未来候选。
+
+### 后续诊断纠正：inc的含义必须沿真实投射验证
+
+上述隔离诊断人为同时设置了explicit allocation95和inc0，这只证明投射对不一致输入的不同处理，不能证明真实生产会产生同样结构。新核对warehouseReceiving.readWarehouseTask显示customerReceived直接来自allocatedTo(task.title, activity).quantity；purchaseProjection将该值作为inc。故有真实收货或有效分配历史时，inc是目标客户的正式分配汇总，并非单纯主供应商实收计数。此前对该字段含义的描述不准确，生产根因仍待查明，不能删去分配上限。
+
+正式原版资料同时显示实收95、Purchase待分配、Support Alloc Qty0，而Stock Control Reserved95可能依据PURCHASE_CUSTOMER_SHARE保留客户归属，并非PLANNER_ALLOCATION。后续必须经真实projectPurchaseWorkspace构建一致资料，比较未分配、已分配、追加来源及分次Loaded的读写门禁；不以手填inc掩盖合同。
+
+后续更新这四项状态，只有候选四阶段均完成才能通知用户测试。不能合并 main 或创建整个库存流程已获用户验证的标签。实际 Credit、缓存及 Token 归因 UNKNOWN。

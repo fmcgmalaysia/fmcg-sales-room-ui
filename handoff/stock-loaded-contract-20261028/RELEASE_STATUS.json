@@ -6,11 +6,12 @@
         "GHRLists": 0,
         "NCTLists": 0
       },
-      "status": "CANDIDATE_FAILED_BACKEND_RESTORED_READY95_STATIC_RECOVERY_PENDING",
+      "status": "CANDIDATE_FAILED_ORIGINAL_BASELINE_RESTORED_AND_PUBLICLY_RECHECKED",
       "productionBusinessWrites": 0,
       "supportForceRefreshBeforePublish": "CUSTOMERS_VISIBLE_NCT_2",
       "evidence": "PUBLIC_CHECK.json",
-      "restoredReady": 95
+      "restoredReady": 95,
+      "recoveryEvidence": "PUBLIC_RECOVERY_CHECK.json"
     },
     "wix": {
       "syncedModules": 14,
@@ -38,12 +39,20 @@
       "resources": 99,
       "originalSevenRulesExact": true,
       "exact": 99,
-      "recoveryStatus": "PREPARED_99_ORIGINAL_ASSETS_PENDING_EXPLICIT_PERMISSION_AFTER_AUTO_REVIEW_REJECTION"
+      "recoveryStatus": "SUCCESS_99_ORIGINAL_RESOURCES_EXACT_ORIGINAL_7_RULES_RESTORED",
+      "recoveryRunId": 40797000500,
+      "recoveryBuild": "20261028-master-save-continuity-v1"
     },
     "code": "GITHUB_SYNCED"
   },
   "build": "20261028-stock-loaded-v1",
   "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/233",
   "codeCommit": "39bf0674694069cab05a511d414cea1e24a1cbd1",
-  "updatedAt": "2026-10-28T19:01:52.226Z"
+  "updatedAt": "2026-10-29T01:18:01.287Z",
+  "currentLive": {
+    "backend": "080d357 originals; physicalOutflow unreachable",
+    "staticBuild": "20261028-master-save-continuity-v1",
+    "recipeHead": "e47218ca7c92764e289d869faa3739bf7d741737",
+    "loadedCandidateReadyForUserTest": false
+  }
 }

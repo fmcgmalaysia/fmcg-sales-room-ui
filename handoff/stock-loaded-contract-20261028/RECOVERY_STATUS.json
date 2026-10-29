@@ -1,9 +1,9 @@
 {
   "at": "2026-10-28T19:01:52.225Z",
   "reason": "Packing Ready 95 before release became 0 after release while Warehouse remained 95 on hand and 95 reserved; no production business writes.",
-  "state": "WIX_ORIGINALS_PUBLISHED_PAGES_RECOVERY_AWAITING_SPECIFIC_PERMISSION",
+  "state": "ORIGINAL_BACKEND_AND_99_STATIC_RESOURCES_RESTORED_PUBLIC_RECHECK_PASSED",
   "liveWix": "LOADED_CANDIDATE_PUBLISHED_RECEIPT_CONFIRMED",
-  "livePages": "20261028-stock-loaded-v1",
+  "livePages": "20261028-master-save-continuity-v1",
   "originalBackendBaseline": "080d3578fbddc0995938a08d452828cc24e12f6d",
   "originalStaticRuntime": "e71bf49",
   "originalStaticBuild": "20261028-master-save-continuity-v1",
@@ -103,7 +103,7 @@
   "totalExistingModules": 13,
   "totalReverseHunks": 54,
   "newPhysicalModule": "Still present; will become unreachable after all 13 originals restored. Do not delete history or CMS.",
-  "next": "Await the pending user approval for the exact temporary Pages branch grant. If approved, recover-loaded.cjs allow, dispatch (master-save-continuity-only), status, restore; verify exact 99 old resources, force-refresh public pages. Do not reapply candidate or investigate a production fix until recovery is complete.",
+  "next": "Recovery complete. Validate receipt/allocation semantics before next minimal runtime patch. This recovery-only approval is consumed and temporary permission removed.",
   "wixReceipt": {
     "at": "2026-10-28T18:56:48.457Z",
     "heading": "Congratulations",
@@ -111,7 +111,7 @@
     "source": "VISIBLE_RECOVERY_PUBLISH_DIALOG"
   },
   "pagesRecoveryApproval": {
-    "status": "AUTO_REVIEW_DENIED_BEFORE_PROCESS_START_USER_QUESTION_PENDING",
+    "status": "USER_EXPLICITLY_APPROVED_EXECUTED_AND_REVOKED",
     "branch": "fix/stock-loaded-single-authority-20261028",
     "scope": "master-save-continuity-only",
     "rulesChanged": false
@@ -132,5 +132,17 @@
     "restoredBackendConfirmed": true,
     "productionBusinessWrites": 0,
     "pagesStillCandidate": "20261028-stock-loaded-v1"
-  }
+  },
+  "pagesRecovery": {
+    "runId": 40797000500,
+    "head": "e47218ca7c92764e289d869faa3739bf7d741737",
+    "build": "20261028-master-save-continuity-v1",
+    "resources": 99,
+    "exact": 99,
+    "temporaryPermissionRemoved": true,
+    "originalSevenRulesExact": true,
+    "restoredAt": "2026-10-29T00:54:43.83Z"
+  },
+  "updatedAt": "2026-10-29T01:18:01.287Z",
+  "publicRecoveryEvidence": "PUBLIC_RECOVERY_CHECK.json"
 }
