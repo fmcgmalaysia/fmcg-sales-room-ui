@@ -24,12 +24,13 @@ test('FOC total updates immediately; quantity history contains saved events only
  ui.open('ROOT');assert.match(node('#allocationHistory').innerHTML,/LAW.*HONG LEA.*PO-1.*500 → 300 CTN/);
  assert.doesNotMatch(node('#allocationHistory').innerHTML,/NOT-SAVED|300 → 250/);
  assert.doesNotMatch(node('#allocationConfirmations').innerHTML,/allocation-confirm=|供应商确认/);
+ ui.click({dataset:{allocationAmend:'ROOT'}});
  ui.edit({target:{value:'20',dataset:{allocationField:'free'},closest:()=>({dataset:{allocationRow:'ROOT'}})}});
  assert.equal(node('total:ROOT').textContent,'= 220 CTN');
  assert.equal(node('[data-allocation-row="ROOT"] [data-allocation-field="qty"]').value,'220');
  assert.match(node('#allocationSummary').innerHTML.replace(/<[^>]*>/g,''),/已安排 220 CTN · 待安排 80 CTN/);
  assert.doesNotMatch(node('#allocationHistory').innerHTML,/200 → 220/);
- ui.edit({target:{id:'allocationReason',value:'Revised procurement'}});ui.click({id:'applySupplierAllocation',dataset:{}});
+ ui.click({id:'applySupplierAllocation',dataset:{}});
  assert.equal(submitted.length,1);assert.equal(submitted[0].input.totalCtn,220);
  assert.equal(submitted[0].input.costing.paidCtn,200);assert.equal(submitted[0].input.costing.freeCtn,20);
  assert.equal('supplierConfirmed' in submitted[0].input,false);
