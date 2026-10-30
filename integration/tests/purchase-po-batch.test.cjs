@@ -84,3 +84,20 @@ test('lost recovery claim, result and final-lock-delete acknowledgements cannot 
   assert.equal(lost,true);assert.equal(f.rows.has('NCTActivity/'+f.lockId),false);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PO_ASSIGNED').length,8);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_OPERATION_RESULT').length,1);
  }
 });
+
+const reordered=value=>Array.isArray(value)?value.map(reordered):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).reverse().map(([key,item])=>[key,reordered(item)])):value;
+test('CMS object-key reordering cannot block original result recovery after a lost insert acknowledgement',async()=>{
+ const f=await interruptedCompleted();f.advance(300001);const insert=f.store.insert,read=f.store.read;let lost=false;
+ f.store.read=async(c,id)=>reordered(await read(c,id));f.store.insert=async(c,row)=>{const result=await insert(c,row);if(!lost&&row._id===f.resultId){lost=true;throw Error('response lost');}return result;};
+ assert.deepEqual(await f.operate(f.request),f.outcome);assert.equal(lost,true);assert.equal(f.rows.has('NCTActivity/'+f.lockId),false);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PO_ASSIGNED').length,8);
+});
+test('CMS-reordered existing recovered result resumes cleanup without repeating business writes',async()=>{
+ const f=await interruptedCompleted();f.advance(300001);const remove=f.store.remove;f.store.remove=async()=>{throw Error('cleanup response lost');};await assert.rejects(f.operate(f.request),/cleanup response lost/);f.store.remove=remove;f.advance(300001);
+ const read=f.store.read;f.store.read=async(c,id)=>reordered(await read(c,id));assert.deepEqual(await f.operate(f.request),f.outcome);assert.equal(f.rows.has('NCTActivity/'+f.lockId),false);assert.equal([...f.rows.values()].filter(row=>row.action==='PURCHASE_PO_ASSIGNED').length,8);
+});
+test('reordered JSON with altered values or task-array order remains rejected before lock cleanup',async()=>{
+ for(const change of [value=>value.savedAt='2020-01-01T00:00:00.000Z',value=>value.taskIds.reverse(),value=>value.unexpected=true]){
+  const f=await interruptedCompleted();f.advance(300001);const remove=f.store.remove;f.store.remove=async()=>{throw Error('cleanup response lost');};await assert.rejects(f.operate(f.request),/cleanup response lost/);f.store.remove=remove;f.advance(300001);
+  change(f.rows.get('NCTActivity/'+f.resultId).details.outcome);const read=f.store.read;f.store.read=async(c,id)=>reordered(await read(c,id));const before=copy([...f.rows].filter(([key])=>key.startsWith('NCTTasks/')));await assert.rejects(f.operate(f.request),/requires review/);assert.equal(f.rows.has('NCTActivity/'+f.lockId),true);assert.deepEqual(copy([...f.rows].filter(([key])=>key.startsWith('NCTTasks/'))),before);
+ }
+});
