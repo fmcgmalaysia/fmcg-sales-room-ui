@@ -7,7 +7,7 @@ import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
 import { allocateBatchSources, stockBatchEntries } from 'backend/shipmentBatchAllocation.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 export function readAllocationLoans(activity){
- const pending=activity.filter(row=>row.action==='PLANNER_ALLOCATION_SAVED'&&row.result==='SAVED'&&row.details?.loanChanges).flatMap(event=>event.details.loanChanges.map(change=>({event,change}))),loans=new Map();
+ const pending=activity.filter(row=>['PLANNER_ALLOCATION_SAVED','DESK_SHORTLOAD_RESOLVED'].includes(row.action)&&row.result==='SAVED'&&row.details?.loanChanges).flatMap(event=>event.details.loanChanges.map(change=>({event,change}))),loans=new Map();
  while(pending.length){
   const next=pending.filter(({change})=>(loans.get(change.id)?.revision||'')===change.beforeRevision);
   if(!next.length||new Set(next.map(({change})=>change.id)).size!==next.length)throw Error('Borrowing history requires review.');

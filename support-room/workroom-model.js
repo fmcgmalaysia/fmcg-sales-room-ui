@@ -25,7 +25,8 @@
       const loadedRecords=(packing?.lists||[]).filter(list=>list.status!=='CANCELLED'&&list.status!=='DRAFT').flatMap(list=>list.lines.filter(line=>line.taskId===source.taskId));
       const invoiceRecords=shipments.filter(row=>['INVOICED','DISPATCHED'].includes(row.status)).flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId));
       const packingTask=packing?.tasks?.find(row=>row.taskId===source.taskId),ready=invoiceState?.lines?.find(row=>row.taskId===source.taskId);
-      orders.get(orderKey).lines.push({...source,orderQty:finite(source.originalRequested)??finite(source.requested),committedQty:null,allocQty:finite(source.allocated),
+      const deskPortions=(packing?.portions||[]).filter(part=>part.taskId===source.taskId).map(part=>({...part,invoiceReadyQty:invoiceState?.deskLines?.find(row=>row.taskId===source.taskId&&row.desk===part.desk)?.maxInvoiceQty||0}));
+      orders.get(orderKey).lines.push({...source,deskPortions,orderQty:finite(source.originalRequested)??finite(source.requested),committedQty:null,allocQty:finite(source.allocated),
         loadedQty:finite(packing?.deskSummaries?.find(row=>row.taskId===source.taskId)?.loadedQty)??(loadedRecords.length?sum(loadedRecords,'loaded'):finite(ready?.loadedQty)),invoiceReadyQty:finite(ready?.maxInvoiceQty)??0,invoiceIssue:ready?.reason||'',invoicedQty:sum(invoiceRecords,'quantity'),shippedQty:sum(shipments.filter(row=>row.status==='DISPATCHED').flatMap(row=>row.lines.filter(line=>line.taskId===source.taskId)),'quantity'),
         pricePc:finite(source.sellingPricePc),priceCtn:finite(source.sellingPriceCtn),gp:finite(ready?.gpPercent),
         cbm:finite(source.cbmPerCtn)??finite(packingTask?.cbm)});

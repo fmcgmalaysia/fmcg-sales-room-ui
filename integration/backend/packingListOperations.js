@@ -5,6 +5,7 @@ import { validatePackingPhotos } from 'backend/packingListPhotos.js';
 import { loadingOutflowId, planLoadedSources, assertLoadedOutflows } from 'backend/physicalOutflow.js';
 import { planDeskDelivery, changeDeskDelivery } from 'backend/deskDelivery.js';
 import { reserveSupportDeskDelivery } from 'backend/supportDesk.js';
+import { shortloadStatus } from 'backend/shortloadResolutionModel.js';
 
 export const PACKING_CURRENT='SUPPORT_PACKING_LIST_CURRENT';
 const validEvidence=line=>line.photos===undefined||Array.isArray(line.photos)&&line.photos.length<=30&&line.photos.every(photo=>photo&&typeof photo.fileId==='string'&&photo.fileId.length>0&&typeof photo.sha256==='string'&&/^[a-f0-9]{64}$/i.test(photo.sha256)&&['PACKING','LOADING'].includes(photo.stage)&&Number.isSafeInteger(photo.size)&&photo.size>0&&photo.size<=2*1024*1024&&!Object.hasOwn(photo,'base64'));
@@ -15,7 +16,7 @@ export function readPackingLists(activity,company){
   if(!list||row._id!==operationId(company,list.id,'PACKING_CURRENT')||row.description!==list.id||list.company!==company||ids.has(list.id)||!list.revision||!list.customerId||!list.currency||!['DRAFT','SENT','PROCESSING','COMPLETED','CANCELLED'].includes(list.status)||!Array.isArray(list.lines)||list.lines.length<1||list.lines.length>300||new Set(list.lines.map(line=>line.taskId)).size!==list.lines.length||list.lines.some(line=>!line.taskId||![line.quantity,line.packed,line.loaded].every(value=>Number.isSafeInteger(value)&&value>=0&&value<=9999)||line.quantity===0||line.loaded>line.packed||line.packed>line.quantity))throw Error('Packing list identity requires review.');
   if(list.change&&(!Array.isArray(list.change.lines)||!list.change.lines.length||list.change.lines.length>300||new Set(list.change.lines.map(line=>line.taskId)).size!==list.change.lines.length||list.change.lines.some(line=>!line.taskId||!Number.isSafeInteger(line.quantity)||line.quantity<=0||line.quantity>9999)))throw Error('Packing change requires review.');
   if(Buffer.byteLength(JSON.stringify(list),'utf8')>200000||!list.lines.every(validEvidence)||list.change&&!list.change.lines.every(validEvidence)||list.retiredLines!==undefined&&(!Array.isArray(list.retiredLines)||list.retiredLines.length>300||!list.retiredLines.every(line=>line&&line.taskId&&line.retiredAt&&validEvidence(line))))throw Error('Packing evidence requires review.');
-  ids.add(list.id);return JSON.parse(JSON.stringify(list));
+  ids.add(list.id);const result=JSON.parse(JSON.stringify(list));if(result.desk)result.lines=result.lines.map(line=>({...line,resolution:shortloadStatus(activity,result,line)}));return result;
  });
 }
 export function packingVersion(context){return operationId(context.company,context.sourceVersion,context.tasks,context.lists);}
@@ -51,6 +52,7 @@ export function createPackingListOperations({store,names,readContext,documentSer
    }
    const attachments=uploads.map(upload=>({fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at,by:staff.staffName}));
    const next=deskNext||changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});
+   for(const line of next.lines)delete line.resolution;
    if(deskLoad&&attachments.length)next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,photos:[...(line.photos||[]),...attachments]}:line);
    if(deskLoad&&next.lines.some(line=>line.photos?.length>30))throw Error('Warehouse photo history is full.');
    if(input.action==='PROGRESS'||deskLoad)for(const line of next.lines){
@@ -61,7 +63,8 @@ export function createPackingListOperations({store,names,readContext,documentSer
    next.updatedBy=staff.staffName;next.updatedByStaffId=staff.staffId;
    if(Buffer.byteLength(JSON.stringify(next),'utf8')>200000)throw Error('Packing list is too large. Use a smaller packing list.');
    const deskReservation=input.action==='DESK_SEND'?{customerId:next.customerId,desk:next.desk.number,revision:input.deskRevision,listId:id,taskIds:next.lines.map(line=>line.taskId),digest:operationId(next)}:null;
-   return {uploads,deskReservation,...(deskReservation?{authorizationInput:safeInput}:{}),expectedVersion:packingVersion(context),beforeRevision:current?.revision||'',record:{_id:operationId(company,id,'PACKING_CURRENT'),title:id,description:id,image:next.customerId,action:PACKING_CURRENT,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,details:{list:next}}};
+   const resolutionStates=next.desk?next.lines.map(line=>({taskId:line.taskId,resolution:shortloadStatus(context.physicalContext.activity,next,line)})):[];
+   return {uploads,deskReservation,resolutionStates,...(deskReservation?{authorizationInput:safeInput}:{}),expectedVersion:packingVersion(context),beforeRevision:current?.revision||'',record:{_id:operationId(company,id,'PACKING_CURRENT'),title:id,description:id,image:next.customerId,action:PACKING_CURRENT,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,details:{list:next}}};
   },apply:async plan=>{
    const existing=await store.read(collection,plan.record._id),list=plan.record.details.list;let deskState=null;
    if(existing?.details?.list?.revision===list.revision){
@@ -78,7 +81,7 @@ export function createPackingListOperations({store,names,readContext,documentSer
     const row={...plan.record,activityTime:new Date(plan.record.activityTime)};
     if(existing)await store.update(collection,row);else await store.insert(collection,row);
    }
-   return {ok:true,company,requestId,id:list.id,revision:list.revision,status:list.status,...(list.desk?{list,deskState}:{} )};
+   return {ok:true,company,requestId,id:list.id,revision:list.revision,status:list.status,...(list.desk?{list:{...list,lines:list.lines.map(line=>({...line,...(plan.resolutionStates?.find(row=>row.taskId===line.taskId)||{})}))},deskState}:{} )};
   }});
  };
 }

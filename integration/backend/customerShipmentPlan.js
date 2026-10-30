@@ -30,7 +30,7 @@ export function createSalesShipmentDateOperations({store,names,readContext,now=(
  };
 }
 export function readShipmentPlans(activity){
- const pending=activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SALES_ORDER_ADJUSTMENT_SAVED'].includes(row.action)&&row.result==='SAVED'),plans=new Map();
+ const pending=activity.filter(row=>(['CUSTOMER_SHIPMENT_PLAN_SAVED','SALES_ORDER_ADJUSTMENT_SAVED'].includes(row.action)||row.action==='DESK_SHORTLOAD_RESOLVED'&&row.details?.plan)&&row.result==='SAVED').map(row=>row.action==='DESK_SHORTLOAD_RESOLVED'?{...row,description:row.details.plan.id,details:{...row.details,beforeRevision:row.details.beforePlanRevision}}:row),plans=new Map();
  while(pending.length){
   const next=pending.filter(row=>(plans.get(row.description)?.revision||'')===row.details?.beforeRevision);
   if(!next.length||new Set(next.map(row=>row.description)).size!==next.length)throw Error('Shipment plan history requires review.');

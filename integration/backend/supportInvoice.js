@@ -1,4 +1,4 @@
-import { checkSupportDeskInvoice, reserveSupportDeskInvoice, releaseCancelledSupportDeskInvoice } from 'backend/supportDesk.js';
+import { checkSupportDeskInvoice, reserveSupportDeskInvoice, releaseCancelledSupportDeskInvoice, readSupportDesks } from 'backend/supportDesk.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { createCustomerFulfilmentOperations, shipmentVersion } from 'backend/customerFulfilment.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
@@ -7,7 +7,8 @@ import { packingTaskHeld } from 'backend/packingListGuards.js';
 import { openSourceCost } from 'backend/purchaseMarginRefresh.js';
 import { partialInvoiceMargin } from 'backend/partialInvoiceMargin.js';
 import { calculateGrossProfitMargin } from 'backend/grossProfitMargin.js';
-import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physicalOutflow.js';
+import { deskTaskPortions, shortloadStatus, readShortloadResolutions } from 'backend/shortloadResolutionModel.js';
 const INTENT='SUPPORT_INVOICE_PREPARED',READY='SUPPORT_INVOICE_INPUT_SAVED';
 const uuid=value=>/^[a-f0-9-]{36}$/i.test(value||'');
 const derived=(...parts)=>{const h=operationId(...parts);return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};
@@ -19,7 +20,13 @@ export function supportInvoiceState(context){
   const maxInvoiceQty=issue?0:Math.max(0,Math.min(loaded-reserved,(task.inc||0)-reserved,(task.requested??task.ord)-reserved));
   return {taskId:task.id,loadedQty:loaded,maxInvoiceQty,reason:held>completedPacking?'Packing arrangement requires review':issue?'Warehouse loading requires review':maxInvoiceQty===0?'No uninvoiced loaded quantity':''};
  });
- return {company:context.company,version:operationId(shipmentVersion(context),lines),lines};
+ const resolvedTasks=new Set(readShortloadResolutions(context.activity).map(row=>row.taskId));
+ const desks=readSupportDesks(context.activity,context.company),deskLines=context.tasks.filter(task=>resolvedTasks.has(task.id)&&!task.archived&&!task.specialPurchase&&!task.procurementSource).flatMap(task=>deskTaskPortions(context.activity,desks.find(state=>state.customerId===task.customerId),task,outflows).filter(part=>part.desk>0).map(part=>{
+  const loaded=deskLoadedInvoiceQuantity(context,task.id,part.desk),lists=context.activity.filter(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.customerId===task.customerId&&row.details.list.desk?.number===part.desk&&row.details.list.status!=='CANCELLED').map(row=>row.details.list);
+  const blocked=lists.some(list=>list.lines.some(line=>line.taskId===task.id&&(list.status!=='COMPLETED'||shortloadStatus(context.activity,list,line).issue||shortloadStatus(context.activity,list,line).pending)));
+  return {taskId:task.id,desk:part.desk,loadedQty:loaded.loaded,maxInvoiceQty:blocked?0:Math.min(loaded.ready,Math.max(0,part.allocated-loaded.reserved)),reason:blocked?'Resolve the remaining Desk quantity first.':''};
+ }));
+ return {company:context.company,version:operationId(shipmentVersion(context),lines,deskLines),lines,deskLines};
 }
 // Compose the original SELECT and INVOICE operations. Their stock, FX and financial guards remain authoritative.
 // Durable inputs retain both original operation versions across a lost acknowledgement.
@@ -37,7 +44,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    const desk=checkSupportDeskInvoice(context,state,input,{requestId,memberId:staff.memberId,digest});
    let amountCents=0;const currencies=new Set();
    for(const line of normalized.lines){
-    const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&orderIds.includes(row.orderId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=state.lines.find(row=>row.taskId===line.taskId);
+    const task=context.tasks.find(row=>row.id===line.taskId&&row.customerId===input.customerId&&orderIds.includes(row.orderId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource),available=(input.desk&&state.deskLines.find(row=>row.taskId===line.taskId&&row.desk===input.desk.number))||state.lines.find(row=>row.taskId===line.taskId);
     if(!task||!Number.isSafeInteger(line.quantity)||line.quantity<=0||line.quantity>9999||line.quantity>(available?.maxInvoiceQty||0))throw Error('Invoice quantity exceeds confirmed, uninvoiced loading.');
     if(!known(task.sellingPricePc)||task.sellingPricePc<=0||!Number.isSafeInteger(task.ea)||task.ea<=0)throw Error('Sales price or carton packing is incomplete.');
     currencies.add(task.transactionCurrency);amountCents+=Math.round(task.sellingPricePc*task.ea*line.quantity*100);
@@ -46,7 +53,8 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
    if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
    await reserveSupportDeskInvoice({store,names,context,staff,requestId,input:normalized,digest,snapshot:desk,now});
-   const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
+   const scoped=desk&&normalized.lines.some(line=>state.deskLines.some(row=>row.taskId===line.taskId&&row.desk===desk.number));
+   const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,...(scoped?{desk:desk.number}:{}),version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
    const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
   }
@@ -57,7 +65,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
     const context=await readContext(...args),state=supportInvoiceState(context);
     const selected=request.input.action==='SELECT'?request.input.lines:readCustomerShipments(context.activity).find(row=>row.id===request.input.id)?.lines;
     if(!selected?.length)throw Error('Invoice loading evidence is unavailable.');
-    for(const line of selected){const current=state.lines.find(row=>row.taskId===line.taskId);if(!current||current.reason&&current.reason!=='No uninvoiced loaded quantity'||(request.input.action==='SELECT'?line.quantity>current.maxInvoiceQty:reservedCartons(line.taskId,context.activity)>current.loadedQty))throw Error('Warehouse loading changed. Review before invoicing.');}
+    for(const line of selected){const scope=intent.details.select.desk,current=(scope&&state.deskLines.find(row=>row.taskId===line.taskId&&row.desk===scope))||state.lines.find(row=>row.taskId===line.taskId),reserved=scope?deskLoadedInvoiceQuantity(context,line.taskId,scope).reserved:reservedCartons(line.taskId,context.activity);if(!current||current.reason&&current.reason!=='No uninvoiced loaded quantity'||(request.input.action==='SELECT'?line.quantity>current.maxInvoiceQty:reserved>current.loadedQty))throw Error('Warehouse loading changed. Review before invoicing.');}
     return context;
    };
    const original=createCustomerFulfilmentOperations({store,names,readContext:checkedContext,readRates,now});

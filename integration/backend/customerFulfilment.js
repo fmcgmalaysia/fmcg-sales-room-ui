@@ -21,14 +21,15 @@ export function createCustomerFulfilmentOperations({store,names,readContext,read
    if(!reason||reason.length>2000)throw Error('Enter the shipment action reason.');
    const at=now().toISOString();let shipment,beforeRevision='';
    if(input.action==='SELECT'){
+    if(input.desk!==undefined&&(staff.packingDepartment!=='SUPPORT'||!Number.isSafeInteger(input.desk)||input.desk<1||input.desk>3))throw Error('Only Support may select a scoped Desk invoice.');
     if(!text(input.customerId)||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300||new Set(input.lines.map(row=>row.taskId)).size!==input.lines.length)throw Error('Select distinct customer lines and quantities.');
     const selectedTasks=input.lines.map(entry=>{const task=context.tasks.find(row=>row.id===entry.taskId);if(!task||task.procurementSource||task.customerId!==input.customerId||task.archived||!qty(entry.quantity)||entry.quantity>Math.max(0,(task.inc||0)-reservedCartons(task.id,context.activity)))throw Error('Shipment exceeds available customer allocation.');return task;});
-    requirePackingReleased({...context,activity:context.activity.filter(row=>!(row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.status==='COMPLETED'&&row.details.list.customerId===input.customerId&&!row.details.list.change))},input.lines.map(line=>line.taskId));
+    requirePackingReleased({...context,activity:context.activity.filter(row=>!(row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.customerId===input.customerId&&(row.details.list.status==='COMPLETED'&&!row.details.list.change||input.desk&&row.details.list.desk&&row.details.list.desk.number!==input.desk)))},input.lines.map(line=>line.taskId));
     const lines=input.lines.map((entry,index)=>{const task=selectedTasks[index];
-     const physical=selectLoadedForInvoice(context,task.id,entry.quantity);
+     const physical=selectLoadedForInvoice(context,task.id,entry.quantity,input.desk);
      return {taskId:task.id,orderId:task.orderId,sourceLineId:task.sourceLineId,barcode:task.barcode,name:task.name,packing:task.packing,quantity:entry.quantity,...physical};});
     const currencies=[...new Set(lines.map(line=>context.tasks.find(task=>task.id===line.taskId).transactionCurrency))];if(currencies.length!==1||!currencies[0])throw Error('Select one customer and one invoice currency.');
-    shipment={id:operationId(company,requestId,'SHIPMENT'),company,customerId:input.customerId,currency:currencies[0],status:'REQUESTED',lines,requestedAt:at,requestedBy:staff.staffName,requestedByStaffId:staff.staffId,reason};
+    shipment={id:operationId(company,requestId,'SHIPMENT'),company,customerId:input.customerId,currency:currencies[0],status:'REQUESTED',lines,...(input.desk?{desk:input.desk}:{}),requestedAt:at,requestedBy:staff.staffName,requestedByStaffId:staff.staffId,reason};
    }else{
     const current=shipments.find(row=>row.id===input.id);if(!current||current.company!==company)throw Error('Shipment is unavailable.');
     if(staff.customerId&&staff.customerId!==current.customerId)throw Error('Shipment customer is not authorized.');

@@ -1,5 +1,7 @@
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
+import { deskTaskPortions, readShortloadResolutions } from 'backend/shortloadResolutionModel.js';
+import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physicalOutflow.js';
 const ACTION='SUPPORT_DESK_SAVED';
 const deskValid=value=>Number.isSafeInteger(value)&&value>=1&&value<=3;
 const textValid=value=>typeof value==='string'&&value.length>0&&value.length<=100;
@@ -19,7 +21,7 @@ function validExtras(state){return (state.references===undefined||Array.isArray(
 function validState(state,company){return state&&state.company===company&&textValid(state.customerId)&&validExtras(state)&&Array.isArray(state.assignments)&&new Set(state.assignments.map(row=>row.taskId)).size===state.assignments.length&&state.assignments.every(row=>textValid(row.taskId)&&(row.desk===0||deskValid(row.desk)))&&Array.isArray(state.shipments)&&new Set(state.shipments.map(row=>row.desk)).size===state.shipments.length&&state.shipments.every(row=>deskValid(row.desk)&&(row.detailsVersion===3?detailShipmentValid(row):transports.includes(row.transport)&&dateValid(row.date)&&(row.arrival===''||dateValid(row.arrival)&&row.arrival>=row.date)));}
 export function readSupportDesks(activity,company){
  if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');
- const pending=activity.filter(row=>row.action===ACTION&&row.result==='SAVED'),states=new Map(),requests=new Set();
+ const pending=activity.filter(row=>[ACTION,'DESK_SHORTLOAD_RESOLVED'].includes(row.action)&&row.result==='SAVED').map(row=>row.action===ACTION?row:{...row,description:identity(company,row.details.customerId),details:{...row.details,beforeRevision:row.details.deskBeforeRevision}}),states=new Map(),requests=new Set();
  while(pending.length){
   const next=pending.filter(row=>(states.get(row.description)?.revision||'')===row.details?.beforeRevision);
   if(!next.length||new Set(next.map(row=>row.description)).size!==next.length)throw Error('Desk history requires review.');
@@ -39,7 +41,7 @@ export async function reserveSupportDeskDelivery({store,names,context,staff,requ
  if(readSupportDeskLocks(context).some(row=>row.customerId===customerId&&row.desk===desk))throw Error('This Desk is locked by its Sales Invoice.');
  const previous=(before.deliveryHolds||[]).find(row=>row.desk===desk),previousList=previous&&context.activity.find(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===previous.listId)?.details?.list;
  if(previous&&(!previousList||!['COMPLETED','CANCELLED'].includes(previousList.status)))throw Error('This Desk already has an active Warehouse task.');
- if(!deskValid(desk)||!taskIds.length||taskIds.some(taskId=>supportDeskForTask(before,taskId)!==desk))throw Error('Desk task membership changed.');
+ if(!deskValid(desk)||!taskIds.length||taskIds.some(taskId=>{const task=context.tasks.find(row=>row.id===taskId);return !task||!deskTaskPortions(context.activity,before,task).some(row=>row.desk===desk&&row.quantity>0);}))throw Error('Desk task membership changed.');
  const state=copy(before);delete state.revision;state.deliveryHolds=(state.deliveryHolds||[]).filter(row=>row.desk!==desk).concat({desk,listId,requestId,memberId:staff.memberId,digest,taskIds:[...taskIds]});
  const saved=await appendInvoiceDeskState({store,collection:names[company].activity,company,staff,requestId,before,state,kind:'authorized delivery',now});
  return {...saved.state,revision:saved.revision};
@@ -67,7 +69,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   const locks=readSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(input.action==='DESK_ASSIGN'?[supportDeskForTask(before,input.taskId)]:[])];
   if(locks.some(row=>affected.includes(row.desk)||input.action==='DESK_ASSIGN'&&row.taskIds.includes(input.taskId)))throw Error('This Desk is locked by its Sales Invoice.');
   if(before.revision!==input.revision)throw Error('Desk details changed. Refresh before editing.');
-  if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
+  if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
   const state=copy(before);delete state.revision;
   if(input.action==='DESK_ASSIGN'){state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk}).sort((a,b)=>a.taskId.localeCompare(b.taskId));}
   else if(input.action==='DESK_SHIPMENT'){
@@ -90,9 +92,12 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
  const hold=readSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===desk.number);
  if(hold){if(owner&&hold.requestId===owner.requestId&&hold.memberId===owner.memberId&&hold.digest===owner.digest)return copy(hold.snapshot);throw Error('This Desk is locked by its Sales Invoice.');}
  if(state.revision!==desk.revision)throw Error('Desk classification changed. Refresh before invoicing.');
- const deskTasks=context.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.specialPurchase&&!task.procurementSource&&supportDeskForTask(state,task.id)===desk.number);
- if(deskTasks.some(task=>{const remaining=Math.max(0,(task.requested??task.ord??0)-reservedCartons(task.id,context.activity));return remaining>0&&(readiness.lines.find(line=>line.taskId===task.id)?.maxInvoiceQty||0)<remaining;}))throw Error('Split unloaded quantities into an unassigned row before confirming this invoice.');
- const expected=context.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.specialPurchase&&!task.procurementSource&&supportDeskForTask(state,task.id)===desk.number).map(task=>({taskId:task.id,quantity:readiness.lines.find(line=>line.taskId===task.id)?.maxInvoiceQty||0})).filter(line=>line.quantity>0).sort((a,b)=>a.taskId.localeCompare(b.taskId));
+ const resolved=new Set(readShortloadResolutions(context.activity).map(row=>row.taskId));
+ const portions=context.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.specialPurchase&&!task.procurementSource).flatMap(task=>(resolved.has(task.id)?deskTaskPortions(context.activity,state,task,readPhysicalOutflows(context.activity)):[{desk:supportDeskForTask(state,task.id),quantity:task.requested??task.ord??0}]).filter(part=>part.desk===desk.number).map(part=>({task,...part})));
+ const scoped=task=>readiness.deskLines?.find(line=>line.taskId===task.id&&line.desk===desk.number);
+ const ready=task=>(scoped(task)||readiness.lines.find(line=>line.taskId===task.id))?.maxInvoiceQty||0;
+ if(portions.some(part=>{const reserved=scoped(part.task)?deskLoadedInvoiceQuantity(context,part.task.id,desk.number).reserved:reservedCartons(part.task.id,context.activity);return ready(part.task)<Math.max(0,part.quantity-reserved);}))throw Error('Resolve the remaining Desk quantities before confirming this invoice.');
+ const expected=portions.map(part=>({taskId:part.task.id,quantity:ready(part.task)})).filter(line=>line.quantity>0).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  const observed=input.lines.map(line=>({taskId:line.taskId,quantity:line.quantity})).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  if(!expected.length||operationId(expected)!==operationId(observed))throw Error('Invoice lines must match the current Desk and confirmed loading.');
  return {number:desk.number,revision:desk.revision,shipment:copy(state.shipments.find(row=>row.desk===desk.number)||null),references:copy((state.references||[]).find(row=>row.desk===desk.number)||null)};
