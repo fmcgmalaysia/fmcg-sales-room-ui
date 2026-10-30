@@ -4,22 +4,23 @@ const prior=require('../prototypes/purchase-personal-row-order-20261030/stage.cj
 const {patch}=require('../prototypes/purchase-received-review-20261031/patch.cjs');
 const source=patch(prior.assets.get('purchase-live/app.js').toString());
 function render(item){
- const calls=[],nodes={receiptSolution:{value:''},receiptStopOptions:{hidden:true,querySelectorAll:()=>[]}};
+ const calls=[],classes=[],nodes={receiptSolution:{value:''},receiptStopOptions:{hidden:true,querySelectorAll:()=>[]}};
  const begin=source.indexOf('  function receiptDecisionEditor('),end=source.indexOf('  function quantityCaseEditor(',begin);
  const run=vm.runInNewContext('(()=>{let dialogContext;'+source.slice(begin,end)+';return {open:receiptDecisionEditor,context:()=>dialogContext};})()',{
   formDialog:(title,po,body,actions,kind)=>calls.push({title,po,body,actions,kind}),qtyDigits:String,
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;'),
-  modal:{classList:{add(){}}},document:{querySelector:s=>nodes[s.slice(1)]}
+  modal:{classList:{add:name=>classes.push(name)}},document:{querySelector:s=>nodes[s.slice(1)]}
  });
  const before=JSON.stringify(item);run.open({id:'TASK',po:'SYNTHETIC-PO'},item);
  assert.equal(JSON.stringify(item),before,'opening review must not mutate the shared case');
- return {...calls[0],context:run.context()};
+ return {...calls[0],context:run.context(),classes};
 }
 const complete={kind:'RECEIPT',id:'CASE',planned:100,accepted:100,quantity:0,receivingIssue:false,warehouseFeedback:{reason:'Prior short delivery <historical>'},financeRequired:true,status:'OPEN',owner:'ACCOUNT'};
 test('a replenished receipt retains history and financial review without another Purchase decision',()=>{
  const r=render(complete);assert.equal(r.title,'Receipt Review 收货核对');assert.match(r.body,/Goods received in full/);
  assert.match(r.body,/原收货异常保留供财务核对/);assert.match(r.body,/100 CTN/);assert.match(r.body,/0 CTN/);
  assert.match(r.body,/Prior short delivery &lt;historical>/);assert.equal(r.actions,'');
+ assert(r.classes.includes('receipt-feedback-dialog'),'retain the compact receiving dialog layout');
  assert.doesNotMatch(r.body,/receiptSolution|saveReceiptDecision|below the P.O.|Stop waiting/);
  assert.equal(r.context.kind,'receipt-review');assert.equal(complete.financeRequired,true);assert.equal(complete.status,'OPEN');
 });
