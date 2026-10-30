@@ -1,0 +1,13 @@
+# Warehouse receipt concurrency scope
+
+A formal stress test opened a Warehouse receipt while Purchase uploaded a supplier document. The receipt was rejected as stale although its supplier, commercial content, planned quantities and prior receipts were unchanged. The previous projection derived the receipt version from the entire Purchase Order record, which also contains unrelated documents and payment bookkeeping.
+
+The patch changes one version expression in `warehouseReceiving.js`. It derives the existing receipt fence from the PO identity, authoritative commercial content version, supplier, receiving transport, Finance checked/closed locks, receipt revision and projected receiving lines. POs without a commercial content version retain the full-record fallback. No second save path or version store is introduced.
+
+Both existing preflight and apply comparisons continue using this projected version. Procurement revisions, quantity changes, supplier changes, another receipt, stop-waiting decisions, relevant line state and financial correction locks still invalidate stale forms. Same-request journal replay remains unchanged. Documents and recorded payments that do not alter those receiving facts no longer force the warehouse user to re-enter a receipt.
+
+Fresh Wix source and repository source matched after newline normalization before editing. The exact source hash was `b328fc23caaa94662bbb1465f725982760c532e5058d1e2048e5e48eac966c6d`; the existing `cbf572a` release and private source capture provide recovery. Purchase's Wix source also matched the current published version. No live code was chosen over an unexamined repository conflict.
+
+Nine focused tests pass, including a document/payment update between preparation and apply, replay without duplicate receipt, actual operational conflicts, Finance lock changes and legacy fallback. The document-only scenario reproduces the stale error with the captured original Wix module. Wider affected-consumer regression: candidate 338/364 passed; original module 329/355 passed. All 26 failures are reproduced unchanged with the original module, with no new failure names. They remain recorded historical fixture/prototype failures, not claimed as passing tests. No test evidence or real financial files are included in the public repository.
+
+This is a backend-only patch: no Pages resource, inventory rule, invoice deduction, payment state, authorization or document delivery change. Publication and formal acceptance are separate gates; local results alone do not establish that it is live. Do not merge `main` or create a user-verified tag without user acceptance.
