@@ -1,0 +1,56 @@
+# Purchase completed-save recovery and bounded PO work
+
+User authorization 2026-10-30: autonomously repair observed MASTER bugs and unreasonable save/refresh waits while the user sleeps; continue background testing when Chrome cannot be used. Work remains within the existing architecture and one stock authority. No real payment or supplier messaging is authorized by this work.
+
+Phase 1 objective: prevent serial PO work from unnecessarily extending requests, and safely recover the original completed eight-line PO after its response/cleanup was lost. Only purchaseOperationJournal.js, purchaseOperations.js and purchaseOperations.web.js are changed, with targeted tests. A later UI/transport improvement will be a separate patch/branch.
+
+Startup completed: root AGENTS.md, START_HERE.md (490 lines, bounded chunks after an initially truncated combined read), checkout supplement, system ownership/record, current quiet-refresh publication record and two-order audit record. The many historical candidates in START_HERE are not current production evidence. One broad prototype search used an invalid Windows glob and was abandoned; work returned to the known production modules. A directory test invocation was corrected to explicit test files after Node treated it as a module.
+
+Recovery source: published 0b61b6e (record fdb5afb), 94-resource purchase-quiet-refresh-v1 package retained. Protected annotated tags for row-drag-save, requested split and stop-waiting remain unchanged. Fresh Wix full-source copies of all three modified modules match repository originals after newline normalization and are privately preserved under root handoff/master-save-recovery-20261030/live-before. No verified tag is fabricated for the unaccepted current workflow.
+
+Design:
+- Original journal remains the authority; operation/request/member identities, prepare plan, immutable business events and result record are preserved. Inventory, allocation, financial locks and Loaded deduction are unchanged.
+- Only independent PO row work uses a maximum of four workers. Every started worker joins before cleanup; other operations keep their existing order. A failure cannot release locks while another launched update is still running.
+- Completed-only recovery is opt-in for PO. It requires the exact original request digest and lock owner, an old enough original plan, every intended task patch and its original version reconstruction, every expected saved audit, no invoice lock and no foreign task lock. Age alone never permits a recovery.
+- A unique recovery executor claim prevents simultaneous original retries from cleaning each other's locks. Interrupted recovery retains the original plan/result; another executor must wait for the prior recovery to quiesce. Failed/incomplete or changed business data remains blocked for review. This is not an automatic lease for unfinished operations.
+- Recovery writes the original result without repeating business updates, removes only its own task locks, then releases its own company lock. The result-check interface stays pending until that cleanup completes. Lost claim/result/delete acknowledgements are covered.
+
+Evidence so far:
+- Published originals reproduce five of seven new performance/recovery assertions failing; candidate initial seven pass.
+- Current targeted recovery/web checks: 23 pass including lost acknowledgements and interrupted cleanup. Existing purchase operations: 49 pass. Direct current allocation-draft tests: 9 pass.
+- All 342 integration test files: 2600 tests, 2475 pass, 125 fail. Failed files were checked with original published backend sources; 122 reproduced, and three nested prototype regression failures reproduced separately. Current and baseline failure-name sets match (124 unique names; one repeated assertion). No new full-suite failure identified. Most failures are retired release manifests or inactive R2/prototype assumptions; they were not rewritten to manufacture a pass. Detailed logs are private. This is not an all-green suite claim.
+- No production save retried under candidate code yet. No Wix source modified or published at this point. No Pages permission changed. Main untouched.
+
+Remaining: GitHub candidate sync, minimal Wix draft patches/readbacks, publication and original-request live recovery, then original Warehouse receipt and the rest of the two-order scenario. UI saving feedback, unnecessary refresh work and mixed transport presentation remain separate approved phases.
+
+## 2026-10-30 continuation
+
+- Code e85998380937a3520d71d37f0797ebd137155e2c synchronized to its isolated branch; draft PR239 attached. Main unchanged.
+- Wix: four journal, five operation and two web-interface unique fragments applied, then each full module read back exactly against the tested candidate. The Purchase page remained byte-equivalent after newline normalization. Wix confirmed "This site is published and live online"; private source hashes and screenshot retained.
+- Editor transitions/replacement commands occasionally returned stale state. Work stopped at each mismatch, read back the actual source and completed only missing unique fragments. No page code was changed.
+- Pages: no frontend deployment or permission change. Existing Purchase build 20261029-purchase-quiet-refresh-v1 returned HTTP200. Public app bytes match the preserved package and the repository's assembled quiet-refresh plan exactly; the raw app source differs because existing receipt-feedback changes are applied by the staged release chain. Do not deploy the raw app file as a replacement.
+- Public acceptance incomplete: original request 59805f5f-8a35-405d-883c-ab5d8b68e37f retried on the existing tab but remained pending. The tab was refreshed to load the new Wix revision; its embed remained blank and later browser evaluation timed out. A new tab opened by normal Chrome navigation loaded both customers successfully, but does not contain the original tab's session draft. No new PO identity or manual lock deletion used. Original Warehouse receipt remains pending and Loaded has not been reached.
+- Monitoring's last-seven-days counters are historical totals, not the two-order test. They show repeated company-wide reads and save latency requiring further inspection; do not extrapolate new CMS record growth from request counts.
+- User subsequently supplied a screenshot of the old Purchase customer layout and explicitly requested its removal. Next isolated objective is to route all task entries and restored drafts through the existing Active Orders layout while retaining the original pending request and every business handler.
+
+## Recovery readback comparison correction
+
+The refreshed original Purchase tab loaded and the same request created one recovered RESULT plus one recovery executor record (NCT Activity149 to151). It then reported `Original save recovery requires review`. A separate normal CMS dashboard was used read-only after the embedded CMS grid failed to render. The recovered result has the exact eight original task IDs and expected values, but CMS reads object fields in a different order: savedAt/company/operation/taskIds/requestId/ok versus constructed ok/company/requestId/operation/savedAt/taskIds. Raw JSON string equality is false with all field values equal. No CMS field was edited or lock manually removed.
+
+Isolated correction: canonicalize object-key order only for the two completed-recovery outcome comparisons. Original operation digests, every value/extra field, task-array order, identities, scope/claim locks and completion proof remain strict. New tests first reproduce both key-order failures; altered values and reordered task arrays remain blocked. All75 focused checks then pass. Full342-file regression has the same124 unique failure names as the previous run; no added/removed failures. Detailed evidence stays private.
+
+Wix synchronization/public original-request recovery for this correction remain pending. Studio was reloaded after a code-panel action unintentionally opened an empty Wix IDE tab and made the panel read-only; the empty tab was closed without edits. Source identity checks prevented copying or replacing the Purchase page by mistake. The backend candidate has not been called complete.
+
+## Key-order correction synchronized
+
+On user continuation, the separately approved Active-only UI864322f completed all four publication stages; original7Pages rules restored exactly. Its Wix pointer remains the current20261030-purchase-active-only-v1. No confirmed-feedback candidate was bundled.
+
+Then, under the existing overnight bug-fix authorization, fresh Wix journal6735chars matched the saved e859983 source exactly. Applied only3unique fragments for9518417; full6996char readback matched the tested repository source. Wix confirmed published/live; exact before/after hashes and screenshot retained privately. Pages did not change, no further deployment permission was requested or modified. Public original-request recovery is still pending until its same-ID retry is observed completing. The original Purchase tab was hard-refreshed with its cached request retained; familiar blank-embed/navigation behavior required a normal bookmark load. Do not count the recovered RESULT as a confirmed Warehouse receipt or Loaded.
+
+## Original requests recovered and first real Loaded test
+
+After the isolated correction was published, the original Purchase request completed through its same-ID retry; its pending tracker cleared and exactly the original two test P.O.s remained. The original Warehouse B receipt retry then completed 1,400 cartons; A remained 835 of 865 received, including AJAX170 of200. Physical receipts total2,235 before Loaded. No manually removed locks or replacement requests.
+
+The normal Purchase allocation action then assigned A AJAX200 using own170 plus B30. A fresh workspace confirmed outstanding borrowing30 to B; borrowing did not change physical stock. Five other A product allocations were confirmed individually. Support authorized A Desk1 and Warehouse showed only that authorized Desk, six tasks, without financial fields in its visible interface. Loaded over-authorized201 and unexplained short199 were blocked before writing; exact200 succeeded. The remaining A lines were subsequently submitted through the normal Loaded interface, with final readback still pending at this record.
+
+A separate reproducible UI issue remains: after a confirmed customer-allocation save, its silent workspace read can be discarded while supplier drafts remain dirty. Manual readback shows the allocation persisted. Do not repeat confirmed saves to refresh a list. This is not counted as fixed or published. Private customer/financial screenshots stay outside the public repository.

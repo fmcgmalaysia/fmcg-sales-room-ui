@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8');
 const callback=source.slice(source.indexOf('export const savePurchaseOperation='),source.indexOf('export const getSupplierProfile=')).replace('export const savePurchaseOperation=','this.save=');
+test('completed-save recovery states keep the original request pending with specific feedback',async()=>{
+ for(const message of ['Original save recovery is pending. Retain this request.','Original save is still processing. Retain this request.','Original save recovery is still processing. Retain this request.','Original save recovery requires review. Retain this request.']){
+  const result=await endpoint(async()=>{throw Error(message);})('NCT','REQUEST','PO',{});assert.equal(result.ok,false);assert.equal(result.pending,true);assert.equal(result.requestId,'REQUEST');assert.equal(result.error,message);
+ }
+});
 function endpoint(operate,auth=async()=>({staffId:'STAFF',staffName:'LAW',memberId:'MEMBER'}),info){const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:auth,operate,console:{warn(){},info}};vm.runInNewContext(callback,context);return context.save;}
 test('known pre-write negative-cost rejection returns actionable feedback instead of a Wix masked exception',async()=>{const result=await endpoint(async()=>{throw Error('Net cost cannot be negative.');})('NCT','REQUEST','EDIT',{});assert.equal(result.ok,false);assert.equal(result.requestId,'REQUEST');assert.equal(result.error,'Net cost cannot be negative.');});
 test('PO identity and prefix rejections return actionable feedback without exposing unknown errors',async()=>{for(const message of ['Enter the P.O. number after the company prefix.','This P.O. has saved records. Select all its tasks when changing its number.','Two purchase orders with saved records cannot be merged.']){const result=await endpoint(async()=>{throw Error(message);})('NCT','REQUEST','PO',{});assert.equal(result.ok,false);assert.equal(result.error,message);}});

@@ -31,7 +31,39 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     if(operation==='QTY'&&staff?.role!=='SUPER ADMIN')throw Error('Only Super Admin may change customer demand / 只有最高权限 Admin 可修改客户需求。');
     if(!PURCHASE_COLLECTIONS[company] || !['EDIT','REORDER','PO','SPECIAL','QTY','AVERAGE_COST','PLAN'].includes(operation))throw Error('Unsupported purchase operation.');
     const names=PURCHASE_COLLECTIONS[company];
-    return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},prepare:async()=>{
+    // PO rows are independent under the existing company journal lock. Join every
+    // started worker before cleanup; other operation types retain their order.
+    async function each(items,work,cleanup=false){
+      if(operation!=='PO'){for(const item of items)await work(item);return;}
+      let next=0,failure;
+      await Promise.all(Array.from({length:Math.min(4,items.length)},async()=>{
+        while((cleanup||!failure)&&next<items.length){const item=items[next++];try{await work(item);}catch(error){failure=failure||error;}}
+      }));
+      if(failure)throw failure;
+    }
+    const recoverCompleted=operation==='PO'?async(plan,phase,assertClaim)=>{
+      if(plan.operation!=='PO'||!Array.isArray(plan.updates)||!plan.updates.length||plan.updates.length>100||!Array.isArray(plan.events)||plan.displayOrder)return null;
+      const ids=plan.updates.map(change=>change.id);
+      if(new Set(ids).size!==ids.length||new Set(input.taskIds).size!==ids.length||ids.some(id=>!input.taskIds.includes(id)))return null;
+      if(phase==='CLEANUP'){
+        await each(ids,async id=>{await assertClaim();const lockId=operationId(company,id,'COST_LOCK'),lock=await store.read(names.activity,lockId);if(!lock)return;if(lock.details?.requestId!==requestId||lock.details?.actorMemberId!==staff.memberId)throw Error('Original save recovery requires review. Retain this request.');await assertClaim();await store.remove(names.activity,lockId);},true);
+      }else{
+        const [tasks,orders,activity]=await Promise.all([store.all(names.tasks),store.all(names.orders),store.all(names.activity)]);
+        for(const change of plan.updates){
+          const task=tasks.find(row=>row._id===change.id),order=orders.find(row=>row.title===change.orderId&&row.sourceLineId===change.lineId),event=plan.events.find(row=>row.taskId===change.id&&row.action==='PURCHASE_PO_ASSIGNED');
+          if(!task||!order||order.salesInvoiceNumber||task.title!==change.id||task.description!==change.orderId||task.imageAltText!==change.lineId||!event||event.after!==String(input.poNumber||'').trim().toUpperCase()||Object.keys(change.patch).some(key=>!['ourPoNumber','purchaseStage'].includes(key))||Object.entries(change.patch).some(([key,value])=>task[key]!==value))return null;
+          if(!(event.before===''?['',null]:[event.before]).some(before=>[task.purchaseStage,'NEW_INCOMING','WAITING_FOR_PO'].some(stage=>taskEditVersion({...task,ourPoNumber:before,purchaseStage:stage})===change.expected)))return null;
+          const lock=activity.find(row=>row._id===operationId(company,change.id,'COST_LOCK'));
+          if(lock&&(lock.details?.requestId!==requestId||lock.details?.actorMemberId!==staff.memberId))return null;
+        }
+        for(const event of plan.events){
+          const change=plan.updates.find(row=>row.id===event.taskId),saved=activity.find(row=>row._id===operationId(company,requestId,staff.memberId,event.taskId,event.action));
+          if(!change||!['PURCHASE_PO_ASSIGNED','PURCHASE_PLAN_SAVED'].includes(event.action)||!saved||saved.action!==event.action||saved.result!=='SAVED'||saved.description!==change.orderId||saved.imageAltText!==change.id||saved.initiatedByStaffId!==staff.staffId||saved.details?.requestId!==requestId||Object.entries(event).some(([key,value])=>JSON.stringify(saved.details[key])!==JSON.stringify(value)))return null;
+        }
+      }
+      return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:ids};
+    }:undefined;
+    return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},recoverCompleted,prepare:async()=>{
       const s=await state(company,staff),updates=[],events=[];let displayOrder;
       const verified=id=>{const row=s.workspace.tasks.find(row=>row.id===id);if(!row||row.archived)throw Error('Active accepted task required.');
         const task=s.tasks.find(task=>task.title===id);if(!task)throw Error('Task missing.');
@@ -179,12 +211,12 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       const stillOwned=async taskId=>{const id=operationId(company,taskId,'COST_LOCK'),lock=await store.read(names.activity,id);if(started+90000<=now().getTime()||lock?.details?.requestId!==requestId||lock.details.actorMemberId!==staff.memberId)throw Error('Save time limit reached. Refresh and retry this same save.');};
       try {
         await requireEditablePurchaseChanges(company,plan.updates);
-        for(const change of [...plan.updates].sort((a,b)=>a.id.localeCompare(b.id))) {
+        await each([...plan.updates].sort((a,b)=>a.id.localeCompare(b.id)),async change=>{
           const lockId=operationId(company,change.patch.title||change.id,'COST_LOCK');
           if(await store.read(names.activity,lockId))throw Error('A task is busy. Retry this same save after refreshing.');
           await store.insert(names.activity,{_id:lockId,title:lockId,description:change.orderId,activityTime:now(),details:{requestId,actorMemberId:staff.memberId}});held.push(lockId);
-        }
-        for(const change of plan.updates) {
+        });
+        await each(plan.updates,async change=>{
           await stillOwned(change.patch.title||change.id);
           const order=await store.one(names.orders,{title:change.orderId,sourceLineId:change.lineId});if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');
           const current=await store.read(names.tasks,change.id),target={...current,...change.patch};
@@ -199,15 +231,15 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           if(change.expected===null) {if(current){if(taskEditVersion(current)!==taskEditVersion(change.patch))throw Error('Special Purchase identity conflict.');}else {const record={_id:change.id,...change.patch};if(record.lastCostCaptureTime)record.lastCostCaptureTime=new Date(record.lastCostCaptureTime);await store.insert(names.tasks,record);}}
           else if(!current)throw Error('Task missing.');
           else if(taskEditVersion(current)!==taskEditVersion(target)){if(taskEditVersion(current)!==change.expected)throw Error('Task changed while this save was pending.');await store.update(names.tasks,target);}
-        }
-        for(const event of plan.events) {
+        });
+        await each(plan.events,async event=>{
           await stillOwned(event.taskId);
           const change=plan.updates.find(change=>change.id===event.taskId),id=operationId(company,requestId,staff.memberId,event.taskId,event.action);
           if(!await store.read(names.activity,id))await store.insert(names.activity,{_id:id,title:id,description:change.orderId,image:change.lineId,imageAltText:event.shareRootId||event.taskId,action:event.action,
             activityTime:new Date(plan.time),actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,result:'SAVED',message:event.action.replaceAll('_',' '),details:{requestId,...event}});
-        }
+        });
         return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:plan.updates.map(change=>change.id)};
-      } finally {for(const id of held){const lock=await store.read(names.activity,id);if(lock?.details?.requestId===requestId&&lock.details.actorMemberId===staff.memberId)await store.remove(names.activity,id);}}
+      } finally {await each(held,async id=>{const lock=await store.read(names.activity,id);if(lock?.details?.requestId===requestId&&lock.details.actorMemberId===staff.memberId)await store.remove(names.activity,id);},true);}
     }});
   };
 }
