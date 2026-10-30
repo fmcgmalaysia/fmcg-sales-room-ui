@@ -738,4 +738,4 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 .po-document-issue{border-left:3px solid #E51B2B;background:#fff5f6;padding:10px;margin:8px 0;color:#9b1823}.po-document-issue p{margin:6px 0}.po-document-issue small,.po-document-issue-note small{display:block}.po-issue-actions{display:flex;gap:8px;margin:8px 0}.po-document-issue-note{margin-top:6px;color:#E51B2B}.po-document-issue-note button{color:inherit;text-align:left;padding:0;border:0;background:none;font:inherit;cursor:pointer}
 
 .po-review-changes{margin-top:14px;border-top:1px solid #d9e4ef;padding-top:10px}.po-review-changes summary{cursor:pointer;color:#2563eb;font-weight:600}.po-review-changes section{margin-top:12px;overflow:auto}.po-review-changes small{display:block;font-size:11px;color:#62788d}
-.po-doc-badge.pending{background:#8B98A8;border-color:#8B98A8;color:#fff}
+.po-doc-badge.pending{background:#F58A00;border-color:#F58A00;color:#fff}

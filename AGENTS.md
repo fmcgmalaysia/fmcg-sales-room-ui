@@ -1,5 +1,9 @@
 # FMCG repository operating supplement
 
+## 2026-10-30 Purchase and Finance DOCS colors
+
+Purchase PO/PI/DO/INV/CN buttons are orange when the shared state is MISSING, blue for an effective available file, and red for an unresolved document problem. Finance uses gray only before a corresponding shared state is available; it follows the same orange/blue/red state once available. Synchronization is bidirectional: a Finance issue must appear red in Purchase, and Purchase invalidation must appear red in Finance. Both consume the existing canonical documentStates projection; do not create another status store or change file, payment, financial lock or inventory behavior for this color request.
+
 ## 2026-10-30 MASTER 正式网址与空白页核对规则
 
 用户要求将反复使用旧核对网址的问题写入 GitHub，作为后续工作的固定约束。

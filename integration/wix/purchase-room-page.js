@@ -85,5 +85,5 @@ $w.onReady(() => {
         ok: false, identity, error: error?.message || 'Purchase data could not be loaded.' });
     }
   });
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261030-po-document-states-v2';
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261030-docs-synced-colors-v1';
 });
