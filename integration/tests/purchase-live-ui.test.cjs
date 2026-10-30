@@ -1013,4 +1013,3 @@ test('legacy mixed unknown Save retains its exact request; known rejection conve
  assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.deepEqual(JSON.parse(cache.values().next().value).savePending,original);h.click({controlId:'retryPendingSave'});const retried=h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').at(-1);assert.deepEqual(JSON.parse(JSON.stringify(retried)),original);
  h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'ORIGINAL',ok:true,result:{ok:false,requestId:'ORIGINAL',error:'Select an active supplier.'}});h.click({controlId:'saveEdits'});const next=h.messages.at(-1);assert.notEqual(next.requestId,'ORIGINAL');assert.equal(next.input.taskIds,undefined);assert.equal(next.input.edits[0].changes.disc3,3);
 });
-
