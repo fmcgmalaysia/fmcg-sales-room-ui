@@ -47,3 +47,45 @@ Pages: no static asset changes; preserve frozen production build.
 Central: saved candidate; deployment/readback pending.
 Wix: minimal backend synchronization and publication pending.
 Public: actual corrected-source success pending source owner correction/sync.
+
+Release update
+Central: immutable Version 19 successfully deployed on the original deployment;
+three changed files exactly read back, access and scopes unchanged, v18 retained.
+Wix: all six minimal patches applied and complete 37,422-character LF readback
+matches candidate SHA2564e58c691eaa1df147bd03084431efdb29136ffff4cb7ab491aa48e551e5b5935.
+Wix publication is NOT complete: browser control disconnected before publishing.
+Preserved draft; connection-restoration request pending. No repeated deployment.
+Public acceptance: not yet performed for this candidate. Source still awaits
+owner correction/sync; do not claim successful Sunquick insertion in advance.
+
+2026-10-31 continuation (supersedes the publication blocker above)
+The owner does not yet know the genuine product barcode. Continue mechanism
+release without inventing one, changing POINTBASE, reselecting, or weakening
+identity validation. Source-dependent successful insertion remains pending.
+
+Code remains eeb73ff; no additional business-code changes or central redeployment.
+Fresh complete Wix draft readback exactly matches both candidate and prior saved
+readback after CRLF normalization: 37,422 characters, SHA256
+4e58c691eaa1df147bd03084431efdb29136ffff4cb7ab491aa48e551e5b5935.
+The existing jobs.config was read back and still calls retryCatalogueSelections
+hourly through the same queue. Existing 42 focused and 93 affected test results
+(84 pass, nine previously recorded failures) were reused for unchanged code.
+
+Pages: no static changes or deployment. Fresh public Sales index hash remains
+728214cef727e6e86128a599474ee6e9e8b80fc1fe19af7ab0f065f098eec98c.
+Wix: published once; Studio explicitly confirmed published and live. Private
+receipt saved locally. Version 19 remains on the original central deployment.
+Public: native Chrome fresh Sales opened with correct signed-in identity; four
+customer accounts and the affected workspace were available. Catalogue opened
+from that workspace and preserved the same selection count and Selected state.
+No reselection, source edit, manual route, quotation publication or QD write was
+performed by the agent. Fresh Sales error capture was empty; Catalogue captured
+one existing Wix LinkBar suspense fallback, not a selection exception. A normal
+tool reload produced an empty iframe; a native fresh tab rendered successfully.
+This does not establish the blank-iframe root cause.
+
+Actual successful insertion after valid source correction and synchronization is
+NOT verified and must not be claimed. This task has completed the previously
+blocked Wix publication and preserved-state public checks only. It does not
+require the customer to retry, and it does not create another queue or writer.
+Main is unmerged, no new user-verified tag. Raw business evidence stays private.
