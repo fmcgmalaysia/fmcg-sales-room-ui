@@ -1,9 +1,9 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
-import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate } from 'backend/purchaseDocumentPolicy.js';
+import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate, effectivePurchaseDocuments, purchaseDocumentStates, purchaseDocumentReview } from 'backend/purchaseDocumentPolicy.js';
 import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
-import { projectPaymentHandoff, projectProcurementHandoff, transitionProcurementHandoff, procurementSubmissionVersion } from 'backend/paymentHandoff.js';
+import { projectPaymentHandoff, projectProcurementHandoff, transitionProcurementHandoff, procurementSubmissionVersion, procurementContentLock } from 'backend/paymentHandoff.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
 const text = value => String(value ?? '').trim();
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -47,15 +47,20 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const supplier=workspace.suppliers.find(item=>item.id===first.supplierId),customer=workspace.customers.find(item=>item.id===first.customerId);
     const complete=rows.every(row=>Number.isSafeInteger(row.procurement?.totalCtn)&&row.procurement.totalCtn>0&&['lpCtn','disc1','disc2','disc3'].every(key=>finite(row[key]))&&row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3>=0);
     const amount=complete?rows.reduce((sum,row)=>sum+(row.procurement.costing?.amountCents??Math.round((row.lpCtn*(1-row.disc1)*(1-row.disc2)-row.disc3)*row.procurement.totalCtn*100)),0)/100:null;
-    const documents=(details.documents||[]).filter(doc=>doc.linked===true),invoiceDates=documents.filter(doc=>doc.type==='INV'&&!doc.superseded).map(doc=>doc.date).sort();
+    const commercialEvents=history.filter(event=>event.commercialChanged===true||event.commercialChanged===undefined&&(['PURCHASE_PO_ASSIGNED','PURCHASE_AVERAGE_COST_APPLIED'].includes(event.action)||event.action==='PURCHASE_PLAN_SAVED'&&event.changes?.before!==event.changes?.after||event.action==='PURCHASE_PRICE_SAVED'&&Object.keys(event.changes?.after||{}).some(key=>key!=='manualCostField'&&event.changes.after[key]!==event.changes.before?.[key])));
+    const procurementRevision=operationId(commercialEvents.map(event=>event.id).sort());
+    const contentVersion=operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3,...(row.procurement?.costing?[row.procurement.costing]:[])]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+    const documents=effectivePurchaseDocuments(details.documents||[],procurementRevision,contentVersion,commercialEvents),invoiceDates=documents.filter(doc=>doc.type==='INV'&&!doc.superseded).map(doc=>doc.date).sort();
     const invoiceDate=invoiceDates[0]||null,termDays=Number.isSafeInteger(details.termDays)?details.termDays:null;
     // Invoice dates, receipt closure and payment completion are not inferred from tasks.
     // Their department writers are not connected yet; never offer a premature archive.
     const shortageIssues=rows.filter(row=>row.warehouse?.issue||row.shortage?.financeRequired).map(row=>({taskId:row.id,barcode:row.barcode,name:row.name,customerId:row.customerId,decision:row.shortage||null,receivingIssue:row.warehouse?.issue===true}));
     const quantityCases=rows.flatMap(row=>row.quantityCases||[]).filter(item=>item.kind==='RECEIPT');
     const creditTransfers=(workspace.creditTransfers||[]).filter(entry=>entry.sourceId===id||entry.targetId===id);
+    const cnRequirements=receiptCnRequirements(quantityCases,documents);
     const stockCases=rows.flatMap(row=>row.warehouse?.stock?.cases||[]),stockIssues=stockCases.filter(row=>row.status!=='RESOLVED');
-    const projected={id,paymentRequestRevision:details.paymentRequestRevision||null,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers,...(quantityCases.length?[quantityCases.map(item=>[item.id,item.signature,item.decision?.revision||null])]:[]),...(rows.some(row=>row.procurement?.transportMode)?[rows.map(row=>[row.id,row.procurement?.transportMode||''])]:[])),contentVersion:operationId(rows.map(row=>[row.id,row.barcode,row.packing,row.procurement?.totalCtn,row.lpCtn,row.disc1,row.disc2,row.disc3,...(row.procurement?.costing?[row.procurement.costing]:[])]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))),taskIds,shortageIssues,quantityCases,cnRequirements:receiptCnRequirements(quantityCases,documents),stockIssues,stockCases,creditTransfers,
+    const projected={id,paymentRequestRevision:details.paymentRequestRevision||null,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers,...(quantityCases.length?[quantityCases.map(item=>[item.id,item.signature,item.decision?.revision||null])]:[]),...(rows.some(row=>row.procurement?.transportMode)?[rows.map(row=>[row.id,row.procurement?.transportMode||''])]:[])),contentVersion,taskIds,shortageIssues,quantityCases,cnRequirements,stockIssues,stockCases,creditTransfers,
+      procurementRevision,procurementContentLocked:Boolean(procurementContentLock(details)),procurementLockReason:procurementContentLock(details),
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       shipmentDates:[...new Map(rows.map(row=>[row.orderId,{orderId:row.orderId,customerId:row.customerId,date:row.estimatedShipmentDate,updatedAt:row.shipmentDate?.at||'',updatedBy:row.shipmentDate?.by||''}])).values()],
       selfCollect:rows.some(row=>row.procurement?.transportMode==='SELF_COLLECT'),supplierId:first.supplierId,supplierShortName:supplier?.shortName||supplier?.name||'',supplierName:supplier?.name||'',
@@ -69,7 +74,10 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
       history:[...history,...(details.audit||[])].sort((a,b)=>String(a.time).localeCompare(String(b.time))),
       updatedAt:date(details.updatedAt),readAt:now.toISOString()};
     const settlement={...projected,...projectInvoiceReview(projected,details)};
-    return {...settlement,...projectPaymentHandoff(settlement,details,now),procurementHandoff:projectProcurementHandoff(settlement,details)};
+    const payment=projectPaymentHandoff(settlement,details,now),reviewed=payment.paymentHandoff.review?.confirmCurrentProcurement===true;
+    const documentReviewRequired=reviewed?[]:purchaseDocumentReview(documents,procurementRevision,commercialEvents);
+    const reviewedDocuments=documents.map(doc=>({...doc,requiresProcurementReview:documentReviewRequired.includes(doc.fileId)}));
+    return {...settlement,...payment,documents:reviewedDocuments,documentReviewRequired,documentStates:purchaseDocumentStates(reviewedDocuments,details.documentIssues||[],cnRequirements),procurementHandoff:projectProcurementHandoff(settlement,details)};
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
@@ -153,6 +161,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         patch={procurementHandoff:transitionProcurementHandoff(row,before,input,{at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},'PURCHASE'),...(input.action==='SUBMIT_FINANCE'?{chasePayment:input.urgent===true}:{})};
       }else if(input.action==='DOCUMENT'){
         if(!row.supplierId)throw Error('Select a supplier before uploading documents.');
+        if(input.type==='PO'&&procurementContentLock(before))throw Error(procurementContentLock(before));
         const issue=input.issueId?(before.documentIssues||[]).find(item=>item.id===input.issueId):null;
         if(input.issueId&&(row.state==='HISTORY'||!issue||issue.status!=='OPEN'||issue.type!==input.type||!row.documents.some(doc=>doc.fileId===issue.fileId&&doc.sha256===issue.sha256&&!doc.superseded)))throw Error('Purchase order changed. Select an open issue for this document type.');
         if(['INV','CN'].includes(input.type)&&(!Number.isSafeInteger(input.declaredCents)||input.declaredCents<=0||input.declaredCents>999999999999))throw Error('Enter the supplier document amount in MYR.');
@@ -168,12 +177,14 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         }
         const uploadDate=now().toISOString(),documentDate=uploadDate.slice(0,10);
         const name=purchaseDocumentName({date:documentDate,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
-        if((before.documents||[]).some(doc=>doc.linked&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
+        if(row.documents.some(doc=>doc.linked&&!doc.superseded&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
         const allocated=await documentService({action:'ALLOCATE',company});
         upload={action:'UPLOAD',company,poId:row.id,fileId:allocated.fileId,name,type:input.type,sha256:journalInput.sha256};
         const document={fileId:allocated.fileId,name,type:input.type,number:text(input.number),date:documentDate,...cnMetadata,size:journalInput.size,sha256:journalInput.sha256,linked:true,...(Number.isSafeInteger(input.declaredCents)?{declaredCents:input.declaredCents}:{}),uploadedAt:uploadDate,uploadedBy:staff.staffName,uploadedByStaffId:staff.staffId};
+        if(['PO','PI','SO','INV','CN'].includes(input.type))document.procurementRevision=row.procurementRevision;
+        if(input.type==='PO')document.contentVersion=row.contentVersion;
         if(issue){document.superseded=true;document.pendingIssueId=issue.id;}
-        patch={documents:[...(before.documents||[]),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{}),...(issue?{documentIssues:before.documentIssues.map(item=>item.id===issue.id?{...item,status:'AWAITING_REVIEW',response:{reason,fileId:document.fileId,sha256:document.sha256,at:document.uploadedAt,by:staff.staffName,byStaffId:staff.staffId}}:item)}:{})};
+        patch={documents:[...(before.documents||[]).map(doc=>input.type==='PO'&&!issue&&doc.type==='PO'&&doc.linked?{...doc,superseded:true,supersededBy:document.fileId}:doc),document],...(input.type==='INV'?{finalInvoiceComplete:true}:{}),...(issue?{documentIssues:before.documentIssues.map(item=>item.id===issue.id?{...item,status:'AWAITING_REVIEW',response:{reason,fileId:document.fileId,sha256:document.sha256,at:document.uploadedAt,by:staff.staffName,byStaffId:staff.staffId}}:item)}:{})};
       } else if(input.action==='ACK_PAYMENT'){
         const payment=row.finance.payments.find(payment=>payment.id===input.paymentId&&payment.confirmed&&payment.direction!=='REFUND'&&payment.proof?.linked);
         if(!payment)throw Error('Select an actual payment notification.');
@@ -185,6 +196,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
         if(typeof input.enabled!=='boolean'||input.enabled===row.chasePayment)throw Error('Payment chase has not changed.');
         patch={chasePayment:input.enabled};
       } else {
+        if(procurementContentLock(before))throw Error(procurementContentLock(before));
         if(before.procurementHandoff&&!row.procurementHandoff.editable)throw Error('Procurement handoff has locked payment terms. Request return before editing.');
         if(!Number.isSafeInteger(input.termDays)||input.termDays<0||input.termDays>3650)throw Error('Enter payment terms from 0 to 3650 days.');
         if(input.termDays===row.termDays)throw Error('Payment term has not changed.');
