@@ -69,3 +69,14 @@ The scoped manual release option is `purchase-personal-row-order-only`; preparin
 4. Formal page: not visually verified for this candidate.
 
 Before a later release, recheck the current live baseline for intervening changes. Preserve the user's existing Purchase tab containing the old unsaved move; do not refresh, save or cancel it. After the usual Pages and Wix publication stages, use a fresh formal Purchase entry from `https://fmcg999.wixstudio.com/master` to verify dragging, re-opening, customer and supplier filters, genuine price Save and department isolation. User confirmation is still required before promotion to a verified main baseline.
+
+## Release continuation — 2026-10-31
+
+The user authorized Chrome use, publication and formal verification. A fresh read of all 94 public resources matches the recovery package exactly. The original Purchase tab with its unsaved movement remains untouched.
+
+The current full Wix Purchase page matched `integration/wix/purchase-room-page.js` before editing. A one-token version change was saved as a Wix draft and its full readback exactly matches the expected patch. No backend, Finance, Warehouse, Support or FMCGMALAYSIA draft was edited. The correct MASTER editor identity is site `8a6752d7-e5bb-42cc-aca7-77346a8e97a6`, metaSite `f80870fd-a3d8-47c0-9917-1bfd9c16ea44`.
+
+Before-page normalized SHA-256: `c18577ef141f1f1c169cb87836e56088c01ad3f77fd090a5f5f2ddfd0fdb3ad9`.
+After-page normalized SHA-256: `cefcae9770320ec4b613143409a9ff4ad77445624f602e2bd12b5a5284a31447`.
+
+Pages deployment, temporary branch permission, Wix publication and formal acceptance are pending at this continuation checkpoint. Prior test results remain applicable: no business code changed during this continuation.
