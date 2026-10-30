@@ -7,7 +7,7 @@ function fixture(){
  const modal={open:true,classList:{add(){},contains:()=>true},close(){this.open=false;}};
  const ui=ctx.window.purchaseSupplierAllocation.create({workspace:()=>workspace,company:()=>workspace.company,rowLabel:id=>id==='A'?'ROW 050':'ROW 051',esc:x=>String(x??''),num:x=>Number.isFinite(x)?x.toFixed(2):'—',dialog(){modal.open=true;},modal:()=>modal,cache(){},status:(text,error)=>messages.push({text,error}),savePending:()=>pending,atOrigin:()=>true,mutate(_,request){submissions.push(request);},openPo:id=>pos.push(id),confirm:()=>true,handIcon:()=>''});
  const edit=(id,field,value)=>ui.edit({target:{value,dataset:{allocationField:field},closest:()=>({dataset:{allocationRow:id}})}});
- return {ui,workspace,submissions,messages,pos,edit,modal,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
+ return {ui,workspace,submissions,messages,pos,edit,modal,node,planner:ctx.window.purchaseSupplierAllocation,setPending:value=>pending=value};
 }
 
 function twoSources(f,saved=false){
@@ -83,4 +83,13 @@ test('repeated stale saved-source refreshes cannot reopen a dismissed dialog or 
  const f=fixture(),root=twoSources(f,true),cache=f.ui.serialize();cache.rows[0].status='saved';f.ui.restore(cache);f.ui.open('A');f.modal.close();root.procurement.totalCtn=41;
  for(let i=0;i<3;i++)f.ui.receivedWorkspace();
  assert.equal(f.modal.open,false);assert.equal(f.submissions.length,0);assert.ok(f.ui.serialize());
+});
+
+test('confirmed source immediately replaces Saving feedback while delayed readback cannot duplicate the save',()=>{
+ const f=fixture();twoSources(f,true);f.ui.click({dataset:{allocationSave:'second'}});const request=f.submissions[0];f.setPending(request);f.ui.receipt(request,{ok:true,sourceTaskId:'NEW'});
+ assert.match(f.node('#allocationIssue').textContent,/此来源已保存/);assert.match(f.node('#allocationIssue').className,/complete/);const saved=f.node('[data-allocation-row="second"] [data-allocation-save]');assert.equal(saved.textContent,'已保存');assert.equal(saved.disabled,true);assert.equal(saved.className,'allocation-save');assert.match(f.messages.at(-1).text,/可继续浏览/);
+ f.setPending(null);f.ui.click({dataset:{allocationSave:'second'}});assert.equal(f.submissions.length,1);assert.equal(f.ui.serialize().rows.find(row=>row.key==='second').status,'saved');assert.equal(f.ui.serialize().running,true,'next writes still require verified fresh versions');
+});
+test('confirmed feedback never reopens a closed source dialog or discards another source draft',()=>{
+ const f=fixture();twoSources(f,true);f.edit('A','qty','bad');f.ui.click({dataset:{allocationSave:'second'}});const request=f.submissions[0],before=f.ui.serialize().rows.find(row=>row.key==='A').qty;f.modal.close();f.ui.receipt(request,{ok:true,sourceTaskId:'NEW'});assert.equal(f.modal.open,false);assert.equal(f.ui.serialize().rows.find(row=>row.key==='A').qty,before);assert.equal(f.submissions.length,1);
 });

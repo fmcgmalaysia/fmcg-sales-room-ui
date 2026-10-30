@@ -190,7 +190,13 @@
       if(completed.allocationInitializeRoot){for(const other of state.rows.filter(item=>item!==row&&item.taskId===state.rootId)){other.taskId=null;other.version=null;}row.taskId=state.rootId;}
       if(!row.taskId){if(!result?.sourceTaskId){state.running=false;state.issue='来源已收到成功回执，但缺少来源编号；请核对最新资料，不再重发。';api.cache();return true;}else row.taskId=result.sourceTaskId;}
       row.status='saved';row.auto=false;state.current=null;state.dirty=true;
+      state.issueTone='complete';state.issue='此来源已保存 · 正在核对最新资料，可继续浏览。';
       if(!api.atOrigin()){state.running=false;state.reopen=false;state.issue='当前来源已确认；其余草稿保留，返回后明确继续应用。';}
+      if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog')){
+        const issue=document.querySelector('#allocationIssue');if(issue){issue.textContent=state.issue;issue.className='allocation-issue complete';}
+        const savedButton=document.querySelector('[data-allocation-row="'+row.key+'"] [data-allocation-save]');if(savedButton){savedButton.textContent='已保存';savedButton.disabled=true;savedButton.className='allocation-save';}
+      }
+      api.status(state.issue);
       api.cache();return true;
     }
     function receivedWorkspace(){
