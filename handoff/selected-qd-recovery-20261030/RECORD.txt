@@ -1,0 +1,23 @@
+Selected -> QD automatic recovery, 2026-10-30. Scope: FMCGMALAYSIA only.
+
+Production baseline comparison and authorization:
+The freshly read catalogueSelection.web.js matches historical 3fe127d exactly (SHA256 923afbc6c6bd04789e0fe80c64edb02e8655a48dd0446bcff98db54c7bc7288c). Current repository had three additional customer-context return fields from bc4906b. The user explicitly approved preserving the online behavior and patching only QD recovery. These unrelated fields are therefore omitted from this patch's runtime baseline, not silently synchronized into Wix.
+Sales Room page code is semantically exact after CRLF normalization: SHA256 534b62526aeee797e1a9f5cba3cbaccbc98466a805c8a9a8abed546debb7a807. The raw UI clipboard CRLF hash differs only by line endings.
+Existing annotated recovery tag verified/catalogue-search-20261004 remains unchanged. Exact fresh online backend is preserved privately. Central QD writer is unchanged, active deployment v18; its RemoveSelection.gs matches integration/apps-script/verified-central-v16/RemoveSelection.gs exactly.
+
+Single recovery path:
+- All entry points use the existing routeQueuedSelections_ / routeOneSelection_ writer.
+- A failed selection does not prevent later eligible selections from running. Oldest attempts are processed first; elapsed request time is bounded.
+- Retry rereads the exact referenced source product after barcode validation failures. It does not edit POINTBASE, split a barcode, infer a replacement product, or create another selection ID. Invalid or colliding source identity remains a staff issue.
+- READY requires the matching customer ID, matching selection ID, and a valid QD row receipt.
+- Lost responses retry the same selection ID. Current quote fields, removed flags, and newer routing state are preserved on result writes.
+- Staff access and customer status boundaries remain enforced. Customer Selected feedback continues immediately after CMS persistence.
+- Sales Room retries saved work once per minute while work remains and coalesces overlapping requests. No page reload or customer retry control is added.
+- Wix scheduled jobs call the same internal queue hourly when no page is open, respecting standard-plan scheduling limits. This job uses existing records; it does not create diagnostic/test rows.
+
+Validation:
+29 focused selection, routing, quotation and brand-sync checks pass.
+Expanded affected regression: 125 tests, 111 pass, 14 fail. Unmodified HEAD baseline: 106 tests, 92 pass, the identical 14 fail; all 19 newly added tests pass and no existing failure was added. Existing failures concern stale download/layout/order/FX assertions, not repaired by this task. Private full TAP outputs are retained locally.
+git diff --check passes. POINTBASE, QD template, central Apps Script, Catalogue display, Buyer Room and MASTER source files are unchanged.
+
+Release state at preparation: code and tests complete locally; GitHub push, Wix minimum sync/publish and public acceptance pending. Static GitHub Pages interface files are unchanged; no full-site static upload is authorized or required for this backend/Wix bridge patch. Do not claim complete publication from this record.
