@@ -90,6 +90,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
             ok: event.details?.outcome?.ok === true, error: text(event.details?.outcome?.error)
           } : null,
           actor: event.actorType === 'SYSTEM' ? 'System' : text(event.initiatedByStaffName),
+          taskId:task.title,commercialChanged:event.details?.commercialChanged,amendment:event.details?.amendment,commercialBefore:event.details?.commercialBefore||null,commercialAfter:event.details?.commercialAfter||null,
           initiatedBy: text(event.initiatedByStaffName), result: text(event.result), message: text(event.message)
           ,changes:['PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED'].includes(event.action)?{before:event.details?.before??null,after:event.details?.after??null,reason:text(event.details?.reason),...(event.action==='PURCHASE_AVERAGE_COST_APPLIED'?{calculation:event.details?.calculation}:{} )}:event.action==='SPECIAL_PURCHASE_ADDED'?{parentTaskId:text(event.details?.parentTaskId),extraQty:number(event.details?.extraQty),reason:text(event.details?.reason)}:null
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
@@ -114,7 +115,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     root.salesCommittedQty=Math.min(root.requested,sources.some(row=>row.procurement.totalCtn>0)?planned:root.originalCommitment);root.sourcing.unplacedCtn=Math.max(0,root.requested-planned);
   }
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
-  for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
+  for(const row of rows){row.procurement.amendmentCount=new Set(row.history.filter(event=>event.amendment===true).map(event=>event.requestId||event.id)).size;row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   const quantityCases=projectQuantityCases({company,tasks:rows},activity);
   for(const row of rows){
     row.quantityCases=quantityCases.filter(item=>item.taskId===row.id);

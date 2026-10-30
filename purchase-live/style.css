@@ -521,6 +521,7 @@ dialog:has(.progress-product) .dialogfoot{padding:8px 12px;background:#f5f9fd}
 
 .supplier-allocation-dialog .allocation-hand:disabled{background:#edf0f3;border-color:#d1d8df;color:#8995a2;cursor:default;opacity:1}
 .supplier-allocation-dialog .allocation-hand.loading{cursor:wait}
+.allocation-pencil{position:relative}.allocation-revision-count{position:absolute;right:-6px;top:-7px;min-width:14px;height:14px;padding:0 2px;border-radius:8px;background:#E51B2B;color:white;font:600 9px/14px Arial,sans-serif;text-align:center}.allocation-reason[hidden]{display:none}
 .supplier-allocation-dialog .allocation-hand.complete{background:#EFF6FF;border-color:#BFDBFE;color:#2563EB}
 .allocation-cost-spinner{width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:allocation-cost-spin .8s linear infinite}
 @keyframes allocation-cost-spin{to{transform:rotate(360deg)}}
@@ -735,3 +736,6 @@ body #app>.active-order-heading{min-height:0;margin-bottom:12px}
 
 /* Confirmed supplier document issues; existing controls and spacing retained. */
 .po-document-issue{border-left:3px solid #E51B2B;background:#fff5f6;padding:10px;margin:8px 0;color:#9b1823}.po-document-issue p{margin:6px 0}.po-document-issue small,.po-document-issue-note small{display:block}.po-issue-actions{display:flex;gap:8px;margin:8px 0}.po-document-issue-note{margin-top:6px;color:#E51B2B}.po-document-issue-note button{color:inherit;text-align:left;padding:0;border:0;background:none;font:inherit;cursor:pointer}
+
+.po-review-changes{margin-top:14px;border-top:1px solid #d9e4ef;padding-top:10px}.po-review-changes summary{cursor:pointer;color:#2563eb;font-weight:600}.po-review-changes section{margin-top:12px;overflow:auto}.po-review-changes small{display:block;font-size:11px;color:#62788d}
+.po-doc-badge.pending{background:#8B98A8;border-color:#8B98A8;color:#fff}

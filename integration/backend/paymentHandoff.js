@@ -1,4 +1,11 @@
 import { operationId } from 'backend/purchaseOperationJournal.js';
+// A payment is a durable fact. Removing proof or refunding it cannot reopen procurement.
+export function procurementContentLock(details={}){
+ const payments=details.finance?.payments||[];
+ if(payments.some(payment=>payment.confirmed===true&&payment.direction!=='REFUND'&&Number.isSafeInteger(payment.cents)&&payment.cents>0))return 'Procurement handoff is permanently locked after the first confirmed payment.';
+ if(details.finance?.check?.enabled||details.finance?.closure?.enabled||details.invoiceCheck?.enabled)return 'Procurement handoff is locked by final Finance reconciliation.';
+ return '';
+}
 export function paymentReviewVersion(row){
  return operationId(row.company,row.id,row.contentVersion,row.documents.filter(doc=>doc.linked&&!doc.superseded&&['PI','SO','INV','CN'].includes(doc.type)).map(doc=>[doc.fileId,doc.sha256,doc.type,doc.number,doc.date,doc.declaredCents]).sort());
 }
@@ -35,7 +42,7 @@ export function projectProcurementHandoff(row,details){
  const stages=['SUBMITTED','OWNED','RETURN_REQUESTED','PROCESSING','UNKNOWN','WITHDRAWN','RETURNED'];
  if(saved.schema!==1||!stages.includes(saved.stage)||!saved.submission?.version||!saved.submission?.byStaffId||!saved.submission?.at)throw Error('Procurement handoff requires review.');
  const stale=saved.submission.version!==procurementSubmissionVersion(row);
- return {...saved,submitted:!['WITHDRAWN','RETURNED'].includes(saved.stage),editable:['WITHDRAWN','RETURNED'].includes(saved.stage),stale};
+ return {...saved,submitted:!['WITHDRAWN','RETURNED'].includes(saved.stage),editable:!procurementContentLock(details)&&['WITHDRAWN','RETURNED'].includes(saved.stage),stale};
 }
 export function transitionProcurementHandoff(row,details,input,identity,department){
  const current=projectProcurementHandoff(row,details),stage=current.stage,action=input.action;
@@ -74,6 +81,7 @@ export function transitionProcurementHandoff(row,details,input,identity,departme
   if(!['OWNED','RETURN_REQUESTED'].includes(stage)||input.bankClear!==true)throw Error('Procurement handoff requires Finance to confirm no unresolved bank operation before return.');
   next={...details.procurementHandoff,stage:'RETURNED',bankClear:{...identity,reason:input.reason}};
  }else if(action==='PAYMENT_PROCESSING'){
+  if(row.documentStates?.PO?.state==='PROBLEM')throw Error('Procurement handoff requires the current PO before payment processing.');
   if(stage!=='OWNED'||current.stale||input.bankClear!==true)throw Error('Procurement handoff requires a current Finance-owned instruction and no unresolved bank operation.');
   if(current.submission?.paymentRequest){const request=current.submission.paymentRequest,quote=paymentRequestQuote(row,request.creditNotes);if(quote.cnPending||quote.availableCents<Math.max(0,request.requestedCents-(quote.paidCents-request.paidCents)-(quote.creditAppliedCents-request.creditAppliedCents)))throw Error('Payment request CN or available balance requires Account reconciliation.');}
   const review=details.paymentHandoff?.review;

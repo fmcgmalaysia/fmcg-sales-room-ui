@@ -25,6 +25,7 @@ on:
           - purchase-quiet-refresh-only
           - purchase-active-only
           - purchase-confirmed-feedback-only
+          - po-revision-only
 
 permissions:
   contents: read
@@ -56,7 +57,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -190,6 +191,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-confirmed-feedback-site', runner.temp) }}
+
+      - name: Prepare scoped PO revision and shared status resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'
+        run: node integration/prototypes/po-revision-ui-20261030/stage-state-colors.cjs "$RUNNER_TEMP/po-revision-site"
+
+      - name: Upload scoped PO revision resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/po-revision-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

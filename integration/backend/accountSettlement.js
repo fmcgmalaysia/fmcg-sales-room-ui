@@ -138,6 +138,8 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       }else if(input.action==='DOCUMENT_UPLOAD'){
         if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date||'')||!Number.isFinite(Date.parse(input.date))||new Date(input.date).toISOString().slice(0,10)!==input.date)throw Error('Enter a valid document date.');
         const number=text(input.number);if((!number&&input.type!=='PAYMENT')||number.length>120)throw Error('Enter the document or payment reference.');
+        if(input.type==='PAYMENT'&&!input.paymentId&&input.direction!=='REFUND'&&row.documentStates?.PO?.state==='PROBLEM')throw Error('Supplier PO requires replacement before payment.');
+        if(input.type==='PAYMENT'&&!input.paymentId&&input.direction!=='REFUND'&&row.documentReviewRequired?.length)throw Error('Supplier documents require confirmation against the current PO in Payment Review.');
         if(input.type==='PAYMENT'&&!input.paymentId&&(!cents(input.cents)||input.cents===0))throw Error('Enter a valid paid amount.');
         if(input.direction!==undefined&&!['PAYMENT','REFUND'].includes(input.direction))throw Error('Select payment or received refund.');
         if(input.type==='PAYMENT'&&!input.paymentId&&input.direction==='REFUND'){
@@ -188,9 +190,10 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       }else if(input.action==='PAYMENT_REVIEW'){
         if(details.procurementHandoff){const state=projectProcurementHandoff(row,details);if(state.stage!=='OWNED'||state.stale)throw Error('Procurement handoff requires a current Finance-owned submission before payment review.');}
         if(details.procurementHandoff?.submission?.paymentRequest){const request=details.procurementHandoff.submission.paymentRequest,quote=paymentRequestQuote(row,request.creditNotes);if(quote.cnPending||input.requestedCents!==request.requestedCents||input.requestedCents>quote.availableCents)throw Error('Payment request CN or amount requires reconciliation or return to Purchase.');}
+        if(row.documentReviewRequired?.length&&input.confirmCurrentProcurement!==true)throw Error('Supplier documents require confirmation against the current PO in Payment Review.');
         if(!['RECEIVED','REVIEWING'].includes(input.stage)||input.paperReceived!==true||!cents(input.requestedCents)||input.requestedCents===0)throw Error('Confirm paper documents received, review stage and requested MYR amount.');
         if(!currentDocs(row).some(doc=>['PI','SO','INV'].includes(doc.type)))throw Error('Supplier PI / SO or Final Invoice is required before review.');
-        handoff={...(details.paymentHandoff||{}),review:{stage:input.stage,requestedCents:input.requestedCents,paidAtReviewCents:row.finance?.paidCents||0,creditAtReviewCents:row.finance?.creditAppliedCents||0,paperReceived:true,version:paymentReviewVersion(row),...(details.procurementHandoff?{procurementVersion:details.procurementHandoff.submission.version}:{}),reason,...identity}};
+        handoff={...(details.paymentHandoff||{}),review:{stage:input.stage,requestedCents:input.requestedCents,paidAtReviewCents:row.finance?.paidCents||0,creditAtReviewCents:row.finance?.creditAppliedCents||0,paperReceived:true,confirmCurrentProcurement:input.confirmCurrentProcurement===true||row.paymentHandoff?.review?.confirmCurrentProcurement===true,version:paymentReviewVersion(row),...(details.procurementHandoff?{procurementVersion:details.procurementHandoff.submission.version}:{}),reason,...identity}};
         audit.changes={before:details.paymentHandoff?.review||null,after:handoff.review};
       }else if(input.action==='SHORTAGE_CLAIM'){
         const claim=preparePurchaseClaim(row,input,identity,reason);

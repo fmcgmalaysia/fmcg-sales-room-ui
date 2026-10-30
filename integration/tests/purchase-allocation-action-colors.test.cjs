@@ -21,7 +21,7 @@ test('next action changes from save to PO only after matching saved workspace, t
  const root=f.workspace.tasks[0];root.editVersion='V2';root.procurement={transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P2',draftPlan:true,costing:request.input.costing};f.ui.receivedWorkspace();saved(f);
  f.ui.click({dataset:{allocationPo:'A'}});assert.deepEqual(f.pos,['A']);assert.equal(f.submissions.length,1);
  f.edit('A','qty','55');waiting(f);f.ui.click({dataset:{allocationPo:'A'}});assert.deepEqual(f.pos,['A']);assert.equal(f.submissions.length,1);
- root.po='NCT-PO-000123';f.edit('A','qty','54');assert.equal(controls(f).po.className,'allocation-po complete');assert.equal(controls(f).save.className,'allocation-save needs-save');
+ root.po='NCT-PO-000123';f.edit('A','qty','54');assert.equal(f.ui.serialize().rows[0].qty,'55');f.ui.click({dataset:{allocationAmend:'A'}});f.edit('A','qty','54');assert.equal(controls(f).po.className,'allocation-po complete');assert.equal(controls(f).save.className,'allocation-save needs-save');
 });
 test('failed, ambiguous and mismatching readback leave save orange and PO white without retrying',()=>{
  for(const outcome of ['rejected','pending','mismatch']){

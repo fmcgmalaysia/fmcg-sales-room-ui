@@ -5,9 +5,11 @@ import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchas
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
 import { preparePurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
+import { procurementContentLock } from 'backend/paymentHandoff.js';
 const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
 const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
 const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
+const commercialSnapshot=(task,plan,order)=>({poNumber:task.ourPoNumber||'',quantity:plan.totalCtn??null,costing:copy(plan.costing),prices:Object.fromEntries(prices.map(key=>[key,task[key]??null])),cbmPerCtn:Number.isFinite(order.cbmCtn)?order.cbmCtn:null,amountCents:plan.costing?.amountCents??(Number.isSafeInteger(plan.totalCtn)&&prices.slice(1).every(key=>Number.isFinite(task[key]))?Math.round(plan.totalCtn*(task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3)*100):null)});
 export function createPurchaseOperations({store,now=()=>new Date()}) {
   const journal=createOperationJournal({store,now});
   async function state(company,staff) {
@@ -23,6 +25,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
     const tasks=destinationNumbers.size?await store.all(PURCHASE_COLLECTIONS[company].tasks):[];
     const ids=new Set([...business.map(change=>change.id),...tasks.filter(task=>destinationNumbers.has(task.ourPoNumber)).map(task=>task.title)]);
     for(const record of records.filter(record=>record.details?.taskIds?.some(id=>ids.has(id)))){
+      const permanentLock=procurementContentLock(record.details);if(permanentLock)throw Error(permanentLock);
       const handoff=record.details.procurementHandoff;
       if(handoff&&(handoff.schema!==1||!['WITHDRAWN','RETURNED'].includes(handoff.stage)))throw Error('Procurement handoff has locked this purchase order. Withdraw or request Finance return before editing.');
     }
@@ -131,14 +134,14 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
-        if((!reason&&(!costing||plan.revision||task.ourPoNumber))||reason.length>2000)throw Error('A procurement reason is required.');
+        if((!reason&&!task.ourPoNumber&&(!costing||plan.revision))||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const batchContext=checkPurchaseBatch(s.workspace,demandTask.title,input,input.totalCtn-(plan.totalCtn||0));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
         const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
-        if(extra>0&&(!reason||!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
+        if(extra>0&&(!reason&&!task.ourPoNumber||!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
         if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
@@ -202,6 +205,14 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           extraQty:input.extraQty,reason,stockDestination:'AVATA',allocationPending:true});
       }
       for(const change of updates.filter(change=>change.sharesRevision!==undefined)){const original=s.tasks.find(task=>task._id===change.id);change.targetVersion=taskEditVersion({...original,...change.patch});}
+      // Capture exact saved inputs once on the existing journal, including legacy edit paths.
+      for(const event of events.filter(event=>['PURCHASE_PLAN_SAVED','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PO_ASSIGNED'].includes(event.action))){
+        const task=s.tasks.find(task=>task.title===event.taskId),change=updates.find(change=>change.id===event.taskId),order=s.orders.find(order=>order.title===task?.description&&order.sourceLineId===task?.imageAltText);
+        if(!task||!change||!order)continue;
+        const beforePlan=readPurchasePlan(task,s.activity),planEvent=events.find(item=>item.taskId===task.title&&item.action==='PURCHASE_PLAN_SAVED'),afterPlan=planEvent?{...beforePlan,totalCtn:planEvent.totalCtn,costing:planEvent.costing||null}:beforePlan;
+        event.commercialBefore=commercialSnapshot(task,beforePlan,order);event.commercialAfter=commercialSnapshot({...task,...change.patch},afterPlan,order);
+        event.commercialChanged=JSON.stringify(event.commercialBefore)!==JSON.stringify(event.commercialAfter);event.amendment=Boolean(task.ourPoNumber)&&event.commercialChanged;
+      }
       await requireEditablePurchaseChanges(company,updates);
       return {operation,updates,events,...(displayOrder?{displayOrder}:{}),time:now().toISOString()};
     },apply:async plan=>{
