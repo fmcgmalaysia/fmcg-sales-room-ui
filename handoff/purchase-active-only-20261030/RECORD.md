@@ -1,0 +1,25 @@
+# Purchase current task layout only
+
+User screenshot 2026-10-30 explicitly rejects the old customer Room layout. Startup reused the already-read project framework and inspected the dashboard-entry handoff, actual assembled production app and current routing/draft handlers. Published app bytes equal the preserved quiet-refresh release and its reproducible staged plan. Raw app.js intentionally differs because existing receipt-feedback overlays are part of that release chain.
+
+Minimum candidate: normalize legacy `room` routes and saved origin display context to the existing customer-filtered Active Orders before rendering. Business handlers, task IDs, pending payload/request identity, source rows, financial locks and stock logic remain unchanged. The old stored route is accepted for draft compatibility but cannot render the old layout. No unrelated cleanup or backend change in this patch.
+
+Recovery: existing94-resource 0b61b6e quiet-refresh package and Wix page source. The new staged release inherits all94 resources and changes only Purchase app/index. Main untouched. Eleven targeted checks pass for unmarked/task routes, restored pending request, original retry payload, drafts, movement and source/Finance guards. The wider122-test UI run initially had17 failures: two new assertions also matched hidden legacy select options and were corrected to inspect the actual layout; remaining older legacy-layout expectations require explicit review before release. No all-green claim.
+
+Code candidate and release staging prepared; GitHub/Pages/Wix/public acceptance pending. Work temporarily returns to the separately scoped backend recovery after fresh CMS evidence proved key-order-only inequality in the saved original result. This record is not publication evidence.
+
+## Candidate review completed
+
+- Actual assembled94-resource package:122 Purchase UI checks,119 pass,3 failures also present with the published assembled app. Twelve older assertions explicitly demanded the retired Room display (progress capsules, separate GP column, clickable receipt values, old branch-marker visibility or old return target). They now verify the corresponding current Active layout while retaining exact quantities, source identities, GP thresholds, shortage isolation, history access and no-write assertions. No business assertion was removed to hide an unknown failure. The three unrelated existing failures were left intact.
+- Eleven route/draft/identity checks pass on the actual assembled app as well as raw development source. The staged candidate changes app/index only; all92 other asset bytes stay pinned. Scoped workflow option added without changing deployment permissions or defaults.
+- Chrome local preview explicitly labels itself unpublished/test-only and has no CMS connection. A pre-upgrade customer context restored to Active Orders filtered to TESTING02. Dashboard customer Entry returned to the same current layout. The existing short-receipt action still opened its original task Progress dialog on Dashboard; it did not enter the old Room and no business write occurred. Private screenshot retained.
+- GitHub draft PR240 attached. Pages/Wix/public stages remain incomplete. Original pending request is retained; the UI candidate does not claim to clear it or to fix backend recovery by hiding its warning.
+
+## Four publication stages completed 2026-10-30
+
+1. Code864322fcf7be0262a8ab0dba809dec9029426a3a, build20261030-purchase-active-only-v1. Existing test outputs reused; no unrelated candidate included. Wix pointer/documentation follow in a separate recording commit. No main merge or fabricated user-verified tag.
+2. Pages run40989111629 succeeded at the exact approved head. All94 public resource hashes matched; all9 retired paths remain404. User action-time approval covered one purchase-active-only dispatch. Temporary rule64863262 was removed immediately after success, and the original7 rules/IDs/types matched exactly.
+3. Fresh Wix Purchase page source matched the repository before editing. Exactly one version token changed; full after-readback matched both the expected isolated replacement and repository8117chars. Wix confirmed "This site is published and live online". No backend module or other page changed in this publication.
+4. Original formal Purchase tab was refreshed, then Chrome native Ctrl+Shift+R was used at its verified URL. The reloaded browser target needed reconnecting after a CDP timeout; fresh inspection showed the new iframe build, restored old customer context on Active Orders,8 existing rows,0 old room headings and0 Pending workload regions. Dashboard Entry and View save both returned to current Active Orders. Original pending submission remained the same; no business save submitted during layout acceptance. No captured console errors. Private screenshots/source hashes/public verification retained.
+
+This completes the scoped layout publication, not the larger two-order Loaded scenario. The existing original PO save still needs its separately tested backend key-order correction. User real-world acceptance remains pending.
