@@ -77,6 +77,7 @@ $w.onReady(function () {
   let customerRefreshPromise;
   let routeQueuePromise;
   let automaticQdVerificationPromise;
+  let hasQdRetryWork = false;
 
   function verifyActivationRequiredQdsInBackground(customers) {
     if (automaticQdVerificationPromise) return automaticQdVerificationPromise;
@@ -98,6 +99,8 @@ $w.onReady(function () {
     if (customerRefreshPromise) return customerRefreshPromise;
     customerRefreshPromise = getSalesRoomCustomersWithQuoteSignals()
       .then((response) => {
+        hasQdRetryWork = (Array.isArray(response?.customers) ? response.customers : []).some(customer =>
+          Number(customer.pendingRouteItemCount || 0) + Number(customer.failedRouteItemCount || 0) + Number(customer.routingItemCount || 0) > 0);
         salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response });
         verifyActivationRequiredQdsInBackground(response?.customers);
         return response;
@@ -118,6 +121,11 @@ $w.onReady(function () {
       .finally(() => { routeQueuePromise = null; });
     return routeQueuePromise;
   }
+
+  // Retry only while saved work remains; no reload or customer interaction.
+  setInterval(() => {
+    if (hasQdRetryWork) staffPromise.then(staff => { if (staff.authorized) routePendingSelections(); });
+  }, 60000);
 
   wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, async () => {
     await refreshCustomersFromCms();
