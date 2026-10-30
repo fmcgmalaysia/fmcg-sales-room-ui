@@ -1,5 +1,5 @@
 {
-  "state": "DRAFTS_VERIFIED_NOT_PUBLISHED",
+  "state": "PAGES_AND_WIX_LIVE_PUBLIC_QA_PARTIAL",
   "branch": "feat/po-revision-paid-lock-20261030",
   "build": "20261030-po-revision-paid-lock-v1",
   "backend": [
@@ -65,12 +65,47 @@
     "liveJournal": {
       "passed": 120,
       "failed": 0
-    }
+    },
+    "historicalBuyerFailure": "Unchanged Buyer Room renders English; old assertion expects Chinese. Evidence HISTORICAL_FEEDBACK_TEST.json"
   },
   "productionDataWrites": 0,
   "publication": {
-    "pages": "NOT_STARTED",
-    "wix": "DRAFT_ONLY",
-    "public": "NOT_STARTED"
-  }
+    "codeVersion": "f5c8de20b30fe24c6218e25e608043d8e4c210d4",
+    "build": "20261030-po-revision-paid-lock-v1",
+    "pages": {
+      "status": "VERIFIED",
+      "runId": 41021081020,
+      "resourcesMatched": 94,
+      "total": 94
+    },
+    "permissions": {
+      "temporaryRuleRemoved": true,
+      "originalRules": 7
+    },
+    "wix": {
+      "status": "PUBLISHED_AND_LIVE",
+      "evidence": "WIX_PUBLISHED.png",
+      "backendDraftsMatched": 8,
+      "pageVersionPatchesMatched": 3
+    },
+    "public": {
+      "status": "PARTIAL",
+      "purchase": {
+        "loadedNewBuild": true,
+        "readonlyFieldsVerified": true,
+        "pencilEnablesEditing": true,
+        "noReasonOnAmend": true,
+        "screenshot": "PURCHASE_AMEND.png"
+      },
+      "pending": [
+        "Cancel/reopen and Review history",
+        "Finance live canonical button states",
+        "Support Planned/Loaded display",
+        "Cross-department live convergence"
+      ],
+      "blocker": "Chrome control connection lost: Debugger unattached. Reconnect requested; do not redeploy."
+    },
+    "productionBusinessWrites": 0
+  },
+  "deployedCode": "f5c8de20b30fe24c6218e25e608043d8e4c210d4"
 }
