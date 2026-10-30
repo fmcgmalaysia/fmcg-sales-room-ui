@@ -455,6 +455,9 @@ const stages=[
   }
   function render() {
     if (!data) return;
+    // Old task links and saved drafts use the current Active Orders layout too.
+    if(view==='room'){activeCustomer=customerId;view='active';}
+    if(saveOrigin?.view==='room')saveOrigin={...saveOrigin,view:'active',activeCustomer:saveOrigin.customerId};
     renderTaskSignals();if(window.masterTaskSignals&&!poData&&!poLoading&&!poLoadError)loadPurchaseOrders();
     document.querySelector('#taskSignals').hidden=view==='dashboard'||view==='active'||view==='po'||view==='payments'||view==='pohistory'||view==='history';
     document.querySelectorAll('nav [data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view || view==='room'&&button.dataset.view==='dashboard'));

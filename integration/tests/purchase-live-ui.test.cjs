@@ -114,6 +114,22 @@ test('Dashboard Entry preserves another customer price draft and saves it with i
  h.click({controlId:'saveEdits'});const sent=h.messages.at(-1);assert.equal(sent.operation,'EDIT');assert.equal(sent.input.edits[0].taskId,'TASK');assert.equal(sent.input.edits[0].version,'REV-C');assert.equal(sent.input.edits[0].changes.disc3,3);
 });
 
+test('unmarked customer and old room entries render only current customer-filtered Active Orders',()=>{
+ const h=harness(),w=workspace();w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);
+ for(const entry of [{customer:'C'},{view:'room'}]){h.click(entry);const html=h.node('#app').innerHTML;assert.match(html,/active-order-heading/);assert.match(html,/<option value="C" selected/);assert.doesNotMatch(html,/class="roomhead"|<th>Progress<\/th>|SECOND PRODUCT/);}
+ assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+});
+
+test('dashboard task action opens current layout and the same task editor without a business write',()=>{
+ let open;const signals={mount(_host,_department,_data,handler){open=handler;}},h=harness(undefined,[],signals),w=workspace();h.reply(w);open({id:'TASK',action:'edit'});
+ assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);assert.equal(h.node('#modal').open,true);assert.match(h.node('#dialogContent').innerHTML,/00123/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+});
+
+test('pre-upgrade pending room draft restores and returns through current layout with the identical save payload',()=>{
+ const pending={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'original-request',operation:'EDIT',input:{edits:[{taskId:'TASK',version:'REV',changes:{disc3:5}}]}},cached={customerId:'C',drafts:[['TASK',{version:'REV',changes:{disc3:5}}]],savePending:pending,saveOrigin:{view:'room',customerId:'C',activeCustomer:''}},cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify(cached)]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='REV';h.reply(w);
+ assert.equal(h.messages.at(-1).saveRequestId,pending.requestId);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.match(h.node('#app').innerHTML,/<option value="C" selected/);h.click({view:'payments'});h.click({controlId:'viewPendingSave'});assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.doesNotMatch(h.node('#app').innerHTML,/class="roomhead"/);h.click({controlId:'retryPendingSave'});assert.deepEqual(JSON.parse(JSON.stringify(h.messages.at(-1))),pending);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
+});
+
 test('stock-only supplier receipts cannot satisfy another supplier customer shortage',()=>{
  const h=harness(),w=workspace();
  Object.assign(w.tasks[0],{ord:100,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:100,customerCtn:100,expectedExtra:0},warehouse:{accepted:60,hasPhysicalReceipt:true}});

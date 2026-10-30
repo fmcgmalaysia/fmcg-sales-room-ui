@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto'),cp=require('node:child_process'),previous=require('../purchase-quiet-refresh-20261029/stage.cjs'),root=path.resolve(__dirname,'../../..');
+const build='20261030-purchase-active-only-v1',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+function plan(){
+ const inherited=previous.plan(),assets=new Map(inherited.assets),baseline=new Map(assets);assert.equal(assets.size,94);
+ const find='  function render() {\n    if (!data) return;\n',replacement=find+"    // Old task links and saved drafts use the current Active Orders layout too.\n    if(view==='room'){activeCustomer=customerId;view='active';}\n    if(saveOrigin?.view==='room')saveOrigin={...saveOrigin,view:'active',activeCustomer:saveOrigin.customerId};\n";
+ let app=assets.get('purchase-live/app.js').toString();assert.equal(app.split(find).length,2);assets.set('purchase-live/app.js',Buffer.from(app.replace(find,()=>replacement)));
+ let index=assets.get('purchase-live/index.html').toString().replace(/(<meta name="build" content=")[^"]+/,'$1'+build).replace(/(src="app\.js\?v=)[^"&]+/,'$1'+build);assets.set('purchase-live/index.html',Buffer.from(index));
+ const changed=[...assets].filter(([file,bytes])=>hash(bytes)!==hash(baseline.get(file))).map(([file])=>file);assert.deepEqual(changed.sort(),['purchase-live/app.js','purchase-live/index.html']);return {...inherited,build,assets,baseline,changed};
+}
+function stage(destination){const p=plan(),target=path.resolve(destination||'');assert(destination&&!fs.existsSync(target)&&target!==root&&!target.startsWith(root+path.sep)&&target!==path.parse(target).root);fs.mkdirSync(target,{recursive:true});for(const[file,bytes]of p.assets){const output=path.join(target,file);fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,bytes);}const report={build,codeCommit:cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),productionRecovery:'0b61b6e878f64241b0d88142de2bec272ae55d40',resources:[...p.assets].map(([file,bytes])=>({path:file,sha256:hash(bytes)})),retired:p.retired,redirects:p.redirects,changed:p.changed,backendFilesIncluded:false,wixCodeChangeRequired:true};fs.writeFileSync(path.join(target,'active-only-release.json'),JSON.stringify(report,null,2)+'\n');return report;}
+if(require.main===module){const p=stage(process.argv[2]);console.log(JSON.stringify({build,resources:p.resources.length,changed:p.changed}));}module.exports={plan,stage};
