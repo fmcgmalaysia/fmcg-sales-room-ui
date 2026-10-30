@@ -79,4 +79,41 @@ The current full Wix Purchase page matched `integration/wix/purchase-room-page.j
 Before-page normalized SHA-256: `c18577ef141f1f1c169cb87836e56088c01ad3f77fd090a5f5f2ddfd0fdb3ad9`.
 After-page normalized SHA-256: `cefcae9770320ec4b613143409a9ff4ad77445624f602e2bd12b5a5284a31447`.
 
-Pages deployment, temporary branch permission, Wix publication and formal acceptance are pending at this continuation checkpoint. Prior test results remain applicable: no business code changed during this continuation.
+At the pre-approval continuation checkpoint these release stages were pending. The completed outcome below supersedes that checkpoint. Prior test results remain applicable: no business code changed during this continuation.
+
+## Completed release and formal acceptance — 2026-10-31
+
+Released commit: `cbf572a1fef00087bf6a6b8ae781b730cc60f414`.
+Build: `20261030-purchase-personal-row-order-v1`.
+Draft PR: [248](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/248); no main merge or new user-verified tag.
+
+The user approved one exact temporary branch permission and one `purchase-personal-row-order-only` deployment. [Run 41093032764](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41093032764), job `124191561972`, succeeded. Only the scoped personal-row-order prepare/upload steps ran; the generic site upload and other release modes were skipped. The temporary branch rule was immediately removed after success and the exact original seven rules were visibly restored.
+
+All 94 resource contents were verified. 93 match the Windows candidate byte for byte. `display-rows.js` uses LF in the Linux deployment instead of the Windows candidate's 51 CRLF endings; its deployed bytes exactly match the approved Git blob and its normalized code exactly matches the tested candidate. There is no code-content difference. The 91 resources outside the three changed Purchase resources remain identical to the pre-release package.
+
+Wix's final pre-publication full readback still exactly matched the one-token patch. Wix Studio then displayed `Congratulations This site is published and live online.` The receipt screenshot is retained privately.
+
+Formal acceptance used LAW, NCT, TESTING 02 on the clean public Purchase URL. A normal native Chrome new-tab navigation rendered the real workspace with the correct iframe URL, build meta and app/display-row script tokens. The following were observed directly:
+
+| Scenario | Formal result |
+| --- | --- |
+| Actual mouse drag of LABOUR above DETTOL | Immediate new order; no Save or Cancel move control appeared |
+| Business values before and after movement | All eight rows' quantities, costs, P.O., received and Loaded cells unchanged |
+| Fresh backend workspace/history read after moving | Same 62 records, with the entire displayed history content exactly matching the pre-release snapshot |
+| Open a second native Chrome tab and enter TESTING 02 | Moved order restored automatically without Save |
+| Click a handle, choose the top destination and apply | Same personal-order behavior; original test arrangement restored successfully |
+| Fresh history read after restoring the test order | Still the exact original 62 records |
+| Refresh Support's TESTING 02 workspace | Eight task rows, same order and business values |
+| Refresh Warehouse's TESTING 02 Delivery Task | Eight task rows, same order and business values |
+| Refresh Finance overview | Two records, same business values, payment state and order |
+| Candidate formal page errors | No captured console errors |
+
+Relative `Today`/`Yesterday` display labels were normalized only when comparing department snapshots; actual timestamps, quantities, values, identities and order were preserved in the comparison. No genuine price, payment, stock, allocation, received or Loaded save was submitted during this release test.
+
+The original Purchase tab containing the user's old unsaved movement was not refreshed, saved or cancelled. The completed test page was left open with the test arrangement restored, ready for user testing. Its original unsaved old-version counterpart remains preserved separately.
+
+The documented tooling-related load limitation remains: tool reload of a clean page produced the correct new iframe address but an `about:blank` inner document with no captured page error. Native Chrome `Ctrl+T`, typing the clean URL and navigating normally rendered the real workspace on both acceptance openings. This is a verified operating route, not a claimed root-cause fix of the existing intermittent blank-page behavior. No startup, authentication or embed architecture was changed to achieve acceptance.
+
+Private evidence: `PUBLIC_ACCEPTANCE_20261031.json`, `PAGES_VERIFIED_20261031.json`, `RULES_RESTORED_20261031.json`, `DEPARTMENTS_AFTER_MOVE_20261031.json`, exact before/after sources, history snapshots and screenshots in the existing task evidence directory. Raw business snapshots and screenshots are excluded from GitHub and public deployment.
+
+Final four-stage status: code complete; Pages verified; Wix published/live; requested formal movement, history and department checks passed. User real-world testing remains the next step before any verified-baseline promotion.
