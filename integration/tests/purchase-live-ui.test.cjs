@@ -60,7 +60,7 @@ test('PO submit dialog sends one complete saved version with optional urgency an
  h.node('#poChangeReason').value='Confirmed both sources';h.node('#poUrgent').checked=true;h.click({controlId:'savePurchaseOrderMeta'});
  const sent=h.messages.at(-1);assert.equal(sent.type,'PURCHASE_ORDER_SAVE_REQUEST');assert.equal(sent.input.action,'SUBMIT_FINANCE');assert.equal(sent.input.version,'PV');assert.equal(sent.input.urgent,true);assert.equal(sent.input.termDays,undefined);
 });
-function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
+function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage) {
   const nodes = new Map(), listeners = new Map(), messages = [], timers = [], intervals=[];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
@@ -70,6 +70,8 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[]) {
   }
   const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
   let count=0;
+  const rowValues=new Map();rowStorage=rowStorage||{getItem:k=>rowValues.get(k)||null,setItem:(k,v)=>rowValues.set(k,v)};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/display-rows.js'),'utf8'),{window,localStorage:rowStorage});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/dashboard.js'),'utf8'),{window});
   vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
@@ -203,14 +205,12 @@ test('Active child rows are always visible with a noninteractive branch marker i
  h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ao-child-marker/);
 });
 
-test('Active move entry selects a customer and preserves the original grouped move and cancel without saving',()=>{
+test('Active move entry applies a personal grouped order immediately without a cancel or Save step',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{supplierId:'S',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'}});
- w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0});w.tasks.push({...w.tasks[0],id:'OTHER'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'D-TASK',customerId:'D'});
- h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});assert.match(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);
- h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);
- h.click({drag:'TASK'});const moveMarkup=h.node('#dialogContent').innerHTML;assert.match(moveMarkup,/Move Row 移动行/);assert.match(moveMarkup,/To Top 移到顶部/);assert.match(moveMarkup,/To Bottom 移到底部/);assert.ok(moveMarkup.includes('<option value="OTHER">Before Row 002 前面</option>'));assert.doesNotMatch(moveMarkup,/<option value="SOURCE">/);h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});let html=h.node('#app').innerHTML;
- assert.ok(html.indexOf('data-id="OTHER"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-source-id="SOURCE"'));assert.match(html,/data-active-cancel="true"/);
- h.click({activeCancel:'true'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="OTHER"'));assert.doesNotMatch(html,/data-active-cancel/);assert.equal(h.messages.length,before);
+ w.tasks.push({...w.tasks[0],id:'SOURCE',procurementSource:true,customerDemandTaskId:'TASK',ord:0},{...w.tasks[0],id:'OTHER'});w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'D-TASK',customerId:'D'});
+ h.reply(w);h.click({view:'active'});const before=h.messages.length;h.click({activeMove:'true'});h.node('#moveCustomer').value='C';h.click({controlId:'startCustomerMove'});
+ h.click({drag:'TASK'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/<option value="SOURCE">/);h.node('#moveTarget').value='bottom';h.click({controlId:'applyMove'});const html=h.node('#app').innerHTML;
+ assert.ok(html.indexOf('data-id="OTHER"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-source-id="SOURCE"'));assert.doesNotMatch(html,/data-active-cancel/);h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
 });
 
 test('cost-aware plan saves quantity and prices once and reopens remaining supplier planning only after a confirmed receipt',()=>{
@@ -568,7 +568,7 @@ test('drag feedback marks grip, source and exact insertion target while keeping 
  h.event('dragstart',handleTarget,{dataTransfer:{setData(type,id){assert.equal(type,'text/plain');assert.equal(id,'TASK2')}}});assert(second.classes.has('dragging-row'));
  const target={closest:selector=>selector==='tr[data-id]'?first:null};h.event('dragover',target,{preventDefault(){}});assert(first.classes.has('drop-target'));assert.equal(h.messages.length,1);
  h.event('drop',target,{preventDefault(){}});assert(!first.classes.has('drop-target'));assert(!second.classes.has('dragging-row'));assert.equal(h.messages.length,1);
- h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);assert.equal(save.input.versions.TASK,'REV1');assert.equal(save.input.versions.TASK2,'REV2');assert.equal(save.input.edits.length,0);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.length,1);const html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));
 });
 
 test('department financial signals read without rebuilding unsaved task rows',async()=>{
@@ -599,12 +599,11 @@ test('late confirmation clears only submitted edits, retains unrelated drafts an
  h.click({view:'active'});h.click({controlId:'saveEdits'});const next=h.messages.at(-1);assert.equal(next.input.edits.length,1);assert.equal(next.input.edits[0].taskId,'OTHER');assert.equal(next.input.edits[0].version,'V2');assert.equal(next.input.edits[0].changes.disc3,7);
 });
 
-test('an unsaved row order remains scoped to its original customer while browsing another customer',()=>{
- const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);h.click({customer:'C'});
+test('personal order survives browsing another customer without submitting a business request',()=>{
+ const h=harness(),w=workspace();w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);h.click({customer:'C'});
  h.change({dataset:{select:'TASK2'},checked:true});h.click({controlId:'moveSelected'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});
- h.click({view:'dashboard'});h.click({customer:'D'});assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);assert.doesNotMatch(h.node('#app').innerHTML,/data-id="TASK2"/);
- h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.customerId,'C');assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);
- h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:save.requestId,ok:true,result:{ok:true,requestId:save.requestId}});h.reply(w);assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);h.click({controlId:'saveEdits'});assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,1);
+ const before=h.messages.length;h.click({view:'dashboard'});h.click({customer:'D'});assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
+ h.click({customer:'C'});const html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));
 });
 
 test('late receipt from an earlier save cannot resolve or retry a later operation',async()=>{
@@ -626,7 +625,7 @@ test('pending dialog unlock after a known rejection preserves fields that were a
 });
 
 test('pre-upgrade row-order cache retains customer scope after navigating to another customer',()=>{
- const cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify({customerId:'C',drafts:[],sequenceDraft:['TASK2','TASK'],sequenceVersions:{TASK:'V',TASK2:'V'}})]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);h.click({customer:'D'});assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.customerId,'C');assert.deepEqual(Array.from(save.input.taskIds),['TASK2','TASK']);
+ const cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify({customerId:'C',drafts:[],sequenceDraft:['TASK2','TASK'],sequenceVersions:{TASK:'V',TASK2:'V'}})]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});w.customers.push({id:'D',name:'SECOND CUSTOMER'});w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',name:'SECOND PRODUCT'});h.reply(w);h.click({customer:'D'});assert.match(h.node('#app').innerHTML,/SECOND PRODUCT/);h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,0);h.click({customer:'C'});assert.ok(h.node('#app').innerHTML.indexOf('data-id="TASK2"')<h.node('#app').innerHTML.indexOf('data-id="TASK"'));
 });
 
 
@@ -635,11 +634,11 @@ test('Active move entry immediately exposes native drag handles for a sole custo
  assert.match(h.node('#app').innerHTML,/data-drag="TASK"/);h.click({activeMove:'true'});
  assert.match(h.node('#app').innerHTML,/draggable="true" aria-description="Drag to move · 拖动排列" data-drag="TASK"/);
  assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="moveCustomer"/);assert.equal(h.messages.length,before);
- assert.match(h.node('#liveStatus').textContent,/Save/);
+ assert.match(h.node('#liveStatus').textContent,/自动记忆/);
 });
 
 
-test('All Customers keeps native handles across navigation and drags a complete group with a customer-scoped Save',()=>{
+test('All Customers keeps a personal group order across navigation without a business Save',()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='V1';w.customers.push({id:'D',name:'SECOND CUSTOMER'});
  w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'D',editVersion:'VD'},{...w.tasks[0],id:'TASK2',editVersion:'V2'},{...w.tasks[0],id:'SOURCE2',procurementSource:true,customerDemandTaskId:'TASK2',editVersion:'VS'});
  h.reply(w);h.click({view:'active'});let html=h.node('#app').innerHTML;assert.match(html,/data-drag="TASK2"/);assert.match(html,/data-drag="OTHER"/);assert.doesNotMatch(html,/data-drag="SOURCE2"/);
@@ -648,17 +647,17 @@ test('All Customers keeps native handles across navigation and drags a complete 
  const drag=()=>{h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});};
  const before=h.messages.length;drag();html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.ok(html.indexOf('data-source-id="SOURCE2"')<html.indexOf('data-id="OTHER"'));assert.equal(h.messages.length,before);
  h.click({view:'dashboard'});h.click({view:'active'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/data-drag="TASK2"/);
- h.click({activeCancel:'true'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="TASK2"'));
- drag();h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.customerId,'C');assert.deepEqual(Array.from(save.input.taskIds),['TASK2','SOURCE2','TASK']);assert.deepEqual(Object.keys(save.input.versions).sort(),['SOURCE2','TASK','TASK2']);assert.equal(save.input.versions.OTHER,undefined);
+ assert.doesNotMatch(html,/data-active-cancel/);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);assert.equal(w.tasks[0].rowPosition,undefined);assert.equal(w.tasks[0].editVersion,'V1');
 });
 
-test('All Customers rejects cross-customer drop and protects an existing customer sort draft',()=>{
+test('All Customers rejects cross-customer drop and allows independent personal customer orders',()=>{
  const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.customers.push({id:'D',name:'SECOND'});w.tasks.push({...w.tasks[0],id:'TASK2'},{...w.tasks[0],id:'OTHER',customerId:'D'});h.reply(w);h.click({view:'active'});const before=h.messages.length;
  const start=id=>h.event('dragstart',{closest:()=>({dataset:{drag:id},closest:()=>null})},{dataTransfer:{setData(){}}});
  start('TASK');h.event('drop',{closest:()=>({dataset:{id:'OTHER'}})},{preventDefault(){}});assert.match(h.node('#liveStatus').textContent,/同一客户/);h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
  start('TASK2');h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});
- let prevented=false;h.event('dragstart',{closest:()=>({dataset:{drag:'OTHER'},closest:()=>null})},{preventDefault(){prevented=true;},dataTransfer:{setData(){throw Error('must not start another customer');}}});assert.equal(prevented,true);
- h.click({controlId:'saveEdits'});assert.equal(h.messages.at(-1).input.customerId,'C');assert.deepEqual(Array.from(h.messages.at(-1).input.taskIds),['TASK2','TASK']);
+ let prevented=false;h.event('dragstart',{closest:()=>({dataset:{drag:'OTHER'},closest:()=>null})},{preventDefault(){prevented=true;},dataTransfer:{setData(){}}});assert.equal(prevented,false);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
 });
 
 test('Clicking a persistent handle in All Customers opens the original destination dialog for its customer',()=>{
@@ -667,13 +666,13 @@ test('Clicking a persistent handle in All Customers opens the original destinati
 });
 
 
-test('Active work tabs separate work content from filters and retain a row-order draft and supplier filter',()=>{
+test('Active work tabs retain the personal order and supplier filter without a draft',()=>{
  const h=harness(),w=workspace();w.suppliers=[{id:'S1',name:'FIRST SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S1',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',expectedExtra:10,totalCtn:20,revision:'P'}});w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({view:'active'});
  let html=h.node('#app').innerHTML;assert.match(html,/data-active-work="orders" aria-pressed="true"/);assert.match(html,/data-active-work="allocation" aria-pressed="false"/);assert.match(html,/id="allocationFilter" aria-label="Work source" hidden/);assert.match(html,/All Customers 全部客户/);assert.match(html,/All Suppliers 全部供应商/);
  h.change({id:'supplierFilter',value:'S1',dataset:{}});h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});const before=h.messages.length;
- h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Awaiting warehouse/);assert.match(html,/disabled>Allocate/);assert.match(html,/class="save-group" (?!hidden)/);assert.ok(!html.includes('Sales / Buyer'));
+ h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Awaiting warehouse/);assert.match(html,/disabled>Allocate/);assert.match(html,/class="save-group" hidden/);assert.ok(!html.includes('Sales / Buyer'));
  h.click({activeWork:'orders'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/<option value="S1" selected>/);assert.equal((html.match(/data-drag=/g)||[]).length,2);assert.equal(h.messages.length,before);
- h.click({controlId:'saveEdits'});assert.deepEqual(Array.from(h.messages.at(-1).input.taskIds),['TASK2','TASK']);
+ h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
 });
 
 test('Active work tabs allow read-only browsing during a pending Save without resubmitting',()=>{
@@ -699,7 +698,7 @@ test('supplier-filtered diagnostics use the same visible product numbering as th
  const {h,w}=rowErrorFixture();w.tasks[0].supplierId='OTHER';w.tasks[1].supplierId='S';w.tasks[2].supplierId='S';w.suppliers=[{id:'S',name:'Supplier'},{id:'OTHER',name:'Other'}];h.reply(w);h.click({view:'active'});h.change({id:'supplierFilter',value:'S'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});assert.match(rejectSave(h,h.messages.at(-1)),/^ROW 002 ·/);
 });
 test('diagnostics follow moved product order without changing submitted edits or sequence',()=>{
- const {h,w}=rowErrorFixture();h.reply(w);h.click({customer:'C'});h.click({drag:'TASK'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.taskIds[0],'TASK');assert.match(rejectSave(h,save),/^ROW 001 ·/);
+ const {h,w}=rowErrorFixture();h.reply(w);h.click({customer:'C'});h.click({drag:'TASK'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.input.taskIds,undefined);assert.equal(save.input.edits[0].taskId,'TASK');assert.match(rejectSave(h,save),/^ROW 001 ·/);
 });
 test('the original supplier record rendered as the first child is labelled as a child for source costing',()=>{
  const {h,w}=rowErrorFixture();w.tasks.push({...w.tasks[2],id:'CHILD',procurementSource:true,customerDemandTaskId:'TASK'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({controlId:'saveEdits'});assert.match(rejectSave(h,h.messages.at(-1)),/^ROW 003 的子行/);
@@ -995,4 +994,22 @@ test('forged or stale Active checkbox changes cannot bypass the compatibility gu
  const h=harness(),w=workspace();w.suppliers=[{id:'S',name:'SUPPLIER'},{id:'B',name:'OTHER'}];Object.assign(w.tasks[0],{supplierId:'S',po:'',procurement:{revision:'P1',totalCtn:100}});w.tasks.push({...w.tasks[0],id:'LOCKED'}, {...w.tasks[0],id:'FOREIGN',supplierId:'B'});h.reply(w);h.click({view:'active'});
  h.click({view:'po'});const request=h.messages.findLast(m=>m.type==='PURCHASE_ORDERS_REQUEST');h.send({type:'PURCHASE_ORDERS_RESULT',company:'NCT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[{id:'LOCK',state:'ACTIVE',documentStatus:'Awaiting documents',supplierName:'SUPPLIER',customerName:'CUSTOMER',number:'PO-LOCK',taskIds:['LOCKED'],supplierId:'S',documents:[],history:[],procurementHandoff:{stage:'OWNED',editable:false}}]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'active'});
  h.change({dataset:{select:'TASK',selectKind:'demand'},checked:true});for(const id of ['LOCKED','FOREIGN']){const el={dataset:{select:id,selectKind:'demand'},checked:true,disabled:false};h.change(el);assert.equal(el.checked,false);assert.match(h.node('#app').innerHTML,/1 selected/);}assert.equal(h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').length,0);
+});
+
+test('personal display drag and destination dialog persist through reload without a Save or history write',()=>{
+ const values=new Map(),store={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)},w=workspace();w.tasks.push({...w.tasks[0],id:'TASK2'});w.purchaseDisplayOrder={C:{version:'ORDER-V',rows:['["TASK",""]','["TASK2",""]']}};const before=JSON.stringify(w),h=harness(undefined,[],null,[],store);h.reply(w);h.click({view:'active'});
+ const key='["TASK2",""]',first='["TASK",""]',target=selector=>selector==='tr[data-display-key]'?{dataset:{displayKey:first}}:null;
+ h.event('dragstart',{closest:selector=>selector==='[data-display-drag]'?{dataset:{displayDrag:key},closest:()=>null}:null},{dataTransfer:{setData(){}}});h.event('drop',{closest:target},{preventDefault(){}});
+ let html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/class="save-group" hidden/);h.click({controlId:'saveEdits'});assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ const again=harness(undefined,[],null,[],store);again.reply(w);again.click({view:'active'});html=again.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));
+ again.click({displayDrag:key});assert.doesNotMatch(again.node('#dialogContent').innerHTML,/Click Save afterwards/);again.node('#displayMoveTarget').value='bottom';again.click({controlId:'applyDisplayMove'});html=again.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK"')<html.indexOf('data-id="TASK2"'));assert.equal(again.messages.filter(m=>m.type.includes('SAVE')).length,0);assert.equal(JSON.stringify(w),before);assert.equal(values.size,1);
+});
+test('personal movement preserves a price draft and submits only its original edit version',()=>{
+ const h=harness(),w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({customer:'C'});h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});h.click({drag:'TASK2'});h.node('#moveTarget').value='top';h.click({controlId:'applyMove'});h.click({controlId:'saveEdits'});const save=h.messages.at(-1);assert.equal(save.type,'PURCHASE_SAVE_REQUEST');assert.equal(save.input.edits.length,1);assert.equal(save.input.edits[0].version,'V');assert.equal(save.input.edits[0].changes.disc3,3);for(const field of ['taskIds','customerId','versions','displayRows','displayOrderVersion'])assert.equal(save.input[field],undefined);
+});
+test('legacy mixed unknown Save retains its exact request; known rejection converts only unsent ordering',()=>{
+ const w=workspace();w.tasks[0].editVersion='V';w.tasks.push({...w.tasks[0],id:'TASK2'});const original={type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'ORIGINAL',operation:'EDIT',input:{customerId:'C',taskIds:['TASK2','TASK'],versions:{TASK:'V',TASK2:'V'},edits:[{taskId:'TASK',version:'V',changes:{disc3:3}}]}};
+ const cache=new Map([['fmcg-purchase-draft-v1/NCT/STAFF/MEMBER',JSON.stringify({customerId:'C',drafts:[['TASK',{version:'V',changes:{disc3:3}}]],sequenceDraft:['TASK2','TASK'],sequenceVersions:original.input.versions,sequenceCustomerId:'C',savePending:original})]]),storage={getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v),removeItem:k=>cache.delete(k)},h=harness(storage);h.reply(w);
+ assert.equal(h.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');assert.deepEqual(JSON.parse(cache.values().next().value).savePending,original);h.click({controlId:'retryPendingSave'});const retried=h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST').at(-1);assert.deepEqual(JSON.parse(JSON.stringify(retried)),original);
+ h.send({type:'PURCHASE_SAVE_RESULT',company:'NCT',requestId:'ORIGINAL',ok:true,result:{ok:false,requestId:'ORIGINAL',error:'Select an active supplier.'}});h.click({controlId:'saveEdits'});const next=h.messages.at(-1);assert.notEqual(next.requestId,'ORIGINAL');assert.equal(next.input.taskIds,undefined);assert.equal(next.input.edits[0].changes.disc3,3);
 });
