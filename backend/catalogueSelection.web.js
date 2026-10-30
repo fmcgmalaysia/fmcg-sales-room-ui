@@ -37,9 +37,14 @@ export const getCatalogueSelectionState = webMethod(
     return Object.freeze({
       ok: true,
       customerId: context.customerId,
-      selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
+      selectedProductIds: [...new Set(selectedItems.flatMap((item) => {
+        const data = selectionPayload_(item);
+        return [data.productId, ...(Array.isArray(data.productAliases) ? data.productAliases : [])];
+      }).filter(Boolean))],
       activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
-      selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
+      selectedBarcodes: [...new Set(selectedItems.flatMap((item) => {
+        const data = selectionPayload_(item); return [data.unitBarcode, data.originalUnitBarcode];
+      }).filter(Boolean))],
       counts,
       total: activeItems.length,
       selectionLimit: context.selectionLimit
@@ -69,9 +74,20 @@ export const addCatalogueSelection = webMethod(
       // A source-data correction must not create another selection for the same product.
       customerItems = await selectionItemsForCustomer_(context.customerId);
       const matches = customerItems
-        .filter(record => normalize(selectionPayload_(record).productId) === normalize(product._id));
+        .filter(record => normalize(selectionPayload_(record).productId) === normalize(product._id)
+          || (Array.isArray(selectionPayload_(record).productAliases) && selectionPayload_(record).productAliases.includes(normalize(product._id))));
       if (matches.length > 1) throw new Error('Duplicate selection records require admin review.');
       item = matches[0] || null;
+      if (!item) {
+        for (const record of customerItems) {
+          const data = selectionPayload_(record);
+          if (data.removed || upper(data.qdSyncStatus) === 'READY' || !sameReferenceFamily_(data, product)) continue;
+          const resolved = await resolveSelectionProduct_(record, context);
+          if (normalize(resolved.product._id) !== normalize(product._id)) continue;
+          if (item) throw new Error('Duplicate selection records require admin review.');
+          item = { ...record, title, payload: JSON.stringify({ ...data, ...linkedSelectionFields_(data, resolved) }) };
+        }
+      }
     }
 
     if (item && normalize(item.title) !== title && (normalize(selectionPayload_(item).productId) !== normalize(product._id)
@@ -115,6 +131,7 @@ export const addCatalogueSelection = webMethod(
         packingSize: normalize(product.description),
         mainCategory: normalize(product.mainCategory),
         imageUrl: imageUrl_(product.image),
+        productReference: productReference_({}, product),
         quoteStatus: 'RFQ',
         selectedAt: now,
         selectedByType: context.actorType,
@@ -348,19 +365,15 @@ async function routeOneSelection_(item, customer) {
     { suppressAuth: true }
   );
   try {
-    // Only a validation rejection proves that this barcode never reached QD.
-    // Read the exact referenced product; never split or guess dirty source data.
-    if ((normalize(payload.lastError) === 'Invalid Unit Barcode.' || !/^\d{6,18}$/.test(normalizeBarcode_(payload.unitBarcode)))
-      && !payload.qdSyncedAt && !Number(payload.qdRow || 0)) {
-      const product = await getActiveProduct_(payload.productId);
-      const correctedBarcode = normalizeBarcode_(product.barcode);
-      if (!/^\d{6,18}$/.test(correctedBarcode)) throw new Error('Invalid Unit Barcode.');
-      const correctedTitle = normalize(payload.customerId) + '|' + correctedBarcode;
-      const collisions = await wixData.query(SELECTION_COLLECTION).eq('title', correctedTitle).limit(2)
-        .find({ suppressAuth: true, consistentRead: true });
-      if (collisions.items.some(record => record._id !== item._id)) throw new Error('Corrected product already has another selection. Staff review is required.');
-      routing.unitBarcode = correctedBarcode;
-      current = { ...current, title: correctedTitle };
+    if (!payload.qdSyncedAt && !Number(payload.qdRow || 0)) {
+      const resolved = await resolveSelectionProduct_(item, customer);
+      Object.assign(routing, linkedSelectionFields_(payload, resolved));
+      routing.qdSyncStatus = 'ROUTING';
+      current = { ...current, title: normalize(payload.customerId) + '|' + routing.unitBarcode };
+      current = await saveSelectionRouting_(current, routing);
+      const saved = selectionPayload_(current);
+      if (current.removed || saved.removed || upper(saved.qdSyncStatus) === 'READY'
+        || saved.qdLastAttemptAt !== routing.qdLastAttemptAt) return Object.freeze({ ok: true, skipped: true, selectionId: normalize(item._id) });
     }
     const sharedSecret = await getSecret(SECRET_NAME);
     const response = await postJson_(APPS_SCRIPT_ENDPOINT, {
@@ -378,7 +391,10 @@ async function routeOneSelection_(item, customer) {
     const result = response.body.result || {};
     if (normalize(result.customerId) !== normalize(payload.customerId)
       || normalize(result.wixMyListId) !== normalize(item._id)
-      || !Number.isInteger(Number(result.qdRow)) || Number(result.qdRow) < 7) {
+      || !Number.isInteger(Number(result.qdRow)) || Number(result.qdRow) < 7
+      || (result.unitBarcode && normalizeBarcode_(result.unitBarcode) !== normalizeBarcode_(routing.unitBarcode))
+      || ((routing.productId !== payload.productId || routing.originalUnitBarcode !== routing.unitBarcode)
+        && normalizeBarcode_(result.unitBarcode) !== normalizeBarcode_(routing.unitBarcode))) {
       throw new Error('Quotation Desk did not confirm the selection row.');
     }
     const ready = {
@@ -413,9 +429,71 @@ async function saveSelectionRouting_(item, routing) {
   if (latest.removed || data.removed || (upper(data.qdSyncStatus) === 'READY' && routing.qdSyncStatus === 'FAILED')
     || (Date.parse(data.qdLastAttemptAt || '') || 0) > (Date.parse(routing.qdLastAttemptAt || '') || 0)) return latest;
   const merged = { ...data };
-  ['unitBarcode', 'qdSyncStatus', 'qdSyncedAt', 'qdNextRetryAt', 'qdRow', 'lastError', 'qdRouteAttempts', 'qdLastAttemptAt']
+  ['unitBarcode', 'productId', 'productAliases', 'originalUnitBarcode', 'productReference', 'itemName', 'packingSize',
+    'qdSyncStatus', 'qdSyncedAt', 'qdNextRetryAt', 'qdRow', 'lastError', 'qdRouteAttempts', 'qdLastAttemptAt']
     .forEach(key => { if (Object.prototype.hasOwnProperty.call(routing, key)) merged[key] = routing[key]; });
   return wixData.update(SELECTION_COLLECTION, { ...latest, title: item.title, qdSyncStatus: merged.qdSyncStatus, payload: JSON.stringify(merged) }, { suppressAuth: true });
+}
+
+function referenceText_(value) { return normalize(value).replace(/\s+/g, ' ').toUpperCase(); }
+function productReference_(data, product = {}) {
+  const stored = data.productReference || {};
+  return {
+    imageUrl: imageUrl_(stored.imageUrl || data.imageUrl || product.image),
+    packingSize: normalize(stored.packingSize || data.packingSize || product.description),
+    eaPerCtn: Number(stored.eaPerCtn || product.ea || product.price || 0),
+    principle: normalize(stored.principle || product.principle)
+  };
+}
+function sameReferenceFamily_(data, product) {
+  const ref = productReference_(data);
+  return ref.imageUrl && referenceText_(ref.packingSize) === referenceText_(product.description)
+    && (!ref.eaPerCtn || ref.eaPerCtn === Number(product.ea || product.price))
+    && (!ref.principle || referenceText_(ref.principle) === referenceText_(product.principle));
+}
+function linkedSelectionFields_(data, resolved) {
+  const product = resolved.product;
+  return { productId: normalize(product._id), unitBarcode: normalizeBarcode_(product.barcode),
+    productAliases: [...new Set([...(Array.isArray(data.productAliases) ? data.productAliases : []), data.productId, product._id].filter(Boolean))],
+    originalUnitBarcode: data.originalUnitBarcode || data.unitBarcode,
+    productReference: resolved.reference,
+    itemName: normalize(product.name || data.itemName), packingSize: normalize(product.description || data.packingSize) };
+}
+async function resolveSelectionProduct_(item, customer) {
+  const data = selectionPayload_(item);
+  const query = await wixData.query(PRODUCT_COLLECTION).eq('_id', normalize(data.productId)).limit(1)
+    .find({ suppressAuth: true, consistentRead: true });
+  const original = query.items[0];
+  const reference = productReference_(data, original);
+  let product = original;
+  if (!product || upper(product.pointBaseStatus) !== 'ACTIVE' || !/^\d{6,18}$/.test(normalizeBarcode_(product.barcode))
+    || (upper(data.qdSyncStatus) === 'FAILED' && reference.imageUrl && reference.packingSize)) {
+    const secret = await getSecret(SECRET_NAME);
+    const response = await postJson_(APPS_SCRIPT_ENDPOINT, { action: 'RESOLVE_SELECTION_PRODUCT', sharedSecret: secret,
+      customerId: normalize(data.customerId), qdFileId: normalize(customer.qdFileId), wixMyListId: normalize(item._id), reference });
+    const resolved = response.body?.result;
+    if (!response.ok || !response.body?.ok || resolved?.kind !== 'SELECTION_PRODUCT_REFERENCE_V1'
+      || normalize(resolved.customerId) !== normalize(data.customerId) || normalize(resolved.wixMyListId) !== normalize(item._id)
+      || !/^\d{6,18}$/.test(normalizeBarcode_(resolved.unitBarcode))) {
+      throw new Error(response.body?.error || 'Product identity could not be verified. Internal recovery pending.');
+    }
+    const candidates = await wixData.query(PRODUCT_COLLECTION).eq('barcode', normalizeBarcode_(resolved.unitBarcode))
+      .eq('pointBaseStatus', 'ACTIVE').limit(2).find({ suppressAuth: true, consistentRead: true });
+    if (candidates.items.length !== 1) throw new Error('Corrected product sync is missing or ambiguous. Internal recovery pending.');
+    product = candidates.items[0];
+    if (referenceText_(product.name) !== referenceText_(resolved.itemName)
+      || referenceText_(product.description) !== referenceText_(resolved.packingSize)
+      || Number(product.ea || product.price) !== Number(resolved.eaPerCtn)
+      || referenceText_(product.principle) !== referenceText_(resolved.principle)) {
+      throw new Error('Corrected product sync does not match the source. Internal recovery pending.');
+    }
+    reference.eaPerCtn = Number(resolved.eaPerCtn);
+    reference.principle = normalize(resolved.principle);
+  }
+  const title = normalize(data.customerId) + '|' + normalizeBarcode_(product.barcode);
+  const collisions = await wixData.query(SELECTION_COLLECTION).eq('title', title).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (collisions.items.some(record => record._id !== item._id)) throw new Error('Corrected product already has another selection. Staff review is required.');
+  return { product, reference };
 }
 
 async function notifySalesRoomSelectionChanged_() {

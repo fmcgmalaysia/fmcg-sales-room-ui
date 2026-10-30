@@ -1,0 +1,49 @@
+Selected product-reference recovery, 2026-10-30
+
+Scope
+Keep one durable selection and the existing ADD_SELECTION writer when a corrected
+source barcode creates a replacement CMS product ID. Do not edit POINTBASE,
+change the QD template, reset quotations, or ask customers to select again.
+
+Identity boundary
+SORT NO and item names can change. Resolve only a unique ACTIVE POINTBASE product
+by the original Wix image asset plus packing and available carton quantity and
+principle. Read public identity columns only. Verify the corrected CMS product
+against the returned source fields. Missing or ambiguous references remain an
+internal retry; never guess by name or sort number.
+
+One recovery path
+The existing Sales/background job queue resolves and persists aliases on the
+original selection before invoking ADD_SELECTION. Preserve original ID, selected
+time, quote fields, removed state and routing metadata. Validate the actual QD row
+barcode on corrected-product receipts, including idempotent retries. Catalogue
+reads do not launch source requests. After linking, old and new IDs both remain
+Selected while the selection count remains one.
+
+Central changes
+plan.cjs reconstructs the freshly compared deployed v18 dispatcher from the
+historical v16 record while retaining MASTER_CAPTURE_COST. Only three existing
+snippets change: one read-only dispatcher action and two barcode receipt fields.
+SelectionProductReference.gs is additive. Existing deployment ID, scopes, access,
+customer creation and all unrelated central files must remain unchanged.
+
+Recovery
+Base 4a415c608d0db7e685311cadc3da0f81fe33b7d5; pre-change Wix backend LF SHA256
+97d43cef91d4f0b30ba094bf7db901c5a769281c2de94beae19a35c8750f9096.
+Immutable deployed central v18 and exact fresh six-file copies retained privately.
+No main merge or new user-verified tag until real-world confirmation.
+
+Validation
+42 focused checks pass, including deleted/replaced IDs, renamed source, changed
+sort number, missing replacement image, response loss, duplicate/incorrect source,
+retained retry metadata, unchanged customer state and exact receipt validation.
+Affected regression: 93 checks, 84 pass; nine existing stale download/FX/order/
+workspace assertions remain, matching previously recorded failures. Unrelated
+code and tests behind those failures are unchanged.
+
+Release status before live publication
+Code: complete and tested.
+Pages: no static asset changes; preserve frozen production build.
+Central: saved candidate; deployment/readback pending.
+Wix: minimal backend synchronization and publication pending.
+Public: actual corrected-source success pending source owner correction/sync.

@@ -34,12 +34,16 @@ function fixture() {
     req.end = () => queueMicrotask(() => {
       const payload = JSON.parse(raw); state.requests.push(payload);
       if (state.onSend) state.onSend(payload);
+      if (payload.action === 'RESOLVE_SELECTION_PRODUCT') {
+        const res = new EventEmitter(); res.statusCode = 200; res.headers = {}; res.setEncoding = () => {};
+        callback(res); res.emit('data', JSON.stringify(state.referenceReply || { ok: false, error: 'Source product barcode still needs correction.' })); res.emit('end'); return;
+      }
       const exists = state.qd.has(payload.wixMyListId);
       if (!exists && !state.reply) state.qd.set(payload.wixMyListId, state.qd.size + 7);
       if (state.failAfterWrite) { state.failAfterWrite = false; req.emit('error', Error('Response lost after write')); return; }
       const res = new EventEmitter(); res.statusCode = 200; res.headers = {}; res.setEncoding = () => {};
       callback(res);
-      const body = state.reply || { ok: true, result: { customerId: payload.customerId, wixMyListId: payload.wixMyListId, qdRow: state.qd.get(payload.wixMyListId), idempotent: exists } };
+      const body = state.reply || { ok: true, result: { customerId: payload.customerId, wixMyListId: payload.wixMyListId, unitBarcode: payload.unitBarcode, qdRow: state.qd.get(payload.wixMyListId), idempotent: exists } };
       res.emit('data', JSON.stringify(body)); res.emit('end');
     }); return req;
   }
@@ -69,7 +73,9 @@ test('Selection persists and stays Selected without waiting for a QD request', a
 
 test('Invalid source data remains unchanged and does not block a later normal selection', async () => {
   const f = fixture(); f.rows('FMCGMALAYSIA')[0].barcode = '123456 / 987654';
-  f.add(ID, { unitBarcode: '123456 / 987654', qdSyncStatus: 'FAILED', lastError: 'Invalid Unit Barcode.' }); f.add('ml_12345678_abcdef13');
+  f.add(ID, { unitBarcode: '123456 / 987654', qdSyncStatus: 'FAILED', lastError: 'Invalid Unit Barcode.' });
+  f.rows('FMCGMALAYSIA').push({ _id: 'normal', barcode: '9876543210123', name: 'Other valid product', pointBaseStatus: 'ACTIVE' });
+  f.add('ml_12345678_abcdef13', { productId: 'normal', unitBarcode: '9876543210123' });
   const before = clone(f.rows('FMCGMALAYSIA'));
   const result = await f.api.processSalesRoomSelectionQueue();
   assert.equal(result.processed, 2); assert.equal(f.payload().qdSyncStatus, 'FAILED');
@@ -162,6 +168,74 @@ test('Scheduled retry is internal and configuration calls the same queue impleme
   assert.match(source, /const retryCatalogueSelections = async/);
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '../backend/jobs.config'), 'utf8'));
   assert.deepEqual(config.jobs.map(job => [job.functionLocation, job.functionName]), [['/catalogueSelection.web.js', 'retryCatalogueSelections']]);
+});
+
+function correctedProductFixture() {
+  const f = fixture();
+  const image = 'https://static.wixstatic.com/media/stable-product.jpg';
+  f.rows('FMCGMALAYSIA')[0] = { _id: 'product', barcode: '123 / 456', pointBaseStatus: 'ACTIVE', name: 'Old name', description: '700ML x 6', ea: 6, principle: 'Supplier', image };
+  f.rows('FMCGMALAYSIA').push({ _id: 'replacement', barcode: '9551234567890', pointBaseStatus: 'ACTIVE', name: 'Corrected full name', description: '700ML x 6', price: 6, principle: 'Supplier' });
+  f.add(ID, { unitBarcode: '123 / 456', itemName: 'Old name', packingSize: '700ML x 6', imageUrl: image, selectedAt: 'original-time', qdSyncStatus: 'FAILED', qdRouteAttempts: 7 });
+  f.state.referenceReply = { ok: true, result: { kind: 'SELECTION_PRODUCT_REFERENCE_V1', customerId: CUSTOMER, wixMyListId: ID, unitBarcode: '9551234567890', itemName: 'Corrected full name', packingSize: '700ML x 6', eaPerCtn: 6, principle: 'Supplier' } };
+  return f;
+}
+
+test('Corrected source links a replacement product without its image, retaining selection identity and retry metadata', async () => {
+  const f = correctedProductFixture(); const products = clone(f.rows('FMCGMALAYSIA'));
+  await f.api.retryCatalogueSelections();
+  assert.equal(f.payload().qdSyncStatus, 'READY'); assert.equal(f.payload().productId, 'replacement');
+  assert.equal(f.payload().qdRouteAttempts, 8); assert.equal(f.payload().qdLastAttemptAt, new Date(f.state.now).toISOString());
+  assert.equal(f.payload().selectedAt, 'original-time'); assert.equal(f.payload().originalUnitBarcode, '123 / 456');
+  assert.deepEqual(f.payload().productAliases, ['product', 'replacement']); assert.equal(f.state.qd.size, 1);
+  assert.deepEqual(f.rows('FMCGMALAYSIA'), products); assert.equal(f.rows('WixBuyerListItems').length, 1);
+  const selected = await f.api.getCatalogueSelectionState(CUSTOMER);
+  assert.deepEqual(selected.selectedProductIds, ['replacement', 'product']); assert.equal(selected.total, 1);
+  assert.equal((await f.api.addCatalogueSelection('replacement', CUSTOMER)).duplicate, true);
+  assert.equal(f.rows('WixBuyerListItems').length, 1);
+});
+
+test('Deleted original product is recovered from the durable selection reference', async () => {
+  const f = correctedProductFixture(); f.rows('FMCGMALAYSIA').shift(); await f.api.retryCatalogueSelections();
+  assert.equal(f.payload().qdSyncStatus, 'READY'); assert.equal(f.payload().productId, 'replacement');
+});
+
+test('A failed old active product with a valid stale barcode is checked against the source', async () => {
+  const f = correctedProductFixture(); f.rows('FMCGMALAYSIA')[0].barcode = '1234567890123';
+  await f.api.retryCatalogueSelections(); assert.equal(f.payload().productId, 'replacement');
+  assert.equal(f.state.requests[0].action, 'RESOLVE_SELECTION_PRODUCT');
+});
+
+test('Unknown write response after replacement linking reuses one record and the same QD writer', async () => {
+  const f = correctedProductFixture(); f.state.failAfterWrite = true;
+  await f.api.retryCatalogueSelections(); assert.equal(f.payload().productId, 'replacement'); assert.equal(f.payload().qdSyncStatus, 'FAILED');
+  f.state.now += 900001; await f.api.retryCatalogueSelections();
+  assert.equal(f.payload().qdSyncStatus, 'READY'); assert.equal(f.state.qd.size, 1);
+  assert.deepEqual(f.state.requests.filter(p => p.action === 'ADD_SELECTION').map(p => p.wixMyListId), [ID, ID]);
+});
+
+for (const failure of ['missing', 'duplicate', 'wrong-metadata', 'wrong-customer', 'source-invalid']) {
+  test(`Unverified replacement stays internal and creates no QD row: ${failure}`, async () => {
+    const f = correctedProductFixture();
+    if (failure === 'missing') f.rows('FMCGMALAYSIA').pop();
+    if (failure === 'duplicate') f.rows('FMCGMALAYSIA').push({ ...f.rows('FMCGMALAYSIA')[1], _id: 'other' });
+    if (failure === 'wrong-metadata') f.rows('FMCGMALAYSIA')[1].description = '1L x 12';
+    if (failure === 'wrong-customer') f.state.referenceReply.result.customerId = 'CUS-261030-000000';
+    if (failure === 'source-invalid') f.state.referenceReply = { ok: false, error: 'Source product barcode still needs correction.' };
+    await f.api.retryCatalogueSelections();
+    assert.equal(f.payload().qdSyncStatus, 'FAILED'); assert.equal(f.payload().productId, 'product');
+    assert.equal(f.state.qd.size, 0); assert.equal(f.rows('WixBuyerListItems').length, 1);
+  });
+}
+
+test('An old idempotent QD row with a different barcode never becomes falsely READY', async () => {
+  const f = correctedProductFixture();
+  f.state.reply = { ok: true, result: { customerId: CUSTOMER, wixMyListId: ID, qdRow: 7, unitBarcode: '1111111111111', idempotent: true } };
+  await f.api.retryCatalogueSelections(); assert.equal(f.payload().qdSyncStatus, 'FAILED'); assert.match(f.payload().lastError, /did not confirm/);
+});
+
+test('Catalogue state reads do not initiate source reads or QD work', async () => {
+  const f = correctedProductFixture(); const result = await f.api.getCatalogueSelectionState(CUSTOMER);
+  assert.equal(result.total, 1); assert.equal(f.state.requests.length, 0); assert.equal(f.state.qd.size, 0);
 });
 
 test('Sales background retry is idle with no work, coalesces overlapping requests, and stops after completion', async () => {
