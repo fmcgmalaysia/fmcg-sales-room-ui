@@ -194,7 +194,7 @@ jobs:
 
       - name: Prepare scoped PO revision and shared status resources
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'
-        run: node integration/prototypes/po-revision-ui-20261030/stage.cjs "$RUNNER_TEMP/po-revision-site"
+        run: node integration/prototypes/po-revision-ui-20261030/stage-state-colors.cjs "$RUNNER_TEMP/po-revision-site"
 
       - name: Upload scoped PO revision resources only
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'

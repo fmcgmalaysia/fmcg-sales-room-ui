@@ -1,0 +1,13 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto'),cp=require('node:child_process'),previous=require('./stage.cjs'),root=path.resolve(__dirname,'../../..');
+const build='20261030-po-document-states-v2',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+function plan(){const inherited=previous.plan(),baseline=new Map(inherited.assets),assets=new Map(baseline);
+ const patch=(file,find,replace)=>{let s=assets.get(file).toString();assert.equal(s.split(find).length,2,file+' unique color correction');assets.set(file,Buffer.from(s.replace(find,()=>replace)));};
+ patch('purchase-live/active-layout.css','#app .po-doc-badge.pending[data-po-doc-type="PO"]{background:#E51B2B!important;color:#fff!important}','');
+ patch('purchase-live/style.css','.po-doc-badge.pending{background:#8B98A8;border-color:#8B98A8;color:#fff}','.po-doc-badge.pending{background:#B8C4D0;border-color:#B8C4D0;color:#fff}');
+ patch('purchase-live/index.html','<meta name="build" content="20261030-po-revision-paid-lock-v1">','<meta name="build" content="'+build+'">');
+ patch('purchase-live/index.html','style.css?v=20261030-po-revision-paid-lock-v1','style.css?v='+build);
+ const index=assets.get('purchase-live/index.html').toString();const token=index.match(/active-layout\.css\?v=[^"&]+/);assert(token);patch('purchase-live/index.html',token[0],'active-layout.css?v='+build);
+ const changed=[...assets].filter(([file,b])=>!b.equals(baseline.get(file))).map(([file])=>file).sort();assert.equal(assets.size,94);assert.deepEqual(changed,['purchase-live/active-layout.css','purchase-live/index.html','purchase-live/style.css']);return{assets,baseline,changed,build};}
+function stage(destination){const p=plan(),target=path.resolve(destination||'');assert(destination&&!fs.existsSync(target)&&target!==root&&!target.startsWith(root+path.sep)&&target!==path.parse(target).root);fs.mkdirSync(target,{recursive:true});for(const[file,b]of p.assets){const out=path.join(target,file);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,b);}const report={build,codeCommit:cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),resources:[...p.assets].map(([file,b])=>({path:file,sha256:hash(b)})),changed:p.changed,backendFilesIncluded:false,wixCodeChangeRequired:true,productionRecovery:'f5c8de20b30fe24c6218e25e608043d8e4c210d4'};fs.writeFileSync(path.join(target,'po-revision-release.json'),JSON.stringify(report,null,2)+'\n');return report;}
+if(require.main===module){const p=stage(process.argv[2]);console.log(JSON.stringify({build,resources:p.resources.length,changed:p.changed}));}module.exports={plan,stage};
