@@ -22,3 +22,13 @@ Evidence so far:
 - No production save retried under candidate code yet. No Wix source modified or published at this point. No Pages permission changed. Main untouched.
 
 Remaining: GitHub candidate sync, minimal Wix draft patches/readbacks, publication and original-request live recovery, then original Warehouse receipt and the rest of the two-order scenario. UI saving feedback, unnecessary refresh work and mixed transport presentation remain separate approved phases.
+
+## 2026-10-30 continuation
+
+- Code e85998380937a3520d71d37f0797ebd137155e2c synchronized to its isolated branch; draft PR239 attached. Main unchanged.
+- Wix: four journal, five operation and two web-interface unique fragments applied, then each full module read back exactly against the tested candidate. The Purchase page remained byte-equivalent after newline normalization. Wix confirmed "This site is published and live online"; private source hashes and screenshot retained.
+- Editor transitions/replacement commands occasionally returned stale state. Work stopped at each mismatch, read back the actual source and completed only missing unique fragments. No page code was changed.
+- Pages: no frontend deployment or permission change. Existing Purchase build 20261029-purchase-quiet-refresh-v1 returned HTTP200. Public app bytes match the preserved package and the repository's assembled quiet-refresh plan exactly; the raw app source differs because existing receipt-feedback changes are applied by the staged release chain. Do not deploy the raw app file as a replacement.
+- Public acceptance incomplete: original request 59805f5f-8a35-405d-883c-ab5d8b68e37f retried on the existing tab but remained pending. The tab was refreshed to load the new Wix revision; its embed remained blank and later browser evaluation timed out. A new tab opened by normal Chrome navigation loaded both customers successfully, but does not contain the original tab's session draft. No new PO identity or manual lock deletion used. Original Warehouse receipt remains pending and Loaded has not been reached.
+- Monitoring's last-seven-days counters are historical totals, not the two-order test. They show repeated company-wide reads and save latency requiring further inspection; do not extrapolate new CMS record growth from request counts.
+- User subsequently supplied a screenshot of the old Purchase customer layout and explicitly requested its removal. Next isolated objective is to route all task entries and restored drafts through the existing Active Orders layout while retaining the original pending request and every business handler.
