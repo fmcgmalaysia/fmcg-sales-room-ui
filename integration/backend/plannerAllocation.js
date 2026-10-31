@@ -1,4 +1,4 @@
-import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { packingGuardVersion } from 'backend/packingListGuards.js';
 
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
@@ -38,7 +38,13 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
   return async({company,staff,requestId,input})=>{
     if(!names[company]||input?.action!=='ALLOCATE')throw Error('Select a receiving line to allocate.');
     const collection=names[company].activity;
-    return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{allocation:input},prepare:async()=>{
+    const recoverCompleted=async(plan,phase)=>{
+      const event=plan.event,id=operationId(company,requestId,staff.memberId,'ALLOCATION');
+      if(!event||event._id!==id||event.title!==id||event.action!=='PLANNER_ALLOCATION_SAVED'||event.result!=='SAVED'||event.details?.company!==company||event.initiatedByStaffId!==staff.staffId||event.initiatedByStaffName!==staff.staffName)return null;
+      if(phase!=='CLEANUP'){const saved=await store.read(collection,id);if(!saved||Object.keys(event).some(key=>canonical(saved[key])!==canonical(event[key])))return null;}
+      return {ok:true,company,requestId,sourceTaskId:event.imageAltText,savedAt:event.activityTime};
+    };
+    return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{allocation:input},recoverCompleted,prepare:async()=>{
       const workspace=await readWorkspace(company,staff),activity=await store.all(collection),version=allocationVersion(workspace,activity);
       if(input.version!==version)throw Error('Stock or allocations changed. Refresh before allocating.');
       if(input.planMode){

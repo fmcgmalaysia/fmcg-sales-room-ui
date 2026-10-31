@@ -128,6 +128,16 @@ function proofFileHarness(){
  const input={action:'DOCUMENT_UPLOAD',type:'PAYMENT',date:'2026-10-17',number:'',cents:20000,base64:pdf(1),attachments:[{base64:pdf(2)}],recipientChoice:'SUPPLIER',recipientBank:{bankName:supplier.bankName,bankAccountNo:supplier.bankAccountNo},paymentSource:'CASH',reason:''};
  return {row,operations,request,input,calls,records,listOrders,supplier,failExtra:()=>failExtra=true};
 }
+
+test('three actual instalments and later extra proof keep three monetary records and one permanent PO lock',async()=>{
+ const h=proofFileHarness(),{procurementContentLock}=load('paymentHandoff.js');let paid=0;
+ for(const [i,cents]of [30000,20000,50000].entries()){
+  const req=await h.request({...h.input,cents,attachments:[],number:'THREE-'+i,base64:Buffer.from('%PDF-1.4\nINSTALMENT '+i).toString('base64')});await h.operations.save(req);await h.operations.save(req);paid+=cents;
+  const details=h.records.get('PurchaseOrders/PO').details,state=(await h.listOrders())[0];assert.equal(details.finance.payments.length,i+1);assert.equal(state.finance.paidCents,paid);assert.equal(state.finance.balanceCents,100000-paid);assert.match(procurementContentLock(details),/permanently locked/);
+ }
+ const first=h.records.get('PurchaseOrders/PO').details.finance.payments[0];await h.operations.save(await h.request({...h.input,paymentId:first.id,attachments:[],base64:Buffer.from('%PDF-1.4\nADDITIONAL PROOF').toString('base64')}));
+ const details=h.records.get('PurchaseOrders/PO').details;assert.equal(details.finance.payments.length,3);assert.equal(details.finance.payments[0].proofs.length,2);assert.equal((await h.listOrders())[0].finance.paidCents,100000);
+});
 test('multi-file payment preserves one amount, server bank snapshot and the same files after a lost response',async()=>{
  const h=proofFileHarness(),req=await h.request(h.input);h.failExtra();await assert.rejects(h.operations.save(req),/lost upload/);assert.equal(h.records.get('PurchaseOrders/PO').details.finance.payments.length,0);
  await h.operations.save(req);const p=h.records.get('PurchaseOrders/PO').details.finance.payments[0];assert.equal(p.proofs.length,2);assert.equal(p.cents,20000);assert.equal(p.reference,'');assert.equal(p.recipientBank.bankAccountNo,'0012345');assert.equal(h.calls.filter(c=>c.action==='ALLOCATE').length,2);assert.equal((await h.listOrders())[0].finance.paidCents,20000);assert.equal(JSON.stringify([...h.records.values()]).includes(h.input.base64),false);

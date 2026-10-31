@@ -1,0 +1,13 @@
+# Confirmed allocation receipt recovery
+
+Scope: recover only a proven completed allocation after a retained company lock. Never replay an uncommitted prepared allocation or clear a lock merely because it is old. No new stock authority, lock store or timeout-reclamation path.
+
+Live-versus-repository conflict: fresh Wix purchaseOperationJournal contains historical9518417, preserving object-key-independent receipt comparisons. The user explicitly approved keeping that live behavior as the patch base. Exact private original SHA256956eeeb0b3a8543b1de2efe7175f466856456c606741130e72ed9b4e99b66107 is retained. The missing three baseline hunks are restored locally, rather than overwritten on Wix. Recovery is live b6f41d4/be3c5ef, including separately deployed receiptfc76b37 and unchanged99 static resources.
+
+Planner supplies a verifier through the existing completed-recovery hook. The verifier requires its deterministic event ID, company, server employee and every prepared event field to agree with the immutable persisted business event. CMS object field order may differ; values and array order may not. It returns the original outcome and performs no allocation writes.
+
+The existing journal retains its quiet period, recovery claim, repeat verification, result identity and owned-lock cleanup. It can now inspect a retained lock even when an ordinary completed result exists; a recent completed result returns immediately without stealing the live writer's lock. Allocation's immutable event time supplies the prepared time when legacy allocation plans have no top-level time. Other callers without the recovery hook keep their original early return and lock behavior. Existing PO recovery is regression-tested.
+
+Validation: the original allocation recovery tests fail before the patch. Seven recovery boundaries pass, plus1/5/10 concurrent allocation checks and a three-instalment payment/extra-proof scenario. The shared33-suite regression run passes335 checks; four additional scenario cases then pass in their34-check affected subset. No real CMS or bank writes. Original key-order live behavior is retained. Memory stock read load200/1000/5000 events preserves20 on hand,10 reserved,10 free; median CPU times0.98/8.95/228.61ms in this run, excluding network/CMS latency. These are not production capacity guarantees.
+
+Boundary: absent or altered business evidence, a different employee/request, or a non-quiescent unfinished writer remains blocked. No production orphan lock was observed or removed. Whole-site38-group live acceptance is not implied. Publication pending; keep main unmerged.
