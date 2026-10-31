@@ -72,6 +72,7 @@
       }
       if(rootId&&allocated){
         for(const node of [...allocated.childNodes])if(node.nodeType===3&&/^\s*\d[\d,]*\s*$/.test(node.textContent)){const value=document.createElement('span');value.className='quantity-reference receipt-complete purchase-info-total';value.textContent=node.textContent.trim();node.replaceWith(value);}
+        if(!allocated.querySelector('.purchase-info-total')&&Number.isSafeInteger(m.allocated)){const value=document.createElement('span');value.className='quantity-reference purchase-info-total purchase-info-pending';value.textContent=qty(m.allocated);allocated.prepend(value);}
         allocated.append(infoButton('allocation',m));
         const summary=sourceSummary(m);if(summary){const line=document.createElement('small');line.className='purchase-info-note';line.innerHTML=summary;allocated.append(line);}
       }

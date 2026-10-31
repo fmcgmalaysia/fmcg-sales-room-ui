@@ -22,3 +22,9 @@ RCV caption is PO receipts (covers multiple supplier POs); ALLOC caption is Sour
 Test170+30versus170+borrow30, completed repayment, ready stock, corrections, rejected-only/zero receipt, three deliveries, duplicate-event protection, missing history, multiple source POs, split Desk batches, NCT/GHR scoping and unchanged business versions. Regression-test original allocation, borrow/repay, receipt and shortload flows. Only synthetic memory fixtures may be written for this task; public acceptance is read-only.
 
 Four release stages, exact permissions restoration, runtime/version marker and real page evidence must be recorded separately before claiming publication. Keep a draft PR and do not merge main before user acceptance.
+
+## Pre-release results
+
+15new checks,86existing business regressions and33receipt/allocation regressions pass. All97current public baseline assets match after newline normalization (93byte-exact). New scoped package contains98assets:4modified and1new;93unchanged. Native local candidate verified split receipts200with170+30, receipt170withALLOC200andBorrowed30, and repaid source30with outstanding0. Info exposes original date/time and staff, read-only. Real0is kept beside the original allocation warning, whose action remains unchanged. The original layout observer preserves Info across repeated parent-row cleanup; no extra observer or API request is created.
+
+Wix drafts: new purchaseReceiptInfo.js matches after CRLF/LF normalization; existing purchaseWorkspace.web.js and Purchase page version reference match exactly. No Wix publication or Pages dispatch has occurred. Original seven deployment branch rules remain unchanged. Protected receivingfc76b37 is preserved. All public business acceptance remains pending this release; synthetic previews are not presented as production evidence.
