@@ -70,9 +70,9 @@ export function createShortloadResolutionOperations({store,names,readContext,now
    readShortloadResolutions(physical.activity.concat(event));
    return {expectedVersion:input.version,resolutionInput:copy(input),event};
   },apply:async plan=>{
-   const collection=names[company].activity,existing=await store.read(collection,plan.event._id);
-   if(existing){if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Desk changed while resolving the remainder.');}
-   else{const context=await readContext(company,staff);if(packingVersion(context)!==plan.expectedVersion)throw Error('Desk or stock changed while resolving the remainder.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
+   const collection=names[company].activity,existing=await store.read(collection,plan.event._id),conflict=()=>({ok:false,company,requestId,retryable:false,error:'Desk changed while resolving the remainder. Refresh and choose a new decision.'});
+   if(existing){if(operationId(existing.details)!==operationId(plan.event.details))return conflict();}
+   else{const context=await readContext(company,staff);if(packingVersion(context)!==plan.expectedVersion)return conflict();try{await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}catch(error){const saved=await store.read(collection,plan.event._id);if(saved&&operationId(saved.details)!==operationId(plan.event.details))return conflict();throw error;}}
    return {ok:true,company,requestId,resolutionId:plan.event.title,id:plan.event.description,taskId:plan.event.imageAltText,parts:plan.event.details.parts};
   }});
  };
