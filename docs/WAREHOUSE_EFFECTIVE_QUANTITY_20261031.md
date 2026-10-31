@@ -1,6 +1,6 @@
 # Warehouse effective Desk quantity
 
-MST-03 candidate, not yet published or user accepted.
+MST-03 published as part of `0d6b492` with MST-02; technical public verification passed, user acceptance pending. See WAREHOUSE_OPERATIONAL_HEADER_20261031.md for the combined release evidence.
 
 The Warehouse Alloc cell and Loaded dialog caption now read the existing `resolution.maximum` when present. An authorization of 250 with 20 cancelled or transferred displays 230; a decision to continue loading retains 250. The immutable authorization, customer order quantity, stock ownership, physical deductions and save handlers are unchanged. Nullish fallback preserves a real maximum of zero.
 
@@ -14,10 +14,10 @@ Release scope `warehouse-effective-quantity-only`: 99 static resources, only sha
 
 | Stage | Status |
 | --- | --- |
-| Code | Candidate and 61 distinct checks passed |
-| GitHub Pages | Not deployed |
-| Wix Studio | Originals compared; candidate not synchronized or published |
-| Public page | Pending release; local preview is not public acceptance |
+| Code | 3956ff9 composed into0d6b492;61 distinct quantity checks passed |
+| GitHub Pages | Run41201581377 succeeded;99 assets verified |
+| Wix Studio | Exact drafts read back; published and live confirmed |
+| Public page | TESTING01 Desk2 Alloc230/Loaded230/Resolved; original801100/90/10 retained |
 | User acceptance | Pending |
 
 MST-02 is separate: Warehouse customer PO is explicitly unwanted. Receiving uses Purchaser-issued supplier PO; Delivery needs customer ETD and Last Gate In. This quantity-only candidate does not claim to finish that change or the other open register items.
