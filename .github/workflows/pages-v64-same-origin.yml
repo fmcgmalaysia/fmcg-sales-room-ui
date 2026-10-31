@@ -35,6 +35,7 @@ on:
           - stock-list-style-only
           - purchase-stock-actions-only
           - purchase-alloc-layout-only
+          - purchase-source-receipt-only
 
 permissions:
   contents: read
@@ -67,7 +68,7 @@ jobs:
 
       - name: Upload static site
         # The company-stock-list release uses the isolated asset upload below.
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -301,6 +302,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-alloc-layout-site', runner.temp) }}
+
+      - name: Prepare Purchase source and receipt display only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-source-receipt-only'
+        run: node integration/prototypes/purchase-receipt-review-20261031/stage.cjs "$RUNNER_TEMP/purchase-source-receipt-site"
+
+      - name: Upload Purchase source and receipt display resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-source-receipt-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-source-receipt-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment
