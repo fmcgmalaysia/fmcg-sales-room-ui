@@ -1,2 +1,59 @@
+@import url('workroom-theme.css?v=20261031-stock-list-purchase-v1');
 /* Scoped to the Stock List pane; no other workroom styles are changed. */
 .stock-summary{display:flex;gap:0;border:1px solid #c5d6e5;border-radius:5px;background:#fff;margin:0 0 12px;min-height:58px}.stock-summary>div{flex:1;padding:9px 14px;border-right:1px solid #dce5ef}.stock-summary>div:last-child{border:0}.stock-summary span{display:block;font-size:11px;color:#4c6680}.stock-summary b{display:inline-block;margin:3px 7px 0 0;font-size:20px;color:#173b5a;font-variant-numeric:tabular-nums}.stock-summary small{font-size:10px;color:#536c83}.stock-summary .value-summary{flex:1.8}.value-summary small{display:block;margin-top:2px}.value-summary b{font-size:18px}.stock-status{display:inline-block;padding:3px 7px;border-radius:10px;white-space:nowrap;font-weight:600}.stock-status.confirmed{background:#e8efff;color:#1f4b9c}.stock-status.pending{background:#fff0d9;color:#875000}#notice{height:17px;min-height:17px;margin:7px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}#read-at{font-size:10px;color:#526b81}.warehouse-embedded .heading{margin-bottom:9px}.warehouse-embedded .scope-note{margin-bottom:10px}.warehouse-embedded .frame table{min-width:720px}.warehouse-embedded td{padding:9px 11px}.warehouse-embedded .product{font-size:11px}.warehouse-embedded .product:hover{text-decoration:underline}.warehouse-embedded th:first-child{width:40%}body[data-department=ACCOUNT] .frame table{min-width:1000px}body[data-department=ACCOUNT] th:first-child{width:30%}body[data-department=ACCOUNT] dialog{width:1050px}body[data-department=ACCOUNT] .sources{min-width:860px}.source-summary span{background:#edf3fa;padding:5px 8px;border-radius:4px}dialog td small{overflow-wrap:anywhere}.num{white-space:nowrap}@media(max-width:800px){.stock-summary{flex-wrap:wrap}.stock-summary>div{flex:1 1 24%;padding:8px}.stock-summary .value-summary{flex:1 1 100%;border-top:1px solid #dce5ef}.stock-summary b{font-size:17px}}
+
+/* Purchase presentation roles, confined to the two Stock List documents. */
+:root{--line:#bccbd9;--blue:#3766a2}
+:root.warehouse-embedded{font-family:var(--master-font);font-size:11px;line-height:1.4;color:#203047}
+body :is(button,input,select){font-family:inherit;font-size:11px}
+body h1{margin:0;font-size:20px;line-height:26px;font-weight:800}
+.warehouse-embedded .heading{min-height:36px;margin-bottom:8px;align-items:center}
+#read-at{display:block;margin-top:3px;font-size:10px;line-height:14px;color:#536b84}
+.warehouse-embedded .scope-note{border:0;background:transparent;padding:0;margin:0 0 10px;color:#536b84;font-size:10px;line-height:14px}
+.stock-summary{min-height:54px;border-color:#bccbd9;margin-bottom:12px}
+.stock-summary>div{padding:8px 12px;border-color:#dce4ed;min-width:0}
+.stock-summary span{font-size:11px;font-weight:600;color:#536b84;line-height:15px}
+.stock-summary b{font-size:20px;font-weight:700;line-height:24px;color:#173557;margin-top:2px}
+.stock-summary small{font-size:10px;line-height:14px;color:#536b84}
+.stock-summary .value-summary{flex:1.6}
+.value-summary b{font-size:20px}
+.warehouse-embedded .tools{padding:10px 12px;gap:10px;border-color:#d5e1ec;border-radius:5px;margin-bottom:0;flex-wrap:wrap}
+.tools :is(input,select){height:30px;padding:4px 8px;border-color:#b8ccdf;border-radius:4px;font-size:11px;color:#203047}
+.tools input{width:320px;min-width:180px;max-width:100%}
+.tools select{min-width:200px}
+.tools span{font-size:10px;color:#536b84}
+#notice{height:18px;min-height:18px;margin:5px 0;font-size:10px;line-height:18px}
+body button{min-height:30px;padding:4px 10px;border-color:#b8ccdf;border-radius:4px}
+body button.primary{background:#3766a2;border-color:#3766a2;color:#fff;font-weight:600}
+body button:not(:disabled):hover{background:#edf4fc;border-color:#9cb6ce}
+body button.primary:not(:disabled):hover{background:#2c568c;border-color:#2c568c}
+body :is(button,input,select):focus-visible{outline:2px solid #3766a2;outline-offset:2px}
+.frame{border-color:#bccbd9;border-radius:5px}
+main>.frame>table{table-layout:fixed}
+.warehouse-embedded .frame :is(th,td){padding-left:8px;padding-right:8px;font-size:11px;line-height:1.4}
+.warehouse-embedded .frame th{padding-top:7px;padding-bottom:7px;background:#d2dfea;color:#203047;font-weight:700;border-bottom:1px solid #b8ccdf}
+.warehouse-embedded .frame th small{font-size:10px;line-height:13px;margin-top:1px;color:#536b84}
+.warehouse-embedded .frame td{height:44px;padding-top:6px;padding-bottom:6px;border-bottom-color:#dce4ed;color:#203047}
+.warehouse-embedded .frame tr:last-child td{border-bottom:0}
+#stock-rows>tr:hover>td{background:#edf4fc}
+.warehouse-embedded .product{display:block;max-width:100%;min-height:0;border:0;border-radius:0;padding:0;color:#2563eb;font-size:11px;line-height:15px;font-weight:600;text-align:left}
+.warehouse-embedded .product:not(:disabled):hover{background:transparent;text-decoration:underline;text-underline-offset:2px}
+.warehouse-embedded .product small{font-size:10px;line-height:14px;font-weight:400;color:#536b84;margin-top:2px}
+#stock-rows .product{width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stock-rows .product small{overflow:hidden;text-overflow:ellipsis}
+.num{font-weight:600;font-variant-numeric:tabular-nums}
+.stock-status{padding:1px 6px;font-size:10px;line-height:16px;font-weight:600;border-radius:9px;cursor:default}
+.stock-status.confirmed{background:#dbeafe;color:#1e40af}
+.stock-status.pending{background:#fff0d6;color:#8a4b00}
+.pager{margin-top:0;padding:8px 10px;border:1px solid #bccbd9;border-top:0;border-radius:0 0 5px 5px;background:#fff;font-size:10px}
+.pager button{min-height:28px;padding:4px 9px;font-size:10px}
+.warehouse-embedded .dialog-heading{padding:12px 16px;background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
+.warehouse-embedded .dialog-heading h2{font-size:14px;line-height:20px;font-weight:700;color:#234768}
+.warehouse-embedded .dialog-heading p{margin-top:3px;font-size:10px;color:#536b84}
+.warehouse-embedded .dialog-heading button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;flex-shrink:0;padding:0;border:0;background:transparent;color:#234768;font-size:22px;line-height:1}
+.warehouse-embedded .dialog-body{padding:12px 16px}
+.source-summary{gap:8px;margin-bottom:12px;font-size:11px;font-weight:600}
+.source-summary span{background:#e7eef5;color:#173557;padding:5px 8px;border-radius:4px}
+.warehouse-embedded footer{padding:10px 16px;background:#f5f9fd;border-top:1px solid #cfdfed}
+.footnote{font-size:10px;line-height:15px;color:#536b84;margin-top:10px}
+@media(max-width:800px){.stock-summary{flex-wrap:wrap}.stock-summary>div{flex:1 1 40%;padding:8px 10px}.stock-summary .value-summary{flex:1 1 100%}.warehouse-embedded .tools input{width:100%}.warehouse-embedded .tools select{flex:1;min-width:180px}.heading>div:last-child{gap:6px}.stock-summary b,.value-summary b{font-size:18px}}
