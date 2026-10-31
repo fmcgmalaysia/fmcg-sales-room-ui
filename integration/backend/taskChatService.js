@@ -37,7 +37,7 @@ export function createTaskChatService({drive,index,resolve,hash}){
  function summary(task,peer,department,staff,result){
   const value={sequence:0,unread:0,lastIncoming:null,...result?.summary,staffId:staff.staffId};
   const old=legacy(task,department,peer,value),incoming=old.filter(m=>m.to.includes(department)),oldLast=incoming.at(-1);
-  const lastIncoming=[value.lastIncoming||oldLast,...updates(task,department,peer).filter(e=>e.presentation==='MESSAGE'&&e.from===peer)].filter(Boolean).sort((a,b)=>String(a.at).localeCompare(String(b.at))).at(-1)||null;
+  const lastIncoming=[value.lastIncoming||oldLast,...updates(task,department,peer).filter(e=>e.presentation==='MESSAGE'&&(!e.from||e.from===peer))].filter(Boolean).sort((a,b)=>String(a.at).localeCompare(String(b.at))).at(-1)||null;
   const unread=old.filter(m=>m.to.includes(department)&&m.byStaffId!==staff.staffId&&!m.receipts.some(r=>r.byStaffId===staff.staffId&&r.department===department)).length;
   return {kind:task.kind,taskId:task.id,sourceTaskId:task.sourceTaskId||null,sourceTaskIds:task.sourceTaskIds||[],...salesContext(task),peer,pair:taskChatPair(department,peer),number:task.number,title:task.title,closed:!!task.closed,sequence:value.sequence,updatedAt:[value.updatedAt,old.at(-1)?.at,...updates(task,department,peer).map(e=>e.at)].filter(Boolean).sort().at(-1)||null,unread:value.unread+unread+updates(task,department,peer).filter(e=>e.notify&&e.from===peer&&(!value.systemReadAt||e.at>value.systemReadAt)).length,lastIncoming,updates:updates(task,department,peer)};
  }

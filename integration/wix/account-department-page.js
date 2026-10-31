@@ -56,5 +56,5 @@ $w.onReady(() => {
   });
   const maintenanceAction=String(wixLocationFrontend.query.accountIndexAction||'').toUpperCase(),maintenanceCompany=String(wixLocationFrontend.query.accountIndexCompany||'').toUpperCase(),maintenanceGeneration=String(wixLocationFrontend.query.accountIndexGeneration||'').toLowerCase();
   const maintenance=['PLAN','STAGE','ACTIVATE'].includes(maintenanceAction)&&['NCT','GHR'].includes(maintenanceCompany)?`&accountIndexAction=${maintenanceAction}&accountIndexCompany=${maintenanceCompany}${maintenanceAction==='ACTIVATE'&&/^[a-f0-9]{32}$/.test(maintenanceGeneration)?`&accountIndexGeneration=${maintenanceGeneration}`:''}`:'';
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261031-stock-list-purchase-v1'+maintenance;
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261031-purchase-payment-message-v1'+maintenance;
 });
