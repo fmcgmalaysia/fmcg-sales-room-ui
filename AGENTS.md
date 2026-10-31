@@ -1,5 +1,9 @@
 # FMCG repository operating supplement
 
+## 2026-10-31 Quantity and date typography
+
+用户要求全站沿用统一的字体、字样和语义配色，禁止各列自行选择字体或字距。数量胶囊复用共同样式和统一高度；日期使用正常数字字距，不继承数量列的等宽数字样式。已知尚无收货/分配可展示浅橙色0，但不得把无法确认或矛盾的数据冒充真实0；默认展示值不得参与业务或异常计算。EXTRA只在图标本身用浅蓝色，来源图标与人头同尺寸、同蓝色。当前Active本轮候选统一为19px数量胶囊、11px/600数量、10px/400日期和16px来源图标；按实际正式页逐项验收，不能以记录规范声称全站已全部完成。不改变权限、付款、库存或借还货规则。
+
 ## 2026-10-30 Purchase and Finance DOCS colors
 
 Purchase PO/PI/DO/INV/CN buttons are orange when the shared state is MISSING, blue for an effective available file, and red for an unresolved document problem. Finance uses gray only before a corresponding shared state is available; it follows the same orange/blue/red state once available. Synchronization is bidirectional: a Finance issue must appear red in Purchase, and Purchase invalidation must appear red in Finance. Both consume the existing canonical documentStates projection; do not create another status store or change file, payment, financial lock or inventory behavior for this color request.
