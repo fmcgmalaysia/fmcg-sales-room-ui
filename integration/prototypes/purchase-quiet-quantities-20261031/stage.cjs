@@ -3,8 +3,9 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict'),cryp
 const previous=require('../purchase-etd-requested-20261031/stage.cjs'),{once,patchGrid,patchInfo}=require('./patch.cjs'),root=path.resolve(__dirname,'../../..'),build='20261031-purchase-quiet-quantities-v1';
 const style=`
 /* Purchase: normal quantities stay quiet; only differences expose detail. */
-#app .purchase-tasks.active-order-table .received-quantity .purchase-info-total,#app .purchase-tasks.active-order-table .allocated-quantity .purchase-info-total{background:#e8f1ff!important;color:#1652aa!important;border:0;border-radius:12px;padding:2px 8px;font-weight:600;white-space:nowrap}
-.purchase-tasks.active-order-table .allocated-quantity .purchase-info-pending{background:#fff0d8!important;color:#895000!important}
+#app .purchase-tasks.active-order-table.draft-column-layout .received-quantity .quantity-reference.purchase-info-total,#app .purchase-tasks.active-order-table.draft-column-layout .allocated-quantity .quantity-reference.purchase-info-total{background:#e8f1ff!important;color:#1652aa!important;border:0;border-radius:12px;padding:2px 8px;font-weight:600;white-space:nowrap}
+#app .purchase-tasks.active-order-table.draft-column-layout .allocated-quantity .quantity-reference.purchase-info-total.purchase-info-pending{background:#fff0d8!important;color:#895000!important}
+#app .purchase-tasks.active-order-table.draft-column-layout .received-quantity>span.purchase-info-total:empty{display:none!important}
 .active-order-table .purchase-info-note{margin-top:3px;line-height:13px}
 .active-order-table .purchase-info-note .purchase-info-link{padding:0;font-size:10px;line-height:13px}
 .active-order-table .allocated-quantity[data-purchase-info-settled] .dd-purchase-loaded{display:none}
