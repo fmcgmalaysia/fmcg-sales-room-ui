@@ -15,6 +15,7 @@ import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 import { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';
 import { customerAllocationContext, readAllocationLoans } from 'backend/customerAllocationContext.js';
+import { allocationOriginInfo } from 'backend/allocationOriginInfo.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -153,6 +154,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     shipmentPlans: readShipmentPlans(activity),
     purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
     paymentRequestsConnected: false,
+    allocationOrigins:allocationOriginInfo(activity),
     deskDeliveries:projectDeskDeliverySummaries(activity),
     allocationContext:customerAllocationContext({company,tasks:rows},activity,allocations,allocationVersion({company,tasks:rows},activity))
   };
