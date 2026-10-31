@@ -14,7 +14,8 @@ export function buildTaskChatWorkspace({company,department,orders,delivery,legac
   const original=(legacy?.threads||[]).find(t=>t.id===po.id);
   const updates=(original?.updates||[]).filter(e=>!['Payment reminder updated'].includes(e.body)).map(e=>{
    const audit=(po.history||[]).find(a=>a.id===e.id);
-   return audit?.action==='ACCOUNT_DOCUMENT_UPLOAD'&&audit.changes?.type==='PAYMENT'?{...e,from:'ACCOUNT',notify:true,body:'Payment proof uploaded',bodyZh:'付款证明已上传'}:e;
+   const displayFrom=e.from||(audit?.action?.startsWith('ACCOUNT_')?'ACCOUNT':audit?.action==='SUPPLIER_DOCUMENT_UPLOADED'?'PURCHASE':['Receiving updated','Packing confirmed','Loading recorded','Packing reversed','Warehouse photos added'].includes(e.body)?'WAREHOUSE':null);
+   return {...e,presentation:'MESSAGE',displayFrom,...(audit?.action==='ACCOUNT_DOCUMENT_UPLOAD'&&audit.changes?.type==='PAYMENT'?{from:'ACCOUNT',notify:true,body:'Payment proof uploaded',bodyZh:'付款证明已上传'}:{})};
   });
   tasks.push({kind:'PO',id:po.id,number:po.number,title:po.supplierName,closed:po.supplierAccount?.closed===true,peers:peers.PO[department],legacy:original?.messages||[],updates});
   for(const peer of ['PURCHASE','ACCOUNT','WAREHOUSE'].filter(p=>p!==department&&!peers.PO[department].includes(p))){const messages=(original?.messages||[]).filter(m=>m.from===peer&&m.to.includes(department)||m.from===department&&m.to.includes(peer));if(messages.length)legacyArchive.push({kind:'PO',taskId:po.id,number:po.number,title:po.supplierName,peer,legacyOnly:true,closed:true,messages});}

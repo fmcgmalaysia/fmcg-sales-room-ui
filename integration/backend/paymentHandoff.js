@@ -55,6 +55,7 @@ export function transitionProcurementHandoff(row,details,input,identity,departme
   if(stage!=='LEGACY'||input.bankClear!==true||!row.supplierId||!row.number||!row.taskIds?.length||!Number.isFinite(row.amount)||row.amount<=0)throw Error('Procurement handoff requires Finance to reconcile the complete legacy order and bank status.');
   next={schema:1,stage:'OWNED',legacyReviewed:true,submission:{version:procurementSubmissionVersion(row),amountCents:Math.round(row.amount*100),...identity},ownership:identity};
  }else if(action==='REQUEST_PAYMENT'){
+  if(stage==='SUBMITTED'&&procurementContentLock(details))throw Error(procurementContentLock(details));
   if(!['LEGACY','WITHDRAWN','RETURNED','SUBMITTED'].includes(stage)||stage==='SUBMITTED'&&(!current.submission?.paymentRequest||current.ownership)||details.paymentHandoff?.review&&stage!=='RETURNED')throw Error('Payment request is locked by Account.');
   if(!row.supplierId||!row.number||!row.taskIds?.length||!row.paymentRequestRevision)throw Error('Payment request requires a complete saved PO.');
   if(!['FULL','DEPOSIT','PART','BALANCE'].includes(input.purpose)||![0,7,14,30,45,60,90].includes(input.termDays))throw Error('Payment request purpose or terms are invalid.');
