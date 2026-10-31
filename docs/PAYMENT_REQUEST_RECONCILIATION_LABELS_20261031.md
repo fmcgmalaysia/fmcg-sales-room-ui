@@ -13,4 +13,4 @@ The candidate generator changes exactly two label expressions and their two HTML
 
 Validation: 6 new cases and 37 existing payment-plan, payment-handoff and supplier-closeout cases pass (43 total). Cases cover cash versus credit, unknown versus genuine zero, partial/processing states, no automatic Audit completion and preservation of existing completed audits. No real financial or CMS records were written.
 
-Code: tested background candidate. Pages: not deployed. Wix: not synchronized or published. Public: not verified. Broader shared-consumer regression and browser acceptance remain required before release. Do not mark complete or merge main before the required acceptance.
+Continuation: scoped release integration, relevant shared-consumer regression and Chrome candidate acceptance are complete. Purchase and Finance version drafts exactly match expected changes; see MASTER_CLOSEOUT_DISPLAY_20261031.md. Pages: not deployed. Wix: drafts saved, not published. Public: not verified. Do not mark complete or merge main before the required acceptance.
