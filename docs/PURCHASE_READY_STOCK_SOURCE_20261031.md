@@ -14,4 +14,12 @@ The detail view shows original supplier/PO, receiving update timestamp, source-a
 
 Acceptance: 12 new tests pass for 90+10, 90+6, unconfirmed draft/failure, return, own excess, pure stock, borrowing/repayment trace, quarantine, protected loaded ownership, split binding, cross-batch no duplication, read-only detail and unchanged resources. 68 affected regression tests pass using the actual candidate grid and allocation UI, including original source rows, split inline layout, personal row order, borrowing and the 25 short-load scenarios.
 
-Release state: candidate only. GitHub Pages deployment, Wix publication and fresh public verification remain pending. Never merge this branch into main before user acceptance.
+Release completed 2026-10-31; user acceptance remains pending.
+
+- Code version: 3401d75be7cbb885c56576127b1bef136f923951, build 20261031-purchase-ready-stock-v1, draft PR252.
+- GitHub Pages: run41153704457 succeeded. Only the scoped ready-stock prepare/upload ran. 94 public resources checked: 93 exact hashes; unchanged purchase-live/display-rows.js differs only by baseline CRLF/LF normalization (normalized content identical).
+- Deployment permissions: the exact temporary branch rule was removed immediately after success; original seven branch rules and zero tag rules restored.
+- Wix Studio: Purchase-only version reference matched full draft readback, and Studio confirmed that the site is published and live online. No backend writes in this release.
+- Public page: opened clean https://fmcg999.wixstudio.com/master in a new native Chrome tab; iframe shows the new build and real CMS data. TESTING 02 AJAX shows Ready Stock 30 with a blue clickable box; its read-only view shows the original supplier and source PO. TESTING 801 LAY'S source shows borrowed 30, lender TESTING 802, outstanding zero and Repaid. Original Alloc100 / Loaded90 and remainder10 remain unchanged. The stock detail has no save or editable controls. Existing Purchase Order navigation lists five POs and their amounts. No captured page errors.
+
+Live verification was read-only. Partial6/gap4, release/return, pure-stock, cross-batch and failed-draft cases were validated in the recorded synthetic tests, not newly written into real CMS. This release adds no allocation mutation path or automatic Desk assignment. Private screenshots and exact readbacks remain in the root handoff directory. Never merge this branch into main before user acceptance.
