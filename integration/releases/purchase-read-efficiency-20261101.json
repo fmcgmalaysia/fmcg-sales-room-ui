@@ -1,0 +1,153 @@
+{
+  "at": "2026-10-31T16:36:56.801Z",
+  "objective": "Purchase reads: reuse one authorized workspace snapshot and bound independent source GP checks; one PO projection and response formatter.",
+  "branch": "fix/purchase-read-efficiency-20261101",
+  "base": "aa357a8",
+  "productionRecovery": {
+    "static": "b86805a",
+    "record": "48efdd6",
+    "freshOriginals": [
+      {
+        "name": "purchaseMarginRefresh.js",
+        "before": "3518bf6e24f9d6d30ca558eaf40a47ae3d27f15c69b961b475c3e708d2de66f0"
+      },
+      {
+        "name": "purchaseOrderWorkflow.js",
+        "before": "908e5edd3e85cf7e4a0d85c65107e3691fd8b334271dd9fadecbb8df1406dd24"
+      },
+      {
+        "name": "purchaseOrders.web.js",
+        "before": "a7e1e6ef74013f9070cc519b1b26fea68889c6eae0f925b3bac04b3ec605a210"
+      },
+      {
+        "name": "purchaseWorkspace.web.js",
+        "before": "7c0b020b801b2476fed6a1dd0129157b2ebbd7ac0462e7a674272fd40d1a10ea"
+      },
+      {
+        "name": "purchase-room-page.js",
+        "before": "2fa8381041449ab24448de277fb4a56bb45139d7bfda7953f3e70818d6795807"
+      }
+    ],
+    "retainIndependentReceiving": "fc76b37",
+    "retainConfirmedSaveRecovery": "97f9623"
+  },
+  "components": [
+    {
+      "name": "purchaseMarginRefresh.js",
+      "before": "3518bf6e24f9d6d30ca558eaf40a47ae3d27f15c69b961b475c3e708d2de66f0",
+      "candidate": "d572953fa21dc20fc55f4a31a03bb9fb9e046e4a4d87f7e1030f484b48d9b344",
+      "wixDraft": "d572953fa21dc20fc55f4a31a03bb9fb9e046e4a4d87f7e1030f484b48d9b344"
+    },
+    {
+      "name": "purchaseOrderWorkflow.js",
+      "before": "908e5edd3e85cf7e4a0d85c65107e3691fd8b334271dd9fadecbb8df1406dd24",
+      "candidate": "3cc76cdaf78ce011e0f4854b99ddc77edae5eb5deff62fc1a6bfe823f02c100e",
+      "wixDraft": "3cc76cdaf78ce011e0f4854b99ddc77edae5eb5deff62fc1a6bfe823f02c100e"
+    },
+    {
+      "name": "purchaseOrders.web.js",
+      "before": "a7e1e6ef74013f9070cc519b1b26fea68889c6eae0f925b3bac04b3ec605a210",
+      "candidate": "1a8f0c4a8302f114a71ff79fe519963ce3ffc9e834aa81eada57107e8fc120bf",
+      "wixDraft": "1a8f0c4a8302f114a71ff79fe519963ce3ffc9e834aa81eada57107e8fc120bf"
+    },
+    {
+      "name": "purchaseWorkspace.web.js",
+      "before": "7c0b020b801b2476fed6a1dd0129157b2ebbd7ac0462e7a674272fd40d1a10ea",
+      "candidate": "24e4c072902222bc38715ad2045d3ba31d52e2c511babbaaf9c20ed817e796af",
+      "wixDraft": "24e4c072902222bc38715ad2045d3ba31d52e2c511babbaaf9c20ed817e796af"
+    },
+    {
+      "name": "purchase-room-page.js",
+      "before": "2fa8381041449ab24448de277fb4a56bb45139d7bfda7953f3e70818d6795807",
+      "candidate": "caf7f6affd735262f0078daa568c2ddef0a22864a9bf5f4729761c41be72c785",
+      "wixDraft": "caf7f6affd735262f0078daa568c2ddef0a22864a9bf5f4729761c41be72c785"
+    }
+  ],
+  "build": "20261101-purchase-read-efficiency-v1",
+  "scope": "purchase-read-efficiency-only",
+  "resources": {
+    "total": 99,
+    "changed": [
+      "purchase-live/app.js",
+      "purchase-live/index.html"
+    ],
+    "unchanged": 97
+  },
+  "tests": {
+    "newScenarios": 10,
+    "existingBackend": 187,
+    "uiPassed": 117,
+    "uiBaselineFailures": 13,
+    "newFailures": 0,
+    "notes": "13 legacy UI failures reproduced with exact same names on b86805a asset cohort; existing confirmed-readback scenarios all pass."
+  },
+  "comparison": {
+    "kind": "ISOLATED_SIMULATED_IO_COMPARISON",
+    "productionWrites": 0,
+    "livePerformanceMeasured": false,
+    "simulatedReadDelayMs": 10,
+    "records": {
+      "orders": 46,
+      "tasks": 47,
+      "activity": 429
+    },
+    "sameMarginResults": 93,
+    "sameFreshChecks": 63,
+    "calls": {
+      "read": 63,
+      "insert": 0,
+      "update": 0,
+      "remove": 0
+    },
+    "samples": [
+      {
+        "before": {
+          "elapsedMs": 1046,
+          "peak": 1
+        },
+        "after": {
+          "elapsedMs": 280,
+          "peak": 4
+        }
+      },
+      {
+        "before": {
+          "elapsedMs": 1014,
+          "peak": 1
+        },
+        "after": {
+          "elapsedMs": 287,
+          "peak": 4
+        }
+      },
+      {
+        "before": {
+          "elapsedMs": 1009,
+          "peak": 1
+        },
+        "after": {
+          "elapsedMs": 306,
+          "peak": 4
+        }
+      }
+    ],
+    "scope": "No production acceleration percentage claimed. Source checks only; all root cache writers unchanged and serial."
+  },
+  "protections": [
+    "All fresh source task/order/COST_LOCK checks retained; unknown GP fails closed.",
+    "Root GP cache writes, GP_LOCK ownership and cleanup remain serial.",
+    "One shared PO projection with identical document deletion permission and Finance locks.",
+    "Standalone read endpoint uses the same formatter for existing callers; older in-flight reads cannot overwrite a newer bundle.",
+    "No change to original Save request/receipt/retry, stock, PO, payments, borrowing, Loaded or company collection isolation.",
+    "Existing polling intervals and editing/draft protection unchanged; no cross-request business cache."
+  ],
+  "release": {
+    "code": "COMPLETE",
+    "github": "PENDING_SYNC",
+    "pages": "PENDING",
+    "wix": "FIVE_EXACT_DRAFTS_NOT_PUBLISHED",
+    "public": "PENDING",
+    "userAcceptance": "PENDING"
+  },
+  "followups": "MST-09 is not a capacity sign-off. Production live timings, more active tasks, concurrent users and lifecycle/volume budget remain to be measured."
+}

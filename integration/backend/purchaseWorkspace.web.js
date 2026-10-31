@@ -5,7 +5,7 @@ import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchase
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { applyPurchaseProgress } from 'backend/purchaseProgress.js';
-import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
+import { purchaseOrderList, purchaseOrderReadResult } from 'backend/purchaseOrderWorkflow.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { purchaseReceiptInfo } from 'backend/purchaseReceiptInfo.js';
@@ -36,8 +36,9 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
     refreshMargins({ company, names: ids, orders, tasks, workspace, activity })
   ]);
   workspace.customers=workspace.customers.map(row=>({...row,shortName:customerNames.find(item=>item.customerId===row.id)?.shortName||''}));
-  const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
+  const purchaseOrders=purchaseOrderList({company,workspace,records:purchaseRecords,staff});
   applyPurchaseProgress(workspace,activity,purchaseOrders);
   const receiptInfo = purchaseReceiptInfo(purchaseOrders, activity);
-  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, receiptHistory: receiptInfo.get(row.id) || [], gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
+  const purchaseOrdersResult=purchaseOrderReadResult({company,rows:purchaseOrders,names:customerNames,customerNamesError:customerNamesError?'客户 Short Name 暂时无法读取，采购单保留已保存名称。':customerNames.some(row=>!row.shortName)?'客户 Short Name 尚未填写；该客户暂显示已保存名称。':''});
+  return { ...workspace, customerNamesError, purchaseOrders:purchaseOrdersResult, tasks: workspace.tasks.map(row => ({ ...row, receiptHistory: receiptInfo.get(row.id) || [], gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
 });
