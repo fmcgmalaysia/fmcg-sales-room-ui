@@ -35,6 +35,15 @@ test('known value totals flag omitted quantities and never treat a reference pri
  const p=projectStockValuationPage(context([a,b]));assert.equal(p.items[0].valuation.valueCents,null);assert.equal(p.summary.valuation.knownValueCents,500000);
  assert.equal(p.summary.valuation.unvaluedQuantity,20);assert.equal(p.summary.valuation.complete,false);assert.equal(p.items[0].valuation.averageCost,null);
 });
+test('an assigned PO values its saved cost even when the immutable plan retains its draft flag',()=>{
+ const a=source('A',100,58.08);a.procurement.draftPlan=true;a.warehouse.accepted=30;
+ const before=JSON.stringify(a),p=projectStockValuationPage(context([a]));
+ assert.equal(p.items[0].valuation.averageCost,58.08);assert.equal(p.items[0].valuation.valueCents,174240);
+ assert.equal(p.items[0].sources[0].valuation.status,'CONFIRMED');assert.equal(JSON.stringify(a),before);
+ a.po='';assert.equal(projectStockValuationPage(context([a])).items[0].valuation.valueCents,null);
+ a.po='PO-A';a.procurement.costing.amountCents++;
+ assert.equal(projectStockValuationPage(context([a])).items[0].sources[0].valuation.status,'COST_REQUIRES_REVIEW');
+});
 test('filtered summaries include all pages and cost changes invalidate a Finance cursor',()=>{
  const tasks=[source('A',10,50),source('B',20,56)].map((row,i)=>({...row,barcode:String(i)}));
  const c=context(tasks),p=projectStockValuationPage(c,{pageSize:1});assert.equal(p.items.length,1);assert.equal(p.summary.onHand.quantity,30);assert.equal(p.summary.valuation.knownValueCents,162000);
