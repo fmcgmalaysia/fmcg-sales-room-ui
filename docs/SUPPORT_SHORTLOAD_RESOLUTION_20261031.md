@@ -15,3 +15,5 @@ Chrome synthetic preview verified 100 allocated / 90 loaded: transfer leaves Des
 A completed decision is one immutable activity event consumed by existing demand, allocation, borrowing and Desk readers. It does not create an alternative stock writer. The existing operation journal supplies same-request recovery. No periodic new history is added.
 
 Release is not yet complete: GitHub Pages, Wix publish and public verification are pending. Keep this branch out of main until user acceptance. New modules must be created before importing them in the minimal live patches; the separately deployed receiving backend is untouched.
+
+Wix prepublish check: all 13 existing backend modules were patched through unique Find/Replace hunks and fully read back, two new modules were fully read back, and all three page references were changed only at the version marker. Exact code: 4054f2f. All fresh page originals matched the checkout. Pages permission and publication remain pending.
