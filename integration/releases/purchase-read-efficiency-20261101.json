@@ -142,12 +142,64 @@
     "Existing polling intervals and editing/draft protection unchanged; no cross-request business cache."
   ],
   "release": {
-    "code": "COMPLETE",
-    "github": "PENDING_SYNC",
-    "pages": "PENDING",
-    "wix": "FIVE_EXACT_DRAFTS_NOT_PUBLISHED",
-    "public": "PENDING",
+    "code": "c844f396494a083e00bc8dbdf783fae1203caecc",
+    "github": "SYNCED_PR274",
+    "pages": "SUCCESS_99_NORMALIZED_95_EXACT",
+    "wix": "PUBLISHED_AND_LIVE_FIVE_EXACT_COMPONENTS",
+    "public": "PASSED_NORMAL_CHROME_NEW_TAB",
     "userAcceptance": "PENDING"
   },
-  "followups": "MST-09 is not a capacity sign-off. Production live timings, more active tasks, concurrent users and lifecycle/volume budget remain to be measured."
+  "followups": "MST-09 is not a capacity sign-off. Production live timings, more active tasks, concurrent users and lifecycle/volume budget remain to be measured.",
+  "codeCommit": "c844f396494a083e00bc8dbdf783fae1203caecc",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/274",
+  "permission": {
+    "originalBranches": 7,
+    "originalTags": 0,
+    "temporaryRuleAdded": false,
+    "actionTimeApproval": "USER_APPROVED_THIS_TURN",
+    "scope": "purchase-read-efficiency-only",
+    "dispatches": 1,
+    "restoredBranches": 7,
+    "restoredTags": 0,
+    "removedRule": "fix/purchase-read-efficiency-20261101",
+    "removedPolicyId": 65070136
+  },
+  "pagesRun": {
+    "id": 41254055942,
+    "job": 124693358849,
+    "conclusion": "success",
+    "codeCommit": "c844f396494a083e00bc8dbdf783fae1203caecc",
+    "scope": "purchase-read-efficiency-only",
+    "dispatches": 1
+  },
+  "publicAcceptance": {
+    "purchaseTab": "51429183",
+    "url": "https://fmcg999.wixstudio.com/master",
+    "build": "20261101-purchase-read-efficiency-v1",
+    "staff": "LAW",
+    "NCTPurchaseOrders": 8,
+    "GHROrders": 0,
+    "NCTtoGHRtoNCT": "PASS",
+    "financeNCTOrders": 8,
+    "GPVisible": "PASS",
+    "originalAlloc100Loaded90": "PRESERVED",
+    "paidProcurementFieldsAndAmendAction": "DISABLED",
+    "paymentAmountsProofCountsEditableState": "PRESERVED",
+    "manualRefresh": "COMPLETED",
+    "capturedRelevantErrors": 0,
+    "realPostPublishSaveOrFinancialTransaction": "NOT_EXECUTED",
+    "manualBusinessMutations": 0,
+    "exactProductionRefreshDurationMs": null,
+    "productionP50P95AfterRelease": null,
+    "productionCMSItemDeltaAfterRelease": null
+  },
+  "limitations": [
+    "Automated outer-page reload again produced the pre-existing embedded blank with the correct new URL and no captured errors. A normal Chrome new tab loaded and passed; startup root cause is not resolved.",
+    "Manual Refresh completed, but the browser waiting API timed out before the visible response. No precise production duration or speed percentage is claimed.",
+    "Stock List live cost totals were not reaccepted in this release. Its nested frame did not provide usable content during the optional check; Finance Supplier Accounts was restored and freshly reread successfully. All Stock List static resources remain byte-identical in the scoped package.",
+    "Real saving/failure injection was not repeated against production; original receipt and writer blocks are unchanged, with isolated regression evidence.",
+    "The existing read-only supplier modal still asks to cancel unsaved allocation when closed without entering values. Original supplier UI asset is unchanged; record as a later usability check.",
+    "Capacity, more active tasks/concurrent staff and lifecycle budget remain open under MST-09."
+  ],
+  "closeoutAt": "2026-11-01 Asia/Kuala_Lumpur"
 }
