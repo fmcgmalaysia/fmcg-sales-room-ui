@@ -1,9 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),load=require('./load-master-module.cjs');
 const source=fs.readFileSync(path.join(__dirname,'../backend/purchaseOperations.web.js'),'utf8'),{operationId}=load('purchaseOperationJournal.js'),requestId='11111111-1111-4111-8111-111111111111',key=operationId('NCT/PURCHASE',requestId,'MEMBER');
-function endpoint(record,lock,auth=async()=>({memberId:'MEMBER'})){
- const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:auth,PURCHASE_COLLECTIONS:{NCT:{activity:'NCTActivity'}},operationId,store:{read:async(c,id)=>id===operationId(key,'RESULT')?record:id===operationId('NCT/PURCHASE','LOCK')?lock:null}};
+function endpoint(record,lock,auth=async()=>({memberId:'MEMBER'}),prepared=null){
+ const context={webMethod:(_,fn)=>fn,Permissions:{SiteMember:1},getPurchaseStaffContext:auth,PURCHASE_COLLECTIONS:{NCT:{activity:'NCTActivity'}},operationId,store:{read:async(c,id)=>id===operationId(key,'RESULT')?record:id===operationId('NCT/PURCHASE','LOCK')?lock:id===key?prepared:null}};
  vm.runInNewContext(source.slice(source.indexOf('export const getPurchaseSaveResult=')).replace('export const getPurchaseSaveResult=','this.readResult='),context);return context.readResult;
 }
+test('completed allocation with retained original lock stays recoverable in the client until cleanup',async()=>{
+ const outcome={ok:true,requestId},record={details:{outcome}},prepared={details:{plan:{event:{action:'PLANNER_ALLOCATION_SAVED'}}}};
+ assert.equal((await endpoint(record,{details:{owner:key}},undefined,prepared)('NCT',requestId,null)).pending,true);
+ assert.equal(await endpoint(record,null,undefined,prepared)('NCT',requestId,null),outcome);
+});
 test('recovered result is not reported complete while its cleanup still owns the company lock',async()=>{
  const outcome={ok:true,requestId},record={details:{recovered:true,outcome}};
  const result=await endpoint(record,{details:{owner:key}})('NCT',requestId,null);assert.equal(result.ok,false);assert.equal(result.pending,true);assert.match(result.error,/recovery is pending/);
