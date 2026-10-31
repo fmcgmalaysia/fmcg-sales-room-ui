@@ -5,7 +5,8 @@ const style=`
 /* Active Orders: cumulative receipt total, real batches, confirmed allocation sources. */
 .active-order-table .purchase-info-link{border:0;background:transparent;color:#2563eb;text-decoration:underline;text-underline-offset:2px;font:inherit;font-size:10px;padding:2px 0 2px 6px;cursor:pointer;vertical-align:middle}
 .active-order-table .purchase-info-note{display:block;margin-top:3px;font-size:10px;line-height:15px;color:#526b80;white-space:normal;font-weight:400}
-.active-order-table .purchase-info-pending{background:#fff0d8;color:#895000}
+.purchase-tasks.active-order-table .quantity-reference.purchase-info-total{background:#e8f1ff!important;color:#1652aa!important}
+.purchase-tasks.active-order-table .quantity-reference.purchase-info-total.purchase-info-pending{background:#fff0d8!important;color:#895000!important}
 .active-order-table .purchase-info-source{display:inline-block;color:#24549b}.active-order-table .purchase-info-source.loan{background:#fff0d8;color:#895000;padding:0 3px;border-radius:3px}
 .active-order-table th .purchase-info-caption{display:block;font-size:10px;font-weight:400;color:#526b80}
 dialog.purchase-info-dialog{width:620px;max-width:calc(100vw - 32px);padding:0;border:1px solid #b8cddd;border-radius:6px;color:#17364d;background:#fff;font:11px/1.5 Inter,'Segoe UI',Arial,sans-serif}dialog.purchase-info-dialog::backdrop{background:#17364d66}

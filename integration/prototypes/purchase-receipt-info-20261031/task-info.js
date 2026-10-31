@@ -64,7 +64,7 @@
         if(!m.batchId||m.sourceId){
           receipt.querySelectorAll('.extra-stock,small').forEach(node=>node.remove());
           const primary=receipt.querySelector('.quantity-reference,.draft-receipt-shortfall');
-          if(primary)primary.textContent=qty(m.received);
+          if(primary){primary.textContent=qty(m.received);if(primary.tagName==='SPAN')primary.classList.add('purchase-info-total');}
           else{for(const node of [...receipt.childNodes])if(node.nodeType===3)node.remove();const value=document.createElement('span');value.className='quantity-reference purchase-info-total';value.textContent=qty(m.received);receipt.prepend(value);}
         }
         receipt.append(infoButton('receipts',m));const summary=receiptSummary(m);
