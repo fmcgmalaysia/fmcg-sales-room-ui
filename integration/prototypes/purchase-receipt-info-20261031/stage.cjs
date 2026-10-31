@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),crypto=require('crypto');
-const previous=require('../purchase-active-clarity-20261031/stage.cjs'),root=path.resolve(__dirname,'../../..'),build='20261031-purchase-receipt-info-v1';
+const previous=require('../purchase-active-clarity-20261031/stage.cjs'),root=path.resolve(__dirname,'../../..'),build='20261031-purchase-receipt-info-v2';
 const style=`
 /* Active Orders: cumulative receipt total, real batches, confirmed allocation sources. */
 .active-order-table .purchase-info-link{border:0;background:transparent;color:#2563eb;text-decoration:underline;text-underline-offset:2px;font:inherit;font-size:10px;padding:2px 0 2px 6px;cursor:pointer;vertical-align:middle}

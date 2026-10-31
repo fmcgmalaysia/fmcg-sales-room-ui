@@ -50,7 +50,7 @@
     if(header&&!header.dataset.purchaseInfoReady){
       const receipt=[...header.cells].find(cell=>cell.textContent.trim().toLowerCase()==='rcv qty'),allocation=[...header.cells].find(cell=>cell.textContent.trim().toLowerCase()==='alloc qty');
       if(receipt)receipt.innerHTML='RCV Qty<small class="purchase-info-caption">PO receipts</small>';
-      if(allocation)allocation.innerHTML='ALLOC Qty<small class="purchase-info-caption">Sources</small>';
+      if(allocation)allocation.innerHTML='Alloc Qty<small class="purchase-info-caption">Sources</small>';
       header.dataset.purchaseInfoReady='true';
     }
     for(const row of table.tBodies[0]?.rows||[]){

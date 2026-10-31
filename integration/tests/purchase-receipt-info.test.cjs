@@ -4,6 +4,29 @@ const release=require('../prototypes/purchase-receipt-info-20261031/stage.cjs').
 const window={};vm.runInNewContext(release.assets.get('purchase-live/task-info.js').toString(),{window});const api=window.purchaseTaskInfo;
 function event(id,before,received,prior='',kind='PARTIAL',extra={}){return {title:id,description:'PO1',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',activityTime:'2026-10-31T0'+(before?'2':'1')+':00:00Z',initiatedByStaffName:'WH',details:{beforeRevision:prior,lines:[{taskId:'A',orderId:'OA',sourceLineId:'LA',beforeAccepted:before,beforeRejected:0,accepted:received,rejected:0,kind,reason:kind==='CORRECTION'?'Recount':'',...extra}]}};}
 const po={id:'PO1',number:'NCT-PO1',company:'NCT',taskIds:['A']};
+test('Info header remains compatible with the unchanged Loaded consumer, including shortload and zero',()=>{
+ const delivery=release.assets.get('master-shared/desk-delivery.js').toString();
+ const decorator=delivery.slice(delivery.indexOf(' function decoratePurchase(){'),delivery.indexOf(' const queuePurchase='));
+ const pill=delivery.split('\n').find(line=>line.includes('function summaryPill('));
+ const number=delivery.split('\n').find(line=>line.includes('const number='));
+ for(const summary of [{taskId:'A',loadedQty:200},{taskId:'A',loadedQty:90,issue:true},{taskId:'A',loadedQty:0}]){
+  const info={className:'purchase-info-link'},children=[info];
+  const cell={querySelector:selector=>selector==='.dd-purchase-loaded'?children.find(node=>node.className==='dd-purchase-loaded'):null,append:node=>children.push(node)};
+  const headers=['RCV Qty','Alloc Qty'].map(text=>({textContent:text,set innerHTML(value){this.textContent=value.replace(/<[^>]*>/g,'');}}));
+  const table={tHead:{rows:[{cells:headers,dataset:{}}]},tBodies:[{rows:[]}],querySelectorAll:selector=>selector==='thead th'?headers:[{dataset:{id:'A'},cells:[{},cell]}]};
+  const root={addEventListener(){},querySelectorAll:()=>[table]};
+  const document={getElementById:id=>id==='app'?root:{value:'NCT'},createElement:()=>({dataset:{},remove(){children.splice(children.indexOf(this),1);}})};
+  const scope={window:{},document,purchaseModel:{deskDeliveries:[summary]},purchaseQueued:false};
+  vm.createContext(scope);vm.runInContext(release.assets.get('purchase-live/task-info.js').toString(),scope);
+  scope.window.purchaseTaskInfo.setContext({tasks:[],allocations:[],customers:[]});scope.window.purchaseTaskInfo.decorate(table);
+  vm.runInContext(number+'\n'+pill+'\n'+decorator+'\ndecoratePurchase();decoratePurchase();',scope);
+  const loaded=children.filter(node=>node.className==='dd-purchase-loaded');
+  assert.equal(loaded.length,1,'original Loaded decorator must still find the Info-decorated column');
+  assert.match(loaded[0].innerHTML,new RegExp('Loaded Qty .*>'+summary.loadedQty+'</span>'));
+  assert.ok(children.includes(info),'Loaded rendering must preserve the Info action');
+  if(summary.issue)assert.match(loaded[0].innerHTML,/dd-issue/);
+ }
+});
 function fixture(received=200){const a={id:'A',customerId:'CA',barcode:'SKU',name:'ITEM',ord:200,inc:200,po:'NCT-PO1',procurement:{totalCtn:200},warehouse:{hasPhysicalReceipt:true,accepted:received},receiptHistory:[]},b={...a,id:'B',customerId:'CB',po:'NCT-PO2'};return {tasks:[a,b],customers:[{id:'CA',name:'CUSTOMER A'},{id:'CB',name:'CUSTOMER B'}],allocations:[{sourceTaskId:'A',targets:[{taskId:'A',quantity:200}]}],allocationContext:{loans:[]}};}
 test('two validated deliveries expose170+30 without an extra record or current-total inference',()=>{const activity=[event('R1',0,170),event('R2',170,200,'R1','DELIVERY')],before=JSON.stringify(activity),rows=purchaseReceiptInfo([po],activity).get('A');assert.deepEqual(Array.from(rows,row=>row.received),[170,30]);assert.equal(rows[1].totalReceived,200);assert.equal(JSON.stringify(activity),before);assert.equal(rows[0].by,'WH');assert.equal(rows[0].po,'NCT-PO1');});
 test('one receipt170 plus borrowed30 remainsRCV170 andALLOC200 with a distinct source',()=>{const data=fixture(170);data.tasks[0].receiptHistory=purchaseReceiptInfo([po],[event('R1',0,170)]).get('A');data.allocations=[{sourceTaskId:'A',targets:[{taskId:'A',quantity:170}]},{sourceTaskId:'B',targets:[{taskId:'A',quantity:30}]}];data.allocationContext.loans=[{id:'L',borrowerTaskId:'A',lenderTaskId:'B',quantity:30,outstanding:30,sources:[{sourceTaskId:'B',quantity:30}]}];const before=JSON.stringify(data),m=api.model('A','','',data);assert.equal(m.received,170);assert.equal(m.allocated,200);assert.equal(m.consistent,true);assert.equal(m.sources[1].kind,'Borrowed');assert.match(api.sourceSummary(m),/PO 170/);assert.match(api.sourceSummary(m),/Borrowed 30/);assert.equal(api.receiptSummary(m),'1 receipt');assert.equal(JSON.stringify(data),before);});
