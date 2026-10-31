@@ -1,7 +1,7 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
-import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate, effectivePurchaseDocuments, purchaseDocumentStates, purchaseDocumentReview } from 'backend/purchaseDocumentPolicy.js';
+import { purchaseDocumentName, purchaseDocumentState, purchaseInvoiceDueDate, effectivePurchaseDocuments, purchaseDocumentStates, purchaseDocumentReview, PURCHASE_DOCUMENT_TYPES } from 'backend/purchaseDocumentPolicy.js';
 import { projectInvoiceReview } from 'backend/accountPurchaseReview.js';
 import { projectPaymentHandoff, projectProcurementHandoff, transitionProcurementHandoff, procurementSubmissionVersion, procurementContentLock } from 'backend/paymentHandoff.js';
 export const PURCHASE_ORDER_COLLECTION = 'PurchaseOrders';
@@ -81,15 +81,21 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
   }).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||a.number.localeCompare(b.number));
 }
 
+export function purchaseOrderList({company,workspace,records,staff,now=new Date()}) {
+  return projectPurchaseOrders({company,workspace,records,now}).map(row=>{
+    const details=records.find(record=>record._id===row.id)?.details||{};
+    return {...row,documents:row.documents.map(document=>{const deleteBlocker=purchaseDocumentDeleteBlocker(row,details,document,staff);return {...document,deleteAllowed:!deleteBlocker,deleteBlocker};})};
+  });
+}
+export function purchaseOrderReadResult({company,rows,names,customerNamesError}) {
+  return {company,orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,documentsConnected:true,documentTypes:PURCHASE_DOCUMENT_TYPES,documentDeletionConnected:true,paymentConnected:true,paymentRequestsConnected:true,warehouseConnected:true};
+}
 export function createPurchaseOrderOperations({store,readWorkspace,names,documentService,now=()=>new Date()}) {
   const journal=createOperationJournal({store,now});
   async function list(company,staff){
     if(!names[company])throw Error('Select NCT or GHR.');
     const [workspace,records]=await Promise.all([readWorkspace(company,staff),store.all(PURCHASE_ORDER_COLLECTION)]);
-    return projectPurchaseOrders({company,workspace,records,now:now()}).map(row=>{
-      const details=records.find(record=>record._id===row.id)?.details||{};
-      return {...row,documents:row.documents.map(document=>{const deleteBlocker=purchaseDocumentDeleteBlocker(row,details,document,staff);return {...document,deleteAllowed:!deleteBlocker,deleteBlocker};})};
-    });
+    return purchaseOrderList({company,workspace,records,staff,now:now()});
   }
   async function deleteDocument({company,staff,requestId,input}){
     if(!documentService)throw Error('Document deletion is not connected.');

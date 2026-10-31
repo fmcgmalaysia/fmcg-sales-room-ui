@@ -1,6 +1,8 @@
 # MASTER open work and product cost decisions
 
-Updated 2026-10-31. This is the continuing register for unfinished work; reports and chat summaries are evidence, not a replacement backlog. Current static release isb86805a/PR272, with read-only origin projection and payment wording fromca5ed1b/PR271 and Warehouse projection0d6b492/PR269. Shared repair97f9623 and independent receipt fixfc76b37 remain protected. MST-01~04 have four-stage technical verification, user acceptance pending. This register does not approve the proposed cost migration.
+Updated 2026-11-01. This is the continuing register for unfinished work; reports and chat summaries are evidence, not a replacement backlog. Current static release isb86805a/PR272, with read-only origin projection and payment wording fromca5ed1b/PR271 and Warehouse projection0d6b492/PR269. Shared repair97f9623 and independent receipt fixfc76b37 remain protected. MST-01~04 have four-stage technical verification, user acceptance pending. This register does not approve the proposed cost migration.
+
+MST-09 authorized implementation: `fix/purchase-read-efficiency-20261101` is a tested candidate, not yet published. Five fresh Wix originals matched the repository; five minimal drafts now match the candidate. One workspace snapshot supplies the existing PO projection/permissions; independent GP source checks run at most four at a time, retaining all63 fresh validations and serial root-cache writes.10 new scenarios,187 existing backend checks and117 UI checks pass;13 legacy UI failures match the original asset cohort exactly.99-resource package changes only Purchase app/index. See [read optimization report](reports/PURCHASE_READ_EFFICIENCY_20261101.html) and `integration/releases/purchase-read-efficiency-20261101.json`. Pages, Wix publication, public verification and user acceptance remain pending. Capacity/lifecycle acceptance below remains open.
 
 ## How to continue without losing work
 

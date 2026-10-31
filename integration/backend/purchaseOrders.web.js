@@ -2,8 +2,7 @@ import { webMethod, Permissions } from 'wix-web-module';
 import wixData from 'wix-data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
-import { createPurchaseOrderOperations } from 'backend/purchaseOrderWorkflow.js';
-import { PURCHASE_DOCUMENT_TYPES } from 'backend/purchaseDocumentPolicy.js';
+import { createPurchaseOrderOperations, purchaseOrderReadResult } from 'backend/purchaseOrderWorkflow.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 const options={suppressAuth:true,consistentRead:true};
@@ -24,7 +23,7 @@ export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
   let names=[],customerNamesError='';
   try {names=await readCustomerShortNames([...new Set(rows.flatMap(row=>row.customerIds||[row.customerId]))]);if(names.some(row=>!row.shortName))customerNamesError='客户 Short Name 尚未填写；该客户暂显示已保存名称。';}
   catch (_){customerNamesError='客户 Short Name 暂时无法读取，采购单保留已保存名称。';}
-  return {company,orders:rows.map(row=>({...row,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),customerNamesError,documentsConnected:true,documentTypes:PURCHASE_DOCUMENT_TYPES,documentDeletionConnected:true,paymentConnected:true,paymentRequestsConnected:true,warehouseConnected:true};
+  return purchaseOrderReadResult({company,rows,names,customerNamesError});
 });
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await getPurchaseStaffContext();
