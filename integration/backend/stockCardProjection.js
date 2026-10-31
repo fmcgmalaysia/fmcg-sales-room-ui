@@ -86,7 +86,9 @@ export function projectStockCard(context) {
       const ownRemaining = Math.max(0, (claims.get(ownerId) || 0) - ownerSent);
       // Empty targets alone do not release the existing Warehouse own-source entitlement.
       // Unknown legacy source shares require reconciliation instead of guessed free stock.
-      const expected = quantity(demand) ? Math.max(0, Math.min(demand, quantity(share) ? share : demand) - ownerSent) : null;
+      // Confirmed matching allocations elsewhere can already satisfy this customer's demand.
+      const otherAllocated = allocations.filter(row => row.sourceTaskId !== source.id && tasks.get(row.sourceTaskId)?.warehouse?.hasPhysicalReceipt === true && identity(tasks.get(row.sourceTaskId)) === key).reduce((n, row) => n + (row.targets.find(target => target.taskId === ownerId)?.quantity || 0), 0);
+      const expected = quantity(demand) ? Math.max(0, Math.min(Math.max(0, demand - otherAllocated), quantity(share) ? share : demand) - ownerSent) : null;
       if (expected === null || expected > ownRemaining) issues.push('OWNERSHIP_NOT_CONFIRMED');
     }
     const cached = source.warehouse.stock?.availablePhysical;

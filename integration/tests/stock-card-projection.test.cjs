@@ -7,6 +7,29 @@ const received = n => ({ hasPhysicalReceipt: true, accepted: n });
 const allocation = (targets, source = 'A') => ({ title: 'ALLOC-' + source, action: 'PLANNER_ALLOCATION_SAVED', result: 'SAVED',
   imageAltText: source, activityTime: at, details: { beforeRevision: '', targets } });
 const context = (tasks, activity = [], company = 'NCT') => ({ company, tasks, activity });
+
+test('late original receipt is free when explicit matching sources already cover customer demand', () => {
+  const a=task('A',{procurement:{totalCtn:250,customerCtn:250},ord:250,warehouse:received(250)});
+  const b=task('B',{customerId:'CB',warehouse:received(100),procurement:{totalCtn:100,customerCtn:100}});
+  const activity=[allocation([{taskId:'A',quantity:170}]),allocation([{taskId:'A',quantity:80},{taskId:'B',quantity:20}],'B')];
+  const row=projectStockCard(context([a,b],activity)).items[0];
+  assert.equal(row.onHand,350);assert.equal(row.reservedUsable,270);assert.equal(row.available,80);assert.equal(row.reviewRequired,false);
+});
+
+test('unreceived or mismatched external sources cannot release original entitlement', () => {
+  for(const extra of [{warehouse:received(0),barcode:'OTHER'},{warehouse:{hasPhysicalReceipt:false,accepted:0}}]){
+    const a=task('A',{procurement:{totalCtn:250,customerCtn:250},ord:250,warehouse:received(250)});
+    const b=task('B',{warehouse:received(100),...extra});
+    const row=projectStockCard(context([a,b],[allocation([{taskId:'A',quantity:170}]),allocation([{taskId:'A',quantity:80}],'B')])).items.find(x=>x.barcode==='0001');
+    assert.equal(row.sources.find(x=>x.sourceTaskId==='A').available,null);
+  }
+});
+
+test('partial outside coverage still preserves unexplained customer entitlement review',()=>{
+  const a=task('A',{procurement:{totalCtn:250,customerCtn:250},ord:250,warehouse:received(250)}),b=task('B',{warehouse:received(100)});
+  const row=projectStockCard(context([a,b],[allocation([{taskId:'A',quantity:170}]),allocation([{taskId:'A',quantity:50}],'B')])).items[0];
+  assert.equal(row.sources.find(x=>x.sourceTaskId==='A').available,null);
+});
 function shipmentChain(status, amount = 40) {
   const lines = [{ taskId: 'A', quantity: amount, sources: [{ sourceTaskId: 'A', quantity: amount }] }];
   return ['REQUESTED', 'INVOICED', 'DISPATCHED'].slice(0, ['REQUESTED', 'INVOICED', 'DISPATCHED'].indexOf(status) + 1).map((state, i) => ({
