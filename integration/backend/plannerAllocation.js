@@ -57,7 +57,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       const existing=await store.read(collection,plan.event._id);
       if(!existing){
         const workspace=await readWorkspace(company,staff),activity=await store.all(collection);
-        if(allocationVersion(workspace,activity)!==plan.expectedVersion)throw Error('Stock or allocations changed while saving.');
+        if(allocationVersion(workspace,activity)!==plan.expectedVersion)return {ok:false,company,requestId,retryable:false,error:'Stock or allocations changed while saving. Review current stock before making a new allocation.'};
         await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});
       }else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Allocation receipt conflict.');
       return {ok:true,company,requestId,sourceTaskId:plan.event.imageAltText,savedAt:plan.event.activityTime};
