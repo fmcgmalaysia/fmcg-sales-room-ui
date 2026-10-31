@@ -9,8 +9,8 @@
       if (frame?.isConnected && company === selectedCompany) return;
       company = selectedCompany; activeRequest = ''; busy = false;
       frame = document.createElement('iframe');
-      frame.title = 'Warehouse Stock Control 库存管理';
-      frame.src = 'stock-control.html?v=20261021-stock-tab-v1&embedded=warehouse&company=' + company;
+      frame.title = 'Warehouse Stock List 库存清单';
+      frame.src = 'stock-control.html?v=20261031-company-stock-list-v1&embedded=warehouse&company=' + company;
       frame.style.cssText = 'display:block;width:100%;height:560px;border:0;background:transparent';
       container.replaceChildren(frame);
     },

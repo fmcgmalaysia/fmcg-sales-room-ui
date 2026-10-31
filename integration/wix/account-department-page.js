@@ -4,11 +4,17 @@ import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepa
 import { getAccountPurchaseOrders, queryAccountPurchaseOrders, planAccountReadIndex, maintainAccountReadIndex, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
 import wixLocationFrontend from 'wix-location-frontend';
+import { getFinanceStockList } from 'backend/stockValuation.web';
 // PO read and final-Invoice review; payment ledger and Warehouse closure remain unconnected.
 $w.onReady(() => {
   const room=$w('#html1');
   room.onMessage(async event=>{
     const message=event.data||{};
+    if(message.type==='FINANCE_STOCK_LIST_READ_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!message.requestId||message.requestId.length>100||JSON.stringify(message).length>2000)return;
+      try{const result=await getFinanceStockList(message.company,message.input||{});room.postMessage({type:'FINANCE_STOCK_LIST_READ_RESULT',company:message.company,requestId:message.requestId,ok:true,result});}
+      catch(error){room.postMessage({type:'FINANCE_STOCK_LIST_READ_RESULT',company:message.company,requestId:message.requestId,ok:false,error:'Stock could not be confirmed. Refresh the stock list or check your Finance access.'});}return;
+    }
     if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)&&await handleTaskChat(message,'ACCOUNT',result=>room.postMessage(result)))return;
     if(['DEPARTMENT_MESSAGES_REQUEST','DEPARTMENT_MESSAGE_SAVE_REQUEST'].includes(message.type)){
       if(!['NCT','GHR'].includes(message.company)||message.department!=='ACCOUNT'||typeof message.requestId!=='string'||message.requestId.length>100||JSON.stringify(message).length>200000)return;
@@ -50,5 +56,5 @@ $w.onReady(() => {
   });
   const maintenanceAction=String(wixLocationFrontend.query.accountIndexAction||'').toUpperCase(),maintenanceCompany=String(wixLocationFrontend.query.accountIndexCompany||'').toUpperCase(),maintenanceGeneration=String(wixLocationFrontend.query.accountIndexGeneration||'').toLowerCase();
   const maintenance=['PLAN','STAGE','ACTIVATE'].includes(maintenanceAction)&&['NCT','GHR'].includes(maintenanceCompany)?`&accountIndexAction=${maintenanceAction}&accountIndexCompany=${maintenanceCompany}${maintenanceAction==='ACTIVATE'&&/^[a-f0-9]{32}$/.test(maintenanceGeneration)?`&accountIndexGeneration=${maintenanceGeneration}`:''}`:'';
-  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261030-docs-synced-colors-v1'+maintenance;
+  room.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261031-company-stock-list-v1'+maintenance;
 });
