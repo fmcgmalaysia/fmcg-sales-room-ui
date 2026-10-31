@@ -12,15 +12,16 @@ function criteria(input = {}) {
   return { search: search.trim().toLowerCase(), filter, pageSize, cursor };
 }
 const present = row => row.onHand === null || row.onHand > 0 || row.usableOnHand > 0 || row.reviewRequired;
+export function validateStockListInput(input) { criteria(input); }
 
 // Pure current-stock response. Only quantity and source identity fields leave the server.
 // Existing full-history replay is retained for correctness until a verified checkpoint
 // replaces it; pagination bounds product count, not historical query cost or
 // the number of sources within a single product.
-export function projectStockControlPage(context, input = {}, readAt = new Date().toISOString()) {
+export function projectStockControlPage(context, input = {}, readAt = new Date().toISOString(), extensions = null) {
   const query = criteria(input), projected = projectStockCard(context);
   const customers = new Map((context.customers || []).map(row => [row.id, row.name]));
-  const items = projected.items.map(row => ({
+  let items = projected.items.map(row => ({
     key: row.key, company: row.company, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea,
     onHand: row.onHand, reservedUsable: row.reservedUsable, available: row.available, isolated: row.isolated,
     usableOnHand: row.usableOnHand, shortage: row.shortage, incoming: row.incoming, reviewRequired: row.reviewRequired,
@@ -35,7 +36,9 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
       }))
     }))
   }));
-  const version = operationId('STOCK_CONTROL', context.company, items);
+  const quantityVersion = operationId('STOCK_CONTROL', context.company, items);
+  if (extensions) items = items.map(extensions.item);
+  const version = extensions ? operationId('STOCK_VALUATION', quantityVersion, items) : quantityVersion;
   if (query.cursor && query.cursor.version !== version) throw Error('Stock changed while paging. Refresh the stock list.');
   const all = items.filter(row => !query.search || [row.barcode, row.name, row.packing].join(' ').toLowerCase().includes(query.search));
   const visible = all.filter(row => query.filter === 'ALL' || query.filter === 'ON_HAND' && present(row)
@@ -45,7 +48,13 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
   const offset = query.cursor?.offset || 0;
   if (offset > visible.length) throw Error('Stock page changed. Refresh the stock list.');
   const page = visible.slice(offset, offset + query.pageSize);
-  return { company: context.company, version, readAt, items: page, offset, total: visible.length,
+  const summary = { products: visible.length };
+  for (const field of ['onHand', 'reservedUsable', 'available', 'isolated']) {
+    summary[field] = { quantity: visible.reduce((total, row) => total + (row[field] ?? 0), 0),
+      unknownProducts: visible.filter(row => row[field] === null).length };
+  }
+  return { company: context.company, version, quantityVersion, readAt, items: page, offset, total: visible.length,
+    summary: { ...summary, ...(extensions ? extensions.summary(visible) : {}) },
     nextCursor: offset + page.length < visible.length ? { version, offset: offset + page.length } : null,
     counts: { onHandProducts: all.filter(present).length, availableProducts: all.filter(row => row.available > 0).length,
       isolatedProducts: all.filter(row => row.isolated === null || row.isolated > 0).length,
