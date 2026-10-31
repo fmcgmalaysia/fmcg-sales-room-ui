@@ -1,6 +1,6 @@
 // Warehouse receives execution data only. Never spread a commercial list/line/Desk.
 const pick=(source,keys)=>Object.fromEntries(keys.filter(key=>source?.[key]!==undefined).map(key=>[key,source[key]]));
-const reference=row=>row?pick(row,['desk','poNo','soNo']):null;
+const reference=row=>row?pick(row,['desk','soNo']):null;
 const shipment=row=>row?pick(row,['desk','transport','date','arrival','lastGateIn','departureDate','bookedBy']):null;
 const photo=row=>pick(row,['fileId','name','sha256','mimeType','size','stage','at','by']);
 const resolution=row=>row?{...pick(row,['revision','maximum','remaining','removed','issue','pending','resolved','at','by']),parts:(row.parts||[]).map(part=>pick(part,['mode','quantity','desk']))}:null;
