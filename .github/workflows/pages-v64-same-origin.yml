@@ -46,6 +46,7 @@ on:
           - warehouse-operational-header-only
           - master-closeout-display-only
           - purchase-origin-view-source-only
+          - purchase-read-efficiency-only
 
 permissions:
   contents: read
@@ -78,7 +79,7 @@ jobs:
 
       - name: Upload static site
         # The company-stock-list release uses the isolated asset upload below.
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only' && inputs.static_ui != 'purchase-active-clarity-only' && inputs.static_ui != 'purchase-receipt-info-only' && inputs.static_ui != 'purchase-etd-requested-only' && inputs.static_ui != 'purchase-quiet-quantities-only' && inputs.static_ui != 'purchase-payment-message-only' && inputs.static_ui != 'purchase-quantity-style-only' && inputs.static_ui != 'warehouse-effective-quantity-only' && inputs.static_ui != 'warehouse-operational-header-only' && inputs.static_ui != 'master-closeout-display-only' && inputs.static_ui != 'purchase-origin-view-source-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only' && inputs.static_ui != 'purchase-active-clarity-only' && inputs.static_ui != 'purchase-receipt-info-only' && inputs.static_ui != 'purchase-etd-requested-only' && inputs.static_ui != 'purchase-quiet-quantities-only' && inputs.static_ui != 'purchase-payment-message-only' && inputs.static_ui != 'purchase-quantity-style-only' && inputs.static_ui != 'warehouse-effective-quantity-only' && inputs.static_ui != 'warehouse-operational-header-only' && inputs.static_ui != 'master-closeout-display-only' && inputs.static_ui != 'purchase-origin-view-source-only' && inputs.static_ui != 'purchase-read-efficiency-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -415,6 +416,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-origin-view-source-site', runner.temp) }}
+      - name: Prepare Purchase read efficiency resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-read-efficiency-only'
+        run: node integration/prototypes/purchase-read-efficiency-20261101/stage.cjs "$RUNNER_TEMP/purchase-read-efficiency-site"
+
+      - name: Upload Purchase read efficiency resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-read-efficiency-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-read-efficiency-site', runner.temp) }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

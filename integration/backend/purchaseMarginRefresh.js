@@ -27,7 +27,7 @@ export function openSourceCost(row, task, tasks, workspace, invoiceLines = []) {
 // GP, FX and financial amounts together; a bare invoice number is not a lock snapshot.
 export function createPurchaseMarginRefresh({ store, readRates, now = () => new Date() }) {
   return async ({ company, names, orders, tasks, workspace, activity=[] }) => {
-    const results = new Map(), open = [], invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status));
+    const results = new Map(), open = [], sourceChecks = [], invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status));
     for (const row of workspace.tasks.flatMap(item => item.procurementSource ? [item] : [item, {...item, procurementSource:true}])) {
       const resultId=row.procurementSource?'SOURCE:'+row.id:row.id;
       const order = orders.find(item => item.title === row.orderId && item.sourceLineId === row.sourceLineId);
@@ -63,9 +63,9 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
       results.set(resultId, gp);
       if(row.procurementSource){
         if(gp===null)continue;
-        try{const current=await store.read(names.tasks,task._id),currentOrder=await store.read(names.orders,order._id);
+        sourceChecks.push(async()=>{try{const current=await store.read(names.tasks,task._id),currentOrder=await store.read(names.orders,order._id);
           if(!current||taskEditVersion(current)!==taskEditVersion(task)||!currentOrder||currentOrder.sellingPricePc!==order.sellingPricePc||currentOrder.orderId!==order.orderId||currentOrder.transactionCurrency!==order.transactionCurrency||String(currentOrder.salesInvoiceNumber||'')!==String(order.salesInvoiceNumber||'')||await store.read(names.activity,operationId(company,task.title,'COST_LOCK')))results.set(resultId,null);
-        }catch(_){results.set(resultId,null);}
+        }catch(_){results.set(resultId,null);}});
         continue;
       }
       const hasOpenQuantity=invoiceLines?quantity>invoiceLines.reduce((sum,line)=>sum+line.quantity,0):true;
@@ -101,6 +101,8 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
       } catch (_) { results.set(row.id, null); }
       finally { if (held) { try { const lock = await store.read(names.activity, lockId); if (lock?.details?.requestId === requestId) await store.remove(names.activity, lockId); } catch (_) { results.set(row.id, null); } } }
     }
+    // Only independent read validations overlap; GP writes and their locks stay serial.
+    for(let i=0;i<sourceChecks.length;i+=4)await Promise.all(sourceChecks.slice(i,i+4).map(check=>check()));
     return results;
   };
 }
