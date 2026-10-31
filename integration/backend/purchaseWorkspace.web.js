@@ -8,6 +8,7 @@ import { applyPurchaseProgress } from 'backend/purchaseProgress.js';
 import { projectPurchaseOrders } from 'backend/purchaseOrderWorkflow.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
+import { purchaseReceiptInfo } from 'backend/purchaseReceiptInfo.js';
 const options = { suppressAuth: true, consistentRead: true };
 const refreshMargins = createPurchaseMarginRefresh({ readRates: readCurrentAdminFx, store: {
   async read(collection, id) { const found = await wixData.query(collection).eq('_id', id).limit(2).find(options); if (found.items.length > 1) throw Error('Ambiguous margin record.'); return found.items[0] || null; },
@@ -37,5 +38,6 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   workspace.customers=workspace.customers.map(row=>({...row,shortName:customerNames.find(item=>item.customerId===row.id)?.shortName||''}));
   const purchaseOrders=projectPurchaseOrders({company,workspace,records:purchaseRecords});
   applyPurchaseProgress(workspace,activity,purchaseOrders);
-  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
+  const receiptInfo = purchaseReceiptInfo(purchaseOrders, activity);
+  return { ...workspace, customerNamesError, tasks: workspace.tasks.map(row => ({ ...row, receiptHistory: receiptInfo.get(row.id) || [], gp: margins.get(row.id) ?? null, sourceGp: margins.get('SOURCE:'+row.id) ?? null })) };
 });
