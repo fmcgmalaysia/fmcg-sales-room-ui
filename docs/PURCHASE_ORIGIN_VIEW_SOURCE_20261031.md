@@ -22,4 +22,21 @@ Recovery is theca5ed1b static composer and its Purchase page version. Preserve t
 
 Code/tests/candidate complete; GitHub push, the new branch's one-run permission, Pages deploy, Wix publish, public verification and user acceptance are recorded separately. Theca5ed1b permission was consumed and removed; it cannot authorize this release.
 
+## Release acceptance — 2026-10-31
+
+| Stage | Observed result |
+| --- | --- |
+| Code | `b86805aaa1ad69f3295eaac2bd8b0d68b897c360`, PR272;87/87 checks passed. |
+| GitHub Pages | Single approved run [41213120105](https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41213120105), job124572060509 succeeded; only the scoped prepare/upload ran.99 normalized assets and all99 manifest hashes match;95 byte-exact,4 line-ending-only differences. |
+| Permission | Exact action-time approval used once. Temporary branch rule removed immediately after workflow success; original7 branches and0 tags verified. |
+| Wix Studio | Purchase one-token version draft fully read back and exact. One Publish action returned published/live. No new backend draft changes. |
+| Public | Clean native Chrome Purchase page loads `20261031-purchase-origin-view-source-v1`, LAW/NCT; actual mixed and pure-source cases below passed, no captured application error. |
+| User acceptance | Pending; no main merge or new user-verified baseline. |
+
+Public TESTING01 late AJAX retains one Mixed Stock60 child. Its original View source now shows source PO NCT-PO-STRESS-B2-1031, Stock20, Borrowed/Repaid40 and outstanding0, retaining original supplier/receiving/allocation/operator details. The original earlier AJAX pure-loan child remains Borrowed/Repaid30; the box shows30 and outstanding0. TESTING801 LAY'S remains Alloc100/Loaded90. No synthetic scenario was written to production for this release.
+
+Payment regression: the latest Purchase page still shows Request Paid12500/4files, Request Paid5808/2files and Partially Paid123000/balance456, with no paid Editable entry. Finance Stock List retains NCT270/reserved230/free40/isolated0/MYR19814.40; prior GHR0 isolation evidence is preserved. All verification was read-only; no stock, PO, loan, repayment, payment or Loaded write.
+
+Evidence: root handoff/master-urgent-closeout-20261031/ORIGIN_CONSUMER_PUBLIC_ASSETS.json, origin-consumer-permissions-restored.png, origin-consumer-wix-published.png, origin-consumer-mixed-public.png/txt, origin-consumer-pure-public.txt, origin-consumer-801-public.txt, origin-consumer-payment-public.txt and final stock evidence. The first isolated-model omission is retained in the record, not erased from history.
+
 Private evidence remains root handoff/master-urgent-closeout-20261031/, including origin-consumer-tests.txt, origin-consumer-regression.txt, origin-consumer-mixed-candidate.png, origin-consumer-purchase-before.js/draft.js and the earlier public source-entry-gap evidence. Other work-register items and the proposed cost migration are excluded.

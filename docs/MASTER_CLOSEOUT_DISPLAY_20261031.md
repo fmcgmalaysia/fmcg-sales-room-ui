@@ -26,7 +26,7 @@ Recovery: original purchaseProjection and the two page versions, plus the `wareh
 | Code | Implemented, relevant regression and browser candidate verified; GitHub push recorded separately |
 | GitHub Pages | Single approved run41210457746/job124564165529 succeeded;99 normalized/95 byte-exact/all99 manifest hashes verified. Temporary rule removed immediately, original7 branches/0 tags restored. |
 | Wix Studio |4 exact final drafts; one Publish action returned published/live. |
-| Public page | MST-04 verified on clean native Purchase/Finance pages. MST-01 remains incomplete: real grid dropped origin context and old View source was uncovered; see PURCHASE_ORIGIN_VIEW_SOURCE_20261031.md. |
+| Public page | MST-04 verified on clean native Purchase/Finance pages. Initial MST-01 consumer omission was subsequently repaired inb86805a and publicly verified; see PURCHASE_ORIGIN_VIEW_SOURCE_20261031.md. |
 | User acceptance | Pending |
 
 Remaining minor recovery/usability, attachment naming, validation feedback, Finance ETD and CMS measurement entries stay in MASTER_WORK_REGISTER.md. Cost authority migration remains unapproved and is excluded.
