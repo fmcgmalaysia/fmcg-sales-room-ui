@@ -59,6 +59,6 @@ export const getPurchaseSaveResult=webMethod(Permissions.SiteMember,async(compan
  const isSupplier=supplierId!==null,identity=isSupplier?(supplierId||'SUP-'+operationId(requestId,staff.memberId).slice(0,16).toUpperCase()):null;
  const scope=isSupplier?'SUPPLIER/'+identity:company+'/PURCHASE',collection=isSupplier?'SharedSupplierActivity':PURCHASE_COLLECTIONS[company].activity;
  const key=operationId(scope,requestId,staff.memberId),record=await store.read(collection,operationId(key,'RESULT'));
- if(record?.details?.recovered){const lock=await store.read(collection,operationId(scope,'LOCK'));if(lock?.details?.owner===key)return {ok:false,pending:true,company,requestId,error:'Original save recovery is pending. Retain this request.'};}
+ if(record?.details?.recovered||record?.details?.outcome?.ok===true){const lock=await store.read(collection,operationId(scope,'LOCK'));if(lock?.details?.owner===key&&(record.details.recovered||(await store.read(collection,key))?.details?.plan?.event?.action==='PLANNER_ALLOCATION_SAVED'))return {ok:false,pending:true,company,requestId,error:'Original save recovery is pending. Retain this request.'};}
  return record?.details?.outcome || {ok:false,pending:true,company,requestId};
 });

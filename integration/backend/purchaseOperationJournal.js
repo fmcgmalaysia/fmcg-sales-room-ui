@@ -2,6 +2,8 @@
 import { createHash, randomUUID } from 'crypto';
 export const operationId = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0,32);
 const copy = value => JSON.parse(JSON.stringify(value));
+// CMS may reorder object fields. Values, extra fields and array order still matter.
+export const canonical = value => JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
 export function createOperationJournal({ store, now = () => new Date() }) {
   return async ({ collection, scope, entityId=scope, requestId, staff, input, prepare, apply, recoverCompleted }) => {
     if (!/^[a-f0-9-]{36}$/i.test(requestId || '') || !staff?.memberId || !staff.staffId || !staff.staffName) throw Error('Verified employee and save identity are required.');
@@ -9,7 +11,7 @@ export function createOperationJournal({ store, now = () => new Date() }) {
     const prior = await store.read(collection,resultId);
     if (prior) {
       if(prior.details.digest !== digest) throw Error('This save identity was already used for different changes.');
-      if(!prior.details.recovered) return copy(prior.details.outcome);
+      if(!prior.details.recovered&&!recoverCompleted) return copy(prior.details.outcome);
     }
     const lockId = operationId(scope,'LOCK'), at = now().toISOString();
     const lock = await store.read(collection,lockId);
@@ -20,7 +22,8 @@ export function createOperationJournal({ store, now = () => new Date() }) {
       // Old PO writers check a 90s apply limit; legacy cleanup is serial. Do not
       // reclaim a live writer, or infer completion merely from an old lock.
       const quietMs=Math.max(300000,180000+10000*(plan.updates?.length||0));
-      if(!Number.isFinite(Date.parse(plan.time))||now().getTime()-Date.parse(plan.time)<quietMs)throw Error('Original save is still processing. Retain this request.');
+      const preparedAt=plan.time??plan.event?.activityTime;
+      if(!Number.isFinite(Date.parse(preparedAt))||now().getTime()-Date.parse(preparedAt)<quietMs){if(prior&&!prior.details.recovered)return copy(prior.details.outcome);throw Error('Original save is still processing. Retain this request.');}
       const completed=await recoverCompleted(copy(plan),'VERIFY');
       if(!completed?.ok||completed.requestId!==requestId)throw Error('Original save recovery is pending. Retain this request.');
       let claim,claimId;
@@ -35,12 +38,12 @@ export function createOperationJournal({ store, now = () => new Date() }) {
       const assertClaim=async()=>{const current=await store.read(collection,claimId);if(now().getTime()-Date.parse(claim.details.time)>=90000||current?.details?.nonce!==claim.details.nonce)throw Error('Original save recovery is pending. Retain this request.');};
       await assertClaim();
       const confirmed=await recoverCompleted(copy(plan),'VERIFY');
-      if(!confirmed?.ok||JSON.stringify(confirmed)!==JSON.stringify(completed))throw Error('Original save recovery requires review. Retain this request.');
+      if(!confirmed?.ok||canonical(confirmed)!==canonical(completed))throw Error('Original save recovery requires review. Retain this request.');
       let receipt=await store.read(collection,resultId);
       if(!receipt){const row={_id:resultId,title:resultId,description:entityId,action:'PURCHASE_OPERATION_RESULT',activityTime:now(),actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,result:'SAVED',message:'Purchase operation result recovered',details:{kind:'RESULT',time:now().toISOString(),actorStaffId:staff.staffId,actorStaffName:staff.staffName,actorMemberId:staff.memberId,requestId,digest,outcome:completed,recovered:true}};
         try{await store.insert(collection,row);receipt=row;}catch(error){receipt=await store.read(collection,resultId);if(!receipt)throw error;}
       }
-      if(receipt.details?.digest!==digest||JSON.stringify(receipt.details?.outcome)!==JSON.stringify(completed))throw Error('Original save recovery requires review. Retain this request.');
+      if(receipt.details?.digest!==digest||canonical(receipt.details?.outcome)!==canonical(completed))throw Error('Original save recovery requires review. Retain this request.');
       await recoverCompleted(copy(plan),'CLEANUP',assertClaim);
       await assertClaim();const current=await store.read(collection,lockId);
       if(current?.details?.owner!==key||current.details.digest!==digest)throw Error('Original save recovery requires review. Retain this request.');
