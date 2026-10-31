@@ -30,7 +30,7 @@ export function readPhysicalOutflows(activity){
   if(!quantity(line.loaded))throw Error('Loaded quantity requires review.');
   if(!line.loaded)return;
   if(line.physicalSources===undefined){const key=state.company+'|'+line.taskId;unmapped.set(key,(unmapped.get(key)||[]).concat({kind,loadingId,company:state.company,customerId:state.customerId,taskId:line.taskId,loaded:line.loaded}));return;}
-  flows.push({id:loadingOutflowId(state.company,kind,loadingId,line.taskId),kind,loadingId,company:state.company,customerId:state.customerId,taskId:line.taskId,quantity:line.loaded,sources:sourcesFor(line.physicalSources,line.loaded),invoiceReady:kind==='WAREHOUSE'||state.status==='COMPLETED'&&!state.change});
+  flows.push({id:loadingOutflowId(state.company,kind,loadingId,line.taskId),kind,loadingId,...(state.desk?{desk:state.desk.number}:{}),company:state.company,customerId:state.customerId,taskId:line.taskId,quantity:line.loaded,sources:sourcesFor(line.physicalSources,line.loaded),invoiceReady:kind==='WAREHOUSE'||state.status==='COMPLETED'&&!state.change});
  }
  for(const state of states.values())append('WAREHOUSE',state.id,state,state);
  const lists=new Set();
@@ -83,10 +83,15 @@ export function planLoadedSources(context,{id,taskId,loaded,previous=[],sourceLi
  return sourcesFor(sources,loaded);
 }
 
-export function selectLoadedForInvoice(context,taskId,amount){
+export function deskLoadedInvoiceQuantity(context,taskId,desk){
+ const flows=readPhysicalOutflows(context.activity).filter(flow=>flow.taskId===taskId&&flow.desk===desk&&flow.invoiceReady),ids=new Set(flows.map(flow=>flow.id));
+ const used=readCustomerShipments(context.activity).filter(row=>row.status!=='CANCELLED').flatMap(row=>row.lines).flatMap(row=>row.physicalOutflowRefs||[]).filter(ref=>ids.has(ref.id)).reduce((n,ref)=>n+ref.quantity,0);
+ const loaded=flows.reduce((n,flow)=>n+flow.quantity,0);if(used>loaded)throw Error('Desk invoiced quantity exceeds its loading.');return {loaded,reserved:used,ready:loaded-used};
+}
+export function selectLoadedForInvoice(context,taskId,amount,desk){
  if(!quantity(amount)||!amount)throw Error('Select a positive loaded invoice quantity.');
  const shipments=readCustomerShipments(context.activity).filter(row=>row.status!=='CANCELLED'),refs=[];let remaining=amount;
- for(const flow of readPhysicalOutflows(context.activity).filter(row=>row.company===context.company&&row.taskId===taskId&&row.invoiceReady)){
+ for(const flow of readPhysicalOutflows(context.activity).filter(row=>row.company===context.company&&row.taskId===taskId&&row.invoiceReady&&(desk===undefined||row.desk===desk))){
   const used=shipments.flatMap(row=>row.lines).flatMap(row=>row.physicalOutflowRefs||[]).filter(row=>row.id===flow.id).flatMap(row=>row.sources);
   const sources=[];
   for(const source of flow.sources){const taken=used.filter(row=>row.sourceTaskId===source.sourceTaskId).reduce((sum,row)=>sum+row.quantity,0),take=Math.min(remaining,source.quantity-taken);if(take<0)throw Error('Loaded invoice allocation requires review.');if(take){sources.push({sourceTaskId:source.sourceTaskId,quantity:take});remaining-=take;}}
@@ -119,5 +124,5 @@ export function validateInvoiceOutflows(context,shipment){
  for(const row of context.activity.filter(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT')){const list=row.details?.list;if(list?.company!==context.company||list.customerId!==shipment.customerId||list.status!=='COMPLETED'||list.change)continue;
   if(list.lines.every(line=>!line.loaded||flows.filter(flow=>flow.kind==='PACKING'&&flow.loadingId===list.id&&flow.taskId===line.taskId).some(flow=>flow.quantity===line.loaded&&flow.sources.every(source=>(allUsed.get(flow.id+'|'+source.sourceTaskId)||0)===source.quantity))))lists.add(list.id);
  }
- return {...context,activity:context.activity.filter(row=>!(row.action==='SUPPORT_PACKING_LIST_CURRENT'&&lists.has(row.details?.list?.id)&&row.details.list.status==='COMPLETED'&&!row.details.list.change))};
+ return {...context,activity:context.activity.filter(row=>!(row.action==='SUPPORT_PACKING_LIST_CURRENT'&&(lists.has(row.details?.list?.id)&&row.details.list.status==='COMPLETED'&&!row.details.list.change||shipment.desk&&row.details?.list?.customerId===shipment.customerId&&row.details.list.desk&&row.details.list.desk.number!==shipment.desk)))};
 }

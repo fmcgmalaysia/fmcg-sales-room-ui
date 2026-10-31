@@ -29,6 +29,7 @@ on:
           - docs-state-colors-only
           - purchase-personal-row-order-only
           - purchase-received-review-only
+          - support-shortload-only
 
 permissions:
   contents: read
@@ -60,7 +61,7 @@ jobs:
         run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
 
       - name: Upload static site
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -234,6 +235,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ format('{0}/purchase-received-review-site', runner.temp) }}
+
+      - name: Prepare scoped Support short-load resolution resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-shortload-only'
+        run: node integration/prototypes/support-shortload-20261031/stage.cjs "$RUNNER_TEMP/support-shortload-site"
+
+      - name: Upload scoped Support short-load resolution resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-shortload-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/support-shortload-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

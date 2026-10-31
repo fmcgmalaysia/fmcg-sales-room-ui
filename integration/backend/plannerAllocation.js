@@ -13,7 +13,7 @@ export function readAllocations(activity){
   const changes=event.details.allocations;
   if(!Array.isArray(changes)||!changes.length||new Set(changes.map(row=>row.sourceTaskId)).size!==changes.length)throw Error('Grouped allocation identity requires review.');
   return changes.map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change}));
- }).concat(activity.filter(event=>event.action==='SALES_ORDER_ADJUSTMENT_SAVED'&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
+ }).concat(activity.filter(event=>['SALES_ORDER_ADJUSTMENT_SAVED','DESK_SHORTLOAD_RESOLVED'].includes(event.action)&&event.result==='SAVED').flatMap(event=>(event.details.allocations||[]).map(change=>({...event,title:event.title+'|'+change.sourceTaskId,imageAltText:change.sourceTaskId,details:change})))),sources=new Map();
   while(pending.length){
     const candidates=pending.filter(event=>(sources.get(event.imageAltText)?.revision||'')===event.details?.beforeRevision);
     if(!candidates.length||new Set(candidates.map(event=>event.imageAltText)).size!==candidates.length)throw Error('Allocation history requires review.');

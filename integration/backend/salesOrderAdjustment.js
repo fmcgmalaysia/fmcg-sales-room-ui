@@ -7,10 +7,15 @@ export const SALES_ADJUSTMENT_ACTION='SALES_ORDER_ADJUSTMENT_SAVED';
 const qty=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 // Original intake, supplier P.O. and receipt rows remain immutable. Customer demand is a journal view.
 export function readSalesDemand(taskId,original,activity){
- const pending=activity.filter(event=>event.action===SALES_ADJUSTMENT_ACTION&&event.result==='SAVED'&&event.imageAltText===taskId);
+ const pending=activity.filter(event=>(event.action===SALES_ADJUSTMENT_ACTION||event.action==='DESK_SHORTLOAD_RESOLVED'&&event.details?.demand)&&event.result==='SAVED'&&event.imageAltText===taskId);
  let requested=original,revision='';
- while(pending.length){const next=pending.filter(event=>event.details?.beforeDemandRevision===revision);if(next.length!==1)throw Error('Sales demand history requires review.');
+ while(pending.length){const next=pending.filter(event=>(event.details?.demand||event.details)?.beforeDemandRevision===revision);if(next.length!==1)throw Error('Sales demand history requires review.');
   const event=next[0],d=event.details;
+  if(event.action==='DESK_SHORTLOAD_RESOLVED'){
+   const change=d.demand,cancelled=d.parts.filter(part=>part.mode==='CANCEL').reduce((n,part)=>n+part.quantity,0);
+   if(!event.title||!event.initiatedByStaffId||!Number.isFinite(Date.parse(event.activityTime))||!cancelled||change.beforeRequested!==requested||!Number.isSafeInteger(change.requested)||change.requested<0||change.requested!==requested-cancelled)throw Error('Short-load demand cancellation requires review.');
+   requested=change.requested;revision=event.title;pending.splice(pending.indexOf(event),1);continue;
+  }
   if(!event.title||!qty(d.beforeRequested)||!qty(d.requested)||d.beforeRequested!==requested||!['INCREASE','SPLIT','REDUCE'].includes(d.mode)||!event.initiatedByStaffId||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Sales demand identity requires review.');
   const delta=d.afterQuantity-d.beforeQuantity,lines=d.plan?.batches?.flatMap(batch=>batch.lines.filter(line=>line.taskId===taskId));
   if(!qty(d.beforeQuantity)||!qty(d.afterQuantity)||!Array.isArray(lines)||!lines.length||lines.some(line=>!qty(line.quantity))||lines.reduce((sum,line)=>sum+line.quantity,0)!==d.requested||d.plan.id!==event.description||d.plan.customerId!==event.image||d.customerId!==event.image||d.plan.orderId!==d.orderId||(d.mode==='SPLIT'&&(!(delta<0)||d.requested!==requested)))throw Error('Sales demand quantities require review.');
@@ -67,7 +72,7 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
     batches.splice(index+1,0,{sequence,label:sequence===2?'Next shipment':'Shipment '+sequence,date:null,lines:[{taskId:task.id,quantity:before-n,coverage,sourceCoverage,stockCoverage}]});
    }
    const at=now().toISOString(),id=operationId(company,requestId,staff.memberId,'SALES_ORDER_ADJUSTMENT'),old=readSalesDemand(task.id,total,[]),latestDemand=context.activity.filter(event=>event.action===SALES_ADJUSTMENT_ACTION&&event.result==='SAVED'&&event.imageAltText===task.id);
-   const previousRevision=latestDemand.find(event=>!latestDemand.some(next=>next.details?.beforeDemandRevision===event.title))?.title||old.revision;
+   const previousRevision=task.salesDemandRevision||latestDemand.find(event=>!latestDemand.some(next=>next.details?.beforeDemandRevision===event.title))?.title||old.revision;
    const allocations=[];
    if(input.mode==='REDUCE'){
     // A cancellation releases its saved cartons; never refill another batch's gap with them.

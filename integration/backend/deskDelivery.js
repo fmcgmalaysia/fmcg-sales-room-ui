@@ -2,6 +2,7 @@ import { changePackingList, packingAvailability } from 'backend/packingListModel
 import { readSupportDesks, supportDeskForTask, readSupportDeskLocks } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
+import { shortloadStatus, deskTaskPortions } from 'backend/shortloadResolutionModel.js';
 
 const copy=value=>JSON.parse(JSON.stringify(value));
 const qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;
@@ -13,9 +14,11 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
  if(!state||state.revision!==input.deskRevision)throw Error('Desk classification changed. Refresh before sending to Warehouse.');
  if(readSupportDeskLocks(physical).some(row=>row.customerId===input.customerId&&row.desk===input.desk))throw Error('This Desk is locked by its Sales Invoice.');
  if(context.lists.some(list=>list.customerId===input.customerId&&list.desk?.number===input.desk&&['SENT','PROCESSING'].includes(list.status)))throw Error('This Desk already has an active Warehouse task.');
- const available=packingAvailability(context),tasks=physical.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&supportDeskForTask(state,task.id)===input.desk);
+ const available=packingAvailability(context),tasks=physical.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.procurementSource&&!task.specialPurchase);
  const totals=new Map();for(const flow of readPhysicalOutflows(physical.activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);
- const selected=tasks.map(task=>({task,quantity:Math.max(0,(task.inc||0)-(totals.get(task.id)||0))})).filter(row=>row.quantity>0);
+ const flows=readPhysicalOutflows(physical.activity);
+ const selected=tasks.map(task=>{const portion=deskTaskPortions(physical.activity,state,task,flows).find(row=>row.desk===input.desk);return {task,quantity:portion?portion.allocated-portion.loaded:0};}).filter(row=>row.quantity>0);
+ if(selected.some(row=>context.lists.some(list=>list.customerId===input.customerId&&list.desk?.number===input.desk&&list.status!=='CANCELLED'&&list.lines.some(line=>line.taskId===row.task.id&&shortloadStatus(physical.activity,list,line).remaining>0))))throw Error('Desk remainder must be resolved or completed in its existing delivery task.');
  if(!selected.length)throw Error('Desk has no remaining allocated cartons to send.');
  if(!Array.isArray(input.lines)||input.lines.length!==selected.length||new Set(input.lines.map(row=>row.taskId)).size!==selected.length||selected.some(row=>!input.lines.some(line=>line.taskId===row.task.id&&line.quantity===row.quantity)))throw Error('Desk allocation changed. Refresh before sending to Warehouse.');
  if(selected.some(row=>!qty(row.quantity)||(available.find(task=>task.taskId===row.task.id)?.readyToArrange||0)<row.quantity))throw Error('Desk allocated stock is unavailable or already authorized. Ask Purchase to review it.');
@@ -36,15 +39,21 @@ export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
  if(actor!=='WAREHOUSE'||input.action!=='DESK_LOAD'||!qty(input.loaded))throw Error('Desk loading requires Warehouse and valid cumulative cartons.');
  if(!readSupportDesks(context.physicalContext.activity,context.company).some(state=>state.customerId===list.customerId&&state.deliveryHolds?.some(hold=>hold.desk===list.desk.number&&hold.listId===list.id)))throw Error('Desk delivery is no longer open to Warehouse. Refresh before confirming.');
  const current=list.lines.find(line=>line.taskId===input.taskId),codes=input.reasonCodes||[],note=typeof input.note==='string'?input.note.trim():'';
+ const disposition=current&&shortloadStatus(context.physicalContext.activity,list,current);
+ if(disposition?.revision&&((input.resolutionRevision||'')!==disposition.revision||input.loaded>disposition.maximum))throw Error('Desk remainder was resolved by Support. Refresh the authorized quantity before loading.');
  if(!current||input.loaded>current.quantity||input.loaded<current.loaded)throw Error('Desk Loaded must stay within authorized cartons and cannot reduce a confirmed outflow.');
  if(!Array.isArray(codes)||codes.length>3||new Set(codes).size!==codes.length||codes.some(code=>!issues.includes(code))||note.length>1000||codes.includes('OTHER')&&!note)throw Error('Desk select valid reasons and explain Other.');
- if(input.loaded!==current.quantity&&!codes.length)throw Error('Desk select a reason for the undelivered cartons.');
+ if(input.loaded!==(disposition?.maximum??current.quantity)&&!codes.length)throw Error('Desk select a reason for the undelivered cartons.');
  const reason=[...codes.map(code=>labels[code]),note].filter(Boolean).join(' · ');let next=copy(list);
+ // Validate the remaining authorization through the existing packing rules,
+ // then retain the original authorized quantity as historical evidence.
+ next.lines=next.lines.map(line=>({...line,quantity:shortloadStatus(context.physicalContext.activity,list,line).maximum}));
  if(next.status==='SENT')next=changePackingList({list:next,input:{action:'START',revision:next.revision},context,actor,id,revision,at});
  if(next.status==='COMPLETED')next=changePackingList({list:next,input:{action:'REOPEN',revision:next.revision,reason:'Confirm additional authorized loading'},context,actor,id,revision,at});
  next=changePackingList({list:next,input:{action:'PROGRESS',revision:next.revision,lines:next.lines.map(line=>({taskId:line.taskId,packed:line.taskId===input.taskId?input.loaded:line.packed,loaded:line.taskId===input.taskId?input.loaded:line.loaded,reason:line.taskId===input.taskId?reason:line.reason}))},context,actor,id,revision,at});
  next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,loadedConfirmedAt:at,reasonCodes:[...codes],note}:line);
  if(next.lines.every(line=>line.loadedConfirmedAt))next=changePackingList({list:next,input:{action:'COMPLETE',revision:next.revision},context,actor,id,revision,at});
+ next.lines=next.lines.map(line=>({...line,quantity:list.lines.find(row=>row.taskId===line.taskId).quantity}));
  return next;
 }
 export function projectDeskDeliverySummaries(activity){
@@ -54,7 +63,7 @@ export function projectDeskDeliverySummaries(activity){
  }
  if(!groups.size)return [];
  const totals=new Map();for(const flow of readPhysicalOutflows(activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);
- return [...groups.values()].map(({sentAt,...row})=>{const loadedQty=totals.get(row.taskId)||0;return {...row,loadedQty,difference:Math.max(0,row.authorizedQty-loadedQty),issue:row.confirmed&&row.authorizedQty!==loadedQty};});
+ return [...groups.values()].map(({sentAt,...row})=>{const loadedQty=totals.get(row.taskId)||0,states=activity.filter(event=>event.action==='SUPPORT_PACKING_LIST_CURRENT'&&event.details?.list?.desk&&event.details.list.status!=='CANCELLED').flatMap(event=>event.details.list.lines.filter(line=>line.taskId===row.taskId).map(line=>shortloadStatus(activity,event.details.list,line)));return {...row,loadedQty,difference:Math.max(0,row.authorizedQty-loadedQty),issue:states.some(state=>state.issue),pending:states.some(state=>state.pending),resolved:states.some(state=>state.resolved)};});
 }
 // Restore only this employee's prepared authorization after a lost window/session.
 // The original request digest must match; no new identity or guessed payload.
