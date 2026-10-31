@@ -8,6 +8,18 @@ function fixture(){
  const base={company:'NCT',staff,requestId:'11111111-1111-4111-8111-111111111111'},input=()=>({action:'ALLOCATE',planMode:'CUSTOMER',version:version(),taskId:'A',batchId:'WHOLE',borrow:true,donorTaskId:'B'});
  return {records,tasks,workspace,store,staff,save,activity,version,base,input,failAfterCommit:()=>{failAfterCommit=true;}};
 }
+
+test('stale prepared allocation gets a durable terminal rejection; replay cannot transfer and fresh review may save',async()=>{
+ const f=fixture(),originalInsert=f.store.insert;let fail=true;
+ f.store.insert=async(c,row)=>{if(fail&&row.action==='PLANNER_ALLOCATION_SAVED'){fail=false;throw Error('Injected pre-commit failure');}return originalInsert(c,row);};
+ const request={...f.base,input:f.input()};await assert.rejects(f.save(request),/Injected/);
+ f.tasks[2].warehouse.accepted=21;
+ const result=await f.save(request);assert.equal(result.ok,false);assert.equal(result.retryable,false);assert.equal(result.requestId,request.requestId);
+ assert.equal(JSON.stringify(await f.save(request)),JSON.stringify(result));assert.equal(readAllocations(f.activity()).length,0);
+ assert.equal(f.activity().filter(x=>x.action==='PURCHASE_OPERATION_RESULT').length,1);
+ await f.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:f.input()});
+ assert.equal(allocatedTo('A',f.activity()).quantity,250);assert.equal(readAllocationLoans(f.activity())[0].outstanding,29);
+});
 test('one original journal event atomically commits own200 + free20 + borrowed30 and debt, once',async()=>{
  const f=fixture(),input=f.input(),before=JSON.stringify(f.tasks);await f.save({...f.base,input});await f.save({...f.base,input});assert.equal(allocatedTo('A',f.activity()).quantity,250);assert.equal(allocatedTo('B',f.activity()).quantity,250);assert.equal(readAllocations(f.activity()).length,3);assert.equal(readAllocationLoans(f.activity())[0].outstanding,30);assert.equal(f.activity().filter(row=>row.action==='PLANNER_ALLOCATION_SAVED').length,1);assert.equal(JSON.stringify(f.tasks),before);
 });
