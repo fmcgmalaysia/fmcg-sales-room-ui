@@ -24,9 +24,11 @@ Recovery: original purchaseProjection and the two page versions, plus the `wareh
 | Stage | Status |
 | --- | --- |
 | Code | Implemented, relevant regression and browser candidate verified; GitHub push recorded separately |
-| GitHub Pages | Not deployed; exact one-run deployment permission required |
-| Wix Studio |4 exact candidate drafts saved; not published |
-| Public page | Pending after deployment; candidate preview is not public verification |
+| GitHub Pages | Single approved run41210457746/job124564165529 succeeded;99 normalized/95 byte-exact/all99 manifest hashes verified. Temporary rule removed immediately, original7 branches/0 tags restored. |
+| Wix Studio |4 exact final drafts; one Publish action returned published/live. |
+| Public page | MST-04 verified on clean native Purchase/Finance pages. Initial MST-01 consumer omission was subsequently repaired inb86805a and publicly verified; see PURCHASE_ORIGIN_VIEW_SOURCE_20261031.md. |
 | User acceptance | Pending |
 
 Remaining minor recovery/usability, attachment naming, validation feedback, Finance ETD and CMS measurement entries stay in MASTER_WORK_REGISTER.md. Cost authority migration remains unapproved and is excluded.
+
+Public MST-04: two paid requests show Request Paid with existing12500/4files and5808/2files; partial request remains123000 paid/456 due. Finance unknown final payable and balance stay dashes with Payable pending review; no completed audits appeared. No Editable entry appeared for paid requests. NCT stock remains270/reserved230/free40/MYR19814.40; GHR remains0. No business write or financial transaction. Source gap evidence is preserved rather than declaring the entire closeout complete.
