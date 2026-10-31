@@ -38,6 +38,7 @@ on:
           - purchase-source-receipt-only
           - purchase-active-clarity-only
           - purchase-receipt-info-only
+          - purchase-etd-requested-only
 
 permissions:
   contents: read
@@ -70,7 +71,7 @@ jobs:
 
       - name: Upload static site
         # The company-stock-list release uses the isolated asset upload below.
-        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only' && inputs.static_ui != 'purchase-active-clarity-only' && inputs.static_ui != 'purchase-receipt-info-only'
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only' && inputs.static_ui != 'purchase-active-clarity-only' && inputs.static_ui != 'purchase-receipt-info-only' && inputs.static_ui != 'purchase-etd-requested-only'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
@@ -335,6 +336,15 @@ jobs:
         with:
           path: ${{ format('{0}/purchase-receipt-info-site', runner.temp) }}
 
+      - name: Prepare Purchase ETD dates and Requested presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-etd-requested-only'
+        run: node integration/prototypes/purchase-etd-requested-20261031/stage.cjs "$RUNNER_TEMP/purchase-etd-requested-site"
+
+      - name: Upload Purchase ETD dates and Requested presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-etd-requested-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-etd-requested-site', runner.temp) }}
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
