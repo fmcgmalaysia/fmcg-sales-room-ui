@@ -1,0 +1,13 @@
+Stock List Purchase presentation, 2026-10-31
+
+Scope: Warehouse and Finance Stock List typography, density, colors and source dialog only. Purchase itself and all backend, inventory, allocation, Loaded, costing, payment and authorization logic remain unchanged.
+
+Base035cf57, runtime6b6ea23/static4c1e7a5. Private exact originals and evidence: C:/FMCG-WIX-LOCAL/handoff/stock-list-purchase-style-20261031. Fresh11public asset reads match the previous release after newline normalization. Fresh full Finance and Warehouse Wix originals match. Annotated verified/sales-buyer-design-20261014 retains its older visual scope; no new user-verified claim.
+
+Stock List imports the existing unmodified workroom theme used by Purchase. Isolated CSS aligns Inter font weights,20px/800 headings,11px table/body,10px secondary copy,#d2dfea headers,30px filters,44px data rows, pale non-interactive status pills, blue operations and14px source-dialog title with32px close target. Long names truncate in the grid and remain complete in source detail. Finance stays English; Warehouse bilingual labels are preserved.
+
+No event handler/ID/payload changes. Source97assets/7changed: one stylesheet and six version-only resources. The other90assets are identical. Scoped stock-list-style-only workflow excludes private evidence/backend sources. Two Wix page drafts only change one version token each; full readbacks match candidates. Drafts are NOT PUBLISHED yet.
+
+Acceptance:10existing Stock List UI/navigation checks pass. Actual Chrome computed styles match Purchase font family20px/800,11px headers,#d2dfea and44px rows. Finance source dialog1050px, no internal width overflow,14px title/32px close. Long product names remain accessible and open detail. Local800px host-width tests: Warehouse no body overflow; Finance inner pane752px/table1000px scrolls only within table. Chrome viewport override did not apply and was reset; actual narrow testing used explicit local preview width controls. Synthetic170/80/90/0,known value7800/20unpriced unchanged. No captured browser errors.
+
+Code/GitHub/release permission and final four-stage publication are pending. Do not merge into main before user acceptance. Preserve separately deployed receipt backendfc76b37 and existing two inherited LF-normalization working changes. No CMS business writes.
