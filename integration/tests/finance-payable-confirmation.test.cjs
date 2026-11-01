@@ -6,8 +6,8 @@ test('prepayment and missing invoice amounts are never used as the payable',()=>
 test('only current linked hashed INV values contribute, CN needs existing explicit reconciliation',()=>{assert.equal(recordedInvoice({documents:[inv(),inv({superseded:true}),inv({type:'CN',declaredCents:5000}),inv({linked:false})]}).total,1250000);assert.equal(recordedInvoice({documents:[inv({sha256:''})]}).confirmable,false);});
 test('all current invoice amounts must be known and safe',()=>{assert.equal(recordedInvoice({documents:[inv(),inv({fileId:'B',declaredCents:null})]}).total,null);assert.equal(recordedInvoice({documents:[inv({declaredCents:Number.MAX_SAFE_INTEGER}),inv()]}).total,null);});
 test('real production renderer exposes the existing amount-confirmation action while preserving confirmed payable',()=>{
- const vm=require('node:vm'),window={},baseline=require('../prototypes/purchase-locked-dialog-20261101/stage.cjs').plan().assets;
- vm.runInNewContext(patch(baseline.get('account-room/payment-layout.js').toString()),{window,Intl,Date,document:{addEventListener(){}}});
+ const vm=require('node:vm'),window={},baseline=require('../prototypes/two-site-closeout-20261102/stage.cjs').plan().assets;
+ vm.runInNewContext(baseline.get('account-room/payment-layout.js').toString(),{window,Intl,Date,document:{addEventListener(){}}});
  const row={id:'PO',number:'PO',createdAt:'2026-10-31',supplierId:'S',documents:[inv()],history:[],warehouse:{},finance:{payableCents:null,paidCents:625000,balanceCents:null,payments:[]}};
  const render=()=>window.accountPaymentLayout.render({view:'creditor',company:'NCT',data:{orders:[row]},rows:[row],search:'',supplier:'',filter:'ACTIVE',stamp:x=>x,purchaseNote:()=>'',error:''});
  const html=render();assert.match(html,/12,500\.00/);assert.match(html,/Invoice total · unconfirmed/);assert.match(html,/data-settlement="amounts" data-po="PO"/);assert.match(html,/Net paid 6,250\.00/);assert.match(html,/Final balance pending confirmation/);
