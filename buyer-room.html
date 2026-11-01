@@ -747,7 +747,7 @@ window.addEventListener('message',e=>{
   }
 });
 post('BUYER_ROOM_READY',{view:'my'});post('BUYER_ROOM_REQUEST_DATA',{view:'my'});
-setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},60000);
+setInterval(()=>{if(!document.hidden)post('BUYER_ROOM_REQUEST_DATA')},15000);
 setInterval(()=>{if(!document.hidden&&$('trackView').classList.contains('active'))requestOrderDetails(true)},10000);
 </script>
 
