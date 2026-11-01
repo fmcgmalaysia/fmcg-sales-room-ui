@@ -118,6 +118,10 @@ MST-14 late public verification2026-11-02: existing IAB Finance formal page reco
 
 ## MST-19 — Catalogue background read and menu timer audit
 
+MST09 urgent update2026-11-02: fresh NCT Activity2,872, with repeated identical GP_RECALCULATED rows. Exact live GP/journal modules match the checkout; a3-location GP patch reuses canonical comparison and skips already-current results inside the existing GP lock. Fresh/stale/object-key-order/concurrent regression preserves true FX/cost updates and locks.30 GP checks and387 selected affected checks pass,0 skipped; overlapping evidence, not417 unique checks. Master GP draft exact, not published. Existing duplicate records retained; full growth attribution/quota lifecycle remain open. See TWO_SITE_CLOSEOUT_20261102.md. The4 historical release-chain fixture failures from the earlier proposal run remain recorded, not silently green.
+
+MST18/MST17 resume2026-11-02: Master Studio recovered;14 Master drafts are now exact after minimum line synchronization, including the new GP patch. FMCG5 drafts, Pages, two-site Wix publication and live customer/role/payment/file acceptance remain pending. No deployment permissions changed or new business transactions submitted.
+
 LIVE_READ_REQUIRED. Versioned buyer-room/catalogue/wix/catalogue-page-v3.js has15s selection-state polling without a visible in-flight guard and180ms async window-position checks for menu hiding. These may waste work on slow/hidden pages, but no current live timing or fresh original was obtained. Do not edit or replace the Catalogue from this older repository file. Capture current live page, preserve SELECTED-to-QD auto-repair/customer authorization, then evaluate a minimal coalescing/menu-open guard. Editor startup currently blocks the prerequisite.
 
 MST14 unpaid follow-up: public FENCE plan exposes Amend PO while ordinary fields are disabled; no edit or Save. Cancel control timed out and iframe subsequently blank; record this intermittent session issue instead of declaring full navigation recovery. Catalogue/QD protected28/28 pass separately from381. Dashboard-origin Studio recovery also stalls98%; no fresh candidate publish.

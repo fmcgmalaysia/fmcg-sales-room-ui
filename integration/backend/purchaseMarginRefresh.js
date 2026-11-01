@@ -1,7 +1,7 @@
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { partialInvoiceMargin } from 'backend/partialInvoiceMargin.js';
 import { randomBytes } from 'crypto';
-import { operationId } from 'backend/purchaseOperationJournal.js';
+import { operationId, canonical } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { calculateGrossProfitMargin, calculateNetCartonCost } from 'backend/grossProfitMargin.js';
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -71,7 +71,7 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
       const hasOpenQuantity=invoiceLines?quantity>invoiceLines.reduce((sum,line)=>sum+line.quantity,0):true;
       const cachedRate=hasOpenQuantity?rate?.rateToMyr:order.adminFxSource;
       if (gp === null || (order.gp === gp && order.adminFxSource === cachedRate &&
-          (!invoiceSummary||operationId(order.salesInvoiceSummary||[])===operationId(invoiceSummary)))) continue;
+          (!invoiceSummary||canonical(order.salesInvoiceSummary||[])===canonical(invoiceSummary)))) continue;
       const lockId = operationId(company, task.title, 'GP_LOCK'), requestId = randomBytes(16).toString('hex');
       let held = false;
       try {
@@ -89,6 +89,7 @@ export function createPurchaseMarginRefresh({ store, readRates, now = () => new 
             currentOrder.title !== order.title || currentOrder.sourceLineId !== order.sourceLineId || currentOrder.customerId !== order.customerId ||
             (invoiceLines?String(currentOrder.salesInvoiceNumber||'')!==String(order.salesInvoiceNumber||''):String(currentOrder.salesInvoiceNumber || '').trim()) || currentOrder.sellingPricePc !== order.sellingPricePc ||
             currentOrder.orderId !== order.orderId || currentOrder.transactionCurrency !== order.transactionCurrency) { results.set(row.id, null); continue; }
+        if(currentOrder.gp===gp&&currentOrder.adminFxSource===cachedRate&&(!invoiceSummary||canonical(currentOrder.salesInvoiceSummary||[])===canonical(invoiceSummary)))continue;
         const at = now(), eventId = operationId(company, requestId, 'GP');
         // Preserve evidence before caching. No customer-facing selling/FX fields are projected.
         await store.insert(names.activity, { _id: eventId, title: eventId, description: order.title, image: order.sourceLineId, imageAltText: task.title,
