@@ -527,12 +527,12 @@
     "evidence": "handoff/month-end-stock-loss-20261101/check-04, affected-04.txt, release-check-01.txt, historical-stage-03.txt"
   },
   "status": {
-    "code": "TESTED_ALL_14_DRAFTS_EXACT",
+    "code": "7efa243_TESTED",
     "github": "PUSHED_PR276",
-    "pages": "V1_VERIFIED_V2_PENDING",
-    "wix": "V1_PUBLISHED_3_V2_DRAFTS_EXACT",
-    "public": "INCOMPLETE_HIDDEN_ENTRY_V2_FIX_READY",
-    "user": "PENDING"
+    "pages": "V2_99_EXACT_VERIFIED",
+    "wix": "V2_PUBLISHED_AND_LIVE",
+    "public": "PARTIAL_PURCHASE_PASS_FINANCE_WAREHOUSE_BLANK",
+    "user": "BOOKMARK_REOPEN_REQUESTED"
   },
   "preview": "Not completed: browser/local socket restrictions. No workaround; do not count as visual acceptance.",
   "referenceJournal": "723d08f705bb9a376768ba7f398e6d57149e93d3c44fa02eae3e5399d252eaff",
@@ -554,8 +554,22 @@
       "result": "PAGES_SUCCESS_99_EXACT_WIX_PUBLISHED",
       "permissions": "REVOKED_ORIGINAL_7_BRANCHES_0_TAGS",
       "public": "Finance270/230/40/MYR19814.40 preserved; inherited CSS hides required entry"
+    },
+    {
+      "commit": "7efa243",
+      "run": 41263687617,
+      "job": 124721939841,
+      "result": "PAGES_SUCCESS_99_EXACT_WIX_PUBLISHED",
+      "permissions": "REVOKED_ORIGINAL_7_BRANCHES_0_TAGS",
+      "public": "Purchase v2 LAW/GP/801 Alloc100 Loaded90 verified; Finance/Warehouse correct v2 iframe src but about:blank, user bookmark reopen pending"
     }
   ],
   "buildRepair": "Restore line endings only when exact frozen SHA256 matches; Linux LF simulation passes; same 99 resource hashes",
-  "entryFix": "One CSS declaration, Finance/Warehouse only; 8 static resources differ from v1 (CSS + version refs), backend unchanged"
+  "entryFix": "One CSS declaration, Finance/Warehouse only; 8 static resources differ from v1 (CSS + version refs), backend unchanged",
+  "publicEvidence": {
+    "purchase": "handoff/month-end-stock-loss-20261101/purchase-v2-public.png",
+    "financeV1": "StockList270/230/40/MYR19814.40; GHR0/MYR0",
+    "v2": "Finance/Warehouse embedded about:blank, correct v2 iframe src, no captured page error",
+    "businessWrites": 0
+  }
 }

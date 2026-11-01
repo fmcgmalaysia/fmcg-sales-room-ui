@@ -60,6 +60,8 @@ Purchase 只能更正有明确出货来源证据的未出货批次；已消费�
 
 ## 发布状态
 
+最新v2：7efa243已push到PR276；run41263687617/job124721939841成功，99/99公开资源逐字匹配。临时权限已撤销，原7分支0tags恢复。Wix三处v2引用已published/live（wix-v2-published.png）。新正式根入口Purchase载入v2、LAW身份、GP及TESTING801原Alloc100/Loaded90通过。Finance和Warehouse正确指向v2但iframe about:blank，未捕获页面错误；用户原书签重新打开的请求已发出，尚未完成两入口正式验收。四阶段仅前三完成，不能宣布本轮发布完成。未提交任何正式隔离、结损或处置记录。
+
 首次批准的构建1f461d1在GitHub run41262645325/job124718874910上传前失败：Linux生成的display-rows.js为LF，而冻结生产文件为CRLF。Upload及Deploy均未执行，正式站未改变；临时分支规则已撤销，恢复原7条0tags。打包器现只接受能恢复到冻结SHA256的换行变体，实际内容差异仍拒绝。新增Linux LF读入模拟通过，99个资源哈希与原批准发布包完全一致，业务代码及14份Wix草稿不变。3项发布检查通过；重新部署需新的具体权限批准，不沿用已执行的一次授权。
 
 - Code：1783675业务版已同步，v2仅追加Finance/Warehouse入口CSS和版本引用。
