@@ -26,7 +26,7 @@
 | CN/DN及文件锁定 | 隔离测试已有，正式链路待完成 | Support参考金额与Finance实际金额分别保留；同一文件复用；已入账/被替代文件不能再次确认 |
 | Sales选择器计数 | 选择器10，任务区及Buyer9 | 查清计数来源并统一语义；不能修改库存或隐藏真实余量来凑数 |
 | 旧进度文案 | Shipped及英中斜线提示仍在 | 与Loaded记录、实际发货区分；按最小显示补丁处理 |
-| 旧Sales拆单测试夹具 | 缺有效preparation identity，旧基准同样失败 | 修正有效测试上下文并保留原失败证据，不降低业务保护 |
+| 旧Sales拆单测试夹具 | 已在独立测试分支修复：公司/客户/description身份补齐，10/10通过 | 原失败保留；缺失身份仍拒绝、Loaded30不可移动；与正式客户验收分开 |
 | 浏览器 | Chrome嵌入空白根因未证实；近期IAB控制出现browser.user unavailable | 恢复受支持控制后接续。不得以重复部署或改权限冒充修复 |
 
 用户离开电脑时继续不依赖该权限的工作，不重复催促，不自批应用权限。现有合成PDF位于根handoff/master-cross-department-stress-20261101/test-documents。
@@ -205,3 +205,11 @@ Buyer保留绿色、Sales保留蓝色主题。Buyer自动识别登录客户；Sa
 独立界面候选位于 [preview.html](../integration/prototypes/customer-transactions-20261101/preview.html)。它不在正式资源入口或发布包内，没有网络请求、保存机制或账务写入。可本地打开查看Buyer绿色/Sales蓝色、七列、日期/搜索筛选、Invoice详情、逐单付款、合并收款分配和文件弹窗。样例NCT Invoice合计6200，已收4100，待收2100；GHR未分配Credit300单独显示。这些均是候选测试数据，不能替代真实801的AR4200或前轮收款验收。
 
 候选脚本经Node语法检查通过；使用离线DOM替身执行脚本，核对七列表头、清除筛选、付款弹窗、合并付款说明及费用明细均通过，只验证演示脚本交互，不代表浏览器布局或正式财务测试。本地预览服务器9021启动后，IAB访问报告连接超时；服务器已停止，未声称视觉验收通过。Windows Python启动别名不可用，已改用Node完成该次预览尝试；不重复无效启动。浏览器恢复后先核对两个主题、窄屏横滚、付款弹窗和蓝色文件按钮，再接入正式权威核销数据。原付款确认、PDF上传和普通客户授权验收继续保留。
+
+## 10. 用户离开电脑期间的测试收尾
+
+测试分支 test/sales-split-loading-fixture-20261101，基于d9d91f9。仅修复 integration/tests/sales-split-rows.test.cjs 中缺少description/company/customerId的准备单夹具。准备单撤销前后均使用有效身份，两个公司均验证：未装货可以在撤销准备后重新拆单；已Loaded30箱不能通过撤销准备后重新拆单；缺少任一身份仍拒绝。没有修改后台保护、库存、权限、财务或正式页面。
+
+原测试8项中7过1失败；修复后保留原断言并增加Loaded及坏身份边界，共10/10。相关回归六个文件报告41个通过及1个文件启动失败，不能称42项全过。失败位于未改动的 stock-isolated-loaded-replay.test.cjs：其旧构建清单不接受MASTER/stockValuation.web.js、supportWorkroom.web.js、warehouseStockIssues.web.js，场景尚未启动。相对于d9d91f9，相关后台/构建器/失败文件没有差异；未修改R2构建器或降低检查。该阻塞作为MST-12历史测试跟踪，不代表此次Sales夹具回归。
+
+原始输出在根handoff/master-cross-department-stress-20261101的 SALES_SPLIT_FIXTURE_BEFORE.txt、SALES_SPLIT_FIXTURE_AFTER.txt、SALES_SPLIT_FIXTURE_REGRESSION.txt。10个专项包含在41个回归通过中，不能相加成51。继承customer-allocation.js哈希仍为6C2A28369A1DE34B07D9F285E1B48163CE46815A0E0909DDC66C8E88A005A951，排除提交。此任务只同步测试与文档，不需要重新部署Pages或Wix。
