@@ -23,7 +23,7 @@ export function projectStockCard(context) {
     if (!task.id || tasks.has(task.id)) throw Error('Stock source identity requires review.');
     tasks.set(task.id, task);
   }
-  const allocations = readAllocations(context.activity);
+  const allocations = context.allocations ?? readAllocations(context.activity);
   const shipments = readCustomerShipments(context.activity);
   const outflows = readPhysicalOutflows(context.activity);
   if (shipments.some(row => row.company !== context.company)) throw Error('Stock shipment company mismatch.');

@@ -14,7 +14,7 @@ import { resolveBatchEntitlements, preferredSourceBatch, purchaseBatchVersion, r
 import { readCreditTransfers } from 'backend/supplierCredit.js';
 import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';
 import { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';
-import { customerAllocationContext, readAllocationLoans } from 'backend/customerAllocationContext.js';
+import { customerAllocationContext, readAllocationLoans, projectSupplyAllocation } from 'backend/customerAllocationContext.js';
 import { allocationOriginInfo } from 'backend/allocationOriginInfo.js';
 const text = value => String(value ?? '').trim();
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -44,7 +44,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     if (accepted.has(orderId)) throw Error('Duplicate Master receipt requires review.');
     accepted.set(orderId, { submissionId, ids: new Set(ids), receivedAt: stamp(event.activityTime) });
   }
-  const rows = [], seen = new Set(), customers = new Map(), allocations=readAllocations(activity);
+  const rows = [], seen = new Set(), customers = new Map();let allocations=readAllocations(activity);
   for (const task of tasks) {
     const receipt = accepted.get(text(task.description));
     if (!receipt) continue;
@@ -70,7 +70,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
       ea: number(order.orderId), ord: salesDemand?.revision?salesDemand.requested:number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):salesDemand?.requested??number(order.orderQtyInCtn), salesDemandRevision:salesDemand?.revision||'',originalCommitment:number(task.purchaseQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
       procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.extraCtn??(procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn)),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
       warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,stock:warehouse.stock,updatedAt:warehouse.at}:null,
-      supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
+      ...(sourceEvent[0]?.details?.supplyPurpose?{supplyPurpose:sourceEvent[0].details.supplyPurpose,replacementLimit:sourceEvent[0].details.replacementLimit}:{}),supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
       transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
       lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),
       netCostCtn: ['lpCtn','disc1','disc2','disc3'].every(key=>number(task[key])!==null)?Number((task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3).toFixed(2)):number(snapshot.netCostCtn), cbmPerCtn: number(order.cbmCtn),
@@ -112,10 +112,30 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   for(const root of rows.filter(row=>row.salesDemandRevision)){
     const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);let remaining=root.requested,planned=0;
     const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id))),baseline=plan?.sourceBaselines?.find(row=>row.taskId===root.id),matrix=plan?allocateBatchSources(batchEntries(plan,root.id),sources.map(source=>{const held=baseline?.sources.find(row=>row.id===source.id),total=source.procurement.totalCtn||0,customer=Math.max(0,total-(source.procurement.expectedExtra||0));return {id:source.id,quantity:held?Math.min(customer,held.customerCtn+Math.max(0,total-held.totalCtn)):customer,batchId:preferredSourceBatch(source.id,activity)};})):null;
-    for(const source of sources){const customer=matrix?matrix.reduce((sum,batch)=>sum+(batch.find(row=>row.id===source.id)?.quantity||0),0):Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));const kept=Math.min(customer,remaining);remaining-=kept;planned+=kept;source.procurement.customerCtn=kept;source.procurement.expectedExtra=(source.procurement.totalCtn||0)-kept;}
+    for(const source of sources){const customer=source.supplyPurpose==='STOCK'?0:matrix?matrix.reduce((sum,batch)=>sum+(batch.find(row=>row.id===source.id)?.quantity||0),0):Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));const kept=Math.min(customer,remaining);remaining-=kept;planned+=kept;source.procurement.customerCtn=kept;source.procurement.expectedExtra=(source.procurement.totalCtn||0)-kept;}
     root.salesCommittedQty=Math.min(root.requested,sources.some(row=>row.procurement.totalCtn>0)?planned:root.originalCommitment);root.sourcing.unplacedCtn=Math.max(0,root.requested-planned);
   }
+  // A formal replacement PO takes over only the proven missing customer share.
+  // Original PO totals, receipt histories, supplier obligations and costs remain intact.
+  for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const group=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);
+    for(const source of group){source.procurement.customerCtn=source.supplyPurpose==='STOCK'?0:source.procurement.customerCtn??Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));source.procurement.expectedExtra=(source.procurement.totalCtn||0)-source.procurement.customerCtn;}
+    for(const replacement of group.filter(row=>row.po&&row.supplyPurpose==='REPLACE_GAP')){
+      if(!Number.isSafeInteger(replacement.replacementLimit)||replacement.replacementLimit<1)throw Error('Replacement supply history requires review.');
+      let remaining=Math.min(replacement.procurement.totalCtn,replacement.replacementLimit)-replacement.procurement.customerCtn;
+      for(const source of group.filter(row=>row.id!==replacement.id&&row.supplyPurpose!=='REPLACE_GAP'&&(row.warehouse?.issue||row.warehouse?.stock?.excluded>0))){
+        const usable=source.warehouse.stock?.usableReceived??source.warehouse.accepted,missing=Math.max(0,source.procurement.customerCtn-usable),take=Math.min(Math.max(0,remaining),missing);
+        source.procurement.customerCtn-=take;source.procurement.expectedExtra+=take;replacement.procurement.customerCtn+=take;replacement.procurement.expectedExtra-=take;remaining-=take;
+      }
+    }
+  }
   for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
+  // Resolve existing automatic customer earmarks only from verified physical
+  // receipts. Legacy quantities without receipt evidence retain their review path.
+  const physicalAllocation=customerAllocationContext({company,tasks:rows},activity,allocations,'');
+  const automatic=physicalAllocation.sources.filter(source=>(source.implicit||source.automaticDelta>0)&&source.targets.length).map(source=>({...allocations.find(row=>row.sourceTaskId===source.id),sourceTaskId:source.id,revision:allocations.find(row=>row.sourceTaskId===source.id)?.revision||'',targets:source.targets.map(({protectedQuantity,...target})=>target),automatic:true}));
+  allocations=allocations.filter(source=>!automatic.some(auto=>auto.sourceTaskId===source.sourceTaskId)).concat(automatic);
+  for(const row of rows.filter(row=>!row.procurementSource&&!row.specialPurchase))if(row.warehouse?.hasPhysicalReceipt||physicalAllocation.sources.some(source=>source.targets.some(target=>target.taskId===row.id)))row.inc=allocations.reduce((n,source)=>n+(source.targets.find(target=>target.taskId===row.id)?.quantity||0),0);
   for(const row of rows){row.procurement.amendmentCount=new Set(row.history.filter(event=>event.amendment===true).map(event=>event.requestId||event.id)).size;row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
   const quantityCases=projectQuantityCases({company,tasks:rows},activity);
   for(const row of rows){
@@ -144,6 +164,8 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     }
     root.batchAllocationVersion=purchaseBatchVersion({tasks:rows},root);
   }
+  const supply=projectSupplyAllocation({company,tasks:rows},physicalAllocation);
+  for(const row of rows){const allocation=supply.find(item=>item.taskId===row.id);if(allocation)row.supplyAllocation=allocation;}
   const borrowing=readAllocationLoans(activity);
   for(const row of rows){row.borrowingPayable=borrowing.filter(loan=>loan.borrowerTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingReceivable=borrowing.filter(loan=>loan.lenderTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingOutstanding=row.borrowingPayable+row.borrowingReceivable;if(row.borrowingOutstanding>0)row.archived=false;}
   return {

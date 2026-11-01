@@ -27,10 +27,10 @@ function fixture({main=50,child=45,allocated=false}={}){
  const request=action=>{const row=projectPreparation(context()).find(row=>row.taskId==='ROOT');return {company:'NCT',staff,requestId:String(++serial).padStart(8,'0')+'-1111-4111-8111-111111111111',input:{id:row.id,version:row.version,...action}};};
  return {context,records,request,save};
 }
-test('real receipt projection keeps physical Ready95 visible with allocation0, while preparation save remains blocked',async()=>{
+test('automatic receipt ownership supplies95 without manual allocation; a whole100 pack still requires its missing5',async()=>{
  const f=fixture(),c=f.context(),root=c.tasks.find(row=>row.id==='ROOT');
- assert.equal(root.sourcing.receivedCtn,95);assert.equal(root.inc,0);assert.equal(c.allocations.length,0);
- assert.equal(projectPackingContext(c).tasks[0].ready,95);assert.equal(projectPreparation(c)[0].allocated,0);
+ assert.equal(root.sourcing.receivedCtn,95);assert.equal(root.inc,95);assert.equal(c.allocations.length,2);assert.equal(c.activity.some(row=>row.action==='PLANNER_ALLOCATION_SAVED'),false);
+ assert.equal(projectPackingContext(c).tasks[0].ready,95);assert.equal(projectPreparation(c)[0].allocated,95);
  const stock=projectStockCard(c).items[0];assert.equal(stock.onHand,95);assert.equal(stock.reservedUsable,95);assert.equal(stock.available,0);
  await assert.rejects(f.save(f.request({action:'PACK'})),/allocated goods are insufficient/);
  assert.equal(f.context().activity.filter(row=>row.action==='WAREHOUSE_PREPARATION_SAVED').length,0);

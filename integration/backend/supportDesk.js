@@ -1,6 +1,6 @@
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
-import { deskTaskPortions, readShortloadResolutions } from 'backend/shortloadResolutionModel.js';
+import { deskTaskPortions, readShortloadResolutions, readDeskCommitments } from 'backend/shortloadResolutionModel.js';
 import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physicalOutflow.js';
 const ACTION='SUPPORT_DESK_SAVED';
 const deskValid=value=>Number.isSafeInteger(value)&&value>=1&&value<=3;
@@ -15,6 +15,7 @@ const transports=['LAND','SEA_20FT','SEA_40FT','OTHER'];
 const identity=(company,customerId)=>operationId(company,customerId,'SUPPORT_DESK');
 const empty=(company,customerId)=>({company,customerId,revision:'',assignments:[],shipments:[]});
 const copy=value=>JSON.parse(JSON.stringify(value));
+const validParts=parts=>Array.isArray(parts)&&parts.length>0&&parts.length<=4&&new Set(parts.map(part=>part.desk)).size===parts.length&&parts.every(part=>(part.desk===0||deskValid(part.desk))&&Number.isSafeInteger(part.quantity)&&part.quantity>0&&part.quantity<=9999);
 const receiptState=value=>Array.isArray(value)?value.map(receiptState):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,receiptState(value[key])])):value;
 const validDeliveryHolds=state=>state?.deliveryHolds===undefined||Array.isArray(state.deliveryHolds)&&state.deliveryHolds.length<=3&&new Set(state.deliveryHolds.map(row=>row.desk)).size===state.deliveryHolds.length&&state.deliveryHolds.every(row=>deskValid(row.desk)&&[row.listId,row.requestId,row.memberId,row.digest].every(textValid)&&Array.isArray(row.taskIds)&&row.taskIds.length>0&&new Set(row.taskIds).size===row.taskIds.length&&row.taskIds.every(textValid));
 function validExtras(state){return (state.references===undefined||Array.isArray(state.references)&&new Set(state.references.map(r=>r.desk)).size===state.references.length&&state.references.every(r=>deskValid(r.desk)&&typeof r.soNo==='string'&&r.soNo.length<=100&&typeof r.poNo==='string'&&r.poNo.length<=100&&(r.detailsVersion!==3||detailReferenceValid(r))))&&(state.locks===undefined||Array.isArray(state.locks)&&new Set(state.locks.map(r=>r.desk)).size===state.locks.length&&state.locks.every(r=>deskValid(r.desk)&&textValid(r.requestId)&&textValid(r.memberId)&&textValid(r.number)&&textValid(r.digest)&&Array.isArray(r.taskIds)&&r.taskIds.every(textValid)&&r.snapshot?.number===r.desk));}
@@ -26,7 +27,7 @@ export function readSupportDesks(activity,company){
   const next=pending.filter(row=>(states.get(row.description)?.revision||'')===row.details?.beforeRevision);
   if(!next.length||new Set(next.map(row=>row.description)).size!==next.length)throw Error('Desk history requires review.');
   for(const event of next){const d=event.details,state=d?.state,requestKey=d?.memberId+'/'+d?.requestId;
-   if(!validState(state,company)||!validDeliveryHolds(state)||event.description!==identity(company,state.customerId)||event._id!==operationId(event.description,d.beforeRevision,'NEXT')||event.title!==event._id||!d.memberId||!d.requestId||requests.has(requestKey)||!event.initiatedByStaffId||!event.initiatedByStaffName||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Desk record identity requires review.');
+   if(!validState(state,company)||state.assignments.some(row=>row.parts!==undefined&&(!validParts(row.parts)||row.dispositionRevision!==undefined&&typeof row.dispositionRevision!=='string'))||!validDeliveryHolds(state)||event.description!==identity(company,state.customerId)||event._id!==operationId(event.description,d.beforeRevision,'NEXT')||event.title!==event._id||!d.memberId||!d.requestId||requests.has(requestKey)||!event.initiatedByStaffId||!event.initiatedByStaffName||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Desk record identity requires review.');
    requests.add(requestKey);states.set(event.description,{...copy(state),revision:event.title});pending.splice(pending.indexOf(event),1);
   }
  }
@@ -50,9 +51,9 @@ export async function reserveSupportDeskDelivery({store,names,context,staff,requ
 export function createSupportDeskOperations({store,names,readContext,now=()=>new Date()}){
  return async({company,staff,requestId,input})=>{
   if(!['NCT','GHR'].includes(company)||!names[company]||staff?.packingDepartment!=='SUPPORT'||!staff.memberId||!staff.staffId||!staff.staffName)throw Error('Support access is required.');
-  if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||!textValid(input.customerId)||!(deskValid(input.desk)||input.action==='DESK_ASSIGN'&&input.desk===0)||typeof input.revision!=='string'||input.revision.length>100||!['DESK_ASSIGN','DESK_SHIPMENT','DESK_REFERENCES'].includes(input.action))throw Error('Select a customer and Desk 1, 2 or 3.');
+  if(!/^[a-f0-9-]{36}$/i.test(requestId||'')||!input||!textValid(input.customerId)||!(deskValid(input.desk)||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&input.desk===0)||typeof input.revision!=='string'||input.revision.length>100||!['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES'].includes(input.action))throw Error('Select a customer and Desk 1, 2 or 3.');
   let normalized;
-  if(input.action==='DESK_ASSIGN'){if(!textValid(input.taskId))throw Error('Select an active customer task.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,taskId:input.taskId};}
+  if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){if(!textValid(input.taskId)||input.action==='DESK_SPLIT'&&!validParts(input.parts))throw Error('Select an active customer task and valid Desk quantities.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,taskId:input.taskId,...(input.action==='DESK_SPLIT'?{parts:input.parts.map(part=>({desk:part.desk,quantity:part.quantity})).sort((a,b)=>a.desk-b.desk)}:{})};}
   else if(input.action==='DESK_SHIPMENT'){
    if(input.details){if(!detailShipmentValid(input)||!['poNo','soNo'].every(key=>referenceText(input.details[key]))||!detailReferenceValid(input.details))throw Error('Enter valid Desk references, deposit details and shipment dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival,lastGateIn:input.lastGateIn,departureDate:input.departureDate,details:{poNo:input.details.poNo.trim(),soNo:input.details.soNo.trim(),invoiceNoDraft:input.details.invoiceNoDraft.trim(),depositAmountCents:input.details.depositAmountCents,depositDate:input.details.depositDate,depositCurrency:input.details.depositCurrency}};}
    else{if(!transports.includes(input.transport)||!dateValid(input.date)||!(input.arrival===''||dateValid(input.arrival)&&input.arrival>=input.date))throw Error('Enter valid shipment and arrival dates.');normalized={action:input.action,customerId:input.customerId,desk:input.desk,revision:input.revision,transport:input.transport,date:input.date,arrival:input.arrival};}
@@ -63,15 +64,28 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   if(prior.length>1)throw Error('Desk save receipt requires review.');
   if(prior.length){if(prior[0].details.digest!==digest)throw Error('This save was already used for different Desk details.');return {ok:true,company,requestId,deskState:{...copy(prior[0].details.state),revision:prior[0].title}};}
   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase);
-  if(!tasks.length||input.action==='DESK_ASSIGN'&&!tasks.some(row=>row.id===input.taskId))throw Error('Select an active customer task.');
+  if(!tasks.length||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&!tasks.some(row=>row.id===input.taskId))throw Error('Select an active customer task.');
   const before=readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId);
   if(input.action==='DESK_ASSIGN'&&(before.deliveryHolds||[]).some(hold=>hold.taskIds.includes(input.taskId)&&!context.activity.some(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===hold.listId&&row.details.list.status==='CANCELLED')))throw Error('This task is authorized to Warehouse. Recall its unstarted delivery before moving it.');
-  const locks=readSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(input.action==='DESK_ASSIGN'?[supportDeskForTask(before,input.taskId)]:[])];
-  if(locks.some(row=>affected.includes(row.desk)||input.action==='DESK_ASSIGN'&&row.taskIds.includes(input.taskId)))throw Error('This Desk is locked by its Sales Invoice.');
+  const locks=readSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)?[supportDeskForTask(before,input.taskId),...(normalized.parts||[]).map(part=>part.desk)]:[])];
+  if(input.action!=='DESK_SPLIT'&&locks.some(row=>affected.includes(row.desk)||input.action==='DESK_ASSIGN'&&row.taskIds.includes(input.taskId)))throw Error('This Desk is locked by its Sales Invoice.');
   if(before.revision!==input.revision)throw Error('Desk details changed. Refresh before editing.');
-  if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
+  if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>(readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)||before.assignments.find(row=>row.taskId===task.id)?.parts)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
   const state=copy(before);delete state.revision;
-  if(input.action==='DESK_ASSIGN'){state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk}).sort((a,b)=>a.taskId.localeCompare(b.taskId));}
+  if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)){
+   if(input.action==='DESK_SPLIT'){
+    const task=tasks.find(row=>row.id===input.taskId);
+    if(normalized.parts.reduce((n,part)=>n+part.quantity,0)!==(task.requested??task.ord))throw Error('Desk quantities must preserve the whole customer demand.');
+    const committed=readDeskCommitments(context.activity,company,task.id),flows=readPhysicalOutflows(context.activity).filter(flow=>flow.taskId===task.id),portions=deskTaskPortions(context.activity,before,task,flows);
+    for(const desk of [1,2,3]){
+     const wanted=normalized.parts.find(part=>part.desk===desk)?.quantity||0,fixed=committed.batches.filter(batch=>batch.desk===desk).reduce((n,batch)=>n+batch.quantity,0),loaded=flows.filter(flow=>(flow.desk??supportDeskForTask(before,task.id))===desk).reduce((n,flow)=>n+flow.quantity,0);
+     if(wanted<Math.max(fixed,loaded)||locks.some(lock=>lock.desk===desk)&&wanted!==(portions.find(part=>part.desk===desk)?.quantity||0))throw Error('Confirmed, loaded or invoiced Desk quantities cannot be moved. Resolve its delivery remainder first.');
+     const pending=(before.deliveryHolds||[]).some(hold=>hold.desk===desk&&hold.taskIds.includes(task.id)&&!context.activity.some(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===hold.listId));
+     if(pending&&wanted!==(portions.find(part=>part.desk===desk)?.quantity||0))throw Error('Desk authorization is still processing. Retry its original save first.');
+    }
+   }else if(before.assignments.find(row=>row.taskId===input.taskId)?.parts)throw Error('Use the Desk split form to preserve the other batch quantities.');
+   state.assignments=state.assignments.filter(row=>row.taskId!==input.taskId).concat({taskId:input.taskId,desk:input.desk,...(normalized.parts?{parts:normalized.parts,dispositionRevision:readShortloadResolutions(context.activity).filter(row=>row.taskId===input.taskId&&row.customerId===input.customerId).at(-1)?.revision||''}:{})}).sort((a,b)=>a.taskId.localeCompare(b.taskId));
+  }
   else if(input.action==='DESK_SHIPMENT'){
    state.shipments=state.shipments.filter(row=>row.desk!==input.desk).concat({...state.shipments.find(row=>row.desk===input.desk),desk:input.desk,transport:input.transport,date:input.date,arrival:input.arrival,...(normalized.details?{detailsVersion:3,lastGateIn:normalized.lastGateIn,departureDate:normalized.departureDate}:{})}).sort((a,b)=>a.desk-b.desk);
    if(normalized.details)state.references=(state.references||[]).filter(row=>row.desk!==input.desk).concat({desk:input.desk,detailsVersion:3,...normalized.details}).sort((a,b)=>a.desk-b.desk);
@@ -93,10 +107,10 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
  if(hold){if(owner&&hold.requestId===owner.requestId&&hold.memberId===owner.memberId&&hold.digest===owner.digest)return copy(hold.snapshot);throw Error('This Desk is locked by its Sales Invoice.');}
  if(state.revision!==desk.revision)throw Error('Desk classification changed. Refresh before invoicing.');
  const resolved=new Set(readShortloadResolutions(context.activity).map(row=>row.taskId));
- const portions=context.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.specialPurchase&&!task.procurementSource).flatMap(task=>(resolved.has(task.id)?deskTaskPortions(context.activity,state,task,readPhysicalOutflows(context.activity)):[{desk:supportDeskForTask(state,task.id),quantity:task.requested??task.ord??0}]).filter(part=>part.desk===desk.number).map(part=>({task,...part})));
+ const portions=context.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.specialPurchase&&!task.procurementSource).flatMap(task=>((resolved.has(task.id)||state.assignments.find(row=>row.taskId===task.id)?.parts)?deskTaskPortions(context.activity,state,task,readPhysicalOutflows(context.activity)):[{desk:supportDeskForTask(state,task.id),quantity:task.requested??task.ord??0}]).filter(part=>part.desk===desk.number).map(part=>({task,...part})));
  const scoped=task=>readiness.deskLines?.find(line=>line.taskId===task.id&&line.desk===desk.number);
  const ready=task=>(scoped(task)||readiness.lines.find(line=>line.taskId===task.id))?.maxInvoiceQty||0;
- if(portions.some(part=>{const reserved=scoped(part.task)?deskLoadedInvoiceQuantity(context,part.task.id,desk.number).reserved:reservedCartons(part.task.id,context.activity);return ready(part.task)<Math.max(0,part.quantity-reserved);}))throw Error('Resolve the remaining Desk quantities before confirming this invoice.');
+ if(portions.some(part=>{const reserved=scoped(part.task)?deskLoadedInvoiceQuantity(context,part.task.id,desk.number).reserved:reservedCartons(part.task.id,context.activity),confirmed=readDeskCommitments(context.activity,context.company,part.task.id).batches.filter(row=>row.desk===desk.number).reduce((n,row)=>n+row.quantity,0);return ready(part.task)<Math.max(0,(confirmed||part.quantity)-reserved);}))throw Error('Resolve the remaining Desk quantities before confirming this invoice.');
  const expected=portions.map(part=>({taskId:part.task.id,quantity:ready(part.task)})).filter(line=>line.quantity>0).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  const observed=input.lines.map(line=>({taskId:line.taskId,quantity:line.quantity})).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  if(!expected.length||operationId(expected)!==operationId(observed))throw Error('Invoice lines must match the current Desk and confirmed loading.');

@@ -1,3 +1,4 @@
+import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { projectPreparation } from 'backend/warehousePreparation.js';
 import { createCustomerAccountOperations, customerAccountVersion } from 'backend/customerAccountLedger.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
@@ -11,6 +12,11 @@ import { warehouseCbm } from 'backend/warehouseCbm.js';
 import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
 import { createShipmentPlanOperations, readShipmentPlans, shipmentPlanVersion, createSalesShipmentDateOperations } from 'backend/customerShipmentPlan.js';
 import { createSalesOrderAdjustmentOperations, salesAdjustmentVersion } from 'backend/salesOrderAdjustment.js';
+import { projectPackingContext } from 'backend/packingListContext.js';
+import { packingVersion } from 'backend/packingListOperations.js';
+import { createShortloadResolutionOperations, createSalesDeskCancellation } from 'backend/shortloadResolution.js';
+import { readSupportDesks } from 'backend/supportDesk.js';
+import { shortloadStatus } from 'backend/shortloadResolutionModel.js';
 const options={suppressAuth:true,consistentRead:true};
 export const fulfilmentStore={
  async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -23,7 +29,22 @@ const refreshInvoiceCache=createPurchaseMarginRefresh({store:fulfilmentStore,rea
 const saveShipmentPlan=createShipmentPlanOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const saveSalesShipmentDate=createSalesShipmentDateOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const saveSalesOrderAdjustment=createSalesOrderAdjustmentOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});
+const saveSalesDeskCancellation=createSalesDeskCancellation(createShortloadResolutionOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:async(company,staff)=>projectPackingContext(await readFulfilmentContext(company,staff))}));
+const retiredJournal=createOperationJournal({store:fulfilmentStore});
+async function recoverRetiredShipment(request,inputKey,writer){
+ const {company,staff,requestId,input}=request,collection=PURCHASE_COLLECTIONS[company]?.activity,message='Shipment batches are arranged by Support in Desk. Sales confirms customer demand changes.';
+ if(!collection||staff?.canSelectShipment!==true||staff.customerId&&staff.customerId!==input.customerId)throw Error(message);
+ const key=operationId(company+'/PURCHASE',requestId,staff.memberId),wrapped={[inputKey]:input},digest=operationId(wrapped),prepared=await fulfilmentStore.read(collection,key),prior=await fulfilmentStore.read(collection,operationId(key,'RESULT'));
+ if(prior?.action==='PURCHASE_OPERATION_RESULT'&&prior.details?.actorMemberId===staff.memberId&&prior.details?.digest===digest)return writer(request);
+ if(prepared?.action!=='PURCHASE_OPERATION_PREPARED'||prepared.details?.actorMemberId!==staff.memberId||prepared.details?.digest!==digest||!prepared.details?.plan?.event?._id)throw Error(message);
+ const event=await fulfilmentStore.read(collection,prepared.details.plan.event._id);if(event)return writer(request);
+ return retiredJournal({collection,scope:company+'/PURCHASE',requestId,staff,input:wrapped,prepare:async()=>{throw Error(message);},apply:async()=>({ok:false,company,requestId,retryable:false,error:'This shipment request was not saved. Arrange the remaining quantities in Support Desk.'})});
+}
 export async function saveCustomerFulfilment(request){
+ if(request.input.action==='PLAN')return recoverRetiredShipment(request,'shipmentPlan',saveShipmentPlan);
+ if(request.input.action==='ADJUST'&&request.input.mode==='SPLIT')return recoverRetiredShipment(request,'salesOrderAdjustment',saveSalesOrderAdjustment);
+ if(request.input.action==='SELECT'&&request.staff?.packingDepartment!=='SUPPORT')return recoverRetiredShipment(request,'fulfilment',saveFulfilmentEvent);
+ if(request.input.action==='ADJUST'&&request.input.deskResolution)return saveSalesDeskCancellation(request);
  if(request.input.action==='ADJUST')return saveSalesOrderAdjustment(request);
  if(request.input.action==='ORDER_DATE')return saveSalesShipmentDate(request);
  if(request.input.action==='PLAN')return saveShipmentPlan(request);
@@ -43,7 +64,9 @@ export async function readCustomerFulfilment(company,staff,customerId=''){
  const context=await readFulfilmentContext(company,staff),shipments=readCustomerShipments(context.activity).filter(row=>!customerId||row.customerId===customerId);
  const preparation=staff.readSupportDetails===true?projectPreparation(context):[];
  const account=projectCustomerAccount(context);for(const entry of account.entries)if(!context.customers.some(row=>row.id===entry.customerId))context.customers.push({id:entry.customerId,name:entry.customerName});
+ const packing=staff.canSelectShipment&&staff.customerId?projectPackingContext(context):null,deskStates=packing?readSupportDesks(context.activity,company):[],packingSnapshot=packing?packingVersion(packing):'';
+ const deskRemainders=packing?packing.lists.filter(list=>list.desk&&list.customerId===staff.customerId&&['PROCESSING','COMPLETED'].includes(list.status)).flatMap(list=>list.lines.flatMap(line=>{const resolution=shortloadStatus(context.activity,list,line);return resolution.remaining&&line.loadedConfirmedAt?[{id:list.id,revision:list.revision,desk:list.desk.number,taskId:line.taskId,remaining:resolution.remaining,version:packingSnapshot,deskRevision:deskStates.find(row=>row.customerId===list.customerId)?.revision||'',resolutionRevision:resolution.revision}]:[];})):[];
  return {company,adjustmentVersion:salesAdjustmentVersion(context,shipmentPlanVersion),plans:readShipmentPlans(context.activity).filter(row=>!customerId||row.customerId===customerId),planVersion:shipmentPlanVersion(context),customerAccount:{entries:account.entries.filter(row=>!customerId||row.customerId===customerId),balances:account.balances.filter(row=>!customerId||row.customerId===customerId)},accountVersion:customerAccountVersion(context),debtorInvoices:projectCustomerDebtors({company,activity:context.activity,customers:context.customers}).filter(row=>!customerId||row.customerId===customerId),version:shipmentVersion(context),staff:{staffName:staff.staffName},customers:context.customers.filter(row=>!customerId||row.id===customerId),
- lines:context.tasks.filter(row=>(!customerId||row.customerId===customerId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource).map(row=>({taskId:row.id,customerId:row.customerId,orderId:row.orderId,sourceLineId:row.sourceLineId,estimatedShipmentDate:row.estimatedShipmentDate,shipmentDate:row.shipmentDate,barcode:row.barcode,name:row.name,packing:row.packing,requested:row.ord,originalRequested:row.requested??row.ord,allocated:row.inc||0,reserved:reservedCartons(row.id,context.activity),available:Math.max(0,(row.inc||0)-reservedCartons(row.id,context.activity)),sellingPriceCtn:row.sellingPricePc*row.ea,currency:row.transactionCurrency,...(staff.readSupportDetails===true?{customerPo:row.customerPo||'',orderDate:row.submittedAt||row.masterReceivedAt||null,sellingPricePc:row.sellingPricePc,cbmPerCtn:warehouseCbm(company,row,context.activity),expiryDates:[...new Set(preparation.filter(item=>item.taskId===row.id&&!item.orphaned).map(item=>item.expiryDate).filter(Boolean))]}:{})})),
+ deskRemainders,lines:context.tasks.filter(row=>(!customerId||row.customerId===customerId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource).map(row=>({taskId:row.id,customerId:row.customerId,orderId:row.orderId,sourceLineId:row.sourceLineId,estimatedShipmentDate:row.estimatedShipmentDate,shipmentDate:row.shipmentDate,barcode:row.barcode,name:row.name,packing:row.packing,requested:row.ord,originalRequested:row.requested??row.ord,allocated:row.inc||0,plannedAllocated:row.supplyAllocation?.planned??null,reserved:reservedCartons(row.id,context.activity),available:Math.max(0,(row.inc||0)-reservedCartons(row.id,context.activity)),sellingPriceCtn:row.sellingPricePc*row.ea,currency:row.transactionCurrency,...(staff.readSupportDetails===true?{customerPo:row.customerPo||'',orderDate:row.submittedAt||row.masterReceivedAt||null,sellingPricePc:row.sellingPricePc,cbmPerCtn:warehouseCbm(company,row,context.activity),expiryDates:[...new Set(preparation.filter(item=>item.taskId===row.id&&!item.orphaned).map(item=>item.expiryDate).filter(Boolean))]}:{})})),
  shipments:shipments.map(row=>({...row,lines:row.lines.map(line=>({taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,estimatedShipmentDate:context.tasks.find(task=>task.id===line.taskId)?.estimatedShipmentDate||null,barcode:line.barcode,name:line.name,packing:line.packing,quantity:line.quantity,sellingPriceCtn:line.sellingPriceCtn??(()=>{const task=context.tasks.find(row=>row.id===line.taskId);return task?task.sellingPricePc*task.ea:null;})()}))})),readAt:new Date().toISOString()};
 }

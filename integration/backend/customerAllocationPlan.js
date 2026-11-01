@@ -10,7 +10,7 @@ function checked(context){
   if(source.company!==context.company||!source.id||!whole(source.usableReceived)||!whole(source.availablePhysical)||source.availablePhysical>source.usableReceived||!Array.isArray(source.targets)||new Set(source.targets.map(row=>row.taskId)).size!==source.targets.length||source.targets.some(row=>!whole(row.quantity)||!context.tasks.some(task=>task.id===row.taskId&&matches(task,source)))||sum(source.targets)>source.usableReceived&&!(source.excluded>=sum(source.targets)-source.usableReceived))throw Error('Physical source allocation requires review.');
  }
  for(const task of context.tasks){
-  if(task.company!==context.company||!whole(task.demand)||!Array.isArray(task.batches)||new Set(task.batches.map(row=>row.id)).size!==task.batches.length||task.batches.some(row=>!row.id||!whole(row.quantity))||sum(task.batches)!==task.demand)throw Error('Customer batch identity requires review.');
+  if(task.company!==context.company||!whole(task.demand)||!Array.isArray(task.batches)||new Set(task.batches.map(row=>row.id)).size!==task.batches.length||task.batches.some(row=>!row.id||!whole(row.quantity)||row.waiting!==undefined&&(!whole(row.waiting)||row.waiting>row.quantity))||sum(task.batches)!==task.demand)throw Error('Customer batch identity requires review.');
   if(sum(context.sources.flatMap(source=>source.targets.filter(row=>row.taskId===task.id)))>task.demand)throw Error('Customer allocation exceeds demand.');
  }
  for(const loan of context.loans)if(!loan.id||!whole(loan.outstanding)||!loan.borrowerTaskId||!loan.lenderTaskId||loan.borrowerTaskId===loan.lenderTaskId)throw Error('Borrowing responsibility requires review.');
@@ -33,11 +33,11 @@ function availableSources(context,task){return context.sources.filter(row=>row.r
 function free(source){return Math.max(0,Math.min(source.availablePhysical,source.usableReceived-sum(source.targets)));}
 export function quoteCustomerAllocation(context,{taskId,batchId}){
  checked(context);const {task,batch}=targetFor(context,taskId,batchId),sources=availableSources(context,task);
- const assigned=context.sources.reduce((n,source)=>n+assignedToBatch(source,task,batchId),0);
+ const physicalAssigned=context.sources.reduce((n,source)=>n+assignedToBatch(source,task,batchId),0),waiting=batch.waiting||0,assigned=physicalAssigned+waiting;
  if(assigned>batch.quantity)throw Error('Batch allocation exceeds demand.');
  const freeQuantity=sources.reduce((n,source)=>n+free(source),0),useFree=Math.min(batch.quantity-assigned,freeQuantity),shortage=batch.quantity-assigned-useFree;
  const donors=context.tasks.filter(row=>row.id!==taskId&&row.customerId!==task.customerId&&!row.archived&&!row.invoiceLocked&&!row.held&&!row.returnLocked&&matches(row,task)&&!context.loans.some(loan=>(loan.borrowerTaskId===row.id||loan.lenderTaskId===row.id)&&loan.outstanding>0)).map(donor=>({taskId:donor.id,customerId:donor.customerId,quantity:sources.reduce((n,source)=>n+Math.min(source.availablePhysical,source.targets.find(row=>row.taskId===donor.id)?.quantity||0),0)})).filter(row=>row.quantity>0);
- return {version:context.version,taskId,batchId,demand:batch.quantity,assigned,freeQuantity,useFree,shortage,donors};
+ return {version:context.version,taskId,batchId,demand:batch.quantity,assigned,physicalAssigned,waiting,freeQuantity,useFree,shortage,donors};
 }
 function changeQuantity(source,task,batchId,delta){
  let target=source.targets.find(row=>row.taskId===task.id);
@@ -55,7 +55,8 @@ export function planCustomerAllocation(context,input){
  const {task}=targetFor(context,input.taskId,input.batchId);
  if(context.sources.some(source=>sum(source.targets)>source.usableReceived&&source.targets.some(target=>target.taskId===task.id&&target.quantity>0)))throw Error('Review quarantined stock and reconcile this allocation before assigning more cartons.');
  if(context.loans.some(loan=>loan.lenderTaskId===task.id&&loan.outstanding>0))throw Error('Use Repay to link received stock to this customer outstanding borrowing responsibility.');
- if(task.held)throw Error('Release the active Desk instruction before changing its allocation.');
+ // Adding received supply does not alter an already-authorized Desk quantity.
+ // Donor holds and every existing physical/Loaded floor remain enforced below.
  const borrowed=input.borrow===true?quote.shortage:0;
  if(!quote.useFree&&!borrowed&&!context.sources.some(source=>source.implicit&&source.targets.some(row=>row.taskId===task.id&&row.quantity>0)))throw Error('Allocation has not changed.');
  const donor=borrowed&&context.tasks.find(row=>row.id===input.donorTaskId),offered=quote.donors.find(row=>row.taskId===input.donorTaskId);
@@ -83,7 +84,7 @@ export function planCustomerRepayment(context,input){
  const loan=context.loans.find(row=>row.id===input.loanId);
  if(!loan||!whole(input.quantity)||input.quantity===0||input.quantity>loan.outstanding)throw Error('Select a valid outstanding repayment.');
  const lender=context.tasks.find(row=>row.id===loan.lenderTaskId);
- if(!lender||lender.archived||lender.invoiceLocked||lender.held)throw Error('Lender task must remain active and available for repayment.');
+ if(!lender||lender.archived||lender.invoiceLocked)throw Error('Lender task must remain active and available for repayment.');
  const next=copy(context),changes=[];let remaining=input.quantity;
  for(const source of availableSources(next,lender)){
   const earmarked=source.implicit?source.targets.find(target=>target.taskId===lender.id)?.quantity||0:0;
@@ -126,7 +127,8 @@ export function planCustomerReconciliation(context,input){
  checked(context);if(input.version!==context.version)throw Error('Stock, Desk or allocations changed. Refresh before confirming.');
  const source=context.sources.find(row=>row.id===input.sourceTaskId),{task}=targetFor(context,input.taskId,input.batchId),reason=String(input.reason||'').trim();
  if(!source||!source.received||!(source.excluded>0)||!reason||reason.length>2000||!whole(input.quantity))throw Error('Select a quarantined receipt, the affected customer batch, a lower quantity and a reason.');
- if(task.held)throw Error('Release the active Desk instruction before correcting its allocation.');
+ // Reconcile only unusable, unshipped source claims. The Desk promise stays
+ // intact as a supply gap; the Loaded and invoiced source floors below remain locked.
  const before=assignedToBatch(source,task,input.batchId),delta=input.quantity-before;if(delta>=0)throw Error('Stock reconciliation may only reduce the affected allocation.');
  const next=copy(source);changeQuantity(next,task,input.batchId,delta);const target=next.targets.find(row=>row.taskId===task.id);
  if(target.quantity<(target.protectedQuantity||0))throw Error('Loaded or invoiced cartons cannot be removed.');

@@ -17,16 +17,17 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
  const available=packingAvailability(context),tasks=physical.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.procurementSource&&!task.specialPurchase);
  const totals=new Map();for(const flow of readPhysicalOutflows(physical.activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);
  const flows=readPhysicalOutflows(physical.activity);
- const selected=tasks.map(task=>{const portion=deskTaskPortions(physical.activity,state,task,flows).find(row=>row.desk===input.desk);return {task,quantity:portion?portion.allocated-portion.loaded:0};}).filter(row=>row.quantity>0);
+ const selected=tasks.map(task=>{const portion=deskTaskPortions(physical.activity,state,task,flows).find(row=>row.desk===input.desk);return {task,quantity:portion?portion.planned-portion.loaded:0};}).filter(row=>row.quantity>0);
  if(selected.some(row=>context.lists.some(list=>list.customerId===input.customerId&&list.desk?.number===input.desk&&list.status!=='CANCELLED'&&list.lines.some(line=>line.taskId===row.task.id&&shortloadStatus(physical.activity,list,line).remaining>0))))throw Error('Desk remainder must be resolved or completed in its existing delivery task.');
  if(!selected.length)throw Error('Desk has no remaining allocated cartons to send.');
  if(!Array.isArray(input.lines)||input.lines.length!==selected.length||new Set(input.lines.map(row=>row.taskId)).size!==selected.length||selected.some(row=>!input.lines.some(line=>line.taskId===row.task.id&&line.quantity===row.quantity)))throw Error('Desk allocation changed. Refresh before sending to Warehouse.');
- if(selected.some(row=>!qty(row.quantity)||(available.find(task=>task.taskId===row.task.id)?.readyToArrange||0)<row.quantity))throw Error('Desk allocated stock is unavailable or already authorized. Ask Purchase to review it.');
+ if(selected.some(row=>!qty(row.quantity)||(available.find(task=>task.taskId===row.task.id)?.unarranged||0)<row.quantity))throw Error('Desk supply is unavailable or already authorized. Ask Purchase to review it.');
  const currencies=[...new Set(selected.map(row=>row.task.transactionCurrency))];if(currencies.length!==1||!currencies[0])throw Error('Desk tasks must use one confirmed customer currency.');
  const draft=changePackingList({input:{action:'CREATE',company:physical.company,customerId:input.customerId,currency:currencies[0],lines:selected.map(row=>({taskId:row.task.id,quantity:row.quantity}))},context,actor,id,revision,at});
+ draft.desk={number:input.desk};
  const next=changePackingList({list:draft,input:{action:'SEND',revision},context,actor,id,revision,at});
  next.desk={number:input.desk,revision:state.revision,references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};
- next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:task.cbmPerCtn??null};});
+ next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:task.cbmPerCtn??null};});
  return next;
 }
 export function changeDeskDelivery({context,list,input,actor,id,revision,at}){

@@ -13,7 +13,7 @@ test('A250 from own200, free20 and borrowed30 preserves physical500, source iden
 test('declining borrowing allocates220 only and creates no debt',()=>{const result=plan(fixture(),{...input,borrow:false}),next=apply(fixture(),result);assert.equal(allocated(next,'A'),220);assert.equal(allocated(next,'B'),280);assert.equal(result.shortage,30);assert.equal(result.loan,null);});
 test('held, invoiced and archived donor stock cannot be offered or borrowed; no partial free-stock mutation',()=>{
  for(const key of ['held','invoiceLocked','archived']){const f=fixture();f.tasks[1][key]=true;const before=JSON.stringify(f);assert.equal(quote(f,input).donors.length,0);assert.throws(()=>plan(f,input),/insufficient/);assert.equal(JSON.stringify(f),before);}
- const f=fixture();f.tasks[0].held=true;assert.throws(()=>plan(f,input),/Desk/);
+ const f=fixture();f.tasks[0].held=true;assert.equal(plan(f,input).assigned,250); // Open recipient Desk may gain supply; donor holds above remain protected.
 });
 test('company, specification, receipt, quarantine and stale quote boundaries reject or exclude sources',()=>{
  const f=fixture();assert.throws(()=>plan(f,{...input,version:'old'}),/changed/);
