@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -125,6 +125,13 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
+      if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
+      try { const result = await getBuyerTransactionHistory(message.company, assistCustomerId);
+        frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:true, company:message.company, requestId:message.requestId, result}); }
+      catch (error) { frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:false, company:message.company, requestId:message.requestId, error:error?.message || 'Transaction history could not be loaded.'}); }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_VIEW_CHANGED') {
       activeBuyerRoomView = message.view;
       updateDownloadButtonVisibility();

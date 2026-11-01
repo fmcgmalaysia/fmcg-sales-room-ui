@@ -55,6 +55,12 @@ Next: user transaction acceptance of new PO, receipt/REALLOC, borrowing/repaymen
 
 Implementation branch: feat/po-auto-allocation-20261101 from planning commita3e1827, inspected business head4e1589d; inherited dirty purchase-live/customer-allocation.js is untouched and excluded (SHA2566C2A28369A1DE34B07D9F285E1B48163CE46815A0E0909DDC66C8E88A005A951). Local evidence: root handoff/po-auto-allocation-20261101/acceptance.json, ACCEPTANCE.html, STATUS.json, baseline-tests.txt. Four technical stages now complete for this scope; user acceptance and main merge remain pending. Exact live entry markers, resource hashes and25 draft comparisons are recorded in integration/releases/po-auto-allocation-20261101.json. MST-14/15 remain pending.
 
+## MST-17 — Customer evidence, Finance posting and history
+
+State: LOCAL_CANDIDATE_DISPATCH_DECISION_PENDING. Branch `feat/customer-dispatch-history-20261101`, parent07b882c; deployed f8aba73 unchanged. [Current closeout and evidence](CUSTOMER_FLOW_CLOSEOUT_20261101.md) records Support-only uploads, Finance-only actual receipts/CN/DN, one customer PDF identity, money formatting and Sales/Buyer themed read-only history. HTTP/R2 and cost migration remain excluded. Live801 has190+60 Loaded/SI, AR4200, repaid70; NCT820/780/40/0 atMYR55658.40 andGHR0 verified. No actual customer receipts or new public PDF permissions applied.
+
+The original plan assumed an available Dispatch entry, but deployed Warehouse explicitly retires it. A local reconnection was reverted. Await user choice of new Desk Confirm Dispatched (recommended, no stock deduction) versus Loaded records; do not silently reactivate old Dispatch or call Loaded physically dispatched. Candidate tests170 distinct checks pass; protected323-case run reconciled after fixing missing real dependency in a5-test isolated harness. Release, public acceptance and user verification remain open. Do not repeat completed live receipt/repayment/Loaded/SI operations.
+
 ## Cost route decision
 
 **COST-D01: DECISION_PENDING. Recommendation: POINTBASE becomes product-information input; MASTER Purchase owns all active supplier reference-price and promotion management.** Do not retain two editable reference-price authorities. FMCGMALAYSIA keeps its current Catalogue, images, customer selections and QD identity; MASTER reads the authoritative product metadata. No full Catalogue/image migration is proposed.

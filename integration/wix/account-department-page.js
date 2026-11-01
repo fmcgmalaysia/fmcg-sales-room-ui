@@ -1,5 +1,5 @@
 import { handleTaskChat } from 'public/taskChatBridge.js';
-import { getCustomerFulfilment } from 'backend/customerFulfilment.web';
+import { getCustomerFulfilment, confirmCustomerAccount } from 'backend/customerFulfilment.web';
 import { getStockExceptions, saveStockException, getDepartmentMessages, saveDepartmentMessage } from 'backend/stockExceptions.web';
 import { getAccountPurchaseOrders, queryAccountPurchaseOrders, planAccountReadIndex, maintainAccountReadIndex, saveAccountInvoiceCheck, saveAccountSettlement } from 'backend/accountPurchase.web';
 import { authentication } from 'wix-members-frontend';
@@ -31,6 +31,11 @@ $w.onReady(() => {
     if(message.type==='ACCOUNT_LOGIN_REQUEST'){
       try{await authentication.promptLogin({mode:'login',modal:true});room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:true});}
       catch(_){room.postMessage({type:'ACCOUNT_LOGIN_RESULT',ok:false});}return;
+    }
+    if(message.type==='ACCOUNT_CUSTOMER_CONFIRM_REQUEST'){
+      if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!/^[a-f0-9-]{36}$/i.test(message.requestId)||!message.input||JSON.stringify(message).length>5000)return;
+      try{const result=await confirmCustomerAccount(message.company,message.requestId,message.input);room.postMessage({type:'ACCOUNT_CUSTOMER_CONFIRM_RESULT',company:message.company,requestId:message.requestId,ok:result.ok===true,result});}
+      catch(error){room.postMessage({type:'ACCOUNT_CUSTOMER_CONFIRM_RESULT',company:message.company,requestId:message.requestId,ok:false,error:error?.message||'Customer confirmation could not be verified. Check the result before retrying the same confirmation.'});}return;
     }
     if(message.type==='ACCOUNT_CUSTOMER_LEDGER_REQUEST'){
       if(!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||message.requestId.length>100)return;
