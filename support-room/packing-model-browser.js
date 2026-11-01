@@ -12,10 +12,12 @@ function packingHeld(list,taskId){
  return Math.max(current?(list.status==='COMPLETED'?current.loaded:current.quantity):0,pending?.quantity||0);
 }
 function packingAvailability({tasks,lists},excludeId=''){
+ const ownDesk=lists.find(list=>list.id===excludeId)?.desk?.number;
  return tasks.map(task=>{
   if(!task.taskId||!quantity(task.remaining)||!quantity(task.ready))fail('Demand or physical stock requires review.');
   const held=lists.filter(list=>list.id!==excludeId).reduce((sum,list)=>sum+Math.max(0,packingHeld(list,task.taskId)-(list.lines.find(line=>line.taskId===task.taskId)?.loaded||0)),0);
-  return {...copy(task),held,unarranged:Math.max(0,task.remaining-held),readyToArrange:Math.max(0,Math.min(task.remaining,task.ready)-held),review:held>task.remaining||held>task.ready||Boolean(task.review)};
+  const portion=ownDesk&&task.deskReady?.find(row=>row.desk===ownDesk),ready=portion?Math.min(task.ready,portion.quantity):task.ready-held;
+  return {...copy(task),held,unarranged:Math.max(0,task.remaining-held),readyToArrange:Math.max(0,Math.min(task.remaining,ready)),review:held>task.remaining||held>(task.planned??task.ready)||Boolean(task.review)};
  });
 }
 function planLines(input,list,context){
@@ -31,7 +33,8 @@ function planLines(input,list,context){
 function checkSupply(list,context,lines=list.lines){
  const available=packingAvailability(context,list.id);
  for(const line of lines){const task=available.find(task=>task.taskId===line.taskId);
-  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity-(list.lines.find(row=>row.taskId===line.taskId)?.loaded||0)>task.readyToArrange)fail('Usable customer stock changed. Review allocation before proceeding.');
+  const capacity=list.desk?Math.min(task?.unarranged??0,Math.max(0,(task?.planned??task?.ready??0)-(task?.held||0))):task?.readyToArrange;
+  if(!task||task.review||task.company!==list.company||task.customerId!==list.customerId||task.currency!==list.currency||line.quantity-(list.lines.find(row=>row.taskId===line.taskId)?.loaded||0)>capacity)fail('Usable customer stock changed. Review allocation before proceeding.');
  }
 }
 function checkExecuted(lines){
@@ -77,6 +80,10 @@ function changePackingList({list,input,context,actor,id,revision,at}){
   next.lines=next.lines.map(line=>{const update=input.lines.find(entry=>entry.taskId===line.taskId);
    if(!update||!quantity(update.packed)||!quantity(update.loaded)||update.loaded>update.packed||update.packed>line.quantity)fail('Loaded must not exceed packed or planned quantity.');
    if(update.loaded<line.loaded)fail('Loaded cartons have left stock. Use the supervised correction process.');
+   if(next.desk&&(update.packed>line.packed||update.loaded>line.loaded)){
+    const task=packingAvailability(context,next.id).find(task=>task.taskId===line.taskId);
+    if(!task||Math.max(update.packed,update.loaded)-line.loaded>task.readyToArrange)fail('Only actually received usable cartons may be packed or loaded.');
+   }
    if((update.packed<line.packed||update.loaded<line.loaded)&&!reason(update.reason))fail('Explain the physical quantity correction.');
    return {...line,packed:update.packed,loaded:update.loaded,reason:reason(update.reason)?update.reason.trim():line.reason};
   });

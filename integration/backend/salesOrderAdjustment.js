@@ -93,6 +93,7 @@ export function createSalesOrderAdjustmentOperations({store,names,readContext,re
     }
    }
    const sourceBaselines=[...(prior?.sourceBaselines||[]).filter(row=>row.taskId!==task.id),{taskId:task.id,sources:group.map(source=>({id:source.id,totalCtn:source.procurement?.totalCtn||0,customerCtn:batches.flatMap(batch=>batch.lines.filter(line=>line.taskId===task.id)).flatMap(line=>line.sourceCoverage||[]).filter(row=>row.id===source.id).reduce((sum,row)=>sum+row.quantity,0)}))}];
+   for(const change of allocations){const received=context.tasks.find(row=>row.id===change.sourceTaskId)?.warehouse?.accepted;if(Number.isSafeInteger(received)&&received>=0)change.receivedTotalAtSave=received;}
    const plan={id:planId,company,customerId:task.customerId,orderId:task.orderId,batches,sourceBaselines,reason:'Sales '+input.mode.toLowerCase()+' '+before+' to '+after,at,by:staff.staffName,byStaffId:staff.staffId};
    return {version:input.version,event:{_id:id,title:id,description:planId,image:task.customerId,imageAltText:task.id,action:SALES_ADJUSTMENT_ACTION,result:'SAVED',activityTime:at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:plan.reason,details:{orderId:task.orderId,sourceLineId:task.sourceLineId,customerId:task.customerId,beforeDemandRevision:previousRevision,beforeRequested:total,requested,mode:input.mode,batchId:input.batchId||'',beforeQuantity:before,afterQuantity:after,beforeRevision:prior?.revision||'',plan,allocations}}};
   },apply:async plan=>{

@@ -2,6 +2,17 @@
 (()=>{
  const take=(total,offset,quantity)=>Math.min(quantity,Math.max(0,(Number(total)||0)-offset));
  function lines(line){
+  if(line.quantityContract===2&&Array.isArray(line.deskCommitments)){
+   const grouped=new Map();for(const batch of line.deskCommitments){const row=grouped.get(batch.desk)||{desk:batch.desk,quantity:0,loaded:0,at:batch.at};row.quantity+=batch.quantity;row.loaded+=batch.loaded;if(batch.at>row.at)row.at=batch.at;grouped.set(batch.desk,row);}
+   // Old Loaded evidence with no Desk reference is retained as one historical row.
+   if(!grouped.size&&line.committedQtyCtn>0)return [line];
+   const result=[...grouped.values()].sort((a,b)=>a.desk-b.desk).map(batch=>{
+    const invoices=(line.masterCompletedInvoices||[]).filter(invoice=>invoice.desk===batch.desk),sum=key=>invoices.reduce((n,row)=>n+(row[key]||0),0),received=line.deskPhysical?.find(row=>row.desk===batch.desk)?.receivedQtyCtn;
+    return {...line,shipmentBatches:[],deskCommitments:[],splitBatch:{id:'DESK:'+batch.desk,label:'Desk '+batch.desk,desk:batch.desk},splitOriginalLine:line,requestedQtyCtn:batch.quantity,effectiveRequestedQtyCtn:batch.quantity,quantityCtn:batch.quantity,committedQtyCtn:batch.quantity,uncommittedQtyCtn:0,completedQtyCtn:sum('completedQty'),invoicedQtyCtn:sum('quantity'),dispatchedQtyCtn:sum('dispatchedQty'),closedUnfulfilledQtyCtn:0,masterCompletedInvoices:invoices,...(Number.isSafeInteger(received)?{receivedQtyCtn:received,goodsReceivedAt:received>=batch.quantity?line.receivedUpdatedAt:null}:{receivedQtyCtn:null,goodsReceivedAt:null}),warehousePreparation:{...line.warehousePreparation,loadedQty:batch.loaded}};
+   });
+   const quantity=line.uncommittedQtyCtn||0;if(quantity)result.push({...line,shipmentBatches:[],deskCommitments:[],splitBatch:{id:'UNARRANGED',label:'Awaiting arrangement'},splitOriginalLine:line,requestedQtyCtn:quantity,effectiveRequestedQtyCtn:quantity,quantityCtn:quantity,committedQtyCtn:0,uncommittedQtyCtn:quantity,completedQtyCtn:0,invoicedQtyCtn:0,dispatchedQtyCtn:0,closedUnfulfilledQtyCtn:0,masterCompletedInvoices:[],receivedQtyCtn:line.deskPhysical?.find(row=>row.desk===0)?.receivedQtyCtn??null,goodsReceivedAt:null,packedAt:null,warehousePreparation:{ready:false,issue:false,packedQty:0,loadedQty:0}});
+   return result.length?result:[line];
+  }
   const batches=line.shipmentBatches||[];if(!batches.length)return [line];
   let offset=0;
   return batches.map((batch,index)=>{

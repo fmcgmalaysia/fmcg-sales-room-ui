@@ -21,6 +21,7 @@ export function readAllocations(activity){
       const detail=event.details;
       if(!event.title||!event.imageAltText||!Array.isArray(detail.targets)||new Set(detail.targets.map(row=>row.taskId)).size!==detail.targets.length||detail.targets.some(row=>!row.taskId||!qty(row.quantity)))throw Error('Allocation identity requires review.');
       sources.set(event.imageAltText,{sourceTaskId:event.imageAltText,revision:event.title,targets:detail.targets,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName});
+      if(detail.receivedTotalAtSave!==undefined){if(!qty(detail.receivedTotalAtSave))throw Error('Allocation receipt checkpoint requires review.');sources.get(event.imageAltText).receivedTotalAtSave=detail.receivedTotalAtSave;}
       pending.splice(pending.indexOf(event),1);
     }
   }
@@ -31,7 +32,7 @@ export function allocatedTo(taskId,activity){
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
-  return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber,row.procurement,row.batchEntitlements]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity),readAllocationLoans(activity),readPhysicalOutflows(activity),activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SUPPORT_DESK_SAVED'].includes(row.action))));
+  return packingGuardVersion({...workspace,activity},operationId(workspace.company,workspace.tasks.map(row=>[row.id,row.editVersion,row.ord,row.warehouse,row.salesInvoiceNumber,row.procurement,row.batchEntitlements,row.supplyAllocation]),readAllocations(activity),readCustomerShipments(activity),readStockExceptions(activity),readAllocationLoans(activity),readPhysicalOutflows(activity),activity.filter(row=>['CUSTOMER_SHIPMENT_PLAN_SAVED','SUPPORT_DESK_SAVED'].includes(row.action))));
 }
 export function createPlannerAllocationOperations({store,names,readWorkspace,now=()=>new Date()}){
   const journal=createOperationJournal({store,now});
@@ -53,7 +54,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
         const result=input.planMode==='CUSTOMER'?planCustomerAllocation(context,input):input.planMode==='RETURN'?planCustomerReturn(context,input):input.planMode==='RECONCILE'?planCustomerReconciliation(context,input):planCustomerRepayment(context,input);
         for(const change of result.changes){const source=context.sources.find(row=>row.id===change.sourceTaskId);if(!source||change.targets.reduce((n,target)=>n+target.quantity,0)>source.usableReceived)throw Error('Allocate no more than usable received stock.');for(const target of change.targets){const before=source.targets.find(row=>row.taskId===target.taskId);if(target.quantity<(before?.protectedQuantity||0))throw Error('Loaded or invoiced cartons cannot be removed.');}}
         const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();
-        const changes=result.changes.map(change=>({...change,targets:change.targets.map(target=>{const task=workspace.tasks.find(row=>row.id===target.taskId),{protectedQuantity,...claim}=target;return {...claim,orderId:task.orderId,sourceLineId:task.sourceLineId,customerId:task.customerId};}),beforeRevision:prior.find(row=>row.sourceTaskId===change.sourceTaskId)?.revision||''}));
+        const changes=result.changes.map(change=>({...change,receivedTotalAtSave:context.sources.find(source=>source.id===change.sourceTaskId).receivedTotal,targets:change.targets.map(target=>{const task=workspace.tasks.find(row=>row.id===target.taskId),{protectedQuantity,...claim}=target;return {...claim,orderId:task.orderId,sourceLineId:task.sourceLineId,customerId:task.customerId};}),beforeRevision:prior.find(row=>row.sourceTaskId===change.sourceTaskId)?.revision||''}));
         const loan=result.loan?{...result.loan,id:result.loan.id||operationId(id,'BORROWING')}:null;
         const beforeLoan=loan&&context.loans.find(row=>row.id===loan.id);if(loan)delete loan.revision;
         return {expectedVersion:version,event:{_id:id,title:id,description:input.taskId||loan?.borrowerTaskId,image:context.tasks.find(row=>row.id===(input.taskId||loan?.borrowerTaskId))?.customerId||'',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:input.planMode==='REPAY'?'Borrowed stock repaid':'Customer received stock allocated',details:{company,mode:input.planMode,allocations:changes,loanChanges:loan?[{id:loan.id,beforeRevision:beforeLoan?.revision||'',state:loan}]:[],reason:input.planMode==='RECONCILE'?String(input.reason).trim():input.planMode==='REPAY'?'Explicit received stock repayment':input.planMode==='RETURN'?'Unshipped borrowed stock returned':'Customer allocation confirmed',taskId:input.taskId,batchId:input.batchId}}};

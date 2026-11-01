@@ -25,7 +25,7 @@ async function setup(initial=90,borrow=0,split=false,twoRows=false){
  const loading=async(list,loaded)=>save(await request({action:'DESK_LOAD',id:list.id,revision:list.revision,taskId:'A',loaded,resolutionRevision:list.lines[0].resolution?.revision||'',reasonCodes:loaded<list.lines[0].quantity?['INSUFFICIENT']:[]},'WAREHOUSE'));
  const sent=await send();await loading(sent.list,initial);
  const current=async(id=sent.id)=>(await packingContext('NCT')).lists.find(row=>row.id===id);
- const decision=async parts=>{const list=await current();return request({action:'DESK_RESOLVE',id:list.id,revision:list.revision,taskId:'A',deskRevision:(await state()).revision,resolutionRevision:list.lines[0].resolution.revision,parts});};
+ const decision=async parts=>{const list=await current(),req=await request({action:'DESK_RESOLVE',id:list.id,revision:list.revision,taskId:'A',deskRevision:(await state()).revision,resolutionRevision:list.lines[0].resolution.revision,parts});if(parts.some(part=>part.mode==='CANCEL'))req.staff={...f.staff,memberId:'SOURCE_SALES/SYNTHETIC-STAFF',customerId:'CUSTOMER-A'};return req;};
  const stock=async()=>{const row=load('stockCardProjection.js').projectStockCard(await context('NCT')).items[0];return {onHand:row.onHand,free:row.available,reserved:row.reservedUsable};};
  return {...f,context,stock,packingContext,save,resolve,state,request,send,loading,current,decision};
 }
@@ -34,17 +34,27 @@ test('continue 10 clears the exception to pending, then Loaded posts only the ad
  await f.resolve(await f.decision([{mode:'CONTINUE',quantity:10}]));const list=await f.current();assert.equal(list.lines[0].resolution.issue,false);assert.equal(list.lines[0].resolution.pending,true);assert.equal((await f.stock()).onHand,110);
  await f.loading(list,100);assert.equal((await f.stock()).onHand,100);assert.equal((await f.current()).lines[0].resolution.pending,false);
 });
+test('Support cannot cancel customer demand and Sales cannot transfer shipment batches',async()=>{
+ const f=await setup(),cancel=await f.decision([{mode:'CANCEL',quantity:10}]);
+ await assert.rejects(f.resolve({...cancel,staff:{...f.staff,packingDepartment:'SUPPORT'}}),/Sales confirmation/);
+ const move=await f.decision([{mode:'TRANSFER',desk:2,quantity:10}]);await assert.rejects(f.resolve({...move,staff:cancel.staff}),/Sales may confirm customer cancellation only/);
+ await assert.rejects(f.resolve({...cancel,staff:{...cancel.staff,customerId:'FOREIGN'}}),/changed/);assert.equal((await f.context('NCT')).tasks[0].ord,100);assert.equal((await f.stock()).onHand,110);
+});
+test('Support can defer10 without inventing a future Desk or losing customer demand',async()=>{
+ const f=await setup();await f.resolve(await f.decision([{mode:'TRANSFER',desk:0,quantity:10}]));const ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity)),commit=load('shortloadResolutionModel.js').readDeskCommitments(ctx.activity,'NCT','A');
+ assert.equal(parts.find(part=>part.desk===0).quantity,10);assert.equal(ctx.tasks[0].ord,100);assert.equal(commit.quantity,90);assert.equal(commit.loaded,90);assert.equal((await f.stock()).onHand,110);assert.equal((await f.current()).lines[0].resolution.issue,false);
+});
 test('transfer 10 retains 90 on the original Desk and fences the old Warehouse form',async()=>{
  const f=await setup(),old=await f.current();await f.resolve(await f.decision([{mode:'TRANSFER',desk:2,quantity:10}]));
- const ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity));assert.deepEqual(JSON.parse(JSON.stringify(parts)),[{desk:1,quantity:90,loaded:90,allocated:90},{desk:2,quantity:10,loaded:0,allocated:10}]);
+ const ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity));assert.deepEqual(JSON.parse(JSON.stringify(parts)),[{desk:1,quantity:90,loaded:90,allocated:90,planned:90},{desk:2,quantity:10,loaded:0,allocated:10,planned:10}]);
  await assert.rejects(f.loading(old,100),/resolved by Support/);assert.equal((await f.stock()).onHand,110);
  const sent=await f.send(2,10);await f.loading(sent.list,10);assert.equal((await f.stock()).onHand,100);assert.equal(projectDeskDeliverySummaries((await f.context('NCT')).activity)[0].issue,false);
 });
 test('cancel 10 atomically releases only unshipped ownership and reduces demand, without changing physical stock',async()=>{
  const f=await setup();await f.resolve(await f.decision([{mode:'CANCEL',quantity:10}]));const ctx=await f.context('NCT');assert.equal(ctx.tasks[0].ord,90);assert.equal(ctx.tasks[0].inc,90);assert.equal((await f.stock()).onHand,110);assert.equal((await f.stock()).free,10);assert.equal((await f.current()).lines[0].resolution.issue,false);
 });
-test('mixed transfer 6 and cancellation 4 preserves a total of 96 customer cartons',async()=>{
- const f=await setup();await f.resolve(await f.decision([{mode:'TRANSFER',desk:2,quantity:6},{mode:'CANCEL',quantity:4}]));const ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity));assert.equal(parts.reduce((n,row)=>n+row.quantity,0),96);assert.equal(parts.find(row=>row.desk===2).allocated,6);assert.equal((await f.stock()).free,4);
+test('Sales cancels4, then Support transfers6, preserving96 customer cartons and separate authority',async()=>{
+ const f=await setup();await f.resolve(await f.decision([{mode:'CONTINUE',quantity:6},{mode:'CANCEL',quantity:4}]));await f.resolve(await f.decision([{mode:'TRANSFER',desk:2,quantity:6}]));const ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity));assert.equal(parts.reduce((n,row)=>n+row.quantity,0),96);assert.equal(parts.find(row=>row.desk===2).allocated,6);assert.equal((await f.stock()).free,4);
 });
 test('lost acknowledgement reuses the same resolution and stock release exactly once',async()=>{
  const f=await setup(),request=await f.decision([{mode:'CANCEL',quantity:10}]);f.lose('DESK_SHORTLOAD_RESOLVED');await assert.rejects(f.resolve(request),/lost acknowledgement/);const result=await f.resolve(request);assert(result.resolutionId);await f.resolve(request);assert.equal((await f.context('NCT')).activity.filter(row=>row.action==='DESK_SHORTLOAD_RESOLVED').length,1);assert.equal((await f.stock()).free,10);
@@ -109,7 +119,7 @@ test('existing Sales split keeps batch ownership through cancellation and subseq
  const adjust=createSalesOrderAdjustmentOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});await adjust({company:'NCT',staff:{...f.staff,customerId:'CUSTOMER-A'},requestId:f.nextId(),input:{action:'ADJUST',mode:'INCREASE',quantity:5,batchId:p.id+'|2',taskId:'A',customerId:'CUSTOMER-A',orderId:'ORDER-A',version:salesAdjustmentVersion(ctx,shipmentPlanVersion)}});ctx=await purchase(f);assert.equal(ctx.tasks[0].requested,95);assert.equal(ctx.tasks[0].inc,90);assert.equal(load('stockCardProjection.js').projectStockCard(ctx).items[0].available,10);
 });
 test('interrupted resolution is offered only to its original operator and reuses the same request',async()=>{
- const f=await setup(),request=await f.decision([{mode:'CANCEL',quantity:10}]),{pendingShortloadResolutions}=load('shortloadResolution.js');f.lose('DESK_SHORTLOAD_RESOLVED');await assert.rejects(f.resolve(request),/lost/);let activity=(await f.context('NCT')).activity;const pending=pendingShortloadResolutions(activity,'NCT',f.staff.memberId);assert.equal(pending.length,1);assert.equal(pending[0].requestId,request.requestId);assert.equal(pendingShortloadResolutions(activity,'NCT','OTHER').length,0);await f.resolve({...request,input:pending[0].input});activity=(await f.context('NCT')).activity;assert.equal(pendingShortloadResolutions(activity,'NCT',f.staff.memberId).length,0);
+ const f=await setup(),request=await f.decision([{mode:'CANCEL',quantity:10}]),{pendingShortloadResolutions}=load('shortloadResolution.js');f.lose('DESK_SHORTLOAD_RESOLVED');await assert.rejects(f.resolve(request),/lost/);let activity=(await f.context('NCT')).activity;const pending=pendingShortloadResolutions(activity,'NCT',request.staff.memberId);assert.equal(pending.length,1);assert.equal(pending[0].requestId,request.requestId);assert.equal(pendingShortloadResolutions(activity,'NCT','OTHER').length,0);await f.resolve({...request,input:pending[0].input});activity=(await f.context('NCT')).activity;assert.equal(pendingShortloadResolutions(activity,'NCT',request.staff.memberId).length,0);
 });
 
 for(const mode of ['CONTINUE','TRANSFER','CANCEL'])test('Purchase reads the same '+mode+' disposition without changing supplier purchase quantities',async()=>{
@@ -121,4 +131,32 @@ test('next Desk shipment details accept the transferred task currency without mo
 
 test('Support resolves a confirmed short line while another line in the same Desk is still loading',async()=>{
  const f=await setup(90,0,false,true);assert.equal((await f.current()).status,'PROCESSING');await f.resolve(await f.decision([{mode:'TRANSFER',desk:2,quantity:10}]));const list=await f.current();assert.equal(list.lines[0].resolution.issue,false);await f.save(await f.request({action:'DESK_LOAD',id:list.id,revision:list.revision,taskId:'B',loaded:100,reasonCodes:[]},'WAREHOUSE'));assert.equal((await f.current()).status,'COMPLETED');assert.equal((await f.stock()).onHand,10);
+});
+
+test('deferred10 can be arranged in a new Desk later without reapplying the old transfer',async()=>{
+ const f=await setup();await f.resolve(await f.decision([{mode:'TRANSFER',desk:0,quantity:10}]));
+ const assign=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context}),input={action:'DESK_SPLIT',customerId:'CUSTOMER-A',taskId:'A',desk:1,revision:(await f.state()).revision,parts:[{desk:1,quantity:90},{desk:2,quantity:10}]};
+ const req=await f.request(input);await assign(req);await assign(req);
+ let ctx=await f.context('NCT'),parts=deskTaskPortions(ctx.activity,await f.state(),ctx.tasks[0],readPhysicalOutflows(ctx.activity));assert.equal(parts.find(row=>row.desk===1).quantity,90);assert.equal(parts.find(row=>row.desk===2).quantity,10);assert.equal(parts.some(row=>row.desk===0),false);assert.equal((await f.stock()).onHand,110);
+ await assert.rejects(assign(await f.request({...input,revision:(await f.state()).revision,parts:[{desk:1,quantity:89},{desk:2,quantity:11}]})),/Confirmed, loaded or invoiced/);
+ const sent=await f.send(2,10);await f.loading(sent.list,10);ctx=await f.context('NCT');assert.equal((await f.stock()).onHand,100);const commitment=load('shortloadResolutionModel.js').readDeskCommitments(ctx.activity,'NCT','A');assert.equal(commitment.quantity,100);assert.equal(commitment.loaded,100);
+});
+
+test('a current unresolved Desk remainder cannot be silently moved using Split',async()=>{
+ const f=await setup(),assign=createSupportDeskOperations({store:f.store,names:{NCT:{activity:'N'}},readContext:f.context});
+ await assert.rejects(assign(await f.request({action:'DESK_SPLIT',customerId:'CUSTOMER-A',taskId:'A',desk:1,revision:(await f.state()).revision,parts:[{desk:1,quantity:90},{desk:2,quantity:10}]})),/Confirmed, loaded or invoiced/);assert.equal((await f.current()).lines[0].resolution.issue,true);assert.equal((await f.stock()).onHand,110);
+});
+
+test('a pre-cutover committed Support cancellation recovers once without authorizing a new cancellation',async()=>{
+ const f=await setup(),sales=await f.decision([{mode:'CANCEL',quantity:10}]),{operationId}=load('purchaseOperationJournal.js');f.lose('DESK_SHORTLOAD_RESOLVED');await assert.rejects(f.resolve(sales),/lost/);
+ // Preserve the actual old journal shape, with its original Support owner.
+ const support={...f.staff,packingDepartment:'SUPPORT'},oldKey=operationId('NCT/PURCHASE',sales.requestId,sales.staff.memberId),key=operationId('NCT/PURCHASE',sales.requestId,support.memberId),prepared=f.records.get('N/'+oldKey);f.records.delete('N/'+oldKey);prepared._id=prepared.title=key;prepared.details.actorMemberId=support.memberId;prepared.details.plan.event.details.memberId=support.memberId;f.records.set('N/'+key,prepared);const event=f.records.get('N/'+prepared.details.plan.event._id);event.details.memberId=support.memberId;
+ const request={...sales,staff:support},result=await f.resolve(request);assert.equal(result.ok,true);await f.resolve(request);assert.equal((await f.context('NCT')).activity.filter(row=>row.action==='DESK_SHORTLOAD_RESOLVED').length,1);assert.equal((await f.stock()).free,10);
+ await assert.rejects(f.resolve({...request,requestId:f.nextId()}),/Sales confirmation/);
+});
+
+test('an uncommitted old Support cancellation terminates without applying customer demand changes',async()=>{
+ const f=await setup(),sales=await f.decision([{mode:'CANCEL',quantity:10}]),{operationId}=load('purchaseOperationJournal.js'),support={...f.staff,packingDepartment:'SUPPORT'},key=operationId('NCT/PURCHASE',sales.requestId,support.memberId),event={_id:'LEGACY',action:'DESK_SHORTLOAD_RESOLVED',details:{company:'NCT',memberId:support.memberId,requestId:sales.requestId}};
+ f.records.set('N/'+key,{_id:key,title:key,action:'PURCHASE_OPERATION_PREPARED',details:{actorMemberId:support.memberId,digest:operationId({shortload:sales.input}),plan:{resolutionInput:sales.input,event}}});
+ const request={...sales,staff:support},result=await f.resolve(request);assert.equal(result.ok,false);assert.equal(result.retryable,false);await f.resolve(request);assert.equal((await f.context('NCT')).tasks[0].requested,100);assert.equal((await f.stock()).onHand,110);assert.equal((await f.context('NCT')).activity.some(row=>row.action==='DESK_SHORTLOAD_RESOLVED'),false);
 });
