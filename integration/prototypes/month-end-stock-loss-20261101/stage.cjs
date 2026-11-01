@@ -10,7 +10,15 @@ function plan(){
  // The historic Stock List composer reads this working file. Pin its recovery
  // bytes before comparing the entire published cohort, then apply this patch.
  baseline.set('warehouse-room/stock-control-app.js',Buffer.from(cp.execFileSync('git',['show','c844f39:warehouse-room/stock-control-app.js'],{cwd:root,encoding:'utf8'}).replace(/\r?\n/g,'\r\n')));
- assert.equal(baseline.size,99);for(const row of manifest.resources)assert.equal(hash(baseline.get(row.path)),row.sha256,'Recovery resource: '+row.path);
+ assert.equal(baseline.size,99);for(const row of manifest.resources){
+  const bytes=baseline.get(row.path);
+  if(hash(bytes)!==row.sha256&&/\.(?:js|css|html)$/.test(row.path)){
+   // Restore only a line-ending variant whose exact bytes match the frozen
+   // production hash. Any content change still fails the original assertion.
+   const text=bytes.toString();for(const normalized of [text.replace(/\r\n/g,'\n'),text.replace(/\r?\n/g,'\r\n')]){const candidate=Buffer.from(normalized);if(hash(candidate)===row.sha256){baseline.set(row.path,candidate);break;}}
+  }
+  assert.equal(hash(baseline.get(row.path)),row.sha256,'Recovery resource: '+row.path);
+ }
  const assets=new Map(baseline);
  for(const file of ['master-shared/stock-exceptions.js','master-shared/stock-exceptions.css','warehouse-room/stock-control-app.js'])assets.set(file,Buffer.from(fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n')));
  const planner=fs.readFileSync(path.join(root,'integration/backend/customerAllocationPlan.js'),'utf8').replace(/\r\n/g,'\n').replace(/^export /gm,'');

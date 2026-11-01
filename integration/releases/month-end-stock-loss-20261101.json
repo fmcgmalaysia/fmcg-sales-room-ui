@@ -522,19 +522,31 @@
       "skipped": 0
     },
     "affected": 49,
-    "release": 2,
+    "release": 3,
     "historicalStage": 14,
     "evidence": "handoff/month-end-stock-loss-20261101/check-04, affected-04.txt, release-check-01.txt, historical-stage-03.txt"
   },
   "status": {
     "code": "TESTED_ALL_14_DRAFTS_EXACT",
-    "github": "PENDING",
-    "pages": "PENDING",
+    "github": "PUSHED_PR276",
+    "pages": "FIRST_BUILD_FAILED_BEFORE_UPLOAD_NOT_DEPLOYED",
     "wix": "14_DRAFTS_EXACT_NOT_PUBLISHED",
     "public": "PENDING",
     "user": "PENDING"
   },
   "preview": "Not completed: browser/local socket restrictions. No workaround; do not count as visual acceptance.",
   "referenceJournal": "723d08f705bb9a376768ba7f398e6d57149e93d3c44fa02eae3e5399d252eaff",
-  "verifiedRecoveryTag": "verified/stop-waiting-cn-20261026"
+  "verifiedRecoveryTag": "verified/stop-waiting-cn-20261026",
+  "attempts": [
+    {
+      "commit": "1f461d11f8143ad1a735a5ae13b643ac97e92575",
+      "run": 41262645325,
+      "job": 124718874910,
+      "result": "BUILD_FAILED_BEFORE_UPLOAD",
+      "reason": "Frozen display-rows.js CRLF differs from Linux LF output",
+      "permissions": "REVOKED_ORIGINAL_7_BRANCHES_0_TAGS",
+      "wix": "NOT_PUBLISHED"
+    }
+  ],
+  "buildRepair": "Restore line endings only when exact frozen SHA256 matches; Linux LF simulation passes; same 99 resource hashes"
 }
