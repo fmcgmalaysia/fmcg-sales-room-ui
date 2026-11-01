@@ -1,6 +1,7 @@
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { projectCustomerAccount } from 'backend/customerDebtor.js';
 import { readSupportDocuments, customerFileReady } from 'backend/supportDocuments.js';
+import { readLoadedInvoiceRecords } from 'backend/customerLoadedRecords.js';
 
 // Read model only. Shipment, money and attachment ledgers remain the authorities.
 const publicCodes = new Set(['SO', 'BC', 'SI', 'DO', 'CN', 'DN', 'PL', 'INS', 'CF', 'BL', '$']);
@@ -39,9 +40,9 @@ export function projectCustomerTransactionHistory(context, customerId) {
   const documents = [...new Map([...supportFiles, ...accountFiles].map(row => [row.fileId, row])).values()]
     .sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.id.localeCompare(b.id));
   return { company, customerId,
-    shipments: shipments.filter(row => row.status === 'DISPATCHED').map(row => ({
-      id: row.id, company, customerId, desk: row.desk || null, dispatchedAt: row.dispatch.at,
-      reference: row.dispatch.reference, number: row.invoice.number, date: row.invoice.date,
+    shipments: readLoadedInvoiceRecords(activity,shipments).map(row => ({
+      id: row.id, company, customerId, desk: row.desk || null, recordedAt: row.invoice.at || row.invoice.date,
+      number: row.invoice.number, date: row.invoice.date,
       currency: row.invoice.currency, amountCents: row.invoice.amountCents,
       lines: row.lines.map(line => ({ taskId: line.taskId, orderId: line.orderId,
         sourceLineId: line.sourceLineId, barcode: line.barcode, name: line.name,
@@ -51,7 +52,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
       documents: documents.filter(document => document.invoiceId === row.id ||
         !document.invoiceId && document.scope === 'ORDER' && row.lines.some(line => line.orderId === document.orderId) ||
         !document.invoiceId && document.scope === 'DESK' && document.desk === row.desk && row.lines.some(line => line.orderId === document.orderId))
-    })).sort((a, b) => String(b.dispatchedAt).localeCompare(String(a.dispatchedAt)) || a.id.localeCompare(b.id)),
+    })).sort((a, b) => String(b.recordedAt).localeCompare(String(a.recordedAt)) || a.id.localeCompare(b.id)),
     account: {
       balances: account.balances.filter(row => row.customerId === customerId).map(row => ({
         company, customerId, currency: row.currency, invoiceCents: row.invoiceCents,
