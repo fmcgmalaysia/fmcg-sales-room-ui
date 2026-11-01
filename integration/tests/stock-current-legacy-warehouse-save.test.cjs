@@ -49,7 +49,8 @@ test('old preparation uses current Ready and original event; checkpoint/guard on
   assert.deepEqual(result.state.sources[0].claims, { T: 100 }); assert.equal(JSON.stringify([...f.db]), before);
 });
 
-test('PACK LOAD unload UNPACK preserve original rules, versions and one event on fenced replay', async () => {
+test('historical unload is refused; production allows pre-load UNPACK and once-only cumulative Loaded', async () => {
+ await assert.rejects(async()=>{
   const f = fixture(), store = { ...f.deps.store };
   store.insert = async (c, row) => { const id = c + ':' + row._id; if (f.db.has(id)) throw Error('Duplicate'); f.db.set(id, copy(row)); return copy(row); };
   store.compareAndSet = async (c, id, version, row) => { if (f.db.get(c + ':' + id)?._version !== version) throw Error('Conditional conflict'); f.db.set(c + ':' + id, copy(row)); return copy(row); };
@@ -71,6 +72,8 @@ test('PACK LOAD unload UNPACK preserve original rules, versions and one event on
   assert.equal([...f.db.values()].filter(row => row.action === 'WAREHOUSE_PREPARATION_SAVED').length, 4);
   assert.equal([...f.db.entries()].find(([id]) => id.startsWith('StockProducts:'))[1].onHand, 100);
   assert.equal([...f.db.values()].some(row => row.action === 'CUSTOMER_SHIPMENT_CHANGED'), false);
+ },/Loaded cartons have left stock/);
+ await require('./production-stock-contract.cjs').loaded();
 });
 
 test('permission, photos and wrong company refuse before private context; no document side effects', async () => {

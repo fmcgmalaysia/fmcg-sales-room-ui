@@ -55,6 +55,7 @@
     const items = data?.items || [];
     $('stock-rows').innerHTML = items.map(row => '<tr><td><button class="product" data-key="' + esc(row.key) + '">' + esc(row.name)
       + '<small>' + esc(row.barcode) + ' · ' + esc(row.packing) + '</small></button>'
+      + (row.awaitingDisposal > 0 ? '<small>' + label('Awaiting disposal', '待处置') + ': ' + amount(row.awaitingDisposal) + ' CTN</small>' : '')
       + (row.reviewRequired ? '<small class="unknown">' + label('Review Required', '待核对') + '</small>' : '') + '</td>'
       + [row.onHand, row.reservedUsable, row.available, row.isolated].map(value => '<td class="num">' + amount(value) + '</td>').join('')
       + (finance ? '<td class="num">' + unitCost(row.valuation?.averageCost) + '</td><td class="num">' + money(row.valuation?.valueCents) + '</td><td><span class="stock-status ' + (row.valuation?.status === 'CONFIRMED' ? 'confirmed' : 'pending') + '">' + (row.valuation?.status === 'CONFIRMED' ? 'Confirmed' : 'Cost review') + '</span></td>' : '') + '</tr>').join('')
@@ -89,6 +90,7 @@
       || '<tr><td colspan="' + (finance ? 7 : 5) + '" class="empty">' + label('No remaining source quantity', '暂无剩余来源数量') + '</td></tr>';
     const issues = [...new Set(row.sources.flatMap(source => source.issues))];
     const notes = issues.map(code => finance ? (issueLabels[code] || code).replace(/\s*[\u3400-\u9fff].*$/, '') : issueLabels[code] || code);
+    if (row.awaitingDisposal > 0) notes.push(label('Written off; awaiting physical disposal', '已结损，等待实物处置') + ': ' + row.awaitingDisposal + ' CTN. ' + label('Physical custody', '实物在仓') + ': ' + row.physicalCustody + ' CTN.');
     if (finance && row.valuation?.status !== 'CONFIRMED') notes.push('Unconfirmed costs or quantities are excluded from the known value. Partial FOC receipts require paid/free composition confirmation.');
     $('source-review').textContent = notes.join('\n');
     $('source-dialog').showModal();

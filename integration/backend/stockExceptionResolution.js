@@ -1,18 +1,27 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readStockExceptions, stockExceptionVersion } from 'backend/inventoryExceptions.js';
+import { sourceCost } from 'backend/stockValuationService.js';
 const text=value=>String(value??'').trim();
 const money=value=>Number.isSafeInteger(value)&&value>=0&&value<=999999999999;
 const quantity=value=>Number.isSafeInteger(value)&&value>0&&value<=9999;
 export function stockResolutionVersion(context,purchaseOrders){return operationId(stockExceptionVersion(context),readStockExceptions(context.activity),purchaseOrders.map(row=>[row.id,row.version]));}
+export function stockTakePeriod(value,at,reportedAt){
+ const period=text(value),today=new Date(new Date(at).getTime()+8*60*60*1000).toISOString().slice(0,10);
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(period))throw Error('Select the Stock Take month.');
+ const [year,month]=period.split('-').map(Number),end=new Date(Date.UTC(year,month,0)).toISOString().slice(0,10);
+ if(end>today||new Date(new Date(reportedAt).getTime()+8*60*60*1000).toISOString().slice(0,10)>end)throw Error('Stock loss closes at month-end Stock Take, in a period containing this report.');
+ return period;
+}
 export function createStockResolutionOperations({store,names,readContext,listOrders,now=()=>new Date()}){
  const journal=createOperationJournal({store,now});
  return async({company,staff,requestId,input})=>{
-  const permission={DECIDE:'canPlanStockResolution',APPROVE_LOSS:'canApproveStockLoss',APPROVE_VARIANCE:'canApproveStockLoss',APPROVE_RELEASE:'canApproveStockLoss',RETURN:'canReportStockException',REPLACEMENT:'canReportStockException',CLOSE:'canCloseStockException'}[input?.action];
+  const permission={DECIDE:'canPlanStockResolution',APPROVE_LOSS:'canApproveStockLoss',APPROVE_VARIANCE:'canApproveStockLoss',APPROVE_RELEASE:'canApproveStockLoss',RETURN:'canReportStockException',REPLACEMENT:'canReportStockException',DISPOSE:'canReportStockException',CLOSE:'canCloseStockException'}[input?.action];
   if(!names[company]||!permission||staff?.[permission]!==true)throw Error('Stock resolution action is not authorized.');
+  if(input.action==='APPROVE_LOSS')throw Error('Finance records inventory loss once at month-end Stock Take; a separate Admin approval is not used.');
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{stockResolution:input},prepare:async()=>{
    const context=await readContext(company,staff),orders=await listOrders(company,staff),version=stockResolutionVersion(context,orders),cases=readStockExceptions(context.activity),item=cases.find(row=>row.id===input.id);
    if(context.company!==company||input.version!==version||!item||item.company!==company)throw Error('Stock case changed. Refresh before saving.');
-   if(item.status==='RESOLVED')throw Error('Resolved stock cases require a separate correction.');
+   if(item.status==='RESOLVED'&&input.action!=='DISPOSE')throw Error('Resolved stock cases require a separate correction.');
    const matches=orders.filter(po=>po.taskIds.includes(item.sourceTaskId));if(matches.length!==1)throw Error('Stock case requires one supplier purchase order.');
    const po=matches[0],reason=text(input.reason);if(!reason||reason.length>2000)throw Error('Enter the stock resolution reason.');
    const identity={at:now().toISOString(),by:staff.staffName,byStaffId:staff.staffId},state={...(item.resolution||{}),caseId:item.id};delete state.revision;
@@ -24,11 +33,9 @@ export function createStockResolutionOperations({store,names,readContext,listOrd
     if(input.decision==='REPLACE'&&(!/^\d{4}-\d{2}-\d{2}$/.test(input.expectedDate||'')||!Number.isFinite(Date.parse(input.expectedDate))||new Date(input.expectedDate).toISOString().slice(0,10)!==input.expectedDate))throw Error('Enter a valid replacement date.');
     state.decision={value:input.decision,disposition:input.decision==='PENDING'?null:input.disposition,supplierReference:text(input.supplierReference),expectedDate:input.decision==='REPLACE'?input.expectedDate:null,reason,...identity};
    }
-   if(['APPROVE_LOSS','APPROVE_RELEASE'].includes(input.action)){
-    if(input.action==='APPROVE_LOSS'&&item.kind!=='INTERNAL_DAMAGE')throw Error('Supplier-related stock must follow supplier resolution.');
+   if(input.action==='APPROVE_RELEASE'){
     if(state.adminApproval||(state.returns||[]).length||(state.replacements||[]).length)throw Error('This stock approval or physical movement is already recorded.');
-    state.adminApproval={outcome:input.action==='APPROVE_LOSS'?'LOSS':'RELEASED',quantity:item.quantity,reason,...identity};
-    if(input.action==='APPROVE_LOSS'){const cents=input.cents??item.referenceCostCents;if(!money(cents))throw Error('Super Admin must confirm the inventory loss amount.');state.adminApproval.cents=cents;}
+    state.adminApproval={outcome:'RELEASED',quantity:item.quantity,reason,...identity};
    }
    if(input.action==='APPROVE_VARIANCE'){
     if(item.kind==='INTERNAL_DAMAGE'||!money(item.referenceCostCents)||!money(input.cents)||input.cents===0||input.cents>item.referenceCostCents)throw Error('Confirm the unrecovered supplier claim amount.');
@@ -45,10 +52,20 @@ export function createStockResolutionOperations({store,names,readContext,listOrd
    }
    if(input.action==='CLOSE'){
     const outcome=input.outcome,approval={outcome,reason,...identity};
-    if(['LOSS','RELEASED'].includes(outcome)){
+    if(outcome==='LOSS'){
+     if(state.adminApproval?.outcome==='RELEASED')throw Error('Stock release is awaiting Finance verification; loss cannot replace it.');
+     const period=stockTakePeriod(input.period,identity.at,item.at),cost=item.referenceCostCents;
+     if(!money(cost)||input.cents!==cost)throw Error('Confirm the original source cost before recording inventory loss.');
+     if(state.decision&&state.decision.value!=='PENDING'||(state.returns||[]).length||(state.replacements||[]).length)throw Error('Stock loss cannot replace an existing supplier claim or movement.');
+     if(input.stockTakeConfirmed!==true||!['PRESENT','DISPOSED'].includes(input.goodsStatus))throw Error('Confirm Stock Take and whether the isolated goods remain physically present.');
+     const source=context.tasks.find(row=>row.id===item.sourceTaskId),stock=source?.warehouse?.stock;
+     if(!stock||!Number.isSafeInteger(stock.availablePhysical)||!Number.isSafeInteger(stock.held)||stock.held<item.quantity)throw Error('Stock Take requires the current isolated source position.');
+     const valuation=sourceCost(source);
+     if(valuation.status!=='CONFIRMED'||Math.round(valuation.unit*item.quantity*100)!==cost)throw Error('Stock source cost changed or is unconfirmed. Finance must review it before recording loss.');
+     Object.assign(approval,{period,quantity:item.quantity,cents:cost,currency:'MYR',sourceTaskId:item.sourceTaskId,poNumber:source.po,goodsStatus:input.goodsStatus,stockTakeConfirmed:true,before:{received:stock.received,shipped:stock.shipped,usable:stock.availablePhysical,isolated:stock.held},after:{received:stock.received,shipped:stock.shipped,usable:stock.availablePhysical,isolated:stock.held-item.quantity}});
+    }else if(outcome==='RELEASED'){
      if(state.adminApproval?.outcome!==outcome||state.adminApproval.quantity!==item.quantity)throw Error('Super Admin approval is required before Finance closes this stock adjustment.');
      if(state.adminApproval.byStaffId===staff.staffId)throw Error('A different Finance employee must verify the Admin stock approval.');
-     if(outcome==='LOSS'){if(!money(input.cents)||input.cents!==state.adminApproval.cents)throw Error('Finance loss amount must match Super Admin approval.');approval.cents=input.cents;approval.currency='MYR';}
     }else{
      if(!['REFUND','CREDIT','REPLACED'].includes(outcome)||state.decision?.value!==(outcome==='REPLACED'?'REPLACE':outcome))throw Error('Finance outcome must match Purchase supplier resolution.');
      if(state.decision.disposition==='RETURN'&&(state.returns||[]).reduce((sum,row)=>sum+row.quantity,0)!==item.quantity)throw Error('Warehouse must confirm all required supplier returns.');
@@ -80,6 +97,11 @@ export function createStockResolutionOperations({store,names,readContext,listOrd
      }
     }
     state.financeApproval=approval;
+   }
+   if(input.action==='DISPOSE'){
+    const approval=state.financeApproval,reference=text(input.reference);
+    if(approval?.outcome!=='LOSS'||approval.stockTakeConfirmed!==true||approval.goodsStatus!=='PRESENT'||state.disposal||input.quantity!==item.quantity||!reference||reference.length>120)throw Error('Warehouse may confirm disposal only for the complete written-off quantity awaiting disposal.');
+    state.disposal={quantity:item.quantity,reference,reason,...identity};
    }
    const id=operationId(company,requestId,staff.memberId,'STOCK_RESOLUTION');
    return {version,event:{_id:id,title:id,description:item.id,imageAltText:item.sourceTaskId,action:'STOCK_EXCEPTION_RESOLUTION_SAVED',result:'SAVED',activityTime:identity.at,actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:reason,details:{action:input.action,beforeRevision:item.resolution?.revision||'',state}}};

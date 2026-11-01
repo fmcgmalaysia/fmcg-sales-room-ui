@@ -78,11 +78,11 @@ async function allocation(segmented, drift) {
     stockIdentity: { memberId: 'M', staffId: 'P' } } };
 }
 for (const segmented of [false, true]) {
-  test(`real ${segmented ? 'v2' : 'v1'} allocation remains valid under unchanged original identity`, async () => {
-    const f = await allocation(segmented, false), result = await f.save(f.request);
-    assert.equal(result.ok, true); assert.equal(result.stockGeneration, 1);
-    assert.equal([...f.db.values()].filter(row => row.action === 'PLANNER_ALLOCATION_SAVED').length, 1);
-    assert.equal([...f.db.values()].find(row => row.action === 'PLANNER_ALLOCATION_SAVED').initiatedByStaffId, 'P');
+  test(`retired ${segmented ? 'v2' : 'v1'} allocation request refuses; current customer ALLOC preserves actor and commits once`, async () => {
+    const f = await allocation(segmented, false);
+    await assert.rejects(f.save(f.request),segmented?/Stock or allocations changed/:/Reload Purchase/);
+    assert.equal([...f.db.values()].filter(row => row.action === 'PLANNER_ALLOCATION_SAVED').length, 0);
+    await require('./production-stock-contract.cjs').allocation();
   });
   test(`real ${segmented ? 'v2' : 'v1'} allocation rejects same-member staff reissue before business reads/staging`, async () => {
     const f = await allocation(segmented, true), before = JSON.stringify([...f.db]);

@@ -14,7 +14,8 @@ export function readStockExceptions(activity){
   const item=event.details;
   if(!event.title||!event.imageAltText||!item||!['NCT','GHR'].includes(item.company)||!quantity(item.quantity)||!['INTERNAL_DAMAGE','WRONG_ITEM','SHORT_EXPIRY'].includes(item.kind)||!text(item.reason)||!event.initiatedByStaffId||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Stock exception record requires review.');
   const resolution=resolutions.get(event.title)||null;
-  let owner=item.kind==='INTERNAL_DAMAGE'?(resolution?.adminApproval?'ACCOUNT':'ADMIN'):'PURCHASE';
+  let owner='ACCOUNT';
+  if(item.kind!=='INTERNAL_DAMAGE'&&resolution?.decision?.value==='PENDING')owner='PURCHASE';
   if(item.kind!=='INTERNAL_DAMAGE'&&resolution?.decision&&resolution.decision.value!=='PENDING')owner=resolution.decision.disposition==='RETURN'&&(resolution.returns||[]).reduce((n,row)=>n+row.quantity,0)<item.quantity||resolution.decision.value==='REPLACE'&&(resolution.replacements||[]).reduce((n,row)=>n+row.quantity,0)<item.quantity?'WAREHOUSE':'ACCOUNT';
   return {id:event.title,sourceTaskId:event.imageAltText,company:item.company,quantity:item.quantity,kind:item.kind,reason:item.reason,referenceCostCents:Number.isSafeInteger(item.referenceCostCents)?item.referenceCostCents:null,resolution,status:resolution?.financeApproval?'RESOLVED':'OPEN',owner,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,byStaffId:event.initiatedByStaffId};
  });

@@ -44,5 +44,17 @@ export function customerAllocationContext(workspace,activity,allocations,version
   const matrix=allocateBatchSources(entries.map((batch,index)=>({...batch,quantity:remaining[index]})),unbound);
   for(const source of related){const target=source.targets.find(target=>target.taskId===task.id);if(!target.batches){source.bindingNeeded=true;target.batches=entries.map((batch,index)=>({id:batch.id,quantity:matrix[index].find(row=>row.id===source.id)?.quantity||0}));}}
  }
+ // Preserve the existing earliest-batch consumption used by Warehouse preparation.
+ // Explicit Warehouse batch movements retain their exact binding; unbound packing
+ // movements protect the earliest remaining entitlement, never a later free batch.
+ for(const task of tasks){
+  let unbound=outflows.filter(flow=>flow.taskId===task.id&&flow.kind!=='WAREHOUSE').reduce((n,flow)=>n+flow.quantity,0);
+  const consumed=task.batches.map(batch=>{const own=outflows.filter(flow=>flow.taskId===task.id&&flow.kind==='WAREHOUSE'&&flow.loadingId===operationId(workspace.company,task.id,batch.id)).reduce((n,flow)=>n+flow.quantity,0),other=Math.min(Math.max(0,batch.quantity-own),unbound);unbound-=other;return {id:batch.id,quantity:own+other};});
+  const mapped=consumed.reduce((n,row)=>n+row.quantity,0),actual=outflows.filter(flow=>flow.taskId===task.id).reduce((n,row)=>n+row.quantity,0);
+  const invoiced=shipments.flatMap(shipment=>shipment.lines).filter(line=>line.taskId===task.id).reduce((n,line)=>n+line.quantity,0);
+  if(unbound||mapped!==actual||invoiced>actual)continue;
+  // Read-only task metadata is never written into source allocation history.
+  task.protectedBatches=consumed.filter(row=>row.quantity>0).map(row=>row.id);
+ }
  return {company:workspace.company,version,tasks,sources,loans:readAllocationLoans(activity)};
 }

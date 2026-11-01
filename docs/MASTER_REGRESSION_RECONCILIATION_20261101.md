@@ -1,5 +1,7 @@
 # Regression reconciliation — 2026-11-01
 
+Historical first-round report. The subsequently approved [month-end loss follow-up](MONTH_END_STOCK_LOSS_20261101.md) resolves the remaining13 checks:205/205,0 skips;145/145 protected. The original analysis below remains as evidence, not the latest backlog.
+
 Scope: reconcile the original26 failures with the later13 UI failures, using the published Purchase cohort. This is test/documentation maintenance, not a production business patch. Recovery/base9aabd51; current Purchase runtimec844f39, independent receivingfc76b37 and allocation/journal recovery97f9623 remain unchanged. No deployment or permission change is required for this maintenance.
 
 ## A single denominator

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-01",
-  "scope": "Reconcile the original26 and subsequent13 distinct failures; no production release",
+  "scope": "Approved month-end quarantine loss and remaining13 contract reconciliation; release pending",
   "baseCommit": "9aabd51e3818c40354ebf8f047c6976a98d9f4aa",
   "runtime": "c844f39",
   "receiving": "fc76b37",
@@ -12,8 +12,8 @@
   },
   "comparableAfter": {
     "tests": 205,
-    "pass": 192,
-    "fail": 13,
+    "pass": 205,
+    "fail": 0,
     "skipped": 0
   },
   "additionalProtected": {
@@ -21,9 +21,9 @@
     "pass": 145,
     "fail": 0
   },
-  "closedAssertions": 26,
-  "openBusinessBoundaries": 1,
-  "openHistoricalPrototypeChecks": 12,
+  "closedAssertions": 39,
+  "openBusinessBoundaries": 0,
+  "openHistoricalPrototypeChecks": 0,
   "rows": [
     {
       "id": "H01",
@@ -78,8 +78,10 @@
       "id": "H08",
       "originalTest": "500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170",
       "category": "current_customer_allocation_fixture",
-      "status": "OPEN_BUSINESS_BOUNDARY",
-      "detail": "500 ordered, 480 received, 300 Loaded/invoiced/dispatched, 10 quarantined: available physical 170 is correct. Lowering split allocation480 to470 is blocked by Loaded batch source correction requires supervised review. No approved supported correction path demonstrated."
+      "status": "PASS_CANDIDATE_BUSINESS_PUBLIC_PENDING",
+      "detail": "Positive500/480/300/isolate10/continue170 passes; real Desk cumulative470 test and payment/receipt immutability pass. Only unshipped batch correction allowed.",
+      "previousStatus": "OPEN_BUSINESS_BOUNDARY",
+      "previousDetail": "500 ordered, 480 received, 300 Loaded/invoiced/dispatched, 10 quarantined: available physical 170 is correct. Lowering split allocation480 to470 is blocked by Loaded batch source correction requires supervised review. No approved supported correction path demonstrated."
     },
     {
       "id": "H09",
@@ -127,85 +129,109 @@
       "id": "H15",
       "originalTest": "new original stock wrapper/root reproducible; original auth, public endpoints and exact rejection tail preserved",
       "category": "historical_generated_snapshot",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+      "status": "PASS_GENERATED_CONTRACT",
+      "detail": "Normalize generation/comparison line endings; H26 regenerated from current privacy-protected source. Offline only, not activated.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
     },
     {
       "id": "H16",
       "originalTest": "NCT: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H17",
       "originalTest": "GHR: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H18",
       "originalTest": "old stock wrapper reproducible; only context seam added, original web/auth/interface unchanged",
       "category": "historical_generated_snapshot",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+      "status": "PASS_GENERATED_CONTRACT",
+      "detail": "Normalize generation/comparison line endings; H26 regenerated from current privacy-protected source. Offline only, not activated.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
     },
     {
       "id": "H19",
       "originalTest": "PACK LOAD unload UNPACK preserve original rules, versions and one event on fenced replay",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H20",
       "originalTest": "generated gateway matches source and exposes only original staff-guarded SiteMember reads",
       "category": "historical_generated_snapshot",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+      "status": "PASS_GENERATED_CONTRACT",
+      "detail": "Normalize generation/comparison line endings; H26 regenerated from current privacy-protected source. Offline only, not activated.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
     },
     {
       "id": "H21",
       "originalTest": "real v1 allocation remains valid under unchanged original identity",
       "category": "historical_allocation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
     },
     {
       "id": "H22",
       "originalTest": "real v2 allocation remains valid under unchanged original identity",
       "category": "historical_allocation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
     },
     {
       "id": "H23",
       "originalTest": "current PACK/LOAD/unload/UNPACK keep original validators/events, same-request replay and physical stock unchanged",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H24",
       "originalTest": "photo/file actions, missing all-writer coverage, stale form, partial-load reason and UNPACK while loaded fail without a legacy apply",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H25",
       "originalTest": "paired current photo PACK/PHOTOS/LOAD reuse actual original validation, frozen slots, current holds and once-only physical stock",
       "category": "historical_loaded_preparation_protocol",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+      "status": "PASS_CURRENT_AUTHORITY_LEGACY_REJECTED",
+      "detail": "Historical unsupported request remains rejected without allocation/Loaded write; positive current-authority scenario verifies once-only physical deduction, allocation, permissions or photos. No legacy activation.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
     },
     {
       "id": "H26",
       "originalTest": "generated receipt root and minimum wrappers are exact original bodies after removal of explicit current mode seams",
       "category": "historical_generated_snapshot",
-      "status": "OPEN_HISTORICAL_PROTOTYPE",
-      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+      "status": "PASS_GENERATED_CONTRACT",
+      "detail": "Normalize generation/comparison line endings; H26 regenerated from current privacy-protected source. Offline only, not activated.",
+      "previousStatus": "OPEN_HISTORICAL_PROTOTYPE",
+      "previousDetail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
     },
     {
       "id": "U01",
@@ -316,5 +342,17 @@
       "path": "C:/FMCG-WIX-LOCAL/handoff/master-regression-reconciliation-20261101/protected-final.txt",
       "sha256": "e6c702c186a40cdd71ff8aff489f905c67282a1e5503f29cae1834ad08c6c1b3"
     }
-  ]
+  ],
+  "previousReconciliation": {
+    "comparableAfter": {
+      "tests": 205,
+      "pass": 192,
+      "fail": 13,
+      "skipped": 0
+    },
+    "closedAssertions": 26,
+    "openBusinessBoundaries": 1,
+    "openHistoricalPrototypeChecks": 12
+  },
+  "businessUserAcceptance": "PENDING"
 }
