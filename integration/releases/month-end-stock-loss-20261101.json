@@ -531,8 +531,8 @@
     "github": "PUSHED_PR276",
     "pages": "V2_99_EXACT_VERIFIED",
     "wix": "V2_PUBLISHED_AND_LIVE",
-    "public": "PARTIAL_PURCHASE_PASS_FINANCE_WAREHOUSE_BLANK",
-    "user": "BOOKMARK_REOPEN_REQUESTED"
+    "public": "VERIFIED_PUBLIC_ENTRIES_AND_STOCK",
+    "user": "READY_FOR_USER_TEST_NOT_MERGED"
   },
   "preview": "Not completed: browser/local socket restrictions. No workaround; do not count as visual acceptance.",
   "referenceJournal": "723d08f705bb9a376768ba7f398e6d57149e93d3c44fa02eae3e5399d252eaff",
@@ -567,9 +567,14 @@
   "buildRepair": "Restore line endings only when exact frozen SHA256 matches; Linux LF simulation passes; same 99 resource hashes",
   "entryFix": "One CSS declaration, Finance/Warehouse only; 8 static resources differ from v1 (CSS + version refs), backend unchanged",
   "publicEvidence": {
-    "purchase": "handoff/month-end-stock-loss-20261101/purchase-v2-public.png",
-    "financeV1": "StockList270/230/40/MYR19814.40; GHR0/MYR0",
-    "v2": "Finance/Warehouse embedded about:blank, correct v2 iframe src, no captured page error",
-    "businessWrites": 0
+    "build": "20261101-month-end-stock-loss-v2",
+    "purchase": "LAW, GP, original801 Alloc100 Loaded90 preserved",
+    "finance": "Stock Take reads No pending stock issues; StockList270/230/40/isolated0/MYR19814.40",
+    "warehouse": "Stock Issues reads empty list; Report issue form sourcePO/kind/quantity/note opens; StockList270/230/40/isolated0, no money displayed",
+    "companyIsolation": "NCT→GHR0→NCT on both departments",
+    "errors": "No captured Finance/Warehouse errors",
+    "businessWrites": 0,
+    "limits": "No pending real quarantine cases; month-end loss/disposal and concurrency were tested in isolated scenarios, not newly submitted on public site",
+    "evidence": "handoff/month-end-stock-loss-20261101/*public*"
   }
 }
