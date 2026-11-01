@@ -66,6 +66,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
       classList:{ toggle(){},remove(){},add(){} }, insertAdjacentHTML(position,html){node('#dialogContent').innerHTML+=html;}, addEventListener(type,callback){ listeners.set(id+':'+type,callback); },
       showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
+    if(id==='#receiptStopOptions')nodes.get(id).querySelectorAll=()=>dialogFields;
     return nodes.get(id);
   }
   const parent = { postMessage:message => messages.push(message) }, window = { parent,masterTaskSignals:signals, addEventListener(type,callback){ const key='window:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } };
@@ -74,7 +75,10 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/display-rows.js'),'utf8'),{window,localStorage:rowStorage});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/task-grid.js'),'utf8'),{window});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/dashboard.js'),'utf8'),{window});
-  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
+  const planner=fs.readFileSync(path.join(__dirname,'../backend/customerAllocationPlan.js'),'utf8').replace(/^export /gm,'');
+  vm.runInNewContext('(()=>{'+planner+';window.customerAllocationPlan={quoteCustomerAllocation,planCustomerAllocation,planCustomerRepayment,planCustomerReturn,planCustomerReconciliation};})()',{window});
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/customer-allocation.js'),'utf8'),{window,document:{querySelector:selector=>node(selector)}});
+  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')||selector==='input[name="receiptSupplierDecision"]:checked'?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {
@@ -155,7 +159,7 @@ test('Active priorities count saved sources and locate their task rows without w
  w.tasks.push({...w.tasks[0],id:'UNPLANNED',po:'',supplierId:'',procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:null,revision:''}});
  h.reply(w);h.click({view:'active'});const html=h.node('#app').innerHTML,before=h.messages.length;
  assert.match(html,/data-active-notice="pending"[\s\S]*?<b>3<\/b>/);assert.match(html,/data-active-notice="incoming"[\s\S]*?<b>1<\/b>/);
- assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETA: 28 Oct 2026/);
+ assert.match(html,/ACTUAL CUSTOMER<small class="customer-shipment"[^>]*>ETD: 28 Oct 2026/);
  assert.equal((html.match(/<th>/g)||[]).length,11);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({activeNotice:'pending'});assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="UNPLANNED"/);assert.match(h.node('#dialogContent').innerHTML,/Unassigned 待分配/);assert.match(h.node('#dialogContent').innerHTML,/10 CTN/);assert.match(h.node('#dialogContent').innerHTML,/100 CTN/);
  h.click({activeNotice:'incoming'});assert.match(h.node('#dialogContent').innerHTML,/Short received/);assert.match(h.node('#dialogContent').innerHTML,/data-active-notice-row="B">Row 001 →/);h.click({activeNoticeRow:'B'});assert.equal(h.node('#modal').open,false);assert.match(h.node('#app').innerHTML,/data-source-id="B"/);assert.equal(h.messages.length,before);
@@ -246,24 +250,27 @@ test('additional source plan uses remaining customer capacity instead of its zer
  (h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));const request=h.messages.at(-1);assert.equal(request.operation,'PLAN');assert.equal(request.input.taskId,'B');assert.equal(request.input.totalCtn,15);assert.equal(request.input.confirmExtra,false);
 });
 
-test('separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk',()=>{
- const h=harness(),w=workspace();w.quantityCasesVersion='CASES';Object.assign(w.tasks[0],{po:'PO-A',ord:200,inc:180,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180},quantityCases:[{id:'UNPLACED',kind:'UNPLACED',quantity:10,status:'RESOLVED',decision:{customerDecision:'STOP',by:'PLANNER',at:'2026-10-12T03:00:00Z'}},{id:'RECEIPT',kind:'RECEIPT',quantity:10,status:'OPEN',financeRequired:true,owner:'PURCHASE'}]});
- h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;assert.match(html,/quantity-case resolved[^>]*data-quantity-case="UNPLACED"/);assert.match(html,/quantity-case financial[^>]*data-quantity-case="RECEIPT"/);
- h.click({quantityCase:'RECEIPT'});assert.match(h.node('#dialogContent').innerHTML,/Receiving Issue/);assert.match(h.node('#dialogContent').innerHTML,/内部原因不会传给客户/);
- h.node('#caseCustomer').value='STOP';h.node('#caseSupplier').value='REFUND';h.node('#caseDate').value='';h.node('#caseReason').value='Supplier short delivered';h.node('#caseMessage').value='Available quantity is confirmed';h.click({controlId:'saveQuantityCase'});
- const request=h.messages.at(-1);assert.equal(request.operation,'QUANTITY_CASE');assert.equal(request.input.id,'RECEIPT');assert.equal(request.input.version,'CASES');assert.equal(request.input.customerDecision,'STOP');assert.equal(request.input.supplierDecision,'REFUND');assert.equal(request.input.enabled,undefined,'Purchase cannot send Finance clearance');
+test('resolved sourcing is quiet; receipt decisions preserve financial risk and cannot send Finance clearance',()=>{
+ const choice={value:'CN_PROMISED',checked:true,dataset:{},parentElement:{textContent:'Supplier will issue a CN'}},h=harness(undefined,[],null,[choice]),w=workspace();
+ w.quantityCasesVersion='CASES';Object.assign(w.tasks[0],{po:'PO-A',ord:200,inc:180,procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:180},quantityCases:[{id:'UNPLACED',kind:'UNPLACED',quantity:10,status:'RESOLVED',decision:{customerDecision:'STOP',by:'PLANNER',at:'2026-10-12T03:00:00Z'}},{id:'RECEIPT',kind:'RECEIPT',quantity:10,status:'OPEN',financeRequired:true,owner:'PURCHASE',planned:180,accepted:170}]});
+ h.reply(w);h.click({customer:'C'});const html=h.node('#app').innerHTML;assert.doesNotMatch(html,/data-quantity-case="UNPLACED"/);assert.match(html,/quantity-case financial[^>]*data-quantity-case="RECEIPT"/);
+ h.click({quantityCase:'RECEIPT'});assert.match(h.node('#dialogContent').innerHTML,/Receiving Shortfall/);assert.doesNotMatch(h.node('#dialogContent').innerHTML,/Finance Checked|caseMessage/);
+ h.node('#receiptSolution').value='STOP';h.click({controlId:'saveReceiptDecision'});
+ const request=h.messages.at(-1);assert.equal(request.operation,'QUANTITY_CASE');assert.equal(request.input.id,'RECEIPT');assert.equal(request.input.version,'CASES');assert.equal(request.input.supplierDeliveryDecision,'STOP');assert.equal(request.input.supplierDecision,'CN_PROMISED');assert.equal(request.input.customerDecision,undefined);assert.equal(request.input.enabled,undefined,'Purchase cannot send Finance clearance');
 });
-test('planner allocation editor sends the selected receipt and explicit customer quantities with a reason',()=>{
- const h=harness(),w=workspace();Object.assign(w.tasks[0],{po:'PO1',supplierId:'S',warehouse:{accepted:90},procurement:{transportMode:'SUPPLIER_DELIVER',availableCtn:90,allocationEnabled:true}});w.allocationVersion='AV';w.allocations=[];
- h.reply(w);h.click({view:'stock'});assert.match(h.node('#app').innerHTML,/data-allocate="TASK"/);h.click({allocate:'TASK'});
- assert.match(h.node('#dialogContent').innerHTML,/ACTUAL CUSTOMER/);h.node('#allocateQty0').value='80';h.node('#allocationReason').value='Hold ten cartons';h.click({controlId:'saveAllocation'});
- const request=h.messages.at(-1);assert.equal(request.operation,'ALLOCATE');assert.equal(request.input.version,'AV');assert.equal(request.input.targets[0].quantity,80);assert.equal(request.input.sourceTaskId,'TASK');assert.equal(request.input.reason,'Hold ten cartons');
+test('customer-task ALLOC uses the current own-stock/free-stock plan and original receipt identity exactly once',()=>{
+ const h=harness(),w=workspace(),product={company:'NCT',barcode:'00123',packing:'SIZE x16',ea:16};
+ Object.assign(w.tasks[0],{ord:100,inc:60,po:'PO1',supplierId:'S',warehouse:{accepted:60},procurement:{transportMode:'SUPPLIER_DELIVER',totalCtn:60,revision:'P'}});
+ w.allocationContext={company:'NCT',version:'AV',loans:[],tasks:[{...product,id:'TASK',customerId:'C',demand:100,batches:[{id:'WHOLE',quantity:100}]}],sources:[{...product,id:'TASK',received:true,usableReceived:60,availablePhysical:60,targets:[{taskId:'TASK',quantity:60}]},{...product,id:'FREE',received:true,usableReceived:20,availablePhysical:20,targets:[]}]};
+ h.reply(w);h.click({view:'stock'});assert.doesNotMatch(h.node('#app').innerHTML,/data-allocate=/);h.click({view:'active'});h.click({customerAllocate:'TASK',allocationBatch:'WHOLE'});
+ assert.match(h.node('#dialogContent').innerHTML,/Customer demand/);assert.match(h.node('#dialogContent').innerHTML,/80 CTN/);h.click({controlId:'confirmCustomerAllocation'});h.click({controlId:'confirmCustomerAllocation'});
+ const saves=h.messages.filter(m=>m.type==='PURCHASE_SAVE_REQUEST'),request=saves[0];assert.equal(saves.length,1);assert.equal(request.operation,'ALLOCATE');assert.equal(request.input.version,'AV');assert.equal(request.input.planMode,'CUSTOMER');assert.equal(request.input.taskId,'TASK');assert.equal(request.input.batchId,'WHOLE');assert.equal(request.input.targets,undefined);
 });
 test('Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'payments'});const request=h.messages.at(-1);assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
  const row={id:'PO',number:'NCT-PO-001',createdAt:'2026-10-11T01:00:00Z',createdBy:'LAW',supplierName:'SUPPLIER FULL NAME',supplierShortName:'SUP',customerName:'BUYER',amount:1200,status:'Paid W/T Inv',procurementHandoff:{stage:'OWNED',submission:{at:'2026-10-11T01:00:00Z',by:'LAW',paymentRequest:{requestedCents:100000,paidCents:0,cnCents:0}}},paymentHandoff:{status:'PAID'},finance:{payableCents:100000,paidCents:100000,balanceCents:0,payments:[{id:'P',confirmed:true,reference:'BANK001',cents:100000,at:'2026-10-11T02:00:00Z',by:'FINANCE',proof:{fileId:'proof_123456789'}}]}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));
- const html=h.node('#app').innerHTML;assert.match(html,/NCT-PO-001/);assert.match(html,/1,000.00/);assert.match(html,/>Fully Paid</);assert.doesNotMatch(html,/付款申请流程尚未连接/);
+ const html=h.node('#app').innerHTML;assert.match(html,/NCT-PO-001/);assert.match(html,/1,000.00/);assert.match(html,/>Request Paid</);assert.doesNotMatch(html,/付款申请流程尚未连接/);
  h.click({paymentProof:'PO'});const proof=h.node('#dialogContent').innerHTML;assert.match(proof,/BANK001/);assert.match(proof,/FINANCE/);assert.match(proof,/drive.google.com\/uc\?export=download/);assert.match(proof,/proof_123456789/);assert.doesNotMatch(proof,/type="file"|Record Payment|data-settlement/);
 });
 
@@ -278,6 +285,7 @@ test('purchase orders render persisted documents and readable history, with uplo
  const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1);
  assert.equal(request.type,'PURCHASE_ORDERS_REQUEST');
  const row={id:'POID',version:'V',number:'NCT-PO-001',taskIds:['TASK'],customerName:'BUYER',supplierId:'S',supplierShortName:'SUP',supplierName:'SUPPLIER',itemCount:1,amount:100,termDays:30,documents:[{fileId:'file_123456789',linked:true,type:'INV',number:'INV001',date:'2026-10-11',uploadedBy:'LAW'}],documentStatus:'COMPLETE',state:'ACTIVE',history:[{action:'PAYMENT_TERM_CHANGED',actor:'LAW',time:'2026-10-11T01:00:00Z',changes:{before:{termDays:15},after:{termDays:30},reason:'Agreed terms'}}]};
+ row.documentStates=require('./load-master-module.cjs')('purchaseDocumentPolicy.js').purchaseDocumentStates(row.documents);
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});
  await new Promise(resolve=>setImmediate(resolve));
  assert.match(h.node('#app').innerHTML,/po-doc-badge available[^>]*data-po-doc-type="INV"/);assert.match(h.node('#app').innerHTML,/BUYER/);
@@ -288,6 +296,7 @@ test('purchase orders render persisted documents and readable history, with uplo
 
 test('PDF stays disabled after file reading hands off to the actual pending save, and a second click does not upload twice',async()=>{
  const h=harness(),w=workspace();h.reply(w);h.click({view:'po'});const request=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[],history:[],documentStatus:'MISSING',termDays:null};
+ row.documentStates=require('./load-master-module.cjs')('purchaseDocumentPolicy.js').purchaseDocumentStates(row.documents);
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:request.requestId,ok:true,result:{company:'NCT',orders:[row],documentsConnected:true}});await new Promise(resolve=>setImmediate(resolve));h.click({poUpload:'PO',poDocType:'PI'});
  const pdf=Buffer.from('%PDF-1.4\nTEST');h.node('#poDocumentFile').files=[{size:pdf.length,arrayBuffer:async()=>pdf.buffer.slice(pdf.byteOffset,pdf.byteOffset+pdf.byteLength)}];
  h.node('#poDocumentDate').value='2026-10-11';h.node('#poDocumentNumber').value='TEST';h.click({controlId:'uploadPurchaseDocument'});await new Promise(resolve=>setImmediate(resolve));
@@ -397,14 +406,14 @@ test('unchanged supplier quantities and unconfirmed P.O. changes give local feed
  h.node('#planSupplierConfirmed').checked=true;(h.node('#planTransport').value='SUPPLIER_DELIVER',h.click({controlId:'saveSupplierPlan'}));assert.equal(h.messages.at(-1).operation,'PLAN');assert.equal(h.messages.at(-1).input.totalCtn,275);assert.equal(h.messages.at(-1).input.quantity,undefined);
 });
 
-test('shared expected-stock view includes all company customers and disables allocation before receipt',()=>{
+test('Stock Actions keeps only borrowing/review work and never restores the retired supplier allocation table',()=>{
  const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:25,totalCtn:275};w.tasks.push({...w.tasks[0],id:'OTHER',customerId:'OTHER-CUSTOMER',barcode:'OTHER-BARCODE',procurement:{transportMode:'SUPPLIER_DELIVER',expectedExtra:10,totalCtn:260}});h.reply(w);h.click({customer:'C'});h.click({view:'stock'});
- const html=h.node('#app').innerHTML;assert.match(html,/OTHER-BARCODE/);assert.match(html,/Awaiting warehouse/);assert.match(html,/<button class="btn" data-allocate="[^"]+" disabled>Allocate/);assert.equal([...html.matchAll(/<button[^>]*data-allocate[^>]*>/g)].every(match=>match[0].includes("disabled")),true);
+ const html=h.node('#app').innerHTML;assert.match(html,/Use ALLOC on the customer task/);assert.match(html,/No outstanding borrowing or allocation review/);assert.doesNotMatch(html,/data-allocate=|OTHER-BARCODE|Awaiting warehouse/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
 });
 test('live page starts empty, requests real Master data and never seeds demo business records',()=>{
   const h=harness();assert.equal(h.messages.length,1);assert.equal(h.messages[0].type,'PURCHASE_WORKSPACE_REQUEST');
   assert.doesNotMatch(h.node('#app').innerHTML,/AVATA|Supplier A|CORN FLAKES/);
-  h.reply(workspace());assert.match(h.node('#app').innerHTML,/ACTUAL CUSTOMER/);assert.equal(h.node('#session').textContent,'ACTUAL STAFF / Purchase');
+  h.reply(workspace());assert.match(h.node('#app').innerHTML,/ACTUAL CUSTOMER/);assert.equal(h.node('#session').textContent,'ACTUAL STAFF');
 });
 test('customer entry preserves actual quantity without an independent Cost Error route',()=>{
  const h=harness();h.reply(workspace());h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/ACTUAL PRODUCT/);assert.match(h.node('#app').innerHTML,/250/);assert.doesNotMatch(h.node('#app').innerHTML,/Cost Error|data-cost=/);
@@ -548,7 +557,7 @@ test('original task history dialog remains available without retired progress ca
 
 test('cost metadata never creates an independent Cost Error badge or triggers a write',()=>{for(const [reason,lpCtn] of [['UNAVAILABLE_CBMPERCTN',16],['UNAVAILABLE_CBMPERCTN',null],['UNAVAILABLE_CBMPERCTN; UNAVAILABLE_LPCTN',16],['POINTBASE_SERVICE_UNAVAILABLE',16]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{costErrorReason:reason,lpCtn});h.reply(w);h.click({customer:'C'});assert.doesNotMatch(h.node('#app').innerHTML,/data-cost=|Cost Error/);assert.equal(h.messages.length,1);}});
 test('current GP warning uses valid saved GP; six percent and unknown GP are not flagged',()=>{for(const [gp,shown] of [[.0599,true],[.06,false],[-.1,true],[0,true],[null,false],[undefined,false]]){const h=harness(),w=workspace();Object.assign(w.tasks[0],{gp,procurement:{totalCtn:250,revision:'SAVED-COST'}});h.reply(w);h.click({customer:'C'});assert.equal(h.node('#app').innerHTML.includes('gp-badge gp-low'),shown);assert.doesNotMatch(h.node('#app').innerHTML,/id="riskFilter"|class="risk-deal"/);}});
-test('Save is hidden when clean and allocation stays within the current task layout',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Awaiting warehouse/);assert.match(h.node('#app').innerHTML,/disabled>Allocate/);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.equal(h.messages.length,1);});
+test('Save is hidden when clean and allocation stays within the current task layout',()=>{const h=harness(),w=workspace();w.tasks[0].procurement={expectedExtra:10};h.reply(w);h.click({customer:'C'});assert.match(h.node('#app').innerHTML,/id="saveEdits" hidden/);h.change({dataset:{moneyTask:'TASK',moneyField:'disc3'},value:'3'});assert.equal(h.node('#saveEdits').hidden,false);h.change({id:'allocationFilter',dataset:{},value:'allocation'});assert.match(h.node('#app').innerHTML,/Use ALLOC on the customer task/);assert.doesNotMatch(h.node('#app').innerHTML,/data-allocate=/);assert.match(h.node('#app').innerHTML,/active-order-heading/);assert.equal(h.messages.length,1);});
 
 test('negative net cost is explained before a write and known failed save frees editing without losing input',()=>{
  const h=harness(),w=workspace();Object.assign(w.tasks[0],{lpPc:.4652777778,lpCtn:7.4444444444,disc1:.15,disc2:0,disc3:0});h.reply(w);h.click({customer:'C'});
@@ -670,7 +679,7 @@ test('Active work tabs retain the personal order and supplier filter without a d
  const h=harness(),w=workspace();w.suppliers=[{id:'S1',name:'FIRST SUPPLIER'}];Object.assign(w.tasks[0],{supplierId:'S1',editVersion:'V',procurement:{transportMode:'SUPPLIER_DELIVER',expectedExtra:10,totalCtn:20,revision:'P'}});w.tasks.push({...w.tasks[0],id:'TASK2'});h.reply(w);h.click({view:'active'});
  let html=h.node('#app').innerHTML;assert.match(html,/data-active-work="orders" aria-pressed="true"/);assert.match(html,/data-active-work="allocation" aria-pressed="false"/);assert.match(html,/id="allocationFilter" aria-label="Work source" hidden/);assert.match(html,/All Customers 全部客户/);assert.match(html,/All Suppliers 全部供应商/);
  h.change({id:'supplierFilter',value:'S1',dataset:{}});h.event('dragstart',{closest:()=>({dataset:{drag:'TASK2'},closest:()=>null})},{dataTransfer:{setData(){}}});h.event('drop',{closest:()=>({dataset:{id:'TASK'}})},{preventDefault(){}});const before=h.messages.length;
- h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Awaiting warehouse/);assert.match(html,/disabled>Allocate/);assert.match(html,/class="save-group" hidden/);assert.ok(!html.includes('Sales / Buyer'));
+ h.click({activeWork:'allocation'});html=h.node('#app').innerHTML;assert.match(html,/data-active-work="allocation" aria-pressed="true"/);assert.match(html,/class="tools ao-allocation-tools"/);assert.match(html,/Use ALLOC on the customer task/);assert.doesNotMatch(html,/data-allocate=/);assert.match(html,/class="save-group" hidden/);assert.ok(!html.includes('Sales / Buyer'));
  h.click({activeWork:'orders'});html=h.node('#app').innerHTML;assert.ok(html.indexOf('data-id="TASK2"')<html.indexOf('data-id="TASK"'));assert.match(html,/<option value="S1" selected>/);assert.equal((html.match(/data-drag=/g)||[]).length,2);assert.equal(h.messages.length,before);
  h.click({controlId:'saveEdits'});assert.equal(h.messages.length,before);
 });
@@ -729,11 +738,11 @@ test('restored legacy pending request stays uncertain even when its next attempt
  restored.send({type:'PURCHASE_SAVE_RESULT',company:first.company,requestId:first.requestId,ok:true,result:await prewriteCmsFailure(retry)});assert.equal(restored.node('#companySelect').disabled,true);assert.equal(restored.messages.at(-1).type,'PURCHASE_SAVE_CHECK_REQUEST');
 });
 
-test('PO workspace has seven ordered columns, per-customer shipment ETA and unchanged source identity',async()=>{
+test('PO workspace has seven ordered columns, per-customer shipment ETD and unchanged source identity',async()=>{
  const h=harness(),w=workspace();w.customers=[{id:'C',name:'Full customer',shortName:'SHORT'},{id:'D',name:'Other customer',shortName:'OTHER'}];h.reply(w);h.click({view:'po'});const req=h.messages.at(-1);
  const row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',customerIds:['C','D'],taskIds:['TASK'],supplierName:'FULL SUPPLIER SDN BHD',supplierShortName:'SUP',documents:[],history:[],documentStatus:'MISSING',termDays:null,amount:100,shipmentDates:[{customerId:'C',date:'2026-10-28'},{customerId:'D',date:'2026-11-05'}]};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row]}});await new Promise(resolve=>setImmediate(resolve));const html=h.node('#app').innerHTML;
- assert.equal(h.node('#taskSignals').hidden,true);assert.deepEqual([...html.matchAll(/<th>(.*?)<\/th>/g)].map(match=>match[1].replace(/<button.*?<\/button>/g,'').trim()),['Created On','P.O. &amp; Supplier','Purchase For','Amount MYR','Docs','Request Payment','Message']);assert.match(html,/po-payment-ineligible">Not eligible/);assert.doesNotMatch(html,/>Details<|<th>Term/);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETA: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETA: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
+ assert.equal(h.node('#taskSignals').hidden,true);assert.deepEqual([...html.matchAll(/<th>(.*?)<\/th>/g)].map(match=>match[1].replace(/<button.*?<\/button>/g,'').trim()),['Created On','P.O. &amp; Supplier','Purchase For','Amount MYR','Docs','Request Payment','Message']);assert.match(html,/po-payment-ineligible">Not eligible/);assert.doesNotMatch(html,/>Details<|<th>Term/);assert.match(html,/North Cape Trading Sdn\. Bhd\./);assert.match(html,/SHORT<\/b><small[^>]*>ETD: 28 Oct 2026/);assert.match(html,/OTHER<\/b><small[^>]*>ETD: 05 Nov 2026/);assert.match(html,/FULL SUPPLIER SDN BHD/);assert.doesNotMatch(html,/<th>Chase Payment|<th>Status|<b>SUP<\/b>/);assert.match(html,/data-po-view="TASK"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
 });
 
 test('term dropdown sends Cash as zero through existing versioned save with factual audit reason',async()=>{
@@ -792,8 +801,8 @@ test('payment request omits manual date and client timestamp; submits saved PO v
 });
 
 test('submitted payment is read-only in PO; eligible Follow-up alone edits and any Account review locks it',async()=>{
- for(const [stage,review,editable] of [['SUBMITTED',null,true],['SUBMITTED',{stage:'RECEIVED'},false],['OWNED',null,false],['SUBMITTED',{stage:'REVIEWING'},false],['PROCESSING',null,false]]){
-  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100,procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:12:00Z',by:'LAW',paymentRequest:{requestedCents:2500,purpose:'DEPOSIT',basisFileId:'PI',termDays:30}}},paymentHandoff:{review,status:'AWAITING_REVIEW'}};
+ for(const [stage,review,editable,locked=false] of [['SUBMITTED',null,true],['SUBMITTED',{stage:'RECEIVED'},false],['OWNED',null,false],['SUBMITTED',{stage:'REVIEWING'},false],['PROCESSING',null,false],['SUBMITTED',null,false,true],['SUBMITTED',null,false,null]]){
+  const h=harness();h.reply(workspace());h.click({view:'po'});const req=h.messages.at(-1),row={id:'PO',version:'V',number:'NCT-PO-1',state:'ACTIVE',taskIds:['TASK'],documents:[{type:'PO',linked:true,fileId:'OUR'},{type:'PI',linked:true,fileId:'PI',number:'PI-1'}],history:[],documentStatus:'PROVISIONAL',termDays:30,amount:100,procurementContentLocked:locked,procurementHandoff:{stage,submitted:true,submission:{at:'2026-10-16T08:12:00Z',by:'LAW',paymentRequest:{requestedCents:2500,purpose:'DEPOSIT',basisFileId:'PI',termDays:30}}},paymentHandoff:{review,status:'AWAITING_REVIEW'}};
   h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[row],paymentRequestsConnected:true}});await new Promise(resolve=>setImmediate(resolve));assert.match(h.node('#app').innerHTML,/po-request-payment submitted/);h.click({poRequest:'PO'});
   let html=h.node('#dialogContent').innerHTML;assert.match(html,/Last Submitted/);assert.match(html,/16:12/);assert.match(html,/LAW/);assert.match(html,/25.00/);assert.equal(/data-po-request-edit/.test(html),false);assert.match(html,editable?/Payment Follow-up/:/locked/);
   h.click({poRequestEdit:'PO'});assert.doesNotMatch(h.node('#dialogContent').innerHTML,/id="poRequestAmount"/);assert.equal(h.messages.filter(m=>m.type.includes('SAVE')).length,0);
@@ -879,7 +888,7 @@ test('Follow Up uses requested columns, Malaysian calendar dates, real Account n
  const problem={...waiting,id:'BAD',number:'BAD-PO',procurementHandoff:{...waiting.procurementHandoff,stage:'RETURNED',submission:{...waiting.procurementHandoff.submission,at:new Date(now-2*86400000).toISOString()}}};
  h.send({type:'PURCHASE_ORDERS_RESULT',requestId:req.requestId,ok:true,result:{company:'NCT',orders:[base,waiting,problem]}});await new Promise(resolve=>setImmediate(resolve));h.click({view:'payments'});const html=h.node('#app').innerHTML;
  assert.match(html,/<th>Requested<\/th><th>P.O. &amp; Supplier<\/th><th>Purchase For<\/th><th>Amount MYR<\/th><th>Status<\/th><th><span class="pf-slip-heading">Pay Slip<\/span><\/th><th>Message<\/th>/);
- for(const text of ['Today','Yesterday','2 Days ago','Fully Paid','Waiting for Acc. response','Problem','Used verified credit balance'])assert.ok(html.includes(text),text);
+ for(const text of ['Today','Yesterday','2 Days ago','Request Paid','Waiting for Acc. response','Problem','Used verified credit balance'])assert.ok(html.includes(text),text);
  assert.doesNotMatch(html,/Private purchase action/);assert.equal(h.node('#taskSignals').hidden,true);
  h.click({paymentFilter:'UPDATES'});assert.match(h.node('#app').innerHTML,/FULL-PO/);assert.doesNotMatch(h.node('#app').innerHTML,/WAIT-PO|BAD-PO/);
  h.click({accountHistory:'FULL'});assert.match(h.node('#poHistoryEntries').innerHTML,/ACCOUNT STAFF/);assert.match(h.node('#poHistoryEntries').innerHTML,/Reviewing started/);assert.match(h.node('#poHistoryEntries').innerHTML,/Confirm &lt;supplier&gt; documents/);assert.match(h.node('#poHistoryEntries').innerHTML,/ACCOUNT CREDIT STAFF/);assert.doesNotMatch(h.node('#poHistoryEntries').innerHTML,/Private purchase action/);

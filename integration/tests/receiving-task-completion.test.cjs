@@ -25,7 +25,7 @@ for(const outcome of ['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'])test(
  const order=await f.po();
  for(const department of ['WAREHOUSE','ACCOUNT']){
   const staff={staffId:department,staffName:department,departments:[department]},legacy=projectDepartmentMessages({company:'NCT',department,staff,orders:[order],activity:events});
-  const updates=legacy.threads[0].updates.filter(e=>e.from==='PURCHASE');assert.equal(updates.length,1);assert.equal(updates[0].notify,true);assert.match(updates[0].body,/stopped waiting/);assert.ok(updates[0].bodyZh);
+  const updates=legacy.threads[0].updates.filter(e=>e.from==='PURCHASE');assert.equal(updates.length,1);assert.equal(updates[0].notify,true);assert.equal(updates[0].body,'Stop Waiting');assert.equal(updates[0].presentation,'MESSAGE');assert.ok(updates[0].bodyZh);
   const model=buildTaskChatWorkspace({company:'NCT',department,orders:[order],delivery:[],legacy});
   const service=createTaskChatService({resolve:async()=>model,index:{find:async()=>[]},drive:async()=>{throw Error('Unexpected Drive write');},hash:x=>createHash('sha256').update(JSON.stringify(x)).digest('hex')});
   const list=await service.list({company:'NCT',department,staff});assert.equal(list.threads[0].peer,'PURCHASE');assert.equal(list.threads[0].unread,1);assert.equal(list.threads[0].updates.filter(e=>e.from==='PURCHASE').length,1);

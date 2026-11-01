@@ -1,0 +1,320 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "scope": "Reconcile the original26 and subsequent13 distinct failures; no production release",
+  "baseCommit": "9aabd51e3818c40354ebf8f047c6976a98d9f4aa",
+  "runtime": "c844f39",
+  "receiving": "fc76b37",
+  "comparableBefore": {
+    "tests": 205,
+    "pass": 166,
+    "fail": 39
+  },
+  "comparableAfter": {
+    "tests": 205,
+    "pass": 192,
+    "fail": 13,
+    "skipped": 0
+  },
+  "additionalProtected": {
+    "tests": 145,
+    "pass": 145,
+    "fail": 0
+  },
+  "closedAssertions": 26,
+  "openBusinessBoundaries": 1,
+  "openHistoricalPrototypeChecks": 12,
+  "rows": [
+    {
+      "id": "H01",
+      "originalTest": "A180+B10: stopping unplaced ten never clears later short-receipt ten or publishes internal notes",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H02",
+      "originalTest": "NCT: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H03",
+      "originalTest": "GHR: prepay in two instalments, receive in two deliveries, allocate, invoice, dispatch and close",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H04",
+      "originalTest": "100 prepaid / 90 received: stop waiting never clears liability; CN and actual refund need Finance Checked",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H05",
+      "originalTest": "short first delivery and later replacement preserve the first partial invoice and clear risk only after reconciliation",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H06",
+      "originalTest": "credit-term supplier does not block customer dispatch but remains active until final payment",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H07",
+      "originalTest": "CN kept for next purchase remains a supplier credit and never becomes customer Debtor credit",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H08",
+      "originalTest": "500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 180 and permits planner-confirmed 170",
+      "category": "current_customer_allocation_fixture",
+      "status": "OPEN_BUSINESS_BOUNDARY",
+      "detail": "500 ordered, 480 received, 300 Loaded/invoiced/dispatched, 10 quarantined: available physical 170 is correct. Lowering split allocation480 to470 is blocked by Loaded batch source correction requires supervised review. No approved supported correction path demonstrated."
+    },
+    {
+      "id": "H09",
+      "originalTest": "supplier replacement received in two batches restores usable stock without rewriting the original receipt",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H10",
+      "originalTest": "NCT: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H11",
+      "originalTest": "GHR: demand 200 stays one customer line across A180+B10, A170 received then B10, and independent source costs",
+      "category": "current_customer_allocation_fixture",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Use current planMode CUSTOMER; preserve original scenario quantities, supplier cost, payment and reconciliation checks."
+    },
+    {
+      "id": "H12",
+      "originalTest": "confirmed CN_PROMISED completes receiving work without pretending cartons arrived",
+      "category": "notification_copy",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Stop Waiting is a message; original receipt quantity, remaining risk and once-only notification assertions retained."
+    },
+    {
+      "id": "H13",
+      "originalTest": "confirmed FUTURE_DEDUCTION completes receiving work without pretending cartons arrived",
+      "category": "notification_copy",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Stop Waiting is a message; original receipt quantity, remaining risk and once-only notification assertions retained."
+    },
+    {
+      "id": "H14",
+      "originalTest": "confirmed SUPPLIER_REFUSED completes receiving work without pretending cartons arrived",
+      "category": "notification_copy",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Stop Waiting is a message; original receipt quantity, remaining risk and once-only notification assertions retained."
+    },
+    {
+      "id": "H15",
+      "originalTest": "new original stock wrapper/root reproducible; original auth, public endpoints and exact rejection tail preserved",
+      "category": "historical_generated_snapshot",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+    },
+    {
+      "id": "H16",
+      "originalTest": "NCT: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H17",
+      "originalTest": "GHR: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H18",
+      "originalTest": "old stock wrapper reproducible; only context seam added, original web/auth/interface unchanged",
+      "category": "historical_generated_snapshot",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+    },
+    {
+      "id": "H19",
+      "originalTest": "PACK LOAD unload UNPACK preserve original rules, versions and one event on fenced replay",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H20",
+      "originalTest": "generated gateway matches source and exposes only original staff-guarded SiteMember reads",
+      "category": "historical_generated_snapshot",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+    },
+    {
+      "id": "H21",
+      "originalTest": "real v1 allocation remains valid under unchanged original identity",
+      "category": "historical_allocation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
+    },
+    {
+      "id": "H22",
+      "originalTest": "real v2 allocation remains valid under unchanged original identity",
+      "category": "historical_allocation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fenced v1/v2 allocation adapter retains retired request/version assumptions; original failure retained."
+    },
+    {
+      "id": "H23",
+      "originalTest": "current PACK/LOAD/unload/UNPACK keep original validators/events, same-request replay and physical stock unchanged",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H24",
+      "originalTest": "photo/file actions, missing all-writer coverage, stale form, partial-load reason and UNPACK while loaded fail without a legacy apply",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H25",
+      "originalTest": "paired current photo PACK/PHOTOS/LOAD reuse actual original validation, frozen slots, current holds and once-only physical stock",
+      "category": "historical_loaded_preparation_protocol",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Historical fixture assumes unchanged physical stock on Loaded or reversible unload and lacks current Loaded source evidence; original failure retained. Do not restore that logic."
+    },
+    {
+      "id": "H26",
+      "originalTest": "generated receipt root and minimum wrappers are exact original bodies after removal of explicit current mode seams",
+      "category": "historical_generated_snapshot",
+      "status": "OPEN_HISTORICAL_PROTOTYPE",
+      "detail": "Generated current-stock candidate snapshot differs from changed source; original failure retained. Not repaired or activated."
+    },
+    {
+      "id": "U01",
+      "originalTest": "Active priorities count saved sources and locate their task rows without writes",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U02",
+      "originalTest": "separate sourcing and receiving bubbles open a case-specific bilingual decision without clearing financial risk",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U03",
+      "originalTest": "planner allocation editor sends the selected receipt and explicit customer quantities with a reason",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U04",
+      "originalTest": "Purchase Payment Follow-up reads shared paid/balance and displays proof links without finance write controls",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U05",
+      "originalTest": "purchase orders render persisted documents and readable history, with upload input instead of fixture controls",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U06",
+      "originalTest": "shared expected-stock view includes all company customers and disables allocation before receipt",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U07",
+      "originalTest": "live page starts empty, requests real Master data and never seeds demo business records",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U08",
+      "originalTest": "Save is hidden when clean and allocation stays within the current task layout",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U09",
+      "originalTest": "Active work tabs retain the personal order and supplier filter without a draft",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U10",
+      "originalTest": "Active work tabs allow read-only browsing during a pending Save without resubmitting",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U11",
+      "originalTest": "PO workspace has seven ordered columns, per-customer shipment ETA and unchanged source identity",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U12",
+      "originalTest": "submitted payment is read-only in PO; eligible Follow-up alone edits and any Account review locks it",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    },
+    {
+      "id": "U13",
+      "originalTest": "Follow Up uses requested columns, Malaysian calendar dates, real Account notes and full/partial/problem states",
+      "category": "current_ui_fixture_or_contract",
+      "status": "PASS_CURRENT_CONTRACT",
+      "detail": "Updated test harness/fixture and assertions to published Purchase cohort; no production business code changed."
+    }
+  ],
+  "evidence": [
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/master-stress-four-scenarios-20261031/RECEIPT_VERSION_REGRESSION.txt",
+      "sha256": "ec74ea24d3b552ae39edfbf9eb172106e424e84fb04bc79f122ecddfcc910e6e"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/purchase-read-efficiency-20261101/ui-cohort-current.txt",
+      "sha256": "ac9a1b0f9266eabbe57ec57b69441c8f2f1b50fe81ff86a3a3f7a7667b4e884f"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/master-regression-reconciliation-20261101/comparable-final.txt",
+      "sha256": "b4de8e7c2ab8bdd05979c6d055fffc6d2f9396f1f8152f5efafc483da34dc166"
+    },
+    {
+      "path": "C:/FMCG-WIX-LOCAL/handoff/master-regression-reconciliation-20261101/protected-final.txt",
+      "sha256": "e6c702c186a40cdd71ff8aff489f905c67282a1e5503f29cae1834ad08c6c1b3"
+    }
+  ]
+}
