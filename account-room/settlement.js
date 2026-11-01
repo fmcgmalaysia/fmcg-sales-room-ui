@@ -77,7 +77,8 @@
   }else if(kind.startsWith('delete-proof:')){
    modal(row,'Delete Payment File','<p>Remove this file from the Google folder? The payment amount and audit record will remain.</p>');dialog.querySelector('[name="reason"]').required=false;
   }else if(kind.startsWith('proof:')){
-   modal(row,'Add Payment Files','<label class="account-field"><span>Date</span><input name="date" type="date" value="'+date(new Date())+'" required></label><input name="reference" type="hidden" value=""><label class="account-field proof-upload"><span>Upload Files</span><input name="pdf" type="file" accept="application/pdf,.pdf" multiple required><small>PDF files, up to 3 MiB in total</small></label><div id="selectedProofNames"></div>');dialog.querySelector('[name="reason"]').required=false;
+   const payment=(row.finance?.payments||[]).find(item=>item.id===kind.slice(6));if(!payment)return;
+   modal(row,'Add Payment Files','<label class="account-field"><span>Date</span><input name="date" type="date" value="'+date(new Date())+'" required></label><input name="reference" type="hidden" value="'+esc(payment.reference||'')+'"><label class="account-field proof-upload"><span>Upload Files</span><input name="pdf" type="file" accept="application/pdf,.pdf" multiple required><small>PDF files, up to 3 MiB in total</small></label><div id="selectedProofNames"></div>');dialog.querySelector('[name="reason"]').required=false;
   }else if(kind==='credit'){
    modal(row,'Recognize Supplier Credit','<p>Retain supplier credit for a future purchase. Finance must check it before use.</p><p>MYR '+money(-(row.finance?.balanceCents||0))+'</p>');
   }else if(kind==='apply-credit'){
