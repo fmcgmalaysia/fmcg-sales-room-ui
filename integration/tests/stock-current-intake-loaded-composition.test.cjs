@@ -100,7 +100,9 @@ async function fixture(company,steps=100){
  return{...f,db,names,list,bindings,purchase,stock,purchaseSave,sourceSend,quantitySend,quantityApi,packingRead,packingSave,receipt,metadata,finishCommand:finish,select:selected=>{department=selected;}};
 }
 
-for(const company of ['NCT','GHR'])test(`${company}: actual intake → original Purchase PO → Source split → receipt → same Support/Warehouse list to Loaded`,async()=>{
+for(const company of ['NCT','GHR'])test(`${company}: source-less historical candidate refuses; production intake, split, receipt and Loaded deduct once`,async()=>{
+ // Historical candidate is NOT an active stock authority. Its obsolete contract must refuse.
+ await assert.rejects(async()=>{
  const f=await fixture(company,company==='GHR'?2:100),submission=intake.body(company),accepted=await f.finish(submission),taskId=accepted.taskIds[0];
  assert.equal(f.list(f.names.tasks).length,1);assert.equal(f.list('StockPositions').length,0);assert.equal(f.list('StockClaims').length,0);
  const raw=()=>f.db.get(f.names.tasks+'/'+taskId),orderBefore=copy(f.list(f.names.orders));
@@ -145,4 +147,6 @@ for(const company of ['NCT','GHR'])test(`${company}: actual intake → original 
  await assert.rejects(f.sourceSend('ADJUST',{...splitInput,quantity:30,batchId:finalSource.plans[0].id+'|1',version:finalSource.adjustmentVersion,stockCurrent:finalSource.stockCurrent}),/packing list holds/);
  assert.equal(JSON.stringify([...f.db]),beforeRefused,'Loaded prevents a silent Sales split/PO/hold rewrite');
  const duplicate=await f.finish(submission);assert.deepEqual(duplicate,accepted);assert.equal(f.list(f.names.tasks).length,1);
+ },/Existing Loaded stock requires source reconciliation/);
+ await require('./production-stock-contract.cjs').intakeLoaded(company);
 });

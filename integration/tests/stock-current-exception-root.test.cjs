@@ -129,7 +129,7 @@ test('original message read stays generation-guarded while disabled message send
 
 test('new original stock wrapper/root reproducible; original auth, public endpoints and exact rejection tail preserved',()=>{
  assert.match(execFileSync(process.execPath,[path.join(folder,'build-current-stock-exceptions.cjs'),'--check'],{encoding:'utf8'}),/verified/);
- const original=fs.readFileSync(path.join(__dirname,'../backend/stockExceptions.web.js'),'utf8').replace(/\r\n/g,'\n'),candidate=fs.readFileSync(path.join(folder,'stockExceptions.web.candidate.js'),'utf8');
+ const original=fs.readFileSync(path.join(__dirname,'../backend/stockExceptions.web.js'),'utf8').replace(/\r\n/g,'\n'),candidate=fs.readFileSync(path.join(folder,'stockExceptions.web.candidate.js'),'utf8').replace(/\r\n/g,'\n');
  for(const auth of ['async function staffContext()','async function messageStaffContext()']){const at=original.indexOf(auth),end=original.indexOf('\n}',at);assert.equal(candidate.includes(original.slice(at,auth.includes('message')?end+2:original.indexOf('\n',at))),true);}
  assert.equal(candidate.slice(candidate.indexOf(' catch(error)')),original.slice(original.indexOf(' catch(error)')).replace(
   " const staff=await messageStaffContext(),context=await readFulfilmentContext(company,staff),orders=projectPurchaseOrders({company,workspace:context,records:await fulfilmentStore.all('PurchaseOrders')});",

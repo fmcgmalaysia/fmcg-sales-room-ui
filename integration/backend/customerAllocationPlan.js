@@ -130,7 +130,7 @@ export function planCustomerReconciliation(context,input){
  const before=assignedToBatch(source,task,input.batchId),delta=input.quantity-before;if(delta>=0)throw Error('Stock reconciliation may only reduce the affected allocation.');
  const next=copy(source);changeQuantity(next,task,input.batchId,delta);const target=next.targets.find(row=>row.taskId===task.id);
  if(target.quantity<(target.protectedQuantity||0))throw Error('Loaded or invoiced cartons cannot be removed.');
- if(task.batches.length>1&&task.returnLocked)throw Error('Loaded batch source correction requires supervised review.');
+ if(task.batches.length>1&&task.returnLocked&&(!Array.isArray(task.protectedBatches)||task.protectedBatches.includes(input.batchId)))throw Error('Loaded batch source correction requires supervised review.');
  if(sum(next.targets)>source.usableReceived)throw Error('Reduce allocation to no more than usable received stock; quarantined stock cannot be allocated.');
  return {changes:[{sourceTaskId:source.id,targets:next.targets}],loan:null,physicalDelta:0};
 }

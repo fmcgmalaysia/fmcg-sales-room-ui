@@ -2,7 +2,7 @@
 const fs = require('node:fs'), path = require('node:path');
 const { WRITERS } = require('./stock-admission.cjs');
 function body(file, imports = []) {
-  let source = fs.readFileSync(path.join(__dirname, file), 'utf8').replace(/^'use strict';\r?\n/, '');
+  let source = fs.readFileSync(path.join(__dirname, file), 'utf8').replace(/\r\n/g,'\n').replace(/^'use strict';\r?\n/, '');
   for (const line of imports) source = source.replace(line, '');
   source = source.replace(/module\.exports = ([^;]+);/, 'return $1;');
   if (source.includes('require(') || source.includes('module.exports')) throw Error('Unexpected current-read dependency');

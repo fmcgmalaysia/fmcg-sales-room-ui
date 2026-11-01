@@ -3,7 +3,12 @@ const previous=require('../purchase-ready-stock-20261031/stage.cjs'),root=path.r
 function replace(text,find,value){assert.equal(text.split(find).length,2,'Unique stock-list patch: '+find);return text.replace(find,()=>value);}
 function plan(){
  const prior=previous.plan(),baseline=new Map(prior.assets),assets=new Map(baseline);
- for(const file of ['warehouse-room/stock-control.html','warehouse-room/stock-control-app.js','warehouse-room/stock-control-link.js','account-room/stock-list.html','account-room/stock-list-link.js','master-shared/stock-list.css'])assets.set(file,fs.readFileSync(path.join(root,file)));
+ // Reconstruct the historical release independently of new working-tree edits
+ // and the runner's checkout line endings. Warehouse originals used CRLF.
+ for(const file of ['warehouse-room/stock-control.html','warehouse-room/stock-control-app.js','warehouse-room/stock-control-link.js','account-room/stock-list.html','account-room/stock-list-link.js','master-shared/stock-list.css']){
+  const original=require('node:child_process').execFileSync('git',['show','c844f39:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n');
+  assets.set(file,Buffer.from(file.startsWith('warehouse-room/')?original.replace(/\n/g,'\r\n'):original));
+ }
  let wh=assets.get('warehouse-room/stock-control.html').toString();
  wh=replace(wh,'<title>Stock Control · Warehouse</title>','<title>Stock List · Warehouse</title>');
  wh=replace(wh,'</head>','<link rel="stylesheet" href="../master-shared/stock-list.css?v='+build+'"></head>');

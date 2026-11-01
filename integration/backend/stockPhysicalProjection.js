@@ -5,7 +5,7 @@ export function projectPhysicalStock(stock) {
   if (!stock || !qty(stock.availablePhysical) || !Array.isArray(stock.cases)) {
     throw Error('Physical stock requires a verified source position.');
   }
-  let isolated = 0, returned = 0;
+  let isolated = 0, returned = 0, awaitingDisposal = 0, writtenOff = 0;
   const issues = [];
   for (const item of stock.cases) {
     if (!qty(item.quantity)) throw Error('Physical stock case quantity requires review.');
@@ -22,6 +22,12 @@ export function projectPhysicalStock(stock) {
       continue;
     }
     const remaining = item.quantity - sentBack;
+    const approval = item.resolution?.financeApproval;
+    if(outcome === 'LOSS' && approval.stockTakeConfirmed === true && approval.quantity === item.quantity && ['PRESENT','DISPOSED'].includes(approval.goodsStatus)) {
+      writtenOff += remaining;
+      if(approval.goodsStatus === 'PRESENT' && !item.resolution.disposal) awaitingDisposal += remaining;
+      continue;
+    }
     isolated += remaining;
     // Current legacy cases have no physical-disposal record. A closed case with
     // goods not returned may still be physically present, or may have been removed.
@@ -31,7 +37,10 @@ export function projectPhysicalStock(stock) {
     usableOnHand: stock.availablePhysical,
     isolated: issues.length ? null : isolated,
     onHand: issues.length ? null : stock.availablePhysical + isolated,
+    physicalCustody: issues.length ? null : stock.availablePhysical + isolated + awaitingDisposal,
     returned,
+    awaitingDisposal,
+    writtenOff,
     issues: [...new Set(issues)]
   };
 }

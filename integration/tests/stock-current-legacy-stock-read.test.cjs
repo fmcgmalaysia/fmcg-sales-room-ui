@@ -28,6 +28,6 @@ test('a concurrent cutover or legacy mutation invalidates the entire old histori
 });
 test('old stock wrapper reproducible; only context seam added, original web/auth/interface unchanged',()=>{
  assert.match(execFileSync(process.execPath,[path.join(folder,'build-legacy-stock-read-guard.cjs'),'--check'],{encoding:'utf8'}),/verified/);
- const original=fs.readFileSync(path.join(__dirname,'../backend/stockControl.web.js'),'utf8').replace(/\r\n/g,'\n'),candidate=fs.readFileSync(path.join(folder,'stockControl.web.candidate.js'),'utf8');
+ const original=fs.readFileSync(path.join(__dirname,'../backend/stockControl.web.js'),'utf8').replace(/\r\n/g,'\n'),candidate=fs.readFileSync(path.join(folder,'stockControl.web.candidate.js'),'utf8').replace(/\r\n/g,'\n');
  assert.equal(candidate.slice(candidate.indexOf('export const getWarehouseStockControl')),original.slice(original.indexOf('export const getWarehouseStockControl')));assert.equal((candidate.match(/webMethod\(Permissions.SiteMember/g)||[]).length,1);
 });

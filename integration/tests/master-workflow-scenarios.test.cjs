@@ -33,7 +33,8 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
     update: async (c, row) => { rows.set(c + '/' + row._id, clone(row)); return clone(row); },
     remove: async (c, id) => rows.delete(c + '/' + id)
   };
-  const names = PURCHASE_COLLECTIONS, n = names[company], now = () => new Date('2026-10-12T03:00:00Z');
+  let clock = '2026-10-12T03:00:00Z';
+  const names = PURCHASE_COLLECTIONS, n = names[company], now = () => new Date(clock);
   let sequence = 0, fileSequence = 0;
   const staff = name => ({ memberId: name, staffId: name, staffName: name, role: name === 'ADMIN' ? 'SUPER ADMIN' : name });
   const request = (who, input) => ({ company, staff: staff(who), requestId: String(++sequence).padStart(8,'0') + '-1111-4111-8111-111111111111', input });
@@ -88,7 +89,7 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const quarantine=async(quantity,kind)=>stockOps({...request('WAREHOUSE',{action:'QUARANTINE',sourceTaskId:id,version:stockExceptionVersion(await context()),quantity,kind,reason:'Internal stock finding'}),staff:{...staff('WAREHOUSE'),canReportStockException:true}});
   const resolutionOps=createStockResolutionOperations({store,names,readContext:context,listOrders:poOps.list,now});
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
-  const plan=async totalCtn=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:(await task()).procurement.revision,totalCtn,supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
+  const plan=async (totalCtn,costing)=>purchase({...request('PURCHASE',{taskId:id,version:(await task()).editVersion,transportMode:'SUPPLIER_DELIVER',planRevision:(await task()).procurement.revision,totalCtn,...(costing?{costing}:{}),supplierConfirmed:true,reason:'Supplier confirmed available cartons'}),operation:'PLAN'});
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
   const packingContext=async()=>projectPackingContext(await context()),packingSave=createPackingListOperations({store,names,readContext:packingContext,now});
   const loadForInvoice=async quantity=>{
@@ -108,7 +109,7 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const claim=async cents=>{const current=await po(),item=current.quantityCases.find(item=>item.quantity>0),cn=current.documents.find(doc=>doc.type==='CN'),refund=current.finance.payments.find(payment=>payment.direction==='REFUND');return finance({action:'SHORTAGE_CLAIM',caseId:item.id,signature:item.signature,quantity:item.quantity,outcome:item.decision.supplierDecision,cents,cnAllocations:[{fileId:cn.fileId,cents}],refundAllocations:refund?[{paymentId:refund.id,cents}]:[]});};
   const completion = async () => customerCompletion(id, await store.all(n.activity), await poOps.list(company, staff('ACCOUNT')));
   const progress=async()=>applyPurchaseProgress(await workspace(),await store.all(n.activity),await poOps.list(company,staff('PURCHASE'))).tasks;
-  return { store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, progress, allPos:()=>poOps.list(company,staff('PURCHASE')) };
+  return { packingContext, packingSave, loadForInvoice, store, names: n, company, id, task, po, upload, finance, pay, acknowledge, delivery, allocate, shortage, invoice, dispatch, amounts, claim, completion, context, quarantine, plan, resolve, split, source, sourceDelivery, sourceAllocate, otherDeliveries, decideQuantity, progress, setClock:value=>{clock=value;}, allPos:()=>poOps.list(company,staff('PURCHASE')) };
 }
 
 test('payment handoff records paper review, partial payments and per-proof acknowledgement without financial clearance',async()=>{
@@ -216,13 +217,13 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   assert.equal(projectCustomerAccount(await f.context()).entries.length,0,'split intent does not create an invoice or receivable');
   assert.equal((await f.task()).inc,null,'split intent cannot create received or allocated stock');
   await assert.rejects(f.split([300,170]),/original customer quantity/);
-  await f.plan(480);await f.pay(4800000,'PREPAY');
+  await f.plan(480,{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:480,freeCtn:0,prices:{lpPc:10,lpCtn:100,disc1:0,disc2:0,disc3:0}});await f.pay(4800000,'PREPAY');
   await f.delivery(480,'DELIVERY');await f.allocate(480);
   const first=await f.invoice(300);await f.dispatch(first);
   await f.quarantine(5,'INTERNAL_DAMAGE');await f.quarantine(3,'WRONG_ITEM');await f.quarantine(2,'SHORT_EXPIRY');
   let row=await f.task();assert.equal(row.ord,500);assert.equal(row.warehouse.accepted,480);
   assert.equal(row.warehouse.stock.held,10);assert.equal(row.warehouse.stock.shipped,300);assert.equal(row.warehouse.stock.availablePhysical,170);
-  assert.deepEqual(Array.from(row.warehouse.stock.cases,item=>item.owner),['ADMIN','PURCHASE','PURCHASE']);
+  assert.deepEqual(Array.from(row.warehouse.stock.cases,item=>item.owner),['ACCOUNT','ACCOUNT','ACCOUNT']);
   const beforeRejected=JSON.stringify((await f.context()).activity);
   await assert.rejects(f.invoice(180),/Usable customer stock changed|Loaded exceeds confirmed physical customer allocation/);
   assert.equal(JSON.stringify((await f.context()).activity),beforeRejected,'an unavailable test selection does not stage a new packing hold');
@@ -234,9 +235,11 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   await assert.rejects(f.finance({action:'CHECK',enabled:true}),/quarantined stock/);
   assert.equal((await f.po()).state,'ACTIVE');
   const [damage,wrong,expiry]=(await f.task()).warehouse.stock.cases;
-  await assert.rejects(f.resolve('ACCOUNT',{action:'CLOSE',id:damage.id,outcome:'LOSS',cents:50000}),/Super Admin/);
-  await f.resolve('ADMIN',{action:'APPROVE_LOSS',id:damage.id});
-  await f.resolve('ACCOUNT',{action:'CLOSE',id:damage.id,outcome:'LOSS',cents:50000});
+  const loss={action:'CLOSE',id:damage.id,outcome:'LOSS',cents:50000,period:'2026-10',stockTakeConfirmed:true,goodsStatus:'DISPOSED'};
+  await assert.rejects(f.resolve('ACCOUNT',loss),/month-end Stock Take/);
+  await assert.rejects(f.resolve('ADMIN',{action:'APPROVE_LOSS',id:damage.id}),/separate Admin approval is not used/);
+  f.setClock('2026-10-31T03:00:00Z');
+  await f.resolve('ACCOUNT',loss);
   for(const item of [wrong,expiry]){
     await f.resolve('PURCHASE',{action:'DECIDE',id:item.id,decision:'REFUND',disposition:'RETURN',supplierReference:'Supplier accepted claim'});
     await f.resolve('WAREHOUSE',{action:'RETURN',id:item.id,quantity:item.quantity,reference:'RETURN-'+item.kind});

@@ -11,7 +11,7 @@ function criteria(input = {}) {
   if (cursor != null && (!cursor || !/^[a-f0-9]{32}$/.test(cursor.version || '') || !Number.isSafeInteger(cursor.offset) || cursor.offset < 0)) throw Error('Stock page requires review.');
   return { search: search.trim().toLowerCase(), filter, pageSize, cursor };
 }
-const present = row => row.onHand === null || row.onHand > 0 || row.usableOnHand > 0 || row.reviewRequired;
+const present = row => row.onHand === null || row.onHand > 0 || row.usableOnHand > 0 || row.awaitingDisposal > 0 || row.reviewRequired;
 export function validateStockListInput(input) { criteria(input); }
 
 // Pure current-stock response. Only quantity and source identity fields leave the server.
@@ -24,11 +24,13 @@ export function projectStockControlPage(context, input = {}, readAt = new Date()
   let items = projected.items.map(row => ({
     key: row.key, company: row.company, barcode: row.barcode, name: row.name, packing: row.packing, ea: row.ea,
     onHand: row.onHand, reservedUsable: row.reservedUsable, available: row.available, isolated: row.isolated,
+    awaitingDisposal: row.awaitingDisposal, physicalCustody: row.physicalCustody,
     usableOnHand: row.usableOnHand, shortage: row.shortage, incoming: row.incoming, reviewRequired: row.reviewRequired,
-    sources: row.sources.filter(source => source.onHand === null || source.onHand > 0 || source.shortage > 0
+    sources: row.sources.filter(source => source.onHand === null || source.onHand > 0 || source.shortage > 0 || source.awaitingDisposal > 0
       || source.issues.length > 0 || source.reservations.some(entry => entry.remaining > 0)).map(source => ({
       sourceTaskId: source.sourceTaskId, po: source.po, onHand: source.onHand, usableOnHand: source.usableOnHand,
       reservedUsable: source.reservedUsable, available: source.available, isolated: source.isolated,
+      awaitingDisposal: source.awaitingDisposal, physicalCustody: source.physicalCustody,
       shortage: source.shortage, ownershipBasis: source.ownershipBasis, issues: [...source.issues],
       reservations: source.reservations.filter(entry => entry.remaining > 0).map(entry => ({
         taskId: entry.taskId, customerName: customers.get(context.tasks.find(task => task.id === entry.taskId)?.customerId) || '',

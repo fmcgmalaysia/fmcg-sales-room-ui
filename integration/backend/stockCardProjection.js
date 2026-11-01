@@ -100,6 +100,7 @@ export function projectStockCard(context) {
       dispatched: stock.shipped, excluded: stock.excluded, unresolvedHeld: stock.held,
       usableOnHand: stock.availablePhysical, reserved, unassigned, shortage, reservations,
       onHand: physical.onHand, isolated: physical.isolated, returned: physical.returned,
+      awaitingDisposal: physical.awaitingDisposal, physicalCustody: physical.physicalCustody,
       ownershipBasis: allocation ? 'PLANNER_ALLOCATION' : canResolveSource ? 'PURCHASE_CUSTOMER_SHARE' : 'REVIEW_REQUIRED',
       outstandingClaims: reserved,
       reservedUsable: reservationKnown ? Math.min(reserved, stock.availablePhysical) : null,
@@ -119,6 +120,7 @@ export function projectStockCard(context) {
     const knownSum = field => group.sources.some(source => source[field] === null) ? null : sum(field);
     return { ...group, received: sum('received'), dispatched: sum('dispatched'), usableOnHand: sum('usableOnHand'),
       onHand: knownSum('onHand'), isolated: knownSum('isolated'), returned: sum('returned'),
+      awaitingDisposal: sum('awaitingDisposal'), physicalCustody: knownSum('physicalCustody'),
       outstandingClaims: sum('outstandingClaims'), reservedUsable: knownSum('reservedUsable'),
       reserved: sum('reserved'), shortage: sum('shortage'), unassigned: sum('unassigned'),
       available: group.sources.some(source => source.available === null) ? null : sum('available'),
