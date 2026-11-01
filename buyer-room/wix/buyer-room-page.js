@@ -1,4 +1,4 @@
-import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -125,6 +125,13 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
+      if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
+      try { const result = await getBuyerTransactionHistory(message.company, assistCustomerId);
+        frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:true, company:message.company, requestId:message.requestId, result}); }
+      catch (error) { frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:false, company:message.company, requestId:message.requestId, error:error?.message || 'Transaction history could not be loaded.'}); }
+      return;
+    }
     if (message.type === 'BUYER_ROOM_VIEW_CHANGED') {
       activeBuyerRoomView = message.view;
       updateDownloadButtonVisibility();
@@ -239,7 +246,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261101-po-auto-allocation-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261101-customer-loaded-records-v1';
   try { await loadWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);

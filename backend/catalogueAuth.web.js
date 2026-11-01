@@ -1,3 +1,4 @@
+import { requestMasterFulfilment } from 'backend/masterFulfilmentClient.js';
 import { withMasterQuantities } from 'backend/masterQuantityClient.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
@@ -397,6 +398,13 @@ async function writeBuyerUserAudit(action, customerId, userId, beforeStatus, aft
 
 export const getCurrentBuyerContext = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   try { return { ok: true, buyer: await resolveBuyerContext(assistCustomerId) }; } catch (error) { return { ok: false, reason: normalize(error?.message || error) }; }
+});
+// Reuse existing member/customer authorization. This entry is read-only and cannot post payments.
+export const getBuyerTransactionHistory = webMethod(Permissions.SiteMember, async (company, assistCustomerId = '') => {
+  const buyer = await resolveBuyerContext(assistCustomerId);
+  if (!['NCT', 'GHR'].includes(company)) throw Error('Select NCT or GHR.');
+  return requestMasterFulfilment({company, customerId:buyer.customerId, customerName:buyer.companyName || buyer.customerId,
+    staff:{staffId:buyer.actorStaffId || buyer.actorUserId || buyer.customerId, staffName:buyer.actorName || 'Customer'}, action:'HISTORY'});
 });
 export const getBuyerWorkspace = webMethod(Permissions.SiteMember, async (assistCustomerId = '') => {
   const buyer = await resolveBuyerContext(assistCustomerId);

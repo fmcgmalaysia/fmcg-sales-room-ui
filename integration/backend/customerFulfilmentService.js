@@ -1,6 +1,6 @@
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { projectPreparation } from 'backend/warehousePreparation.js';
-import { createCustomerAccountOperations, customerAccountVersion } from 'backend/customerAccountLedger.js';
+import { createCustomerAccountOperations, createFinanceCustomerAccountOperations, readCustomerAccountEvidence, customerAccountVersion } from 'backend/customerAccountLedger.js';
 import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
 import { projectCustomerDebtors, projectCustomerAccount } from 'backend/customerDebtor.js';
 import wixData from 'wix-data';
@@ -17,6 +17,7 @@ import { packingVersion } from 'backend/packingListOperations.js';
 import { createShortloadResolutionOperations, createSalesDeskCancellation } from 'backend/shortloadResolution.js';
 import { readSupportDesks } from 'backend/supportDesk.js';
 import { shortloadStatus } from 'backend/shortloadResolutionModel.js';
+import { projectCustomerTransactionHistory } from 'backend/customerTransactionHistory.js';
 const options={suppressAuth:true,consistentRead:true};
 export const fulfilmentStore={
  async all(collection){let page=await wixData.query(collection).limit(1000).find(options),rows=[...page.items];while(page.hasNext()){page=await page.next();rows.push(...page.items);}return rows;},
@@ -60,13 +61,18 @@ export async function saveCustomerFulfilment(request){
  return result;
 }
 export const saveCustomerAccountDocument=createCustomerAccountOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,documentService:requestPurchaseDocument});
+export const confirmCustomerAccountDocument=createFinanceCustomerAccountOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
+export async function readCustomerTransactionHistory(company,staff,customerId){
+ if(!staff?.customerId||staff.customerId!==customerId)throw Error('Customer history is not authorized.');
+ return projectCustomerTransactionHistory(await readFulfilmentContext(company,staff),customerId);
+}
 export async function readCustomerFulfilment(company,staff,customerId=''){
  const context=await readFulfilmentContext(company,staff),shipments=readCustomerShipments(context.activity).filter(row=>!customerId||row.customerId===customerId);
  const preparation=staff.readSupportDetails===true?projectPreparation(context):[];
- const account=projectCustomerAccount(context);for(const entry of account.entries)if(!context.customers.some(row=>row.id===entry.customerId))context.customers.push({id:entry.customerId,name:entry.customerName});
+ const account=projectCustomerAccount(context);account.pendingDocuments=readCustomerAccountEvidence(context);for(const entry of [...account.entries,...account.pendingDocuments])if(!context.customers.some(row=>row.id===entry.customerId))context.customers.push({id:entry.customerId,name:entry.customerName});
  const packing=staff.canSelectShipment&&staff.customerId?projectPackingContext(context):null,deskStates=packing?readSupportDesks(context.activity,company):[],packingSnapshot=packing?packingVersion(packing):'';
  const deskRemainders=packing?packing.lists.filter(list=>list.desk&&list.customerId===staff.customerId&&['PROCESSING','COMPLETED'].includes(list.status)).flatMap(list=>list.lines.flatMap(line=>{const resolution=shortloadStatus(context.activity,list,line);return resolution.remaining&&line.loadedConfirmedAt?[{id:list.id,revision:list.revision,desk:list.desk.number,taskId:line.taskId,remaining:resolution.remaining,version:packingSnapshot,deskRevision:deskStates.find(row=>row.customerId===list.customerId)?.revision||'',resolutionRevision:resolution.revision}]:[];})):[];
- return {company,adjustmentVersion:salesAdjustmentVersion(context,shipmentPlanVersion),plans:readShipmentPlans(context.activity).filter(row=>!customerId||row.customerId===customerId),planVersion:shipmentPlanVersion(context),customerAccount:{entries:account.entries.filter(row=>!customerId||row.customerId===customerId),balances:account.balances.filter(row=>!customerId||row.customerId===customerId)},accountVersion:customerAccountVersion(context),debtorInvoices:projectCustomerDebtors({company,activity:context.activity,customers:context.customers}).filter(row=>!customerId||row.customerId===customerId),version:shipmentVersion(context),staff:{staffName:staff.staffName},customers:context.customers.filter(row=>!customerId||row.id===customerId),
+ return {company,adjustmentVersion:salesAdjustmentVersion(context,shipmentPlanVersion),plans:readShipmentPlans(context.activity).filter(row=>!customerId||row.customerId===customerId),planVersion:shipmentPlanVersion(context),customerAccount:{entries:account.entries.filter(row=>!customerId||row.customerId===customerId),balances:account.balances.filter(row=>!customerId||row.customerId===customerId),pendingDocuments:account.pendingDocuments.filter(row=>!customerId||row.customerId===customerId)},accountVersion:customerAccountVersion(context),debtorInvoices:projectCustomerDebtors({company,activity:context.activity,customers:context.customers}).filter(row=>!customerId||row.customerId===customerId),version:shipmentVersion(context),staff:{staffName:staff.staffName},customers:context.customers.filter(row=>!customerId||row.id===customerId),
  deskRemainders,lines:context.tasks.filter(row=>(!customerId||row.customerId===customerId)&&!row.archived&&!row.specialPurchase&&!row.procurementSource).map(row=>({taskId:row.id,customerId:row.customerId,orderId:row.orderId,sourceLineId:row.sourceLineId,estimatedShipmentDate:row.estimatedShipmentDate,shipmentDate:row.shipmentDate,barcode:row.barcode,name:row.name,packing:row.packing,requested:row.ord,originalRequested:row.requested??row.ord,allocated:row.inc||0,plannedAllocated:row.supplyAllocation?.planned??null,reserved:reservedCartons(row.id,context.activity),available:Math.max(0,(row.inc||0)-reservedCartons(row.id,context.activity)),sellingPriceCtn:row.sellingPricePc*row.ea,currency:row.transactionCurrency,...(staff.readSupportDetails===true?{customerPo:row.customerPo||'',orderDate:row.submittedAt||row.masterReceivedAt||null,sellingPricePc:row.sellingPricePc,cbmPerCtn:warehouseCbm(company,row,context.activity),expiryDates:[...new Set(preparation.filter(item=>item.taskId===row.id&&!item.orphaned).map(item=>item.expiryDate).filter(Boolean))]}:{})})),
  shipments:shipments.map(row=>({...row,lines:row.lines.map(line=>({taskId:line.taskId,orderId:line.orderId,sourceLineId:line.sourceLineId,estimatedShipmentDate:context.tasks.find(task=>task.id===line.taskId)?.estimatedShipmentDate||null,barcode:line.barcode,name:line.name,packing:line.packing,quantity:line.quantity,sellingPriceCtn:line.sellingPriceCtn??(()=>{const task=context.tasks.find(row=>row.id===line.taskId);return task?task.sellingPricePc*task.ea:null;})()}))})),readAt:new Date().toISOString()};
 }
