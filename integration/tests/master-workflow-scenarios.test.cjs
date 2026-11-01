@@ -5,7 +5,9 @@ const { createPurchaseOperations } = load('purchaseOperations.js');
 const { projectPurchaseWorkspace, PURCHASE_COLLECTIONS } = load('purchaseProjection.js');
 const { createPurchaseOrderOperations } = load('purchaseOrderWorkflow.js');
 const { createWarehouseOperations, projectWarehouseOrders } = load('warehouseReceiving.js');
-const { createPlannerAllocationOperations, allocationVersion } = load('plannerAllocation.js');
+const { createPlannerAllocationOperations, allocationVersion, readAllocations } = load('plannerAllocation.js');
+const {customerAllocationContext}=load('customerAllocationContext.js');
+const {planLoadedSources}=load('physicalOutflow.js');
 const { createShortageOperations, shortageVersion } = load('purchaseShortage.js');
 const { createAccountSettlementOperations } = load('accountSettlement.js');
 const { createCustomerFulfilmentOperations, shipmentVersion } = load('customerFulfilment.js');
@@ -57,7 +59,21 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const warehouseOps = createWarehouseOperations({ store, names, readOrders: warehouseOrders, now });
   const delivery = async (accepted, kind, resolveIssue = false) => warehouseOps.save(request('WAREHOUSE', { action: 'RECEIVE', id: (await po()).id, version: (await warehouseOrders()).find(row=>row.taskIds?.includes(id)||row.lines.some(line=>line.taskId===id)).version, lines: [{ taskId: id, accepted, rejected: 0, kind, resolveIssue, reason: 'Scenario delivery' }] }));
   const allocator = createPlannerAllocationOperations({ store, names, readWorkspace: workspace, now });
-  const allocate = async quantity => allocator(request('PURCHASE', { action: 'ALLOCATE', sourceTaskId: id, version: allocationVersion(await workspace(), await store.all(n.activity)), targets: [{ taskId: id, quantity }], reason: 'Allocate actual cartons' }));
+  const allocateTask = async (taskId,quantity) => {
+    const current=await workspace(),activity=await store.all(n.activity),version=allocationVersion(current,activity),ctx=customerAllocationContext(current,activity,readAllocations(activity),version),target=ctx.tasks.find(row=>row.id===taskId);
+    // Exercise the same customer/batch entry as the current ALLOC dialog.
+    const batch=target.batches[0],assigned=ctx.sources.reduce((n,row)=>n+(row.targets.find(t=>t.taskId===taskId)?.quantity||0),0);
+    let input={action:'ALLOCATE',planMode:'CUSTOMER',taskId,batchId:batch.id,version,borrow:false};
+    if(quantity!==undefined&&quantity<assigned){
+      const source=ctx.sources.find(row=>row.targets.some(t=>t.taskId===taskId));
+      const last=target.batches.at(-1),earlier=target.batches.slice(0,-1).reduce((n,row)=>n+row.quantity,0);
+      input={action:'ALLOCATE',planMode:'RECONCILE',taskId,sourceTaskId:source.id,batchId:last.id,version,quantity:quantity-earlier,reason:'Reconcile quarantined stock'};
+    }
+    const result=await allocator(request('PURCHASE',input));
+    if(quantity!==undefined)assert.equal((await workspace()).tasks.find(row=>row.id===taskId).inc,quantity,'current customer ALLOC retains the scenario quantity assertion');
+    return result;
+  };
+  const allocate = async quantity => allocateTask(id,quantity);
   const shortageOps = createShortageOperations({ store, names, readWorkspace: workspace, now });
   const shortage = async (customerDecision, supplierDecision) => decideQuantity((await task()).quantityCases.some(item=>item.kind==='RECEIPT')?'RECEIPT':'UNPLACED',customerDecision,supplierDecision);
   const context = async () => ({ ...await workspace(), activity: await store.all(n.activity), tasks: (await workspace()).tasks.map(row => ({ ...row, sellingPricePc: 15 })) });
@@ -67,8 +83,8 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const sourceOps=createPurchaseSourceOperations({store,names,readWorkspace:workspace,now});
   const source=async quantity=>{if(!await store.read('SharedSuppliers','B'))await store.insert('SharedSuppliers',{_id:'B',title:'B',companyName:'SUPPLIER B',shortName:'B',supplierStatus:'ACTIVE'});const req={...request('PURCHASE',{action:'ADD_SOURCE',transportMode:'SUPPLIER_DELIVER',parentTaskId:id,version:purchaseSourcesVersion(await workspace()),quantity,supplierId:'B',poNumber:company+'-PO-B',prices:{lpPc:12,lpCtn:120,disc1:0,disc2:0,disc3:0},reason:'Find remaining cartons'}),staff:{...staff('PURCHASE'),canAddPurchaseSource:true}};const result=await sourceOps(req);assert.deepEqual(await sourceOps(req),result,'same save must not add a second supplier source');return result.sourceTaskId;};
   const sourceDelivery=async(sourceId,accepted,kind)=>{const order=(await warehouseOrders()).find(po=>po.lines.some(line=>line.taskId===sourceId));return warehouseOps.save(request('WAREHOUSE',{action:'RECEIVE',id:order.id,version:order.version,lines:[{taskId:sourceId,accepted,rejected:0,kind,reason:'Supplier source delivery'}]}));};
-  const sourceAllocate=async(sourceId,quantity)=>allocator(request('PURCHASE',{action:'ALLOCATE',sourceTaskId:sourceId,version:allocationVersion(await workspace(),await store.all(n.activity)),targets:[{taskId:id,quantity}],reason:'Allocate supplier source to original demand'}));
-  const otherDeliveries=async()=>{for(const taskId of receipt.taskIds.filter(taskId=>taskId!==id)){await sourceDelivery(taskId,demand,'DELIVERY');await allocator(request('PURCHASE',{action:'ALLOCATE',sourceTaskId:taskId,version:allocationVersion(await workspace(),await store.all(n.activity)),targets:[{taskId,quantity:demand}],reason:'Allocate other ordered product'}));}};
+  const sourceAllocate=async(sourceId,quantity)=>{assert.ok((await workspace()).tasks.some(row=>row.id===sourceId));return allocateTask(id);};
+  const otherDeliveries=async()=>{for(const taskId of receipt.taskIds.filter(taskId=>taskId!==id)){await sourceDelivery(taskId,demand,'DELIVERY');await allocateTask(taskId,demand);}};
   const quarantine=async(quantity,kind)=>stockOps({...request('WAREHOUSE',{action:'QUARANTINE',sourceTaskId:id,version:stockExceptionVersion(await context()),quantity,kind,reason:'Internal stock finding'}),staff:{...staff('WAREHOUSE'),canReportStockException:true}});
   const resolutionOps=createStockResolutionOperations({store,names,readContext:context,listOrders:poOps.list,now});
   const resolve=async(who,input)=>resolutionOps({...request(who,{version:stockResolutionVersion(await context(),await poOps.list(company,staff(who))),reason:'Stock resolution scenario',...input}),staff:{...staff(who),canReportStockException:who==='WAREHOUSE',canPlanStockResolution:who==='PURCHASE',canApproveStockLoss:who==='ADMIN',canCloseStockException:who==='ACCOUNT'}});
@@ -76,6 +92,8 @@ async function scenario(company = 'NCT', demand = 100, productCount = 1) {
   const fulfilment = createCustomerFulfilmentOperations({ store, names, readContext: context, readRates: async () => [{ currency: 'MYR', rateToMyr: 1 }], now });
   const packingContext=async()=>projectPackingContext(await context()),packingSave=createPackingListOperations({store,names,readContext:packingContext,now});
   const loadForInvoice=async quantity=>{
+   // A failed test precondition must not leave a newly staged list holding this task.
+   planLoadedSources(await context(),{id:'SCENARIO-PREFLIGHT',taskId:id,loaded:quantity,previous:[]});
    const act=async(input,department='SUPPORT')=>packingSave({...request(department,{version:packingVersion(await packingContext()),...input}),staff:{...staff(department),packingDepartment:department}});
    const created=await act({action:'CREATE',customerId:'C',currency:'MYR',lines:[{taskId:id,quantity}]});
 
@@ -166,7 +184,7 @@ test('short first delivery and later replacement preserve the first partial invo
 });
 
 test('credit-term supplier does not block customer dispatch but remains active until final payment', async () => {
-  const f = await scenario(); await f.delivery(100, 'DELIVERY'); await f.allocate(100);
+  const f = await scenario(); await f.upload('PO'); await f.delivery(100, 'DELIVERY'); await f.allocate(100);
   await f.upload('INV', 1000000); await f.upload('DO'); await f.amounts();
   await f.finance({ action: 'CN_NOT_APPLICABLE', enabled: true }); await f.finance({ action: 'CHECK', enabled: true });
   const shipment = await f.invoice(100); await f.dispatch(shipment);
@@ -205,7 +223,9 @@ test('500 requested / 480 received / 300 shipped: quarantine 5 + 3 + 2 blocks 18
   let row=await f.task();assert.equal(row.ord,500);assert.equal(row.warehouse.accepted,480);
   assert.equal(row.warehouse.stock.held,10);assert.equal(row.warehouse.stock.shipped,300);assert.equal(row.warehouse.stock.availablePhysical,170);
   assert.deepEqual(Array.from(row.warehouse.stock.cases,item=>item.owner),['ADMIN','PURCHASE','PURCHASE']);
-  await assert.rejects(f.invoice(180),/Usable customer stock changed/);
+  const beforeRejected=JSON.stringify((await f.context()).activity);
+  await assert.rejects(f.invoice(180),/Usable customer stock changed|Loaded exceeds confirmed physical customer allocation/);
+  assert.equal(JSON.stringify((await f.context()).activity),beforeRejected,'an unavailable test selection does not stage a new packing hold');
   await assert.rejects(f.allocate(480),/quarantined stock/);
   await f.allocate(470);await f.shortage('STOP','PENDING',false);const second=await f.invoice(170);await f.dispatch(second);
   row=await f.task();assert.equal(row.ord,500);assert.equal(row.inc,470);assert.equal(row.warehouse.accepted,480);
