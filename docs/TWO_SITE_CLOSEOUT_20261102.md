@@ -18,3 +18,7 @@ Both Wix Studio editors remain in platform startup. Master console reports a Wix
 The final package has105 static resources,18 differences from28bcf9a. It includes the prerequisite customer-payment/history and Sales Department work; four existing source-site page version references need synchronized publication with backend dependencies. Actual customer PDF delivery, ordinary customer/staff role access, actual receipt matching and commission policy/data remain separate acceptance or business-definition items. Do not mark them complete from isolated tests. SUNQUICK barcode and cost migration remain explicitly deferred.
 
 GitHub Pages restricted deployment, exact resource verification, Wix published/live receipts and fresh public-page tests remain mandatory. No temporary deployment rule has been added for this branch.
+
+## Final backend and test follow-up
+
+Customer history builds a snapshot index once and reuses the confirmed Loaded projection, preserving duplicate-evidence rejection and the existing Finance/file authorities. A500-invoice isolated test verifies bounded event traversals; this is not a production latency claim. Final selected42-file suite:381/381, no failures or skips. The10 old Buyer failures and3 additionally encountered fixtures are reconciled separately from production fixes. No R2 activation guard was weakened; its separate unclassified-writer experiment remains offline. The historical complete regression evidence is retained.
