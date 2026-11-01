@@ -62,10 +62,10 @@ Purchase 只能更正有明确出货来源证据的未出货批次；已消费�
 
 首次批准的构建1f461d1在GitHub run41262645325/job124718874910上传前失败：Linux生成的display-rows.js为LF，而冻结生产文件为CRLF。Upload及Deploy均未执行，正式站未改变；临时分支规则已撤销，恢复原7条0tags。打包器现只接受能恢复到冻结SHA256的换行变体，实际内容差异仍拒绝。新增Linux LF读入模拟通过，99个资源哈希与原批准发布包完全一致，业务代码及14份Wix草稿不变。3项发布检查通过；重新部署需新的具体权限批准，不沿用已执行的一次授权。
 
-- Code：候选完成，测试通过；GitHub同步状态见发布记录。
-- GitHub Pages：尚未部署。
-- Wix：11份后台草稿和3处页面版本引用已逐字匹配，尚未点击发布。
-- Public：尚未验收；本地Chrome候选预览因网络/文件协议限制未完成，不能计为界面通过。
+- Code：1783675业务版已同步，v2仅追加Finance/Warehouse入口CSS和版本引用。
+- GitHub Pages：1783675在run41263034457/job124720014955成功，99/99公开资源逐字一致；临时权限已撤销恢复原7条。v2待限定发布。
+- Wix：v1已取得published/live回执；11份后台保持，3处v2页面版本草稿重新与原件比对并完整匹配，尚未再次发布。
+- Public：Finance新v1财务记录、Stock List270/230/40、Isolated0、MYR19814.40保持；发现旧payment-layout.css和workroom.css隐藏stock-entry，导致新入口不可见。v2以一条仅针对这两部门的更高优先级样式修补，Purchase入口保持。Warehouse工具刷新仍嵌入空白，完整入口核对待v2。不能称本轮四阶段已完成。
 - User：待正式发布后试用，未合并main。
 
 持续工作只更新 MASTER_WORK_REGISTER 的 MST-12、MST-13；成本管理、CMS容量生命周期及既有其他待办不属于本轮已完成事项。

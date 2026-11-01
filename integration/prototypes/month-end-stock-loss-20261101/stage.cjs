@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto'),cp=require('node:child_process');
-const previous=require('../purchase-read-efficiency-20261101/stage.cjs'),manifest=require('./baseline.json'),root=path.resolve(__dirname,'../../..'),build='20261101-month-end-stock-loss-v1';
+const previous=require('../purchase-read-efficiency-20261101/stage.cjs'),manifest=require('./baseline.json'),root=path.resolve(__dirname,'../../..'),build='20261101-month-end-stock-loss-v2';
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function version(html,name){const pattern=new RegExp('('+name.replace(/[.]/g,'\\.')+'\\?v=)[^"&]+','g');assert(pattern.test(html),name);return html.replace(pattern,'$1'+build);}
 let cached;

@@ -1,7 +1,7 @@
 {
   "date": "2026-11-01",
   "branch": "feat/month-end-stock-loss-20261101",
-  "build": "20261101-month-end-stock-loss-v1",
+  "build": "20261101-month-end-stock-loss-v2",
   "scope": "month-end-stock-loss-only",
   "productionRecovery": "c844f39",
   "retainReceiving": "fc76b37",
@@ -70,20 +70,20 @@
     {
       "file": "integration/wix/purchase-room-page.js",
       "before": "caf7f6affd735262f0078daa568c2ddef0a22864a9bf5f4729761c41be72c785",
-      "candidate": "47e5bbd8ba1ad3709ffc7357eb3044dbc24a9d00aff3dbfd6c32c0f35c0cf1a5",
-      "wixDraft": "47e5bbd8ba1ad3709ffc7357eb3044dbc24a9d00aff3dbfd6c32c0f35c0cf1a5"
+      "candidate": "36c22eb3790151e3f36ab76c64d4f4d692a57a500157855178a77a3349ef5645",
+      "wixDraft": "36c22eb3790151e3f36ab76c64d4f4d692a57a500157855178a77a3349ef5645"
     },
     {
       "file": "integration/wix/account-department-page.js",
       "before": "62fe1b6764b4438f50b38abf65a4925a1032e00065be3af3ae4a59b3bc55f534",
-      "candidate": "d74d30e5d8c6593550145a99efad8ce27dcc4991d449d16d8bddb2809d89ef42",
-      "wixDraft": "d74d30e5d8c6593550145a99efad8ce27dcc4991d449d16d8bddb2809d89ef42"
+      "candidate": "c1556c483bea4a530cda80ad2d97cf4266d8e7972d2593df2ee54761e142d833",
+      "wixDraft": "c1556c483bea4a530cda80ad2d97cf4266d8e7972d2593df2ee54761e142d833"
     },
     {
       "file": "integration/wix/warehouse-department-page.js",
       "before": "f03c8b95b98fa289a5aa80ced4210debba75e08095f8c6a1ca11c9275ee78ead",
-      "candidate": "c803f75865f9fb0ad46133a32279c489c490edeca8b98ae3b973b96a8f05cdab",
-      "wixDraft": "c803f75865f9fb0ad46133a32279c489c490edeca8b98ae3b973b96a8f05cdab"
+      "candidate": "d84662dbbe31a8bf6df16abda12ecb3a3aa8ea224098e6ce2923d5aa8427cdf9",
+      "wixDraft": "d84662dbbe31a8bf6df16abda12ecb3a3aa8ea224098e6ce2923d5aa8427cdf9"
     },
     {
       "file": "integration/backend/stockValuationService.js",
@@ -93,7 +93,7 @@
     }
   ],
   "static": {
-    "build": "20261101-month-end-stock-loss-v1",
+    "build": "20261101-month-end-stock-loss-v2",
     "changed": [
       "account-room/index.html",
       "account-room/stock-list-link.js",
@@ -118,7 +118,7 @@
       },
       {
         "path": "account-room/index.html",
-        "sha256": "a1c1256284ac49e7e3ae241a3b6aeefd06ba69f79118e58b9582cc8fbbead95c"
+        "sha256": "1eaa49f4fce4565201e95fc884cd12a3fd22815d48762ded3b6cfc6007aae7b9"
       },
       {
         "path": "account-room/payment-layout.css",
@@ -270,7 +270,7 @@
       },
       {
         "path": "master-shared/stock-exceptions.css",
-        "sha256": "1c2c2034269e1668ecbc70dcb85de8a9c96fb04033a2ebd375089485eded0843"
+        "sha256": "fdc92728e3c3100b416abea23f5842d079c6d48a74e547b50b5cee928e61fb86"
       },
       {
         "path": "master-shared/stock-exceptions.js",
@@ -322,7 +322,7 @@
       },
       {
         "path": "purchase-live/index.html",
-        "sha256": "9bcf97642dda2610aadff7ad47098914e4ef51ec66c7a5cc087c849459f749eb"
+        "sha256": "59a59daf5f9a1ce0367f01be337092cc75c0ef61393957e43a8f59a42d97a7a9"
       },
       {
         "path": "purchase-live/split-rows.css",
@@ -402,7 +402,7 @@
       },
       {
         "path": "warehouse-room/index.html",
-        "sha256": "ac68b8e427ece0a5a8abfb8fec2500d08db527ee5cedc6adeef36cabe8675451"
+        "sha256": "cf527d0708cd723374245e6276605197e69fcbba76a437e1ea367e5c7b734438"
       },
       {
         "path": "warehouse-room/stock-control-app.js",
@@ -414,7 +414,7 @@
       },
       {
         "path": "warehouse-room/stock-control-link.js",
-        "sha256": "3d5a5758c06206d029b6154792600d48a1497e59080cee717d137ee6aa9c2178"
+        "sha256": "05e15efd06f29f9d2e8175321ee824d9942e3810c3fa8d5e340398f93bfa6e35"
       },
       {
         "path": "warehouse-room/stock-control-preview.html",
@@ -426,7 +426,7 @@
       },
       {
         "path": "warehouse-room/stock-control.html",
-        "sha256": "80ad62b0364fbb01f8d9a9a85f57d9953b4d39ddd14ae4a0ab0ce5c2ac2289c6"
+        "sha256": "28998f23e540d43581e44d18657bcbe964342ff949b3c43c5811ce83fce7cea7"
       },
       {
         "path": "warehouse-room/stock-tab-preview.html",
@@ -486,11 +486,11 @@
       },
       {
         "path": "account-room/stock-list.html",
-        "sha256": "ba03ad7fe7d5567d100ec1f9a0730305dda521a2275150a227ae14b642208992"
+        "sha256": "25756f80f0ccf954319990585089cc2a8176427a16a8b4cb9ea3596153991970"
       },
       {
         "path": "account-room/stock-list-link.js",
-        "sha256": "aa37c669a130c2c970a69a5c8007669526001a8a48f8ad81cc4376de3d40a094"
+        "sha256": "b42053a5d52183cf1ed6847f24a4ad2e84a34925bd86ce80fd10436b366dd529"
       },
       {
         "path": "master-shared/stock-list.css",
@@ -529,9 +529,9 @@
   "status": {
     "code": "TESTED_ALL_14_DRAFTS_EXACT",
     "github": "PUSHED_PR276",
-    "pages": "FIRST_BUILD_FAILED_BEFORE_UPLOAD_NOT_DEPLOYED",
-    "wix": "14_DRAFTS_EXACT_NOT_PUBLISHED",
-    "public": "PENDING",
+    "pages": "V1_VERIFIED_V2_PENDING",
+    "wix": "V1_PUBLISHED_3_V2_DRAFTS_EXACT",
+    "public": "INCOMPLETE_HIDDEN_ENTRY_V2_FIX_READY",
     "user": "PENDING"
   },
   "preview": "Not completed: browser/local socket restrictions. No workaround; do not count as visual acceptance.",
@@ -546,7 +546,16 @@
       "reason": "Frozen display-rows.js CRLF differs from Linux LF output",
       "permissions": "REVOKED_ORIGINAL_7_BRANCHES_0_TAGS",
       "wix": "NOT_PUBLISHED"
+    },
+    {
+      "commit": "1783675d16f83edf27a0d00e437380f0a98861e7",
+      "run": 41263034457,
+      "job": 124720014955,
+      "result": "PAGES_SUCCESS_99_EXACT_WIX_PUBLISHED",
+      "permissions": "REVOKED_ORIGINAL_7_BRANCHES_0_TAGS",
+      "public": "Finance270/230/40/MYR19814.40 preserved; inherited CSS hides required entry"
     }
   ],
-  "buildRepair": "Restore line endings only when exact frozen SHA256 matches; Linux LF simulation passes; same 99 resource hashes"
+  "buildRepair": "Restore line endings only when exact frozen SHA256 matches; Linux LF simulation passes; same 99 resource hashes",
+  "entryFix": "One CSS declaration, Finance/Warehouse only; 8 static resources differ from v1 (CSS + version refs), backend unchanged"
 }
