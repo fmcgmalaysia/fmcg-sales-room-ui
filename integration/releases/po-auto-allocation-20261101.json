@@ -454,11 +454,11 @@
     "patchBlocks": 57
   },
   "status": {
-    "code": "TESTED_CANDIDATE",
-    "github": "PENDING_PUSH",
-    "pages": "NOT_CHANGED",
-    "wix": "FMCGMALAYSIA_3_DRAFTS_EXACT_MASTER_FIRST_DRAFT_INTERRUPTED_READBACK_REQUIRED",
-    "public": "NOT_TESTED",
+    "code": "COMPLETE_TESTED",
+    "github": "PUSHED_DRAFT_PR280_NO_MAIN_MERGE",
+    "pages": "SUCCESS_RUN41289004847_99_EXACT",
+    "wix": "FMCGMALAYSIA_THEN_MASTER_PUBLISHED_AND_LIVE_25_EXACT_DRAFTS",
+    "public": "AFFECTED_CONSUMERS_PASS",
     "userAcceptance": "PENDING"
   },
   "recovery": {
@@ -474,5 +474,103 @@
   "publishOrder": [
     "FMCGMALAYSIA",
     "MASTER"
+  ],
+  "runtimeCommit": "f8aba73b48e1515c8787a66fc98c61f273da4fa5",
+  "pr": 280,
+  "releaseEvidence": {
+    "run": 41289004847,
+    "job": 124796148974,
+    "artifact": 13076253072,
+    "resources": 99,
+    "exact": 99,
+    "permissions": {
+      "at": "2026-11-01T08:30:42.912Z",
+      "branches": [
+        "feat/master-gp-margin",
+        "feat/nct-order-submit-room6",
+        "feat/purchase-adjustment-cost",
+        "fix/purchase-approved-ux-layout",
+        "main",
+        "style/purchase-icons-spacing-feedback",
+        "style/purchase-table-track"
+      ],
+      "tags": [],
+      "temporaryRuleRemoved": true,
+      "run": 41289004847,
+      "commit": "f8aba73b48e1515c8787a66fc98c61f273da4fa5"
+    },
+    "entryMarkers": {
+      "Purchase": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/purchase-live/?v=20261101-po-auto-allocation-v1",
+      "Support": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/support-room/workroom.html?v=20261101-po-auto-allocation-v1&live=1&department=SUPPORT",
+      "Warehouse": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/warehouse-room/?v=20261101-po-auto-allocation-v1",
+      "Sales": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261101-po-auto-allocation-v1",
+      "Buyer": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261101-po-auto-allocation-v1",
+      "Finance": "https://fmcgmalaysia.github.io/fmcg-sales-room-ui/account-room/?v=20261101-finance-payable-confirmation-v1"
+    },
+    "publicChecks": {
+      "purchase": "PASS: correct ALLOC-before-RCV header, sticky scrolling, 300 planned/250 received/REALLOC50, paid PO plain-value lock and original100/90 retained",
+      "support": "PASS: planned and Loaded amounts/CBM separate, whole-demand split500 valid versus490 blocked, cancelled without save; Desk1→2→1 retains100/90; short10 remains with continue/transfer/awaiting and no Support cancel",
+      "warehouse": "PASS: supplier PO300/receipt250, four authorized Desks only,801100/90/short10 retained, no customer PO or monetary columns; stock520/480/40/0",
+      "finance": "PASS affected stock read: NCT520/480/40/0 andMYR38234.40; GHR0/MYR0 thenNCT restored. Prior invoice confirmation-form acceptance remains open",
+      "sales": "PASS:801 Desk1 commitment100, USD1680,CBM1.4; unconfirmed lines remain awaiting arrangement",
+      "buyer": "PASS: correct801 identity, same100/USD1680/CBM1.4 and awaiting balance"
+    },
+    "businessOperationsSubmitted": 0,
+    "localSplitForm": "300+200 valid;300+190 blocked;cancelled without saving",
+    "consoleRelevantErrors": 0
+  },
+  "browserObservation": "Automation reload reproduced prior Wix about:blank. Native Chrome new-tab navigation loaded all affected formal pages. This workaround is verified for this release; the underlying interoperability cause remains unproven. Do not repeat deployment or change authentication/CMS to address blank embeds.",
+  "remaining": [
+    "User transaction acceptance: new PO, actual receipt, borrowing/repayment, Desk authorization and Loaded submission were not committed during this read-only public verification",
+    "NET KG/GROSS KG authoritative source mappings remain unknown (MST11); no invented weights or packaging costs",
+    "MST14 final invoice confirmation-form and MST15 actual NONFOOD product acceptance remain open",
+    "Existing read-only supplier popup may still ask to discard an unsaved draft on close (MST05); no unrelated fix included"
+  ],
+  "consumption": {
+    "tokens": "UNKNOWN",
+    "cache": "UNKNOWN",
+    "actualCredits": "UNKNOWN"
+  },
+  "technicalEvidenceFiles": [
+    {
+      "file": "WIX_CUSTOMER_PUBLISH_RECEIPT.txt",
+      "sha256": "1d8a7fe9061590b28e13fe287868bf153ba455ca3183d992432b79cf03b1b580"
+    },
+    {
+      "file": "WIX_MASTER_PUBLISH_RECEIPT.txt",
+      "sha256": "0febdff3b9d2a0dadc855cb1b2102c1cf1ef01eca31a545d817cfdde4cc1e844"
+    },
+    {
+      "file": "public-purchase-final.png",
+      "sha256": "688abea7a362b42f039e054e6234db4c4e6cbfe5fff0e8808047d0ffe2dfd8bb"
+    },
+    {
+      "file": "public-support-split-validation.png",
+      "sha256": "2b5487c595042ae4f929bf5f32b754d320871dab640a796f748e8befd34ca2ab"
+    },
+    {
+      "file": "public-support-final.png",
+      "sha256": "a273aaf7f3a8cef19a230006352cbed93c95d4090f123e22792ce368151d84d6"
+    },
+    {
+      "file": "public-warehouse-task.png",
+      "sha256": "3324b6854ce287333b7e4b92ce809a909666e5ec2e1db4a5adba7814fe003cd7"
+    },
+    {
+      "file": "public-warehouse-stock.png",
+      "sha256": "8f273be3cfb5a4447d84499366f9b67691d55098ba3302f4dd139679cab16a99"
+    },
+    {
+      "file": "public-finance-stock.png",
+      "sha256": "d7fc4829e44131b0939a0bbc528661782dbc9cd1f7d7c167db2882e3ae26cec4"
+    },
+    {
+      "file": "public-sales-commitment.png",
+      "sha256": "1985291fbe86c4e96cbacc6d19526f031563272616f73dbcf3c9d758dd9e3a37"
+    },
+    {
+      "file": "public-buyer-commitment.png",
+      "sha256": "48ca2d076486aa3c4cf4d46f9d68472e573ad45d456cf6e97af9d85029a12d10"
+    }
   ]
 }
