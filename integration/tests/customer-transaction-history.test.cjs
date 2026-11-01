@@ -21,7 +21,7 @@ test('dispatched portions enter history despite unpaid supplier; invoiced-only p
 });
 test('two receipts do not mark either of two invoices paid or allocate money twice',()=>{
  const r=project(context([...shipment('ONE',{qty:100,price:10}),...shipment('TWO',{qty:100,price:20}),document('FIRST',{amountCents:150000}),document('SECOND',{amountCents:150000})]),'A');
- assert.equal(r.account.balances[0].receiptCents,300000);assert.equal(r.account.balances[0].balanceCents,0);assert.equal(r.account.invoiceMatching,'NOT_RECORDED');assert.equal(r.account.entries.filter(x=>x.type==='CUSTOMER_RECEIPT').length,2);assert.ok(r.shipments.every(x=>!('paid' in x)&&!('balanceCents' in x)));
+ assert.equal(r.account.balances[0].receiptCents,300000);assert.equal(r.account.balances[0].balanceCents,0);assert.equal(r.account.invoiceMatching,'EXPLICIT_ALLOCATIONS');assert.equal(r.transactions.reduce((n,row)=>n+row.dueCents,0),300000);assert.equal(r.account.unapplied.reduce((n,row)=>n+row.amountCents,0),300000);assert.equal(r.account.entries.filter(x=>x.type==='CUSTOMER_RECEIPT').length,2);assert.ok(r.shipments.every(x=>!('paid' in x)&&!('balanceCents' in x)));
 });
 test('prepayment, CN, debit and overpayment stay customer/currency postings rather than stock movements',()=>{
  const c=context([...shipment('ONE',{qty:100,price:10}),document('USD',{amountCents:120000}),document('SGD',{currency:'SGD',amountCents:99900}),document('CREDIT',{type:'SALES_CN',amountCents:5000}),document('DEBIT',{type:'DEBIT_NOTE',amountCents:2000})]);

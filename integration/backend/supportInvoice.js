@@ -2,6 +2,7 @@ import { checkSupportDeskInvoice, reserveSupportDeskInvoice, releaseCancelledSup
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { createCustomerFulfilmentOperations, shipmentVersion } from 'backend/customerFulfilment.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
+import { readCustomerAccountDocuments } from 'backend/customerAccountLedger.js';
 import { projectPreparation } from 'backend/warehousePreparation.js';
 import { packingTaskHeld } from 'backend/packingListGuards.js';
 import { openSourceCost } from 'backend/purchaseMarginRefresh.js';
@@ -51,11 +52,12 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    }
    if(input.orderIds&&new Set(normalized.lines.map(line=>context.tasks.find(task=>task.id===line.taskId).orderId)).size!==orderIds.length)throw Error('Selected order dates do not match invoice lines.');
    if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||'')||!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>999999999999)throw Error('Invoice currency or total is invalid.');
-   if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
+   if(readCustomerShipments(context.activity).some(row=>row.invoice?.number.toUpperCase()===normalized.number.toUpperCase())||readCustomerAccountDocuments(context.activity).some(row=>row.company===company&&row.type==='CHARGE_INV'&&row.number.toUpperCase()===normalized.number.toUpperCase()))throw Error('Sales Invoice number already exists.');
    await reserveSupportDeskInvoice({store,names,context,staff,requestId,input:normalized,digest,snapshot:desk,now});
    const scoped=desk&&normalized.lines.some(line=>state.deskLines.some(row=>row.taskId===line.taskId&&row.desk===desk.number));
    const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,...(scoped?{desk:desk.number}:{}),version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
-   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
+   const shipmentDetails=desk?readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)?.shipments.find(row=>row.desk===desk.number):null;
+   const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),customerDetails:{transport:shipmentDetails?.transport||'',departureDate:shipmentDetails?.departureDate||''},select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
   }
   if(intent.details?.digest!==digest||intent.details?.memberId!==staff.memberId)throw Error('This invoice save was already used for different details.');

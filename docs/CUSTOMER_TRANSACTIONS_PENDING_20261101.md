@@ -213,3 +213,11 @@ Buyer保留绿色、Sales保留蓝色主题。Buyer自动识别登录客户；Sa
 原测试8项中7过1失败；修复后保留原断言并增加Loaded及坏身份边界，共10/10。相关回归六个文件报告41个通过及1个文件启动失败，不能称42项全过。失败位于未改动的 stock-isolated-loaded-replay.test.cjs：其旧构建清单不接受MASTER/stockValuation.web.js、supportWorkroom.web.js、warehouseStockIssues.web.js，场景尚未启动。相对于d9d91f9，相关后台/构建器/失败文件没有差异；未修改R2构建器或降低检查。该阻塞作为MST-12历史测试跟踪，不代表此次Sales夹具回归。
 
 原始输出在根handoff/master-cross-department-stress-20261101的 SALES_SPLIT_FIXTURE_BEFORE.txt、SALES_SPLIT_FIXTURE_AFTER.txt、SALES_SPLIT_FIXTURE_REGRESSION.txt。10个专项包含在41个回归通过中，不能相加成51。继承customer-allocation.js哈希仍为6C2A28369A1DE34B07D9F285E1B48163CE46815A0E0909DDC66C8E88A005A951，排除提交。此任务只同步测试与文档，不需要重新部署Pages或Wix。
+
+## 11. 2026-11-02 implementation checkpoint
+
+Branch feat/customer-invoice-payments-20261101. Fresh Master originals and FMCG catalogueAuth, masterFulfilmentClient, Buyer and Sales pages match their sources after newline normalization. The user explicitly approved retaining the deployed Support marker and four 28bcf9a entry points. Candidate changes reuse the single Finance journal for receipt/CN/DN allocations; Support charge evidence creates no receivable until Finance confirms; customer history reads both company accounts independently and uses seven columns. Buyer menu becomes Transaction History.
+
+Final affected suite: 180/180, no skips (root handoff/customer-invoice-allocation-20261101/INTEGRATED_FINAL.txt). Candidate bundle contains101 resources,9 changed. The immutable28bcf9a baseline protects Purchase, Warehouse, stock, existing Finance Stock List and retired Support route. Source writes to Wix, new Pages deployment and public acceptance remain NOT DONE. Apps Script Version11 is unchanged. No new actual receipts, PDF uploads, Loaded or stock operations have been submitted.
+
+The new receipt allocation/charge/history tests are isolated evidence, not live acceptance. T25 currently provides stable client paging over the complete response; server-side historical read scaling remains an explicit follow-up underMST09. Refund/reversal and cost migration remain unimplemented. The prior native Chrome safety stop is not bypassed; browser-only tools may resume on a fresh authorized turn. Local preview9022 timed out through browser automation; no visual pass is claimed.

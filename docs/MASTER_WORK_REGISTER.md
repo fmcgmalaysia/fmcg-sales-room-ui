@@ -101,3 +101,9 @@ Current facts: [supplier-allocation](../purchase-live/supplier-allocation.js) an
 5. Verify Catalogue/Selected→QD, quotation, Sales submit, PO, Finance, receipts, FOC cost finalization, allocation/borrowing, Loaded, Stock List and company isolation. Preserve the four release stages and user acceptance before baseline promotion.
 
 Until these gates are met, current POINTBASE price reads remain active. No cost authority was switched by this documentation task.
+
+## MST-18 — Sales Department and two-site closeout audit
+
+AUTHORIZED 2026-11-02. User requests a salesperson-only Dashboard, customer transaction/profit page and Commission page. Strict current salesperson ownership applies even where legacy Sales Room administrators can view all customers. Reuse existing Invoice/Finance/payment sources and immutable invoice purchase-cost/FX snapshots; no second editable accounting balance. Transport, Other Cost and Net Commission remain blank until authoritative data/rules exist. Pending is not proof a commission was paid; only Finance-confirmed commission records may show Comm. Paid.
+
+Implement separately from MST17; first preserve/push its checkpoint. Then inspect fresh relevant Wix originals and current identity/data flow. Audit both sites for duplicate work, unnecessary queries/saves and timeout causes; apply isolated evidence-led patches without disabling GP, financial locks, journals or company separation. Unknown historical metadata and user/data-dependent acceptance cannot be declared fixed by code tests.

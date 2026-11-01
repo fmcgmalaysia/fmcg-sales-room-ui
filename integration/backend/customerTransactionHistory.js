@@ -2,6 +2,7 @@ import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { projectCustomerAccount } from 'backend/customerDebtor.js';
 import { readSupportDocuments, customerFileReady } from 'backend/supportDocuments.js';
 import { readLoadedInvoiceRecords } from 'backend/customerLoadedRecords.js';
+import { operationId } from 'backend/purchaseOperationJournal.js';
 
 // Read model only. Shipment, money and attachment ledgers remain the authorities.
 const publicCodes = new Set(['SO', 'BC', 'SI', 'DO', 'CN', 'DN', 'PL', 'INS', 'CF', 'BL', '$']);
@@ -11,7 +12,7 @@ const file = (document, ready) => {
     ready, url: ready ? 'https://drive.google.com/file/d/' + document.fileId + '/view' : null,
     name: document.name || document.number || document.reference || '',
     at: document.at || '', code: document.code || ({ SALES_INV: 'SI', SALES_CN: 'CN',
-      CUSTOMER_RECEIPT: 'RECEIPT', DEBIT_NOTE: 'DN' })[document.type],
+      CUSTOMER_RECEIPT: 'RECEIPT', DEBIT_NOTE: 'DN', CHARGE_INV: 'SI' })[document.type],
     number: document.number || document.reference || '', scope: document.scope || 'ACCOUNT',
     orderId: document.orderId || '', invoiceId: document.invoiceId || document.shipmentId || '',
     ...(document.desk ? { desk: document.desk } : {}) };
@@ -35,11 +36,23 @@ export function projectCustomerTransactionHistory(context, customerId) {
       shipment.lines.some(line => line.orderId === row.orderId) &&
       (row.scope !== 'DESK' || shipment.desk === row.desk)))
     .map(publicFile);
-  const accountFiles = entries.flatMap(row => row.documents.map(publicFile));
+  const accountFiles = entries.flatMap(row => row.documents.map(document=>publicFile(row.type==='CHARGE_INV'?{...document,shipmentId:row.id}:document)));
   // The same Drive file may be linked by both existing ledgers; never duplicate it in the customer library.
   const documents = [...new Map([...supportFiles, ...accountFiles].map(row => [row.fileId, row])).values()]
     .sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.id.localeCompare(b.id));
-  return { company, customerId,
+  const loadedRecords=readLoadedInvoiceRecords(activity,shipments),loadedIds=new Set(loadedRecords.map(row=>row.id));
+  const invoices=account.invoicePayments.invoices.filter(row=>row.customerId===customerId);
+  const transactions=invoices.filter(row=>row.kind==='CHARGE'||loadedIds.has(row.id)).map(row=>{
+    const source=shipments.find(shipment=>shipment.id===row.id),invoiceDocuments=documents.filter(doc=>doc.invoiceId===row.id||source&&!doc.invoiceId&&(doc.scope==='ORDER'&&source.lines.some(line=>line.orderId===doc.orderId)||doc.scope==='DESK'&&doc.desk===source.desk&&source.lines.some(line=>line.orderId===doc.orderId)));
+    const related=entry=>({...entry,documents:documents.filter(doc=>doc.fileId===entry.fileId)});
+    const prepared=activity.filter(event=>event.action==='SUPPORT_INVOICE_PREPARED'&&event.image===customerId&&event.details?.invoice?.number===row.number&&event.details?.customerDetails&&activity.some(ready=>ready.title===operationId(event._id,'SUPPORT_INVOICE_INPUT_SAVED')&&ready.description===row.id));
+    if(prepared.length>1)throw Error('Invoice shipment details require review.');
+    const snapshot=prepared[0]?.details.customerDetails;
+    return {id:row.id,company,customerId,kind:row.kind,number:row.number,date:row.date,currency:row.currency,amountCents:row.amountCents,quantity:row.quantity,paidCents:row.paidCents,creditCents:row.creditCents,debitCents:row.debitCents,dueCents:row.dueCents,lastPayment:row.lastPayment?related(row.lastPayment):null,payments:row.payments.map(related),adjustments:row.adjustments.map(related),documents:invoiceDocuments,
+      lines:row.kind==='CHARGE'?row.chargeLines.map(line=>({description:line.description,amountCents:line.amountCents})):source.lines.map(line=>({name:line.name,packing:line.packing,quantity:line.quantity,sellingPriceCtn:line.sellingPriceCtn})),
+      transport:source?.invoice?.transport||snapshot?.transport||'',departureDate:source?.invoice?.departureDate||snapshot?.departureDate||''};
+  }).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  return { company, customerId, transactions,
     shipments: readLoadedInvoiceRecords(activity,shipments).map(row => ({
       id: row.id, company, customerId, desk: row.desk || null, recordedAt: row.invoice.at || row.invoice.date,
       number: row.invoice.number, date: row.invoice.date,
@@ -63,6 +76,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
         number: row.number, date: row.date, currency: row.currency, amountCents: row.amountCents,
         signedCents: row.signedCents, at: row.at, documents: row.documents.map(publicFile) })),
       // Existing receipts are customer/currency postings, not invoice allocations or bank confirmations.
-      invoiceMatching: 'NOT_RECORDED'
+      invoiceMatching: 'EXPLICIT_ALLOCATIONS',
+      unapplied:account.invoicePayments.unapplied.filter(row=>row.customerId===customerId)
     }, documents };
 }
