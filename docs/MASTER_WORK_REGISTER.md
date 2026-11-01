@@ -45,6 +45,16 @@ Priority P1 means potentially misleading work/financial interpretation or a crit
 
 MST-01 through MST-04 and MST-10 should be resolved/accepted before declaring the full workflow ready. MST-05 is an explicit usability follow-up. The unchanged supplier source UI also asks to cancel an unsaved allocation when a read-only paid source is closed without input; observed during this release, not silently fixed or declared a new regression. MST-09 is required before promising production scale. Cosmetic rows remain visible work, not a reason to migrate the entire system.
 
+## MST-16 — PO automatic allocation workflow
+
+State: DESIGN_REVIEWED_IMPLEMENTATION_NOT_STARTED. User requested the final cross-department acceptance walkthrough for formal PO → automatic planned ALLOC → physical receipt enables execution → exception REALLOC → Loaded outbound authority. See [32-scenario acceptance and implementation boundaries](reports/PO_AUTO_ALLOCATION_ACCEPTANCE_20261101.html). Nine isolated arithmetic snapshots are consistent; no new production-module or public business test has run. Do not describe the 32 defined scenarios as passed tests.
+
+Single scope: remove the normal post-receipt manual allocation handoff while retaining one source allocation authority, Support Desk/disposition permissions, Purchase borrowing/repayment, actual receipt/outflow history, first-payment PO lock and NCT/GHR isolation. Proposed Alloc is a cumulative planned target, with missing support explicitly shown; it is not physical on-hand or customer received quantity. Reallocation replaces a gap rather than adding demand. Source-only receiving totals cannot include borrowed cartons as supplier deliveries.
+
+Next: fresh live comparison, particularly independent warehouseReceiving fixfc76b37, then minimal implementation against one explicit planned/physical quantity contract. Existing purchaseQuantityProjection must not expose planned allocations as customer receipts; packingListModel currently requires whole-list physical supply and must distinguish authorization from per-line execution. Partial-invoice remainder procurement must protect completed batches without globally unlocking the original PO. Preserve current journal97f9623/canonical9518417, GP, stock valuation, document/financial locks and isolation. No cost migration or blanket legacy cleanup.
+
+Planning branch: design/po-auto-allocation-20261101, inspected head4e1589d; inherited dirty purchase-live/customer-allocation.js is untouched and excluded. Local evidence: root handoff/po-auto-allocation-20261101/acceptance.json, ACCEPTANCE.html, STATUS.json. No Pages/Wix change, no public verification of this proposal, no main merge. MST-14/15 remain pending; this design does not close them.
+
 ## Cost route decision
 
 **COST-D01: DECISION_PENDING. Recommendation: POINTBASE becomes product-information input; MASTER Purchase owns all active supplier reference-price and promotion management.** Do not retain two editable reference-price authorities. FMCGMALAYSIA keeps its current Catalogue, images, customer selections and QD identity; MASTER reads the authoritative product metadata. No full Catalogue/image migration is proposed.
