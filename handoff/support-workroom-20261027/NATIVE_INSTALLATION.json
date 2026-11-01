@@ -1,0 +1,55 @@
+{
+  "site": "MASTER",
+  "published": false,
+  "files": [
+    {
+      "file": "backend/supportShipmentBooking.js",
+      "sha256": "d0c3cdcc2b6ba01e75b7b5693ef9363dfd90d33fea1dd54e02fe92cb55411330",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/supportDocuments.js",
+      "sha256": "6e58f94398e06c46529de985ce21641bdeb369311d8ce3d5bcf97c6816742117",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/supportInvoice.js",
+      "sha256": "fbac5bf06fa163b4a0d3e27d3dfcff3b48b7602411752712fae630cb3b2c6be5",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/supportWorkroom.web.js",
+      "sha256": "afabaad89390b1f44621dc5f21fd07467687ede2c50b70ee4c731ff2b5d62d44",
+      "exactReadback": true
+    },
+    {
+      "file": "public/supportWorkroomBridge.js",
+      "sha256": "2f1d9f5aaeab8563fdb55d0a9095c8ef45dea662088cefe4e2833b47e2007a34",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/customerFulfilment.web.js",
+      "sha256": "c82913cc46a383a1dd040c161a4a1bd9c9fe62354d074347ff9dfd4c7b3f821c",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/customerFulfilmentService.js",
+      "sha256": "59faf90dee4c178a58582ee14b535db9bd70f68bbfbe0ca145c7126b1b4fd4ea",
+      "exactReadback": true
+    },
+    {
+      "file": "backend/purchaseMarginRefresh.js",
+      "sha256": "3518bf6e24f9d6d30ca558eaf40a47ae3d27f15c69b961b475c3e708d2de66f0",
+      "exactReadback": true
+    }
+  ],
+  "page": {
+    "name": "Support Department",
+    "nativeSha256": "9f9d29645bdbeb855b03db41bb792283c2897b6b9ee47726fa864694650eac71",
+    "oldEntryRetained": true,
+    "futureLocalSha256": "3fe1dcc0b4d8be4bf085b6b565f32ed5dd77a97a294850e77394a10eda83486d",
+    "pendingChange": "Replace only packing-workbench source URL with verified Support build after Pages deployment"
+  },
+  "publicBusinessAcceptance": false,
+  "documentServiceVersion": 9
+}

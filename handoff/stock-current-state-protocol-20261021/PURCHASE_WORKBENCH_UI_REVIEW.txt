@@ -1,0 +1,48 @@
+2026-10-23 — visible existing Purchase workbench candidate, NOT live publication
+
+User priority: deliver visible clickable interface before more broad backend tests.
+Single objective this increment: make the existing implementation available to see,
+without changing its actual handlers or inventing another stock system. Recovery
+protected production d447185/runtime32b812c and candidate54418a9. Existing framework/
+same-version handoffs reused; targeted Purchase UI only. No protected source edit.
+
+New build-purchase-ux-review.cjs mechanically embeds candidate purchase-ui/index.html
+and all32referenced original/candidate JS/CSS assets. Exact source paths+SHA256 in
+preview/purchase-workbench-review.inputs.json. Candidate task-grid.js, supplier-
+allocation.js, borrow-approval/relations/return/outstanding.js and app.js unchanged.
+Original chrome, person shapes, dialog handling and selected PO/quantity/reason/
+repayment-consent controls are the real candidate implementations, not retyped mocks.
+
+New purchase-ux-review-bridge.js supplies isolated EXAMPLE A/B/PO-A/PO-B READ fixtures
+only. It is not a business authority or real user data snapshot. Real quote/auth/
+quantity validation remains required before production writes. Bridge refuses ALL
+save requests: no successful response, new balance, generation, halo or receipt.
+Original app may retain a rejected save as an unconfirmed browser draft under
+synthetic UX-REVIEW-ONLY identity; no existing staff cache used or cleared. Label
+NOT SAVED and no-CMS-capability error explicit. No staged autoapproval simulation.
+Self-contained file CSP denies connections/forms/all external resources. No fetch,
+SDK, Wix/CMS adapter or deployed relay provided by bridge. Other workrooms not faked.
+
+User route: open preview/purchase-workbench-review.html manually -> Active Orders
+-> EXAMPLE A original person -> Check eligible P.O.s -> choose EXAMPLE PO pair,
+quantity/reason/automatic repayment consent. Confirm form/layout, not real borrowing.
+EXAMPLE B has no eligible pair, intentionally displays known-empty UI. Outstanding
+view has no invented debt. Later real borrow/Loaded/receipt acceptance still pending.
+
+Targeted checks:3pass0fail259.3798ms: exact32asset hashes/generated parity + every
+embedded script parses; exact fixture quote no workspace mutation; writes refuse
+without fake successful approval/generation/halo/receipt. No broader/native testing.
+
+Browser attempt: Chrome5 fresh session. First createBrowserTab visible option was
+unsupported before navigation; removed incompatible option once. Second creation
+rejected file: URL by browser security policy, allowed protocolshttp/https only.
+No authority to trigger local-file browser action. STOPPED, no server/localhost/
+other browser/alternate surface/indirect execution workaround. User manual opening
+is required. Browser layout/interaction QA NOT verified and NO screenshot exists.
+Do not imply tests constitute browser visual acceptance. Existing live user Purchase
+tab still shows old supplier dialog; no business site/Pages/Wix changes this increment.
+
+Four release states: review package code only; Pages unchanged; Wix production
+unchanged; real public borrow interface/Loaded acceptance NOT completed. Native
+unknown call20 remains stopped and separate. Local diagnostic gateCLOSED, last
+known Wix armed draft closure still unconfirmed; no test restarted or lock deleted.

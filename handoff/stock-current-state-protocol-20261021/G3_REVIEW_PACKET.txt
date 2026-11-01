@@ -1,0 +1,153 @@
+2026-10-23 — focused semantic G3 input, NOT a review pass or activation permission
+
+LATEST bounded evidence additions (reuse source and outputs, not a new whole scan):
+- NATIVE_300_COMMIT_REHEARSAL.txt + BATCHED_IMAGE_READS.txt: new fixed namespace,
+ 19actual executor calls confirmed BEFORE380/901; call20 UI outcomeUNKNOWN, stopped
+ with original pending/request retained, no rerun/cleanup. Local diagnostic gate
+ CLOSED; Wix last saved armed gate requires manual close after two browser failures.
+ NOT full native application/recovery acceptance. Exact read batching reduces
+ actual BEFORE43->16queries without changing20step budget/CAS/plan identities;
+ FULL1192pass0fail32174.7612ms. Original production paths unchanged. Review failed/
+ short/foreign/reordered batch refusals; native business setup/migration/drain and
+ whole300business preparation/capacity/recovery remain OPEN. ACTIVE staysOFF.
+- NATIVE_300_PLAN_STAGING_ACCEPTANCE.txt: actual mock-prepared original300receipt
+  plan901images/596928bytes now EXACT native SDK staged/readback: intentional first
+  fragment interruption then same plan continuation;4queries/12inserts total,
+  11fragments+manifest retained, no patch/delete/lock/business/ACL/Publish.16affected
+  tests pass. This is NOT native whole300preparation or901imagecommit/fence/recovery
+  acceptance. Actual Babel>500KB formatting warning retained. User ordinary-testing
+  autonomy/visible-Wix requirement recorded separately; no early blanket ACL grant.
+- NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt: exact separate human grants received;
+  actual Wix INIT+TYPE each ranONCE and passed.10reads/2inserts/7patch attempts and
+  9queries/1insert/1patch respectively.3fixed fixtures retained, only granted TYPE
+  obsoleteFlag removed; no record/lock delete. Visible-editor source exact/readback
+  hashes and private result JSON/screenshots preserved. Both grantsCONSUMED, no rerun.
+  Synthetic missing-version/date conjunction and exact shared typed adapter now
+  accepted IN ISOLATION; NOT business initialization, timestampABA/legacy drain,
+  business schema/ACL/indexes, native300capacity/recovery or activation proof.
+- BORROW_SPLIT_LOADED_REPAY_COMPOSITION.txt: sameDB both-company same/different PO
+  borrow then BOTH parties' Sales30/70 splits, borrowerLoaded30, own receipt20/80
+  automatically repays30 and ends halos. Full positions/claims/rawtasks/transfer
+  unchanged at split; actual stockCoverage30/70 and original POcoverage100 conserved.
+  Final affected5pass3901.3581ms, test-only; unchanged business source reuses last
+  FULL1166 at027e285, not a new full total. Private Sales composition, not new HTTP/
+  native/public acceptance. Existing linked/packing cancellation guards stay intact.
+- BORROW_ADMISSION_ACTOR_SNAPSHOT.txt, RECEIPT_ALLOCATION_ADMISSION_ACTOR.txt,
+  PURCHASE_PREPARATION_ADMISSION_ACTOR.txt: actual-root same-member staff reissue
+  counterexamples; trusted admitted staff now forwarded/compared before business
+  preparation. Some old ok:false/receipt errors occurred AFTER fixture stock commit.
+- PACKING_EARLY_ADMISSION_IDENTITY.txt: existing packing late guard already prevented
+  domain commit; new early guard also prevents wrong-request photo ID allocation/
+  context reads. Do not misstate its old behavior as a committed-stock bypass.
+- CURRENT_READ_WRITER_COVERAGE_GATE.txt: actual native read-wrapper candidate formerly
+  accepted ACTIVE alone. New defaultEMPTY server coverage gates all current list/
+  detail/relation reads, writerBuild included in exact before/after snapshot. New
+  read tests6counterexamples,25affectedpass. FULL1166pass0fail27660.2358ms includes
+  unsafe witnesses; not native safety, capacity, G3 pass or activation authority.
+- CMS actual total item maximum10000 known; native execution/RPM/whole300business
+  prepare/commit/recovery remainUNKNOWN. See NATIVE_STORAGE_QUOTA_AND_FOOTPRINT.txt
+  and ITEM_QUOTA_RECOVERY_MATRIX.txt; arithmetic/fake quota are not native acceptance.
+- INIT/TYPE exact test grants CONSUMED; generic Wix support contact consent remains
+  PENDING. Do not rerun probes or contact Wix without the missing human reply.
+  Migration APPLY still explicitly NOT IMPLEMENTED. Native/old-execution drain/G3/
+  schema/capacity/recovery/shadow/cutover/public release gates are not complete.
+- Packing ownership/hold review found no basis to change existing max pending hold/
+  customer remainder/Loaded-not-dispatch rules. Preserve spec136/150 extension boundary:
+  no unrelated invoice, physical exit or slice-cancellation redesign for Loaded test.
+
+Review one objective: existing system current stock + Purchase borrowing/automatic
+repayment + customer split + original person halo, initial human test through Loaded.
+Real Support invoicing/physical exit OFF. Do not design finance features, a replacement
+authority, extra global queues or autonomous models/agents. Keep current chosen model
+unless user manually switches. Original approved ASTRA_PRODUCTION_DECISION stays.
+
+Exact recovery: d447185987fecbb81bcaf6b25c170f631f767f9f; production runtime32b812c.
+Branch feat/stock-current-state-protocol-20261021; draft PR220. Latest code commit is
+Git HEAD; do not use stale b3cc6d4 in automation as HEAD. Current STATUS and evidence
+supersede historical OVERNIGHT_CLOSEOUT. All changes isolated; original production
+directories unchanged. No actual CMS current collections/schema/activation installed.
+
+Use bounded inputs, not another full project scan:
+1 INSTALL_GRAPH_AND_FRESH_EDITOR_PARITY.txt + current-install-manifest.json:
+  38exact two-system install targets/94transitive backend modules;23Master original
+  PATCH whole SAVED EDITOR texts freshly matched canonical hashes. No claim this is
+  a published runtime/public pass or all94live dependency capture.20writer review
+  flags unverified/coverageEMPTY/activation false.
+2 INTAKE_LOADED_CUSTOMER_QUANTITIES.txt: actual original generated roots, single mock
+  store intake→PLAN/PO→Sales60/40split→receipt100→same listLoaded60; actual HTTP safe
+  quantity endpoint now current-fenced/customer-scoped. Original timestamp unchanged
+  where unaffected; borrowed customer ownership distinct from physical PO source.
+3 RESERVED_DAMAGE_IMPLEMENTATION.txt and reserved-damage tests: exact sole customer
+  claim isolation, demand unchanged, Purchase-only eligible shortage borrow, supplier
+  restore exact case customer without falsifying future receipt/repayment, durable
+  same-list physical recheck even after good stock restored. Ambiguous shared source
+  attribution REFUSES; Warehouse cannot guess or reallocate. Check held/case/claim/
+  change/reopen/closed/source lifecycle interactions; do not loosen them silently.
+4 LEGACY_STOCK_READ_MODE_GUARD.txt: actual old stock endpoint now legacy-only and
+  version-barrier checked; ACTIVE old UI must refresh, no competing historical stock.
+5 FRESH_DOMAIN_DATE_FIELDS.txt: actual CMS8field definitions, real configuration bug
+  witness, same existing codec bound across all roots/recovery.1050offlinepass. Date-
+  preserving MOCK adapter is NOT native Wix acceptance; corrupt legacy Date refuses.
+6 LIFECYCLE_SHADOW_PARITY.txt: retained witness proves original physical-only parity
+  accepts incorrect v2 lifetime/highwater/task metadata. New private initial-v2 check
+  composes same balances with exact original task preservation and independent source/
+  task dispatch sums, generation/index/typed versions.33affectedpass; no native/runtime
+  installation or migration executor. Initial transfer relations still refuse legacy
+  rebuilding. Verify future G4 composition uses v2 proof, not legacy-only parity.
+7 NATIVE_SETUP_REVIEW.txt: pure additive field/index review with10new+4install tests.
+  Actual reader/batched/detail/relation query fields exercised. Native UI both company
+  journals show2SYSTEM indexes only; no manual index visible, actual quota/status/path
+  metadata UNKNOWN. Screenshots/LIVE_EXISTING_INDEX_READBACK retained. No install.
+  Three-field/slot/UTF8 constraints never justify native capacity or changing identity;
+  matching metadata is not stored-value enforcement or a native typed roundtrip.
+
+Review questions (return evidence/file+line and minimal required correction):
+- LEGACY_ADMISSION_RACE_WITNESS.txt now gives exact original-writer interleaving:
+  LEGACY control response delayed across MAINTENANCE, no lock at capture, then old
+  task writes.2offline assertions include UNSAFE witness, not safety acceptance.
+  Need real supported admission drain/termination proof or separately reviewed
+  all-legacy fencing BEFORE migration. Another non-atomic mode read is not a fix.
+- UPDATED concrete prerequisite: BATCHED_RECEIPT_READS.txt supersedes pre-batch workload
+  in PREPARE_INVOCATION_BUDGET. b7a9dc4 implemented same-snapshot batch/current/exact
+  CLOSED/zero identities and union task reads. OFFLINE300line first counted lower-
+  bound2168->110, pending unchanged20/901; second39. Read cache has no mutations and
+  never escapes preparation. Verify equivalent closure/correction/dispatch/absence
+  semantics, complete strong paging/image checks and memory policy. Existing protocol
+  default20 unchanged. New native fixed-test50ID+company query passed3reads648ms,
+  seed13; NOT native300business preparation/index/write/recovery acceptance. No new
+  business/native write/deletion. Do not invent resumable preparation without evidence.
+- Any exposed web/HTTP root or read-side write bypassing the same fence/CAS, including
+  old clients, read margin/cache and co-writers? Structural map is not semantic proof.
+- Can customer cumulative received/current usable/isolated/dispatched or PO acceptance
+  be conflated under split, borrowed fulfilment, partial repayment/correction, duplicate
+  request, physical damage/replacement or archived departments? Halo must reflect all
+  outstanding relations, never shared archived blocks; original blue/orange unchanged.
+- Large original300business-line request: complete scoped preparation/staging/reload/
+  verification and file callback costs, not merely segmented envelope901images. Are
+  real server timeout/RPM/record limits still unmeasured or algorithmically unbounded?
+  Refusal must precede durable domain mutation; do not substitute prototype bound for
+  production acceptance or silently split one business request into multiple saves.
+- Recovery: same original member/request/digest after interruption; no recalculation,
+  TTL stealing, forced unlock, arbitrary inverse rollback or old lock deletion grant.
+  Unknown lock remains blocked. Is there sufficient operational rehearsal/termination
+  proof for supported cases? Classify unsupported cases honestly, not by assertion.
+- Native schema/private permissions/indexes/Date/metadata and all-writer review must
+  precede maintenance, exact initialization/migration and shadow single-authority
+  cutover. No manual ACTIVE/coverage flag based on test count or this document.
+
+Next independent implementation prep: bounded native-capacity/read/typed roundtrip
+diagnostic and actual schema/index installation/recovery checklist; no execution of
+new synthetic writes or deletes without exact remaining authority. Existing original
+StockProtocolTest lock deletion grants exhausted, preserve all previous records.
+NATIVE_INITIALIZATION_PROBE.txt defines the new2retained-row Admin diagnostic
+(10reads/2inserts/7patchattempts maximum) and11offline tests. Its actual one-time
+native pass is now recorded in NATIVE_INIT_TYPE_ACCEPTANCE_20261023.txt.
+Do not equate WQL exists:false with strict missing/null or synthetic date proof with
+whole-company writer quiescence/ABA/migration recovery. Not in production packet.
+NATIVE_TYPED_ROUNDTRIP_PROBE.txt adds1fixed retained-row exact shared codec/adapter
+value test.13affectedpass plus actual isolated native pass in acceptance record.
+Both exact grants now consumed:3new StockProtocolTest rows/2Admin functions once/
+19queries+3inserts+8patchattempts total, new TYPE obsoleteFlag removal only. No
+record/lock delete or production ACL/Pages grant. Do not reuse these permissions.
+Do not repeat unchanged tests/23UIcaptures or claim publication. GitHub push/Pages/
+Wix published-live/public verification/user Loaded acceptance remain distinct.

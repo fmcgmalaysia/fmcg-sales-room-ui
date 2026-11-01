@@ -1,0 +1,50 @@
+2026-10-22 — Sales demand and fact-bound cancellation release candidate
+
+Recovery protected d447185; previous candidate7fbee19. Production Sales/PO/receipt code
+unchanged. No publication, CMS mutations/schema, permission changes or real transactions.
+
+Original validation seam original-sales-validation.cjs
+Runs ORIGINAL createSalesOrderAdjustmentOperations against in-memory private journal;
+captures original PREPARED, stops before legacy apply, no real write/delete store accepted.
+Preserves original canSelectShipment/customer context, plan version, active task, batch
+entitlement/source coverage, packing/preparation, selected/invoiced shipment restrictions.
+This does NOT authenticate browser staff: actual cross-site Sales authority still must
+resolve original server identity/customer entitlement before snapshots/commit/replay.
+No special staff scope invented, no real Support invoice enabled.
+
+Pure adjustDemand and prepareSalesDemand
+- Split changes shipment arrangement only; current product demand/ownership unchanged.
+- Increase changes requested only, not accepted/onHand/current claims or original PO.
+- Reduction consumes ONLY original event.details.allocations exact-source cancellation
+  changes, not a guessed requested delta. Lifetime targets subtract dispatched provenance.
+- Cannot add stock, release dispatched quantities or change another customer's allocation.
+- Packing-held release refuses. Unresolved borrowing source/party stock cannot be freed
+  by Sales cancellation; approved return/replacement resolution remains separate.
+- Covered-plus-promised demand invariants still apply. Cancelling uncovered demand may
+  proceed without deleting repayment obligation or changing own supplier PO.
+- Original event retained unchanged with current per-row releases/product summary in one
+  fenced plan. No separate allocation/receipt event invented or duplicate physical receipt.
+
+Evidence
+Original sales-order-adjustment + initial candidate tests12pass250.208ms. Later added
+borrowing cancellation test, rebuilt preview bundle from model, affected50pass308.3389ms
+(stock-current-sales-demand/allocation/borrowing/borrow-plan/preview); overlap not summed.
+500 original -> split300+200 -> reduce first50 releasesA50, preservesB200. Physical
+sources300+200 stay500; claims450/free50. Increase20 adds demand only. Wrong customer,
+stale version and loaded preparation still blocked by ORIGINAL validator. Attempt to
+release linked borrowing stock refuses; reducing borrower uncovered100to80 keeps debt30
+and PO100, but100to20 refuses. No actual Wix/production endpoint test claimed.
+Token/cache/actual Credit UNKNOWN. No repeated project scan/browser attempt.
+
+Open integration cases
+Original implicit allocation without saved per-source allocation events cannot yet be
+released by this adapter; if new demand undercuts claims, reject rather than guess. Need
+existing batch/source entitlement proof mapped to current explicit ownership before ACTIVE.
+Production demand/order view is original event, no new competing task balance row. All
+current readers must consume new demand consistently, with actual version/plan/fence and
+fresh server identity. Split branch rows still share demand task, so no duplicate inventory.
+Original private journal interception seam needs focused review and minimal real wiring;
+legacy apply must not also save. Bounds/relation lifecycle, exceptions/dispatch/other
+writers, recovery/migration/shadow and actual UI/halo/release gates remain unfinished.
+Four statuses: isolated code candidate; Pages unchanged; Wix unchanged; public new
+borrowing/current-state workflow unavailable/unverified. ACTIVE remains OFF.

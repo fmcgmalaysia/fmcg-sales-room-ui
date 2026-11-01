@@ -1,0 +1,49 @@
+2026-10-22 continuation aftere887d62 — original Sales date/batch arrangement
+
+Scope/recovery
+- Reused same-version framework. Read original customerShipmentPlan.js date and PLAN
+  bodies, original Sales validator pattern and affected tests. No production file edit.
+- shipment-arrangement-plan.cjs captures ORIGINAL ORDER_DATE/PLAN prepare in private
+  journal only, before legacy apply. Original verified server staff/context required;
+  not a public endpoint/auth grant. No current balances/demand/PO/source/claim changes.
+- Original customer/submission/version/date checks, finished-shipping lock, conserved
+  batch totals, existing coverage/sequence, selected/invoiced/prepared restrictions
+  retained. Only original company event becomes one common-fence plan write.
+- Actual authenticated Sales gateway/client version/common admission and all original
+  final rechecks still need full integration. No real source/Wix code changed.
+
+Tests and baseline failure — do NOT report whole regression green
+- Expanded original+candidate set:43tests,42pass,1fail,1439.3258ms.
+- New5 all passed: NCT/GHR date/batch event only, permission/stale/date/completed lock,
+  conserved demand/foreign customer/preparation guard, existing source entitlement
+  cannot be renamed/erased, and date+plan fence replay advances generation2 with2events.
+- Failure is original master-workflow-scenarios.test.cjs:93 expecting paymentHandoff
+  PAID after PI instalment; original paymentHandoff.js:101 returns INSTALLMENT_PAID
+  while final payableCents is unknown. No attempt made to choose/change finance policy.
+- Stopped feature editing at failure, compared original dependency files to recovery
+  point. git diff d447185 -- integration/backend plus original scenario/test-loader
+  returned exit0. All scenario imports original backend via unchanged loader; none
+  imports candidate prototypes.
+- Scenario test blob baseline/current both:
+  f77286ed0bf7323547232e8d4b8ee9299c3db7c0
+- paymentHandoff.js blob baseline/current both:
+  e7e903344c0741475f3e984be71aa22c730ff8b3
+- Isolated original failure rerun (reason: classify newly observed failure, not blind
+  retry):1fail268.9064ms, same INSTALLMENT_PAID vs PAID. Baseline code/test mismatch,
+  not evidence of a new production regression; no restoration required because those
+  artifacts never changed. Baseline failure remains an explicit release/review gate.
+- Prior326 candidate-focused evidence did not include this full original scenario set;
+  do not relabel it as complete original scenario acceptance or remove failed assertion.
+
+Efficiency/operation notes
+- One read-only lookup guessed absent paymentRequestHandoff.js; rg returned actual
+  paymentHandoff.js and actual path used thereafter. No failed lookup counted as test.
+- One mistaken own placeholder created at worktrees/nct-order-submit-room6-20261021-
+  NOT-USED.txt and removed immediately with apply_patch. Only that newly created
+  placeholder removed; no user file, business record or tracked source touched.
+
+Four states
+Code isolated candidate only; Pages NOT deployed; Wix NOT synchronized/published;
+public page NOT verified. ACTIVE OFF; Support real invoice OFF. All remaining actual
+writer/read/photo/routing/capacity/lifecycle/recovery/schema/metadata/migration/shadow/
+UI/halo/focused review gates open, now including explicit original financial test issue.

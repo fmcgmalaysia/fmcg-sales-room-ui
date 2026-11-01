@@ -1,0 +1,81 @@
+2026-10-23 — PURCHASE EXPECTED-IDENTITY CHAIN — CANDIDATE ONLY
+
+Single objective
+Preserve the existing expected staff/member identity through the original Purchase
+candidate page, route, task/borrowing gateways and private save wrappers into the
+unchanged common identity check and immutable request digest. Do not grant authority
+from browser identity or change original Purchase, Warehouse, Sales or finance roles.
+
+Recovery / actual scope
+Starting candidate e3b82a5; recoverable verified production d447185 and runtime32b812c
+remain untouched. Only isolated prototype/test files and this handoff changed. No Wix
+business code synchronization, CMS data/schema/permission change, native probe, Pages
+dispatch or Publish. Previously captured original editor parity is reused because no
+live source change was made; no new live-parity claim for these candidate changes.
+
+Evidence before patch
+Several layers rebuilt requests but omitted stockIdentity: original Purchase mode
+router, task gateway, borrowing gateway, department Purchase and borrowing wrappers,
+and both current page relay branches. Generic UI saves and internal margin staging
+also lacked it; resume validation accepted it only for cost/PO. Margin authentication
+returned memberId only, losing the staffId required by the common identity checker.
+
+Retained actual-root regression before patch: 15 tests,10pass5fail,700.4938ms.
+The five failures established router identity loss, forged-staff EDIT/REORDER/margin
+saves reaching real candidate plans, and forged-staff borrowing entering pending.
+Borrowing result ok:false alone was NOT a refusal: pending state had already changed.
+Whole mock database comparison is retained to distinguish that unsafe case.
+An earlier six-test attempt included two fixture mistakes (normalized control versus
+raw control version; cross-realm deepStrictEqual in an imported VM fixture). These
+were corrected before the retained reproduction, without weakening business guards.
+
+Minimum implementation
+- Forward expected identity unchanged at each existing rewrapping seam and page relay.
+- Keep original current Purchase margin authenticated staff object, not memberId alone.
+- Generic candidate UI snapshots original authenticated workspace staff/member into
+  the same immutable cached request; missing identity prevents a new current save.
+- Internal margin staging records the same identity before its first network write.
+- Resume requires that identity for every current Purchase request and compares it
+  with fresh original Purchase authorization. Unbound/mismatched cached requests are
+  retained, not migrated, cleared, silently adopted or retried as new requests.
+- Original common server guard remains optional when identity is genuinely omitted
+  by older private callers. No claim that this increment mandates identity for every
+  direct API call or completes all-writer semantic closure. Once an identified request
+  exists, omitting/changing its identity cannot adopt its immutable digest.
+
+Acceptance actually completed
+Actual candidate roots: forged staff rejected before plan/data mutation; valid EDIT,
+REORDER and margin saves replay exactly once. Same login with reissued staff cannot
+resume identified EDIT or pending borrowing by using old/new/omitted identity.
+Restoring the original actor/request completes only that original borrowing approval;
+forged actor cannot return unused borrowed cartons. No role or PO guards relaxed.
+Actual page relays preserve expected identity but still discard forged role/coverage.
+Actual UI keeps immutable staff metadata, blocks missing staff, preserves unrelated
+drafts, refuses unbound/different-staff cache without clearing it, and stages durable
+identified margin saves. Existing original LEGACY branches remain unchanged.
+
+Final targeted five-file run:44pass0fail892.7669ms.
+Final FULL stock-current-*.test.cjs:1123pass0fail24073.6842ms.
+This suite includes retained unsafe-schedule witnesses;1123pass is NOT1123proofs that
+production is safe. VM/mock execution is NOT native types/capacity/live acceptance.
+Command runtime, install manifest, Purchase UI and page-relay builders --check exact.
+Runtime104 scoped modules; install38targets94dependencies20UNVERIFIEDwriter categories.
+Protected original production path diff versus d447185 remains empty; diff --check clean.
+No automatic model switch, extra agent, full project scan or business test data.
+Actual Credits UNKNOWN. Some exploratory output was truncated and two guessed test
+paths failed; neither was treated as evidence or retried blindly. Use known file
+inventory and bounded outputs in subsequent work.
+
+Remaining release gates / permission
+The prior consolidated question for2INIT+1TYPE retained StockProtocolTest fixtures
+remains PENDING. No matching human grant or native execution this turn; do not repeat
+the question or infer approval from a heartbeat. Old lock-delete grants remain spent.
+Native schema/index/private ACL/type/domain/capacity, operational recovery/termination,
+legacy pre-lock admission race, maintenance/bootstrap/shadow/single-authority cutover
+and final semantic review still OPEN. CoverageEMPTY, ACTIVEOFF, realinvoice/exitOFF.
+
+Four release states
+Code: isolated identity-chain increment regression-tested; overall release incomplete.
+GitHub Pages: unchanged; new inventory feature NOT deployed/verified there.
+Wix published-live: unchanged; no current inventory activation or business publication.
+Public page: new inventory/borrowing Loaded workflow not publicly accepted.

@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-17 Asia/Kuala_Lumpur",
+  "runtime": "4a167459248c111757db1274e3adc76fb87423bc",
+  "branch": "style/purchase-gp-pills-20261017",
+  "pullRequest": 164,
+  "recovery": "Purchase closeout93eebfb, all four release stages verified and recorded d6559f7",
+  "scope": "Two presentation changes: extend existing GP badge selector to source rows and retain two decimal places. Backend, source cost calculations, allocation gates and financial snapshots unchanged.",
+  "tests": {
+    "passed": 204,
+    "failed": 0,
+    "formatCases": [
+      "12.00%",
+      "12.35%",
+      "0.00%",
+      "-0.14%"
+    ],
+    "isolatedChrome": "Source green/source red/mother red all16px height,8px radius,9px font,0px4px padding,6px leading margin.",
+    "publicChrome": "Actual source12.00% twice and mother12.00%,11.98%,-0.14%,19.97%; all6capsules same16px/8px/9px/0px4px/6px. Green#12883E/red#c42b31 correct; no captured error."
+  },
+  "release": {
+    "code": "GitHub synchronized; main unchanged",
+    "pages": {
+      "run": 38991527550,
+      "result": "success",
+      "marker": "2026-10-17-purchase-gp-pill-unify-v1",
+      "exactAssets": [
+        "index.html",
+        "task-grid.js",
+        "active-orders.css",
+        "app.js"
+      ],
+      "originalDeploymentPoliciesRestored": 7
+    },
+    "wix": "Fresh current full page matches prior verified code; only pointer updated. Full after readback exact. Published-and-live receipt captured.",
+    "public": "PASS. User manually refreshed formal Purchase tab51425783; current iframe and meta build verified; actual source and mother capsule metrics and fixed decimal formats verified. No business mutations.",
+    "allFourStagesComplete": true
+  },
+  "normalizedSha256": {
+    "purchase-live/active-orders.css": "7fc950e4a02ea8049743c14d261da6bde406785d5b83898ea6d12d9363fbd775",
+    "purchase-live/task-grid.js": "f14995e909b9ef10a9952fb7f2f009c4ca81201071afe20feec22e9a74a8c660",
+    "purchase-live/index.html": "e8bd50bdb17bc61b555d39b9e103df8ea2de1e2afd3241c1cb04f60a7b0888fa",
+    "integration/wix/purchase-room-page.js": "228499d8987d4510a10580e38a86da93b712867debbfbd8ef5983d0231f8db82"
+  },
+  "humanAcceptance": "Further visual/user confirmation remains required before main merge or a new whole-workflow verified tag."
+}

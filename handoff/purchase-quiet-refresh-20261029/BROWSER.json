@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-29T15:36:43.778Z",
+  "build": "20261029-purchase-quiet-refresh-v1",
+  "results": [
+    {
+      "label": "baseline",
+      "workspaceReads": 3,
+      "poReads": 3,
+      "headingShift": 37,
+      "tableShift": 37,
+      "updatingSamples": 14,
+      "errors": [],
+      "externalRequests": [],
+      "productionWrites": 0
+    },
+    {
+      "label": "candidate",
+      "workspaceReads": 3,
+      "poReads": 3,
+      "headingShift": 0,
+      "tableShift": 0,
+      "updatingSamples": 0,
+      "errors": [],
+      "externalRequests": [],
+      "productionWrites": 0
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+2026-10-24 — Current row references for borrowing relations, candidate only
+Parent c5f5df8. Existing overnight authorization; no new release authority inferred.
+Reused unchanged framework/spec and protected d447185/runtime32b812c recovery;
+reread current status, ALLOC and RCV handoffs, ownership and exact UI dependencies
+after context restoration. Root is not Git; actual task checkout/branch unchanged.
+
+Single defect: candidate ALLOC dialog's rowLabel found only the first matching
+task row. An independently moved Sales split task can occupy several display rows;
+showing only the first falsely implies the relation belongs to that one batch.
+Filtering also returned a blank label without distinguishing the hidden reference.
+
+Minimum candidate patch in purchase-allocation-ui-overlay.cjs:
+- Resolve the current DOM afresh on each read/label request, using stable task ID.
+- Show ROW for one visible row, ROWS for every distinct current split row.
+- Invalid/missing row numbers do not create ROWundefined, ROWblank or ROW000.
+- Hidden/missing references show Not in current view; known archived tasks show
+  Archived. Customer/PO/stable identity fallback in relation/approval remains.
+- Same resolver embedded into candidate app by existing exact generator. No new
+  runtime asset or stateful row index, no stored row numbers, no business mutation.
+- Borrow submit identity remains task/source/relation IDs. Original display order,
+  sorting/drag/Save, person colors, halos, debt and archived state not modified.
+
+Verification:
+26affected checks passed474.0082ms: actual original display-row decorator moves
+splitA from001/002to001/003 while B003becomes002; filter/archive/invalid-number
+cases; actual async relation panel resolves new007/102after read began, preserves
+remaining15and halo when filtered/archived. Existing approve/return/halo checks pass.
+92Purchase original-workflow/metadata/cost/order/UI-install/review checks passed
+955.7436ms, including original63workflow replay. These are local automation, NOT
+public/browser/live acceptance. Prior1323full-suite evidence is reused unchanged;
+this narrow UI patch did not change backend modules or business quantity formulas.
+Rebuilt38Pages-asset/5relay install hashes and33asset self-contained local review.
+No original production directories changed. No native/Wix/CMS calls, screenshots,
+sync, Publish, Pages dispatch, GitHub push/export, permission or deletion actions.
+
+Remaining scope is NOT resolved by row references:
+- Native movement/filter/archive and partial borrowing/repayment visual acceptance.
+- Per-confirmed-batch physical hold/source provenance and selected-batch borrowing
+  semantics still need explicit review; displaying all task rows is not proof of
+  a loan's physical batch assignment.
+- Exact native backend/page/schema/index installation, capacity/recovery/shadow.
+- Unsafe initial legacy-writer drain remains hard blocked; no verified Wix reply.
+- Specific GitHub handoff-export authorization remains unanswered; no retry/bypass.
+Code local candidate; Pages unchanged; Wix unsynchronized/unpublished; public
+new ALLOC borrowing unverified/unavailable. ACTIVE and real invoice/dispatch OFF.
+Other independent implementation/install work remains: heartbeat stays active.

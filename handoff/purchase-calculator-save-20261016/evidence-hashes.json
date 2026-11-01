@@ -1,0 +1,54 @@
+[
+  {
+    "file": "wix-operations-web-before.js",
+    "sha256": "7d41de7f92ae40c1c2a8bd036ec6013fbcf36f4de07d4b9c1b3128a0b5746398"
+  },
+  {
+    "file": "wix-operations-web-after.js",
+    "sha256": "bc470db5985643aa0478d0bfe66b0ca6d90b42759f90506f18360f66b5350faf"
+  },
+  {
+    "file": "wix-reference-before.js",
+    "sha256": "bc470db5985643aa0478d0bfe66b0ca6d90b42759f90506f18360f66b5350faf"
+  },
+  {
+    "file": "wix-reference-after.js",
+    "sha256": "975b3eda22fa9400bc00a8f4a84415c527121bcd51ca55592b66b8fbd40442ef"
+  },
+  {
+    "file": "wix-page-before.js",
+    "sha256": "09af7239a2e5962457626c54183c4051c57d2b1a58ea8893bd40dd393f45d4fd"
+  },
+  {
+    "file": "wix-page-after.js",
+    "sha256": "e21c20768b582ceeb532b1ed5d8582ab0f5c31059676d7da208addde31f3b08b"
+  },
+  {
+    "file": "wix-page-v2-after.js",
+    "sha256": "347fb3a60a707b10455a359e21c0f0315f6ba841402f4c8bfaa9980b72925326"
+  },
+  {
+    "file": "v2-publish-receipt.png",
+    "sha256": "b9be0cdb2e55dd6cbe52fe307436c54c2e5fdabd609da1e0aa11f8937cedc6d8"
+  },
+  {
+    "file": "chipsmore35-confirmed-v2.png",
+    "sha256": "dfe7d7aa9b7dfc32b8349b95647fb4fd65c72b5974c084fd424223460d1d2e63"
+  },
+  {
+    "file": "eclipse-before-foc-save.png",
+    "sha256": "5a106503af90d3ae42441f23a91fc88a8da4ddeba290a78957010c90d62552de"
+  },
+  {
+    "file": "eclipse-foc-confirmed-v2.png",
+    "sha256": "236dbf95cae9b717ffea2b8006952eb258e6a620666c627254e33e614904846f"
+  },
+  {
+    "file": "eclipse-stock10-v2.png",
+    "sha256": "5406d5fedd35a770e0411f149e70c5939cd80c4bd599bed2cf19c56294f2a8d5"
+  },
+  {
+    "file": "active-final-v2.png",
+    "sha256": "1b80e300bddca299e0ed1a789f5725651e732510b143fb3fba4ba45a09793ba1"
+  }
+]

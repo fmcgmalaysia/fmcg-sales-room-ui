@@ -1,0 +1,48 @@
+2026-10-22 continuation after f903207 — original order intake candidate
+
+Original evidence and scope
+- Read original nctIntake.js, nctReceiver.js and MASTER http-functions.js receiver.
+  The real receiver authenticates a backend-only shared secret before receiving or
+  reading a receipt. This candidate does NOT replace or bypass that boundary.
+- Original intake inserts immutable PREPARED/cost snapshot, Orders/Tasks and cost
+  history, then ORDER_RECEIVED last. insertOnce preserves already edited task fields.
+- No original file changed; baseline d447185/runtime32b812c still protected.
+
+Candidate implementation
+- order-intake-plan.cjs runs exact original intake and receipt reader against private
+  server-owned snapshot/overlay. Original IDs/field mapping/date/FX/cost-error semantics
+  preserved; only new company-scoped insert images become a common-fence plan.
+- Opposite-company journal read remains read-only, original opposite preparation check
+  preserved. No old task/order overwrite and no initial physical inventory invented.
+- Deterministic internal request identity for same order/destination; not a staff
+  credential/auth grant. Existing accepted legacy receipt may return replay/no writes;
+  an actual gateway must handle this under a verified read barrier, not commit empty plan.
+- Protocol failure after original PREPARED/order but before task keeps pending barrier;
+  same execution resumes exact saved plan/costs, only one accepted receipt.
+
+Unresolved blockers made explicit (not solved by a green test)
+- Two independent company snapshots can both prepare same original order for opposite
+  destinations before either commits. Company-local lock cannot serialize this race.
+  Offline counterexample added; neither private plan is allowed to claim activation.
+  Must prove source immutable routing or review cross-company arbitration before live.
+  This is evidence about candidate guarantees, NOT a claim that a live duplicate order
+  has occurred. No real site/CMS used. Preserve original auth/routing; no invented global
+  collection/permission or ad-hoc second stock authority was added.
+- Current30-write/180k proof budget refuses10-line intake (32 insert images). This is
+  NOT an acceptable production order capacity. No hidden chunking/truncation/dummy rows.
+  Production capacity/lifecycle/recovery design still required before activation.
+- Original authenticated gateway/common admission/read receipt integration still open.
+
+Tests
+- New candidate8 + original intake11:19pass,0fail,213.1987ms.
+- NCT/GHR identities, duplicate/manual task preservation, resume original partial cost
+  snapshot, opposite-company preparation, quote/date/FX checks, missing-cost outage,
+  large-order all-or-refuse, concurrent opposite routing counterexample, and fenced
+  interruption/replay covered. One capture/one receipt, no stock/PO invented.
+- No model/production file change, so unrelated full-model326 evidence reused.
+
+Four states: candidate code only; Pages NOT deployed; Wix NOT synchronized/published;
+public page NOT verified. ACTIVE OFF. No business CMS mutations/temporary deletions.
+Still open: all actual writer/read/photo integration, routing/capacity/lifecycle,
+operational recovery, private schema/permissions/metadata/migration/shadow, UI/halo,
+focused Astra diff/proof review and four-stage release. Do not ask for real borrowing QA.

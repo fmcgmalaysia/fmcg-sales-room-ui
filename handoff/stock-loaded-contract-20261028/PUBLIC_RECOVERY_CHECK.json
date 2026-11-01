@@ -1,0 +1,72 @@
+{
+  "at": "2026-10-29T01:03:05.031Z",
+  "method": "VISIBLE_PUBLIC_UI_AND_NORMAL_DEVTOOLS_READ_ONLY",
+  "productionBusinessWrites": 0,
+  "support": {
+    "forceRefreshed": true,
+    "temporaryCacheBypass": true,
+    "buildLink": "20261028-master-save-continuity-v1",
+    "customers": 2,
+    "backendReads": "200",
+    "relevantConsoleError": false,
+    "cacheOptionRestored": true,
+    "deskSwitch": {
+      "sequence": [
+        1,
+        2,
+        1
+      ],
+      "taskCounts": [
+        2,
+        0,
+        2
+      ],
+      "retryDeskSave": false
+    },
+    "poSoLabelsPresent": true,
+    "uploadDialog": {
+      "opened": true,
+      "customerAndDeskCorrect": true,
+      "chooseFilePresent": true,
+      "uploadButtonPresent": true,
+      "filesChosen": 0,
+      "uploads": 0
+    }
+  },
+  "warehouse": {
+    "forceRefreshed": true,
+    "incomingProgress": 1,
+    "incomingCompleted": 2,
+    "onHand": 95,
+    "reserved": 95,
+    "available": 0,
+    "isolated": 0,
+    "reviewRequired": 0,
+    "delivery": {
+      "rows": 4,
+      "firstProductReady": 95,
+      "firstProductTaskQty": 100,
+      "positiveLoaded": 0,
+      "legacyViewRestored": true
+    }
+  },
+  "account": {
+    "forceRefreshed": true,
+    "records": 3,
+    "statuses": [
+      "Awaiting Review",
+      "Awaiting Review",
+      "Awaiting Review"
+    ],
+    "visibleError": false
+  },
+  "purchase": {
+    "forceRefreshed": true,
+    "customers": 2,
+    "dashboardTasks": 3,
+    "shortReceivedCtn": 5,
+    "allocationActionPresent": true,
+    "visibleError": false
+  },
+  "completedAt": "2026-10-29T01:17:04.487Z"
+}

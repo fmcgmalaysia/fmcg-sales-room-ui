@@ -4,6 +4,55 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      static_ui:
+        description: Static interface installation only; does not activate current-stock writes
+        type: choice
+        default: baseline
+        options:
+          - baseline
+          - stock-interface
+          - isolated-stock-interface
+          - purchase-layout-only
+          - receipt-feedback-only
+          - support-workroom-only
+          - master-efficiency-only
+          - master-save-continuity-only
+          - stock-loaded-only
+          - desk-delivery-only
+          - support-details-only
+          - purchase-allocation-only
+          - purchase-quiet-refresh-only
+          - purchase-active-only
+          - purchase-confirmed-feedback-only
+          - po-revision-only
+          - docs-state-colors-only
+          - purchase-personal-row-order-only
+          - purchase-received-review-only
+          - support-shortload-only
+          - purchase-ready-stock-only
+          - company-stock-list-only
+          - stock-list-style-only
+          - purchase-stock-actions-only
+          - purchase-alloc-layout-only
+          - purchase-source-receipt-only
+          - purchase-active-clarity-only
+          - purchase-receipt-info-only
+          - purchase-etd-requested-only
+          - purchase-quiet-quantities-only
+          - purchase-payment-message-only
+          - purchase-quantity-style-only
+          - warehouse-effective-quantity-only
+          - warehouse-operational-header-only
+          - master-closeout-display-only
+          - purchase-origin-view-source-only
+          - purchase-read-efficiency-only
+          - month-end-stock-loss-only
+          - purchase-locked-dialog-only
+          - finance-payable-confirmation-only
+          - po-auto-allocation-only
+          - customer-loaded-records-only
+          - customer-invoice-payments-only
 
 permissions:
   contents: read
@@ -24,14 +73,424 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
+      - name: Prepare paired stock interface resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-interface'
+        run: node integration/prototypes/stock-current-state/stage-business-ui-install.cjs "$RUNNER_TEMP/stock-interface-site"
+
       - name: Upload static site
+        # The company-stock-list release uses the isolated asset upload below.
+        if: inputs.static_ui != 'isolated-stock-interface' && inputs.static_ui != 'purchase-layout-only' && inputs.static_ui != 'receipt-feedback-only' && inputs.static_ui != 'support-workroom-only' && inputs.static_ui != 'master-efficiency-only' && inputs.static_ui != 'master-save-continuity-only' && inputs.static_ui != 'stock-loaded-only' && inputs.static_ui != 'desk-delivery-only' && inputs.static_ui != 'support-details-only' && inputs.static_ui != 'purchase-allocation-only' && inputs.static_ui != 'purchase-quiet-refresh-only' && inputs.static_ui != 'purchase-active-only' && inputs.static_ui != 'purchase-confirmed-feedback-only' && inputs.static_ui != 'po-revision-only' && inputs.static_ui != 'docs-state-colors-only' && inputs.static_ui != 'purchase-personal-row-order-only' && inputs.static_ui != 'purchase-received-review-only' && inputs.static_ui != 'support-shortload-only' && inputs.static_ui != 'purchase-ready-stock-only' && inputs.static_ui != 'company-stock-list-only' && inputs.static_ui != 'stock-list-style-only' && inputs.static_ui != 'purchase-stock-actions-only' && inputs.static_ui != 'purchase-alloc-layout-only' && inputs.static_ui != 'purchase-source-receipt-only' && inputs.static_ui != 'purchase-active-clarity-only' && inputs.static_ui != 'purchase-receipt-info-only' && inputs.static_ui != 'purchase-etd-requested-only' && inputs.static_ui != 'purchase-quiet-quantities-only' && inputs.static_ui != 'purchase-payment-message-only' && inputs.static_ui != 'purchase-quantity-style-only' && inputs.static_ui != 'warehouse-effective-quantity-only' && inputs.static_ui != 'warehouse-operational-header-only' && inputs.static_ui != 'master-closeout-display-only' && inputs.static_ui != 'purchase-origin-view-source-only' && inputs.static_ui != 'purchase-read-efficiency-only' && inputs.static_ui != 'month-end-stock-loss-only' && inputs.static_ui != 'purchase-locked-dialog-only' && inputs.static_ui != 'finance-payable-confirmation-only' && inputs.static_ui != 'po-auto-allocation-only' && inputs.static_ui != 'customer-loaded-records-only' && inputs.static_ui != 'customer-invoice-payments-only'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .
+          path: ${{ inputs.static_ui == 'stock-interface' && format('{0}/stock-interface-site', runner.temp) || '.' }}
+
+      - name: Prepare isolated static resources (no backend or private evidence)
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        run: node integration/prototypes/stock-current-state/stage-isolated-cohort.cjs "$RUNNER_TEMP/isolated-stock-interface-site"
+
+      - name: Upload isolated static site
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'isolated-stock-interface'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/isolated-stock-interface-site', runner.temp) }}
+
+      - name: Prepare approved Purchase layout on current live static baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-layout-only'
+        run: node integration/prototypes/purchase-active-layout-20261025/stage.cjs "$RUNNER_TEMP/purchase-layout-site"
+
+      - name: Upload approved Purchase layout only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-layout-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-layout-site', runner.temp) }}
+
+      - name: Prepare scoped receipt feedback on the approved live baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'receipt-feedback-only'
+        run: node integration/prototypes/receipt-feedback-20261026/stage.cjs "$RUNNER_TEMP/receipt-feedback-site"
+
+      - name: Upload scoped receipt feedback resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'receipt-feedback-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/receipt-feedback-site', runner.temp) }}
+
+      - name: Prepare scoped Support workroom on the current public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-workroom-only'
+        run: node integration/prototypes/support-workroom-20261027/stage.cjs "$RUNNER_TEMP/support-workroom-site"
+
+      - name: Upload scoped Support workroom resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-workroom-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/support-workroom-site', runner.temp) }}
+
+      - name: Prepare scoped MASTER efficiency changes on the verified public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-efficiency-only'
+        run: node integration/prototypes/master-efficiency-20261028/stage.cjs "$RUNNER_TEMP/master-efficiency-site"
+
+      - name: Upload scoped MASTER efficiency resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-efficiency-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/master-efficiency-site', runner.temp) }}
+
+      - name: Prepare scoped MASTER save continuity on the current public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-save-continuity-only'
+        run: node integration/prototypes/master-save-continuity-20261028/stage.cjs "$RUNNER_TEMP/master-save-continuity-site"
+
+      - name: Upload scoped MASTER save continuity resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-save-continuity-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/master-save-continuity-site', runner.temp) }}
+
+      - name: Prepare scoped Loaded stock resources on the current public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-loaded-only'
+        run: node integration/prototypes/stock-loaded-contract-20261028/stage.cjs "$RUNNER_TEMP/stock-loaded-site"
+
+      - name: Upload scoped Loaded stock resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-loaded-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/stock-loaded-site', runner.temp) }}
+
+      - name: Prepare Desk-authorized delivery resources on frozen v2
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'desk-delivery-only'
+        run: node integration/prototypes/desk-delivery-task-20261029/stage.cjs "$RUNNER_TEMP/desk-delivery-site"
+
+      - name: Upload Desk-authorized delivery resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'desk-delivery-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/desk-delivery-site', runner.temp) }}
+
+      - name: Prepare compact Support details and operational Warehouse task resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-details-only'
+        run: node integration/prototypes/support-details-20261029/stage.cjs "$RUNNER_TEMP/support-details-site"
+
+      - name: Upload scoped Support details resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-details-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/support-details-site', runner.temp) }}
+
+      - name: Prepare customer allocation on the current public static baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-allocation-only'
+        run: node integration/prototypes/purchase-allocation-20261029/stage.cjs "$RUNNER_TEMP/purchase-allocation-site"
+
+      - name: Upload customer allocation static resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-allocation-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-allocation-site', runner.temp) }}
+
+      - name: Prepare quiet Purchase background refresh on the pinned current baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-refresh-only'
+        run: node integration/prototypes/purchase-quiet-refresh-20261029/stage.cjs "$RUNNER_TEMP/purchase-quiet-refresh-site"
+
+      - name: Upload quiet Purchase refresh resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-refresh-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-quiet-refresh-site', runner.temp) }}
+
+      - name: Prepare current Purchase task layout on the pinned public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-active-only'
+        run: node integration/prototypes/purchase-active-only-20261030/stage.cjs "$RUNNER_TEMP/purchase-active-only-site"
+
+      - name: Upload current Purchase task layout resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-active-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-active-only-site', runner.temp) }}
+
+      - name: Prepare confirmed Purchase save feedback only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-confirmed-feedback-only'
+        run: node integration/prototypes/purchase-confirmed-feedback-20261030/stage.cjs "$RUNNER_TEMP/purchase-confirmed-feedback-site"
+
+      - name: Upload confirmed Purchase save feedback resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-confirmed-feedback-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-confirmed-feedback-site', runner.temp) }}
+
+      - name: Prepare scoped PO revision and shared status resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'
+        run: node integration/prototypes/po-revision-ui-20261030/stage-state-colors.cjs "$RUNNER_TEMP/po-revision-site"
+
+      - name: Upload scoped PO revision resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-revision-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/po-revision-site', runner.temp) }}
+
+      - name: Prepare scoped Purchase and Finance document colors
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'docs-state-colors-only'
+        run: node integration/prototypes/docs-state-colors-20261030/stage.cjs "$RUNNER_TEMP/docs-state-colors-site"
+
+      - name: Upload scoped document color resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'docs-state-colors-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/docs-state-colors-site', runner.temp) }}
+
+      - name: Prepare personal Purchase row order only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-personal-row-order-only'
+        run: node integration/prototypes/purchase-personal-row-order-20261030/stage.cjs "$RUNNER_TEMP/purchase-personal-row-order-site"
+
+      - name: Upload personal Purchase row order resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-personal-row-order-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-personal-row-order-site', runner.temp) }}
+
+      - name: Prepare received-review resources (no backend or private evidence)
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-received-review-only'
+        run: node integration/prototypes/purchase-received-review-20261031/stage.cjs "$RUNNER_TEMP/purchase-received-review-site"
+
+      - name: Upload received-review resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-received-review-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-received-review-site', runner.temp) }}
+
+      - name: Prepare scoped Support short-load resolution resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-shortload-only'
+        run: node integration/prototypes/support-shortload-20261031/stage.cjs "$RUNNER_TEMP/support-shortload-site"
+
+      - name: Upload scoped Support short-load resolution resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'support-shortload-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/support-shortload-site', runner.temp) }}
+
+      - name: Prepare scoped Purchase ready-stock source resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-ready-stock-only'
+        run: node integration/prototypes/purchase-ready-stock-20261031/stage.cjs "$RUNNER_TEMP/purchase-ready-stock-site"
+
+      - name: Upload scoped Purchase ready-stock source resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-ready-stock-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-ready-stock-site', runner.temp) }}
+
+      - name: Prepare scoped company Stock List resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'company-stock-list-only'
+        run: node integration/prototypes/company-stock-list-20261031/stage.cjs "$RUNNER_TEMP/company-stock-list-site"
+
+      - name: Upload scoped company Stock List resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'company-stock-list-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/company-stock-list-site', runner.temp) }}
+
+      - name: Prepare Stock List Purchase presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-list-style-only'
+        run: node integration/prototypes/stock-list-purchase-style-20261031/stage.cjs "$RUNNER_TEMP/stock-list-style-site"
+
+      - name: Upload Stock List presentation resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'stock-list-style-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/stock-list-style-site', runner.temp) }}
+
+      - name: Prepare Purchase stock actions on the current public baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-stock-actions-only'
+        run: node integration/prototypes/purchase-stock-actions-20261031/stage.cjs "$RUNNER_TEMP/purchase-stock-actions-site"
+
+      - name: Upload Purchase stock actions resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-stock-actions-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-stock-actions-site', runner.temp) }}
+
+      - name: Prepare ALLOC dialog presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-alloc-layout-only'
+        run: node integration/prototypes/purchase-alloc-layout-20261031/stage.cjs "$RUNNER_TEMP/purchase-alloc-layout-site"
+
+      - name: Upload ALLOC dialog presentation resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-alloc-layout-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-alloc-layout-site', runner.temp) }}
+
+      - name: Prepare Purchase source and receipt display only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-source-receipt-only'
+        run: node integration/prototypes/purchase-receipt-review-20261031/stage.cjs "$RUNNER_TEMP/purchase-source-receipt-site"
+
+      - name: Upload Purchase source and receipt display resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-source-receipt-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-source-receipt-site', runner.temp) }}
+
+      - name: Prepare Purchase Active clarity presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-active-clarity-only'
+        run: node integration/prototypes/purchase-active-clarity-20261031/stage.cjs "$RUNNER_TEMP/purchase-active-clarity-site"
+
+      - name: Upload Purchase Active clarity resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-active-clarity-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-active-clarity-site', runner.temp) }}
+
+      - name: Prepare Purchase receipt and source Info only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-receipt-info-only'
+        run: node integration/prototypes/purchase-receipt-info-20261031/stage.cjs "$RUNNER_TEMP/purchase-receipt-info-site"
+
+      - name: Upload Purchase receipt and source Info resources only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-receipt-info-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-receipt-info-site', runner.temp) }}
+
+      - name: Prepare Purchase ETD dates and Requested presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-etd-requested-only'
+        run: node integration/prototypes/purchase-etd-requested-20261031/stage.cjs "$RUNNER_TEMP/purchase-etd-requested-site"
+
+      - name: Upload Purchase ETD dates and Requested presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-etd-requested-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-etd-requested-site', runner.temp) }}
+      - name: Prepare Purchase quiet quantity presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-quantities-only'
+        run: node integration/prototypes/purchase-quiet-quantities-20261031/stage.cjs "$RUNNER_TEMP/purchase-quiet-quantities-site"
+
+      - name: Upload Purchase quiet quantity presentation only
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quiet-quantities-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-quiet-quantities-site', runner.temp) }}
+      - name: Prepare Purchase payment and message consistency
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-payment-message-only'
+        run: node integration/prototypes/purchase-payment-message-20261031/stage.cjs "$RUNNER_TEMP/purchase-payment-message-site"
+
+      - name: Upload Purchase payment and message resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-payment-message-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-payment-message-site', runner.temp) }}
+      - name: Prepare Purchase quantity presentation
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quantity-style-only'
+        run: node integration/prototypes/purchase-quantity-style-20261031/stage.cjs "$RUNNER_TEMP/purchase-quantity-style-site"
+
+      - name: Upload Purchase quantity presentation
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-quantity-style-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-quantity-style-site', runner.temp) }}
+      - name: Prepare Warehouse effective quantity display
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-effective-quantity-only'
+        run: node integration/prototypes/warehouse-effective-quantity-20261031/stage.cjs "$RUNNER_TEMP/warehouse-effective-quantity-site"
+
+      - name: Upload Warehouse effective quantity display
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-effective-quantity-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/warehouse-effective-quantity-site', runner.temp) }}
+      - name: Prepare Warehouse operational header
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-operational-header-only'
+        run: node integration/prototypes/warehouse-operational-header-20261031/stage.cjs "$RUNNER_TEMP/warehouse-operational-header-site"
+
+      - name: Upload Warehouse operational header
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'warehouse-operational-header-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/warehouse-operational-header-site', runner.temp) }}
+      - name: Prepare MASTER closeout display
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-closeout-display-only'
+        run: node integration/prototypes/master-closeout-display-20261031/stage.cjs "$RUNNER_TEMP/master-closeout-display-site"
+
+      - name: Upload MASTER closeout display
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'master-closeout-display-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/master-closeout-display-site', runner.temp) }}
+      - name: Prepare Purchase origin display consumers
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-origin-view-source-only'
+        run: node integration/prototypes/purchase-origin-view-source-20261031/stage.cjs "$RUNNER_TEMP/purchase-origin-view-source-site"
+
+      - name: Upload Purchase origin display consumers
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-origin-view-source-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-origin-view-source-site', runner.temp) }}
+      - name: Prepare Purchase read efficiency resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-read-efficiency-only'
+        run: node integration/prototypes/purchase-read-efficiency-20261101/stage.cjs "$RUNNER_TEMP/purchase-read-efficiency-site"
+
+      - name: Upload Purchase read efficiency resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-read-efficiency-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-read-efficiency-site', runner.temp) }}
+
+      - name: Prepare month-end stock loss resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'month-end-stock-loss-only'
+        run: node integration/prototypes/month-end-stock-loss-20261101/stage.cjs "$RUNNER_TEMP/month-end-stock-loss-site"
+
+      - name: Upload month-end stock loss resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'month-end-stock-loss-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/month-end-stock-loss-site', runner.temp) }}
+
+      - name: Prepare locked Purchase dialog resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-locked-dialog-only'
+        run: node integration/prototypes/purchase-locked-dialog-20261101/stage.cjs "$RUNNER_TEMP/purchase-locked-dialog-site"
+
+      - name: Upload locked Purchase dialog resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-locked-dialog-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/purchase-locked-dialog-site', runner.temp) }}
+
+      - name: Prepare Finance payable confirmation resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'finance-payable-confirmation-only'
+        run: node integration/prototypes/finance-payable-confirmation-20261101/stage.cjs "$RUNNER_TEMP/finance-payable-confirmation-site"
+
+      - name: Upload Finance payable confirmation resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'finance-payable-confirmation-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/finance-payable-confirmation-site', runner.temp) }}
+
+      - name: Prepare PO automatic allocation resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-auto-allocation-only'
+        run: node integration/prototypes/po-auto-allocation-20261101/stage.cjs "$RUNNER_TEMP/po-auto-allocation-site"
+
+      - name: Upload PO automatic allocation resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'po-auto-allocation-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/po-auto-allocation-site', runner.temp) }}
+
+      - name: Prepare customer loaded records resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'customer-loaded-records-only'
+        run: node integration/prototypes/customer-loaded-records-20261101/stage.cjs "$RUNNER_TEMP/customer-loaded-records-site"
+
+      - name: Upload customer loaded records resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'customer-loaded-records-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/customer-loaded-records-site', runner.temp) }}
+
+      - name: Prepare customer invoice payment resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'customer-invoice-payments-only'
+        run: node integration/prototypes/customer-invoice-payments-20261102/stage.cjs "$RUNNER_TEMP/customer-invoice-payments-site"
+
+      - name: Upload customer invoice payment resources
+        if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'customer-invoice-payments-only'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ format('{0}/customer-invoice-payments-site', runner.temp) }}
 
       - name: Deploy to GitHub Pages
         id: deployment

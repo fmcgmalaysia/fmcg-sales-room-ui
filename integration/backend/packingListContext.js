@@ -1,0 +1,28 @@
+import { operationId } from 'backend/purchaseOperationJournal.js';
+import { projectPreparation } from 'backend/warehousePreparation.js';
+import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
+import { readPackingLists } from 'backend/packingListOperations.js';
+import { physicalOutflowQuantity, readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { readSupportDesks } from 'backend/supportDesk.js';
+import { deskTaskPortions } from 'backend/shortloadResolutionModel.js';
+
+export function requirePackingStaff(member,records,department){
+ if(!['SUPPORT','WAREHOUSE'].includes(department)||!member?._id||member.status!=='APPROVED'||!member.loginEmail)throw Error('Sign in with an approved Master staff account.');
+ const matches=records.filter(row=>String(row.staffEmail||'').trim().toLowerCase()===member.loginEmail.trim().toLowerCase()),row=matches.length===1?matches[0]:null;
+ if(!row||row.description!==member._id||String(row.staffStatus).toUpperCase()!=='ACTIVE'||!row.title||!row.staffName)throw Error('Master staff access is not configured.');
+ if(String(row.role).toUpperCase()!=='SUPER ADMIN'&&!(department==='WAREHOUSE'&&String(row.role).trim().toUpperCase()==='TOP MANAGEMENT')&&!(row.departments||[]).map(value=>String(value).toUpperCase()).includes(department))throw Error('This packing department is not authorized.');
+ return {memberId:member._id,staffId:row.title,staffName:row.staffName,packingDepartment:department};
+}
+export function projectPackingContext(context){
+ const preparation=projectPreparation(context),shipments=readCustomerShipments(context.activity),customers=new Map((context.customers||[]).map(row=>[row.id,row.name])),desks=readSupportDesks(context.activity,context.company),flows=readPhysicalOutflows(context.activity);
+ const tasks=context.tasks.filter(task=>!task.procurementSource&&!task.specialPurchase&&!task.archived).map(task=>{
+  const rows=preparation.filter(row=>row.taskId===task.id),sent=physicalOutflowQuantity(context.activity,{taskId:task.id});
+  const legacy=shipments.some(row=>row.status!=='CANCELLED'&&row.status!=='DISPATCHED'&&row.lines.some(line=>line.taskId===task.id&&line.physicalOutflowRefs===undefined));
+  const related=context.tasks.filter(source=>source.id===task.id||source.customerDemandTaskId===task.id||(context.allocations||[]).some(allocation=>allocation.sourceTaskId===source.id&&allocation.targets.some(target=>target.taskId===task.id&&target.quantity>0)));
+  const unknownPhysical=related.some(source=>source.warehouse?.hasPhysicalReceipt===true&&(!Number.isSafeInteger(source.warehouse.stock?.availablePhysical)||source.warehouse.stock.availablePhysical<0));
+  const remaining=Math.max(0,(task.requested??task.ord)-sent),ready=rows.reduce((sum,row)=>sum+(Number.isSafeInteger(row.readyStock)?row.readyStock:0),0);
+  const deskReady=deskTaskPortions(context.activity,desks.find(state=>state.customerId===task.customerId),task,flows).map(part=>({desk:part.desk,quantity:Math.max(0,part.allocated-part.loaded)}));
+  return {taskId:task.id,company:context.company,customerId:task.customerId,customerName:customers.get(task.customerId)||task.customerId,currency:task.transactionCurrency,barcode:task.barcode||'',name:task.name||'',packing:task.packing||'',remaining,planned:Math.max(0,(task.supplyAllocation?.planned??task.inc??0)-sent),ready:Math.min(remaining,ready),deskReady,cbm:null,weight:null,chatContexts:rows.filter(row=>!row.orphaned).map(row=>({id:row.id,label:row.batch||row.name})),review:unknownPhysical||legacy||rows.some(row=>row.stale&&row.revision||row.orphaned||row.prepared||row.loaded>0)};
+ });
+ return {company:context.company,tasks,lists:readPackingLists(context.activity,context.company),sourceVersion:operationId(context.tasks,context.allocations||[],preparation,shipments),physicalContext:context,readAt:new Date().toISOString()};
+}

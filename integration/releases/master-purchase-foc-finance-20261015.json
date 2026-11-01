@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "codeCommit": "03d132d",
+  "branch": "feat/master-purchase-finance-submit-20261014",
+  "build": "2026-10-15-purchase-foc-finance-v1",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "recoveryScope": "Limited user Lavender PLAN/PRICE/PO acceptance only",
+  "wixEditor": {
+    "all13ComponentsExactReadback": true,
+    "normalizedHashes": {
+      "integration/backend/purchasePlan.js": "21f7009698fffd073bee5efada61a68047dd0bd16939ec1fef699b66193b5bf3",
+      "integration/backend/paymentHandoff.js": "535035b3ea4ce55377a3cf8da932af5332dfe4e09ec422fd54da307c053ef934",
+      "integration/backend/purchaseOrders.web.js": "ae5cfc6fa51db1d6dfecbf461acd8069cf62e16ca65c5116b8ba0b615ac86d9f",
+      "integration/backend/accountPurchase.web.js": "a1f6db338590fc20b1814257cafed3b2f93064184979bc13eef444f464059b41",
+      "integration/backend/warehouseReceiving.js": "86683e099ccb1159627379a3c0b0d14a54fd732435665a2a51e8e10a70fa59ae",
+      "integration/backend/purchaseProjection.js": "059c876870ed2b7c9b9c2e0faa9cc074695a08336e71b7cf20df5d4d850de60b",
+      "integration/backend/purchaseSources.js": "e385d7dabca5f92c28913743107d5d0322113733765fb9abefe9c2c11003a5e8",
+      "integration/backend/purchaseOperations.web.js": "f92786d59bb3180b6bb447ebd53e6b5f34c4cb21f2415ae366fd5b56bd4d6827",
+      "integration/backend/purchaseOrderWorkflow.js": "170b2482376ca8972aadf35105fa47d33f2af57e7634820b7dd11b1f4028fb3a",
+      "integration/backend/accountSettlement.js": "99aaf9e1fe4ef1eea5db74938a54bbfd66e685c410ddae762f0391dfc3b0ce23",
+      "integration/backend/purchaseOperations.js": "1542b8a214e677598890c07a6c5a4dd335c9015cb394429acfbdc3af2edb66b8",
+      "integration/wix/purchase-room-page.js": "7a9e6816f504e4d8ea961a95dcb94c626ad2584e0b5c2109dddd1edee2335a1c",
+      "integration/wix/account-department-page.js": "373b4d991379f06e04e2ed34f9466b6b17cd3ed1d58ddf2f390ddbbabe7389b0"
+    },
+    "newDiagnostics": 0,
+    "preexistingDiagnostics": 9,
+    "synced": true,
+    "published": false,
+    "syncEvidence": "IDE status: last synced just now; Studio page displays new reference bridge.",
+    "publishStatus": "Tool clicks produced no acknowledgement; user manual Publish requested after release gates passed."
+  },
+  "validation": {
+    "priorTargetedTests": 130,
+    "typeFixTests": 24,
+    "approvedLayout": "v3",
+    "accountIsolated": "SUBMITTED ownership modal request correct; simulated explicit refusal retained note",
+    "realCandidateSave": false
+  },
+  "pages": {
+    "deployed": true,
+    "commit": "4056068786cefd37d6f02742508c76762d9ea364",
+    "runId": 38665941714,
+    "jobId": 116197819514,
+    "status": "success",
+    "verifiedAssets": [
+      {
+        "file": "purchase-live/index.html",
+        "normalizedExact": true,
+        "sha256": "e4e9706083edcb91fd7ce420c563a11483c45ddff6c6394870a6359440e68a47"
+      },
+      {
+        "file": "purchase-live/app.js",
+        "normalizedExact": true,
+        "sha256": "465b15dc178b7901c117cb013f44e1895e82780b4aca71f575ed9145e3438814"
+      },
+      {
+        "file": "purchase-live/style.css",
+        "normalizedExact": true,
+        "sha256": "dde8ddfbaa7470b8eefb9529968ac5d635bc491570de5f5ba43f5bdb3a152181"
+      },
+      {
+        "file": "purchase-live/supplier-allocation.js",
+        "normalizedExact": true,
+        "sha256": "d50345a03c854536d632d2f7ef39a8fb7ad7737bd53037d8e18087d5794b4cd5"
+      },
+      {
+        "file": "purchase-live/task-grid.js",
+        "normalizedExact": true,
+        "sha256": "a0d44a630b974d9a85442177d2fdeb0aeafbcd2aa6b5de862d51eb7dddadfc20"
+      },
+      {
+        "file": "purchase-live/task-grid.css",
+        "normalizedExact": true,
+        "sha256": "bb856310b3293f7bdda749110f236fbbb1aaec442cad4f6e24d552cdcc8cf818"
+      },
+      {
+        "file": "account-room/index.html",
+        "normalizedExact": true,
+        "sha256": "774de9df924e2938dccbe89350504b79f0fa1ce561bb1ba925271a1ac5f9a4b6"
+      },
+      {
+        "file": "account-room/settlement.js",
+        "normalizedExact": true,
+        "sha256": "6943626ea08aaa20d4bd589de0c78533941c16baa03bcb2907e432b3852265ea"
+      },
+      {
+        "file": "account-room/purchase-payments.js",
+        "normalizedExact": true,
+        "sha256": "0952c9da81e7b6253760b8186aacee9ca2e4c337194f11290de44b9401b22c37"
+      },
+      {
+        "file": "account-room/app.js",
+        "normalizedExact": true,
+        "sha256": "21705afd878329140bee902fa324f7a2a2a1a1d459d98ed1f5eb1c1db732971a"
+      },
+      {
+        "file": "account-room/style.css",
+        "normalizedExact": true,
+        "sha256": "84dee7aae72b16dcf65f87d8d097059aa9a35ea0bffff1b1aea8fd9ce5d6279d"
+      },
+      {
+        "file": "index.html",
+        "normalizedExact": true,
+        "sha256": "23ba131c0657de264f7eff764499f85b9894a7cc95ed2c99476bead301f1f40e"
+      },
+      {
+        "file": "buyer-room.html",
+        "normalizedExact": true,
+        "sha256": "d29e287d95df0cbd457b9825db29cac5d2aae18ed61971909aeee981d81257ad"
+      },
+      {
+        "file": "buyer-login.html",
+        "normalizedExact": true,
+        "sha256": "1e7a3659b475f43b161a7f1e9f1e655e2bf760767064c2ade74c41fb5aa14b3e"
+      },
+      {
+        "file": "warehouse-room/index.html",
+        "normalizedExact": true,
+        "sha256": "1a77173225f8da835e14844353d31699e297497328493b02d1c9750dd7dede94"
+      },
+      {
+        "file": "warehouse-room/app.js",
+        "normalizedExact": true,
+        "sha256": "938d8b0d7229d33857d9d7755e2315fa90aec81c0da046eca8f04708008293e2"
+      },
+      {
+        "file": "support-room/index.html",
+        "normalizedExact": true,
+        "sha256": "eb6cf85b31ce09b4f248f3e35856b51c674a1db8f96acfe13692da986d046fe1"
+      },
+      {
+        "file": "support-room/app.js",
+        "normalizedExact": true,
+        "sha256": "b485959192a6cb8eab128189c375c8734b547777f524cff7f82f6180cb70925c"
+      }
+    ],
+    "originalSevenDeploymentPoliciesRestored": true
+  },
+  "publicVerification": {
+    "complete": false
+  },
+  "mainMerged": false
+}

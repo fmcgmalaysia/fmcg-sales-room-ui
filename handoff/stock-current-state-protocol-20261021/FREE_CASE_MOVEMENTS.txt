@@ -1,0 +1,40 @@
+2026-10-22 — real supplier return and replacement facts, FREE-attributed cases only
+
+Protected d447185 production unchanged; previous candidatee6ccf89. No CMS/live/business
+mutation, new schema permission or publication. Actual Support invoice stays disabled.
+
+Physical source equation extended with distinct current cumulative facts:
+onHand + dispatched + supplierReturned = receiptAccepted + replacementReceived.
+No fake second PO receipt or rewriting original accepted. current-model conversion now
+requires original projection.returned and persists supplierReturned. Borrowing row mapping
+and shared original-product-state exact current-row assembly retain both counters.
+
+prepareFreeQuarantine now records private stockAttribution FREE + exact stockKey metadata
+on SAME original exception event, original details unchanged. Only actual free balance
+has been isolated, so no customer loss attribution is invented. Migrated legacy case
+without this proof cannot claim FREE merely because stock is presently available.
+
+freeCaseMovement + prepareFreeCaseMovement require original case, exact company/product/
+source/ID, original beforeResolution revision, Purchase decision, no financial/admin close,
+and exactly one append to returns OR replacements. All prior decision/approval/other
+movement facts unchanged, original case quantity ceiling enforced. Original real operation
+must still enforce role/acceptedGood/reference/version; candidate is not public authority.
+RETURN reduces isolated/onHand and adds supplierReturned. REPLACEMENT adds free/onHand
+and replacementReceived, never removes still-present old isolated stock. Customer claims,
+original receipt and borrowing debt untouched. One original resolution + current rows plan.
+
+Tests use ORIGINAL createStockExceptionOperations and createStockResolutionOperations
+for report/DECIDE/REPLACEMENT/RETURN entirely in-memory, then candidate mapping.100onHand,
+80claims,20free -> isolate10 -> good replacement5:105onHand/10isolated/15free -> actual
+return5:100onHand/5isolated/15free. Accepted100 and claims80 unchanged. Removing proof
+or rewriting supplier decision refuses. Existing projection agrees on physical totals.
+Migration test separately confirms accepted100/replacement5/return5 -> onHand100/iso5.
+5focused tests170.3012ms; final affected76pass411.4532ms after same-model bundle rebuild;
+overlapping old checks not summed. Actual Credit UNKNOWN.
+
+Still OPEN: reserved/held/borrowed isolation attribution, old case migration review,
+Finance RELEASED/CLOSE with actual physical evidence, other current writers/readers and
+real endpoint/gateway/client version wiring. Original whole-product14source/30relationship
+proof bounds are NOT production capacity. Admin termination recovery and full migration/
+shadow/ACTIVE remain gates. Four statuses: isolated candidate; Pages unchanged; Wix
+unchanged; new public workflow not available/verified. No claim all work completed.

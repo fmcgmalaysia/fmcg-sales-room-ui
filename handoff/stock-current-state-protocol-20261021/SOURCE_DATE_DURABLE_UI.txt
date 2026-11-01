@@ -1,0 +1,63 @@
+2026-10-22 — ORIGINAL SOURCE DATE FORMS / DURABLE CURRENT REQUEST
+Recovery43c2850/PR220. Protected productiond447185/runtime32b812c unchanged.
+No Wix/native/browser/business writes or new grants. First user test ends Loaded;
+real invoice/physical departure OFF. This is candidate code, not deployed inventory.
+
+Two original inline date Save calls now use a private browser controller. Pre-transfer
+Source form sends its exact original message; routed form first uses existing original
+parent READ to learn server current metadata. No guessed generation/server envelope,
+new web method, direct backend/credentials, staff authority or automatic old fallback.
+Successful explicitly legacy READ keeps original legacy date method. Failed/unknown
+mode READ does NOT permit a date write; only original auth-only recovery can inspect
+own retained company/employee key. Cached customer reauthorized before old view shown.
+
+Current transferred-date request retains complete original Source message, expected
+Source revision/date revision, company/customer, current generation/employee and original
+order snapshot BEFORE network, sharing the existing ADJUST/SELECT/CANCEL/PLAN cache.
+Another owner request routes to original widget rather than creating a competing save.
+Same UUID/full inputs through original parent seventh optional metadata argument and
+bounded continuation. No new Source/Master order/demand/PO/receipt quantities or files.
+
+Only original correlated parent final plus company/order/revision/advanced generation
+and read-confirmed cache cleanup allows existing original success handler to continue.
+Wrong/foreign/unknown/error/timeout or cleanup failure retains request, leaves quantity/
+PO/date/cancel locked and gives the EXISTING Save button Retry. Phase timers own their
+attempt; stale queued callbacks cannot send next request. Unload warns. Original form
+refresh guards prevent async data from erasing a pending date. Successful original
+button label restored before original refresh/feedback behavior continues.
+
+Reloaded date deliberately resumes in existing Order Review with original customer/
+product snapshot and date, read-only until explicit retry, EVEN when original click
+was from Progress. This is a single deterministic recovery view, not a new popup.
+Original Review rendering/event handlers reused, no CSS/font/theme redesign. Local
+restore routing is presentation only and grants no backend authority. Session cache
+does not solve closing a tab/losing storage; native cross-session/admin recovery OPEN.
+
+Verification actually run
+- ALL current848pass0fail17050.1083ms after shared helper/controller integration.
+- Final tiny date-only Save-label restoration then focused10pass0fail347.7812ms.
+  Do not imply the final label line was present in earlier full848 run. No shared
+  helper change after that full run. Publishing full regression remains required.
+- Independent original adjustment/split/view/fulfilment/date32pass0fail360.464ms.
+  Original invoice/dispatch unit tests here preserve existing behavior, NOT activation.
+- Runtime generator --check89modules45private exports unchanged. Source HTML generator
+  verifies exact original anchor patches, JS assets and ENTIRE inline script syntax.
+- Actual original Progress and Review Save/result functions loaded in VM, fake DOM;
+  metadata before cache/network, all bounded phases, unknown/wrong/foreign result,
+  quota/cleanup failure, reload to original Review, same UUID, pending READ/auth-only,
+  foreign staff key not read, cached-customer reauth mismatch, two widget routing,
+  refresh/late timer guards and legacy/pretransfer preservation. NOT Chrome/native
+  authority, Source native order-lock or complete real end-to-end acceptance.
+- Production root index/adjustment/shipment/Source parent/onboarding diffs against
+  d447185 empty. Tracked line whitespace diff passes; earlier generated parent native
+  snapshot's inherited6-space line134 remains intentionally exact as already recorded.
+  Credits UNKNOWN. No claim of percentage savings or production readiness.
+
+NEXT preserve existing DOCUMENT co-writer under same company fence before ACTIVE;
+remaining order intake/update/other native writer authority and transport. Native CMS/
+schema/date/index/SDK, all20writer verification, safe unknown-lock/cross-session tools,
+production capacity/relationship lifecycle, quiescent cutover/shadow parity, Loaded
+end-to-end and four release gates OPEN. Coverage EMPTY; ACTIVE OFF. No partial release.
+Four statuses: code incomplete candidate; Pages unchanged; Wix not installed/published;
+public current stock/borrowing unavailable/unverified. Branch-specific temporary Pages
+permission still needed only when complete release is ready; computer access not grant.

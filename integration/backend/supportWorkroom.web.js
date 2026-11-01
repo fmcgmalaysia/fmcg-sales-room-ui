@@ -1,0 +1,32 @@
+import { createSupportDeskOperations, readSupportDesks, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { operationId } from 'backend/purchaseOperationJournal.js';
+import { requestSupportCustomers } from 'backend/supportCustomerClient.js';
+import { webMethod, Permissions } from 'wix-web-module';
+import { currentMember } from 'wix-members-backend';
+import { fulfilmentStore, readFulfilmentContext, saveCustomerFulfilment } from 'backend/customerFulfilmentService.js';
+import { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';
+import { requirePackingStaff } from 'backend/packingListContext.js';
+import { readSupportBookings, createSupportBookingOperations } from 'backend/supportShipmentBooking.js';
+import { readSupportInvoiceState, createSupportInvoiceOperations, createSupportInvoiceCancellation } from 'backend/supportInvoice.js';
+import { readCurrentAdminFx } from 'backend/adminFxClient.js';
+import { readSupportDocuments, supportDocumentVersion, createSupportDocumentOperations, supportCustomerFiles, createSupportCustomerDeliveryOperations } from 'backend/supportDocuments.js';
+import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';
+async function supportStaff(){return requirePackingStaff(await currentMember.getMember({fieldsets:['FULL']}),await fulfilmentStore.all('StaffMasterAccess'),'SUPPORT');}
+const saveDesk=createSupportDeskOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
+const save=createSupportBookingOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
+export const getSupportBookings=webMethod(Permissions.SiteMember,async company=>{const staff=await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');const activity=await fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity),deskLocks=readSupportDeskLocks({company,activity}),invoiceDesks=activity.filter(row=>row.action==='SUPPORT_INVOICE_PREPARED'&&row.details?.desk).flatMap(row=>{const ready=activity.find(item=>item.title===operationId(row._id,'SUPPORT_INVOICE_INPUT_SAVED'));return ready?[{invoiceId:ready.description,desk:row.details.desk}]:[];});return {company,bookings:readSupportBookings(activity,company),desks:readSupportDesks(activity,company),deskLocks,pendingDeskInvoices:deskLocks.filter(row=>row.status==='PENDING'&&row.memberId===staff.memberId&&row.input).map(row=>({customerId:row.customerId,desk:row.desk,requestId:row.requestId,input:row.input})),deskMetadataVersion:2,invoiceDesks};});
+export const saveSupportBooking=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{const staff=await supportStaff();return (['DESK_ASSIGN','DESK_SPLIT','DESK_SHIPMENT','DESK_REFERENCES'].includes(input?.action)?saveDesk:save)({company,staff,requestId,input});});
+
+const invoiceDependencies={store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,saveFulfilment:saveCustomerFulfilment,readRates:readCurrentAdminFx};
+const saveInvoice=createSupportInvoiceOperations(invoiceDependencies),cancelInvoice=createSupportInvoiceCancellation(invoiceDependencies);
+export const getSupportInvoiceState=webMethod(Permissions.SiteMember,async company=>{const staff=await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');return readSupportInvoiceState(await readFulfilmentContext(company,staff),readCurrentAdminFx);});
+export const issueSupportInvoice=webMethod(Permissions.SiteMember,async(company,requestId,input)=>saveInvoice({company,staff:await supportStaff(),requestId,input}));
+export const withdrawSupportInvoice=webMethod(Permissions.SiteMember,async(company,requestId,input)=>cancelInvoice({company,staff:await supportStaff(),requestId,input}));
+
+const saveDocument=createSupportDocumentOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,readCustomers:requestSupportCustomers,documentService:requestPurchaseDocument});
+const deliverDocument=createSupportCustomerDeliveryOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,documentService:requestPurchaseDocument});
+export const getSupportDocuments=webMethod(Permissions.SiteMember,async company=>{await supportStaff();if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');const activity=await fulfilmentStore.all(PURCHASE_COLLECTIONS[company].activity),posted=activity.filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED').map(row=>row.details?.document),withFinance=d=>({...d,financeRecorded:posted.some(p=>p&&(p.sourceDocumentId===d.id||p.fileId===d.fileId||p.sha256===d.sha256))});return {company,documents:readSupportDocuments(activity,company).map(withFinance),customerFiles:supportCustomerFiles({company,activity}).map(withFinance),version:supportDocumentVersion({company,activity})};});
+export const uploadSupportDocument=webMethod(Permissions.SiteMember,async(company,requestId,input)=>(input?.action==='DELIVER'?deliverDocument:saveDocument)({company,staff:await supportStaff(),requestId,input}));
+
+export const getSupportCustomers=webMethod(Permissions.SiteMember,async company=>requestSupportCustomers({company,staff:await supportStaff()}));
+export const saveSupportCustomer=webMethod(Permissions.SiteMember,async(company,requestId,input)=>requestSupportCustomers({company,staff:await supportStaff(),requestId,input}));

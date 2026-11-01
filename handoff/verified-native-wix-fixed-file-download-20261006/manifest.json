@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "scope": "Fixed simulation-file native Wix signed download only",
+  "archivedFiles": [
+    {
+      "file": ".gitattributes",
+      "bytes": 9,
+      "sha256": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992"
+    },
+    {
+      "file": "acceptance-and-result.json",
+      "bytes": 3994,
+      "sha256": "7602147c1be0609e09308cc9f28b314b76b62b202fafdf136d4e42919878123c",
+      "normalizedLfTrimEndSha256": "76f3f92a28692ee396c219d527d282d4a4b9599beddb176b909b2165fd0854ae"
+    },
+    {
+      "file": "buyer-page-before.js",
+      "bytes": 12723,
+      "sha256": "967431dbdfe329bf851e660d5874d77bd572b77eb2d4eb8bdb6e823d4492fde0",
+      "normalizedLfTrimEndSha256": "9deb99bcda851a441a563427e16dfa23be936d3d395d9b62b80530002a183817"
+    },
+    {
+      "file": "buyer-page-restored.js",
+      "bytes": 12723,
+      "sha256": "967431dbdfe329bf851e660d5874d77bd572b77eb2d4eb8bdb6e823d4492fde0",
+      "normalizedLfTrimEndSha256": "9deb99bcda851a441a563427e16dfa23be936d3d395d9b62b80530002a183817"
+    },
+    {
+      "file": "buyer-page-success.js",
+      "bytes": 14278,
+      "sha256": "2cbc77f16666142ea6555c0ee264d1a5cbf1788efb52178a3ee00b40c97d84b5",
+      "normalizedLfTrimEndSha256": "841f12d0f6ee6d392bd411deb70a29e8646dcf48f2c1f98c94042b3f10748495"
+    },
+    {
+      "file": "catalogueAuth-unchanged.web.js",
+      "bytes": 53739,
+      "sha256": "2a3193fe0e7978b27c04652f2b7128c349a1c73973e9de23fd12a3165d91ecec",
+      "normalizedLfTrimEndSha256": "17bf5bcdee6d26357a02d763a90e8bd579009a69f78a568ab1ed5f0f4357ac1b"
+    },
+    {
+      "file": "native-button-downloaded-test.xlsx",
+      "bytes": 4132,
+      "sha256": "538ef70ccb38de04d1c91ee706ad276585e782b6aac375bb0d619f0570ffd03c"
+    },
+    {
+      "file": "page-test-only-forward.patch",
+      "bytes": 2683,
+      "sha256": "7fdf732e91389af36cb11f73c3f0c9980a86cd9dc01233b473a723c0ae6bec2a",
+      "normalizedLfTrimEndSha256": "b19695337fffb9df68b12cabefccbad15f0b392e4e2bc7159f3ab62566b25f64"
+    },
+    {
+      "file": "page-test-only-reverse.patch",
+      "bytes": 2683,
+      "sha256": "54234ad3bd1f914ebf296808be8d78e0207bf24fc932882c92d402bc90af8565",
+      "normalizedLfTrimEndSha256": "be6bd5cdb3862ceb183db285a5f7591aeb902615d749c511359a04431a594d8f"
+    },
+    {
+      "file": "RECOVERY_AND_REPRODUCTION.txt",
+      "bytes": 3342,
+      "sha256": "576aea3624ea481a6b5abd0d3c091bc4fbb24c0638c4df1ab23da8f183809604",
+      "normalizedLfTrimEndSha256": "b4dfe780e4482718c617de843cac9a8457669f7e1c68c817f1207d76aa5b59cd"
+    },
+    {
+      "file": "xlsxTest-admin-before.web.js",
+      "bytes": 1056,
+      "sha256": "0457acaf8d0472d0a716f0e36d0e214f52e5811862214ba09034896dd2f8a5cd",
+      "normalizedLfTrimEndSha256": "9b6b5c475f704766e08401fae2eb089cbe4f5583d380e83ac066a0a68f4dc18c"
+    },
+    {
+      "file": "xlsxTest-disabled.web.js",
+      "bytes": 2082,
+      "sha256": "83631d267906ac593d3b5d1e4b3a4bcc2426f3724c8f26f729bd39dc1c7efa23",
+      "normalizedLfTrimEndSha256": "837f5117c238f680355f8be9fd310d6ebccdec399eb561b4a23b664ce27f1112"
+    },
+    {
+      "file": "xlsxTest-success.web.js",
+      "bytes": 2014,
+      "sha256": "2e534aa58980ab6b6e8e65a0acbdb49decf6fdabe98cc104917a827a07fe1bf7",
+      "normalizedLfTrimEndSha256": "3127a21a57c1fc0b813cc3cf68f269afd0aa7aec5fc31091afe34302d3b1db0e"
+    }
+  ],
+  "localOnlyEvidence": [
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/my-selection-download-regression-20261006/staff-gate-publish.png",
+      "bytes": 51425,
+      "sha256": "2058a47e1b6d4f4585c03806a3f05ed5511d469a4b0d1727cd25d4431c6078f2"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/my-selection-download-regression-20261006/staff-gate-download-success.png",
+      "bytes": 70181,
+      "sha256": "813fbcbfb52d3f09bec33187cabd26fdc6fc561cdc4a161aac084a495fb61f2a"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/my-selection-download-regression-20261006/staff-restoration-receipt.txt",
+      "bytes": 8070,
+      "sha256": "3a5fae0f98847e93aaf04f52cd8a8d899a8aa4867d0585e016ee063340ad977d"
+    },
+    {
+      "file": "C:/FMCG-WIX-LOCAL/handoff/my-selection-download-regression-20261006/staff-restored-public.png",
+      "bytes": 77671,
+      "sha256": "64ef80b20c6a601e288ab75d09ccf6d35c1e3e46bfcb247b43628207e7a2ecb2"
+    }
+  ]
+}

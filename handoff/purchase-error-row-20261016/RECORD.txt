@@ -1,0 +1,16 @@
+2026-10-16 Purchase error row context
+
+Single objective: save diagnostic messages lead with product ROW nnn, and supplier source errors include 的子行. ADD_SOURCE uses its parent even when no child task ID exists. Existing source records use their parent, including first supplier root rendered as child. Main demand edits retain main-row label. Current table filter predicates and roomRows sequence are read only for labels; no business handlers/payloads/IDs/backend changed. Action/Ref bilingual separators corrected only in this formatter.
+
+Framework read: root AGENTS/START_HERE, latest save-po-colors handoff, MASTER_WORKROOM_STANDARD, app saveDiagnostic/save message/receipt paths, task-grid root/child numbering. Fresh public app.js normalized exact to repo; full Wix fresh code matches previous readback. Both copies preserved before writes. Recovery a5fe178, existing narrow verified tags purchase-allocation-layout-20261015 and purchase-lavender-plan-po-20261014 preserved; no claim of overall business acceptance.
+
+Branch copy/purchase-error-row-context-20261016, draft PR99. Code cb5766f3613445b45248d07100036117f41ed1a2; Wix pointer 299383fc2862bea69ab3c0dfe2ebd5c1a01b3906. 93 tests passed, zero failed: live-ui, dialog, drafts, waiting, action-colors. New cases main ROW003, existing child, new child without ID, first original supplier as child, supplier-filter renumbering and moved order.
+
+Pages run38842729465 success, marker2026-10-16-purchase-error-row-v1, all31 public resources normalized exact. Temporary policy63225781 removed and original7 exact.
+Wix complete before/after differ only one version token. Published/live receipt saved. No backend synchronized.
+
+Chrome connection changed4->5 mid-task; reconnected documented runtime, reused actual candidate51425510. Original preview51425506 had already closed, only one replacement created. Isolated local preview Save rejected intentionally with Select an active supplier; displayed ROW002的子行, actual backend text and request ID retained. It is a simulated validation error, not a real supplier fault or real business acceptance. Final screenshot and preview retained.
+
+Official entry https://fmcg999.wixstudio.com/master inspected using same candidate window temporarily and refreshed once. New iframe reference error-row-v1 confirmed but embedded content blank; public visual verification incomplete, do not claim full publication. Returned candidate to local demonstration. Original real user page51425500 not refreshed/edited/submitted. No live Save/PO clicked. Actual prior workspace mismatch / active supplier errors remain unresolved by this copy-only task.
+
+Next verify new diagnostic in real saved request flow with user acceptance, without inventing error or changing real business records solely for visual testing. Preserve drafts, action colors, quantities and drag. No main merge/new whole-workflow verified tag. Unrelated pre-existing CRLF-only allocation-drafts.test.cjs stays unstaged.
