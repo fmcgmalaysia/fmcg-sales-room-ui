@@ -452,11 +452,29 @@
     "No cost-management migration"
   ],
   "status": {
-    "code": "TESTED",
-    "github": "PENDING",
-    "pages": "PENDING",
-    "wix": "TWO_VERSION_DRAFTS_EXACT_NOT_PUBLISHED",
-    "public": "PENDING"
+    "code": "TESTED_PUSHED",
+    "github": "DRAFT_PR277_PR278_PR279_NO_MAIN_MERGE",
+    "pages": "SUCCESS_RUN_41273489673_99_EXACT",
+    "wix": "PUBLISHED_AND_LIVE_TWO_EXACT_VERSION_DRAFTS",
+    "public": "PURCHASE_LOCK_PASS_FINANCE_EMBED_BLANK_PENDING",
+    "userAcceptance": "PENDING"
   },
-  "recovery": "7efa243 / 99 exact live resources; isolated original script saved privately"
+  "recovery": "7efa243 / 99 exact live resources; isolated original script saved privately",
+  "runtimeCommit": "8815ddd213a975801a7c24b583ae4a828d376928",
+  "releaseEvidence": {
+    "run": 41273489673,
+    "job": 124750873446,
+    "resources": 99,
+    "exact": 99,
+    "permissions": "TEMPORARY_BRANCH_REMOVED_ORIGINAL_7_BRANCHES_0_TAGS_RESTORED",
+    "purchase": "Paid801 plain values, locked bilingual notice, no editing/Save; original100 Alloc/90 Loaded preserved",
+    "finance": "New iframe src finance-payable-confirmation-v1 but about:blank; no final amount or confirmation form public acceptance",
+    "businessWrites": 0,
+    "boundScriptVersion": "Saved HEAD for existing menu; no web deployment"
+  },
+  "remaining": [
+    "Finance public invoice/confirmation form verification from original bookmark",
+    "Unpaid PO public edit regression",
+    "User acceptance; actual selected NONFOOD product verification"
+  ]
 }
