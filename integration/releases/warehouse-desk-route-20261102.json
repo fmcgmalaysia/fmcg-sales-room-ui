@@ -1,0 +1,32 @@
+{
+  "objective": "Prevent Desk notifications and late Delivery reads from overwriting other Warehouse pages",
+  "branch": "fix/warehouse-desk-route-20261102",
+  "build": "20261102-warehouse-desk-route-v1",
+  "baseline": "1d4ca00 published canonical101 assets,0a13b69 publication record",
+  "recoveryTag": "verified/warehouse-desk-route-recovery-20261102",
+  "changes": "Two UI guards reuse the existing active Warehouse navigation state; no extra route state, business authority, queue or save changes",
+  "staticChanges": [
+    "master-shared/desk-delivery.js",
+    "warehouse-room/index.html"
+  ],
+  "unchangedStaticResources": 99,
+  "wix": "One Warehouse version reference; fresh Studio original equals repository",
+  "tests": {
+    "passed": 90,
+    "newNavigationCases": 9,
+    "oldPackagingFailure": {
+      "test": "warehouse-operational-header.test.cjs",
+      "cause": "Historical frozen retired support-room/packing-model-browser.js hash mismatch c1fcb6f5 versus50022e0a. Existing tracked test/staging inputs unchanged at0a13b69; current101-resource pipeline uses the verified public archive and does not traverse this old99-resource packager. No business production changes to satisfy this assertion.",
+      "fixed": false
+    }
+  },
+  "candidateUi": "After Delivery initialization, switched Incoming and sent same-company notification; Incoming remained visible and Packing reads stayed3 to3. Active Delivery behavior is covered by runtime test.",
+  "publication": {
+    "code": "CANDIDATE",
+    "pages": "NOT_DEPLOYED",
+    "wix": "DRAFT_FULL_READBACK_EXACT_NOT_PUBLISHED",
+    "public": "NOT_VERIFIED"
+  },
+  "userAcceptance": "PENDING",
+  "packaging": "101/101 staged hashes verified; exactly2 static resources change"
+}

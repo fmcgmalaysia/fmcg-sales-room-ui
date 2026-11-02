@@ -1,8 +1,8 @@
 {
   "task": "Real three-customer cross-department pressure test",
-  "branch": "fix/purchase-merge-po-entry-20261102",
+  "branch": "fix/warehouse-desk-route-20261102",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "MERGE_PO_PATCH_PUBLICLY_VERIFIED_CONTINUING_REAL_STRESS",
+  "status": "ALL_3_CUSTOMERS_LOADED_AND_5_SI_CONFIRMED_FIXES_AND_READ_COUNT_IN_PROGRESS",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -223,6 +223,102 @@
       "quantity": 1300,
       "amountMYR": 193885.95,
       "receiptQuantity": 0
+    },
+    {
+      "step": "Merged PO receipts confirmed",
+      "po": "NCT-PO-T3-MERGED-KOH-1102",
+      "batches": [
+        1230,
+        70
+      ],
+      "captain801": [
+        250,
+        50
+      ],
+      "captain01": [
+        80,
+        20
+      ],
+      "finalQuantity": 1300
+    },
+    {
+      "step": "01 Desk1 authorized and Loaded confirmed",
+      "taskCount": 6,
+      "loadedEach": 100,
+      "loadedTotal": 600,
+      "mixedAjax": "90 original source plus10 Ready Stock",
+      "etd": "2026-12-03",
+      "lastGateIn": "2026-12-02T18:00",
+      "noInvoiceYet": true
+    },
+    {
+      "step": "01 Desk1 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-01-D1-1102",
+      "loaded": 600,
+      "amountUSD": 16476,
+      "financeOutstandingUSD": 16476,
+      "quantityInputsReadOnly": true
+    },
+    {
+      "step": "801 Desk3 Loaded confirmed",
+      "lines": [
+        50,
+        150,
+        100,
+        300,
+        200
+      ],
+      "quantity": 800,
+      "existingDesks1and2Retained": true
+    },
+    {
+      "step": "802 Desk1 opened and Loaded queued",
+      "lines": [
+        150,
+        150,
+        150,
+        150
+      ],
+      "quantity": 600,
+      "depositSGD123_40": "Reference only; no Finance receipt"
+    },
+    {
+      "step": "802 Desk1 Loaded confirmed",
+      "quantity": 600,
+      "lines": [
+        150,
+        150,
+        150,
+        150
+      ]
+    },
+    {
+      "step": "801 Desk3 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-801-D3-1102",
+      "amountUSD": 16662,
+      "quantity": 800
+    },
+    {
+      "step": "802 Desk1 Sales Invoice confirmed",
+      "number": "NCT-INV-T3-802-D1-1102",
+      "amountSGD": 39411,
+      "quantity": 600
+    },
+    {
+      "step": "Finance final AR confirmed",
+      "customer01USD": 16476,
+      "customer801USD": 16662,
+      "customer802SGD": 39411,
+      "original801Invoices": [
+        2784,
+        2016
+      ],
+      "original801Receipts": [
+        2400,
+        2400
+      ],
+      "originalInvoicesStillPaid": true,
+      "referenceDepositSGD123_40NotPosted": true
     }
   ],
   "findings": [
@@ -292,6 +388,16 @@
       "id": "T3-12",
       "issue": "Finance customer pending receipt visible but shows Awaiting Finance and no Review button for current LAW session; fresh Wix customerFulfilment.web original matches repository exactly; Finance page forwards full result",
       "status": "FIXED_AND_FORMALLY_VERIFIED_EEA8160; one existing TOP MANAGEMENT account-role expression;90checks; GitHub and Wix complete; Review and customer posting real-UI pass"
+    },
+    {
+      "id": "T3-14",
+      "issue": "Warehouse merged PO receiving displays identical product twice with expected300/100 but no per-line customer label; human attribution is ambiguous. First1230 then70 receipts remained correctly separated.",
+      "status": "VISUAL_DEFECT_REPRODUCED_NOT_FIXED"
+    },
+    {
+      "id": "T3-15",
+      "issue": "Task selection and redraw in long scroll area can reset viewport; observed check failure/offscreen native second coordinate no-op, actual checked states read back before PO.",
+      "status": "OBSERVED_NEEDS_BROWSER_VERSUS_APP_ROOT_CONFIRMATION"
     }
   ],
   "blocker": {
@@ -302,13 +408,12 @@
     "history": "Former URL safety stop retained in prior commits; not an active blocker."
   },
   "pending": [
+    "Refresh Buyer/Sales transaction history for latest5 SI and verify customer downloads; preserve old801 paid allocations",
     "Resolve original SI attachment request result; do not create new upload or invoice blindly",
-    "Receive merged PO1300 through Warehouse and complete remaining allocations/Loaded/SI without repeating original7UP500",
-    "Complete remaining customer tasks Loaded/SI and related financial cases; existing8017UP500 and all4 payments must not replay",
     "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
     "Complete Finance stock valuation/GHR and customer download acceptance",
-    "Stable CMS before/after read-only count comparison; earlier168/210 counts are midpoints",
-    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
+    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained",
+    "Warehouse route guard candidate ready; publish after exact branch deployment approval, then real notification/current-view acceptance"
   ],
   "expectedCurrentStockNotYetVisuallyVerified": {
     "status": "FINANCE_FORMAL_UI_VERIFIED",
@@ -354,19 +459,43 @@
       2784,
       2016
     ],
-    "financeDueUSD": 0,
-    "buyerDueUSD": 0,
-    "warehouseOnHand": 710,
-    "reserved": 700,
+    "warehouseOnHand": 10,
+    "reserved": 0,
     "free": 5,
     "isolated": 5,
-    "customerLoaded": 500,
-    "goodsReceipts": 1210,
+    "customerLoaded": 2500,
+    "goodsReceipts": 2510,
     "noRealBankTransfers": true,
-    "financeStockValueMYR": 34702.41,
+    "financeStockValueMYR": 571.25,
     "ghrFinanceStockQuantity": 0,
     "ghrFinanceStockValueMYR": 0,
-    "purchaseOrders": 7
+    "purchaseOrders": 7,
+    "stockMeasuredAt": "After all3 customers Loaded; after01 and802 SI; final801 SI does not move stock",
+    "customer01InvoiceUSD": 16476,
+    "financeDueByCustomer": {
+      "01": {
+        "currency": "USD",
+        "amount": 16476
+      },
+      "801": {
+        "currency": "USD",
+        "amount": 16662
+      },
+      "802": {
+        "currency": "SGD",
+        "amount": 39411
+      }
+    },
+    "buyer801DueUSD": 16662,
+    "buyerOriginalD1PaidUSD": [
+      1000,
+      1784
+    ],
+    "customerInvoiceCount": 5,
+    "cmsActivityReadCycle": [
+      327,
+      327
+    ]
   },
   "mergePoCandidate": {
     "build": "20261102-purchase-merge-po-entry-v1",
@@ -382,5 +511,31 @@
     "commit": "1d4ca00",
     "authorization": "User explicitly approved one scoped Pages run and immediate restoration of original7 rules",
     "deployment": "Run329 succeeded,101 hashes exact,original7 rules restored,Wix published/live"
+  },
+  "currentExpectedStockAfterLoaded": {
+    "status": "PUBLIC_WAREHOUSE_AND_FINANCE_MATCH",
+    "onHand": 10,
+    "reserved": 0,
+    "free": 5,
+    "isolated": 5,
+    "valueMYR": 571.25
+  },
+  "cmsReadComparison": {
+    "beforeActivity": 327,
+    "operations": "Purchase refresh attempted (tool action uncertain); Support/Warehouse stock/Finance AR refresh clicked; no business saves during interval",
+    "afterActivity": 327,
+    "result": "PASS_NO_ACTIVITY_GROWTH"
+  },
+  "warehouseRouteCandidate": {
+    "build": "20261102-warehouse-desk-route-v1",
+    "checksPass": 90,
+    "legacyPackagingFailure": {
+      "test": "warehouse-operational-header.test.cjs",
+      "cause": "Historical frozen retired support-room/packing-model-browser.js hash mismatch c1fcb6f5 versus50022e0a. Existing tracked test/staging inputs unchanged at0a13b69; current101-resource pipeline uses the verified public archive and does not traverse this old99-resource packager. No business production changes to satisfy this assertion.",
+      "fixed": false
+    },
+    "wix": "Exact one-reference draft matched",
+    "pages": "NOT_DEPLOYED",
+    "ui": "Incoming stays visible; stable local notify Packing read count3 to3"
   }
 }
