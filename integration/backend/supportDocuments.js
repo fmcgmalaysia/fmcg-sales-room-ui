@@ -3,7 +3,9 @@ import { createHash } from 'crypto';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { normalizeChargeLines } from 'backend/customerInvoicePayments.js';
-import { readSupportDesks, supportDeskForTask, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { readSupportDesks, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { deskTaskPortions } from 'backend/shortloadResolutionModel.js';
+import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 const ACTION='SUPPORT_DOCUMENT_UPLOADED',codes=['SO','BC','SI','DO','CN','DN','PL','INS','CF','BL','$'];
 const typeFor=code=>'SUPPORT_'+(code==='$'?'PAYMENT':code);
 const text=value=>String(value??'').trim();
@@ -54,10 +56,12 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
   const sha256=createHash('sha256').update(bytes).digest('hex'),safeInput={...input,base64:undefined,sha256,size:bytes.length};
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{supportDocument:safeInput},prepare:async()=>{
    const context=await readContext(company,staff),docs=readSupportDocuments(context.activity,company);
-   if(context.company!==company||input.version!==supportDocumentVersion(context))throw Error('Documents changed. Refresh before uploading.');
+   if(context.company!==company||!/^[a-f0-9]{32}$/.test(input.version||''))throw Error('Documents changed. Refresh before uploading.');
+   const preparedVersion=supportDocumentVersion(context);
    const customerScope=input.scope==='CUSTOMER'||charge,deskScope=input.scope==='DESK',deskState=deskScope?readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId):null,deskLock=deskScope?readSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===input.desk):null;
    const directory=customerScope&&readCustomers?await readCustomers({company,staff}):null;if(customerScope&&(!directory||directory.company!==company||!Array.isArray(directory.customers)))throw Error('Customer directory is unavailable.');
-   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&(deskScope?supportDeskForTask(deskState,row.id)===input.desk:row.orderId===input.orderId)&&!row.specialPurchase&&!row.procurementSource),customer=(customerScope?directory.customers:context.customers).find(row=>row.id===input.customerId);
+   const flows=deskScope?readPhysicalOutflows(context.activity):[];
+   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.specialPurchase&&!row.procurementSource&&(deskScope?deskTaskPortions(context.activity,deskState,row,flows).some(part=>part.desk===input.desk&&part.quantity>0):row.orderId===input.orderId)),customer=(customerScope?directory.customers:context.customers).find(row=>row.id===input.customerId);
    if(!customer||!customerScope&&!tasks.length)throw Error('This customer order is unavailable.');
    if(deskScope&&!tasks.some(row=>row.orderId===input.orderId))throw Error('This order is not assigned to the selected Desk.');
    const invoice=!charge&&(input.scope==='INVOICE'||deskScope)?readCustomerShipments(context.activity).find(row=>row.id===(deskScope?deskLock?.invoiceId:input.invoiceId)&&row.customerId===input.customerId&&row.company===company&&row.invoice&&row.lines.some(line=>line.orderId===input.orderId)):null;
@@ -74,7 +78,7 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
    if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('File allocation is not confirmed.');
    const at=now().toISOString(),clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,80),name=at.slice(0,10)+' '+clean(customer.name)+' '+(input.code==='$'?'PAYMENT':input.code)+' '+clean(reference||input.orderId)+'.pdf';
    const document={id,company,customerId:input.customerId,customerName:customer.name,customerDeliveryVersion:1,customerLinkReady:true,orderId:input.orderId,scope:input.scope,invoiceId,...(deskScope?{desk:input.desk}:{}),...(replaces?{replacesDocumentId:replaces.id}:{}),...(input.code==='$'?{depositPayment:input.depositPayment===true}:{}),code:input.code,reference,currency:[...currencies][0],amountCents:input.code==='SI'&&!charge?invoice.invoice.amountCents:input.amountCents,...(charge?{invoiceKind:'CHARGE',chargeLines}:{}),fileId:allocated.fileId,sha256,size:bytes.length,name,at,by:staff.staffName,byStaffId:staff.staffId,url:'https://drive.google.com/file/d/'+allocated.fileId+'/view'};
-   return {version:input.version,upload:{action:'UPLOAD',company,department:'SUPPORT',type:typeFor(input.code),poId:id,fileId:allocated.fileId,name,sha256,customerId:input.customerId,customerName:customer.name,customerScope:input.scope,businessId:invoiceId||input.orderId},event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support attached '+input.code,details:{document}}};
+   return {version:preparedVersion,upload:{action:'UPLOAD',company,department:'SUPPORT',type:typeFor(input.code),poId:id,fileId:allocated.fileId,name,sha256,customerId:input.customerId,customerName:customer.name,customerScope:input.scope,businessId:invoiceId||input.orderId},event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support attached '+input.code,details:{document}}};
   },apply:async plan=>{
    const existing=await store.read(names[company].activity,plan.event._id);
    if(!existing){if(supportDocumentVersion(await readContext(company,staff))!==plan.version)throw Error('Documents changed during upload. Retry the original upload.');const result=await documentService({...plan.upload,base64:input.base64});if(result?.ok!==true||['company','poId','fileId','sha256','name'].some(key=>result[key]!==plan.upload[key])||result.size!==bytes.length||plan.upload.customerId&&(result.customerId!==plan.upload.customerId||result.customerLinkReady!==true))throw Error('File upload is not confirmed. Retry this same upload.');await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}

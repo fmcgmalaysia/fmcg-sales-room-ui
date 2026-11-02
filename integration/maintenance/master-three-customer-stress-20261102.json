@@ -1,8 +1,8 @@
 {
   "task": "Real three-customer cross-department pressure test",
-  "branch": "fix/restore-support-upload-baseline-20261103",
+  "branch": "fix/support-split-desk-document-20261103",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "ALL_ORDERS_LOADED_AR_COMPLETE_UPLOAD_ORIGINAL_RESTORED_READONLY_SCOPE_CONFIRMED",
+  "status": "SPLIT_SI_UPLOAD_BUYER_PREVIEW_PASS_FRESH_SUPPORT_FETCH_FAILED",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -401,14 +401,14 @@
     }
   ],
   "blocker": {
-    "current": "No browser access blocker. SI original upload remains unconfirmed; preserve its original request."
+    "current": "Fresh Support read fails with page-level Failed to fetch after user-bookmark open. SI original upload and Buyer preview succeeded before reload. Actual Google download ERR_BLOCKED_BY_RESPONSE. No repeated upload, payment or stock operation needed."
   },
   "stop": {
     "status": "RESOLVED_AFTER_USER_RESUME",
     "history": "Former URL safety stop retained in prior commits; not an active blocker."
   },
   "pending": [
-    "Repair same Support upload using existing split Desk portions plus fresh preparation version, then retry the retained original request. Archive removal hypothesis disproved. No new history source.",
+    "Fresh Support read fails with page-level Failed to fetch after user-bookmark open. SI original upload and Buyer preview succeeded before reload. Actual Google download ERR_BLOCKED_BY_RESPONSE. No repeated upload, payment or stock operation needed.",
     "Refresh Buyer/Sales transaction history for latest5 SI and verify customer downloads; preserve old801 paid allocations",
     "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
     "Complete Finance stock valuation/GHR and customer download acceptance",
@@ -478,10 +478,6 @@
     "stockMeasuredAt": "After all3 customers Loaded; after01 and802 SI; final801 SI does not move stock",
     "customer01InvoiceUSD": 16476,
     "financeDueByCustomer": {
-      "01": {
-        "currency": "USD",
-        "amount": 16476
-      },
       "801": {
         "currency": "USD",
         "amount": 16662
@@ -489,6 +485,10 @@
       "802": {
         "currency": "SGD",
         "amount": 39411
+      },
+      "01": {
+        "currency": "USD",
+        "amount": 16476
       }
     },
     "buyer801DueUSD": 16662,
@@ -551,7 +551,7 @@
     "scope": "Fresh server document version only for an unprepared upload; same original request/file, all current identity/duplicate/posted proof checks and prepared unknown-result guard preserved",
     "testsPass": 77,
     "wix": "NOT_SYNCED",
-    "status": "WITHDRAWN_81ddc96_ORIGINAL_RESTORED_EXACT_WIX_LIVE",
+    "status": "SUPERSEDED_AFTER_RECOVERY_BY_C640AE6",
     "public": "Original SI upload remains unresolved; two original customer proofs still Recorded",
     "newEvidence": {
       "wrongInitialHypothesis": "Archive removal was inferred prematurely. readFulfilmentContext preserves archived tasks.",
@@ -565,5 +565,24 @@
       "existingCustomerProofsVisible": 2,
       "noNewFileOrFinancialRecordsClaimed": true
     }
+  },
+  "supportSplitDocument": {
+    "code": "c640ae6",
+    "pr": 292,
+    "checks": 136,
+    "wix": "Exact full readback; published and live",
+    "pages": "Unchanged run330,101 resources previously verified; no deployment permission changes",
+    "publicUpload": "Retained original801 Desk1 SI request succeeded once. File10nWphnHdEu9ExYiqOEoO299fH5eGz2dl, USD2784,290CTN; subsequent original retry reconciled the result, no duplicate link. Buyer801 history displays the same SI; original invoice due0,new due16662 unchanged.",
+    "freshRead": "User-bookmark Support51430555 displays iframe but no customer data; one Refresh ended Loading could not be confirmed; Sign in click had no response. Wix page log00:38:19 TypeError Failed to fetch, no stack obtained. Previous tool reload blank. Exact cause and relation to repeated pre-existing Wix load issue unconfirmed. No repeated reload loop or business replay.",
+    "download": "Buyer SI opens readable TEST ONLY PDF. Drive UI reports Anyone with link/no sign-in required. Download clicked; new usercontent tab ERR_BLOCKED_BY_RESPONSE. Do not bypass; actual download not accepted.",
+    "evidence": [
+      "55-split-upload-wix-published.png",
+      "56-split-si-original-confirmed.png",
+      "57-buyer-split-si-visible.png",
+      "58-customer-si-preview.png",
+      "59-customer-si-download-blocked.txt",
+      "60-support-fresh-fetch-log.txt",
+      "61-support-fresh-read-failed.png"
+    ]
   }
 }
