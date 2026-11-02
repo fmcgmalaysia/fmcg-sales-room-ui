@@ -1,0 +1,22 @@
+{
+  "objective": "Allow a valid, unprepared Support upload to prepare against current server evidence instead of a stale form document version",
+  "branch": "fix/support-upload-fresh-version-20261102",
+  "baseline": "Fresh live supportDocuments.js equals repository at3a9cc46; originalSHA25658a0a660bb3774ac1a2c3a257277b7b0f4d3b01950877a86177e200c131be975 includesCRLF",
+  "recoveryTag": "verified/support-upload-recovery-20261103",
+  "observedError": "Wix live log23:39:52 Documents changed. Refresh before uploading.; same original801 Desk1 SI request remains unprepared, PDF selection retained",
+  "changes": "Two backend expressions: require well-formed version metadata, then snapshot current server document version after all fresh checks. Existing original request identity, customer/Desk/invoice scope, Finance-posted replacement guard, duplicate checks, shared routing, delivery permissions, journal replay and apply-time prepared-version protection remain.",
+  "tests": {
+    "newAndExistingUpload": 14,
+    "sharedDocumentsInvoicesHistory": 63,
+    "totalPass": 77,
+    "fail": 0
+  },
+  "limits": "A prepared upload whose outcome is uncertain still cannot silently rebase after concurrent document changes. This patch does not bypass that safety case or add a retry service.",
+  "staticResources": "101 existing Pages resources unchanged; retain Warehouse run330 and Purchase merge entry",
+  "publication": {
+    "code": "CANDIDATE",
+    "pages": "UNCHANGED_RUN330_101_HASHES_VERIFIED",
+    "wix": "NOT_SYNCED",
+    "public": "NOT_VERIFIED"
+  }
+}
