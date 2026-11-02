@@ -296,8 +296,10 @@ $w.onReady(async () => {
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to('/buyer-room');
         }
     }
+    let selectionRefreshPending = false;
     setInterval(async () => {
-        if (!selectionContext) return;
+        if (!selectionContext || selectionRefreshPending) return;
+        selectionRefreshPending = true;
         try { await loadSelectionState(selectionContext.assistCustomerId || ''); }
         catch (error) {
             const expiredAssistCustomerId = String(selectionContext?.assistCustomerId || session.getItem('catalogueAssistCustomerId') || '').trim();
@@ -307,7 +309,7 @@ $w.onReady(async () => {
             local.removeItem('catalogueAccess');
             session.removeItem('catalogueAccess');
             if (wixWindowFrontend.viewMode === 'Site') wixLocationFrontend.to(expiredAssistCustomerId ? '/sales-room' : '/buyer-room');
-        }
+        } finally { selectionRefreshPending = false; }
     }, 15000);
 });
 
@@ -364,7 +366,8 @@ function setupNav() {
     }
     let activeMain = 'FOOD';
     let isOpen = false;
-    let lastScrollY = 0;
+    let lastScrollY = null;
+    let scrollCheckPending = false;
     let leaveTimer;
 
     const setWorkspaceMenuState = (open) => {
@@ -533,9 +536,14 @@ function setupNav() {
     loadMenuData();
     logoLoadPromise = loadPrincipleLogos();
     setInterval(async () => {
-        const currentY = (await wixWindowFrontend.getBoundingRect()).scroll.y;
-        if (currentY - lastScrollY > 8 && currentY > 160) hideMenu();
-        lastScrollY = currentY;
+        if (!isOpen) { lastScrollY = null; return; }
+        if (scrollCheckPending) return;
+        scrollCheckPending = true;
+        try {
+            const currentY = (await wixWindowFrontend.getBoundingRect()).scroll.y;
+            if (isOpen && lastScrollY !== null && currentY - lastScrollY > 8 && currentY > 160) hideMenu();
+            lastScrollY = currentY;
+        } finally { scrollCheckPending = false; }
     }, 180);
 }
 
