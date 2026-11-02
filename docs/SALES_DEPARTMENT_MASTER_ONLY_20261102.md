@@ -1,5 +1,7 @@
 # Sales Department placement correction
 
+**Current removal status:** all four release stages passed for this narrow removal. Pages runtimebcfe855, Wix version-reference6d43ab4,101/101 exact public resources,4removed404s, original7rules restored. A fresh user-opened Sales bookmark after Chrome/GPT restart rendered correctly at the cleared build. No Sales Department menu or nested internal iframe remains. TESTING801 invoices1008.00+3192.00 and balance4200.00 remain; Payments/Documents tabs open with their existing empty state. No captured error. Saved actual screenshot and PUBLIC_ACCEPTANCE.json in the root handoff. This is not completion of MASTER Sales Management, actual receipts/PDF delivery, ordinary-role tests or GP no-growth. Main/user verification remain pending.
+
 User correction, 2 November 2026: Sales Department belongs in MASTER. FMCG Malaysia must not serve internal costs, profit, GP or commission. The prior Sales Room placement was an implementation error, not an approved business boundary. The user explicitly requested complete removal rather than hiding the menu and confirmed deletion of the three erroneous Wix backend modules at action time.
 
 ## Immediate removal
