@@ -16,8 +16,9 @@ function plan(sourceCommit){
  replace('support-room/workroom.js','new URL(document.referrer)','new URL(location.ancestorOrigins?.[0]||document.referrer)');
  replace('support-room/workroom.js','packing-workbench.html?v=20261028-master-save-continuity-v1','packing-workbench.html?v='+build,2);
  replace('support-room/workroom.js',"dataset.supportBuild='20261028-master-save-continuity-v1'","dataset.supportBuild='"+build+"'");
- const model=fs.readFileSync(path.join(root,'support-room/packing-model-browser.js'),'utf8').replace(/\r\n/g,'\n');
- const domain=fs.readFileSync(path.join(root,'integration/backend/packingListModel.js'),'utf8').replace(/\r\n/g,'\n').replace(/^export /gm,'');assert(model.includes(domain));assets.set('support-room/packing-model-browser.js',Buffer.from(model));
+ const readSource=file=>sourceCommit?cp.execFileSync('git',['show',sourceCommit+':'+file],{cwd:root,encoding:'utf8'}):fs.readFileSync(path.join(root,file),'utf8');
+ const model=readSource('support-room/packing-model-browser.js').replace(/\r\n/g,'\n');
+ const domain=readSource('integration/backend/packingListModel.js').replace(/\r\n/g,'\n').replace(/^export /gm,'');assert(model.includes(domain));assets.set('support-room/packing-model-browser.js',Buffer.from(model));
  replace('support-room/packing-workbench.js','Both planned and actual quantities remain visible. 两部门共用同一备货单，保留计划与实装数量。','Loaded cartons leave stock once; invoices do not deduct again. 两部门共用同一备货单；实装保存扣一次库存，开票不再扣量。');
  for(const file of ['purchase-live/index.html','account-room/index.html','warehouse-room/index.html','support-room/index.html','support-room/workroom.html','support-room/packing-workbench.html']){
   const text=assets.get(file).toString();assert.equal((text.match(/<meta name="build" content="[^"]+">/g)||[]).length,1);assets.set(file,Buffer.from(text.replace(/(<meta name="build" content=")[^"]+(">)/,'$1'+build+'$2')));
