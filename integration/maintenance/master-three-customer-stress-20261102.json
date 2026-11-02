@@ -1,0 +1,254 @@
+{
+  "task": "Real three-customer cross-department pressure test",
+  "branch": "test/master-three-customer-stress-20261102",
+  "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
+  "status": "STOPPED_BROWSER_URL_POLICY",
+  "orders": {
+    "TESTING01": {
+      "tasks": 6,
+      "quantityEach": 100,
+      "etd": "2026-12-03"
+    },
+    "TESTING801": {
+      "tasks": 6,
+      "quantities": [
+        50,
+        150,
+        100,
+        300,
+        200,
+        500
+      ],
+      "etd": null
+    },
+    "TESTING802": {
+      "tasks": 4,
+      "quantityEach": 150,
+      "etd": "2026-11-27"
+    }
+  },
+  "observedSuppliers": 4,
+  "plan": [
+    "PO auto planned allocation before receiving; no physical stock fabricated",
+    "801 7UP500 receives430;802 7UP150 receives150;borrow70 then late receipt70 and repay70",
+    "Support separate confirmed Desks; Warehouse only authorized tasks; planned/ready/Loaded distinct",
+    "Partial Loaded and Support move unshipped remainder without changing demand or prior movements",
+    "Supplier two-payment references and first-proof purchase lock; Finance-only actual posting",
+    "Customer SI and accounts receivable; Buyer/Sales committed/history/files; no cost leak",
+    "Normal and split receipts versus borrowed source visual distinction",
+    "Stock quarantine and current-month premature loss rejection; no forged month-end",
+    "Read/Refresh/Info do not grow Activity; company isolation"
+  ],
+  "protected": [
+    "Single Loaded physical stock deduction",
+    "Finance first-payment PO lock",
+    "Supplier/customer identities and separate NCT/GHR",
+    "Original save-request receipts; no new-request blind retry",
+    "Source product/QD/POINTBASE unchanged"
+  ],
+  "limits": [
+    "No real bank transfer or supplier/customer communication",
+    "No generic deletion or permission changes",
+    "Code repair if needed requires fresh live comparison and separately scoped minimal fix"
+  ],
+  "actions": [
+    {
+      "step": "POs CONFIRMED",
+      "count": 6,
+      "ids": [
+        "NCT-PO-T3-801-7UP-1102",
+        "NCT-PO-T3-802-7UP-1102",
+        "NCT-PO-T3-01-7UP-1102",
+        "NCT-PO-T3-802-AJAX-1102",
+        "NCT-PO-T3-01-AJAX-1102",
+        "NCT-PO-T3-801-AJAX-1102"
+      ]
+    },
+    {
+      "step": "7UP receipts CONFIRMED",
+      "customers": {
+        "801": "430+70=500",
+        "802": 150,
+        "01": "70+30=100"
+      }
+    },
+    {
+      "step": "Borrow and repay CONFIRMED",
+      "quantity": 70,
+      "borrower": "801",
+      "lender": "802",
+      "earlyRepay": "REJECTED without free stock",
+      "lateRepay": "CONFIRMED; no outstanding borrowing shown"
+    },
+    {
+      "step": "Support shortload CONFIRMED",
+      "firstPlan": 300,
+      "firstLoaded": 290,
+      "remaining10": "TRANSFERRED_TO_DESK2",
+      "secondPlan": 210,
+      "secondLoaded": 210,
+      "totalLoaded": 500,
+      "invalidRemainder11": "REJECTED",
+      "overload211": "REJECTED",
+      "firstTransferAttempt": "STALE_REJECTED; fresh context then confirmed"
+    },
+    {
+      "step": "SI/Finance/Buyer/Sales CONFIRMED",
+      "invoices": [
+        {
+          "id": "NCT-INV-T3-801-D1-1102",
+          "qty": 290,
+          "amountUSD": 2784
+        },
+        {
+          "id": "NCT-INV-T3-801-D2-1102",
+          "qty": 210,
+          "amountUSD": 2016
+        }
+      ],
+      "totalReceivableUSD": 4800,
+      "noCustomerPaymentPosted": true
+    },
+    {
+      "step": "AJAX receipts CONFIRMED",
+      "customer802": 170,
+      "customer01": 90,
+      "customer801": 200,
+      "freeStock10": "ALLOCATED from802 extra20 to01, after explicit stale rejection and fresh read"
+    },
+    {
+      "step": "Other sources saved, NOT PO issued",
+      "supplier": "KOH SOON HUAT",
+      "count": 10,
+      "quantity": 1300,
+      "items": [
+        "01 DETTOL100",
+        "01 LABOUR100",
+        "01 CAPTAIN100",
+        "01 AMBIPUR100",
+        "802 SKITTLES150",
+        "802 WRIGLEY150",
+        "801 FARCENT50",
+        "801 COZZO150",
+        "801 POPS100",
+        "801 CAPTAIN300"
+      ]
+    },
+    {
+      "step": "Support802 reference",
+      "desk": 1,
+      "assigned": [
+        "7UP150",
+        "AJAX150"
+      ],
+      "warehouseOpen": false,
+      "depositSGD": 123.4,
+      "financialReceipt": "NONE; Finance AR reread shows only801 SI4800",
+      "etd": "2026-11-27",
+      "lastGateIn": "2026-11-26T12:30",
+      "logistic": "LAND"
+    },
+    {
+      "step": "Supplier/customer PDF upload",
+      "state": "NOT UPLOADED",
+      "localFixtures": 8,
+      "suppliedFilesAllTestOnly": true,
+      "bankTransfers": 0
+    }
+  ],
+  "findings": [
+    {
+      "id": "T3-01",
+      "issue": "Warehouse receiving content replaced by Delivery content on background Support/Desk notification",
+      "evidence": "03-warehouse-background-route-overwrite.txt/png",
+      "status": "REPRODUCED_NOT_FIXED"
+    },
+    {
+      "id": "T3-02",
+      "issue": "Rejected pre-receipt Loaded failure notice disappears after background read; input retained; no Loaded committed",
+      "evidence": "02-loaded-before-receipt.txt",
+      "status": "OBSERVED_NEEDS_ROOT_CONFIRMATION"
+    },
+    {
+      "id": "T3-03",
+      "issue": "Waiting reason visually shows first option but remains unset until explicitly selected; initial C70 submit rejected",
+      "status": "OBSERVED_NOT_FIXED"
+    },
+    {
+      "id": "T3-04",
+      "issue": "Cross-room stale remainder and allocation context rejected; fresh read required. Scope may be broader than actual affected product.",
+      "evidence": [
+        "10-remainder-stale-conflict.txt",
+        "16-free10-stale-context-rejected.txt"
+      ],
+      "status": "PROTECTION_PASSED; UX_SCOPE_TO_REVIEW"
+    },
+    {
+      "id": "T3-05",
+      "issue": "Normal single-source mother checkbox is move-only; no visible source selector to merge saved supplier rows into one PO. Ten unissued sources deliberately retained rather than creating ten needless POs.",
+      "status": "REPRODUCED_NOT_FIXED; UI_MINIMAL_FIX_TO_SCOPE"
+    },
+    {
+      "id": "T3-06",
+      "issue": "Logistic internal token SEA_20FT exposed in customer history and Warehouse; should display readable Sea20ft label",
+      "evidence": "19-buyer-history4800.png",
+      "status": "VISUAL_DEFECT_NOT_FIXED"
+    },
+    {
+      "id": "T3-07",
+      "issue": "WRIGLEY source has missing CBM; Support warns Missing CBM. Actual product source incomplete, not safe to invent zero.",
+      "status": "DATA_COMPLETENESS_PENDING"
+    },
+    {
+      "id": "T3-08",
+      "issue": "Transaction history initially showed stale pre-cleanup invoices4200 while Updating; fresh read replaced with new4800.",
+      "status": "STALE_CACHE_DISPLAY_OBSERVED; NOT PERSISTENT_OLD_LEDGER"
+    },
+    {
+      "id": "T3-09",
+      "issue": "01 AJAX GP disappears after mixing PO90 plus Ready Stock10; parent purchase total5141.23 remains original PO90. Need clarify aggregate display versus effective source cost before changing formula.",
+      "status": "FOLLOW_UP_NOT_A_CONFIRMED_FINANCIAL_WRITE_BUG"
+    }
+  ],
+  "blocker": {
+    "optionalFileUpload": "Supported file chooser timed out; extension file-URL permission requested once. Photos optional; quantity flow continued. PDF/payment proof acceptance still pending."
+  },
+  "stop": {
+    "reason": "Computer Use stopped this turn because current browser URL could not be determined confidently on Windows. No alternate UI controller or API used.",
+    "lastAttempt": "Read native Chrome window after standard file chooser and keyboard chooser timeout. User had enabled extension file URL access.",
+    "lastVisibleChromeTitle": "COMMAND CENTER - Google Sheets - Google Chrome",
+    "resume": "Restore current Chrome web control and foreground original Purchase public page; inspect existing Upload PO dialog before any new action. No repeat PO/receipt/borrow/repay/Loaded/SI."
+  },
+  "pending": [
+    "Upload supplier PO/PI/INV and two8425 payment proofs; verify first-proof lock and second-proof history across Purchase/Finance",
+    "Upload customer SI/proofs; Finance actual2400+2400 allocated1000/1400 then1784/616; verify per-invoice balance and download access",
+    "Fix/scope merge-PO selection before issuing remaining10 saved sources",
+    "Complete remaining customer tasks Loaded and SI; existing only8017UP500 Loaded",
+    "Quarantine5 of AJAX free10; Finance reject premature current-month loss; no forged date",
+    "Separate NCT/GHR public navigation and warehouse financial-field isolation acceptance",
+    "Stable CMS before/after read-refresh count comparison; midpoint168 not final nor capacity proof"
+  ],
+  "expectedCurrentStockNotYetVisuallyVerified": {
+    "receipts1210MinusLoaded500": 710,
+    "reserved": 700,
+    "free": 10,
+    "isolated": 0,
+    "valueMYR34702_41": 34702.41
+  },
+  "cmsMidpoint": {
+    "activity": 168,
+    "tasks": 16,
+    "orders": 16,
+    "purchaseOrdersLegacy": 0,
+    "suppliers": 4,
+    "supplierActivity": 6,
+    "ghrBusiness": 0,
+    "warning": "Midpoint was read before last sources saved; not final counts. Shared supplier count4 was already present on new-task baseline; not changed by agent."
+  },
+  "publication": {
+    "codeChanged": false,
+    "pagesDeployment": false,
+    "wixPublish": false,
+    "allTestingComplete": false
+  }
+}
