@@ -583,7 +583,7 @@ jobs:
 
       - name: Stage scoped clean supplier dialog close
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-clean-dialog-close-only'
-        run: node integration/prototypes/purchase-clean-dialog-close-20261103/stage.cjs "$RUNNER_TEMP/purchase-clean-dialog-site"
+        run: node integration/prototypes/purchase-saved-plan-close-20261103/stage.cjs "$RUNNER_TEMP/purchase-clean-dialog-site"
 
       - name: Upload scoped clean supplier dialog close
         if: github.event_name == 'workflow_dispatch' && inputs.static_ui == 'purchase-clean-dialog-close-only'
