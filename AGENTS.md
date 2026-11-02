@@ -1,5 +1,9 @@
 # FMCG repository operating supplement
 
+## 2026-11-02 Sales Department belongs only to MASTER
+
+Sales Department is an internal MASTER department, never part of FMCG Malaysia Sales Room, Buyer Room or Catalogue. Internal purchase cost, profit, GP and commission data must not be returned through FMCG Malaysia pages, web methods or cross-site customer interfaces. Remove the mistakenly added source-site Sales Department integration completely, not merely its menu. Preserve the existing sanitized customer transaction/payment/file history. MASTER must authenticate its own staff and enforce each salesperson's authoritative customer ownership server-side; submitting an order is not evidence of customer ownership. Do not introduce a second login, duplicate financial ledger or infer assignment from a submitting admin.
+
 ## 2026-10-31 Quantity and date typography
 
 用户要求全站沿用统一的字体、字样和语义配色，禁止各列自行选择字体或字距。数量胶囊复用共同样式和统一高度；日期使用正常数字字距，不继承数量列的等宽数字样式。已知尚无收货/分配可展示浅橙色0，但不得把无法确认或矛盾的数据冒充真实0；默认展示值不得参与业务或异常计算。EXTRA只在图标本身用浅蓝色，来源图标与人头同尺寸、同蓝色。当前Active本轮候选统一为19px数量胶囊、11px/600数量、10px/400日期和16px来源图标；按实际正式页逐项验收，不能以记录规范声称全站已全部完成。不改变权限、付款、库存或借还货规则。
