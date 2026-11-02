@@ -2,7 +2,7 @@
   "task": "Real three-customer cross-department pressure test",
   "branch": "fix/warehouse-desk-route-20261102",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "ALL_3_CUSTOMERS_LOADED_AND_5_SI_CONFIRMED_FIXES_AND_READ_COUNT_IN_PROGRESS",
+  "status": "ALL_LOADED_AR_DONE_ROUTE_FIXED_UPLOAD_REPAIR_NEXT",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -326,7 +326,7 @@
       "id": "T3-01",
       "issue": "Warehouse receiving content replaced by Delivery content on background Support/Desk notification",
       "evidence": "03-warehouse-background-route-overwrite.txt/png",
-      "status": "REPRODUCED_NOT_FIXED"
+      "status": "FIXED_13fc348_PUBLIC_LATE_RESPONSE_NAVIGATION_PASS_LOCAL_NOTIFICATION_PASS"
     },
     {
       "id": "T3-02",
@@ -412,8 +412,7 @@
     "Resolve original SI attachment request result; do not create new upload or invoice blindly",
     "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
     "Complete Finance stock valuation/GHR and customer download acceptance",
-    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained",
-    "Warehouse route guard candidate ready; publish after exact branch deployment approval, then real notification/current-view acceptance"
+    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
   ],
   "expectedCurrentStockNotYetVisuallyVerified": {
     "status": "FINANCE_FORMAL_UI_VERIFIED",
@@ -433,7 +432,13 @@
     "codeChanged": true,
     "pagesDeployment": false,
     "wixPublish": true,
-    "allTestingComplete": false
+    "allTestingComplete": false,
+    "warehouseRoute": {
+      "code": "13fc348",
+      "pages": "Run330 success https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41475496877;101/101 resource hashes exact",
+      "wix": "Published and live; sole Warehouse version reference matched completely",
+      "public": "New clean Warehouse loaded build20261102-warehouse-desk-route-v1. Five completed Desks render correctly. Started Delivery refresh then immediately navigated to Incoming; after read completion Incoming remained visible and Delivery heading count0; no captured errors. Same-company notification skip checked in local UI and runtime tests, not by manufacturing extra business writes."
+    }
   },
   "resume": {
     "buyerTab": "51430491",
@@ -534,8 +539,17 @@
       "cause": "Historical frozen retired support-room/packing-model-browser.js hash mismatch c1fcb6f5 versus50022e0a. Existing tracked test/staging inputs unchanged at0a13b69; current101-resource pipeline uses the verified public archive and does not traverse this old99-resource packager. No business production changes to satisfy this assertion.",
       "fixed": false
     },
-    "wix": "Exact one-reference draft matched",
-    "pages": "NOT_DEPLOYED",
-    "ui": "Incoming stays visible; stable local notify Packing read count3 to3"
+    "wix": "Published/live",
+    "pages": "Run330 success;101 hashes exact;original7 rules restored",
+    "ui": "Incoming stays visible; stable local notify Packing read count3 to3",
+    "public": "PUBLIC_LATE_READ_NAVIGATION_PASS_NO_ERRORS"
+  },
+  "supportUploadCandidate": {
+    "checkout": "C:\\FMCG-WIX-LOCAL\\worktrees\\support-upload-stale-20261102",
+    "branch": "fix/support-upload-fresh-version-20261102",
+    "rootError": "Documents changed. Refresh before uploading. at backend/supportDocuments.js, prepare before allocation",
+    "scope": "Fresh server document version only for an unprepared upload; same original request/file, all current identity/duplicate/posted proof checks and prepared unknown-result guard preserved",
+    "testsPass": 77,
+    "wix": "NOT_SYNCED"
   }
 }

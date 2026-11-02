@@ -22,11 +22,17 @@
   },
   "candidateUi": "After Delivery initialization, switched Incoming and sent same-company notification; Incoming remained visible and Packing reads stayed3 to3. Active Delivery behavior is covered by runtime test.",
   "publication": {
-    "code": "CANDIDATE",
-    "pages": "NOT_DEPLOYED",
-    "wix": "DRAFT_FULL_READBACK_EXACT_NOT_PUBLISHED",
-    "public": "NOT_VERIFIED"
+    "code": "13fc348",
+    "pages": "Run330 success https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41475496877;101/101 resource hashes exact",
+    "wix": "Published and live; sole Warehouse version reference matched completely",
+    "public": "New clean Warehouse loaded build20261102-warehouse-desk-route-v1. Five completed Desks render correctly. Started Delivery refresh then immediately navigated to Incoming; after read completion Incoming remained visible and Delivery heading count0; no captured errors. Same-company notification skip checked in local UI and runtime tests, not by manufacturing extra business writes."
   },
-  "userAcceptance": "PENDING",
-  "packaging": "101/101 staged hashes verified; exactly2 static resources change"
+  "userAcceptance": "PENDING_USER_TEST",
+  "packaging": "101/101 staged hashes verified; exactly2 static resources change",
+  "codeCommit": "13fc348",
+  "deploymentRules": {
+    "restored": true,
+    "originalRulesCount": 7,
+    "evidence": "route-rules-before.txt,route-rules-after.txt"
+  }
 }
