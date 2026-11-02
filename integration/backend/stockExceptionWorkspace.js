@@ -5,8 +5,8 @@ export function requireStockStaff(member,records){
  const email=text(member?.loginEmail).toLowerCase(),matches=records.filter(row=>text(row.staffEmail).toLowerCase()===email),row=matches.length===1?matches[0]:null;
  if(!member?._id||member.status!=='APPROVED'||!email||!row||row.description!==member._id||text(row.staffStatus).toUpperCase()!=='ACTIVE'||!text(row.title)||!text(row.staffName))throw Error('Approved Master staff access is required.');
  const role=text(row.role).toUpperCase(),departments=Array.isArray(row.departments)?row.departments.map(value=>text(value).toUpperCase()):[],admin=role==='SUPER ADMIN';
- const permissions={canReportStockException:admin||departments.includes('WAREHOUSE'),canPlanStockResolution:admin||departments.includes('PURCHASE'),canApproveStockLoss:admin,canCloseStockException:admin||departments.includes('ACCOUNT')||role==='TOP MANAGEMENT'};
- if(!admin&&!permissions.canCloseStockException&&!departments.some(value=>['PURCHASE','ACCOUNT','WAREHOUSE','SUPPORT'].includes(value)))throw Error('Stock workspace access is not authorized.');
+ const permissions={canReportStockException:admin||departments.includes('WAREHOUSE'),canPlanStockResolution:admin||departments.includes('PURCHASE'),canApproveStockLoss:admin,canCloseStockException:admin||departments.includes('ACCOUNT')};
+ if(!admin&&!departments.some(value=>['PURCHASE','ACCOUNT','WAREHOUSE','SUPPORT'].includes(value)))throw Error('Stock workspace access is not authorized.');
  return {memberId:member._id,staffId:row.title,staffName:row.staffName,role,...permissions};
 }
 export function projectStockWorkspace(context,orders,staff){

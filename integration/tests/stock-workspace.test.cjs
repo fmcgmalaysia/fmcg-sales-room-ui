@@ -11,12 +11,3 @@ test('stock workspace permissions come from authenticated staff records, never b
  assert.throws(()=>requireStockStaff({...member,_id:'OTHER'},[{...record,departments:['ACCOUNT']}]),/Approved/);
  assert.throws(()=>requireStockStaff(member,[{...record,departments:['ACCOUNT']},{...record}]),/Approved/);
 });
-test('TOP MANAGEMENT retains Finance Stock Take authority without gaining reporting, supplier resolution or Super Admin approval',()=>{
- const permissions=requireStockStaff(member,[{...record,role:'TOP MANAGEMENT',departments:[]}]);
- assert.equal(permissions.canCloseStockException,true);assert.equal(permissions.canReportStockException,false);assert.equal(permissions.canPlanStockResolution,false);assert.equal(permissions.canApproveStockLoss,false);
-});
-test('TOP MANAGEMENT still requires an active exact member binding and cannot be supplied by the caller',()=>{
- for(const overrides of [{description:'OTHER'},{staffStatus:'INACTIVE'},{title:''},{staffName:''}])assert.throws(()=>requireStockStaff(member,[{...record,role:'TOP MANAGEMENT',departments:[],...overrides}]),/Approved/);
- assert.throws(()=>requireStockStaff({...member,status:'BLOCKED'},[{...record,role:'TOP MANAGEMENT',departments:[]}]),/Approved/);
- assert.throws(()=>requireStockStaff(member,[{...record,departments:['SALES']}]),/not authorized/);
-});
