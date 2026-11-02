@@ -35,8 +35,8 @@ export function readWarehouseReceipts(poId,activity){
   return {revision,lines:[...lines.values()],history};
 }
 
-export function readWarehouseTask(task,activity){
-  const allocation=allocatedTo(task.title,activity);
+export function readWarehouseTask(task,activity,allocations){
+  const allocation=allocatedTo(task.title,activity,allocations);
   const ids=[...new Set(activity.filter(event=>event.action===RECEIPT_ACTION&&event.result==='SAVED'&&event.details?.lines?.some(line=>line.taskId===task.title)).map(event=>event.description))];
   if(!ids.length)return allocation.sources.length?{hasPhysicalReceipt:false,accepted:0,rejected:0,issue:false,customerReceived:allocation.quantity,extraReceived:0,at:allocation.at}:null;
   if(ids.length!==1)throw Error('Warehouse task belongs to multiple purchase orders.');

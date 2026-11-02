@@ -44,8 +44,8 @@ export function readPhysicalOutflows(activity){
  if(new Set(flows.map(row=>row.id)).size!==flows.length)throw Error('Duplicate physical outflow identity.');
  return flows;
 }
-export function physicalOutflowQuantity(activity,{sourceTaskId,taskId}={}){
- return readPhysicalOutflows(activity).filter(row=>!taskId||row.taskId===taskId).reduce((sum,row)=>sum+(sourceTaskId?row.sources.filter(source=>source.sourceTaskId===sourceTaskId).reduce((n,source)=>n+source.quantity,0):row.quantity),0);
+export function physicalOutflowQuantity(activity,{sourceTaskId,taskId}={},outflows=readPhysicalOutflows(activity)){
+ return outflows.filter(row=>!taskId||row.taskId===taskId).reduce((sum,row)=>sum+(sourceTaskId?row.sources.filter(source=>source.sourceTaskId===sourceTaskId).reduce((n,source)=>n+source.quantity,0):row.quantity),0);
 }
 export function physicalOutflowVersion(activity){return operationId(readPhysicalOutflows(activity));}
 export function assertLoadedOutflows(context,movements){

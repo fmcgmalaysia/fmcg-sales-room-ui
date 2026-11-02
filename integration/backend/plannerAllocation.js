@@ -27,8 +27,8 @@ export function readAllocations(activity){
   }
   return [...sources.values()];
 }
-export function allocatedTo(taskId,activity){
-  const sources=readAllocations(activity).filter(source=>source.targets.some(row=>row.taskId===taskId));
+export function allocatedTo(taskId,activity,allocations=readAllocations(activity)){
+  const sources=allocations.filter(source=>source.targets.some(row=>row.taskId===taskId));
   return {quantity:sources.reduce((total,source)=>total+(source.targets.find(row=>row.taskId===taskId)?.quantity||0),0),at:sources.map(source=>source.at).sort().at(-1)||null,sources};
 }
 export function allocationVersion(workspace,activity){
