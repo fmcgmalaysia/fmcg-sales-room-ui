@@ -45,3 +45,7 @@ Code, GitHub, Pages, Wix and public acceptance must be reported separately. Do n
 - Permission: the single temporary branch rule was removed; original seven branch rules and zero tags are restored.
 - Wix: Purchase version draft matched exactly and Studio returned “This site is published and live online.”
 - Public verification: incomplete. The existing Purchase page reloaded to the new iframe URL, but the actual embedded browsing context is about:blank with no captured page errors. A fresh visit from the user’s original Purchase bookmark has been requested. No repeat deployment is required. Do not report complete publication until the actual task UI is verified.
+
+## Public acceptance completed — 2026-11-02
+
+The user opened their original Purchase bookmark (tab51430276). Live build20261102-purchase-compact-tasks-v1 rendered as LAW. Compact header, customer picker (All35 pending/2issues; TESTING01 1/1), customer switching and the existing Stock Actions empty state passed. All19 ordinary supplier/stock children are white. All25 orange allocation cells omit Info and retain their25 allocation actions. TESTING01 displays11 rows including child sources; no relevant captured errors. Actual screenshot is in the private handoff. All four technical release stages now pass; user test remains pending. No business operation was submitted.
