@@ -1,5 +1,7 @@
 # Two-site closeout — 2 November 2026
 
+**Current exception:** public QA found repeated GP activity still grows, and the user corrected the mistakenly placed Sales Department to MASTER-only. This closeout is not fully accepted. Source-site internal-data authority has been withdrawn; follow docs/SALES_DEPARTMENT_MASTER_ONLY_20261102.md for physical removal and the new boundary. Do not restore the prior Sales Room placement or claim GP no-growth passed.
+
 Current candidate extends the versioned, freshly compared 28bcf9a production bundle. Customer invoice matching/history (5b0fe72), Sales Department (dad6795), and Buyer refresh coalescing (22caddc) remain distinguishable checkpoints. Main is untouched. No new receipt, stock adjustment, payment posting or commission payout has occurred.
 
 ## Evidence-led patches

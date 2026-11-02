@@ -1,5 +1,7 @@
 # Sales Department — implementation and acceptance
 
+**Superseded placement:** user corrected this on2November: internal Sales Department belongs only to MASTER. The Sales Room integration below was erroneous and is being physically removed, including its source-site backend and cross-site data action. Do not implement or restore this document's source-site placement. Current correction: docs/SALES_DEPARTMENT_MASTER_ONLY_20261102.md.
+
 2026-11-02, Asia/Kuala_Lumpur. Candidate on feat/sales-department-20261102, based on customer-invoice checkpoint5b0fe72. Not deployed.
 
 ## Placement and authority

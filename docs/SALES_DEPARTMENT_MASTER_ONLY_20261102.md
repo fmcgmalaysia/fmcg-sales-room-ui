@@ -1,0 +1,41 @@
+# Sales Department placement correction
+
+**Current removal status:** all four release stages passed for this narrow removal. Pages runtimebcfe855, Wix version-reference6d43ab4,101/101 exact public resources,4removed404s, original7rules restored. A fresh user-opened Sales bookmark after Chrome/GPT restart rendered correctly at the cleared build. No Sales Department menu or nested internal iframe remains. TESTING801 invoices1008.00+3192.00 and balance4200.00 remain; Payments/Documents tabs open with their existing empty state. No captured error. Saved actual screenshot and PUBLIC_ACCEPTANCE.json in the root handoff. This is not completion of MASTER Sales Management, actual receipts/PDF delivery, ordinary-role tests or GP no-growth. Main/user verification remain pending.
+
+User correction, 2 November 2026: Sales Department belongs in MASTER. FMCG Malaysia must not serve internal costs, profit, GP or commission. The prior Sales Room placement was an implementation error, not an approved business boundary. The user explicitly requested complete removal rather than hiding the menu and confirmed deletion of the three erroneous Wix backend modules at action time.
+
+## Immediate removal
+
+- Fresh source Sales page and MASTER customerFulfilmentGateway match the e0ac431 published copies. Exact before/after originals and hashes are retained in the root handoff.
+- Remove the source page's department import and message handler. Preserve its customer/order/transaction-history handlers.
+- Remove the internal department action and service import from the existing MASTER customer bridge. Even valid shared bridge credentials and a full customer/staff envelope cannot retrieve internal department data. Existing sanitized HISTORY remains available.
+- Physically delete source-site backend salesDepartment.web.js, salesDepartmentAccess.js and salesDepartmentClient.js, with no replacement proxy or stub. All three disappeared from the Wix backend tree; FMCG returned published/live. MASTER also returned published/live after closing the bridge action. No customer-site backend may remain connected to the internal service.
+- The static removal package derives from the hash-verified e0ac431105-resource release. Remove all four sales-department assets and the Sales shell script reference. Only index.html changes; the other100 retained assets are byte-identical. The internal presentation files are preserved under master-sales for subsequent MASTER-only implementation and are not shipped in this removal package.
+
+The new constrained workflow is customer-site-isolation-only. The deleted integration cannot be rebuilt from current source by its former builder; old historical commits remain recovery evidence, never a reason to redeploy the wrong placement. The isolated current package is independent of that historical builder.
+
+## Protected behavior and checks
+
+No invoice, receipt, payment, supplier, stock, Loaded, customer identity, document-sharing or accounting record is modified by this correction. The existing customer history still excludes internal costs, FX and employee identifiers. Initial affected run65/65 passes; the subsequently added physical-deletion check is separately required. Existing historical tests that asserted the wrong positive source bridge are superseded by denial checks, not evidence that the removed behavior should be restored.
+
+## MASTER implementation boundary
+
+User clarification after cleanup preparation: name the internal area Sales Management. The boss may view all salespeople; an individual such as LIM may view only their own transaction performance, profit and commission. Sales Room serves the current customer owner and customer history may pass to a new employee. Those service assignments must not rewrite historical transaction ownership or commission. Subsequent collection of an old invoice does not transfer that invoice's sales credit to the new account handler. Ownership corrections require authoritative evidence and a controlled recorded action; missing historical owner remains unresolved. This is the target contract, not a claim that MASTER currently has the page, payout source or configured Sales employee permissions.
+
+Use MASTER member authentication and StaffMasterAccess, restrict server-side to Sales and authoritative assigned customers, and read local NCT/GHR Finance ledgers. Do not use submittedByStaffId as ownership: an administrator may submit on another salesperson's behalf. Verify the actual assignment/profile authority before connecting the new page. No internal financial projection is sent to FMCG. Existing customer profiles and transaction history must retain their existing authorities; this correction does not authorize a second customer directory, a fabricated commission payout or an inferred customer assignment.
+
+## Outstanding evidence
+
+Static deployment/removal verification, public Sales menu absence and preserved transaction history remain required. The current public session may retain the old shell until a fresh navigation. The preceding closeout's GP no-growth acceptance failed: activity count2904→2923, visible newest events repeatedly GP_RECALCULATED for the same task at08:30–08:32. This is not solved or deleted; unrelated tests paused for the placement correction. Buyer/Support PDF/payment acceptance, ordinary-role access and the other tracked business contracts remain open. Do not claim the full previous closeout is accepted.
+
+## Removal release receipts
+
+The user approved exactly one customer-site-isolation-only deployment at bcfe855. Run326/41371074982 succeeded on its first attempt. All101 public resource hashes match; all four removed sales-department URLs return404. Rule65166330 was removed immediately after success, returning to the same7 branches and0tags. No second deployment or alternate allowed branch was used.
+
+After fresh full source comparison, only the source Sales page's version reference was advanced to20261102-customer-site-isolation-v1. Its full normalized SHA256 is c36725b3705eb73e57d4f8f6da3b469c9827aaa7a3506be3e62d8aee5a48660f. FMCG again returned published/live. The backend-removal MASTER receipt remains valid; no additional MASTER publish was necessary. Post-reference isolation5/5 and module syntax validation pass.
+
+Public visual acceptance is still pending: the existing clean Sales URL refreshed to a blank embed, with Wix component suspense fallback errors and a pre-existing declarative iframe source. Do not claim the new Wix page code ran from that state, blame historical query parameters, re-deploy, inject page state, or switch controllers. The user was asked once to reopen their original Sales bookmark. A pre-refresh legacy session also showed that the old internal reader could no longer confirm account records; its retained in-memory customer header is not evidence of a live internal response. Capture fresh no-menu and original transaction-history evidence before marking removal accepted.
+
+An initial attempt to open the workflow configuration button was automatically rejected as potentially submitting an unchecked deployment. Read-only DOM evidence established it was a type=button outside a form that opened the configuration dialog. The selected branch and static_ui were then explicitly verified before clicking the dialog's actual submit button. The approved deployment ran once at the exact approved SHA; no safety bypass or extra permission was used.
+
+Subsequent control recovery: after the user said continue, the browser runtime bindings were no longer present. The current inventory selected the same Chrome extension as browser2; the existing Sales tab51429932 remained present. Normal claim and screenshot APIs reported Debugger unattached. The user explicitly reported restoring the connection, but a fresh same-browser claim and the documented screenshot alternative still failed. No new window controller, protocol, reload, deployment or permission change was used. Keep public acceptance pending until the normal connection actually permits the original Sales menu/history check. Root STATUS and START_HERE now point to these completed deployment receipts rather than the earlier permission-pending state.
