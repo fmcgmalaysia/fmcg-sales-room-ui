@@ -20,7 +20,7 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   const ids = PURCHASE_COLLECTIONS[company];
   const [orders, tasks, activity, suppliers, purchaseRecords] = await Promise.all([
     all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), all(wixData.query(ids.activity)),
-    all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders'))
+    all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders').eq('company',company))
   ]);
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });
   let customerNamesError='';
