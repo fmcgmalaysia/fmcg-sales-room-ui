@@ -14,9 +14,24 @@
   "limits": "A prepared upload whose outcome is uncertain still cannot silently rebase after concurrent document changes. This patch does not bypass that safety case or add a retry service.",
   "staticResources": "101 existing Pages resources unchanged; retain Warehouse run330 and Purchase merge entry",
   "publication": {
-    "code": "CANDIDATE",
+    "code": "81ddc96 retained for diagnosis; functional module restored to3a9cc46 exact original",
     "pages": "UNCHANGED_RUN330_101_HASHES_VERIFIED",
-    "wix": "NOT_SYNCED",
-    "public": "NOT_VERIFIED"
+    "wix": "Candidate published then exact2-expression original restored, full readback exact and Wix published/live",
+    "public": "NOT_ACCEPTED. Original retained SI advanced past stale version then failed This customer order is unavailable. Restored original customer Payment Proof history still shows2 Finance-recorded files, no duplicates."
+  },
+  "codeCommit": "81ddc96",
+  "pullRequest": 291,
+  "status": "WITHDRAWN_AFTER_INCOMPLETE_PUBLIC_ACCEPTANCE",
+  "newEvidence": {
+    "wrongInitialHypothesis": "Archive removal was inferred prematurely. readFulfilmentContext preserves archived tasks.",
+    "confirmedCause": "Split Desk document selection still calls supportDeskForTask, which returns0 for a parts assignment. Existing canonical deskTaskPortions returns positive290/210.",
+    "readOnlyDiagnostic": "Original backend functions with an archived retained task: single Desk uploads; split290/210 rejects before file allocation. Results root handoff/master-three-customer-stress-20261102/read-only-split-document-diagnosis.json",
+    "nextMinimalScope": "Reuse existing deskTaskPortions only in document membership plus fresh preparation version; no new history store or change to active/stock/Finance projection."
+  },
+  "recoveryVerification": {
+    "originalExact": true,
+    "originalUploadTestsPass": 10,
+    "existingCustomerProofsVisible": 2,
+    "noNewFileOrFinancialRecordsClaimed": true
   }
 }

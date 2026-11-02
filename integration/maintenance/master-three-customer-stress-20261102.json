@@ -1,8 +1,8 @@
 {
   "task": "Real three-customer cross-department pressure test",
-  "branch": "fix/warehouse-desk-route-20261102",
+  "branch": "fix/restore-support-upload-baseline-20261103",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "ALL_LOADED_AR_DONE_ROUTE_FIXED_UPLOAD_REPAIR_NEXT",
+  "status": "ALL_ORDERS_LOADED_AR_COMPLETE_UPLOAD_ORIGINAL_RESTORED_READONLY_SCOPE_CONFIRMED",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -408,8 +408,8 @@
     "history": "Former URL safety stop retained in prior commits; not an active blocker."
   },
   "pending": [
+    "Repair same Support upload using existing split Desk portions plus fresh preparation version, then retry the retained original request. Archive removal hypothesis disproved. No new history source.",
     "Refresh Buyer/Sales transaction history for latest5 SI and verify customer downloads; preserve old801 paid allocations",
-    "Resolve original SI attachment request result; do not create new upload or invoice blindly",
     "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
     "Complete Finance stock valuation/GHR and customer download acceptance",
     "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
@@ -550,6 +550,20 @@
     "rootError": "Documents changed. Refresh before uploading. at backend/supportDocuments.js, prepare before allocation",
     "scope": "Fresh server document version only for an unprepared upload; same original request/file, all current identity/duplicate/posted proof checks and prepared unknown-result guard preserved",
     "testsPass": 77,
-    "wix": "NOT_SYNCED"
+    "wix": "NOT_SYNCED",
+    "status": "WITHDRAWN_81ddc96_ORIGINAL_RESTORED_EXACT_WIX_LIVE",
+    "public": "Original SI upload remains unresolved; two original customer proofs still Recorded",
+    "newEvidence": {
+      "wrongInitialHypothesis": "Archive removal was inferred prematurely. readFulfilmentContext preserves archived tasks.",
+      "confirmedCause": "Split Desk document selection still calls supportDeskForTask, which returns0 for a parts assignment. Existing canonical deskTaskPortions returns positive290/210.",
+      "readOnlyDiagnostic": "Original backend functions with an archived retained task: single Desk uploads; split290/210 rejects before file allocation. Results root handoff/master-three-customer-stress-20261102/read-only-split-document-diagnosis.json",
+      "nextMinimalScope": "Reuse existing deskTaskPortions only in document membership plus fresh preparation version; no new history store or change to active/stock/Finance projection."
+    },
+    "recoveryVerification": {
+      "originalExact": true,
+      "originalUploadTestsPass": 10,
+      "existingCustomerProofsVisible": 2,
+      "noNewFileOrFinancialRecordsClaimed": true
+    }
   }
 }
