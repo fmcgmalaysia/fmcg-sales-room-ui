@@ -1,0 +1,20 @@
+{
+  "objective": "Restore existing TOP MANAGEMENT Finance Stock Take authority",
+  "branch": "fix/finance-top-management-stock-take-20261102",
+  "recoveryTag": "verified/stock-take-access-recovery-20261102",
+  "approval": "User explicitly approved the two existing Finance access judgments on 2026-11-02",
+  "liveComparison": "Fresh exact Wix stockExceptionWorkspace.js equals repository after CRLF normalization",
+  "businessFiles": ["integration/backend/stockExceptionWorkspace.js"],
+  "change": "TOP MANAGEMENT may use existing Finance closure permission; the workspace gate accepts that same permission. Reporting, supplier resolution and Super Admin approval remain unchanged.",
+  "tests": {
+    "focusedPassed": 25,
+    "focusedFailed": 0,
+    "sharedPassed": 83,
+    "sharedFailed": 4,
+    "newFailures": 0,
+    "baselineComparison": "Same four Allocation has not changed failures reproduced against exact pre-patch original. One baseline-only missing shortload helper was supplied and its 31 tests passed; no business source changed for that fixture.",
+    "legacyFailures": ["A180+B10 stopping unplaced quantity", "NCT prepay/receipts/allocate/invoice/dispatch/close", "GHR prepay/receipts/allocate/invoice/dispatch/close", "Short first delivery and later replacement"]
+  },
+  "publication": {"github": "PENDING", "pages": "UNCHANGED; no static asset modified", "wix": "PENDING", "public": "PENDING"},
+  "limits": ["No staff record change", "No month-end rule change", "No quarantine, disposal or loss posting in this patch", "No main merge before user verification"]
+}
