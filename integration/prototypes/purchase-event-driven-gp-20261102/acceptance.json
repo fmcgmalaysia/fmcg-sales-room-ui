@@ -1,5 +1,5 @@
 {
-  "status": "MINIMAL_DRAFTS_VERIFIED_NOT_PUBLISHED",
+  "status": "GP_MINIMAL_PUBLISHED_PUBLIC_READ_VERIFIED",
   "date": "2026-11-02",
   "objective": "Display GP from existing financial inputs without IO, cache initialization or GP Activity; preserve original SI save confirmation.",
   "recovery": {
@@ -59,9 +59,8 @@
     "Old financial snapshots are not rebuilt or rewritten by opening a page"
   ],
   "limits": [
-    "Not published yet; Pages resources unchanged.",
-    "Buyer missing CBM presentation still pending.",
-    "Old historical volume/weight not invented."
+    "Observed limited read-only public checks; no capacity-load or new real SI/PO test claimed.",
+    "Buyer missing-CBM display release has formal embedded-page verification pending separately."
   ],
   "initialization": {
     "execution": "One NCT task ALREADY_INITIALIZED with original GP unchanged; other21 not applied. No further initialization.",
@@ -71,5 +70,9 @@
     "final": 212,
     "efficiency": 6,
     "failed": 0
-  }
+  },
+  "codeVersion": "a675979",
+  "pages": "Existing101/101 static unchanged",
+  "wix": "Six exact readbacks, published and live",
+  "public": "Purchase Refresh twice, GP visible, Support read normal, NCTActivity3029 stable"
 }
