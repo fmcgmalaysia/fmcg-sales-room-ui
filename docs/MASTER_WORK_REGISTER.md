@@ -1,3 +1,5 @@
+2026-11-02 MST-09 GP trigger contract approved and cross-department review completed: no GP before PO; calculate on first confirmed PO and meaningful financial saves; ordinary Purchase reads perform no GP writes or Admin FX call. Existing SI post-save confirmation remains mandatory. Exact acceptance/paths/failure boundaries: integration/prototypes/purchase-event-driven-gp-20261102/acceptance.json. Branch fix/purchase-event-driven-gp-20261102, implementation pending; no production source/draft changes. Current static runtime remains5194ed3 and Purchase four-stage acceptance remains valid.
+
 2026-11-02 latest priorities: MST-20 compact Purchase has completed all four technical release stages (`5194ed3`, Pages327/41382194830,101/101 hashes,Wix published/live, user-bookmark public pass). User test pending. Next resume MST-09 repeated GP activity and CMS capacity. MST-18 Sales Management is explicitly DESIGN ONLY for now: MASTER theme, three pages, no data-source/auth/ownership/commission implementation. Prior deeper data work is deferred, not completed.
 
 # MASTER open work and product cost decisions

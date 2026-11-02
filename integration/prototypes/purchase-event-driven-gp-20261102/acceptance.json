@@ -1,0 +1,87 @@
+{
+  "status": "APPROVED_RULE_REVIEWED_IMPLEMENTATION_PENDING",
+  "date": "2026-11-02",
+  "objective": "One GP calculator; business-save triggers only; Purchase reads have no GP writes or FX calls.",
+  "recovery": {
+    "runtimeStatic": "5194ed3",
+    "publicEvidenceRecord": "cdf767e",
+    "gpModuleSha256": "7fac338458fe3b3680dc4c2648006a6ec6ad088a7530052c65fae93195cd7fa8"
+  },
+  "existingPaths": {
+    "purchaseRead": "purchaseWorkspace.web.js -> createPurchaseMarginRefresh",
+    "purchaseWrites": "purchaseOperations.web.js -> existing journaled PO/PLAN/EDIT/AVERAGE_COST/ADD_SOURCE/ALLOCATE/SHORTAGE/QUANTITY_CASE",
+    "invoiceSave": "customerFulfilmentService.js -> existing post-INVOICE cache confirmation",
+    "demandChanges": "customerFulfilmentService.js -> ADJUST or Desk cancellation",
+    "shortload": "packingListService.js -> existing shortload resolver"
+  },
+  "rules": [
+    {
+      "when": "Before confirmed PO",
+      "gp": "Blank",
+      "rates": false,
+      "writes": false
+    },
+    {
+      "when": "First confirmed PO or effective commercial amendment",
+      "gp": "Calculate affected customer/source values through existing arithmetic",
+      "rates": "Read once for affected currencies",
+      "writes": "Save only changed GP evidence/cache under existing locks"
+    },
+    {
+      "when": "Page load, refresh, background read, view/company/customer navigation",
+      "gp": "Read last confirmed current cache only",
+      "rates": false,
+      "writes": false
+    },
+    {
+      "when": "PO number change only / dates / documents / payments / messages / personal row order",
+      "gp": "No calculation unless actual financial basis also changed",
+      "rates": false,
+      "writes": false
+    },
+    {
+      "when": "Borrow, repayment, return, reconciliation, demand cancellation",
+      "gp": "Recalculate only if the existing formula financial basis changes; preserve exact stock/loan histories",
+      "rates": "Only for confirmed business calculation",
+      "writes": "No duplicate stock or accounting writes"
+    },
+    {
+      "when": "SI save",
+      "gp": "Keep original mandatory invoice cache confirmation; freeze issued quantity cost and FX",
+      "rates": "Existing invoice rule",
+      "writes": "Idempotent existing request"
+    },
+    {
+      "when": "Daily Admin FX update alone",
+      "gp": "Do not rewrite PO GP during reads; use saved applicable rate. New SI retains existing fresh-rate snapshot rule",
+      "rates": false,
+      "writes": false
+    }
+  ],
+  "failurePolicy": {
+    "confirmedBusinessSave": "Never repeat, roll back, or alter a confirmed PO/stock/payment operation solely because a derived GP cache fails.",
+    "unconfirmedGp": "Do not display stale cache as current or missing data as zero; retain original request for controlled same-save repair.",
+    "locks": "Retain GP/COST/Finance locks, source-version checks and invoice immutability.",
+    "legacy": "Preserve verified existing PO/invoice values; no read-triggered backfill, dummy PO edit, deletion or invented source margin."
+  },
+  "acceptance": [
+    "Pre-PO read has null GP, zero FX and GP store calls",
+    "First PO computes once; repeated reads add no events",
+    "Real price/discount/FOC/source changes update only affected current values",
+    "Partial coverage: valid supplier GP remains distinct from unknown customer aggregate",
+    "No cross-company or other-customer changes",
+    "Borrow/repay stock and journal writes remain byte/behavior protected",
+    "Partial SI retains issued cost/rate; open quantity alone changes",
+    "Pure document/payment/date/message/reorder produce no GP work",
+    "Cache failure retains business result identity and hides unconfirmed GP",
+    "Same-request retry does not duplicate GP or business records",
+    "Concurrent amendments/invoice and COST/GP locks remain protected",
+    "Old financial snapshots are not rebuilt or rewritten by opening a page"
+  ],
+  "limits": [
+    "Existing repeated events are retained.",
+    "3028 -> 3028 observed after a user-bookmark visit is limited evidence, not a controlled load or capacity pass.",
+    "Public Refresh measurement previously blocked by automatic approval review; no workaround used.",
+    "No implementation or new production publication is claimed by this contract."
+  ]
+}
