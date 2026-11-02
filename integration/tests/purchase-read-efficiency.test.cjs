@@ -43,7 +43,7 @@ test('parent GP cache writes and their lock lifecycle remain serial before sourc
  for(let i=0;i<6;i++){const id='T'+i,order={...base.orders[0],_id:'O'+i,title:'ORDER'+i},task={...base.tasks[0],_id:id,title:id,description:order.title};input.orders.push(order);input.tasks.push(task);input.workspace.tasks.push({...base.workspace.tasks[0],id,orderId:order.title});f.rows.set('NCTOrders/'+order._id,copy(order));f.rows.set('NCTTasks/'+id,copy(task));}
  let active=0,peak=0,writes=0;for(const method of ['insert','update','remove']){const original=f.store[method];f.store[method]=async(...args)=>{active++;peak=Math.max(peak,active);await new Promise(setImmediate);try{writes++;return await original(...args);}finally{active--;}};}
  const result=await createPurchaseMarginRefresh({store:f.store,readRates:async()=>[{currency:'SGD',rateToMyr:3.2}]})(input);
- assert.equal(peak,1);assert.equal(writes,24);assert.equal(f.events().length,6);assert([...result.values()].every(x=>x===.25));assert.equal([...f.rows.values()].filter(x=>x.details?.actorMemberId==='SYSTEM_GP').length,0);
+ assert.equal(peak,1);assert.equal(writes,18);assert.equal(f.events().length,0);assert([...result.values()].every(x=>x===.25));assert.equal([...f.rows.values()].filter(x=>x.details?.actorMemberId==='SYSTEM_GP').length,0);
 });
 test('bundled PO projection preserves uploader restrictions, Finance lock, values and exact customer names',async()=>{
  const f=fixture('purchase-order-workflow.test.cjs'),old=(await f.operations.list('NCT',f.staff))[0];
@@ -95,7 +95,7 @@ test('workspace reads each collection once and returns the same PO lock and docu
   PURCHASE_COLLECTIONS:{NCT:names},getPurchaseStaffContext:async()=>{if(!allowed)throw Error('Denied');return f.staff;},
   projectPurchaseWorkspace:()=>copy(f.workspace),purchaseOrderList,purchaseOrderReadResult,
   readCustomerShortNames:async ids=>{namesCalls++;assert.deepEqual(Array.from(ids),['C']);return [{customerId:'C',shortName:'SHORT'}];},
-  readPurchaseMarginCache:input=>{marginCalls++;assert.equal(input.company,'NCT');return new Map();},
+  readPurchaseMargins:input=>{marginCalls++;assert.equal(input.company,'NCT');return new Map();},
   applyPurchaseProgress(){},purchaseReceiptInfo:()=>new Map(),Map,Date,Promise,Error
  };
  const src=fs.readFileSync(path.join(__dirname,'../backend/purchaseWorkspace.web.js'),'utf8').replace(/^import[^\n]+\r?\n/gm,'').replace('export const getPurchaseWorkspace','this.getPurchaseWorkspace');

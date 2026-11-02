@@ -18,15 +18,15 @@ function fixture() {
   const refresh = createPurchaseMarginRefresh({ store, readRates: async () => [{ currency: 'SGD', rateToMyr: rate, updatedAt: '2026-10-10T14:00:00Z' }] });
   return { names, rows, store, refresh, input, setRate: value => { rate = value; }, events: () => [...rows.values()].filter(row => row.action === 'GP_RECALCULATED') };
 }
-test('open GP uses latest Admin FX, persists only margin/FX cache, audits recalculation and skips unchanged reads', async () => {
+test('open GP uses latest Admin FX, persists only margin/FX cache, confirms SI cache without independent GP events', async () => {
   const f = fixture(), originalTask = clone(f.rows.get('NCTTasks/T'));
   assert.equal((await f.refresh(f.input())).get('T'), .25);
   assert.equal(f.rows.get('NCTOrders/O').gp, .25); assert.equal(f.rows.get('NCTOrders/O').adminFxSource, 3.2);
   assert.deepEqual(f.rows.get('NCTTasks/T'), originalTask); assert.equal(f.rows.get('NCTOrders/O').orderQtyInCtn, 100);
-  assert.equal(f.rows.get('NCTOrders/O').sellingPricePc, 10); assert.equal(f.events().length, 1);
-  await f.refresh(f.input()); assert.equal(f.events().length, 1);
-  f.setRate(4); assert.equal((await f.refresh(f.input())).get('T'), .4); assert.equal(f.events().length, 2);
-  assert.equal(f.events()[1].actorType, 'SYSTEM'); assert(!isNaN(Date.parse(f.events()[1].activityTime)));
+  assert.equal(f.rows.get('NCTOrders/O').sellingPricePc, 10); assert.equal(f.events().length, 0);
+  await f.refresh(f.input()); assert.equal(f.events().length, 0);
+  f.setRate(4); assert.equal((await f.refresh(f.input())).get('T'), .4); assert.equal(f.events().length, 0);
+  assert.equal(f.events().length, 0);
 });
 test('missing current rate/cost never exposes the previous cached margin or substitutes zero', async () => {
   const f = fixture(); f.setRate(null); assert.equal((await f.refresh(f.input())).get('T'), null); assert.equal(f.events().length, 0);
@@ -128,7 +128,7 @@ test('partial invoice writes CMS invoice summary and weighted GP without locking
   assert.equal(saved.salesInvoiceSummary[0].number,'SI-001');assert.equal(saved.salesInvoiceSummary[0].quantity,40);
   assert.equal(saved.salesInvoiceSummary[0].by,'SUPPORT');assert.equal(saved.salesInvoiceSummary[0].rateToMyr,3);
   assert.equal(saved.salesInvoiceNumber,'');assert.equal(saved.sellingPricePc,10);
-  await f.refresh(withInvoice(f.input(),40));assert.equal(f.events().length,1);
+  await f.refresh(withInvoice(f.input(),40));assert.equal(f.events().length,0);
   f.setRate(5);await f.refresh(withInvoice(f.input(),40));assert.equal(f.rows.get('NCTOrders/O').salesInvoiceSummary[0].rateToMyr,3);
   assert.notEqual(f.rows.get('NCTOrders/O').gp,expected);
 });
@@ -172,7 +172,7 @@ test('Sales invoice cache refresh retains supplier children and uses their confi
  const wixData={query:collection=>{const filters=[];return {limit(){return this},eq(key,value){filters.push([key,value]);return this},async find(){return {items:[...f.rows].filter(([key,row])=>key.startsWith(collection+'/')&&filters.every(([field,value])=>row[field]===value)).map(([,row])=>clone(row)),hasNext:()=>false}}}},insert:f.store.insert,update:f.store.update,remove:f.store.remove};
  let source=fs.readFileSync(path.join(__dirname,'../backend/customerFulfilmentService.js'),'utf8'),bindings={wixData};
  for(const match of source.matchAll(/^import \{([^}]+)\} from '[^']+';/gm))for(const name of match[1].split(',').map(x=>x.trim()))bindings[name]=()=>null;
- Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginCommit:require('./load-master-module.cjs')('purchaseMarginRefresh.js').createPurchaseMarginCommit,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({ok:true,shipmentId:'SHIP'})});
+ Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginRefresh,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({ok:true,shipmentId:'SHIP'})});
  source=source.replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');const save=vm.runInNewContext('(function(){'+source+';return saveCustomerFulfilment;})()',bindings);
  await save({company:'NCT',requestId:'00000000-0000-4000-8000-000000000001',staff:{memberId:'M',staffId:'S'},input:{action:'INVOICE'}});const revenue=40*100*3+50*100*4;assert.equal(f.rows.get('NCTOrders/O').gp,(revenue-40*240-20*120-30*300)/revenue);
 });
@@ -222,26 +222,26 @@ test('CMS object field order and stale snapshots do not create duplicate invoice
   const f=fixture(),input=withInvoice(f.input(),quantity);await f.refresh(input);const expected=f.rows.get('NCTOrders/O').gp;let writes=0;const update=f.store.update;
   f.store.update=async(...args)=>{writes++;return update(...args);};
   for(let n=0;n<20;n++){const current=f.rows.get('NCTOrders/O');current.salesInvoiceSummary=reorder(current.salesInvoiceSummary);assert.equal((await f.refresh(stale?input:withInvoice(f.input(),quantity))).get('T'),expected);}
-  assert.equal(f.events().length,1);assert.equal(writes,0);assert.equal(f.rows.get('NCTTasks/T').purchaseQtyInCtn,90);
+  assert.equal(f.events().length,0);assert.equal(writes,0);assert.equal(f.rows.get('NCTTasks/T').purchaseQtyInCtn,90);
  }
 });
 
-test('identical concurrent invoice refreshes retain one GP event and release their own lock',async()=>{
+test('identical concurrent invoice refreshes retain no GP event and release their own lock',async()=>{
  const f=fixture(),input=withInvoice(f.input(),40);await Promise.all([f.refresh(input),f.refresh(input)]);
- assert.equal(f.events().length,1);assert.equal((await f.refresh(input)).get('T'),f.rows.get('NCTOrders/O').gp);assert.equal(f.events().length,1);
+ assert.equal(f.events().length,0);assert.equal((await f.refresh(input)).get('T'),f.rows.get('NCTOrders/O').gp);assert.equal(f.events().length,0);
  assert.equal(f.rows.has('NCTActivity/'+operationId('NCT','T','GP_LOCK')),false);
 });
 
 test('confirmed source amount changes still update open GP without rewriting issued invoice cost or FX',async()=>{
  const f=fixture(),input=withInvoice(f.input(),40);await f.refresh(input);const before=f.rows.get('NCTOrders/O').gp,invoice=clone(input.activity.at(-1));
  const changed=withInvoice(f.input(),40);changed.workspace.tasks[0].procurement.costing={totalCtn:90,amountCents:1800000};
- await f.refresh(changed);assert.notEqual(f.rows.get('NCTOrders/O').gp,before);assert.equal(f.events().length,2);assert.deepEqual(changed.activity.at(-1),invoice);
+ await f.refresh(changed);assert.notEqual(f.rows.get('NCTOrders/O').gp,before);assert.equal(f.events().length,0);assert.deepEqual(changed.activity.at(-1),invoice);
 });
 
 test('an already cached GP cannot let a stale invoice read bypass current cost locks or quote changes',async()=>{
  for(const kind of['lock','quote']){
   const f=fixture(),input=withInvoice(f.input(),40);await f.refresh(input);
   if(kind==='lock'){const id=operationId('NCT','T','COST_LOCK');f.rows.set('NCTActivity/'+id,{details:{requestId:'OTHER'}});}else f.rows.get('NCTOrders/O').sellingPricePc=11;
-  assert.equal((await f.refresh(input)).get('T'),null);assert.equal(f.events().length,1);
+  assert.equal((await f.refresh(input)).get('T'),null);assert.equal(f.events().length,0);
  }
 });

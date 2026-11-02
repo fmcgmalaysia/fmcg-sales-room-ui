@@ -5,7 +5,7 @@ import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchase
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
 import { applyPurchaseProgress } from 'backend/purchaseProgress.js';
 import { purchaseOrderList, purchaseOrderReadResult } from 'backend/purchaseOrderWorkflow.js';
-import { readPurchaseMarginCache } from 'backend/purchaseMarginRefresh.js';
+import { readPurchaseMargins } from 'backend/purchaseMarginRefresh.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { purchaseReceiptInfo } from 'backend/purchaseReceiptInfo.js';
 const options = { suppressAuth: true, consistentRead: true };
@@ -26,7 +26,7 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   let customerNamesError='';
   const [customerNames,margins]=await Promise.all([
     readCustomerShortNames(workspace.customers.map(row=>row.id)).catch(()=>{customerNamesError='客户 Short Name 暂时无法读取，请核对客户资料。';return [];}),
-    readPurchaseMarginCache({ company, orders, tasks, workspace, activity })
+    readPurchaseMargins({ company, orders, tasks, workspace, activity })
   ]);
   workspace.customers=workspace.customers.map(row=>({...row,shortName:customerNames.find(item=>item.customerId===row.id)?.shortName||''}));
   const purchaseOrders=purchaseOrderList({company,workspace,records:purchaseRecords,staff});

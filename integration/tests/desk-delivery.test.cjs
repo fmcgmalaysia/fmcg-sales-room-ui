@@ -68,3 +68,9 @@ test('an interrupted Desk authorization restores only its owner and original dig
  const f=await setup(),request=await f.sendRequest(),insert=f.store.insert;let fail=true;f.store.insert=async(collection,row)=>{if(fail&&row.action==='SUPPORT_PACKING_LIST_CURRENT'){fail=false;throw Error('Synthetic interruption before current');}return insert(collection,row);};
  await assert.rejects(f.packingSave(request),/interruption before current/);const activity=(await f.context()).activity,pending=pendingDeskAuthorizations(activity,'NCT',f.staff.memberId);assert.equal(pending.length,1);assert.equal(pending[0].requestId,request.requestId);assert.equal(pendingDeskAuthorizations(activity,'NCT','OTHER-EMPLOYEE').length,0);const recovered=await f.packingSave({...request,input:pending[0].input});assert(recovered.list);assert.equal(pendingDeskAuthorizations((await f.context()).activity,'NCT',f.staff.memberId).length,0);assert.equal((await f.stock()).onHand,150);
 });
+
+test('Desk authorization reuses the existing missing-CBM capture without new capture events',async()=>{
+ const f=await setup(),context=await f.context(),task=context.tasks.find(row=>row.id==='A'),id=load('purchaseOperationJournal.js').operationId('NCT','A','WAREHOUSE_CBM_CAPTURED');
+ await f.store.insert('N',{_id:id,title:id,description:task.orderId,imageAltText:'A',action:'WAREHOUSE_CBM_CAPTURED',result:'SAVED',details:{company:'NCT',sourceLineId:task.sourceLineId,barcode:task.barcode,cbmPerCtn:.025}});
+ const result=await f.send();assert.equal(result.list.lines[0].cbm,.025);assert.equal((await f.context()).activity.filter(row=>row.action==='WAREHOUSE_CBM_CAPTURED').length,1);assert.equal((await f.stock()).onHand,150);
+});

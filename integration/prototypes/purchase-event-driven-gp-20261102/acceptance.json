@@ -1,7 +1,7 @@
 {
-  "status": "IMPLEMENTED_305_TESTS_PASS_LIVE_INITIALIZATION_PENDING",
+  "status": "MINIMAL_DRAFTS_VERIFIED_NOT_PUBLISHED",
   "date": "2026-11-02",
-  "objective": "One GP calculator; business-save triggers only; Purchase reads have no GP writes or FX calls.",
+  "objective": "Display GP from existing financial inputs without IO, cache initialization or GP Activity; preserve original SI save confirmation.",
   "recovery": {
     "runtimeStatic": "5194ed3",
     "publicEvidenceRecord": "cdf767e",
@@ -16,46 +16,26 @@
   },
   "rules": [
     {
-      "when": "Before confirmed PO",
-      "gp": "Blank",
+      "when": "Before PO",
+      "gp": "Blank"
+    },
+    {
+      "when": "Purchase reads",
+      "gp": "Pure arithmetic, saved applicable order FX and confirmed source costs; immutable issued SI slices",
       "rates": false,
       "writes": false
     },
     {
-      "when": "First confirmed PO or effective commercial amendment",
-      "gp": "Calculate affected customer/source values through existing arithmetic",
-      "rates": "Read once for affected currencies",
-      "writes": "Save only changed GP evidence/cache under existing locks"
-    },
-    {
-      "when": "Page load, refresh, background read, view/company/customer navigation",
-      "gp": "Read last confirmed current cache only",
-      "rates": false,
-      "writes": false
-    },
-    {
-      "when": "PO number change only / dates / documents / payments / messages / personal row order",
-      "gp": "No calculation unless actual financial basis also changed",
-      "rates": false,
-      "writes": false
-    },
-    {
-      "when": "Borrow, repayment, return, reconciliation, demand cancellation",
-      "gp": "Recalculate only if the existing formula financial basis changes; preserve exact stock/loan histories",
-      "rates": "Only for confirmed business calculation",
-      "writes": "No duplicate stock or accounting writes"
+      "when": "Business saves",
+      "gp": "Original business handlers only; no added GP follow-up"
     },
     {
       "when": "SI save",
-      "gp": "Keep original mandatory invoice cache confirmation; freeze issued quantity cost and FX",
-      "rates": "Existing invoice rule",
-      "writes": "Idempotent existing request"
+      "gp": "Original confirmation and locks retained; no independent GP event"
     },
     {
-      "when": "Daily Admin FX update alone",
-      "gp": "Do not rewrite PO GP during reads; use saved applicable rate. New SI retains existing fresh-rate snapshot rule",
-      "rates": false,
-      "writes": false
+      "when": "Warehouse fills missing carton CBM",
+      "gp": "Existing single capture retained; new Desk reuses warehouseCbm resolver"
     }
   ],
   "failurePolicy": {
@@ -79,22 +59,17 @@
     "Old financial snapshots are not rebuilt or rewritten by opening a page"
   ],
   "limits": [
-    "Existing repeated events are retained.",
-    "3028 -> 3028 observed after a user-bookmark visit is limited evidence, not a controlled load or capacity pass.",
-    "Public Refresh measurement previously blocked by automatic approval review; no workaround used.",
-    "Implementation is local and two Wix drafts matched. No new production publication or controlled initialization claimed."
+    "Not published yet; Pages resources unchanged.",
+    "Buyer missing CBM presentation still pending.",
+    "Old historical volume/weight not invented."
   ],
   "initialization": {
-    "approval": "User approved one explicit cache initialization, preserving confirmed GP and SI snapshots",
-    "policy": "Preview is read-only; bounded five tasks; saved FX only; mismatches skipped; apply requires exact preview identity",
-    "execution": "Preview pending; employee mapping denial preserved; only new maintenance method uses Wix Permissions.Admin",
-    "authority": "USER_APPROVED_WIX_ADMIN_ONLY"
+    "execution": "One NCT task ALREADY_INITIALIZED with original GP unchanged; other21 not applied. No further initialization.",
+    "authority": "Maintenance draft export retracted; existing row/event preserved."
   },
   "tests": {
-    "newEventDriven": 19,
-    "affectedRegression": 301,
-    "readEfficiencyBackend": 6,
-    "passed": 307,
+    "final": 212,
+    "efficiency": 6,
     "failed": 0
   }
 }

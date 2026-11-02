@@ -1,3 +1,4 @@
+import { warehouseCbm } from 'backend/warehouseCbm.js';
 import { changePackingList, packingAvailability } from 'backend/packingListModel.js';
 import { readSupportDesks, supportDeskForTask, readSupportDeskLocks } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
@@ -27,7 +28,7 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
  draft.desk={number:input.desk};
  const next=changePackingList({list:draft,input:{action:'SEND',revision},context,actor,id,revision,at});
  next.desk={number:input.desk,revision:state.revision,references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};
- next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:task.cbmPerCtn??null};});
+ next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:warehouseCbm(physical.company,task,physical.activity)};});
  return next;
 }
 export function changeDeskDelivery({context,list,input,actor,id,revision,at}){

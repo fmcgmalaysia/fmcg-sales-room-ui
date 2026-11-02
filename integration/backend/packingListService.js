@@ -1,4 +1,4 @@
-import { fulfilmentStore, readFulfilmentContext, commitPurchaseMargins } from 'backend/customerFulfilmentService.js';
+import { fulfilmentStore, readFulfilmentContext } from 'backend/customerFulfilmentService.js';
 import { PURCHASE_COLLECTIONS } from 'backend/purchaseProjection.js';
 import { createPackingListOperations, projectPackingWorkroom } from 'backend/packingListOperations.js';
 import { projectPackingContext } from 'backend/packingListContext.js';
@@ -12,7 +12,7 @@ import { readPhysicalOutflows, deskLoadedInvoiceQuantity } from 'backend/physica
 const readContext=async(company,staff)=>projectPackingContext(await readFulfilmentContext(company,staff));
 const saveDeskOperation=createPackingListOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext,documentService:requestPurchaseDocument});
 const resolveShortload=createShortloadResolutionOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext});
-export async function savePackingOperation(request){if(request.input?.action==='DESK_RESOLVE')return commitPurchaseMargins({...request,result:await resolveShortload(request),taskIds:[request.input.taskId]});if(!['DESK_SEND','DESK_LOAD','DESK_RECALL'].includes(request.input?.action))throw Error('Desk delivery must be authorized from Support ENTRY. The standalone Packing List is retired.');const result=await saveDeskOperation(request);return request.staff.packingDepartment==='WAREHOUSE'?projectWarehouseDeliveryReceipt(result):result;}
+export async function savePackingOperation(request){if(request.input?.action==='DESK_RESOLVE')return resolveShortload(request);if(!['DESK_SEND','DESK_LOAD','DESK_RECALL'].includes(request.input?.action))throw Error('Desk delivery must be authorized from Support ENTRY. The standalone Packing List is retired.');const result=await saveDeskOperation(request);return request.staff.packingDepartment==='WAREHOUSE'?projectWarehouseDeliveryReceipt(result):result;}
 export async function readPackingWorkroom(company,staff){
  const context=await readContext(company,staff),view=projectPackingWorkroom(context,staff.packingDepartment),desks=readSupportDesks(context.physicalContext.activity,company),lists=view.lists.filter(list=>list.desk).map(list=>{const state=desks.find(row=>row.customerId===list.customerId);return {...list,currentAuthorization:Boolean(state?.deliveryHolds?.some(hold=>hold.listId===list.id)),currentDesk:{references:state?.references?.find(row=>row.desk===list.desk.number)||null,shipment:state?.shipments.find(row=>row.desk===list.desk.number)||null}};});
  const common={company,version:view.version,readAt:view.readAt,deskDeliveryVersion:2,staff:{staffName:staff.staffName},department:staff.packingDepartment};
