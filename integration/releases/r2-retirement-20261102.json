@@ -1341,7 +1341,7 @@
   "permissions": {
     "deploymentExpansionRequired": false
   },
-  "status": "PREPARED_AWAITING_ACTION_TIME_DELETE_CONFIRMATION",
+  "status": "DRAFT_FILES_REMOVED_PUBLISH_BLOCKED_EXTRA_R2_PAGE",
   "validation": {
     "formalFilesChecked": 137,
     "formalR2Refs": 0,
@@ -1355,5 +1355,26 @@
       "skipped": 0,
       "scope": "nct-cross-site,nct-receiver,customer-fulfilment,warehouse-receiving,account-purchase-review,customer-invoice-payments,customer-transaction-history,support-workroom,catalogue-qd-recovery"
     }
+  },
+  "actual": {
+    "draftFilesRemoved": 122,
+    "masterHttpExtraLinesRemoved": 9,
+    "masterHttpNonR2Exact": true,
+    "wixPublished": false,
+    "cmsDeleted": 0,
+    "pagesAssetsExact": 101,
+    "postRegressionPassed": 100,
+    "postRegressionFailed": 0
+  },
+  "additionalPageProposal": {
+    "site": "MASTER",
+    "name": "R2 Capacity Test",
+    "file": "R2 Capacity Test.f3l9j.js",
+    "pageId": "f3l9j",
+    "bytes": 11655,
+    "sha256": "59c745916c124cabbb94bb95deb388f772cda10062dd8ae5c7c38371df22b14a",
+    "enabled": false,
+    "reason": "Wix build deployment7e5562db-db82-43dc-8094-dc831584a5b0 cannot resolve backend/r2IntakeCapacityAcceptance.web.js from this retained page",
+    "status": "AWAITING_ACTION_TIME_PAGE_DELETE_CONFIRMATION"
   }
 }
