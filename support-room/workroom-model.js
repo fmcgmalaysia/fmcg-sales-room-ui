@@ -51,5 +51,11 @@
       transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id).concat((documentResult?.documents||[]).filter(row=>row.customerId===customer.id&&!row.superseded&&!row.financeRecorded&&(['$','CN','DN'].includes(row.code)||row.invoiceKind==='CHARGE')).map(row=>({...row,type:row.invoiceKind==='CHARGE'?'CHARGE_INVOICE_DOCUMENT':row.code==='$'?'PAYMENT_DOCUMENT':row.code==='DN'?'DEBIT_NOTE_DOCUMENT':'CREDIT_NOTE_DOCUMENT',number:row.reference,date:row.at,pending:true})))}));
     return {delivery:packing,company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],customerFiles:documentResult?.customerFiles||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
   }
-  return {project};
+  // Confirm the original upload from its existing journal-linked document, never by amount alone.
+  function confirmedDocumentAttempt(attempt,model){
+    if(!attempt||!model)return null;
+    const input=attempt.input,rows=(model.documents||[]).filter(row=>row.company===model.company&&row.uploadRequestId===attempt.requestId&&row.customerId===input.customerId&&row.code===input.code&&row.scope===input.scope&&row.orderId===input.orderId&&(input.scope==='DESK'?row.desk===input.desk:row.invoiceKind==='CHARGE'||row.invoiceId===(input.invoiceId||'')));
+    return rows.length===1&&(['$','CN','DN'].includes(input.code)||input.invoiceKind==='CHARGE'?rows[0].amountCents===input.amountCents:true)?rows[0]:null;
+  }
+  return {project,confirmedDocumentAttempt};
 });
