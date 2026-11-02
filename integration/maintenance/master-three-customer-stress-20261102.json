@@ -1,8 +1,8 @@
 {
   "task": "Real three-customer cross-department pressure test",
-  "branch": "test/master-three-customer-stress-20261102",
+  "branch": "fix/purchase-merge-po-entry-20261102",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "STOPPED_BROWSER_URL_POLICY",
+  "status": "IN_PROGRESS_MERGE_PO_ENTRY_TESTED_NOT_DEPLOYED",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -150,10 +150,69 @@
     },
     {
       "step": "Supplier/customer PDF upload",
-      "state": "NOT UPLOADED",
+      "state": "PO PI INV CONFIRMED UPLOADED; supplier two8425 proofs CONFIRMED; customer first2400 reference saved after504; no customer receipt posted",
       "localFixtures": 8,
       "suppliedFilesAllTestOnly": true,
       "bankTransfers": 0
+    },
+    {
+      "step": "Supplier payment real UI test CONFIRMED",
+      "po": "NCT-PO-T3-801-7UP-1102",
+      "firstMYR": 8425,
+      "secondMYR": 8425,
+      "totalMYR": 16850,
+      "confirmedInvoiceMYR": 16850,
+      "balanceMYR": 0,
+      "twoOriginalPaySlipsRetained": true,
+      "lockedSupplierPopup": "No input fields or pencils; lock icon and bilingual locked message",
+      "realBankTransfer": false
+    },
+    {
+      "step": "Customer first reference proof saved after504",
+      "reference": "TEST-CUSTOMER-801-FIRST-2400",
+      "amountUSD": 2400,
+      "finance": "Pending review1; Awaiting Finance; no Review action",
+      "actualReceiptPosted": false,
+      "currentReceivableUSD": 4800
+    },
+    {
+      "step": "Customer first receipt CONFIRMED",
+      "amountUSD": 2400,
+      "invoiceD1": 1000,
+      "invoiceD2": 1400,
+      "remainingD1": 1784,
+      "remainingD2": 616,
+      "buyerTotalDueUSD": 2400,
+      "duplicatePosting": false
+    },
+    {
+      "step": "Warehouse isolation CONFIRMED",
+      "source": "802 AJAX extra",
+      "quantity": 5,
+      "onHand": 710,
+      "reserved": 700,
+      "free": 5,
+      "isolated": 5,
+      "monthEndLossPosted": false
+    },
+    {
+      "step": "Customer second receipt CONFIRMED before pause and reread after recovery",
+      "amountUSD": 2400,
+      "invoiceD1": 1784,
+      "invoiceD2": 616,
+      "financeDueUSD": 0,
+      "buyerDueUSD": 0,
+      "totalReceiptsUSD": 4800
+    },
+    {
+      "step": "Stock Take authority candidate withdrawn",
+      "candidate": "14b911d",
+      "reason": "User also reported Finance unable to open; recovery-first rule applied without asserting root cause",
+      "restoredCode": "10c8303",
+      "wix": "published and live",
+      "public": "Fresh user Finance51430505 displays AR twoSI/two receipts/due0 after recovery",
+      "customerReceiptPatch": "eea8160 retained",
+      "businessRecordsChangedByRecovery": false
     }
   ],
   "findings": [
@@ -185,8 +244,8 @@
     },
     {
       "id": "T3-05",
-      "issue": "Normal single-source mother checkbox is move-only; no visible source selector to merge saved supplier rows into one PO. Ten unissued sources deliberately retained rather than creating ten needless POs.",
-      "status": "REPRODUCED_NOT_FIXED; UI_MINIMAL_FIX_TO_SCOPE"
+      "issue": "Normal business selection works; toolbar omits existing createSelectedPo action. Original PO handler and validations are present.",
+      "status": "MINIMAL_TOOLBAR_CANDIDATE_42_CHECKS_PASS_NOT_DEPLOYED"
     },
     {
       "id": "T3-06",
@@ -208,32 +267,42 @@
       "id": "T3-09",
       "issue": "01 AJAX GP disappears after mixing PO90 plus Ready Stock10; parent purchase total5141.23 remains original PO90. Need clarify aggregate display versus effective source cost before changing formula.",
       "status": "FOLLOW_UP_NOT_A_CONFIRMED_FINANCIAL_WRITE_BUG"
+    },
+    {
+      "id": "T3-10",
+      "issue": "Second supplier payment summary compares against already-paid first partial request and calls actual remaining8425 above current balance; confirmed whole-PO balance was8425; two payments ultimately retained and net balance0",
+      "status": "REPRODUCED_SUMMARY_SCOPE_NOT_FIXED"
+    },
+    {
+      "id": "T3-11",
+      "issue": "Support customer proof returned504 but file and pending document actually saved; read-back still retains Retry Upload instead of reconciling successful original attempt",
+      "status": "ORIGINAL_REQUEST_RETRY_RECOVERED; first proof retained once; second proof separate. Automatic read-back recovery still needs patch."
+    },
+    {
+      "id": "T3-12",
+      "issue": "Finance customer pending receipt visible but shows Awaiting Finance and no Review button for current LAW session; fresh Wix customerFulfilment.web original matches repository exactly; Finance page forwards full result",
+      "status": "FIXED_AND_FORMALLY_VERIFIED_EEA8160; one existing TOP MANAGEMENT account-role expression;90checks; GitHub and Wix complete; Review and customer posting real-UI pass"
     }
   ],
   "blocker": {
-    "optionalFileUpload": "Supported file chooser timed out; extension file-URL permission requested once. Photos optional; quantity flow continued. PDF/payment proof acceptance still pending."
+    "current": "No browser access blocker. SI original upload remains unconfirmed; preserve its original request."
   },
   "stop": {
-    "reason": "Computer Use stopped this turn because current browser URL could not be determined confidently on Windows. No alternate UI controller or API used.",
-    "lastAttempt": "Read native Chrome window after standard file chooser and keyboard chooser timeout. User had enabled extension file URL access.",
-    "lastVisibleChromeTitle": "COMMAND CENTER - Google Sheets - Google Chrome",
-    "resume": "Restore current Chrome web control and foreground original Purchase public page; inspect existing Upload PO dialog before any new action. No repeat PO/receipt/borrow/repay/Loaded/SI."
+    "status": "RESOLVED_AFTER_USER_RESUME",
+    "history": "Former URL safety stop retained in prior commits; not an active blocker."
   },
   "pending": [
-    "Upload supplier PO/PI/INV and two8425 payment proofs; verify first-proof lock and second-proof history across Purchase/Finance",
-    "Upload customer SI/proofs; Finance actual2400+2400 allocated1000/1400 then1784/616; verify per-invoice balance and download access",
-    "Fix/scope merge-PO selection before issuing remaining10 saved sources",
-    "Complete remaining customer tasks Loaded and SI; existing only8017UP500 Loaded",
-    "Quarantine5 of AJAX free10; Finance reject premature current-month loss; no forged date",
-    "Separate NCT/GHR public navigation and warehouse financial-field isolation acceptance",
-    "Stable CMS before/after read-refresh count comparison; midpoint168 not final nor capacity proof"
+    "Resolve original SI attachment request result; do not create new upload or invoice blindly",
+    "Restore missing Create PO toolbar entry using exact live source; issue remaining10 saved sources only after fix",
+    "Complete remaining customer tasks Loaded/SI and related financial cases; existing8017UP500 and all4 payments must not replay",
+    "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
+    "Complete Finance stock valuation/GHR and customer download acceptance",
+    "Stable CMS before/after read-only count comparison; earlier168/210 counts are midpoints",
+    "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
   ],
   "expectedCurrentStockNotYetVisuallyVerified": {
-    "receipts1210MinusLoaded500": 710,
-    "reserved": 700,
-    "free": 10,
-    "isolated": 0,
-    "valueMYR34702_41": 34702.41
+    "financeValueMYR": 34702.41,
+    "status": "EXPECTED_VALUE_NOT_YET_FINANCE_UI_VERIFIED"
   },
   "cmsMidpoint": {
     "activity": 168,
@@ -246,9 +315,55 @@
     "warning": "Midpoint was read before last sources saved; not final counts. Shared supplier count4 was already present on new-task baseline; not changed by agent."
   },
   "publication": {
-    "codeChanged": false,
+    "codeChanged": true,
     "pagesDeployment": false,
-    "wixPublish": false,
+    "wixPublish": true,
     "allTestingComplete": false
+  },
+  "resume": {
+    "buyerTab": "51430491",
+    "buyerHistory": "Two actual invoices2784+2016, receipts2400+2400; due0",
+    "browserControl": "Restored; same Chrome browser3 and same CUA controller",
+    "uploadMethod": "Standard chooser event repeatedly timed out; current native Chrome owned Open dialog observed, selected exact TEST ONLY PDF through filename input; no security settings changed by agent",
+    "poUpload": "CONFIRMED",
+    "newFinancialPostings": 4,
+    "financeTab": "51430505"
+  },
+  "currentVerified": {
+    "supplierPaymentsMYR": [
+      8425,
+      8425
+    ],
+    "supplierConfirmedPayableMYR": 16850,
+    "supplierBalanceMYR": 0,
+    "customerReceiptsUSD": [
+      2400,
+      2400
+    ],
+    "customerInvoicesUSD": [
+      2784,
+      2016
+    ],
+    "financeDueUSD": 0,
+    "buyerDueUSD": 0,
+    "warehouseOnHand": 710,
+    "reserved": 700,
+    "free": 5,
+    "isolated": 5,
+    "customerLoaded": 500,
+    "goodsReceipts": 1210,
+    "noRealBankTransfers": true
+  },
+  "mergePoCandidate": {
+    "build": "20261102-purchase-merge-po-entry-v1",
+    "changedResources": [
+      "purchase-live/app.js",
+      "purchase-live/index.html"
+    ],
+    "tests": {
+      "pass": 42,
+      "fail": 0
+    },
+    "public": "NOT_DEPLOYED"
   }
 }

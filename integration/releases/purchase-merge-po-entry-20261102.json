@@ -1,0 +1,31 @@
+{
+  "objective": "Restore existing merged purchase-order entry for selected saved supplier tasks",
+  "branch": "fix/purchase-merge-po-entry-20261102",
+  "build": "20261102-purchase-merge-po-entry-v1",
+  "recoveryTag": "verified/purchase-merge-entry-recovery-20261102",
+  "baseline": "87ceb29 canonical101-resource package; fresh public Purchase app equals generated baseline; Wix page equals repository and previous published exact draft",
+  "patch": "One toolbar insertion calls the original createSelectedPo handler; original guards, PO dialog, journals, locks, allocations, payments and personal row order are unchanged",
+  "staticChanges": [
+    "purchase-live/app.js",
+    "purchase-live/index.html"
+  ],
+  "wixChanges": [
+    "integration/wix/purchase-room-page.js: one version reference"
+  ],
+  "resources": 101,
+  "unchangedResources": 99,
+  "checks": {
+    "pass": 42,
+    "fail": 0,
+    "log": "root handoff/master-three-customer-stress-20261102/merge-entry-tests.txt"
+  },
+  "candidateUi": "Two selected tasks100CTN MYR1200 open the original batch dialog; no selection adds no extra action. Preview synthetic writes disabled. Screenshots35/36.",
+  "publication": {
+    "code": "COMPLETE_CANDIDATE",
+    "pages": "NOT_DEPLOYED",
+    "wix": "DRAFT_FULL_READBACK_EXACT_NOT_PUBLISHED",
+    "public": "NOT_VERIFIED"
+  },
+  "userConfirmation": "PENDING",
+  "packaging": "101 file hashes and scoped workflow guards verified"
+}
