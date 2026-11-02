@@ -28,21 +28,22 @@ function marginValue({row,order,task,invoiceLines,quantity},tasks,workspace,rate
 }
 // Display-only arithmetic over existing inputs: no transport, store or cache dependency.
 export function readPurchaseMargins({company,orders,tasks,workspace,activity=[]}){
+ const ready=source=>Boolean(source.po||source.supplierId&&source.procurement?.revision);
  const result=new Map(),invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)),locks=new Set(activity.map(row=>row._id));
  for(const root of workspace.tasks.filter(row=>!row.procurementSource)){
   const group=workspace.tasks.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id),order=orders.find(row=>row.title===root.orderId&&row.sourceLineId===root.sourceLineId);
-  const blocked=!order||!group.some(row=>row.po);
+  const blocked=!order||!group.some(ready);
   const invoiceLines=invoices.flatMap(shipment=>shipment.lines.filter(line=>line.taskId===root.id));
   for(const row of [root,...group.map(source=>({...source,procurementSource:true}))]){
    const key=row.procurementSource?'SOURCE:'+row.id:row.id;result.set(key,null);
-   if(blocked||row.procurementSource&&!row.po||(row.procurementSource?[row]:group).some(source=>locks.has(operationId(company,source.id,'COST_LOCK'))||locks.has(operationId(company,source.id,'GP_LOCK'))))continue;
+   if(blocked||row.procurementSource&&!ready(row)||(row.procurementSource?[row]:group).some(source=>locks.has(operationId(company,source.id,'COST_LOCK'))||locks.has(operationId(company,source.id,'GP_LOCK'))))continue;
    if(!invoiceLines.length&&String(order.salesInvoiceNumber||'').trim()){
     if(!row.procurementSource&&String(order.financialLockedBy||'').trim()&&finite(order.gp))result.set(key,order.gp);
     continue;
    }
    const relevant=row.procurementSource?invoiceLines.map(line=>{const parts=(line.costSources||[]).filter(part=>part.sourceTaskId===row.id);return {...line,quantity:parts.reduce((n,part)=>n+part.quantity,0),costSources:parts};}).filter(line=>line.quantity>0):invoiceLines;
    const quantity=row.procurementSource?(row.procurement?.customerCtn??((row.procurement?.totalCtn||0)-(row.procurement?.expectedExtra||0))):row.shortage?.customerDecision==='STOP'?(row.inc||0):row.ord;
-   if(quantity>relevant.reduce((n,line)=>n+line.quantity,0)&&group.filter(source=>!row.procurementSource||source.id===row.id).some(source=>!source.po))continue;
+   if(quantity>relevant.reduce((n,line)=>n+line.quantity,0)&&group.filter(source=>!row.procurementSource||source.id===row.id).some(source=>!ready(source)))continue;
    result.set(key,marginValue({row,order,task:tasks.find(item=>item.title===row.id),quantity,...(relevant.length?{invoiceLines:relevant}:{})},tasks,workspace,order.adminFxSource));
   }
  }
