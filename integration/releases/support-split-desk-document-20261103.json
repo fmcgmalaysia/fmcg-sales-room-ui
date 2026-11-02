@@ -20,7 +20,13 @@
     "Retained original801 Desk1 SI request succeeds once; verify Buyer own PDF and original receipts"
   ],
   "pages": "UNCHANGED_RUN330_101_RESOURCES",
-  "wix": "NOT_SYNCED",
-  "public": "NOT_ACCEPTED",
-  "modelReview": "Archive removal hypothesis disproved. Single Desk helper returns0 for split parts. No new history store, ledger or reactivation."
+  "wix": "PUBLISHED_LIVE_EXACT_READBACK",
+  "public": "Retained original801 Desk1 SI request succeeded once. File10nWphnHdEu9ExYiqOEoO299fH5eGz2dl, USD2784,290CTN; subsequent original retry reconciled the result, no duplicate link. Buyer801 history displays the same SI; original invoice due0,new due16662 unchanged.",
+  "modelReview": "Archive removal hypothesis disproved. Single Desk helper returns0 for split parts. No new history store, ledger or reactivation.",
+  "code": "c640ae6",
+  "pullRequest": 292,
+  "freshRead": "User-bookmark Support51430555 displays iframe but no customer data; one Refresh ended Loading could not be confirmed; Sign in click had no response. Wix page log00:38:19 TypeError Failed to fetch, no stack obtained. Previous tool reload blank. Exact cause and relation to repeated pre-existing Wix load issue unconfirmed. No repeated reload loop or business replay.",
+  "download": "Buyer SI opens readable TEST ONLY PDF. Drive UI reports Anyone with link/no sign-in required. Download clicked; new usercontent tab ERR_BLOCKED_BY_RESPONSE. Do not bypass; actual download not accepted.",
+  "status": "UPLOAD_AND_BUYER_PREVIEW_PASS_FRESH_SUPPORT_FETCH_FAILED",
+  "noCompletePublicationClaim": true
 }
