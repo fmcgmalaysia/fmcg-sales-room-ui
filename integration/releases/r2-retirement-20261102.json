@@ -1341,7 +1341,7 @@
   "permissions": {
     "deploymentExpansionRequired": false
   },
-  "status": "DRAFT_FILES_REMOVED_PUBLISH_BLOCKED_EXTRA_R2_PAGE",
+  "status": "FOUR_TECHNICAL_STAGES_COMPLETE_USER_PENDING",
   "validation": {
     "formalFilesChecked": 137,
     "formalR2Refs": 0,
@@ -1358,13 +1358,47 @@
   },
   "actual": {
     "draftFilesRemoved": 122,
+    "publishedR2FilesRemoved": 122,
     "masterHttpExtraLinesRemoved": 9,
     "masterHttpNonR2Exact": true,
-    "wixPublished": false,
-    "cmsDeleted": 0,
+    "r2TestPagesRemoved": 1,
+    "wixPublished": {
+      "MASTER": true,
+      "FMCGMALAYSIA": true
+    },
+    "cmsDeleted": 16,
+    "cmsR2Remaining": {
+      "MASTER": 0,
+      "FMCGMALAYSIA": 0
+    },
     "pagesAssetsExact": 101,
+    "pagesRedeployed": false,
+    "permissionsChanged": false,
     "postRegressionPassed": 100,
-    "postRegressionFailed": 0
+    "postRegressionFailed": 0,
+    "retiredHttpStatuses": {
+      "r2NctIntake": 404,
+      "r2SalesFulfilment": 404,
+      "r2PurchaseQuantities": 404
+    },
+    "publicPages": [
+      "Purchase",
+      "Finance",
+      "Warehouse",
+      "Support",
+      "Sales",
+      "Buyer admin assist",
+      "Catalogue"
+    ],
+    "formalMasterCountsUnchanged": {
+      "NCTActivity": 3029,
+      "NCTOrders": 46,
+      "NCTTasks": 47,
+      "PurchaseOrders": 4,
+      "DepartmentChatIndex": 2
+    },
+    "sourceProductsUnchanged": 6780,
+    "formalBusinessWrites": 0
   },
   "additionalPageProposal": {
     "site": "MASTER",
@@ -1375,6 +1409,18 @@
     "sha256": "59c745916c124cabbb94bb95deb388f772cda10062dd8ae5c7c38371df22b14a",
     "enabled": false,
     "reason": "Wix build deployment7e5562db-db82-43dc-8094-dc831584a5b0 cannot resolve backend/r2IntakeCapacityAcceptance.web.js from this retained page",
-    "status": "AWAITING_ACTION_TIME_PAGE_DELETE_CONFIRMATION"
+    "status": "APPROVED_DELETED_PUBLISHED"
+  },
+  "acceptance": {
+    "userPending": true,
+    "ordinaryBuyerLoginRetested": false,
+    "notes": [
+      "100 backend scenarios passed before and after retirement.",
+      "7 public pages force refreshed and read-only navigation passed.",
+      "Buyer and Sales TESTING801 history preserve two invoices1008+3192 and balance4200, matching Finance.",
+      "Wix initial-render fallback logs were retained; no relevant application error found.",
+      "No order submission, receipt, Loaded, borrowing/repayment, posting, price change or production-data reset in R2 task.",
+      "A new user request to clear fake CMS business records is separate and has not executed."
+    ]
   }
 }

@@ -1,3 +1,7 @@
+## 2026-11-02 R2 retirement record
+
+R2 has been removed from both live Wix sites:122 files,3 HTTP routes,1 dedicated test page and16 empty collections. `integration/releases/r2-retirement-20261102.json` is the exact record. Sources under the old isolated-cohort prototype are retained offline as history, not an active workflow or deployment baseline. Formal business data was retained; clearing fake business records is a separate authorized task requiring its own exact scope and verification.
+
 # FMCG repository operating supplement
 
 ## 2026-11-02 Sales Department belongs only to MASTER
