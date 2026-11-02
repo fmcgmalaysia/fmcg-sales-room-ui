@@ -69,16 +69,24 @@ $w.onReady(async function () {
     setTimeout(() => prepareSelectionDownload(true), 1500);
   });
 
+  let workspaceRefreshPromise = null, workspaceReadEpoch = 0;
+  function refreshWorkspace() {
+    if (!workspaceRefreshPromise) workspaceRefreshPromise = loadWorkspace().finally(() => { workspaceRefreshPromise = null; });
+    return workspaceRefreshPromise;
+  }
   async function loadWorkspace() {
+    const readEpoch = ++workspaceReadEpoch;
     let result;
     try { result = await getBuyerWorkspace(assistCustomerId); }
     catch (error) {
+      if (readEpoch !== workspaceReadEpoch) return;
       if (assistCustomerId) {
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Error: ' + (error?.message || String(error)) });
         throw error;
       }
       throw error;
     }
+    if (readEpoch !== workspaceReadEpoch) return;
     if (!result?.ok || !result?.context?.customerId || result.context.status !== 'ACTIVE') {
       if (assistCustomerId) {
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Could Not Be Verified.' });
@@ -139,7 +147,7 @@ $w.onReady(async function () {
     }
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
       frameReady = true;
-      try { await loadWorkspace(); }
+      try { await refreshWorkspace(); }
       catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
       return;
     }
@@ -240,16 +248,16 @@ $w.onReady(async function () {
   wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, (message) => {
     if (!frameReady || message?.payload?.type !== 'ORDER_QUANTITY_CHANGED') return;
     frame.postMessage({ type: 'BUYER_ROOM_ORDER_REFRESH' });
-    loadWorkspace().catch(error => console.error('Buyer order realtime refresh failed', error));
+    refreshWorkspace().catch(error => console.error('Buyer order realtime refresh failed', error));
   }).catch(error => console.error('Buyer order realtime subscription failed', error));
 
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261102-sales-department-v1';
-  try { await loadWorkspace(); }
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261102-two-site-closeout-v1';
+  try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
-  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
+  // Visible-frame polling is the only periodic workspace refresh authority.
   setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);
 });
 

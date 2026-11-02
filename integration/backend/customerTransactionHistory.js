@@ -42,10 +42,12 @@ export function projectCustomerTransactionHistory(context, customerId) {
     .sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.id.localeCompare(b.id));
   const loadedRecords=readLoadedInvoiceRecords(activity,shipments),loadedIds=new Set(loadedRecords.map(row=>row.id));
   const invoices=account.invoicePayments.invoices.filter(row=>row.customerId===customerId);
+  const savedInputs=new Set(activity.map(event=>JSON.stringify([event.title,event.description]))),preparedByNumber=new Map();
+  for(const event of activity)if(event.action==='SUPPORT_INVOICE_PREPARED'&&event.image===customerId&&event.details?.invoice?.number&&event.details?.customerDetails){const number=event.details.invoice.number,list=preparedByNumber.get(number)||[];list.push(event);preparedByNumber.set(number,list);}
   const transactions=invoices.filter(row=>row.kind==='CHARGE'||loadedIds.has(row.id)).map(row=>{
     const source=shipments.find(shipment=>shipment.id===row.id),invoiceDocuments=documents.filter(doc=>doc.invoiceId===row.id||source&&!doc.invoiceId&&(doc.scope==='ORDER'&&source.lines.some(line=>line.orderId===doc.orderId)||doc.scope==='DESK'&&doc.desk===source.desk&&source.lines.some(line=>line.orderId===doc.orderId)));
     const related=entry=>({...entry,documents:documents.filter(doc=>doc.fileId===entry.fileId)});
-    const prepared=activity.filter(event=>event.action==='SUPPORT_INVOICE_PREPARED'&&event.image===customerId&&event.details?.invoice?.number===row.number&&event.details?.customerDetails&&activity.some(ready=>ready.title===operationId(event._id,'SUPPORT_INVOICE_INPUT_SAVED')&&ready.description===row.id));
+    const prepared=(preparedByNumber.get(row.number)||[]).filter(event=>savedInputs.has(JSON.stringify([operationId(event._id,'SUPPORT_INVOICE_INPUT_SAVED'),row.id])));
     if(prepared.length>1)throw Error('Invoice shipment details require review.');
     const snapshot=prepared[0]?.details.customerDetails;
     return {id:row.id,company,customerId,kind:row.kind,number:row.number,date:row.date,currency:row.currency,amountCents:row.amountCents,quantity:row.quantity,paidCents:row.paidCents,creditCents:row.creditCents,debitCents:row.debitCents,dueCents:row.dueCents,lastPayment:row.lastPayment?related(row.lastPayment):null,payments:row.payments.map(related),adjustments:row.adjustments.map(related),documents:invoiceDocuments,
@@ -53,7 +55,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
       transport:source?.invoice?.transport||snapshot?.transport||'',departureDate:source?.invoice?.departureDate||snapshot?.departureDate||''};
   }).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
   return { company, customerId, transactions,
-    shipments: readLoadedInvoiceRecords(activity,shipments).map(row => ({
+    shipments: loadedRecords.map(row => ({
       id: row.id, company, customerId, desk: row.desk || null, recordedAt: row.invoice.at || row.invoice.date,
       number: row.invoice.number, date: row.invoice.date,
       currency: row.invoice.currency, amountCents: row.invoice.amountCents,

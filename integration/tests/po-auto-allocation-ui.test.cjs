@@ -2,8 +2,9 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const release=require('../prototypes/po-auto-allocation-20261101/stage.cjs').plan(),root=path.resolve(__dirname,'../..');
 test('the release retains99 exact scoped resources and excludes the inherited allocation draft',()=>{
  assert.equal(release.assets.size,99);for(const[f,b]of release.assets)if(!release.changed.includes(f))assert(b.equals(release.baseline.get(f)),f);
- assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'purchase-live/customer-allocation.js'))).digest('hex'),'6c2a28369a1de34b07d9f285e1b48163ce46815a0e0909ddc66c8e88a005a951');
- assert(!release.assets.get('purchase-live/customer-allocation.js').equals(fs.readFileSync(path.join(root,'purchase-live/customer-allocation.js'))));
+ const shippedHash=crypto.createHash('sha256').update(release.assets.get('purchase-live/customer-allocation.js')).digest('hex');
+ assert.equal(shippedHash,'0119f8ed11f171626d9c50334bb898f92897bc58655a7c62a98ebe24aea37e1f','frozen release bytes, independent of the checkout draft');
+ assert.notEqual(shippedHash,'6c2a28369a1de34b07d9f285e1b48163ce46815a0e0909ddc66c8e88a005a951','never ship the inherited unverified draft');
  for(const f of ['account-room/app.js','account-room/payment-layout.js','warehouse-room/workroom.js','warehouse-room/workroom.html','catalogue-sidebar-v1.html'])if(release.baseline.has(f))assert(release.assets.get(f).equals(release.baseline.get(f)),f);
 });
 test('every shipped script parses and allocation preview is mechanically built from the sole server domain',()=>{

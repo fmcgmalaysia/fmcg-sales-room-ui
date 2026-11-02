@@ -214,3 +214,33 @@ test('unknown source margins avoid redundant CMS reads without exposing cached v
   assert.deepEqual(calls,[]);assert.deepEqual(clone([...f.rows]),before);
  }
 });
+
+test('CMS object field order and stale snapshots do not create duplicate invoice GP writes',async()=>{
+ const reorder=value=>Array.isArray(value)?value.map(reorder):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).reverse().map(([key,item])=>[key,reorder(item)])):value;
+ for(const quantity of[40,90])for(const stale of[false,true]){
+  const f=fixture(),input=withInvoice(f.input(),quantity);await f.refresh(input);const expected=f.rows.get('NCTOrders/O').gp;let writes=0;const update=f.store.update;
+  f.store.update=async(...args)=>{writes++;return update(...args);};
+  for(let n=0;n<20;n++){const current=f.rows.get('NCTOrders/O');current.salesInvoiceSummary=reorder(current.salesInvoiceSummary);assert.equal((await f.refresh(stale?input:withInvoice(f.input(),quantity))).get('T'),expected);}
+  assert.equal(f.events().length,1);assert.equal(writes,0);assert.equal(f.rows.get('NCTTasks/T').purchaseQtyInCtn,90);
+ }
+});
+
+test('identical concurrent invoice refreshes retain one GP event and release their own lock',async()=>{
+ const f=fixture(),input=withInvoice(f.input(),40);await Promise.all([f.refresh(input),f.refresh(input)]);
+ assert.equal(f.events().length,1);assert.equal((await f.refresh(input)).get('T'),f.rows.get('NCTOrders/O').gp);assert.equal(f.events().length,1);
+ assert.equal(f.rows.has('NCTActivity/'+operationId('NCT','T','GP_LOCK')),false);
+});
+
+test('confirmed source amount changes still update open GP without rewriting issued invoice cost or FX',async()=>{
+ const f=fixture(),input=withInvoice(f.input(),40);await f.refresh(input);const before=f.rows.get('NCTOrders/O').gp,invoice=clone(input.activity.at(-1));
+ const changed=withInvoice(f.input(),40);changed.workspace.tasks[0].procurement.costing={totalCtn:90,amountCents:1800000};
+ await f.refresh(changed);assert.notEqual(f.rows.get('NCTOrders/O').gp,before);assert.equal(f.events().length,2);assert.deepEqual(changed.activity.at(-1),invoice);
+});
+
+test('an already cached GP cannot let a stale invoice read bypass current cost locks or quote changes',async()=>{
+ for(const kind of['lock','quote']){
+  const f=fixture(),input=withInvoice(f.input(),40);await f.refresh(input);
+  if(kind==='lock'){const id=operationId('NCT','T','COST_LOCK');f.rows.set('NCTActivity/'+id,{details:{requestId:'OTHER'}});}else f.rows.get('NCTOrders/O').sellingPricePc=11;
+  assert.equal((await f.refresh(input)).get('T'),null);assert.equal(f.events().length,1);
+ }
+});
