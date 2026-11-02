@@ -2,7 +2,7 @@
   "task": "Real three-customer cross-department pressure test",
   "branch": "fix/purchase-merge-po-entry-20261102",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "IN_PROGRESS_MERGE_PO_ENTRY_TESTED_NOT_DEPLOYED",
+  "status": "MERGE_PO_PATCH_PUBLICLY_VERIFIED_CONTINUING_REAL_STRESS",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -213,6 +213,16 @@
       "public": "Fresh user Finance51430505 displays AR twoSI/two receipts/due0 after recovery",
       "customerReceiptPatch": "eea8160 retained",
       "businessRecordsChangedByRecovery": false
+    },
+    {
+      "step": "Merged PO confirmed once",
+      "po": "NCT-PO-T3-MERGED-KOH-1102",
+      "taskRows": 10,
+      "distinctProducts": 9,
+      "customers": 3,
+      "quantity": 1300,
+      "amountMYR": 193885.95,
+      "receiptQuantity": 0
     }
   ],
   "findings": [
@@ -245,7 +255,7 @@
     {
       "id": "T3-05",
       "issue": "Normal business selection works; toolbar omits existing createSelectedPo action. Original PO handler and validations are present.",
-      "status": "MINIMAL_TOOLBAR_CANDIDATE_42_CHECKS_PASS_NOT_DEPLOYED"
+      "status": "FIXED_1d4ca00_PUBLIC_MERGE_ACCEPTED"
     },
     {
       "id": "T3-06",
@@ -293,7 +303,7 @@
   },
   "pending": [
     "Resolve original SI attachment request result; do not create new upload or invoice blindly",
-    "Restore missing Create PO toolbar entry using exact live source; issue remaining10 saved sources only after fix",
+    "Receive merged PO1300 through Warehouse and complete remaining allocations/Loaded/SI without repeating original7UP500",
     "Complete remaining customer tasks Loaded/SI and related financial cases; existing8017UP500 and all4 payments must not replay",
     "Stock Take TOP MANAGEMENT permission remains withdrawn after recovery; true month-end rejection not yet accepted",
     "Complete Finance stock valuation/GHR and customer download acceptance",
@@ -301,8 +311,8 @@
     "Fix remaining reproduced UX defects in isolated scopes; legacy4 test failures separately retained"
   ],
   "expectedCurrentStockNotYetVisuallyVerified": {
-    "financeValueMYR": 34702.41,
-    "status": "EXPECTED_VALUE_NOT_YET_FINANCE_UI_VERIFIED"
+    "status": "FINANCE_FORMAL_UI_VERIFIED",
+    "valueMYR": 34702.41
   },
   "cmsMidpoint": {
     "activity": 168,
@@ -352,7 +362,11 @@
     "isolated": 5,
     "customerLoaded": 500,
     "goodsReceipts": 1210,
-    "noRealBankTransfers": true
+    "noRealBankTransfers": true,
+    "financeStockValueMYR": 34702.41,
+    "ghrFinanceStockQuantity": 0,
+    "ghrFinanceStockValueMYR": 0,
+    "purchaseOrders": 7
   },
   "mergePoCandidate": {
     "build": "20261102-purchase-merge-po-entry-v1",
@@ -364,6 +378,9 @@
       "pass": 42,
       "fail": 0
     },
-    "public": "NOT_DEPLOYED"
+    "public": "PASS_REAL_MERGE_10_TASKS_1300_CTN",
+    "commit": "1d4ca00",
+    "authorization": "User explicitly approved one scoped Pages run and immediate restoration of original7 rules",
+    "deployment": "Run329 succeeded,101 hashes exact,original7 rules restored,Wix published/live"
   }
 }
