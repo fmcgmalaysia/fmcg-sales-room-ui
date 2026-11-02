@@ -22,7 +22,7 @@
  }
  function paymentSummary(row,cents){
   if(!Number.isSafeInteger(cents)||cents<=0)return 'Enter the payment amount to generate the summary.';
-  const request=window.accountPaymentLayout.requestAmounts(row),active=Number.isSafeInteger(request.requested),f=row.finance||{},requested=active?request.requested:f.payableCents,paid=active?request.paid:f.paidCents,balance=active?request.balance:f.balanceCents;
+  const request=window.accountPaymentLayout.requestAmounts(row),f=row.finance||{},active=!Number.isSafeInteger(f.payableCents)&&Number.isSafeInteger(request.requested),requested=active?request.requested:f.payableCents,paid=active?request.paid:f.paidCents,balance=active?request.balance:f.balanceCents;
   const value=n=>Number.isSafeInteger(n)?'MYR '+money(n):'Not set',afterPaid=Number.isSafeInteger(paid)?paid+cents:null,afterBalance=Number.isSafeInteger(balance)?balance-cents:null,lines=[(active?'Requested amount: ':'Supplier payable: ')+value(requested),'This payment: '+value(cents),(active?'Paid against this request: ':'Net paid to date: ')+value(afterPaid)];
   const credit=active&&Number.isSafeInteger(paid)&&Number.isSafeInteger(balance)?requested-paid-balance:0;if(credit>0)lines.push('Credit applied to request: '+value(credit));
   lines.push((active?'Request balance due: ':'Supplier balance due: ')+value(afterBalance===null?null:Math.max(0,afterBalance)));if(afterBalance!==null&&afterBalance<0)lines.push('Amount above current balance: '+value(-afterBalance));return lines.join('\n');
