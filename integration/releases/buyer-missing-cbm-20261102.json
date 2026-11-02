@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-02",
+  "objective": "Display unknown Buyer CBM honestly without affecting order quantity, amount or actions",
+  "build": "20261102-buyer-cbm-display-v1",
+  "baseline": "5194ed3",
+  "scope": "buyer-cbm-display-only",
+  "resources": 101,
+  "changed": [
+    "buyer-room.html"
+  ],
+  "unchanged": 100,
+  "wix": {
+    "file": "buyer-room/wix/buyer-room-page.js",
+    "change": "one version reference",
+    "readback": "EXACT_UNPUBLISHED"
+  },
+  "tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "approval": "User explicitly approved retaining four formal Buyer version references",
+  "gpCloseout": {
+    "commit": "a675979",
+    "wix": "published and live",
+    "public": "Purchase twice and Support read verified, NCT Activity3029 stable"
+  },
+  "status": "TESTED_NOT_DEPLOYED"
+}
