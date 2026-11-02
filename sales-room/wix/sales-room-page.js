@@ -1,4 +1,3 @@
-import { getSalesDepartment } from 'backend/salesDepartment.web.js';
 import { salesRoomShipment } from 'backend/onboarding.web';
 import { createSalesRoomCustomer, verifySalesRoomCustomerQd, getSalesRoomCustomers, getSalesRoomCustomerDetail, getAssignableSalesStaff, updateSalesRoomCustomerProfile, updateSalesRoomSelectionLimit, saveSalesRoomCustomerUser, getSalesRoomCustomerAudit, recordSalesRoomActivity, getSalesRoomActivityForAdmin, getSalesRoomCustomersOperational, getSalesRoomConfirmedOrders, getSalesRoomOrderDetail, checkSalesRoomOrderReceipt, getSalesRoomOrderForm, submitSalesRoomOrder, createSalesRoomProforma, confirmSalesRoomOrderForm, updateSalesRoomCustomerLifecycle, addSalesRoomCustomerUser, reviewSalesRoomCustomerUser, publishSalesRoomQuotations, getSalesRoomOrderProgress, saveSalesRoomOrderQty, saveSalesRoomOrderPo, saveSalesRoomOrderPlanning } from 'backend/onboarding.web';
 import { getFxRateSettings, saveAndSyncFxRates } from 'backend/fxRates.web.js';
@@ -185,12 +184,6 @@ $w.onReady(function () {
 
   salesRoom.onMessage(async (event) => {
     const message = event.data || {};
-    if (message.type === 'SALES_DEPARTMENT_REQUEST') {
-      if (typeof message.requestId !== 'string' || !/^[a-f0-9-]{36}$/i.test(message.requestId)) return;
-      try { salesRoom.postMessage({ type: 'SALES_DEPARTMENT_RESULT', requestId: message.requestId, ...await getSalesDepartment() }); }
-      catch (error) { const staff = await getCurrentStaffContext().catch(() => null); salesRoom.postMessage({ type: 'SALES_DEPARTMENT_RESULT', requestId: message.requestId, ok: false, accessDenied: staff?.authorized !== true, error: 'Sales access or account records could not be confirmed.' }); }
-      return;
-    }
 
 
     if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
