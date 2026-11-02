@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-02",
+  "runtimeCommit": "bcfe85569a68ce67d6f18258d4cf110ac15dcdeb",
+  "branch": "fix/sales-department-master-only-20261102",
+  "build": "20261102-customer-site-isolation-v1",
+  "pr": 285,
+  "pages": {"runId":41371074982,"number":326,"attempt":1,"conclusion":"success","exact":101,"total":101,"removed404":4},
+  "resources": {"changed":["index.html"],"removed":["sales-department/index.html","sales-department/style.css","sales-department/app.js","sales-department/entry.js"],"otherRetainedExact":100},
+  "permissions": {"temporaryRule":65166330,"status":"REVOKED_ORIGINAL_7_BRANCHES_0_TAGS_RESTORED"},
+  "wix": {"master":"PUBLISHED_LIVE_AFTER_INTERNAL_ACTION_REMOVAL","fmcg":"PUBLISHED_LIVE_AFTER_PHYSICAL_DELETION_AND_VERSION_REFERENCE","deletedModules":3,"sourcePageSha256":"c36725b3705eb73e57d4f8f6da3b469c9827aaa7a3506be3e62d8aee5a48660f"},
+  "public":"PENDING_USER_BOOKMARK_RECOVERY_OF_WIX_BLANK_EMBED",
+  "tests":{"affected":65,"latestIsolation":5,"fail":0,"skipped":0,"overlapping":true,"sourceSyntax":"PASS"},
+  "masterSalesManagement":"NOT_YET_CONNECTED; BOSS_ALL_AND_PERSONAL_HISTORICAL_TRANSACTION_OWNERSHIP_CONTRACT_RECORDED",
+  "businessWrites":false,
+  "mainMerged":false,
+  "userVerified":false,
+  "priorCloseoutGpNoGrowth":"FAILED_AND_SEPARATELY_OPEN"
+}

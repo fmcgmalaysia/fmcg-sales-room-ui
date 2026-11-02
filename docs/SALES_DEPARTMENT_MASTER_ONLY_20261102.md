@@ -18,8 +18,20 @@ No invoice, receipt, payment, supplier, stock, Loaded, customer identity, docume
 
 ## MASTER implementation boundary
 
+User clarification after cleanup preparation: name the internal area Sales Management. The boss may view all salespeople; an individual such as LIM may view only their own transaction performance, profit and commission. Sales Room serves the current customer owner and customer history may pass to a new employee. Those service assignments must not rewrite historical transaction ownership or commission. Subsequent collection of an old invoice does not transfer that invoice's sales credit to the new account handler. Ownership corrections require authoritative evidence and a controlled recorded action; missing historical owner remains unresolved. This is the target contract, not a claim that MASTER currently has the page, payout source or configured Sales employee permissions.
+
 Use MASTER member authentication and StaffMasterAccess, restrict server-side to Sales and authoritative assigned customers, and read local NCT/GHR Finance ledgers. Do not use submittedByStaffId as ownership: an administrator may submit on another salesperson's behalf. Verify the actual assignment/profile authority before connecting the new page. No internal financial projection is sent to FMCG. Existing customer profiles and transaction history must retain their existing authorities; this correction does not authorize a second customer directory, a fabricated commission payout or an inferred customer assignment.
 
 ## Outstanding evidence
 
 Static deployment/removal verification, public Sales menu absence and preserved transaction history remain required. The current public session may retain the old shell until a fresh navigation. The preceding closeout's GP no-growth acceptance failed: activity count2904→2923, visible newest events repeatedly GP_RECALCULATED for the same task at08:30–08:32. This is not solved or deleted; unrelated tests paused for the placement correction. Buyer/Support PDF/payment acceptance, ordinary-role access and the other tracked business contracts remain open. Do not claim the full previous closeout is accepted.
+
+## Removal release receipts
+
+The user approved exactly one customer-site-isolation-only deployment at bcfe855. Run326/41371074982 succeeded on its first attempt. All101 public resource hashes match; all four removed sales-department URLs return404. Rule65166330 was removed immediately after success, returning to the same7 branches and0tags. No second deployment or alternate allowed branch was used.
+
+After fresh full source comparison, only the source Sales page's version reference was advanced to20261102-customer-site-isolation-v1. Its full normalized SHA256 is c36725b3705eb73e57d4f8f6da3b469c9827aaa7a3506be3e62d8aee5a48660f. FMCG again returned published/live. The backend-removal MASTER receipt remains valid; no additional MASTER publish was necessary. Post-reference isolation5/5 and module syntax validation pass.
+
+Public visual acceptance is still pending: the existing clean Sales URL refreshed to a blank embed, with Wix component suspense fallback errors and a pre-existing declarative iframe source. Do not claim the new Wix page code ran from that state, blame historical query parameters, re-deploy, inject page state, or switch controllers. The user was asked once to reopen their original Sales bookmark. A pre-refresh legacy session also showed that the old internal reader could no longer confirm account records; its retained in-memory customer header is not evidence of a live internal response. Capture fresh no-menu and original transaction-history evidence before marking removal accepted.
+
+An initial attempt to open the workflow configuration button was automatically rejected as potentially submitting an unchecked deployment. Read-only DOM evidence established it was a type=button outside a form that opened the configuration dialog. The selected branch and static_ui were then explicitly verified before clicking the dialog's actual submit button. The approved deployment ran once at the exact approved SHA; no safety bypass or extra permission was used.

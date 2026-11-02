@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261102-two-site-closeout-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261102-customer-site-isolation-v1';
   const staffPromise = loadCurrentStaff();
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
