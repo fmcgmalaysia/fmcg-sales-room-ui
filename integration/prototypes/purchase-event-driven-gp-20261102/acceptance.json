@@ -8,11 +8,11 @@
     "gpModuleSha256": "7fac338458fe3b3680dc4c2648006a6ec6ad088a7530052c65fae93195cd7fa8"
   },
   "existingPaths": {
-    "purchaseRead": "purchaseWorkspace.web.js -> createPurchaseMarginRefresh",
-    "purchaseWrites": "purchaseOperations.web.js -> existing journaled PO/PLAN/EDIT/AVERAGE_COST/ADD_SOURCE/ALLOCATE/SHORTAGE/QUANTITY_CASE",
+    "purchaseRead": "purchaseWorkspace.web.js -> readPurchaseMargins (pure existing-input arithmetic)",
+    "purchaseWrites": "Original confirmed business handlers; no GP follow-up",
     "invoiceSave": "customerFulfilmentService.js -> existing post-INVOICE cache confirmation",
-    "demandChanges": "customerFulfilmentService.js -> ADJUST or Desk cancellation",
-    "shortload": "packingListService.js -> existing shortload resolver"
+    "demandChanges": "Original ADJUST and Desk cancellation",
+    "shortload": "Original resolver; no GP follow-up"
   },
   "rules": [
     {
@@ -39,8 +39,8 @@
     }
   ],
   "failurePolicy": {
-    "confirmedBusinessSave": "Never repeat, roll back, or alter a confirmed PO/stock/payment operation solely because a derived GP cache fails.",
-    "unconfirmedGp": "Do not display stale cache as current or missing data as zero; retain original request for controlled same-save repair.",
+    "confirmedBusinessSave": "Original business receipts unchanged; there is no post-PO GP cache stage.",
+    "unconfirmedGp": "Missing required cost/rate or in-flight source lock yields unknown, never stale cache or invented zero.",
     "locks": "Retain GP/COST/Finance locks, source-version checks and invoice immutability.",
     "legacy": "Preserve verified existing PO/invoice values; no read-triggered backfill, dummy PO edit, deletion or invented source margin."
   },
@@ -59,8 +59,8 @@
     "Old financial snapshots are not rebuilt or rewritten by opening a page"
   ],
   "limits": [
-    "Observed limited read-only public checks; no capacity-load or new real SI/PO test claimed.",
-    "Buyer missing-CBM display release has formal embedded-page verification pending separately."
+    "Limited formal Purchase and Support read checks, not a capacity test or new real SI/PO operation.",
+    "Buyer follow-up87ceb29 has four technical release stages complete; positive missing-spec case exercised in exact-build synthetic preview only."
   ],
   "initialization": {
     "execution": "One NCT task ALREADY_INITIALIZED with original GP unchanged; other21 not applied. No further initialization.",
