@@ -10,8 +10,8 @@ function fixture(){
   wixData:{query:()=>({limit(){return this;},find:async()=>({items:[],hasNext:()=>false})})},
   projectPurchaseWorkspace:()=>workspace,
   readCustomerShortNames:()=>{calls.push('names');return names.promise;},
-  createPurchaseMarginRefresh:()=>()=>{calls.push('margins');started.resolve();return margins.promise;},
-  readCurrentAdminFx:()=>{},projectPurchaseOrders:()=>[],applyPurchaseProgress:()=>{},
+  readPurchaseMarginCache:()=>{calls.push('margins');started.resolve();return margins.promise;},
+  purchaseOrderList:()=>[],purchaseOrderReadResult:()=>({orders:[]}),purchaseReceiptInfo:()=>new Map(),applyPurchaseProgress:()=>{},
  });
  return {read,names,margins,started,calls};
 }

@@ -1,5 +1,5 @@
 {
-  "status": "APPROVED_RULE_REVIEWED_IMPLEMENTATION_PENDING",
+  "status": "IMPLEMENTED_305_TESTS_PASS_LIVE_INITIALIZATION_PENDING",
   "date": "2026-11-02",
   "objective": "One GP calculator; business-save triggers only; Purchase reads have no GP writes or FX calls.",
   "recovery": {
@@ -82,6 +82,19 @@
     "Existing repeated events are retained.",
     "3028 -> 3028 observed after a user-bookmark visit is limited evidence, not a controlled load or capacity pass.",
     "Public Refresh measurement previously blocked by automatic approval review; no workaround used.",
-    "No implementation or new production publication is claimed by this contract."
-  ]
+    "Implementation is local and two Wix drafts matched. No new production publication or controlled initialization claimed."
+  ],
+  "initialization": {
+    "approval": "User approved one explicit cache initialization, preserving confirmed GP and SI snapshots",
+    "policy": "Preview is read-only; bounded five tasks; saved FX only; mismatches skipped; apply requires exact preview identity",
+    "execution": "Preview pending; employee mapping denial preserved; only new maintenance method uses Wix Permissions.Admin",
+    "authority": "USER_APPROVED_WIX_ADMIN_ONLY"
+  },
+  "tests": {
+    "newEventDriven": 19,
+    "affectedRegression": 301,
+    "readEfficiencyBackend": 6,
+    "passed": 307,
+    "failed": 0
+  }
 }

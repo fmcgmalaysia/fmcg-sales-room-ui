@@ -167,13 +167,14 @@ test('multiple confirmed source amounts are weighted by customer share and keep 
 test('Sales invoice cache refresh retains supplier children and uses their confirmed costs',async()=>{
  const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),f=fixture(),input=withSources(f,withInvoice(f.input(),40));
  input.workspace.tasks[0].procurement.costing={schema:1,totalCtn:60,amountCents:720000,averageCostCtn:120};
+ for(const task of input.workspace.tasks)task.po='CONFIRMED-PO';
  for(const [i,event]of input.activity.entries())f.rows.set('NCTActivity/INVOICE-'+i,{_id:'INVOICE-'+i,...clone(event)});
  const wixData={query:collection=>{const filters=[];return {limit(){return this},eq(key,value){filters.push([key,value]);return this},async find(){return {items:[...f.rows].filter(([key,row])=>key.startsWith(collection+'/')&&filters.every(([field,value])=>row[field]===value)).map(([,row])=>clone(row)),hasNext:()=>false}}}},insert:f.store.insert,update:f.store.update,remove:f.store.remove};
  let source=fs.readFileSync(path.join(__dirname,'../backend/customerFulfilmentService.js'),'utf8'),bindings={wixData};
  for(const match of source.matchAll(/^import \{([^}]+)\} from '[^']+';/gm))for(const name of match[1].split(',').map(x=>x.trim()))bindings[name]=()=>null;
- Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginRefresh,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({shipmentId:'SHIP'})});
+ Object.assign(bindings,{PURCHASE_COLLECTIONS:{NCT:f.names},projectPurchaseWorkspace:()=>clone(input.workspace),createPurchaseMarginCommit:require('./load-master-module.cjs')('purchaseMarginRefresh.js').createPurchaseMarginCommit,readCurrentAdminFx:async()=>[{currency:'SGD',rateToMyr:4}],readCustomerShipments:require('./load-master-module.cjs')('customerShipmentLedger.js').readCustomerShipments,createCustomerFulfilmentOperations:()=>async()=>({ok:true,shipmentId:'SHIP'})});
  source=source.replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');const save=vm.runInNewContext('(function(){'+source+';return saveCustomerFulfilment;})()',bindings);
- await save({company:'NCT',staff:{},input:{action:'INVOICE'}});const revenue=40*100*3+50*100*4;assert.equal(f.rows.get('NCTOrders/O').gp,(revenue-40*240-20*120-30*300)/revenue);
+ await save({company:'NCT',requestId:'00000000-0000-4000-8000-000000000001',staff:{memberId:'M',staffId:'S'},input:{action:'INVOICE'}});const revenue=40*100*3+50*100*4;assert.equal(f.rows.get('NCTOrders/O').gp,(revenue-40*240-20*120-30*300)/revenue);
 });
 
 test('partial allocation calculates each saved supplier independently including the first source sharing the mother ID',async()=>{

@@ -95,7 +95,7 @@ test('workspace reads each collection once and returns the same PO lock and docu
   PURCHASE_COLLECTIONS:{NCT:names},getPurchaseStaffContext:async()=>{if(!allowed)throw Error('Denied');return f.staff;},
   projectPurchaseWorkspace:()=>copy(f.workspace),purchaseOrderList,purchaseOrderReadResult,
   readCustomerShortNames:async ids=>{namesCalls++;assert.deepEqual(Array.from(ids),['C']);return [{customerId:'C',shortName:'SHORT'}];},
-  createPurchaseMarginRefresh:()=>async input=>{marginCalls++;assert.equal(input.names,names);return new Map();},readCurrentAdminFx:()=>{},
+  readPurchaseMarginCache:input=>{marginCalls++;assert.equal(input.company,'NCT');return new Map();},
   applyPurchaseProgress(){},purchaseReceiptInfo:()=>new Map(),Map,Date,Promise,Error
  };
  const src=fs.readFileSync(path.join(__dirname,'../backend/purchaseWorkspace.web.js'),'utf8').replace(/^import[^\n]+\r?\n/gm,'').replace('export const getPurchaseWorkspace','this.getPurchaseWorkspace');

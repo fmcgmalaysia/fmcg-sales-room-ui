@@ -9,7 +9,7 @@ import { createCustomerFulfilmentOperations, shipmentVersion } from 'backend/cus
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
 import { readCurrentAdminFx } from 'backend/adminFxClient.js';
 import { warehouseCbm } from 'backend/warehouseCbm.js';
-import { createPurchaseMarginRefresh } from 'backend/purchaseMarginRefresh.js';
+import { createPurchaseMarginCommit } from 'backend/purchaseMarginRefresh.js';
 import { createShipmentPlanOperations, readShipmentPlans, shipmentPlanVersion, createSalesShipmentDateOperations } from 'backend/customerShipmentPlan.js';
 import { createSalesOrderAdjustmentOperations, salesAdjustmentVersion } from 'backend/salesOrderAdjustment.js';
 import { projectPackingContext } from 'backend/packingListContext.js';
@@ -26,7 +26,7 @@ export const fulfilmentStore={
 };
 export async function readFulfilmentContext(company,staff){const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');const [orders,tasks,activity,suppliers]=await Promise.all([fulfilmentStore.all(names.orders),fulfilmentStore.all(names.tasks),fulfilmentStore.all(names.activity),fulfilmentStore.all('SharedSuppliers')]);const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});if(staff.customerId&&staff.customerName&&!workspace.customers.some(row=>row.id===staff.customerId))workspace.customers.push({id:staff.customerId,name:staff.customerName});return {...workspace,activity,tasks:workspace.tasks.map(task=>({...task,sellingPricePc:orders.find(order=>order.title===task.orderId&&order.sourceLineId===task.sourceLineId)?.sellingPricePc}))};}
 const saveFulfilmentEvent=createCustomerFulfilmentOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,readRates:readCurrentAdminFx});
-const refreshInvoiceCache=createPurchaseMarginRefresh({store:fulfilmentStore,readRates:readCurrentAdminFx});
+export const commitPurchaseMargins=createPurchaseMarginCommit({store:fulfilmentStore,readRates:readCurrentAdminFx});
 const saveShipmentPlan=createShipmentPlanOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const saveSalesShipmentDate=createSalesShipmentDateOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext});
 const saveSalesOrderAdjustment=createSalesOrderAdjustmentOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext:readFulfilmentContext,readPlans:readShipmentPlans,planVersion:shipmentPlanVersion});
@@ -45,8 +45,8 @@ export async function saveCustomerFulfilment(request){
  if(request.input.action==='PLAN')return recoverRetiredShipment(request,'shipmentPlan',saveShipmentPlan);
  if(request.input.action==='ADJUST'&&request.input.mode==='SPLIT')return recoverRetiredShipment(request,'salesOrderAdjustment',saveSalesOrderAdjustment);
  if(request.input.action==='SELECT'&&request.staff?.packingDepartment!=='SUPPORT')return recoverRetiredShipment(request,'fulfilment',saveFulfilmentEvent);
- if(request.input.action==='ADJUST'&&request.input.deskResolution)return saveSalesDeskCancellation(request);
- if(request.input.action==='ADJUST')return saveSalesOrderAdjustment(request);
+ if(request.input.action==='ADJUST'&&request.input.deskResolution)return commitPurchaseMargins({...request,result:await saveSalesDeskCancellation(request),taskIds:[request.input.taskId]});
+ if(request.input.action==='ADJUST')return commitPurchaseMargins({...request,result:await saveSalesOrderAdjustment(request),taskIds:[request.input.taskId]});
  if(request.input.action==='ORDER_DATE')return saveSalesShipmentDate(request);
  if(request.input.action==='PLAN')return saveShipmentPlan(request);
  const result=await saveFulfilmentEvent(request);
@@ -55,8 +55,8 @@ export async function saveCustomerFulfilment(request){
   const [orders,tasks]=await Promise.all([fulfilmentStore.all(names.orders),fulfilmentStore.all(names.tasks)]);
   const shipment=readCustomerShipments(context.activity).find(row=>row.id===result.shipmentId);
   const workspace={...context,tasks:context.tasks.filter(row=>shipment.lines.some(line=>line.taskId===row.id||line.taskId===row.customerDemandTaskId))};
-  const refreshed=await refreshInvoiceCache({company,names,orders,tasks,workspace,activity:context.activity});
-  if(shipment.lines.some(line=>refreshed.get(line.taskId)===null||!refreshed.has(line.taskId)))throw Error('Invoice saved; CMS cache confirmation pending. Retry this same request.');
+  const confirmed=await commitPurchaseMargins({...request,result,taskIds:shipment.lines.map(line=>line.taskId),requireCustomerMargin:true,context:{company,names,orders,tasks,workspace,activity:context.activity}});
+  if(confirmed.gpPending)throw Error('Invoice saved; CMS cache confirmation pending. Retry this same request.');
  }
  return result;
 }
