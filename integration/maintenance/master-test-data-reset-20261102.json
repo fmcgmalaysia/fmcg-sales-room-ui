@@ -1,0 +1,101 @@
+{
+  "task": "Clear fake business/test stock records; retain registered customers/suppliers and their supporting setup",
+  "branch": "maintenance/master-test-data-reset-20261102",
+  "codeBaseline": "31e3051",
+  "status": "PREPARED_NO_DATA_DELETED",
+  "deleteRows": [
+    {
+      "site": "MASTER",
+      "collection": "NCTOrders",
+      "count": 46
+    },
+    {
+      "site": "MASTER",
+      "collection": "NCTTasks",
+      "count": 47
+    },
+    {
+      "site": "MASTER",
+      "collection": "PurchaseOrders",
+      "count": 4
+    },
+    {
+      "site": "MASTER",
+      "collection": "DepartmentChatIndex",
+      "count": 2
+    },
+    {
+      "site": "MASTER",
+      "collection": "NCTActivity",
+      "count": 3029
+    }
+  ],
+  "total": 3128,
+  "preserve": {
+    "MASTER": {
+      "SharedSuppliers": 3,
+      "SharedSupplierActivity": 4,
+      "StaffMasterAccess": 1,
+      "AccountReadIndex": 0,
+      "NCTOrders1": 0,
+      "NCTTasks1": 0,
+      "NCTActivity1": 0,
+      "StockProtocolTest": 0,
+      "StockClaims": 0,
+      "StockPositions": 0,
+      "StockProducts": 0
+    },
+    "FMCGMALAYSIA": {
+      "FMCGMALAYSIA": 6780,
+      "WixCustomers": 4,
+      "WixCustomerUsers": 4,
+      "CustomerProfileAudit": 17,
+      "CustomerUserAudit": 12,
+      "CustomerAssignmentAudit": 4,
+      "StaffMaster": 4,
+      "WixFxRates": 3,
+      "subCategories": 38,
+      "MainCategory": 4,
+      "CatalogueBuyers": 1,
+      "WixBuyerOrders": 0,
+      "WixBuyerOrderLines": 0,
+      "WixBuyerListItems": 0,
+      "WixOrderAudit": 0,
+      "WixAccountNotifications": 0
+    }
+  },
+  "sourceAuthority": {
+    "supplier": "SharedSuppliers and SharedSupplierActivity",
+    "customers": "WixCustomers, WixCustomerUsers and customer profile/user/assignment audit; existing QDs retained",
+    "companyBusiness": "NCTOrders/NCTTasks/NCTActivity and separate GHR NCTOrders1/NCTTasks1/NCTActivity1",
+    "stockFinance": "Existing task/activity projections; no second quantity or financial reset writer"
+  },
+  "execution": {
+    "method": "CMS item deletion only, not collection deletion",
+    "order": [
+      "NCTOrders",
+      "NCTTasks",
+      "PurchaseOrders",
+      "DepartmentChatIndex",
+      "NCTActivity"
+    ],
+    "countChange": "Stop if a fresh item count no longer matches approved scope",
+    "codeChanges": false,
+    "pagesDeploy": false,
+    "wixPublish": false,
+    "newRegistration": false,
+    "driveOrSheetsDelete": false,
+    "backup": "Do not export business details; retain scope/count/verification only"
+  },
+  "expectedAfter": {
+    "MASTER": {
+      "NCTOrders": 0,
+      "NCTTasks": 0,
+      "PurchaseOrders": 0,
+      "DepartmentChatIndex": 0,
+      "NCTActivity": 0
+    },
+    "ui": "No active/archived test orders, old inventory, debt/borrowing, Loaded, test receivables or payment history; retain four customers and three suppliers; stock/finance empty on both companies"
+  },
+  "confirmation": "Pending single action-time confirmation for permanent3128 test-business-item deletion. CMS NCT Orders is at Delete items? dialog;46 selected; no final Delete clicked."
+}
