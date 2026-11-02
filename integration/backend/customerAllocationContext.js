@@ -1,6 +1,7 @@
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
 import { packingTaskHeld } from 'backend/packingListGuards.js';
+import { readPackingLists } from 'backend/packingListOperations.js';
 import { physicalOutflowQuantity, readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
@@ -51,10 +52,11 @@ export function readAllocationLoans(activity){
 export function customerAllocationContext(workspace,activity,allocations,version){
  const plans=readShipmentPlans(activity),shipments=readCustomerShipments(activity).filter(row=>row.status!=='CANCELLED');
  const outflows=readPhysicalOutflows(activity),guardActivity=activity.filter(row=>{const list=row.action==='SUPPORT_PACKING_LIST_CURRENT'?row.details?.list:null;return !list||list.status!=='COMPLETED'||list.change||list.lines.some(line=>line.loaded&&!outflows.some(flow=>flow.kind==='PACKING'&&flow.loadingId===list.id&&flow.taskId===line.taskId&&flow.quantity===line.loaded));});
+ const guardedLists=readPackingLists(guardActivity,workspace.company);
  const tasks=workspace.tasks.filter(row=>!row.procurementSource&&!row.specialPurchase).map(row=>{
   const plan=plans.find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));
   const batches=plan?stockBatchEntries(plan,row.id).map(batch=>({id:batch.id,quantity:batch.quantity,waiting:row.supplyAllocation?.batches?.find(item=>item.id===batch.id)?.waiting||0})):[{id:'WHOLE',quantity:row.ord,waiting:row.supplyAllocation?.waiting||0}];
-  return {id:row.id,customerId:row.customerId,company:workspace.company,barcode:row.barcode,packing:row.packing,ea:row.ea,archived:row.archived===true,demand:row.ord,batches,invoiceLocked:Boolean(row.salesInvoiceNumber),held:packingTaskHeld({...workspace,activity:guardActivity},row.id)>0,returnLocked:physicalOutflowQuantity(activity,{taskId:row.id})>0||shipments.some(shipment=>shipment.lines.some(line=>line.taskId===row.id))};
+  return {id:row.id,customerId:row.customerId,company:workspace.company,barcode:row.barcode,packing:row.packing,ea:row.ea,archived:row.archived===true,demand:row.ord,batches,invoiceLocked:Boolean(row.salesInvoiceNumber),held:packingTaskHeld({...workspace,activity:guardActivity},row.id,guardedLists)>0,returnLocked:physicalOutflowQuantity(activity,{taskId:row.id},outflows)>0||shipments.some(shipment=>shipment.lines.some(line=>line.taskId===row.id))};
  });
  const unfilled=new Map(tasks.map(task=>[task.id,Math.max(0,task.demand-allocations.reduce((n,source)=>n+(source.targets.find(target=>target.taskId===task.id)?.quantity||0),0))]));
  const sources=workspace.tasks.filter(row=>row.warehouse?.hasPhysicalReceipt&&row.po&&row.supplierId).map(row=>{
@@ -69,7 +71,7 @@ export function customerAllocationContext(workspace,activity,allocations,version
    automaticDelta=Math.max(0,Math.min(row.warehouse.accepted-saved.receivedTotalAtSave,unfilled.get(owner.id)||0,stock.usableReceived-targets.reduce((n,target)=>n+target.quantity,0),customer-owned-other));
    if(automaticDelta)unfilled.set(owner.id,(unfilled.get(owner.id)||0)-automaticDelta);
   }
-  for(const target of targets)target.protectedQuantity=Math.max(physicalOutflowQuantity(activity,{sourceTaskId:row.id,taskId:target.taskId}),shipments.flatMap(shipment=>shipment.lines).filter(line=>line.taskId===target.taskId).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((n,source)=>n+source.quantity,0));
+  for(const target of targets)target.protectedQuantity=Math.max(physicalOutflowQuantity(activity,{sourceTaskId:row.id,taskId:target.taskId},outflows),shipments.flatMap(shipment=>shipment.lines).filter(line=>line.taskId===target.taskId).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((n,source)=>n+source.quantity,0));
   return {id:row.id,ownerTaskId:owner?.id||null,company:workspace.company,barcode:row.barcode,packing:row.packing,ea:row.ea,implicit:!saved,automaticDelta,receivedTotal:row.warehouse.accepted,usableReceived:stock.usableReceived,availablePhysical:stock.availablePhysical,excluded:stock.excluded,received:true,quarantined:stock.held>0,targets};
  });
  for(const task of tasks){

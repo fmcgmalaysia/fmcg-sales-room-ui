@@ -60,7 +60,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
-    const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
+    const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity,allocations);
     const shipmentDate=readSalesShipmentDate(task.description,order.customerId,order.submissionId,order.estimatedShipmentDate,activity);
     const salesDemand=!task.procurementSource&&!task.specialPurchase?readSalesDemand(task.title,order.orderQtyInCtn,activity):null;
     rows.push({
