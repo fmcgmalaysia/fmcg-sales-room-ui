@@ -2,7 +2,7 @@
   "task": "Clear fake business/test stock records; retain registered customers/suppliers and their supporting setup",
   "branch": "maintenance/master-test-data-reset-20261102",
   "codeBaseline": "31e3051",
-  "status": "PREPARED_NO_DATA_DELETED",
+  "status": "USER_CLEANUP_READ_ONLY_VERIFIED",
   "deleteRows": [
     {
       "site": "MASTER",
@@ -65,7 +65,7 @@
     }
   },
   "sourceAuthority": {
-    "supplier": "SharedSuppliers and SharedSupplierActivity",
+    "supplier": "SharedSuppliers is profile authority; SharedSupplierActivity is profile-change/save receipt journal, not stock or PO ledger.",
     "customers": "WixCustomers, WixCustomerUsers and customer profile/user/assignment audit; existing QDs retained",
     "companyBusiness": "NCTOrders/NCTTasks/NCTActivity and separate GHR NCTOrders1/NCTTasks1/NCTActivity1",
     "stockFinance": "Existing task/activity projections; no second quantity or financial reset writer"
@@ -97,5 +97,52 @@
     },
     "ui": "No active/archived test orders, old inventory, debt/borrowing, Loaded, test receivables or payment history; retain four customers and three suppliers; stock/finance empty on both companies"
   },
-  "confirmation": "Pending single action-time confirmation for permanent3128 test-business-item deletion. CMS NCT Orders is at Delete items? dialog;46 selected; no final Delete clicked."
+  "confirmation": "User reported completing deletion personally; agent did not click Delete or repeat deletion. SharedSupplierActivity retained after source review.",
+  "actualAfter": {
+    "MASTER": {
+      "NCTOrders": 0,
+      "NCTTasks": 0,
+      "PurchaseOrders": 0,
+      "DepartmentChatIndex": 0,
+      "NCTActivity": 0,
+      "SharedSuppliers": 3,
+      "SharedSupplierActivity": 4,
+      "StaffMasterAccess": 1,
+      "NCTOrders1": 0,
+      "NCTTasks1": 0,
+      "NCTActivity1": 0
+    },
+    "FMCGMALAYSIA": {
+      "FMCGMALAYSIA": 6780,
+      "WixCustomers": 4,
+      "WixCustomerUsers": 4,
+      "CustomerProfileAudit": 18,
+      "CustomerUserAudit": 12,
+      "CustomerAssignmentAudit": 4,
+      "StaffMaster": 4,
+      "WixFxRates": 3,
+      "subCategories": 38,
+      "MainCategory": 4,
+      "CatalogueBuyers": 1,
+      "WixBuyerOrders": 0,
+      "WixBuyerOrderLines": 0,
+      "WixBuyerListItems": 0,
+      "WixOrderAudit": 0,
+      "WixAccountNotifications": 0
+    },
+    "collectionsPerSite": 16
+  },
+  "verification": {
+    "publicNCT": [
+      "Purchase tasks0 and suppliers3",
+      "Support customers4 with all order counts0",
+      "Finance receivables empty after Refresh; supplier accounts0/MYR0.00",
+      "Warehouse Delivery empty; Incoming in-progress0/completed0",
+      "Warehouse and Finance stock quantities0; Finance valueMYR0.00"
+    ],
+    "limits": "GHR verified through CMS counts, not separate public navigation. No certification of future order/PDF/payment workflows. CustomerProfileAudit18 versus earlier17 retained; agent made no profile writes. Drive and Sheet files not deleted.",
+    "businessWritesByAgent": 0,
+    "deploymentRequired": false,
+    "evidenceRoot": "handoff/master-test-data-reset-20261102"
+  }
 }
