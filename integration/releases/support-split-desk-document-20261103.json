@@ -1,0 +1,26 @@
+{
+  "objective": "Support SI uploads for existing split/issued Desks using canonical portions; prepare unprepared original against fresh documents",
+  "branch": "fix/support-split-desk-document-20261103",
+  "baseline": "70e0dfe original restored, fresh Wix rawSHA256 58a0a660bb3774ac1a2c3a257277b7b0f4d3b01950877a86177e200c131be975",
+  "recoveryTag": "verified/support-upload-recovery-20261103",
+  "scope": [
+    "integration/backend/supportDocuments.js only production change",
+    "Reuse existing deskTaskPortions and readPhysicalOutflows",
+    "Current server version at preparation; unchanged prepared uncertain guard"
+  ],
+  "protected": [
+    "Stock/Loaded/SI/Finance journals and archived flags",
+    "Customer/company/Desk authorization and duplicate/posted proof checks",
+    "Original upload identity and file routing/download permissions"
+  ],
+  "acceptance": [
+    "17 upload scenarios pass",
+    "119 existing shared regressions pass",
+    "Fresh exact Wix minimal sync and explicit published/live",
+    "Retained original801 Desk1 SI request succeeds once; verify Buyer own PDF and original receipts"
+  ],
+  "pages": "UNCHANGED_RUN330_101_RESOURCES",
+  "wix": "NOT_SYNCED",
+  "public": "NOT_ACCEPTED",
+  "modelReview": "Archive removal hypothesis disproved. Single Desk helper returns0 for split parts. No new history store, ledger or reactivation."
+}
