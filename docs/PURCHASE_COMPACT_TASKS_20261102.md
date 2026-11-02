@@ -37,3 +37,11 @@ Candidate build `20261102-purchase-compact-tasks-v1`, scope `purchase-compact-ta
 Wix single-token draft read-back exactly matches the candidate (normalized SHA256 6c6169d8ef411652189bb55824902d8262b5ade8076c454d6f1f565e19ef9fe6); it has not been published.
 
 Code, GitHub, Pages, Wix and public acceptance must be reported separately. Do not claim this candidate is published from local checks. MASTER Sales Management, the GP repeated-event issue and real customer PDF/payment acceptance remain independent open work; this layout task does not resolve them.
+
+## Deployment receipt — 2026-11-02
+
+- Code: `5194ed3`, draft PR286.
+- Pages: workflow run327 (`41382194830`) succeeded; all 101 public resources match the approved package hashes.
+- Permission: the single temporary branch rule was removed; original seven branch rules and zero tags are restored.
+- Wix: Purchase version draft matched exactly and Studio returned “This site is published and live online.”
+- Public verification: incomplete. The existing Purchase page reloaded to the new iframe URL, but the actual embedded browsing context is about:blank with no captured page errors. A fresh visit from the user’s original Purchase bookmark has been requested. No repeat deployment is required. Do not report complete publication until the actual task UI is verified.
