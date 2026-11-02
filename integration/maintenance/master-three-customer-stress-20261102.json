@@ -2,7 +2,7 @@
   "task": "Real three-customer cross-department pressure test",
   "branch": "fix/support-split-desk-document-20261103",
   "baseline": "3ddc82e documentation; live R2-retired current business code and101 assets preserved",
-  "status": "SPLIT_SI_UPLOAD_BUYER_PREVIEW_PASS_FRESH_SUPPORT_FETCH_FAILED",
+  "status": "OVERNIGHT_BACKEND_LIVE_STATIC_AWAITING_DEPLOYMENT_CONFIRMATION",
   "orders": {
     "TESTING01": {
       "tasks": 6,
@@ -584,5 +584,58 @@
       "60-support-fresh-fetch-log.txt",
       "61-support-fresh-read-failed.png"
     ]
-  }
+  },
+  "overnightLatest": {
+    "asOf": "2026-11-03",
+    "branch": "release/master-stress-closeout-20261103",
+    "code": "b5af6a1",
+    "build": "20261103-master-stress-closeout-v1",
+    "checks": {
+      "passed": 419,
+      "failed": 0
+    },
+    "pages": {
+      "status": "NOT_DEPLOYED",
+      "baseline": "13fc348",
+      "resources": 101,
+      "changed": 19,
+      "unchanged": 82,
+      "permission": "PENDING_ACTION_TIME_CONFIRMATION",
+      "rules": "ORIGINAL_7_UNCHANGED"
+    },
+    "wix": {
+      "backend": "PUBLISHED_AND_LIVE_EXACT_READBACK",
+      "pageVersionReferences": "UNCHANGED_PENDING_STATIC_RELEASE"
+    },
+    "public": {
+      "backendReads": "NCT_7_PO_GHR_0; STOCK_NCT_10_FREE_5_ISOLATED_5_VALUE_571.25_GHR_0",
+      "newStaticUI": "NOT_YET_DEPLOYED_OR_ACCEPTED"
+    },
+    "businessWritesReplayed": 0,
+    "remaining": [
+      "Static release and two-site page reference synchronization/public acceptance",
+      "Actual customer PDF download blocked by browser response",
+      "Fresh Sales Room iframe is about:blank; no new test order created overnight",
+      "Mixed Ready Stock/PO parent GP requires confirmed source-cost boundary; issued SI protected",
+      "Missing product CBM must be repaired at source",
+      "Actual month-end loss closure remains unaccepted; no mid-month date/permission bypass"
+    ],
+    "counts": {
+      "beforeActivity": 330,
+      "afterActivity": 330,
+      "orders": 16,
+      "tasks": 16,
+      "purchaseOrderCollectionRows": 1,
+      "logicalPOs": 7,
+      "sharedSupplierActivity": 6,
+      "sharedSuppliers": 4,
+      "staff": 1,
+      "ghrOrders": 0,
+      "ghrTasks": 0,
+      "ghrActivity": 0
+    },
+    "report": "integration/maintenance/master-cms-followup-20261103/REPORT.html"
+  },
+  "currentReleaseCode": "b5af6a1",
+  "currentReleaseBranch": "release/master-stress-closeout-20261103"
 }
