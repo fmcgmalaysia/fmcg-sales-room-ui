@@ -841,7 +841,7 @@ const stages=[
     formDialog('Task Path',row.id,detail,'');
   });
   // A separate close listener avoids treating a modal close as a task operation.
-  modal.addEventListener('close',()=>{if(!modal.open)modal.classList.toggle('po-dialog',false);});
+  modal.addEventListener('close',()=>{if(!modal.open){modal.classList.toggle('po-dialog',false);if(data&&!savePending&&modal.classList.contains('supplier-allocation-dialog'))render();}});
   document.addEventListener('click',event=>{if(event.target.closest('#closeModal')){modal.close();modal.classList.toggle('supplier-dialog',false);modal.classList.toggle('special-dialog',false);}});
   function previewAverageCost(){const cost=document.querySelector('#averageLineCost'),ctn=document.querySelector('#averageCartons'),result=document.querySelector('#averageResult');if(result)result.textContent=dialogMoneyValue(cost)&&ctn.value.trim()&&Number.isFinite(Number(cost.value))&&Number(cost.value)>=0&&Number.isSafeInteger(Number(ctn.value))&&Number(ctn.value)>0?'MYR '+num(Number(cost.value)/Number(ctn.value)):'—';}
   document.addEventListener('input',event=>{if(event.target.id.startsWith('sourcePrice-')||event.target.id==='sourceQty'){if(event.target.id==='sourcePrice-lpPc'){const row=data.tasks.find(row=>row.id===dialogContext.taskId);if(row.ea>0)document.querySelector('#sourcePrice-lpCtn').value=Number((Number(event.target.value)*row.ea).toFixed(2));}previewSourceCost();}});
