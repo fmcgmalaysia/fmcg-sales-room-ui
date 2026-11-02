@@ -4,6 +4,13 @@
   const key=(...parts)=>JSON.stringify(parts);
   const orderDay=value=>{if(!value||!Number.isFinite(Date.parse(value)))return '';return new Date(Date.parse(value)+8*60*60*1000).toISOString().slice(0,10);};
   const sum=(rows,field)=>rows.reduce((n,row)=>n+(finite(row[field])??0),0);
+  function invoicePayment(shipment,fulfilment){
+    const unknown={paymentStatus:'Awaiting Reconciliation',paidCents:null,balanceCents:null};
+    const rows=(fulfilment.customerAccount?.invoicePayments?.invoices||[]).filter(row=>row.id===shipment.id&&row.company===fulfilment.company&&row.customerId===shipment.customerId&&row.currency===shipment.currency&&row.amountCents===shipment.invoice.amountCents);
+    if(rows.length!==1)return unknown;const payment=rows[0];
+    if(!Number.isSafeInteger(payment.paidCents)||payment.paidCents<0||!Number.isSafeInteger(payment.dueCents)||payment.dueCents<0)return unknown;
+    return {paymentStatus:payment.dueCents===0?(payment.creditCents>0?'Settled':'Fully Paid'):payment.paidCents>0?'Partially Paid':'Unpaid',paidCents:payment.paidCents,balanceCents:payment.dueCents};
+  }
   // Read-only presentation. Missing reconciliation is never treated as zero paid.
   function project(fulfilment,packing,bookingResult,invoiceState,documentResult,directory){
     if(!fulfilment||!['NCT','GHR'].includes(fulfilment.company)||!Array.isArray(fulfilment.lines)||!Array.isArray(fulfilment.customers))throw Error('Customer orders are unavailable.');
@@ -44,7 +51,7 @@
       progress:order.lines.length?'In Progress':order.shipments.length&&order.shipments.every(row=>row.status==='DISPATCHED')?'Dispatched':'Awaiting Shipment',
       eta:[...new Set(order.lines.map(line=>line.estimatedShipmentDate).filter(Boolean))].join(' · ')}));
     const invoices=shipments.filter(row=>row.invoice).map(row=>({...row,number:row.invoice.number,date:row.invoice.date,amountCents:row.invoice.amountCents,
-      deskNumber:bookingResult?.invoiceDesks?.find(item=>item.invoiceId===row.id)?.desk.number||null,deskShipment:bookingResult?.invoiceDesks?.find(item=>item.invoiceId===row.id)?.desk.shipment||null,shipmentStatus:row.status==='DISPATCHED'?'Dispatched':'Awaiting Shipment',paymentStatus:'Awaiting Reconciliation',paidCents:null,balanceCents:null}));
+      deskNumber:bookingResult?.invoiceDesks?.find(item=>item.invoiceId===row.id)?.desk.number||null,deskShipment:bookingResult?.invoiceDesks?.find(item=>item.invoiceId===row.id)?.desk.shipment||null,shipmentStatus:row.status==='DISPATCHED'?'Dispatched':'Awaiting Shipment',...invoicePayment(row,fulfilment)}));
     const workRows=result.filter(order=>order.lines.some(line=>(line.orderQty??0)>line.invoicedQty)).map(order=>({...order,lines:order.lines.filter(line=>(line.orderQty??0)>line.invoicedQty),items:new Set(order.lines.filter(line=>(line.orderQty??0)>line.invoicedQty).map(line=>key(line.barcode,line.packing))).size,shipments:[],progress:'To Invoice'})).concat(invoices.map(invoice=>{const order=result.find(row=>row.customerId===invoice.customerId&&invoice.lines.some(line=>line.orderId===row.orderId));return {...order,id:'INVOICE:'+invoice.id,bookingOrderId:order?.id,customerId:invoice.customerId,customerName:customerNames.get(invoice.customerId)||invoice.customerId,orderId:invoice.lines[0]?.orderId||'',currency:invoice.currency,lines:invoice.lines,items:new Set(invoice.lines.map(line=>key(line.barcode,line.packing))).size,shipments:[invoice],invoiceId:invoice.id,progress:invoice.shipmentStatus};}));
     const customers=[...customerRows.values()].map(customer=>({...customer,orders:result.filter(order=>order.customerId===customer.id),invoices:invoices.filter(row=>row.customerId===customer.id),
       openTaskCount:result.filter(order=>order.customerId===customer.id).reduce((total,order)=>total+order.lines.filter(line=>line.invoicedQty<(line.orderQty??0)).length,0),balanceCents:null,
