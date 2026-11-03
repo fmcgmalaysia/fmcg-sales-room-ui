@@ -10,7 +10,11 @@
     "On supplier-allocation-dialog close, render the already-read workspace only when data exists and no save is pending. No extra request or writer."
   ],
   "resources": 101,
-  "changed": ["purchase-live/app.js", "purchase-live/index.html", "purchase-live/supplier-allocation.js"],
+  "changed": [
+    "purchase-live/app.js",
+    "purchase-live/index.html",
+    "purchase-live/supplier-allocation.js"
+  ],
   "unchanged": 98,
   "preserved": "PO guards, GP, first-payment financial lock, draft recovery, original save request/receipt, inventory, borrowing/repayment, current Support refresh and Warehouse recovery assets",
   "checks": {
@@ -30,5 +34,7 @@
   "liveBaselineRead": "Fresh public read of Purchase app/index/supplier-allocation, Support workroom.js and Warehouse app.js matched the current Support release package; default DNS failure resolved by approved read-only network execution",
   "recovery": "Preserved current101 asset baseline and exact Wix original; older Purchase7354bed/4480ab6 packages must not be deployed because they omit subsequent releases",
   "businessWrites": 0,
-  "merge": "None; await deployment, real-page acceptance and user verification"
+  "merge": "None; await deployment, real-page acceptance and user verification",
+  "codeVersion": "295b954",
+  "github": "Branch pushed; PR connector reports not available to model, no PR created"
 }
