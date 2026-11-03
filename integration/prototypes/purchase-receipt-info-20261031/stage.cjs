@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('fs'),path=require('path'),assert=require('assert/strict'),crypto=require('crypto');
+const fs=require('fs'),path=require('path'),assert=require('assert/strict'),crypto=require('crypto'),cp=require('node:child_process');
 const previous=require('../purchase-active-clarity-20261031/stage.cjs'),root=path.resolve(__dirname,'../../..'),build='20261031-purchase-receipt-info-v2';
 const style=`
 /* Active Orders: cumulative receipt total, real batches, confirmed allocation sources. */
@@ -26,7 +26,7 @@ function plan(){
  layout=once(layout,"receipt.querySelectorAll('button').forEach(button=>button.remove());","receipt.querySelectorAll('button:not([data-purchase-info])').forEach(button=>button.remove());");
  layout=once(layout,"  table.classList.add('draft-column-layout');","  window.purchaseTaskInfo?.decorate(table);\n  table.classList.add('draft-column-layout');");
  assets.set('purchase-live/active-layout.js',Buffer.from(layout));
- assets.set('purchase-live/task-info.js',fs.readFileSync(path.join(__dirname,'task-info.js')));
+ assets.set('purchase-live/task-info.js',cp.execFileSync('git',['show','7f80f70e33c0ac1f10e50595728f67d922e133aa:integration/prototypes/purchase-receipt-info-20261031/task-info.js'],{cwd:root}));
  assets.set('purchase-live/task-grid.css',Buffer.from(assets.get('purchase-live/task-grid.css').toString()+style));
  let index=assets.get('purchase-live/index.html').toString().replace(/(<meta name="build" content=")[^"]+/,'$1'+build);
  index=once(index,'<script src="task-grid.js','<script src="task-info.js?v='+build+'"></script><script src="task-grid.js');
