@@ -2,7 +2,9 @@
   "date": "2026-11-03",
   "objective": "Reduce Purchase workspace result-receipt reads without changing any save, recovery or business event authority",
   "branch": "perf/purchase-result-receipt-read-20261103",
-  "scope": ["integration/backend/purchaseWorkspace.web.js"],
+  "scope": [
+    "integration/backend/purchaseWorkspace.web.js"
+  ],
   "liveOriginal": {
     "normalizedSha256": "c9285cbe61f03ebde06b23ff46aa284da15553155e140da09f206f7d5e57e4a4",
     "freshWixReadMatchesRepository": true,
@@ -10,7 +12,14 @@
     "existingVerifiedTag": "verified/support-upload-recovery-20261103"
   },
   "change": "Exclude bulk PURCHASE_OPERATION_RESULT rows from the Purchase workspace read. Retain every other event including prepared operations and empty-action locks; retrieve original result receipts by title only when historical row-order evidence requires them, in batches of at most100.",
-  "protected": ["Original journal and exact save-result lookup unchanged", "All writers and latest-version checks unchanged", "GP and financial locks unchanged", "NCT/GHR collection separation", "No storage deletion or consolidation", "No persistent cache or second ledger"],
+  "protected": [
+    "Original journal and exact save-result lookup unchanged",
+    "All writers and latest-version checks unchanged",
+    "GP and financial locks unchanged",
+    "NCT/GHR collection separation",
+    "No storage deletion or consolidation",
+    "No persistent cache or second ledger"
+  ],
   "checks": {
     "affectedPassed": 56,
     "failed": 0,
@@ -25,11 +34,15 @@
     "paginationFailureRejectsPartialWorkspace": true,
     "historicalFixtureRepair": "The pre-existing workspace performance fixture lacked query.eq(), reproducing3 failures against the exact live original. Extended empty-query fixtures with supported chain methods; existing assertions retained. Separate new query adapter tests evaluate actual filtering."
   },
-  "limits": ["400CMS rows remain stored", "Prepared and business history still grows; this is one bounded read improvement, not a complete long-term capacity solution", "No measured live latency or credit-saving percentage"],
+  "limits": [
+    "400CMS rows remain stored",
+    "Prepared and business history still grows; this is one bounded read improvement, not a complete long-term capacity solution",
+    "No measured live latency or credit-saving percentage"
+  ],
   "stages": {
-    "code": "LOCAL_TESTS_PASS_PENDING_COMMIT",
+    "code": "325834b_GITHUB_SYNCED_56_CHECKS_PASS",
     "pages": "UNCHANGED_101_RESOURCE_RELEASE_335_NO_STATIC_CHANGES_OR_PERMISSION_EXPANSION",
-    "wix": "NOT_SYNCED",
-    "public": "NOT_VERIFIED_NEW_BACKEND"
+    "wix": "ONE_MODULE_EXACT_FULL_READBACK_PUBLISHED_AND_LIVE",
+    "public": "PENDING_AFTER_ONE_FORMAL_FRESH_RELOAD_EMBED_EMPTY_TARGET_SRC_CORRECT_NO_RETRY_LOOP"
   }
 }
