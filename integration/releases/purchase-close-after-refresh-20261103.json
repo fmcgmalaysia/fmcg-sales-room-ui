@@ -1,0 +1,34 @@
+{
+  "state": "BACKGROUND_READY_BROWSER_CONNECTION_BLOCKED",
+  "branch": "fix/purchase-close-after-refresh-20261103",
+  "scope": "purchase-clean-dialog-close-only",
+  "build": "20261103-purchase-saved-plan-close-v3",
+  "baseline": "2217b55 runtime, d1a8742 release record; Support Pages334/41572089274,101/101 hashes and Wix live; Support public final acceptance remains blank-blocked",
+  "fault": "Clean supplier forms unnecessarily ask to discard; closing after confirmed save can leave the task table displaying its previous result.",
+  "patch": [
+    "Ask to discard only when state.dirty; keep running/savePending close guards.",
+    "On supplier-allocation-dialog close, render the already-read workspace only when data exists and no save is pending. No extra request or writer."
+  ],
+  "resources": 101,
+  "changed": ["purchase-live/app.js", "purchase-live/index.html", "purchase-live/supplier-allocation.js"],
+  "unchanged": 98,
+  "preserved": "PO guards, GP, first-payment financial lock, draft recovery, original save request/receipt, inventory, borrowing/repayment, current Support refresh and Warehouse recovery assets",
+  "checks": {
+    "focused": "45/45 passed in the existing saved-plan-close/allocation-dialog/allocation-drafts/save-web-feedback/supplier-ready-GP run; result reused, not rerun for reporting",
+    "separateHistoricalBoundaryRun": "21/22; the previously recorded master-save-continuity-boundary historical Support hash assertion remains. That historical builder is not used by this package; no weakened assertion or unrelated repair.",
+    "package": "101 resources,3 changed,98 byte-identical to Support release baseline; JS parses and retained Desk/Support/Warehouse references checked"
+  },
+  "wix": {
+    "freshOriginal": "8492 chars, normalized full equality before local version-only edit; exact original preserved in root handoff/purchase-page-before-close-followup.js",
+    "oldVersion": "20261103-support-reusable-desk-v1",
+    "newVersion": "20261103-purchase-saved-plan-close-v3",
+    "draft": "NOT_WRITTEN; browser binding timed out then transport closed before response; recover editor and freshly read current page before editing",
+    "published": false
+  },
+  "pages": "NOT_DISPATCHED; no temporary rule added and no new action-time deployment approval requested yet",
+  "public": "NOT_TESTED; do not claim complete publication",
+  "liveBaselineRead": "Fresh public read of Purchase app/index/supplier-allocation, Support workroom.js and Warehouse app.js matched the current Support release package; default DNS failure resolved by approved read-only network execution",
+  "recovery": "Preserved current101 asset baseline and exact Wix original; older Purchase7354bed/4480ab6 packages must not be deployed because they omit subsequent releases",
+  "businessWrites": 0,
+  "merge": "None; await deployment, real-page acceptance and user verification"
+}
