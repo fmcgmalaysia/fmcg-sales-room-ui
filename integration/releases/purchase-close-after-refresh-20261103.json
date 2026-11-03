@@ -1,5 +1,5 @@
 {
-  "state": "CODE_PUSHED_WIX_DRAFT_EXACT_PENDING_ONE_TIME_RELEASE",
+  "state": "FOUR_SCOPED_RELEASE_STAGES_COMPLETE_AWAITING_USER_VERIFICATION",
   "branch": "fix/purchase-close-after-refresh-20261103",
   "scope": "purchase-clean-dialog-close-only",
   "build": "20261103-purchase-saved-plan-close-v3",
@@ -27,17 +27,29 @@
     "oldVersion": "20261103-support-reusable-desk-v1",
     "newVersion": "20261103-purchase-saved-plan-close-v3",
     "draft": "8496 chars full readback exact; only unique version replacement; original8492 chars freshly reread and equal preserved original",
-    "published": false,
-    "draftSha256": "544d1bfe8b514c3b5025868fc2746d79a256613000b9d7078874320e572387c2"
+    "published": true,
+    "draftSha256": "544d1bfe8b514c3b5025868fc2746d79a256613000b9d7078874320e572387c2",
+    "receipt": "Congratulations; This site is published and live online. Screenshot124"
   },
-  "pages": "NOT_DISPATCHED; no temporary rule added and no new action-time deployment approval requested yet",
-  "public": "NOT_TESTED; do not claim complete publication",
+  "pages": {
+    "run": 41583639350,
+    "number": 335,
+    "status": "success",
+    "hashes": "101/101",
+    "url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41583639350"
+  },
+  "public": "Userbookmark51431066 loaded newv3 LAW/NCT. Clean supplier Cancel closed without confirm, unchanged task DOM; genuine unsaved reason triggered confirm, later re-open empty; paidPO16850 read-only with lock/no input/pencil;GHR0customers,NCTreturn,logs[]. Saved-result redraw/pending/failure assertions remain isolated45checks, no real supplier save replay.",
   "liveBaselineRead": "Fresh public read of Purchase app/index/supplier-allocation, Support workroom.js and Warehouse app.js matched the current Support release package; default DNS failure resolved by approved read-only network execution",
   "recovery": "Preserved current101 asset baseline and exact Wix original; older Purchase7354bed/4480ab6 packages must not be deployed because they omit subsequent releases",
   "businessWrites": 0,
   "merge": "None; await deployment, real-page acceptance and user verification",
   "codeVersion": "295b954",
-  "github": "Branch295b954 pushed, version recordd65660f; latest exact Wix draft evidence recorded here",
+  "github": "DraftPR320 created through GitHub UI after connector unavailable; no merge",
   "browserRecovery": "User restored connection; current Master existing tab reused, fresh original compared before one replacement",
-  "packageFinalCheck": "101/101 current package hashes equal saved v3 manifest; no runtime changes after45-check run"
+  "packageFinalCheck": "101/101 current package hashes equal saved v3 manifest; no runtime changes after45-check run",
+  "pr": 320,
+  "approvedHead": "859f6caae2f3f4c457433053c5694cc298789296",
+  "permission": "One authorized exact branch rule added, one dispatch, rule removed immediately on success; original7 and0tags confirmed, screenshot123",
+  "liveEvidence": "RootPURCHASE_CLOSE_V3_LIVE_ACCEPTANCE.json and129/130/131 screenshots; initialblank125 preserved, no global startup stability claim",
+  "remainingBoundary": "Dirty confirm was detected; attempted dismissal found it already closed, so live cancellation-retention is not claimed. Existing isolated tests cover that branch. No business save or pending-write interruption replay."
 }
