@@ -57,7 +57,16 @@
     "code": "0de7473_GITHUB_SYNCED_101_CHECKS_PASS",
     "pages": "RUN_336_41600753718_SUCCESS_101_MANIFEST_HASHES_3_CHANGED_RESOURCE_HASHES_MATCH",
     "wix": "TWO_EXACT_DRAFT_READBACKS_PUBLISHED_AND_LIVE",
-    "public": "PENDING_FRESH_FORMAL_DOWNLOAD_AND_BACK_ACCEPTANCE"
+    "public": "SALES_SI_DOWNLOAD_USER_CONFIRMED_HASH_MATCH_BUYER_PAYMENT_PROOF_BACK_PENDING"
   },
-  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_RULE_REMOVED"
+  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_RULE_REMOVED",
+  "userVerifiedSalesDownload": {
+    "userAnswer": "可以了",
+    "entry": "Sales history SI button, same top-level tab",
+    "fileId": "10nWphnHdEu9ExYiqOEoO299fH5eGz2dl",
+    "bytes": 1949,
+    "sha256": "7ede46c9e922f72f1db4fa11a9ea52bce70e86acb0c3b89f36cc0826116f9d57",
+    "newLocalDownloadMatchesOriginal": true,
+    "scope": "Sales original SI download only; Buyer/payment proof/back remain to verify"
+  }
 }
