@@ -203,3 +203,10 @@ MST-23 resumed 2026-11-03: fresh native CMS export400 (99PREPARED/99RESULT pairs
 - Minimal candidate: `fix/customer-file-parent-open-20261103`, only three public resources plus two Wix parent handlers. Both Wix drafts read back exactly; 101 affected checks pass.
 - Same original permanent Drive files and permissions. Link click uses authorized history response only; no additional CMS read, Activity event, sharing change or financial/inventory write.
 - Publication and real Sales/Buyer download/back acceptance remain pending; keep the separate Purchase result-receipt formal acceptance and longer-term CMS growth work visible.
+
+
+### 2026-11-03 MST23 Buyer entry sandbox inheritance follow-up
+
+- User verified Sales original SI download; preserve `verified/customer-file-download-20261103`. Buyer from the old iframe popup still fails, while the same1985-byte customer proof downloads from a normal address-bar tab with original hash.
+- User specifically approved current-tab Buyer Entry via the existing Wix parent route. Candidate changes only the Sales entry click, arrow/note and version references; all customer-file handlers and permissions remain unchanged.
+- `fix/sales-buyer-entry-parent-20261103`:96 affected checks pass, one Wix version draft exact; only one of101 static resources changes,100 unchanged. Deployment and formal download/back acceptance pending.

@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-03",
+  "objective": "Prevent sandbox inheritance when entering Buyer from Sales by reusing the existing Wix parent route in the current tab",
+  "branch": "fix/sales-buyer-entry-parent-20261103",
+  "build": "20261103-buyer-entry-parent-v1",
+  "workflowInput": "buyer-entry-parent-only",
+  "baseline": {
+    "code": "0de747399222cd69997af29f99bb70af333f284e",
+    "userVerifiedTag": "verified/customer-file-download-20261103",
+    "freshSalesHtmlMatches": true,
+    "freshSalesWixMatches": true
+  },
+  "evidence": {
+    "buyerProofFailure": "USER_CONFIRMED_ERR_BLOCKED_BY_RESPONSE",
+    "sameProofDirectAddressBar": "USER_CONFIRMED_SUCCESS_1985_BYTES_ORIGINAL_SHA256_MATCH",
+    "source": "https://googlechrome.github.io/samples/allow-popups-to-escape-sandbox/index.html",
+    "scopeApproval": "User allowed Buyer Entry current-tab reuse of existing parent navigation"
+  },
+  "resources": 101,
+  "changed": [
+    "index.html"
+  ],
+  "unchanged": 100,
+  "checks": {
+    "passed": 96,
+    "failed": 0
+  },
+  "wix": {
+    "onlyChange": "Sales entry version reference",
+    "normalizedSha256": "29ec97153552844547e0eb56d25c9e4e7158a6e6a7ac7f78e61103c928927e05",
+    "fullReadbackExact": true
+  },
+  "protected": [
+    "Existing STAFF authorization and Buyer customer context validation",
+    "Original customer file current-tab navigation and original PDF permissions",
+    "Buyer HTML, history script and 98 other resources byte identical",
+    "No additional CMS read or Activity write for entry",
+    "QD and Catalogue entry behavior preserved",
+    "No invoice, payment, inventory or quantity writes"
+  ],
+  "stages": {
+    "code": "LOCAL_TESTED_PENDING_GITHUB",
+    "pages": "PENDING_ACTION_TIME_PERMISSION",
+    "wix": "SINGLE_VERSION_DRAFT_EXACT_PENDING_PUBLISH",
+    "public": "PENDING_SALES_ENTRY_BUYER_ORIGINAL_PROOF_DOWNLOAD_AND_BACK"
+  }
+}
