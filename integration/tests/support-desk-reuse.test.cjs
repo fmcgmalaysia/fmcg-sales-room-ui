@@ -7,6 +7,7 @@ const {createShortloadResolutionOperations}=load('shortloadResolution.js');
 const {readCustomerShipments}=load('customerShipmentLedger.js');
 const {readPhysicalOutflows}=load('physicalOutflow.js');
 const {deskTaskPortions}=load('shortloadResolutionModel.js');
+const {projectStockCard}=load('stockCardProjection.js');
 
 async function setup(){
  const f=fixture(),names={NCT:{activity:'N'},GHR:{activity:'G'}},staff={...f.staff,packingDepartment:'SUPPORT'};
@@ -97,4 +98,33 @@ test('all three issued Desks are released together and a new order can use Desk1
  const ctx=await f.context(),current=desks.currentSupportDeskState(ctx,await f.state());assert.equal(desks.currentSupportDeskLocks(ctx).length,0);assert.equal(current.deliveryHolds.length,0);assert.equal(readCustomerShipments(ctx.activity).filter(row=>row.invoice).length,3);
  f.tasks.push({...structuredClone(f.tasks[0]),id:'NEW-A',orderId:'NEW-ORDER-A',sourceLineId:'NEW-LINE',requested:10,ord:10,inc:0,po:'',procurement:undefined,warehouse:{hasPhysicalReceipt:false,accepted:0},archived:false});
  await f.assign({action:'DESK_ASSIGN',taskId:'NEW-A',desk:1});assert.equal((await f.state()).assignments.find(row=>row.taskId==='NEW-A').desk,1);assert.equal((await f.stock()).onHand,50);
+});
+
+test('two-product30 plan ships22, keeps8 Unassigned, and reuses the same Desk after later receipt without changing the first SI',async()=>{
+ const f=await setup();
+ // Isolated receipt snapshots: this exercises production Desk/Loaded/SI writers,
+ // not a second receiving implementation or a claim of live UI acceptance.
+ for(const [taskId,quantity]of [['A',5],['B',17]])f.records.get('N/ALLOCATION-'+taskId).details.targets=[{taskId,quantity}];
+ for(const [i,quantity,received,price]of [[0,10,5,1.37],[1,20,17,0.8]])Object.assign(f.tasks[i],{customerId:'CUSTOMER-A',orderId:'ORDER-A',barcode:'SKU-'+i,ord:quantity,requested:quantity,inc:quantity,procurement:{totalCtn:quantity,customerCtn:quantity},sellingPricePc:price,warehouse:{hasPhysicalReceipt:true,accepted:received}});
+ const stock=async()=>projectStockCard(await f.context()).items.reduce((n,row)=>n+row.onHand,0);
+ await f.assign({action:'DESK_ASSIGN',taskId:'B',desk:1});
+ const sent=await f.packing({action:'DESK_SEND',customerId:'CUSTOMER-A',desk:1,deskRevision:(await f.state()).revision,lines:[{taskId:'A',quantity:10},{taskId:'B',quantity:20}]});
+ assert.equal(await stock(),22);
+ for(const [taskId,loaded]of [['A',5],['B',17]]){const list=await f.current(sent.id);await f.packing({action:'DESK_LOAD',id:list.id,revision:list.revision,taskId,loaded,reasonCodes:['INSUFFICIENT']},'WAREHOUSE');}
+ for(const [taskId,remaining]of [['A',5],['B',3]]){const list=await f.current(sent.id);await f.resolve(await f.request({action:'DESK_RESOLVE',id:list.id,revision:list.revision,taskId,deskRevision:(await f.state()).revision,resolutionRevision:list.lines.find(row=>row.taskId===taskId).resolution.revision,parts:[{mode:'TRANSFER',desk:0,quantity:remaining}]}));}
+ const firstRequest=await f.invoiceRequest(5,'TEST-MULTI-22');firstRequest.input.lines=[{taskId:'A',quantity:5},{taskId:'B',quantity:17}];await f.issue(firstRequest);
+ const ctx=await f.context(),first=readCustomerShipments(ctx.activity).find(row=>row.invoice);assert.equal(first.invoice.amountCents,24540);assert.equal(await stock(),0);
+ const savedState=await f.state(),parts=ctx.tasks.flatMap(task=>deskTaskPortions(ctx.activity,savedState,task,readPhysicalOutflows(ctx.activity)));
+ assert.equal(parts.filter(row=>row.desk===0).reduce((n,row)=>n+row.quantity,0),8);assert.equal(ctx.tasks.reduce((n,row)=>n+row.requested,0),30);
+ const firstList=await f.current(sent.id);
+ f.tasks[0].warehouse.accepted=10;f.tasks[1].warehouse.accepted=20;
+ for(const [taskId,quantity]of [['A',10],['B',20]]){const id='LATE-ALLOCATION-'+taskId;f.records.set('N/'+id,{_id:id,title:id,imageAltText:taskId,action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-29T08:00:00Z',details:{beforeRevision:'ALLOCATION-'+taskId,targets:[{taskId,quantity}]}});}
+ assert.equal(await stock(),8);
+ for(const [taskId,quantity]of [['A',10],['B',20]])await f.assign({action:'DESK_SPLIT',taskId,desk:1,parts:[{desk:1,quantity}]});
+ const second=await f.packing({action:'DESK_SEND',customerId:'CUSTOMER-A',desk:1,deskRevision:(await f.state()).revision,lines:[{taskId:'A',quantity:5},{taskId:'B',quantity:3}]});assert.notEqual(second.id,sent.id);
+ for(const [taskId,loaded]of [['A',5],['B',3]]){const list=await f.current(second.id);await f.packing({action:'DESK_LOAD',id:list.id,revision:list.revision,taskId,loaded,reasonCodes:[]},'WAREHOUSE');}
+ const secondRequest=await f.invoiceRequest(5,'TEST-MULTI-8');secondRequest.input.lines=[{taskId:'A',quantity:5},{taskId:'B',quantity:3}];await f.issue(secondRequest);
+ const done=await f.context(),invoices=readCustomerShipments(done.activity).filter(row=>row.invoice);assert.equal(invoices.length,2);assert.deepEqual(invoices.find(row=>row.id===first.id),first);assert.equal(invoices.reduce((n,row)=>n+row.invoice.amountCents,0),35640);assert.deepEqual(await f.current(sent.id),firstList);assert.equal(await stock(),0);
+ assert.equal(readPhysicalOutflows(done.activity).reduce((n,row)=>n+row.quantity,0),30);
+ const evidence=JSON.stringify(done.activity);await f.issue(firstRequest);assert.equal(JSON.stringify((await f.context()).activity),evidence);assert.equal((await f.context('GHR')).activity.length,0);
 });
