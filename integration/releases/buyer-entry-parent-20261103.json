@@ -39,9 +39,11 @@
     "No invoice, payment, inventory or quantity writes"
   ],
   "stages": {
-    "code": "LOCAL_TESTED_PENDING_GITHUB",
-    "pages": "PENDING_ACTION_TIME_PERMISSION",
-    "wix": "SINGLE_VERSION_DRAFT_EXACT_PENDING_PUBLISH",
-    "public": "PENDING_SALES_ENTRY_BUYER_ORIGINAL_PROOF_DOWNLOAD_AND_BACK"
-  }
+    "code": "e1138ea_GITHUB_SYNCED_96_CHECKS_PASS",
+    "pages": "RUN_337_41606760414_SUCCESS_101_MANIFEST_HASHES_AND_CHANGED_HTML_MATCH",
+    "wix": "UNIQUE_VERSION_DRAFT_EXACT_PUBLISHED_AND_LIVE",
+    "public": "PENDING_FRESH_FORMAL_SALES_ENTRY_BUYER_DOWNLOAD_TOOL_EMBED_BLANK"
+  },
+  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_BRANCH_RULE_REMOVED",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/321"
 }
