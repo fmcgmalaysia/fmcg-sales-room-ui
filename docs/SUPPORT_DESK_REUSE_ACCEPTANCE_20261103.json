@@ -62,7 +62,33 @@
     "additionalChecks": "13/13 targeted checks after adding recalled-list exclusion and old-request replay after second SI",
     "pages": "Run332/41558633924 success;101/101 hashes exact; temporary permission removed and original7 restored",
     "wix": "Nine backend and three version-only page drafts exactly matched; published and live receipt retained",
-    "public": "Support and Warehouse refresh produce blank embeds with correct new source and no captured errors. One fresh clean Support visit likewise blank. Finance in-page fresh stock32/reserved22/free5/isolated5/MYR1442.45, original5SI/two receipts preserved. Desk real-operation acceptance incomplete."
+    "public": "Support and Warehouse refresh produce blank embeds with correct new source and no captured errors. One fresh clean Support visit likewise blank. Finance in-page fresh stock32/reserved22/free5/isolated5/MYR1442.45, original5SI/two receipts preserved. Desk real-operation acceptance incomplete. GHR fresh StockList09:31:00=0/MYR0; NCT return09:31:44=32/MYR1442.45. Old failed checks were fixed in separate test branches; the original182-count run remains historical, not rewritten as all passed.",
+    "followupTests": [
+      {
+        "commit": "58dab85",
+        "pr": 314,
+        "scope": "Historical Warehouse header source pin",
+        "passed": 3,
+        "total": 3,
+        "productionAssetsChanged": 0
+      },
+      {
+        "commit": "5320016",
+        "pr": 315,
+        "scope": "No-op/implicit allocation fixture and borrowing guards",
+        "passed": 28,
+        "total": 28,
+        "productionCodeChanged": false
+      },
+      {
+        "commit": "d80478b",
+        "pr": 316,
+        "scope": "Desk mixed-product22+8 and existing batch protections",
+        "passed": 8,
+        "total": 8,
+        "productionCodeChanged": false
+      }
+    ]
   },
   "release": {
     "commit": "3b6a1db",
