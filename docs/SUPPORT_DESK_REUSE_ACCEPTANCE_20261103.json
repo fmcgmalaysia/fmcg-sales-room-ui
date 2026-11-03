@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-03",
+  "state": "LOCAL_CANDIDATE_VALIDATED_NOT_RELEASED",
+  "objective": "Reuse Desk 1-3 after a confirmed goods SI, retain all historical batch evidence, and keep undelivered demand in orange Unassigned until Support arranges it.",
+  "authority": "Existing Desk revision chain, delivery list identities, customer shipment/SI ledger and shortload disposition writer. No new stock or financial ledger, polling writes, automatic stock release or history migration.",
+  "recovery": {
+    "static": "b5af6a1",
+    "wixReferences": "e9ef924",
+    "freshBackendComparison": "Ten relevant Wix originals match the pre-change checkout after EOL/EOF normalization; exact originals retained in root handoff."
+  },
+  "rules": [
+    "Only canonical successfully issued goods SI completes a delivery batch. Draft number, PDF upload, charge SI and payment are not completion triggers.",
+    "Unpaid invoices remain collectible in Transactions without occupying an operational Desk.",
+    "Short receipt alone does not close or reduce a customer shipment instruction.",
+    "Support may continue loading or transfer the exact shortload remainder to existing Desk 0 awaiting arrangement. Customer cancellation remains an authorized Sales decision.",
+    "Partial SI requires the original shortload disposition to be confirmed. SI confirmation must explain the quantity invoiced and retained remainder. A timeout must recover the same disposition/SI requests.",
+    "New Desk use must have an unambiguous batch association before pre-SI files are uploaded. Reuse existing identities and state, not a separate collection or duplicate balance.",
+    "New batch metadata and file list cannot inherit the prior batch. Old delivery and invoice screens use their own frozen snapshots.",
+    "Archived batches must never become active Warehouse tasks again. Loaded sources and invoice references remain unchanged."
+  ],
+  "acceptance": [
+    "All three completed Desks can accept later orders without a Desk 4.",
+    "The SAME original order reuses Desk 1 after a partial invoice; old/new files, shipment details, Loaded and invoice quantities remain separated.",
+    "30 ordered,22 received: receipt leaves8 outstanding; loading22 and confirmed transfer8 toUnassigned permits SI22, then a later batch8.",
+    "300 allocated/290 loaded: continue10 and transfer10 toUnassigned are distinct; neither silently cancels demand or changes physical stock.",
+    "Old unsaved Warehouse forms cannot load a completed SI batch after the Desk is reused.",
+    "Interrupted SI and original retry recover one invoice and one completion; competing assignment/authorization retains revision fencing.",
+    "Pre-SI and post-SI PDFs remain attached only to their batch; legacy ambiguous linkage fails closed instead of guessing.",
+    "Finance balances/payments, NCT/GHR isolation, Warehouse monetary redaction and single Loaded deduction remain unchanged.",
+    "Pure reads create no new Activity entries."
+  ],
+  "liveTests": {
+    "priority": "Continue NCT-PO-CLOSEOUT-1103 first:30ordered,22received,8remaining,newLoaded0,newSI0.",
+    "supplement": "AVATA001 source order ORD-CUS-261103-43C587-80F66CCC20A345958F8BFAC32570BD6E contains300each CADBURY7622202836213,AJAX9556031068706,7UP9556404007035; SGD21954.00. Read-only reviewed,not submitted by agent.",
+    "optionalQuotation": "BEAUTY MAMA account authorized for needed extra test products with12%GP. No quote created or published in this review."
+  },
+  "preservedCloseout": [
+    "Purchase7354bed/PR311 still needs candidate UI,Wix version sync,scoped deployment and public acceptance",
+    "SalesManagement15e57f9/PR309 DESIGN ONLY",
+    "CMS growth/read budget still open",
+    "Actual Drive download response blocked; no bypass",
+    "Window root-cause investigation deferred by user"
+  ],
+  "validation": {
+    "affectedTests": {
+      "passed": 180,
+      "total": 182,
+      "oldFailures": [
+        "packing-consumer-integration: existing no-op allocation rejects with Allocation has not changed",
+        "warehouse-operational-header: historical builder anchor failure"
+      ],
+      "baseline": "Both reproduced with HEAD source substituted read-only; current package builds separately."
+    },
+    "candidateBrowser": [
+      "90 Loaded + SI;10 Unassigned",
+      "same Desk1 reassigned10",
+      "Warehouse old90 Completed read-only;new10 active",
+      "second Loaded10 deducts once;SI does not deduct",
+      "two separate SI2160.00 and240.00 preserved"
+    ],
+    "additionalChecks": "13/13 targeted checks after adding recalled-list exclusion and old-request replay after second SI",
+    "pages": "NOT_DEPLOYED",
+    "wix": "NOT_SYNCED",
+    "public": "NOT_VERIFIED"
+  }
+}

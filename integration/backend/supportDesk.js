@@ -14,12 +14,19 @@ const detailShipmentValid=row=>optionalDate(row.date)&&optionalDate(row.arrival)
 const transports=['LAND','SEA_20FT','SEA_40FT','OTHER'];
 const identity=(company,customerId)=>operationId(company,customerId,'SUPPORT_DESK');
 const empty=(company,customerId)=>({company,customerId,revision:'',assignments:[],shipments:[]});
+export const supportDeskBatchId=(state,desk)=>state?.batches?.find(row=>row.desk===desk)?.id||operationId(state.company,state.customerId,desk,'INITIAL_DESK_BATCH');
+export function invoiceDeskSnapshots(activity){
+ const saved=new Map(activity.map(row=>[row.title,row.description])),snapshots=new Map();
+ for(const intent of activity)if(intent.action==='SUPPORT_INVOICE_PREPARED'&&intent.details?.desk){const invoiceId=saved.get(operationId(intent._id,'SUPPORT_INVOICE_INPUT_SAVED'));if(invoiceId){if(snapshots.has(invoiceId))throw Error('Invoice Desk identity requires review.');snapshots.set(invoiceId,intent.details.desk);}}
+ return snapshots;
+}
+export function invoiceDeskSnapshot(activity,invoiceId){return invoiceDeskSnapshots(activity).get(invoiceId)||null;}
 const copy=value=>JSON.parse(JSON.stringify(value));
 const validParts=parts=>Array.isArray(parts)&&parts.length>0&&parts.length<=4&&new Set(parts.map(part=>part.desk)).size===parts.length&&parts.every(part=>(part.desk===0||deskValid(part.desk))&&Number.isSafeInteger(part.quantity)&&part.quantity>0&&part.quantity<=9999);
 const receiptState=value=>Array.isArray(value)?value.map(receiptState):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,receiptState(value[key])])):value;
 const validDeliveryHolds=state=>state?.deliveryHolds===undefined||Array.isArray(state.deliveryHolds)&&state.deliveryHolds.length<=3&&new Set(state.deliveryHolds.map(row=>row.desk)).size===state.deliveryHolds.length&&state.deliveryHolds.every(row=>deskValid(row.desk)&&[row.listId,row.requestId,row.memberId,row.digest].every(textValid)&&Array.isArray(row.taskIds)&&row.taskIds.length>0&&new Set(row.taskIds).size===row.taskIds.length&&row.taskIds.every(textValid));
 function validExtras(state){return (state.references===undefined||Array.isArray(state.references)&&new Set(state.references.map(r=>r.desk)).size===state.references.length&&state.references.every(r=>deskValid(r.desk)&&typeof r.soNo==='string'&&r.soNo.length<=100&&typeof r.poNo==='string'&&r.poNo.length<=100&&(r.detailsVersion!==3||detailReferenceValid(r))))&&(state.locks===undefined||Array.isArray(state.locks)&&new Set(state.locks.map(r=>r.desk)).size===state.locks.length&&state.locks.every(r=>deskValid(r.desk)&&textValid(r.requestId)&&textValid(r.memberId)&&textValid(r.number)&&textValid(r.digest)&&Array.isArray(r.taskIds)&&r.taskIds.every(textValid)&&r.snapshot?.number===r.desk));}
-function validState(state,company){return state&&state.company===company&&textValid(state.customerId)&&validExtras(state)&&Array.isArray(state.assignments)&&new Set(state.assignments.map(row=>row.taskId)).size===state.assignments.length&&state.assignments.every(row=>textValid(row.taskId)&&(row.desk===0||deskValid(row.desk)))&&Array.isArray(state.shipments)&&new Set(state.shipments.map(row=>row.desk)).size===state.shipments.length&&state.shipments.every(row=>deskValid(row.desk)&&(row.detailsVersion===3?detailShipmentValid(row):transports.includes(row.transport)&&dateValid(row.date)&&(row.arrival===''||dateValid(row.arrival)&&row.arrival>=row.date)));}
+function validState(state,company){return state&&state.company===company&&textValid(state.customerId)&&(state.batches===undefined||Array.isArray(state.batches)&&state.batches.length<=3&&new Set(state.batches.map(row=>row.desk)).size===state.batches.length&&state.batches.every(row=>deskValid(row.desk)&&textValid(row.id)))&&validExtras(state)&&Array.isArray(state.assignments)&&new Set(state.assignments.map(row=>row.taskId)).size===state.assignments.length&&state.assignments.every(row=>textValid(row.taskId)&&(row.desk===0||deskValid(row.desk)))&&Array.isArray(state.shipments)&&new Set(state.shipments.map(row=>row.desk)).size===state.shipments.length&&state.shipments.every(row=>deskValid(row.desk)&&(row.detailsVersion===3?detailShipmentValid(row):transports.includes(row.transport)&&dateValid(row.date)&&(row.arrival===''||dateValid(row.arrival)&&row.arrival>=row.date)));}
 export function readSupportDesks(activity,company){
  if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');
  const pending=activity.filter(row=>[ACTION,'DESK_SHORTLOAD_RESOLVED'].includes(row.action)&&row.result==='SAVED').map(row=>row.action===ACTION?row:{...row,description:identity(company,row.details.customerId),details:{...row.details,beforeRevision:row.details.deskBeforeRevision}}),states=new Map(),requests=new Set();
@@ -35,11 +42,11 @@ export function readSupportDesks(activity,company){
 }
 export function supportDeskForTask(state,taskId){return state?.assignments.find(row=>row.taskId===taskId)?.desk||0;}
 export async function reserveSupportDeskDelivery({store,names,context,staff,requestId,customerId,desk,revision,listId,taskIds,digest,now}){
- const company=context.company,before=readSupportDesks(context.activity,company).find(row=>row.customerId===customerId)||empty(company,customerId);
+ const company=context.company,before=currentSupportDeskState(context,readSupportDesks(context.activity,company).find(row=>row.customerId===customerId)||empty(company,customerId));
  const owned=(before.deliveryHolds||[]).find(row=>row.desk===desk&&row.requestId===requestId&&row.memberId===staff.memberId);
  if(owned){if(owned.digest!==digest||owned.listId!==listId)throw Error('Desk delivery save identity changed.');return copy(before);}
  if(before.revision!==revision)throw Error('Desk classification changed. Refresh before sending to Warehouse.');
- if(readSupportDeskLocks(context).some(row=>row.customerId===customerId&&row.desk===desk))throw Error('This Desk is locked by its Sales Invoice.');
+ if(currentSupportDeskLocks(context).some(row=>row.customerId===customerId&&row.desk===desk))throw Error('This Desk is locked by its Sales Invoice.');
  const previous=(before.deliveryHolds||[]).find(row=>row.desk===desk),previousList=previous&&context.activity.find(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===previous.listId)?.details?.list;
  if(previous&&(!previousList||!['COMPLETED','CANCELLED'].includes(previousList.status)))throw Error('This Desk already has an active Warehouse task.');
  if(!deskValid(desk)||!taskIds.length||taskIds.some(taskId=>{const task=context.tasks.find(row=>row.id===taskId);return !task||!deskTaskPortions(context.activity,before,task).some(row=>row.desk===desk&&row.quantity>0);}))throw Error('Desk task membership changed.');
@@ -65,9 +72,9 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   if(prior.length){if(prior[0].details.digest!==digest)throw Error('This save was already used for different Desk details.');return {ok:true,company,requestId,deskState:{...copy(prior[0].details.state),revision:prior[0].title}};}
   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase);
   if(!tasks.length||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&!tasks.some(row=>row.id===input.taskId))throw Error('Select an active customer task.');
-  const before=readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId);
+  const before=currentSupportDeskState(context,readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId));
   if(input.action==='DESK_ASSIGN'&&(before.deliveryHolds||[]).some(hold=>hold.taskIds.includes(input.taskId)&&!context.activity.some(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===hold.listId&&row.details.list.status==='CANCELLED')))throw Error('This task is authorized to Warehouse. Recall its unstarted delivery before moving it.');
-  const locks=readSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)?[supportDeskForTask(before,input.taskId),...(normalized.parts||[]).map(part=>part.desk)]:[])];
+  const locks=currentSupportDeskLocks(context).filter(row=>row.customerId===input.customerId),affected=[input.desk,...(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)?[supportDeskForTask(before,input.taskId),...(normalized.parts||[]).map(part=>part.desk)]:[])];
   if(input.action!=='DESK_SPLIT'&&locks.some(row=>affected.includes(row.desk)||input.action==='DESK_ASSIGN'&&row.taskIds.includes(input.taskId)))throw Error('This Desk is locked by its Sales Invoice.');
   if(before.revision!==input.revision)throw Error('Desk details changed. Refresh before editing.');
   if(normalized.details?.depositAmountCents!==null&&normalized.details?.depositAmountCents!==undefined){const currencies=[...new Set(tasks.filter(task=>(readShortloadResolutions(context.activity).some(row=>row.taskId===task.id)||before.assignments.find(row=>row.taskId===task.id)?.parts)?deskTaskPortions(context.activity,before,task).some(part=>part.desk===input.desk&&part.quantity>0):supportDeskForTask(before,task.id)===input.desk).map(task=>task.transactionCurrency))];if(currencies.length!==1||currencies[0]!==normalized.details.depositCurrency)throw Error('Desk deposit currency must match its assigned order currency.');}
@@ -102,8 +109,8 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
 export function checkSupportDeskInvoice(context,readiness,input,owner){
  const desk=input.desk;if(!desk)return null;
  if(!deskValid(desk.number)||typeof desk.revision!=='string')throw Error('Select one Desk before invoicing.');
- const state=readSupportDesks(context.activity,context.company).find(row=>row.customerId===input.customerId)||empty(context.company,input.customerId);
- const hold=readSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===desk.number);
+ const state=currentSupportDeskState(context,readSupportDesks(context.activity,context.company).find(row=>row.customerId===input.customerId)||empty(context.company,input.customerId));
+ const hold=currentSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===desk.number);
  if(hold){if(owner&&hold.requestId===owner.requestId&&hold.memberId===owner.memberId&&hold.digest===owner.digest)return copy(hold.snapshot);throw Error('This Desk is locked by its Sales Invoice.');}
  if(state.revision!==desk.revision)throw Error('Desk classification changed. Refresh before invoicing.');
  const resolved=new Set(readShortloadResolutions(context.activity).map(row=>row.taskId));
@@ -114,7 +121,7 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
  const expected=portions.map(part=>({taskId:part.task.id,quantity:ready(part.task)})).filter(line=>line.quantity>0).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  const observed=input.lines.map(line=>({taskId:line.taskId,quantity:line.quantity})).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  if(!expected.length||operationId(expected)!==operationId(observed))throw Error('Invoice lines must match the current Desk and confirmed loading.');
- return {number:desk.number,revision:desk.revision,shipment:copy(state.shipments.find(row=>row.desk===desk.number)||null),references:copy((state.references||[]).find(row=>row.desk===desk.number)||null)};
+ return {number:desk.number,revision:desk.revision,batchId:supportDeskBatchId(state,desk.number),shipment:copy(state.shipments.find(row=>row.desk===desk.number)||null),references:copy((state.references||[]).find(row=>row.desk===desk.number)||null)};
 }
 
 // Invoice admission shares the Desk revision chain with task moves and shipment edits.
@@ -131,6 +138,27 @@ export function readSupportDeskLocks(context){
  }
  return locks;
 }
+// Canonical issued SI remains available for receipt recovery and Transactions;
+// only an unfinished invoice preparation occupies an operational workbench.
+export function currentSupportDeskLocks(context){return readSupportDeskLocks(context).filter(row=>row.status!=='ISSUED');}
+// Derive the next use from the prior confirmed invoice, without a read-time write.
+// The next ordinary Desk save persists this metadata in the existing revision chain.
+export function currentSupportDeskState(context,state,locks=readSupportDeskLocks(context)){
+ const closed=(state.locks||[]).map(held=>locks.find(row=>row.customerId===state.customerId&&row.requestId===held.requestId&&row.memberId===held.memberId&&row.status==='ISSUED')).filter(Boolean);
+ if(!closed.length)return state;
+ const next=copy(state),numbers=new Set(closed.map(row=>row.desk));
+ if(context.tasks){const flows=readPhysicalOutflows(context.activity);next.assignments=next.assignments.map(assignment=>{
+  const task=context.tasks.find(row=>row.id===assignment.taskId&&row.customerId===state.customerId);if(!task||!closed.some(row=>row.taskIds.includes(task.id)))return assignment;
+  const parts=deskTaskPortions(context.activity,state,task,flows).map(({desk,quantity})=>({desk,quantity}));
+  return {...assignment,parts,dispositionRevision:readShortloadResolutions(context.activity).filter(row=>row.taskId===task.id&&row.customerId===state.customerId).at(-1)?.revision||''};
+ });}
+ next.locks=(next.locks||[]).filter(row=>!numbers.has(row.desk));
+ next.deliveryHolds=(next.deliveryHolds||[]).filter(row=>!numbers.has(row.desk));
+ next.references=(next.references||[]).filter(row=>!numbers.has(row.desk));
+ next.shipments=next.shipments.filter(row=>!numbers.has(row.desk));
+ next.batches=(next.batches||[]).filter(row=>!numbers.has(row.desk)).concat(closed.map(row=>({desk:row.desk,id:operationId(context.company,state.customerId,row.invoiceId,'NEXT_DESK_BATCH')})));
+ return next;
+}
 async function appendInvoiceDeskState({store,collection,company,staff,requestId,before,state,kind,now}){
  const entityId=identity(company,state.customerId),id=operationId(entityId,before.revision,'NEXT'),digest=operationId(kind,state);
  const event={_id:id,title:id,description:entityId,image:state.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support '+kind+' Desk invoice',details:{beforeRevision:before.revision,memberId:staff.memberId,requestId,digest,state}};
@@ -140,8 +168,8 @@ async function appendInvoiceDeskState({store,collection,company,staff,requestId,
 }
 export async function reserveSupportDeskInvoice({store,names,context,staff,requestId,input,digest,snapshot,now}){
  if(!input.desk)return;
- const company=context.company,collection=names[company].activity,before=readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId);
- const prior=readSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===input.desk.number);
+ const company=context.company,collection=names[company].activity,before=currentSupportDeskState(context,readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId));
+ const prior=currentSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===input.desk.number);
  if(prior){if(prior.requestId===requestId&&prior.memberId===staff.memberId&&prior.digest===digest)return;throw Error('This Desk is locked by its Sales Invoice.');}
  if(before.revision!==input.desk.revision)throw Error('Desk classification changed. Refresh before invoicing.');
  const numberId=operationId(company,input.number.trim().toUpperCase(),'SUPPORT_INVOICE_NUMBER'),numberRecord={_id:numberId,title:numberId,description:input.customerId,image:String(input.desk.number),action:'SUPPORT_INVOICE_NUMBER_RESERVED',result:'SAVED',actorType:'STAFF',activityTime:now(),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support reserved an invoice number for one Desk',details:{customerId:input.customerId,desk:input.desk.number,number:input.number.trim()}};

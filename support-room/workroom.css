@@ -154,7 +154,7 @@ body.support-workroom .desk-task-table .order-tasks{min-width:1100px}
 .desk-task-table .order-tasks :is(th,td):nth-child(3){min-width:220px;width:auto}
 .desk-task-table .order-tasks td:nth-child(4){min-width:75px}.desk-task-table .order-tasks td:nth-child(10){min-width:82px;white-space:nowrap}.desk-task-table .order-tasks td:nth-child(11){min-width:190px;white-space:normal}
 .desk-drag-cell .row-drag{font-size:17px;padding:0;min-width:16px}.desk-drag-cell .row-drag:disabled{color:#b8c4d0;cursor:default}
-.desk-cell select.unassigned{background:#f58a00;color:#fff;border-color:#f58a00}.desk-cell select.unassigned:disabled{background:#fff0d6;color:#825300;border-color:#f7dfb9}
+.desk-cell :is(select,button).unassigned{background:#f58a00;color:#fff;border-color:#f58a00}.desk-cell :is(select,button).unassigned:disabled{background:#fff0d6;color:#825300;border-color:#f7dfb9}
 #invoice-review{width:520px;max-width:calc(100vw - 28px)}#invoice-review #invoice-fields{margin:0 0 12px}#invoice-number{width:100%}
 #invoice-review .work-table{table-layout:fixed}#invoice-review .work-table th:first-child,#invoice-review .work-table td:first-child{width:56%;min-width:0}
 #invoice-review .work-table th:nth-child(2),#invoice-review .work-table td:nth-child(2){width:16%}#invoice-review .work-table th:last-child,#invoice-review .work-table td:last-child{width:28%}

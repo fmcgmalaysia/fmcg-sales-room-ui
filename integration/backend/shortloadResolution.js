@@ -1,6 +1,6 @@
 import { createOperationJournal, operationId } from 'backend/purchaseOperationJournal.js';
 import { packingVersion } from 'backend/packingListOperations.js';
-import { readSupportDesks, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { readSupportDesks, currentSupportDeskState, currentSupportDeskLocks } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { customerAllocationContext } from 'backend/customerAllocationContext.js';
 import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
@@ -67,9 +67,9 @@ export function createShortloadResolutionOperations({store,names,readContext,now
   }
   if(sales&&(!input.parts?.some(part=>part.mode==='CANCEL')||input.parts.some(part=>!['CANCEL','CONTINUE'].includes(part.mode))))throw Error('Sales may confirm customer cancellation only. Support controls shipment batches.');
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{shortload:input},prepare:async()=>{
-   const context=await readContext(company,staff),physical=context.physicalContext,list=context.lists.find(row=>row.id===input.id),line=list?.lines.find(row=>row.taskId===input.taskId),state=physical&&readSupportDesks(physical.activity,company).find(row=>row.customerId===list?.customerId);
+   const context=await readContext(company,staff),physical=context.physicalContext,list=context.lists.find(row=>row.id===input.id),line=list?.lines.find(row=>row.taskId===input.taskId),stored=physical&&readSupportDesks(physical.activity,company).find(row=>row.customerId===list?.customerId),state=stored&&currentSupportDeskState(physical,stored);
    if(context.company!==company||sales&&staff.customerId!==list?.customerId||packingVersion(context)!==input.version||!list?.desk||!['PROCESSING','COMPLETED'].includes(list.status)||!line?.loadedConfirmedAt||!state||state.revision!==input.deskRevision||list.revision!==input.revision)throw Error('Desk loading or assignment changed. Refresh before deciding the remainder.');
-   const status=shortloadStatus(physical.activity,list,line),task=physical.tasks.find(row=>row.id===line.taskId&&row.customerId===list.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase),locks=readSupportDeskLocks(physical).filter(row=>row.customerId===list.customerId);
+   const status=shortloadStatus(physical.activity,list,line),task=physical.tasks.find(row=>row.id===line.taskId&&row.customerId===list.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase),locks=currentSupportDeskLocks(physical).filter(row=>row.customerId===list.customerId);
    if(!task||input.orderId&&input.orderId!==task.orderId||!status.issue&&!status.pending||status.revision!==(input.resolutionRevision||''))throw Error('Desk has no unresolved short-load quantity.');
    if(locks.some(row=>row.desk===list.desk.number)||state.shipments.find(row=>row.desk===list.desk.number)?.departureDate)throw Error('Desk already invoiced or departed; its loading cannot be changed.');
    if(!Array.isArray(input.parts)||!input.parts.length||input.parts.length>4||input.parts.some(part=>!quantity(part.quantity)||!['CONTINUE','TRANSFER','CANCEL'].includes(part.mode))||input.parts.reduce((n,part)=>n+part.quantity,0)!==status.remaining)throw Error('Desk decisions must cover exactly the remaining cartons.');
