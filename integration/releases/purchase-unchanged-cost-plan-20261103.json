@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-03",
+  "scope": "Reject unchanged normalized procurement costing via existing PLAN guard",
+  "branch": "fix/purchase-unchanged-cost-plan-20261103",
+  "baselineCommit": "dd04f52",
+  "recovery": "Fresh Wix source exactly matched working copy before edit; Git blob matches after CRLF normalization",
+  "baselineSha256": "d355bc8746c27d55e9dc0a3dd1b4a8296defe185765a6a65c7bc9d7a6196bf0a",
+  "candidateSha256": "616e6f8885a52d90eb8c2d409632a6735269f1f1a5f476716ac861adb2f708c3",
+  "changedBusinessFiles": [
+    "integration/backend/purchaseOperations.js"
+  ],
+  "liveComparison": "EXACT_5_MODULES",
+  "tests": {
+    "targeted": 71,
+    "financialAndAllocation": 60,
+    "failed": 0
+  },
+  "preserved": [
+    "Original-request journal",
+    "PO and shares",
+    "First-payment financial lock",
+    "FOC original commercial inputs",
+    "Inventory and Loaded",
+    "No-op error contract"
+  ],
+  "release": {
+    "code": "COMPLETE_TESTED",
+    "pages": "STATIC_UNCHANGED_NO_DEPLOYMENT_REQUIRED",
+    "wix": "NOT_SYNCED",
+    "public": "PENDING"
+  },
+  "nextSeparateTask": "Incomplete PLAN read semantics; not fixed by no-op patch"
+}
