@@ -218,4 +218,4 @@ async function run(){
  report.sourceHashes=Object.fromEntries(['purchaseOperations.js','purchaseSources.js','purchasePlan.js','purchaseOperationJournal.js','purchaseTaskIdentity.js'].map(name=>[name,crypto.createHash('sha256').update(fs.readFileSync(path.join(backend,name))).digest('hex')]));return report;
 }
 if(require.main===module)run().then(r=>{if(process.argv[2])fs.writeFileSync(process.argv[2],JSON.stringify(r,null,2)+'\n');console.log(JSON.stringify({checks:r.checks,growth:r.growth,acceptance:r.acceptance},null,2));}).catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={run};
+module.exports={run,harness,oracle,pick};
