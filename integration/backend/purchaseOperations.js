@@ -1,5 +1,5 @@
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
-import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
@@ -125,7 +125,10 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const costing=input.costing?calculatePlanCosting(input.costing,input.totalCtn,order.orderId):null;
         if(!supplierId||!s.suppliers.some(row=>row.title===supplierId&&String(row.supplierStatus||'').toUpperCase()!=='INACTIVE'))throw Error('Select an active supplier before saving the purchase plan.');
         if(supplierId!==task.supplierId){if(task.ourPoNumber||plan.revision&&!plan.draftPlan)throw Error('Supplier is locked to the confirmed procurement source.');patch.supplierId=supplierId;}
-        if(costing){Object.assign(patch,{lpPc:costing.averageCostCtn/costing.ea,lpCtn:costing.averageCostCtn,disc1:0,disc2:0,disc3:0,manualCostField:prices});}
+        if(costing){
+          const derived={lpPc:costing.averageCostCtn/costing.ea,lpCtn:costing.averageCostCtn,disc1:0,disc2:0,disc3:0,manualCostField:prices};
+          for(const [key,value] of Object.entries(derived))if(canonical(task[key]??null)!==canonical(value))patch[key]=value;
+        }
         else if(input.prices!==undefined){
           if(!input.prices||Object.keys(input.prices).length!==prices.length||prices.some(key=>typeof input.prices[key]!=='number'||!Number.isFinite(input.prices[key])||input.prices[key]<0)||input.prices.disc1>1||input.prices.disc2>1||input.prices.lpCtn*(1-input.prices.disc1)*(1-input.prices.disc2)-input.prices.disc3<0)throw Error('Check supplier costs and discounts.');
           for(const key of prices)if(input.prices[key]!==task[key])patch[key]=input.prices[key];
@@ -135,7 +138,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
         if((!reason&&!task.ourPoNumber&&(!costing||plan.revision))||reason.length>2000)throw Error('A procurement reason is required.');
-        if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&JSON.stringify(costing)===JSON.stringify(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
+        if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&canonical(costing)===canonical(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const batchContext=checkPurchaseBatch(s.workspace,demandTask.title,input,input.totalCtn-(plan.totalCtn||0));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
