@@ -14,7 +14,7 @@ import { getPointbaseBrands } from 'backend/pointbaseBrandClient.js';
 import { capturePointbaseCosts } from 'backend/pointbaseCostClient.js';
 const options={suppressAuth:true,consistentRead:true};
 const store={
- async all(collection){let page=await wixData.query(collection).limit(1000).find(options),items=[...page.items];while(page.hasNext()){page=await page.next();items.push(...page.items);}return items;},
+ async all(collection,criteria={}){let query=wixData.query(collection);for(const [key,value] of Object.entries(criteria))query=query.eq(key,value);let page=await query.limit(1000).find(options),items=[...page.items];while(page.hasNext()){page=await page.next();items.push(...page.items);}return items;},
  async one(collection,criteria){let query=wixData.query(collection);for(const [key,value] of Object.entries(criteria))query=query.eq(key,value);const page=await query.limit(2).find(options);if(page.items.length>1)throw Error('Duplicate operational record.');return page.items[0]||null;},
  async read(collection,id){return this.one(collection,{_id:id});},
  insert:(collection,row)=>wixData.insert(collection,row,{suppressAuth:true}),
