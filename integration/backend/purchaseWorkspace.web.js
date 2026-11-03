@@ -8,10 +8,19 @@ import { purchaseOrderList, purchaseOrderReadResult } from 'backend/purchaseOrde
 import { readPurchaseMargins } from 'backend/purchaseMarginRefresh.js';
 import { readCustomerShortNames } from 'backend/customerNamesClient.js';
 import { purchaseReceiptInfo } from 'backend/purchaseReceiptInfo.js';
+import { operationId } from 'backend/purchaseOperationJournal.js';
 const options = { suppressAuth: true, consistentRead: true };
 async function all(query) {
   let page = await query.limit(1000).find(options), rows = [...page.items];
   while (page.hasNext()) { page = await page.next(); rows.push(...page.items); }
+  return rows;
+}
+async function purchaseActivity(collection) {
+  // Save/result recovery still reads its original receipts directly. The task
+  // projection needs result receipts only for confirmed historical row ordering.
+  const rows = await all(wixData.query(collection).ne('action','PURCHASE_OPERATION_RESULT').or(wixData.query(collection).isEmpty('action')));
+  const legacyResults = [...new Set(rows.filter(row=>row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.plan?.displayOrder).map(row=>operationId(row.title,'RESULT')))];
+  for(let index=0;index<legacyResults.length;index+=100) rows.push(...await all(wixData.query(collection).hasSome('title',legacyResults.slice(index,index+100))));
   return rows;
 }
 export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async company => {
@@ -19,7 +28,7 @@ export const getPurchaseWorkspace = webMethod(Permissions.SiteMember, async comp
   const staff = await getPurchaseStaffContext();
   const ids = PURCHASE_COLLECTIONS[company];
   const [orders, tasks, activity, suppliers, purchaseRecords] = await Promise.all([
-    all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), all(wixData.query(ids.activity)),
+    all(wixData.query(ids.orders)), all(wixData.query(ids.tasks)), purchaseActivity(ids.activity),
     all(wixData.query('SharedSuppliers')), all(wixData.query('PurchaseOrders').eq('company',company))
   ]);
   const workspace = projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff });

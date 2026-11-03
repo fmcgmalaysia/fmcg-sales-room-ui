@@ -7,7 +7,7 @@ function fixture(){
  const read=vm.runInNewContext(source+'\ngetPurchaseWorkspace',{
   webMethod:(_p,fn)=>fn,Permissions:{SiteMember:1},PURCHASE_COLLECTIONS:{NCT:{orders:'O',tasks:'T',activity:'A'}},
   getPurchaseStaffContext:async()=>({role:'PURCHASE'}),
-  wixData:{query:()=>({limit(){return this;},find:async()=>({items:[],hasNext:()=>false})})},
+  wixData:{query:()=>({eq(){return this;},ne(){return this;},isEmpty(){return this;},or(){return this;},limit(){return this;},find:async()=>({items:[],hasNext:()=>false})})},
   projectPurchaseWorkspace:()=>workspace,
   readCustomerShortNames:()=>{calls.push('names');return names.promise;},
   readPurchaseMargins:()=>{calls.push('margins');started.resolve();return margins.promise;},
