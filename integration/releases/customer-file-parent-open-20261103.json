@@ -54,9 +54,10 @@
     "Customer payment-proof downloads use same path; unauthorized file and stale request cannot navigate"
   ],
   "stages": {
-    "code": "LOCAL_TESTED_PENDING_GITHUB",
-    "pages": "PENDING_ACTION_TIME_PERMISSION",
-    "wix": "TWO_DRAFTS_EXACT_PENDING_PUBLISH",
-    "public": "PENDING_AFTER_RELEASE"
-  }
+    "code": "0de7473_GITHUB_SYNCED_101_CHECKS_PASS",
+    "pages": "RUN_336_41600753718_SUCCESS_101_MANIFEST_HASHES_3_CHANGED_RESOURCE_HASHES_MATCH",
+    "wix": "TWO_EXACT_DRAFT_READBACKS_PUBLISHED_AND_LIVE",
+    "public": "PENDING_FRESH_FORMAL_DOWNLOAD_AND_BACK_ACCEPTANCE"
+  },
+  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_RULE_REMOVED"
 }
