@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-03",
+  "objective": "Reduce Purchase workspace result-receipt reads without changing any save, recovery or business event authority",
+  "branch": "perf/purchase-result-receipt-read-20261103",
+  "scope": [
+    "integration/backend/purchaseWorkspace.web.js"
+  ],
+  "liveOriginal": {
+    "normalizedSha256": "c9285cbe61f03ebde06b23ff46aa284da15553155e140da09f206f7d5e57e4a4",
+    "freshWixReadMatchesRepository": true,
+    "privateRecovery": "handoff/master-three-customer-stress-20261102/purchaseWorkspace.live-before-result-read-20261103.js",
+    "existingVerifiedTag": "verified/support-upload-recovery-20261103"
+  },
+  "change": "Exclude bulk PURCHASE_OPERATION_RESULT rows from the Purchase workspace read. Retain every other event including prepared operations and empty-action locks; retrieve original result receipts by title only when historical row-order evidence requires them, in batches of at most100.",
+  "protected": [
+    "Original journal and exact save-result lookup unchanged",
+    "All writers and latest-version checks unchanged",
+    "GP and financial locks unchanged",
+    "NCT/GHR collection separation",
+    "No storage deletion or consolidation",
+    "No persistent cache or second ledger"
+  ],
+  "checks": {
+    "affectedPassed": 56,
+    "failed": 0,
+    "newCases": 7,
+    "freshExportRows": 400,
+    "prepared": 99,
+    "results": 99,
+    "matchedPreparedResultRequests": 99,
+    "workspaceActivityRowsAfter": 301,
+    "threeCustomerHistoryDifferences": 0,
+    "legacyReorderEvidencePreserved": true,
+    "paginationFailureRejectsPartialWorkspace": true,
+    "historicalFixtureRepair": "The pre-existing workspace performance fixture lacked query.eq(), reproducing3 failures against the exact live original. Extended empty-query fixtures with supported chain methods; existing assertions retained. Separate new query adapter tests evaluate actual filtering."
+  },
+  "limits": [
+    "400CMS rows remain stored",
+    "Prepared and business history still grows; this is one bounded read improvement, not a complete long-term capacity solution",
+    "No measured live latency or credit-saving percentage"
+  ],
+  "stages": {
+    "code": "325834b_GITHUB_SYNCED_56_CHECKS_PASS",
+    "pages": "UNCHANGED_101_RESOURCE_RELEASE_335_NO_STATIC_CHANGES_OR_PERMISSION_EXPANSION",
+    "wix": "ONE_MODULE_EXACT_FULL_READBACK_PUBLISHED_AND_LIVE",
+    "public": "PASSED_FORMAL_FRESH_REFRESH_TASK_GP_PAID_PO_EDIT_GUARD_GHR_EMPTY_NCT_RETURN"
+  },
+  "formalAcceptance": {
+    "date": "2026-11-03",
+    "entry": "https://fmcg999.wixstudio.com/master",
+    "freshRead": "Explicit Refresh showed loading and then complete workspace without relevant error",
+    "gpAndQuantities": "Known existing task GP and quantities retained",
+    "paidPo": "Paid PO parent exposes no supplier-plan edit button",
+    "companyIsolation": "GHR contained no NCT task; returning NCT restored its tasks",
+    "businessWrites": "NONE",
+    "privateEvidence": "handoff/master-three-customer-stress-20261102/RESULT_READ_FORMAL_ACCEPTANCE_20261103.json",
+    "limit": "Storage and unbounded historical growth remain unchanged"
+  }
+}
