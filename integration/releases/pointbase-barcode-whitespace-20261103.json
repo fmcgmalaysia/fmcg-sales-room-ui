@@ -1,0 +1,48 @@
+{
+  "state": "LIVE_SOURCE_FIX_QUOTATION_READBACK_PASSED",
+  "date": "2026-11-03",
+  "sourceSpreadsheet": "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
+  "sourceSheet": "NONFOOD",
+  "sourceRange": "F1963:F1965",
+  "changes": [
+    {
+      "cell": "F1963",
+      "before": "9551021171015 ",
+      "after": "9551021171015"
+    },
+    {
+      "cell": "F1964",
+      "before": "9551021171046 ",
+      "after": "9551021171046"
+    },
+    {
+      "cell": "F1965",
+      "before": "8880000869218 ",
+      "after": "8880000869218"
+    }
+  ],
+  "cause": "Exact XLOOKUP compares source trailing spaces with clean quotation barcode input; IFNA masked the mismatch as blank.",
+  "consumerSpreadsheet": "1YEw29TcD7p01gcA6PefaW5zhz00oXDXn6jMiOJ4Uoik",
+  "consumerSheet": "OCT26",
+  "restoredRows": [
+    320,
+    321,
+    322
+  ],
+  "checks": {
+    "sourceThreeCellsReadback": true,
+    "all330NonemptyQuotationBarcodesHaveDescription": true,
+    "canonicalDuplicateBarcodesAcrossThreePointbaseTabs": 0,
+    "sortValuesNearNewProductsUnchanged": true
+  },
+  "preserved": "Barcode digits, descriptions, pack sizes, quantity/price inputs, lookup formulas, sheet structure, scripts, permissions and Wix sync not changed. Only three source string values had one trailing space removed.",
+  "recovery": "Exact three original values above; private full cell evidence kept locally in handoff/pointbase-new-product-quotation-20261103/BEFORE.json, not uploaded with commercial cost data.",
+  "publication": {
+    "code": "No script or site code changed",
+    "github": "This scoped change record",
+    "pages": "Not applicable; static resources untouched",
+    "wix": "Not applicable; no synchronization or deployment invoked",
+    "liveSheets": "Three source cells and all330quotation descriptions read back successfully; native visual verification still pending"
+  },
+  "pausedWork": "Customer history,actual downloads andlong-termCMS remain paused per user. This task does not resume them."
+}
