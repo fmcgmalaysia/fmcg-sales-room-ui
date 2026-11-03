@@ -1,6 +1,7 @@
 <!doctype html><html lang="zh"><meta charset="utf-8"><title>CMS D04 · Purchase 读取缩减</title><style>body{font:16px/1.65 system-ui,sans-serif;color:#173955;max-width:1000px;margin:36px auto;padding:0 24px}h1{font-size:26px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd9e5;padding:10px;text-align:left}th{background:#eaf2fa}.note{background:#fff1db;padding:16px}</style>
 <h1>CMS D04 · Purchase 排除无关客户收款记录</h1>
-<p>2026-11-03 · 分支 perf/purchase-customer-account-read-20261103。当前：代码与离线验收完成；GitHub、Wix 与正式页状态见发布记录。长期 CMS 优化尚未全部完成。</p>
+<p>2026-11-03 · 分支 perf/purchase-customer-account-read-20261103。长期 CMS 优化尚未全部完成。</p>
+<table><tr><th>代码版本</th><td>bf2815c，GitHub PR 328，已同步</td></tr><tr><th>GitHub Pages</th><td>静态文件未改；三个 Purchase 资源在线哈希一致；部署权限未变</td></tr><tr><th>Wix Studio</th><td>单行修补完整读回一致，已取得 published and live 回执</td></tr><tr><th>正式页面验收</th><td>未完成。刷新一次后 about:blank；干净网址、嵌入引用正确，捕获错误为空。已停止重复刷新，并请求一次用户原书签访问；不重复部署或交易。</td></tr></table>
 <h2>本次最小改动</h2><p>只修改 purchaseWorkspace.web.js 的一个查询行，排除 CUSTOMER_ACCOUNT_DOCUMENT_SAVED 与 CUSTOMER_ACCOUNT_ALLOCATION_SAVED。两类记录仍保存在原 CMS，Finance 的收款及逐发票匹配读取不变。Purchase 的 45 个后台依赖未发现这两类事件的消费者；加入依赖检查，以便以后新增消费者时提示重新审核。</p>
 <p>没有删除记录、新建集合、月度截断、搬迁历史、改变库存账、价格、权限、财务锁定或保存回执。修改前 Wix 原件与 GitHub 规范化 SHA-256 一致：74e7b36cffb4fc6ea7841bbdde09e3d1c5ea50c70006d36bce15dc6bb2a9d82e。恢复点为 92505f0 中的原文件及 D03 已核对版本。</p>
 <h2>实际离线测量</h2><table><tr><th>附加客户收款事件</th><th>旧读取返回行数</th><th>新读取返回行数</th><th>完整业务结果</th></tr><tr><td>0</td><td>10</td><td>10</td><td>相同</td></tr><tr><td>1,001</td><td>1,011</td><td>10</td><td>相同</td></tr><tr><td>100,000</td><td>100,010</td><td>10</td><td>相同</td></tr></table><p>固定两任务内存场景；新查询均为 5 个返回页、0 写入。这是查询返回量，不能解释为 Wix 数据库只扫描 10 行，也不是线上速度或百万行容量证明。</p>

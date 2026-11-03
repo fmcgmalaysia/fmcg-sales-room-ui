@@ -18,14 +18,17 @@
     "specialized": 13
   },
   "release": {
-    "code": "COMPLETE",
-    "pages": "UNCHANGED_PENDING_HASH_CHECK",
-    "wix": "PENDING",
-    "public": "PENDING"
+    "code": "COMPLETE_PUSHED",
+    "pages": "UNCHANGED_THREE_PURCHASE_HASHES_MATCH",
+    "wix": "ONE_QUERY_LINE_EXACT_PUBLISHED_AND_LIVE",
+    "public": "PENDING_ABOUT_BLANK_AFTER_ONE_REFRESH_NO_CAPTURED_ERRORS"
   },
   "limits": [
     "Purchase other histories and save preparation still grow",
     "No measured Wix latency or index execution plan",
     "No million-row readiness claim"
-  ]
+  ],
+  "code": "bf2815c5d155b2720a376e33091ebef66b5caa4f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/328",
+  "permissions": "UNCHANGED_NO_DEPLOYMENT_PERMISSION_ADDED"
 }
