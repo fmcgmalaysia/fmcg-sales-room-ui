@@ -16,6 +16,16 @@ $w.onReady(async function () {
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
   assistCustomerId = getAssistCustomerId();
+  // Only files returned by the authorized history read may leave the embed.
+  const historyFiles = new Map();
+  function openHistoryFile(message) {
+    const saved = historyFiles.get(message.company);
+    if (!saved || saved.requestId !== message.requestId || saved.customerId !== message.customerId) return;
+    const file = saved.documents?.find(file => file.fileId === message.fileId && file.ready === true);
+    if (!file || !/^[A-Za-z0-9_-]{10,200}$/.test(file.fileId) || file.url !== 'https://drive.google.com/file/d/' + file.fileId + '/view') return;
+    wixLocationFrontend.to(file.url);
+  }
+  let historyCustomerId = '';
   let frameReady = false;
   let activeBuyerRoomView = 'my';
   let selectionDownloadUrl = '';
@@ -93,6 +103,7 @@ $w.onReady(async function () {
       } else wixLocationFrontend.to('/buyer-room-login');
       return;
     }
+    if (historyCustomerId !== result.context.customerId) { historyFiles.clear(); historyCustomerId = result.context.customerId; }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
     const currentSelectionKey = JSON.stringify(result.myList || []);
     if (currentSelectionKey !== selectionDataKey) {
@@ -133,9 +144,13 @@ $w.onReady(async function () {
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
+    if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { openHistoryFile(message); return; }
     if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
       if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
+      const pending = {requestId:message.requestId, customerId:historyCustomerId};
+      historyFiles.set(message.company, pending);
       try { const result = await getBuyerTransactionHistory(message.company, assistCustomerId);
+        if (historyFiles.get(message.company) === pending && result.company === message.company && result.customerId === historyCustomerId && result.customerId === pending.customerId) pending.documents = result.documents;
         frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:true, company:message.company, requestId:message.requestId, result}); }
       catch (error) { frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:false, company:message.company, requestId:message.requestId, error:error?.message || 'Transaction history could not be loaded.'}); }
       return;
@@ -254,7 +269,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261102-buyer-cbm-display-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261103-customer-file-parent-open-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.

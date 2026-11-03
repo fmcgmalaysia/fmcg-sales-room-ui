@@ -71,8 +71,17 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261102-customer-site-isolation-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261103-customer-file-parent-open-v1';
   const staffPromise = loadCurrentStaff();
+  // Only files returned by the authorized history read may leave the embed.
+  const historyFiles = new Map();
+  function openHistoryFile(message) {
+    const saved = historyFiles.get(message.company);
+    if (!saved || saved.requestId !== message.requestId || saved.customerId !== message.customerId) return;
+    const file = saved.documents?.find(file => file.fileId === message.fileId && file.ready === true);
+    if (!file || !/^[A-Za-z0-9_-]{10,200}$/.test(file.fileId) || file.url !== 'https://drive.google.com/file/d/' + file.fileId + '/view') return;
+    wixLocationFrontend.to(file.url);
+  }
   let currentDevice = 'UNKNOWN';
   let customerRefreshPromise;
   let routeQueuePromise;
@@ -481,8 +490,11 @@ $w.onReady(function () {
       catch (error) { salesRoom.postMessage({ type: 'SALES_ROOM_CONFIRMED_ORDERS', ok: false, error: error?.message || 'Incoming orders could not be loaded.' }); }
       return;
     }
+    if(message.type==='CUSTOMER_HISTORY_FILE_OPEN'){openHistoryFile(message);return;}
     if(message.type==='SALES_ROOM_SHIPMENT_REQUEST'){
-      try{const result=await salesRoomShipment(message.customerId,message.company,message.action,message.requestId,message.input);salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:true,result});}
+      const pending=message.action==='HISTORY'?{requestId:message.requestId,customerId:message.customerId}:null;
+      if(pending)historyFiles.set(message.company,pending);
+      try{const result=await salesRoomShipment(message.customerId,message.company,message.action,message.requestId,message.input);if(pending&&historyFiles.get(message.company)===pending&&result.company===message.company&&result.customerId===pending.customerId)pending.documents=result.documents;salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:true,result});}
       catch(error){salesRoom.postMessage({type:'SALES_ROOM_SHIPMENT_RESULT',requestId:message.requestId,company:message.company,ok:false,error:error?.message||'Shipment request could not be confirmed.'});}return;
     }
     if(['TASK_CHAT_LIST_REQUEST','TASK_CHAT_PAGE_REQUEST','TASK_CHAT_SAVE_REQUEST'].includes(message.type)){
