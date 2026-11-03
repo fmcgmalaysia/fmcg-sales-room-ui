@@ -6,7 +6,8 @@
   "recovery": {
     "static": "b5af6a1",
     "wixReferences": "e9ef924",
-    "freshBackendComparison": "Ten relevant Wix originals match the pre-change checkout after EOL/EOF normalization; exact originals retained in root handoff."
+    "freshBackendComparison": "Ten relevant Wix originals match the pre-change checkout after EOL/EOF normalization; exact originals retained in root handoff.",
+    "wixPageBaseline": "Approved release e9ef924; current three Wix pages freshly match it exactly. Working branch differs only in older version literals; those are advanced to this release without functional changes."
   },
   "rules": [
     "Only canonical successfully issued goods SI completes a delivery batch. Draft number, PDF upload, charge SI and payment are not completion triggers.",
@@ -60,7 +61,7 @@
     ],
     "additionalChecks": "13/13 targeted checks after adding recalled-list exclusion and old-request replay after second SI",
     "pages": "NOT_DEPLOYED",
-    "wix": "NOT_SYNCED",
+    "wix": "Nine backend drafts and three version-only page drafts match exactly; NOT PUBLISHED",
     "public": "NOT_VERIFIED"
   }
 }
