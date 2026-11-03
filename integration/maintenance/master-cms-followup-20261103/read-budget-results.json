@@ -1,0 +1,63 @@
+{
+  "type": "ISOLATED_ACTUAL_READER_WITH_PAGINATED_ADAPTER_NOT_LIVE_WIX",
+  "sourceSha256": "0f67968bcbc756f6e8ff319535c2f58ca112fff5c904604dec850632dd5cae7d",
+  "excludes": [
+    "Staff lookup internals",
+    "Customer short-name service internals",
+    "Network latency",
+    "Real polling frequency",
+    "Wix billing/credits",
+    "Full projection CPU (measured separately)"
+  ],
+  "results": [
+    {
+      "history": 335,
+      "activityPages": 1,
+      "workspaceCollectionPageReads": 5,
+      "theoreticalPageReadsPerVisibleHour": 1800
+    },
+    {
+      "history": 2000,
+      "activityPages": 2,
+      "workspaceCollectionPageReads": 6,
+      "theoreticalPageReadsPerVisibleHour": 2160
+    },
+    {
+      "history": 10000,
+      "activityPages": 10,
+      "workspaceCollectionPageReads": 14,
+      "theoreticalPageReadsPerVisibleHour": 5040
+    },
+    {
+      "history": 20000,
+      "activityPages": 20,
+      "workspaceCollectionPageReads": 24,
+      "theoreticalPageReadsPerVisibleHour": 8640
+    },
+    {
+      "history": 100000,
+      "activityPages": 100,
+      "workspaceCollectionPageReads": 104,
+      "theoreticalPageReadsPerVisibleHour": 37440
+    }
+  ],
+  "guards": {
+    "deniedBeforeQueries": true,
+    "invalidCompanyBeforeQueries": true,
+    "secondPageFailureRejectsWholeWorkspace": true,
+    "companyScopedPurchaseOrders": true,
+    "noWrites": true
+  },
+  "pollingAssumption": "Upper-bound arithmetic at an eligible refresh every10seconds; hidden/editing/pending guards and response duration lower actual frequency.",
+  "productionChanged": false,
+  "publicAcceptance": "Support and Warehouse fresh clean visits still blank; new build source correct; no errors captured; no business writes or redeployment",
+  "pending": [
+    "Real Desk30/22/8 acceptance",
+    "Purchase4480ab6 follow-up release",
+    "Measured live polling/network bytes",
+    "Dependency-safe historical read scope",
+    "Native PDF download",
+    "Mixed transport display",
+    "Mixed-source parent GP"
+  ]
+}
