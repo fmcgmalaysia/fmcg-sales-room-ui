@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-03",
+  "branch": "perf/purchase-customer-account-read-20261103",
+  "baseline": "92505f0",
+  "file": "integration/backend/purchaseWorkspace.web.js",
+  "beforeSha256": "74e7b36cffb4fc6ea7841bbdde09e3d1c5ea50c70006d36bce15dc6bb2a9d82e",
+  "afterSha256": "167fcf955baf19b2f2ef969c7fd85eaa4a8774b7a6ff75b8dd2188f5d0ebeca9",
+  "productionFilesChanged": 1,
+  "productionLinesChanged": 1,
+  "staticChanges": 0,
+  "newCollections": 0,
+  "productionBusinessWrites": 0,
+  "tests": {
+    "total": 177,
+    "passed": 175,
+    "baselineFailures": 2,
+    "newFailures": 0,
+    "specialized": 13
+  },
+  "release": {
+    "code": "COMPLETE_PUSHED",
+    "pages": "UNCHANGED_THREE_PURCHASE_HASHES_MATCH",
+    "wix": "ONE_QUERY_LINE_EXACT_PUBLISHED_AND_LIVE",
+    "public": "PENDING_ABOUT_BLANK_AFTER_ONE_REFRESH_NO_CAPTURED_ERRORS"
+  },
+  "limits": [
+    "Purchase other histories and save preparation still grow",
+    "No measured Wix latency or index execution plan",
+    "No million-row readiness claim"
+  ],
+  "code": "bf2815c5d155b2720a376e33091ebef66b5caa4f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/328",
+  "permissions": "UNCHANGED_NO_DEPLOYMENT_PERMISSION_ADDED"
+}

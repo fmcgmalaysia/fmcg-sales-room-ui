@@ -16,7 +16,7 @@ function request(f,serial,price=16,total=200,transportMode='SUPPLIER_DELIVER'){
  const row=f.workspace().tasks.find(row=>row.id===f.id);
  return {...f.base,requestId:String(serial).padStart(8,'0')+'-1111-4111-8111-111111111111',operation:'PLAN',input:{taskId:f.id,version:taskEditVersion(f.task()),planRevision:row.procurement.revision||'',totalCtn:total,transportMode,draftPlan:true,reason:'Offline diagnostic',costing:{schema:1,mode:'NORMAL',moneySource:'PRICES',paidCtn:total,freeCtn:0,prices:{lpPc:price/16,lpCtn:price,disc1:0,disc2:0,disc3:0}}}};
 }
-function setup(){
+function setup({workspaceSourceTransform=source=>source}={}){
  const f=factory(),queries=[],mutations=[];
  const rawQuery=collection=>{let predicates=[],limit=1000;const q={
   eq(k,v){predicates.push(row=>row[k]===v);return q;},ne(k,v){predicates.push(row=>row[k]!==v);return q;},
@@ -29,7 +29,7 @@ function setup(){
  const operations=fs.readFileSync(path.join(backend,'purchaseOperations.web.js'),'utf8');
  f.store.all=vm.runInNewContext(operations.slice(operations.indexOf('const options='),operations.indexOf('const operate='))+'\nstore.all;',{wixData:{query:rawQuery}});
  for(const method of ['insert','update','remove']){const original=f.store[method];f.store[method]=async(...args)=>{const result=await original(...args);mutations.push({method,collection:args[0],action:args[1]?.action||null});return result;};}
- const source=fs.readFileSync(path.join(backend,'purchaseWorkspace.web.js'),'utf8').replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');
+ const source=workspaceSourceTransform(fs.readFileSync(path.join(backend,'purchaseWorkspace.web.js'),'utf8')).replace(/^import[^\n]+\r?\n/gm,'').replace(/^export /gm,'');
  const bindings=Object.assign({},...['purchaseProjection.js','purchaseProgress.js','purchaseOrderWorkflow.js','purchaseMarginRefresh.js','purchaseReceiptInfo.js','purchaseOperationJournal.js'].map(loadName=>load(loadName)));
  const read=vm.runInNewContext(source+'\ngetPurchaseWorkspace',{...bindings,webMethod:(_p,fn)=>fn,Permissions:{SiteMember:1},wixData:{query:rawQuery},getPurchaseStaffContext:async()=>f.base.staff,readCustomerShortNames:async ids=>ids.map(customerId=>({customerId,shortName:'TEST'}))});
  return Object.assign(f,{queries,mutations,read});
