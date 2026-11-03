@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { normalizeChargeLines } from 'backend/customerInvoicePayments.js';
-import { readSupportDesks, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { readSupportDesks, currentSupportDeskState, currentSupportDeskLocks, supportDeskBatchId, invoiceDeskSnapshot } from 'backend/supportDesk.js';
 import { deskTaskPortions } from 'backend/shortloadResolutionModel.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 const ACTION='SUPPORT_DOCUMENT_UPLOADED',codes=['SO','BC','SI','DO','CN','DN','PL','INS','CF','BL','$'];
@@ -11,6 +11,16 @@ const typeFor=code=>'SUPPORT_'+(code==='$'?'PAYMENT':code);
 const text=value=>String(value??'').trim();
 const financialCodes=['$','CN','DN'];
 const isCharge=doc=>doc.invoiceKind==='CHARGE'&&doc.code==='SI'&&doc.scope==='INVOICE'&&doc.orderId==='';
+export function supportDocumentMatchesShipment(document,shipment,activity,snapshot=invoiceDeskSnapshot(activity,shipment.id)){
+ if(document.customerId!==shipment.customerId||document.company!==shipment.company)return false;
+ if(document.invoiceId)return document.invoiceId===shipment.id;
+ if(!shipment.lines.some(line=>line.orderId===document.orderId))return false;
+ if(document.scope==='ORDER')return true;
+ if(document.scope!=='DESK'||document.desk!==shipment.desk)return false;
+ if(!snapshot)return false;
+ const initial=supportDeskBatchId({company:shipment.company,customerId:shipment.customerId},shipment.desk);
+ return (document.batchId||initial)===(snapshot.batchId||initial);
+}
 export function readSupportDocuments(activity,company){
  if(!['NCT','GHR'].includes(company))throw Error('Select NCT or GHR.');
  const docs=activity.filter(row=>row.action===ACTION&&row.result==='SAVED').map(row=>row.details?.document);
@@ -58,13 +68,17 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
    const context=await readContext(company,staff),docs=readSupportDocuments(context.activity,company);
    if(context.company!==company||!/^[a-f0-9]{32}$/.test(input.version||''))throw Error('Documents changed. Refresh before uploading.');
    const preparedVersion=supportDocumentVersion(context);
-   const customerScope=input.scope==='CUSTOMER'||charge,deskScope=input.scope==='DESK',deskState=deskScope?readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId):null,deskLock=deskScope?readSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===input.desk):null;
+   const customerScope=input.scope==='CUSTOMER'||charge,deskScope=input.scope==='DESK',storedDesk=deskScope?readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId):null,deskState=storedDesk&&currentSupportDeskState(context,storedDesk),deskLock=deskScope?currentSupportDeskLocks(context).find(row=>row.customerId===input.customerId&&row.desk===input.desk):null;
+   const invoiceCandidates=deskScope?readCustomerShipments(context.activity).filter(row=>row.customerId===input.customerId&&row.company===company&&row.desk===input.desk&&row.invoice&&row.lines.some(line=>line.orderId===input.orderId)):[];
+   const historicalInvoice=deskScope?(input.invoiceId?invoiceCandidates.find(row=>row.id===input.invoiceId):!input.batchId&&input.code==='SI'&&invoiceCandidates.length===1?invoiceCandidates[0]:null):null;
+   const historicalDesk=historicalInvoice&&invoiceDeskSnapshot(context.activity,historicalInvoice.id),initialBatch=supportDeskBatchId({company,customerId:input.customerId},input.desk),batchId=deskScope?(historicalDesk?.batchId||historicalDesk&&initialBatch||deskState&&supportDeskBatchId(deskState,input.desk)):null;
+   if(deskScope&&(!batchId||input.invoiceId&&!historicalDesk||(input.batchId||initialBatch)!==batchId))throw Error('This Desk batch is unavailable or changed. Reopen the intended batch before uploading.');
    const directory=customerScope&&readCustomers?await readCustomers({company,staff}):null;if(customerScope&&(!directory||directory.company!==company||!Array.isArray(directory.customers)))throw Error('Customer directory is unavailable.');
    const flows=deskScope?readPhysicalOutflows(context.activity):[];
-   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.specialPurchase&&!row.procurementSource&&(deskScope?deskTaskPortions(context.activity,deskState,row,flows).some(part=>part.desk===input.desk&&part.quantity>0):row.orderId===input.orderId)),customer=(customerScope?directory.customers:context.customers).find(row=>row.id===input.customerId);
+   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.specialPurchase&&!row.procurementSource&&(deskScope?historicalInvoice?historicalInvoice.lines.some(line=>line.taskId===row.id):deskTaskPortions(context.activity,deskState,row,flows).some(part=>part.desk===input.desk&&part.quantity>0):row.orderId===input.orderId)),customer=(customerScope?directory.customers:context.customers).find(row=>row.id===input.customerId);
    if(!customer||!customerScope&&!tasks.length)throw Error('This customer order is unavailable.');
    if(deskScope&&!tasks.some(row=>row.orderId===input.orderId))throw Error('This order is not assigned to the selected Desk.');
-   const invoice=!charge&&(input.scope==='INVOICE'||deskScope)?readCustomerShipments(context.activity).find(row=>row.id===(deskScope?deskLock?.invoiceId:input.invoiceId)&&row.customerId===input.customerId&&row.company===company&&row.invoice&&row.lines.some(line=>line.orderId===input.orderId)):null;
+   const invoice=historicalInvoice||(!charge&&(input.scope==='INVOICE'||deskScope)?readCustomerShipments(context.activity).find(row=>row.id===(deskScope?deskLock?.invoiceId:input.invoiceId)&&row.customerId===input.customerId&&row.company===company&&row.invoice&&row.lines.some(line=>line.orderId===input.orderId)):null);
    if(!charge&&(input.scope==='INVOICE'&&!invoice||input.code==='SI'&&!invoice))throw Error('Issue the Sales Invoice before attaching its PDF.');
    const currencies=new Set(customerScope?[customer.currency]:tasks.map(row=>row.transactionCurrency));if(currencies.size!==1||!(/^[A-Z]{3}$/).test([...currencies][0]||''))throw Error('Order currency requires review.');
    const reference=invoice&&input.code==='SI'?invoice.invoice.number:text(input.reference);
@@ -73,11 +87,11 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
    const replaces=input.replacesDocumentId?docs.find(d=>d.id===input.replacesDocumentId):null,posted=context.activity.filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED').map(row=>row.details?.document);
    if(input.replacesDocumentId&&(!replaces||replaces.superseded||!financialCodes.includes(input.code)||replaces.customerId!==input.customerId||replaces.code!==input.code||replaces.scope!==input.scope||replaces.orderId!==input.orderId||replaces.invoiceId!==invoiceId||replaces.desk!==(deskScope?input.desk:undefined)||posted.some(d=>d&&(d.sourceDocumentId===replaces.id||d.fileId===replaces.fileId||d.sha256===replaces.sha256))))throw Error('Only an unrecorded current proof can be replaced.');
    if((financialCodes.includes(input.code)||charge)&&(docs.some(d=>(financialCodes.includes(d.code)||isCharge(d))&&d.sha256===sha256)||posted.some(d=>d?.sha256===sha256)))throw Error('This proof is already recorded or attached. Review the existing file.');
-   if(docs.some(d=>d.code===input.code&&d.scope===input.scope&&d.customerId===input.customerId&&(deskScope?d.desk===input.desk:d.orderId===input.orderId&&d.invoiceId===invoiceId)&&d.sha256===sha256))throw Error('This PDF is already attached to the order.');
+   if(docs.some(d=>d.code===input.code&&d.scope===input.scope&&d.customerId===input.customerId&&(deskScope?d.desk===input.desk&&(d.batchId||initialBatch)===batchId:d.orderId===input.orderId&&d.invoiceId===invoiceId)&&d.sha256===sha256))throw Error('This PDF is already attached to the order.');
    const id=operationId(company,requestId,staff.memberId,ACTION),allocated=await documentService({action:'ALLOCATE',company});
    if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('File allocation is not confirmed.');
    const at=now().toISOString(),clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,80),name=at.slice(0,10)+' '+clean(customer.name)+' '+(input.code==='$'?'PAYMENT':input.code)+' '+clean(reference||input.orderId)+'.pdf';
-   const document={id,company,customerId:input.customerId,customerName:customer.name,customerDeliveryVersion:1,customerLinkReady:true,orderId:input.orderId,scope:input.scope,invoiceId,...(deskScope?{desk:input.desk}:{}),...(replaces?{replacesDocumentId:replaces.id}:{}),...(input.code==='$'?{depositPayment:input.depositPayment===true}:{}),code:input.code,reference,currency:[...currencies][0],amountCents:input.code==='SI'&&!charge?invoice.invoice.amountCents:input.amountCents,...(charge?{invoiceKind:'CHARGE',chargeLines}:{}),fileId:allocated.fileId,sha256,size:bytes.length,name,at,by:staff.staffName,byStaffId:staff.staffId,url:'https://drive.google.com/file/d/'+allocated.fileId+'/view'};
+   const document={id,company,customerId:input.customerId,customerName:customer.name,customerDeliveryVersion:1,customerLinkReady:true,orderId:input.orderId,scope:input.scope,invoiceId,...(deskScope?{desk:input.desk,batchId}:{}),...(replaces?{replacesDocumentId:replaces.id}:{}),...(input.code==='$'?{depositPayment:input.depositPayment===true}:{}),code:input.code,reference,currency:[...currencies][0],amountCents:input.code==='SI'&&!charge?invoice.invoice.amountCents:input.amountCents,...(charge?{invoiceKind:'CHARGE',chargeLines}:{}),fileId:allocated.fileId,sha256,size:bytes.length,name,at,by:staff.staffName,byStaffId:staff.staffId,url:'https://drive.google.com/file/d/'+allocated.fileId+'/view'};
    return {version:preparedVersion,upload:{action:'UPLOAD',company,department:'SUPPORT',type:typeFor(input.code),poId:id,fileId:allocated.fileId,name,sha256,customerId:input.customerId,customerName:customer.name,customerScope:input.scope,businessId:invoiceId||input.orderId},event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support attached '+input.code,details:{document}}};
   },apply:async plan=>{
    const existing=await store.read(names[company].activity,plan.event._id);

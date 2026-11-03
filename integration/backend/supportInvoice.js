@@ -56,7 +56,7 @@ export function createSupportInvoiceOperations({store,names,readContext,saveFulf
    await reserveSupportDeskInvoice({store,names,context,staff,requestId,input:normalized,digest,snapshot:desk,now});
    const scoped=desk&&normalized.lines.some(line=>state.deskLines.some(row=>row.taskId===line.taskId&&row.desk===desk.number));
    const at=now().toISOString(),date=new Date(now().getTime()+8*60*60*1000).toISOString().slice(0,10),select={action:'SELECT',customerId:input.customerId,lines:normalized.lines,...(scoped?{desk:desk.number}:{}),version:shipmentVersion(context),reason:'Support selected confirmed loading for Sales Invoice '+normalized.number};
-   const shipmentDetails=desk?readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)?.shipments.find(row=>row.desk===desk.number):null;
+   const shipmentDetails=desk?.shipment||null;
    const record={_id:id,title:id,description:input.orderId,image:input.customerId,action:INTENT,result:'PREPARED',actorType:'STAFF',activityTime:new Date(at),initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support prepared Sales Invoice',details:{digest,memberId:staff.memberId,requestId,...(desk?{desk}:{}),customerDetails:{transport:shipmentDetails?.transport||'',departureDate:shipmentDetails?.departureDate||''},select,invoice:{action:'INVOICE',number:normalized.number,date,amountCents,reason:'Support issued Sales Invoice '+normalized.number}}};
    try{intent=await store.insert(collection,record);}catch(error){intent=await store.read(collection,id);if(!intent)throw error;}
   }

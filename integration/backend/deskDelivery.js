@@ -1,6 +1,6 @@
 import { warehouseCbm } from 'backend/warehouseCbm.js';
 import { changePackingList, packingAvailability } from 'backend/packingListModel.js';
-import { readSupportDesks, supportDeskForTask, readSupportDeskLocks } from 'backend/supportDesk.js';
+import { readSupportDesks, supportDeskForTask, currentSupportDeskLocks, currentSupportDeskState, supportDeskBatchId } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { shortloadStatus, deskTaskPortions } from 'backend/shortloadResolutionModel.js';
@@ -11,9 +11,9 @@ const issues=['DAMAGED','INSUFFICIENT','OTHER'];
 const labels={DAMAGED:'Damaged goods',INSUFFICIENT:'Not enough stock',OTHER:'Other'};
 export function planDeskDelivery({context,input,actor,id,revision,at}){
  if(actor!=='SUPPORT'||!context.physicalContext||!Number.isSafeInteger(input.desk)||input.desk<1||input.desk>3)throw Error('Desk delivery requires Support and Desk 1, 2 or 3.');
- const physical=context.physicalContext,state=readSupportDesks(physical.activity,physical.company).find(row=>row.customerId===input.customerId);
+ const physical=context.physicalContext,storedState=readSupportDesks(physical.activity,physical.company).find(row=>row.customerId===input.customerId),state=storedState&&currentSupportDeskState(physical,storedState);
  if(!state||state.revision!==input.deskRevision)throw Error('Desk classification changed. Refresh before sending to Warehouse.');
- if(readSupportDeskLocks(physical).some(row=>row.customerId===input.customerId&&row.desk===input.desk))throw Error('This Desk is locked by its Sales Invoice.');
+ if(currentSupportDeskLocks(physical).some(row=>row.customerId===input.customerId&&row.desk===input.desk))throw Error('This Desk is locked by its Sales Invoice.');
  if(context.lists.some(list=>list.customerId===input.customerId&&list.desk?.number===input.desk&&['SENT','PROCESSING'].includes(list.status)))throw Error('This Desk already has an active Warehouse task.');
  const available=packingAvailability(context),tasks=physical.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.procurementSource&&!task.specialPurchase);
  const totals=new Map();for(const flow of readPhysicalOutflows(physical.activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);
@@ -27,7 +27,7 @@ export function planDeskDelivery({context,input,actor,id,revision,at}){
  const draft=changePackingList({input:{action:'CREATE',company:physical.company,customerId:input.customerId,currency:currencies[0],lines:selected.map(row=>({taskId:row.task.id,quantity:row.quantity}))},context,actor,id,revision,at});
  draft.desk={number:input.desk};
  const next=changePackingList({list:draft,input:{action:'SEND',revision},context,actor,id,revision,at});
- next.desk={number:input.desk,revision:state.revision,references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};
+ next.desk={number:input.desk,revision:state.revision,batchId:supportDeskBatchId(state,input.desk),references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};
  next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.supplyAllocation?.planned??task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:warehouseCbm(physical.company,task,physical.activity)};});
  return next;
 }
@@ -39,7 +39,7 @@ export function changeDeskDelivery({context,list,input,actor,id,revision,at}){
   return {...copy(list),status:'CANCELLED',revision,cancelledAt:at,cancelReason:input.reason.trim()};
  }
  if(actor!=='WAREHOUSE'||input.action!=='DESK_LOAD'||!qty(input.loaded))throw Error('Desk loading requires Warehouse and valid cumulative cartons.');
- if(!readSupportDesks(context.physicalContext.activity,context.company).some(state=>state.customerId===list.customerId&&state.deliveryHolds?.some(hold=>hold.desk===list.desk.number&&hold.listId===list.id)))throw Error('Desk delivery is no longer open to Warehouse. Refresh before confirming.');
+ if(!readSupportDesks(context.physicalContext.activity,context.company).map(state=>currentSupportDeskState(context.physicalContext,state)).some(state=>state.customerId===list.customerId&&state.deliveryHolds?.some(hold=>hold.desk===list.desk.number&&hold.listId===list.id)))throw Error('Desk delivery is no longer open to Warehouse. Refresh before confirming.');
  const current=list.lines.find(line=>line.taskId===input.taskId),codes=input.reasonCodes||[],note=typeof input.note==='string'?input.note.trim():'';
  const disposition=current&&shortloadStatus(context.physicalContext.activity,list,current);
  if(disposition?.revision&&((input.resolutionRevision||'')!==disposition.revision||input.loaded>disposition.maximum))throw Error('Desk remainder was resolved by Support. Refresh the authorized quantity before loading.');

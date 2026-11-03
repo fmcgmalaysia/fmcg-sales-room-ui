@@ -1,6 +1,7 @@
+import { invoiceDeskSnapshots } from 'backend/supportDesk.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { projectCustomerAccount } from 'backend/customerDebtor.js';
-import { readSupportDocuments, customerFileReady } from 'backend/supportDocuments.js';
+import { readSupportDocuments, customerFileReady, supportDocumentMatchesShipment } from 'backend/supportDocuments.js';
 import { readLoadedInvoiceRecords } from 'backend/customerLoadedRecords.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 
@@ -15,11 +16,11 @@ const file = (document, ready) => {
       CUSTOMER_RECEIPT: 'RECEIPT', DEBIT_NOTE: 'DN', CHARGE_INV: 'SI' })[document.type],
     number: document.number || document.reference || '', scope: document.scope || 'ACCOUNT',
     orderId: document.orderId || '', invoiceId: document.invoiceId || document.shipmentId || '',
-    ...(document.desk ? { desk: document.desk } : {}) };
+    ...(document.desk ? { desk: document.desk, ...(document.batchId?{batchId:document.batchId}:{}) } : {}) };
 };
 
 export function projectCustomerTransactionHistory(context, customerId) {
-  const { company, activity } = context;
+  const { company, activity } = context,deskSnapshots=invoiceDeskSnapshots(activity);
   if (!['NCT', 'GHR'].includes(company) || typeof customerId !== 'string' || !customerId || customerId.length > 100) {
     throw Error('Customer history identity is required.');
   }
@@ -45,7 +46,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
   const savedInputs=new Set(activity.map(event=>JSON.stringify([event.title,event.description]))),preparedByNumber=new Map();
   for(const event of activity)if(event.action==='SUPPORT_INVOICE_PREPARED'&&event.image===customerId&&event.details?.invoice?.number&&event.details?.customerDetails){const number=event.details.invoice.number,list=preparedByNumber.get(number)||[];list.push(event);preparedByNumber.set(number,list);}
   const transactions=invoices.filter(row=>row.kind==='CHARGE'||loadedIds.has(row.id)).map(row=>{
-    const source=shipments.find(shipment=>shipment.id===row.id),invoiceDocuments=documents.filter(doc=>doc.invoiceId===row.id||source&&!doc.invoiceId&&(doc.scope==='ORDER'&&source.lines.some(line=>line.orderId===doc.orderId)||doc.scope==='DESK'&&doc.desk===source.desk&&source.lines.some(line=>line.orderId===doc.orderId)));
+    const source=shipments.find(shipment=>shipment.id===row.id),invoiceDocuments=documents.filter(doc=>doc.invoiceId===row.id||source&&supportDocumentMatchesShipment({...doc,company,customerId},source,activity,deskSnapshots.get(source.id)||null));
     const related=entry=>({...entry,documents:documents.filter(doc=>doc.fileId===entry.fileId)});
     const prepared=(preparedByNumber.get(row.number)||[]).filter(event=>savedInputs.has(JSON.stringify([operationId(event._id,'SUPPORT_INVOICE_INPUT_SAVED'),row.id])));
     if(prepared.length>1)throw Error('Invoice shipment details require review.');
@@ -64,9 +65,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
         packing: line.packing, quantity: line.quantity, sellingPriceCtn: line.sellingPriceCtn,
         // Old invoice snapshots have no immutable weight/volume. Do not substitute current catalogue data.
         cbm: null, netKg: null, grossKg: null })),
-      documents: documents.filter(document => document.invoiceId === row.id ||
-        !document.invoiceId && document.scope === 'ORDER' && row.lines.some(line => line.orderId === document.orderId) ||
-        !document.invoiceId && document.scope === 'DESK' && document.desk === row.desk && row.lines.some(line => line.orderId === document.orderId))
+      documents: documents.filter(document => supportDocumentMatchesShipment({...document,company,customerId},row,activity,deskSnapshots.get(row.id)||null))
     })).sort((a, b) => String(b.recordedAt).localeCompare(String(a.recordedAt)) || a.id.localeCompare(b.id)),
     account: {
       balances: account.balances.filter(row => row.customerId === customerId).map(row => ({
