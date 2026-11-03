@@ -132,5 +132,14 @@
     "Actual daily row growth",
     "Measured end-to-end latency",
     "Atomicity/visibility mechanism for proposed current-state maintenance"
-  ]
+  ],
+  "historicalQuotaEvidence": {
+    "recordedAt": "2026-10-31T16:05:37.403Z",
+    "itemLimit": 10000,
+    "storageDisplay": "10 GB",
+    "usedItemsThen": 536,
+    "currentQuotaVerified": false,
+    "source": "handoff/master-cms-baseline-20261031/BASELINE.json"
+  },
+  "followup": "docs/reports/CMS_SAVE_BOUNDARIES_20261103.html; 13 current-code diagnostic observations and 10 existing recovery checks; not new-design acceptance."
 }

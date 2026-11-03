@@ -1,0 +1,493 @@
+{
+  "date": "2026-11-03",
+  "kind": "OFFLINE_CURRENT_CODE_DIAGNOSTIC",
+  "liveWrites": 0,
+  "productionCodeChanges": 0,
+  "adapter": "Existing in-memory fixture; immediate reads and unique-ID inserts. Not proof of Wix latency, replication or atomic transactions.",
+  "checks": [
+    {
+      "name": "Exact original request retry creates no additional rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "reads": {
+        "allCalls": [],
+        "allReturned": 0,
+        "pointReads": 1,
+        "writes": 0
+      }
+    },
+    {
+      "name": "Same request identity with changed input is rejected",
+      "status": "OBSERVED_AS_ASSERTED"
+    },
+    {
+      "name": "Identical costing under a new request currently creates business revisions",
+      "status": "OBSERVED_AS_ASSERTED",
+      "added": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_PRICE_SAVED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      }
+    },
+    {
+      "name": "Original request resumes after TASK_UPDATE_AFTER",
+      "status": "OBSERVED_AS_ASSERTED",
+      "interruptedRows": {
+        "ORDER_RECEIVED": 1,
+        "PURCHASE_OPERATION_PREPARED": 2,
+        "PURCHASE_PRICE_SAVED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 16,
+        "newPlanBlocked": true
+      },
+      "finalAddedPlanEvents": 1,
+      "note": "Caught exception with normal finally cleanup; not process termination."
+    },
+    {
+      "name": "Original request resumes after PLAN_EVENT_BEFORE",
+      "status": "OBSERVED_AS_ASSERTED",
+      "interruptedRows": {
+        "ORDER_RECEIVED": 1,
+        "PURCHASE_OPERATION_PREPARED": 2,
+        "PURCHASE_PRICE_SAVED": 2,
+        "PURCHASE_SOURCE_SHARES_SAVED": 2,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 16,
+        "newPlanBlocked": true
+      },
+      "finalAddedPlanEvents": 1,
+      "note": "Caught exception with normal finally cleanup; not process termination."
+    },
+    {
+      "name": "Original request resumes after RESULT_BEFORE",
+      "status": "OBSERVED_AS_ASSERTED",
+      "interruptedRows": {
+        "ORDER_RECEIVED": 1,
+        "PURCHASE_OPERATION_PREPARED": 2,
+        "PURCHASE_PRICE_SAVED": 2,
+        "PURCHASE_SOURCE_SHARES_SAVED": 2,
+        "PURCHASE_PLAN_SAVED": 2,
+        "PURCHASE_OPERATION_RESULT": 1
+      },
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 32
+      },
+      "finalAddedPlanEvents": 1,
+      "note": "Caught exception with normal finally cleanup; not process termination."
+    },
+    {
+      "name": "Original request resumes after RESULT_AFTER",
+      "status": "OBSERVED_AS_ASSERTED",
+      "interruptedRows": {
+        "ORDER_RECEIVED": 1,
+        "PURCHASE_OPERATION_PREPARED": 2,
+        "PURCHASE_PRICE_SAVED": 2,
+        "PURCHASE_SOURCE_SHARES_SAVED": 2,
+        "PURCHASE_PLAN_SAVED": 2,
+        "PURCHASE_OPERATION_RESULT": 2
+      },
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 32
+      },
+      "finalAddedPlanEvents": 1,
+      "note": "Caught exception with normal finally cleanup; not process termination."
+    },
+    {
+      "name": "Actual workspace handler query volume with 0 unrelated rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "historicalRows": 0,
+      "pages": 5,
+      "rowsReturned": 10,
+      "activityRows": 5,
+      "writes": 0,
+      "note": "Actual handler and business projections; simulated query adapter and external staff/name services. No measured Wix latency."
+    },
+    {
+      "name": "Actual workspace handler query volume with 1000 unrelated rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "historicalRows": 1000,
+      "pages": 6,
+      "rowsReturned": 1010,
+      "activityRows": 1005,
+      "writes": 0,
+      "note": "Actual handler and business projections; simulated query adapter and external staff/name services. No measured Wix latency."
+    },
+    {
+      "name": "Actual workspace handler query volume with 10000 unrelated rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "historicalRows": 10000,
+      "pages": 15,
+      "rowsReturned": 10010,
+      "activityRows": 10005,
+      "writes": 0,
+      "note": "Actual handler and business projections; simulated query adapter and external staff/name services. No measured Wix latency."
+    },
+    {
+      "name": "Save read amplification with 0 unrelated historical rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "budget": {
+        "historicalRows": 0,
+        "activeFixtureTasks": 2,
+        "allCalls": [
+          {
+            "method": "all",
+            "collection": "NCTOrders",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTTasks",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 7
+          },
+          {
+            "method": "all",
+            "collection": "SharedSuppliers",
+            "returned": 1
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 9
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 9
+          }
+        ],
+        "allReturned": 30,
+        "pointReads": 17,
+        "writes": 10
+      }
+    },
+    {
+      "name": "Save read amplification with 1000 unrelated historical rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "budget": {
+        "historicalRows": 1000,
+        "activeFixtureTasks": 2,
+        "allCalls": [
+          {
+            "method": "all",
+            "collection": "NCTOrders",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTTasks",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 1007
+          },
+          {
+            "method": "all",
+            "collection": "SharedSuppliers",
+            "returned": 1
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 1009
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 1009
+          }
+        ],
+        "allReturned": 3030,
+        "pointReads": 17,
+        "writes": 10
+      }
+    },
+    {
+      "name": "Save read amplification with 10000 unrelated historical rows",
+      "status": "OBSERVED_AS_ASSERTED",
+      "budget": {
+        "historicalRows": 10000,
+        "activeFixtureTasks": 2,
+        "allCalls": [
+          {
+            "method": "all",
+            "collection": "NCTOrders",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTTasks",
+            "returned": 2
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 10007
+          },
+          {
+            "method": "all",
+            "collection": "SharedSuppliers",
+            "returned": 1
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "PurchaseOrders",
+            "returned": 0
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 10009
+          },
+          {
+            "method": "all",
+            "collection": "NCTActivity",
+            "returned": 10009
+          }
+        ],
+        "allReturned": 30030,
+        "pointReads": 17,
+        "writes": 10
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "D01",
+      "severity": "UNNECESSARY_WRITE",
+      "summary": "Identical costing saved with fresh request creates business revisions despite unchanged task",
+      "added": {
+        "PURCHASE_OPERATION_PREPARED": 1,
+        "PURCHASE_PRICE_SAVED": 1,
+        "PURCHASE_SOURCE_SHARES_SAVED": 1,
+        "PURCHASE_PLAN_SAVED": 1,
+        "PURCHASE_OPERATION_RESULT": 1
+      }
+    },
+    {
+      "id": "D02",
+      "severity": "PARTIAL_STATE_VISIBLE_IN_PROJECTION",
+      "boundary": "TASK_UPDATE_AFTER",
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 16,
+        "newPlanBlocked": true
+      }
+    },
+    {
+      "id": "D02",
+      "severity": "PARTIAL_STATE_VISIBLE_IN_PROJECTION",
+      "boundary": "PLAN_EVENT_BEFORE",
+      "observed": {
+        "readSucceeded": true,
+        "taskLpCtn": 32,
+        "planAverage": 16,
+        "newPlanBlocked": true
+      }
+    }
+  ],
+  "readBudgets": [
+    {
+      "historicalRows": 0,
+      "activeFixtureTasks": 2,
+      "allCalls": [
+        {
+          "method": "all",
+          "collection": "NCTOrders",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTTasks",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 7
+        },
+        {
+          "method": "all",
+          "collection": "SharedSuppliers",
+          "returned": 1
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 9
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 9
+        }
+      ],
+      "allReturned": 30,
+      "pointReads": 17,
+      "writes": 10
+    },
+    {
+      "historicalRows": 1000,
+      "activeFixtureTasks": 2,
+      "allCalls": [
+        {
+          "method": "all",
+          "collection": "NCTOrders",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTTasks",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 1007
+        },
+        {
+          "method": "all",
+          "collection": "SharedSuppliers",
+          "returned": 1
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 1009
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 1009
+        }
+      ],
+      "allReturned": 3030,
+      "pointReads": 17,
+      "writes": 10
+    },
+    {
+      "historicalRows": 10000,
+      "activeFixtureTasks": 2,
+      "allCalls": [
+        {
+          "method": "all",
+          "collection": "NCTOrders",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTTasks",
+          "returned": 2
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 10007
+        },
+        {
+          "method": "all",
+          "collection": "SharedSuppliers",
+          "returned": 1
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "PurchaseOrders",
+          "returned": 0
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 10009
+        },
+        {
+          "method": "all",
+          "collection": "NCTActivity",
+          "returned": 10009
+        }
+      ],
+      "allReturned": 30030,
+      "pointReads": 17,
+      "writes": 10
+    }
+  ],
+  "sourceHashes": {
+    "purchaseOperations.js": "d355bc8746c27d55e9dc0a3dd1b4a8296defe185765a6a65c7bc9d7a6196bf0a",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "purchaseProjection.js": "c7d15c51d6ed941d32b6c3015647e148319bfed00b639d3d83d6b4a2bc49b08c",
+    "plannerAllocation.js": "7f836acbacdac1f6626802ea20e7e08e2c3a513117337d2e971b124caf5c380c"
+  },
+  "conclusion": "Original-request retry survives tested caught errors; same-value costing creates unnecessary events; current reads still depend on total history. See partial-state observations before considering a current-state cutover."
+}
