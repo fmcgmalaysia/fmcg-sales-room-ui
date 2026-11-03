@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-Hans"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS 当前状态：保存边界验证</title>
+<style>body{font:16px/1.65 system-ui,"Microsoft YaHei",sans-serif;background:#f4f7fa;color:#173650;margin:0}main{max-width:1120px;margin:auto;padding:30px}h1{font-size:28px}h2{font-size:21px;margin-top:28px}table{border-collapse:collapse;width:100%;background:white;margin:16px 0}th,td{padding:12px;border:1px solid #cbd9e5;text-align:left;vertical-align:top}th{background:#dfeaf4}.result{padding:18px;background:#eaf2ff;border-left:5px solid #2563eb}.limit{padding:16px;background:#fff1dc;border-left:5px solid #f58a00}a{color:#2563eb}code{overflow-wrap:anywhere}</style>
+<main><h1>已补齐采购当前读取的主要保存边界</h1><p>2026-11-03 · 基准 c1cfa56 · 离线分支 test/purchase-current-state-boundaries-20261103</p>
+<div class="result"><strong>结论：</strong>新的离线合同已通过 18 组列明验证，覆盖普通采购计划、开 PO、新增供应商、合并 PO、保存中断和跨月。上轮“漏掉保存中”和“新增 50 箱仍显示 200 箱”的候选缺陷已在这些场景中解决。<strong>尚未修改生产程序，不代表整个 CMS 已完成优化。</strong></div>
+<h2>这次怎样减少不必要的机制</h2><p>先测试了逐条给任务留下保存标记的方式，但合并 PO 在第一条标记后中断，会留下不完整的保护范围。这个失败实验保留在 <code>f15f86e</code>，不作为部署候选。</p>
+<p>最终实验沿用<strong>现有的一条原请求准备记录 PREPARED</strong>，在它首次保存时一并附上受影响根任务列表。这样同一张合并 PO 的所有任务，在同一次记录写入中被声明。没有另建业务日志、待办队列、库存账或新集合。</p>
+<ol><li>既有原请求准备记录与受影响任务列表一起保存；业务字段尚未写入。</li><li>沿用原程序保存价格、计划、份额或 PO。没有重算另一套业务数量。</li><li>读取只取该任务当前结果，并查与它有关的尚未完成请求。发现待完成请求时，按确定 ID 读取有限条原业务证据。</li><li>证据未齐：展示前一个已确认值并标明待恢复；证据齐全：即使当前结果写回尚未完成，也能确认新结果。</li><li>写入流程更新所有受影响任务的固定当前记录，随后把原 PREPARED 上的待完成任务列表清空，最后沿用原 RESULT 回执。历史记录和原请求身份保留。</li></ol>
+<p>读取本身没有补写、初始化、静默修复或退回全历史。期间若另一个保存改变了读取依据，明确要求重读，避免混用前后版本。已有业务计算与单事件解析函数仍是结果来源；实验只在核对真实前一版本后，以本地副本解析最新事件，没有改写历史事件。</p>
+<h2>已完成的场景</h2><table><tr><th>场景</th><th>结果</th></tr>
+<tr><td>普通 PLAN 与现有全历史结果比较</td><td>价格、采购计划、份额及成员一致。</td></tr>
+<tr><td>20 个保存中断位置</td><td>包含准备记录写入前后、任务价格前后、三类业务事件前后、当前结果更新前后、待完成列表清空前后、RESULT 前后；原请求恢复成功，重放不新增重复业务记录。</td></tr>
+<tr><td>新增来源 200＋50</td><td>正确返回 250 和两条来源；五个新增来源中断位置也通过。没有把原采购数量与新增来源混成未知值。</td></tr>
+<tr><td>开 PO 与合并 PO</td><td>开 PO 后版本一致；合并 PO 即使只写回第一条当前记录，另一条仍可据完整原请求证据读出正确结果。</td></tr>
+<tr><td>声明所有任务前后中断</td><td>PREPARED 写入前没有孤立标记；写入后所有关联任务都能发现同一请求，第二条任务不能绕过尚未完成的合并操作。</td></tr>
+<tr><td>并发保存</td><td>两个实际 PLAN 调用沿用原公司保存锁；受影响任务显示待恢复，不相关根任务仍可读取。</td></tr>
+<tr><td>完成事实后下一次保存</td><td>下一次写入在原公司锁内先补齐已确认结果的读取投射，再继续新的请求；不重做旧业务事件、不伪造旧 RESULT。</td></tr>
+<tr><td>旧任务整条更新</td><td>不会覆盖分离的当前记录。运输方式仅改变且价格未变时仍读到新运输方式；旧价格覆盖则明确停止，不能冒充已确认。</td></tr>
+<tr><td>读取过程中发生提交</td><td>检测到前后依据变化，返回重读要求，不返回混合版本。</td></tr>
+<tr><td>公司、缺失记录与证据矛盾</td><td>错误公司、缺失当前记录、原业务事实被改动均明确拒绝；不会默认 0。</td></tr>
+<tr><td>10 月 31 日到 11 月 1 日</td><td>真实内存 PLAN 保存跨月运行；上月未变化计划仍可见，新月修订按原请求更新，没有日期截断。</td></tr></table>
+<h2>程序突然结束的边界</h2><p>另有三组模型测试：准备记录、任务字段、最后业务事件写完时，模拟清理不能运行，再把已持久化数据载入新执行环境。待恢复/已确认状态仍正确，原锁仍保留。<strong>原程序的 PLAN 锁在这种情况下仍阻止继续保存</strong>；本轮没有新增超时删锁、抢锁或自动接管。此项验证的是安全状态保留，不是宣称自动恢复能力已完成。</p>
+<p>另一个既有边界已在未修改的原程序与候选中同时复现：旧请求已完成业务事实但缺少 RESULT，随后另一次保存改了价格，再重试旧请求，会被原有版本保护拒绝。最新价格保留，不会回滚；本轮没有把它冒充为已修复的自动恢复。</p><h2>读取量的实测范围</h2><table><tr><th>无关历史</th><th>稳定状态按 ID 读取</th><th>待完成请求查询</th><th>查询返回</th><th>读取时写入</th></tr>
+<tr><td>0</td><td>3 次：当前、任务、当前复核</td><td>2 次</td><td>0 条</td><td>0</td></tr><tr><td>1,000</td><td>3 次</td><td>2 次</td><td>0 条</td><td>0</td></tr><tr><td>100,000</td><td>3 次</td><td>2 次</td><td>0 条</td><td>0</td></tr></table>
+<p>还验证了<strong>确实有一个未完成请求</strong>的正例：三种历史规模均为 6 次按 ID 读取、2 次待完成查询（同一条请求前后各返回一次），结果一致，读取没有写入。不是通过永远返回空查询来制造提效结果。</p>
+<div class="limit">待完成查询在本实验中使用内存索引适配器；它不是已上线的 Wix 查询实现。官方文档确认支持标量数组索引和 hasSome，但仍须核对本站可用索引、字段结构及实际查询。没有测量线上延迟、物理扫描量或百万行容量；正常完整工作台和原保存准备也尚未脱离历史。</div>
+<h2>固定记录与增长代价</h2><p>实验在已有 NCT/GHR Activity 内，每个根任务保留一条固定当前记录，来源成员随同保存；不把当前记录塞进可能被整条更新的 Tasks。每次保存覆盖同一条，不按每次点击新增当前记录。尚未选择正式字段名或写入生产。</p>
+<table><tr><th>20 次实际内存 PLAN 修订</th><th>数量</th></tr><tr><td>原程序仍新增的 PREPARED、业务事实、RESULT</td><td>100 条，未删除或减少</td></tr><tr><td>两个根任务对应的当前记录</td><td>固定 2 条，不随修订数增加</td></tr><tr><td>额外当前记录更新</td><td>20 次</td></tr><tr><td>原 PREPARED 的待完成列表清空</td><td>20 次更新，不新增记录</td></tr></table>
+<p>因此，这条路线主要解决日常读取工作量；它不是减少历史容量的最终方案。不能以节省读取为由隐瞒额外写入，也不能删掉仍负责保存恢复的历史。后续减少冗余事件和归档容量需要独立证据。</p>
+<h2>最小字段及索引候选</h2><ul><li>现有 PREPARED 增加实验 <code>readStateSchema</code> 与 <code>pendingReadRoots</code>：列表非空表示仍需核对当前投射，全部写回后清空。不再同时保存重复的 pending 布尔值。</li><li>固定当前记录含公司、根任务、成员已确认结果、份额、原请求标识及一致性校验。只作内部采购读取结果，不包含独立付款或库存余额账。</li><li>候选查询为对 <code>pendingReadRoots</code> 做成员匹配并限制返回条数；该数组需要合适索引。出现多个未解决冲突时报告，不默默截断。</li></ul>
+<p>参考：<a href="https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/indexes-and-wix-data-collections">Wix 官方索引说明</a>明确列出 hasSome 及标量数组支持，并说明索引有额外存储和写入成本。<a href="https://support.wix.com/en/article/content-manager-adding-an-index-for-your-collection">CMS 索引配置说明</a>说明配额取决于套餐。这里没有假定本站已经存在该索引，也没有创建索引。</p>
+<h2>上线前还缺什么</h2><ol><li>覆盖会影响同一状态的其他现有入口，包括旧编辑、成本补抓、特殊采购、新订单接收等。不能只上 PLAN/PO/ADD_SOURCE，然后让其他入口产生旧状态。</li><li>核对正式 Wix 原件与对应消费者，验证真实索引、请求数量和页面表现；保持权限、财务锁定、库存、Loaded 和客户接口原样。</li><li>准备现有记录的只读初始化预览：缺失、未完成或矛盾的项目不能自动确认为正常。具体存储写入与启用范围需另行批准。</li><li>固定当前记录的读取只是采购计划的一部分；完整任务发现、库存来源、借还、Loaded、隔离和财务各有权威依赖，不能以本报告声称全站不再读取历史。</li></ol>
+<p>下一步应把其余采购写入入口和正式索引证据补齐，形成可审查的精确生产补丁与初始化清单。旧锁自动接管属于另一项行为改变，不擅自混入这次读取优化。</p>
+<h2>交付与发布状态</h2><ul><li>代码：本轮只有离线脚本、结果、报告及交接记录；生产 backend 变化 0。</li><li>GitHub Pages：未改变。</li><li>Wix Studio：未改草稿或发布，正式 CMS 写入 0。</li><li>正式页：本轮没有上线候选；此前 D04 只读验收保持已通过，长期 CMS 验收仍未完成。</li></ul>
+<p><a href="../../integration/prototypes/cms-read-review-20261103/current-state-boundaries-results.json">18 组结果与源码哈希</a> · <a href="CMS_CURRENT_PLAN_CONTRACT_20261103.html">上一轮被否决的最简候选</a></p>
+</main></html>
