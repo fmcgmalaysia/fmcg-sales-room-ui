@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>货仓列表读取优化 · 2026-11-04</title><style>body{font:16px/1.7 system-ui;color:#173750;background:#f3f6fa;margin:30px auto;max-width:1000px;padding:24px}main{background:white;padding:28px;border:1px solid #d1dce6}table{border-collapse:collapse;width:100%}th,td{padding:10px;border:1px solid #d1dce6;text-align:left}th{background:#e4edf5}</style><main>
+<h1>货仓列表读取优化</h1><p>2026-11-04 · 后台计算最小修改，无 CMS 数据写入或迁移。</p>
+<h2>实际发现</h2><p>getWarehouseOrders 调用 readWarehouseData 时，每次计算旧 preparation 明细，并逐任务寻找来源和读取 CBM；但公开返回早已固定 deliveryTasks:[]。新版 Delivery Task 通过自己的 Desk 接口读取。旧计算并非全部可删除：收货保存及 captureWarehouseCbm 仍调用相同私有读取器。</p>
+<h2>三个最小改动点</h2><p>只改 warehouseReceiving.web.js：私有读取器增加默认开启的 includePreparation 参数；原计算仅在该参数开启时执行；getWarehouseOrders 明确关闭它。默认路径及收货保存、CBM 补抓、身份校验、完整性保护、数量计算与输出过滤全部保留。不新增另一套库存逻辑。</p>
+<h2>验证</h2><p><strong>366/366 项检查通过，0 失败、0 跳过；其中 10 项新增。</strong>新测试加载实际后台函数，对修改前后完整公开返回进行等价比较，覆盖未开单、合并 PO、170+30 分批收货、重复提交、未完整合并的收货拦截、CBM 已有/缺失补抓、权限拒绝、NCT/GHR 隔离、CMS 失败及 2,005 条跨页历史。测试期间发现并修正测试夹具的 CBM 字段命名和测试表达式语法，未改业务规则。</p>
+<p>已有回归覆盖采购、收货、准备、财务、付款、分配、Desk、短装、借还及公司库存。测试清单沿用本轮合并 PO 保护回归，加本项测试及 Warehouse 读取恢复检查。原始结果在 handoff/warehouse-list-read-efficiency-20261104/regression.tap。</p>
+<h2>效果边界</h2><ul><li>列表请求的额外 preparation 计算从一次变为零；旧明细的逐任务 CBM 查询计算不再执行。</li><li>相同夹具返回值、CMS 查询次数、读取条数全部相同；未测量真实 Wix 端到端耗时，不承诺节省比例。</li><li>此项不是容量优化，也不是全历史读取解决方案；原 Activity 全读仍需另行治理。</li><li>未删除历史、回填关联、创建索引、放宽权限、重做收货或付款。静态资源不变，无需 Pages 部署权限。</li></ul>
+<h2>基准</h2><p>线上完整原件已通过 Wix 编辑器复制，与仓库逐字比较（统一 LF）：SHA256 90fbf1a778e4b936ffe2ffdc22aec309deece2d604e64f2ae432c05cab2baae5。原件与当前已部署保护代码保留于 6d46ae7；此提交只是恢复点，不冒充用户已验收新基准。</p>
+<h2>四阶段状态</h2><table><tr><th>阶段</th><th>状态</th></tr><tr><td>代码</td><td>三个改动点及场景测试完成；等待记录同步提交。</td></tr><tr><td>GitHub Pages</td><td>不变，沿用已核对的 warehouse-read-recovery-v1 静态入口。</td></tr><tr><td>Wix</td><td>待最小同步及完整读回、发布回执。</td></tr><tr><td>正式页</td><td>修改前已能读取8张完成采购单；待修改后核对。不能据本报告称发布完成。</td></tr></table>
+</main></html>

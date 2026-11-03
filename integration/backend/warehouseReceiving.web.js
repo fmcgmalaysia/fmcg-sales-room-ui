@@ -20,16 +20,16 @@ const store={
   remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
 };
 async function staffContext(){return requireWarehouseStaff(await currentMember.getMember({fieldsets:['FULL']}),await store.all('StaffMasterAccess'));}
-async function readWarehouseData(company,staff){
+async function readWarehouseData(company,staff,includePreparation=true){
   const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
   const [orders,tasks,activity,suppliers,records]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers'),store.all('PurchaseOrders')]);
   const workspace=projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
-  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,activity):null};})};
+  return {orders:projectWarehouseOrders({company,purchaseOrders:projectPurchaseOrders({company,workspace,records}),tasks:workspace.tasks,activity}),customerLines:projectWarehouseCustomerReadiness(workspace),deliveryTasks:includePreparation?projectPreparation({...workspace,activity}).map(item=>{const task=workspace.tasks.find(t=>t.id===item.taskId);return {...item,sourceLineId:task?.sourceLineId,cbmPerCtn:task?warehouseCbm(company,task,activity):null};}):[]};
 }
 async function readOrders(company,staff){return (await readWarehouseData(company,staff)).orders;}
 const operations=createWarehouseOperations({store,names:PURCHASE_COLLECTIONS,readOrders});
 export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>{
-  const staff=await staffContext(),{orders,customerLines,deliveryTasks}=await readWarehouseData(company,staff);let names=[];
+  const staff=await staffContext(),{orders,customerLines}=await readWarehouseData(company,staff,false);let names=[];
   try{names=await readCustomerShortNames([...new Set([...orders.flatMap(row=>row.customerIds||[row.customerId]),...customerLines.map(row=>row.customerId)])]);}catch(_){}
   return {company,staff:{staffId:staff.staffId,staffName:staff.staffName},deliveryTasks:[],customerLines:[],orders:orders.map(row=>projectWarehouseReceivingOrder({...row,fullCustomerName:row.customerName,customerName:(row.customers||[{id:row.customerId,name:row.customerName}]).map(customer=>names.find(item=>item.customerId===customer.id)?.shortName||customer.name).join(' / ')})),readAt:new Date().toISOString()};
 });
