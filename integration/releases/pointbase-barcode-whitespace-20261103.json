@@ -42,7 +42,7 @@
     "github": "This scoped change record",
     "pages": "Not applicable; static resources untouched",
     "wix": "Not applicable; no synchronization or deployment invoked",
-    "liveSheets": "Three source cells and all330quotation descriptions read back successfully; native visual verification still pending"
+    "liveSheets": "Three source cells,all330quotation descriptions andnativeGoogleSheetrows318-324 verified; later separate four-formula trim patch preserves every displayed result andtypedprice"
   },
   "pausedWork": "Customer history,actual downloads andlong-termCMS remain paused per user. This task does not resume them."
 }
