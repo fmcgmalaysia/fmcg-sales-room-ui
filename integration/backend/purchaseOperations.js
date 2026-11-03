@@ -1,7 +1,7 @@
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
-import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares, requireConfirmedProcurement } from 'backend/purchasePlan.js';
+import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares, requireConfirmedProcurement, confirmedPurchaseState } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
 import { preparePurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
@@ -12,10 +12,11 @@ const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
 const commercialSnapshot=(task,plan,order)=>({poNumber:task.ourPoNumber||'',quantity:plan.totalCtn??null,costing:copy(plan.costing),prices:Object.fromEntries(prices.map(key=>[key,task[key]??null])),cbmPerCtn:Number.isFinite(order.cbmCtn)?order.cbmCtn:null,amountCents:plan.costing?.amountCents??(Number.isSafeInteger(plan.totalCtn)&&prices.slice(1).every(key=>Number.isFinite(task[key]))?Math.round(plan.totalCtn*(task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3)*100):null)});
 export function createPurchaseOperations({store,now=()=>new Date()}) {
   const journal=createOperationJournal({store,now});
-  async function state(company,staff) {
+  async function state(company,staff,recoveringPoRequestId='') {
     const names=PURCHASE_COLLECTIONS[company];if(!names)throw Error('Select NCT or GHR.');
     const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
-    return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff})};
+    const confirmedState=recoveringPoRequestId?confirmedPurchaseState({company,tasks,activity,recoveringPoRequestId,recoveringPoActorMemberId:staff.memberId}):undefined;
+    return {names,orders,tasks,activity,suppliers,workspace:projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff,confirmedState})};
   }
   async function requireEditablePurchaseChanges(company,updates){
     const business=updates.filter(change=>change.planRevision!==undefined||Object.keys(change.patch).some(key=>key!=='rowPosition'));
@@ -217,7 +218,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       return {operation,updates,events,...(displayOrder?{displayOrder}:{}),time:now().toISOString()};
     },apply:async plan=>{
       const held=[];
-      if(plan.operation!=='PLAN')requireConfirmedProcurement(preparedWorkspace||(await state(company,staff)).workspace,plan.updates.map(change=>change.id));
+      if(plan.operation!=='PLAN')requireConfirmedProcurement(preparedWorkspace||(await state(company,staff,plan.operation==='PO'?requestId:'')).workspace,plan.updates.map(change=>change.id));
       if(plan.displayOrder){const current=(await state(company,staff)).workspace.purchaseDisplayOrder?.[plan.displayOrder.customerId];if(current?.version!==plan.displayOrder.beforeVersion)throw Error('Shipment row order changed while this save was pending. Refresh and review the retained draft.');}
       const started=now().getTime();
       const stillOwned=async taskId=>{const id=operationId(company,taskId,'COST_LOCK'),lock=await store.read(names.activity,id);if(started+90000<=now().getTime()||lock?.details?.requestId!==requestId||lock.details.actorMemberId!==staff.memberId)throw Error('Save time limit reached. Refresh and retry this same save.');};

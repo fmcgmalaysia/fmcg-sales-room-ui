@@ -55,15 +55,44 @@ export function planPurchaseShares(workspace,activity,rootId,taskId,totalCtn) {
 
 // Read-only recovery view over the existing journal and business events.
 const recoveryEvidenceError=()=>{throw Error('Procurement recovery evidence requires review.');};
-export function confirmedPurchaseState({company,tasks,activity}) {
+export function confirmedPurchaseState({company,tasks,activity,recoveringPoRequestId='',recoveringPoActorMemberId=''}) {
   if(!['NCT','GHR'].includes(company))recoveryEvidenceError();
-  const byId=new Map(),pending=[],omitted=new Set(),replacements=new Map(),complete=[];
+  const byId=new Map(),tasksById=new Map(tasks.map(task=>[task._id,task])),pending=[],omitted=new Set(),replacements=new Map(),complete=[];
   const unique=id=>{const matches=byId.get(id)||[];if(matches.length>1)recoveryEvidenceError();return matches[0];};
   for(const row of activity){const bucket=byId.get(row.title)||[];bucket.push(row);byId.set(row.title,bucket);}
   for(const prepared of activity){
-    if(prepared.action!=='PURCHASE_OPERATION_PREPARED'||prepared.details?.plan?.operation!=='PLAN')continue;
+    if(prepared.action!=='PURCHASE_OPERATION_PREPARED'||!['PLAN','PO'].includes(prepared.details?.plan?.operation))continue;
     const {requestId,actorMemberId,actorStaffId,plan}=prepared.details;
     if(unique(prepared.title)!==prepared||!requestId||!actorMemberId||prepared.title!==operationId(company+'/PURCHASE',requestId,actorMemberId))recoveryEvidenceError();
+    if(plan.operation==='PO'){
+      if(!Array.isArray(plan.updates)||!plan.updates.length||!Array.isArray(plan.events)||!plan.events.length||new Set(plan.updates.map(change=>change.id)).size!==plan.updates.length)recoveryEvidenceError();
+      const groups=[],affected=new Set(plan.updates.map(change=>change.id));let saved=0;
+      for(const change of plan.updates){
+        const assigned=plan.events.filter(event=>event.taskId===change.id&&event.action==='PURCHASE_PO_ASSIGNED');
+        if(!change.expected||assigned.length!==1||!assigned[0].after||assigned[0].after!==change.patch?.ourPoNumber||Object.keys(change.patch).some(key=>!['ourPoNumber','purchaseStage'].includes(key)))recoveryEvidenceError();
+      }
+      const eventIds=new Set();
+      for(const event of plan.events){
+        const change=plan.updates.find(row=>row.id===event.taskId),id=operationId(company,requestId,actorMemberId,event.taskId,event.action),actual=unique(id);
+        if(!change||!['PURCHASE_PO_ASSIGNED','PURCHASE_PLAN_SAVED'].includes(event.action)||eventIds.has(id))recoveryEvidenceError();eventIds.add(id);
+        if(actual){if(actual.action!==event.action||actual.result!=='SAVED'||actual.description!==change.orderId||actual.image!==change.lineId||actual.imageAltText!==change.id||actual.initiatedByStaffId!==actorStaffId||actual.details?.requestId!==requestId||Object.entries(event).some(([key,value])=>canonical(actual.details[key])!==canonical(value)))recoveryEvidenceError();saved++;}
+      }
+      // Complete facts remain confirmed even if RESULT was lost. Later task edits
+      // must not invalidate a completed historical assignment.
+      if(saved===plan.events.length)continue;
+      if(unique(operationId(prepared.title,'RESULT')))recoveryEvidenceError();
+      for(const change of plan.updates){
+        const task=tasksById.get(change.id),assigned=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PO_ASSIGNED');
+        if(!task||task.title!==change.id||task.description!==change.orderId||task.imageAltText!==change.lineId)recoveryEvidenceError();
+        groups.push({supplierId:task.supplierId,numbers:[assigned.before,assigned.after].filter(Boolean)});
+      }
+      // Only the owning journal apply may resume this exact prepared request.
+      // Its digest, company lock, task versions and financial locks still apply.
+      if(requestId===recoveringPoRequestId&&actorMemberId===recoveringPoActorMemberId)continue;
+      for(const task of tasks)if(groups.some(group=>group.supplierId===task.supplierId&&group.numbers.includes(task.ourPoNumber)))affected.add(task.title);
+      for(const id of affected){const task=tasksById.get(id);if(!task)recoveryEvidenceError();pending.push({operation:'PO',taskId:id,rootId:task.customerDemandTaskId||id,requestId});}
+      continue;
+    }
     if(plan.updates?.length!==1||!Array.isArray(plan.events)||!plan.events.length)recoveryEvidenceError();
     const change=plan.updates[0],saved=[];
     if(!change.expected||change.planRevision===undefined)recoveryEvidenceError();
@@ -96,6 +125,7 @@ export function confirmedPurchaseState({company,tasks,activity}) {
   const visible=activity.filter(row=>!omitted.has(row.title)),plans=new Map();
   const planFor=task=>{if(!plans.has(task.title))plans.set(task.title,readPurchasePlan(task,visible));return plans.get(task.title);};
   for(const item of pending){
+    if(item.operation==='PO')continue;
     if(planFor(replacements.get(item.taskId)).revision!==item.priorPlanRevision)recoveryEvidenceError();
     if(item.priorSharesRevision!==undefined&&readPurchaseShares(item.rootId,visible).revision!==item.priorSharesRevision)recoveryEvidenceError();
   }
