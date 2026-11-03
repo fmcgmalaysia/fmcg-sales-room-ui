@@ -18,7 +18,7 @@ async function all(query) {
 async function purchaseActivity(collection) {
   // Save/result recovery still reads its original receipts directly. The task
   // projection needs result receipts only for confirmed historical row ordering.
-  const rows = await all(wixData.query(collection).ne('action','PURCHASE_OPERATION_RESULT').or(wixData.query(collection).isEmpty('action')));
+  const rows = await all(wixData.query(collection).ne('action','PURCHASE_OPERATION_RESULT').ne('action','CUSTOMER_ACCOUNT_DOCUMENT_SAVED').ne('action','CUSTOMER_ACCOUNT_ALLOCATION_SAVED').or(wixData.query(collection).isEmpty('action')));
   const legacyResults = [...new Set(rows.filter(row=>row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.plan?.displayOrder).map(row=>operationId(row.title,'RESULT')))];
   for(let index=0;index<legacyResults.length;index+=100) rows.push(...await all(wixData.query(collection).hasSome('title',legacyResults.slice(index,index+100))));
   return rows;
