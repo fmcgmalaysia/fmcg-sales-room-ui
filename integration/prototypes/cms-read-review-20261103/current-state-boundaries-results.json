@@ -1,0 +1,239 @@
+{
+  "schema": 1,
+  "baseline": "c1cfa56",
+  "productionCodeChanges": 0,
+  "productionWrites": 0,
+  "checks": [
+    {
+      "id": "B01",
+      "observed": "Actual confirmed PLAN equals existing full-history oracle using fixed current record in offline Activity, without modifying Tasks."
+    },
+    {
+      "id": "B02",
+      "observed": "18 handled failures: PREPARED is never invisible, complete business facts stay confirmed before state publication, original request recovers without duplicate rows.",
+      "faults": [
+        {
+          "boundary": "BEFORE_STAGE",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_CURRENT_WRITE",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_CURRENT_WRITE",
+          "blocked": true,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_STAGE",
+          "blocked": true,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_OPERATION_PREPARED",
+          "blocked": true,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_OPERATION_PREPARED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_TASK",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_TASK",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_PRICE_SAVED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_PRICE_SAVED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_SOURCE_SHARES_SAVED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_SOURCE_SHARES_SAVED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_PLAN_SAVED",
+          "blocked": true,
+          "legacyPending": 1,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_PLAN_SAVED",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_COMMIT",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_COMMIT",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "BEFORE_PURCHASE_OPERATION_RESULT",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        },
+        {
+          "boundary": "AFTER_PURCHASE_OPERATION_RESULT",
+          "blocked": false,
+          "legacyPending": 0,
+          "recoveredSameRequest": true
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "observed": "Real ADD_SOURCE200+50 returns250 and both sources; exact retry adds no rows/current writes."
+    },
+    {
+      "id": "B04",
+      "observed": "Five ADD_SOURCE interruption boundaries retain old state until source acceptance; final complete facts are visible before publication."
+    },
+    {
+      "id": "B05",
+      "observed": "Real PO assignment updates the same confirmed state, including interruption after business facts; no stale task-version failure from v1."
+    },
+    {
+      "id": "B06",
+      "observed": "Two real concurrent PLAN calls preserve existing company lock; affected root pending, unrelated root readable."
+    },
+    {
+      "id": "B07",
+      "observed": "Reloading persisted rows with cleanup suppressed keeps pending/confirmed status correct. Hard-stopped PLAN remains blocked by existing lock: automatic write recovery is NOT solved.",
+      "cases": [
+        {
+          "boundary": "AFTER_STAGE",
+          "readBlocked": true,
+          "existingLockRetained": true,
+          "recovery": "BLOCKED_EXISTING_LOCK_NOT_STOLEN"
+        },
+        {
+          "boundary": "AFTER_TASK",
+          "readBlocked": true,
+          "existingLockRetained": true,
+          "recovery": "BLOCKED_EXISTING_LOCK_NOT_STOLEN"
+        },
+        {
+          "boundary": "AFTER_PURCHASE_PLAN_SAVED",
+          "readBlocked": false,
+          "existingLockRetained": true,
+          "recovery": "BLOCKED_EXISTING_LOCK_NOT_STOLEN"
+        }
+      ]
+    },
+    {
+      "id": "B08",
+      "observed": "Old whole-task writes cannot overwrite separate current metadata; unchanged-price transport stays correct, stale price overwrite stops explicitly."
+    },
+    {
+      "id": "B09",
+      "observed": "Writer committing between reader checkpoints causes explicit retry, not mixed old/new result. No automatic read-side write or history fallback."
+    },
+    {
+      "id": "B10",
+      "observed": "Stable one-root read uses3ID reads(current,task,current), zero history queries/writes with100000 unrelated records. Pending reads are bounded by current operation size, not retained history."
+    },
+    {
+      "id": "B11",
+      "observed": "Wrong company, absent current record and altered existing business evidence fail explicitly."
+    },
+    {
+      "id": "B12",
+      "observed": "Merged PO with first current root published and second root still pending remains readable from complete evidence; original request recovers both."
+    },
+    {
+      "id": "B13",
+      "observed": "REJECTED fan-out marker design: failure after marking first root but before PREPARED lets an unmarked second root change; original merged PO then fails version validation and first root stays pending. Need a single durable affected-root declaration, not multiple pre-markers."
+    }
+  ],
+  "growth": [
+    {
+      "unrelatedRows": 0,
+      "pointReads": 3,
+      "historyQueries": 0,
+      "writes": 0,
+      "responseHash": "866403ef28a41c503445ab80510fd883"
+    },
+    {
+      "unrelatedRows": 1000,
+      "pointReads": 3,
+      "historyQueries": 0,
+      "writes": 0,
+      "responseHash": "866403ef28a41c503445ab80510fd883"
+    },
+    {
+      "unrelatedRows": 100000,
+      "pointReads": 3,
+      "historyQueries": 0,
+      "writes": 0,
+      "responseHash": "866403ef28a41c503445ab80510fd883"
+    }
+  ],
+  "limitations": [
+    "Only PLAN/PO/ADD_SOURCE use experimental journal hooks; no production import or schema change.",
+    "Existing write preparation still loads history; this experiment only bounds the procurement state reader and final state publication.",
+    "Crash model suppresses cleanup and reloads persisted fixture rows; no distributed Wix crash or strong-read latency measurement.",
+    "Missing/inconsistent state stops; no automatic initialization or full-history fallback on reads.",
+    "Current record per root adds rows. It is an offline candidate, not an approved storage migration.",
+    "Other writers, initialization rollout, whole-page task discovery, inventory/financial dependencies and hard-stop lock recovery remain outside acceptance."
+  ],
+  "acceptance": {
+    "boundedPlanPoSourceContract": "REJECTED_MULTI_ROOT_MARKER_GAP",
+    "productionReady": false,
+    "remaining": [
+      "Atomic affected-root declaration before applying a multi-root operation",
+      "Other writers and new-order initialization",
+      "Hard-stop PLAN lock recovery",
+      "Live-original comparison, storage approval and migration preview",
+      "Full-page dependency/query and save-preparation growth"
+    ]
+  },
+  "sourceHashes": {
+    "purchaseOperations.js": "ba6f7c1684fdc2560ed3a559efd7298285becf34cde7e48e119fc897311156fb",
+    "purchaseSources.js": "ad4ee2babcf25847cbdd4b7dd34be548e008755697a4dfa8e52cabfce70fc4e6",
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "purchaseTaskIdentity.js": "5766827f1a8f715ecbe3fe0492d91980c5879e1ce9ad1ca3ed040c1ab4f8be12"
+  }
+}
