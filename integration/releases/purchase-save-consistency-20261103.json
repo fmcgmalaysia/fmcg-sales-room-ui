@@ -803,8 +803,9 @@
     "runUrl": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41638016059",
     "deploymentRules": "ORIGINAL_7_RESTORED",
     "wix": "PUBLISHED_AND_LIVE_CONFIRMED",
-    "public": "BLOCKED_EMPTY_EMBEDS_AFTER_RELOAD",
-    "publicDetails": "Purchase references 20261103-purchase-save-consistency-v1; all four departments show empty embedded content after one reload, captured error/warn logs empty. Pre-reload pages displayed existing records; this is not new-build acceptance. No repeated refresh, deployment or business writes."
+    "public": "READ_ONLY_PUBLIC_REGRESSION_PASSED",
+    "publicDetails": "User fresh Purchase tab loads new D02 build and LAW identity. Active Orders, ordinary supplier dialog open/Cancel, paid PO locked, GHR zero/NCT return passed. Finance and Warehouse stock10/reserved0/available5/isolated5; Finance valueMYR571.25. Warehouse completed receipts8; Support801 five invoices with prior payment states preserved. Four captured error logs empty. Pending-save interruption/recovery tested in isolation only; no production fault injection or business writes. Earlier empty iframe recovered without another deployment; root cause not established.",
+    "userAcceptance": "AWAITING_USER_BUSINESS_TEST"
   },
   "productionBusinessWrites": 0,
   "newCollections": 0
