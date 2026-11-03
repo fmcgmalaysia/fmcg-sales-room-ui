@@ -57,7 +57,7 @@
     "code": "0de7473_GITHUB_SYNCED_101_CHECKS_PASS",
     "pages": "RUN_336_41600753718_SUCCESS_101_MANIFEST_HASHES_3_CHANGED_RESOURCE_HASHES_MATCH",
     "wix": "TWO_EXACT_DRAFT_READBACKS_PUBLISHED_AND_LIVE",
-    "public": "SALES_SI_DOWNLOAD_USER_CONFIRMED_HASH_MATCH_BUYER_PAYMENT_PROOF_BACK_PENDING"
+    "public": "PARTIAL_SALES_SI_USER_VERIFIED_BUYER_HISTORY_AND_BACK_PASS_BUYER_PROOF_BLOCKED"
   },
   "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_RULE_REMOVED",
   "userVerifiedSalesDownload": {
@@ -68,5 +68,14 @@
     "sha256": "7ede46c9e922f72f1db4fa11a9ea52bce70e86acb0c3b89f36cc0826116f9d57",
     "newLocalDownloadMatchesOriginal": true,
     "scope": "Sales original SI download only; Buyer/payment proof/back remain to verify"
+  },
+  "buyerFailure": {
+    "userConfirmed": true,
+    "error": "ERR_BLOCKED_BY_RESPONSE",
+    "entry": "Sales iframe drawer window.open to Buyer assist",
+    "normalDirectSameFile": "USER_CONFIRMED_SUCCESS_1985_BYTES_ORIGINAL_SHA256_MATCH",
+    "sameFileId": "1kIEtDZ6vjyl0NPJMUC28ZcT5spsTTcmI",
+    "existingSharing": "anyone reader unchanged",
+    "next": "Scope approval to reuse existing parent Buyer entry in current tab; no business code changed"
   }
 }
