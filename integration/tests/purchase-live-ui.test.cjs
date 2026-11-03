@@ -65,7 +65,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', textContent:'', value:'NCT', open:false, dataset:{},
       classList:{ toggle(){},remove(){},add(){} }, insertAdjacentHTML(position,html){node('#dialogContent').innerHTML+=html;}, addEventListener(type,callback){ listeners.set(id+':'+type,callback); },
-      showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){} });
+      showModal(){ this.open=true; }, close(){ this.open=false; }, focus(){},setSelectionRange(){},querySelector(){return null;},contains(){return false;} });
     if(id==='#receiptStopOptions')nodes.get(id).querySelectorAll=()=>dialogFields;
     return nodes.get(id);
   }
@@ -78,7 +78,7 @@ function harness(storage,feedbackRows=[],signals=null,dialogFields=[],rowStorage
   const planner=fs.readFileSync(path.join(__dirname,'../backend/customerAllocationPlan.js'),'utf8').replace(/^export /gm,'');
   vm.runInNewContext('(()=>{'+planner+';window.customerAllocationPlan={quoteCustomerAllocation,planCustomerAllocation,planCustomerRepayment,planCustomerReturn,planCustomerReconciliation};})()',{window});
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../purchase-live/customer-allocation.js'),'utf8'),{window,document:{querySelector:selector=>node(selector)}});
-  vm.runInNewContext(source,{ window, document:{ querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')||selector==='input[name="receiptSupplierDecision"]:checked'?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
+  vm.runInNewContext(source,{ window, document:{ getElementById:id=>node('#dialogContent').innerHTML.includes('id="'+id+'"')?node('#'+id):null, querySelector:selector=>selector.startsWith('#planPrice-')&&!node('#dialogContent').innerHTML.includes('id="planPrice-')?null:node(selector), querySelectorAll:selector=>selector==='#taskRows tr[data-id],#taskRows tr[data-source-id]'||selector==='tr[data-ledger-search]'?feedbackRows:selector.startsWith('#dialogContent input')||selector==='input[name="receiptSupplierDecision"]:checked'?dialogFields:selector.includes("#taskRows .drop-target")||selector.includes("#taskRows .grip-down")?feedbackRows.filter(row=>["grip-down","dragging-row","drop-target"].some(name=>selector.includes("."+name)&&row.classes.has(name))):[], addEventListener(type,callback){
     const key='document:'+type;listeners.set(key,[...(listeners.get(key)||[]),callback]); } },
     crypto:{ randomUUID:()=>String(++count) }, btoa:binary=>Buffer.from(binary,'binary').toString('base64'),sessionStorage:storage,setTimeout:callback=>timers.push(callback),setInterval:callback=>intervals.push(callback), Date, Number, Map, Set });
   function reply(workspace,request=messages.at(-1),extra={}) {

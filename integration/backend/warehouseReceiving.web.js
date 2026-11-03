@@ -1,3 +1,4 @@
+import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import { currentMember } from 'wix-members-backend';
 import wixData from 'wix-data';
@@ -35,7 +36,7 @@ export const getWarehouseOrders=webMethod(Permissions.SiteMember,async company=>
 export const saveWarehouseReceipt=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await staffContext();
   try{return await operations.save({company,staff,requestId,input});}
-  catch(error){const message=String(error?.message||'');const safe=/^(Select a |Purchase order or receipts changed|A receipt line|Enter whole cartons|Accepted cartons|Enter a reason|Confirm that|Rejected carton|A save is still processing|Warehouse )/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing'),error:safe?message:'Receipt save could not be confirmed. Retry the same save. 收货保存尚未确认，请重试同一次保存。'};}
+  catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||'');const safe=/^(Select a |Purchase order or receipts changed|A receipt line|Enter whole cartons|Accepted cartons|Enter a reason|Confirm that|Rejected carton|A save is still processing|Warehouse )/.test(message);return {ok:false,requestId,retryable:!safe||message.startsWith('A save is still processing'),error:safe?message:'Receipt save could not be confirmed. Retry the same save. 收货保存尚未确认，请重试同一次保存。'};}
 });
 
 
@@ -48,7 +49,7 @@ export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(com
  const staff=await staffContext();
  if(['PACK','LOAD'].includes(input?.action))return {ok:false,requestId,retryable:false,error:'Warehouse use Delivery Task authorized by Support Desk. The old preparation entry is retired.'};
  try{return await savePreparation({company,staff:{...staff,canPrepareWarehouse:true},requestId,input});}
- catch(error){const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
+ catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};const message=String(error?.message||''),safe=message.startsWith('Warehouse ');return {ok:false,requestId,retryable:!safe||/unconfirmed|processing/.test(message),error:safe?message:'Warehouse save is unconfirmed. Retry the same save.'};}
 });
 
 const captureCbm=createWarehouseCbmCapture({store,names:PURCHASE_COLLECTIONS,readData:readWarehouseData,captureCosts:capturePointbaseCosts});

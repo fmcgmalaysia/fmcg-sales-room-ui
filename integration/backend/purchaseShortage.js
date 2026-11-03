@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 
 export function readShortage(taskId,activity){
@@ -18,7 +19,7 @@ export function createShortageOperations({store,names,readWorkspace,now=()=>new 
   if(!names[company]||input?.action!=='SHORTAGE')throw Error('Select a purchase shortage.');
   const collection=names[company].activity;
   return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{shortage:input},prepare:async()=>{
-   const workspace=await readWorkspace(company,staff),activity=await store.all(collection),row=workspace.tasks.find(row=>row.id===input.taskId);
+   const workspace=await readWorkspace(company,staff),activity=await store.all(collection),row=workspace.tasks.find(row=>row.id===input.taskId);requireConfirmedProcurement(workspace,[input.taskId]);
    if(!row||row.archived||!row.supplierId||!row.po)throw Error('An active supplier P.O. is required.');
    if(shortageVersion(row,activity)!==input.version)throw Error('Quantity or shortage decision changed. Refresh before saving.');
    if(!(row.ord-(row.inc||0)>0||row.warehouse?.issue))throw Error('This task has no outstanding quantity or receiving issue.');
@@ -30,7 +31,7 @@ export function createShortageOperations({store,names,readWorkspace,now=()=>new 
    return {expectedVersion:input.version,event:{_id:id,title:id,description:row.orderId,image:row.sourceLineId,imageAltText:row.id,action:'PURCHASE_SHORTAGE_DECIDED',result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:at,message:reason,details:{beforeRevision:prior?.revision||'',customerDecision:input.customerDecision,supplierDecision:input.supplierDecision,customerMessage,reason,expectedDate:input.expectedDate||null,shortCtn:Math.max(0,row.ord-(row.inc||0)),allocatedCtn:row.inc||0,financeRequired:prior?.financeRequired===true||input.financeRequired===true||row.warehouse?.issue===true||['REFUND','CREDIT'].includes(input.supplierDecision)}}};
   },apply:async plan=>{
    const existing=await store.read(collection,plan.event._id);
-   if(!existing){const workspace=await readWorkspace(company,staff),activity=await store.all(collection),row=workspace.tasks.find(row=>row.id===plan.event.imageAltText);if(!row||shortageVersion(row,activity)!==plan.expectedVersion)throw Error('Shortage decision changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
+   if(!existing){const workspace=await readWorkspace(company,staff),activity=await store.all(collection),row=workspace.tasks.find(row=>row.id===plan.event.imageAltText);requireConfirmedProcurement(workspace,[plan.event.imageAltText]);if(!row||shortageVersion(row,activity)!==plan.expectedVersion)throw Error('Shortage decision changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
    else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Shortage receipt conflict.');
    return {ok:true,company,requestId,taskId:plan.event.imageAltText,savedAt:plan.event.activityTime};
   }});

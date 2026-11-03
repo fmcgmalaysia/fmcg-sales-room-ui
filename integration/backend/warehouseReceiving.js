@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { allocatedTo, readAllocations } from 'backend/plannerAllocation.js';
 import { stockPosition } from 'backend/inventoryExceptions.js';
@@ -67,7 +68,7 @@ export function projectWarehouseOrders({company,purchaseOrders,tasks,activity}){
     const issue=lines.some(line=>line.issue),complete=lines.length>0&&lines.every(line=>line.remaining===0)&&!issue;
     const receivingTaskComplete=lines.length>0&&lines.every(line=>line.remaining===0&&!line.issue||stopped(line));
     const completionTimes=receivingTaskComplete?lines.map(line=>stopped(line)?.decision.at||receipt.lines.find(saved=>saved.taskId===line.taskId)?.at).filter(Boolean).sort():[];
-    return {id:po.id,company,number:po.number,correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
+    return {id:po.id,company,number:po.number,...(po.procurementSavePending?{procurementSavePending:true}:{}),correctionAllowed:!po.invoiceChecked&&!po.supplierAccount?.closed,selfCollect:po.selfCollect===true,shortageIssues:po.shortageIssues||[],shipmentDates:po.shipmentDates,supplierId:po.supplierId,supplierName:po.supplierName,supplierShortName:po.supplierShortName,customerName:po.customerName,customerId:po.customerId,customerIds:po.customerIds,customers:po.customers,createdAt:po.createdAt,createdBy:po.createdBy,
       version:operationId(po.id,po.contentVersion||po.version,po.supplierId,po.selfCollect===true,po.invoiceChecked===true,po.supplierAccount?.closed===true,receipt.revision,lines),revision:receipt.revision,lines,history:receipt.history.map(event=>({id:event.title,at:new Date(event.activityTime).toISOString(),by:event.initiatedByStaffName,lines:event.details.lines})),
       status:issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',itemCount:new Set(lines.map(line=>JSON.stringify([line.barcode,line.packing]))).size,pendingItems:new Set(lines.filter(line=>line.remaining>0||line.issue).map(line=>JSON.stringify([line.barcode,line.packing]))).size,
       completedAt:complete?receipt.history.at(-1)?.activityTime||null:null,workroomCompletedAt:completionTimes.at(-1)||null,receivingStoppedWaiting:receivingTaskComplete&&lines.some(line=>Boolean(stopped(line))),workroomStatus:po.invoiceChecked&&po.finance?.receiptResolved||receivingTaskComplete?'COMPLETE':issue?'ISSUE':complete?'COMPLETE':receipt.revision?'PARTIAL':'WAITING',approvedReceiptTarget:po.invoiceChecked&&po.finance?.receiptResolved?lines.reduce((n,line)=>n+line.accepted,0):null,documents:po.documents,stockCases:po.stockCases||[]};
@@ -80,6 +81,7 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
     if(!names[company]||!['RECEIVE','CORRECT'].includes(input?.action)||!Array.isArray(input.lines)||!input.lines.length||input.lines.length>300)throw Error('Select a purchase order and enter this delivery.');
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{warehouse:input},prepare:async()=>{
       const po=(await readOrders(company,staff)).find(row=>row.id===input.id);
+      requireConfirmedProcurement(po);
       if(!po||po.version!==input.version)throw Error('Purchase order or receipts changed. Refresh before saving; your input is retained.');
       const correcting=input.action==='CORRECT',activity=correcting?await store.all(names[company].activity):[];
       if(correcting&&(!po.revision||po.correctionAllowed===false))throw Error('Warehouse receipt is financially locked or has no saved delivery. Ask Finance to review before correction.');
@@ -110,6 +112,7 @@ export function createWarehouseOperations({store,names,readOrders,now=()=>new Da
       if(existing&&operationId(existing.details)!==operationId(plan.event.details))throw Error('Warehouse receipt identity conflict.');
       if(!existing){
         const current=(await readOrders(company,staff)).find(row=>row.id===plan.event.description);
+        requireConfirmedProcurement(current);
         if(current?.version!==plan.expectedVersion)throw Error('Purchase order or receipts changed. Refresh before saving; your input is retained.');
         await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});
       }

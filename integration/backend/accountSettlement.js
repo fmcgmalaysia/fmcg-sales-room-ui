@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
 import { createHash } from 'crypto';
@@ -61,7 +62,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
   return {save:async({company,staff,requestId,input})=>{
     if(!names[company]||!['CLOSE_ACCOUNT','REOPEN_ACCOUNT','DOCUMENT_ISSUE_REPORT','DOCUMENT_ISSUE_REVIEW','AMOUNTS','CN_NOT_APPLICABLE','CHECK','DOCUMENT_UPLOAD','PAYMENT_FILE_DELETE','PLAN','RECOGNIZE_CREDIT','SHORTAGE_CLAIM','PAYMENT_REVIEW','REVIEW_LEGACY','TAKE_OWNERSHIP','RETURN_PROCUREMENT','PAYMENT_PROCESSING','PAYMENT_UNKNOWN','PAYMENT_RESOLVED'].includes(input?.action))throw Error('Unsupported financial action.');
     if(input.action==='PAYMENT_FILE_DELETE')return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:input},prepare:async()=>{
-      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
+      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);requireConfirmedProcurement(row);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       const record=await store.read('PurchaseOrders',row.id),payment=record?.details?.finance?.payments?.find(p=>p.id===input.paymentId),proof=(payment?.proofs||[payment?.proof]).find(p=>p?.fileId===input.fileId);
       if(projectAccountSettlement(row,record?.details||{}).supplierAccount.closed)throw Error('Select Reopen account before changing a closed supplier account.');
@@ -74,7 +75,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
       if(!current?.details?.audit?.some(e=>e.id===plan.audit.id)){
-        const row=(await listOrders(company,staff)).find(r=>r.id===plan.record._id);if(row?.version!==plan.expectedVersion)throw Error('Purchase order changed while saving.');
+        const row=(await listOrders(company,staff)).find(r=>r.id===plan.record._id);requireConfirmedProcurement(row);if(row?.version!==plan.expectedVersion)throw Error('Purchase order changed while saving.');
         const receipt=await documentService(plan.trash);
         if(receipt?.ok!==true||receipt.trashed!==true||receipt.fileId!==plan.trash.fileId||receipt.sha256!==plan.trash.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.trash.name||receipt.type!=='PAYMENT')throw Error('Document deletion could not be confirmed. Retry the same deletion.');
         await store.update('PurchaseOrders',plan.record);
@@ -97,7 +98,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
       }
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{settlement:journalInput},prepare:async()=>{
-      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
+      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);requireConfirmedProcurement(row);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       if(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'&&!currentDocs(row).some(doc=>doc.type==='PO'))throw Error('Upload the P.O. before uploading a pay slip.');
       const record=await store.read('PurchaseOrders',row.id),details=record?.details||{},finance={...(details.finance||{})},at=now().toISOString(),reason=text(input.reason)||(input.action==='PLAN'?'Payment plan updated':'')||(input.action==='DOCUMENT_UPLOAD'&&input.type==='PAYMENT'?'Payment recorded':'');
@@ -219,7 +220,7 @@ export function createAccountSettlementOperations({store,names,listOrders,docume
     },apply:async plan=>{
       const current=await store.read('PurchaseOrders',plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.audit.id)){
-        const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);
+        const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);requireConfirmedProcurement(row);
         if((current?operationId(current):null)!==plan.expected||row?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(row)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');
         if(plan.upload?.type==='PAYMENT'&&!currentDocs(row).some(doc=>doc.type==='PO'))throw Error('Upload the P.O. before uploading a pay slip.');
         if(plan.upload){

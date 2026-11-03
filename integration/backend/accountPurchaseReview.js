@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { purchaseDocumentState } from 'backend/purchaseDocumentPolicy.js';
 import { projectAccountSettlement } from 'backend/accountSettlement.js';
@@ -23,7 +24,7 @@ export function createAccountReviewOperations({store,listOrders,names,now=()=>ne
   async function save({company,staff,requestId,input}) {
     if(!names[company]||input?.action!=='INVOICE_CHECK'||typeof input.enabled!=='boolean')throw Error('Unsupported Account action.');
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{accountReview:input},prepare:async()=>{
-      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);
+      const row=(await listOrders(company,staff)).find(row=>row.id===input.id);requireConfirmedProcurement(row);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       if(input.enabled===row.invoiceChecked)throw Error('Invoice check has not changed.');
       if(input.enabled&&!row.documents.some(doc=>doc.type==='INV'&&doc.linked===true&&!doc.superseded))throw Error('Final supplier Invoice is required before checking.');
@@ -40,7 +41,7 @@ export function createAccountReviewOperations({store,listOrders,names,now=()=>ne
       if(!current?.details?.audit?.some(event=>event.id===plan.event.id)){
         if((current?operationId(current):null)!==plan.expected)throw Error('Purchase order changed while saving.');
         // Recheck task costs/quantity/file state before recording the approval.
-        const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);
+        const row=(await listOrders(company,staff)).find(row=>row.id===plan.record._id);requireConfirmedProcurement(row);
         if(!row||invoiceReviewVersion(row)!==plan.record.details.invoiceCheck.reviewVersion)throw Error('Purchase order changed while saving.');
         if(current)await store.update('PurchaseOrders',plan.record);else await store.insert('PurchaseOrders',plan.record);
       }

@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { packingGuardVersion } from 'backend/packingListGuards.js';
 
@@ -52,6 +53,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
         if(!['CUSTOMER','REPAY','RETURN','RECONCILE'].includes(input.planMode))throw Error('Select a customer allocation action.');
         const prior=readAllocations(activity),context=customerAllocationContext(workspace,activity,prior,version);
         const result=input.planMode==='CUSTOMER'?planCustomerAllocation(context,input):input.planMode==='RETURN'?planCustomerReturn(context,input):input.planMode==='RECONCILE'?planCustomerReconciliation(context,input):planCustomerRepayment(context,input);
+        requireConfirmedProcurement(workspace,[input.taskId,...result.changes.flatMap(change=>[change.sourceTaskId,...change.targets.map(target=>target.taskId)])]);
         for(const change of result.changes){const source=context.sources.find(row=>row.id===change.sourceTaskId);if(!source||change.targets.reduce((n,target)=>n+target.quantity,0)>source.usableReceived)throw Error('Allocate no more than usable received stock.');for(const target of change.targets){const before=source.targets.find(row=>row.taskId===target.taskId);if(target.quantity<(before?.protectedQuantity||0))throw Error('Loaded or invoiced cartons cannot be removed.');}}
         const id=operationId(company,requestId,staff.memberId,'ALLOCATION'),at=now().toISOString();
         const changes=result.changes.map(change=>({...change,receivedTotalAtSave:context.sources.find(source=>source.id===change.sourceTaskId).receivedTotal,targets:change.targets.map(target=>{const task=workspace.tasks.find(row=>row.id===target.taskId),{protectedQuantity,...claim}=target;return {...claim,orderId:task.orderId,sourceLineId:task.sourceLineId,customerId:task.customerId};}),beforeRevision:prior.find(row=>row.sourceTaskId===change.sourceTaskId)?.revision||''}));
@@ -64,6 +66,7 @@ export function createPlannerAllocationOperations({store,names,readWorkspace,now
       const existing=await store.read(collection,plan.event._id);
       if(!existing){
         const workspace=await readWorkspace(company,staff),activity=await store.all(collection);
+        requireConfirmedProcurement(workspace,[plan.event.details.taskId,...plan.event.details.allocations.flatMap(change=>[change.sourceTaskId,...change.targets.map(target=>target.taskId)])]);
         if(allocationVersion(workspace,activity)!==plan.expectedVersion)return {ok:false,company,requestId,retryable:false,error:'Stock or allocations changed while saving. Review current stock before making a new allocation.'};
         await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});
       }else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Allocation receipt conflict.');

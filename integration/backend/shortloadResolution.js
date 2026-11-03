@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { createOperationJournal, operationId } from 'backend/purchaseOperationJournal.js';
 import { packingVersion } from 'backend/packingListOperations.js';
 import { readSupportDesks, currentSupportDeskState, currentSupportDeskLocks } from 'backend/supportDesk.js';
@@ -68,6 +69,7 @@ export function createShortloadResolutionOperations({store,names,readContext,now
   if(sales&&(!input.parts?.some(part=>part.mode==='CANCEL')||input.parts.some(part=>!['CANCEL','CONTINUE'].includes(part.mode))))throw Error('Sales may confirm customer cancellation only. Support controls shipment batches.');
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{shortload:input},prepare:async()=>{
    const context=await readContext(company,staff),physical=context.physicalContext,list=context.lists.find(row=>row.id===input.id),line=list?.lines.find(row=>row.taskId===input.taskId),stored=physical&&readSupportDesks(physical.activity,company).find(row=>row.customerId===list?.customerId),state=stored&&currentSupportDeskState(physical,stored);
+   requireConfirmedProcurement(context,[input.taskId]);
    if(context.company!==company||sales&&staff.customerId!==list?.customerId||packingVersion(context)!==input.version||!list?.desk||!['PROCESSING','COMPLETED'].includes(list.status)||!line?.loadedConfirmedAt||!state||state.revision!==input.deskRevision||list.revision!==input.revision)throw Error('Desk loading or assignment changed. Refresh before deciding the remainder.');
    const status=shortloadStatus(physical.activity,list,line),task=physical.tasks.find(row=>row.id===line.taskId&&row.customerId===list.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase),locks=currentSupportDeskLocks(physical).filter(row=>row.customerId===list.customerId);
    if(!task||input.orderId&&input.orderId!==task.orderId||!status.issue&&!status.pending||status.revision!==(input.resolutionRevision||''))throw Error('Desk has no unresolved short-load quantity.');
@@ -91,7 +93,7 @@ export function createShortloadResolutionOperations({store,names,readContext,now
    const collection=names[company].activity,existing=await store.read(collection,plan.event._id),conflict=()=>({ok:false,company,requestId,retryable:false,error:'Desk changed while resolving the remainder. Refresh and choose a new decision.'});
    if(existing){if(operationId(existing.details)!==operationId(plan.event.details))return conflict();}
    else if(legacyCancel)return {ok:false,company,requestId,retryable:false,error:'This unsaved cancellation now requires Sales confirmation. No customer demand was cancelled.'};
-   else{const context=await readContext(company,staff);if(packingVersion(context)!==plan.expectedVersion)return conflict();try{await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}catch(error){const saved=await store.read(collection,plan.event._id);if(saved&&operationId(saved.details)!==operationId(plan.event.details))return conflict();throw error;}}
+   else{const context=await readContext(company,staff);requireConfirmedProcurement(context,[plan.event.imageAltText,...(plan.event.details.allocations||[]).map(row=>row.sourceTaskId)]);if(packingVersion(context)!==plan.expectedVersion)return conflict();try{await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}catch(error){const saved=await store.read(collection,plan.event._id);if(saved&&operationId(saved.details)!==operationId(plan.event.details))return conflict();throw error;}}
    return {ok:true,company,requestId,resolutionId:plan.event.title,id:plan.event.description,taskId:plan.event.imageAltText,parts:plan.event.details.parts};
   }});
  };
