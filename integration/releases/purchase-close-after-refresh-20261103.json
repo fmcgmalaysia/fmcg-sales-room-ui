@@ -1,5 +1,5 @@
 {
-  "state": "BACKGROUND_READY_BROWSER_CONNECTION_BLOCKED",
+  "state": "CODE_PUSHED_WIX_DRAFT_EXACT_PENDING_ONE_TIME_RELEASE",
   "branch": "fix/purchase-close-after-refresh-20261103",
   "scope": "purchase-clean-dialog-close-only",
   "build": "20261103-purchase-saved-plan-close-v3",
@@ -26,8 +26,9 @@
     "freshOriginal": "8492 chars, normalized full equality before local version-only edit; exact original preserved in root handoff/purchase-page-before-close-followup.js",
     "oldVersion": "20261103-support-reusable-desk-v1",
     "newVersion": "20261103-purchase-saved-plan-close-v3",
-    "draft": "NOT_WRITTEN; browser binding timed out then transport closed before response; recover editor and freshly read current page before editing",
-    "published": false
+    "draft": "8496 chars full readback exact; only unique version replacement; original8492 chars freshly reread and equal preserved original",
+    "published": false,
+    "draftSha256": "544d1bfe8b514c3b5025868fc2746d79a256613000b9d7078874320e572387c2"
   },
   "pages": "NOT_DISPATCHED; no temporary rule added and no new action-time deployment approval requested yet",
   "public": "NOT_TESTED; do not claim complete publication",
@@ -36,5 +37,7 @@
   "businessWrites": 0,
   "merge": "None; await deployment, real-page acceptance and user verification",
   "codeVersion": "295b954",
-  "github": "Branch pushed; PR connector reports not available to model, no PR created"
+  "github": "Branch295b954 pushed, version recordd65660f; latest exact Wix draft evidence recorded here",
+  "browserRecovery": "User restored connection; current Master existing tab reused, fresh original compared before one replacement",
+  "packageFinalCheck": "101/101 current package hashes equal saved v3 manifest; no runtime changes after45-check run"
 }
