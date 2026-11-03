@@ -178,7 +178,7 @@
     }
   ],
   "wixReadback": {
-    "status": "DRAFT_NOT_PUBLISHED",
+    "status": "EXACT_DRAFTS_THEN_PUBLISHED_AND_LIVE",
     "backend": [
       {
         "name": "accountPurchase.web.js",
@@ -798,10 +798,13 @@
     "Original-request recovery and existing financial/stock/permission rules preserved"
   ],
   "release": {
-    "code": "CANDIDATE_READY",
-    "githubPages": "NOT_DEPLOYED",
-    "wix": "27_DRAFTS_MATCH_NOT_PUBLISHED",
-    "public": "NOT_VERIFIED"
+    "code": "39ff8eac3f7a7ae967bd37ee50f7911a2fb949ce",
+    "githubPages": "SUCCESS_338_101_OF_101",
+    "runUrl": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41638016059",
+    "deploymentRules": "ORIGINAL_7_RESTORED",
+    "wix": "PUBLISHED_AND_LIVE_CONFIRMED",
+    "public": "BLOCKED_EMPTY_EMBEDS_AFTER_RELOAD",
+    "publicDetails": "Purchase references 20261103-purchase-save-consistency-v1; all four departments show empty embedded content after one reload, captured error/warn logs empty. Pre-reload pages displayed existing records; this is not new-build acceptance. No repeated refresh, deployment or business writes."
   },
   "productionBusinessWrites": 0,
   "newCollections": 0
