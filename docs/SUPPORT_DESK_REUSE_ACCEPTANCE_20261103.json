@@ -1,6 +1,6 @@
 {
   "date": "2026-11-03",
-  "state": "LOCAL_CANDIDATE_VALIDATED_NOT_RELEASED",
+  "state": "THREE_RELEASE_STAGES_COMPLETE_PUBLIC_DESK_ACCEPTANCE_BLOCKED",
   "objective": "Reuse Desk 1-3 after a confirmed goods SI, retain all historical batch evidence, and keep undelivered demand in orange Unassigned until Support arranges it.",
   "authority": "Existing Desk revision chain, delivery list identities, customer shipment/SI ledger and shortload disposition writer. No new stock or financial ledger, polling writes, automatic stock release or history migration.",
   "recovery": {
@@ -36,7 +36,7 @@
     "optionalQuotation": "BEAUTY MAMA account authorized for needed extra test products with12%GP. No quote created or published in this review."
   },
   "preservedCloseout": [
-    "Purchase7354bed/PR311 still needs candidate UI,Wix version sync,scoped deployment and public acceptance",
+    "Purchase4480ab6/PR313 preserves current Desk release,3resource follow-up not deployed; supersedes old7354bed package baseline",
     "SalesManagement15e57f9/PR309 DESIGN ONLY",
     "CMS growth/read budget still open",
     "Actual Drive download response blocked; no bypass",
@@ -60,8 +60,14 @@
       "two separate SI2160.00 and240.00 preserved"
     ],
     "additionalChecks": "13/13 targeted checks after adding recalled-list exclusion and old-request replay after second SI",
-    "pages": "NOT_DEPLOYED",
-    "wix": "Nine backend drafts and three version-only page drafts match exactly; NOT PUBLISHED",
-    "public": "NOT_VERIFIED"
+    "pages": "Run332/41558633924 success;101/101 hashes exact; temporary permission removed and original7 restored",
+    "wix": "Nine backend and three version-only page drafts exactly matched; published and live receipt retained",
+    "public": "Support and Warehouse refresh produce blank embeds with correct new source and no captured errors. One fresh clean Support visit likewise blank. Finance in-page fresh stock32/reserved22/free5/isolated5/MYR1442.45, original5SI/two receipts preserved. Desk real-operation acceptance incomplete."
+  },
+  "release": {
+    "commit": "3b6a1db",
+    "build": "20261103-support-reusable-desk-v1",
+    "runId": 41558633924,
+    "originalRulesRestored": true
   }
 }
