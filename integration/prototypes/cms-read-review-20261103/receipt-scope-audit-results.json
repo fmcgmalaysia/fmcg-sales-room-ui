@@ -1,0 +1,148 @@
+{
+  "status": "OFFLINE_LEAF_EQUIVALENCE_ONLY_NOT_WORKSPACE_OR_RELEASE_ACCEPTANCE",
+  "snapshot": {
+    "source": "Existing private native Wix CMS export dated 2026-11-03; not a fresh 2026-11-04 export",
+    "sha256": "5ce33e85e8583c0f0cb02e538ed05586410ffeba00ceea56723124e15066218b",
+    "rows": 400,
+    "actionCounts": {
+      "PURCHASE_OPERATION_RESULT": 99,
+      "PURCHASE_OPERATION_PREPARED": 99,
+      "COST_CAPTURE": 18,
+      "SUPPORT_DESK_SAVED": 38,
+      "ORDER_RECEIVED": 4,
+      "SUPPORT_INVOICE_PREPARED": 7,
+      "PURCHASE_PO_ASSIGNED": 18,
+      "WAREHOUSE_RECEIPT_SAVED": 12,
+      "PURCHASE_PLAN_SAVED": 18,
+      "PURCHASE_SOURCE_SHARES_SAVED": 18,
+      "SUPPORT_INVOICE_NUMBER_RESERVED": 7,
+      "PLANNER_ALLOCATION_SAVED": 3,
+      "CUSTOMER_SHIPMENT_CHANGED": 14,
+      "SUPPORT_INVOICE_INPUT_SAVED": 7,
+      "INTAKE_PREPARED": 4,
+      "PURCHASE_PRICE_SAVED": 18,
+      "SUPPORT_DOCUMENT_UPLOADED": 3,
+      "SUPPORT_PACKING_LIST_CURRENT": 7,
+      "DESK_SHORTLOAD_RESOLVED": 3,
+      "CUSTOMER_ACCOUNT_DOCUMENT_SAVED": 2,
+      "STOCK_EXCEPTION_REPORTED": 1
+    },
+    "populatedFields": {
+      "company": 0,
+      "status": 0,
+      "stockKey": 0,
+      "participantTaskIds": 0,
+      "replacementSourceId": 0,
+      "repaidQuantity": 0
+    }
+  },
+  "receiptPoCount": 8,
+  "receiptEventCount": 12,
+  "receipts": [
+    {
+      "sample": 1,
+      "returnedEvents": 2,
+      "taskCount": 10,
+      "lastRevisionDigest": "48d41e531ddf674334ff1844099cacdac85fdb03efff2102706249ec9add14fd",
+      "resultDigest": "dfa432de3f67c269dcd816c5f6921227d6664753ea1c643039cafd91548d014a",
+      "serializedBytes": 3993
+    },
+    {
+      "sample": 2,
+      "returnedEvents": 2,
+      "taskCount": 1,
+      "lastRevisionDigest": "10aa58ac9ea199ea160b3e749c977b13f4c9093533e20777e0587d5baf3a1f16",
+      "resultDigest": "989a6a5816708071591f2912a45f2d34682dec7adffdcfded4f68260ded68e80",
+      "serializedBytes": 1337
+    },
+    {
+      "sample": 3,
+      "returnedEvents": 2,
+      "taskCount": 1,
+      "lastRevisionDigest": "25dbea92c77e18deeb118dca31a4cec93050db2772ea4daca8f94aea0e284ea6",
+      "resultDigest": "d6ccfce763a665335a7727128b006665a25a697f2c941f19fec37b22f18fb071",
+      "serializedBytes": 1335
+    },
+    {
+      "sample": 4,
+      "returnedEvents": 2,
+      "taskCount": 2,
+      "lastRevisionDigest": "89cf98a80551159024ea7a6326485fc2d94cc74f6adc3219ab63726811866b91",
+      "resultDigest": "11bfda40527c741e7586afcbe57f377e3775171f61e013407adb176989dc16d2",
+      "serializedBytes": 1913
+    },
+    {
+      "sample": 5,
+      "returnedEvents": 1,
+      "taskCount": 1,
+      "lastRevisionDigest": "d583a3f513046e1ddf6a717d08058b1066ab7b955b35a1f8193a31e82f57ff44",
+      "resultDigest": "b83f15d44336ab458f4b71be6405e0dfdb89c8f62c6722882a369e478d71b2dd",
+      "serializedBytes": 618
+    },
+    {
+      "sample": 6,
+      "returnedEvents": 1,
+      "taskCount": 1,
+      "lastRevisionDigest": "38e1b8852246c1fd6b7db2f4647d7c18c5a44e6d193ce5accdd68e95bc73b792",
+      "resultDigest": "8fd8407fffdb4c0164549ba47e5827c525e8c20853538a76173f79b2da218cd9",
+      "serializedBytes": 618
+    },
+    {
+      "sample": 7,
+      "returnedEvents": 1,
+      "taskCount": 1,
+      "lastRevisionDigest": "a231885426036592cb7f3cc32a58583fa6c6240c5153111feeee9fa817ba8083",
+      "resultDigest": "08bf7faacc0bf985bae4fdbd5a9a222f94ce350bf343d18f6a99d555f28971e3",
+      "serializedBytes": 616
+    },
+    {
+      "sample": 8,
+      "returnedEvents": 1,
+      "taskCount": 1,
+      "lastRevisionDigest": "4fb155bd05306960691ca83cf23a2aff35ea10262bcf26507a51c8c0eec50d8e",
+      "resultDigest": "ec69dfb0e260b435bd176538f2d2179e2e39e15ffc898861b8c7046fe4083749",
+      "serializedBytes": 618
+    }
+  ],
+  "diagnostics": [
+    "All receipt PO chains and Purchase receipt details equal the full exported Activity reader",
+    "Source snapshot and decoded records are unchanged",
+    "170 plus 30 and a signed correction retain original interpretation",
+    "Missing intermediate receipt still rejects",
+    "Conflicting successors still reject",
+    "Task filtering can lose a shared PO chain event; whole PO chain is required",
+    "Removing the complete tail is NOT detectable by this existing reader",
+    "No receipts is distinct from proof of zero stock or no pending request",
+    "Company collection isolation is mandatory even with the same PO ID",
+    "Unrelated row growth does not change modeled scoped return count; not a Wix latency test"
+  ],
+  "diagnosticCount": 10,
+  "unrelatedGrowth": [
+    {
+      "unrelatedEvents": 0,
+      "returnedEvents": 2
+    },
+    {
+      "unrelatedEvents": 1000,
+      "returnedEvents": 2
+    },
+    {
+      "unrelatedEvents": 100000,
+      "returnedEvents": 2
+    }
+  ],
+  "productionWrites": 0,
+  "runtimeEdits": 0,
+  "limitations": [
+    "Array filter models predicate results, not physical Wix index usage, API pagination or query latency.",
+    "Existing reader validates returned chains but cannot prove a complete tail was returned.",
+    "Entire workspace still needs procurement, intake, allocation, borrowing, quarantine, Loaded and Finance records.",
+    "Fixture PO task lists derived from receipt history are not production authorization or membership evidence.",
+    "Receipt reader is not a save-status, stock-balance, allocation, financial-lock or authentication reader.",
+    "Do not deploy a new receipt endpoint solely for this proof: current workspace already holds the same history."
+  ],
+  "sourceHashes": {
+    "warehouseReceiving.js": "285eff17f720a11294876fe5680f2b9d5da925e25772a08a885640a08d74c2ee",
+    "purchaseReceiptInfo.js": "30680c2c946bd058b24f56c885635fba38443b8e6c1a0c1f17187664bea4de66"
+  }
+}
