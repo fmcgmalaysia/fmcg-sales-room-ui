@@ -20,7 +20,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
   async function requireEditablePurchaseChanges(company,updates){
     const business=updates.filter(change=>change.planRevision!==undefined||Object.keys(change.patch).some(key=>key!=='rowPosition'));
     if(!business.length)return;
-    const records=(await store.all('PurchaseOrders')).filter(record=>record.company===company);
+    const records=(await store.all('PurchaseOrders',{company})).filter(record=>record.company===company);
     const destinationNumbers=new Set(business.map(change=>change.patch.ourPoNumber).filter(Boolean));
     const tasks=destinationNumbers.size?await store.all(PURCHASE_COLLECTIONS[company].tasks):[];
     const ids=new Set([...business.map(change=>change.id),...tasks.filter(task=>destinationNumbers.has(task.ourPoNumber)).map(task=>task.title)]);
@@ -236,10 +236,10 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
             const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
             if(!await store.read(names.activity,eventId)){
               if(change.shipmentBatch)checkPurchaseBatch((await state(company,staff)).workspace,change.shipmentBatchRoot,change.shipmentBatch,event.totalCtn-(event.before||0));
-              if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity)).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
+              if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity,{action:'PURCHASE_PLAN_SAVED',result:'SAVED',imageAltText:current.title})).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
             }
           }
-          if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await store.read(names.activity,shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity)).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}
+          if(change.sharesRevision!==undefined){const shareId=operationId(company,requestId,staff.memberId,change.id,'PURCHASE_SOURCE_SHARES_SAVED');if(!await store.read(names.activity,shareId)&&readPurchaseShares(change.sharesRootId,await store.all(names.activity,{action:'PURCHASE_SOURCE_SHARES_SAVED',result:'SAVED',imageAltText:change.sharesRootId})).revision!==change.sharesRevision)throw Error('Supplier allocations changed while saving.');}
           if(change.expected===null) {if(current){if(taskEditVersion(current)!==taskEditVersion(change.patch))throw Error('Special Purchase identity conflict.');}else {const record={_id:change.id,...change.patch};if(record.lastCostCaptureTime)record.lastCostCaptureTime=new Date(record.lastCostCaptureTime);await store.insert(names.tasks,record);}}
           else if(!current)throw Error('Task missing.');
           else if(taskEditVersion(current)!==taskEditVersion(target)){if(taskEditVersion(current)!==change.expected)throw Error('Task changed while this save was pending.');await store.update(names.tasks,target);}
