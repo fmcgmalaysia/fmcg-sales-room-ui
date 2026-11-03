@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 const text=value=>String(value??'').trim();
 const integer=value=>Number.isSafeInteger(value)&&value>=0;
@@ -57,7 +58,7 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
   if(!names[company]||staff?.canDecideQuantityCase!==true||input?.action!=='DECIDE')throw Error('Quantity case decision is not authorized.');
   const collection=names[company].activity;
   return journal({collection,scope:company+'/PURCHASE',requestId,staff,input:{quantityCase:input},prepare:async()=>{
-   const workspace=await readWorkspace(company,staff),activity=await store.all(collection),item=projectQuantityCases(workspace,activity).find(row=>row.id===input.id);
+   const workspace=await readWorkspace(company,staff),activity=await store.all(collection),item=projectQuantityCases(workspace,activity).find(row=>row.id===input.id);requireConfirmedProcurement(workspace,[item?.taskId,item?.customerDemandTaskId]);
    if(workspace.company!==company||input.version!==quantityCasesVersion(workspace,activity)||!item)throw Error('Quantity case changed. Refresh before saving.');
    const supplierDeliveryDecision=input.supplierDeliveryDecision,compact=supplierDeliveryDecision!==undefined;
    if(compact&&(item.kind!=='RECEIPT'||!['WAIT','STOP'].includes(supplierDeliveryDecision)))throw Error('Select whether to wait for the supplier delivery.');
@@ -72,7 +73,7 @@ export function createQuantityCaseOperations({store,names,readWorkspace,now=()=>
    return {version:input.version,event:{_id:id,title:id,description:item.customerDemandTaskId,imageAltText:item.taskId,action:QUANTITY_CASE_ACTION,result:'SAVED',actorType:'STAFF',initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,activityTime:now().toISOString(),message:reason,details:{caseId:item.id,kind:item.kind,quantity:item.quantity,signature:item.signature,beforeRevision:item.revision,customerDecision,supplierDecision,customerMessage,reason,expectedDate:expectedDate||null,...(compact?{supplierDeliveryDecision,company}:{})}}};
   },apply:async plan=>{
    const saved=await store.read(collection,plan.event._id);
-   if(!saved){const workspace=await readWorkspace(company,staff),activity=await store.all(collection);if(quantityCasesVersion(workspace,activity)!==plan.version)throw Error('Quantity case changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
+   if(!saved){const workspace=await readWorkspace(company,staff),activity=await store.all(collection);requireConfirmedProcurement(workspace,[plan.event.imageAltText,plan.event.description]);if(quantityCasesVersion(workspace,activity)!==plan.version)throw Error('Quantity case changed while saving.');await store.insert(collection,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
    else if(operationId(saved.details)!==operationId(plan.event.details))throw Error('Quantity case save identity conflict.');
    return {ok:true,company,requestId,caseId:plan.event.details.caseId};
   }});

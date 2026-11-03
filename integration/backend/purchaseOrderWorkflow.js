@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { createHash } from 'crypto';
 import { Buffer } from 'buffer';
@@ -59,7 +60,7 @@ export function projectPurchaseOrders({company,workspace,records,now=new Date()}
     const creditTransfers=(workspace.creditTransfers||[]).filter(entry=>entry.sourceId===id||entry.targetId===id);
     const cnRequirements=receiptCnRequirements(quantityCases,documents);
     const stockCases=rows.flatMap(row=>row.warehouse?.stock?.cases||[]),stockIssues=stockCases.filter(row=>row.status!=='RESOLVED');
-    const projected={id,paymentRequestRevision:details.paymentRequestRevision||null,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers,...(quantityCases.length?[quantityCases.map(item=>[item.id,item.signature,item.decision?.revision||null])]:[]),...(rows.some(row=>row.procurement?.transportMode)?[rows.map(row=>[row.id,row.procurement?.transportMode||''])]:[])),contentVersion,taskIds,shortageIssues,quantityCases,cnRequirements,stockIssues,stockCases,creditTransfers,
+    const projected={id,...(rows.some(row=>row.procurementSavePending)?{procurementSavePending:true}:{}),paymentRequestRevision:details.paymentRequestRevision||null,version:operationId(record||null,taskIds,rows.map(row=>row.editVersion),rows.map(row=>row.warehouse),shortageIssues,creditTransfers,...(quantityCases.length?[quantityCases.map(item=>[item.id,item.signature,item.decision?.revision||null])]:[]),...(rows.some(row=>row.procurement?.transportMode)?[rows.map(row=>[row.id,row.procurement?.transportMode||''])]:[])),contentVersion,taskIds,shortageIssues,quantityCases,cnRequirements,stockIssues,stockCases,creditTransfers,
       procurementRevision,procurementContentLocked:Boolean(procurementContentLock(details)),procurementLockReason:procurementContentLock(details),
       number:first.po,company,currency:'MYR',customerId:first.customerId,customerIds:[...new Set(rows.map(row=>row.customerId))],customers:[...new Set(rows.map(row=>row.customerId))].map(id=>({id,name:workspace.customers.find(customer=>customer.id===id)?.name||id})),customerName:[...new Set(rows.map(row=>{const item=workspace.customers.find(customer=>customer.id===row.customerId);return item?.shortName||item?.name||row.customerId;}))].join(' / '),
       shipmentDates:[...new Map(rows.map(row=>[row.orderId,{orderId:row.orderId,customerId:row.customerId,date:row.estimatedShipmentDate,updatedAt:row.shipmentDate?.at||'',updatedBy:row.shipmentDate?.by||''}])).values()],
@@ -100,7 +101,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
   async function deleteDocument({company,staff,requestId,input}){
     if(!documentService)throw Error('Document deletion is not connected.');
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{purchaseOrder:input},prepare:async()=>{
-      const row=(await list(company,staff)).find(row=>row.id===input.id);
+      const row=(await list(company,staff)).find(row=>row.id===input.id);requireConfirmedProcurement(row);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       const current=await store.read(PURCHASE_ORDER_COLLECTION,row.id),details=current?.details||{},document=details.documents?.find(doc=>doc.fileId===input.fileId);
       const blocker=purchaseDocumentDeleteBlocker(row,details,document,staff);if(blocker)throw Error(blocker);
@@ -112,7 +113,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       if(current.details.audit?.some(event=>event.id===plan.event.id))return {ok:true,company,requestId,poId:input.id};
       const pending=current.details.documentDeletion;
       if(!(pending?.requestId===requestId&&pending.fileId===input.fileId&&pending.byStaffId===staff.staffId)){
-        const row=(await list(company,staff)).find(row=>row.id===input.id);
+        const row=(await list(company,staff)).find(row=>row.id===input.id);requireConfirmedProcurement(row);
         if(operationId(current)!==plan.expected||row?.version!==plan.expectedVersion)throw Error('Purchase order changed while saving.');
         const blocker=purchaseDocumentDeleteBlocker(row,current.details,current.details.documents.find(doc=>doc.fileId===input.fileId),staff);if(blocker)throw Error(blocker);
         // Remove the financial association before the external side effect. The journal retains the exact file and request for recovery.
@@ -147,6 +148,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
     }
     return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{purchaseOrder:journalInput},prepare:async()=>{
       const rows=await list(company,staff),row=rows.find(row=>row.id===input.id);
+      requireConfirmedProcurement(row);
       if(!row||row.version!==input.version)throw Error('Purchase order changed. Refresh before saving; your input is retained.');
       const current=await store.read(PURCHASE_ORDER_COLLECTION,row.id),before=current?.details||{};
       if(row.supplierAccount?.closed&&input.action!=='ACK_PAYMENT')throw Error('Purchase order changed. Ask Finance to reopen the closed supplier account before editing.');
@@ -217,7 +219,7 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
       const current=await store.read(PURCHASE_ORDER_COLLECTION,plan.record._id);
       if(!current?.details?.audit?.some(event=>event.id===plan.event.id)) {
         if((current?operationId(current):null)!==plan.expected)throw Error('Purchase order changed while saving.');
-        if(plan.expectedVersion){const latest=(await list(company,staff)).find(row=>row.id===plan.record._id);if(latest?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(latest)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');}
+        if(plan.expectedVersion){const latest=(await list(company,staff)).find(row=>row.id===plan.record._id);requireConfirmedProcurement(latest);if(latest?.version!==plan.expectedVersion||plan.expectedBasis&&procurementSubmissionVersion(latest)!==plan.expectedBasis)throw Error('Purchase order changed while saving.');}
         if(plan.upload){
           const receipt=await documentService({...plan.upload,base64:payload});
           if(receipt.ok!==true||receipt.fileId!==plan.upload.fileId||receipt.sha256!==plan.upload.sha256||receipt.company!==company||receipt.poId!==plan.record._id||receipt.name!==plan.upload.name)throw Error('Document upload receipt mismatch.');

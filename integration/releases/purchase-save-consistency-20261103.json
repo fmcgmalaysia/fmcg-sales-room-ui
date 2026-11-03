@@ -1,0 +1,808 @@
+{
+  "date": "2026-11-03",
+  "objective": "Use one confirmed purchase view and block only dependent new saves while original PLAN recovery is pending",
+  "branch": "fix/purchase-save-consistency-20261103",
+  "build": "20261103-purchase-save-consistency-v1",
+  "workflowInput": "purchase-save-consistency-only",
+  "baseline": {
+    "git": "e48356a",
+    "staticPackage": "e1138ea",
+    "purchaseRuntime": "20261103-purchase-saved-plan-close-v3",
+    "liveStaticVerified": 101,
+    "approvedLivePreservation": [
+      "purchase-live/app.js",
+      "purchase-live/task-grid.js",
+      "purchase-live/index.html"
+    ],
+    "recoveryTags": [
+      "verified/customer-file-download-20261103",
+      "verified/support-upload-recovery-20261103"
+    ]
+  },
+  "backendPatches": [
+    {
+      "name": "accountPurchase.web.js",
+      "beforeSha256": "0d2667ce8b45fd1b27b3d90df53e752d74a6b4b4b2fa96fbd4b352a20c4f8ceb",
+      "afterSha256": "c1aeead21c41fb4971aa49944efeca01b5addc389d24b49b647791872a243f14",
+      "hunks": 3
+    },
+    {
+      "name": "accountPurchaseReview.js",
+      "beforeSha256": "791e7a05197b4fd7b06f699165db997f537dc65100994683324d7e0ee94adceb",
+      "afterSha256": "bf497f3857b9ff0b86f21c962ed0f814f6890825ef6910936052d31b4f87984c",
+      "hunks": 3
+    },
+    {
+      "name": "accountSettlement.js",
+      "beforeSha256": "3714c406780da10216129b395b4d82b0988a868309b44cd9b251dd7f536a9ef8",
+      "afterSha256": "e5a569c3f72e4483e1b0fa5c23bde4b0dbe3aa0dd7b88293b21cb05464b3076d",
+      "hunks": 5
+    },
+    {
+      "name": "customerFulfilment.js",
+      "beforeSha256": "d77f2037804540991cc2ef21ca6d4428150c443ba58be44cb5b3d34ce93359fe",
+      "afterSha256": "1a72d4e77ee8307ca9aa83b5ee5af365550883d9b777a92aca09b338120106fd",
+      "hunks": 3
+    },
+    {
+      "name": "customerFulfilmentService.js",
+      "beforeSha256": "0f5b8f47b156550e0796b725810e40d305f750cf080ad1b3a272123d71dfbe96",
+      "afterSha256": "7e10b5212174b3f530a987eb64e4558099c3b46ecbe171315d9c2ac99bcc4c63",
+      "hunks": 2
+    },
+    {
+      "name": "packingListOperations.js",
+      "beforeSha256": "c759869953815a99da156e27bb067620e91be63c86537c7a90dedcd0af310fe7",
+      "afterSha256": "737f205310525146ddffcff3ce566656bc8f6558590dae60bd64105a714f3944",
+      "hunks": 5
+    },
+    {
+      "name": "packingLists.web.js",
+      "beforeSha256": "45ee376af90cbfdef1269b8225cd1bfad2caaa5255aa87e4f048f1fb194e3950",
+      "afterSha256": "248dd47456b59bd62a46f5182a2885fc4cd7cb93d02c5c1bff63c31b96ba692d",
+      "hunks": 2
+    },
+    {
+      "name": "plannerAllocation.js",
+      "beforeSha256": "0cf63bf7f94e98247d420853ad96e5c1bc510ff0a376fa75f5edad4bbdf7def1",
+      "afterSha256": "be13bf07a27a1f0aba26e9c548c50936760772382bb5a425af8464cad75953f0",
+      "hunks": 3
+    },
+    {
+      "name": "purchaseMarginRefresh.js",
+      "beforeSha256": "73d5cd22b1c723d2831eae33353a58932d15b434b170a5027f8a7438804ecdb4",
+      "afterSha256": "880519d771ec7ec522a04e3fe77d6c6d499b8c445b59f4d9fe8f91a795a3f411",
+      "hunks": 1
+    },
+    {
+      "name": "purchaseOperations.js",
+      "beforeSha256": "8f13002c102236993fbe5d5388daaf27a3e68c579368da543d0a1f8552c09e70",
+      "afterSha256": "66b8480bca35be11859190e31d3809d0011d59eca563bf062344885ff1e12324",
+      "hunks": 7
+    },
+    {
+      "name": "purchaseOperations.web.js",
+      "beforeSha256": "167f4a90e0f1c9015a6ec37137f2243d594dcbfdc1a2075093353b5dc2e0e18b",
+      "afterSha256": "66197e7dd3190a6688f0bb3a85e60ea3dea0c7098c3af93ae43d5955fd85b696",
+      "hunks": 2
+    },
+    {
+      "name": "purchaseOrderWorkflow.js",
+      "beforeSha256": "3cc76cdaf78ce011e0f4854b99ddc77edae5eb5deff62fc1a6bfe823f02c100e",
+      "afterSha256": "5e3e8f0ca4082c1ff11780e40865d8ac8d0f6f7ea03a20b247037e3e6ac62a84",
+      "hunks": 6
+    },
+    {
+      "name": "purchaseOrders.web.js",
+      "beforeSha256": "1a8f0c4a8302f114a71ff79fe519963ce3ffc9e834aa81eada57107e8fc120bf",
+      "afterSha256": "2b9874abeb930330b63bda83b245beaa755d067f38e5538127258e2de1738e14",
+      "hunks": 2
+    },
+    {
+      "name": "purchasePlan.js",
+      "beforeSha256": "c56967e4efd921804a2f6537339e240a4ad1133553eddfedbd40ae2ebd04969a",
+      "afterSha256": "07df3f5e793f8e572811d66c30879bdaa0085bac3ecb80ea9f55b55b851e1988",
+      "hunks": 2
+    },
+    {
+      "name": "purchaseProjection.js",
+      "beforeSha256": "c353f8a7bfec4440ec3989a1c8487817cf04955560ce0d044dfc5e5c45bd83d8",
+      "afterSha256": "ca47dcf483263b7b32a883b86abf5ffcda33f4e296179fe2f1c68ca1c0a3e8a1",
+      "hunks": 4
+    },
+    {
+      "name": "purchaseQuantityCases.js",
+      "beforeSha256": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
+      "afterSha256": "b4e75e832487a9dc86d79169009ee6624e5fa913831fc4295588a8691dc2c4b5",
+      "hunks": 3
+    },
+    {
+      "name": "purchaseShortage.js",
+      "beforeSha256": "320be7ce1641d2a3429b0698b25a7c75a1c73e9d7026b5323131f11e431535fd",
+      "afterSha256": "6abfcccb7a54c44d9d938a9f82a244a2a69cfceba9c90b921cafd5ae3e401f41",
+      "hunks": 3
+    },
+    {
+      "name": "purchaseSources.js",
+      "beforeSha256": "e810f96dc958e44949721488e7b9b1650c2cf7f0092dcba873cda1829347f3f9",
+      "afterSha256": "d154ad9c8f18f909f001119cccbe6e58f54bd5bf79989cbe3c937981adf35671",
+      "hunks": 3
+    },
+    {
+      "name": "shortloadResolution.js",
+      "beforeSha256": "a0a376eff8fbe6de5c4e4d6affe742e0bf85b9de630e57876215159b91257bcb",
+      "afterSha256": "ffcefca7ec67f937a811eb0070daf8d5fcf8729699fe17bfb4ad7428ce421fa7",
+      "hunks": 3
+    },
+    {
+      "name": "supplierCredit.js",
+      "beforeSha256": "8d71dd3022cb78764272b5293b38fd97fd934ece0bee7d476573c20fb61bf3d7",
+      "afterSha256": "ce68329cda2a571ee8ac448dcb58e1e702a4f044267338c628efe41b3c31e3e7",
+      "hunks": 3
+    },
+    {
+      "name": "supportDesk.js",
+      "beforeSha256": "425c9e0c2386b22e708080f3c2aa5c4b99cade21aaa441ebdbecc80e3dbbd31c",
+      "afterSha256": "92d2f45a29c315b416cf7cfacca7ead9ec6fb74b0db21e7ac391d937e7c2eb96",
+      "hunks": 3
+    },
+    {
+      "name": "supportWorkroom.web.js",
+      "beforeSha256": "cd2919e9d67a2947f33d1ff834bb115c562d57aaf7383e0c4599266d0037c438",
+      "afterSha256": "52221c83d85be083e328a15b178a2c1c1543b9a13ec56e77e71878b42cb145d2",
+      "hunks": 3
+    },
+    {
+      "name": "warehouseDeliveryView.js",
+      "beforeSha256": "6028d3af15a01c6b5fbeeca3d98f68ab0bda5920a8556f7fca6263915d607348",
+      "afterSha256": "2dcabbe5ad0450c16329905fcff3e796982e14f830c29d73ee31ad4b3e054d58",
+      "hunks": 1
+    },
+    {
+      "name": "warehousePreparation.js",
+      "beforeSha256": "f4df3c3da879b26a97fe48559d4fefd0a85abb70a4223fb9f4f043d34f96e2df",
+      "afterSha256": "2587c63e2b9220a1b87b3c7f0c19ccd734242eda56ff09668295fc11f9948137",
+      "hunks": 2
+    },
+    {
+      "name": "warehouseReceiving.js",
+      "beforeSha256": "941c342fa0ada756abb6eb8b6d6f7321028bdd975a0b9079d1456dbf152e0cb4",
+      "afterSha256": "fc57a83ac9a2d9dccc1de3a9e8e27fe45d02087638865040894d6e0fad0aa166",
+      "hunks": 4
+    },
+    {
+      "name": "warehouseReceiving.web.js",
+      "beforeSha256": "733e44f8372746469193572599582fac43c7e6059180e8b17d635edde2340070",
+      "afterSha256": "90fbf1a778e4b936ffe2ffdc22aec309deece2d604e64f2ae432c05cab2baae5",
+      "hunks": 3
+    }
+  ],
+  "wixReadback": {
+    "status": "DRAFT_NOT_PUBLISHED",
+    "backend": [
+      {
+        "name": "accountPurchase.web.js",
+        "hash": "c1aeead21c41fb4971aa49944efeca01b5addc389d24b49b647791872a243f14",
+        "exact": true
+      },
+      {
+        "name": "accountPurchaseReview.js",
+        "hash": "bf497f3857b9ff0b86f21c962ed0f814f6890825ef6910936052d31b4f87984c",
+        "exact": true
+      },
+      {
+        "name": "accountSettlement.js",
+        "hash": "e5a569c3f72e4483e1b0fa5c23bde4b0dbe3aa0dd7b88293b21cb05464b3076d",
+        "exact": true
+      },
+      {
+        "name": "customerFulfilment.js",
+        "hash": "1a72d4e77ee8307ca9aa83b5ee5af365550883d9b777a92aca09b338120106fd",
+        "exact": true
+      },
+      {
+        "name": "customerFulfilmentService.js",
+        "hash": "7e10b5212174b3f530a987eb64e4558099c3b46ecbe171315d9c2ac99bcc4c63",
+        "exact": true
+      },
+      {
+        "name": "packingListOperations.js",
+        "hash": "737f205310525146ddffcff3ce566656bc8f6558590dae60bd64105a714f3944",
+        "exact": true
+      },
+      {
+        "name": "packingLists.web.js",
+        "hash": "248dd47456b59bd62a46f5182a2885fc4cd7cb93d02c5c1bff63c31b96ba692d",
+        "exact": true
+      },
+      {
+        "name": "plannerAllocation.js",
+        "hash": "be13bf07a27a1f0aba26e9c548c50936760772382bb5a425af8464cad75953f0",
+        "exact": true
+      },
+      {
+        "name": "purchaseMarginRefresh.js",
+        "hash": "880519d771ec7ec522a04e3fe77d6c6d499b8c445b59f4d9fe8f91a795a3f411",
+        "exact": true
+      },
+      {
+        "name": "purchaseOperations.js",
+        "hash": "66b8480bca35be11859190e31d3809d0011d59eca563bf062344885ff1e12324",
+        "exact": true
+      },
+      {
+        "name": "purchaseOperations.web.js",
+        "hash": "66197e7dd3190a6688f0bb3a85e60ea3dea0c7098c3af93ae43d5955fd85b696",
+        "exact": true
+      },
+      {
+        "name": "purchaseOrderWorkflow.js",
+        "hash": "5e3e8f0ca4082c1ff11780e40865d8ac8d0f6f7ea03a20b247037e3e6ac62a84",
+        "exact": true
+      },
+      {
+        "name": "purchaseOrders.web.js",
+        "hash": "2b9874abeb930330b63bda83b245beaa755d067f38e5538127258e2de1738e14",
+        "exact": true
+      },
+      {
+        "name": "purchasePlan.js",
+        "hash": "07df3f5e793f8e572811d66c30879bdaa0085bac3ecb80ea9f55b55b851e1988",
+        "exact": true
+      },
+      {
+        "name": "purchaseProjection.js",
+        "hash": "ca47dcf483263b7b32a883b86abf5ffcda33f4e296179fe2f1c68ca1c0a3e8a1",
+        "exact": true
+      },
+      {
+        "name": "purchaseQuantityCases.js",
+        "hash": "b4e75e832487a9dc86d79169009ee6624e5fa913831fc4295588a8691dc2c4b5",
+        "exact": true
+      },
+      {
+        "name": "purchaseShortage.js",
+        "hash": "6abfcccb7a54c44d9d938a9f82a244a2a69cfceba9c90b921cafd5ae3e401f41",
+        "exact": true
+      },
+      {
+        "name": "purchaseSources.js",
+        "hash": "d154ad9c8f18f909f001119cccbe6e58f54bd5bf79989cbe3c937981adf35671",
+        "exact": true
+      },
+      {
+        "name": "shortloadResolution.js",
+        "hash": "ffcefca7ec67f937a811eb0070daf8d5fcf8729699fe17bfb4ad7428ce421fa7",
+        "exact": true
+      },
+      {
+        "name": "supplierCredit.js",
+        "hash": "ce68329cda2a571ee8ac448dcb58e1e702a4f044267338c628efe41b3c31e3e7",
+        "exact": true
+      },
+      {
+        "name": "supportDesk.js",
+        "hash": "92d2f45a29c315b416cf7cfacca7ead9ec6fb74b0db21e7ac391d937e7c2eb96",
+        "exact": true
+      },
+      {
+        "name": "supportWorkroom.web.js",
+        "hash": "52221c83d85be083e328a15b178a2c1c1543b9a13ec56e77e71878b42cb145d2",
+        "exact": true
+      },
+      {
+        "name": "warehouseDeliveryView.js",
+        "hash": "2dcabbe5ad0450c16329905fcff3e796982e14f830c29d73ee31ad4b3e054d58",
+        "exact": true
+      },
+      {
+        "name": "warehousePreparation.js",
+        "hash": "2587c63e2b9220a1b87b3c7f0c19ccd734242eda56ff09668295fc11f9948137",
+        "exact": true
+      },
+      {
+        "name": "warehouseReceiving.js",
+        "hash": "fc57a83ac9a2d9dccc1de3a9e8e27fe45d02087638865040894d6e0fad0aa166",
+        "exact": true
+      },
+      {
+        "name": "warehouseReceiving.web.js",
+        "hash": "90fbf1a778e4b936ffe2ffdc22aec309deece2d604e64f2ae432c05cab2baae5",
+        "exact": true
+      }
+    ],
+    "page": {
+      "name": "Purchase Department",
+      "sha256": "07a2de871b82e6afcb2a05b7a540508436bd1496c14698e80da654b856384adf",
+      "exact": true
+    }
+  },
+  "resources": {
+    "build": "20261103-purchase-save-consistency-v1",
+    "baseline": "e1138ea",
+    "changed": [
+      "purchase-live/app.js",
+      "purchase-live/index.html",
+      "purchase-live/task-grid.js"
+    ],
+    "unchanged": 98,
+    "resources": [
+      {
+        "path": "account-room/app.js",
+        "sha256": "1091f55ac89b37d70f4acf8d35e5426218b94fd54535e14f4f0bd258709e1790"
+      },
+      {
+        "path": "account-room/customer-debtors.js",
+        "sha256": "4d5803521f0735a543d48b9e6d056ceab99bab648d3601ce2d6dce4dad6171bd"
+      },
+      {
+        "path": "account-room/index.html",
+        "sha256": "38a4d0cec1c99256ea08d8a6a46d0cd772e71ecf9ba28015ffd53ebea79b85a8"
+      },
+      {
+        "path": "account-room/payment-layout.css",
+        "sha256": "82006111952e1af5ca05c8cd31d7e8847f9fe27e99136aae46eca6c4f4c52914"
+      },
+      {
+        "path": "account-room/payment-layout.js",
+        "sha256": "691ed849e34858e188cf257e494f2dc58fc85026487c08fbbeb4a33e548836a3"
+      },
+      {
+        "path": "account-room/purchase-payments.js",
+        "sha256": "320e3a294ed5f6d03a6131e6ca02273cbfd6c14e87e8cd311c27e821668f610a"
+      },
+      {
+        "path": "account-room/settlement.js",
+        "sha256": "e333f59fde3f8e3a2cf993926e6b66641fd66a1df5736562251911dcaa1d97a7"
+      },
+      {
+        "path": "account-room/stock-list-link.js",
+        "sha256": "b42053a5d52183cf1ed6847f24a4ad2e84a34925bd86ce80fd10436b366dd529"
+      },
+      {
+        "path": "account-room/stock-list.html",
+        "sha256": "25756f80f0ccf954319990585089cc2a8176427a16a8b4cb9ea3596153991970"
+      },
+      {
+        "path": "account-room/style.css",
+        "sha256": "05dd0dd5aa77feb93045c29fed243d35444f3f5693ed047059440b47c075c8f9"
+      },
+      {
+        "path": "assets/banner-global-shipping.webp",
+        "sha256": "e9f04efd09b09a2b0e7d4af10d58a5930d078461185e310185212a2a1a1ed368"
+      },
+      {
+        "path": "assets/banner-mixed-container.webp",
+        "sha256": "6f10bf0bb159c89d1d51038e07124b729e228ea9ce563a12aa2997af617d9d46"
+      },
+      {
+        "path": "assets/banner-wholesale-value.webp",
+        "sha256": "830863ab3f8719a283413efdeb09db40ce97f12eb4ba6ce54b2762132aeb4555"
+      },
+      {
+        "path": "assets/buyer-account-partnership-handshake.webp",
+        "sha256": "61424b52d0f3b9d6f1702f5067d270625ca444541fd7eb3f8ee806ca79f07d05"
+      },
+      {
+        "path": "assets/catalogue-promo-buyer-room-v1.webp",
+        "sha256": "25f1faa86334c9c73e981c8c402bea5eac775d33c4cd6ac3c27064e6b00165d4"
+      },
+      {
+        "path": "assets/catalogue-promo-member-pricing-v1.webp",
+        "sha256": "0fe785cebb4a3c1406f81e2dc122c4e3265b080d346251d15e17b6870a5386b7"
+      },
+      {
+        "path": "assets/catalogue-promo-tracking-v1.webp",
+        "sha256": "c709ca929bb4424c9f80a07405f801832fad5901e4b86ef9ae16148e4a2a513e"
+      },
+      {
+        "path": "assets/fmcgmalaysia-logo-white-reverse.png",
+        "sha256": "0dff085daccc855bb0d91c4c34ffdc03d80f62823e1ee645bde5de1e51709ee2"
+      },
+      {
+        "path": "assets/logo-blue-black.png",
+        "sha256": "9e2f91915025e0ae0312a249fa8f758fea691d52deb89df94a7b370b9e18c0c7"
+      },
+      {
+        "path": "assets/logo-blue-white.png",
+        "sha256": "701f9263be7d7e078032476fdda26ea4bd770ff2a71e39d83942c121d231d79a"
+      },
+      {
+        "path": "assets/logo-orange-black-no-slogan.png",
+        "sha256": "d2b239b6c54fcd1e8b9f3977870a55167bf8d816ed26c86da71d9a88f27c25be"
+      },
+      {
+        "path": "assets/logo-orange-white-cropped.png",
+        "sha256": "16ff99c361171150aabc8ae1c7353b582042d82dae4afea33e883637c00cc5a4"
+      },
+      {
+        "path": "assets/logo-orange-white-no-slogan.png",
+        "sha256": "6f6a7adadb8b905aadb0cbe0b36c55d2fa48ed4cfc4bdfa6bf6c80d8522ce803"
+      },
+      {
+        "path": "assets/logo-orange-white.png",
+        "sha256": "383ef5b462386eccb2dab0647a3d5351a37edaa5eeb41297b7af8de2225c40a1"
+      },
+      {
+        "path": "assets/logo-watermark-a4.png",
+        "sha256": "01f3b42e4287014cf17744a5420d3be1674283fd58bdc7fc630c90388dbf9d1e"
+      },
+      {
+        "path": "assets/order-received-flow-v2.png",
+        "sha256": "ee777254d2d92b767c256e613674bfafd49b5e539ec3e669e7d484c4edb70224"
+      },
+      {
+        "path": "assets/order-received-lightbox-v1.html",
+        "sha256": "76333bcd07beb462073a3171ab057db2a3df3f9736e77da118cf29e49982b1dc"
+      },
+      {
+        "path": "assets/order-received-lightbox-v1.png",
+        "sha256": "10a12dee38a006a218277e849b9e24f8f49fc629c3da27a65d842bc8952b460f"
+      },
+      {
+        "path": "assets/order-received-lightbox-v2.html",
+        "sha256": "5677649a884c840607cd76e12ec509e2d52f9720c2f8ec142d89a4060d512fe1"
+      },
+      {
+        "path": "assets/order-received-lightbox-v2.png",
+        "sha256": "fca3da1d894fa77af805aaa2317a8d14dabb51bfac64e664fda6b6aaafc88425"
+      },
+      {
+        "path": "buyer-login.html",
+        "sha256": "b6536b5e95dec88703ef56698d8330a5e49a757cf1d31d30e6ddb56f3c24a72b"
+      },
+      {
+        "path": "buyer-room.html",
+        "sha256": "2b97f3489c957513681b24f5244614a9964c94ab4683caf0d64732ee0a7ee0d0"
+      },
+      {
+        "path": "catalogue-sidebar-v1.html",
+        "sha256": "942c6b09fc592cbbcb86180d22021cb64e76d7d9921be2a01afeca51e051a71b"
+      },
+      {
+        "path": "customer-history/history.css",
+        "sha256": "5af8887b644050de24068e9f690d099c4aa9bccf3a8122f95f06b839d3b36871"
+      },
+      {
+        "path": "customer-history/history.js",
+        "sha256": "02310143eef429c305c8fae96737e99e26fb71b562345ecec8f8d1b4ca4f863a"
+      },
+      {
+        "path": "index.html",
+        "sha256": "bc3b7b43c9394ac306f8901cba15343e2ba2ae3abc00078de73e051ff335de73"
+      },
+      {
+        "path": "master-shared/action-affordances.css",
+        "sha256": "db46db36dfc5a8a7b8aceb77936ee71047676922b4b759cf51c93523e6e6e1b0"
+      },
+      {
+        "path": "master-shared/department-messages.css",
+        "sha256": "b0e3454777cf22fb86b2e5af7ec0593dffe6afadbc8c967cb6c53c2fc2d12ba2"
+      },
+      {
+        "path": "master-shared/department-messages.js",
+        "sha256": "76207d64835dbd6cfe09f81ba34ebbd6f5a970722ae38506a48f09f41a9f8ff6"
+      },
+      {
+        "path": "master-shared/desk-delivery.css",
+        "sha256": "580ba5b6f62d06abace254f3c9e2cd843518b6e140794d149b92a3a6b7a255fb"
+      },
+      {
+        "path": "master-shared/desk-delivery.js",
+        "sha256": "a48dcabaf769c358a39d6305d6eb908ac93829be33baa8122a0ca459d1875b86"
+      },
+      {
+        "path": "master-shared/fixed-header.js",
+        "sha256": "4142e6b4be92eae6db38540273da3b80cc5f0e51202f499bd8bd5d3cbfa8a369"
+      },
+      {
+        "path": "master-shared/mobile-menu.css",
+        "sha256": "47c7a2dffee762611e4e24389755da015942b58fdf3a5b45b180890518017165"
+      },
+      {
+        "path": "master-shared/mobile-menu.js",
+        "sha256": "13e4d8725a5287172c9c060f3c29d1d93be6b8abd7067523d6e40465eb7ab09f"
+      },
+      {
+        "path": "master-shared/quantity-alignment.css",
+        "sha256": "bf03fb177c9ecb2971c3f1b6533002e5a60cda6dcfb807d9e20ba468bf14f551"
+      },
+      {
+        "path": "master-shared/shipment-batches.js",
+        "sha256": "c730ed47b875b87dd8cc734deffbb18c808381a2369b7f86d79ccf7d6735c4b2"
+      },
+      {
+        "path": "master-shared/stock-exceptions.css",
+        "sha256": "fdc92728e3c3100b416abea23f5842d079c6d48a74e547b50b5cee928e61fb86"
+      },
+      {
+        "path": "master-shared/stock-exceptions.js",
+        "sha256": "68b4fd85ee953ee7459b69f1d09967f2d7dc3f18915138382a0b01a96fdc8cd2"
+      },
+      {
+        "path": "master-shared/stock-list.css",
+        "sha256": "eb03d733f0b8cefa7b5183f39f31f14315500617ffeabe7054ff30e46d1884e4"
+      },
+      {
+        "path": "master-shared/task-chat.css",
+        "sha256": "475f74128079a9d5cf301aca0e308d93fd9ada30e1ef3770f0a9a689c8fe746f"
+      },
+      {
+        "path": "master-shared/task-chat.js",
+        "sha256": "fc48ed4766d7bd0506356fbd4b3c2dd5de540872fe5673514383e18a11d33f78"
+      },
+      {
+        "path": "master-shared/task-signals.css",
+        "sha256": "f200cf31bdce10685c3876123271ca77e44ba8d6a762094e4f2ffe208c8e7895"
+      },
+      {
+        "path": "master-shared/task-signals.js",
+        "sha256": "bc95ab18acd49933daebf883c23ccf21275ccbebd20aea31818bc39a23bd3dfe"
+      },
+      {
+        "path": "master-shared/workroom-theme.css",
+        "sha256": "0191c166998d6195a42701f2052ac46ca0f34c71c27301f9030a1304ca632195"
+      },
+      {
+        "path": "purchase-live/active-layout.css",
+        "sha256": "a1481ddaa50cc9a909bb5587bf0f442c998b619ad530873258b2a4eb1453ffdd"
+      },
+      {
+        "path": "purchase-live/active-layout.js",
+        "sha256": "877ee7b2ec28870fc8cebe37851889a93cb7a4cea0d911aa1e5ec6f9b6f77ab6"
+      },
+      {
+        "path": "purchase-live/active-orders.css",
+        "sha256": "2db49c1f6ba7c2a4a13b7a51d2ad61568b83ed1c6469e438b02caa96d2337266"
+      },
+      {
+        "path": "purchase-live/app.js",
+        "sha256": "ae4638265b0c124ac278c3c88758d4a11f81706e253220b5812308ac52d4e571"
+      },
+      {
+        "path": "purchase-live/customer-allocation-plan.js",
+        "sha256": "788de4df899164b8282ad75a2f965e725939cdc90d800052c8b806687a99d3bc"
+      },
+      {
+        "path": "purchase-live/customer-allocation.js",
+        "sha256": "0119f8ed11f171626d9c50334bb898f92897bc58655a7c62a98ebe24aea37e1f"
+      },
+      {
+        "path": "purchase-live/dashboard.css",
+        "sha256": "793b9b36792841ca8260885f785a244587b32cd63c3c837e02643b15ca3d5a04"
+      },
+      {
+        "path": "purchase-live/dashboard.js",
+        "sha256": "042edf37d5389c33db9bc82578cf0c0ad53d70182fc72f2da1f525c8040f5f89"
+      },
+      {
+        "path": "purchase-live/display-rows.js",
+        "sha256": "eeeab4190c10cb30334198097c04dad1be3865503621280d4f5dcff72949df67"
+      },
+      {
+        "path": "purchase-live/header.css",
+        "sha256": "22482d3cd3bc7a1a5310f54dce0213aec6ac517b7a4fddc0a204f1ab15d46fb8"
+      },
+      {
+        "path": "purchase-live/index.html",
+        "sha256": "b955554f295c140f9a5e6823f4be40179be3501d045cefd017767b1e102ca17f"
+      },
+      {
+        "path": "purchase-live/source-stock.png",
+        "sha256": "b486881255b2d9614d0fd8b57ee008927b05a8dbd1155ab6c7e0c193452a91b6"
+      },
+      {
+        "path": "purchase-live/split-rows.css",
+        "sha256": "569163f625195f6af54a30d8c3fd8a7ece0f6f77ec105e2704871a9aa2b0fed9"
+      },
+      {
+        "path": "purchase-live/style.css",
+        "sha256": "74ba2d93c8f105ac34f5b62c4dfab5e48196d0d3cf89bf6141da3ddab97f3814"
+      },
+      {
+        "path": "purchase-live/supplier-allocation.js",
+        "sha256": "c105671acf538d32bf435c3e550ef41b2390e1229189c942340bfc97c3ad0821"
+      },
+      {
+        "path": "purchase-live/task-grid.css",
+        "sha256": "4de149c878c3e94bbf2ee8c0a628b2271c8547c94fc2229d3d530c71f3649992"
+      },
+      {
+        "path": "purchase-live/task-grid.js",
+        "sha256": "803191305c8f4549656376182146479d1ae51ba975b9878c4ff21dc1f61eb978"
+      },
+      {
+        "path": "purchase-live/task-info.js",
+        "sha256": "11cce00c3cd987ae7646ac0859593364e913d00bb7766cbedd9ff9fb1d55494a"
+      },
+      {
+        "path": "sales-room/customer-documents.js",
+        "sha256": "c1e19e6512d601b212ef2a85efb09f4bce1accd1ac704fae2768169fbd11938b"
+      },
+      {
+        "path": "sales-room/messages.css",
+        "sha256": "97df1358753a6e7104e035df9673bdae6972527242549c291e9483b937e7b757"
+      },
+      {
+        "path": "sales-room/messages.js",
+        "sha256": "772576fb86fcbb7affbe309af84d59686be05aabc428edb34653a65cf452c4ca"
+      },
+      {
+        "path": "sales-room/order-adjustment.css",
+        "sha256": "8a9b759105a4e9d91dee8624f3f034905e1c2a22ed8628df2fbc6dfc51177cf3"
+      },
+      {
+        "path": "sales-room/order-adjustment.js",
+        "sha256": "30d21174585c9a5433648cd9db807cef567761ece98dd461203eab6f5073c98a"
+      },
+      {
+        "path": "sales-room/shipment-ui.css",
+        "sha256": "232ce0ef8500615d223ef876efa1edcb47dd2b41a47d8d0a9e32c80f18256aa6"
+      },
+      {
+        "path": "sales-room/shipment-ui.js",
+        "sha256": "67a41e695eb2209d57bffa2b7677f6c06e0c2531915a7769c5b5f284290cf782"
+      },
+      {
+        "path": "support-room/draft-compact.css",
+        "sha256": "e1e5535f6f4a37dd8fee593d35a42e1335db170e73611edb343b2ac5b0b76f26"
+      },
+      {
+        "path": "support-room/draft.css",
+        "sha256": "097adaed9c9c9bc5584cfbcc9444ecf3af70a94b331476672de90c0aedc57b68"
+      },
+      {
+        "path": "support-room/draft.html",
+        "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+      },
+      {
+        "path": "support-room/index.html",
+        "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+      },
+      {
+        "path": "support-room/packing-workbench.html",
+        "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+      },
+      {
+        "path": "support-room/workroom-model.js",
+        "sha256": "06f524171d7fabf91e605156b0603b2052f66b7ee76b766224a116b6758917c3"
+      },
+      {
+        "path": "support-room/workroom.css",
+        "sha256": "4e0ddff0d80a1165f2eb050f353272608b0ce224f41fce508641b865f80c59ec"
+      },
+      {
+        "path": "support-room/workroom.html",
+        "sha256": "c35afec40042d131c112a99bf812127f3fd3aee1fa46cb53ba00e3f02c642905"
+      },
+      {
+        "path": "support-room/workroom.js",
+        "sha256": "9d45955c0a5dae37b7ccdf2b5fcfe0a321ef55a3f834b2e1a1782b17694bbe41"
+      },
+      {
+        "path": "warehouse-room/app.js",
+        "sha256": "a0dae5f58049a8fa8d748068ea23e493d87b8d89321750bd5bfbb0e0ec801256"
+      },
+      {
+        "path": "warehouse-room/dispatch.js",
+        "sha256": "a8a5eab45d224e44d46b421a77328614ab0de5fb88a0867e7e1fdf1cd2cd3804"
+      },
+      {
+        "path": "warehouse-room/index.html",
+        "sha256": "de259f7f670253b3fa6d454ce61e2aa4481d71bafe630c3043e8477dca0f47ee"
+      },
+      {
+        "path": "warehouse-room/stock-control-app.js",
+        "sha256": "f90a5c91506c5d7360fd8c6e50d9f38e269dacf4f816d9e7e71e2551968a3e71"
+      },
+      {
+        "path": "warehouse-room/stock-control-embedded.css",
+        "sha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3"
+      },
+      {
+        "path": "warehouse-room/stock-control-link.js",
+        "sha256": "05e15efd06f29f9d2e8175321ee824d9942e3810c3fa8d5e340398f93bfa6e35"
+      },
+      {
+        "path": "warehouse-room/stock-control-preview.html",
+        "sha256": "558d0e2f2b1a7ea37b02deb8b57a683137f643eef8e8d7130885c9e4cee4be07"
+      },
+      {
+        "path": "warehouse-room/stock-control.css",
+        "sha256": "33869086d49e2c48b4ccb023a8fb06696d3344d708fa63147e1ff1a78f68518d"
+      },
+      {
+        "path": "warehouse-room/stock-control.html",
+        "sha256": "87c21a6f1dba0f48dc6de0bc8a282f6419468bb996ee5d2f998ab4b8b8f099a3"
+      },
+      {
+        "path": "warehouse-room/stock-tab-preview.html",
+        "sha256": "292f4ba89dc40fb5459906a88cdb66e064ed02981c5001283d27cb53be91ec7f"
+      },
+      {
+        "path": "warehouse-room/style.css",
+        "sha256": "b10941d22d5c71cb78af04f42073eab60681cb0124e9680fc9dc67c8c2969311"
+      },
+      {
+        "path": "warehouse-room/workroom.css",
+        "sha256": "b2e4564f0a524b9610bf79a081d679917d46f3561810b7f6c87fce2cc1d69df4"
+      },
+      {
+        "path": "warehouse-room/workroom.js",
+        "sha256": "0fe8d4b1c5bf73e3e015280ec9309345490f04acd355b47381e928d2f788898f"
+      }
+    ]
+  },
+  "tests": {
+    "total": 555,
+    "passed": 520,
+    "preExistingFailures": 35,
+    "newFailures": 0,
+    "ui": {
+      "total": 125,
+      "passed": 92,
+      "baselineFailures": [
+        "Active Orders exposes customer short names, filters one customer for movement and previews cross-customer PO without writes",
+        "Active move entry applies a personal grouped order immediately without a cancel or Save step",
+        "Active move entry immediately exposes native drag handles for a sole customer without submitting",
+        "Active priorities count saved sources and locate their task rows without writes",
+        "Active reordered columns retain source actions and show green or red GP beside the barcode instead of a separate column",
+        "Active work tabs allow read-only browsing during a pending Save without resubmitting",
+        "Active work tabs retain the personal order and supplier filter without a draft",
+        "All Customers keeps a personal group order across navigation without a business Save",
+        "All Customers rejects cross-customer drop and allows independent personal customer orders",
+        "Clicking a persistent handle in All Customers opens the original destination dialog for its customer",
+        "Dashboard Entry preserves another customer price draft and saves it with its original task/version",
+        "Dashboard customer Entry opens Active Orders filtered to that customer, preserving sources and requiring no save",
+        "Pending PO includes unassigned remainder once and excludes fulfilled or archived demands",
+        "Save is hidden when clean and allocation stays within the current task layout",
+        "Stock Actions keeps only borrowing/review work and never restores the retired supplier allocation table",
+        "all task entries omit retired progress chrome and ignore the obsolete hidden stage filter",
+        "cost calculator sends source amounts and internal note, not a client calculated price or quantity edit",
+        "customer-task ALLOC uses the current own-stock/free-stock plan and original receipt identity exactly once",
+        "dashboard task action opens current layout and the same task editor without a business write",
+        "diagnostics follow moved product order without changing submitted edits or sequence",
+        "drag feedback marks grip, source and exact insertion target while keeping original save ordering",
+        "each checked orange source PO opens the same cross-row selection without a top PO control",
+        "first-attempt CMS lookup failure releases waiting and preserves original editable draft without refresh or receipt polling",
+        "former customer Room entry retains current drag controls and read-only columns without business writes",
+        "personal display drag and destination dialog persist through reload without a Save or history write",
+        "personal order survives browsing another customer without submitting a business request",
+        "pre-upgrade pending room draft restores and returns through current layout with the identical save payload",
+        "reload checks the existing save identity and restores only the same staff member draft",
+        "request amount clears on focus and formats valid input to two decimals without masking invalid precision",
+        "restored legacy pending request stays uncertain even when its next attempt cannot read CMS",
+        "retry CMS lookup failure cannot clear an earlier uncertain save or permit a new request",
+        "supplier-filtered diagnostics use the same visible product numbering as the table",
+        "unmarked customer and old room entries render only current customer-filtered Active Orders"
+      ],
+      "newFailures": []
+    },
+    "otherBaselineFailures": [
+      "packing-consumer-integration: expected message regex excludes existing Allocation text",
+      "purchase-payment-message: old historical package assertion before test execution"
+    ],
+    "sources": [
+      "d02-release-regression.tap",
+      "d02-ui-harness-current2.tap",
+      "d02-ui-harness-baseline2.tap",
+      "d02-package-tests-fixed.tap",
+      "d02-baseline-packing.tap",
+      "d02-payment-baseline.tap"
+    ]
+  },
+  "limits": [
+    "Offline tests do not prove Wix query consistency or process-kill behavior",
+    "Local visual preview blocked; no bypass attempted",
+    "No million-row/full-history solution in this patch",
+    "Original-request recovery and existing financial/stock/permission rules preserved"
+  ],
+  "release": {
+    "code": "CANDIDATE_READY",
+    "githubPages": "NOT_DEPLOYED",
+    "wix": "27_DRAFTS_MATCH_NOT_PUBLISHED",
+    "public": "NOT_VERIFIED"
+  },
+  "productionBusinessWrites": 0,
+  "newCollections": 0
+}

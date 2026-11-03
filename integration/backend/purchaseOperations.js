@@ -1,7 +1,7 @@
 import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchaseProjection.js';
 import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
-import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares } from 'backend/purchasePlan.js';
+import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares, requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
 import { preparePurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
@@ -66,13 +66,13 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       }
       return {ok:true,company,requestId,operation,savedAt:plan.time,taskIds:ids};
     }:undefined;
+    let preparedWorkspace;
     return journal({collection:names.activity,scope:company+'/PURCHASE',requestId,staff,input:{operation,input},recoverCompleted,prepare:async()=>{
-      const s=await state(company,staff),updates=[],events=[];let displayOrder;
-      const verified=id=>{const row=s.workspace.tasks.find(row=>row.id===id);if(!row||row.archived)throw Error('Active accepted task required.');
+      const s=await state(company,staff),updates=[],events=[];let displayOrder;preparedWorkspace=s.workspace;
+      const verified=id=>{requireConfirmedProcurement(s.workspace,[id]);const row=s.workspace.tasks.find(row=>row.id===id);if(!row||row.archived)throw Error('Active accepted task required.');
         const task=s.tasks.find(task=>task.title===id);if(!task)throw Error('Task missing.');
         const order=s.orders.find(order=>order.title===task.description&&order.sourceLineId===task.imageAltText);if(!order||order.salesInvoiceNumber)throw Error('Customer invoice has locked this transaction.');return {row,task,order};};
       const edit=(task,patch)=>{const existing=updates.find(change=>change.id===task._id);if(existing)Object.assign(existing.patch,patch);else updates.push({id:task._id,expected:taskEditVersion(task),patch,orderId:task.description,lineId:task.imageAltText});};
-      const requireSettledPlan=task=>{for(const record of s.activity){const event=record.action==='PURCHASE_OPERATION_PREPARED'&&record.details?.plan?.events?.find(event=>event.taskId===task.title&&event.action==='PURCHASE_PLAN_SAVED');if(event&&!s.activity.some(saved=>saved.title===operationId(company,record.details.requestId,record.details.actorMemberId,task.title,event.action)))throw Error('A prior procurement save is pending. Retry that same save first.');}};
       if(operation==='EDIT') {
         if(!Array.isArray(input.edits)||(!input.edits.length&&!input.taskIds)||input.edits.length>100||new Set(input.edits.map(row=>row.taskId)).size!==input.edits.length)throw Error('Select distinct task edits.');
         for(const item of input.edits) {
@@ -117,7 +117,6 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         events.push({taskId:task.title,action:'PURCHASE_AVERAGE_COST_APPLIED',before:Object.fromEntries(prices.map(key=>[key,task[key]??null])),after:Object.fromEntries(prices.map(key=>[key,patch[key]])),calculation:{currency:'MYR',lineCost:input.lineCost,totalCtn:input.cartons,averageCostCtn:average,ea:order.orderId,note},supplierId:task.supplierId});
       } else if(operation==='PLAN') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim(),plan=readPurchasePlan(task,s.activity);
-        requireSettledPlan(task);
         if(taskEditVersion(task)!==input.version||plan.revision!==input.planRevision)throw Error('Procurement plan changed. Refresh before saving; your input is retained.');
         const supplierId=input.supplierId===undefined?task.supplierId:input.supplierId,patch={};
         if(!['SUPPLIER_DELIVER','SELF_COLLECT'].includes(input.transportMode))throw Error('Select Supplier Deliver or Self Collect before saving.');
@@ -155,7 +154,6 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       } else if(operation==='QTY') {
         const {task,order}=verified(input.taskId),reason=String(input.reason||'').trim();
         if(s.workspace.tasks.find(row=>row.id===input.taskId)?.borrowingOutstanding>0)throw Error('Return unshipped borrowed stock or complete repayment before reducing this customer demand.');
-        requireSettledPlan(task);
         if(task.procurementSource)throw Error('Customer demand can only be edited on the original customer line.');
         if(task.specialPurchase)throw Error('Special Purchase quantity rules are not enabled.');
         if(taskEditVersion(task)!==input.version)throw Error('A task changed. Refresh before saving; your input is retained.');
@@ -190,7 +188,6 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         const destination=proposed.filter(row=>row.po===po).map(row=>row.id);
         if(savedOrders.filter(row=>row.details?.taskIds?.some(id=>destination.includes(id))).length>1)throw Error('Two purchase orders with saved records cannot be merged.');
         for(const {task} of chosen){if(input.versions?.[task.title]!==taskEditVersion(task))throw Error('A task changed. Refresh before saving.');
-          requireSettledPlan(task);
           const patch={ourPoNumber:po,purchaseStage:['NEW_INCOMING','WAITING_FOR_PO'].includes(task.purchaseStage)?'WAITING_FOR_SUPPLIER_INV':task.purchaseStage};
           edit(task,patch);events.push({taskId:task.title,action:'PURCHASE_PO_ASSIGNED',before:task.ourPoNumber||'',after:po});
           if(!readPurchasePlan(task,s.activity).revision)events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:'',before:null,after:task.purchaseQtyInCtn,totalCtn:task.purchaseQtyInCtn,customerQty:task.purchaseQtyInCtn,extraKind:'',reason:'Quantity recorded when assigning P.O.',supplierId:task.supplierId,poNumber:po,supplierConfirmed:false});}
@@ -220,6 +217,7 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
       return {operation,updates,events,...(displayOrder?{displayOrder}:{}),time:now().toISOString()};
     },apply:async plan=>{
       const held=[];
+      if(plan.operation!=='PLAN')requireConfirmedProcurement(preparedWorkspace||(await state(company,staff)).workspace,plan.updates.map(change=>change.id));
       if(plan.displayOrder){const current=(await state(company,staff)).workspace.purchaseDisplayOrder?.[plan.displayOrder.customerId];if(current?.version!==plan.displayOrder.beforeVersion)throw Error('Shipment row order changed while this save was pending. Refresh and review the retained draft.');}
       const started=now().getTime();
       const stillOwned=async taskId=>{const id=operationId(company,taskId,'COST_LOCK'),lock=await store.read(names.activity,id);if(started+90000<=now().getTime()||lock?.details?.requestId!==requestId||lock.details.actorMemberId!==staff.memberId)throw Error('Save time limit reached. Refresh and retry this same save.');};

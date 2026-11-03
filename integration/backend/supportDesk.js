@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments, reservedCartons } from 'backend/customerShipmentLedger.js';
 import { deskTaskPortions, readShortloadResolutions, readDeskCommitments } from 'backend/shortloadResolutionModel.js';
@@ -70,6 +71,7 @@ export function createSupportDeskOperations({store,names,readContext,now=()=>new
   const digest=operationId(normalized),prior=context.activity.filter(row=>row.action===ACTION&&row.result==='SAVED'&&row.details?.memberId===staff.memberId&&row.details?.requestId===requestId);
   if(prior.length>1)throw Error('Desk save receipt requires review.');
   if(prior.length){if(prior[0].details.digest!==digest)throw Error('This save was already used for different Desk details.');return {ok:true,company,requestId,deskState:{...copy(prior[0].details.state),revision:prior[0].title}};}
+  if(['DESK_ASSIGN','DESK_SPLIT'].includes(input.action))requireConfirmedProcurement(context,[input.taskId]);
   const tasks=context.tasks.filter(row=>row.customerId===input.customerId&&!row.archived&&!row.procurementSource&&!row.specialPurchase);
   if(!tasks.length||['DESK_ASSIGN','DESK_SPLIT'].includes(input.action)&&!tasks.some(row=>row.id===input.taskId))throw Error('Select an active customer task.');
   const before=currentSupportDeskState(context,readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId));
@@ -119,6 +121,7 @@ export function checkSupportDeskInvoice(context,readiness,input,owner){
  const ready=task=>(scoped(task)||readiness.lines.find(line=>line.taskId===task.id))?.maxInvoiceQty||0;
  if(portions.some(part=>{const reserved=scoped(part.task)?deskLoadedInvoiceQuantity(context,part.task.id,desk.number).reserved:reservedCartons(part.task.id,context.activity),confirmed=readDeskCommitments(context.activity,context.company,part.task.id).batches.filter(row=>row.desk===desk.number).reduce((n,row)=>n+row.quantity,0);return ready(part.task)<Math.max(0,(confirmed||part.quantity)-reserved);}))throw Error('Resolve the remaining Desk quantities before confirming this invoice.');
  const expected=portions.map(part=>({taskId:part.task.id,quantity:ready(part.task)})).filter(line=>line.quantity>0).sort((a,b)=>a.taskId.localeCompare(b.taskId));
+ requireConfirmedProcurement(context,expected.map(line=>line.taskId));
  const observed=input.lines.map(line=>({taskId:line.taskId,quantity:line.quantity})).sort((a,b)=>a.taskId.localeCompare(b.taskId));
  if(!expected.length||operationId(expected)!==operationId(observed))throw Error('Invoice lines must match the current Desk and confirmed loading.');
  return {number:desk.number,revision:desk.revision,batchId:supportDeskBatchId(state,desk.number),shipment:copy(state.shipments.find(row=>row.desk===desk.number)||null),references:copy((state.references||[]).find(row=>row.desk===desk.number)||null)};

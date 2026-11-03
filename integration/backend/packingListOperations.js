@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { changePackingList, packingAvailability } from 'backend/packingListModel.js';
 import { Buffer } from 'buffer';
@@ -43,6 +44,7 @@ export function createPackingListOperations({store,names,readContext,documentSer
    const current=context.lists.find(list=>list.id===id);
    if(!creating&&!current)throw Error('Packing list is unavailable.');
    const revision=operationId(company,requestId,staff.memberId,'PACKING_REVISION'),at=now().toISOString();
+   requireConfirmedProcurement(context,[...(current?.lines||[]),...(input.lines||[])].map(line=>line.taskId));
    const uploads=[],photoStage=deskLoad?'LOADING':input.photoStage,deskNext=deskAction?(input.action==='DESK_SEND'?planDeskDelivery({context,input,actor:department,id,revision,at}):changeDeskDelivery({context,list:current,input,actor:department,id,revision,at})):null;
    if(photoSave){
     if(!current?.lines.some(line=>line.taskId===input.taskId)||!['PACKING','LOADING'].includes(photoStage))throw Error('Warehouse photo task or stage requires review.');
@@ -52,6 +54,7 @@ export function createPackingListOperations({store,names,readContext,documentSer
    }
    const attachments=uploads.map(upload=>({fileId:upload.fileId,name:upload.name,sha256:upload.sha256,mimeType:upload.mimeType,size:upload.size,stage:upload.type,at,by:staff.staffName}));
    const next=deskNext||changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});
+   requireConfirmedProcurement(context,next.lines.map(line=>line.taskId));
    for(const line of next.lines)delete line.resolution;
    if(deskLoad&&attachments.length)next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,photos:[...(line.photos||[]),...attachments]}:line);
    if(deskLoad&&next.lines.some(line=>line.photos?.length>30))throw Error('Warehouse photo history is full.');
@@ -72,12 +75,13 @@ export function createPackingListOperations({store,names,readContext,documentSer
     if(plan.deskReservation){const hold=await store.read(collection,operationId(operationId(company,list.customerId,'SUPPORT_DESK'),plan.deskReservation.revision,'NEXT'));if(!hold?.details?.state?.deliveryHolds?.some(row=>row.listId===list.id&&row.requestId===requestId&&row.memberId===staff.memberId&&row.digest===plan.deskReservation.digest))throw Error('Desk delivery receipt is unconfirmed. Retry the same save.');deskState={...hold.details.state,revision:hold.title};}
    }else{
     if((existing?.details?.list?.revision||'')!==plan.beforeRevision)throw Error('Packing list changed while saving.');
-    const checked=await readContext(company,staff);
+    const checked=await readContext(company,staff);requireConfirmedProcurement(checked,list.lines.map(line=>line.taskId));
     if(packingVersion(checked)!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
     if(plan.deskReservation)deskState=await reserveSupportDeskDelivery({store,names,context:checked.physicalContext,staff,requestId,...plan.deskReservation,now});
     if(list.lines.some(line=>line.loaded>0))assertLoadedOutflows(checked.physicalContext,list.lines.filter(line=>line.loaded>0).map(line=>({id:loadingOutflowId(company,'PACKING',list.id,line.taskId),taskId:line.taskId,quantity:line.loaded,sources:line.physicalSources})));
     for(let index=0;index<(plan.uploads||[]).length;index++){const upload=plan.uploads[index],receipt=await documentService({...upload,base64:verified[index].base64});if(receipt?.ok!==true||['fileId','company','poId','name','sha256','mimeType','size'].some(key=>receipt[key]!==upload[key]))throw Error('Warehouse photo upload is unconfirmed. Retry this same save.');}
-    if(packingVersion(await readContext(company,staff))!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
+    const finalContext=await readContext(company,staff);requireConfirmedProcurement(finalContext,list.lines.map(line=>line.taskId));
+    if(packingVersion(finalContext)!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');
     const row={...plan.record,activityTime:new Date(plan.record.activityTime)};
     if(existing)await store.update(collection,row);else await store.insert(collection,row);
    }

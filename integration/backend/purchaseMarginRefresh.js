@@ -32,7 +32,7 @@ export function readPurchaseMargins({company,orders,tasks,workspace,activity=[]}
  const result=new Map(),invoices=readCustomerShipments(activity).filter(row=>row.company===company&&['INVOICED','DISPATCHED'].includes(row.status)),locks=new Set(activity.map(row=>row._id));
  for(const root of workspace.tasks.filter(row=>!row.procurementSource)){
   const group=workspace.tasks.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id),order=orders.find(row=>row.title===root.orderId&&row.sourceLineId===root.sourceLineId);
-  const blocked=!order||!group.some(ready);
+  const blocked=!order||!group.some(ready)||group.some(source=>source.procurementSavePending===true);
   const invoiceLines=invoices.flatMap(shipment=>shipment.lines.filter(line=>line.taskId===root.id));
   for(const row of [root,...group.map(source=>({...source,procurementSource:true}))]){
    const key=row.procurementSource?'SOURCE:'+row.id:row.id;result.set(key,null);

@@ -1,3 +1,4 @@
+import { requireConfirmedProcurement } from 'backend/purchasePlan.js';
 import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
 import { requirePackingReleased } from 'backend/packingListGuards.js';
 import { readShipmentPlans } from 'backend/customerShipmentPlan.js';
@@ -99,7 +100,7 @@ export function createPreparationOperations({store,names,readContext,documentSer
    return {mimeType:p.mimeType,sha256:p.sha256,base64:p.base64,size:bytes.length};
   });
   const safeInput={...input,photos:verified.map(({base64,...p})=>p)};
-  async function current(){const context=await readContext(company,staff),items=projectPreparation(context),item=items.find(i=>i.id===input.id);if(context.company!==company||!item||item.version!==input.version)throw Error('Warehouse task changed. Refresh before saving; input is retained.');requirePackingReleased(context,[item.taskId]);return {context,items,item};}
+  async function current(){const context=await readContext(company,staff),items=projectPreparation(context),item=items.find(i=>i.id===input.id);if(context.company!==company||!item||item.version!==input.version)throw Error('Warehouse task changed. Refresh before saving; input is retained.');requireConfirmedProcurement(context,[item.taskId]);requirePackingReleased(context,[item.taskId]);return {context,items,item};}
   return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{preparation:safeInput},prepare:async()=>{
    const {context,items,item}=await current(),note=text(input.note),at=now().toISOString();
    if(readCustomerShipments(context.activity).some(row=>row.status==='DISPATCHED'&&row.lines.some(line=>line.taskId===item.taskId)))throw Error('Warehouse this task has dispatched goods. Use the supervised correction process.');

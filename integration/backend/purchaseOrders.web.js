@@ -1,3 +1,4 @@
+import { PROCUREMENT_SAVE_PENDING } from 'backend/purchasePlan.js';
 import { webMethod, Permissions } from 'wix-web-module';
 import wixData from 'wix-data';
 import { getPurchaseStaffContext } from 'backend/purchaseAccess.js';
@@ -28,7 +29,7 @@ export const getPurchaseOrders=webMethod(Permissions.SiteMember,async company=>{
 export const savePurchaseOrder=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{
   const staff=await getPurchaseStaffContext();
   try{return await orders.save({company,requestId,input,staff});}
-  catch(error){
+  catch(error){if(error?.message===PROCUREMENT_SAVE_PENDING)return {ok:false,requestId,retryable:true,error:PROCUREMENT_SAVE_PENDING};
     const message=String(error?.message||'');
     const safe=/^(Payment request |Only the original uploader can delete this document\.|This document is (not available for deletion|locked by payment or Finance records)\.|A document deletion is pending\.|Document identity is incomplete\.|Document deletion (is not connected|could not be confirmed|state changed)\.|Procurement handoff |Select an actual payment notification|This payment notification was already acknowledged|Unsupported purchase order action\.|Document upload is not connected\.|Select a (valid )?PDF up to 3 MiB\.|Purchase order changed\.|Purchase order changed while saving\.|Please enter a reason\.|Select a supplier before uploading documents\.|This document is already linked to the purchase order\.|Payment chase has not changed\.|Enter payment terms from 0 to 3650 days\.|Payment term has not changed\.|Enter the supplier document date\.|Select (PO, )?INV, CN, SO, PI or DO\.|Enter the supplier document amount in MYR\.|Supplier short name and document number are required\.|Purchase document service is not configured\.|Upload credentials do not match\.|Document service unavailable\.|Document upload could not be confirmed\.|A save is still processing\.)/.test(message);
     return {ok:false,requestId,error:safe?message:'Purchase order save could not be confirmed. Retry the same save.'};

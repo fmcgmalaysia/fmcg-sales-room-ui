@@ -2,7 +2,7 @@
 import { readSalesShipmentDate } from 'backend/customerShipmentPlan.js';
 import { projectPurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
 import { taskEditVersion, acceptedSpecialTask } from 'backend/purchaseTaskIdentity.js';
-import { readPurchasePlan, readPurchaseShares } from 'backend/purchasePlan.js';
+import { readPurchasePlan, readPurchaseShares, confirmedPurchaseState } from 'backend/purchasePlan.js';
 import { readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { readAllocations, allocationVersion } from 'backend/plannerAllocation.js';
 import { readShortage, shortageVersion } from 'backend/purchaseShortage.js';
@@ -34,8 +34,10 @@ export function requirePurchaseStaff(member, records) {
       !(departments.includes('PURCHASE') || role === 'SUPER ADMIN' || role === 'TOP MANAGEMENT')) throw Error('Purchase access is not authorized.');
   return { staffId: text(row.title), staffName: text(row.staffName), role };
 }
-export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff }) {
+export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff, confirmedState }) {
   if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
+  const confirmed=confirmedState||confirmedPurchaseState({company,tasks,activity});
+  tasks=confirmed.tasks;activity=confirmed.activity;
   const accepted = new Map();
   for (const event of activity) {
     if (event.action !== 'ORDER_RECEIVED' || event.result !== 'ACCEPTED') continue;
@@ -60,7 +62,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
     seen.add(task.title);
     customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
     const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
-    const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity,allocations);
+    const procurement=confirmed.plans.get(task.title)||readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity,allocations);
     const shipmentDate=readSalesShipmentDate(task.description,order.customerId,order.submissionId,order.estimatedShipmentDate,activity);
     const salesDemand=!task.procurementSource&&!task.specialPurchase?readSalesDemand(task.title,order.orderQtyInCtn,activity):null;
     rows.push({
@@ -168,6 +170,11 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
   for(const row of rows){const allocation=supply.find(item=>item.taskId===row.id);if(allocation)row.supplyAllocation=allocation;}
   const borrowing=readAllocationLoans(activity);
   for(const row of rows){row.borrowingPayable=borrowing.filter(loan=>loan.borrowerTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingReceivable=borrowing.filter(loan=>loan.lenderTaskId===row.id).reduce((n,loan)=>n+loan.outstanding,0);row.borrowingOutstanding=row.borrowingPayable+row.borrowingReceivable;if(row.borrowingOutstanding>0)row.archived=false;}
+  const pendingRoots=new Set(confirmed.pending.map(item=>item.rootId));
+  const pendingIds=new Set(rows.filter(row=>pendingRoots.has(row.customerDemandTaskId||row.id)).map(row=>row.id));
+  // A borrower may depend on this source even though it belongs to another customer.
+  for(const source of allocations)if(pendingIds.has(source.sourceTaskId))for(const target of source.targets||[])pendingIds.add(target.taskId);
+  for(const row of rows)if(pendingIds.has(row.id))row.procurementSavePending=true;
   return {
     company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
     customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
