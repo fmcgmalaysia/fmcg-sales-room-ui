@@ -49,5 +49,14 @@
     "Offline query volume is not measured Wix latency",
     "No real production save replay performed"
   ],
-  "status": "TESTED_NOT_SYNCED_NOT_PUBLISHED"
+  "status": "WIX_LIVE_PUBLIC_ACCEPTANCE_PENDING",
+  "code": "6c3cfb2ee95e7d7d3c19becc11959d33afccac2f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/326",
+  "release": {
+    "code": "COMPLETE_PUSHED",
+    "pages": "UNCHANGED_PURCHASE_3_HASHES_MATCH_PRIOR_D02",
+    "wix": "TWO_EXACT_DRAFTS_PUBLISHED_AND_LIVE",
+    "public": "REFRESHED_PURCHASE_EMPTY_IFRAME_NO_CAPTURED_ERRORS",
+    "permissions": "UNCHANGED_NO_NEW_DEPLOYMENT_RULE"
+  }
 }
