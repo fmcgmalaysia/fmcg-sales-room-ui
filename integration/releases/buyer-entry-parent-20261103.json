@@ -42,8 +42,9 @@
     "code": "e1138ea_GITHUB_SYNCED_96_CHECKS_PASS",
     "pages": "RUN_337_41606760414_SUCCESS_101_MANIFEST_HASHES_AND_CHANGED_HTML_MATCH",
     "wix": "UNIQUE_VERSION_DRAFT_EXACT_PUBLISHED_AND_LIVE",
-    "public": "PENDING_FRESH_FORMAL_SALES_ENTRY_BUYER_DOWNLOAD_TOOL_EMBED_BLANK"
+    "public": "PARTIAL_NEW_ENTRY_ARROW_AND_SAME_TAB_ROUTE_CONFIRMED_BUYER_CONTENT_BLANK_DOWNLOAD_NOT_VERIFIED"
   },
   "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_BRANCH_RULE_REMOVED",
-  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/321"
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/321",
+  "currentBlocker": "Browser tool requires latest ChatGPT Chrome extension; no further browser attempts"
 }
