@@ -4,10 +4,54 @@
   "cause": "Invoice success, original-request reconciliation and cancellation reload sources0,2,3 but reuse stale packing source1. New invoice totals and old per-Desk invoiced quantities are then combined.",
   "change": "Add source1 to those three existing read refreshes. No new business writer, quantity arithmetic, store, permission, ledger or retry path. Version markers updated.",
   "baseline": "Published Warehouse recoveryf901a4c; Support runtime remains3b6a1db. Support Wix original1988chars freshly matched repository; corresponding static asset was unchanged in the verified101/101 package.",
-  "package": {"build": "20261103-support-invoice-desk-refresh-v1", "resources": 101, "changed": ["support-room/workroom.html", "support-room/workroom.js"], "unchanged": 99},
-  "tests": {"passed": 78, "total": 78, "new": 5, "coverage": "Execute original invoice success/reconciliation/uncertain/cancellation UI callbacks, preserve original requests and all business statements; related invoice, shortload, Desk reuse and draft guards."},
+  "package": {
+    "build": "20261103-support-invoice-desk-refresh-v1",
+    "resources": 101,
+    "changed": [
+      "support-room/workroom.html",
+      "support-room/workroom.js"
+    ],
+    "unchanged": 99
+  },
+  "tests": {
+    "passed": 78,
+    "total": 78,
+    "new": 5,
+    "coverage": "Execute original invoice success/reconciliation/uncertain/cancellation UI callbacks, preserve original requests and all business statements; related invoice, shortload, Desk reuse and draft guards."
+  },
   "wix": "Only Support page version reference changes; exact draft readback retained. Not published.",
-  "liveScenario": {"order": "TEST-CLOSEOUT-1103", "po": "NCT-PO-CLOSEOUT-1103", "requested": 30, "received": "22+8=30", "loaded": "22+8=30", "firstSi": {"number": "NCT-INV-CLOSEOUT-1103-01", "qty": 22, "amountUsd": 245.4}, "secondSi": {"number": "NCT-INV-CLOSEOUT-1103-02", "qty": 8, "amountUsd": 111}, "totalUsd": 356.4, "remaining": 0, "sameDesk": 1, "history": "Both batches in WarehouseCompleted; Loaded buttons disabled, original5SI and original payments preserved", "stock": {"onHand": 10, "reserved": 0, "available": 5, "isolated": 5}, "financeCost": "Fresh Finance verification still pending; expected571.25MYR is not claimed verified", "workaround": "One normal full read was used before safely assigning second batch. Invalid10/5 form was cancelled, not submitted."},
+  "liveScenario": {
+    "order": "TEST-CLOSEOUT-1103",
+    "po": "NCT-PO-CLOSEOUT-1103",
+    "requested": 30,
+    "received": "22+8=30",
+    "loaded": "22+8=30",
+    "firstSi": {
+      "number": "NCT-INV-CLOSEOUT-1103-01",
+      "qty": 22,
+      "amountUsd": 245.4
+    },
+    "secondSi": {
+      "number": "NCT-INV-CLOSEOUT-1103-02",
+      "qty": 8,
+      "amountUsd": 111
+    },
+    "totalUsd": 356.4,
+    "remaining": 0,
+    "sameDesk": 1,
+    "history": "Both batches in WarehouseCompleted; Loaded buttons disabled, original5SI and original payments preserved",
+    "stock": {
+      "onHand": 10,
+      "reserved": 0,
+      "available": 5,
+      "isolated": 5
+    },
+    "financeCost": "Fresh Finance verification still pending; expected571.25MYR is not claimed verified",
+    "workaround": "One normal full read was used before safely assigning second batch. Invalid10/5 form was cancelled, not submitted."
+  },
   "accessIssue": "Separate from this UI snapshot fix: intermittent first-page embedded-document connection stall remains unresolved. Warehouse recovery scoped live reads3 andGHR/NCTswitch passed; do not call all access failures fixed.",
-  "permission": "NOT_CHANGED; new action-time deployment authorization required. Previous Warehouse permission was used and removed."
+  "permission": "NOT_CHANGED; new action-time deployment authorization required. Previous Warehouse permission was used and removed.",
+  "pr": 319,
+  "commit": "2217b55",
+  "evidence": "Root handoff/master-three-customer-stress-20261102/DESK_TWO_BATCH_LIVE_20261103.json,113/114/115 screenshots"
 }
