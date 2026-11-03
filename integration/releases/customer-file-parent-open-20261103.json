@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-03",
+  "objective": "Open customer-authorized original Drive files through Wix parent current-tab navigation",
+  "branch": "fix/customer-file-parent-open-20261103",
+  "build": "20261103-customer-file-parent-open-v1",
+  "workflowInput": "customer-file-parent-open-only",
+  "baseline": {
+    "verifiedTag": "verified/support-upload-recovery-20261103",
+    "staticPackage": "859f6ca",
+    "liveStaticMatchesPackage": true,
+    "approvedPreservedDifferences": [
+      "Two Wix formal entry references",
+      "Customer logistic labels and formal HTML version references"
+    ]
+  },
+  "files": [
+    "buyer-room.html",
+    "customer-history/history.js",
+    "index.html"
+  ],
+  "resources": 101,
+  "changedResources": 3,
+  "unchangedResources": 98,
+  "wixReadbacks": {
+    "buyer": {
+      "normalizedSha256": "077730ea706f20b3307bece6564d2d71d8793948f2f4ff85465a6e4b405d6667",
+      "exact": true
+    },
+    "sales": {
+      "normalizedSha256": "ca6443603dce1880146e443a5906ceb0e9c1fc897bf397aefecc0c615476b017",
+      "exact": true
+    }
+  },
+  "checks": {
+    "passed": 101,
+    "failed": 0,
+    "newParentCases": 10,
+    "newUiCases": 3,
+    "newPackageCases": 3
+  },
+  "protected": [
+    "Same original files, permanent preview links and sharing permissions",
+    "Original customer/company backend authorization",
+    "No CMS reads or Activity writes on file clicks",
+    "No supplier/internal Finance file exposure",
+    "No inventory, invoice or payment writes",
+    "Current customer history content, logistics labels and CBM repair",
+    "98 other static resources byte unchanged"
+  ],
+  "acceptance": [
+    "Sales and Buyer history: click original SI, current Wix tab navigates to original Drive view",
+    "Drive native Download saves matching original PDF",
+    "Browser Back returns to the correct customer history identity",
+    "Customer payment-proof downloads use same path; unauthorized file and stale request cannot navigate"
+  ],
+  "stages": {
+    "code": "LOCAL_TESTED_PENDING_GITHUB",
+    "pages": "PENDING_ACTION_TIME_PERMISSION",
+    "wix": "TWO_DRAFTS_EXACT_PENDING_PUBLISH",
+    "public": "PENDING_AFTER_RELEASE"
+  }
+}

@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="build-version" content="2026-10-20-order-adjustment-v1">
+<meta name="build-version" content="20261103-customer-file-parent-open-v1">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -586,12 +586,12 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 .side .nav button.active #progressCustomerAlert{background:#dc3545;color:#fff}
 </style>
 <link rel="stylesheet" href="sales-room/order-adjustment.css?v=20261020-order-adjustment-v1">
-<script src="master-shared/shipment-batches.js?v=20261020-order-adjustment-v1"></script>
-<script src="sales-room/order-adjustment.js?v=20261020-order-adjustment-v1"></script>
+<script src="master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1"></script>
+<script src="sales-room/order-adjustment.js?v=20261101-po-auto-allocation-v1"></script>
 <link rel="stylesheet" href="master-shared/task-chat.css?v=20261020-sales-messages-v1">
 <link rel="stylesheet" href="sales-room/messages.css?v=20261027-chat-latest-v1">
 <meta name="sales-messages-build" content="2026-10-20-sales-messages-v1">
-<link rel="stylesheet" href="customer-history/history.css?v=20261101-customer-dispatch-history-v1">
+<link rel="stylesheet" href="customer-history/history.css?v=20261102-customer-invoice-payments-v1">
 </head>
 <body class="dashboard-view">
 <div class="app">
@@ -1373,7 +1373,7 @@ setInterval(()=>{
 function dashboardRfqCount(rows){return rows.every(row=>Number.isSafeInteger(row.rfqItemCount)&&row.rfqItemCount>=0)?rows.reduce((sum,row)=>sum+row.rfqItemCount,0):null}
 document.querySelectorAll('[data-dashboard-target]').forEach(card=>{const activate=()=>{const view=card.dataset.dashboardTarget;if(showView(view)===false)return;if(view==='customers'){customerAccessView='ACTIVE';customerPage=1;document.getElementById('customerSearch').value='';updateAccessTabs();applyCustomerFilters()}};card.onclick=activate;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}}});
 </script>
-<script src="sales-room/shipment-ui.js?v=20261017-site-bilingual-copy-v1"></script><script src="sales-room/customer-documents.js?v=20261017-site-bilingual-copy-v1"></script><script src="sales-room/messages.js?v=20261027-chat-latest-v1"></script>
-<script src="customer-history/history.js?v=20261101-customer-dispatch-history-v1" data-room="sales"></script>
+<script src="sales-room/shipment-ui.js?v=20261101-po-auto-allocation-v1"></script><script src="sales-room/customer-documents.js?v=20261101-customer-loaded-records-v1"></script><script src="sales-room/messages.js?v=20261027-chat-latest-v1"></script>
+<script src="customer-history/history.js?v=20261103-customer-file-parent-open-v1" data-room="sales"></script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->
