@@ -21,8 +21,10 @@ Wix documents the popup response as the result of its programmatic close operati
 
 Two old quantity-release assertions were updated for explicitly approved subsequent changes: the independently published Sales layout and this receipt-timing change. Protection still verifies unchanged native download blocks, unchanged Buyer confirmation click handler, and byte-identical backend authority/workbook code against the accepted source.
 
-## Release preparation
+## Release status
 
-The two minimal Wix drafts have been read back exactly. GitHub synchronization, Wix publish receipt and real-page order/Excel acceptance remain required. No Pages deployment or temporary deployment permission is required because all 101 static resources remain unchanged.
+Code `70b33f33` is synchronized in PR341. Both minimal Wix drafts were read back exactly; Studio returned published and live. All 101 current static resource hashes were rechecked and remain unchanged, so no Pages deployment or temporary deployment permission was used.
+
+Public acceptance remains incomplete. The existing Buyer tab had the correct customer and zero quantity drafts before its single reload. After reload, its outer Wix page and native Selection Excel link rendered but the Buyer embed remained blank. One new clean access with the same explicit customer-assist URL produced the same result. No further refresh loop or new test submission was performed. Relevant Wix fallback errors and exact source evidence are retained locally. The new Order Received and actual Order Excel workflow still require a real visible page; offline success is not formal acceptance.
 
 Formal acceptance must use a fresh test request, never replay an old request ID. Record any resulting test addition explicitly and do not transfer it to MASTER, receive goods or post payments for this UI task. Historical PDF and CMS long-term-read issues remain separate.
