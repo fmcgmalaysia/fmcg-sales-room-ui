@@ -10,7 +10,8 @@ test('workspace uses the compact customer, sku, user icon and risk layout', () =
   const workspaceOverride = html.slice(html.indexOf('const originalWorkspaceCustomerTable'));
   assert.match(workspaceOverride, /Customer<span>客户<\/span>/);
   assert.doesNotMatch(workspaceOverride, /<th>COUNTRY<span>国家<\/span><\/th>/);
-  assert.match(workspaceOverride, /\+esc\(selectionLimit\)\+' sku/);
+  assert.match(workspaceOverride, /Selection<span>选品数量及上限/);
+  assert.match(workspaceOverride, /\+esc\(selectionLimit\)\+'<span class="selection-unit">sku/);
   assert.match(workspaceOverride, /workspace-user-count/);
   assert.match(workspaceOverride, /Risk <span class="risk-warning" aria-label="Risk warning">⚠<\/span><span>报价风险<\/span>/);
   assert.match(workspaceOverride, /quoteRiskCount/);
