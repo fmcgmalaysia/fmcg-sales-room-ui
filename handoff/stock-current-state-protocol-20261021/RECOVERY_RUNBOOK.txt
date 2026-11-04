@@ -1,0 +1,56 @@
+Stock current-state candidate recovery contract — 2026-10-21
+NOT a production recovery endpoint; no manual CMS editing authorized by this document.
+
+Scope and evidence
+The isolated protocol and SDK-shaped tests cover interrupted saves. Actual Wix tests
+prove conditional patch and conditional remove on synthetic records, not real network
+timeouts or complete multi-record recovery. ACTIVE remains off. The deployed journal
+is unchanged and this candidate must not be used to repair existing business records.
+
+Employee-facing outcome contract
+1. Confirmed RESULT and finalized generation: show saved; retry same request returns
+   the receipt. Do not generate a new request to work around uncertain status.
+2. Pending own request: preserve inputs/request/member/digest; server may resume the
+   exact saved plan under a newly acquired company lock, without recalculating quantity.
+3. Another operation pending: refuse new stock mutations and executable stock reads.
+   Retained last-known UI may only be explicitly stale/read-only.
+4. Read/permission/network error: unknown, never zero stock or record missing.
+5. Conflict between current record and saved before/after: stop; never force the plan,
+   overwrite summary from source, or fall back silently to history-based decisions.
+
+Read-only incident packet (future administrator tooling requirements)
+Capture company/control ID/generation/version/pending key+digest; lock owner+attempt;
+exact PREPARED and RESULT identities/digests; relevant current versions and before/after
+comparisons. Keep private business payload out of public GitHub/Pages. Record error and
+time, but elapsed time alone is not evidence an execution ended. Retain all receipts.
+
+Recovery classification
+A. Lock insert response lost: ownership uncertain, no subsequent domain writes should
+   have begun. Retry must not delete/steal the lock, even when owner request matches.
+B. Known lock absent, pending matches request/digest: retry the SAME operation. Exact
+   after-images confirm already completed transitions; unchanged before-images may be
+   retried with their original atomic expected version, not an unconditional update.
+C. RESULT exists but pending remains: verify digest/base generation; finish the control
+   transition, not the business mutations. Do not invoke prepare again.
+D. Release response lost: if exact lock now absent, normal same-request retry can replay
+   RESULT; if present or read fails, remain blocked. Do not report failure as proof no save.
+E. Stuck lock/current attempt cannot be proved inactive: keep blocked. No TTL stealing.
+   Before a future authorized recovery tool can release it, stop admission, establish
+   old execution termination/no later writes, verify incident packet, and use atomic
+   company+exact-attempt conditional deletion. Changed attempt means abort, not retry
+   with a newly observed token. This tool and termination proof are NOT implemented.
+F. Version/image/digest mismatch, missing receipt with partial changes, or mixed-company
+   identity: quarantine incident for review. No automatic inverse writes or row deletion.
+
+Non-negotiable release prerequisites
+All stock-affecting writers must participate in the same control/fencing protocol.
+Existing business/auth guards remain; collection allowlist is not employee authorization.
+Initialization/migration must occur under the separately approved maintenance plan.
+No production switch until complete adapter live checks, limits, writer coverage, focused
+review and recovery rehearsal pass. Reverting code is not reverting inventory facts.
+
+Latest SDK adapter simulation
+node --test integration/tests/stock-current-sdk-store.test.cjs
+30/30pass,0fail,duration209.9292ms. Eight save boundaries times before/lost/delayed=24;
+original5 adapter checks plus1 lock acquisition/release scenario. Actual platform latency,
+timeout behavior, administrator recovery safety and Credit cost remain UNKNOWN.

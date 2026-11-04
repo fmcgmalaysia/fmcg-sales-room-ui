@@ -1,0 +1,101 @@
+2026-10-23 — SHARED ORIGINAL INTAKE/PO/SPLIT/LOADED AND CUSTOMER QUANTITY READER
+
+Recovery/scope
+Production baseline d447185987fecbb81bcaf6b25c170f631f767f9f/runtime32b812c untouched.
+Pre-change candidate f42cf3e pushed PR220. This increment changes isolated candidate
+generators/generated roots and offline tests ONLY. No browser/native/CMS/business
+test rows, permission edits, file deletion, Pages deployment or Wix publication.
+
+Full original shared-data composition
+New stock-current-intake-loaded-composition.test.cjs uses one database, actual generated
+command runtime/coordinator, original bearer intake/Source gateways and generated
+Purchase/Warehouse/Packing roots. No task/PO/current claim/receipt/list is preseeded:
+only a synthetic customer submission and existing supplier master profile in memory.
+NCT and GHR: actual intake creates original task/order/checkpoint; original PLAN and
+PO commands issue100; Source SPLIT60/40 adds batches, not another task/PO; actual
+receipt100; Support draft hidden from Warehouse, SEND/START/PROGRESS/COMPLETE60Loaded.
+Remaining40 stays customer's received stock and arrangeable; no invoice, physical
+exit, demand change or extra PurchaseOrders record. Every successful command replays
+the exact request once, including intake after all downstream changes. GHR uses
+2steps/invocation across this chain. Sales cannot silently split a held Loaded line.
+
+Bounded G3 dependency evidence / newly found gap
+One search over integration/backend JS writer/journal sites plus exact HTTP imports.
+Found http-functions.js post_purchaseQuantities→purchaseQuantityRead.js was still
+unfenced and its safe formatter readWarehouseTask used old customer allocation even
+when current borrowing changed ownership. Previously tested Source Sales gateway
+READ does NOT prove this separate original quantity endpoint covered. Fixed this
+concrete consumer, not a new endpoint or architecture. G3 not declared exhaustive.
+Other bounded findings retained without unrelated changes:
+- sharedSupplierOperations writes ONLY SharedSuppliers/SharedSupplierActivity, not
+  company control/current-stock/domain rows. Keep original global supplier workflow;
+  it is not permission to move stock. Fresh external master-data validation remains.
+- department message send is already disabled at original web root; do not enable
+  the unused write factory. Current guarded message read already paired.
+- Account supplier credit/customer ledger/index are paired in prior root evidence;
+  no new financial feature belongs to this increment.
+
+Minimal original quantity seams
+Generator build-current-quantity-read.cjs emits:
+- purchaseQuantityRead.candidate.js→original backend/purchaseQuantityRead.js
+- purchaseQuantityProjection.candidate.js→original backend/purchaseQuantityProjection.js
+- stockCurrentQuantityRead.js→private new backend module
+Original HTTP wrapper, bearer secret/header checks, request fields, response filtering
+and LEGACY body retained. Original auth runs BEFORE control/private data. Explicit
+clean LEGACY only; missing/unknown/maintenance/shadow/pending or unpaired current
+modules refuse, never old-quantity fallback. Coverage still EMPTY by default.
+ACTIVE candidate reads original tables plus current projection and safe formatter
+inside SAME generation barrier. Keeps accepted customer/order/submission identities,
+original demand/PO/price/privacy, current allocations BEFORE split/batch metrics.
+No refreshMargins, writes, synthetic allocation events or second inventory ledger.
+Requested archived original task IDs explicitly retained in current projection.
+
+Quantity update time is NOT fabricated from read time or copied from another PO.
+Private scoped latest StockClaims._updatedDate query (including CLOSED) supplies real
+SDK record-update time; exact conditional version/company/task/product/claim ID must
+match. Invalid/missing required timestamp or generation change fails closed. Zero
+with no claim uses original accepted-intake time; does not claim goods were received.
+Native metadata Date behavior and company/task/_updatedDate query/index/runtime costs
+are STILL platform/capacity gates, not proved by these VM mocks. Current formatter
+keeps original receivedUpdatedAt field semantics: time quantity state was updated,
+not a new invoice/physical receipt action. No new Source transport/response fields.
+Follow-up preservation check: when the original customer allocation quantity is
+unchanged and no new current transfer/customer-attributed case affects that task,
+retain its EXACT original allocation/receipt timestamp, not a later generic stock
+record touch. Added a pre-ACTIVE historical-allocation parity fixture: ACTIVE and
+explicit LEGACY both equal the complete original safe response including timestamp.
+First attempted comparison correctly exposed that a new current receipt has NO
+legacy allocation journal and old reader returns0; corrected the parity fixture to
+include actual immutable old allocation evidence instead of weakening expectations.
+New current-only receipt/borrow quantities continue to use verified SDK state time.
+Follow-up affected6pass0fail2040.9854ms; FULL1025pass0fail21462.2497ms. Prior first
+increment0f6e1d4 confirmed pushed PR220. No original/protected file modified.
+
+Tests/evidence
+- New original quantity root4pass0fail1499.7788ms, both companies borrow30→30/70;
+  actual borrower receipt100 auto-repays and returns100/100. Read has zero writes,
+  no supplier/price/internal relation/version leakage or foreign customer access.
+- Covers auth-before-data, closed/absent/pending control, default coverage, pairing,
+  wrong native timestamp/type/identity/version, concurrent committed generation;
+  explicit LEGACY exactly equals original endpoint result; formatter unchanged
+  byte-for-byte after removing only its exact current-stock seam and version marker.
+- Current FULL1025pass0fail22243.1916ms (includes new2full-chain and4quantity tests).
+- Runtime build check103modules/53private exports unchanged; new generator check pass.
+- Additional ORIGINAL quantity/quantity-case suite14pass1fail273.4202ms. Failure is
+  PRE-EXISTING assertion expecting Chinese customerFulfilmentHtml on BOTH pages:
+  buyer-room.html baseline d447185 already has English-only 'Awaiting balance'.
+  git diff baseline shows index.html, buyer-room.html, original test and original
+  backend formatter all unchanged. Exact baseline/current two function lines read
+  and matched. Do NOT change protected page or loosen test as an inventory fix.
+  Do not call this original suite fully green or claim the failure is new regression.
+
+Remaining / publication
+Reserved damage approval remains APPROVED but implementation OPEN: exact claim
+attribution, held/Loaded shortage correction, replacement/return and borrow guards
+must be paired, not just remove free-only check. Ambiguous customer loss attribution
+has no Warehouse allocation grant. No new human question required for this increment.
+Still open: focused G3 completion; native schema/index/permissions/Date + capacity/
+lifecycle; operational recovery; migration/shadow/parity/single-authority cutover;
+focused review and four release stages. Support real invoice/physical exit OFF.
+Code: candidate only. Pages: not deployed. Wix: not synchronized/published.
+Public affected pages: not verified for this candidate. Coverage EMPTY/ACTIVE OFF.

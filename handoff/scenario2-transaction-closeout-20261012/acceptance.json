@@ -1,0 +1,22 @@
+{
+  "scenario": "SCENARIO-2-TRANSACTION-CLOSEOUT",
+  "recordedDate": "2026-10-12",
+  "status": "planned_not_implemented_or_publicly_verified",
+  "startAfter": "Current internal procurement-to-dispatch release has passed dedicated public acceptance",
+  "requiredRead": "handoff/scenario2-transaction-closeout-20261012/RECORD.txt",
+  "checks": [
+    {"id":"S2-01","expected":"50% supplier payment remains partial; second request uses outstanding balance; two independent proofs and acknowledgements","status":"pending","evidence":[]},
+    {"id":"S2-02","expected":"200+200+200 received preserves 600 cartons; final invoice/DO and receipt checked before final supplier clearance","status":"pending","evidence":[]},
+    {"id":"S2-03","expected":"One-week customer delay stays Active with owner and next follow-up; expiry risk independently remains visible","status":"pending","evidence":[]},
+    {"id":"S2-04","expected":"Support records invoice number/date/currency/full amount and PDF; creates exactly one receivable","status":"pending","evidence":[]},
+    {"id":"S2-05","expected":"Invoice alone does not archive undispatched goods; dispatch plus supplier settlement/Checked clears corresponding fulfilment only","status":"pending","evidence":[]},
+    {"id":"S2-06","expected":"Sales-approved 5-carton damage CN uploaded by Support gives -50.00 in original currency linked to invoice, without rewriting dispatch or adding stock","status":"pending","evidence":[]},
+    {"id":"S2-07","expected":"Customer compensation does not clear unresolved supplier/insurance recovery red dots","status":"pending","evidence":[]},
+    {"id":"S2-08","expected":"Independent freight 2000 USD plus insurance 100 USD invoice creates 2100 USD receivable, linked to shipment with no inventory task","status":"pending","evidence":[]},
+    {"id":"S2-09","expected":"Sales and Support can upload customer receipts to correct company Sales folder; Finance can view and confirm actual receipt","status":"pending","evidence":[]},
+    {"id":"S2-10","expected":"Four receipts over three days allocate across product and freight invoices; partial balances visible; duplicate retries do not double count","status":"pending","evidence":[]},
+    {"id":"S2-11","expected":"Only confirmed receipts and effective credits close invoice balances; fees/shortfalls/overpayment and currency differences cannot silently disappear","status":"pending","evidence":[]},
+    {"id":"S2-12","expected":"Settled Debtor entries enter History with traceable allocations and completion notification including Purchase as user requested","status":"pending","evidence":[]},
+    {"id":"S2-13","expected":"Post-settlement CN leaves traceable customer credit/refund obligation and preserves original settlement history","status":"pending","evidence":[]}
+  ]
+}

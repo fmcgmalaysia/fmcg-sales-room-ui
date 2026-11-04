@@ -1,0 +1,210 @@
+// Explicit procurement projection. Never return original order rows or intake snapshots.
+import { readSalesShipmentDate } from 'backend/r2customerShipmentPlan.js';
+import { projectPurchaseDisplayOrder } from 'backend/r2purchaseDisplayOrder.js';
+import { taskEditVersion, acceptedSpecialTask } from 'backend/r2purchaseTaskIdentity.js';
+import { readPurchasePlan, readPurchaseShares } from 'backend/r2purchasePlan.js';
+import { readWarehouseTask } from 'backend/r2warehouseReceiving.js';
+import { readAllocations, allocationVersion } from 'backend/r2plannerAllocation.js';
+import { readShortage, shortageVersion } from 'backend/r2purchaseShortage.js';
+import { projectQuantityCases, quantityCasesVersion, customerCaseFeedback } from 'backend/r2purchaseQuantityCases.js';
+import { readCustomerShipments } from 'backend/r2customerShipmentLedger.js';
+import { readShipmentPlans } from 'backend/r2customerShipmentPlan.js';
+import { readSalesDemand } from 'backend/r2salesOrderAdjustment.js';
+import { resolveBatchEntitlements, preferredSourceBatch, purchaseBatchVersion, resolveBatchStock, allocateBatchSources, batchEntries } from 'backend/r2shipmentBatchAllocation.js';
+import { readCreditTransfers } from 'backend/r2supplierCredit.js';
+import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/r2purchaseSources.js';
+const text = value => String(value ?? '').trim();
+const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+const stamp = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toISOString() : null;
+export const PURCHASE_COLLECTIONS = Object.freeze({
+  NCT: { orders: 'R2NCTOrders', tasks: 'R2NCTTasks', activity: 'R2NCTActivity' },
+  GHR: { orders: 'R2NCTOrders1', tasks: 'R2NCTTasks1', activity: 'R2NCTActivity1' }
+});
+export function requirePurchaseStaff(member, records) {
+  const email = text(member?.loginEmail).toLowerCase();
+  if (!member?._id || !email || member.status !== 'APPROVED') throw Error('Please sign in with your approved Master staff account.');
+  const matches = records.filter(row => text(row.staffEmail).toLowerCase() === email);
+  if (matches.length !== 1) throw Error('Master staff access is not configured.');
+  const row = matches[0], role = text(row.role).toUpperCase();
+  const departments = Array.isArray(row.departments) ? row.departments.map(value => text(value).toUpperCase()) : [];
+  if (!text(row.title) || text(row.description) !== member._id || !text(row.staffName) || text(row.staffStatus).toUpperCase() !== 'ACTIVE' ||
+      !(departments.includes('PURCHASE') || role === 'SUPER ADMIN' || role === 'TOP MANAGEMENT')) throw Error('Purchase access is not authorized.');
+  return { staffId: text(row.title), staffName: text(row.staffName), role };
+}
+export const PURCHASE_CURRENT_PROJECTION_VERSION = 2;
+const verifiedBatchAllocation=function batchAllocation(root) {
+  const whole=n=>Number.isSafeInteger(n)&&n>=0,entries=root.batchEntitlements;
+  if(!whole(root.stockAllocatedCumulative)||!Array.isArray(entries)||!entries.length)return undefined;
+  const seen=new Set(),result=[];
+  for(const entry of entries){
+    if(!entry.id||seen.has(entry.id)||!whole(entry.quantity)||!whole(entry.metrics?.received)
+      ||entry.metrics.received>entry.quantity)return undefined;
+    seen.add(entry.id);result.push({id:entry.id,demand:entry.quantity,allocated:entry.metrics.received});
+  }
+  const sum=result.reduce((n,e)=>n+e.allocated,0);
+  return Number.isSafeInteger(sum)&&sum===root.stockAllocatedCumulative?result:undefined;
+};
+function verifiedCurrentPurchaseProjection(view,company){
+  if(view===undefined)return null;
+  const count=value=>Number.isSafeInteger(value)&&value>=0;
+  if(view?.schema!=='PURCHASE_CURRENT_PROJECTION_V2'||view.company!==company||!count(view.generation)
+    ||!Array.isArray(view.taskReceived)||!Array.isArray(view.sourceAvailable)||!Array.isArray(view.allocations))throw Error('Verified current Purchase projection required');
+  for(const rows of [view.taskReceived,view.sourceAvailable])if(new Set(rows.map(row=>row.taskId)).size!==rows.length
+    ||rows.some(row=>typeof row?.taskId!=='string'||!row.taskId))throw Error('Unique current Purchase projection identities required');
+  if(view.taskReceived.some(row=>!count(row.quantity))||view.sourceAvailable.some(row=>!count(row.accepted)||!count(row.availableCtn)
+    ||!count(row.availablePhysical)||row.availableCtn>row.availablePhysical||row.availablePhysical>row.accepted)
+    ||new Set(view.allocations.map(row=>row.sourceTaskId)).size!==view.allocations.length
+    ||view.allocations.some(row=>!row.sourceTaskId||!Array.isArray(row.targets)||new Set(row.targets.map(target=>target.taskId)).size!==row.targets.length
+      ||row.targets.some(target=>!target.taskId||!count(target.quantity))))throw Error('Known current Purchase projection quantities required');
+  for(const row of view.taskReceived)if(row.allocationFacts!==undefined){
+    const f=row.allocationFacts;
+    if(!f||!['usable','held','dispatched','availableToArrange'].every(k=>count(f[k]))
+      ||typeof f.review!=='boolean'||f.availableToArrange!==(f.review?0:Math.max(0,f.usable-f.held))
+      ||f.usable+f.dispatched!==row.quantity)throw Error('Current allocation availability requires review');
+  }
+  return view;
+}
+export function projectPurchaseWorkspace({ company, orders, tasks, activity, suppliers, staff, currentStock }) {
+  if (!PURCHASE_COLLECTIONS[company]) throw Error('Select NCT or GHR.');
+  const current=verifiedCurrentPurchaseProjection(currentStock,company);
+  const accepted = new Map();
+  for (const event of activity) {
+    if (event.action !== 'ORDER_RECEIVED' || event.result !== 'ACCEPTED') continue;
+    const orderId = text(event.description), submissionId = text(event.details?.submissionId), ids = event.details?.taskIds;
+    if (!orderId || !submissionId || !Array.isArray(ids) || !ids.length || new Set(ids).size !== ids.length) throw Error('Master receipt requires review.');
+    if (accepted.has(orderId)) throw Error('Duplicate Master receipt requires review.');
+    accepted.set(orderId, { submissionId, ids: new Set(ids), receivedAt: stamp(event.activityTime) });
+  }
+  const rows = [], seen = new Set(), customers = new Map(), allocations=current?current.allocations:readAllocations(activity);
+  for (const task of tasks) {
+    const receipt = accepted.get(text(task.description));
+    if (!receipt) continue;
+    const specialEvent=activity.filter(event=>event.action==='SPECIAL_PURCHASE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
+    const sourceEvent=activity.filter(event=>event.action==='PURCHASE_SOURCE_ADDED'&&event.imageAltText===task.title&&event.result==='SAVED');
+    if(!receipt.ids.has(text(task.title)) && specialEvent.length!==1 && sourceEvent.length!==1) continue;
+    if (seen.has(task.title)) throw Error('Duplicate task identity requires review.');
+    const matched = orders.filter(row => row.title === task.description && row.sourceLineId === task.imageAltText && row.submissionId === receipt.submissionId);
+    if (matched.length !== 1) throw Error('Accepted task has no unique order line.');
+    const order = matched[0];
+    if(!receipt.ids.has(text(task.title)) && !acceptedSpecialTask(task,order,receipt,specialEvent[0],tasks.find(row=>row.title===specialEvent[0]?.details?.parentTaskId)) && !acceptedPurchaseSource(task,order,receipt,sourceEvent[0],tasks.find(row=>row.title===task.customerDemandTaskId))) continue;
+    if (!text(order.customerId) || !text(order.customerCompanyName) || !text(order.description) || !text(order.image)) throw Error('Accepted product identity is incomplete.');
+    seen.add(task.title);
+    customers.set(order.customerId, { id: order.customerId, name: order.customerCompanyName });
+    const snapshot = task.latestCostReference || task.originalCostSnapshot || {};
+    const procurement=readPurchasePlan(task,activity),warehouse=readWarehouseTask(task,activity);
+    const shipmentDate=readSalesShipmentDate(task.description,order.customerId,order.submissionId,order.estimatedShipmentDate,activity);
+    const salesDemand=!task.procurementSource&&!task.specialPurchase?readSalesDemand(task.title,order.orderQtyInCtn,activity):null;
+    rows.push({
+      procurementSource:task.procurementSource===true,customerDemandTaskId:task.procurementSource?task.customerDemandTaskId:null,
+      id: task.title, qtyEdited: activity.some(event=>event.imageAltText===task.title&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'), editVersion:taskEditVersion(task), orderId: task.description, sourceLineId: task.imageAltText,
+      customerId: order.customerId, barcode: order.description, name: order.image, packing: text(order.imageAltText), brandName:text(snapshot.brandName),
+      ea: number(order.orderId), ord: salesDemand?.revision?salesDemand.requested:number(task.purchaseQtyInCtn), requested: task.specialPurchase&&specialEvent.length===1?number(specialEvent[0].details?.extraQty):salesDemand?.requested??number(order.orderQtyInCtn), salesDemandRevision:salesDemand?.revision||'',originalCommitment:number(task.purchaseQtyInCtn), inc: warehouse?warehouse.customerReceived:number(task.receivedQtyInCtn),
+      procurement: {...procurement,updatedAt:stamp(procurement.updatedAt),expectedExtra:procurement.extraCtn??(procurement.totalCtn===null?null:Math.max(0,procurement.totalCtn-task.purchaseQtyInCtn)),availableCtn:warehouse?(warehouse.stock?.usableReceived??warehouse.accepted)-(allocations.find(row=>row.sourceTaskId===task.title)?.targets||[]).reduce((sum,row)=>sum+row.quantity,0):null,allocationEnabled:Boolean(warehouse?.accepted)},
+      warehouse:warehouse?{hasPhysicalReceipt:warehouse.hasPhysicalReceipt,accepted:warehouse.accepted,rejected:warehouse.rejected,issue:warehouse.issue,stock:warehouse.stock,updatedAt:warehouse.at}:null,
+      supplierId: text(task.supplierId), po: text(task.ourPoNumber), customerPo: text(order.customerPoNumber), salesInvoiceNumber: text(order.salesInvoiceNumber), salesInvoiceLocked: Boolean(text(order.financialLockedBy)),
+      transactionCurrency: text(order.transactionCurrency), costCurrency: 'MYR',
+      lpPc: number(task.lpPc), lpCtn: number(task.lpCtn), disc1: number(task.disc1), disc2: number(task.disc2), disc3: number(task.disc3),
+      netCostCtn: ['lpCtn','disc1','disc2','disc3'].every(key=>number(task[key])!==null)?Number((task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3).toFixed(2)):number(snapshot.netCostCtn), cbmPerCtn: number(order.cbmCtn),
+      costStatus: text(task.costStatus), costErrorReason: text(task.costErrorReason), costCapturedAt: stamp(task.lastCostCaptureTime),
+      manualCostField:Array.isArray(task.manualCostField)?task.manualCostField:[],
+      stage: text(task.purchaseStage), risk: task.risk === true, riskReason: text(task.riskReason),
+      archived: task.purchaseStage === 'SHIPPED' && Boolean(text(order.salesInvoiceNumber)),
+      specialPurchase: task.specialPurchase === true, specialPurchaseReason: text(task.specialPurchaseReason),
+      rowPosition: number(task.rowPosition), masterReceivedAt: stamp(order.masterReceivedTime) || receipt.receivedAt,
+      submittedAt: stamp(order.salesSubmissionTime), submittedByName: text(order.submittedByStaffName),
+      estimatedShipmentDate: shipmentDate.date || null,
+      shipmentDate,
+      history: activity.filter(event => event.description === task.description &&
+        ['ORDER_RECEIVED', 'COST_CAPTURE', 'COST_RETRY_ATTEMPT', 'COST_RETRY_CAPTURED', 'COST_RETRY_RESULT','PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED','SPECIAL_PURCHASE_ADDED','PURCHASE_SOURCE_ADDED'].includes(event.action) &&
+        (event.imageAltText === task.title || event.action === 'ORDER_RECEIVED')).map(event => ({
+          id: text(event.title), action: text(event.action), time: stamp(event.activityTime),
+          requestId: text(event.details?.requestId), retryOutcome: event.action === 'COST_RETRY_RESULT' ? {
+            ok: event.details?.outcome?.ok === true, error: text(event.details?.outcome?.error)
+          } : null,
+          actor: event.actorType === 'SYSTEM' ? 'System' : text(event.initiatedByStaffName),
+          initiatedBy: text(event.initiatedByStaffName), result: text(event.result), message: text(event.message)
+          ,changes:['PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED'].includes(event.action)?{before:event.details?.before??null,after:event.details?.after??null,reason:text(event.details?.reason),...(event.action==='PURCHASE_AVERAGE_COST_APPLIED'?{calculation:event.details?.calculation}:{} )}:event.action==='SPECIAL_PURCHASE_ADDED'?{parentTaskId:text(event.details?.parentTaskId),extraQty:number(event.details?.extraQty),reason:text(event.details?.reason)}:null
+        })).sort((a, b) => String(a.time).localeCompare(String(b.time)))
+    });
+  }
+  const invoicedShipments=readCustomerShipments(activity).filter(shipment=>shipment.company===company&&['INVOICED','DISPATCHED'].includes(shipment.status));
+  for(const row of rows.filter(row=>row.procurementSource)){row.requested=0;row.procurement.expectedExtra=row.procurement.extraCtn??0;}
+  attachPurchaseSourceTotals(rows);
+  for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);
+    const fixed=readPurchaseShares(root.id,activity);
+    if(fixed.shares){if(fixed.shares.length!==sources.length)throw Error('Supplier allocation save requires confirmation. Retry the original request.');for(const source of sources){const share=fixed.shares.find(item=>item.taskId===source.id);if(!share||share.totalCtn!==(source.procurement.totalCtn||0))throw Error('Supplier allocation save requires confirmation. Retry the original request.');/** @type {typeof source.procurement & {customerCtn:number}} */ (source.procurement).customerCtn=share.customerCtn;source.procurement.expectedExtra=share.totalCtn-share.customerCtn;}/** @type {typeof root & {sourcing:{unplacedCtn:number}}} */ (root).sourcing.unplacedCtn=Math.max(0,root.ord-fixed.shares.reduce((sum,share)=>sum+share.customerCtn,0));continue;}
+    if(!sources.some(row=>row.procurement.totalCtn>0))continue;
+    let extra=Math.max(0,sources.reduce((sum,row)=>sum+(row.procurement.totalCtn||0),0)-root.ord);
+    for(const source of sources.filter(row=>row.procurementSource)){source.procurement.expectedExtra=Math.min(extra,source.procurement.extraCtn||0);extra-=source.procurement.expectedExtra;}
+    root.procurement.expectedExtra=extra;
+  }
+  for(const root of rows.filter(row=>row.salesDemandRevision)){
+    const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id);let remaining=root.requested,planned=0;
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id))),baseline=plan?.sourceBaselines?.find(row=>row.taskId===root.id),matrix=plan?allocateBatchSources(batchEntries(plan,root.id),sources.map(source=>{const held=baseline?.sources.find(row=>row.id===source.id),total=source.procurement.totalCtn||0,customer=Math.max(0,total-(source.procurement.expectedExtra||0));return {id:source.id,quantity:held?Math.min(customer,held.customerCtn+Math.max(0,total-held.totalCtn)):customer,batchId:preferredSourceBatch(source.id,activity)};})):null;
+    for(const source of sources){const customer=matrix?matrix.reduce((sum,batch)=>sum+(batch.find(row=>row.id===source.id)?.quantity||0),0):Math.max(0,(source.procurement.totalCtn||0)-(source.procurement.expectedExtra||0));const kept=Math.min(customer,remaining);remaining-=kept;planned+=kept;source.procurement.customerCtn=kept;source.procurement.expectedExtra=(source.procurement.totalCtn||0)-kept;}
+    root.salesCommittedQty=Math.min(root.requested,sources.some(row=>row.procurement.totalCtn>0)?planned:root.originalCommitment);root.sourcing.unplacedCtn=Math.max(0,root.requested-planned);
+  }
+  for(const row of rows){const invoices=invoicedShipments.filter(shipment=>shipment.lines.some(line=>line.taskId===row.id));row.salesFulfilment={invoicedQty:invoices.reduce((sum,shipment)=>sum+shipment.lines.find(line=>line.taskId===row.id).quantity,0),invoices:invoices.map(shipment=>({shipmentId:shipment.id,number:shipment.invoice.number,date:shipment.invoice.date,quantity:shipment.lines.find(line=>line.taskId===row.id).quantity,at:shipment.invoice.at,dispatched:shipment.status==='DISPATCHED'})),sourceInvoicedQty:invoicedShipments.flatMap(shipment=>shipment.lines).flatMap(line=>line.sources).filter(source=>source.sourceTaskId===row.id).reduce((sum,source)=>sum+source.quantity,0)};}
+  for(const row of rows){row.shortage=readShortage(row.id,activity);row.shortageVersion=shortageVersion(row,activity);row.demandReviewRequired=activity.some(event=>event.imageAltText===row.id&&event.action==='PURCHASE_QTY_REDUCED'&&event.result==='SAVED'&&event.details?.authorizedRole!=='SUPER ADMIN');}
+  const quantityCases=projectQuantityCases({company,tasks:rows},activity);
+  for(const row of rows){
+    row.quantityCases=quantityCases.filter(item=>item.taskId===row.id);
+    const related=quantityCases.filter(item=>item.customerDemandTaskId===(row.customerDemandTaskId||row.id));
+    if(related.some(item=>item.revision)){
+      const feedback=customerCaseFeedback(related),receipt=row.quantityCases.find(item=>item.kind==='RECEIPT');
+      row.shortage={...feedback,supplierDecision:receipt?.decision?.supplierDecision||'PENDING',financeRequired:Boolean(receipt),scopedCases:true};
+    }
+  }
+  // Original shortage/receipt facts above stay unchanged. Current ownership must
+  // precede ORIGINAL split entitlements and batch-stock/version calculations below.
+  if(current){
+    for(const entry of current.taskReceived){const row=rows.find(row=>row.id===entry.taskId&&!row.procurementSource&&!row.specialPurchase);
+      if(!row)throw Error('Current Purchase demand identity missing');row.inc=entry.quantity;row.stockAllocatedCumulative=entry.quantity;
+      if(entry.allocationFacts)row.stockAllocationFacts={...entry.allocationFacts};}
+    for(const entry of current.sourceAvailable){const row=rows.find(row=>row.id===entry.taskId);
+      if(!row||!row.po||(row.warehouse?.hasPhysicalReceipt===true?row.warehouse.accepted:0)!==entry.accepted)throw Error('Current Purchase receipt provenance differs');
+      row.procurement.availableCtn=entry.availableCtn;row.procurement.allocationEnabled=entry.availableCtn>0;
+      if(row.warehouse)row.warehouse={...row.warehouse,stock:{...row.warehouse.stock,availablePhysical:entry.availablePhysical}};
+    }
+  }
+  for (const receipt of accepted.values()) if ([...receipt.ids].some(id => !seen.has(id))) throw Error('Accepted receipt is missing a task. Please contact Admin.');
+  for(const root of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===root.customerId&&plan.orderId===root.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    if(plan){const sources=rows.filter(row=>row.id===root.id||row.customerDemandTaskId===root.id).map(row=>({id:row.id,quantity:Math.max(0,(row.procurement.totalCtn||0)-(row.procurement.expectedExtra||0)),batchId:preferredSourceBatch(row.id,activity)}));root.batchEntitlements=resolveBatchEntitlements(plan,root.id,{committed:root.salesCommittedQty??root.ord,received:Math.max(0,root.inc||0)},sources);}
+  }
+  rows.sort((a, b) => a.customerId.localeCompare(b.customerId) || (a.rowPosition ?? Infinity) - (b.rowPosition ?? Infinity) || String(a.masterReceivedAt).localeCompare(String(b.masterReceivedAt)) ||
+    a.orderId.localeCompare(b.orderId) || a.id.localeCompare(b.id));
+  for(const root of rows.filter(row=>row.batchEntitlements)){
+    const plan=readShipmentPlans(activity).find(plan=>plan.batches.some(batch=>batch.lines.some(line=>line.taskId===root.id)));
+    const stock=allocations.flatMap(allocation=>{const quantity=allocation.targets.find(target=>target.taskId===root.id)?.quantity;return quantity?[{id:allocation.sourceTaskId,quantity,batchId:preferredSourceBatch(allocation.sourceTaskId,activity)}]:[];});
+    if(stock.length&&root.batchEntitlements.some(row=>row.coverage)){const received=resolveBatchStock(plan,root.id,stock);root.batchEntitlements.forEach((row,index)=>{row.metrics.received=Math.min(row.metrics.committed,received[index]);});}
+    root.batchAllocationVersion=purchaseBatchVersion({tasks:rows},root);
+  }
+  if(current)for(const row of rows.filter(row=>!row.procurementSource&&!row.specialPurchase)){
+    const amounts=verifiedBatchAllocation(row);if(amounts)row.stockAllocatedBatches=amounts;
+    const owned=rows.filter(source=>source.id===row.id||source.customerDemandTaskId===row.id);
+    const receiptSources=owned.map(source=>{
+      const has=source.warehouse?.hasPhysicalReceipt===true,accepted=has?source.warehouse.accepted:0;
+      const share=source.procurement?.customerCtn??Math.max(0,(source.procurement?.totalCtn||0)-(source.procurement?.expectedExtra||0));
+      if(!Number.isSafeInteger(accepted)||accepted<0||!Number.isSafeInteger(share)||share<0)throw Error('Actual customer receipt requires review');
+      return {id:source.id,quantity:Math.min(accepted,share),batchId:preferredSourceBatch(source.id,activity)};
+    });
+    row.stockHasReceipt=owned.some(source=>source.warehouse?.hasPhysicalReceipt===true);
+    row.stockActualReceived=receiptSources.reduce((sum,source)=>sum+source.quantity,0);
+    if(!Number.isSafeInteger(row.stockActualReceived))throw Error('Actual receipt total overflow');
+    const plan=readShipmentPlans(activity).find(plan=>plan.customerId===row.customerId&&plan.orderId===row.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===row.id)));
+    if(plan&&row.batchEntitlements){const physical=resolveBatchStock(plan,row.id,receiptSources);
+      row.stockReceiptBatches=row.batchEntitlements.map((batch,i)=>({id:batch.id,received:physical[i]}));}
+  }
+  return {
+    ...(current?{stockAllocationView:'CURRENT_V2'}:{}),
+    company, staff: { staffId: staff.staffId, staffName: staff.staffName, memberId:staff.memberId, canEditCustomerDemand:staff.role==='SUPER ADMIN' }, fetchedAt: new Date().toISOString(),sourcesVersion:purchaseSourcesVersion({company,tasks:rows}),allocationVersion:allocationVersion({company,tasks:rows},activity),allocations,creditTransfers:readCreditTransfers(activity),
+    customers: [...customers.values()].sort((a, b) => a.name.localeCompare(b.name)), tasks: rows,quantityCasesVersion:quantityCasesVersion({company,tasks:rows},activity),
+    suppliers: suppliers.map(row => ({ id: text(row.title), name: text(row.companyName), shortName: text(row.shortName), brands:Array.isArray(row.brands)?row.brands.filter(value=>typeof value==='string').map(text):[] }))
+      .filter(row => row.id && row.name).sort((a, b) => a.name.localeCompare(b.name)),
+    shipmentPlans: readShipmentPlans(activity),
+    purchaseDisplayOrder:projectPurchaseDisplayOrder(company,rows,readShipmentPlans(activity),activity),
+    paymentRequestsConnected: false
+  };
+}

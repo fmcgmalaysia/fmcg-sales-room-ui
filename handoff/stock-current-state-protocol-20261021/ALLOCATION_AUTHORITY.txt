@@ -1,0 +1,51 @@
+2026-10-22 — ordinary free assignment versus customer borrowing boundary
+
+Supersedes CURRENT_ALLOCATION.txt open bypass at isolated-model level only. Recovery
+protected d447185; previous candidate8f8aa81. No existing production route changed.
+
+Policy already authorized by user
+Purchase owns reallocation approval. Borrowing customer-reserved goods requires BOTH
+customer source POs and approved future replacement relationship; Warehouse cannot do
+it. Free stock may be assigned through Purchase. Customer cancellation/release is a
+separate fact-bound workflow, not a generic balance edit.
+
+Implemented candidate boundary
+allocateCumulative ordinary assignment now refuses ANY reduction of current customer
+claims. This closes both direct reservation redistribution and two-step release-to-free
+then assign. Existing dispatched/packing/active relation checks precede generic refusal.
+Increases consume only genuine before-state free stock, remain demand/physical bounded.
+Approved borrowing and unused return continue dedicated transitions; normal automatic
+repayment unchanged. Cancellation release is not disabled forever; its distinct fact-bound
+adapter is unfinished and must precede ACTIVE. Do not substitute this new restriction in
+the live legacy generic endpoint without completing routing/UI/regression work.
+
+allocation-authority.cjs server factory
+- Original requirePurchaseStaff, actual approved member, original workspace and saved PO
+  projector; no newly granted Planner role. Warehouse/Support/unknown role denied.
+- Original allocation prepare validates version/source/target/receipt/finance/packing
+  contracts. Server source accepted facts must agree with current source authority.
+- Reuses originalProductState shared facts; returns server buildState callback, not
+  browser complete/permission fields. Original actor retained, forged actor ignored.
+- Shared current-row reader supports ALLOCATE under readSnapshot and existing fenced-plan
+  shape. Test exact same mapped plan through reader; no extra independent storage logic.
+- Still candidate, not exposed endpoint. Actual entry must authenticate EVERY invocation,
+  including replay; same-lock prepare and all original-writer fencing remain mandatory.
+
+Evidence
+Initial29test run:28pass1fail, fixture missing workspace.customers required by original
+projectPurchaseOrders. Fixed only synthetic fixture (no fallback/catch in production or
+candidate), focused9allocation pass159.0841ms. Added same-barrier ALLOCATE reader check
+and rebuilt preview bundle from exact changed model. Final52affected tests0fail285.8812ms:
+stock-current-allocation, stock-current-borrowing, stock-current-borrow-plan,
+stock-current-borrow-authority, stock-current-preview. Repeated checks not summed.
+No whole-project scan or browser usage. Credit/cache/actual billing UNKNOWN.
+
+Remaining boundaries
+Original generic allocator still runs unchanged in production; new authority does not
+retroactively fence it. Requires actual minimal route and UI choice for free assignment,
+approved borrowing and cancellation release, original cumulative event compatibility,
+versions after borrowing, shared maintenance/recovery and all other stock writers.
+Current model still conservatively rejects unsupported exceptions rather than guessing.
+No half-complete inventory switch, schema creation, migration, Pages/Wix publish or new
+CMS test/deletion occurred. Four statuses: isolated code candidate; Pages unchanged;
+Wix unchanged; formal public new borrowing workflow unavailable/unverified.

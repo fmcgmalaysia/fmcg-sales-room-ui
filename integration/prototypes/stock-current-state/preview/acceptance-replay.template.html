@@ -1,0 +1,88 @@
+<div id="stock-acceptance-replay">
+  <style>
+    #stock-acceptance-replay{--sr-ink:#173858;--sr-blue:#2563eb;--sr-orange:#f58a00;--sr-paper:#fff;--sr-line:#d7e1eb;--sr-soft:#f3f6f9;color:var(--sr-ink);background:var(--sr-paper);font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.5;border-radius:8px;overflow:hidden}
+    #stock-acceptance-replay *{box-sizing:border-box}
+    #stock-acceptance-replay header{background:#153c59;color:#fff;display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:16px 22px;padding-right:112px}
+    #stock-acceptance-replay h2,#stock-acceptance-replay h3{font-size:inherit;font-weight:500;margin:0}
+    #stock-acceptance-replay .sr-main{padding:18px 22px}
+    #stock-acceptance-replay .sr-meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:16px;align-items:center}
+    #stock-acceptance-replay .sr-label{display:block;color:#526b82;font-size:12px;font-weight:400}
+    #stock-acceptance-replay select,#stock-acceptance-replay button{font:inherit;color:inherit}
+    #stock-acceptance-replay select{max-width:100%;border:1px solid var(--sr-line);padding:8px;border-radius:4px;background:var(--sr-paper)}
+    #stock-acceptance-replay .sr-pill{background:#fff3df;color:#79500b;padding:5px 10px;border-radius:4px;font-size:12px}
+    #stock-acceptance-replay .sr-progress{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}
+    #stock-acceptance-replay .sr-progress span{background:var(--sr-soft);padding:5px 9px;color:#526b82;font-size:12px;border-radius:4px}
+    #stock-acceptance-replay .sr-progress .sr-current{background:var(--sr-blue);color:#fff}
+    #stock-acceptance-replay .sr-progress .sr-done{color:var(--sr-blue);background:#edf3ff}
+    #stock-acceptance-replay .sr-stats{display:flex;gap:24px;flex-wrap:wrap;margin:18px 0}
+    #stock-acceptance-replay .sr-stat{min-width:140px}
+    #stock-acceptance-replay .sr-value{font-size:24px;font-weight:500;font-variant-numeric:tabular-nums}
+    #stock-acceptance-replay .sr-scroll{overflow-x:auto}
+    #stock-acceptance-replay table{width:100%;border-collapse:collapse;font-size:12px}
+    #stock-acceptance-replay th{background:#e4edf5;padding:12px 9px;text-align:right;font-weight:500;white-space:nowrap}
+    #stock-acceptance-replay td{padding:15px 9px;text-align:right;border-bottom:1px solid var(--sr-line);font-variant-numeric:tabular-nums;white-space:nowrap}
+    #stock-acceptance-replay th:first-child,#stock-acceptance-replay td:first-child{text-align:left}
+    #stock-acceptance-replay .sr-number{background:#edf3ff;color:#173858;border-radius:4px;padding:4px 8px;display:inline-block;min-width:35px}
+    #stock-acceptance-replay .sr-person{border:0;background:transparent;display:inline-flex;align-items:center;gap:8px;padding:10px 5px;min-height:44px;color:var(--sr-blue)}
+    #stock-acceptance-replay .sr-person.sr-pending{color:var(--sr-orange)}
+    #stock-acceptance-replay .sr-person svg{width:16px;height:16px;fill:currentColor;overflow:visible;flex-shrink:0}
+    #stock-acceptance-replay .sr-person span{color:var(--sr-ink)}
+    #stock-acceptance-replay .sr-relation{margin-top:15px;padding:12px 0;border-bottom:1px solid var(--sr-line)}
+    #stock-acceptance-replay .sr-note{margin:14px 0;min-height:42px;color:#3c5871}
+    #stock-acceptance-replay .sr-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}
+    #stock-acceptance-replay .sr-buttons{display:flex;gap:8px;flex-wrap:wrap}
+    #stock-acceptance-replay .sr-button{border:1px solid #9eb7cf;border-radius:4px;background:#fff;padding:9px 13px;min-height:42px;color:var(--sr-ink)}
+    #stock-acceptance-replay .sr-primary{background:var(--sr-blue);color:#fff;border-color:var(--sr-blue)}
+    #stock-acceptance-replay button:disabled{opacity:.45}
+    #stock-acceptance-replay .sr-foot{font-size:12px;color:#526b82;margin-top:15px}
+    #stock-acceptance-replay .sr-detail{margin-top:8px;font-size:12px;color:#526b82}
+    @media(max-width:520px){#stock-acceptance-replay .sr-main{padding:14px}#stock-acceptance-replay header{padding-left:14px;gap:8px}#stock-acceptance-replay .sr-stats{gap:12px}#stock-acceptance-replay .sr-stat{min-width:100px}#stock-acceptance-replay .sr-value{font-size:22px}}
+  </style>
+  <header><h2>MASTER</h2><span>Stock &amp; Borrowing 库存与借货</span></header>
+  <div class="sr-main">
+    <div class="sr-meta"><label for="sr-case"><span class="sr-label">Scenario 示例场景</span><select id="sr-case"><option value="NCT-same-po">NCT · 同一个 PO</option><option value="NCT-different-po">NCT · 不同 PO</option><option value="GHR-same-po">GHR · 同一个 PO</option><option value="GHR-different-po">GHR · 不同 PO</option></select></label><span class="sr-pill">OFFLINE REPLAY 示例回放 · 不写真实 CMS</span></div>
+    <div id="sr-progress" class="sr-progress" aria-label="Replay steps 回放步骤"></div>
+    <div class="sr-stats" aria-live="polite"><div class="sr-stat"><span class="sr-label">Warehouse on hand 货仓在手</span><span id="sr-onhand" class="sr-value"></span> CTN</div><div class="sr-stat"><span class="sr-label">Outstanding 待补回</span><span id="sr-debt" class="sr-value"></span> CTN</div><div class="sr-stat"><span class="sr-label">Physical departure 实际离仓</span><span id="sr-exit" class="sr-value"></span> CTN</div></div>
+    <div class="sr-scroll"><table aria-label="Actual offline test quantities 实际离线测试数量"><thead><tr><th>Customer<br>客户</th><th>Own PO<br>原采购单</th><th>Order<br>订货</th><th>Split plan<br>拆单安排</th><th>Own PO received<br>本 PO 实收</th><th>Customer-owned<br>客户归属</th><th>Loaded<br>已装柜</th><th>Ready to arrange<br>仍可安排</th><th>Relationship<br>调货关系</th></tr></thead><tbody id="sr-rows"></tbody></table></div>
+    <div id="sr-relation" class="sr-relation"></div>
+    <div id="sr-note" class="sr-note" aria-live="polite"></div>
+    <div id="sr-detail" class="sr-detail" aria-live="polite"></div>
+    <div class="sr-controls"><span id="sr-step"></span><div class="sr-buttons"><button id="sr-start" type="button" class="sr-button cursor-interaction">Start over 从头看</button><button id="sr-prev" type="button" class="sr-button cursor-interaction">Previous 上一步</button><button id="sr-next" type="button" class="sr-button sr-primary cursor-interaction">Next 下一步</button></div></div>
+    <div id="sr-evidence" class="sr-foot"></div>
+  </div>
+  <script>
+  (()=>{
+    const root=document.getElementById('stock-acceptance-replay');
+    const evidence=/*__REPLAY_DATA__*/null;
+    const find=id=>root.querySelector('#'+id);
+    const names={po:'双方已有 PO','received-b':'B 到货 100',borrowed:'采购批准借 30',split:'双方拆成 30＋70',loaded:'A 装柜 30','received-20':'A 到货 20','received-100':'A 再到货 80'};
+    const notes={po:'双方各订 100 箱，均已开 PO；尚无实收，不能从计划数量推断现货。','received-b':'B 的 PO 实收 100 箱，货归 B；A 仍没有可安排的货。',borrowed:'采购批准把 B 的 30 箱给 A，同时绑定 A 的未来到货补回；双方原人头加天使圈。',split:'双方各拆成 30＋70；客户总需求、原 PO 和待补 30 箱不变，现货归属没有重复计算。',loaded:'A 已装柜 30 箱，仍欠补 30；Loaded 不是实际离仓，库存没有扣掉，已装柜部分不能再安排一次。','received-20':'A 的 PO 本次收到 20 箱，自动先补 B 20 箱；还欠 10，双方天使圈保留。','received-100':'A 的 PO 再收到 80 箱，先补最后 10 箱；待补归零，双方去圈。A 已装柜 30，仍可安排 70。'};
+    let selected='NCT-same-po',step=0;
+    function applySaved(saved){const state=saved?.privateContent;if(state&&evidence.cases.some(c=>c.id===state.scenario)&&Number.isInteger(state.step)&&state.step>=0&&state.step<7){selected=state.scenario;step=state.step;}}
+    applySaved(window.openai?.widgetState);
+    function persist(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{type:'OFFLINE_REPLAY',scenario:selected,step,phase:evidence.cases.find(c=>c.id===selected).steps[step].phase},privateContent:{scenario:selected,step}}).catch(()=>{});}
+    function render(){
+      const scenario=evidence.cases.find(c=>c.id===selected),snapshot=scenario.steps[step];
+      find('sr-case').value=selected;find('sr-onhand').textContent=snapshot.onHand;find('sr-debt').textContent=snapshot.outstanding;find('sr-exit').textContent=snapshot.dispatched;
+      find('sr-progress').replaceChildren(...scenario.steps.map((s,i)=>{const span=document.createElement('span');span.textContent=(i+1)+' · '+names[s.phase];if(i===step){span.className='sr-current';span.setAttribute('aria-current','step');}else if(i<step)span.className='sr-done';return span;}));
+      find('sr-rows').replaceChildren(...snapshot.tasks.map(task=>{
+        const tr=document.createElement('tr');
+        const values=['Customer '+task.id+' 客户'+task.id,task.po,task.requested,task.batches.join(' ＋ '),task.accepted,task.owned,task.loaded,task.readyToArrange];
+        values.forEach((value,i)=>{const td=document.createElement('td');if([2,4,5,6,7].includes(i)){const span=document.createElement('span');span.className='sr-number';span.textContent=value;td.append(span);}else td.textContent=value;tr.append(td);});
+        const cell=document.createElement('td'),button=document.createElement('button');button.type='button';button.className='sr-person cursor-interaction'+(task.pending?' sr-pending':'');button.setAttribute('aria-label','客户'+task.id+' '+(task.halo?'有未结调货关系':'没有未结调货关系'));button.innerHTML=task.svg+'<span>'+(task.halo?'待补关系':'普通人头')+'</span>';
+        button.onclick=()=>{find('sr-detail').textContent=task.halo?'客户 '+task.id+' 已和客户 '+(task.id==='A'?'B':'A')+' 绑定调货关系 · 待补 '+snapshot.outstanding+' CTN':'客户 '+task.id+' 没有未结调货关系。';};cell.append(button);tr.append(cell);return tr;
+      }));
+      const relation=snapshot.relations[0];find('sr-relation').textContent=relation?'A ← B · 借入 '+relation.quantity+' · 已补 '+relation.repaid+' · 待补 '+relation.remaining+' CTN'+(relation.remaining?'':' · 关系已结束'):'No borrowing relationship 暂无借货关系';
+      find('sr-note').textContent=notes[snapshot.phase];find('sr-detail').textContent='';find('sr-step').textContent='Step '+(step+1)+' of '+scenario.steps.length+' · '+names[snapshot.phase];
+      find('sr-prev').disabled=step===0;find('sr-next').disabled=step===scenario.steps.length-1;
+      find('sr-evidence').textContent='输出来自现有组合测试的实际离线执行 · 4 场景、28 个步骤快照 · 原请求重放断言通过 · Wix 真实保存与恢复未验收 · 测试源码 '+evidence.sourceSha256.slice(0,12);
+    }
+    find('sr-case').onchange=()=>{selected=find('sr-case').value;step=0;render();persist();};
+    find('sr-start').onclick=()=>{step=0;render();persist();};
+    find('sr-prev').onclick=()=>{if(step>0){step--;render();persist();}};
+    find('sr-next').onclick=()=>{if(step<6){step++;render();persist();}};
+    window.addEventListener('openai:set_globals',event=>{applySaved(event.detail?.globals?.widgetState);render();});
+    render();
+  })();
+  </script>
+</div>

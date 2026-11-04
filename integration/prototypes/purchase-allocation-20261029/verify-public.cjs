@@ -1,0 +1,7 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+async function verify(manifest){const origin='https://fmcgmalaysia.github.io/fmcg-sales-room-ui/',results=[],hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+ for(let offset=0;offset<manifest.resources.length;offset+=8){await Promise.all(manifest.resources.slice(offset,offset+8).map(async row=>{const response=await fetch(origin+row.path+'?release='+manifest.build,{headers:{'Cache-Control':'no-cache'}});assert.equal(response.status,200,row.path);const bytes=Buffer.from(await response.arrayBuffer());assert.equal(hash(bytes),row.sha256,row.path);if(row.path==='purchase-live/index.html')assert(bytes.toString().includes('content="'+manifest.build+'"'));results.push({path:row.path,sha256:row.sha256,status:response.status});}));}
+ const retired=[];for(const file of manifest.retired){const response=await fetch(origin+file+'?release='+manifest.build);assert.equal(response.status,404,file+' retired');retired.push({path:file,status:response.status});}
+ return {at:new Date().toISOString(),build:manifest.build,codeCommit:manifest.codeCommit,resourcesExact:results.length,retired,productionWrites:0};}
+if(require.main===module)verify(JSON.parse(fs.readFileSync(process.argv[2],'utf8'))).then(report=>{if(process.argv[3])fs.writeFileSync(process.argv[3],JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));}).catch(error=>{console.error(error);process.exitCode=1;});module.exports={verify};

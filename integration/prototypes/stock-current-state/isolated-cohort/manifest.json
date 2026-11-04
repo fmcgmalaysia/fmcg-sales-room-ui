@@ -1,0 +1,1871 @@
+{
+  "schema": "ISOLATED_COHORT_CANDIDATE_V1",
+  "cohort": "MASTER_20261024_R2",
+  "candidateOnly": true,
+  "activationAllowed": false,
+  "retiredLocalOutputs": [
+    "relays/integration/wix/packingListBridge.js",
+    "FMCGMALAYSIA/r2catalogueSelection.web.js",
+    "FMCGMALAYSIA/r2fxRates.web.js"
+  ],
+  "originalModulesUntouched": true,
+  "originalHttpHandlersUntouched": true,
+  "collections": {
+    "MASTER": {
+      "NCTOrders": "R2NCTOrders",
+      "NCTTasks": "R2NCTTasks",
+      "NCTActivity": "R2NCTActivity",
+      "NCTOrders1": "R2NCTOrders1",
+      "NCTTasks1": "R2NCTTasks1",
+      "NCTActivity1": "R2NCTActivity1",
+      "PurchaseOrders": "R2PurchaseOrders",
+      "StockPositions": "R2StockPositions",
+      "StockClaims": "R2StockClaims",
+      "StockProducts": "R2StockProducts",
+      "DepartmentChatIndex": "R2DepartmentChatIndex",
+      "AccountReadIndex": "R2AccountReadIndex"
+    },
+    "FMCGMALAYSIA": {
+      "WixBuyerOrders": "R2WixBuyerOrders",
+      "WixBuyerOrderLines": "R2WixBuyerOrderLines",
+      "WixOrderAudit": "R2WixOrderAudit"
+    }
+  },
+  "routes": {
+    "nctIntake": "r2NctIntake",
+    "salesFulfilment": "r2SalesFulfilment",
+    "purchaseQuantities": "r2PurchaseQuantities"
+  },
+  "coordinationPolicy": {
+    "databaseRoots": [
+      "stockCurrentAccountPurchase.js",
+      "stockCurrentBorrow.web.js",
+      "stockCurrentCostReference.js",
+      "stockCurrentExceptions.js",
+      "stockCurrentFulfilment.js",
+      "stockCurrentOrderIntake.js",
+      "stockCurrentPacking.js",
+      "stockCurrentPurchaseOrders.js",
+      "stockCurrentQuantityRead.js",
+      "stockCurrentSourceSales.js",
+      "stockCurrentWarehouse.web.js"
+    ],
+    "database": "CONTROL_CAS_CANDIDATE",
+    "batchApplyReads": true,
+    "photoRoots": [
+      "stockCurrentPacking.js",
+      "stockCurrentWarehouse.web.js"
+    ],
+    "photos": "CONTROL_CAS_CANDIDATE",
+    "fileRoots": [
+      "stockCurrentAccountPurchase.js",
+      "stockCurrentPurchaseOrders.js",
+      "stockCurrentSourceSales.js"
+    ],
+    "files": "CONTROL_CAS_CANDIDATE",
+    "maintenance": "EXCLUSIVE_LOCK",
+    "nativeAccepted": false
+  },
+  "backend": [
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2buyerOrderDownload.js",
+      "originalTarget": "buyerOrderDownload.js",
+      "source": "backend/buyerOrderDownload.js",
+      "sourceSha256": "6f340a7b8ebcef7617b25b521c2cd3293e2540d15a81b3abf61ee2b94f853af1",
+      "dependencies": [
+        "FMCGMALAYSIA/r2buyerSelectionExcel.js"
+      ],
+      "sha256": "5286d6c0d129a1a6b0acdf2f626febe10a3ea40ea26275dcb65d525f39b5eb60"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2buyerOrderExportToken.js",
+      "originalTarget": "buyerOrderExportToken.js",
+      "source": "backend/buyerOrderExportToken.js",
+      "sourceSha256": "e1432cfffae5ceb283df1c34e884f14e919b0105972010005fdfd1fe8fc1bc1e",
+      "dependencies": [],
+      "sha256": "e1432cfffae5ceb283df1c34e884f14e919b0105972010005fdfd1fe8fc1bc1e"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2buyerSelectionDownload.js",
+      "originalTarget": "buyerSelectionDownload.js",
+      "source": "backend/buyerSelectionDownload.js",
+      "sourceSha256": "d4dd98a433f147a690864f700b576b5288af20ed204841b62a486ed3b02290bc",
+      "dependencies": [
+        "FMCGMALAYSIA/r2buyerSelectionExcel.js"
+      ],
+      "sha256": "43742a850c5ab3997e8a5256297857eeebd8fba9462bd0d126aa13d5ac77660a"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2buyerSelectionExcel.js",
+      "originalTarget": "buyerSelectionExcel.js",
+      "source": "backend/buyerSelectionExcel.js",
+      "sourceSha256": "e494ca9678e098e3601dfd4acbc029e37c107bb5d3d54e7fb29f9a8c6bc80e2f",
+      "dependencies": [],
+      "sha256": "e494ca9678e098e3601dfd4acbc029e37c107bb5d3d54e7fb29f9a8c6bc80e2f"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2buyerSelectionExportToken.js",
+      "originalTarget": "buyerSelectionExportToken.js",
+      "source": "backend/buyerSelectionExportToken.js",
+      "sourceSha256": "56500353f72b355c7fd1cbea166a3b3d679ff6f1c977b6bd0c8d37681ef94463",
+      "dependencies": [],
+      "sha256": "56500353f72b355c7fd1cbea166a3b3d679ff6f1c977b6bd0c8d37681ef94463"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2catalogueAuth.web.js",
+      "originalTarget": "catalogueAuth.web.js",
+      "source": "backend/catalogueAuth.web.js",
+      "sourceSha256": "c0cbda48b183fa25d067781007b8257c68b2347e9de415088865c0fa710776df",
+      "dependencies": [
+        "FMCGMALAYSIA/r2buyerOrderDownload.js",
+        "FMCGMALAYSIA/r2buyerOrderExportToken.js",
+        "FMCGMALAYSIA/r2buyerSelectionDownload.js",
+        "FMCGMALAYSIA/r2buyerSelectionExportToken.js",
+        "FMCGMALAYSIA/r2masterQuantityClient.js"
+      ],
+      "sha256": "e4d86565580a6ecf9f2a4efc7fc20ef3557cfe2bc257feccf4424536b9a339d9"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2masterFulfilmentClient.js",
+      "originalTarget": "masterFulfilmentClient.js",
+      "source": "backend/masterFulfilmentClient.js",
+      "sourceSha256": "5cc8b1d8b3b32cfa560ccb41021be1af99f206685a9fa0e90a2c3d093e0c477a",
+      "dependencies": [],
+      "sha256": "c6fb7e9fc42b42423e11db63ba58731fb151e8b51f298a1531d401fb50b5ff63"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2masterQuantityClient.js",
+      "originalTarget": "masterQuantityClient.js",
+      "source": "backend/masterQuantityClient.js",
+      "sourceSha256": "878a91d8855968a145f4d43edc0efb327d88e921f8c2e93240294c80416995a4",
+      "dependencies": [
+        "FMCGMALAYSIA/r2masterQuantityProjection.js"
+      ],
+      "sha256": "209ac96cd34d624a6b4875850399ed3b8198f5cafe8260d83a0f37773975556f"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2masterQuantityProjection.js",
+      "originalTarget": "masterQuantityProjection.js",
+      "source": "backend/masterQuantityProjection.js",
+      "sourceSha256": "85f3676b715228bc0d66223fe2bb2da531e9cb4322d13c30756ff6d85e0cd1eb",
+      "dependencies": [],
+      "sha256": "85f3676b715228bc0d66223fe2bb2da531e9cb4322d13c30756ff6d85e0cd1eb"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2nctSalesIntake.js",
+      "originalTarget": "nctSalesIntake.js",
+      "source": "backend/nctSalesIntake.js",
+      "sourceSha256": "143246e81a689b2a4fa87e314314f3ca8c27265f9897dea780ffc2cf52b08c27",
+      "dependencies": [
+        "FMCGMALAYSIA/r2nctSubmissionDelivery.js"
+      ],
+      "sha256": "d22a886252c68e89400ba546a6668c113e80096294d916e808dcfc6948e63807"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2nctSubmissionDelivery.js",
+      "originalTarget": "nctSubmissionDelivery.js",
+      "source": "integration/prototypes/stock-current-state/nctSubmissionDelivery.candidate.js",
+      "sourceSha256": "0fc1533c5e04c73ff706c9da1fdb9ec393af5e5541cb7ff6966a3ec21f3b1342",
+      "dependencies": [
+        "FMCGMALAYSIA/r2nctSubmissionPayload.js"
+      ],
+      "sha256": "123c549ada04317dbb2fa2d3698159516f61da73525825e8eb48cbdd011552f5"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2nctSubmissionPayload.js",
+      "originalTarget": "nctSubmissionPayload.js",
+      "source": "backend/nctSubmissionPayload.js",
+      "sourceSha256": "8535234f848b2599992d1a15975aacc926e24958d875da75594c3c600703eccc",
+      "dependencies": [],
+      "sha256": "8535234f848b2599992d1a15975aacc926e24958d875da75594c3c600703eccc"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2onboarding.web.js",
+      "originalTarget": "onboarding.web.js",
+      "source": "integration/prototypes/stock-current-state/source-onboarding.candidate.js",
+      "sourceSha256": "9d117a6f228d9d3268bd3acbcda6e53e15806b7ca0be26122920759f19246efd",
+      "dependencies": [
+        "FMCGMALAYSIA/r2masterFulfilmentClient.js",
+        "FMCGMALAYSIA/r2masterQuantityClient.js",
+        "FMCGMALAYSIA/r2nctSalesIntake.js"
+      ],
+      "sha256": "a791bd4d10f9f5e1cd6ee03ea9e22241ed7c853f2f3a678808956d5182b1a444"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2accountPurchase.web.js",
+      "originalTarget": "accountPurchase.web.js",
+      "source": "integration/prototypes/stock-current-state/accountPurchase.web.candidate.js",
+      "sourceSha256": "1215a115a27e0451e7f2df544c2692c17a41451606d7eeab86d992c696b63661",
+      "dependencies": [
+        "MASTER/r2accountPurchaseReview.js",
+        "MASTER/r2accountReadIndex.js",
+        "MASTER/r2accountReadQuery.js",
+        "MASTER/r2accountSettlement.js",
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentAccountPurchase.js",
+        "MASTER/r2supplierCredit.js"
+      ],
+      "sha256": "3d8cc3d8dd0f8955c294d8c6a24b78920cfd0a624eda980e648c14b671e8028f"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2accountPurchaseReview.js",
+      "originalTarget": "accountPurchaseReview.js",
+      "source": "integration/backend/accountPurchaseReview.js",
+      "sourceSha256": "791e7a05197b4fd7b06f699165db997f537dc65100994683324d7e0ee94adceb",
+      "dependencies": [
+        "MASTER/r2accountSettlement.js",
+        "MASTER/r2purchaseDocumentPolicy.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "37fb07f5aabd3e8993820683b3c90828ddbae1ffa48fb987efb8db66f94a5936"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2accountReadIndex.js",
+      "originalTarget": "accountReadIndex.js",
+      "source": "integration/backend/accountReadIndex.js",
+      "sourceSha256": "9713b7265b13412e4b85991c76ecfec8b88f522c9d2a984f8212c666a80194d7",
+      "dependencies": [],
+      "sha256": "033be26661038896aec0bb0dced95357844534202e7578ca4c88ef1e5a68d077"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2accountReadQuery.js",
+      "originalTarget": "accountReadQuery.js",
+      "source": "integration/backend/accountReadQuery.js",
+      "sourceSha256": "a4c6b825afe812eb0c91929f1b8db031f2e5c8b31943d3b6e463163086c1e654",
+      "dependencies": [],
+      "sha256": "a4c6b825afe812eb0c91929f1b8db031f2e5c8b31943d3b6e463163086c1e654"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2accountSettlement.js",
+      "originalTarget": "accountSettlement.js",
+      "source": "integration/backend/accountSettlement.js",
+      "sourceSha256": "8a007abcf6b3810555876647c5593ac39f2fb90e87a02f85681bf8533e16ce7b",
+      "dependencies": [
+        "MASTER/r2paymentHandoff.js",
+        "MASTER/r2purchaseClaimEvidence.js",
+        "MASTER/r2purchaseDocumentPolicy.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "ec93036b78d8202bd214f3b62ec25d7a14e951ba3ab945fe84bd6b6e7380fa8b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2adminFxClient.js",
+      "originalTarget": "adminFxClient.js",
+      "source": "integration/backend/adminFxClient.js",
+      "sourceSha256": "e54943e4bba0fa20ffc3a97d9e3e3982d39b6caa139ca3dfa2023f96e292a03b",
+      "dependencies": [],
+      "sha256": "e54943e4bba0fa20ffc3a97d9e3e3982d39b6caa139ca3dfa2023f96e292a03b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerAccountLedger.js",
+      "originalTarget": "customerAccountLedger.js",
+      "source": "integration/backend/customerAccountLedger.js",
+      "sourceSha256": "395c55bb9aa655929f9b77138c00fc741b1d2d368718c0548866ee2dc282834c",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "202d04f981754235043058fe01788ade2e125624fb64c046413b0848891031ff"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerCompletionProjection.js",
+      "originalTarget": "customerCompletionProjection.js",
+      "source": "integration/backend/customerCompletionProjection.js",
+      "sourceSha256": "4f21cd9a7bff1cc4b5a8c77f67187102d1f1e86b952fc6b4f13dd785262e227b",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js"
+      ],
+      "sha256": "4b29b5746e2ac9712204cc95adfe394d8f747f5ad35930fe857142b97e2dd913"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerDebtor.js",
+      "originalTarget": "customerDebtor.js",
+      "source": "integration/backend/customerDebtor.js",
+      "sourceSha256": "7e9cf414c3a39a61d1cb7d2e7fa83616ae054b92dfd9c9b7da36895cb703ca99",
+      "dependencies": [
+        "MASTER/r2customerAccountLedger.js",
+        "MASTER/r2customerShipmentLedger.js"
+      ],
+      "sha256": "71f1fc47b67adea1cf0e887ed48ef7c8bcd4e39e9e95496ab9634d620c5e20cb"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerFulfilment.js",
+      "originalTarget": "customerFulfilment.js",
+      "source": "integration/prototypes/stock-current-state/customerFulfilment.candidate.js",
+      "sourceSha256": "b2bc26b5ebd612b885aabe6d947fa2bb953e68330132f15ee32b115b4d83bbd5",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2grossProfitMargin.js",
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2packingListGuards.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "9a8119f6fd6a42eeec8470a53df16cb44e9010f3f7a85fd7fee0b586ef31e534"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerFulfilment.web.js",
+      "originalTarget": "customerFulfilment.web.js",
+      "source": "integration/prototypes/stock-current-state/customerFulfilment.web.candidate.js",
+      "sourceSha256": "6a46a9d6cd5114dff2837c1dbea1b6e72d40205315d89399122c19caa8e28a29",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2stockCurrentFulfilment.js"
+      ],
+      "sha256": "b4a2911aa02382f7cb8df99959d08b112d42c7573ac783d2237099086153d4b5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerFulfilmentGateway.js",
+      "originalTarget": "customerFulfilmentGateway.js",
+      "source": "integration/prototypes/stock-current-state/customerFulfilmentGateway.candidate.js",
+      "sourceSha256": "98c57ba8b60b2cd860afa3c65286cb810eb0587d9c8f846b1a311a9d1e8ba222",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2stockCurrentSourceSales.js",
+        "MASTER/r2taskChat.web.js"
+      ],
+      "sha256": "dba8e1ed91a3193605272934561b946102556c2fc44802c15af3a5f8e92753d5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerFulfilmentService.js",
+      "originalTarget": "customerFulfilmentService.js",
+      "source": "integration/prototypes/stock-current-state/customerFulfilmentService.candidate.js",
+      "sourceSha256": "13ec07d3e73730f3c591c4b5bf5a9d9ef07b5c94d201a41576ab75d2937990fa",
+      "dependencies": [
+        "MASTER/r2adminFxClient.js",
+        "MASTER/r2customerAccountLedger.js",
+        "MASTER/r2customerDebtor.js",
+        "MASTER/r2customerFulfilment.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseMarginRefresh.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2salesOrderAdjustment.js"
+      ],
+      "sha256": "8b938c27968d8217ec1fb628be538f4a160b1557fac0ca85e983eb3224ac512d"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerNamesClient.js",
+      "originalTarget": "customerNamesClient.js",
+      "source": "integration/backend/customerNamesClient.js",
+      "sourceSha256": "6b7cad33bd7264a2e1241820376722943d3934147ac0e73a83be47a665e0f7b2",
+      "dependencies": [],
+      "sha256": "6b7cad33bd7264a2e1241820376722943d3934147ac0e73a83be47a665e0f7b2"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerShipmentLedger.js",
+      "originalTarget": "customerShipmentLedger.js",
+      "source": "integration/backend/customerShipmentLedger.js",
+      "sourceSha256": "4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "f274877e32abafa23555c749f2d056b8daac545bcda97ce629028350e03b4c73"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2customerShipmentPlan.js",
+      "originalTarget": "customerShipmentPlan.js",
+      "source": "integration/backend/customerShipmentPlan.js",
+      "sourceSha256": "539b222f742f14db0d32b4151566c2a80d4fe3673638bae44ad1b5867f10f66d",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "3480a38af5372849e0fc5a889902541ab1b2f8b2b811d2db3d757143dd330336"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2departmentMessages.js",
+      "originalTarget": "departmentMessages.js",
+      "source": "integration/backend/departmentMessages.js",
+      "sourceSha256": "92d9b4f1c328c5f3a1dba310d760fa6c4e846f2e1cae0366493a399e590405f6",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "8c5dbf76b96c73dec171b18497df600fb9d4df8a295fcc6fb6cca2ecad802031"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2grossProfitMargin.js",
+      "originalTarget": "grossProfitMargin.js",
+      "source": "integration/backend/grossProfitMargin.js",
+      "sourceSha256": "0cddb05a1f36f27e63217736d7e2e0dc135da9f05bb18c65026cb7f072ce2ac4",
+      "dependencies": [],
+      "sha256": "0cddb05a1f36f27e63217736d7e2e0dc135da9f05bb18c65026cb7f072ce2ac4"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2inventoryExceptions.js",
+      "originalTarget": "inventoryExceptions.js",
+      "source": "integration/backend/inventoryExceptions.js",
+      "sourceSha256": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2stockExceptionState.js"
+      ],
+      "sha256": "e5e0f3fcb41750d9081e7f1e107cdee5010a2ee397a72f1e00607147a8ff08a6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2nctIntake.js",
+      "originalTarget": "nctIntake.js",
+      "source": "integration/backend/nctIntake.js",
+      "sourceSha256": "69530c4c130d3aeaf4a3526dc0c90ce8b41bfe0cd4df2dc69b611a482984ed3f",
+      "dependencies": [],
+      "sha256": "3ddeca7841492bb89e3706874e94256e6f58890ecf13300887014f378f95c72b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2nctReceiver.js",
+      "originalTarget": "nctReceiver.js",
+      "source": "integration/prototypes/stock-current-state/nctReceiver.candidate.js",
+      "sourceSha256": "bf68f2fe67f3d2916defd7241d58fedf361141b42a567aaa7dc5fc13af3acd50",
+      "dependencies": [
+        "MASTER/r2nctIntake.js",
+        "MASTER/r2stockCurrentOrderIntake.js"
+      ],
+      "sha256": "c5fcbe09f0ecbcd6b34dcefd982986715991e04140d6f0d9adc326b9a82420c6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListContext.js",
+      "originalTarget": "packingListContext.js",
+      "source": "integration/backend/packingListContext.js",
+      "sourceSha256": "d33b0d6b435e6221c52bc843c67a59027c3c71a8d7eec88b85ce0fa9ecd13bc8",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "d3bcea8efb38b64f22b86ecece8033bfc866b372057d5c2a66be347f6c2ca56a"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListGuards.js",
+      "originalTarget": "packingListGuards.js",
+      "source": "integration/backend/packingListGuards.js",
+      "sourceSha256": "1071d9ff5f1ac975368055e37ec6e0268b08b2190de39acb48f3c17f3c115ca1",
+      "dependencies": [
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "523390738950395e2444bcc6cc641238dbf9b598ac9b5ca9efc69d905e16c4dc"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListModel.js",
+      "originalTarget": "packingListModel.js",
+      "source": "integration/prototypes/stock-current-state/packingListModel.candidate.js",
+      "sourceSha256": "e49b4d0a23f5fe91f48410a0d81eed19a200c348fa6b2a1982707bba705139fb",
+      "dependencies": [],
+      "sha256": "e49b4d0a23f5fe91f48410a0d81eed19a200c348fa6b2a1982707bba705139fb"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListOperations.js",
+      "originalTarget": "packingListOperations.js",
+      "source": "integration/prototypes/stock-current-state/packingListOperations.candidate.js",
+      "sourceSha256": "5bf6581e1ffce47e75c20d373fa381774db8aecc2e978cbaf8b22ba0a3bd8b77",
+      "dependencies": [
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListPhotos.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "6961134af845455b8b31e8ab3635834436a58280461aa324b126b3b5671e651d"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListPhotos.js",
+      "originalTarget": "packingListPhotos.js",
+      "source": "integration/backend/packingListPhotos.js",
+      "sourceSha256": "ebda7350c83986d63ba6d9bda638ec3e024b4249cbaf0e580022a2d561ec6a71",
+      "dependencies": [],
+      "sha256": "ebda7350c83986d63ba6d9bda638ec3e024b4249cbaf0e580022a2d561ec6a71"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingLists.web.js",
+      "originalTarget": "packingLists.web.js",
+      "source": "integration/prototypes/stock-current-state/packingLists.web.candidate.js",
+      "sourceSha256": "6543cb689cd45d0bacd1b1d8ad0708c89ce9e45775ed708b0b25d3ec650ba4ea",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2packingListContext.js",
+        "MASTER/r2packingListService.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2stockCurrentPacking.js"
+      ],
+      "sha256": "43ebb902f5461a06953ed0fed71a569aba0c604b75effa92715b2549cd964eae"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2packingListService.js",
+      "originalTarget": "packingListService.js",
+      "source": "integration/backend/packingListService.js",
+      "sourceSha256": "56ef7dbf805859f69252c2ec615cc12aa6b087b8738894fd8e9225bfb9597aed",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2packingListContext.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseProjection.js"
+      ],
+      "sha256": "7b7162ef5fa62951917f0c5db75351bbd36d985027609a57944df16667e694ef"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2partialInvoiceMargin.js",
+      "originalTarget": "partialInvoiceMargin.js",
+      "source": "integration/backend/partialInvoiceMargin.js",
+      "sourceSha256": "e7aca78ed7980848f0587e42db244ed3de79e4ced40f4207caba2c820a38dbe0",
+      "dependencies": [],
+      "sha256": "e7aca78ed7980848f0587e42db244ed3de79e4ced40f4207caba2c820a38dbe0"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2paymentHandoff.js",
+      "originalTarget": "paymentHandoff.js",
+      "source": "integration/backend/paymentHandoff.js",
+      "sourceSha256": "940bb4e99e709719868183d1edcf4c693df87e1f483ab6b722a548dd104049ca",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "77540769550832d28dee6c4ef35cedd1b81a882ae4c02c34c8848d254f47e442"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2plannerAllocation.js",
+      "originalTarget": "plannerAllocation.js",
+      "source": "integration/prototypes/stock-current-state/plannerAllocation.candidate.js",
+      "sourceSha256": "d55cd2741ccf0772acc69dd7aa67159474cc57e781b4a8b9edcfe030264be7fb",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2packingListGuards.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "a67d9acbf8fd8b6d51612fef321a8eb6e5b491f06816033352fd688195de1ff4"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2pointbaseBrandClient.js",
+      "originalTarget": "pointbaseBrandClient.js",
+      "source": "integration/backend/pointbaseBrandClient.js",
+      "sourceSha256": "201091f51d7f3503d0b853ba0a2c18aa6ba0c06b018e9a79b4b27cdfa82522f2",
+      "dependencies": [],
+      "sha256": "201091f51d7f3503d0b853ba0a2c18aa6ba0c06b018e9a79b4b27cdfa82522f2"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2pointbaseCostClient.js",
+      "originalTarget": "pointbaseCostClient.js",
+      "source": "integration/backend/pointbaseCostClient.js",
+      "sourceSha256": "e0246e7cd26cf26b53f5c4c12bbbcb432f04622597547f5b792c75cc2acfd3d6",
+      "dependencies": [],
+      "sha256": "e0246e7cd26cf26b53f5c4c12bbbcb432f04622597547f5b792c75cc2acfd3d6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseAccess.js",
+      "originalTarget": "purchaseAccess.js",
+      "source": "integration/backend/purchaseAccess.js",
+      "sourceSha256": "b11db6605b6b5d69345a57bac5f576612180ca6036934def97cd4b064292bcfd",
+      "dependencies": [
+        "MASTER/r2purchaseProjection.js"
+      ],
+      "sha256": "6e1ebca9caff77cfa5522bc0679c47b9420bdec01ceb2a939dc0fb46c24cdbcb"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseClaimEvidence.js",
+      "originalTarget": "purchaseClaimEvidence.js",
+      "source": "integration/backend/purchaseClaimEvidence.js",
+      "sourceSha256": "39d93ee60f69ac794d3fa00729178ff5fca37ecea27d1b2f003589718fe48c9a",
+      "dependencies": [],
+      "sha256": "39d93ee60f69ac794d3fa00729178ff5fca37ecea27d1b2f003589718fe48c9a"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseCostRetry.js",
+      "originalTarget": "purchaseCostRetry.js",
+      "source": "integration/backend/purchaseCostRetry.js",
+      "sourceSha256": "5b775dd81fb0a891054cab6bdee4b11dd1924ed65224c70955758d4c3c96fc6a",
+      "dependencies": [
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseTaskIdentity.js"
+      ],
+      "sha256": "38065cd5304a8716ad3cccf64a371c786ebc5284e404fdfe6a6c4f7a7725ec5d"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseCostRetry.web.js",
+      "originalTarget": "purchaseCostRetry.web.js",
+      "source": "integration/prototypes/stock-current-state/purchaseCostRetry.web.candidate.js",
+      "sourceSha256": "f7e729f63710760770ec23a8f2cd9d35725b60858ff2ab397645991aff86e45e",
+      "dependencies": [
+        "MASTER/r2pointbaseCostClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseCostRetry.js",
+        "MASTER/r2stockCurrentCostReference.js"
+      ],
+      "sha256": "691193c0110ca0ea41960fa92b281e2da301af14dfb24e15e3a1d12fcd33abd0"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseDisplayOrder.js",
+      "originalTarget": "purchaseDisplayOrder.js",
+      "source": "integration/prototypes/stock-current-state/purchaseDisplayOrder.candidate.js",
+      "sourceSha256": "cddb79063460b5c6f8a3f0f1ea925c3b8d79ba4263641720514aa249969927a0",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "496d925384c48e3e2498ec34ac6d73bfc7103cde88626e34d1b204e22e2c8bb6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseDocumentClient.js",
+      "originalTarget": "purchaseDocumentClient.js",
+      "source": "integration/backend/purchaseDocumentClient.js",
+      "sourceSha256": "dd9aa74d059c22533e2fb7f16258f8383f35ede832262e021bf5041d563fdeea",
+      "dependencies": [],
+      "sha256": "dd9aa74d059c22533e2fb7f16258f8383f35ede832262e021bf5041d563fdeea"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseDocumentPolicy.js",
+      "originalTarget": "purchaseDocumentPolicy.js",
+      "source": "integration/backend/purchaseDocumentPolicy.js",
+      "sourceSha256": "1b6d69de59fc97da18b7899b7dda415ab1f6d350e9d09cbd3d3883472be9edea",
+      "dependencies": [],
+      "sha256": "1b6d69de59fc97da18b7899b7dda415ab1f6d350e9d09cbd3d3883472be9edea"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseMarginRefresh.js",
+      "originalTarget": "purchaseMarginRefresh.js",
+      "source": "integration/backend/purchaseMarginRefresh.js",
+      "sourceSha256": "75053444ee6d46296754026ef88a50b540a76e2c17b695eba9039e7d82a0f2ea",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2grossProfitMargin.js",
+        "MASTER/r2partialInvoiceMargin.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseTaskIdentity.js"
+      ],
+      "sha256": "8a4741e41969ea9546ffed34cc65109bdbfb83d1f3efb4619bbee9bc0e8a8d37"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseOperationJournal.js",
+      "originalTarget": "purchaseOperationJournal.js",
+      "source": "integration/backend/purchaseOperationJournal.js",
+      "sourceSha256": "c79dd9044130147c979d01b99edfaa01296c038c12573c2b6f4c9b65ed201888",
+      "dependencies": [],
+      "sha256": "c79dd9044130147c979d01b99edfaa01296c038c12573c2b6f4c9b65ed201888"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseOperations.js",
+      "originalTarget": "purchaseOperations.js",
+      "source": "integration/backend/purchaseOperations.js",
+      "sourceSha256": "b1c749a81e3130a4fa603aeb266cf4a8251f16a9c6f99352e464111692792fd9",
+      "dependencies": [
+        "MASTER/r2purchaseDisplayOrder.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchasePlan.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseTaskIdentity.js",
+        "MASTER/r2shipmentBatchAllocation.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "facbb0030b41bf2a264ce94c53a308bdd23416a67a949b72c5055cf89d48eb8b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseOperations.web.js",
+      "originalTarget": "purchaseOperations.web.js",
+      "source": "integration/prototypes/stock-current-state/purchaseOperations.web.candidate.js",
+      "sourceSha256": "4a3451d2a38e6dba0bb152bd0d5ae4e96a5e28f60e2af8deca8317e695a4b719",
+      "dependencies": [
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2pointbaseBrandClient.js",
+        "MASTER/r2pointbaseCostClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOperations.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseQuantityCases.js",
+        "MASTER/r2purchaseShortage.js",
+        "MASTER/r2purchaseSources.js",
+        "MASTER/r2sharedSupplierOperations.js",
+        "MASTER/r2stockCurrentBorrow.web.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "5e175e8a0eb2d1b8629f0a6389ac5aaa2cb83e293035a23dd220994f63082e7c"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseOrders.web.js",
+      "originalTarget": "purchaseOrders.web.js",
+      "source": "integration/prototypes/stock-current-state/purchaseOrders.web.candidate.js",
+      "sourceSha256": "0c9f726aa304e8ecaf2747a2cb3c1e241784fd1debf800a8c9d9dbf82096afc7",
+      "dependencies": [
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseDocumentPolicy.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentPurchaseOrders.js"
+      ],
+      "sha256": "8e363f105424a2597dadfe36e7749d4816fcb26141c5c57c4d424079f1a23e33"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseOrderWorkflow.js",
+      "originalTarget": "purchaseOrderWorkflow.js",
+      "source": "integration/backend/purchaseOrderWorkflow.js",
+      "sourceSha256": "1e41500131c973b25ed4576a3e46a9b603de5e2acf4da192a1d514e048c2c948",
+      "dependencies": [
+        "MASTER/r2accountPurchaseReview.js",
+        "MASTER/r2paymentHandoff.js",
+        "MASTER/r2purchaseDocumentPolicy.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "00689c50efcf133afecb4ade94355848e887bfeaf80d0b89b1c472a35d03b296"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchasePlan.js",
+      "originalTarget": "purchasePlan.js",
+      "source": "integration/backend/purchasePlan.js",
+      "sourceSha256": "c56967e4efd921804a2f6537339e240a4ad1133553eddfedbd40ae2ebd04969a",
+      "dependencies": [],
+      "sha256": "c56967e4efd921804a2f6537339e240a4ad1133553eddfedbd40ae2ebd04969a"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseProgress.js",
+      "originalTarget": "purchaseProgress.js",
+      "source": "integration/backend/purchaseProgress.js",
+      "sourceSha256": "3e39171f2b56b4d1bfd2c49dee0ac0a3704af6bc2894cbebea4a59fd4a4ed641",
+      "dependencies": [
+        "MASTER/r2customerCompletionProjection.js",
+        "MASTER/r2customerShipmentLedger.js"
+      ],
+      "sha256": "c72b5b09d6bf18e5422171b346065b542acccd21df759c4a9839799a1d32d67f"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseProjection.js",
+      "originalTarget": "purchaseProjection.js",
+      "source": "integration/prototypes/stock-current-state/purchaseProjection.candidate.js",
+      "sourceSha256": "ac0c2ab39f218104a1790e9bf0f65f6b6c06b75a9bb4684916512693f289d73b",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseDisplayOrder.js",
+        "MASTER/r2purchasePlan.js",
+        "MASTER/r2purchaseQuantityCases.js",
+        "MASTER/r2purchaseShortage.js",
+        "MASTER/r2purchaseSources.js",
+        "MASTER/r2purchaseTaskIdentity.js",
+        "MASTER/r2salesOrderAdjustment.js",
+        "MASTER/r2shipmentBatchAllocation.js",
+        "MASTER/r2supplierCredit.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "d208c321ba38686ec90bbf16f30b86fae98ad17ed58f545ed1a9d46acc557829"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseQuantityCases.js",
+      "originalTarget": "purchaseQuantityCases.js",
+      "source": "integration/backend/purchaseQuantityCases.js",
+      "sourceSha256": "e31995582a2d009c910d7933e1da0325496261cdd60ff6eaa10f88c8c57f5048",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "61d6f656d30e350ed01f2198773d550d5b31fadaa338ebc0b3b39554dfc7fc5c"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseQuantityProjection.js",
+      "originalTarget": "purchaseQuantityProjection.js",
+      "source": "integration/prototypes/stock-current-state/purchaseQuantityProjection.candidate.js",
+      "sourceSha256": "3a8ccb8d10f891df1ae3bcb3de1bf44151d198489c8bbb259cb14fcf151f1008",
+      "dependencies": [
+        "MASTER/r2customerCompletionProjection.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2purchaseShortage.js",
+        "MASTER/r2shipmentBatchAllocation.js",
+        "MASTER/r2warehousePreparation.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "6690cdf99b3c7be261b9af805f659d79d32bc60e1fba8f7a13d77227aafb7e78"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseQuantityRead.js",
+      "originalTarget": "purchaseQuantityRead.js",
+      "source": "integration/prototypes/stock-current-state/purchaseQuantityRead.candidate.js",
+      "sourceSha256": "4d6b2ef08cdcdcd180c4219779b2be4d9d40b32ffd049031c907807f278436de",
+      "dependencies": [
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseQuantityProjection.js",
+        "MASTER/r2stockCurrentQuantityRead.js"
+      ],
+      "sha256": "21cc645091dd0102cbbd3fa4c68cf1d2208971106cfb1be52a2a2b0bbb826bcc"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseShortage.js",
+      "originalTarget": "purchaseShortage.js",
+      "source": "integration/backend/purchaseShortage.js",
+      "sourceSha256": "320be7ce1641d2a3429b0698b25a7c75a1c73e9d7026b5323131f11e431535fd",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "25bee6f65c43ad0805c0e9ed3b41407640513a3fd4579503f6138cfd0acc4756"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseSources.js",
+      "originalTarget": "purchaseSources.js",
+      "source": "integration/backend/purchaseSources.js",
+      "sourceSha256": "d7c0b053dab3c35ba5d0eb2bc1c58c2008380ddb8964d8a374d047566c09f930",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchasePlan.js",
+        "MASTER/r2purchaseTaskIdentity.js",
+        "MASTER/r2shipmentBatchAllocation.js"
+      ],
+      "sha256": "bba1456df42abfc14debd4414d0389d6adae44148e4df1eb9455fd64989f64a6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseTaskIdentity.js",
+      "originalTarget": "purchaseTaskIdentity.js",
+      "source": "integration/backend/purchaseTaskIdentity.js",
+      "sourceSha256": "d2b1b724fb1efc8e099b5cfb745e15683734b14fca868f8bc7da840301ca41e2",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "4eedca81fd82335bc363cd170e46db9212c4b1cb9108ce18d93078afc49fe052"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2purchaseWorkspace.web.js",
+      "originalTarget": "purchaseWorkspace.web.js",
+      "source": "integration/prototypes/stock-current-state/purchaseWorkspace.web.candidate.js",
+      "sourceSha256": "ee007e3afb8f7fd653c9046e34af92a5b3179a2efe1f760523741fcb91802937",
+      "dependencies": [
+        "MASTER/r2adminFxClient.js",
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseMarginRefresh.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProgress.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentBorrow.web.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "70061e8db3a505dbc4dc6ae28cc860f22d0e24a78bd2c9459913cc94b9cd5bd7"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2salesOrderAdjustment.js",
+      "originalTarget": "salesOrderAdjustment.js",
+      "source": "integration/backend/salesOrderAdjustment.js",
+      "sourceSha256": "d37ae8ba0483bdd9f0bf64265113f6f80b4ce4074bc6d6623df05662fcd3849a",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListGuards.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2shipmentBatchAllocation.js"
+      ],
+      "sha256": "4085e0f4ee3c181f06f6b99837906c0727082ae5a195bf7d3be2c6a17c38b93b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2sharedSupplierOperations.js",
+      "originalTarget": "sharedSupplierOperations.js",
+      "source": "integration/backend/sharedSupplierOperations.js",
+      "sourceSha256": "1800bc5c838bad8be8f443af93da6325d9749657fa27d46106ee1efe55d57b0e",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "6ed6bad034120a391258fe26e18e92eaaebe5d0d8c0e49ed038c31919f2bbd32"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2shipmentBatchAllocation.js",
+      "originalTarget": "shipmentBatchAllocation.js",
+      "source": "integration/backend/shipmentBatchAllocation.js",
+      "sourceSha256": "2d65df0147e3fc9f693a6df4bc44fad5b73a7a090fa866a57d1a4383703c1aed",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "2c4fef29c2699f453b05ca57445a1c7d149b0fc36bee557529c16e0b777ec80f"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCardProjection.js",
+      "originalTarget": "stockCardProjection.js",
+      "source": "integration/prototypes/stock-current-state/stockCardProjection.candidate.js",
+      "sourceSha256": "9975b258d10c8326f2f1f09d2068bd0b11ca7b0b6c84ca59494c4f45b4aaf8fd",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2stockPhysicalProjection.js"
+      ],
+      "sha256": "90d598e80966e0b7d74044374964c1c58ecc8e7adb34379e6986042d6dc4db04"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockControl.web.js",
+      "originalTarget": "stockControl.web.js",
+      "source": "integration/prototypes/stock-current-state/stockControl.web.candidate.js",
+      "sourceSha256": "7ed07ba0a0335662d98968499d26310f905c6bcce17765822830fe18efd11f13",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2stockControlService.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "0c4066dbc48104cc4d934e737bd5ab1d1de48115f2ba8a10dd1e2d39936e58dd"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockControlService.js",
+      "originalTarget": "stockControlService.js",
+      "source": "integration/backend/stockControlService.js",
+      "sourceSha256": "c6e146aa74677b8b44589c116ea5209b62dd5551cbee74e3bcc712bd3105449d",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2stockCardProjection.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "f736b864dbeaaa43dbf1268cea10139aff6bfc20fbfd9929594cd8cdb3a896c4"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentAccountPurchase.js",
+      "originalTarget": "stockCurrentAccountPurchase.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentAccountPurchase.js",
+      "sourceSha256": "096538e56076877c9dfe811af0f859970d125ce42c52d47b1db634f5eba90a01",
+      "dependencies": [
+        "MASTER/r2accountPurchaseReview.js",
+        "MASTER/r2accountSettlement.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2supplierCredit.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "9a9da5c2fe48f550de13bb74de7e4bf91b569815b98f16b7aed93a06c2977db0"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentBorrow.web.js",
+      "originalTarget": "stockCurrentBorrow.web.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentBorrow.web.js",
+      "sourceSha256": "40af370a88d65479767e797d31a0315c799a30d49edf88428961c78fdca3706f",
+      "dependencies": [
+        "MASTER/r2adminFxClient.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseDisplayOrder.js",
+        "MASTER/r2purchaseMarginRefresh.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOperations.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProgress.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseQuantityCases.js",
+        "MASTER/r2purchaseShortage.js",
+        "MASTER/r2purchaseSources.js",
+        "MASTER/r2purchaseTaskIdentity.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "7c895eb3d4e2ca2acca8a0fdaeb67c58e8d0a6a2e972826f1bc572448ca2bd7b"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentCommands.js",
+      "originalTarget": "stockCurrentCommands.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentCommands.js",
+      "sourceSha256": "57d0b4b9a0ae10396cd091b1ab009dbd802dec174a9220579f8e8cd67ae1552f",
+      "dependencies": [],
+      "sha256": "890658ad682033b4eb10af629931f052d8478b280f343402692a90aa45b2daa5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentCostReference.js",
+      "originalTarget": "stockCurrentCostReference.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentCostReference.js",
+      "sourceSha256": "caeef6d117caaf64366cc3c08fd2088dfc80b8b8af1f7f2214d66846630aa229",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2pointbaseCostClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseCostRetry.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "bd4916782d193ade634ea70c7c0cdafecbcb96a2f55a74836c2621210a1e2854"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentExceptions.js",
+      "originalTarget": "stockCurrentExceptions.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentExceptions.js",
+      "sourceSha256": "787b8ea930d3c355169731747aee6ad28988dc20fb72289dc2889c88700c5427",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2departmentMessages.js",
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2stockExceptionResolution.js",
+        "MASTER/r2stockExceptionWorkspace.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "7eb693240ba682751d868e1f875a62158fc8c56d999bc240cafb6be88c1670f5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentFulfilment.js",
+      "originalTarget": "stockCurrentFulfilment.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentFulfilment.js",
+      "sourceSha256": "6c4fc5bd37271187aba5b9051717d35ae21083f0b857acb50617efc0fbb9d5d6",
+      "dependencies": [
+        "MASTER/r2customerFulfilment.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "bd9365579ef0e74974bbde834591eaca644382573020b9443f928ec6f1c24eb6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentOrderIntake.js",
+      "originalTarget": "stockCurrentOrderIntake.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentOrderIntake.js",
+      "sourceSha256": "cea7b09c799af64002aa80cf0343682eac9891f91c852d2c277d4b4932a01633",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2nctIntake.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "e225c802010a1abaa5985b022f3b15237b2cccb90a0a73ddf4a2c4e380afd03f"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentPacking.js",
+      "originalTarget": "stockCurrentPacking.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentPacking.js",
+      "sourceSha256": "e87feac4d72221795063a1042c19e10c972d75fab371d0b7a4aaee7244ba325f",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListContext.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "6ae08348b5c1895bf2c174dedef7f23f4f3c07e250b9d2ff5e55681fdd2aa2eb"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentPurchaseOrders.js",
+      "originalTarget": "stockCurrentPurchaseOrders.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentPurchaseOrders.js",
+      "sourceSha256": "87a4f29cbd45cd55ed200e525fb7d2765d495942bbf3d7b6bd0d343f2cdd39f9",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "3f52d83010e8be472e7fc269841599e271fce0327e405e3c797c0dee6c183efc"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentQuantityRead.js",
+      "originalTarget": "stockCurrentQuantityRead.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentQuantityRead.js",
+      "sourceSha256": "d3fa549ccc29da40774332adb03678563eaed347d04bd987d18601607bbb1dd7",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2purchaseQuantityProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "5ee3f64d6f355140d422fcb2d4a930f8cd241eab59f11a28f31e373872404e06"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentRead.web.js",
+      "originalTarget": "stockCurrentRead.web.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentRead.web.js",
+      "sourceSha256": "4a371cc2dbcf049bbef8bb433fc873dce172c196506a14fa1bb6a63678aca612",
+      "dependencies": [
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2purchaseAccess.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "f332d51e0025729f4c0842e8a95bb83cf77f505b237c242c96e109a609777afd"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentSourceSales.js",
+      "originalTarget": "stockCurrentSourceSales.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentSourceSales.js",
+      "sourceSha256": "aad69e3079829d5dd9ececc19240ccbfbba150b411ab302eed167ac62abcd880",
+      "dependencies": [
+        "MASTER/r2customerAccountLedger.js",
+        "MASTER/r2customerFulfilment.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2salesOrderAdjustment.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehousePreparation.js"
+      ],
+      "sha256": "c382171330a5120cd111398446a6945a7316f8383e5cff67c1312dedc08a88ac"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockCurrentWarehouse.web.js",
+      "originalTarget": "stockCurrentWarehouse.web.js",
+      "source": "integration/prototypes/stock-current-state/stockCurrentWarehouse.web.js",
+      "sourceSha256": "37a684c51a732d528a2d7c232b1dcf173121a0eeaee911e75b19ff9dfa2c84f4",
+      "dependencies": [
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2packingListModel.js",
+        "MASTER/r2packingListOperations.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2pointbaseCostClient.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2warehouseCbm.js",
+        "MASTER/r2warehouseCustomerReadiness.js",
+        "MASTER/r2warehousePreparation.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "cc35f8d0965dcb1c85f9dd85a709114be6506233603020d15de496e0460fbde6"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockExceptionResolution.js",
+      "originalTarget": "stockExceptionResolution.js",
+      "source": "integration/backend/stockExceptionResolution.js",
+      "sourceSha256": "6e9f349d30c8a8e2399943a592fe1806ed830f7ee379047ab35872910c41889b",
+      "dependencies": [
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "fd5209e58806b0be017f64eee200b703af3d4410d468b9dd777a581fd0b41ec3"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockExceptions.web.js",
+      "originalTarget": "stockExceptions.web.js",
+      "source": "integration/prototypes/stock-current-state/stockExceptions.web.candidate.js",
+      "sourceSha256": "7948f562900c9ecbb12ca186c6521da7a71e5bf7622ed5246550ee5a4ff5f285",
+      "dependencies": [
+        "MASTER/r2accountPurchaseReview.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2departmentMessages.js",
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentExceptions.js",
+        "MASTER/r2stockExceptionResolution.js",
+        "MASTER/r2stockExceptionWorkspace.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "5a672ae9a41a2638837905fa90c24ec3904e9a96658fd8cd90dc92eb9c29fed5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockExceptionState.js",
+      "originalTarget": "stockExceptionState.js",
+      "source": "integration/backend/stockExceptionState.js",
+      "sourceSha256": "605bc979f97775eb90b423694c57724747f9a3c94adce73d48b999872a4f23f2",
+      "dependencies": [],
+      "sha256": "605bc979f97775eb90b423694c57724747f9a3c94adce73d48b999872a4f23f2"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockExceptionWorkspace.js",
+      "originalTarget": "stockExceptionWorkspace.js",
+      "source": "integration/backend/stockExceptionWorkspace.js",
+      "sourceSha256": "f4f94dd396dfe49d7ed3441aad51c0a780b5f80b954c86d25c2f96338ff539e6",
+      "dependencies": [
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2stockExceptionResolution.js"
+      ],
+      "sha256": "38707e87f2edeb73f66c8725a96072b23484cfd342257b547b1fb78081a926b3"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockMaintenanceAdmin.web.js",
+      "originalTarget": "stockMaintenanceAdmin.web.js",
+      "source": "integration/prototypes/stock-current-state/stockMaintenanceAdmin.web.js",
+      "sourceSha256": "3ad44165ad1aaf0666667263653f4523d26561c44664d597c0198ba21120d161",
+      "dependencies": [
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCardProjection.js",
+        "MASTER/r2stockCurrentCommands.js"
+      ],
+      "sha256": "69d930b24005306c572c79ae1c9f81a0e76baba520fc0cb05535940e0b787142"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockPhysicalProjection.js",
+      "originalTarget": "stockPhysicalProjection.js",
+      "source": "integration/backend/stockPhysicalProjection.js",
+      "sourceSha256": "64d3d88593ee030a1fcfb75195683a1a4e8dc7a227f5b3fa21c441a782c48344",
+      "dependencies": [],
+      "sha256": "64d3d88593ee030a1fcfb75195683a1a4e8dc7a227f5b3fa21c441a782c48344"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2stockRecoveryRead.web.js",
+      "originalTarget": "stockRecoveryRead.web.js",
+      "source": "integration/prototypes/stock-current-state/stockRecoveryRead.web.js",
+      "sourceSha256": "f3f5421030d6ef2d1de2853bd5f966ac10f6254b00fcf9784c5307af40d445a4",
+      "dependencies": [],
+      "sha256": "6d20815398fadc3f59386f4a8959c6fa4f32a63c49bb13f3ac0c440110d5f5e1"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2supplierCredit.js",
+      "originalTarget": "supplierCredit.js",
+      "source": "integration/backend/supplierCredit.js",
+      "sourceSha256": "8d71dd3022cb78764272b5293b38fd97fd934ece0bee7d476573c20fb61bf3d7",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "70219fbce94dc7ab26c5dcbfa39e04c578a966559927bbdca41e2da0466e914d"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2taskChat.web.js",
+      "originalTarget": "taskChat.web.js",
+      "source": "integration/backend/taskChat.web.js",
+      "sourceSha256": "9c673648634a37a986b186f68e28673b6a0103b7ec89c2696201fc152325e7b2",
+      "dependencies": [
+        "MASTER/r2accountPurchaseReview.js",
+        "MASTER/r2customerFulfilmentService.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2departmentMessages.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2taskChatClient.js",
+        "MASTER/r2taskChatService.js",
+        "MASTER/r2taskChatWorkspace.js",
+        "MASTER/r2warehousePreparation.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "93f85f5e7713e5191bfba33b98d67c968c26cb5bd23a8aa9c01021f7bf412b49"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2taskChatClient.js",
+      "originalTarget": "taskChatClient.js",
+      "source": "integration/backend/taskChatClient.js",
+      "sourceSha256": "a59f33c0fb950811371a36c723ce5d72034eb944f405019fe67707b402c0c2d3",
+      "dependencies": [
+        "MASTER/r2purchaseDocumentClient.js"
+      ],
+      "sha256": "80b72aeba25d23dbad1e874fdf7e4ff3a3b0a1cdb13c23a36233512a8ab95614"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2taskChatService.js",
+      "originalTarget": "taskChatService.js",
+      "source": "integration/backend/taskChatService.js",
+      "sourceSha256": "7b9e503342d286e4aa476323efedc3d799715af4f0bc7538423fa56bcdabf998",
+      "dependencies": [],
+      "sha256": "7b9e503342d286e4aa476323efedc3d799715af4f0bc7538423fa56bcdabf998"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2taskChatWorkspace.js",
+      "originalTarget": "taskChatWorkspace.js",
+      "source": "integration/backend/taskChatWorkspace.js",
+      "sourceSha256": "c96b838354b7685a0f471852f1d554949c26fb0054bfa1b9a1c7758aa890e6d5",
+      "dependencies": [],
+      "sha256": "c96b838354b7685a0f471852f1d554949c26fb0054bfa1b9a1c7758aa890e6d5"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2warehouseCbm.js",
+      "originalTarget": "warehouseCbm.js",
+      "source": "integration/backend/warehouseCbm.js",
+      "sourceSha256": "328aa445f13450c84ccb8af98575d906c32bc5a48cadbb4ea58e91388f7b0595",
+      "dependencies": [
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "3ad4b6eb1610eba66176471e2f31cc443d2a2f7d4c54f9f42fabd9d0fef64fed"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2warehouseCustomerReadiness.js",
+      "originalTarget": "warehouseCustomerReadiness.js",
+      "source": "integration/backend/warehouseCustomerReadiness.js",
+      "sourceSha256": "a8489aa5d39060436fe3729a415b1892e3d7ff24359c10a7a73d09f1225c77dd",
+      "dependencies": [],
+      "sha256": "a8489aa5d39060436fe3729a415b1892e3d7ff24359c10a7a73d09f1225c77dd"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2warehousePreparation.js",
+      "originalTarget": "warehousePreparation.js",
+      "source": "integration/prototypes/stock-current-state/warehousePreparation.candidate.js",
+      "sourceSha256": "3f91bdf40a17b5a3800f5b1da4ce0cb0ed914c9e3ac730a60c8cb33d8da8998c",
+      "dependencies": [
+        "MASTER/r2customerShipmentLedger.js",
+        "MASTER/r2customerShipmentPlan.js",
+        "MASTER/r2packingListGuards.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2shipmentBatchAllocation.js"
+      ],
+      "sha256": "4a77b06394f6a902a4d897718c17012e25d57692b7ae6a037dff2acb5920f013"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2warehouseReceiving.js",
+      "originalTarget": "warehouseReceiving.js",
+      "source": "integration/backend/warehouseReceiving.js",
+      "sourceSha256": "27183e41c7c7525e0eb2c8cc5bdd375d3e8a6ddc273074f27e759ec94c31dee4",
+      "dependencies": [
+        "MASTER/r2inventoryExceptions.js",
+        "MASTER/r2plannerAllocation.js",
+        "MASTER/r2purchaseOperationJournal.js"
+      ],
+      "sha256": "42eff7941ea4852a5f37a9eef2d3fc402c5b03865c68b6296627d79ea6e3038d"
+    },
+    {
+      "system": "MASTER",
+      "target": "r2warehouseReceiving.web.js",
+      "originalTarget": "warehouseReceiving.web.js",
+      "source": "integration/prototypes/stock-current-state/warehouseReceiving.web.candidate.js",
+      "sourceSha256": "98c071cf858eb3fed1b72f1687c7937c838d263fad2ed479c9971c2f30b5b7cd",
+      "dependencies": [
+        "MASTER/r2customerNamesClient.js",
+        "MASTER/r2pointbaseCostClient.js",
+        "MASTER/r2purchaseDocumentClient.js",
+        "MASTER/r2purchaseOperationJournal.js",
+        "MASTER/r2purchaseOrderWorkflow.js",
+        "MASTER/r2purchaseProjection.js",
+        "MASTER/r2stockCurrentCommands.js",
+        "MASTER/r2stockCurrentWarehouse.web.js",
+        "MASTER/r2warehouseCbm.js",
+        "MASTER/r2warehouseCustomerReadiness.js",
+        "MASTER/r2warehousePreparation.js",
+        "MASTER/r2warehouseReceiving.js"
+      ],
+      "sha256": "976cde48f31720aeb53016291dddd4b7dff12e1d4be275b9d4f54a84ca1636f6"
+    }
+  ],
+  "relays": [
+    {
+      "system": "MASTER",
+      "target": "integration/wix/purchase-room-page.js",
+      "source": "integration/prototypes/stock-current-state/purchase-room-page.candidate.js",
+      "sourceSha256": "5d1d4460ecaab40ce7c6646d18344e325c01781d485ed7399f4d5011a56674f9",
+      "sha256": "e8d4ef5865d1f2d6664742cc3b6f357250228e1d75978ec162b6e753036bcbd6"
+    },
+    {
+      "system": "MASTER",
+      "target": "integration/wix/warehouse-department-page.js",
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/warehouse-department-page.js",
+      "sourceSha256": "0246f031d9e05a658cfdd6200b13b6469bc605cf1a7674b12edce7f6e1350eaf",
+      "sha256": "2110ff53d32f98098fa02f1b26a1aa3796afcbedde136d3096e374fbfdaf1e60"
+    },
+    {
+      "system": "MASTER",
+      "target": "integration/wix/support-department-page.js",
+      "source": "integration/prototypes/stock-current-state/packing-ui/support-department-page.js",
+      "sourceSha256": "d594c7b2d9790cc7093014d648739a35157d25fe22cf83e15b5d93dc058d370d",
+      "sha256": "857dd3b73e501bbeafd2a68b7ca7311488f83f468ed80387cee0db0a7e04abe1"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "sales-room/wix/sales-room-page.js",
+      "source": "integration/prototypes/stock-current-state/source-sales-room-page.candidate.js",
+      "sourceSha256": "af6076eed0c9571e71e0d82c5b87ac0e0570caa44a323a8fa056e506e46428c2",
+      "sha256": "c3cdc2107424c74f069b6e3bf8b876358c4b40ecb5e0776f0a1febbc8cc08559"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "buyer-room/wix/buyer-room-page.js",
+      "source": "buyer-room/wix/buyer-room-page.js",
+      "sourceSha256": "442444958334868f8785f2d1b9e3ac9bea27f3096dfe769743382e865aad8cdc",
+      "sha256": "070d00143d116d0f70c3be41159a6f4700ade23132a3c0cda69450a7469e8ae6"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "buyer-room/catalogue/wix/catalogue-page-v3.js",
+      "source": "buyer-room/catalogue/wix/catalogue-page-v3.js",
+      "sourceSha256": "977ca4e66194e1dd2b3d72071a731fee7d28d0cd70998e854e519b13ebf0f170",
+      "sha256": "ae4ad0b7275a6ddf415b0e21d1df6c102f447197d4609e1e5bb372fcec9a1e55"
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "buyer-room/wix/order-received-lightbox.js",
+      "source": "buyer-room/wix/order-received-lightbox.js",
+      "sourceSha256": "d35528de6e5245872b7589596cc7af87035e1c609906e5459b3f87e224228936",
+      "sha256": "d35528de6e5245872b7589596cc7af87035e1c609906e5459b3f87e224228936"
+    },
+    {
+      "system": "MASTER",
+      "target": "integration/wix/account-department-page.js",
+      "source": "integration/prototypes/stock-current-state/account-department-page.candidate.js",
+      "sourceSha256": "1fcc0b3a6bde22834a44f5f1d76091a9f17f47cd4bb2adfefdb656a19a2832f3",
+      "sha256": "087a1a65191700327b5c95cb786a78ede8ec6f9f9ff0029cf5c233f6ae78b57a"
+    }
+  ],
+  "publicModules": [
+    {
+      "system": "MASTER",
+      "target": "public/r2taskChatBridge.js",
+      "source": "integration/wix/task-chat-bridge.js",
+      "sourceSha256": "1736da027e0be6da69b21f4c04dc0e7c6de2d2b21faeee97b667ffccd412d9d7",
+      "sha256": "c17507dc63feed53d8d27000a270300fe5c8e8f0b7f4da260db1f24c29a6ebd0"
+    },
+    {
+      "system": "MASTER",
+      "target": "public/r2packingListBridge.js",
+      "source": "integration/prototypes/stock-current-state/packing-ui/packingListBridge.js",
+      "sourceSha256": "2b44cbd3233656346171fbb9bb790b524e13e0533c4a5e2fb190c34a4a280cfc",
+      "sha256": "800ca91f6460b139cbcb2a679a7ecc80f6a8137c3ef20c1a45b9e28ae6d2df5b"
+    }
+  ],
+  "bootstrapModules": [
+    {
+      "system": "MASTER",
+      "target": "r2cohortBootstrap.web.js",
+      "source": "integration/prototypes/stock-current-state/fresh-cohort-bootstrap.cjs",
+      "sha256": "a026b693aa159e04aa9d9623530deb39cefab0048ef942ac096df36edf2bb507",
+      "activationAllowed": false
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "r2cohortBootstrap.web.js",
+      "source": "integration/prototypes/stock-current-state/fresh-cohort-bootstrap.cjs",
+      "sha256": "8bf3967b63797e9e3b6d65adaa39c2075e0a7f1e2c550f5afa21fe69215635c0",
+      "activationAllowed": false
+    }
+  ],
+  "staticResources": [
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/index.html",
+      "target": "index.html",
+      "sourceSha256": "c135957abca15b49aa84b89f982ee82eaf6cc26d26604deadad1759c39780073",
+      "sha256": "45a88b17be018b1760cb607524a1a894f83e344b495e4cd988342fb0c9cc7fc5"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/current-requests.js",
+      "target": "sales-room/current-requests.js",
+      "sourceSha256": "f61207437f1d470ca0a76f040112c1f4aba638437e7fcd495a0fb299f59334fc",
+      "sha256": "f61207437f1d470ca0a76f040112c1f4aba638437e7fcd495a0fb299f59334fc"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/current-dates.js",
+      "target": "sales-room/current-dates.js",
+      "sourceSha256": "d0003e5a3f5ace9cf7143accf88f6867ccb7383ead7e3db7c965ec66fde5f699",
+      "sha256": "d0003e5a3f5ace9cf7143accf88f6867ccb7383ead7e3db7c965ec66fde5f699"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/order-adjustment.js",
+      "target": "sales-room/order-adjustment.js",
+      "sourceSha256": "49ecb384c51de993a07a8607c7d927cb9be9cb3a03f083b6152951368b8f531a",
+      "sha256": "49ecb384c51de993a07a8607c7d927cb9be9cb3a03f083b6152951368b8f531a"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/shipment-ui.js",
+      "target": "sales-room/shipment-ui.js",
+      "sourceSha256": "ce92159995394ce8ae206e973eece8a72870fdaf97ac171fb5d6b3b19b7a5827",
+      "sha256": "ce92159995394ce8ae206e973eece8a72870fdaf97ac171fb5d6b3b19b7a5827"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/source-ui/customer-documents.js",
+      "target": "sales-room/customer-documents.js",
+      "sourceSha256": "214db5c43e62676ed76fa9c7990d03cadf6a4c09e01bb59a660d32fd117644fe",
+      "sha256": "214db5c43e62676ed76fa9c7990d03cadf6a4c09e01bb59a660d32fd117644fe"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/index.html",
+      "target": "purchase-live/index.html",
+      "sourceSha256": "722ae56d02bf1010beb76ce7dc21e7be28adccd6c0cdce41bb891773b2aa6f26",
+      "sha256": "9ed38a610637aa163e237676d2dca12de5eb6e30d301db0632e2be13f2ebd1e3"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/app.js",
+      "target": "purchase-live/app.js",
+      "sourceSha256": "d160ac07052114b558c31960bfef72ed90485b8520c29696b61dc20a140ff8a0",
+      "sha256": "d160ac07052114b558c31960bfef72ed90485b8520c29696b61dc20a140ff8a0"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/task-grid.js",
+      "target": "purchase-live/task-grid.js",
+      "sourceSha256": "18ba427acc017e941f7f656011174cef573047f6cc31894626c8e521ddf2de00",
+      "sha256": "18ba427acc017e941f7f656011174cef573047f6cc31894626c8e521ddf2de00"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/supplier-allocation.js",
+      "target": "purchase-live/supplier-allocation.js",
+      "sourceSha256": "9d4207d9306d8589fb9dc72fec830ff1bbce44fb4780a4bab2eded4e8b986b7c",
+      "sha256": "9d4207d9306d8589fb9dc72fec830ff1bbce44fb4780a4bab2eded4e8b986b7c"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/purchase-resume.js",
+      "target": "purchase-live/purchase-resume.js",
+      "sourceSha256": "9d359441ccb12e759eb1924df332e442d8b15eb954e4c9e5dbd7c3d7a44ea0c9",
+      "sha256": "9d359441ccb12e759eb1924df332e442d8b15eb954e4c9e5dbd7c3d7a44ea0c9"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.js",
+      "target": "purchase-live/borrow-approval.js",
+      "sourceSha256": "45130bb4560702d5a939968837c005758dbc3bd7fbc084d33bbd7d509395d0d0",
+      "sha256": "45130bb4560702d5a939968837c005758dbc3bd7fbc084d33bbd7d509395d0d0"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-approval.css",
+      "target": "purchase-live/borrow-approval.css",
+      "sourceSha256": "55ee38817f95d141dd2307f2d4411734c365266110df6ae1e97b7b8c698b634c",
+      "sha256": "55ee38817f95d141dd2307f2d4411734c365266110df6ae1e97b7b8c698b634c"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.js",
+      "target": "purchase-live/borrow-relations.js",
+      "sourceSha256": "463e77551d2b33a04056fbaa2d0241c3bebf1be00845ab7b07c9ec93c2e13c32",
+      "sha256": "463e77551d2b33a04056fbaa2d0241c3bebf1be00845ab7b07c9ec93c2e13c32"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-relations.css",
+      "target": "purchase-live/borrow-relations.css",
+      "sourceSha256": "29d7a0bf8db04a8a1f5e96ba0f655e5eb4fa4b741d0344a076e75a8ebc13d6d9",
+      "sha256": "29d7a0bf8db04a8a1f5e96ba0f655e5eb4fa4b741d0344a076e75a8ebc13d6d9"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-return.js",
+      "target": "purchase-live/borrow-return.js",
+      "sourceSha256": "24b6530d05a909428d634b62453e9822b02b33b65d737bbcf36dd36be0d9afc9",
+      "sha256": "24b6530d05a909428d634b62453e9822b02b33b65d737bbcf36dd36be0d9afc9"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.js",
+      "target": "purchase-live/borrow-outstanding.js",
+      "sourceSha256": "005eb6c428cc0984ec3abb8ea40522582a3e12297b25bff32a633fec6bdd92df",
+      "sha256": "005eb6c428cc0984ec3abb8ea40522582a3e12297b25bff32a633fec6bdd92df"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/borrow-outstanding.css",
+      "target": "purchase-live/borrow-outstanding.css",
+      "sourceSha256": "106c44eadb3b72ee172a6ad43406d428deb4ceb0b11f23c6ba9d4d70358501bf",
+      "sha256": "106c44eadb3b72ee172a6ad43406d428deb4ceb0b11f23c6ba9d4d70358501bf"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/stock-exceptions.js",
+      "target": "purchase-live/stock-exceptions.js",
+      "sourceSha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/purchase-ui/stock-control.js",
+      "target": "purchase-live/stock-control.js",
+      "sourceSha256": "3b92fe30e446a5d47a1c5b762b7f5ee2967763d66c631cfbc98dba25918560ae",
+      "sha256": "59cf2d6cef0dda358009b76afe6521c99655cdf8b1239d98d17301a96ca93c48"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/index.html",
+      "target": "warehouse-room/index.html",
+      "sourceSha256": "7ddb17f58eb9c1e02f5cf7ebeb06836d33efe86722090c03fc22659aaf75d887",
+      "sha256": "ea616b9f8a838d2602e68c5b56c0462ca352643914d869f0d89e4a5832676e45"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/app.js",
+      "target": "warehouse-room/app.js",
+      "sourceSha256": "2e5a751c39959f1d5aca11b19bf5a433e995df7ef0b223683b07ce33b6a18833",
+      "sha256": "2e5a751c39959f1d5aca11b19bf5a433e995df7ef0b223683b07ce33b6a18833"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/workroom.js",
+      "target": "warehouse-room/workroom.js",
+      "sourceSha256": "7fcf39d78d46d3b7967159162c1633e27c4d64311ff3c37fc5326f01f4400e57",
+      "sha256": "7fcf39d78d46d3b7967159162c1633e27c4d64311ff3c37fc5326f01f4400e57"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/dispatch.js",
+      "target": "warehouse-room/dispatch.js",
+      "sourceSha256": "c24449ea88d680ec77452136862b3eed2435a50f449f1139bd112ac1c7923f2e",
+      "sha256": "c24449ea88d680ec77452136862b3eed2435a50f449f1139bd112ac1c7923f2e"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/packing-list-link.js",
+      "target": "warehouse-room/packing-list-link.js",
+      "sourceSha256": "c1ee48bf03a8440f97702321d5c33e12b1ec19bb12778764c90f6918edebb450",
+      "sha256": "24130c73cf29ed43055a674fdb0571749e0accfb245d9a6c4f10ca2a2caa1bf5"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-control-app.js",
+      "target": "warehouse-room/stock-control-app.js",
+      "sourceSha256": "bf28e2d0e41d09e125c1a04d46b2820b9ef306c3e985ff9d1d37289fc4bcef25",
+      "sha256": "bf28e2d0e41d09e125c1a04d46b2820b9ef306c3e985ff9d1d37289fc4bcef25"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-control.css",
+      "target": "warehouse-room/stock-control.css",
+      "sourceSha256": "f302dec1eaf165b598ac2b57a9117e6bad3259f2cff6020e3d61a13dead543d5",
+      "sha256": "f302dec1eaf165b598ac2b57a9117e6bad3259f2cff6020e3d61a13dead543d5"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-control-embedded.css",
+      "target": "warehouse-room/stock-control-embedded.css",
+      "sourceSha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3",
+      "sha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-control.html",
+      "target": "warehouse-room/stock-control.html",
+      "sourceSha256": "4e371a74942657bac2e54642e70d0532e30cf12ee743923bce2bf6ea25e41f62",
+      "sha256": "80e7233c4bc26f705c827aeb5c901c7defa7d6ad3aed601fa9732fec02e33ddb"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-control-link.js",
+      "target": "warehouse-room/stock-control-link.js",
+      "sourceSha256": "5d243c66c97df99d185dfbc2cc3a44e130a6206e6dd1752d894dbaf29ff84a38",
+      "sha256": "0fa7ead4b672a8424377e8bde41f1d79129af15e8a791ca4cdbbcdc3a11e86c1"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/warehouse-cbm-resume.js",
+      "target": "warehouse-room/warehouse-cbm-resume.js",
+      "sourceSha256": "7fd4cf9be8d4d2ccc07dde28a93f1b18e300f594f51f2ffd69fb0f85bb7f3ddd",
+      "sha256": "7fd4cf9be8d4d2ccc07dde28a93f1b18e300f594f51f2ffd69fb0f85bb7f3ddd"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/warehouse-dispatch-resume.js",
+      "target": "warehouse-room/warehouse-dispatch-resume.js",
+      "sourceSha256": "b2277adbf185bd3ce02a9db5b44809fdc25bce0fbfff5627533086cf7beaf6e7",
+      "sha256": "b2277adbf185bd3ce02a9db5b44809fdc25bce0fbfff5627533086cf7beaf6e7"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/warehouse-preparation-resume.js",
+      "target": "warehouse-room/warehouse-preparation-resume.js",
+      "sourceSha256": "bef02eedd2ed389ef7cc9ffa51470b8e3b2160a71c17873b73f1aaf46fa9e238",
+      "sha256": "bef02eedd2ed389ef7cc9ffa51470b8e3b2160a71c17873b73f1aaf46fa9e238"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/warehouse-receipt-resume.js",
+      "target": "warehouse-room/warehouse-receipt-resume.js",
+      "sourceSha256": "48fb571157df0ea15cf5ebaa8f3e833d5683f19b28c60f076ea7ae7a1c9bfa29",
+      "sha256": "48fb571157df0ea15cf5ebaa8f3e833d5683f19b28c60f076ea7ae7a1c9bfa29"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/warehouse-ui/stock-exceptions.js",
+      "target": "warehouse-room/stock-exceptions.js",
+      "sourceSha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/packing-ui/packing-workbench.html",
+      "target": "support-room/packing-workbench.html",
+      "sourceSha256": "8d6ab9cd6c364aef3a18531bd40975c0ef466351baef3a72bd12ed48939202bb",
+      "sha256": "9491676794577359cc841ffcbfbec97cc12eb1db56f4ae9efd670d61f7eb524e"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/packing-ui/packing-workbench.js",
+      "target": "support-room/packing-workbench.js",
+      "sourceSha256": "fd334cc5399c210b3ed3e541427d9308cb9f444519d6a56b98ed012f7bb92337",
+      "sha256": "5bcd2e8b4c2625819a85a8e52e89250e7de31410998b1444ec6d32c6915fecd0"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/packing-ui/packing-transport.js",
+      "target": "support-room/packing-transport.js",
+      "sourceSha256": "7f53457e4c4dabfce1102bbd45b47e90280829617e0dbf4c30b377c4210a9bb0",
+      "sha256": "7f53457e4c4dabfce1102bbd45b47e90280829617e0dbf4c30b377c4210a9bb0"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/account-ui/index.html",
+      "target": "account-room/index.html",
+      "sourceSha256": "60623fd82c7b3b9a5a0f91adb203f78db7843ce2ce646e4b6c2e48f5ea8872f9",
+      "sha256": "7d661ee4158d03c2392dbcd0630ff099b0291d64dc8b51cafde22f8414ba3013"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/account-ui/account-current.js",
+      "target": "account-room/account-current.js",
+      "sourceSha256": "b84582e5365bc07e0289a624916f545647d0bdecc90ed3cd1e8139253d47a750",
+      "sha256": "b84582e5365bc07e0289a624916f545647d0bdecc90ed3cd1e8139253d47a750"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/account-ui/settlement.js",
+      "target": "account-room/settlement.js",
+      "sourceSha256": "66ee4d073cbf231ce551bcb185c618645fda7cfa8ce8f63bffeca90f44870623",
+      "sha256": "66ee4d073cbf231ce551bcb185c618645fda7cfa8ce8f63bffeca90f44870623"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/account-ui/purchase-payments.js",
+      "target": "account-room/purchase-payments.js",
+      "sourceSha256": "67d836f3b5fa97b245bfaf698fd5305892fe4b00e1faadc6aec9d17cd7f676df",
+      "sha256": "67d836f3b5fa97b245bfaf698fd5305892fe4b00e1faadc6aec9d17cd7f676df"
+    },
+    {
+      "source": "integration/prototypes/stock-current-state/account-ui/stock-exceptions.js",
+      "target": "account-room/stock-exceptions.js",
+      "sourceSha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae"
+    }
+  ],
+  "retainedDependencies": [
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "fxRates.web.js",
+      "nativeVerified": false,
+      "businessIsolationVerified": false
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "nativeVerified": false,
+      "businessIsolationVerified": false
+    },
+    {
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "nativeVerified": false,
+      "businessIsolationVerified": false
+    }
+  ],
+  "additionalControlFields": {
+    "cohort": "TEXT",
+    "bootstrapMemberId": "TEXT",
+    "bootstrapRequestId": "TEXT"
+  },
+  "httpAppend": {
+    "source": "integration/backend/http-functions.js",
+    "beforeSha256": "401d71f442461705793a816746119507d159a02a219c815d53e3f07ee511f7ce",
+    "additionsSha256": "f4e0bb0a5e8906bcc614e0d0474148e72268d3281d36c88deb3def4a667c4e11"
+  },
+  "requiredEvidence": [
+    "Fresh native originals including added Buyer/Catalogue dependencies",
+    "Exact private new schemas/indexes/ACL and reference bindings",
+    "Fresh empty-cohort initialization (not legacy migration/drain)",
+    "All-writer native coverage/capacity/recovery",
+    "Old execution and cross-site/cached client separation",
+    "External file side-effect identity review",
+    "Four-stage release and real Buyer/split/borrow/Loaded acceptance"
+  ]
+}

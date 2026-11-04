@@ -1,0 +1,20 @@
+{
+  "projectName":"MASTER PURCHASE DOCUMENTS",
+  "projectId":"1pujJulysBJIhi361pZHBGQ5SeRCfDTO3W5Q61bn_XdcngqGPJENRSSUO",
+  "previousVersion":8,
+  "immutableVersion":9,
+  "activeDeploymentVersion":9,
+  "deploymentId":"AKfycbzjlAYtCCwqVg_tQXXuh34GTYQdknnjR2omKGj95wAUY12USDjJ5joAl98gI0Dr9sTU",
+  "savedFilesSha256":{
+    "Code.gs":"ed120a8da8455ad2b3f65ccee3b30102b90614fa6c5beddb7ca7e75f3ff1d0a5",
+    "WarehousePhotos.gs":"36738eea6a797444dc288cc2916eee133cb8d44577ddfeefdd588c54a22836f6",
+    "TaskChatState.gs":"dcb0f6f4d6f49516a899766d561a0fd0e3f96ed86a65877bd7b24897cd8d216a",
+    "TaskChatStore.gs":"ac89e2ddec43082b046a05fe2a279f44714f1ee50c8428700c9b2328e931e10a"
+  },
+  "savedCodeExactReadback":true,
+  "executionIdentityAndAccess":"existing owner and authenticated application protocol unchanged; no OAuth or sharing changes",
+  "receipt":"Deployment successfully updated. Version 9 on Oct 27, 2026, 3:35 AM",
+  "scope":"Support PDF categories use existing customer roots; original Purchase/Account/Sales PDFs, photos and chat unchanged",
+  "liveSupportUploadAcceptance":false,
+  "wixSupportPageInstalled":false
+}

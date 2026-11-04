@@ -1,0 +1,22 @@
+Browser tab: 51421495, Title: "Wix Studio | FMCG MALAYSIA", URL: "https://fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 281-282
+~			278 container success
+~				280 text Autosave on
++			281 button
+~			25 button Publish
++								282 image
++								283 image
++			284 container
++				285 button
++					286 image
++				287 container
++					288 text Congratulations This site is published and live online.
++					289 image
++					290 text field https://fmcg999.wixstudio.com/fmcgmalaysia
++					291 button View Site
++				292 container
++					293 image
++					294 text Don’t show this again
++				295 button Done
+The focused UI element is 0 AXWebArea Wix Studio | FMCG MALAYSIA, URL: fmcg999-fmcgmalaysia.editor.wix.com/studio/a894d6e7-cece-4f3c-ade2-8d0f996ddcfb?metaSiteId=5292b63a-30e5-4c0e-8762-a1b127bbc651

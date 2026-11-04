@@ -1,0 +1,64 @@
+{
+  "schema": "R2_NATIVE_ACTIVATION_VERIFIER_PROGRESS_V1",
+  "cohort": "MASTER_20261024_R2",
+  "businessGraphBuild": "f9fe1c19caa991b166ab2852956cd7f47712117c",
+  "businessCodeChanged": false,
+  "newModule": "r2nativeActivation.web.js",
+  "savedNativeSha256": "96a7e836138d9d3bd59297fe0dd31f6023b2bfb5080c52ff422e001e09b504cb",
+  "wholeSavedSourceCompared": true,
+  "firstReadOnlyNativeVersionSha256": "0b641b94aa0c381d047cf63747204b7394b370021e3741edc60b611207764e8e",
+  "firstNativeReports": [
+    {"company":"NCT","digest":"65396966f0c51159590b3e435025b73f64eaa989b04f47d57574d916faf7bd34","nativeSchema":true,"nativeQueries":true,"freshBusinessEmpty":true,"missingNativeBindings":25,"activationAllowed":false},
+    {"company":"GHR","digest":"db544c4c8a5ada2b20bef372d9eace1176c5f6001cdfdbf6bed50293b0f6bd0d","nativeSchema":true,"nativeQueries":true,"freshBusinessEmpty":true,"missingNativeBindings":25,"activationAllowed":false}
+  ],
+  "retainedEmployeeEvidenceReuse": {
+    "fixedCompletedRecords": 8,
+    "newRecordsCreated": false,
+    "oldRunReplayed": false,
+    "readerQueryLimit": 1,
+    "nativeBoundedReaderOutcome": "NATIVE_METHODS_VERIFIED_READ_ONLY",
+    "nativeEvidenceDigest": "b2f65b7ba25098f0908624dd12f43a28eae242d8c43929a217d9ad0c184a177a",
+    "purchaseRetainedImagesSha256": "03133af7abf5519501747e3995996523c9f25972af28eca3c980a1c39d3dcf98",
+    "warehouseRetainedImagesSha256": "9bc25d2fd68590fc8998f182e93fef188e19d4f9c4f1f8a27c1bdb81cc9e6c9d",
+    "nativeMethodsSubproofAccepted": true,
+    "businessWriterAcceptanceImplied": false
+  },
+  "fullReadinessPath": {
+    "updatedNativeAttempts": 2,
+    "clientOutcome": "504",
+    "mutationCapability": false,
+    "pathStopped": true,
+    "oldExecutionTerminationInferred": false,
+    "wholeCheckMustNotBeRepeatedWithoutFix": true
+  },
+  "localVerification": {
+    "latestAffectedTests": 11,
+    "failures": 0,
+    "durationMs": 722.0955,
+    "earlierExistingActivationTestsReused": 6,
+    "earlierAuditSchemaTestsReused": 14,
+    "fullStock1606ResultReused": true,
+    "nativeAcceptanceNotImpliedByLocalTests": true
+  },
+  "guards": {
+    "browserCannotSupplyProofOrBuild": true,
+    "missingOrChangedTerminalRefuses": true,
+    "sameAdministratorRequired": true,
+    "activationExportPresent": false,
+    "businessWriterCoverageStillEmpty": true,
+    "businessActiveEnabled": false,
+    "realInvoiceEnabled": false,
+    "physicalDispatchEnabled": false,
+    "packingChanged": false
+  },
+  "release": {
+    "pagesPackageUnchanged": "c4bc72d97341c10269a8bb0a993ff3576ccfdb9a",
+    "pagesDeployed": false,
+    "wixMainPublishPerformed": false,
+    "lastMasterLiveVersion": 149,
+    "lastMasterTestVersion": 156,
+    "sourceChanged": false,
+    "publicBuyerAccepted": false
+  },
+  "next": "Finish bounded native proof inspection and actual business writer/read acceptance; do not manufacture terminal bindings or enable ACTIVE from the earlier SDK/synthetic fixtures. No additional demo is needed."
+}

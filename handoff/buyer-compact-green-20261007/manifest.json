@@ -1,0 +1,92 @@
+{
+  "scope": "Buyer Room presentation v2; pending user acceptance",
+  "localOnlyEvidence": [
+    {
+      "file": "public-final.png",
+      "bytes": 108824,
+      "sha256": "dd992a54edd43f49a76c42ae5baf2857aad3eddb1b750275b0eb9a3a519be2e8"
+    },
+    {
+      "file": "public-final-my-selection.png",
+      "bytes": 108723,
+      "sha256": "e158512579207f83fa5a4b74f0dce64971802a1c2fa321aed8ea5689a208af4c"
+    },
+    {
+      "file": "public-final-order-form.png",
+      "bytes": 107216,
+      "sha256": "ce4c05e93c13aa5a3f47beed95fe974faf8cf9ff8a797195d471da8b06a7e406"
+    },
+    {
+      "file": "wix-v2-publish.png",
+      "bytes": 64835,
+      "sha256": "86ff279c9151c0509ef48d88d69632dd05043f9c5328fda3a4fff3171fc042c4"
+    },
+    {
+      "file": "wix-v2-publish.txt",
+      "bytes": 10192,
+      "sha256": "493b24df8321603e675bcb7626bd5fd2578cc2f8696ed48b816253328c478066"
+    },
+    {
+      "file": "permissions-v2-restored.txt",
+      "bytes": 8578,
+      "sha256": "0a3b89f3915df0f1163c36ff88a3df0eeaa967362c77b92c08c4bdb4b5d14dac"
+    },
+    {
+      "file": "excel-position-before.txt",
+      "bytes": 7064,
+      "sha256": "92d413148d879abd6759d204f0806d724b9fa31563c587e6e33e44f4f613fd48"
+    },
+    {
+      "file": "excel-position-after.txt",
+      "bytes": 7083,
+      "sha256": "1caa3f0d6ec3f897f33658b71e1c3caf07e51ac9596c8e619d12d7b8abcff1b2"
+    },
+    {
+      "file": "public-v2-metrics.json",
+      "bytes": 737,
+      "sha256": "db4910890b2a3e1dded68fd1768128613cfcae1ee4b1bf64a1990ab56c8f0d2b"
+    }
+  ],
+  "archivedFiles": [
+    {
+      "file": ".gitattributes",
+      "bytes": 9,
+      "sha256": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992"
+    },
+    {
+      "file": "buyer-html-before.html",
+      "bytes": 181776,
+      "sha256": "304c72d810a5cfcf2be616784a4951d02c2d9dc897a00954143a7737741c24ae"
+    },
+    {
+      "file": "CHANGE_AND_RECOVERY.txt",
+      "bytes": 3793,
+      "sha256": "fc3f8b90cd464fec5342832e094610b421fade317514a4ae27d952f5a2ac61b3"
+    },
+    {
+      "file": "html-patches.json",
+      "bytes": 3204,
+      "sha256": "b08d3da5e6e0e73ba5e5928bdab6681b256feb42e69ed46ed79f9c2eb694f90d"
+    },
+    {
+      "file": "release.json",
+      "bytes": 3765,
+      "sha256": "5e9443f16a873f5f48a6a28d90ac697939284502c1b4d3a9d62b6b9e2bc614eb"
+    },
+    {
+      "file": "V2_CORRECTION.txt",
+      "bytes": 336,
+      "sha256": "b006a41a52f24db26b64931b7145c7e22d02c08f172efbea628fd0c02c09fd2d"
+    },
+    {
+      "file": "wix-page-before.js",
+      "bytes": 13386,
+      "sha256": "cb68581bb71b101071466e3caa47a35f58da721eaa4a594d3522f2dcca1ebe01"
+    },
+    {
+      "file": "wix-page-v2-readback.js",
+      "bytes": 13383,
+      "sha256": "19982440ff5f35713a56002401eaf42e65281203b5f74c162cb02e8b74727d0b"
+    }
+  ]
+}

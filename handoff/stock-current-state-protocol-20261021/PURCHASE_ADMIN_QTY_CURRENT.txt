@@ -1,0 +1,42 @@
+2026-10-22 — original Purchase administrator QTY current save candidate
+
+Scope: finish the existing original operation as a common-fenced co-writer. No
+new department rights, customer cancellation, Special Purchase or financial policy.
+Recovery productiond447185/runtime32b812c and candidate25a7d6f remain recoverable.
+Fresh evidence this continuation is GHR_JOURNAL_SCHEMA.txt; original production
+business directories still exactlyd447185. No original/live file was edited.
+
+Important original semantics verified in purchaseOperations.js/purchaseProjection.js:
+QTY changes purchaseQtyInCtn (procurement commitment). Original requested quantity
+continues to come from Sales demand/order. Do NOT silently rewrite requested or
+release current claims just because this original field changed. Normal Sales
+REDUCE/CANCEL continues through its separately authorized existing path.
+
+Minimal binding: existing createCurrentPurchaseSave admits QTY as PURCHASE_TASK;
+same original prepare/domain plan/current stock guards, conditional exact images,
+one company fence and one retained request. No new stock transition or fake Sales
+event. Original Super Admin role checked on EVERY invocation, including completed
+replay after downgrade to ordinary Purchase. Original original-prepare checks still
+apply independently. Successful reply confirms exact committed original QTY audit
+identity/member/role/quantity before returning company/operation/savedAt/taskIds.
+
+Tests: original role/version/invoice/received bound/positive reduction/reason checks;
+NCT and GHR isolated saves; Sales requested250 remains250 while commitment250->240;
+original source customer shares prevent reduction25 below100; permitted240 reduction
+preserves ACTIVE30 borrowing relationship plus exact current physical positions and
+claims; interruption after task before product checkpoint resumes exact same plan;
+administrator downgrade cannot replay completed result. Initial role test revealed
+general Purchase auth insufficient for operation-specific completed replay; added
+original Super Admin grant check, not a new privilege. Lost response after an exact
+write is already read-confirmed by protocol, so interruption test injects BEFORE the
+product checkpoint instead of incorrectly expecting a confirmed write to fail.
+
+Focused8pass0fail590.1825ms. Full current652pass0fail6270.1568ms, includes existing
+63original UI fixture assertions, not652independent production proofs. Runtime remains
+71scoped modules29exports. SDK/member/DB are offline fixtures; actual native transport,
+production permission/scale and public workflow remain unverified. No lock/CMS writes.
+
+REORDER/displayRows and original-disabled SPECIAL are not routed through generic
+current task save. Official workspace/root/client remaining writers/external files/
+forced reload/schema/init/recovery/capacity/shadow and four release stages remain
+OPEN. Writer coverage empty/ACTIVE OFF. No Pages/Wix install or publication.

@@ -1,0 +1,58 @@
+2026-10-23 — executable private initialization core, NOT an installed Admin tool
+
+User renewed implementation-through-release authority. No further ordinary-stage
+approval required. Existing explicit security/deletion boundaries still apply.
+Same-version framework/spec/Astra decision reused. STATUS remains release authority;
+historical closeout and review packets contain superseded native-gate statements.
+Recovery original d447185; annotated verified/sales-requested-split-20261020 remains
+the limited user-confirmed Sales split checkpoint. No new verification tag invented.
+
+New maintenance-metadata-initializer.cjs
+- Private per-record initializer uses the exact native missing-version/company/date
+  conjunction previously accepted in isolation, with strict typed private images.
+- Only captured ordinal/checkpoint accepted; server owns collection, identity and
+  snapshot. Original task/order/shared PO fields, zero, text, arrays and Dates stay.
+- Only company and stockCommitVersion are added. Existing immutable journals,
+  staff, suppliers, locks, Stock* and system fields are excluded from this helper.
+- Admin and independently verified legacy drain required before any mutation;
+  maintenance control rechecked. No timestamp/empty-lock/time-based drain inference.
+- Lost write response stops. An explicit later step first checks the exact retained
+  initialization token and original image; different versions/changed rows refuse.
+
+New maintenance-migration.cjs
+- Builds v2 stock/task after-images from the existing complete lifecycle preflight.
+  No guessed stock, unrelated catalogue rows, duplicate customer demand or PO.
+- Reuses SAME segmented fence/CAS/immutable prepared-plan/owned release algorithm.
+  Same member/request/checkpoint resumes; original plan is prepared once. Metadata
+  generation matches the generation published on completion, not the old capture.
+- Entire installed stock/task cohort must match before completion; extra rows
+  refuse. Read-only inspect decodes retained plan and runs full lifecycle shadow
+  comparison, including source/claim/task cumulative totals and original fields.
+- Empty company gets one initialization checkpoint, zero invented products.
+- Remains MAINTENANCE. No ACTIVE/coverage assignment or schema installation.
+
+Important remaining binding work
+These are executable private cores, NOT a completed production migration endpoint.
+They are not in current runtime/install graph. Actual Admin identity, complete
+authenticated native snapshot reader, durable private checkpoint/backup storage,
+native setup/limits, maintenance control operations and real legacy-drain verifier
+must be bound and accepted before running on business CMS. No manual true flag or
+browser assertion can substitute for those prerequisites. Existing dry-run result
+keeps ADMIN_MIGRATION_APPLY_NOT_IMPLEMENTED until the actual Admin root is complete.
+No live installation, mutation, lock removal, native test, grant or publish here.
+
+Verification
+23 migration/bootstrap/lifecycle tests passed324.8161ms at initial increment.
+27 metadata/native-probe/migration tests passed294.8639ms; these overlap.
+After excluding immutable journal initialization and strengthening result identity,
+final16 metadata/migration tests passed238.3292ms. Node/mock only, not native proof.
+Covered both companies, typed exact preservation, competing/stale edits, unknown
+reply inspection, same-plan resume/replay, empty company, incomplete/extra current
+rows, changed request, unknown drain and unauthorized browser images.
+
+Legacy request drain remains UNSOLVED. Official compute-features page reconfirmed
+that client timeout can leave backend code executing. No supported per-site drain
+mechanism established by the bounded search; this is UNKNOWN, not nonexistence.
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/limits-and-optimization/compute-features
+Do not re-run old native300 call20 or interpret closed future admission as termination.
+Actual credits UNKNOWN. No agents/model changes or repeated full project scan.

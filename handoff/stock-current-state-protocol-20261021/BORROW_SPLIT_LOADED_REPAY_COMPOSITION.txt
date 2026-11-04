@@ -1,0 +1,47 @@
+2026-10-23 — BORROW THEN CUSTOMER SPLITS THEN LOADED/REPAY, OFFLINE COMPOSITION
+
+Checkpoint before this test increment:027e285 pushed PR220. Business/runtime code
+UNCHANGED this increment; no discovered Sales split/borrowing rule required a patch.
+Originals stilld447185, runtime32b812c. Same approved inventory/borrowing/Sales scope.
+
+Read bounded current-sales-save/read/workspace/delegation, original Sales preparation,
+adjustDemand/prepareSalesDemand and existing split/borrowing tests. Actual SPLIT keeps
+the demand task ID/requested total and changes shipment-plan batches, not PO sources.
+Borrow commitments are task/source relationships, not disposable shipment batch IDs.
+Do not weaken the separate whole-task packing or linked-stock cancellation guards.
+
+Extended the EXISTING one-database case in
+integration/tests/stock-current-receipt-packing-composition.test.cjs:
+all four NCT/GHR x same/different PO combinations, original receipt/Purchase borrow/
+packing roots plus private authenticated current Sales composition and original
+Sales validator using the SAME real candidate segmented coordinator and MOCK store.
+No source bearer HTTP call added in this fixture; that transport has separate existing
+tests. No native Wix operation, business records or permissions created.
+
+Sequence: lender receives100, Purchase approves30 to borrower, both halos outstanding30;
+each party's Sales task splits100 into30/70, exact same requests replay once; borrower
+loads30 and remains indebted30; own future PO receives20then80, automatically repays
+20then10 once each, both halos end, old PO identity and stock provenance remain.
+
+Assertions added at each split:
+- Physical positions/claims and original raw task rows unchanged in full.
+- Same single transfer row unchanged in full, remaining30/halo still present.
+- Customer shipment quantities30+70=100.
+- Total actual stockCoverage stays borrower30/lender70, never duplicated per batch.
+- Source PO coverage remains exactly100 per original customer commitment.
+Final assertions retain original200physical/0dispatch,100reserved per customer, one
+closed relation repaid30, exactly3receipt events, unchanged PO list, no invoice;
+add exactly2Sales adjustment events with both split plans still30/70 after repayment.
+
+First enhanced affected5tests pass0fail3748.3468ms. Added explicit per-batch actual
+stock/source coverage assertions, then FINAL affected5pass0fail3901.3581ms. Second
+run justified by new assertions, not a summary refresh. Existing full1166pass belongs
+027e285; unchanged business source reuses that evidence, NOT a new full-suite claim.
+No builder rebuild/full run needed for this test-only increment. diff--check and
+protected path diff before commit; exact existing PR220 sync. No Pages/Wix/public
+verification, actual stock schema, native capacity, recovery or G3 pass inferred.
+
+Both exact native INIT/TYPE test and Wix support contact consents remainPENDING,
+no repeat/run/send. Migration APPLY/drain/schema/capacity/recovery/G3/shadow/cutover
+stillOPEN, CoverageEMPTY/ACTIVEOFF, realinvoice/physicalexitOFF. Continue only concrete
+independent consumer/lifecycle gaps, not peripheral refactoring or fabricated patches.

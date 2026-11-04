@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-Hans"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS 两条读取路线对照</title>
+<style>body{font:16px/1.7 system-ui,'Microsoft YaHei',sans-serif;background:#f4f7fa;color:#173650;margin:0}main{max-width:1100px;margin:auto;padding:30px}h1{font-size:28px}h2{font-size:21px;margin-top:28px}table{border-collapse:collapse;width:100%;background:white}td,th{border:1px solid #cbd9e5;padding:12px;text-align:left;vertical-align:top}th{background:#e0ebf5}.note{padding:16px;background:#fff1db;border-left:5px solid #f58a00}a{color:#2563eb}code{overflow-wrap:anywhere}</style>
+<main><h1>先验证较小的关联读取，不直接上线当前结果存储</h1>
+<p>2026-11-03 · 离线对照 · 基准 a394c75 · 分支 test/purchase-read-route-comparison-20261103</p>
+<p class="note"><strong>11 组诊断断言通过，其中包含明确复现的失败反例，不是 11 项生产功能验收通过。</strong>两条路线都没有达到上线条件。正式代码、CMS、Pages、Wix 草稿及权限均未改变。</p>
+<h2>结论与决定</h2>
+<p>关联历史索引确实较少维护一份当前结果，值得作为第一步候选；但它只能排除无关历史，不能消除同一任务自身的版本链增长。固定当前结果能进一步限制读取量，却需要额外记录、写入和覆盖全部保存入口。不能用“较少机制”或“读取次数固定”单独决定上线。</p>
+<p>先完成关联范围及完整性检查的最小设计，并核对真实索引能力。只要较小路线达到实际工作量要求，就不引入当前结果存储。当前结果方案保留为离线备选；不并行部署两条业务权威，也不在日常页面静默退回全历史。</p>
+<h2>同一数据的对照结果</h2>
+<table><tr><th>场景</th><th>关联历史路线</th><th>当前结果路线</th></tr>
+<tr><td>正常 PLAN、完整新增来源 200＋50、完整合并 PO</td><td colspan="2">使用现有函数产生的内存业务记录；两者结果一致，读取没有写入。</td></tr>
+<tr><td>6 个 PLAN 中断位置</td><td colspan="2">关联完整时，两者的确认结果及待恢复状态一致；原请求继续后结果一致。</td></tr>
+<tr><td>合并 PO 写完第一条任务后中断</td><td>沿用现有 PLAN 专用完整性读取，未显示待恢复；索引没有自动增加 PO 的保护。</td><td>本轮候选识别原 PREPARED，阻止把半完成 PO 当成已确认。</td></tr>
+<tr><td>新增来源的 5 个中断位置</td><td>准备记录、计划、份额写完这三个时点，未提供与候选相同的来源接受保护。</td><td>来源接受事件完成前保持待恢复；接受后与关联路线一致。</td></tr>
+<tr><td>漏掉 PREPARED 的关联字段</td><td>错误暴露未确认价格 32，原已确认价为 16；没有待恢复标志。</td><td>本项测试针对关联索引的遗漏，不构成当前结果路线所有遗漏已安全的证明。</td></tr>
+<tr><td>漏掉最新一次运输方式修改的全部关联字段</td><td>返回合法旧链，显示 Supplier Deliver，而真实已改为 Self Collect；版本链完整仍不能检测尾部整次遗漏。</td><td>仍需独立验证全部入口和证据完整性。</td></tr>
+<tr><td>整页先读 A，合并 PO 提交，再读 B</td><td colspan="2">各任务单独读取均可有效，但组合页面包含提交前的 A 与提交后的 B。单根复核不等于整页原子快照。</td></tr></table>
+<h2>增长数字：不是线上延迟</h2>
+<table><tr><th>同一根任务真实内存修订次数</th><th>关联 Activity 返回量</th><th>关联 JSON 字节</th><th>当前结果读取</th></tr>
+<tr><td>1</td><td>5 条</td><td>7,960</td><td>3 次 ID 读取＋2 次待完成查询</td></tr>
+<tr><td>10</td><td>50 条</td><td>87,034</td><td>同上</td></tr>
+<tr><td>100</td><td>500 条</td><td>877,774</td><td>同上</td></tr></table>
+<p>加入 0、1,000、100,000 条无关历史时，关联路线均返回 5 条；当前路线均为 3 次 ID 读取＋2 次模拟索引查询。这里保守保留原请求 RESULT，没有把它当成可删除冗余。关联 JSON 已去掉当前结果实验专用的两个元数据字段。</p>
+<p>这些不是耗时、物理扫描或整个工作台的查询数。关联索引在离线快照准备阶段构造，依赖已知任务与原请求映射；不是已完成的增量写入或历史回填器。当前路线的写入准备仍读历史，两个方案都没有降低原有历史容量。</p>
+<h2>必须补齐的关联与入口</h2>
+<table><tr><th>入口或依赖</th><th>本轮核实的边界</th><th>下一步必须证明</th></tr>
+<tr><td>purchaseOperations.js：PLAN、PO</td><td>已实测正常、PLAN 中断和合并 PO；PO 中断的根索引路线存在保护差异。</td><td>同一原请求的完整确认规则，不能只改查询字段。</td></tr>
+<tr><td>purchaseSources.js：ADD_SOURCE</td><td>来源子任务可在接受事件之前存在；PREPARED 里有未来子任务身份。</td><td>关联必须覆盖尚未正式接受的来源，不只从现有任务表推断。</td></tr>
+<tr><td>purchaseOperations.js：EDIT、AVERAGE_COST、QTY、REORDER</td><td>代码仍有这些处理入口，是否仍由正式界面调用需分别核实；可改价格、数量或行位置。</td><td>不能把静态存在直接等同于正式可达；也不能遗漏仍可达的写入。</td></tr>
+<tr><td>SPECIAL</td><td>当前处理分支在创建代码前直接抛错，不能当作已开放新功能。</td><td>只保留既有历史身份的读取兼容，不重新启用退役或未开放路径。</td></tr>
+<tr><td>purchaseCostRetry.js</td><td>使用独立 COST_LOCK，整条更新任务；仅补初始缺失价格，并可补订单 CBM。不是本轮通用 PREPARED 方案。</td><td>保留已有价格保护，核对与其他任务写入交错时的影响；不顺手更改锁策略。</td></tr>
+<tr><td>nctIntake.js</td><td>准备记录、初始成本及 ORDER_RECEIVED 接受记录关联整批 taskIds。</td><td>新单及回填必须覆盖整批身份；缺字段不等于无业务。</td></tr>
+<tr><td>customerShipmentPlan.js</td><td>分批和日期记录会影响页面，不直接等同于采购成本修改。</td><td>按实际页面消费者保留，不为所有事件强套一个“当前价格”模型。</td></tr>
+<tr><td>收货、借还、旧库存、Loaded、隔离与财务锁</td><td>此前 S01–S12 已证明它们可能跨任务、跨客户、跨月或按 PO 关联。</td><td>形成完整查询依赖；本轮采购组件对照不能取代全页验收。</td></tr></table>
+<p>上表是已查明的必要边界，不是对整个仓库所有写入入口完成可达性审计的声明。下一步应先收敛到一个具体只读消费者，以其全部依赖为验收范围；不要一次迁移全站。</p>
+<h2>遗漏检测与页面一致性：上线前不能跳过</h2>
+<ol><li>查询只能找到有正确关联字段的记录。完整性依据必须来自查询结果之外的可靠证据，或经核对的回填与全部写入入口；仅检查已返回记录的版本链不能发现整次尾部遗漏。</li><li>待完成查询前后均为空，不证明期间没有提交。页面涉及多个根任务时，必须定义所需的一致性范围，再设计验证；不能假定一个通用“读两次”即足够。</li><li>后台保存应继续核对最新业务版本，页面一致性验证不能代替保存校验。</li><li>Wix 实际索引、consistentRead 行为、本站配额和生产读回尚未验证。先只读核对，任何索引创建、回填或新存储写入需具体批准。</li></ol>
+<p>参考：<a href="https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/indexes-and-wix-data-collections">Wix 索引说明</a>；<a href="https://dev.wix.com/docs/api-reference/business-solutions/cms/eventual-consistency">Wix 读取一致性</a>。这些文档不构成本站已有相应索引或多记录事务的证据。</p>
+<h2>执行记录与发布状态</h2>
+<p>首轮执行在最后一项断言发现测试夹具的未开 PO 值为 undefined，而非空字符串。只修正这项夹具预期，没有放宽业务比较；随后补齐来源中断对照、剔除候选专用字段后，最终 11 组诊断完成。</p>
+<ul><li>代码：仅离线测试、结果、报告及交接；既有离线文件只导出同一测试夹具以复用。</li><li>GitHub Pages：未变。</li><li>Wix Studio：没有同步草稿或发布。</li><li>正式页：没有新运行版本，生产业务记录写入 0；此前 D04 验收保留。</li></ul>
+<p><a href="../../integration/prototypes/cms-read-review-20261103/read-route-comparison-results.json">精确结果与源文件哈希</a> · <a href="CMS_CURRENT_STATE_BOUNDARIES_20261103.html">当前结果候选验证</a> · <a href="CMS_TASK_READ_SCOPE_20261103.html">跨任务依赖反例</a></p>
+</main></html>

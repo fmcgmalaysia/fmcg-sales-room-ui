@@ -1,0 +1,72 @@
+2026-10-23 — actual CMS schema readback + minimum current-root date binding
+
+Single objective: preserve ORIGINAL native Date fields when current inventory
+protocol updates whole task/order images. No new finance function, field, collection,
+authentication or workflow. Production remains unchanged, ACTIVE OFF.
+
+Fresh observed Master CMS (existing Chrome dashboard51426755)
+Opened existing collection fields via Manage Fields, original field menu > Edit;
+read name/Field ID/type. EVERY field window Cancelled, NEVER Save/Change Type,
+checkbox, Add Field/Add Item, delete or permission action. Field definitions:
+
+Collection    Field ID                Actual Field type
+NCTOrders     estimatedShipmentDate   Date
+NCTOrders     masterReceivedTime      Date and Time
+NCTOrders     salesSubmissionTime     Date and Time
+NCTOrders1    estimatedShipmentDate   Date
+NCTOrders1    masterReceivedTime      Date and Time
+NCTOrders1    salesSubmissionTime     Date and Time
+NCTTasks      lastCostCaptureTime     Date and Time
+NCTTasks1     lastCostCaptureTime     Date and Time
+
+The two journal activityTime fields were separately inspected previously; reuse
+SDK_TYPED_FIELDS.txt/GHR_JOURNAL_SCHEMA.txt same schema evidence, not inferred from
+their names. Date-only is a native Date boundary too; no new time-of-day semantics
+or user date presentation introduced. Actual native data roundtrip STILL not run.
+
+CMS collection directory listed original13collections incl StockProtocolTest but no
+StockPositions/StockClaims/StockProducts. NCTOrders record grid displayed "We weren't
+able to load this collection"; its record count/state UNKNOWN despite placeholder
+No items. Did not retry record loading or treat error as empty/clean. Manage Fields
+still exposed actual schema. Other task/order pages loaded; no business data copied.
+Native migration/read/capacity gate remains open; no inferred cause for that CMS error.
+
+Demonstrated bug (candidate only)
+Several current roots configured only journal.activityTime. Existing SDK codec
+intentionally leaves unlisted fields alone; canonical JSON transforms an unlisted
+native Date into text. Whole-row task/order CAS could then write an UNTOUCHED Date
+field back as string while updating an inventory counter. This is a root-configuration
+hole, not permission to change the codec's unknown-text or repair legacy data.
+
+Minimum correction
+Generated Borrow, Warehouse, Master Fulfilment, Packing, SourceSales and customer
+quantity read roots now explicitly bind these already-existing original Date fields
+for their OWN company only. Existing intake/cost/Account/PO/exception roots already
+configured them. Read-only Admin recovery uses same typed canonical comparison.
+No runtime model/protocol algorithm changed;103modules/53exports remain. Six root
+builders + recovery builder only; original files and production untouched.
+
+New stock-current-domain-date-binding.test.cjs:
+- All11root constructors + recovery, both companies, exact field-map assertions.
+- Actual conditional adapter against Date-preserving mock transport: whole-row CAS
+  retains native Date types/canonical ISO comparison; ordinary date-looking text stays
+  text. THIS IS NOT a real Wix roundtrip.
+- Retained journal-only counterexample explicitly demonstrates wrong string write.
+- Already-corrupt native string in typed field refuses, no silent repair/migration.
+4pass0fail198.1328ms. First full after config fix1050tests1027pass23fail16678.5684ms;
+inspected real assertions:4old root mocks still demanded journal-only config and caused
+dependent compositions to refuse. Updated EXACT expected full schema (no weaker checks).
+Affected31pass0fail11150.3141ms includes original300line Warehouse receipt mock route.
+FINAL FULL1050pass0fail22964.7846ms. No active command sessions.
+Manifest rebuilt exact new hashes; protected production paths diff against baseline
+d447185 is EMPTY. No shared original golden path regressed in production.
+
+GitHub: preceding c727f03 install graph/fresh23editor comparison confirmed PUSHED
+PR220; current increment to same branch/PR, no main merge or force push. All four
+release gates still separate: candidate code only, Pages unchanged, Wix unmodified,
+public borrowing not enabled/verified. Exact actual platform schema/index/permissions,
+capacity, operational recovery, maintenance/shadow and semanticG3 remain open.
+
+Model request: user asked proactively at G3 whether manually switched Astra High;
+optional/nonblocking, no automatic switch/effort/agent. While waiting continue bounded
+independent platform evidence preparation; no repeated whole business re-theory.

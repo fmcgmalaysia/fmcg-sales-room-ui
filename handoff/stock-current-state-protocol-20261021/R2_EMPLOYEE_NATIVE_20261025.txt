@@ -1,0 +1,99 @@
+2026-10-25 — ORDINARY EMPLOYEE FIXTURE EXISTS; READ-ONLY TEST SITE AWAITING MANUAL NEW TAB
+
+Scope: user's original-authorized R2 SDK read/write approval, and explicit MASTER
+@wix/essentials1.0.15 install approval. Ten R2 business roots/SDK native methods
+completed in e425bba, successfully pushed PR220. No business ACTIVE, old-table
+edit, staff/ACL change, privileged deletion, Packing, physical exit or invoice.
+
+New diagnostic r2EmployeeAuthorityAcceptance.web.js: two SiteMember exports call
+the exact original Purchase/Warehouse grants before fixed StockProtocolTest work.
+Profiles are fixed server literals; browser input accepts only RUN or INSPECT.
+RUN requires ordinary raw SDK read denial BEFORE inserts/bulkInsert/CAS. A raw
+successful read (administrator context), unknown/network error or occupied fixture
+stops without starting another mutation. No removal/reset/reseed path exists.
+Fixed retained prefixes:
+SPT-R2AUTH-PURCHASE-20261025-a581:
+SPT-R2AUTH-WAREHOUSE-20261025-f281:
+Each has CONDITIONAL,BULK-A,BULK-B. Do NOT RUN these occupied fixtures again.
+
+Native editor Purchase tester: original grant refused with
+Master staff access is not configured. Native page Preview same original refusal.
+No weaker grant or staff-record change was attempted. Official Wix documentation
+explicitly assigns ADMIN role to Preview/function testing, which cannot certify
+ordinary visitor permissions:
+https://dev.wix.com/docs/velo/articles/getting-started/testing-and-debugging
+
+Created MASTER Test Site from Site menu, with no previous Test Site to overwrite.
+Release Manager native confirmed Live149/100%, Test151/0%. Updated our own test
+to152/0% with only six-record employee RUN enabled, all R2 business controls OFF.
+URL https://fmcg999.wixstudio.com/master/blank?rc=test-site (pagef3l9j).
+Created/updated test site is NOT main-site Publish or Buyer acceptance.
+Test152 browser read timed out once at CDP Runtime.evaluate. Screenshot showed
+template shell. New version confirmed before ONE intentional page reload; browser
+logs returned no R2EMPLOYEE receipt. Complete RUN terminal outcomes not captured.
+
+One later attempted gutter opening did not yet expose the new tester in the stale
+AX representation; invoking the only visible Run accidentally started PAGE Preview.
+That Preview produced R2EMPLOYEE_PAGE_STOP Request failed with status code504.
+Stopped writes; did not rerun/reset fixtures, change identity or infer no late write.
+Subsequent screenshot/new AX correctly showed the distinct readonly inspector
+tester; ran its actual inner Run once, not the toolbar Page Preview action.
+
+Native ADMIN READONLY INSPECTION (two strong queries, zero mutations):
+PURCHASE212ms, retainedRecords3 complete:true, AUTH-BULK/AUTH-BULK/AUTH-V1.
+WAREHOUSE81ms, retainedRecords3 complete:true, same exact versions/JSON afterimages.
+This proves both fixed fixture write checkpoints exist. Original department and
+raw-denial checks precede those writes in exact installed source. It does NOT
+substitute a full terminal ordinary RUN/stale-attempt receipt, user acceptance,
+allwriter/native business schema acceptance or a site-wide drain receipt.
+
+Found a defect in OUR new temporary diagnostic page: no rendering.env guard.
+Wix onReady can run once on server and again in browser, and SSR logs need not be
+visible in browser. This is a demonstrated missing guard with a platform-supported
+double-run risk, NOT proof it caused the original production504 or Test152 behavior.
+https://dev.wix.com/docs/velo/apis/wix-window-frontend/rendering/introduction
+Changed ONLY new temporary page additions: browser-only guard, INSPECT not RUN,
+visible title RUNNING/PASS/STOP. Never redo the occupied write fixtures. Original
+capacity page body still byte-exact with its original gate false. Backend RUN gate
+is now CLOSED. SiteMember INSPECT requires original grant + raw SDK denial + fixed
+strong elevated read and reports ordinaryStaffReadAccepted, not full write proof.
+Admin fixed-six-row inspection is separate and cannot claim ordinary staff proof.
+
+Native entire-source readbacks:
+employee backend CLOSED eab17710cd988fc74614c6a6239bcda3b155ea8799b5c8493a7c96e16b2b8b2d
+combined page CLOSED45d9f220a71d9c89ea6ae2d2b041346b7d253b938fb273d0b5c7da23736ffa79
+Only the PAGE read gate was then enabled; BACKEND mutation gate remains false.
+Created own Test153. Release Manager independently confirmed Test153/0%, Live149/100%.
+One intentional changed-version reload still showed old title R2 Capacity Test
+and no captured logs. No repeat reload or write test. Asked user ONCE to manually
+open new Chrome tab URL above, report title R2 Employee Read Check PASS/STOP or
+unchanged; no repeated refresh, no Buyer order. Agent stopped browser controls and
+marked51427484/51427490 handoff. Browser3 binding remains; new user tab should be
+claimed from a fresh inventory AFTER their reply, not prior failed page navigation.
+
+Local diagnostic checks13pass0fail176.6916ms include original rejected grants,
+non-permission errors, administrator rejection, closed readonly native contract,
+SSR suppression and browser INSPECT-only flow. Main R2 business regression before
+these diagnostic-only changes:1586pass0fail50649.9044ms. Final full stock run
+1593pass0fail0skip0cancelled48922.4316ms, retained output
+C:/FMCG-WIX-LOCAL/tmp-r2-staff-read-final-stock-tests-20261025.txt.
+Both local diagnostic builders --check passed; no repeat native tests invoked.
+
+Native older ADMIN diagnostic remains CLOSED exactb3835bd6...d58ef accepted853ms.
+Its LOCAL regenerated source now includes shared fixed-profile diagnostic support
+and differs (f1dfddfe173777d0ed24dec32cbf01a2cf14b5a967842bdc8ad8bc9aaf027732).
+Do not overwrite native diagnostic without fresh original comparison; no need to
+rerun its completed fixture. This is explicit candidate drift, not verified parity.
+
+Readonly Source audit while user assists: r2-source-conditional-overlay.cjs still
+imports raw @wix/data in Source r2nctSalesIntake.js/r2onboarding.web.js. Conditional
+patches and OWN temporary order-lock removes need ordinary-caller SDK authority.
+MASTER-only dependency approval does not authorize installing on Source, nor
+silently elevating remove. Need fresh SOURCE package/source/ACL checks once user
+finishes browser help; no Source change performed. Any needed component/strictly
+owned conditional operational-lock release grant must be explained specifically;
+do not reuse145test-lock grant or bypass CAS with suppressAuth unconditional remove.
+
+Release facts: business e425bba synced PR220; new diagnostics ready for same-branch sync;
+GitHub Pages unchanged; main Wix Live149 unchanged; Test153 only0%; public Buyer,
+split/borrow/repay not released/accepted. ACTIVE OFF, automation remains paused.

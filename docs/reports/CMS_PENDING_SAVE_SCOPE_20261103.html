@@ -1,0 +1,33 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>采购中断保存：最小安全修补范围</title><style>body{font:16px/1.7 system-ui,'Microsoft YaHei',sans-serif;background:#f3f6f9;color:#17344d;margin:0}main{max-width:1080px;padding:32px;margin:auto;background:white}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #d8e4ee;padding:10px;text-align:left;vertical-align:top}th{background:#e7eff7}.note{padding:16px;background:#fff0da;border-left:4px solid #ef9400}code{overflow-wrap:anywhere}</style><main>
+<h1>采购中断保存：最小安全修补范围</h1><p>2026-11-03 · D02 隔离验证；不是生产版本。</p>
+<div class="note">30项隔离检查通过。其中1项特意证明“只修读取仍不安全”：原收货接口会接受上次版本的数量。其余检查验证候选读取及货仓两个保存关口。尚未覆盖所有财务、借还货、Desk及SI写入，不得称全跨部门修复已完成。</div>
+<h2>具体场景</h2><p>原采购200箱、每箱16，总额3200；采购员改成220箱、每箱32。任务价格和来源分配写入后，计划保存中断。原系统可能同时出现32的新单价与200箱的旧计划，或整间采购页读取失败。</p>
+<p>候选读取利用原有PREPARED及业务事件核对身份和版本，保留上次完整的200箱、16、3200；这只是查看用的已确认状态，不回写旧数据、不新建缓存或库存账。受影响单据必须同时标记“保存待恢复”，并阻止以此旧状态继续新增收货、付款、分配或开单。只显示旧数值而不限制相关保存，会让旧数值看似有效。</p>
+<h2>已经实际验证</h2><ul>
+<li>首次采购计划及已开PO，200/220箱、任务更新/价格/来源份额/计划/结果回执5个中断点，共20项。读取没有写入，原请求可恢复，重复原请求不增加记录。</li>
+<li>完整业务记录仅缺RESULT时不回退；之后的新修订也不会被旧回执影响。</li>
+<li>一个无关任务仍可正常保存；两个供应商来源保持上次完整的来源份额。</li>
+<li>错误事件身份、被改过的内容、缺少旧修订、重复身份及冲突任务版本明确拒绝，不猜测。</li>
+<li>只存在PREPARED但任务尚未更新、只改运输方式，都不伪造价格回退。</li>
+<li>货仓候选在prepare及apply两个位置检查待恢复状态：受影响PO拒绝新收货及原收货重试，无关PO仍可收货。恢复原采购后才使用220箱新计划；旧收货请求仍遵守原版本检查，不能冒充成功。</li>
+</ul><p>全部使用现有真实模块和内存数据；没有新建线上订单、付款、收货或库存记录。不是Wix复制延迟、真实断网、进程强杀或百万行性能证明。</p>
+<h2>为什么必须扩大到保存关口</h2><p>原候选若只接入采购读取，将在货仓“看旧状态、按旧状态收货”，使采购尚未完成的新计划与新收货并存。调整写入顺序不能使多条CMS记录变成一次原子提交；全公司统一禁止操作又会拖住无关工作。需要同一份待恢复判断，按实际关联任务限制保存。</p>
+<table><tr><th>范围</th><th>拟修改位置和约束</th></tr>
+<tr><td>统一读取</td><td>purchasePlan.js / purchaseProjection.js：使用既有PREPARED、事件身份及任务版本；只返回可证实的完整状态与待恢复标记。不得按时间解除，不新增CMS集合。</td></tr>
+<tr><td>采购及来源</td><td>purchaseOperations、purchaseSources、plannerAllocation、purchaseShortage、purchaseQuantityCases的相关prepare/apply；只限制关联任务与来源，新请求不能覆盖原请求。原恢复保持原身份。</td></tr>
+<tr><td>PO、Finance、Warehouse</td><td>purchaseOrderWorkflow、accountSettlement、accountPurchaseReview、supplierCredit、warehouseReceiving：待恢复标记贯穿相关PO读取；新写入及尚未落地的旧写入都必须核对。原文件、已付金额和已收记录保留。</td></tr>
+<tr><td>Support / 客户边界</td><td>customerFulfilmentService及实际依赖该来源的Desk、Loaded、SI写入检查。只阻止使用未确认来源的新操作；已确认SI、Loaded、客户收款及文件历史不能消失。内部准备记录、成本和错误详情不得直接传给客户。</td></tr>
+<tr><td>可见提示</td><td>受影响任务/PO显示统一的“保存待恢复”，沿用原保存结果核对/原请求恢复入口；正常行不增加信息，无关任务仍可操作。</td></tr>
+</table>
+<p>这是拟议的影响范围，不表示这些文件已修改或已全部核对。正式接入前需逐个核对受影响Wix原件；当前仅purchaseProjection.js、warehouseReceiving.js、accountSettlement.js取得本轮新鲜完全一致结果。只有证据证明必需的调用位置才改，不能批量替换文件。</p>
+<h2>接入前仍必须通过</h2><ol>
+<li>Finance入账/审核/旧请求恢复：不能依据待恢复PO产生新结果；既有两次付款与余额保持。</li>
+<li>同产品多客户借还货、已分批SI、Desk短装余量：只限制受影响来源，无关客户不冻结。</li>
+<li>实际客户返回值继续脱敏；只读不会新增Activity，也不能暗中恢复保存。</li>
+<li>完整事件与任务读取发生矛盾时必须安全识别；本轮内存适配器不证明Wix跨查询一致性。</li>
+<li>所有共享消费者回归、Wix精确同步和正式页测试，不以本报告替代。</li>
+</ol>
+<h2>CMS长期问题的边界</h2><p>本修补解决保存完整性，不解决每次读取全部历史。它不应成为新的每页重复查询。已有读取结果只分析一次；后续当前状态读取与按需历史查询仍需独立实施。没有批准或执行月归档、Activity删除、第二套库存逻辑或R2恢复。</p>
+<h2>当前发布状态</h2><table><tr><th>阶段</th><th>D02状态</th></tr><tr><td>代码</td><td>仅隔离原型与测试，生产文件未改。</td></tr><tr><td>GitHub Pages</td><td>未部署，静态资源未改。</td></tr><tr><td>Wix Studio</td><td>只读核对3份原件，无草稿修改/发布。</td></tr><tr><td>正式页</td><td>未验收本候选。D01的采购页现能显示框架，但身份确认/读取未完成；只按超时提示重读一次，未重做交易。</td></tr></table>
+<p>恢复点：保留当前正式原件及D01的73e85a6记录；D02原型在test/purchase-partial-read-contract-20261103，不能作为生产基准。</p>
+</main></html>

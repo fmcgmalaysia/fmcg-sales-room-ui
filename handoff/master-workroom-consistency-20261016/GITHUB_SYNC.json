@@ -1,0 +1,24 @@
+{
+  "codeCommit": "dcffa57d9a50325a4651c1f148ed658c5e0101b0",
+  "branch": "style/master-workroom-consistency-20261015",
+  "githubConfirmedHead": "dcffa57d9a50325a4651c1f148ed658c5e0101b0",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/93",
+  "draft": true,
+  "baseBranch": "style/purchase-active-header-layout-20261015",
+  "baseCommit": "b8932e902b0c284a002fd6eb51b67dace3618034",
+  "affectedTests": {
+    "pass": 248,
+    "fail": 0
+  },
+  "fullTests": {
+    "pass": 396,
+    "fail": 2,
+    "baselineReproduced": true
+  },
+  "pages": "not deployed",
+  "wix": "not synchronized or published",
+  "publicCandidate": "not verified",
+  "production": "70a0b59",
+  "mainMerged": false,
+  "nextTask": "Separate Purchase / Warehouse / Account business linking investigation; read RECORD first."
+}

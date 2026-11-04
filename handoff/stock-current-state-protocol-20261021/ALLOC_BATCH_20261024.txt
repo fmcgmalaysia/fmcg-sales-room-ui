@@ -1,0 +1,32 @@
+2026-10-24 heartbeat continuation — candidate only, not published
+
+Advanced explicit split-row allocation display after752177a. Existing confirmed
+batch entitlement metrics are reused; no fresh arbitrary distribution of root
+quantity is created. New batchAllocation helper returns exact batch ID, demand
+and allocated quantity only when IDs are unique, all numbers are nonnegative safe
+integers, each allocation <= batch demand and sum equals authoritative cumulative
+customer allocation including retained dispatch history. Incomplete CLOSED-source
+coverage or truncated/unknown metadata leaves the batch amount unconfirmed.
+
+Paired original Purchase projection exposes stockAllocatedBatches after existing
+stock/batch calculations. Active grid uses stable batch ID and shows its own qty,
+not the root total repeated for every row. ALLOC dialog retains selected batch
+context and blocks borrowing from a fully covered or unconfirmed selected batch.
+Approval continues to bind the customer product line and actual PO pair; no silent
+change of Sales shipment plan or assertion that a loan is already assigned to a
+particular physical shipment. Existing relation and shipment identity unchanged.
+
+Affected83checks pass913.0975ms before one additional paired-projection assertion.
+Includes original63workflow checks and current projection integration. New helper
+tests cover90split80/10, known0, duplicate/unknown/overflow/incomplete history.
+Local preview rebuilt33exactassets; install remains40targets/100modules,
+38Pagespaths/5relays/20unverifiedcategories. These counts are inventory not native
+installation or verification evidence. Existing full1307result is retained from
+prior commit; not relabelled as a new full run for this change.
+
+Still unfinished: second action is explanatory, not a saved Purchase instruction
+to Support. Full chosen-batch receiving/available/held/Loaded semantics and actual
+UI/native acceptance remain. Initial cutover hard refusal, stopped browser paths,
+unresolved prior export-specific approval and release gates remain exactly as in
+ALLOC_ENTRY_20261024. No CMS/permissions/deployment/GitHub push attempted. No user
+notification needed for this intermediate code checkpoint while user rests.

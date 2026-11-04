@@ -1,0 +1,37 @@
+2026-10-22 — original one-task reference cost co-writer current save candidate
+
+Recovery preceding candidate d6fb18b, production d447185/runtime32b812c unchanged.
+Single objective: bind existing reference-only task update through current fence so
+its existing whole-row writes cannot overwrite stock counter fields. Not a finance
+feature, price-confirmation change or new POINTBASE path. Reused previously read
+original purchaseCostRetry/web, existing private cost-reference plan and tests.
+
+createCurrentCostReferenceSave composes original Purchase authentication freshly on
+each attempt/replay, exact selected task server tables, original cost retry over a
+private overlay, COST_REFERENCE admission and segmented domain-writes coordinator.
+No old TTL lock is stolen or deleted in real storage. Only original allowed cost
+reference fields plus empty CBM are mapped; manual/existing prices, original cost
+snapshot, PO/supplier/qty/stockCounterSchema/dispatch/generation fields preserved.
+Original accepted receipt and invoice locks remain authoritative. Exact immutable
+COST_RETRY_RESULT confirmed under shared read barrier before returning original
+costStatus/issues/capture time/changed and retained fields plus stock generation.
+
+If the original legacy receipt already exists without a current plan, empty plan
+cannot be promoted to a fabricated new current save; explicit legacy reconciliation
+is required. Original thrown/private failed preparation never becomes success or
+leaks its simulated failure events into real data. Actual failed-attempt audit and
+legacy migration/reconciliation still remain integration gates, not claimed complete.
+
+Tests: targeted12pass0fail438.0505ms. Cost-only full current snapshot541pass0fail
+5449.5932ms after mechanical runtime build66modules26exports. Actual original validators
+in mocks/VM, both NCT/GHR; manual price9 and manual missing carton price retained,
+CBM0.1 filled, original stock dispatch30/countergeneration0 and all PO fields unchanged.
+Injected task APPLY interruption proves pending barrier and one immutable captured
+cost on retry/no recapture/no second prepare. Original expired lock refused; invoice
+lock, Warehouse-only role and revoked completed replay refused. No stock rows created.
+
+No production code/data/schema/permission changes, no ACTIVE/Support real invoice/
+Pages/Wix publication/main merge. Actual authenticated web/relay/UI wiring, all other
+co-writers, SDK Date/nested-order roundtrip, capacity/init/routing/shadow/G3/four-stage
+release remain OPEN. Later UI work and its regression evidence are separate records.
+Token/cache/actual Credit UNKNOWN. Existing user untracked files and automation retained.

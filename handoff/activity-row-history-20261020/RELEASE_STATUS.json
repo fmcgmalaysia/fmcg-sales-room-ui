@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-20",
+  "runtimeCommit": "d109090db6ffc82494e2ec35044deaadfb2c59b4",
+  "functionalCommit": "d6907203a6f358df7354eaec531d5132421ed83d",
+  "buildMarker": "2026-10-20-activity-row-history-v1",
+  "pages": {"run": 39411470119, "conclusion": "success", "exactResources": 6},
+  "permissions": {"temporaryPolicyRemoved": 63696353, "originalSevenExact": true},
+  "wix": {
+    "module": "purchaseOperations.js",
+    "freshBeforeLfSha256": "47f3ed0142e740cf0add88a3ec28fd6750c07385c467d8b8bc4a3d6db1609a76",
+    "draftAfterLfSha256": "1428fb2b20886362a57f9a0a106c9feec328a07c56614675bd4f6c7b9675c5f8",
+    "draftAfterExact": true,
+    "publishClicked": true,
+    "publishedLiveReceipt": true,
+    "editorReloads": 1,
+    "state": "User recovered editor; fresh exact candidate readback followed by native published-live receipt",
+    "postReloadDraftReadback": "exact candidate, 27284 CRLF characters, same LF SHA256",
+    "receiptEvidence": "Private root handoff/activity-row-history-20261020/wix-published-live.png"
+  },
+  "publicVerification": "Clean in-app public Purchase reloaded after publishing; LAW authenticated, Active Orders has 11 data rows, Move rows entry retained, no captured page errors; no reorder or Save executed",
+  "realBusinessAcceptance": "deferred by user until Stock Card and full-system testing",
+  "mainMerged": false,
+  "complete": true
+}

@@ -1,0 +1,13 @@
+2026-10-05 — UNPUBLISHED candidate: Sales quantity edits and Buyer edit history
+
+Scope: customer-submitted quantities locked; authorized Sales edits before NCT/GHR; original quantities/quoted prices retained; actor/time/before-after audit; automatic Buyer detail refresh; active/completed history uses the existing invoice/completed-quantity classification. PO Number and the new Proforma design are not implemented here.
+
+Recovery: see room5-order-edit-baseline.txt. Retained customerShortName and the legacy duplicate guard are unchanged. Apps Script, QD template, authentication, collection names/permissions and download mechanisms have not changed.
+
+Implementation: quantity save, transfer and the existing Proforma status save use one per-order mutation lock to prevent stale whole-order payload overwrites. Failed quantity/audit persistence restores prior line/order data; a failed restoration retains the lock for Admin review. Request IDs and order revisions reject duplicate/conflicting saves. The existing realtime channel emits only a generic change signal, with existing polling retained.
+
+Local evidence: 99 Node tests pass. New tests execute actual backend logic against isolated in-memory Wix data and cover authorization, replay, versions, transfer races, Proforma races, restoration, history pagination/ownership, committed-line locks, completion partitioning and script parsing. Browser mock confirmed a Sales change from 15 to 25 and Buyer history showing original 15 / previous 15 / updated 25, with actor/time. Mock screenshots and full logs are in C:/FMCG-WIX-LOCAL/handoff/ROOM5-readonly-20261005/. Mock data is not live acceptance evidence.
+
+Release status at this record: no GitHub Pages deployment, no Wix code synchronization/publish, no public-page verification of this candidate. Browser connection bootstrap failed because the installed service references missing browser/26.930.41038/scripts/browser-service.mjs; only browser/26.930.31730 exists. Native Windows access can display Wix, but returned editor selection is truncated at 1000 characters and cannot supply the exact current source comparison required before live edits. No publishing gate has been bypassed.
+
+Resume: restore the supported browser connection, re-capture and compare all four current Wix sources plus existing realtime permissions; synchronize only isolated approved snippets; deploy the narrowly scoped branch after the required deployment permission confirmation; verify Pages markers, Wix live publish and real public Buyer/Sales pages. Do not merge main or mark this as user-verified until real acceptance passes.

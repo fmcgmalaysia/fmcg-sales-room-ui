@@ -1,0 +1,1096 @@
+{
+  "task": "MST-09",
+  "measurementStarted": "2026-10-31 Asia/Kuala_Lumpur",
+  "recordedAt": "2026-10-31T16:05:37.403Z",
+  "status": "BASELINE_MEASURED_FOLLOWUP_REQUIRED",
+  "runtime": "b86805a",
+  "recordBase": "48efdd6",
+  "productionCodeChanged": false,
+  "productionBusinessOperationsSubmitted": 0,
+  "capacityAccepted": false,
+  "quota": {
+    "collectionLimit": 1000,
+    "itemLimit": 10000,
+    "storageLimitDisplay": "10 GB",
+    "usedCollections": 28,
+    "usedItems": 536,
+    "usedStorageDisplay": "999.7 KB",
+    "remainingItems": 9464,
+    "scope": "All custom collections on the Master site; NCT and GHR share this site quota"
+  },
+  "storage": [
+    {
+      "collection": "NCT Activity",
+      "items": 429,
+      "storageDisplay": "843.4 KB"
+    },
+    {
+      "collection": "NCT Tasks",
+      "items": 47,
+      "storageDisplay": "87.3 KB"
+    },
+    {
+      "collection": "NCT Orders",
+      "items": 46,
+      "storageDisplay": "43.9 KB"
+    },
+    {
+      "collection": "Purchase Orders",
+      "items": 4,
+      "storageDisplay": "18.7 KB"
+    },
+    {
+      "collection": "Shared Supplier Activity",
+      "items": 4,
+      "storageDisplay": "3.1 KB"
+    },
+    {
+      "collection": "Shared Suppliers",
+      "items": 3,
+      "storageDisplay": "1.7 KB"
+    },
+    {
+      "collection": "Department Chat Index",
+      "items": 2,
+      "storageDisplay": "1.2 KB"
+    },
+    {
+      "collection": "Staff Master Access",
+      "items": 1,
+      "storageDisplay": "474 B"
+    },
+    {
+      "collection": "GHR Tasks",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 NCT Activity",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 Department Chat Index",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 StockProducts",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "Account Read Index",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "GHR Activity",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 Account Read Index",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 GHR Tasks",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "StockClaims",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 GHR Activity",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 NCT Orders",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 NCT Tasks",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "StockPositions",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "StockProtocolTest",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 StockClaims",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "GHR Orders",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "StockProducts",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 GHR Orders",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 StockPositions",
+      "items": 0,
+      "storageDisplay": "0 B"
+    },
+    {
+      "collection": "R2 Purchase Orders",
+      "items": 0,
+      "storageDisplay": "0 B"
+    }
+  ],
+  "activity": {
+    "kind": "LIVE_UI_EXPORT_ANALYSIS",
+    "rawCounts": {
+      "NCTActivity": 429,
+      "NCTOrders": 46,
+      "NCTTasks": 47,
+      "PurchaseOrders": 4
+    },
+    "actions": {
+      "PURCHASE_OPERATION_PREPARED": 100,
+      "PURCHASE_SOURCE_SHARES_SAVED": 21,
+      "COST_CAPTURE": 46,
+      "PURCHASE_OPERATION_RESULT": 100,
+      "PLANNER_ALLOCATION_SAVED": 19,
+      "PURCHASE_PO_ASSIGNED": 20,
+      "PURCHASE_PRICE_SAVED": 20,
+      "GP_RECALCULATED": 26,
+      "INTAKE_PREPARED": 7,
+      "PURCHASE_OPERATION_RECOVERY": 2,
+      "ORDER_RECEIVED": 7,
+      "SUPPORT_DESK_SAVED": 23,
+      "WAREHOUSE_RECEIPT_SAVED": 11,
+      "PURCHASE_SOURCE_ADDED": 1,
+      "PURCHASE_PLAN_SAVED": 21,
+      "DESK_SHORTLOAD_RESOLVED": 1,
+      "SUPPORT_PACKING_LIST_CURRENT": 4
+    },
+    "classification": {
+      "operationPrepared": 100,
+      "operationResult": 100,
+      "recoveryClaims": 2,
+      "remainingActivity": 227
+    },
+    "preparedWithoutMatchingResultCount": 0,
+    "liveOperationLockCount": 0,
+    "recoveryClaimStates": {
+      "SAVED": 1,
+      "PENDING": 1
+    },
+    "orderCount": 7,
+    "intakeLineCounts": [
+      1,
+      1,
+      6,
+      8,
+      10,
+      10,
+      10
+    ],
+    "initialCostRows": 46,
+    "sourceTaskExtra": 1,
+    "gpRecalculationRows": 26,
+    "historicalRowMoveEvents": 0,
+    "sha256": {
+      "NCTActivity": "73f2b86272efe96fea5b9d13503b5eb347da973460357ba5e16c70fcd01a738c",
+      "NCTOrders": "048190923a2c89c87c9eac1e6513bce3c2d3ce810e67e78dff4c943a6a85f30f",
+      "NCTTasks": "181dfcfe8bd16c3f4c2611b9efe952f8c61a758e480c281930e4e5f4a9f1396c",
+      "PurchaseOrders": "2986d26192c3ec2c3cb003a21a2839ecb11350fb09588b8c693f6a6b3b5e7180"
+    }
+  },
+  "isolatedFootprint": {
+    "kind": "ISOLATED_CURRENT_WRITER_FOOTPRINT",
+    "productionWrites": 0,
+    "networkLatencyMeasured": false,
+    "receivingSource": "fc76b37 (independent deployed fix)",
+    "sourceHashes": {
+      "nctIntake.js": "69530c4c130d3aeaf4a3526dc0c90ce8b41bfe0cd4df2dc69b611a482984ed3f",
+      "purchaseOperations.js": "d98598cafccf2caad2e62c00f89c73b26df7145afed8c8b7df00d8523cccadb7",
+      "purchaseProjection.js": "2cb2590df7b5b218ab9236ced7030e26a62cb3574e58353f14f1a2e5bc57b0f3",
+      "customerShipmentPlan.js": "1cc4bd1341137012a6b8df42d0d7de201aa911c609070c2e4f88b978cfc87ea9",
+      "purchaseOperationJournal.js": "723d08f705bb9a376768ba7f398e6d57149e93d3c44fa02eae3e5399d252eaff",
+      "customerShipmentLedger.js": "d93f5e45bb2326ea7dc0b34591cf521ed9272ca2efff137b799ff273672bf5ad",
+      "physicalOutflow.js": "762ed0ba948b6a738f759d061def19a77cdbf9bb23b65127554d5979edfd5ef0",
+      "purchaseDisplayOrder.js": "30ad1401156863b4e854a37803a393bce921034b9a580481c371ddebfd89954b",
+      "purchaseTaskIdentity.js": "d2b1b724fb1efc8e099b5cfb745e15683734b14fca868f8bc7da840301ca41e2",
+      "purchasePlan.js": "c56967e4efd921804a2f6537339e240a4ad1133553eddfedbd40ae2ebd04969a",
+      "warehouseReceiving.js": "447337a9cd68348f5577ae7834f83fec8857b982be21f4493517a7b12fc1d84e",
+      "plannerAllocation.js": "82867188c1a0b46acb91eb46e0c20ab45e2561305e859e26a780fa9844fd8a6c",
+      "packingListGuards.js": "fbc9d7375aee064bf88aa1a75beb6df5d7610852032bcd33dee965fb43dbb5a2",
+      "packingListOperations.js": "c759869953815a99da156e27bb067620e91be63c86537c7a90dedcd0af310fe7",
+      "packingListModel.js": "2a5fd9c25b559c53c6cca0849c67b446ea80e48a2b6765c20b14603ce504a486",
+      "packingListPhotos.js": "ebda7350c83986d63ba6d9bda638ec3e024b4249cbaf0e580022a2d561ec6a71",
+      "deskDelivery.js": "8f5cf5f8339aded83255eac4dec0975314844bacb9b548e4d7a38a82b7ec3a3f",
+      "supportDesk.js": "71751b091a70f762ecd5a48866a25140cd9eb73291490196823c65d98d9013d2",
+      "shortloadResolutionModel.js": "5c4638975166ff83b3c2f73cf14525ff7550de97b70b182fc6ba408e0b1b5894",
+      "inventoryExceptions.js": "8373560883e00feb77b33d3efee8593fdd24659a4c18e5cf120875a62f1c906f",
+      "stockExceptionState.js": "605bc979f97775eb90b423694c57724747f9a3c94adce73d48b999872a4f23f2",
+      "customerAllocationContext.js": "7df05fa2cffde3e8fed6f858f40b382215d845af8082f2c4559a6e52874ffdb1",
+      "shipmentBatchAllocation.js": "9ad5634473869c840b1246d617ea8cc0aa72ea6d3af964c80fff4a451f9f8d1d",
+      "customerAllocationPlan.js": "2eede0d7cc7ef1c7136ee2cc861580b828f29e90c43a5c38c580d57af346c3ea",
+      "purchaseShortage.js": "320be7ce1641d2a3429b0698b25a7c75a1c73e9d7026b5323131f11e431535fd",
+      "purchaseQuantityCases.js": "2d97fdbb038ed78d2ad73a22366c8010e2bcf25959ef3143bd6f62e9ebfdb364",
+      "salesOrderAdjustment.js": "a37d14018994a767a69ad02239fd98fa027c267ea9176ac140f95e1201936147",
+      "supplierCredit.js": "8d71dd3022cb78764272b5293b38fd97fd934ece0bee7d476573c20fb61bf3d7",
+      "purchaseSources.js": "d7c0b053dab3c35ba5d0eb2bc1c58c2008380ddb8964d8a374d047566c09f930",
+      "allocationOriginInfo.js": "631a3968ebc8b383edf13786959d4e4980c93ff3f44686c94d1dd6d9ef510527",
+      "paymentHandoff.js": "68b514fe773ef4de346457df756e05e267c61e2fecfbdd075dcb4a1bf8acb2a9",
+      "purchaseMarginRefresh.js": "3518bf6e24f9d6d30ca558eaf40a47ae3d27f15c69b961b475c3e708d2de66f0",
+      "partialInvoiceMargin.js": "e7aca78ed7980848f0587e42db244ed3de79e4ced40f4207caba2c820a38dbe0",
+      "grossProfitMargin.js": "0cddb05a1f36f27e63217736d7e2e0dc135da9f05bb18c65026cb7f072ce2ac4",
+      "accountSettlement.js": "3714c406780da10216129b395b4d82b0988a868309b44cd9b251dd7f536a9ef8",
+      "purchaseDocumentPolicy.js": "49a9a8a996388e962d3fdd648fc5a41d0ac29ba39be2a49785ebc6183ec1fe79",
+      "purchaseClaimEvidence.js": "39d93ee60f69ac794d3fa00729178ff5fca37ecea27d1b2f003589718fe48c9a",
+      "purchaseOrderWorkflow.js": "908e5edd3e85cf7e4a0d85c65107e3691fd8b334271dd9fadecbb8df1406dd24",
+      "accountPurchaseReview.js": "791e7a05197b4fd7b06f699165db997f537dc65100994683324d7e0ee94adceb"
+    },
+    "measurements": [
+      {
+        "label": "intake:10 lines",
+        "retainedAdditional": 32,
+        "newRows": 32,
+        "updatedRows": 0,
+        "newByAction": {
+          "INTAKE_PREPARED": 1,
+          "ENTITY": 20,
+          "COST_CAPTURE": 10,
+          "ORDER_RECEIVED": 1
+        },
+        "retainedJsonByteDelta": 27764,
+        "calls": {
+          "read": 34,
+          "all": 0,
+          "one": 0,
+          "insert": 32,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "intake:same submission replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 33,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "intake:receipt read only",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 2,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "purchase:plan one source",
+        "retainedAdditional": 5,
+        "newRows": 5,
+        "updatedRows": 1,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PURCHASE_PRICE_SAVED": 1,
+          "PURCHASE_SOURCE_SHARES_SAVED": 1,
+          "PURCHASE_PLAN_SAVED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 7746,
+        "calls": {
+          "read": 16,
+          "all": 8,
+          "one": 1,
+          "insert": 7,
+          "update": 1,
+          "remove": 2
+        },
+        "allRowsReturned": 15
+      },
+      {
+        "label": "purchase:plan original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "purchase:create PO one source",
+        "retainedAdditional": 3,
+        "newRows": 3,
+        "updatedRows": 1,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PURCHASE_PO_ASSIGNED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 3978,
+        "calls": {
+          "read": 10,
+          "all": 9,
+          "one": 1,
+          "insert": 5,
+          "update": 1,
+          "remove": 2
+        },
+        "allRowsReturned": 16
+      },
+      {
+        "label": "purchase:PO original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 2,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "warehouse:receipt first80",
+        "retainedAdditional": 3,
+        "newRows": 3,
+        "updatedRows": 0,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "WAREHOUSE_RECEIPT_SAVED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 2493,
+        "calls": {
+          "read": 5,
+          "all": 2,
+          "one": 0,
+          "insert": 4,
+          "update": 0,
+          "remove": 1
+        },
+        "allRowsReturned": 3
+      },
+      {
+        "label": "warehouse:receipt original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "warehouse:receipt second20",
+        "retainedAdditional": 3,
+        "newRows": 3,
+        "updatedRows": 0,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "WAREHOUSE_RECEIPT_SAVED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 2563,
+        "calls": {
+          "read": 5,
+          "all": 3,
+          "one": 0,
+          "insert": 4,
+          "update": 0,
+          "remove": 1
+        },
+        "allRowsReturned": 12
+      },
+      {
+        "label": "purchase:own200+free20+borrow30",
+        "retainedAdditional": 3,
+        "newRows": 3,
+        "updatedRows": 0,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PLANNER_ALLOCATION_SAVED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 4126,
+        "calls": {
+          "read": 5,
+          "all": 2,
+          "one": 0,
+          "insert": 4,
+          "update": 0,
+          "remove": 1
+        },
+        "allRowsReturned": 3
+      },
+      {
+        "label": "purchase:allocation original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 2,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "purchase:repay30",
+        "retainedAdditional": 3,
+        "newRows": 3,
+        "updatedRows": 0,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PLANNER_ALLOCATION_SAVED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 3144,
+        "calls": {
+          "read": 5,
+          "all": 2,
+          "one": 0,
+          "insert": 4,
+          "update": 0,
+          "remove": 1
+        },
+        "allRowsReturned": 9
+      },
+      {
+        "label": "purchase:repay original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 2,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "support:open Desk task",
+        "retainedAdditional": 4,
+        "newRows": 4,
+        "updatedRows": 0,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "SUPPORT_DESK_SAVED": 1,
+          "SUPPORT_PACKING_LIST_CURRENT": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 6416,
+        "calls": {
+          "read": 6,
+          "all": 3,
+          "one": 0,
+          "insert": 5,
+          "update": 0,
+          "remove": 1
+        },
+        "allRowsReturned": 15
+      },
+      {
+        "label": "support:Desk original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "warehouse:Loaded80 of100",
+        "retainedAdditional": 2,
+        "newRows": 2,
+        "updatedRows": 1,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 4804,
+        "calls": {
+          "read": 5,
+          "all": 3,
+          "one": 0,
+          "insert": 3,
+          "update": 1,
+          "remove": 1
+        },
+        "allRowsReturned": 26
+      },
+      {
+        "label": "warehouse:Loaded original replay",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "read:changed GP cache",
+        "retainedAdditional": 1,
+        "newRows": 1,
+        "updatedRows": 1,
+        "newByAction": {
+          "GP_RECALCULATED": 1
+        },
+        "retainedJsonByteDelta": 525,
+        "calls": {
+          "read": 8,
+          "all": 0,
+          "one": 0,
+          "insert": 2,
+          "update": 1,
+          "remove": 1
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "read:unchanged GP cache",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 3,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "finance:payment50% #1",
+        "retainedAdditional": 2,
+        "newRows": 2,
+        "updatedRows": 1,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 4536,
+        "calls": {
+          "read": 6,
+          "all": 0,
+          "one": 0,
+          "insert": 3,
+          "update": 1,
+          "remove": 1
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "finance:payment original replay #1",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "finance:payment50% #2",
+        "retainedAdditional": 2,
+        "newRows": 2,
+        "updatedRows": 1,
+        "newByAction": {
+          "PURCHASE_OPERATION_PREPARED": 1,
+          "PURCHASE_OPERATION_RESULT": 1
+        },
+        "retainedJsonByteDelta": 6641,
+        "calls": {
+          "read": 6,
+          "all": 0,
+          "one": 0,
+          "insert": 3,
+          "update": 1,
+          "remove": 1
+        },
+        "allRowsReturned": 0
+      },
+      {
+        "label": "finance:payment original replay #2",
+        "retainedAdditional": 0,
+        "newRows": 0,
+        "updatedRows": 0,
+        "newByAction": {},
+        "retainedJsonByteDelta": 0,
+        "calls": {
+          "read": 1,
+          "all": 0,
+          "one": 0,
+          "insert": 0,
+          "update": 0,
+          "remove": 0
+        },
+        "allRowsReturned": 0
+      }
+    ]
+  },
+  "isolatedRead": {
+    "kind": "PRIVATE_EXPORT_ISOLATED_READ_AUDIT",
+    "productionWrites": 0,
+    "networkMeasured": false,
+    "scope": "Existing47 tasks; additional technical history only, not more active tasks or concurrent users. CPU includes workspace + Stock Card projection and assertions. JSON payload is local serialization, not measured network bytes.",
+    "actualStock": {
+      "onHand": 270,
+      "reserved": 230,
+      "free": 40
+    },
+    "marginRates": "Stored order FX cache used only for a deterministic diagnostic; not a live external FX fetch.",
+    "marginResultCount": 93,
+    "marginStoreCalls": {
+      "read": 63,
+      "insert": 0,
+      "update": 0,
+      "remove": 0
+    },
+    "marginAdditionalRows": 0,
+    "scale": [
+      {
+        "activityRows": 429,
+        "taskRows": 47,
+        "orderLines": 46,
+        "syntheticAddedRows": 0,
+        "payloadJsonBytes": 1067419,
+        "samples": 10,
+        "p50CpuMs": 23.013700000000085,
+        "p95CpuMs": 47.77000000000004,
+        "stockInvariant": {
+          "onHand": 270,
+          "reserved": 230,
+          "free": 40
+        }
+      },
+      {
+        "activityRows": 2000,
+        "taskRows": 47,
+        "orderLines": 46,
+        "syntheticAddedRows": 1571,
+        "payloadJsonBytes": 1383830,
+        "samples": 10,
+        "p50CpuMs": 44.78269999999998,
+        "p95CpuMs": 90.96050000000002,
+        "stockInvariant": {
+          "onHand": 270,
+          "reserved": 230,
+          "free": 40
+        }
+      },
+      {
+        "activityRows": 5000,
+        "taskRows": 47,
+        "orderLines": 46,
+        "syntheticAddedRows": 4571,
+        "payloadJsonBytes": 1991330,
+        "samples": 10,
+        "p50CpuMs": 80.37739999999985,
+        "p95CpuMs": 100.44350000000009,
+        "stockInvariant": {
+          "onHand": 270,
+          "reserved": 230,
+          "free": 40
+        }
+      },
+      {
+        "activityRows": 9000,
+        "taskRows": 47,
+        "orderLines": 46,
+        "syntheticAddedRows": 8571,
+        "payloadJsonBytes": 2801330,
+        "samples": 10,
+        "p50CpuMs": 127.35960000000023,
+        "p95CpuMs": 140.06960000000026,
+        "stockInvariant": {
+          "onHand": 270,
+          "reserved": 230,
+          "free": 40
+        }
+      },
+      {
+        "activityRows": 20000,
+        "taskRows": 47,
+        "orderLines": 46,
+        "syntheticAddedRows": 19571,
+        "payloadJsonBytes": 5058830,
+        "samples": 10,
+        "p50CpuMs": 279.6291999999994,
+        "p95CpuMs": 348.0556999999999,
+        "stockInvariant": {
+          "onHand": 270,
+          "reserved": 230,
+          "free": 40
+        }
+      }
+    ]
+  },
+  "backendObserved": {
+    "range": "2026-10-31 (selected explicit date in Wix Monitoring; includes earlier builds and controlled tests)",
+    "columns": [
+      "function",
+      "count",
+      "errorRate",
+      "cacheRate",
+      "p50",
+      "p95"
+    ],
+    "rows": [
+      [
+        "taskChat.web.js/getTaskChats",
+        "4496",
+        "0.2%",
+        "0.0%",
+        "4503 ms",
+        "5861 ms",
+        ""
+      ],
+      [
+        "purchaseWorkspace.web.js/getPurchaseWorkspace",
+        "2918",
+        "0.1%",
+        "0.0%",
+        "10699 ms",
+        "12559 ms",
+        ""
+      ],
+      [
+        "purchaseOrders.web.js/getPurchaseOrders",
+        "2852",
+        "0.0%",
+        "0.0%",
+        "1856 ms",
+        "2458 ms",
+        ""
+      ],
+      [
+        "packingLists.web.js/getPackingLists",
+        "167",
+        "0.0%",
+        "0.0%",
+        "991 ms",
+        "1397 ms",
+        ""
+      ],
+      [
+        "warehouseReceiving.web.js/getWarehouseOrders",
+        "54",
+        "3.7%",
+        "0.0%",
+        "1963 ms",
+        "2903 ms",
+        ""
+      ],
+      [
+        "stockValuation.web.js/getFinanceStockList",
+        "30",
+        "0.0%",
+        "0.0%",
+        "986 ms",
+        "1493 ms",
+        ""
+      ],
+      [
+        "stockControl.web.js/getWarehouseStockControl",
+        "20",
+        "0.0%",
+        "0.0%",
+        "971 ms",
+        "1596 ms",
+        ""
+      ],
+      [
+        "purchaseOperations.web.js/savePurchaseOperation",
+        "18",
+        "0.0%",
+        "0.0%",
+        "5603 ms",
+        "7846 ms",
+        ""
+      ],
+      [
+        "customerFulfilment.web.js/getCustomerFulfilment",
+        "17",
+        "0.0%",
+        "0.0%",
+        "1104 ms",
+        "1852 ms",
+        ""
+      ],
+      [
+        "supportWorkroom.web.js/getSupportBookings",
+        "17",
+        "0.0%",
+        "0.0%",
+        "1214 ms",
+        "1999 ms",
+        ""
+      ],
+      [
+        "supportWorkroom.web.js/getSupportInvoiceState",
+        "17",
+        "0.0%",
+        "0.0%",
+        "2243 ms",
+        "3273 ms",
+        ""
+      ],
+      [
+        "taskChat.web.js/getTaskChatPage",
+        "15",
+        "0.0%",
+        "0.0%",
+        "4347 ms",
+        "4914 ms",
+        ""
+      ],
+      [
+        "supportWorkroom.web.js/getSupportCustomers",
+        "14",
+        "0.0%",
+        "0.0%",
+        "1681 ms",
+        "2036 ms",
+        ""
+      ],
+      [
+        "supportWorkroom.web.js/getSupportDocuments",
+        "14",
+        "0.0%",
+        "0.0%",
+        "1113 ms",
+        "1680 ms",
+        ""
+      ],
+      [
+        "accountPurchase.web.js/getAccountPurchaseOrders",
+        "14",
+        "0.0%",
+        "0.0%",
+        "2100 ms",
+        "3565 ms",
+        ""
+      ],
+      [
+        "accountPurchase.web.js/queryAccountPurchaseOrders",
+        "14",
+        "0.0%",
+        "0.0%",
+        "2037 ms",
+        "2218 ms",
+        ""
+      ],
+      [
+        "http-functions.js/post_nctIntake",
+        "13",
+        "23.1%CRITICAL",
+        "0.0%",
+        "553 ms",
+        "16116 ms",
+        ""
+      ],
+      [
+        "warehouseReceiving.web.js/saveWarehouseReceipt",
+        "11",
+        "0.0%",
+        "0.0%",
+        "3203 ms",
+        "3966 ms",
+        ""
+      ],
+      [
+        "purchaseOrders.web.js/savePurchaseOrder",
+        "8",
+        "0.0%",
+        "0.0%",
+        "7446 ms",
+        "8000 ms",
+        ""
+      ],
+      [
+        "accountPurchase.web.js/saveAccountSettlement",
+        "7",
+        "0.0%",
+        "0.0%",
+        "7757 ms",
+        "8172 ms",
+        ""
+      ],
+      [
+        "packingLists.web.js/savePackingList",
+        "5",
+        "0.0%",
+        "0.0%",
+        "4174 ms",
+        "9529 ms",
+        ""
+      ],
+      [
+        "taskChat.web.js/saveTaskChat",
+        "4",
+        "0.0%",
+        "0.0%",
+        "5774 ms",
+        "6272 ms",
+        ""
+      ],
+      [
+        "supportWorkroom.web.js/saveSupportBooking",
+        "2",
+        "0.0%",
+        "0.0%",
+        "1691 ms",
+        "1971 ms",
+        ""
+      ],
+      [
+        "http-functions.js/post_purchaseQuantities",
+        "2",
+        "0.0%",
+        "0.0%",
+        "1730 ms",
+        "1980 ms",
+        ""
+      ]
+    ]
+  },
+  "readOnlyObservation": {
+    "initialItems": 536,
+    "finalItems": 536,
+    "netAdditionalItems": 0,
+    "manualPurchaseRefreshes": 1,
+    "unchangedActivity": 429,
+    "unchangedTasks": 47,
+    "unchangedOrders": 46,
+    "unchangedPurchaseOrders": 4,
+    "limitation": "Aggregate row-count observation, not a field-by-field change audit, isolated idle session or peak concurrency test."
+  },
+  "remaining": [
+    "Fresh live code comparison and attribution for63 serial GP verification reads, before any patch",
+    "Bounded business-history query strategy with complete ledger/borrow/Loaded recovery regression",
+    "Per-action live write deltas and concurrent-user latency on isolated test environment",
+    "Cost record lifecycle and1/3-year volume budget before cost authority cutover",
+    "Historical recovery claim lifecycle review:1 PENDING claim, all100 prepared operations have RESULTS and no operation LOCK; do not clear by age"
+  ],
+  "runtimePackageScriptEvidence": {
+    "purchase-live": [
+      "../master-shared/task-signals.js?v=20261018-task-chat-drive-v1",
+      "../master-shared/fixed-header.js?v=20261018-department-messages-v1",
+      "../master-shared/task-chat.js?v=20261031-purchase-payment-message-v1",
+      "../master-shared/desk-delivery.js?v=20261031-warehouse-operational-header-v1",
+      "app.js?v=20261031-purchase-origin-view-source-v1",
+      "../master-shared/stock-exceptions.js?v=20261018-department-messages-v1"
+    ],
+    "account-room": [
+      "../master-shared/task-signals.js?v=20261018-task-chat-drive-v1",
+      "../master-shared/fixed-header.js?v=20261018-department-messages-v1",
+      "../master-shared/task-chat.js?v=20261031-purchase-payment-message-v1",
+      "customer-debtors.js?v=20261018-department-messages-v1",
+      "app.js?v=20261031-stock-list-purchase-v1",
+      "../master-shared/stock-exceptions.js?v=20261018-department-messages-v1"
+    ],
+    "warehouse-room": [
+      "../master-shared/task-signals.js?v=20261018-task-chat-drive-v1",
+      "../master-shared/task-chat.js?v=20261031-purchase-payment-message-v1",
+      "../master-shared/desk-delivery.js?v=20261031-warehouse-operational-header-v1",
+      "app.js?v=20261026-receipt-review-v1"
+    ],
+    "support-room": []
+  }
+}

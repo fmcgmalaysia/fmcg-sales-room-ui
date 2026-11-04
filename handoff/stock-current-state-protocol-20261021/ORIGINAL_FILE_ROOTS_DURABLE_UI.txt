@@ -1,0 +1,83 @@
+2026-10-23 ORIGINAL SHARED FILE ROOTS/DURABLE UI — CANDIDATE ONLY
+
+Scope and recovery
+Continue approved inventory co-writer pairing, not new financial workflow. Recovery
+cee819e staged Purchase deletion confirmed pushed to draftPR220. Reused same root
+framework/spec, original PO/Account roles/file factories/provider and current file
+protocols. Original production files/layout/fonts/IDs/download/provider untouched;
+runtime32b812c/baselined447185 remain production. No native business/file operations.
+
+Actual original roots now paired in isolated candidate
+- build-current-purchase-orders.cjs binds original DOCUMENT and DELETE_DOCUMENT to
+  same private original-file saver. Delete uses exact staged Purchase protocol;
+  uploads use retained-slot fenced store. Original getPurchaseStaffContext and
+  original PO context/records/validators/delete locks remain. No legacy fallback
+  under ACTIVE/unknown/pending, no new public endpoint/role/Drive permission.
+- build-current-account-purchase.cjs binds original DOCUMENT_UPLOAD and PAYMENT_
+  FILE_DELETE to private same-fence saver with ORIGINAL Account staff authorization,
+  original financial rows, exact PO records and current supplier-bank data. Legacy
+  INVOICE_CHECK still has its distinct endpoint, no bank payment execution added.
+- Existing requestPurchaseDocument is reused unchanged, including its original
+  secret/provider routing and exact upload/trash checks. No token/secret retrieved.
+  Every invocation/replay reauthorizes original staff and all20writer admission.
+- Current record reads and file completion reads retain guarded original snapshot
+  requirements; no partial/LEGACY competing inventory path introduced. Full file
+  body allowance is4400000 characters, NOT200k record allowance. Original PDF limit
+  still3MiB total and up to6Account proof files; original factories validate all.
+
+Original browser/parent pairing
+- Account original DO/payment/addproof/deleteproof dialogs/validation unchanged.
+  Current helper accepts valid original file commands and durably stores COMPLETE
+  PDF/attachments/request before network under original own-user key. Reload reads
+  only fresh authorized key, first retry explicit, same UUID/bytes, no auto overwrite.
+  Existing transport segments/finite phases/fresh state and cache cleanup rules kept.
+- Purchase original upload/delete dialogs/cache/tracker/parent/recovery similarly
+  accept original file actions, same full command before send and strict final PO
+  receipt. Original saved PDF is retained for reload; no cache scan, fake workspace,
+  automatic new request ID or competing file queue. Non-file action caps unchanged.
+- Parent relays only update their current-file body caps; original fallback branches
+  unchanged. New file paths still require original actor/build/generation metadata.
+- Browser header check preserves ORIGINAL first-five-byte %PDF- rule, not a stricter
+  sixth-byte rule. Maximum-size test exposed initial base64 prefix assumption;
+  corrected both validators to include all four possible next-byte high bits. Server
+  retains full original PDF/canonical base64 validation before any real allocation.
+- Existing support/warehouse layouts and preferred Support font untouched. No UI
+  redesign, financial lock relaxation or download-mechanism change in this milestone.
+
+Evidence actually run — NODE / VM / MOCK ONLY
+- New2 actual web/private/generated-runtime tests: NCT/GHR original Purchase upload
+  >200k then uploader deletion, Account multi-proof payment then original proof trash;
+  one audit per action/replay, original bank/source/amount preserved, no stock/task
+  changes or legacy writes. Native SDK workspace assembly remains explicitly MOCKED
+  in existing root fixture; actual financial/file factories and file fences execute.
+- New4 browser tests: original Account file dialog→parent→web→private current root;
+  original Purchase upload dialog→parent→web→root; complete PDF durable reload retry;
+  Purchase original upload/delete recovery with fresh actor and exact cached bytes.
+  Original Account3MiB file fits current browser request; oversize refuses. These are
+  VM browser harnesses, NOT real Chrome/Wix/file-provider acceptance.
+- Target UI/resume36pass693.1656ms; root15pass897.6793ms. Existing retired-action test
+  still rejects but now checks current generic denial copy, not obsolete 'file not
+  connected' text. Invalid file/cross-endpoint tests remain; positive file tests added.
+- FULL current suite999pass0fail19842.3776ms. Final internal unsupported-action copy/
+  builder-description correction then affected36pass0fail1083.1435ms. No unnecessary
+  full rerun merely to redisplay summary. Runtime103modules53exports unchanged.
+- All five original root/UI/panel builders check exact outputs. Protected original
+  account-room/purchase-live/backend/wix directories matchd447185. No CMS rows,
+  native lock deletions, actual file operations, grants, merges or deployments.
+  Actual Credit UNKNOWN. Interruption handoff resumed from exact dirty scoped files;
+  no lost or replaced user changes; unrelated previews/test outputs unstaged.
+
+Next release dependencies
+Original shared record/file roots and clients are now paired OFFLINE, not a claim
+every writer has native verification. Next consolidate exact original writer/root/
+read coverage evidence and missing composition/Loaded golden tests, operational
+recovery and native schema/index/permissions/Date/platform capacity/lifecycle gates,
+then maintenance/migration/shadow/single-authority cutover and focused review.
+Exact new native mutations/temporary branch permission still need scoped action-time
+approval when ready; no blanket permission inferred. No user business question now.
+
+Four release states
+Code: incomplete candidate, this pairing tested offline. GitHub Pages: unchanged.
+Wix: not synchronized/published. Public new stock/borrowing: unverified. All writer
+coverage remains EMPTY/ACTIVE OFF. First user acceptance ends Loaded; real Support
+invoice and physical exit remain OFF. Do not ask user real borrowing tests yet.
