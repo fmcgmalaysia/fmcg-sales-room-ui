@@ -2,6 +2,8 @@
 
 Scope: combine the existing active Selected count and selection allowance in one `Selection` column, rendered as plain text `2/100 sku` without a capsule; rebalance the ten customer columns. Unknown count remains an em dash, never an invented zero. Existing allowed limits 100/300/500/700 remain unchanged. The user's follow-up requested removal of the candidate capsule; it was not approval to grant deployment access for the preceding commit.
 
+Follow-up: RFQ and Risk cells are blank when the existing renderer has no positive count. Positive alerts retain their original styling and count. Risk's explicit unavailable-data em dash remains visible; no quotation-risk computation or backend read was changed.
+
 Baseline: `7d28c83`, with recovery tag `verified/buyer-selection-image-links-20261104`. Fresh public Sales HTML and fresh Wix Sales page matched the repository before edits. Wix draft is a single version-token replacement, exactly read back. No backend changes, extra CMS reads/writes, quotation publication, customer identity, file delivery, or Buyer entry changes.
 
 ## Count diagnosis
