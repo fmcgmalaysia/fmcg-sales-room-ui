@@ -1,0 +1,43 @@
+Full live protocol probe — 2026-10-21 — ALL THREE LIVE STAGES PASSED
+
+Master new DRAFT module synchronized; full editor clipboard readback exact to submitted
+code, source content matches local generated bundle ignoring whitespace. SHA256 of local
+source0937100CBF72CDB23FD51621876F38288C9AFE2B19EDA78059DF00C5FC905204.
+All three Admin probes invoked ONCE each in order after explicit action-time approval.
+First actual interruption left generation0/pending, sourceReserved10/productAvailable20;
+readSnapshot rejected; lock absent. Resume returned same operation/generation1, source10,
+claim10/productReserved10/free10; lock absent. Replay returned identical operation and
+generation1/free10, control pending null, unchanged product version; lock absent.
+Exact selected evidence in LIVE_COMMIT_RESULT.json.3authorized permanent lock removals
+completed, no unused deletion authority remains.7new synthetic data/receipt/control rows
+retained; previous6fixtures not modified. No production data or collection/schema changes.
+No actual network timeout was induced; no production performance or full G0 completion
+claimed. Modes/hooks/indexes/limits/complete writer integration still require evidence.
+
+stockProtocolCommitTest.web.js embeds exactly the existing conditional algorithm and SDK
+adapter, plus a test-only logical-to-physical namespace mapping. SHA256/32hex unchanged;
+fresh attempt entropy crypto.randomBytes16. Every logical journal/source/claim/product ID
+routes ONLY into StockProtocolTest, prefix PROTOCOL-70c1b2. No physical business tables.
+Tests multi-record protocol, not multi-table indexes or production employee authorization.
+
+Three ordered Admin-only functions (no inputs)
+interruptStockProtocolProbe: refuse existing fixture; seed control/source/product; save
+PREPARED/pending/domain/source; inject application exception BEFORE claim insert; release
+own lock. Pending must block stock read. Not an actual network timeout/queued request.
+resumeStockProtocolProbe: require pending generation0; same request/member/digest;
+prepare forbidden. Finish persisted plan, RESULT/generation1; release own lock.
+replayStockProtocolProbe: require complete generation1; same request, no reprepare;
+unchanged quantities/generation; release own lock. Run once only within authorization.
+
+Fulfilled action-time user approval: exactly3 conditional permanent removals of
+StockProtocolTest / PROTOCOL-70c1b2:NCTActivity:1cbdee1c74664528d2874f12e56c301d
+Same ID, fresh attempt per stage. No other delete/cleanup.7other synthetic records retained
+(control/source/product/PREPARED/domain/claim/RESULT); existing6fixtures untouched.
+On unexpected error stop/inspect, no reset, no lock stealing or extra deletion attempts.
+
+Actual preparation tests
+node --test integration/tests/stock-current-protocol-live.test.cjs
+3/3pass,0fail,duration137.8457ms. Generated ESM syntax check passed. Memory SDK executes
+three stages, exactly3distinct-attempt removals/same ID,7rows retained, guards enforced;
+mapping scope and exact algorithm/adapter embedding checked. Not actual Wix recovery.
+Existing unchanged suites reused. No business writes/Publish/Pages/ACTIVE switch.

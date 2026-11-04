@@ -1,0 +1,8 @@
+/* Keep the divider centered and both quantities anchored toward it, with or without a capsule. */
+body .quantity-aligned{display:inline-grid!important;grid-template-columns:minmax(4ch,1fr) 8px minmax(4ch,1fr);align-items:center;justify-items:center;column-gap:2px;width:100%;min-width:78px;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
+body .quantity-aligned>span{box-sizing:border-box;min-width:0;white-space:nowrap}
+body .quantity-aligned>span:first-child{justify-self:end;text-align:right}
+body .quantity-aligned>span:last-child{justify-self:start;text-align:left}
+body .quantity-aligned>.quantity-divider{color:inherit}
+body .quantity-aligned>.wh-badge{margin:0;max-width:none}
+body .order-quantity>.quantity-reference:has(.quantity-aligned){display:block;width:100%;box-sizing:border-box}

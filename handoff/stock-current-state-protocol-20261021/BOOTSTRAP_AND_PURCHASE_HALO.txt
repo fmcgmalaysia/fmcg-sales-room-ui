@@ -1,0 +1,65 @@
+2026-10-22 Continued maintenance planning and actual Purchase icon candidates
+
+Lifecycle bootstrap preflight reuses optional privateProjection from original stock
+bootstrap instead of rerunning projection. Exact complete raw task identities required.
+Maps source0borrow-repaid baseline (only after original no-borrow-facts gate), actual
+historical reservation.dispatched to stable claim/task counters, high-water1, real order
+products with no receipt to zero/CLOSED metadata. No catalogue-wide placeholders.
+Missing legacy task version is an explicit TASK_VERSION_INITIALIZATION_NOT_VERIFIED
+blocker. canApply/activationReady alwaysfalse: NO admin migration executor implemented,
+no assumed missing-field CAS capability and no real metadata write performed.
+Historical20dispatch correctly initializes task/claim counters; conflicting raw data
+refuses. First fixture assertion selected first zero claim for same task from FOCsource;
+corrected to sum per-source dispatch evidence rather than weakening quantity semantics.
+
+Concrete necessary parity fault found in ORIGINAL stockCardProjection: every shipment
+line with amount0 was added to each unrelated source's dispatch/held map. Demonstrated
+different-product B false ALLOCATION_TARGET_REQUIRES_REVIEW and pointless zero claims.
+build-stock-projection-candidate generates EXACT original source plus one line:
+  if (!amount) continue;
+Original backend NOT edited. Candidate test preserves actual productA20dispatch/80stock
+and unrelated productB100known stock. Migration candidate using this projection omits
+FOCsource's unrelated0claim, keeps20FOC free and actual task20dispatched. This one-line
+patch must be fresh-live compared and included with eventual original projection sync;
+do not replace a whole Wix module or compare new balance against old false review.
+
+Purchase halo: shared haloSvg validates exact two existing person bodies and returns
+original markup byte-for-byte when no outstanding relation. Paints only halo above
+same20x20canvas, currentColor, no triangle, unchanged original blue/orange classes.
+Mechanical purchase-ui/task-grid.js and supplier-allocation.js are original source plus
+shared helper and one SVG expression substitution each. No handler, permission, PO,
+supplier allocation or colour logic changed; shapes are NOT a replacement new icon.
+No browser visual acceptance or live installation claimed. Existing preview rebuilt.
+
+Read-only createPurchaseTransferWorkspace authenticates original Purchase, preserves
+LEGACY exact response, ACTIVE requires private verified index2 and complete same-gen
+outstanding pages. Both actual source IDs receive stockTransferOutstanding; all closed
+relations disappear from active query -> both flags clear. Unknown/partial/index failure
+throws instead of silently clearing halo. Archived task absence does not block normal
+department archive. Outstanding view remains separate; actual UI details/approval and
+gateway integration still required. Runtime now28modules/9exports includes this service
+and private current relation query; no public endpoint or elevation is added by bundle.
+
+Current allocation compatibility inc now includes dispatchedOutsideScope. Test200already
+shipped from unloaded CLOSED source +300currentclaims still shows cumulative500, not300.
+
+Latest full current candidate476pass0fail4865.9281ms. Generated runtime, Purchase overlay
+and one-line projection overlay exact checks pass. This does NOT erase known unrelated
+original master-workflow-scenarios PAID vs INSTALLMENT_PAID baseline failure.
+No original production path changed (d447185 diff still empty), no CMS mutation/delete,
+no Wix/Pages publication, ACTIVE OFF. Prior pushes up to be86dcd; this slice pending sync.
+
+NEXT concrete dependencies (not new business theory):
+- Existing plannerAllocation original prepare reads prior=readAllocations(activity),
+  ignoring workspace.allocations compatibility view. Before ACTIVE binding, add a
+  minimal candidate CURRENT-view seam with original-history revision unchanged and
+  actual original validation tests after borrowing. Do not synthesize stored events.
+- currentWarehouseReadyContext still requires full old source/task/provenance context;
+  must explicitly support verified scoped/current counters without false missing-source
+  failure, while preserving original full-snapshot regression.
+- Old-task version initialization capability/maintenance apply/recovery and all actual
+  writer gateways/read consumers/file protocols/migration shadow remain incomplete.
+- Sequential per-product preparation of300line real gateway still needs actual latency/
+  quota acceptance and likely batching; in-memory901writes is not a Wix runtime proof.
+- Actual Purchase bound-relation modal/approve/retained-request resume/public visual QA,
+  final focused implementation review and four release stages remain. No half release.

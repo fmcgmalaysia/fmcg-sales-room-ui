@@ -1,0 +1,79 @@
+2026-10-23 — ORIGINAL STOCK EXCEPTION DURABLE DIALOG/PARENT, OFFLINE ONLY
+
+Recovery:aeb88d8e9df86ead9510a9864fe61413a73db553 confirmed pushed PR220.
+Productiond447185/runtime32b812c unchanged. Same framework/decision reused. Read exact
+original shared dialog in bounded head/middle/tail, exact four builders and existing
+durable patterns. No native/browser/permission/lock deletion or business-data writes.
+
+Implementation
+- One stock-exception-ui-overlay.cjs mechanically patches original common
+  master-shared/stock-exceptions.js; generated SAME body copied into Purchase/Account/
+  Warehouse candidate UI folders. Existing forms, IDs, field extraction, case views,
+  language selection, formatting and CSS untouched. Account remains English. Original
+  sources not edited. Three index tags select local paired candidate script/version.
+- Builds integrated into existing build-purchase-borrow-panel, build-account-current-ui,
+  build-current-stock-ui(Warehouse parent) and build-warehouse-current-ui(index/dialog).
+  Each --check verifies its exact outputs; no competing post-build patch chain.
+- Original STOCK_READ_REQUEST/STOCK_SAVE_REQUEST endpoints retained. Parent branches
+  relay original identity-only readOptions and current metadata/transport segment;
+  normal old routes remain byte-exact after stripping explicit new seams. Invalid
+  company/UUID/segment/size refuses. Segment is transport ONLY, never immutable digest.
+- Opening original Stock Issues first asks original authenticated identity-only root,
+  then reads ONE key:fmcg-stock-exception-current-v1/{company}/{staffId}/{memberId}.
+  No session scan, another-user adoption or fake stock workspace when pending blocks.
+  Own valid cached request shows summary/explicit retry; does NOT auto-send on reload.
+- Full original current command stored and read-confirmed before first network. Same
+  body/requestID/actor/build/base generation for every retry and bounded continuation.
+  Quota/malformed/cache mismatch sends nothing. Company selector and close/back remain
+  locked while unknown; no new UUID or clear-on-error workaround. Beforeunload warns.
+- Correct parent/company/request/segment and live in-flight phase required. Typed
+  BEFORE/APPLY/VERIFY progress auto-continues at most64times then pauses for explicit
+  retry; original request preserved. Timeout/late packets do not auto-restart. Manual
+  retry restarts bounded continuation count, NOT business request identity.
+- Success needs original matching company/request/case and advancing generation. Then
+  fresh original STOCK_READ must match actor/build/generation AND contain exact saved
+  case; QUARANTINE additionally matches source/quantity/kind/reporting employee.
+  Only then exact own cache removed and read-confirmed. Cleanup/read failure retains
+  original command; same native final receipt can safely be replayed. Result text or
+  retryable=false never discards current pending state.
+- Identity/data/unknown messages use original stockCopy, keeping Account English.
+  No new dialog, permission, financial workflow or customer-reserved loss policy.
+
+Tests
+- New8UIcases: full original request before network; strict final+fresh read; quota,
+  wrong receipt/actor/build/parent/segment/case; finite phases and timeout/late packets;
+  explicit own-key reload/malformed/other-member refusal; Account English and cleanup
+  failure; all3actual original parent relays; real original shared dialog→Warehouse
+  parent→current web/private root/coordinator/model writes one FREE isolation event
+  and stock change; all4builders/common script and original form byte identity.
+- SDK/storage/DOM are mocks. Root test's original projector scaffold is documented in
+  stock-current-exception-root.test.cjs; not proof of native Wix or visual acceptance.
+- First broad run1017pass2fail: both failures were exact-original parent comparison
+  tests that stripped prior seams but NOT these two newly authorized stock branches.
+  Added explicit stripping of ONLY those two new branches, retaining byte-exact whole
+  original-body equality. Did not change business expectation, turn off checks or
+  modify protected original parent. Affected25pass0fail1343.2057ms after correction.
+- FINAL FULL1019pass0fail21895.5304ms. Four builders --check pass in new suite.
+  git diff--check passed; production account-room/purchase-live/warehouse-room/
+  master-shared/integration/backend/integration/wix still matchd447185. Untracked user
+  previews preserved. No actual Credit measurements available.
+
+Pending question / next implementation
+Human was asked whether RESERVED customer goods damage should be Warehouse-attributed
+isolation with unchanged customer demand/visible shortage and Purchase replacement/
+approved borrowing only. No answer yet. Do not infer approval from heartbeat. Existing
+free-only guards stay; no fresh per-heartbeat question. Continue independent work.
+
+Next bounded evidence gap: one shared-data flow from actual original intake through PO
+issuance and Sales split to receipt/Packing Loaded. Approved-PO receipt/borrow/Loaded
+composition and actual Source bearer split root tests already exist; reuse them.
+Remaining G3 consumer audit, native schemas/indexes/permissions/Date/capacity/lifecycle,
+operational recovery, maintenance/migration/shadow/cutover/review/release still open.
+
+Four statuses
+Code: broader task incomplete; original stock dialog/backend/parent pairing offline
+implemented and tested, not browser/native accepted.
+GitHub Pages: no feature resource deployment.
+Wix Studio: no feature installation/synchronization/publication.
+Public verification: not performed; feature unavailable/unverified. ACTIVE OFF and
+coverage EMPTY. Real Support invoice/physical exit OFF, main untouched.

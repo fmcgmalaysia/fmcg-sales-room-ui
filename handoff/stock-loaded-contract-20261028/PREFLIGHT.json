@@ -1,0 +1,22 @@
+{
+  "warehouseEarlierRead": {
+    "NCT": {
+      "deliveryRows": 4,
+      "loadedPositive": 0
+    },
+    "GHR": {
+      "deliveryRows": 0
+    }
+  },
+  "productionBusinessWrites": 0,
+  "atUtc": "2026-10-28T17:05:33.8811014Z",
+  "method": "VISIBLE_PUBLIC_WIX_UI_READ_ONLY",
+  "packing": {
+    "NCT": {
+      "lists": 0
+    },
+    "GHR": {
+      "lists": 0
+    }
+  }
+}

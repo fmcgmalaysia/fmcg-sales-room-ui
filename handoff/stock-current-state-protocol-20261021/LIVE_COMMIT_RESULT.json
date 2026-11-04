@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-21",
+  "site": "Master",
+  "physicalCollection": "StockProtocolTest",
+  "namespace": "PROTOCOL-70c1b2",
+  "operationId": "b1ccb8a3e4fe2f201a7f8790afd41e99",
+  "digest": "463182409b8fd33d22e151e7cc64434e",
+  "interrupted": {
+    "passed": true,
+    "generation": 0,
+    "pendingKey": "b1ccb8a3e4fe2f201a7f8790afd41e99",
+    "source": { "onHand": 20, "reserved": 10, "_version": "74cbcb93e80ced3c0e3ac7c701c8f676" },
+    "product": { "onHand": 20, "reserved": 0, "available": 20, "_version": "P0" },
+    "blockedRead": true,
+    "lockAbsent": true
+  },
+  "resumed": {
+    "passed": true,
+    "outcome": { "ok": true, "operationId": "b1ccb8a3e4fe2f201a7f8790afd41e99", "generation": 1 },
+    "generation": 1,
+    "source": { "onHand": 20, "reserved": 10, "_version": "74cbcb93e80ced3c0e3ac7c701c8f676" },
+    "claim": { "reserved": 10, "_version": "1527f1894392608ac3f7d52f7501d1c4" },
+    "product": { "onHand": 20, "reserved": 10, "available": 10, "_version": "d4174ad4a41c57ebc9922c2096a5e329" },
+    "lockAbsent": true
+  },
+  "replay": {
+    "passed": true,
+    "outcome": { "ok": true, "operationId": "b1ccb8a3e4fe2f201a7f8790afd41e99", "generation": 1 },
+    "control": { "generation": 1, "pending": null, "_version": "3cf26bae6ff8afbe798d14d8e7286b05" },
+    "product": { "onHand": 20, "reserved": 10, "available": 10, "_version": "d4174ad4a41c57ebc9922c2096a5e329" },
+    "lockAbsent": true
+  },
+  "authorizedLockReleasesCompleted": 3,
+  "lockPhysicalId": "PROTOCOL-70c1b2:NCTActivity:1cbdee1c74664528d2874f12e56c301d",
+  "retainedNewSyntheticRecords": 7,
+  "evidenceFormat": "Selected fields transcribed from actual returned JSON; not complete raw responses.",
+  "limitation": "Actual Wix writes plus injected application interruption; not true network timeout, multi-table performance or production activation."
+}

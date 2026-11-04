@@ -1,0 +1,11 @@
+{
+  "status": "candidate; not deployed",
+  "branch": "fix/buyer-zero-quantity-display",
+  "base": "style/buyer-order-track-compact",
+  "recoveryCommit": "aa84bc5",
+  "objective": "Deleting an unsent quantity leaves Qty, Edited Time, Line Amount and CBM blank; quantity edit stamps clear on save",
+  "scope": ["Order Form rendering", "Zero save response and unsent item qtyEditedAt/qtyEditedBy", "Isolated preview save response"],
+  "preserved": "Quantity=0 remains the same internal no-order value; no mutation of submitted orders, selection/quotation, historical order audits, download or permissions. General updatedAt/lastEditedBy still retained.",
+  "validation": {"targetedPassed":55,"coverage":"Positive quantity actor/time, zero save, legacy zero no-op, stale workspace echo, all original quantity draft/addition/retry/quote/history/Excel checks in selected suite","realBusinessWrites":false},
+  "publication": {"githubPages":false,"wixPublished":false,"publicVerified":false}
+}

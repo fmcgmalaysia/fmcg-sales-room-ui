@@ -1,0 +1,200 @@
+{
+  "date": "2026-11-03",
+  "mode": "OFFLINE_DIAGNOSTIC_AFTER_D01",
+  "productionWrites": 0,
+  "productionCodeChanges": 0,
+  "observations": [
+    {
+      "quantity": 200,
+      "boundary": "TASK",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_PRICE_SAVED",
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 200,
+      "boundary": "PRICE",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_PRICE_SAVED",
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 200,
+      "boundary": "SHARES",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 200,
+      "boundary": "PLAN",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 200,
+      "boundary": "RESULT",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 32,
+        "planQuantity": 200,
+        "poAmount": 6400
+      },
+      "missingEvents": [],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 220,
+      "boundary": "TASK",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_PRICE_SAVED",
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 220,
+      "boundary": "PRICE",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_PRICE_SAVED",
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 220,
+      "boundary": "SHARES",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 16,
+        "planQuantity": 200,
+        "poAmount": 3200
+      },
+      "missingEvents": [
+        "PURCHASE_SOURCE_SHARES_SAVED",
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 220,
+      "boundary": "PLAN",
+      "observed": {
+        "workspaceReadable": false,
+        "error": "Supplier allocation save requires confirmation. Retry the original request."
+      },
+      "missingEvents": [
+        "PURCHASE_PLAN_SAVED"
+      ],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    },
+    {
+      "quantity": 220,
+      "boundary": "RESULT",
+      "observed": {
+        "workspaceReadable": true,
+        "unrelatedPresent": true,
+        "rawTaskPrice": 32,
+        "taskPrice": 32,
+        "planAverage": 32,
+        "planQuantity": 220,
+        "poAmount": 7040
+      },
+      "missingEvents": [],
+      "unrelatedRawTaskUnchanged": true,
+      "originalRetryRecovered": true,
+      "oldPrice": 16
+    }
+  ],
+  "limitation": "Immediate-read in-memory fixture. Not live latency, process-kill or Wix replication proof."
+}

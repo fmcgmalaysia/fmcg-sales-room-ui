@@ -1,0 +1,30 @@
+{
+  "runtimeCommit": "d92544a0dffdccb2728400d1c82df7c940d3aee2",
+  "branch": "feat/purchase-source-transport-20261018",
+  "pullRequest": 176,
+  "code": "complete",
+  "pages": {
+    "run": 39089805019,
+    "result": "success",
+    "matchedAssets": 30,
+    "marker": "2026-10-18-source-transport-v1",
+    "temporaryPolicyRemoved": 63429212,
+    "originalSevenPoliciesRestoredExactly": true
+  },
+  "wix": {
+    "completeReadbacksMatched": 7,
+    "receipt": "This site is published and live online."
+  },
+  "publicVerification": {
+    "purchase": "passed: real modal, required choices, legacy unknown, unchanged quantities, darker waiting status",
+    "account": "passed after user reopen: real Financial Overview and Payment Plan; waiting geometry and color match Purchase",
+    "pillHeightPx": 21,
+    "waitingBackground": "#6B7785",
+    "text": "#FFFFFF",
+    "relevantErrors": 0,
+    "productionBusinessWrites": 0,
+    "conditionalSelfCollectRecords": "sample-renderer and backend-journal tested; no artificial live procurement record created"
+  },
+  "tests": {"total":532,"pass":529,"knownBaselineFailures":3},
+  "mainMerged": false
+}

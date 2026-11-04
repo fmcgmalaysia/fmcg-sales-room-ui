@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-15",
+  "base": "f498357",
+  "scope": "Seven Dashboard visual feedback points only",
+  "changes": {
+    "title": "18px / 700, Chinese remains 10px secondary",
+    "queues": "Three independent full-width columns, 60px high, English 13px, counts 18px",
+    "toolbar": "English only, item count removed",
+    "productPo": "Existing product identities or PO notice identity unchanged; no invented PO number",
+    "hint": "English and Chinese on same line",
+    "queueLimit": "232px maximum including sticky header: approximately four normal rows, shorter with small viewport; internal scrolling",
+    "directories": "Always visible section, no disclosure"
+  },
+  "stress": {
+    "customerEntryBottom": 665.2000122070312,
+    "directoryTop": 468.7000122070313,
+    "listHeight": 175,
+    "rows": 203,
+    "scrollHeight": 10353,
+    "supplierEntryBottom": 672.7999877929688,
+    "viewport": 680
+  },
+  "protected": {
+    "purchase-live/app.js": true,
+    "purchase-live/header.css": true,
+    "purchase-live/style.css": true,
+    "purchase-live/task-grid.css": true,
+    "purchase-live/task-grid.js": true,
+    "purchase-live/supplier-allocation.js": true
+  },
+  "tests": 132,
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=three-queues",
+  "chromeTab": "51425183",
+  "status": "Local only; no push, deploy, Wix write, publish or merge. User review pending."
+}

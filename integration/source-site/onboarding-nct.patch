@@ -1,0 +1,26 @@
+Candidate only. Fresh full source readback 2026-10-09 equals repository before this patch.
+Install nctSalesIntake.js, nctSubmissionDelivery.js and nctSubmissionPayload.js in SOURCE backend first.
+No Buyer, QD, Proforma or GHR changes.
+
+--- sales-room/wix/onboarding.web.js
++++ sales-room/wix/onboarding.web.js
+@@
+ import wixRealtimeBackend from 'wix-realtime-backend';
++import { submitNctSalesOrder } from 'backend/nctSalesIntake.js';
+@@
+     if (!['NCT', 'GHR'].includes(target)) throw new Error('Select a valid receiving company.');
++    if (target === 'NCT') {
++      const input = { orderId: normalize(orderId), staff,
++        authorizeCustomer: customerId => findAuthorizedCustomer(customerId, staff),
++        readPayloadRows: readAllPayloadRows, putPayload };
++      let receipt, entered = false;
++      try {
++        receipt = await withSalesOrderMutation(orderId, staff,
++          orderEntry => { entered = true; return submitNctSalesOrder({ ...input, lockedOrderEntry: orderEntry }); });
++      } catch (error) {
++        if (entered) throw error;
++        receipt = await submitNctSalesOrder({ ...input, initialError: error });
++      }
++      return Object.freeze({ ...receipt, status: 'SUBMITTED TO NCT' });
++    }
+     return withSalesOrderMutation(orderId, staff, async (orderEntry) => {

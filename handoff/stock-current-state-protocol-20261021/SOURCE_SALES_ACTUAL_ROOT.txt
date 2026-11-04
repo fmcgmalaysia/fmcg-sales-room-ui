@@ -1,0 +1,68 @@
+2026-10-22 — ORIGINAL SOURCE SALES DEFAULT GATEWAY / PRIVATE CURRENT ROOT
+Recovery827dc0d/PR220. Productiond447185/runtime32b812c untouched. No browser/native/
+business/Drive/test-lock writes, credentials read, grants, installation or publication.
+First user acceptance remains to Loaded; actual invoicing/dispatch not opened.
+
+Private stockCurrentSourceSales now binds actual original PO/stock/customer context,
+original Sales adjustment/plan/date/shipment factories and paired original public
+read to conditional SDK/segmented protocol. Existing ONE-ARGUMENT source bearer gateway
+now defaults to this real private resolver; not an unbound injectable-only demo. Original
+bearer header timing-safe check, body validation and server-derived SOURCE_SALES actor
+bytes remain exact, run BEFORE mode/storage/data. No Master employee substitute/grant,
+new webMethod/public route, source authentication replacement or client actor callback.
+Constructor callback is server-only after original bearer authority; exported existing
+requireOriginalSalesDelegation is a SHAPE/SCOPE assertion, NEVER authentication itself.
+
+Only valid raw control LEGACY+null pending permits old entry. ACTIVE only private
+guarded current READ/ADJUST/SELECT/CANCEL/PLAN/ORDER_DATE; unknown, missing, maintenance
+or shadow refuses. Also current request arriving after mode changes to LEGACY now
+refuses instead of accidentally calling original legacy writer. All20coverage EMPTY.
+Original source CHAT handling unchanged. DOCUMENT current connection still OPEN:
+it shares original PURCHASE lock and external file protocol, cannot silently run old
+writer while ACTIVE. Not production-ready disabled functionality; finish preserved
+document path before activating source gateway. No new financial feature requested.
+
+Original current READ returns only original customer-filtered shape + exact expected
+staff/member in stockCurrent. All three current save types return staff ID to shared
+expected-identity digest; actual root always requires original expected identity and
+customer. ADJUST restores original committed company/task/requested receipt by exact
+own immutable event, not by later mutable task. Input metadata is stripped before
+original validators and current version/UUID retained. Same company fence remains.
+READ exact {resume:'SOURCE_SALES_V1'} returns only original bearer-authenticated own
+staff/customer/company, no control/data/stock/version; works behind pending for next
+durable client integration. No secret/cookie/token extracted or real request sent.
+
+PLAN/date remain original intent metadata. Considered adding current product reads,
+then read actual shipmentPlanVersion/model: version does not depend on inc/allocations,
+and operations do not move stock. Removed that uncommitted extra read seam; actual
+original rules/read path retained instead of unnecessary per-product queries.
+
+Evidence
+- Actual-import source root AND original one-arg bearer HTTP gateway positive full
+  in-memory path: customer READ with available10, increase100->150, SPLIT70+80;
+  all original PO/task/physical source/claim rows unchanged; stable committed receipt
+  and same UUID replay. PLAN and existing SELECT/CANCEL update holds/intent only;
+  no physical departure/invoice, original customer-filtered read/account shape stays.
+- Wrong bearer denies before body/control; closed coverage before company context,
+  mode/missing metadata/no old fallback, expected staff/foreign customer refusal,
+  own auth-only recovery behind pending, original auth bytes/default resolver guards.
+  NCT full actual-import test; native GHR root acceptance still OPEN (not fabricated).
+- Final ALL stock-current819pass0fail16514.3865ms. Runtime89modules45private exports.
+  Focused root/Sales/save/arrangement12pass0fail761.2556ms BEFORE final negative case
+  tightening; final ALL includes it. Independent ORIGINAL adjustment/split/date/
+  fulfilment30pass0fail420.0646ms. Generator/whitespace/protected production compare pass.
+  All Node/VM/in-memory/native SDK mock; no native/public/Chrome acceptance. Credit UNKNOWN.
+- New root fixture first omitted readAllocations binding; fixed fixture. SELECT fixture
+  lacked original reason/currency and CANCEL used wrong shipmentId vs original id;
+  fixed synthetic inputs, NOT original validation. No failing real protected workflow.
+  A Windows path-glob diagnostic failed; corrected rg -g with directory, no retry bypass.
+
+NEXT actual source Sales own-cache/durable reload and original parent/Wix transport,
+including date controls. Preserve original document file path under same fence before
+ACTIVE; then intake/order/other original writer native/identity connections. Native
+CMS/SDK/index/date/schema/init, all20verification, safe cross-session/admin unknown-
+lock termination, capacity, inflight legacy/quiescent switch/shadow parity, Loaded
+end-to-end and four release gates OPEN. Real invoice OFF. Do not publish partial root.
+Four states: incomplete code candidate; Pages unchanged; Wix not installed/published;
+new public current inventory/borrowing unavailable/unverified. Exact branch temporary
+Pages grant still required only when complete release ready; computer access not grant.

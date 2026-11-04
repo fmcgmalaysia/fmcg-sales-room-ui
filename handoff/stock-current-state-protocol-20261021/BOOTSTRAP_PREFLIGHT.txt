@@ -1,0 +1,35 @@
+CURRENT afterb021dea — pure maintenance preflight, NOT migration execution/ACTIVE
+
+stockBootstrapPreflight accepts complete private server snapshots only. Requires exact
+company MAINTENANCE control/version/schema/generation with no pending save. Existing
+current rows -> refuse overwrite; company/task/cost locks or unconfirmed legacy/current
+receipts -> block before projection. A result-shaped row alone is not completion evidence.
+Original projectPurchaseOrders resolves each received source's internal PO ID separately
+from display number; original projectStockCard + converter produce private candidate rows
+and deterministic metadata. No CMS writes/schema/index changes, tags, chunking, mode switch,
+opening stock guesses or history deletion. Empty company creates no catalogue placeholders.
+
+Checkpoint hashes company business context/control/current-target snapshot; readAt alone
+excluded, real receipt/control change invalidates. Candidate row images contain private
+business details and must NOT be committed to this public repo when using real data.
+Only synthetic fixture counts/fingerprints are suitable for public evidence.
+activationReady ALWAYS false: dry-run parity never proves writer/recovery/capacity gates.
+
+Found converter hole: known usable claim could have isolatedAttributed null yet no review
+code, incorrectly making converter activationReady true. Such isolation attribution now
+marks claim/source/product Review; usable3/isolated2/onHand10 retained, no zeroing/guessing.
+Known free-only isolation without customer reservation is not mechanically relabeled.
+
+Evidence: initial bootstrap+converter18pass233.7332ms; final stronger completion checks +
+affected converter/query/quarantine/free-source/preview37pass0fail354.8994ms. These overlap.
+220/free20/reserved200 conversion, unknown/null preservation, pending/lock/existing
+target rejection, explicit confirmed receipt and changed checkpoint tests. No real Wix read
+or write/lock deletion. No historical clear receipt assumed to still describe live CMS.
+One documentation patch was rejected for an empty extraneous-path hunk; corrected to the
+intended checkout only, no production file involved.
+
+OPEN: actual fresh live/repo captures, complete authenticated CMS snapshot readers with
+counts/indexes, private recovery snapshot storage, maintenance authorization/entry/exit,
+domain metadata migration, conditional bounded installation/rollback rehearsal, source+
+customer shadow comparison after every mutation, all-writer/read/capacity/lifecycle/recovery,
+UI and four-stage release. This preflight is not an installer or proof of production scale.

@@ -1,0 +1,22 @@
+{
+  "code": "52f0da7",
+  "base": "cfc0cdf",
+  "branch": "style/purchase-source-colors-20261015",
+  "build": "2026-10-15-source-colors-v1",
+  "status": "candidate-not-deployed",
+  "tests": {
+    "passed": 120,
+    "failed": 0
+  },
+  "githubPages": "not deployed",
+  "wix": "not synchronized or published",
+  "publicAcceptance": "pending",
+  "hashes": {
+    "purchase-live/app.js": "8f6d547f905b05bf88a77dcf50b1f9c74fcc446368688ee071561a48c948ff94",
+    "purchase-live/index.html": "d14809cfb0c37610e3945bd05acb03e434c8bc2a817044d7c03bf95a3836ffd3",
+    "purchase-live/supplier-allocation.js": "ac6d3eef7b68043572addb9154a450dc0e3989f1314b6711030d837ad959daaa",
+    "purchase-live/task-grid.js": "56cac853448005a04b7c8bc8e480d44e41cbf1ad50d70f1479b39ef57e40ef2e",
+    "purchase-live/task-grid.css": "804e87bb2f88033f314cf7597db56d2ffb286b7e2c1498cc0aef98ad960f44cc",
+    "purchase-live/style.css": "6949f4b2e501b24f16d906e1297257b0e1331337882bdda327b532669e126c42"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-04",
+  "branch": "fix/buyer-quantity-efficiency-20261104",
+  "build": "20261104-buyer-quantity-efficiency-v1",
+  "workflowInput": "buyer-quantity-efficiency-only",
+  "objective": "Coalesce overlapping quantity readbacks, preserve quantity-independent selection downloads and retain one-click review intent",
+  "baseline": {
+    "commit": "ae151e8",
+    "recoveryTag": "verified/customer-file-download-20261103",
+    "wixPageFreshComparison": "EXACT_NORMALIZED_LINE_ENDINGS",
+    "publicBuyerHtmlFreshComparison": "EXACT_NORMALIZED_LINE_ENDINGS",
+    "lastManifest": "sales-customer-selected-release.json, Pages 339"
+  },
+  "changes": {
+    "static": ["buyer-room.html"],
+    "wix": ["buyer-room/wix/buyer-room-page.js"],
+    "staticResourceCount": 101,
+    "unchangedStaticResources": 100,
+    "backendChanges": 0,
+    "schemaChanges": 0,
+    "existingTransactionReplays": 0
+  },
+  "verification": {
+    "buyerChecks": {"passed":86,"failed":0},
+    "wixDraftReadback": "EXACT_NORMALIZED_LINE_ENDINGS",
+    "browserCandidate": "PASS: two 100-carton saves; one review click waits then opens Review; two saves and zero final submits",
+    "protectedOrderSubmitAndDownloadCode": "BYTE_IDENTICAL_TO_BASELINE",
+    "limits": "Offline read counts and local UI behavior, not measured production latency or CMS capacity reduction"
+  },
+  "stages": {
+    "code": "76f63ae_GITHUB_SYNCED",
+    "pages": "RUN340_41767035215_SUCCESS_101_HASHES_MATCH",
+    "wix": "EXACT_READBACK_PUBLISHED_AND_LIVE",
+    "public": "PASS_801_NEW_BUILD_ONE_CLICK_REVIEW_CLEAR_DRAFT_NATIVE_EXCEL_ORIGINAL_REQUEST_LINES_PRESERVED"
+  },
+  "publicAcceptance": {
+    "customer": "TESTING 801 assisted staff LAW",
+    "review": "Two 100-carton rows, one click, auto-review after saves; 200 CTN / USD2604 / CBM4.3000",
+    "cleanup": "Review cancelled, both unsent quantities cleared and saves confirmed; no final Send Request",
+    "export": "Link unchanged through edits and clearing; native click saved XLSX7495bytes, both expected product barcodes present",
+    "userConfirmation": "User explicitly confirmed Excel download succeeded; freeze native selection download only",
+    "errors": 0,
+    "permissions": "TEMPORARY_RULE_REMOVED_ORIGINAL7_RESTORED",
+    "protectedRequestLines": "Original two 100-carton Request Sent lines remain"
+  },
+  "deferred": [
+    "Old QD publication rows and stale Sales drawer summary",
+    "Empty-selection copy and review sorting",
+    "Order Excel preparation before the success message",
+    "Actual Buyer historical PDF download and return",
+    "CMS full-history query and long-term capacity"
+  ]
+}

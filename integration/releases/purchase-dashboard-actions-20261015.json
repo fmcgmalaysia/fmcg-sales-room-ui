@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-15",
+  "base": "48af138",
+  "scope": "Dashboard actionable work projection and compact action-first table",
+  "purpose": "Show why Purchase needs to act, what source/PO it concerns, who owns it, target shipment date, and an original scoped processing entry.",
+  "entryRules": {
+    "supplierMissing": "Show Assign supplier using existing plan handler",
+    "poMissing": "If saved source plan revision exists, show Create P.O.; otherwise Confirm purchase plan. Existing PO validator remains authoritative.",
+    "explicitWork": "Existing allocate/quantity-case/payment-proof/shortage/stock/Admin review signals remain. Resolved filtering stays with original shared projection.",
+    "genericProgress": "Drop partial edit / Procurement in progress; absence of Sales invoice alone is not a Purchase action.",
+    "ordinaryReceiptWait": "Keep only when a valid target shipment day is earlier than today in Asia/Kuala_Lumpur and existing progressStates reports pending. Normal future/unknown-date waiting remains in Active Orders.",
+    "confirmedReceipt": "Existing confirmed progressState suppresses stale inc-null waiting notice.",
+    "explicitWarehouseIssue": "Warehouse issue flag remains visible even without a projected quantity-case; opens existing source receiving progress."
+  },
+  "identity": "One group per original source/PO/case identity; retain every actionable distinct reason. Display dedup is not transaction dedup or task completion. Original shared signal model and callback indices are unchanged.",
+  "sorting": [
+    "Explicit issue first",
+    "Earlier valid target shipment date first; unknown last",
+    "Earlier original masterReceivedAt / PO createdAt first; unknown last",
+    "Stable identity tie-break"
+  ],
+  "timing": "No new deadline, guessed overdue task age, acknowledgement or notification database. Passed target shipment day is labelled as a date fact, not as a new task overdue status.",
+  "views": "Default All so issues cannot be hidden on entry; Issues/My actions/Waiting buckets remain disjoint, counters count retained actionable groups.",
+  "layout": "Action required / Product-P.O. / Supplier-Customer / Target shipment / Open; original handle buttons directly route to original processing UI. Product click reveals all source actions. Maximum232px queue, responsive shorter height, scroll internal. English primary, secondary Chinese, white text orange counts, current title/header/directory styles retained.",
+  "protection": {
+    "app": "Only Dashboard default mine->all changed",
+    "unchanged": [
+      "room()",
+      "formDialog()",
+      "original action callbacks",
+      "style.css",
+      "header.css",
+      "task-grid.js/css",
+      "supplier-allocation.js",
+      "master-shared/task-signals.js",
+      "all backend/Wix code"
+    ],
+    "verifiedRecovery": "verified/purchase-lavender-plan-po-20261014 (limited existing acceptance)"
+  },
+  "previewFixture": "Corrected PREVIEW-RECEIPT-B kind RECEIVING->RECEIPT to match existing receiving editor schema; no live data or editor logic changed.",
+  "validation": {
+    "tests": 137,
+    "sourcePo": "HONG LEA C source opens50CTN/MYR2400 P.O. dialog, other supplier absent",
+    "issue": "KOH10CTN opens Receiving Issue, existing financial/customer resolution form preserved",
+    "activeOrders": "13 columns, original11px product, no Dashboard root",
+    "layout": "3 meaningful rows,209px queue,1481px width equals scrollWidth; first customer/supplier entrybottom561.8 in695px viewport",
+    "submissions": 0,
+    "wixReadback": "6980chars / sha2561cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9 unchanged"
+  },
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=action-list",
+  "chromeTab": "51425199",
+  "preserved": "Old51425191 had original room unsaved notice after inspecting entry; retained, not refreshed or cleared. Other existing draft tabs untouched.",
+  "status": {
+    "code": "local candidate, user acceptance pending",
+    "pages": "not deployed",
+    "wix": "not written/published",
+    "public": "candidate not publicly verified; live70a0b59 remains"
+  },
+  "next": "Dashboard review only. Do not move to other pages, push, deploy, merge or mark verified based on these tests."
+}

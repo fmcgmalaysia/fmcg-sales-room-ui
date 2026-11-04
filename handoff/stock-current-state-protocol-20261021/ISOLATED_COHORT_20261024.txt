@@ -1,0 +1,144 @@
+2026-10-24 — APPROVED SMALLER BOUNDARY AND FRESH QUOTATION ACCEPTANCE
+User approved retaining original quotation program and isolating orders/stock;
+subsequently requested entirely fresh quotations, not old-data migration. Compiler
+now maps only Source Orders/Lines/Audit3 plus MASTER12. Selection/QD callback and
+native CatalogueSelection/FX/Staff imports unchanged. R2WixBuyerListItems unused.
+105versioned backend modules (MASTER92,Source13),2Admin roots,2public bridges,
+8relays,43static overlays.2formerly generated selection/FX alternatives explicitly
+retired, not installed/exported/staged; no deletion. Original production files
+still untouched.3optional display lines excluded; exact visible effects explained.
+
+Focused65tests passed, then2new quotation-boundary tests passed295.2309ms: actual
+original QD callback publishes a fresh RFQ, generated Buyer workspace sees it,
+new order locks48carton price/10ctn into only R2order tables, old same-request-ID
+order untouched, exact replay not duplicated. Test-only auth fixture, NOT native
+authorization or all-writer evidence.2structural assertion setup errors (expected
+import extension then wrong FX consumer) corrected; substantive quotation/order
+test passed on each run. Compiler --check verified. No new full-suite claim.
+
+NATIVE SOURCE SAVED DRAFT:14new files (13backend+inspect-only Admin bootstrap)
+created individually in user-opened51427367; every final full clipboard readback
+SHA exactly equals generated source. No originalSource/page/HTTP writes, Run or
+Publish. Receipt record SOURCE_R2_NATIVE_INSTALL_20261024.json. Screenshot ROOT
+private-evidence/r2-source-installed-draft-20261024.png saved and embedded.
+New-file naming box initially blank then populated; initial combined helper
+stopped twice before writing, then split observed create/finish steps used.
+One wrong helper targeted Help; Help closed, no code mutation. One CDP focus
+timeout during new Buyer module readback; reobserved rather than recreating.
+Readback found705char Wix default web-module template appended after full candidate;
+only this new draft corrected, then exact full hash verified. Later new web files
+select all initial template before paste; original files untouched.
+Source active pages still original; no business/control insert/ACTIVE/publication.
+MASTER user-opened51427394 successfully claimed, no refresh/new tab; installation
+next. Current saved draft does NOT prove published-live or working native calls.
+
+2026-10-24 — FRESH EMPTY WRITE COHORT, LOCAL IMPLEMENTATION AND NATIVE TABLE SETUP
+
+Authority: user explicitly authorized new/old isolation, native install and release
+through real Buyer/split/borrow tests. Prior provider wait closed by supplied Wix
+reply Ref031000264; old same-table drain refusal still valid. Do not flip it.
+Framework same versions reused; incomplete relevant source reread. Actual checkout
+nct-order-submit-room6-20261009, branch feat/stock-current-state-protocol-20261021.
+Original recovery d447185987fecbb81bcaf6b25c170f631f767f9f/runtime32b812c retained.
+
+Boundary: MASTER_20261024_R2. New backend identities r2<originalModule>; originals
+unchanged. Additive HTTP post_r2NctIntake/post_r2SalesFulfilment/post_r2PurchaseQuantities
+candidate, old endpoints NOT redirected. New Source clients use new paths and
+X-FMCG-Cohort; absent/wrong/duplicate marker409before new handler. Original bearer
+authentication retained; marker is NOT a secret/security credential. Old module
+closures/serialized HTTP addresses still reach old tables. New page relays bind
+new backends; public taskChat/packing bridges also versioned after detecting old
+public imports would otherwise read legacy contexts. Account companion included.
+Shared suppliers/staff/customer identities, auth and all20writer controls retained.
+107module closure+2separate Admin bootstrap roots+2public bridges+8page relays+
+43static overlays version20261024-r2 compiled. No new code installed/published.
+
+Exact16native empty tables created ONCE by copying fields/settings, NOT content
+MASTER original -> new (display name):
+ NCTOrders -> R2NCTOrders (R2 NCT Orders)
+ NCTTasks -> R2NCTTasks (R2 NCT Tasks)
+ NCTActivity -> R2NCTActivity (R2 NCT Activity)
+ NCTOrders1 -> R2NCTOrders1 (R2 GHR Orders)
+ NCTTasks1 -> R2NCTTasks1 (R2 GHR Tasks)
+ NCTActivity1 -> R2NCTActivity1 (R2 GHR Activity)
+ PurchaseOrders -> R2PurchaseOrders (R2 Purchase Orders)
+ StockPositions -> R2StockPositions (R2 StockPositions)
+ StockClaims -> R2StockClaims (R2 StockClaims)
+ StockProducts -> R2StockProducts (R2 StockProducts)
+ DepartmentChatIndex -> R2DepartmentChatIndex (R2 Department Chat Index)
+ AccountReadIndex -> R2AccountReadIndex (R2 Account Read Index)
+FMCGMALAYSIA:
+ WixBuyerOrders -> R2WixBuyerOrders (R2 BUYER ORDERS)
+ WixBuyerOrderLines -> R2WixBuyerOrderLines (R2 BUYER ORDER LINES)
+ WixOrderAudit -> R2WixOrderAudit (R2 ORDER AUDIT)
+ WixBuyerListItems -> R2WixBuyerListItems (R2 BUYER LIST ITEMS)
+
+Before EVERY copy original freshly No items.11MASTER+4Source original Advanced
+matrices16nonAdmin off+4Admin on. Original AccountReadIndex instead Show content,
+Who can view Everyone; cancelled original settings without save. ONLY new empty
+R2AccountReadIndex switched Advanced, fourCollaborator boxes unchecked; saved and
+reopened exact16off+4Admin on. No expanded permissions or original ACL changes.
+All16new tables No items independently confirmed. Source four original reset
+zeros now independently verified too. No record deletion/import/control/business
+insertion. Customers/catalogue/QD/reference/supplier/staff/diagnostic data retained.
+Copy does NOT prove native index/type/reference parity. R2activities additionally
+need TEXT cohort/bootstrapMemberId/bootstrapRequestId; not installed yet.
+
+Operational qualifications
+Task copy initially showed new heading before data view; fresh read confirmed
+No items and new URL, never repeated create. Account generic checker timed out
+because actual original UI basic/public; read actual state, handled new-only ACL.
+Permission save readback menu raced closure once; fresh state/reopen confirmed.
+No native runtime test/oldUNKNOWN replay/lock removal or old init authorization reuse.
+An intermediate unversioned public-relay output belongs only to this new local
+build. apply_patch removal FAILED; NOT retried via shell or other deletion tool.
+It remains explicitly RETIRED DO NOT INSTALL/EXPORT, listed retiredLocalOutputs,
+excluded from compiler output/installation manifest. Never package a whole folder
+blindly. Other unclassified stale outputs cause compiler failure. It was never
+installed/exported. One string-eval helper rebuild was refused by browser runtime;
+no retry/bypass. Ordinary direct JavaScript helper declaration then used.
+
+Fresh bootstrap: actual fixed new tables only, complete private metadata/counts;
+refuses business/unknown rows, nonAdmin/mistyped schemas, control replacement.
+MAINTENANCE genesis only, same request/actual Admin member, no ACTIVE/update/remove/
+drain claim. Lost insert reply propagates; explicit inspect original request only,
+no auto-reinsert. Native Admin wrappers preserve Permissions.Admin; not installed.
+Actual compiled SDK and fulfilment reads reject unmarked/wrong/LEGACY controls.
+Original maintenance hard refusal and all20empty coverage maps retained.
+
+Tests: final focused60pass0fail1265.9247ms (6isolation/50Loaded+borrow+RCV+ALLOC/
+4bootstrap). TEST-only synthetic ACTIVE/coverage is fixture policy, NOT native proof.
+Original substantive flow assertions replayed with actual compiled new modules:
+NCT/GHR intake->PO->split->receipt->Support/WarehouseLoaded; private borrow approval,
+partial/full repayment, cumulative ALLOC, provenance, RCV80+owed10/ALLOC90, limits.
+Delayed ORIGINAL cost retry still writes old task/deletes replacement OLD lock;
+same-ID R2task/lock remain exact. No claim old code drained/became safe.152generated
+JS parsed via vm.SourceTextModule. Prior1348and original63checks reused, no inflated
+new full-suite total. Follow-up bootstrap wrapper generation did not change core.
+
+Source native blocker: fresh dashboard Edit Site opened51427363,49->83->94->98then
+remained98during independent table work. No refresh/URL variant/old51427279retry.
+Source7original backends plus added Buyer/Catalogue sources/relays not native-read.
+staffAuth.web has NO repository source: retained dependency nativeVerified=false,
+businessIsolationVerified=false. Never invent it or infer absence of business writes.
+Browser handed over; async user asked to open FMCGMALAYSIA Studio to code panel,
+not MASTER, no repeated refresh if also stuck. Background code/tests continued.
+No source code installation or claim editoravailable. Known loading, not security
+denial. Native metadata/indexes/recovery/capacity/allwriter/sideeffect checks and
+paired release/public tests remain. Real invoice/physical dispatch OFF.
+
+Private ROOT screenshot files (not GitHub/Pages payload):
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-nct-orders-created-20261024.jpg
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-account-index-private-20261024.jpg
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-source-four-collections-20261024.jpg
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/r2-source-editor-loading98-20261024.jpg
+Intended master-twelve overview screenshot was NOT saved after helper failed;
+do not cite a nonexistent file.16table receipts above came from native snapshots.
+
+Four states: code local isolated candidate only; Pages unchanged/remote66bb853
+(two specifically allowed technical files only); Wix16emptytables created, no new
+code or publication/ACTIVE/control; public no new Buyer/split/borrow/Loaded test.
+Do not ask user to order until true new path is ready. No new push/dispatch.
+Prepare exact code-only export; broad release consent does not export arbitrary
+private handoff/CSV/screenshots or waive seven-policy deployment action boundary.
+Heartbeat remainsPAUSED. This is NOT an assertion every independent task is done.

@@ -1,0 +1,54 @@
+2026-10-23 — DEFAULT-CLOSED PUBLIC CURRENT READS, OFFLINE CANDIDATE
+
+Recovery:dd0a870 pushed PR220; production original paths stilld447185/runtime32b812c.
+Objective: do not advertise new current quantities/relations on ACTIVE mode alone
+when mandatory original stock writers have not all passed native/cutover acceptance.
+
+Concrete evidence
+Actual generated stockCurrentRead.web.js used query-only current-read-barrier which
+checked exact control, pending and before/after generation/version but dropped the
+writerBuild. Neither native reader construction nor barrier required server writer
+coverage. ACTIVE metadata alone could thus return product/detail and relation data
+while the other current root write/read gates remained deliberately CLOSED.
+No real ACTIVE manipulation was performed; counterexamples use existing generated
+web source in VM plus INMEMORY original auth/query adapter, not native records.
+New six cases: default-empty coverage, missingRECEIPT, wrongBORROWINGbuild, missing
+writerBuild, Purchase relation with index/ACTIVE but no coverage, build change during
+same generation/version. Prepatch11tests5pass6fail275.2476ms; all six wrongly returned
+ok:true. Browser verified/canRead/coverage flags are included as untrusted input.
+
+Minimal correction
+- Read barrier accepts only private server construction coverage (defaultEMPTY),
+  carries writerBuild into before/after snapshot, and requires ACTIVE plus every
+  existing mandatory writer verified for the same nonempty string build before
+  quantity/relation queries. Auth still happens before native control/data reads.
+- Generated root owns writerCoverage=Object.freeze({}); both Warehouse list/detail
+  and Purchase relation readers receive it. Mandatory writer list generated directly
+  from the existing stock-admission module, not a second handwritten business list.
+- Public handler signatures, original roles, builtin read auth suppression, private
+  field filtering, paged detail/counts and unknown/real-zero presentation unchanged.
+  No mutation capability, history fallback, new schema or actual coverage grant.
+- Other original Purchase borrow read root already has its own same-build all-writer
+  guardedProtocol; bounded source check found it present, no extra patch needed.
+
+25affectedpass0fail1072.9445ms: actual new read gateway, pure stock service, install
+graph and original legacy read guard. Existing positive fixtures explicitly inject
+complete server coverage OFFLINE only; shipped root remainsEMPTY. Full current suite
+1166pass0fail27660.2358ms, includes unsafe witnesses. Exact read bundle/install rebuilt
+and checked;38targets94dependencies20UNVERIFIEDcategories. Shared commands runtime104
+unchanged. Protected production diff empty, diff--check clean. No UI/native/permission/
+CMS/Pages/Wix action. Neither this guard nor test count establishes safe legacy drain.
+
+Related packing semantic audit (no packing-code changes in this increment)
+Read current packing context/model/operations/hold mapping and reuse existing1160
+full/23composition outputs. Same company/customer/currency lines, task-total old/new
+max pending holds, COMPLETED keepsLoaded and releases only unshipped scheduling,
+no physical debit, unchanged customer claims and Warehouse acknowledgement all
+remain. No unsupported simplification or new test rerun just for a summary.
+Spec lines136/150 explicitly leave slice cancellation while other quantities held
+as a separate extension; do not silently relax whole-task legacy guards or block
+Loaded-only release on implementing new invoice/physical-exit/slice-cancel features.
+
+Native INIT/TYPE and Wix support-contact consentsPENDING/no repeat/run/send. Migration
+APPLY/drain/schema/capacity/recovery/G3/shadow/cutover stillOPEN; CoverageEMPTY/ACTIVEOFF,
+realinvoice/physicalexitOFF. No inventory Pages/Wix/public release or user acceptance.

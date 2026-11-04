@@ -1,0 +1,52 @@
+2026-10-22 Scoped lifecycle integration candidate
+
+readScopedCurrentProduct now queries complete paged ACTIVE product positions/claims/
+relationships, exact requested stable source IDs (CLOSED/null are distinct), exact
+requested zero claims, and nonzero dispatched claim provenance only per loaded source.
+Correction alone adds source-indexed repaid relationships, including CLOSED. Requires
+private control.transferIndexVersion2; no migration marker is installed by this code.
+Transfer writes now include lenderSourceId/replacementSourceId/repaidQuantity alongside
+participantTaskIds and exact details. Read validates indexes against relation facts.
+Purchase outstanding read accepts verified index1/2; v2 source contradictions reject.
+
+Original Warehouse/Purchase authority produces server-owned source/claim/correction scope.
+v2 protocol passes private before-control into readSnapshot callback. Concrete v2 receipt/
+borrowing readers choose scoped path, not silent fallback. v1 retains tested proof reader.
+Original state builder selects current source/task closure, uses exact claim dispatch
+counters and existing task.stockDispatchedCumulative; tasks with dispatch from unloaded
+CLOSED sources retain dispatchedOutsideScope, so customer fulfilment is not understated.
+Missing task.stockCounterSchema2/stockCommitVersion/cumulative fields rejects. No history
+fallback initialization. New product initial checkpoint still needs intake/migration path.
+
+Product delta helper is now used by actual candidate mapper. Full v1 still checks full
+summary parity; scoped v2 checks source subset plus exact product before-image and applies
+only deltas, preserving unrelated stock/isolation. New procurement source may appear only
+with zero physical balance (regression caught and fixed, no original workflow changed).
+Operational scoped bounds are policy, NOT measured production capacity. Complete paging
+and total changes/duplicates/errors refuse before stock preparation.
+
+v2 dispatch composition now appends exact normalized NCTTasks/NCTTasks1 cumulative counter
+writes to the SAME plan as physical outflow, preserving original PO/other task fields.
+Requires exact old counter/generation/schema, no separate side write or decrement/replay.
+This is a pure plan adapter; actual authenticated shipment gateway not yet installed.
+Support real invoice creation remains OFF; original invoiced-dispatch contract untouched.
+
+Tests: read-only scope with10000unrelated CLOSED rows, correction scoped CLOSED reload,
+stable zero claims/absent sources, corruption/missing index/pagination failures. Concrete
+v2 original-auth/PO Purchase approve-return-approve then original Warehouse receipt and
+once-only replay passes, same2POs and physical200, claimsA100/B100. v1 same scenario kept.
+Task dispatch counter plan tests preserve immutable invoice/source guards.
+Full current candidate456pass0fail4188.3604ms after exact generated runtime/read/preview
+rebuilds. Earlier delta integration exposed zero-source addition scope and inherited
+optional reviewRequired compatibility; corrected both, original backend unchanged.
+
+Legacy bootstrap now blocks STOCK_PLAN_MANIFEST v2 authority when current rows are absent,
+instead of attempting to regenerate stock from incomplete legacy projection. Initial v2
+counter/claim/task parity, raw task version initialization, schema/index verification and
+safe production recovery still require implementation and platform acceptance.
+
+Generated command runtime25modules, read gateway and preview exact source updated. No Wix
+sync, CMS writes/deletes, elevation, mode switch, Pages dispatch or publication. ACTIVE OFF.
+Remaining all actual original writers/read routes, initializer/current task projections,
+file callback recovery, capacity/time/real platform evidence, migration/shadow parity,
+Purchase halo/approval UI actual connection, focused final diff and four release phases.

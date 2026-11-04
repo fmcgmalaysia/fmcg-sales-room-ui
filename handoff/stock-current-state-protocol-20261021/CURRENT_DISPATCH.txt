@@ -1,0 +1,53 @@
+2026-10-22 — existing immutable shipment-ledger dispatch to current physical stock
+
+Recovery production d447185; previous isolated candidate464aa9b. No production source,
+Wix, permissions, invoices/business data changed. Real Support invoice remains disabled.
+
+Scope distinction
+This adapter handles the EXISTING CUSTOMER_SHIPMENT_CHANGED invoice/dispatch ledger
+compatibility path. It does NOT invent a new direct packing-list->dispatch route or enable
+real Support invoicing. New packing-list outflow lifecycle/source attribution remains open.
+Loaded alone is never an inventory deduction; only validated actual dispatch does that.
+
+Implementation
+dispatchReserved pure transition consumes only the invoice's exact quantity from its own
+task-total reservation, preserves other invoice/packing holds, checks distinct task/source
+quantities, deducts exact current ownership/onHand and increments source+task dispatched.
+Receipt accepted, free/isolated stock, PO identity and borrowing debt do not change.
+Final balance/coverage validates remaining holds fit remaining customer claims. Existing
+unheld dispatch test helper retained; no pretending all task holds are zero to dispatch.
+
+prepareShipmentDispatch checks original INVOICED prior revision/company/customer/id,
+immutable full lines/source/cost and invoice snapshot, actual DISPATCHED event/reference,
+task order/sourceLine/product identity, then maps original event plus current rows.
+priorShipment must come from original readCustomerShipments authoritative context. It is
+not a browser complete/permission assertion. Existing original dispatch authorization,
+version/reason/reference and financial/packing exception checks must run BEFORE this plan.
+
+warehouse-dispatch-plan composes all products under ONE existing plan/commit: complete,
+distinct product/task coverage, one full original shipment event, no partial per-product
+dispatch; aggregate30write/180000byte proof bounds checked, not production scale claims.
+
+Evidence
+Original customer-fulfilment + candidate tests12pass208.4876ms. Final changed model/plan/
+dispatch/Sales/allocation/preview suite54pass352.7895ms; overlap not summed. Preview bundle
+rebuilt from same model. Existing original ledger parses REQUESTED->INVOICED->DISPATCHED
+fixture.100physical/80claimed/20free, own invoice40 + other hold10 ->60physical/40claimed/
+20free/other hold10. Borrower dispatch30 leaves relation30unrepaid, donor currentclaim50
+and borrower future PO unreceived. Loaded/invoiced-only event, altered invoice/source,
+missing reservation/product fail. Interrupted second-product update blocks reads, same
+prepared request resumes/replays once:120physical and one original dispatch event.
+One initial targeted search named a nonexistent customerFulfilmentOperations.js; actual
+customerFulfilment.js was found from same result and read once. No blind retry/whole scan.
+Actual token/cache/Credit UNKNOWN, no real billing or latency claim.
+
+Remaining release gates
+Actual server dispatch authority/endpoint/replay identity and old-vs-new packing lifecycle
+still need implementation. Current-product fact builder reconstructs old dispatched source
+provenance correctly, but all receipts/allocations/Sales/packing/exception/PO writers and
+readers must share fence/current state before ACTIVE. Existing unfenced writers unchanged.
+No global archived block used; completed borrower remains dispatch-complete with Purchase
+outstanding transfer visible until replacement. Real UI/halo/read view still not integrated.
+Capacity/closed-record lifecycle, recovery, migration/shadow/ACTIVE and full public QA open.
+Four statuses: isolated code candidate only; Pages unchanged; Wix unchanged; new public
+borrowing/current-stock workflow unavailable/unverified. No new real borrowing test asked.

@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-02",
+  "objective": "Display unknown Buyer CBM honestly without affecting order quantity, amount or actions",
+  "build": "20261102-buyer-cbm-display-v1",
+  "baseline": "5194ed3",
+  "scope": "buyer-cbm-display-only",
+  "resources": 101,
+  "changed": [
+    "buyer-room.html"
+  ],
+  "unchanged": 100,
+  "wix": {
+    "file": "buyer-room/wix/buyer-room-page.js",
+    "change": "one version reference",
+    "readback": "EXACT",
+    "publish": "published and live"
+  },
+  "tests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "approval": "User explicitly approved retaining four formal Buyer version references",
+  "gpCloseout": {
+    "commit": "a675979",
+    "wix": "published and live",
+    "public": "Purchase twice and Support read verified, NCT Activity3029 stable"
+  },
+  "status": "FOUR_TECHNICAL_RELEASE_STAGES_COMPLETE_USER_TEST_PENDING",
+  "codeVersion": "87ceb29",
+  "pages": {
+    "run": 41404913644,
+    "number": 328,
+    "result": "success",
+    "resources": 101,
+    "matched": 101
+  },
+  "permissions": {
+    "temporaryRemoved": true,
+    "originalBranches": 7,
+    "tags": 0
+  },
+  "public": {
+    "entry": "Sales Room customer workspace -> ENTER BUYER ROOM",
+    "customer": "TESTING801 assisted admin access",
+    "build": "20261102-buyer-cbm-display-v1",
+    "result": "Buyer opens normally; Order Form genuine zero and Track Orders known CBM verified; original two-invoice history preserved",
+    "errors": 0,
+    "limits": "Positive quantity with missing CBM tested in exact-build synthetic Chrome candidate and automated scenarios; no live order values changed. Independent customer Google login was not tested or modified."
+  }
+}

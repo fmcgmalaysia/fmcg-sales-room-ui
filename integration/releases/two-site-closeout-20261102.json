@@ -1,0 +1,164 @@
+{
+  "date": "2026-11-02",
+  "codeVersion": "e0ac43154091bf989324b29812dbfaa2ad136a70",
+  "build": "20261102-two-site-closeout-v1",
+  "baseline": "28bcf9a9827b8e68eef4517ad1e4d4a49e79a7ce",
+  "pages": {
+    "status": "SUCCESS_105_EXACT",
+    "id": 41366014243,
+    "number": 325,
+    "attempt": 1,
+    "conclusion": "success",
+    "sha": "e0ac43154091bf989324b29812dbfaa2ad136a70",
+    "url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41366014243",
+    "resourcesExact": 105,
+    "changedResources": 18
+  },
+  "deploymentRules": {
+    "temporaryRule": 65163463,
+    "status": "REVOKED_ORIGINAL7_RESTORED",
+    "branches": [
+      "feat/master-gp-margin",
+      "feat/nct-order-submit-room6",
+      "feat/purchase-adjustment-cost",
+      "fix/purchase-approved-ux-layout",
+      "main",
+      "style/purchase-icons-spacing-feedback",
+      "style/purchase-table-track"
+    ],
+    "tags": 0
+  },
+  "wix": {
+    "status": "BOTH_SITES_PUBLISHED_LIVE_20_DRAFTS_MATCHED",
+    "files": [
+      {
+        "site": "MASTER",
+        "destination": "backend/customerAccountLedger.js",
+        "afterSha256": "62e5b310539a44764070e6870b7db667ae037a326e72650bd6728b33175633ae"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerDebtor.js",
+        "afterSha256": "c822652c001a38cc68d89fcdecad8779ce03cd2c457476e0db8cb57e1757eab7"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerFulfilment.js",
+        "afterSha256": "d77f2037804540991cc2ef21ca6d4428150c443ba58be44cb5b3d34ce93359fe"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerFulfilmentService.js",
+        "afterSha256": "0f5b8f47b156550e0796b725810e40d305f750cf080ad1b3a272123d71dfbe96"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerTransactionHistory.js",
+        "afterSha256": "da14aab27274da796f184ccb24e2d8080a30e71a07e8acada44d2bf4909d2d79"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/supportDocuments.js",
+        "afterSha256": "37ded654a49d0f404522e84a17405e0a5f778d548072c651014370ececdbf628"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/supportInvoice.js",
+        "afterSha256": "a0157020b32956cdc9d63c42b2378e1cc156cdf0cbcdaeff3e2a9cfa2fa7a20d"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerFulfilmentGateway.js",
+        "afterSha256": "2baf60c04bc4de8677378b78a13155ae673a9bf1bd033135c87425379cfe4ae8"
+      },
+      {
+        "site": "MASTER",
+        "destination": "account-department-page.js",
+        "afterSha256": "f72d1dd64b2176d0bc99e07b9418081e0fb824f387443a7a6f9f51f112e047cd"
+      },
+      {
+        "site": "MASTER",
+        "destination": "support-department-page.js",
+        "afterSha256": "dd9f445d8e298dfe8d798bac4170525aa34b77f2b967da7a2c838406387be042"
+      },
+      {
+        "site": "FMCG",
+        "destination": "Buyer Room page",
+        "afterSha256": "25a578a6f780b244a11489a2078814e41b315cb1e358de02341df36a3a7d8a19"
+      },
+      {
+        "site": "FMCG",
+        "destination": "Sales Room page",
+        "afterSha256": "76e73b54c9406ff108890999a828de0ecf3fc8d232205a0d3cd5985de04c5d5a"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/customerInvoicePayments.js",
+        "afterSha256": "6422ed6627bf536c6a8a501b64e6b4337b4e3def47c63cc40bf29977f4c60ca9"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/salesDepartmentProjection.js",
+        "afterSha256": "f39b8d9449c9485aaa70b30ea13ba4a44332a203112f068e53ac0e1e46045431"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/salesDepartmentService.js",
+        "afterSha256": "0295612ef7c2b2be1c0742576bcd86e06ad33d46d08021445c06500992db04f0"
+      },
+      {
+        "site": "FMCG",
+        "destination": "backend/salesDepartment.web.js",
+        "afterSha256": "73a8ff0e40acb3b31c65a50898d30eb17a8af6028a9abcd54a478790db4fd263"
+      },
+      {
+        "site": "FMCG",
+        "destination": "backend/salesDepartmentAccess.js",
+        "afterSha256": "9fd890a4ba9fba5c24c232036efd49cf5106652662a7bf5e8edd3467c8821d19"
+      },
+      {
+        "site": "FMCG",
+        "destination": "backend/salesDepartmentClient.js",
+        "afterSha256": "1c40540410a02181b5720619a3b44cf9cb32a53abb60d54ca05f97b153f2f356"
+      },
+      {
+        "site": "MASTER",
+        "destination": "backend/purchaseMarginRefresh.js",
+        "afterSha256": "7fac338458fe3b3680dc4c2648006a6ec6ad088a7530052c65fae93195cd7fa8"
+      },
+      {
+        "site": "FMCG",
+        "destination": "Catalogue page",
+        "afterSha256": "52e71f67a4ebce0215fbaf18e2bcf207fc10cee022ad82d9a7b5f67b75673d8c"
+      }
+    ],
+    "masterDraftsRecheckedAfterReopen": 14
+  },
+  "tests": {
+    "pass": 418,
+    "fail": 0,
+    "skipped": 0,
+    "files": 43
+  },
+  "public": {
+    "status": "PENDING_VISUAL_FUNCTIONAL_ACCEPTANCE_NEW_EMBED_SRC_CONFIRMED",
+    "observations": [
+      "Sales and Finance actual iframe src use20261102-two-site-closeout-v1",
+      "Initial Sales refresh Wix STATIC_FILE_NOT_FOUND",
+      "Clean visit mounts new iframe but tool viewport stays blank; not accepted as a pass"
+    ]
+  },
+  "appsScript": {
+    "version": 11,
+    "changed": false
+  },
+  "businessWrites": {
+    "newReceipts": 0,
+    "newLoaded": 0,
+    "newActualPayments": 0,
+    "stockLosses": 0,
+    "cmsDeleted": 0
+  },
+  "mainMerged": false,
+  "userAcceptance": "PENDING"
+}

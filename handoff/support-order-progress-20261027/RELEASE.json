@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-27",
+  "codeCommit": "d114871f2bc6c19d33896762741db1168a9b59f8",
+  "build": "20261027-support-order-progress-v2",
+  "pullRequest": 227,
+  "pages": {
+    "runId": 40482562518,
+    "conclusion": "success",
+    "resources": 99,
+    "exact": 99,
+    "changed": 7,
+    "unchanged": 92
+  },
+  "temporaryPermission": {
+    "branch": "feat/support-order-progress-20261027",
+    "removed": true,
+    "remainingBranches": 7,
+    "remainingTags": 0
+  },
+  "wix": {
+    "site": "MASTER",
+    "publishedLiveReceipt": true,
+    "nativeExactFiles": 5
+  },
+  "verification": {
+    "sharedRegressionPassed": 145,
+    "localSupportAndWarehouseUi": "passed",
+    "publicDisplay": "PASSED_DISPLAY_ONLY",
+    "businessMutations": 0,
+    "publicBuild": "20261027-support-order-progress-v2",
+    "support": "Formal fresh page shows All Dates/date filter and 11 task columns with authenticated data and Warehouse message entries.",
+    "warehouse": "Formal fresh Delivery Tasks shows editable Expiry inputs; DOM minimum1900-01-01 and maximum9999-12-31 confirmed.",
+    "consoleErrors": 0,
+    "businessAcceptance": "Pending user test; no business write performed by agent during final verification."
+  },
+  "expiryCorrection": "Save on blur or Enter; no save while typing; newly entered years before1900 rejected. Existing history remains readable. No agent business correction."
+}

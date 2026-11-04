@@ -1,7 +1,8 @@
-import { getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
+import wixRealtimeFrontend from 'wix-realtime-frontend';
 
 let assistCustomerId = '';
 function getAssistCustomerId() {
@@ -15,31 +16,107 @@ $w.onReady(async function () {
   const frame = $w('#html1');
   const downloadButton = $w('#downloadExcelButton');
   assistCustomerId = getAssistCustomerId();
+  // Only files returned by the authorized history read may leave the embed.
+  const historyFiles = new Map();
+  function openHistoryFile(message) {
+    const saved = historyFiles.get(message.company);
+    if (!saved || saved.requestId !== message.requestId || saved.customerId !== message.customerId) return;
+    const file = saved.documents?.find(file => file.fileId === message.fileId && file.ready === true);
+    if (!file || !/^[A-Za-z0-9_-]{10,200}$/.test(file.fileId) || file.url !== 'https://drive.google.com/file/d/' + file.fileId + '/view') return;
+    wixLocationFrontend.to(file.url);
+  }
+  let historyCustomerId = '';
   let frameReady = false;
+  let activeBuyerRoomView = 'my';
+  let selectionDownloadUrl = '';
+  let activeDownloadExpiresAt = 0;
+  let downloadPreparation = null;
+  let selectionDataKey = '';
 
-  // This legacy Wix control used to sit above the embedded workspace and
-  // intercept clicks. My Selection now uses the proven in-workspace button.
   downloadButton.disable();
   downloadButton.hide();
-  downloadButton.label = '';
+  downloadButton.link = '';
 
+  function updateDownloadButtonVisibility() {
+    if (activeBuyerRoomView === 'my' && selectionDownloadUrl) {
+      downloadButton.enable();
+      downloadButton.show();
+    } else downloadButton.hide();
+  }
+
+  async function prepareSelectionDownload(force = false) {
+    if (!force && selectionDownloadUrl && activeDownloadExpiresAt > Date.now() + 30000) {
+      updateDownloadButtonVisibility();
+      return;
+    }
+    if (downloadPreparation) return downloadPreparation;
+    const preparingKey = selectionDataKey;
+    downloadPreparation = (async () => {
+      const result = await createBuyerSelectionDownload(assistCustomerId);
+      if (!result?.ok || !result.url || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be prepared.');
+      if (preparingKey !== selectionDataKey) return;
+      selectionDownloadUrl = result.url;
+      activeDownloadExpiresAt = Number(result.expiresAt);
+      downloadButton.link = selectionDownloadUrl;
+      downloadButton.target = '_self';
+      updateDownloadButtonVisibility();
+    })();
+    try { await downloadPreparation; }
+    catch (error) {
+      selectionDownloadUrl = '';
+      downloadButton.hide();
+      console.error('Buyer Room Excel link preparation failed', error);
+    } finally { downloadPreparation = null; if (preparingKey !== selectionDataKey) prepareSelectionDownload(); }
+  }
+
+  downloadButton.onClick(() => {
+    if (!selectionDownloadUrl || activeDownloadExpiresAt <= Date.now()) {
+      console.warn('Excel link expired. Please click again after it is prepared.');
+      prepareSelectionDownload(true);
+      return;
+    }
+    // The native button follows its prebound link. Refresh only the short-lived URL.
+    setTimeout(() => prepareSelectionDownload(true), 1500);
+  });
+
+  let workspaceRefreshPromise = null, workspaceReadEpoch = 0, workspaceRefreshQueued = false;
+  function refreshWorkspace(afterWrite = false) {
+    if (afterWrite) { workspaceRefreshQueued = true; workspaceReadEpoch++; }
+    if (!workspaceRefreshPromise) workspaceRefreshPromise = (async () => {
+      do { workspaceRefreshQueued = false; await loadWorkspace(); } while (workspaceRefreshQueued);
+    })().finally(() => { workspaceRefreshPromise = null; if (workspaceRefreshQueued) return refreshWorkspace(); });
+    return workspaceRefreshPromise;
+  }
   async function loadWorkspace() {
+    const readEpoch = ++workspaceReadEpoch;
     let result;
     try { result = await getBuyerWorkspace(assistCustomerId); }
     catch (error) {
+      if (readEpoch !== workspaceReadEpoch) return;
       if (assistCustomerId) {
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Error: ' + (error?.message || String(error)) });
         throw error;
       }
       throw error;
     }
+    if (readEpoch !== workspaceReadEpoch) return;
     if (!result?.ok || !result?.context?.customerId || result.context.status !== 'ACTIVE') {
       if (assistCustomerId) {
         frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ok: false, message: 'Assisted Access Could Not Be Verified.' });
       } else wixLocationFrontend.to('/buyer-room-login');
       return;
     }
+    if (historyCustomerId !== result.context.customerId) { historyFiles.clear(); historyCustomerId = result.context.customerId; }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
+    // Quantity and its audit fields do not appear in the My Selection Excel.
+    const currentSelectionKey = JSON.stringify((result.myList || []).map(({ orderQtyCtn, qtyEditedAt, qtyEditedBy, updatedAt, lastEditedBy, ...selection }) => selection));
+    if (currentSelectionKey !== selectionDataKey) {
+      selectionDataKey = currentSelectionKey;
+      selectionDownloadUrl = '';
+      activeDownloadExpiresAt = 0;
+      downloadButton.disable();
+      downloadButton.link = '';
+    }
     const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
     frame.postMessage({ type: 'BUYER_ROOM_DATA', data: {
       customerId: result.context.customerId,
@@ -56,24 +133,50 @@ $w.onReady(async function () {
       orders: result.orders || [],
       ordersNextCursor: result.ordersNextCursor || ''
     }});
+    prepareSelectionDownload();
   }
 
+  let quantitySavesInFlight = 0, quantityRefreshNeeded = false;
   async function runAction(action, successMessage, actionName, itemId = '') {
+    const quantityAction = actionName === 'quantity';
+    if (quantityAction) quantitySavesInFlight++;
     try {
       const result = await action();
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, itemId: result?.itemId || itemId, action: actionName, ok: true, message: successMessage });
-      await loadWorkspace();
+      if (quantityAction) quantityRefreshNeeded = true;
+      else await loadWorkspace();
     } catch (error) {
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
+    } finally {
+      if (quantityAction && --quantitySavesInFlight === 0 && quantityRefreshNeeded) {
+        quantityRefreshNeeded = false;
+        try { await refreshWorkspace(true); }
+        catch (error) { console.error('Buyer quantity saved; workspace readback failed', error); }
+      }
     }
   }
 
   frame.onMessage(async (event) => {
     const message = event.data || {};
-    if (message.type === 'BUYER_ROOM_VIEW_CHANGED') return;
+    if (message.type === 'CUSTOMER_HISTORY_FILE_OPEN') { openHistoryFile(message); return; }
+    if (message.type === 'BUYER_TRANSACTION_HISTORY_REQUEST') {
+      if (!['NCT','GHR'].includes(message.company) || typeof message.requestId !== 'string' || message.requestId.length > 100) return;
+      const pending = {requestId:message.requestId, customerId:historyCustomerId};
+      historyFiles.set(message.company, pending);
+      try { const result = await getBuyerTransactionHistory(message.company, assistCustomerId);
+        if (historyFiles.get(message.company) === pending && result.company === message.company && result.customerId === historyCustomerId && result.customerId === pending.customerId) pending.documents = result.documents;
+        frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:true, company:message.company, requestId:message.requestId, result}); }
+      catch (error) { frame.postMessage({type:'BUYER_TRANSACTION_HISTORY_RESULT', ok:false, company:message.company, requestId:message.requestId, error:error?.message || 'Transaction history could not be loaded.'}); }
+      return;
+    }
+    if (message.type === 'BUYER_ROOM_VIEW_CHANGED') {
+      activeBuyerRoomView = message.view;
+      updateDownloadButtonVisibility();
+      return;
+    }
     if (message.type === 'BUYER_ROOM_READY' || message.type === 'BUYER_ROOM_REQUEST_DATA') {
       frameReady = true;
-      try { await loadWorkspace(); }
+      try { await refreshWorkspace(); }
       catch (error) { console.error('Buyer Room data failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
       return;
     }
@@ -104,20 +207,6 @@ $w.onReady(async function () {
     if (message.type === 'BUYER_ROOM_NOTIFICATIONS_READ') {
       try { await markBuyerAccountNotificationsRead(message.eventIds || [], assistCustomerId); await loadWorkspace(); }
       catch (error) { console.error('Buyer Room notification update failed', error); }
-      return;
-    }
-    if (message.type === 'BUYER_ROOM_EXPORT' || message.type === 'BUYER_ROOM_EXPORT_REQUEST') {
-      try {
-        const result = await createBuyerSelectionDownload(assistCustomerId);
-        if (!result?.ok || !result.token || !Number.isFinite(Number(result.expiresAt))) throw new Error('Excel download could not be started.');
-        const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-        const downloadUrl = `${siteBaseUrl}/_functions/buyerSelectionExcel?token=${encodeURIComponent(result.token)}`;
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: true });
-        wixLocationFrontend.to(downloadUrl);
-      } catch (error) {
-        console.error('Buyer Room Excel export failed', error);
-        frame.postMessage({ type: 'BUYER_ROOM_EXPORT_RESULT', ok: false, message: error?.message || 'Excel download could not be started.' });
-      }
       return;
     }
     if (message.type === 'BUYER_ROOM_SAVE_QTY') {
@@ -158,40 +247,32 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
+      let result;
       try {
-        const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '');
-        let downloadFile = null;
-        let downloadError = '';
-        try {
-          const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId, `${siteBaseUrl}/buyer-room`);
-          downloadFile = { fileName: String(download.fileName || '').trim(), base64: String(download.base64 || '').trim() };
-          if (!downloadFile.fileName || !downloadFile.base64) throw new Error('Order Excel response was incomplete.');
-        } catch (error) {
-          downloadError = error?.message || 'Order Excel could not be prepared.';
-          console.error('Buyer order Excel preparation failed', error);
-        }
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadReady: Boolean(downloadFile), downloadError, message: result.warning || 'Order request sent to Sales Room.' });
-        wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadReady: Boolean(downloadFile), downloadError })
-          .then(lightboxResult => {
-            if (lightboxResult?.action === 'download' && downloadFile) {
-              frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', ...downloadFile });
-            }
-          })
-          .catch(error => console.error('Order Received lightbox could not be opened', error));
-        await loadWorkspace();
+        result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
+        if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
+        return;
       }
+      frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
+      try { await refreshWorkspace(true); }
+      catch (error) { console.error('Buyer order confirmed; workspace readback failed', error); }
     }
   });
+  wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, (message) => {
+    if (!frameReady || message?.payload?.type !== 'ORDER_QUANTITY_CHANGED') return;
+    frame.postMessage({ type: 'BUYER_ROOM_ORDER_REFRESH' });
+    refreshWorkspace().catch(error => console.error('Buyer order realtime refresh failed', error));
+  }).catch(error => console.error('Buyer order realtime subscription failed', error));
 
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98';
-  try { await loadWorkspace(); }
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261104-buyer-order-success-v1';
+  try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
-  setInterval(() => { if (frameReady && wixWindowFrontend.rendering.env === 'browser') loadWorkspace().catch(() => { if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }); }, 15000);
+  // Visible-frame polling is the only periodic workspace refresh authority.
+  setInterval(() => { if (activeDownloadExpiresAt && activeDownloadExpiresAt < Date.now() + 60000) { downloadButton.disable(); downloadButton.link = ''; prepareSelectionDownload(true); } }, 30000);
 });
 

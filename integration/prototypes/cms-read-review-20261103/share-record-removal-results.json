@@ -1,0 +1,17 @@
+{
+  "scope": "OFFLINE_COUNTEREXAMPLE_NO_PRODUCTION_WRITES",
+  "scenario": "Transport-only save applies; RESULT write fails; a later quantity revision succeeds; original request is retried.",
+  "baseline": {
+    "variant": "CURRENT_BASELINE",
+    "originalRetryError": null,
+    "originalResultRecords": 1,
+    "currentQuantity": 210
+  },
+  "candidate": {
+    "variant": "IN_MEMORY_REMOVE_IDENTICAL_SHARE_EVENT",
+    "originalRetryError": "Supplier allocations changed while saving.",
+    "originalResultRecords": 0,
+    "currentQuantity": 210
+  },
+  "decision": "Do not delete identical share events alone: current recovery uses their operation identity. No production change is proposed by this probe."
+}

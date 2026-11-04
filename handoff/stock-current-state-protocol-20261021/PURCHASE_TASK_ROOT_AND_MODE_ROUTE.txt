@@ -1,0 +1,76 @@
+2026-10-22 — original Purchase task root, paged tables and server-mode route candidate
+
+Objective: connect already-tested EDIT/PLAN/PO/ADD_SOURCE/AVERAGE_COST/QTY/REORDER
+commands to actual original imports and current protocol, not new business rules.
+Recovery originald447185/runtime32b812c, candidatea53fbce. Same framework/Astra decision
+reused; only task dependencies inspected. Original production files still exact.
+
+Original native evidence: purchaseOperations.web authorizes actual staff before its
+same request journal; customerFulfilmentService.fulfilmentStore.all already performs
+full original pagination. getPurchaseWorkspace refreshes GP cache, so it is NOT used
+as a private current task read. taskEditVersion and original operations/projectors
+remain validators. No alternate customer/stock/financial authority introduced.
+
+Implemented candidate-only
+1. SDK normalizeListedRow reuses exact existing field codec, company scope, system-
+   metadata stripping and stockCommitVersion mapping. No N+1 SDK read of every
+   already-listed row. Requires migrated version for mutable rows. Only the exact
+   reserved own company protocol lock with owner+attempt/no business action/details
+   may normalize without version; does NOT grant lock ownership/removal. Real SDK
+   conditional writes and attempts unchanged. Lock normalization was needed because
+   native original list reads include _updatedDate while exact conditional reads do
+   not; comparing unlike metadata would incorrectly refuse the same owned lock.
+2. createCurrentPurchaseTables reuses ORIGINAL paged all() once per five original
+   tables. Same company mutable orders/tasks/POs require versions and exact codec;
+   global SharedSuppliers unchanged. Pre-ACTIVE immutable legacy journal entries
+   remain original JSON snapshots without rewriting/stamping fake versions/company.
+   Duplicates, missing arrays, foreign journal/current rows and native Date mismatch
+   refuse rather than silently omit business facts. This preserves original nonstock
+   history reads; NOT a claim that the entire system never reads historical data.
+3. Generated stockCurrentBorrow.web root adds savePurchaseTasksCurrent with real
+   original imports, paired display capability2, private table reader and strict
+   current-only task dispatcher. Empty coverage still closes all actual changes.
+   No getPurchaseWorkspace/margin refresh, elevation/init/mode write. Same real
+   Purchase grant before stock access and every command/replay. Unsupported original-
+   disabled SPECIAL or currently-unconnected commands cannot fall back from here.
+4. Existing candidate Wix page relays current SAVE messages with original UUID,
+   input/build/generation and bounded progress. Browser actor/coverage not forwarded.
+   Malformed current metadata still reaches current refusal, never old page apply.
+   Stripping only explicit overlays gives exact original page. NOT synchronized.
+5. createCurrentPurchaseSaveRouter + minimum generated purchaseOperations.web
+   wrapper gate the OLD public entry too. Actual server control chooses mode, not
+   presence/absence of browser metadata. ACTIVE routes even missing metadata to the
+   current refusal path; no error/unsupported command/permission retry falls back.
+   Only known LEGACY/no-current-form/no-pending can retain original apply. Missing,
+   corrupt, SHADOW or MAINTENANCE control blocks. Original actual staff authorization
+   stays before control read; original legacy branches/timing/error handling exact
+   when overlay stripped. Candidate requires valid control before installation.
+
+Verification: full current681pass0fail6681.087ms; runtime75modules33exports. Includes
+new native-import-root EDIT/REORDER fixtures, both-company table normalization/router,
+original direct public wrapper ACTIVE missing-metadata test, old-branch byte comparison,
+current relay identity/progress, no-per-row SDK calls and exact-only lock exception.
+All are offline Node/VM/native API stubs, NOT real SDK/member grants/RPM/visual acceptance.
+First harness failures were missing __dirname/native binding/migrated order fixtures;
+corrected harness, not production permission. Actual-owned-lock metadata mismatch
+required the narrow adapter boundary above. No claim that mock grants equal live grants.
+Existing diagnostic SDK copies refreshed mechanically to exact adapter/hash dependency;
+Admin-only entries unchanged. No live probe/rerun, temporary lock create/delete or renewed
+historical deletion authority. Shared SDK fault/regression checks remain passing.
+
+IMPORTANT OPEN RELEASE GATES
+- Mode router alone does NOT prove cutover safety. A legacy request admitted just
+  BEFORE maintenance/activation must be quiesced/proven terminated while common fence
+  protects transition. Actual control initialization/maintenance lifecycle and unknown
+  late legacy/external callbacks remain unimplemented/unverified; no ACTIVE switch.
+- Native Date schema for other mutable fields, actual SDK field/nested JSON order and
+  member permissions, read/write fanout/RPM/latency/large valid receipts remain gates.
+- Full writer installation (remaining quantity/shortage/allocation routes, margin/
+  intake/warehouse legacy preparation/photos/files etc.), current workspace ownership/
+  progress/GP and source/packing reload durability, bootstrap/recovery/shadow/G3 remain.
+- No actual live-vs-repository full fresh capture/sync was done this backend-only
+  continuation; that remains mandatory before installing any candidate original module.
+- Candidate mode-routing/public task root NOT installed/published. Existing production
+  control/behaviour unchanged, all-writer coverage empty, ACTIVE OFF. Four release
+  stages: code still partial candidate; Pages unchanged; Wix unchanged; public feature
+  unavailable/unverified. No main merge, permission change or business data written.

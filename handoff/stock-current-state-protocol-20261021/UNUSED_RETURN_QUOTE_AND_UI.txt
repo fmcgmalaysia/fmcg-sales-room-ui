@@ -1,0 +1,57 @@
+2026-10-22 UNUSED BORROW RETURN — CURRENT QUOTE + EXISTING DIALOG CANDIDATE
+
+Scope: complete Purchase-only unused-return preflight and action without equating
+outstanding debt with available physical cartons. Original borrowing/return rules
+unchanged. Protected production d447185/runtime32b812c; preceding pushede9e31e4.
+
+Backend/relay
+- purchase-borrow-return-options.cjs validates a complete actual current state and
+  quotes maxima by running SAME returnUnusedBorrow rules. Quantity remaining30 may
+  have returnable0. Unknown/missing/broken state throws, never becomes0.
+- Uses actual Purchase authority inside same read barrier, scoped source/claim/
+  relation closure +current raw task counters. Original matching PO, invoice locks,
+  packing/legacy holds, provenance and conservative already-dispatched protection
+  remain. Preliminary auth is staff-only, not a duplicated outside-barrier context.
+- Read quote creates no real event, lock, claim update or operation manifest. Save
+  reauthorizes/revalidates original BORROW_RETURN via existing fenced factory.
+- Private borrowing gateway, generated real-import web root and candidate Wix relay
+  expose bounded RETURN_OPTIONS contract. Original current client read registry now
+  receives matching result; request/company/metadata identity remains intact.
+- Default ALL-writer coverage remains EMPTY and blocks actionable reads/saves;
+  unverified GHR schema still refuses. No new SDK elevation/permission/live call.
+
+UI
+- Optional compact unused-return section in existing person relation detail, current
+  page links only. Select real linked borrower/lender rows and borrowed/replacement
+  PO (stable source ID fallback, no fabricated labels), then check actual quantity.
+- Validate exact relation/participants/sources/remaining/build/generation and fresh
+  product revision. Show approved quantity+reason only after confirmed positive max.
+ 0returnable explicitly preserves debt; never clears halo or labels debt repaid.
+- Submit through original api.mutate PURCHASE_SAVE_REQUEST BORROW_RETURN. Original
+  UUID/cache/progress/retry owns commit, not a second client request loop. Check all
+  edits/parked drafts/pending/cost state before quote and submission. Batch context
+  disabled; completed original workspace readback determines final halo/colours.
+- Page/dialog replacement cancels async applicability. Double submit disabled,
+  network errors retain selection for explicit retry. Inherit original font/styles,
+  inline fields only, no extra popup. No browser visual QA claimed.
+
+Evidence actually run
+8new assertions scenarios:2pure quote,5UI VM and1actual relay; extended existing
+real-import root test drives actual current model/plan with OFFLINE mock coverage:
+borrow30 ->quote30 ->Purchase return10 ->one ACTIVE relationship remaining20,
+returned10, same request replay once, no PO clone/physical stock deduction. Actual
+permission/SDK store mocked (NOT real Wix authority/field roundtrip acceptance).
+Original complete model tests retain future receipt repayment; return is not that.
+Existing unchanged original Purchase fixture regressions63still pass against overlay.
+Focused81pass607.7359ms; full641pass0fail6195.4128ms. Runtime71modules29exports.
+Protected production diffd447185 exact; diff-check clean aside normal CRLF notices.
+Actual Credits UNKNOWN. No live data/schema/delete, no current mode toggle, no
+Pages dispatch/Wix install/publish/main merge. Support real invoice remainsOFF.
+
+Still OPEN, not hidden by this progress
+Actual installation/root wiring of remaining writers and workspaces/department reads;
+Purchase outstanding workbench separate from archived tasks; client forced-reload
+durability; legacy Warehouse v2/photos/files, reserved-loss/disposal attribution;
+3CMS schemas/indexes/type/order SDK roundtrip, production SDK permissions/authority;
+initialization/recovery/migration/shadow/capacity; exact branch deployment permission
+then4release phases. Current original public UI has no new active borrowing controls.

@@ -1,0 +1,57 @@
+2026-10-22 Concrete allocation and Warehouse Ready CURRENT compatibility
+
+Existing allocation-authority reused, not duplicated. New explicit currentPlan mode
+defers original allocation validation until private current scope/counters are loaded.
+Adds bounded target demand IDs and exact zero-claim reads, retaining original Purchase
+auth, source PO/receipt, customer/product/demand, packing and invoice guards. Current
+factory requires patched module ALLOCATION_CURRENT_VIEW_VERSION2; absent proof marker
+rejects at construction. v1 default behaviour unchanged.
+
+build-allocation-view-candidate mechanically copies original plannerAllocation with
+one prior-view expression seam + capability export. Only private server-generated
+workspace.stockAllocationView CURRENT_V2 selects current cumulative ownership targets;
+ordinary original workspace still uses original journal history. No synthetic stored
+events, unrestricted customer reservation release or staff permission change.
+Original operationId is insertion-order-sensitive: currentAllocationContext targets
+must keep ORIGINAL taskId/orderId/sourceLineId/customerId/quantity property order.
+First new no-op test exposed that ordering mismatch; fixed view field order instead
+of changing original hash/journal. No-op post-borrow now rejected, true free5assignment
+accepted, pending borrow3 not cleared. Concrete v2 original-auth -> current read ->
+original validation -> mapper -> segmented fence test confirms one allocation event,
+physical15unchanged, free5->0, Bclaim3->8, relation3unrepaid, replay once/generation once.
+
+CURRENT Warehouse Ready context explicitly requires requested task IDs and all states
+scoped lifecycle2. Retains source/claim closure privately for other-customer quantities,
+uses exact task/source dispatch counters, not permanent shipment replay. Drops unrelated
+old workspace tasks only from this explicitly scoped view; original full context path
+and its history-provenance checks unchanged. projectCurrentWarehouseReady requires
+WAREHOUSE_CURRENT_READY_VERSION2 and outputs only server-selected requested tasks.
+Actual selection must include active Support instructions AND any real legacy unshipped/
+orphaned loaded work; do not silently drop such work when binding the final gateway.
+
+build-warehouse-ready-candidate adds narrow CURRENT-only counter seams/capability to
+original warehousePreparation; default quantity expressions and all original event,
+version, prepared/loaded and permission code retained. Candidate ordinary output matches
+original serialized signatures/versions. Scoped test with no old shipment history: A
+borrow30, dispatch20 => Aready10/Bready70, dispatched20; unpatched old calculator falsely
+shows B50, proving the required guarded seam. No extra outgoing task is generated for B
+when only A is requested; B source data is private calculation context, not a new task.
+First legacy-output equality assertion crossed VM object prototypes; normalized both
+to original serialized transport representation, no quantity/version assertion removed.
+
+Latest full current candidate479pass0fail4936.8706ms, exact generator checks included.
+Mechanical command runtime32modules/11exports now includes createCurrentAllocationSave
+and projectCurrentWarehouseReady. No public webMethods/elevation/ACTIVE switch added.
+Original production directories still match d447185; candidate source copies are NOT
+permission to overwrite full live Wix modules. Fresh live/repo comparison and minimal
+line patches remain mandatory at final sync. No CMS mutation/delete or publication.
+
+NEXT actual binding work: Sales delegated source authentication must remain original
+customerFulfilmentGateway shared-secret boundary (SOURCE_SALES/member), NOT Master
+employee login or a browser-supplied staff object. Current Sales split/demand adapter
+already exists; add concrete current save/read composition using that original trusted
+staff/customer scope. Purchase source/task/plan, packing, dispatch, exceptions and other
+identified whole-row writers still need actual routes. Counter initialization apply/
+missing-version capability, production staging/prepare/batching/time measurement,
+migration/shadow, actual halo relation/approval popup and retained-request UI, final
+focused diff/proof review and four release stages remain. ACTIVE OFF; no real test yet.

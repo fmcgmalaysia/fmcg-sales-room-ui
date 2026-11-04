@@ -1,0 +1,37 @@
+{
+  "objective": "Escape closes existing Buyer dialogs/menus without undefined function error",
+  "branch": "fix/buyer-escape-close-room5",
+  "recoveryTag": "verified/buyer-quantity-arrows-20261006",
+  "recoveryCommit": "8e093fbd70ae0a84b79ef50f1d61fb4bd88c8652",
+  "marker": "2026-10-06-buyer-escape-close-room5-v1",
+  "productionChanges": [
+    "Remove one undefined closeQuoteDetail call",
+    "Update build marker"
+  ],
+  "noOtherCodeChange": true,
+  "liveBefore": {
+    "marker": "2026-10-06-buyer-quantity-arrows-room5-v1",
+    "scriptsMatch": true,
+    "stylesMatch": true,
+    "wixPageMatchesVerified": true,
+    "wixPageHash": "1d984fbbf238f22c12eaa2244e4b2fb50a0a8acacfe9529200b5a714ebe6a7a0"
+  },
+  "reproduction": "ReferenceError after submit/reduction close, before exports/pending-order reset",
+  "tests": {
+    "passed": 21,
+    "covered": [
+      "Escape reaches every existing close handler",
+      "In-flight order preserved",
+      "Quantity drafts and non-Escape keys preserved",
+      "Enter/blur/up-down quantity saving",
+      "Visible quotation reads",
+      "Direct/native order download handlers"
+    ],
+    "inlineScriptSyntaxPassed": true
+  },
+  "codeStatus": "Complete",
+  "pagesStatus": "Not deployed",
+  "wixStatus": "Unchanged and read back; not republished",
+  "publicStatus": "Pending deployment",
+  "permissionStatus": "Main-only Pages; temporary branch permission not yet authorized"
+}

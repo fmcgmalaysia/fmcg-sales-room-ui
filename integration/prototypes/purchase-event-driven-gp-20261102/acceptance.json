@@ -1,0 +1,78 @@
+{
+  "status": "GP_MINIMAL_PUBLISHED_PUBLIC_READ_VERIFIED",
+  "date": "2026-11-02",
+  "objective": "Display GP from existing financial inputs without IO, cache initialization or GP Activity; preserve original SI save confirmation.",
+  "recovery": {
+    "runtimeStatic": "5194ed3",
+    "publicEvidenceRecord": "cdf767e",
+    "gpModuleSha256": "7fac338458fe3b3680dc4c2648006a6ec6ad088a7530052c65fae93195cd7fa8"
+  },
+  "existingPaths": {
+    "purchaseRead": "purchaseWorkspace.web.js -> readPurchaseMargins (pure existing-input arithmetic)",
+    "purchaseWrites": "Original confirmed business handlers; no GP follow-up",
+    "invoiceSave": "customerFulfilmentService.js -> existing post-INVOICE cache confirmation",
+    "demandChanges": "Original ADJUST and Desk cancellation",
+    "shortload": "Original resolver; no GP follow-up"
+  },
+  "rules": [
+    {
+      "when": "Before PO",
+      "gp": "Blank"
+    },
+    {
+      "when": "Purchase reads",
+      "gp": "Pure arithmetic, saved applicable order FX and confirmed source costs; immutable issued SI slices",
+      "rates": false,
+      "writes": false
+    },
+    {
+      "when": "Business saves",
+      "gp": "Original business handlers only; no added GP follow-up"
+    },
+    {
+      "when": "SI save",
+      "gp": "Original confirmation and locks retained; no independent GP event"
+    },
+    {
+      "when": "Warehouse fills missing carton CBM",
+      "gp": "Existing single capture retained; new Desk reuses warehouseCbm resolver"
+    }
+  ],
+  "failurePolicy": {
+    "confirmedBusinessSave": "Original business receipts unchanged; there is no post-PO GP cache stage.",
+    "unconfirmedGp": "Missing required cost/rate or in-flight source lock yields unknown, never stale cache or invented zero.",
+    "locks": "Retain GP/COST/Finance locks, source-version checks and invoice immutability.",
+    "legacy": "Preserve verified existing PO/invoice values; no read-triggered backfill, dummy PO edit, deletion or invented source margin."
+  },
+  "acceptance": [
+    "Pre-PO read has null GP, zero FX and GP store calls",
+    "First PO computes once; repeated reads add no events",
+    "Real price/discount/FOC/source changes update only affected current values",
+    "Partial coverage: valid supplier GP remains distinct from unknown customer aggregate",
+    "No cross-company or other-customer changes",
+    "Borrow/repay stock and journal writes remain byte/behavior protected",
+    "Partial SI retains issued cost/rate; open quantity alone changes",
+    "Pure document/payment/date/message/reorder produce no GP work",
+    "Cache failure retains business result identity and hides unconfirmed GP",
+    "Same-request retry does not duplicate GP or business records",
+    "Concurrent amendments/invoice and COST/GP locks remain protected",
+    "Old financial snapshots are not rebuilt or rewritten by opening a page"
+  ],
+  "limits": [
+    "Limited formal Purchase and Support read checks, not a capacity test or new real SI/PO operation.",
+    "Buyer follow-up87ceb29 has four technical release stages complete; positive missing-spec case exercised in exact-build synthetic preview only."
+  ],
+  "initialization": {
+    "execution": "One NCT task ALREADY_INITIALIZED with original GP unchanged; other21 not applied. No further initialization.",
+    "authority": "Maintenance draft export retracted; existing row/event preserved."
+  },
+  "tests": {
+    "final": 212,
+    "efficiency": 6,
+    "failed": 0
+  },
+  "codeVersion": "a675979",
+  "pages": "Existing101/101 static unchanged",
+  "wix": "Six exact readbacks, published and live",
+  "public": "Purchase Refresh twice, GP visible, Support read normal, NCTActivity3029 stable"
+}
