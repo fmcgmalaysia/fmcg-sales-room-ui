@@ -22,10 +22,19 @@
     "orderReceivedWorkbook": "BYTE_IDENTICAL"
   },
   "stages": {
-    "code": "COMPLETE_LOCAL",
+    "code": "22f30ab_GITHUB_SYNCED_PR339",
     "pages": "UNCHANGED_101_RESOURCES_NO_DEPLOYMENT_REQUIRED",
-    "wix": "TWO_DRAFTS_VERIFIED_NOT_PUBLISHED",
-    "public": "NOT_VERIFIED"
+    "wix": "TWO_DRAFTS_VERIFIED_PUBLISHED_AND_LIVE",
+    "public": "USD_SGD_NATIVE_DOWNLOADS_AND_NATIVE_LINK_XML_PASS_EXCEL_CLICK_AWAITING_USER"
+  },
+  "publicEvidence": {
+    "USD": {"bytes":8066,"F2":"USD / EA","G2":"USD / CTN","A3A4":"Native external hyperlinks matching displayed URLs"},
+    "SGD": {"bytes":8067,"F2":"SGD / EA","G2":"SGD / CTN","F3":3.33,"F4":0.49,"nativeLinksIncludingA1":3},
+    "formulas": "Original IF(blank EA or price, blank, EA*price) retained in G3/G4",
+    "imageTarget": "Actual exported AJAX URL opened directly and displayed correct product image; this is not an Excel-click test",
+    "desktopAttempt": "Old Excel window no longer present; Downloads app approval timed out. No protection/security settings changed, no alternate desktop control used.",
+    "nativeClick": "Awaiting one user click on A3 in the newly downloaded workbook",
+    "buyerPage": "User-fresh801 identity/selection normal; reload and802 embed intermittently blank while native outer Excel export works. Wix suspense/fallback logs observed on801, not asserted as root cause or repaired."
   },
   "limits": [
     "Excel/default-browser decides tab placement; no promise to force a new tab",
