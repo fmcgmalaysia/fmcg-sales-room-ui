@@ -28,10 +28,20 @@
     "limits": "Offline read counts and local UI behavior, not measured production latency or CMS capacity reduction"
   },
   "stages": {
-    "code": "COMPLETE_LOCAL",
-    "pages": "NOT_DEPLOYED",
-    "wix": "DRAFT_EXACT_NOT_PUBLISHED",
-    "public": "NOT_TESTED"
+    "code": "76f63ae_GITHUB_SYNCED",
+    "pages": "RUN340_41767035215_SUCCESS_101_HASHES_MATCH",
+    "wix": "EXACT_READBACK_PUBLISHED_AND_LIVE",
+    "public": "PASS_801_NEW_BUILD_ONE_CLICK_REVIEW_CLEAR_DRAFT_NATIVE_EXCEL_ORIGINAL_REQUEST_LINES_PRESERVED"
+  },
+  "publicAcceptance": {
+    "customer": "TESTING 801 assisted staff LAW",
+    "review": "Two 100-carton rows, one click, auto-review after saves; 200 CTN / USD2604 / CBM4.3000",
+    "cleanup": "Review cancelled, both unsent quantities cleared and saves confirmed; no final Send Request",
+    "export": "Link unchanged through edits and clearing; native click saved XLSX7495bytes, both expected product barcodes present",
+    "userConfirmation": "User explicitly confirmed Excel download succeeded; freeze native selection download only",
+    "errors": 0,
+    "permissions": "TEMPORARY_RULE_REMOVED_ORIGINAL7_RESTORED",
+    "protectedRequestLines": "Original two 100-carton Request Sent lines remain"
   },
   "deferred": [
     "Old QD publication rows and stale Sales drawer summary",
