@@ -37,11 +37,14 @@ export const getCatalogueSelectionState = webMethod(
     return Object.freeze({
       ok: true,
       customerId: context.customerId,
-      companyName: context.companyName,
-      actorName: context.actorName,
-      selectedProductIds: selectedItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
+      selectedProductIds: [...new Set(selectedItems.flatMap((item) => {
+        const data = selectionPayload_(item);
+        return [data.productId, ...(Array.isArray(data.productAliases) ? data.productAliases : [])];
+      }).filter(Boolean))],
       activeSelectedProductIds: activeItems.map((item) => selectionPayload_(item).productId).filter(Boolean),
-      selectedBarcodes: selectedItems.map((item) => selectionPayload_(item).unitBarcode).filter(Boolean),
+      selectedBarcodes: [...new Set(selectedItems.flatMap((item) => {
+        const data = selectionPayload_(item); return [data.unitBarcode, data.originalUnitBarcode];
+      }).filter(Boolean))],
       counts,
       total: activeItems.length,
       selectionLimit: context.selectionLimit
@@ -60,20 +63,41 @@ export const addCatalogueSelection = webMethod(
     const title = context.customerId + '|' + unitBarcode;
     const selectionId = selectionId_(context.customerId, unitBarcode);
     const now = new Date().toISOString();
+    let customerItems;
     let item = await getSelectionById_(selectionId);
     if (!item) {
       const legacy = await wixData.query(SELECTION_COLLECTION).eq('title', title).limit(2).find({ suppressAuth: true, consistentRead: true });
       if (legacy.items.length > 1) throw new Error('Duplicate selection records require admin review.');
       item = legacy.items[0] || null;
     }
+    if (!item) {
+      // A source-data correction must not create another selection for the same product.
+      customerItems = await selectionItemsForCustomer_(context.customerId);
+      const matches = customerItems
+        .filter(record => normalize(selectionPayload_(record).productId) === normalize(product._id)
+          || (Array.isArray(selectionPayload_(record).productAliases) && selectionPayload_(record).productAliases.includes(normalize(product._id))));
+      if (matches.length > 1) throw new Error('Duplicate selection records require admin review.');
+      item = matches[0] || null;
+      if (!item) {
+        for (const record of customerItems) {
+          const data = selectionPayload_(record);
+          if (data.removed || upper(data.qdSyncStatus) === 'READY' || !sameReferenceFamily_(data, product)) continue;
+          const resolved = await resolveSelectionProduct_(record, context);
+          if (normalize(resolved.product._id) !== normalize(product._id)) continue;
+          if (item) throw new Error('Duplicate selection records require admin review.');
+          item = { ...record, title, payload: JSON.stringify({ ...data, ...linkedSelectionFields_(data, resolved) }) };
+        }
+      }
+    }
 
-    if (item && normalize(item.title) !== title) {
+    if (item && normalize(item.title) !== title && (normalize(selectionPayload_(item).productId) !== normalize(product._id)
+      || normalize(selectionPayload_(item).customerId) !== context.customerId)) {
       throw new Error('Selection identity collision. Admin review is required.');
     }
 
     if (item) {
       const existing = selectionPayload_(item);
-      if (existing.removed && (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
+      if (existing.removed && (customerItems || await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length >= context.selectionLimit) {
         throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before restoring this one.`);
       }
       if (upper(existing.qdSyncStatus) === 'READY' && normalize(item.customerId) === context.customerId && item.removed === false) {
@@ -96,7 +120,7 @@ export const addCatalogueSelection = webMethod(
         { suppressAuth: true }
       );
     } else {
-      const activeCount = (await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length;
+      const activeCount = (customerItems || await selectionItemsForCustomer_(context.customerId)).filter(record => !selectionPayload_(record).removed).length;
       if (activeCount >= context.selectionLimit) throw new Error(`My Selection is at its ${context.selectionLimit}-product limit. Remove an item before adding another.`);
       const payload = {
         version: 1,
@@ -107,6 +131,7 @@ export const addCatalogueSelection = webMethod(
         packingSize: normalize(product.description),
         mainCategory: normalize(product.mainCategory),
         imageUrl: imageUrl_(product.image),
+        productReference: productReference_({}, product),
         quoteStatus: 'RFQ',
         selectedAt: now,
         selectedByType: context.actorType,
@@ -151,6 +176,7 @@ export const getSalesRoomQuoteSignals = webMethod(
     customers.forEach((customer) => {
       const customerId = normalize(customer.customerId);
       if (customerId) byCustomer[customerId] = {
+        selectedItemCount: 0,
         awaitingQuoteItemCount: 0,
         quotedItemCount: 0,
         failedQuoteItemCount: 0,
@@ -168,7 +194,7 @@ export const getSalesRoomQuoteSignals = webMethod(
       if (!allowed.has(normalize(payload.customerId))) return;
       const customerId = normalize(payload.customerId);
       if (!byCustomer[customerId]) byCustomer[customerId] = {
-        awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0, failedRouteItemCount: 0,
+        selectedItemCount: 0, awaitingQuoteItemCount: 0, quotedItemCount: 0, failedQuoteItemCount: 0, failedRouteItemCount: 0,
         pendingRouteItemCount: 0, routingItemCount: 0, readyRouteItemCount: 0,
         routeStatus: 'READY', routeError: '', qdFileId: ''
       };
@@ -179,6 +205,7 @@ export const getSalesRoomQuoteSignals = webMethod(
         if (cleanupStatus === 'FAILED') byCustomer[customerId].failedQuoteItemCount += 1;
         return;
       }
+      byCustomer[customerId].selectedItemCount += 1;
       if (syncStatus === 'READY' && status === 'VIEW QUOTE') byCustomer[customerId].quotedItemCount += 1;
       else if (['PENDING', 'ROUTING', 'READY', 'FAILED'].includes(syncStatus) && status === 'RFQ') byCustomer[customerId].awaitingQuoteItemCount += 1;
       if (syncStatus === 'FAILED') {
@@ -234,6 +261,17 @@ export const processSalesRoomSelectionQueue = webMethod(
   }
 );
 
+// Scheduled internally by Wix, not exposed as a customer web method.
+// Uses the same queue and writer when no customer or salesperson page is open.
+export const retryCatalogueSelections = async () => {
+  const customers = (await allQueryItems_(wixData.query(CUSTOMER_COLLECTION).eq('qdStatus', 'READY').limit(1000)))
+    .filter(customerRoutingAllowed_);
+  const allowed = new Set(customers.map(customer => normalize(customer.customerId)));
+  const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('removed', false)
+    .hasSome('qdSyncStatus', ['PENDING', 'FAILED', 'ROUTING']).limit(1000));
+  return routeQueuedSelections_(rows, customers, allowed, false, 100);
+};
+
 // The red Sales Room bubble is also a manual "route now" control. This keeps
 // automatic routing, while giving staff an immediate, customer-specific retry.
 export const routeSalesRoomCustomerSelections = webMethod(
@@ -252,29 +290,16 @@ export const routeSalesRoomCustomerSelections = webMethod(
       throw new Error('This customer is not assigned to you.');
     }
     const rows = await allQueryItems_(wixData.query(SELECTION_COLLECTION).eq('customerId', normalizedCustomerId).limit(1000));
-    const queue = rows.filter((item) => {
-      const payload = selectionPayload_(item);
-      const status = upper(payload.qdSyncStatus);
-      const routingStartedAt = Date.parse(payload.qdLastAttemptAt || '') || 0;
-      return !payload.removed
-        && (['PENDING', 'FAILED'].includes(status) || (status === 'ROUTING' && routingStartedAt < Date.now() - 60000));
-    }).slice(0, 5);
     const routing = rows.filter((item) => {
       const payload = selectionPayload_(item);
       return !payload.removed && upper(payload.qdSyncStatus) === 'ROUTING'
         && (Date.parse(payload.qdLastAttemptAt || '') || 0) >= Date.now() - 60000;
     }).length;
-    const results = [];
-    for (const item of queue) {
-      const result = await routeOneSelection_(item, customer);
-      results.push(result);
-      if (!result.ok) break;
-    }
-    if (results.length) await notifySalesRoomSelectionChanged_();
+    const { results } = await routeQueuedSelections_(rows, [customer], new Set([normalizedCustomerId]), true);
     return Object.freeze({
       ok: results.every((result) => result.ok),
       processed: results.length,
-      ready: results.filter((result) => result.ok && !result.routing).length,
+      ready: results.filter((result) => result.ok && !result.routing && !result.skipped).length,
       failed: results.filter((result) => !result.ok).length,
       routing,
       results
@@ -282,7 +307,13 @@ export const routeSalesRoomCustomerSelections = webMethod(
   }
 );
 
-async function routeQueuedSelections_(items, customers, allowedCustomerIds) {
+function customerRoutingAllowed_(customer) {
+  return normalize(customer?.qdFileId) && upper(customer.qdStatus || 'READY') === 'READY'
+    && upper(customer.lifecycleStatus || customer.customerStatus) !== 'ARCHIVED'
+    && !['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(upper(customer.catalogueAccessStatus || customer.accessStatus || customer.customerStatus));
+}
+
+async function routeQueuedSelections_(items, customers, allowedCustomerIds, force = false, limit = 5) {
   const now = Date.now();
   const customerById = new Map(customers.map((customer) => [normalize(customer.customerId), customer]));
   const queue = items.filter((item) => {
@@ -293,24 +324,31 @@ async function routeQueuedSelections_(items, customers, allowedCustomerIds) {
     return allowedCustomerIds.has(normalize(payload.customerId))
       && !payload.removed
       && (['PENDING', 'FAILED'].includes(status) || (status === 'ROUTING' && routingStartedAt < now - 60000))
-      && retryAt <= now;
-  }).slice(0, 5);
+      && customerRoutingAllowed_(customerById.get(normalize(payload.customerId)))
+      && (force || retryAt <= now);
+  }).sort((a, b) => (Date.parse(selectionPayload_(a).qdLastAttemptAt || '') || 0)
+    - (Date.parse(selectionPayload_(b).qdLastAttemptAt || '') || 0)).slice(0, limit);
 
   const results = [];
   for (const item of queue) {
     const payload = selectionPayload_(item);
     const customer = customerById.get(normalize(payload.customerId));
     if (!customer || !normalize(customer.qdFileId)) continue;
-    const result = await routeOneSelection_(item, customer);
-    results.push(result);
-    if (!result.ok) break;
+    try { results.push(await routeOneSelection_(item, customer)); }
+    catch (error) { results.push({ ok: false, selectionId: normalize(item._id), error: normalize(error?.message || error) }); }
+    // Keep a timeout on one item from exhausting the whole web request.
+    if (Date.now() - now >= 18000) break;
   }
   if (results.length) await notifySalesRoomSelectionChanged_();
   return Object.freeze({ ok: true, processed: results.length, results });
 }
 
 async function routeOneSelection_(item, customer) {
+  item = await wixData.get(SELECTION_COLLECTION, normalize(item._id), { suppressAuth: true, consistentRead: true });
+  if (!item) throw new Error('Selection was not found.');
   const payload = selectionPayload_(item);
+  if (normalize(payload.customerId) !== normalize(customer.customerId)) throw new Error('Selection does not belong to this customer.');
+  if (item.removed || payload.removed) return Object.freeze({ ok: true, skipped: true, selectionId: normalize(item._id) });
   const status = upper(payload.qdSyncStatus);
   if (status === 'READY') return Object.freeze({ ok: true, idempotent: true, selectionId: normalize(item._id) });
   const lastAttemptAt = Date.parse(payload.qdLastAttemptAt || '') || 0;
@@ -329,6 +367,16 @@ async function routeOneSelection_(item, customer) {
     { suppressAuth: true }
   );
   try {
+    if (!payload.qdSyncedAt && !Number(payload.qdRow || 0)) {
+      const resolved = await resolveSelectionProduct_(item, customer);
+      Object.assign(routing, linkedSelectionFields_(payload, resolved));
+      routing.qdSyncStatus = 'ROUTING';
+      current = { ...current, title: normalize(payload.customerId) + '|' + routing.unitBarcode };
+      current = await saveSelectionRouting_(current, routing);
+      const saved = selectionPayload_(current);
+      if (current.removed || saved.removed || upper(saved.qdSyncStatus) === 'READY'
+        || saved.qdLastAttemptAt !== routing.qdLastAttemptAt) return Object.freeze({ ok: true, skipped: true, selectionId: normalize(item._id) });
+    }
     const sharedSecret = await getSecret(SECRET_NAME);
     const response = await postJson_(APPS_SCRIPT_ENDPOINT, {
       action: 'ADD_SELECTION',
@@ -337,12 +385,20 @@ async function routeOneSelection_(item, customer) {
       assignedStaffId: upper(customer.assignedStaffId),
       qdFileId: normalize(customer.qdFileId),
       wixMyListId: normalize(item._id),
-      unitBarcode: normalizeBarcode_(payload.unitBarcode)
+      unitBarcode: normalizeBarcode_(routing.unitBarcode)
     });
     if (!response.ok || !response.body?.ok) {
       throw new Error(response.body?.error || 'Quotation Desk selection sync failed.');
     }
     const result = response.body.result || {};
+    if (normalize(result.customerId) !== normalize(payload.customerId)
+      || normalize(result.wixMyListId) !== normalize(item._id)
+      || !Number.isInteger(Number(result.qdRow)) || Number(result.qdRow) < 7
+      || (result.unitBarcode && normalizeBarcode_(result.unitBarcode) !== normalizeBarcode_(routing.unitBarcode))
+      || ((routing.productId !== payload.productId || routing.originalUnitBarcode !== routing.unitBarcode)
+        && normalizeBarcode_(result.unitBarcode) !== normalizeBarcode_(routing.unitBarcode))) {
+      throw new Error('Quotation Desk did not confirm the selection row.');
+    }
     const ready = {
       ...routing,
       qdSyncStatus: 'READY',
@@ -351,26 +407,95 @@ async function routeOneSelection_(item, customer) {
       qdRow: Number(result.qdRow || 0),
       lastError: ''
     };
-    current = await wixData.update(
-      SELECTION_COLLECTION,
-      { ...current, qdSyncStatus: 'READY', payload: JSON.stringify(ready) },
-      { suppressAuth: true }
-    );
+    current = await saveSelectionRouting_(current, ready);
+    if (current.removed || selectionPayload_(current).removed) return Object.freeze({ ok: true, skipped: true, selectionId: normalize(item._id) });
     return Object.freeze({ ok: true, idempotent: Boolean(result.idempotent), selectionId: normalize(item._id), qdRow: ready.qdRow });
   } catch (error) {
     const failed = {
       ...routing,
       qdSyncStatus: 'FAILED',
-      qdNextRetryAt: new Date(Date.now() + 30000).toISOString(),
+      qdNextRetryAt: new Date(Date.now() + Math.min(900000, 30000 * 2 ** Math.min(5, routing.qdRouteAttempts - 1))).toISOString(),
       lastError: normalize(error?.message || error)
     };
-    await wixData.update(
-      SELECTION_COLLECTION,
-      { ...current, qdSyncStatus: 'FAILED', payload: JSON.stringify(failed) },
-      { suppressAuth: true }
-    );
+    const saved = await saveSelectionRouting_(current, failed);
+    if (upper(selectionPayload_(saved).qdSyncStatus) === 'READY') return Object.freeze({ ok: true, idempotent: true, selectionId: normalize(item._id), qdRow: Number(selectionPayload_(saved).qdRow || 0) });
     return Object.freeze({ ok: false, selectionId: normalize(item._id), error: failed.lastError });
   }
+}
+
+async function saveSelectionRouting_(item, routing) {
+  const latest = await wixData.get(SELECTION_COLLECTION, item._id, { suppressAuth: true, consistentRead: true });
+  if (!latest) throw new Error('Selection was not found.');
+  const data = selectionPayload_(latest);
+  if (normalize(data.customerId) !== normalize(routing.customerId)) throw new Error('Selection does not belong to this customer.');
+  if (latest.removed || data.removed || (upper(data.qdSyncStatus) === 'READY' && routing.qdSyncStatus === 'FAILED')
+    || (Date.parse(data.qdLastAttemptAt || '') || 0) > (Date.parse(routing.qdLastAttemptAt || '') || 0)) return latest;
+  const merged = { ...data };
+  ['unitBarcode', 'productId', 'productAliases', 'originalUnitBarcode', 'productReference', 'itemName', 'packingSize',
+    'qdSyncStatus', 'qdSyncedAt', 'qdNextRetryAt', 'qdRow', 'lastError', 'qdRouteAttempts', 'qdLastAttemptAt']
+    .forEach(key => { if (Object.prototype.hasOwnProperty.call(routing, key)) merged[key] = routing[key]; });
+  return wixData.update(SELECTION_COLLECTION, { ...latest, title: item.title, qdSyncStatus: merged.qdSyncStatus, payload: JSON.stringify(merged) }, { suppressAuth: true });
+}
+
+function referenceText_(value) { return normalize(value).replace(/\s+/g, ' ').toUpperCase(); }
+function productReference_(data, product = {}) {
+  const stored = data.productReference || {};
+  return {
+    imageUrl: imageUrl_(stored.imageUrl || data.imageUrl || product.image),
+    packingSize: normalize(stored.packingSize || data.packingSize || product.description),
+    eaPerCtn: Number(stored.eaPerCtn || product.ea || product.price || 0),
+    principle: normalize(stored.principle || product.principle)
+  };
+}
+function sameReferenceFamily_(data, product) {
+  const ref = productReference_(data);
+  return ref.imageUrl && referenceText_(ref.packingSize) === referenceText_(product.description)
+    && (!ref.eaPerCtn || ref.eaPerCtn === Number(product.ea || product.price))
+    && (!ref.principle || referenceText_(ref.principle) === referenceText_(product.principle));
+}
+function linkedSelectionFields_(data, resolved) {
+  const product = resolved.product;
+  return { productId: normalize(product._id), unitBarcode: normalizeBarcode_(product.barcode),
+    productAliases: [...new Set([...(Array.isArray(data.productAliases) ? data.productAliases : []), data.productId, product._id].filter(Boolean))],
+    originalUnitBarcode: data.originalUnitBarcode || data.unitBarcode,
+    productReference: resolved.reference,
+    itemName: normalize(product.name || data.itemName), packingSize: normalize(product.description || data.packingSize) };
+}
+async function resolveSelectionProduct_(item, customer) {
+  const data = selectionPayload_(item);
+  const query = await wixData.query(PRODUCT_COLLECTION).eq('_id', normalize(data.productId)).limit(1)
+    .find({ suppressAuth: true, consistentRead: true });
+  const original = query.items[0];
+  const reference = productReference_(data, original);
+  let product = original;
+  if (!product || upper(product.pointBaseStatus) !== 'ACTIVE' || !/^\d{6,18}$/.test(normalizeBarcode_(product.barcode))
+    || (upper(data.qdSyncStatus) === 'FAILED' && reference.imageUrl && reference.packingSize)) {
+    const secret = await getSecret(SECRET_NAME);
+    const response = await postJson_(APPS_SCRIPT_ENDPOINT, { action: 'RESOLVE_SELECTION_PRODUCT', sharedSecret: secret,
+      customerId: normalize(data.customerId), qdFileId: normalize(customer.qdFileId), wixMyListId: normalize(item._id), reference });
+    const resolved = response.body?.result;
+    if (!response.ok || !response.body?.ok || resolved?.kind !== 'SELECTION_PRODUCT_REFERENCE_V1'
+      || normalize(resolved.customerId) !== normalize(data.customerId) || normalize(resolved.wixMyListId) !== normalize(item._id)
+      || !/^\d{6,18}$/.test(normalizeBarcode_(resolved.unitBarcode))) {
+      throw new Error(response.body?.error || 'Product identity could not be verified. Internal recovery pending.');
+    }
+    const candidates = await wixData.query(PRODUCT_COLLECTION).eq('barcode', normalizeBarcode_(resolved.unitBarcode))
+      .eq('pointBaseStatus', 'ACTIVE').limit(2).find({ suppressAuth: true, consistentRead: true });
+    if (candidates.items.length !== 1) throw new Error('Corrected product sync is missing or ambiguous. Internal recovery pending.');
+    product = candidates.items[0];
+    if (referenceText_(product.name) !== referenceText_(resolved.itemName)
+      || referenceText_(product.description) !== referenceText_(resolved.packingSize)
+      || Number(product.ea || product.price) !== Number(resolved.eaPerCtn)
+      || referenceText_(product.principle) !== referenceText_(resolved.principle)) {
+      throw new Error('Corrected product sync does not match the source. Internal recovery pending.');
+    }
+    reference.eaPerCtn = Number(resolved.eaPerCtn);
+    reference.principle = normalize(resolved.principle);
+  }
+  const title = normalize(data.customerId) + '|' + normalizeBarcode_(product.barcode);
+  const collisions = await wixData.query(SELECTION_COLLECTION).eq('title', title).limit(2).find({ suppressAuth: true, consistentRead: true });
+  if (collisions.items.some(record => record._id !== item._id)) throw new Error('Corrected product already has another selection. Staff review is required.');
+  return { product, reference };
 }
 
 async function notifySalesRoomSelectionChanged_() {
@@ -433,7 +558,6 @@ async function resolveSelectionContext_(assistCustomerId) {
   if (upper(customer.qdStatus) !== 'READY' || !normalize(customer.qdFileId)) throw new Error('This customer Quotation Desk is not ready.');
   return {
     customerId: normalize(customer.customerId),
-    companyName: normalize(customer.title),
     qdFileId: normalize(customer.qdFileId),
     assignedStaffId: upper(customer.assignedStaffId),
     actorType,

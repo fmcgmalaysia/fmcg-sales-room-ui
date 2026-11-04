@@ -1,0 +1,67 @@
+{
+  "checks": [
+    {
+      "at": "2026-10-29T13:11:26.723Z",
+      "file": "plannerAllocation.js",
+      "method": "Wix Monaco anchored full-source regex: 1 of 1",
+      "sha256": "f76ee9e4563d8b1d35fb74586a917d81bda1b017d5c1485de9d92bb4f65b628f",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T13:21:20.880Z",
+      "file": "purchaseProjection.js",
+      "method": "Wix Monaco anchored full-source regex: 1 of 1",
+      "sha256": "0f09c3941513cad0ad260b79b9c49cc4630d90eb5b60750e35a08dfc27f813c6",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T13:30:23.854Z",
+      "file": "shipmentBatchAllocation.js",
+      "method": "Wix anchored full-source regex: 1 of 1",
+      "sha256": "2d65df0147e3fc9f693a6df4bc44fad5b73a7a090fa866a57d1a4383703c1aed",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T13:33:47.396Z",
+      "file": "salesOrderAdjustment.js",
+      "method": "Wix anchored full-source regex: 1 of 1",
+      "sha256": "d37ae8ba0483bdd9f0bf64265113f6f80b4ce4074bc6d6623df05662fcd3849a",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T13:43:25.113Z",
+      "file": "warehousePreparation.js",
+      "method": "Wix anchored full-source regex: 1 of 1",
+      "sha256": "90e55aa6892bee8dd703736b046b49a806294d03d7c17a51799b34796f4f8e28",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T13:56:58.556Z",
+      "file": "customerShipmentPlan.js",
+      "method": "Wix anchored full-source regex: 1 of 1",
+      "sha256": "96a2cf0b283d68877e3ab5a5edbce9d2aa45da6d2830e2ffdf3615690b9d4fb5",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T14:09:11.823Z",
+      "file": "purchaseOperations.js",
+      "method": "Full source copied using visible editor UI; exact normalized match",
+      "sha256": "b1c749a81e3130a4fa603aeb266cf4a8251f16a9c6f99352e464111692792fd9",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T14:10:52.554Z",
+      "file": "purchaseProgress.js",
+      "method": "Full source copied using visible editor UI; exact normalized match",
+      "sha256": "8b22e9a133b6b419af709c38be14d9cdbfc88300ac4aea2a6760a245622fb14c",
+      "writes": false
+    },
+    {
+      "at": "2026-10-29T14:38:04.764Z",
+      "file": "purchase-room-page.js",
+      "method": "Full source copied using visible editor UI; exact normalized match",
+      "sha256": "0b326eff574854f16be66d7b7b8cdb87da42c3886e966d4933eb0380ff4e43ef",
+      "writes": false
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "state": "LIVE_THREE_SHEETS_UNIFIED_ALL_EXISTING_PRODUCT_NUMBERS_PRESERVED",
+  "date": "2026-11-03",
+  "spreadsheet": "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
+  "goal": "Use the already-verified NONFOOD row-based sort calculation on FOOD and OTHERS while retaining each prefix and all existing product numbers.",
+  "changed": [
+    {
+      "sheet": "FOOD",
+      "sheetId": 1666933373,
+      "anchor": "Z2",
+      "before": "=ARRAYFORMULA(\n  IFERROR(\n    VSTACK(\n      \"\",\n      \"FO-\"&TEXT(\n        SEQUENCE(\n          MATCH(\n            2,\n            1/(LEN(TRIM(G3:G))>0),\n            1\n          )\n        ),\n        \"00000\"\n      )\n    ),\n    \"\"\n  )\n)",
+      "after": "=ARRAYFORMULA(IFERROR(IF(ROW(G2:G)=2,\"\",IF(LEN(TRIM(G2:G))>0,\"FO-\"&TEXT(ROW(G2:G)-2,\"00000\"),\"\")),\"\"))"
+    },
+    {
+      "sheet": "OTHERS",
+      "sheetId": 0,
+      "anchor": "Z2",
+      "before": "=ARRAYFORMULA(\n  IFERROR(\n    VSTACK(\n      \"\",\n      \"OT-\"&TEXT(\n        SEQUENCE(\n          MATCH(\n            2,\n            1/(LEN(TRIM(G3:G))>0),\n            1\n          )\n        ),\n        \"00000\"\n      )\n    ),\n    \"\"\n  )\n)",
+      "after": "=ARRAYFORMULA(IFERROR(IF(ROW(G2:G)=2,\"\",IF(LEN(TRIM(G2:G))>0,\"OT-\"&TEXT(ROW(G2:G)-2,\"00000\"),\"\")),\"\"))"
+    }
+  ],
+  "unchangedSheet": "NONFOOD anchor freshly verified exact; not rewritten",
+  "checks": {
+    "sheets": [
+      {
+        "sheet": "FOOD",
+        "formulaExact": true,
+        "existingProductsCompared": 4186,
+        "changed": [],
+        "errors": [],
+        "nonemptyNumbers": 4186
+      },
+      {
+        "sheet": "NONFOOD",
+        "formulaExact": true,
+        "existingProductsCompared": 2646,
+        "changed": [],
+        "errors": [],
+        "nonemptyNumbers": 2651
+      },
+      {
+        "sheet": "OTHERS",
+        "formulaExact": true,
+        "existingProductsCompared": 0,
+        "changed": [],
+        "errors": [],
+        "nonemptyNumbers": 0
+      }
+    ],
+    "quotation": {
+      "rows": 330,
+      "missingNames": 0,
+      "sortChanges": []
+    }
+  },
+  "totals": {
+    "existingNumberedProductsCompared": 6832,
+    "existingNumberChanges": 0,
+    "formulaErrors": 0,
+    "quotationSortChanges": 0
+  },
+  "additionalObservation": "NONFOOD now has2651numbers,including5new named rows beyond the2646protected baseline;the original2646numbers remain exact. Those source rows were not created or edited by this task.",
+  "scope": "Only FOODZ2 andOTHERSZ2 userEnteredValue updated atomically. Product data,barcodes,prices,images,styles,scripts,permissions andWix synchronization unchanged. No extra helper sheet,identity store,Pages orAppsScript deployment.",
+  "boundary": "Numbers remain positional sort values; moving/inserting product rows still changes their positions. No measured UI-latency claim or immutable productID migration.",
+  "recovery": "Restore the exact before formula in each respective Z2. Complete before values are stored locally in THREE_SHEET_SORT_BEFORE.json.",
+  "previousScope": "Customer history,actual file download andlong-termCMS remain paused until explicit user resume instruction."
+}

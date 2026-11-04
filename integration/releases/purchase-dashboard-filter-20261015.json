@@ -1,0 +1,35 @@
+{
+  "base": "3a4f33e",
+  "scope": "Dashboard filter style, date/icon and count presentation only",
+  "changes": [
+    "English-only Add supplier",
+    "Four compact view filters: All plus three original work queues, colored numeric pills; counts retain existing identities",
+    "Removed queue toolbar and search input",
+    "Dashboard directory positive task-total counts orange; actual source count unchanged",
+    "Shipment icon replaced with small outlined cargo ship and waves",
+    "ISO day values displayed as DD MMM YYYY, invalid/unknown dates retained; multiple dates preserved",
+    "Dashboard table headers reuse actual PO-ledger background #d2dfea"
+  ],
+  "semantics": "Tasks = data.tasks.filter(!archived), scoped by customer/supplier, including procurement sources. It is not a derived completion status. Do not rename to unfinished work or claim all these sources failed completion.",
+  "checks": {
+    "tests": 67,
+    "browser": {
+      "date": "28 Oct 2026",
+      "taskBubble": "rgb(255, 138, 0)",
+      "header": "rgb(210, 223, 234)",
+      "queueSearchCount": 0,
+      "addSupplier": "+ Add supplier"
+    },
+    "unchanged": {
+      "purchase-live/app.js": true,
+      "purchase-live/header.css": true,
+      "purchase-live/style.css": true,
+      "purchase-live/task-grid.js": true,
+      "purchase-live/task-grid.css": true,
+      "purchase-live/supplier-allocation.js": true
+    }
+  },
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=three-queues",
+  "chromeTab": "51425183",
+  "status": "Local candidate only, user review pending; no push, deployment, Wix writes, publish or merge."
+}

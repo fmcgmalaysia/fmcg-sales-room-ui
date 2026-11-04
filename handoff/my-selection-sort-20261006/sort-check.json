@@ -1,0 +1,12 @@
+{
+  "result": [
+    "chocolate25g",
+    "strawberry25g",
+    "50g",
+    "missingSort",
+    "missingBrand",
+    "nonfood"
+  ],
+  "inputUnchanged": true,
+  "searchUsesSameSort": true
+}

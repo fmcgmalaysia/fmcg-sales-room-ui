@@ -1,0 +1,55 @@
+2026-10-24 — Warehouse/stock native backend pre-install comparison
+Parent910861c; same framework/spec/ownership/computer-use skill reused. Existing
+Chrome3/Master51427123 only. Selected4files in actual Backend & Public list;
+visually confirmed each title/imports before complete editor select-all/copy.
+No code typing, Run, save, Publish, new window, native install or CMS action.
+
+Complete native CRLF/LF lengths and normalized SHA256:
+warehouseReceiving.web.js:5737/5684
+4644837b3125d5cfb8269109ea361f4c75dd2feaa3d8b12f8562fea1dea3c877
+warehousePreparation.js:15805/15664
+d5c731545e141462daa88d50737c753940a2c8f293c3c21a9e53b5eff9b88f91
+stockControl.web.js:628/617
+bc6805fd2328f8988b1cdfb0419f901bc3e75629250decfd03e4c032341904f7
+stockCardProjection.js:8559/8437
+1358a6681adf462bc6e60b935e7d51060af3e68e1ee580d012e07c99b7072300
+All4match exact repository integration/backend originals and corresponding MASTER
+beforeSha256 in current-install-manifest. Candidate AFTER code is NOT installed.
+
+Private LF copies preserved using apply_patch only after full editor hash equality
+under root handoff/stock-current-state-spec-20261021/private-evidence:
+master-warehouse-receiving-web-live-readback-20261024-install.txt
+master-warehouse-preparation-live-readback-20261024-install.txt
+master-stock-control-web-live-readback-20261024-install.txt
+master-stock-card-projection-live-readback-20261024-install.txt
+Copies checked against exact originals; not exported/Git-staged. This overnight
+set now covers10of23MASTERpatch before-images (prior3packing/3Purchase/these4),
+plus3department pages and1Public bridge. Not10installed modules, complete shared
+dependency parity, runtime acceptance or activation proof.13MASTERpatch originals,
+Source boundaries and additional shared dependencies remain; all20writer categories
+stayUNVERIFIED. Runtime119modules still local. Saved editor parity is not live.
+
+Protected consumers: actual Warehouse RECEIVE/CORRECT, photos/legacy preparation/
+CBM, packing release guard, PO/source/task identity, confirmed shipment/source
+coverage, inventory projection semantics and original staff/company isolation.
+Do not remove guards or give Purchase actualRCV authority. Installation stays paired.
+No application code changed; final1337pass30538.2904ms reused without test rerun.
+
+Local recording error: an unintended new31byte scratch file was created at
+C:/FMCG-WIX-LOCAL/worktrees/nct-order-submit-room6-20261021/unused.txt
+with content This file must not be created. It is outside actual task checkout.
+DeleteFile failed twice (absolute then relative path); read-only check confirms
+normal Archive attribute and newly created31byte content. Cause UNKNOWN. No further
+delete/tool bypass attempted. File remains; not user data, not runtime/deployment
+input, and not staged. Do not claim it was removed; any cleanup is separate from
+stock installation. Actual checkout production directories remain unchanged.
+
+No native/CMS/schema/index/permission mutation, diagnostic replay, new support
+message, Pages dispatch, publication, GitHub push/export, merge or user-data deletion.
+Current Wix ticket static confirmation was not polled again. No verified expert
+reply or safe old-request drain. Export approval unanswered; stopped Source/local
+paths untouched. Editor left on original stockCardProjection for continuation.
+Four states: candidate50212f4local / no Pages deployment by this turn / new Wix
+flow unsynchronized/unpublished / public new borrowing unavailable/unverified.
+ACTIVE and this round's real invoice/dispatch remainOFF. Independent work remains,
+heartbeat retained; no user action needed from these4comparisons.

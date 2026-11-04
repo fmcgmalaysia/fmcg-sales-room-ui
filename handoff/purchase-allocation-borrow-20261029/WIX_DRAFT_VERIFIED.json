@@ -1,0 +1,61 @@
+{
+  "at": "2026-10-29T15:13:26.704Z",
+  "build": "20261029-customer-allocation-v1",
+  "backend": [
+    {
+      "name": "plannerAllocation.js",
+      "sha256": "7181f0a03b050c69d4d10e6ec8d705650167fd4e8a2c83a9e78886b4f185df24",
+      "exact": true
+    },
+    {
+      "name": "purchaseProjection.js",
+      "sha256": "a0a0f4c0dbe0b3fbe298a7b527699851e614d4a44d1b7dd2a52495608d2a3f77",
+      "exact": true
+    },
+    {
+      "name": "salesOrderAdjustment.js",
+      "sha256": "680359ebb504ca3afc380f2a28797b51fe56ef0506506ed5c0f682a8be6f5c73",
+      "exact": true
+    },
+    {
+      "name": "shipmentBatchAllocation.js",
+      "sha256": "9ad5634473869c840b1246d617ea8cc0aa72ea6d3af964c80fff4a451f9f8d1d",
+      "exact": true
+    },
+    {
+      "name": "warehousePreparation.js",
+      "sha256": "f4df3c3da879b26a97fe48559d4fefd0a85abb70a4223fb9f4f043d34f96e2df",
+      "exact": true
+    },
+    {
+      "name": "customerShipmentPlan.js",
+      "sha256": "9e3775243dcd8f8c48c9cfda54aa987214bb13371812a8587d11b30d9279fdfa",
+      "exact": true
+    },
+    {
+      "name": "purchaseOperations.js",
+      "sha256": "dd6e2bc910d7cbd6dfa2a6684dc121d6734f0b512cf241560f4f8a14e5c346f4",
+      "exact": true
+    },
+    {
+      "name": "purchaseProgress.js",
+      "sha256": "5d0d838502f15b9f05466ec3ae037fa8dc04195a451e63c7a0dc5496f9c1fe6a",
+      "exact": true
+    },
+    {
+      "name": "customerAllocationContext.js",
+      "sha256": "4c0cd219cce93d7d42b16d78fd4f95ed30120420210b9f50cccb064b778abbf7",
+      "exact": true
+    },
+    {
+      "name": "customerAllocationPlan.js",
+      "sha256": "2eede0d7cc7ef1c7136ee2cc861580b828f29e90c43a5c38c580d57af346c3ea",
+      "exact": true
+    }
+  ],
+  "page": {
+    "name": "purchase-room-page.js",
+    "sha256": "0f4c8ee30a6988e40e83d4c80f0a0129eed46734bfd2f176ee259ca3044801a1",
+    "exact": true
+  }
+}

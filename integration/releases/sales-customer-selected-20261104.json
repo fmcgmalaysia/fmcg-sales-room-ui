@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-04",
+  "branch": "feat/sales-customer-selected-20261104",
+  "build": "20261104-sales-customer-selected-v1",
+  "workflowInput": "sales-customer-selected-only",
+  "objective": "Show active Selected totals, place the user icon before the count, rebalance customer columns and open Buyer in a new tab",
+  "baseline": {
+    "salesPageFreshExact": true,
+    "salesHtmlFreshExact": true,
+    "selectionBackendLiveCommit": "eeb73ff",
+    "approvedPreservation": "User explicitly approved retaining deployed product identity recovery and adding only the selected counter",
+    "otherStaticResourcesMatchLiveManifest": 100,
+    "recoveryTag": "verified/customer-file-download-20261103"
+  },
+  "changes": {
+    "static": [
+      "index.html"
+    ],
+    "wix": [
+      "catalogueSelection.web.js: three counter insertions only relative to approved live original",
+      "Sales Room: one build reference"
+    ],
+    "resources": 101,
+    "unchanged": 100,
+    "extraCmsQueries": 0,
+    "cmsBusinessWrites": 0
+  },
+  "verification": {
+    "newChecks": 7,
+    "affectedChecksPassed": 21,
+    "workspaceExistingChecksPassed": 12,
+    "workspaceExistingFailure": "One legacy green launcher CSS assertion also absent from the unchanged baseline; not repaired by this task",
+    "backendOutsideThreeInsertionsMatchesApprovedLive": true,
+    "wixPageOutsideVersionMatchesOriginal": true,
+    "twoWixDraftReadbacksExact": true,
+    "candidateVisual": "FORMAL_PUBLIC_PASS: table columns, icon-before-count, readable layout, confirmed zero",
+    "buyerActualDownload": "NOT_TESTED: user reset removed historical transactions and files; prior download issue remains open"
+  },
+  "stages": {
+    "code": "1c83490_GITHUB_SYNCED",
+    "pages": "RUN339_41757324948_SUCCESS_101_HASHES_AND_SALES_HTML_EXACT",
+    "wix": "TWO_DRAFTS_EXACT_PUBLISHED_AND_LIVE",
+    "public": "PASS_SELECTED_ZERO_BUYER_ZERO_USERS_ICON_LAYOUT_THREE_DESTINATIONS_NEW_TABS_SALES_PRESERVED"
+  },
+  "protected": [
+    "Staff/customer ownership authorization",
+    "QD and quotation publication",
+    "Product-ID recovery and automatic QD delivery",
+    "Original customer file delivery and sharing permissions",
+    "All MASTER static resources and business rules",
+    "No production data reset or transaction replay"
+  ],
+  "codeCommit": "1c834906de21b96daa562428dbe2d6bb90b5af2f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/337",
+  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_BRANCH_RULE_REMOVED",
+  "limits": [
+    "Positive Selected counts covered offline; real new selection remains user test",
+    "Actual Buyer file download still open; no test file after user reset",
+    "Native fresh Chrome visit loaded successfully; earlier tool reload empty; root cause not determined"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-15",
+  "system": "MASTER",
+  "branch": "fix/master-allocation-surplus-20261015",
+  "base": "448b0a2a31aa58a057022f4589893c96ecc664d4",
+  "recovery": "verified/purchase-lavender-plan-po-20261014",
+  "objective": "Calculator surplus always becomes expected stock without a procurement choice or demand increase",
+  "validation": {
+    "checksPassed": 107,
+    "syntax": true,
+    "diffCheck": true,
+    "sourceAndSharedUnchanged": true,
+    "realSave": false,
+    "latestCandidateChecksPassed": 107
+  },
+  "rules": {
+    "surplusCheckboxRemoved": true,
+    "expectedStockOnly": true,
+    "customerDemandUnchanged": true,
+    "surplusReasonRequired": true,
+    "legacyGuardsPreserved": true,
+    "actualReceiptAuthorityUnchanged": true,
+    "inventoryAllocationOutOfScope": true
+  },
+  "release": {
+    "pagesDeployed": true,
+    "wixBackendPatched": true,
+    "wixPublished": false,
+    "publicVerified": false,
+    "mainMerged": false
+  },
+  "pending": "User to click Publish once in Wix Studio Master, then verify the formal public modal; original dirty Purchase draft must not be refreshed",
+  "backendReadbacks": [
+    {
+      "file": "integration/backend/purchaseOperations.js",
+      "readback": "wix-operations-restart-after-20261015.js",
+      "sha256": "804f4bcbb39bf9572fc6e66e853277d3648637168270220796381e5c8a1fb23f",
+      "characters": 26736,
+      "normalizedExact": true
+    },
+    {
+      "file": "integration/backend/purchaseSources.js",
+      "readback": "wix-sources-restart-after-20261015.js",
+      "sha256": "bd5254eb6b55c87224a14c1d8aaf3f3328506bc554a2e34073249a02b838910c",
+      "characters": 9275,
+      "normalizedExact": true
+    }
+  ],
+  "codeVersion": "70a0b59b57c284e9f4b5962c11983bec1de55705",
+  "pages": {
+    "runId": 38678476288,
+    "url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/38678476288",
+    "conclusion": "success",
+    "marker": "2026-10-15-allocation-audit-v2",
+    "assetsExact": 18,
+    "temporaryPolicyRemoved": 63107134,
+    "originalPolicyCountRestored": 7,
+    "sourceSharedUnchanged": true
+  }
+}

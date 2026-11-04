@@ -1,0 +1,30 @@
+{
+  "build": "20261027-support-shipment-header-v2",
+  "backend": [
+    {
+      "file": "supportDesk.js",
+      "sha256": "ce7acf946f7555b042454c35ecc469c3a83fc0b005c7780b19368e3bee16ca25",
+      "exactReadback": true
+    },
+    {
+      "file": "supportDocuments.js",
+      "sha256": "5e70840720cdc8ef20cd1db5ca9a3d2dc13f5e868322284cb5b003366c1007c3",
+      "exactReadback": true
+    },
+    {
+      "file": "supportInvoice.js",
+      "sha256": "957ed56ba41873e7ca97fdd0551940e7b2e734225bd3b2149d6ec57fcf7f07c1",
+      "exactReadback": true
+    },
+    {
+      "file": "supportWorkroom.web.js",
+      "sha256": "129930724dc099b2e86b8cd04a07adf0cd2c60a1f6246734316ef6646217c6c5",
+      "exactReadback": true
+    }
+  ],
+  "pageInstalled": true,
+  "publishedLive": true,
+  "recovery": "7b37819e00083279e3b3f82e99f7bdae70accefe",
+  "documentServiceVersion": 10,
+  "pageSha256": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286"
+}

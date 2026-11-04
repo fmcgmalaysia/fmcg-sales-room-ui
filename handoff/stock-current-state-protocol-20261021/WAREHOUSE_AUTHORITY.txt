@@ -1,0 +1,66 @@
+2026-10-22 — Warehouse server-authority candidate connected to atomic receipt planning
+
+Recovery: protected production d447185 unchanged; prior isolated candidate a45c2b6.
+Scope: original permissions/facts/current-row reads for Warehouse receipt preparation.
+No business collection writes, Wix sync, production dependency changes or deployment.
+
+New factory warehouse-authority.cjs
+- Gets member from server; checks original approved-member rule before private staff read;
+  uses ORIGINAL requireWarehouseStaff. Purchase/Support/unknown Planner cannot receive.
+- Reads existing authenticated company context and purchase records once; original
+  projectPurchaseOrders + projectWarehouseOrders establish internal PO ID/version and
+  original receipt chain. Browser actor/permission flags never become staff identity.
+- Uses previous original-receipt-validation bridge, preserving original receipt validators.
+- Groups only validated changed receipt sources by exact product identity. Each source's
+  beforeAccepted/planned/internalPO must agree with original context; no guessed balance.
+- Produces server-owned product state builders, NOT browser-supplied complete/poValid.
+
+Shared candidate helpers, not protected refactoring
+original-product-state.cjs contains the previously implemented Purchase fact assembler:
+saved PO customer share/FOC cap, physical receipt basis, original allocation/dispatch/
+packing/legacy shipment hold parsers, and exact current ownership rows. Both department
+fact builders use this same implementation; their authorization remains independent.
+current-product-reader.cjs contains previous exact bounded product reader unchanged in
+semantics: strong scoped queries/counts/CLOSED identities/exact version-decoded rows.
+borrowing-authority.cjs and borrowing-stock-reader.cjs now reuse those helpers. No live
+business module changed, no duplicate ownership algorithm introduced.
+
+warehouse-stock-reader.cjs
+Reads all changed products under ONE protocol.readSnapshot, then prepares ONE full
+original receipt + all current stock/claims/repayment changes. Intended for commit.prepare
+INSIDE the fenced company lock; do not prepare outside lock then blindly commit later.
+On interrupted resume, prepared original plan is reused, not recomputed from partly
+applied receipt. A new pending operation blocks authority/context/product reads.
+
+Evidence
+Focused 22test run260.2513ms before reader composition; superseded by36test run:
+node --test integration/tests/stock-current-warehouse-authority.test.cjs
+ integration/tests/stock-current-borrow-authority.test.cjs
+ integration/tests/stock-current-borrow-plan.test.cjs
+ integration/tests/stock-current-warehouse-plan.test.cjs
+ integration/tests/stock-current-original-receipt.test.cjs
+36pass0fail341.0478ms, overlapping runs not cumulative coverage.
+New end-to-end in-memory test uses ORIGINAL department auth/PO/receipt functions, current
+row reader and existing fenced protocol. Two products100+100 -> one complete receipt,
+one generation, replay no duplicate. Initial preparation:1context read,1staff read,
+1purchase record read,6bounded queries,2exact product reads. This is fixture operation
+count, NOT real Wix latency/production capacity/Credit measurement.
+Negative tests: unauthorized/pending member, company conflict/duplicate tasks, stale PO,
+overreceipt, unknown saved share, mismatch original receipt vs context, pending barrier.
+
+Remaining integration safety boundaries
+No production endpoint or real session save exposed. It must authenticate EVERY request
+including replay BEFORE protocol.commit; prepare's memberId must match that session.
+Server callbacks must not be browser-selectable. Fixture direct commit tests are NOT
+production replay authorization tests. Original factory interception bridge still needs
+focused review/final minimal live seam after fresh compare; legacy apply must not run.
+Same-lock preparation validates original version only if ALL relevant original writers
+also use the fence. Existing unfenced legacy writers remain unchanged; ACTIVE prohibited.
+Final validate hook in current protocol runs AFTER domain writes: it is not suitable for
+first-time original PO-version/permission validation. Do not miswire it as precondition.
+All-writer coverage, original exception/replacement/isolated lifecycle, production bounds
+and closed-source lifecycle, real current-state schema, maintenance/recovery/migration/
+shadow/ACTIVE gates, public Purchase halo and four-stage release still unfinished.
+
+Four statuses: isolated code candidate; Pages unchanged; Wix unchanged; real new workflow
+unavailable/unverified. No real borrowing test requested. Actual Credit remains UNKNOWN.

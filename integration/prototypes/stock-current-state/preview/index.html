@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Purchase Borrowing · 借货候选</title><link rel="stylesheet" href="style.css"></head><body>
+<header><b>MASTER</b><span>Purchase Department 采购部</span><small>LOCAL CANDIDATE 本地候选</small></header>
+<main><h1>Stock Transfer 调货</h1><p class="notice">SAMPLE DATA 示例数据 · Tests the borrowing workflow only. Changes stay in this page. 仅测试借货流程，不保存真实业务数据。</p>
+<div class="toolbar"><button id="reset">Reset 重置</button><span id="revision"></span></div>
+<section class="panel"><table><thead><tr><th>Row 行</th><th>Customer 客户</th><th>Product 产品</th><th>Order Qty 订货量</th><th>Own P.O. Received 本PO实收</th><th>Customer Ready 客户可用</th><th>Dispatched 已发货</th><th>Supplier Allocation 供应商分配</th></tr></thead><tbody id="tasks"></tbody></table></section>
+<section class="panel actions"><h2>Actions 操作</h2><div><button class="primary" id="approve">Borrow for A 给A借货</button><button id="receive">Receive A P.O. A的PO收货</button><button id="dispatch">Dispatch A 发货给A</button><button id="return">Return Unused 退回未用借货</button><button id="correct">Correct Receipt 更正实收</button></div></section>
+<section class="panel"><h2>Outstanding Transfers 待补关系</h2><div id="relations"></div></section>
+<p id="totals"></p><p class="muted">P.O. receipts keep their original source. Loaded is not dispatch. 原PO收货来源保留；装柜不等于实际发货。</p><p id="status" role="status"></p></main>
+<dialog id="dialog"><form method="dialog" id="form"><div class="dialog-head"><strong id="dialogTitle"></strong><button type="button" id="close" aria-label="Close 关闭">×</button></div><div class="dialog-body"><p id="dialogHelp"></p><label id="quantityLabel" for="quantity">Quantity 数量</label><input id="quantity" type="number" min="0" max="100" step="1" required><label for="reason">Reason 原因</label><input id="reason" maxlength="200" required><p id="error" role="alert"></p></div><footer><button type="button" id="cancel">Cancel 取消</button><button value="save" class="primary">Confirm 确认</button></footer></form></dialog>
+<script src="business.js"></script><script src="app.js"></script></body></html>

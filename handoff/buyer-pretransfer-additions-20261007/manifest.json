@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-07",
+  "codeCommit": "a1f2b4973b813974c2ca2c1304401f680ae6a453",
+  "scope": "Exact source and isolated recovery patches; no private test data or tokens",
+  "files": {
+    ".gitattributes": {
+      "bytes": 7,
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    "auth-live-after.js": {
+      "bytes": 68158,
+      "sha256": "27fd22c9388fb809f54f3db53858bc3f9d6f1c579b0bf426a691a401e6af640e"
+    },
+    "auth-live-before.js": {
+      "bytes": 53802,
+      "sha256": "ed17eec456dd75615c2821b3b60ea543650c25a2fd6f0108e64d6626a7f8c05c"
+    },
+    "auth-patches.json": {
+      "bytes": 24818,
+      "sha256": "1ead56c8cf1b03268edef6bc47d45461060196fdec68ba0409ad94097c99409e"
+    },
+    "sales-live-after.js": {
+      "bytes": 99787,
+      "sha256": "864cef16d25ed044ce4816945e3783c88da45844219fa88f919e755d7d9b4fd5"
+    },
+    "sales-live-before.js": {
+      "bytes": 99470,
+      "sha256": "ed9135302be17a31f2f884cee2bed33c3d90337e6de66713b8c9a1f0ce9718c9"
+    },
+    "sales-patches.json": {
+      "bytes": 8661,
+      "sha256": "b96d53fcb081ec14c3de5a431fe814ff923d6fef9627f38f60dfe9b7336e8276"
+    }
+  }
+}

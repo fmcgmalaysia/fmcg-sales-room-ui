@@ -1,0 +1,37 @@
+{
+  "objective": "Restore existing TOP MANAGEMENT Finance Stock Take authority",
+  "branch": "fix/finance-top-management-stock-take-20261102",
+  "recoveryTag": "verified/stock-take-access-recovery-20261102",
+  "approval": "User explicitly approved the two existing Finance access judgments on 2026-11-02",
+  "liveComparison": "Fresh exact Wix stockExceptionWorkspace.js equals repository after CRLF normalization",
+  "businessFiles": [
+    "integration/backend/stockExceptionWorkspace.js"
+  ],
+  "change": "TOP MANAGEMENT may use existing Finance closure permission; the workspace gate accepts that same permission. Reporting, supplier resolution and Super Admin approval remain unchanged.",
+  "tests": {
+    "focusedPassed": 25,
+    "focusedFailed": 0,
+    "sharedPassed": 83,
+    "sharedFailed": 4,
+    "newFailures": 0,
+    "baselineComparison": "Same four pre-existing failures reproduced against exact original: one committed0 versus200, two obsolete receipt-waits-for-manual-ALLOC assertions, one redundant unchanged allocation. Missing baseline helper supplied;31 shortload checks passed.",
+    "legacyFailures": [
+      "A180+B10 stopping unplaced quantity",
+      "NCT prepay/receipts/allocate/invoice/dispatch/close",
+      "GHR prepay/receipts/allocate/invoice/dispatch/close",
+      "Short first delivery and later replacement"
+    ]
+  },
+  "publication": {
+    "github": "14b911d pushed; candidate retained only for diagnosis",
+    "pages": "UNCHANGED; no static asset modified",
+    "wix": "Candidate was published/live, then exact original restored and published/live as10c8303 after user Finance regression report",
+    "public": "WITHDRAWN; no Stock Take permission or premature-loss acceptance claimed. Recovery Finance AR0 verified on user tab51430505."
+  },
+  "limits": [
+    "No staff record change",
+    "No month-end rule change",
+    "No quarantine, disposal or loss posting in this patch",
+    "No main merge before user verification"
+  ]
+}

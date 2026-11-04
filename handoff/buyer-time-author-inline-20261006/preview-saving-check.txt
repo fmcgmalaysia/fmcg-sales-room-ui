@@ -1,0 +1,75 @@
+Browser tab: 51421710, Title: "FMCG Malaysia Buyer Room", URL: "http://127.0.0.1:18765/".
+0 AXWebArea FMCG Malaysia Buyer Room, URL: 127.0.0.1:18765/
+	1 container
+		2 button Description: Return to your Catalogue, Help: Return to Catalogue
+			3 image fmcgMalaysia.com
+		4 text BUYER ROOM
+		5 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+		6 text L
+		7 text LAYOUT PREVIEW
+		8 text LAW
+	9 container
+		10 button My Selection
+			11 image
+			12 text My Selection
+		13 button Order Form
+			14 image
+			15 text Order Form
+		16 button Track Orders
+			17 image
+			18 text Track Orders
+		19 button Completed Orders
+			20 image
+			21 text Completed Orders
+		22 button Documents
+			23 image
+			24 text Documents
+		25 button Account
+			26 image
+			27 text Account
+	28 container orderView
+		29 container
+			30 heading Order Form, Value: 1
+				31 text Order Form
+			32 text Enter a quantity, then press Enter to save. Use the pencil to edit. Review your order before sending the request.
+		33 text Products
+		34 text 1
+		35 text Total Cartons
+		36 text 60 CTN
+		37 text Total CBM
+		38 text 0.7200
+		39 text Estimated Order Total
+		40 text USD 1,411.20
+		41 button (disabled) Send Order Request, Help: Confirm each edited quantity with Enter and wait for saving to finish., ID: submitOrder
+		42 tab group Filter Order Form
+			43 tab (selected, settable, boolean) All Items 2, Value: 1
+All Items
+2
+			44 tab (selectable, settable, boolean) With Qty 1, Value: 0
+With Qty
+1
+		45 search text field (settable) Description: Search order form by product, brand or barcode, ID: orderSearch
+		46 container
+			47 text Barcode Image Descriptions V.I.P Price Order Qty (CTN) Line Amount Total M³ Edited Time
+		48 container orderRows
+			49 text 7622201422929
+			50 text CADBURY DAIRY MILK BITES 50G - ALMOND
+			51 text 50G x 24
+			52 container
+				53 text USD 0.98 23.52
+			54 stepper (settable, integer) Description: Order quantity for CADBURY DAIRY MILK BITES 50G - ALMOND, Help: Click the pencil to edit, Value: 60
+			55 button (disabled) Description: Edit quantity for CADBURY DAIRY MILK BITES 50G - ALMOND, Help: Edit quantity
+			56 text 1,411.20
+			57 text 0.7200
+			58 text Saving…
+			59 text 8901233025001
+			60 text CADBURY ZIP X20 BAR - CHOCOLATE
+			61 text 160G x 16
+			62 container
+				63 text USD 2.31 36.96
+			64 stepper (settable) Description: Order quantity for CADBURY ZIP X20 BAR - CHOCOLATE, Help: Press Enter to confirm and save
+			65 text 0.00
+			66 text 0.0000
+			67 text —
+
+The focused UI element is 0 AXWebArea FMCG Malaysia Buyer Room, URL: 127.0.0.1:18765/

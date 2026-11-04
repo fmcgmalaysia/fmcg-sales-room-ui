@@ -1,0 +1,47 @@
+2026-10-22 continuation after ffca1e0 — legacy Warehouse non-photo preparation
+
+Scope/recovery
+- Protected production/runtime remain d447185 / 32b812c. No production file changed.
+- Added isolated legacy-warehouse-preparation.cjs and its targeted tests only.
+- Reused read framework/current modules; read original warehousePreparation and the
+  actual warehouseReceiving.web.js permission wrapper to preserve its entitlement.
+
+Implemented candidate
+- Original requireWarehouseStaff/current-member boundary, never browser-supplied actor.
+- Original projectPreparation with current cumulative allocation/physical Ready context.
+- Original PACK/LOAD/UNPACK prepare captured in private in-memory journal, before apply.
+- Exact original event + one current product checkpoint, refreshed legacy preparation
+  ownership guard; no claim/source/receipt/dispatch/quantity movement.
+- Original version, batch/quantity/partial reason, unload-before-unpack, and new packing
+  list mutual guards retained. Read returns original projected Warehouse rows only.
+- PHOTOS and nonempty/malformed photos refuse before private reads. Existing protected
+  allocate/hash/upload/retry mechanism is NOT replaced or represented as integrated.
+- All supplied-context products read completely under shared snapshot; this is NOT a
+  production scoped-read/capacity solution or an authorization endpoint/activation.
+
+Evidence
+- Affected new+existing Warehouse Ready/legacy guard/original preparation:22pass,0fail,
+  401.3241ms. Then added interruption test: new6pass,0fail,180.7392ms. Counts overlap;
+  do not sum as distinct coverage. No shared model changed; full previous326 evidence
+  is retained, not rerun simply for a summary.
+- PACK -> LOAD40 -> LOAD0 -> UNPACK commits/replays: four original events, generation4,
+  physical100/reserved100/free0 unchanged. No shipment/invoice event created.
+- Original event saved then checkpoint fails: reads block pending state; exact same
+  prepared images resume once, no re-prepare/duplicate event/stock deduction.
+- Initial new packing mutual-guard fixture lacked original hashed record ID and
+  description, so parser correctly refused it. Fixed ONLY fixture identity; mutual
+  guard then passed. No original validation loosened.
+- Three read attempts initially guessed test paths absent from checkout (tests root,
+  shortened ready filename, guessed shortage-preparation name); failed read-only.
+  Used actual discovered integration/tests paths thereafter. These were not tests
+  and are NOT claimed as coverage. No blind retry or project-wide scan.
+
+Remaining release gates (unchanged, not hidden)
+Actual gateway/admission/client generation, all co-writers/apply-only rechecks, original
+photo protocol, exception attribution, production capacity/relationship lifecycle,
+operational recovery/termination/rehearsal, private schemas/permissions/indexes/domain
+metadata, migration/shadow parity, Purchase controls/halo and focused review remain.
+No real business data written, new SDK business authorization used, or deletion made.
+Support real invoicing remains disabled. ACTIVE OFF. No Pages dispatch/Wix sync/publish.
+Four release states: candidate code only; Pages NOT deployed; Wix NOT synchronized or
+published; public page NOT verified. Not ready for real borrowing acceptance.

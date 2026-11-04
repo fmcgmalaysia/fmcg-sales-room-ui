@@ -1,0 +1,44 @@
+2026-10-24 — ACTUAL BROWSER INTERFACE NOW VISIBLE; NOT REAL BORROW SAVE
+
+User explicitly asked to open complete split/borrow UI and step through for user
+confirmation. Reused framework/UI handoffs and existing mechanical review builder.
+Previous file: security rejection/localhost8986 path remain stopped. No local-file
+navigation, server restart/new port, security setting or alternate execution used.
+
+Normal existing HTTPS Pages URL was available and opened successfully in Chrome3:
+https://fmcgmalaysia.github.io/fmcg-sales-room-ui/integration/prototypes/stock-current-state/preview/purchase-workbench-review.html
+Tab51427282 marked deliverable. This was already part of the deployed repository;
+no new push/permission/deployment. Title Purchase · Borrowing UI Review · Not Live.
+Banner explicitly states example customers/POs/no real saves. This is the EARLIER
+deployed review bundle; latest split-batch navigation/StockControl updates are not
+yet installed there. Do not claim the visible tab is the full currentf692candidate.
+
+Actually operated in browser
+Active Orders -> first original person/Supplier plan for ExampleA 7UP320MLx24 ->
+Check eligible P.O.s -> choose ExampleB PO-B -> ExampleA future PO-A, maximum100 ->
+quantity30 -> reason describing split/repayment -> checkbox automatic repayment.
+Left modal open BEFORE approval. No final approval click or attempted rejected save,
+no real business records changed. Both customer/PO summaries visible, demand100 and
+procurement100 retained. No fabricated halo, repayment or confirmed save receipt.
+Private screenshot:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/visible-borrow-approval-form-20261024.png
+Async user question asks whether this procedure matches expectation; answer pending.
+Do not claim user has approved UX or freeze a verified business baseline yet.
+
+Sales live demonstration attempted safely
+Opened fresh public Sales tab51427285 (same actual site URL). It loaded Wix shell
+with about:blank embedded area and no order controls. Existing user Sales tab51427127
+also showed only shell. Neither refreshed or edited; no split save performed.
+Stopped that visual path; no login/security/hidden-state workaround. Prior actual
+split screenshot candidate-split.png was viewed to provide concrete earlier dialog
+reference if needed, not claimed as fresh real interaction.
+
+Independent work
+Rebuilt local self-contained purchase-workbench-review.html/inputs manifest from
+LATEST unchanged candidate components:33 exact assets. New batch entry included;
+fixture still refuses all saves. Existing3focused review tests pass223.5224ms.
+This local bundle refresh is NOT a Pages/Wix installation. Visible earlier HTTPS
+review deliberately retained for user inspection; no covert resource replacement.
+No source code/backend/CMS/permissions/publish/heartbeat/GitHub export retry.
+Remaining native installation/current mode/recovery/migration/public acceptance
+gates unchanged; UI confirmation now has a real visible form instead of tests only.

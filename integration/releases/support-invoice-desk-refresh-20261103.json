@@ -1,0 +1,65 @@
+{
+  "state": "FORMAL_READ_RECOVERED_INVOICE_CALLBACK_LIVE_RETEST_PENDING",
+  "fault": "After issuing the first partial SI, the split dialog displayed remaining5 but Desk1=5 plusUnassigned5,total10/5. A normal full refresh corrected it to0+5=5/5.",
+  "cause": "Invoice success, original-request reconciliation and cancellation reload sources0,2,3 but reuse stale packing source1. New invoice totals and old per-Desk invoiced quantities are then combined.",
+  "change": "Add source1 to those three existing read refreshes. No new business writer, quantity arithmetic, store, permission, ledger or retry path. Version markers updated.",
+  "baseline": "Published Warehouse recoveryf901a4c; Support runtime remains3b6a1db. Support Wix original1988chars freshly matched repository; corresponding static asset was unchanged in the verified101/101 package.",
+  "package": {
+    "build": "20261103-support-invoice-desk-refresh-v1",
+    "resources": 101,
+    "changed": [
+      "support-room/workroom.html",
+      "support-room/workroom.js"
+    ],
+    "unchanged": 99
+  },
+  "tests": {
+    "passed": 78,
+    "total": 78,
+    "new": 5,
+    "coverage": "Execute original invoice success/reconciliation/uncertain/cancellation UI callbacks, preserve original requests and all business statements; related invoice, shortload, Desk reuse and draft guards."
+  },
+  "wix": "1995chars exact,onlyversionreference,published/live receipt",
+  "liveScenario": {
+    "order": "TEST-CLOSEOUT-1103",
+    "po": "NCT-PO-CLOSEOUT-1103",
+    "requested": 30,
+    "received": "22+8=30",
+    "loaded": "22+8=30",
+    "firstSi": {
+      "number": "NCT-INV-CLOSEOUT-1103-01",
+      "qty": 22,
+      "amountUsd": 245.4
+    },
+    "secondSi": {
+      "number": "NCT-INV-CLOSEOUT-1103-02",
+      "qty": 8,
+      "amountUsd": 111
+    },
+    "totalUsd": 356.4,
+    "remaining": 0,
+    "sameDesk": 1,
+    "history": "Both batches in WarehouseCompleted; Loaded buttons disabled, original5SI and original payments preserved",
+    "stock": {
+      "onHand": 10,
+      "reserved": 0,
+      "available": 5,
+      "isolated": 5
+    },
+    "financeCost": "FreshFinance571.25MYR,NCT10/0/5/5,GHR0value0;801outstanding17018.40",
+    "workaround": "One normal full read was used before safely assigning second batch. Invalid10/5 form was cancelled, not submitted."
+  },
+  "accessIssue": "Separate from this UI snapshot fix: intermittent first-page embedded-document connection stall remains unresolved. Warehouse recovery scoped live reads3 andGHR/NCTswitch passed; do not call all access failures fixed.",
+  "permission": "Temporary exact branch rule removed; original7restored",
+  "pr": 319,
+  "commit": "2217b55",
+  "evidence": "Root handoff/master-three-customer-stress-20261102/DESK_TWO_BATCH_LIVE_20261103.json,113/114/115 screenshots;rootSUPPORT_POST_RELEASE_READ.txt,SUPPORT_POST_RELEASE_DESKS.json,screenshots126/127",
+  "run": {
+    "id": 41572089274,
+    "number": 334,
+    "status": "success",
+    "head": "0ba921cf1c0e0d0922153487debc038bd9c8b0aa",
+    "hashes": "101/101"
+  },
+  "public": "Existing formal Support51430963 loaded newv1,LAW/NCT,801fiveSI and originalpaid statuses; read-only Refresh returned same5,Desk1→2→1 empty planned/Loaded0 and no stale header,logs[]; prior new-pageblank evidence retained. New SI completion callback not replayed after patch;78isolated checks cover it."
+}

@@ -1,0 +1,58 @@
+{
+  "state": "LIVE_FORMAT_FIX_VERIFIED",
+  "date": "2026-11-03",
+  "spreadsheet": "12tyTIrmjF6JxMY-JW8K3JLuz5TcCkEjQUFXsauberLg",
+  "sheet": "NONFOOD",
+  "cause": "Fixed manual red backgrounds were layered under the existing BLANK conditional rule. Once a barcode was entered, the conditional red stopped but the manual red remained.",
+  "change": "Only userEnteredFormat.backgroundColor changed to white in previously solid-red F cells; existing BLANK conditional formatting still makes empty barcodes red.",
+  "groups": [
+    {
+      "start": 102,
+      "end": 103
+    },
+    {
+      "start": 707,
+      "end": 708
+    },
+    {
+      "start": 712,
+      "end": 713
+    },
+    {
+      "start": 1680,
+      "end": 1680
+    },
+    {
+      "start": 2264,
+      "end": 2268
+    },
+    {
+      "start": 2324,
+      "end": 2324
+    },
+    {
+      "start": 2326,
+      "end": 2326
+    },
+    {
+      "start": 2330,
+      "end": 2330
+    },
+    {
+      "start": 2600,
+      "end": 5595
+    }
+  ],
+  "cells": 3011,
+  "filledUniqueNumericCells": 49,
+  "emptyCells": 2962,
+  "checks": {
+    "noCanonicalDuplicateBarcodes": true,
+    "filledF2600AndF2648White": true,
+    "emptyF2649AndF2650StillConditionalRed": true,
+    "nativeGoogleSheetScreenshot": "Root private evidence01-pointbase-barcode-fill-fixed.png"
+  },
+  "preserved": "All cell values, all formulas, cost-verification dates, E freshness lights, data validation, conditional-format rules, scripts, prices,Sort andWix integration preserved.",
+  "recovery": "Restore exact groups to their prior manual backgroundColor red1. Private evidence contains the exact source ranges; no cost records uploaded.",
+  "publication": "Live Sheet formatting and native visual check passed; no script,Pages,Wix deployment orsharing change."
+}

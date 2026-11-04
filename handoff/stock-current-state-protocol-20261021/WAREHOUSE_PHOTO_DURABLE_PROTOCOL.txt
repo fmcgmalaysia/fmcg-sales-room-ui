@@ -1,0 +1,69 @@
+2026-10-22 — ORIGINAL WAREHOUSE PHOTO CURRENT PROTOCOL CANDIDATE
+
+Recovery7c13154/PR220. Protected productiond447185/runtime32b812c unchanged.
+No browser, real file/API/native schema/permission/CMS/lock mutation, install or publish.
+
+Concrete implementation
+- warehouse-photo-plan captures ORIGINAL createPreparationOperations validation and
+  PREPARED plan against scratch journal and supplied server file slots. No legacy apply
+  or real network callback runs during capture. Original photo signatures/hash/2MB total,
+  stages, task version, allocations/packing guards, permissions and30evidence cap stay.
+- Current preparation factory validates first with inert placeholder IDs, then requests
+  bounded real generated IDs through ORIGINAL document client, and recaptures same
+  frozen context/time with actual IDs. Original Code.gs ALLOCATE only generateIds; it
+  creates no file. A failed PRE-MANIFEST allocation may leave unused generated IDs and
+  may repeat on retry; do NOT claim exactly-once allocation. There is no upload before
+  durable manifest/pending. Once manifest exists prepare/ALLOCATE never runs again.
+- Fixed descriptors/evidence remain in immutable original event plan. Insert-only
+  WAREHOUSE_PHOTO_CONFIRMED rows, one per uploaded photo, precede original preparation
+  event and all hold/product writes. No base64 enters journal/plan fragments. Full
+  original request/photo bytes stay in authenticated own-tab cache, unchanged UUID.
+- Request-scoped conditional-store adapter decodes/verifies exact immutable manifest
+  before EVERY domain write, verifies company/digest/generation/APPLY/owned lock,
+  descriptor/event/receipt prefix and earlier receipts. One APPLY write/invocation
+  bounds external work to at most one original PHOTO_UPLOAD call. No shared protocol
+  rewrite, new stock authority, file update/trash or TTL unlock. Only owned lock may
+  be conditionally removed; no generic domain-delete capability.
+- Original create-only same-file-ID service verifies company/task/stage/hash/name/
+  MIME/size. Lost/unknown reply keeps durable pending and no business result; same
+  UUID retries same slot. Receipt loss is read-confirmed; already-confirmed slots are
+  skipped. A late identical remote callback can only create/check same immutable file,
+  not change stock or original evidence. This proof is bounded to original immutable
+  service contract, NOT arbitrary manual Drive modifications/other external effects.
+- Reauthorize on every invocation/replay. Same member/staff ID with renamed display
+  name can resume using immutable original recorded audit name; cannot rewrite audit
+  or adopt another actor. Existing no-file path unchanged. Original PHOTOS with no
+  files/note is still accepted without generated IDs/upload.
+- Actual stockCurrentWarehouse root supplies original document client, bounded photo
+  factory/slot allocation and original grant. Same4SiteMember endpoints, no new public
+  permission. Paired workroom/helper now retain original PHOTOS/full file bytes before
+  send and relay them through existing preparation wrapper. Original compression/UI/
+  file-service code untouched; previous explicit photo block is superseded here.
+- Runtime86scoped modules42private exports; empty writerCoverage and ACTIVE OFF remain.
+
+Evidence
+Real-core current ownership/PACK/PHOTOS/LOAD fixture with frozen photo IDs/lost reply/
+same UUID/display-name edit/note-only PHOTOS preserves physical sources byte-for-byte,
+single receipt/event per action; invalid hash refuses before generated IDs. Original
+service VM tests cover both folders/identity and create-only late/lost upload. Segmented
+file tests cover one upload/invocation, pending read barrier, full prefix validation,
+lost marker response, late callback, digest change/direct write/slot order rejection.
+Actual-import root test confirms private factories and bounded allocation wiring;
+positive native complete PACK through actual SDK tables is STILL NOT demonstrated.
+Final full stock-current suite770pass0fail15504.1128ms. Focused final changed runtime/
+file/current prep14pass0fail1669.5674ms; original prep/photo/root regressions19pass0fail
+9291.2902ms before audit-name hardening; final full includes those tests after hardening.
+Touched generator checks pass, whitespace check pass, protected dirs exactd447185.
+All Node/VM/in-memory/mock SDK/Drive; no real native grants/Drive/platform/public proof.
+
+Next and still-open gates
+Actual CBM and remaining dispatch/packing/Sales/intake/order/other co-writer root/mode/
+durable client connections; all20writer coverage; native current collections/index/
+field/date/SDK permissions/CMS init; full native photo root and payload/time/RPM capacity;
+admin unknown-lock safe termination and cross-session recovery; quiescent cutover/
+in-flight legacy proof; shadow parity; SHIPPED/history/orphan-loaded acceptance.
+Support real invoice OFF. No new user business clarification needed for local work.
+Do not publish only Warehouse subset, mark all-writer verified or invite real borrow.
+Four states: candidate implementation incomplete; Pages unchanged; Wix not installed/
+published; new public current inventory/borrowing unavailable/unverified. Exact branch
+temporary Pages permission remains to request only when complete release is ready.

@@ -1,0 +1,62 @@
+2026-10-22 — original Stock exception and physical resolution current candidates
+
+Recovery: preceding candidate6e3cfe2; production d447185/runtime32b812c unchanged.
+Goal: remaining Stock physical co-writers, not new finance functionality. Read actual
+inventoryExceptions/stockExceptions.web/stockExceptionResolution/StockStaff and original
+physical projection; reused existing pure free quarantine/movement/release mapper and
+framework. No whole-project scan/live writes; existing source/roles/financial files exact.
+
+Concrete createCurrentStockExceptionSave:
+- actual original requireStockStaff(member, staff records), original report flag;
+- original stockExceptionVersion/PO/physical basis/quantity/kind/reason checks captured
+  in scratch journal BEFORE legacy apply; browser staff flags ignored;
+- selected confirmed PO source + ACTIVE closure + exact counters/current v2 checkpoint;
+- common STOCK_EXCEPTION admission/segmented commit, original event marked FREE only
+  by the existing mapper after free-quantity attribution succeeds;
+- isolation moves available->isolated, does not change onHand or accepted receipt.
+
+Concrete createCurrentStockResolutionSave:
+- actual original action permission map (Purchase decide, Warehouse actual movements,
+  Admin approval, separate Finance verification), freshly checked on every replay;
+- exact attributed original case reread + same snapshot original PO/financial context;
+- unchanged original resolution preparation, never its legacy apply;
+- RETURN / REPLACEMENT through existing current physical mapper; actual return reduces
+  onHand/isolated, actual inspected replacement increases onHand/available. Received
+  original PO quantity stays intact; supplierReturned/replacementReceived cumulative;
+- original independent Admin RELEASED + Finance CLOSE RELEASED restores free usability;
+- original nonphysical decision/approval/verified fully-returned closure event changes
+  only product revision checkpoint, never performs implicit physical movement;
+- original immutable event verified before returning original caseId receipt.
+
+IMPORTANT OPEN BUSINESS/RELEASE BOUNDARIES, not silently certified:
+1. Only FREE-attributed cases are supported. Reserved/customer-attributed quarantine
+   and legacy cases without proven FREE attribution are blocked before durable pending.
+   Existing original legacy permits physical exception without customer loss allocation;
+   that does not authorize inventing which reserved customer loses cartons. Need complete
+   dedicated attribution handling/decision before full ACTIVE; do not remove this guard.
+2. Original projectPhysicalStock flags SETTLED_GOODS_LOCATION_REQUIRES_REVIEW when a
+   financially settled case still has unreturned goods and lacks physical-disposal data.
+   Current resolution candidate therefore refuses non-RELEASED CLOSE when that case's
+   original returned quantity is not complete. This is an explicit safety BLOCKER, not
+   full compatibility or permission to add a disposal workflow. Financial closing cannot
+   silently deduct stock or certify disappearance. Fully returned REPLACED closure and
+   independent release tested. Preserve existing financial policy/source unchanged.
+3. Actual original Stock workspace READ/UI/relay installation and same-current metadata
+   remain unconnected, like remaining previously recorded gateways. Not deployable alone.
+
+Evidence: targeted13pass0fail412.6043ms after final tests; shared runtime/current suite
+538pass0fail5364.4183ms,64modules25exports exact generated source. All offline original
+module/Node VM/mock storage, NOT real Wix/SDK/capacity/public acceptance. NCT/GHR free
+PO20 (approved zero customer share), quarantine10 ->20onHand/10available/10isolated;
+replacement5 ->25/15/10; return5 ->20/15/5; repeat remaining5 each ->20/20/0. Original
+accepted20 retained, replacements10/returns10, one event per same-request replay.
+Original Admin vs Finance separate staff ID guard, stale/date/quantity/role/raw-case
+checks retained. Genuine INTERNAL_DAMAGE approval then attempted LOSS closure proves
+missing physical evidence is blocked with isolated10 retained. No claim fabrication.
+
+Original production directory diff d447185 clean. No new CMS data/schema/employee/Drive
+permission, no lock probe/deletion, no ACTIVE/real Support invoice/Pages/Wix publication/
+main merge. Remaining writer/read/client/reload/physical boundary/capacity/init/routing/
+schema+typedSDK/shadow/G3/four-stage release remain OPEN. Token/cache/Credit UNKNOWN.
+Next: remaining independent original writer/read bindings and protected UI/relays;
+consolidate genuinely missing business/permission decisions only after independent work.

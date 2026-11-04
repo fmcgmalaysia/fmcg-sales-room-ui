@@ -1,0 +1,233 @@
+{
+  "build": "20261028-master-efficiency-v1",
+  "runtimeCommit": "65601224978b88d19f120006383b08f0108f04a1",
+  "verifiedAtUtc": "2026-10-27T19:13:51.968Z",
+  "scope": "Public navigation, read-only dialogs, existing conversations, and native force refresh. No business transaction acceptance implied.",
+  "departments": {
+    "purchase": {
+      "build": "20261028-master-efficiency-v1",
+      "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1",
+      "views": [
+        {
+          "view": "Active Orders",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Payment Follow-up",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Purchase History",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Activity History",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Dashboard",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Purchase Order",
+          "navigationObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "chatContainsUndefined": true,
+      "nativeForceRefresh": {
+        "beforeTabBinding": true,
+        "version": {
+          "build": "20261028-master-efficiency-v1",
+          "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1"
+        },
+        "dashboardVisible": true,
+        "browserErrorCount": 0
+      }
+    },
+    "account": {
+      "build": "20261028-master-efficiency-v1",
+      "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1",
+      "views": [
+        {
+          "view": "Supplier Accounts",
+          "requestError": false,
+          "navigationObserved": true
+        },
+        {
+          "view": "Accounts Receivable",
+          "requestError": false,
+          "navigationObserved": true
+        },
+        {
+          "view": "Cash & Facilities",
+          "requestError": false,
+          "navigationObserved": true
+        },
+        {
+          "view": "Transaction History",
+          "requestError": false,
+          "navigationObserved": true
+        },
+        {
+          "view": "Audit Trail",
+          "requestError": false,
+          "navigationObserved": true
+        },
+        {
+          "view": "Financial Overview",
+          "requestError": false,
+          "navigationObserved": true
+        }
+      ],
+      "chatOpened": true,
+      "chatContainsUndefined": true,
+      "nativeForceRefresh": {
+        "beforeTabBinding": true,
+        "version": {
+          "build": "20261028-master-efficiency-v1",
+          "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1"
+        },
+        "overviewVisible": true,
+        "browserErrorCount": 0
+      }
+    },
+    "warehouse": {
+      "build": "20261028-master-efficiency-v1",
+      "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1",
+      "views": [
+        {
+          "view": "Delivery Tasks",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "History",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Stock Control 库存管理",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Incoming Tasks",
+          "navigationObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "chatContainsUndefined": true,
+      "completedAndStopWaitingVisible": true,
+      "nativeForceRefresh": {
+        "beforeTabBinding": true,
+        "version": {
+          "build": "20261028-master-efficiency-v1",
+          "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1"
+        },
+        "incomingVisible": true,
+        "browserErrorCount": 0
+      }
+    },
+    "support": {
+      "build": "20261028-master-efficiency-v1",
+      "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1",
+      "supportBuild": "20261028-master-efficiency-v1",
+      "views": [
+        {
+          "view": "Transactions",
+          "navigationObserved": true,
+          "requestError": false
+        },
+        {
+          "view": "Customers",
+          "navigationObserved": true,
+          "requestError": false
+        }
+      ],
+      "chatOpened": true,
+      "chatLoaded": true,
+      "chatError": false,
+      "referenceInputsVisible": true,
+      "uploadDialogVisible": true,
+      "documentButtons": [
+        {
+          "disabled": false,
+          "name": "Sales Order"
+        },
+        {
+          "disabled": false,
+          "name": "Sales Invoice"
+        },
+        {
+          "disabled": false,
+          "name": "Delivery Order"
+        },
+        {
+          "disabled": false,
+          "name": "Credit Note"
+        },
+        {
+          "disabled": false,
+          "name": "Payment Slip"
+        },
+        {
+          "disabled": false,
+          "name": "Booking Confirmation"
+        },
+        {
+          "disabled": false,
+          "name": "Packing List"
+        },
+        {
+          "disabled": false,
+          "name": "Customs Form"
+        },
+        {
+          "disabled": false,
+          "name": "Insurance"
+        },
+        {
+          "disabled": false,
+          "name": "Bill of Lading"
+        }
+      ],
+      "nativeForceRefresh": {
+        "beforeTabBinding": true,
+        "version": {
+          "build": "20261028-master-efficiency-v1",
+          "chatScript": "../master-shared/task-chat.js?v=20261028-master-efficiency-v1",
+          "supportBuild": "20261028-master-efficiency-v1"
+        },
+        "customersVisible": true,
+        "browserErrorCount": 0,
+        "desk1DocumentEntriesEnabled": true
+      }
+    }
+  },
+  "navigationStatesChecked": 18,
+  "knownIssues": [
+    "Previously observed controlled-tab reload may blank the Wix iframe; native force refresh before tab binding passed for all four departments.",
+    "Support to Packing same-frame navigation times out on read, with a misleading retry-save notice. Unchanged baseline transport targets the referrer origin, while the actual parent remains Wix.",
+    "Warehouse new Outgoing extension version guard does not match the current Wix entry token.",
+    "One existing system event renders undefined in Purchase, Account and Warehouse."
+  ],
+  "businessWritesSubmitted": false,
+  "automaticPersonalReadReceiptsMayOccur": true,
+  "wholeSiteAllTransactionsCertified": false,
+  "packingDiagnostic": {
+    "transportMatchesBaselineAfterCheckoutLineEndingNormalization": true,
+    "realExternalRequests": 0,
+    "productionWrites": 0,
+    "directWixParent": "SUCCESS",
+    "sameFrameSupportNavigationWithWixParent": "TIMEOUT",
+    "warehouseNestedPagesRelay": "SUCCESS"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "VISIBLE_EXISTING_STOCK_INDEX_READBACK_V1",
+  "captureDate": "2026-10-23",
+  "source": "MASTER_CMS_VISIBLE_UI_ONLY",
+  "siteId": "f80870fd-a3d8-47c0-9917-1bfd9c16ea44",
+  "readOnly": true,
+  "nativeMetadataNormalizationComplete": false,
+  "actualManualIndexQuota": null,
+  "collections": [
+    {
+      "id": "NCTActivity",
+      "url": "https://manage.wix.com/dashboard/f80870fd-a3d8-47c0-9917-1bfd9c16ea44/wix-cms/data/NCTActivity/indexes?referralInfo=sidebar",
+      "visibleIndexRows": [
+        {"name": "System index 1", "createdByLabel": "System", "fieldLabel": "Created date", "directionLabel": "Descending", "typeLabel": "Regular"},
+        {"name": "System index 2", "createdByLabel": "System", "fieldLabel": "ID", "directionLabel": "Ascending", "typeLabel": "Regular"}
+      ],
+      "visibleUserIndexRows": 0,
+      "visibleAutomaticIndexRows": 0,
+      "underlyingPathsAndBuildStatus": null,
+      "screenshot": "nct-activity-indexes-readonly.png"
+    },
+    {
+      "id": "NCTActivity1",
+      "displayName": "GHR Activity",
+      "url": "https://manage.wix.com/dashboard/f80870fd-a3d8-47c0-9917-1bfd9c16ea44/wix-cms/data/NCTActivity1/indexes?referralInfo=sidebar",
+      "visibleIndexRows": [
+        {"name": "System index 1", "createdByLabel": "System", "fieldLabel": "Created date", "directionLabel": "Descending", "typeLabel": "Regular"},
+        {"name": "System index 2", "createdByLabel": "System", "fieldLabel": "ID", "directionLabel": "Ascending", "typeLabel": "Regular"}
+      ],
+      "visibleUserIndexRows": 0,
+      "visibleAutomaticIndexRows": 0,
+      "underlyingPathsAndBuildStatus": null,
+      "screenshot": "ghr-activity-indexes-readonly.png"
+    }
+  ],
+  "nativeRoundtripsAccepted": false,
+  "activationReady": false,
+  "limitations": [
+    "Visible labels are not complete API index metadata or native field enum definitions",
+    "No actual plan quota, new stock schema, array compound query or write capacity accepted",
+    "Collection directory counts are not a quiescent authenticated data capture",
+    "No schema, permissions, index, business data or publish mutation performed"
+  ]
+}

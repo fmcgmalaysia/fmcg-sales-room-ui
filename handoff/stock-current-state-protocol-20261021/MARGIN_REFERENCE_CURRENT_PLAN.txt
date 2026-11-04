@@ -1,0 +1,46 @@
+2026-10-22 continuation after0e76bab — GP read-cache co-writer
+
+Scope/recovery
+- Preserve original purchaseMarginRefresh formulas, source-cost weighting, invoice
+  slices, current Admin FX and original best-effort unknown results. No production
+  file changed; baseline d447185/runtime32b812c remains unchanged.
+- Read STATUS current head and relevant original margin write section + original
+  regression tests. Reused same-version framework and original source read earlier.
+
+Candidate code
+- margin-reference-plan.cjs invokes ORIGINAL refresh against private server snapshot
+  overlay. Exact Orders/Tasks require migrated company/version metadata.
+- Only original GP_RECALCULATED evidence and versioned Orders gp/adminFxSource/
+  salesInvoiceSummary changes are allowed. Other order fields, task rows, PO/quantity/
+  receipts/identity/invoice locks cannot be modified. No inventory rows created.
+- Private GP locks are simulated and removed only in memory. Existing GP/COST locks
+  stay untouched and retain original null-GP behavior; no real TTL/lock deletion.
+- Each cache update requires its exact preceding audit. Adapter violations survive
+  ORIGINAL best-effort catch and reject the whole plan, not orphan audit acceptance.
+- Unknown rate/cost remains null, locked invoices frozen, partial invoice historic
+  source cost/FX unchanged. Unchanged GP creates no new writes.
+- Added one-original-demand group entry point: retains mother plus ALL original
+  supplier children, excludes other independent demand groups. Original already
+  updates each demand independently; this does not introduce a whole-workroom atomic
+  transaction or silently drop children to get below the proof budget.
+- Whole-workroom large plans still explicitly refuse at prototype30-write/180k bound.
+  Group path is an implementation seam, NOT proof of production throughput/capacity.
+- Returned margin values requiring writes are tentative until common fence commits;
+  mustCommit is explicit. Actual authenticated read gateway/system identity/admission/
+  refresh assembly and scoped source snapshots remain open, not installed.
+
+Evidence
+- New7 + original margin/partial/formula26:33pass,0fail,247.9504ms. Prior32 run before
+  group test is superseded, not additive credit/coverage evidence.
+- NCT/GHR, read-cache exact fields, unchanged-no-write, missing-rate/cost, old locks,
+  bare/locked/partial/full invoices, swallowed adapter rejection, and multiple supplier
+  children retained inside a17-demand workroom tested.
+- Audit inserted then cache update interrupted: shared reads block pending; same
+  immutable plan resumes once,1rate read/1GP audit, task received80 remains80.
+- All in-memory fixtures; no actual CMS/Wix/FX/Drive/permission changes.
+
+Release states
+Code candidate only; Pages NOT deployed; Wix NOT synchronized/published; public page
+NOT verified. ACTIVE OFF, Support true invoice OFF. Remaining actual writer/read/photo,
+routing/capacity/lifecycle/operational recovery/schema/permissions/metadata/migration/
+shadow/UI/halo and focused review gates stay open. No real borrowing acceptance yet.

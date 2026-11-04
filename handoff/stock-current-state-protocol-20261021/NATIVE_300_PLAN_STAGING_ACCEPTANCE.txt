@@ -1,0 +1,91 @@
+2026-10-23 — actual native staged-plan acceptance, NOT whole receipt/cutover
+
+Single target: move the existing actual-root synthetic300 receipt's durable plan
+staging from memory-only evidence to the real Wix SDK, including an intentional
+first-fragment boundary and exact continuation. No production rule/algorithm change.
+Protected recovery d447185/runtime32b812c; original production path diff still empty.
+Current user's autonomous ordinary testing authority is recorded in
+TESTING_AUTHORITY_AND_VISIBLE_ACCEPTANCE.txt. No additional routine question asked.
+
+Exact source and provenance
+- build-native-plan-staging-fixture.cjs invokes the EXISTING unchanged Warehouse
+  actual-import300fixture with its original authority/projection/plan logic. Injects
+  only a fixed clock into the VM root for deterministic output. Existing assertions
+  remain in original test. Captures BEFORE phase, before any actual source write.
+- native-plan-staging.fixture.json: synthetic-only original prepared plan;300products,
+  901images (300positions+300claims+300products+one original receipt event).
+  Source authority/storage in that export are MOCK, not live employee/business data.
+- native-plan-staging-probe.cjs: EXACT shared segmented codec and SDK adapter.
+  New fixed StockProtocolTest prefix SPT-STAGE300-20261023-a32d:, INSERT-ONLY.
+  No native patch/remove capability forwarded, no control/business/lock/ACL changes.
+  Preflight exact identities; occupied/unknown/failed fixture stops, never resets.
+- build-native-plan-staging-probe.cjs mechanically embeds unchanged codec/store/
+  domain scope and exact fixture into NEW Admin stockProtocolPlanStaging.web.js.
+  Not part of production38targets/94dependencies or104module command runtime.
+
+Offline tests actually run
+New8+existing codec8 initially15pass1fail4961.744ms: VM provider assertion compared
+cross-realm query options prototypes, rejecting even equal safe flags. Corrected
+TEST provider normalization only; production adapter/guards not changed. Final
+16pass0fail4253.7591ms. Fixture regenerated twice/exact --check and module --check
+pass. Native loss-of-insert-reply witness has ONE attempt/retained row/no retry.
+Other checks: fixed occupancy/refuse completed replay, unknown input no access,
+corrupt read refusal, cannot continue before confirmed interruption, Admin-only VM.
+No unchanged full suite rerun. Prior FULL1166 belongs027e285, reused, not summed.
+
+Real Wix actions — both explicit steps invoked ONCE, no auto retry
+NEW Admin module only, existing MASTER editor51426657. Full visible-editor copy
+matches exact generated source after LF normalization. Source622304bytes/366CRLFs;
+visible copied622670chars. SHA256 LF:
+8050f9bbc32d4f3572718274caf6eee1ec32056d2cb242dcbcac0e7b1a4829ef
+Wix Babel noted formatting deoptimization for source>500KB; it did NOT fail
+execution. Keep this actual compile warning, not a clean-log/public release claim.
+No workaround, dependency change or production source minimization applied.
+
+1 INTERRUPT_AFTER_FIRST_FRAGMENT:
+ oktrue INTERRUPTED_WITHOUT_MANIFEST;2queries/1insert/0patch/0delete;
+ retainedCount1,manifestAbsenttrue;elapsed906ms,insert279ms.
+ Saved first fragment read back exactly, remaining fragments and manifest absent.
+2 RESUME_EXACT_RETAINED_PLAN:
+ oktrue EXACT_300_PLAN_NATIVE_STAGING_CONFIRMED;
+ 2queries/11inserts/0patch/0delete;elapsed2232ms;
+ insert timings165,133,148,118,134,195,170,138,216,167,112ms.
+ All11fragments+1manifest retained; manifest inserted LAST.
+ fullPlanReadbackVerified true; corrupted IN-MEMORY copy rejected by exact codec
+ (no deliberate damage to native rows). Original901images and JSON key order exact.
+ planBytes596928;planHash79d177a3ccd56f4672d5656f05834bc6.
+Total actual native4queries/12inserts,12NEW retained rows. No customer/order/task
+business mutation, locks, permanent delete, ACL/schema, mode, Publish or Pages action.
+
+Private evidence OUTSIDE public checkout in ROOT handoff/
+stock-current-state-spec-20261021/private-evidence/:
+native-plan-staging-draft-readback-20261023.js,
+native-plan-staging-before-{interrupt,resume}-20261023.png,
+native-plan-staging-{interrupt,resume}-result-20261023.{json,png}.
+Interrupt copied JSON SHA256:
+4a4924beb013f6ac432e2556ec7a1aebefa82f362e76581fe490512868262a8b
+Resume copied JSON SHA256:
+a7ecfacbe3cc89943ed8e4fd2b644e415df01e1d13c4079c9dbaa38b53e25471
+Resume screenshot SHA256:
+5b636b5c9d05f381ec3b63fbe45b7d88451faeb6d78a20eeec563d6c3123a91e
+No private customer records included in public export/evidence. User-owned tabs kept.
+
+Acceptance boundary
+This proves native SDK persistence/readback of the ACTUAL mock-prepared large plan
+can survive a deliberate application boundary, including final manifest integrity.
+This runner is NOT the original segmented commit executor and intentionally does
+NOT exercise native901image application, per-invocation fence release, whole request
+business preparation/authorization, business collection schema or actual network
+timeout recovery. All wholeBusinessPreparationAccepted,wholeCommitRecoveryAccepted,
+productionCapacityAccepted,activationReady flags remainFALSE, not a full capacity pass.
+No ordinary restart/replay on the now-complete fixed namespace; retain fixtures.
+
+Next critical work remains: actual full native prepare/commit/recovery, legacy writer
+termination/drain or separately reviewed fencing, native business setup, semanticG3,
+Admin migration/apply/resume (NOT IMPLEMENTED), backup/shadow/parity/cutover. No claim
+all independent work complete. CoverageEMPTY/ACTIVEOFF, invoice/physicalexitOFF.
+No new user business-policy question introduced; initial acceptance endsLoaded.
+
+Four release states: new diagnostic code candidate only; inventory Pages unchanged;
+Wix diagnostic SAVED DRAFT/native test only, no published-live business release;
+actual public borrowing/split/halo/Loaded acceptance stillNOT performed.

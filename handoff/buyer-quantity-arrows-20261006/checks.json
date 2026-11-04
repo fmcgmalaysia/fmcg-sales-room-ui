@@ -1,0 +1,13 @@
+{
+  "testsPassed": 31,
+  "publicMatchesRecovery": true,
+  "wixPageMatchesRepository": true,
+  "recoveryTag": "verified/buyer-quantity-blur-20261006",
+  "downSavesAndSkipsUnquoted": true,
+  "upKeepsReadonly": true,
+  "firstLastBoundaryDoesNotChangeQty": true,
+  "saveReplyKeepsFocus": true,
+  "directReviewWaits": true,
+  "actualOrdersWritten": false,
+  "publication": "not started"
+}

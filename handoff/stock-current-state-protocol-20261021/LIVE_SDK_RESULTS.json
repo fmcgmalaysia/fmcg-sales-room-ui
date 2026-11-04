@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-21",
+  "scope": "Master StockProtocolTest only; Admin diagnostic draft; SDK1.0.528",
+  "conditionalUpdate": {
+    "passed": true,
+    "stage": "conditional-update-only",
+    "id": "SPT-bc37b68f-c353-4d82-849a-3c67a34619aa",
+    "before": {"quantity": 20, "stockVersion": "V0"},
+    "actual": {"quantity": 17, "stockVersion": "V2-B"},
+    "trace": [
+      {"label": "wrong-version", "ok": false, "error": "WDE0193: Update condition not met."},
+      {"label": "correct-version", "ok": true, "error": null},
+      {"label": "late-old-version", "ok": false, "error": "WDE0193: Update condition not met."},
+      {"label": "candidate-A", "ok": false, "error": "WDE0193: Update condition not met."},
+      {"label": "candidate-B", "ok": true, "error": null}
+    ],
+    "limitation": "No actual timeout/cancellation guarantee or conditional-delete positive test is proved. Fixture retained."
+  },
+  "conditionalLockRelease": {
+    "passed": true,
+    "lockId": "LOCK-SPT-798e1664-2f75-42e4-b199-f7e0d4bc2317",
+    "removed": true,
+    "retainedFixtureId": "SPT-bc37b68f-c353-4d82-849a-3c67a34619aa",
+    "trace": [
+      {"label": "wrong-attempt", "ok": false, "error": "WDE0193: Remove condition not met."},
+      {"label": "late-old-release", "ok": false, "error": "WDE0193: Remove condition not met."},
+      {"label": "current-release", "ok": true, "error": null}
+    ],
+    "limitation": "Conditional deletion verified for synthetic lock; production recovery and all writers are not implemented."
+  }
+}
