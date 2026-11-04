@@ -1,4 +1,4 @@
-import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -247,31 +247,17 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
+      let result;
       try {
-        const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
-        let downloadFile = null;
-        let downloadError = '';
-        try {
-          const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId, `${siteBaseUrl}/buyer-room`);
-          downloadFile = { fileName: String(download.fileName || '').trim(), base64: String(download.base64 || '').trim() };
-          if (!downloadFile.fileName || !downloadFile.base64) throw new Error('Order Excel response was incomplete.');
-        } catch (error) {
-          downloadError = error?.message || 'Order Excel could not be prepared.';
-          console.error('Buyer order Excel preparation failed', error);
-        }
-        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadReady: Boolean(downloadFile), downloadError, message: result.warning || 'Order request sent to Sales Room.' });
-        wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadReady: Boolean(downloadFile), downloadError })
-          .then(lightboxResult => {
-            if (lightboxResult?.action === 'download' && downloadFile) {
-              frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', ...downloadFile });
-            }
-          })
-          .catch(error => console.error('Order Received lightbox could not be opened', error));
-        await loadWorkspace();
+        result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
+        if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
+        return;
       }
+      frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
+      try { await refreshWorkspace(true); }
+      catch (error) { console.error('Buyer order confirmed; workspace readback failed', error); }
     }
   });
   wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, (message) => {
@@ -283,7 +269,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261104-buyer-quantity-efficiency-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261104-buyer-order-success-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.

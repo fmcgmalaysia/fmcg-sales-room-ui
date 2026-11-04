@@ -5,16 +5,16 @@ const vm=require('node:vm');
 const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'..','buyer-room.html'),'utf8').replace(/\r\n/g,'\n');
 function fixture(){
-  const elements=new Map(),posted=[],notifications=[],toasts=[];
+  const elements=new Map(),posted=[],notifications=[],toasts=[],confirmations=[];
   const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,textContent:'',disabled:false,focused:false,classList:{add(){},remove(){}},focus(){this.focused=true}});return elements.get(id)};
   const state={orderSubmitting:true,pendingOrder:[{itemId:'demo',quantityCtn:150}],orderAttempt:{signature:'same',requestId:'original-request'},quantityDrafts:new Map([['demo',{value:'150'}]])};
-  const context={state,$:element,String,post:(...args)=>posted.push(args),quantityEditsBlocked:()=>false,showOrderWait(){},hideOrderWait(){},addOrderNotification:id=>notifications.push(id),toast:msg=>toasts.push(msg)};
+  const context={state,$:element,String,post:(...args)=>posted.push(args),quantityEditsBlocked:()=>false,showOrderWait(){},hideOrderWait(){},addOrderNotification:id=>notifications.push(id),openOrderReceived:id=>confirmations.push(id),toast:msg=>toasts.push(msg)};
   vm.createContext(context);
   vm.runInContext(html.slice(html.indexOf('function clearOrderSubmitError('),html.indexOf('function openOrderReview(')),context);
   const result=html.slice(html.indexOf("  if(m.type==='BUYER_ROOM_ORDER_RESULT'){"),html.indexOf("\n});\npost('BUYER_ROOM_READY'",html.indexOf("  if(m.type==='BUYER_ROOM_ORDER_RESULT'){")));
   const confirm=html.slice(html.indexOf("$('confirmSubmit').onclick=()=>{"),html.indexOf("$('trackMore').onclick"));
   vm.runInContext(confirm,context);
-  return {context,state,element,posted,notifications,toasts,result:m=>{context.m=m;vm.runInContext(result,context)}};
+  return {context,state,element,posted,notifications,toasts,confirmations,result:m=>{context.m=m;vm.runInContext(result,context)}};
 }
 test('failure remains in modal and preserves quantities, drafts and original request identity',()=>{
   const f=fixture(),order=f.state.pendingOrder,attempt=f.state.orderAttempt;
@@ -46,5 +46,5 @@ test('success keeps existing notification, draft cleanup and request reset behav
   const f=fixture();f.result({type:'BUYER_ROOM_ORDER_RESULT',ok:true,orderId:'demo-order'});
   assert.equal(f.state.orderAttempt,null);assert.equal(f.state.pendingOrder,null);
   assert.equal(f.state.quantityDrafts.size,0);assert.deepEqual(f.notifications,['demo-order']);
-  assert.deepEqual(f.toasts,['Order received. View its progress in Track Orders.']);
+  assert.deepEqual(f.confirmations,['demo-order']);assert.deepEqual(f.toasts,[]);
 });
