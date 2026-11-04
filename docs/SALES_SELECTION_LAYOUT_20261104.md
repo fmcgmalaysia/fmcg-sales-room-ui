@@ -17,11 +17,11 @@ Selected is the count of current non-removed My Selection records, reused from `
 - Scoped package verifies all 101 baseline hashes, changes only `index.html`, and preserves 100 other assets including the latest Buyer quantity UI.
 - Chrome local table preview verified the six-row layout. Public layout verification remains required after Pages and Wix publication.
 
-## Release stages at preparation
+## Release result
 
-1. Code: ready for GitHub synchronization.
-2. Pages: not deployed; scope `sales-selection-layout-only`.
-3. Wix: exact single-page draft saved, not published.
-4. Public: original live table inspected; new table not yet public.
+1. Code: `4bc463e17dc180227710ebcd7a9512845b96c2ba`, GitHub PR340. The earlier transient push failures were resolved before deployment.
+2. Pages: run341 / `41828988079` succeeded with scope `sales-selection-layout-only`; all 101 public resource hashes matched. Only Sales `index.html` changed. Temporary branch permission was immediately removed and the original seven rules verified.
+3. Wix: Sales page's single version-token draft was re-read exactly before publication; Studio confirmed published and live. No backend edits in this release.
+4. Public: fresh existing user Sales tab loaded `20261104-sales-selection-layout-v1` in both iframe URL and actual build marker. Six real customer rows had ten matching cells, plain Selection text with transparent background and zero border radius, empty zero RFQ/Risk cells and preserved positive Risk alerts. No captured errors. The original refreshed tab became unavailable; a newly opened user tab was found and verified. This does not establish a fix for intermittent Wix loading.
 
-No claim of completed publication until all four stages pass. Existing verified Excel downloads and the two submitted test orders remain untouched.
+All four release stages passed. Ready for the user's testing; not merged into main or frozen as a new user-confirmed baseline. Existing verified Excel downloads and the two submitted test orders remain untouched. Private exact source/readback, release receipts and screenshots are retained under the root handoff directory of the same task name. Risk/QD scope alignment remains an explicit separate backlog item.
