@@ -606,7 +606,11 @@ export const getSalesRoomOrderDetail = webMethod(
       .filter((line) => normalize(line.orderId) === normalize(orderId) && !line.addedToOrderId)
       .sort((a, b) => normalize(a.lineId).localeCompare(normalize(b.lineId)));
     const [displayOrder] = orderEntry.data.masterReceipt?.submissionId ? await withMasterQuantities(normalize(orderEntry.data.customerId), [{...orderEntry.data, lines}]) : [{...orderEntry.data, lines}];
-    return Object.freeze({ ok: true, order: { ...displayOrder, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal } });
+    const sortRows=lines.map(line=>({record:{_id:line.itemId||line.productId||line.lineId},data:{productId:line.itemId||line.productId,barcode:line.barcode}}));
+    const barcodes=[...new Set(lines.map(line=>normalize(line.barcode)).filter(Boolean))],sortProducts=[];
+    for(let i=0;i<barcodes.length;i+=100){const batch=barcodes.slice(i,i+100),keys=[...batch,...batch.filter(value=>Number.isFinite(Number(value))).map(Number)];const result=await wixData.query('FMCGMALAYSIA').hasSome('barcode',keys).limit(1000).find({suppressAuth:true,consistentRead:true});sortProducts.push(...result.items);}
+    const selectionOrder=await salesSelectionSortProjection(sortRows,sortProducts);
+    return Object.freeze({ ok: true, order: { ...displayOrder, selectionOrder, totalCartons: orderEntry.data.effectiveTotalCartons ?? orderEntry.data.totalCartons, estimatedTotal: orderEntry.data.effectiveEstimatedTotal ?? orderEntry.data.estimatedTotal } });
   }
 );
 
@@ -1451,15 +1455,15 @@ async function readAllPayloadRows(collectionId) {
 
 // Read the same Catalogue classification/brand/sort fields used by Buyer workspaceItems.
 // Only the authorized customer's selection rows are passed in; no operational writes.
-async function salesSelectionSortProjection(rows) {
-  const ids = [...new Set(rows.map(row => normalize(row.data.productId)).filter(Boolean))], products = [];
-  for (let i = 0; i < ids.length; i += 100) {
+async function salesSelectionSortProjection(rows,prefetched=null) {
+  const ids = [...new Set(rows.map(row => normalize(row.data.productId)).filter(Boolean))], products = Array.isArray(prefetched)?[...prefetched]:[];
+  for (let i = 0; !prefetched && i < ids.length; i += 100) {
     const result = await wixData.query('FMCGMALAYSIA').hasSome('_id', ids.slice(i, i + 100)).limit(100).find({ suppressAuth: true });
     products.push(...result.items);
   }
   const resolved = new Set(products.map(product => normalize(product.barcode)).filter(Boolean));
   const barcodes = [...new Set(rows.map(row => normalize(row.data.barcode || row.data.unitBarcode)).filter(Boolean))].filter(barcode => !resolved.has(barcode));
-  for (const barcode of barcodes) {
+  for (const barcode of prefetched?[]:barcodes) {
     let product = null;
     try { product = (await wixData.query('FMCGMALAYSIA').eq('barcode', barcode).limit(1).find({ suppressAuth: true, consistentRead: true })).items[0]; } catch (_) { /* Match Buyer's numeric barcode retry. */ }
     if (!product && Number.isFinite(Number(barcode))) {
@@ -2437,4 +2441,4 @@ export const getSalesRoomActivityForAdmin = webMethod(
   }
 );
 
-export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff);return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});
+export const salesRoomShipment = webMethod(Permissions.SiteMember,async(customerId,company,action,requestId,input)=>{if(['CHAT_LIST','CHAT_PAGE','CHAT_SAVE','DOCUMENT'].includes(action))throw Error('Use Support for customer documents and department communication.');const staff=await requireAuthorizedStaffContext();const customer=await findAuthorizedCustomer(customerId,staff);return requestMasterFulfilment({customerId:normalize(customer.customerId),customerName:normalize(customer.companyName)||normalize(customer.customerId),company,staff,action,requestId,input});});

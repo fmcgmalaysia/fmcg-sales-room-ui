@@ -5,13 +5,23 @@ import { readSalesShipmentDate, shipmentDateLocked, readShipmentPlans } from 'ba
 import { readShortage } from 'backend/purchaseShortage.js';
 import { preparationSummary } from 'backend/warehousePreparation.js';
 import { resolveBatchEntitlements } from 'backend/shipmentBatchAllocation.js';
-import { readDeskCommitments, deskTaskPortions } from 'backend/shortloadResolutionModel.js';
+import { readDeskCommitments, deskTaskPortions, shortloadStatus } from 'backend/shortloadResolutionModel.js';
 import { readSupportDesks } from 'backend/supportDesk.js';
 import { readPhysicalOutflows } from 'backend/physicalOutflow.js';
+import { projectPackingContext } from 'backend/packingListContext.js';
+import { currentDeskDeliveries } from 'backend/warehouseDeliveryView.js';
+import { changeDeskDelivery } from 'backend/deskDelivery.js';
 export function projectPurchaseQuantities({customerId,requests,orders,tasks,activity,purchaseOrders=[],workspace=null}) {
   if(typeof customerId!=='string'||!customerId||!Array.isArray(requests)||!requests.length||requests.length>100)throw Error('Invalid quantity request.');
   if(activity.some(event=>event.action==='PURCHASE_QUANTITY_CASE_DECIDED'&&event.result==='SAVED')&&!workspace)throw Error('Current quantity case feedback is required.');
-  const output=[];
+  const output=[],packing=workspace?projectPackingContext({...workspace,activity}):null;
+  const deliveries=packing?currentDeskDeliveries(packing.lists,readSupportDesks(activity,workspace.company)):[];
+  // A pure preview of the same Warehouse loading validator. No journal, file or stock writes.
+  const readyFor=taskId=>deliveries.filter(list=>list.lines.some(line=>line.taskId===taskId)).map(list=>{
+    const line=list.lines.find(row=>row.taskId===taskId),status=shortloadStatus(activity,list,line);
+    let ready=false;if(status.maximum>line.loaded)try{changeDeskDelivery({context:packing,list,input:{action:'DESK_LOAD',revision:list.revision,taskId,loaded:status.maximum,resolutionRevision:status.revision||'',reasonCodes:[],note:''},actor:'WAREHOUSE',id:list.id,revision:list.revision,at:list.updatedAt||list.sentAt});ready=true;}catch(_){/* A blocked load cannot be advertised as ready. */}
+    return {id:list.id,desk:list.desk.number,remaining:Math.max(0,status.maximum-line.loaded),ready};
+  });
   for(const request of requests){
     if(!request.orderId||!request.submissionId)throw Error('Accepted order identity is required.');
     const receipts=activity.filter(row=>row.description===request.orderId&&row.action==='ORDER_RECEIVED'&&row.result==='ACCEPTED'&&row.details?.submissionId===request.submissionId);
@@ -44,7 +54,7 @@ export function projectPurchaseQuantities({customerId,requests,orders,tasks,acti
       const shipmentPlan=readShipmentPlans(activity).find(plan=>plan.customerId===customerId&&plan.orderId===request.orderId&&plan.batches.some(batch=>batch.lines.some(line=>line.taskId===task.title)));
       const entitlements=adjusted?.batchEntitlements||(shipmentPlan?resolveBatchEntitlements(shipmentPlan,task.title,{committed:quantity,received:warehouse?.customerReceived||0}):[]);
       const shipmentBatches=entitlements.map(row=>({id:row.id,label:row.label,quantity:row.quantity,metrics:row.metrics,at:shipmentPlan.at,by:shipmentPlan.by}));
-      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:commitment,...(desk?{quantityContract:2,orderedQtyCtn:quantity,deskCommitments:desk.batches,deskPhysical,loadedQtyCtn:Math.max(desk.loaded,completion?.loadedQty||0),uncommittedQtyCtn:quantity-commitment}:{}),...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches:desk?[]:shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===received?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse||adjusted?{receivedQtyCtn:received,receivedUpdatedAt:warehouse?.allocationAt||warehouse?.at||order.masterReceivedTime||receipt.activityTime}:{})});
+      lines.push({lineId:task.imageAltText,barcode:order.description,committedQtyCtn:commitment,...(desk?{purchaseStarted:Boolean(adjusted?.po),deskReadiness:readyFor(task.title),quantityContract:2,orderedQtyCtn:quantity,deskCommitments:desk.batches,deskPhysical,loadedQtyCtn:Math.max(desk.loaded,completion?.loadedQty||0),uncommittedQtyCtn:quantity-commitment}:{}),...(demandAdjustment?{demandAdjustment}:{}),shipmentBatches:desk?[]:shipmentBatches,quantityEdited:history.length>0,quantityUpdatedAt:history.at(-1)?.at||new Date(order.masterReceivedTime||receipt.activityTime).toISOString(),history,...(preparation?{preparation}:{}),...(completion?{completion:{...completion,closedUnfulfilledQty:decision?.customerDecision==='STOP'&&completion.completedQty===received?Math.max(0,quantity-completion.completedQty):0}}:{}),...(decision?{fulfilment:{decision:decision.customerDecision,message:decision.customerMessage,expectedDate:decision.expectedDate,at:decision.at}}:{}),...(warehouse||adjusted?{receivedQtyCtn:received,receivedUpdatedAt:warehouse?.allocationAt||warehouse?.at||order.masterReceivedTime||receipt.activityTime}:{})});
     }
     const ownedOrders=orders.filter(row=>row.title===request.orderId&&row.customerId===customerId&&row.submissionId===request.submissionId);const date=readSalesShipmentDate(request.orderId,customerId,request.submissionId,ownedOrders[0]?.estimatedShipmentDate,activity);
     output.push({orderId:request.orderId,submissionId:request.submissionId,lines,shipmentDate:{...date,locked:workspace?shipmentDateLocked(workspace.tasks.filter(row=>row.orderId===request.orderId&&row.customerId===customerId)):false}});
