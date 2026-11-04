@@ -14,7 +14,7 @@ export async function readPurchaseQuantities(request){
   try {const body=await request.body.json();if(!['NCT','GHR'].includes(body.company)||typeof body.customerId!=='string'||body.customerId.length>100||!Array.isArray(body.orders)||!body.orders.length||body.orders.length>100)throw Error('Invalid request.');
     const ids=body.orders.map(row=>row.orderId);if(ids.some(id=>typeof id!=='string'||id.length>160))throw Error('Invalid order.');
     const names=PURCHASE_COLLECTIONS[body.company];
-    const [orders,tasks,activity,records,suppliers]=await Promise.all([rows(names.orders),rows(names.tasks),rows(names.activity),rows('PurchaseOrders'),rows('SharedSuppliers')]);
+    const [orders,tasks,activity,records,suppliers]=await Promise.all([rows(names.orders),rows(names.tasks),rows(names.activity),rows('PurchaseOrders','company',[body.company]),rows('SharedSuppliers')]);
     const workspace=projectPurchaseWorkspace({company:body.company,orders,tasks,activity,suppliers,staff:{staffId:'SYSTEM_CUSTOMER_READ',staffName:'System'}}),purchaseOrders=projectPurchaseOrders({company:body.company,workspace,records});
     return {status:200,body:projectPurchaseQuantities({customerId:body.customerId,requests:body.orders,orders,tasks,activity,purchaseOrders,workspace})};
   }catch(error){return {status:503,body:{ok:false,error:'Current purchase quantities could not be confirmed. Please refresh.'}};}

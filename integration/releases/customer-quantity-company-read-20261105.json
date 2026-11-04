@@ -1,0 +1,26 @@
+{
+  "objective": "Filter customer quantity PurchaseOrders reads by validated company before retrieving rows",
+  "filesChanged": [
+    "integration/backend/purchaseQuantityRead.js"
+  ],
+  "freshWixNormalizedExactMatch": true,
+  "wixOriginalSha256": "e48b7a84c23960aaa0187a6fe6d73083c62d811096eca19e36e6e4409624120c",
+  "protectedRecoveryTag": "verified/buyer-selection-image-links-20261104",
+  "tests": {
+    "new": 3,
+    "existing": 44,
+    "failed": 0,
+    "foreignPOFixtureRows": 50000,
+    "returnedCurrentCompanyRows": 1,
+    "realWixLatency": "NOT_MEASURED"
+  },
+  "businessWrites": 0,
+  "newCollections": 0,
+  "newIndexes": 0,
+  "newCache": 0,
+  "staticAssetsChanged": 0,
+  "pagesStatus": "96 existing resources unchanged",
+  "wixPublish": "PENDING",
+  "publicVerification": "PENDING",
+  "limitations": "Reduces cross-company PO retrieval only; current-company orders/tasks/activity still read historical records. Does not reduce CMS item count."
+}
