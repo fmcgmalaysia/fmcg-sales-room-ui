@@ -1,4 +1,4 @@
-import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
+import { getBuyerTransactionHistory, getBuyerWorkspace, createBuyerSelectionDownload, createBuyerOrderDownload, getBuyerOrderPage, getBuyerOrderDetail, saveBuyerQuantity, reduceBuyerOrderLine, removeBuyerItem, recoverBuyerItem, submitBuyerOrder, requestBuyerCustomerUser, setBuyerPrimaryUser, markBuyerAccountNotificationsRead } from 'backend/catalogueAuth.web';
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
 import { session } from 'wix-storage-frontend';
@@ -247,26 +247,31 @@ $w.onReady(async function () {
       return;
     }
     if (message.type === 'BUYER_ROOM_SUBMIT_ORDER') {
-      let result;
       try {
-        result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
-        if (!result?.ok || !result.orderId) throw new Error(result?.message || 'Order could not be confirmed.');
+        const result = await submitBuyerOrder(message.lines || [], assistCustomerId, message.requestId || '', message.customerPoNumber || '');
+        let downloadFile = null;
+        let downloadError = '';
+        try {
+          const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
+          const download = await createBuyerOrderDownload(result.orderId, assistCustomerId, `${siteBaseUrl}/buyer-room`);
+          downloadFile = { fileName: String(download.fileName || '').trim(), base64: String(download.base64 || '').trim() };
+          if (!downloadFile.fileName || !downloadFile.base64) throw new Error('Order Excel response was incomplete.');
+        } catch (error) {
+          downloadError = error?.message || 'Order Excel could not be prepared.';
+          console.error('Buyer order Excel preparation failed', error);
+        }
+        frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, downloadReady: Boolean(downloadFile), downloadError, message: result.warning || 'Order request sent to Sales Room.' });
+        wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, downloadReady: Boolean(downloadFile), downloadError })
+          .then(lightboxResult => {
+            if (lightboxResult?.action === 'download' && downloadFile) {
+              frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', ...downloadFile });
+            }
+          })
+          .catch(error => console.error('Order Received lightbox could not be opened', error));
+        await loadWorkspace();
       } catch (error) {
         frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ok: false, message: error?.message || 'Order could not be confirmed.' });
-        return;
       }
-      // Only the submission decides whether the order succeeded. Excel and reads cannot undo its receipt.
-      frame.postMessage({ type: 'BUYER_ROOM_ORDER_RESULT', ...result, message: result.warning || 'Order request sent to Sales Room.' });
-      const siteBaseUrl = String(wixLocationFrontend.baseUrl || '').replace(/\/+$/, '');
-      Promise.resolve().then(() => wixWindowFrontend.openLightbox('Order Received', { orderId: result.orderId, assistCustomerId, buyerRoomUrl: `${siteBaseUrl}/buyer-room` }))
-        .then(lightboxResult => {
-          if (lightboxResult?.action === 'download' && lightboxResult.orderId === result.orderId && lightboxResult.fileName && lightboxResult.base64) {
-            frame.postMessage({ type: 'BUYER_ROOM_DOWNLOAD_ORDER_EXCEL', fileName: lightboxResult.fileName, base64: lightboxResult.base64 });
-          }
-        })
-        .catch(error => console.error('Order confirmed; Order Received lightbox could not be opened', error));
-      try { await refreshWorkspace(true); }
-      catch (error) { console.error('Order confirmed; workspace readback failed', error); }
     }
   });
   wixRealtimeFrontend.subscribe({ name: 'sales-room-signals' }, (message) => {
