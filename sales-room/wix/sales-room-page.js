@@ -71,7 +71,7 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261105-sales-streamline-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261105-sales-date-segments-v1';
   const staffPromise = loadCurrentStaff();
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
