@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 
 test('successful order opens the native Wix Order Received lightbox', () => {
   const pageCode = fs.readFileSync(path.join(root, 'buyer-room', 'wix', 'buyer-room-page.js'), 'utf8');
-  assert.match(pageCode, /openLightbox\('Order Received', \{ orderId: result\.orderId, downloadReady: Boolean\(downloadFile\), downloadError \}\)/);
+  assert.match(pageCode, /openLightbox\('Order Received', \{ orderId: result\.orderId, assistCustomerId, buyerRoomUrl:/);
   assert.doesNotMatch(pageCode, /BUYER_ROOM_NATIVE_ORDER_SUBMIT/);
   assert.doesNotMatch(pageCode, /BUYER_ROOM_PREPARE_ORDER_DOWNLOAD/);
 });
@@ -23,7 +23,7 @@ test('Order Received popup hands its signed Excel to the embedded Buyer Room dow
   assert.match(lightboxCode, /downloadButton\.enable\(\)/);
   assert.doesNotMatch(lightboxCode, /wixLocationFrontend/);
   assert.match(lightboxCode, /downloadButton\.onClick/);
-  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download' \}\)/);
+  assert.match(lightboxCode, /lightbox\.close\(\{ action: 'download', orderId, fileName, base64 \}\)/);
   assert.match(pageCode, /lightboxResult\?\.action === 'download'/);
   assert.match(pageCode, /BUYER_ROOM_DOWNLOAD_ORDER_EXCEL/);
   assert.match(html, /function downloadOrderExcel/);
