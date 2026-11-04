@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build-version" content="20261103-customer-file-parent-open-v1">
+<meta name="build-version" content="20261104-buyer-quantity-efficiency-v1">
 <title>FMCG Malaysia Buyer Room</title>
 <style>
 :root{--green:#06382e;--green-deep:#03271f;--green-soft:#0d5543;--mint:#e8f3ed;--orange:#f15a2a;--orange-dark:#dd461d;--orange-soft:#fff3ed;--paper:#f5f7f5;--surface:#fff;--ink:#132721;--muted:#687873;--line:#dce4df;--line-strong:#c9d4ce;--danger:#b9412c;--top:94px;--side:236px;--radius:13px;--shadow:0 12px 34px rgba(15,54,43,.065)}
@@ -514,6 +514,7 @@ function finishQuantity(result){
 function showOrderWait(preparing=false){$('orderWaitTitle').textContent=preparing?'Preparing your order…':'Sending your order…';$('orderWaitCopy').textContent=preparing?'Saving your latest quantities.':'This may take about 10 seconds.';$('orderWaitBg').classList.add('show');$('orderWaitBg').setAttribute('aria-hidden','false')}
 function hideOrderWait(){$('orderWaitBg').classList.remove('show');$('orderWaitBg').setAttribute('aria-hidden','true')}
 function requestQuantityReview(){
+  if(state.quantityReviewRequested||state.orderSubmitting||$('submitModalBg').classList.contains('show'))return;
   showOrderWait(true);
   state.quantityReviewRequested=true;
   document.querySelectorAll('#orderRows [data-qty]').forEach(input=>{const item=state.my.find(x=>String(x.id)===input.dataset.qty);if(item&&isOrderable(item)&&!input.disabled&&!input.readOnly&&state.quantityDrafts.get(String(item.id))?.editing)confirmQuantityDraft(item,input,false)});
@@ -672,6 +673,7 @@ function openOrderReview(){
   $('submitModalBg').classList.add('show');
 }
 $('submitOrder').onclick=requestQuantityReview;
+$('submitOrder').onpointerdown=event=>{if(event.button!==0||$('submitOrder').disabled)return;event.preventDefault();requestQuantityReview()};
 $('cancelSubmit').onclick=()=>{$('submitModalBg').classList.remove('show');state.pendingOrder=null};
 $('confirmSubmit').onclick=()=>{
   if(quantityEditsBlocked())return toast('Confirm each edited quantity with Enter and wait for saving to finish.');

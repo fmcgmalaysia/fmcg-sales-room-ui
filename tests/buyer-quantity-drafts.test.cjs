@@ -8,7 +8,7 @@ const source=html.slice(html.indexOf('function quantityEditsBlocked('),html.inde
 function fixture(){
   const posted=[],state={my:[{id:'a',orderQtyCtn:0},{id:'b',orderQtyCtn:0}],pendingQuantities:new Map(),quantityDrafts:new Map(),memberName:'Tester'};
   const inputs=[],reviews=[],messages=[],shown=new Set();
-  const context={state,Map,Set,document:{querySelectorAll:()=>inputs},isOrderable:()=>true,$:id=>({classList:{contains:()=>true,add:()=>shown.add(id),remove:()=>shown.delete(id)},setAttribute(){}}),openOrderReview:()=>reviews.push(true),num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast:message=>messages.push(message)};
+  const context={state,Map,Set,document:{querySelectorAll:()=>inputs},isOrderable:()=>true,$:id=>({classList:{contains:name=>id==='orderView'||shown.has(id),add:()=>shown.add(id),remove:()=>shown.delete(id)},setAttribute(){}}),openOrderReview:()=>{reviews.push(true);shown.add('submitModalBg')},num:v=>Number.isFinite(Number(v))?Number(v):0,post:(type,payload)=>posted.push({type,...payload}),summary(){},renderOrder(){},toast:message=>messages.push(message)};
   vm.createContext(context);vm.runInContext(source,context);
   const input=(value,id='a')=>({value:String(value),dataset:{qty:id,committedQty:'0'},readOnly:false,parentElement:{querySelector:()=>({hidden:true,disabled:false})},checkValidity:()=>true,reportValidity(){throw Error('invalid')},closest:()=>({querySelector:()=>({textContent:''})})});
   return {state,context,posted,input,inputs,reviews,messages,shown,item:id=>state.my.find(x=>x.id===id),refresh:rows=>{state.my=rows;context.restoreQuantityDrafts()},reply:(id,qty,ok=true)=>context.finishQuantity({itemId:id,quantityCtn:qty,ok,qtyEditedAt:'2026-10-05T08:00:00.000Z',qtyEditedBy:'Tester',message:ok?'':'Save failed'})};
@@ -112,4 +112,22 @@ test('order preparation stays visible until all quantity saves finish',()=>{
 test('quantity save failure dismisses preparation and never opens review',()=>{
  const f=fixture();f.context.confirmQuantityDraft(f.item('a'),f.input(10),false);f.context.requestQuantityReview();
  f.reply('a',10,false);assert.equal(f.shown.has('orderWaitBg'),false);assert.equal(f.reviews.length,0);assert.equal(f.posted.length,1);
+});
+
+test('pointer-down review survives later blur, synthesized click and replies without a duplicate review',()=>{
+ const f=fixture(),a=f.input(100),b=f.input(100,'b');f.inputs.push(a,b);
+ f.context.rememberQuantityDraft(f.item('a'),a);f.context.confirmQuantityDraft(f.item('a'),a,false);
+ f.context.rememberQuantityDraft(f.item('b'),b);
+ const button={disabled:false};f.context.$=id=>id==='submitOrder'?button:{classList:{contains:()=>false}};
+ // Use the production pointer handler, then the fixture's real review implementation.
+ const handler=html.match(/\$\('submitOrder'\)\.onpointerdown=([^\n]+)/)[1].replace(/;$/,'');
+ const pointer=vm.runInContext('('+handler+')',f.context);
+ f.context.$=id=>id==='submitOrder'?button:{classList:{contains:name=>id==='orderView'||f.shown.has(id),add:()=>f.shown.add(id),remove:()=>f.shown.delete(id)},setAttribute(){}};
+ let prevented=0;pointer({button:0,preventDefault(){prevented++}});
+ f.context.confirmQuantityDraft(f.item('b'),b,false);f.context.requestQuantityReview();
+ assert.equal(prevented,1);assert.equal(f.posted.length,2);assert.equal(f.reviews.length,0);
+ f.reply('b',100);f.reply('a',100);assert.equal(f.reviews.length,1);
+ f.context.requestQuantityReview();assert.equal(f.reviews.length,1);
+ button.disabled=true;pointer({button:0,preventDefault(){throw Error('disabled')}});
+ button.disabled=false;pointer({button:2,preventDefault(){throw Error('secondary')}});
 });

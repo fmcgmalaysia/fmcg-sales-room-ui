@@ -79,9 +79,12 @@ $w.onReady(async function () {
     setTimeout(() => prepareSelectionDownload(true), 1500);
   });
 
-  let workspaceRefreshPromise = null, workspaceReadEpoch = 0;
-  function refreshWorkspace() {
-    if (!workspaceRefreshPromise) workspaceRefreshPromise = loadWorkspace().finally(() => { workspaceRefreshPromise = null; });
+  let workspaceRefreshPromise = null, workspaceReadEpoch = 0, workspaceRefreshQueued = false;
+  function refreshWorkspace(afterWrite = false) {
+    if (afterWrite) { workspaceRefreshQueued = true; workspaceReadEpoch++; }
+    if (!workspaceRefreshPromise) workspaceRefreshPromise = (async () => {
+      do { workspaceRefreshQueued = false; await loadWorkspace(); } while (workspaceRefreshQueued);
+    })().finally(() => { workspaceRefreshPromise = null; if (workspaceRefreshQueued) return refreshWorkspace(); });
     return workspaceRefreshPromise;
   }
   async function loadWorkspace() {
@@ -105,7 +108,8 @@ $w.onReady(async function () {
     }
     if (historyCustomerId !== result.context.customerId) { historyFiles.clear(); historyCustomerId = result.context.customerId; }
     if (assistCustomerId) session.setItem('catalogueAssistCustomerId', result.context.customerId);
-    const currentSelectionKey = JSON.stringify(result.myList || []);
+    // Quantity and its audit fields do not appear in the My Selection Excel.
+    const currentSelectionKey = JSON.stringify((result.myList || []).map(({ orderQtyCtn, qtyEditedAt, qtyEditedBy, updatedAt, lastEditedBy, ...selection }) => selection));
     if (currentSelectionKey !== selectionDataKey) {
       selectionDataKey = currentSelectionKey;
       selectionDownloadUrl = '';
@@ -132,13 +136,23 @@ $w.onReady(async function () {
     prepareSelectionDownload();
   }
 
+  let quantitySavesInFlight = 0, quantityRefreshNeeded = false;
   async function runAction(action, successMessage, actionName, itemId = '') {
+    const quantityAction = actionName === 'quantity';
+    if (quantityAction) quantitySavesInFlight++;
     try {
       const result = await action();
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', ...result, itemId: result?.itemId || itemId, action: actionName, ok: true, message: successMessage });
-      await loadWorkspace();
+      if (quantityAction) quantityRefreshNeeded = true;
+      else await loadWorkspace();
     } catch (error) {
       frame.postMessage({ type: 'BUYER_ROOM_ACTION_RESULT', action: actionName, itemId, ok: false, message: error?.message || 'The action could not be completed.' });
+    } finally {
+      if (quantityAction && --quantitySavesInFlight === 0 && quantityRefreshNeeded) {
+        quantityRefreshNeeded = false;
+        try { await refreshWorkspace(true); }
+        catch (error) { console.error('Buyer quantity saved; workspace readback failed', error); }
+      }
     }
   }
 
@@ -269,7 +283,7 @@ $w.onReady(async function () {
     // Attach the message listener before loading the embed. A cached HTML frame
   // can otherwise send BUYER_ROOM_READY before Wix starts listening, leaving
   // the first visit on the loading state until the page is refreshed.
-  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261103-customer-file-parent-open-v1';
+  frame.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261104-buyer-quantity-efficiency-v1';
   try { await refreshWorkspace(); }
   catch (error) { console.error('Buyer Room authorization failed', error); if (!assistCustomerId) wixLocationFrontend.to('/buyer-room-login'); }
   // Visible-frame polling is the only periodic workspace refresh authority.
