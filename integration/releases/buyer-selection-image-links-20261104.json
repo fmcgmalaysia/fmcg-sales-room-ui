@@ -25,7 +25,7 @@
     "code": "22f30ab_GITHUB_SYNCED_PR339",
     "pages": "UNCHANGED_101_RESOURCES_NO_DEPLOYMENT_REQUIRED",
     "wix": "TWO_DRAFTS_VERIFIED_PUBLISHED_AND_LIVE",
-    "public": "USD_SGD_NATIVE_DOWNLOADS_AND_NATIVE_LINK_XML_PASS_EXCEL_CLICK_AWAITING_USER"
+    "public": "USD_SGD_DOWNLOADS_VERIFIED_USER_CONFIRMED_LINK_ISSUE_RESOLVED"
   },
   "publicEvidence": {
     "USD": {"bytes":8066,"F2":"USD / EA","G2":"USD / CTN","A3A4":"Native external hyperlinks matching displayed URLs"},
@@ -33,8 +33,15 @@
     "formulas": "Original IF(blank EA or price, blank, EA*price) retained in G3/G4",
     "imageTarget": "Actual exported AJAX URL opened directly and displayed correct product image; this is not an Excel-click test",
     "desktopAttempt": "Old Excel window no longer present; Downloads app approval timed out. No protection/security settings changed, no alternate desktop control used.",
-    "nativeClick": "Awaiting one user click on A3 in the newly downloaded workbook",
+    "nativeClick": "User screenshot showed native Excel hyperlink confirmation for the exact Wix image URL; user then explicitly said this issue was resolved and authorized closeout in voice. Do not infer specific browser tab placement.",
     "buyerPage": "User-fresh801 identity/selection normal; reload and802 embed intermittently blank while native outer Excel export works. Wix suspense/fallback logs observed on801, not asserted as root cause or repaired."
+  },
+  "verifiedCheckpoint": {
+    "tag": "verified/buyer-selection-image-links-20261104",
+    "code": "22f30ab6d84fb94b076fdee0f00da28b973af338",
+    "wixGeneratorSha256": "728e070d903b3b6a504d28c6f771558ae42b0d5f10f20e119ced06a12819083e",
+    "wixDownloadSha256": "9ed695ccf2b87644a5725a9e4dffe50b7a4b00fd5f82404a5e0604aceb43000f",
+    "scope": "My Selection Excel native download, image hyperlink and customer-currency F/G headers only"
   },
   "limits": [
     "Excel/default-browser decides tab placement; no promise to force a new tab",
