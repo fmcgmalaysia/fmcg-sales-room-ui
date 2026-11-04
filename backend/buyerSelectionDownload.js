@@ -1,11 +1,14 @@
 import wixData from 'wix-data';
 import { mediaManager } from 'wix-media-backend';
 import { createHash } from 'crypto';
+
 import { buildBuyerSelectionExcel } from 'backend/buyerSelectionExcel.js';
+
 
 const CUSTOMER_COLLECTION = 'WixCustomers';
 const PRODUCT_COLLECTION = 'FMCGMALAYSIA';
 const BUYER_LIST_COLLECTION = 'WixBuyerListItems';
+
 
 function normalize(value) { return String(value ?? '').trim(); }
 function upper(value) { return normalize(value).toUpperCase(); }
@@ -41,6 +44,7 @@ function imageUrl(value, depth = 0) {
   return '';
 }
 
+
 async function allSelectionRecords(customerId) {
   let result = await wixData.query(BUYER_LIST_COLLECTION).eq('customerId', customerId).limit(1000).find({ suppressAuth: true, consistentRead: true });
   const records = [...result.items];
@@ -48,6 +52,7 @@ async function allSelectionRecords(customerId) {
   return records.map(record => ({ record, data: payloadData(record) }))
     .filter(({ record, data }) => normalize(data.customerId) === customerId && !Boolean(record.removed || data.removed));
 }
+
 
 async function productsByIds(ids) {
   const products = [];
@@ -57,6 +62,7 @@ async function productsByIds(ids) {
   }
   return products;
 }
+
 
 async function productByBarcode(barcode) {
   try {
@@ -71,6 +77,7 @@ async function productByBarcode(barcode) {
   } catch (_) { return null; }
 }
 
+
 export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const id = normalize(customerId);
   const customers = await wixData.query(CUSTOMER_COLLECTION).eq('customerId', id).limit(2).find({ suppressAuth: true, consistentRead: true });
@@ -82,6 +89,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   const currency = upper(customer.preferredCurrency || customer.tradingCurrency || 'USD');
   const selections = await allSelectionRecords(id);
   if (!selections.length) throw new Error('There are no products to export.');
+
 
   const productIds = [...new Set(selections.map(({ data }) => normalize(data.productId)).filter(Boolean))];
   const products = await productsByIds(productIds);
@@ -95,6 +103,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
       byBarcode.set(normalize(product.barcode), product);
     });
   }
+
 
   const rows = selections.map(({ data }) => {
     const storedBarcode = normalize(data.barcode || data.unitBarcode);
@@ -118,7 +127,7 @@ export async function buildBuyerSelectionDownload(customerId, buyerRoomUrl) {
   });
   const bytes = buildBuyerSelectionExcel({ buyerRoomUrl, currency, rows });
   const fileName = `fmcgmalaysia.com-My-Selection-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  const versionKey = createHash('sha256').update(JSON.stringify({ id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
+  const versionKey = createHash('sha256').update(JSON.stringify({ format: 'selection-image-links-v1', id, buyerRoomUrl, currency, rows, quoteVersions: selections.map(({ data }) => data.quoteEffectiveAt || data.quoteSyncedAt || '') })).digest('hex');
   return { fileName, bytes: Buffer.from(bytes), rowCount: rows.length, versionKey };
 }
 
@@ -183,3 +192,5 @@ export async function createBuyerSelectionMediaDownload(customerId, buyerRoomUrl
     versionKey: file.versionKey
   };
 }
+
+

@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-04",
+  "branch": "fix/buyer-selection-image-links-20261104",
+  "objective": "Clickable image URLs and customer-currency EA/carton headers in My Selection Excel",
+  "baseline": {
+    "code": "6d30665",
+    "recoveryTag": "verified/buyer-selection-excel-20261104",
+    "freshWixComparison": "Same business source; only existing blank lines and EOF newline differed. Exact live formatting retained.",
+    "nativeExcelUserConfirmed": true
+  },
+  "runtimeFiles": ["backend/buyerSelectionExcel.js", "backend/buyerSelectionDownload.js"],
+  "changes": [
+    "Native external hyperlinks for valid image web URLs in A3 onward; original URL text retained",
+    "F2 customer currency / EA and G2 customer currency / CTN; original G=E*F formula retained",
+    "Existing export hash includes a format revision to avoid reusing old-format files"
+  ],
+  "verification": {
+    "buyerCjsChecksPassed": 92,
+    "failed": 0,
+    "wixGeneratorDraft": "MATCHES_TESTED_SOURCE_EXCLUDING_ONLY_LINE_ENDING_AND_EOF_FORMAT",
+    "wixDownloadDraft": "EXACT_ONE_LINE_CHANGE_RELATIVE_TO_LIVE",
+    "orderReceivedWorkbook": "BYTE_IDENTICAL"
+  },
+  "stages": {
+    "code": "COMPLETE_LOCAL",
+    "pages": "UNCHANGED_101_RESOURCES_NO_DEPLOYMENT_REQUIRED",
+    "wix": "TWO_DRAFTS_VERIFIED_NOT_PUBLISHED",
+    "public": "NOT_VERIFIED"
+  },
+  "limits": [
+    "Excel/default-browser decides tab placement; no promise to force a new tab",
+    "Native My Selection Excel download is protected and not replaced",
+    "Historical customer PDF download/back and CMS long-term reading remain separate backlog"
+  ]
+}
