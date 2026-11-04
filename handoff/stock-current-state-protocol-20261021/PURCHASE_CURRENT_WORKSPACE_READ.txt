@@ -1,0 +1,60 @@
+2026-10-22 — READ-ONLY CURRENT PURCHASE ROOT + ORIGINAL READ MODE GATE
+
+Recovery point: pushed228604c, same existingPR220/current task. No production edit,
+browser, credentials, new external permission, CMS mutation, mode change or publish.
+
+Implemented
+- createCurrentPurchaseWorkspaceRead authenticates original Purchase staff, runs in
+  common generation barrier, requires ACTIVE/schema/index/build and private complete
+  current workspace. Uses existing current projection, not historical stock totals.
+- ORIGINAL GP cache formula is prepared PRIVATELY per original independent demand
+  group. If any cache requires saving, return ONLY company/staff/task/current version
+  suggestion (PURCHASE_MARGIN_REFRESH_REQUIRED_V1), no preview GP/rates/raw orders or
+  partially actionable workspace. No background writes occur in this read method.
+- Original open-currency membership is collected by ORIGINAL factory with a storage-
+  refusing capability and no actual FX lookup. This prevents an old locked/closed
+  removed currency from breaking valid active currency reads. One actual FX snapshot
+  is reused by per-group private calculations; formulas/open-invoice rules unchanged.
+  Collector results are discarded; attempts to write cannot reach storage.
+- When no cache write is needed, returns original GP/source GP (unknown remains null),
+  short names/warning, original progress/stage/archive calculation and COMPLETE current
+  outstanding relation metadata/halos, all under same outer generation barrier.
+  Related archived rows retain halos; incomplete relation read refuses, never zero.
+- Actual candidate getPurchaseWorkspaceCurrent SiteMember entry shares original auth/
+  exact table codec/current source reader with existing Purchase root. All writer
+  coverage remains EMPTY. Public getPurchaseWorkspace not called from current root.
+- Original getPurchaseWorkspace candidate now checks SERVER mode after original auth.
+  Confirmed LEGACY alone may execute original body/cache refresh. ACTIVE goes current;
+  missing/corrupt/pending/maintenance/shadow control stops. No browser mode switch and
+  no old automatic GP writer after ACTIVE. Removing narrow wrapper yields byte-exact
+  original file. MUST initialize paired controls before any actual installation.
+- Runtime80modules37exports; root has6SiteMember entries. Extra query/auth only, no
+  new save entry or privilege. No whole-page production replacement performed.
+
+Evidence
+Workspace/root/borrow-focused23pass0fail1345.4525ms; router/workspace/runtime14pass
+0fail538.517ms. Both-company GP/names/stage/archive/halo, exact refresh-only suggestion,
+removed locked currency excluded from actual FX request, unknown FX/null, names warning,
+incomplete relation refusal, original auth before control and server mode gates tested.
+Actual-import current root returns current inventory metadata with original redaction/
+progress and no database mutation; default empty coverage blocks before tables.
+Actual original read wrapper native test proves ACTIVE never calls old refresh, LEGACY
+calls it once; stripped wrapper exact original. All stock-current720pass0fail6814.2072ms.
+Protected directories exactd447185; git diff --check passed. Node/VM/mocked native API,
+not live SDK/site-member/FX/permission/capacity/public acceptance.
+
+Still next
+Frontend must retain a fresh original MARGIN_REFRESH UUID and server-owned metadata
+in SAME original staff/company session cache BEFORE invoking save, preserve unrelated
+drafts, wait for exact receipt, safely sequence multiple groups and then request fresh
+current workspace. Unknown/reload cannot invent another UUID or call old receipts.
+Do not install backend root without this orchestration or treat suggestion as saved.
+Capacity still needs platform evidence: original nonstock history scans remain, current
+product sets are complete and bounded; repeated per-group margin context work and extra
+currency inspection are NOT claimed production-efficient or measured. No activation
+until bounds/time/quiescent cutover/full writer coverage/shadow checks pass.
+
+Other native schema/permissions/CMS initialization/files/recovery/termination/remaining
+writers/cutover/public acceptance remain open. Support real invoice OFF, main unchanged.
+Four states: code incomplete candidate; Pages unchanged; Wix not installed/published;
+new public stock/borrowing unavailable/unverified. ACTIVE OFF.

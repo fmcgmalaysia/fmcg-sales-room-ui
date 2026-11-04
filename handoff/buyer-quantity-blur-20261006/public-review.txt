@@ -1,0 +1,220 @@
+- region "top of page"
+- link "Built on Wix Studio":
+  - /url: //wix.com/studio
+  - text: Built on
+  - img "Wix Studio"
+- main:
+  - iframe [active] [name="htmlComp-iframe"]:
+    - banner:
+      - button "Return to your Catalogue":
+        - img "fmcgMalaysia.com"
+      - strong: BUYER ROOM
+      - button "Notifications":
+      - generic: B
+      - strong: BERJAYA 06
+      - generic: LAW
+    - complementary:
+      - navigation:
+        - button "My Selection":
+          - text: My Selection
+        - button "Order Form":
+          - text: Order Form
+        - button "Track Orders":
+          - text: Track Orders
+        - button "Completed Orders":
+          - text: Completed Orders
+        - button "Documents":
+          - text: Documents
+        - button "Account":
+          - text: Account
+    - main:
+      - text: × × × × × × × ×
+      - heading "Order Form" [level=1]
+      - paragraph: Enter a quantity, then press Enter or click outside the box to save. Use the pencil to edit. Review your order before sending the request.
+      - strong: Admin Access · 管理员访问
+      - text: You are operating this customer account with Admin authority. All changes are recorded under your Admin identity.
+      - generic: ADMIN
+      - generic: Products
+      - strong: "5"
+      - generic: Total Cartons
+      - strong: 11411 CTN
+      - generic: Total CBM
+      - strong: "170.3309"
+      - generic: Estimated Order Total
+      - strong: USD 270,520.08
+      - button "Send Order Request" [active]
+      - tablist "Filter Order Form":
+        - tab "All Items 8" [selected]
+        - tab "With Qty 5"
+      - searchbox "Search order form by product, brand or barcode"
+      - generic: Barcode
+      - generic: Image
+      - generic: Descriptions
+      - generic: V.I.P Price
+      - generic: Order Qty
+      - generic: (CTN)
+      - generic: Line Amount
+      - generic: Total M³
+      - generic: Edited Time
+      - generic: "7622201422929"
+      - img "CADBURY DAIRY MILK BITES 50G - ALMOND"
+      - generic "CADBURY DAIRY MILK BITES 50G - ALMOND"
+      - generic: 50G x 24
+      - text: USD 0.98
+      - generic: "|"
+      - text: "23.52"
+      - spinbutton "Order quantity for CADBURY DAIRY MILK BITES 50G - ALMOND": "9999"
+      - button "Edit quantity for CADBURY DAIRY MILK BITES 50G - ALMOND": ✎
+      - strong: 235,176.48
+      - generic: "150.9849"
+      - generic: 06-10-26 01:46pm by LAW
+      - generic: "8901233025001"
+      - img "CADBURY ZIP X20 BAR - CHOCOLATE"
+      - generic "CADBURY ZIP X20 BAR - CHOCOLATE"
+      - generic: 160G x 16
+      - text: USD 2.31
+      - generic: "|"
+      - text: "36.96"
+      - spinbutton "Order quantity for CADBURY ZIP X20 BAR - CHOCOLATE": "100"
+      - button "Edit quantity for CADBURY ZIP X20 BAR - CHOCOLATE": ✎
+      - strong: 3,696.00
+      - generic "CBM data is currently unavailable": "0.0000"
+      - generic: 06-10-26 01:22pm by LAW
+      - generic: "9556001284860"
+      - img "KITKAT 2 FINGERS MULTI-PACK 18"
+      - generic "KITKAT 2 FINGERS MULTI-PACK 18"
+      - generic: (15G x 18) x 24
+      - text: USD 5.09
+      - generic: "|"
+      - text: "122.16"
+      - spinbutton "Order quantity for KITKAT 2 FINGERS MULTI-PACK 18"
+      - strong: "0.00"
+      - generic: "0.0000"
+      - generic: —
+      - generic: "59800511261"
+      - img "KITKAT COOKIES CRUMBLE"
+      - generic "KITKAT COOKIES CRUMBLE"
+      - generic: 120G x 6 x 15 out
+      - text: USD 2.11
+      - generic: "|"
+      - text: "189.90"
+      - spinbutton "Order quantity for KITKAT COOKIES CRUMBLE": "100"
+      - button "Edit quantity for KITKAT COOKIES CRUMBLE": ✎
+      - strong: 18,990.00
+      - generic: "2.3800"
+      - generic: 05-10-26 11:30pm by LAW
+      - generic: "8935001708988"
+      - img "MENTOS GUM (PURE) - FRESH"
+      - generic "MENTOS GUM (PURE) - FRESH"
+      - generic: 29G x 10 x 12 out
+      - generic: Waiting
+      - spinbutton "Quantity unavailable until MENTOS GUM (PURE) - FRESH is quoted" [disabled]
+      - generic: —
+      - generic: —
+      - generic: —
+      - generic: "9557062343107"
+      - generic: ▧
+      - generic "MISTER POTATO CRISPS - SOUR CREAM & ONION"
+      - generic: 85G x 14
+      - text: USD 0.70
+      - generic: "|"
+      - text: "9.80"
+      - spinbutton "Order quantity for MISTER POTATO CRISPS - SOUR CREAM & ONION": "562"
+      - button "Edit quantity for MISTER POTATO CRISPS - SOUR CREAM & ONION": ✎
+      - strong: 5,507.60
+      - generic: "8.7110"
+      - generic: 06-10-26 01:44pm by LAW
+      - generic: "9557062321778"
+      - img "MISTER POTATO CRISPS - SWEET POTATO"
+      - generic "MISTER POTATO CRISPS - SWEET POTATO"
+      - generic: 40G x 20
+      - text: USD 0.55
+      - generic: "|"
+      - text: "11.00"
+      - spinbutton "Order quantity for MISTER POTATO CRISPS - SWEET POTATO": "650"
+      - button "Edit quantity for MISTER POTATO CRISPS - SWEET POTATO": ✎
+      - strong: 7,150.00
+      - generic: "8.2550"
+      - generic: 06-10-26 01:46pm by LAW
+      - generic: "9556023663407"
+      - img "ORIENTAL SUPER RING (CAN)"
+      - generic "ORIENTAL SUPER RING (CAN)"
+      - generic: 80G x 12
+      - text: USD 1.09
+      - generic: "|"
+      - text: "13.08"
+      - spinbutton "Order quantity for ORIENTAL SUPER RING (CAN)"
+      - strong: "0.00"
+      - generic: "0.0000"
+      - generic: —
+    - dialog "Review Order":
+      - button "Close order review": ×
+      - banner:
+        - heading "Review Order" [level=3]
+        - paragraph: 5 items selected for this order.
+        - generic: BERJAYA 06
+        - generic: •
+        - generic: 06-10-2026
+        - generic: •
+        - generic: USD
+      - generic: Products
+      - strong: "5"
+      - generic: Total Cartons
+      - strong: 11411 CTN
+      - generic: Total CBM
+      - strong: "170.3309"
+      - generic: Estimated Total
+      - strong: USD 270,520.08
+      - generic: "#"
+      - generic: Barcode
+      - generic: Descriptions
+      - generic: Packing Size
+      - generic: USD / CTN
+      - generic: Qty CTN
+      - generic: Line Amount / USD
+      - generic: CBM
+      - generic: "1"
+      - generic: "9557062343107"
+      - generic "MISTER POTATO CRISPS - SOUR CREAM & ONION"
+      - generic: 85G x 14
+      - generic: "9.80"
+      - generic: "562"
+      - generic: 5,507.60
+      - generic: "8.7110"
+      - generic: "2"
+      - generic: "9557062321778"
+      - generic "MISTER POTATO CRISPS - SWEET POTATO"
+      - generic: 40G x 20
+      - generic: "11.00"
+      - generic: "650"
+      - generic: 7,150.00
+      - generic: "8.2550"
+      - generic: "3"
+      - generic: "59800511261"
+      - generic "KITKAT COOKIES CRUMBLE"
+      - generic: 120G x 6 x 15 out
+      - generic: "189.90"
+      - generic: "100"
+      - generic: 18,990.00
+      - generic: "2.3800"
+      - generic: "4"
+      - generic: "7622201422929"
+      - generic "CADBURY DAIRY MILK BITES 50G - ALMOND"
+      - generic: 50G x 24
+      - generic: "23.52"
+      - generic: 9,999
+      - generic: 235,176.48
+      - generic: "150.9849"
+      - generic: "5"
+      - generic: "8901233025001"
+      - generic "CADBURY ZIP X20 BAR - CHOCOLATE"
+      - generic: 160G x 16
+      - generic: "36.96"
+      - generic: "100"
+      - generic: 3,696.00
+      - generic "CBM data is currently unavailable": "0.0000"
+      - contentinfo:
+        - strong: Submit with confidence
+        - generic: Submitted orders are locked. Contact your salesperson to request changes.
+        - button "Send Request"
+- region "bottom of page"

@@ -1,0 +1,38 @@
+{
+  "objective": "Restore existing merged purchase-order entry for selected saved supplier tasks",
+  "branch": "fix/purchase-merge-po-entry-20261102",
+  "build": "20261102-purchase-merge-po-entry-v1",
+  "recoveryTag": "verified/purchase-merge-entry-recovery-20261102",
+  "baseline": "87ceb29 canonical101-resource package; fresh public Purchase app equals generated baseline; Wix page equals repository and previous published exact draft",
+  "patch": "One toolbar insertion calls the original createSelectedPo handler; original guards, PO dialog, journals, locks, allocations, payments and personal row order are unchanged",
+  "staticChanges": [
+    "purchase-live/app.js",
+    "purchase-live/index.html"
+  ],
+  "wixChanges": [
+    "integration/wix/purchase-room-page.js: one version reference"
+  ],
+  "resources": 101,
+  "unchangedResources": 99,
+  "checks": {
+    "pass": 42,
+    "fail": 0,
+    "log": "root handoff/master-three-customer-stress-20261102/merge-entry-tests.txt"
+  },
+  "candidateUi": "Two selected tasks100CTN MYR1200 open the original batch dialog; no selection adds no extra action. Preview synthetic writes disabled. Screenshots35/36.",
+  "publication": {
+    "code": "1d4ca00",
+    "pages": "Run329 succeeded: https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/41462179780;101/101 resource hashes match",
+    "wix": "Published and live; exact one-reference Purchase page readback",
+    "public": "Clean Purchase URL loaded 20261102-purchase-merge-po-entry-v1. One merged PO for10 task rows/9 products/3 customers/1300CTN MYR193885.95 confirmed; all10 planned allocations and existing stock/PO rows retained; no captured page errors."
+  },
+  "userConfirmation": "PENDING_USER_TEST",
+  "packaging": "101 file hashes and scoped workflow guards verified",
+  "codeCommit": "1d4ca00",
+  "pullRequest": 289,
+  "deploymentRules": {
+    "temporaryBranchRemoved": true,
+    "restoredOriginalCount": 7,
+    "evidence": "pages-rules-before-merge-entry.txt and pages-rules-after-merge-entry.txt"
+  }
+}

@@ -1,0 +1,47 @@
+2026-10-22 — private read-only recovery incident classifier
+
+Recovery protected d447185; previous isolated candidated9c4350. No production/live data
+read or mutated. This implements a diagnostic portion of RECOVERY_RUNBOOK, not all G0.
+
+recovery-inspector.cjs accepts only store.read capability and exact original company/
+request/member/input. Computes stable existing protocol identities/digest; reads control,
+lock, PREPARED, RESULT and bounded exact row images, then rechecks BOTH guard records.
+Matches original30write/180000byte proof bounds, collection/control reserved-ID allowlist,
+exact prepared after-version hash and before-version separation. Does not fetch full
+project, scan history, write, remove, unlock, force, initialize, retry or generate requests.
+Normal budget at most36exact reads (4identities +30changes +2guard rechecks); older final
+result after later committed generations skips obsolete business-image rereads. This is
+algorithmic upper bound for this proof size, not Wix latency/production capacity claim.
+
+Classifications
+- No receipt: NOT CONFIRMED, not proof save failed or stock zero.
+- Any surviving lock: stay blocked irrespective of age or matching owner. Changed guard:
+  recheck later. Unknown read/network error propagates unchanged.
+- Exact pending request/prepared plan, only before/after images: same-request resume.
+- RESULT with exact pending/all after images: same-request finalize control only.
+- Valid RESULT/generation: confirmed. Later legitimate operations may change current
+  images; do not falsely flag an old completed save as broken or reread its old payload.
+- Foreign pending: other operation pending. Wrong digest/company/identity, invalid plan/
+  version/result, image conflict, missing barrier or missing prepared: review, no repair.
+Output contains identities, generations/versions/attempt, presence flags and per-row
+BEFORE/AFTER/CONFLICT classification plus fingerprint. NO input/plan/business row body.
+Incident output remains private; never publish actual packets to this PUBLIC repo/Pages.
+
+Evidence
+Initial8checks137.6204ms. Added exact prepared token validation and forged-token test,
+reran only affected8checks119.908ms, all pass. No unchanged suite rerun. Tests cover
+interruption/resume via existing protocol, result-control finalization, request mismatch,
+image/barrier/receipt corruption, old lock retention, later valid generation, read error,
+changing guard, forbidden collection and forged prepared version. All fixtures local
+in-memory. Read-only assertion verifies inspector causes ZERO store write calls.
+Token/cache/actual Credit UNKNOWN. No CMS test or lock deletion performed.
+
+Not implemented / not safe to claim finished
+Actual administrator identity+private route/UI, operational evidence preservation and
+same-request action wiring still needed. Diagnosis alone does not authorize mutation.
+Stuck lock release still requires admission stopped + actual old execution termination/
+no-later-writes proof + accurate operation-time conditional deletion authorization. No
+automatic age-based lock steal and no exhausted synthetic-delete permission reuse.
+All writers fenced, production scale, schema/migration/shadow and end-to-end rehearsal
+remain release conditions. Code revert is NOT rollback of stock facts. Four statuses:
+isolated diagnostic code; Pages unchanged; Wix unchanged; public new workflow unavailable.

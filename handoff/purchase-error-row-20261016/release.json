@@ -1,0 +1,51 @@
+{
+  "objective": "Add affected product ROW and supplier-child context to save diagnostics only",
+  "recovery": "a5fe178",
+  "branch": "copy/purchase-error-row-context-20261016",
+  "pr": 99,
+  "code": "cb5766f3613445b45248d07100036117f41ed1a2",
+  "wixReference": "299383fc2862bea69ab3c0dfe2ebd5c1a01b3906",
+  "build": "2026-10-16-purchase-error-row-v1",
+  "tests": {
+    "passed": 93,
+    "failed": 0,
+    "scenarios": [
+      "main row",
+      "existing child",
+      "new child without ID",
+      "original supplier as child",
+      "filtered row numbers",
+      "moved row numbers"
+    ]
+  },
+  "pages": {
+    "run": 38842729465,
+    "success": true,
+    "assetsExact": 31
+  },
+  "policies": {
+    "temporaryRemoved": 63225781,
+    "originalSevenExact": true
+  },
+  "wix": {
+    "onlyTokenChanged": true,
+    "publishedLiveReceipt": true
+  },
+  "preview": {
+    "tab": "51425510",
+    "text": "ROW 002 的子行 · Barcode 95510000000002 · Purchase plan 采购方案 · Select an active supplier. · Ref 操作编号: ...",
+    "isolated": true
+  },
+  "public": {
+    "entry": "https://fmcg999.wixstudio.com/master",
+    "iframeVersion": "20261016-purchase-error-row-v1",
+    "visual": "pending: fresh public iframe blank after one reload; no real Save to trigger error"
+  },
+  "protected": {
+    "saveHandlersPayloadsRetriesLocksUnchanged": true,
+    "colorsUnchanged": true,
+    "noRealSave": true,
+    "originalUserTab51425500Untouched": true
+  },
+  "knownUnresolved": "Existing real Save mismatch/active supplier failure not repaired by this diagnostic copy change."
+}

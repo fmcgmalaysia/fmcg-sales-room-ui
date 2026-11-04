@@ -1,0 +1,93 @@
+2026-10-23 — NATIVE ADMIN COMPOSITION AND ABSENT CONTROL INITIALIZATION
+
+Single objective: close the actual candidate Admin/native composition gap, not add
+more business models, finance features, previews or an alternative inventory.
+Recovery6423d5d51b41b30576b0c28d0c46de6b5a730cd1. Same-version framework/spec and
+previous evidence reused; latest STATUS, stopped-path record and relevant private
+maintenance/service/runtime/install code read. No browser or native operation.
+New user instruction is continuous implementation through publication/testing,
+not ordinary-stage approval waiting. Scope still split/borrow/receipt repayment/
+current inventory/halo through Loaded, ACTIVE/invoice/physical exitOFF.
+
+Implementation
+- stockMaintenanceAdmin.web.js: eight actual Permissions.Admin exports, actual
+  currentMember identity for original ownership, no supplied memberId/Admin/role
+  title/staff row as authority. Existing Admin platform gate is the permission;
+  member identity is only ownership. Contributors without usable approved member
+  identity refuse; no synthetic identity/fallback. Actual native identity execution
+  still needs acceptance, not established by a VM stub.
+- Exact company/original backup request/migration request/checkpoint/ordinal only.
+  No browser images, budgets, writer coverage, mode or native proof input.
+- Direct @wix/data SDK binding to original conditional adapter, exact company maps,
+  declared original DateTime fields, existing projectors, complete capture, retained
+  backup, metadata initializer, owned capture and installed lifecycle readback.
+- Private retention uses actual collection metadata read and requires all four
+  existing journal permissions ADMIN. Unknown or public journal refuses; no ACL
+  changes or assumption based on ability to query. This policy can be incompatible
+  with existing journal ACLs; do not change those ACLs without exact authority.
+- Native control schema verifier reads exact journal field metadata; no field
+  installation, schema replacement or metadata write in this module.
+- Every entry refuses BEFORE native metadata/item access: actual provider drain
+  or sufficient all-legacy fencing is still not established. verifyLegacyDrain
+  deliberately throws. Replacing it requires reviewed implementation/evidence;
+  no Boolean, elapsed time, empty lock or successful publish can fill that seam.
+  This is a closed candidate root, NOT an executable installation acceptance.
+  Do not invoke it as an alternate route around either stopped native UI path.
+- maintenance-control-initializer.cjs adds exactly one absent MAINTENANCE/schema1/
+  transferIndex2/generation0/pendingnull control under original Admin+request token.
+  Actual independent drain, private retention and native fields checked before
+  reads/writes and rechecked around insertion. Existing lock or any different
+  control/request/owner/mode/generation refuses. No existing LEGACY->MAINTENANCE
+  transition, ACTIVE switch, lock acquisition/release/delete or automatic retry.
+  Unknown insert propagates; later explicit same-request inspect can confirm the
+  retained exact record. No original generic protocol.initialize() used.
+- Existing shared runtime now116modules/60exports; installation manifest39backend
+  targets/95dependency modules (one new Admin root), same20UNVERIFIEDwriters.
+  Same38Pages resources+4Wix relays; only paired manifest hash updated, no UI edits.
+
+Verification and evidence
+New root tests explicitly distinguish shipped hard refusal from TEST-ONLY opened
+boundary used to inspect composition. No fake proof is installed in candidate code.
+NCT/GHR absent control/replay/owner/mode/late gate/lock/unknown outcome and generated
+VM runtime covered. Initial static test expected no initialize() at all; narrowed
+to forbid protocol.initialize(), while allowing the new guarded control initializer.
+Cross-realm fixture comparison corrected by copying metadata, not production changes.
+Affected25pass971.725ms; later control9pass143.2612ms. Overlapping, not additive.
+ONE final complete stock-current run:1290pass/0fail31663.5474ms.
+Private log outside public repository:
+C:/FMCG-WIX-LOCAL/handoff/stock-current-state-spec-20261021/private-evidence/maintenance-admin-control-full-tests-20261023.txt
+Not entire-project/native acceptance, and no test count grants writer coverage.
+Protected original paths remain zero diff against d447185. Actual Credit UNKNOWN.
+
+Official primary sources checked for the actual binding contract:
+https://dev.wix.com/docs/velo/apis/wix-web-module/introduction
+https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/backend-code/web-modules/about-web-modules
+https://dev.wix.com/docs/velo/apis/wix-members-backend/current-member/get-member
+getRoles example/title is NOT used as Admin authority. Permission gate and actual
+member identity separated, preview limitations are not claimed native success.
+
+Actual blockers / continuation
+Both stopped native paths remain STOPPED: native Add Field chooser twice failed;
+schema function testing twice yielded no results/Request timed out. Old native300
+execution remains UNKNOWN; do not retry/release/reset/clean it. Existing field/index/
+ACL/table state unchanged. No actual native backup, metadata initialization/control,
+migration, schema mutation, capacity/recovery test, Pages deployment or Wix Publish.
+Provider-supported old-execution drain/termination OR separately reviewed sufficient
+all-legacy fencing remains necessary; existing documented UNSAFE witnesses still
+valid. New additional mode reads would only move the race, not solve it.
+One new nonblocking request asks whether the user authorizes contacting Wix support
+with the schema/timeouts + drain questions, without business data/credentials/ACLs
+or paid service. No message/ticket sent and no ordinary development consent asked.
+Earlier manual popup observation request is not repeated.
+Further native setup/index ACTIVE/typed acceptance, measured whole-request capacity,
+operational recovery, all-writer semantic/native review, migration/shadow/cutover and
+public split->approve borrow->receipt repay->Loaded acceptance are still required.
+Do not claim all independent implementation or review is complete.
+
+Four states
+Code: new native composition/control candidate implemented and regression-tested.
+Pages: original rollback baseline; no new inventory resources deployed.
+Wix: previous schema Admin draft only; new root not synchronized/published.
+Public: new borrowing/current inventory/halo through Loaded not accepted/testable.
+No production code, CMS/ACL/staff/Drive permission change or deletion. ExistingPR220,
+no main merge/force push/new verified tag. HeartbeatPAUSED, no chat archive.

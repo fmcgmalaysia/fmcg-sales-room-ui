@@ -1,0 +1,51 @@
+2026-10-22 — ORIGINAL SOURCE FILE FORM DURABLE CURRENT CLIENT
+Recovery36ba921/PR220. Protected productiond447185/runtime32b812c untouched.
+No real CMS/Drive/native/Wix writes, grants, deployment or public verification. Real
+invoice/physical departure OFF. First user test remains through Loaded only.
+
+Mechanical overlay of original customer-documents.js, original render/template/
+fields/classes/download links/validation unchanged. Original current READ metadata
+attached to DOCUMENT only. Full immutable original request+PDF+original view/file
+name/size retained and read-confirmed in own session before network. Shared company/
+original employee key now accepts DOCUMENT only with original max3MiB PDF and4.3M-
+character total cache budget; non-file requests retain200K budget. This is browser
+own-session data, NEVER extra PDF CMS rows. Real browser quota/HTTP capacity still OPEN.
+Quota/invalid/oversize failure sends no write, never silently drops PDF or falls back.
+
+Fresh original cached-customer authorization precedes recovered view; wrong employee
+key never read. Same cache routes to ADJUST/shipment/date original owner rather than
+creating a competing save. Original form restored read-only with retained file name;
+browser FileList is NOT fabricated/reselected. Retry sends original retained PDF bytes
+without invoking file picker/upload preparation again. No autosend after reload.
+Same UUID/input across bounded phases; attempt ownership/one-in-flight prevents stale
+timeout/phase callbacks from unlocking or sending next request. Unknown/error/wrong
+final/cleanup failure keeps fields and close locked, same original Retry. Current save
+never enters old error-text reset. Legacy successful/error reset remains original.
+Only correlated parent final/company/documentId/advanced generation and confirmed cache
+cleanup permits original following READ. No new public method/identity/download path.
+
+Evidence
+- ALL stock-current869pass0fail16702.3583ms final shared helper/client/build included.
+- New actual document UI9pass0fail481.002ms; original customeraccount/fulfilment14pass
+  0fail256.1127ms. Source script generators --check exact and original full inline
+  syntax compile. Production root index/document/adjustment/shipment diffs against
+  d447185 empty; tracked whitespace check pass. Runtime92modules47exports unchanged.
+- VM actual original UI+actual original one-arg bearer/private root composition:
+  original READ->retain->bounded file write->lose FINAL parent reply->same request
+  replay; synthetic file map has1ALLOCATE1UPLOAD1original ledger event. No invoice
+  posting. Synthetic server Source actor explicitly supplied after mocked Source
+  authority, not browser actor. NOT real auth/Drive/native/browser end-to-end acceptance.
+- Original3MiB boundary4,194,304base64chars retained, >normal200K supported; invalid/
+  oversized/quota failure no DOCUMENT send. Wrong final/company/ID/generation and
+  cleanup failure, pending read auth-only recovery, reauth cached customer/foreign staff,
+  same-company other-widget recovery, stale callback and legacy behavior checked.
+  Credit UNKNOWN; no actual quota/capacity/credit-saving percentage claimed.
+
+NEXT remaining original order intake/update/other native writer roots and clients,
+then native CMS/schema/index/SDK/authority verification, all20writer build coverage,
+unknown-lock/cross-session admin recovery, capacity/lifecycle, quiescent cutover/shadow
+parity and Loaded end-to-end. No new financial work. Source file protocol is now paired
+in candidate but all native acceptance and install/cutover gates remain OPEN.
+Coverage EMPTY; ACTIVE OFF. Four statuses: incomplete candidate code; Pages unchanged;
+Wix not installed/published; public current inventory/borrowing unavailable/unverified.
+Do not publish partial inventory or ask user to run real borrowing yet.

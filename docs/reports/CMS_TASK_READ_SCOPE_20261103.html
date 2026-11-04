@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>CMS 当前任务读取边界验证</title>
+<style>body{font:16px/1.7 system-ui,'Microsoft YaHei',sans-serif;color:#163953;background:#f3f6f9;margin:0}main{max-width:1120px;margin:32px auto;padding:32px;background:white;border:1px solid #c9d7e3;border-radius:12px}h1{font-size:28px}h2{font-size:21px;margin-top:30px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #d4dfe8;text-align:left;vertical-align:top;padding:10px}th{background:#dfebf5}.notice{border-left:5px solid #f58a00;background:#fff6e8;padding:16px}.pass{border-left:5px solid #2563eb;background:#edf4ff;padding:16px}code{overflow-wrap:anywhere}small{color:#58718a}a{color:#2563eb}</style>
+<main><small>2026-11-03 · 离线验证 · 基准 7ad78a2（运行补丁 bf2815c）</small>
+<h1>先查清依赖，再缩小日常读取</h1>
+<p class="notice"><strong>决定：不把“当月”“当前客户”或“最新一条记录”直接用作新的日常读取规则。</strong>本轮 12 个隔离场景完成，证实这些简单过滤会漏掉当前业务依赖。没有修改生产业务代码、CMS 数据或集合，没有上线另一套库存逻辑。</p>
+<p>验证调用当前项目的采购、收货、借还货、库存和财务锁定函数。采购计划、开 PO、分批收货、保存中断与恢复用现有写入函数生成内存记录；借还货及旧库存使用明确构造的合法组件输入。全部数据留在隔离内存中。</p>
+<h2>12 个验证结果</h2>
+<table><thead><tr><th>场景</th><th>完整读取</th><th>错误缩小范围的后果</th></tr></thead><tbody>
+<tr><td>S01 单任务</td><td>核对同一订单接收回执中的全部任务身份</td><td>只留目标任务，报 Accepted receipt is missing a task</td></tr>
+<tr><td>S02 保存到一半</td><td>显示已确认采购价 16，保留保存待恢复标志</td><td>按任务/订单顶层字段过滤，漏掉 PREPARED，显示未确认价 32，待恢复标志消失</td></tr>
+<tr><td>S03 原请求恢复</td><td>完整证据下能恢复原请求；再次重试新增 0 行</td><td>说明恢复证据不能按“看起来重复”直接删除</td></tr>
+<tr><td>S04 采购单收货</td><td>实际收齐 200 箱，两个批次</td><td>收货记录以 PO 为关联，单用任务/订单字段过滤后收货明细变成空</td></tr>
+<tr><td>S05 跨月收货</td><td>10 月 170＋11 月 30＝200</td><td>只留 11 月，版本链核对失败</td></tr>
+<tr><td>S06 无关历史增长</td><td>添加 0、1,000、100,000 条无关历史，完整结果与已知关联子集一致</td><td>本次仍先取得全部数据才选出子集；不能把它称为数据库有界读取</td></tr>
+<tr><td>S07 同一任务反复修订</td><td>1、10、100、1,000 次修订均能得出最终计划</td><td>超过一次修订后只取最后一条会失败；排除无关历史仍不能解决自身版本链增长</td></tr>
+<tr><td>S08 跨客户借还货</td><td>借 30、还 10，尚欠 20；出借方目前分配 260</td><td>只按出借方顶层身份过滤，丢掉整条责任和来源关系；仅取还货记录也无法接上版本链</td></tr>
+<tr><td>S09 旧单剩余库存</td><td>旧 FOC 20＋新收 200＝库存 220，可用 20</td><td>排除已归档任务后显示库存 200、可用 0</td></tr>
+<tr><td>S10 财务锁定</td><td>旧月份首次确认付款后仍锁定 PO</td><td>遗漏对应 PurchaseOrders 财务记录后，计算结果错误地变为未锁定</td></tr>
+<tr><td>S11 已装货和隔离</td><td>收 200，旧月份已装 150，隔离 10；当前在库 50、可用实物 40</td><td>删除旧月份依赖后变成在库 200、隔离 0；已完成 Desk 仍有当前库存意义</td></tr>
+<tr><td>S12 跨客户合并 PO</td><td>两个客户采购 200＋150，同一供应商 PO 合计 5,600</td><td>只留一个客户，现有保护拒绝被截断的 PO 关联</td></tr>
+</tbody></table>
+<h2>增长实验的含义与限制</h2>
+<table><tr><th>额外无关历史</th><th>全量 Activity</th><th>已知关联子集</th><th>业务结果</th></tr><tr><td>0</td><td>15</td><td>15</td><td>一致</td></tr><tr><td>1,000</td><td>1,015</td><td>15</td><td>一致</td></tr><tr><td>100,000</td><td>100,015</td><td>15</td><td>一致</td></tr></table>
+<p>比较保留全部返回业务字段，仅排除每次生成的 fetchedAt 时间。这个实验说明<strong>无关数据不应参与日常重算</strong>，但没有证明现有 CMS 能直接查出这 15 行。它不代表线上延迟、索引效率、百万行业务容量或完整替代读取器已验收。最初对照因 fetchedAt 不同失败，明确排除该响应时间后重跑通过；没有忽略业务差异。</p>
+<h2>当前读取最少必须知道什么</h2>
+<table><tr><th>范围</th><th>必须保留的信息</th><th>现有障碍</th></tr>
+<tr><td>任务与订单</td><td>公司、任务、来源行、客户、同一接收回执的任务成员</td><td>不能单独截断一行后沿用完整订单校验</td></tr>
+<tr><td>采购与保存</td><td>已确认计划、供应商份额、当前版本、原请求及未完成写入证据</td><td>当前确认值和完整性仍依赖历史链；任务价格字段本身不代表已确认</td></tr>
+<tr><td>PO 与财务</td><td>完整合并 PO 成员、原财务状态、文件状态及付款锁</td><td>跨客户；必须从现有 PurchaseOrders 权威记录取得，不能用当月付款代替</td></tr>
+<tr><td>库存与归属</td><td>当前实收、有效来源、目标客户、借出/归还责任、可用和隔离数量</td><td>关联常在 details 数组内，顶层客户/任务筛选不足；旧单可仍有库存</td></tr>
+<tr><td>Desk、Loaded 与 SI</td><td>已扣库存的装货来源、占用、未开票部分和永久历史身份</td><td>完成 Desk 不能简单排除，不能再次扣减，也不能释放仍在占用的货</td></tr>
+</table>
+<h2>下一步的最小范围</h2>
+<p><strong>先证明一份“已确认采购当前状态”可以直接读取，并与现有保存恢复共用一条提交路径。</strong>优先检查能否使用现有任务/PO记录，不先决定新增集合。正常页面读取不得创建记录或补写历史；读失败不能退回另一套猜测逻辑。</p>
+<ol><li>离线原型先覆盖计划、来源份额、版本及未完成请求关联。故障点包含写入前后、回应丢失、旧请求重试和并发修改。</li><li>证明后再补上来源关联的完整查询范围：合并 PO、库存来源、借还货、Loaded 与财务锁。不能只优化采购价格就宣称全站脱离历史。</li><li>上线前必须形成精确字段/写入差异、现有记录一次性核对方式、恢复方案和不一致处理。变更存储/写入范围须单独批准；本轮没有执行初始化或迁移。</li><li>历史查询随后按单据、客户和期间分页。月结用于已核对的余额与未结事项接续，不作为任意忽略旧记录的日期界限。</li></ol>
+<p>这里的当前状态是同一业务流程保存后的读取结果，不是第二套可独立操作的库存账。历史仍用于审计和指定恢复；日常页面最终应不再从最早历史重放。建立这条边界前不删除既有 Activity。</p>
+<h2>行数增长不能与读取提效混为一谈</h2>
+<p>本轮只证明读取依赖，没有减少正式 CMS 行数。此前已修复相同内容的新请求重复保存；真实保存中的 PREPARED、业务事实和 RESULT 尚承担恢复职责，不能合并删除而不验证故障恢复。减少每次读取量、减少每次业务新增行数和控制长期容量是三项独立验收。</p>
+<h2>本轮与上一轮发布状态</h2>
+<p>本轮为离线验证，不涉及 Pages、Wix 或业务数据发布。D04 的生产代码仍为 bf2815c：只排除采购不消费的两类客户应收 Activity；此项不是全历史问题的根本解决方案。</p>
+<p id="public-status">D04 正式页本次已经恢复显示：NCT 18 条根任务、8 张采购单；GP、分批收货、430＋70 来源、已付 PO 500 箱/MYR16,850及锁定提示可见，GHR 0任务。返回 NCT 及错误日志核对记录在交接文件。</p>
+<p>精确结果：<a href="../../integration/prototypes/cms-read-review-20261103/task-read-scope-results.json">12 场景及源文件哈希</a>；可重跑脚本：<code>integration/prototypes/cms-read-review-20261103/task-read-scope.cjs</code>。测试结果与正式验收分开，不把测试通过当作用户业务验收。</p>
+</main></html>

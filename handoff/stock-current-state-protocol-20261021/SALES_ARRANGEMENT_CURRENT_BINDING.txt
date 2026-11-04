@@ -1,0 +1,43 @@
+2026-10-22 — original Sales arrangement under current company fence; candidate only
+
+Continuation: actual checkout HEAD838ca6c, production baseline d447185 / runtime32b812c.
+Reused framework/Astra decision/previous live facts; inspected original shipment plan,
+source shipment UI and specialized source order-planning webMethod. No whole-project
+scan, no UI/live writes, no new financial rule. Original production directories still
+exact d447185. Existing user untracked files retained. Token/cache/Credit UNKNOWN.
+
+Implemented createCurrentSalesArrangementSave using existing original preparation:
+- private original bearer delegation reauthorized per call, including replay;
+- original PLAN / ORDER_DATE validators, version/customer/permission/preparation and
+  completed-shipment locks, original immutable events and response receipt fields;
+- SHIPMENT_PLAN admission, same segmented company fence and confirmed generation;
+- only one original event; no stock balance/source/claim/demand/PO/packing mutations;
+- exact committed immutable event identity read before original receipt returned.
+Private current gateway routes PLAN/ORDER_DATE only to connected arrangement handler;
+browser action/customer cannot override trusted gateway identity, no legacy fallback.
+
+Mechanical original source shipment UI candidate adds metadata from current READ for
+SELECT/CANCEL/PLAN, immutable request copies and same UUID across bounded phases.
+Unknown/error/malformed receipt retains intent; old timeout cannot unlock later phase;
+opening another customer cannot discard current pending operation; unload warns.
+Original non-current behavior preserved. No layout/label/role/business rule redesign.
+This is NOT durable recovery after forced page reload; that gate remains open.
+
+Actual source saveSalesRoomOrderPlanning is a separate path to ORDER_DATE, not this
+shipment dialog. Its current signature/relay currently lack metadata/progress; inspected
+and explicitly left OPEN, not claimed connected by backend factory alone. Date default,
+source order edit/P.O. revision and pre-transfer behavior must stay protected when bound.
+
+Evidence: affected19tests pass560.2632ms; UI/arrangement13tests pass437.953ms. Shared
+runtime/all current suite after changes527pass0fail5428.9135ms (offline mocks/VM, not
+Wix acceptance). Exact generated runtime60modules21exports. New tests cover NCT/GHR,
+one event on replay, bounded resume/preparation once, revoked/stale/cross-customer,
+invalid date/quantity/preparation/finished shipping; actual UI three actions, unknown
+receipts/timeout/reopen and legacy behavior. Original protected directory diff clean.
+
+All actual release gates remain open: remaining co-writers/actual composition + relays,
+Purchase detail/approval UI, durable client recovery, real schemas/indexes and SDK typed
+Date/nested JSON key-order roundtrip, current-task initialization/admin apply, routing,
+measured production capacity/latency, shadow/parity/G3 and four release phases.
+No CMS records/schema/permissions changed, ACTIVE OFF, Support invoice OFF. No Pages
+dispatch/Wix sync/publish/main merge/real business tests. Continue independent work.

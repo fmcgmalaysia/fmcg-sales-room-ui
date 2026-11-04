@@ -1,0 +1,59 @@
+2026-10-22 — targeted shared writer completeness check after f903207
+
+Reason for bounded search
+Spec requires ALL writers of current-stock authority and shared domain images to
+participate. Prior14 category list did not explicitly cover several actual shared
+writers. Ran one rg over integration/backend JavaScript only for update/save and
+createOperationJournal sites, NOT whole project/file contents. Read resulting exact
+dependency files/excerpts. No live write or protected file edit.
+
+Confirmed additional obligations
+MARGIN_REFERENCE
+- purchaseWorkspace.web.js getPurchaseWorkspace calls refreshMargins during a read.
+- purchaseMarginRefresh.js line99 spreads currentOrder and updates gp/adminFxSource/
+  salesInvoiceSummary, with a separate GP lock. Read-side effect must not bypass the
+  company control or overwrite an order image during stock-domain commit/recovery.
+- Must retain financial freshness/locked invoice portions; do NOT silently disable it
+  or label the whole workroom read-only without original behavior regression proof.
+
+SHIPMENT_PLAN
+- customerShipmentPlan.js creates original date and batch-plan operations. Batch
+  coverage/signatures govern prepared/loaded/Ready and borrowing guards; it participates
+  in original company PURCHASE journal. Date action may map to ORDER_UPDATE; batch
+  action now has explicit category, not assumed covered by Sales quantity adapter.
+
+QUANTITY_CASE
+- purchaseQuantityCases.js original DECIDE stores WAIT/STOP/PENDING and supplier
+  decisions; original feedback changes downstream sourcing/shortage views.
+- It is not Sales cancellation/claim release. Existing legacy shortage candidate does
+  not prove this separate operation integrated.
+
+PURCHASE_ORDER_RECORD
+- purchaseOrderWorkflow.js record/document/payment operations update PurchaseOrders
+  (lines100/107/193), sharing source/finance identity and exact record versions.
+- Existing procurement task adapter does not implicitly cover these updates/external
+  upload/delete phases. No permission to perform file deletion is inferred here.
+
+ACCOUNT_PURCHASE_RECORD
+- accountPurchaseReview.js line45 and accountSettlement.js lines80/228 update same
+  PurchaseOrders record under original company PURCHASE journal. Financial lock and
+  supplier/receipt reconciliation remain authoritative, not bypassed by inventory.
+- Need exact original account boundaries/records/apply checks/external proofs preserved.
+
+Implementation/evidence
+- Mandatory server admission now19 explicit categories. Five added above, prior14
+  retained. A missing flag for ANY new category blocks ACTIVE; nothing marked verified.
+- Admission targeted7pass,0fail,137.0537ms. Test proves all five omissions refuse.
+- This is NOT proof the19 categories are exhaustive: remaining journal-only finance,
+  supplier/customer ledger, CBM/display-order and deployed Source gateway consumers
+  still need explicit dependency classification and G3 review. No invented endpoints.
+- Initial multi-file source read output truncated within shipment-plan body; only exact
+  visible write/scope statements used here, no claim to have reviewed missing details
+  or to have validated these new production adapters.
+
+Status/recovery
+Protected directories unchanged from d447185 by git diff. Current code candidate only.
+Pages NOT deployed. Wix NOT synchronized/published. Public page NOT verified.
+ACTIVE OFF, Support real invoicing OFF. No CMS/permission changes, old locks deleted,
+or source/financial workflows altered. Continue actual bounded implementation; never
+activate based on admission unit-test flags or count of isolated adapter tests.

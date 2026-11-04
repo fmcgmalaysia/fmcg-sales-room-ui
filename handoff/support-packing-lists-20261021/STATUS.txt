@@ -1,0 +1,87 @@
+FINAL CURRENT OVERRIDE 2026-10-21 — four release stages complete for packing workflow; user real Save acceptance pending
+
+Code runtime32b812c655e1083306037c008314c72373a15f72, draft PR219 unmerged. Final Pages Actions39590023698 success. Initial25runtime/font resources exact plus each changed delta commit-exact; unchanged bytes reused. All six temporary policies deleted (63824713,63825327,63826166,63826825,63827089,63827423), original7exact restored. No new Drive sharing, CMS edits, test packing records or main merge.
+
+Wix14 initial whole readbacks exact; subsequent one-line role fix/safe-error line/cache pointer exact. Official history independently confirms Published18:44(initial),18:58(management compatibility),19:14(final cache pointer), despite the editor's misleading temporary-technical-issue popup. Do not repeat Publish merely because of that popup: verify official history and actual runtime first. Final public Warehouse outer src is warehouse-room/?v=20261021-packing-company-v1, both host and inner workbench JS query packing-company-v1 verified from DOM.
+
+Actual public acceptance: LAW in both departments; Support NCT10 real task rows, GHR0; same-customer checkbox isolation and compact draft dialog open/cancel without Save. Warehouse NCT/GHR Outgoing loads0 actual sent lists without errors; zero is expected because no test list was created. Incoming retains actual3pending/1high-risk/1awaiting-Purchase; Stock Control real1/95cartons reserved1/95/free0 read. Final GHR child caption Global HR verified, then NCT restored. Both public console error captures empty. Accepted typography bytes unchanged. Local evidence files in this directory: support-live-tasks.jpg, support-live-draft.jpg, warehouse-live-outgoing.jpg, warehouse-live-ghr.jpg, wix-published-history.jpg; original technical-error screenshot retained for diagnosis. Screenshots remain local, not uploaded with customer details to GitHub.
+
+One real compatibility defect found and fixed: Staff Master Access read-only evidence shows LAW TOP MANAGEMENT with SUPPORT department; original requireWarehouseStaff explicitly permits TOP MANAGEMENT, initial packing authorizer omitted it. New Warehouse endpoint now preserves that existing entitlement, without editing the employee or granting Support to managers lacking its department. Dedicated tests assert both boundaries. A separate initial company-label omission and observed nested browser cache were corrected with small caption/version changes. These are recorded concrete defects, not inferred user or network problems.
+
+Latest full run843/839pass/same4baseline failures; later isolated caption/host/stock checks14pass. Real business Save/send/progress/photos/loading completion is deliberately left for user testing. No invoice issue, dispatch posting, borrowing or POINTBASE dimension mapping is claimed complete by this phase. No new user-verified business tag until user confirms real workflow. Full structured status: RELEASE_STATUS.json. Actual Credits UNKNOWN.
+
+HISTORICAL RELEASE UPDATES BELOW — superseded by the final override above
+
+Release update superseding implementation-only paragraphs below: user explicitly approved this branch's temporary publishing permission and asked to finish then publish, with real business testing afterwards. Runtime a98001bd02de94e2431b152ff4d5ab0935f7f80f pushed to PR219. Pages Actions39586509274 completed successfully. All23 changed runtime resources plus2 unchanged accepted typography stylesheets were fetched and exactly compared with this commit (LF-normalized). Temporary rule63824713 removed immediately; original seven rules exact restored. No repeated dispatch/main merge/Drive permission changes/business writes.
+
+Fresh Wix comparison before synchronization: original Warehouse entry SHA fb4f66066f7013c8cefca86fdfd193d32b295f45ac487db94f637ad977477895; four edited consumers still exact to preserved originals below. Existing customerFulfilmentService, purchaseDocumentClient, purchaseOperationJournal and purchaseProjection freshly read and repository-exact. Eight new files created (7backend including web method,1public bridge). Four consumers changed using2–3 isolated replacements each, not whole-file overwrite. Support/Warehouse entry imports, fixed-role route and runtime URL minimally patched. All14 complete editor readbacks match a98001b resources. Accepted typography untouched.
+
+One Publish click issued. No official success receipt yet; editor Publish remains disabled. Existing console contains disconnect/Failed-to-fetch/save-failure/DeferredTimeoutError at10:36UTC, earlier than this click, so those logs do NOT prove the cause of the current wait. Read-only site history after one refresh still lists latest Saved17:29MYT and old Published09:16MYT; no new published version observed. Original editor51426657 preserved with exact code. New recovery editor51426763 opened once for read-only persistence check, currently Loading. Do not claim Wix publication or force-save/repeatedly dispatch. All exact content is in runtime commit plus current original-editor memory; server persistence remains to be confirmed. Public new functionality not accepted yet.
+
+No automated or actual new packing save/photo/chat/invoice/stock test write has been made. Code test result839/835 with same4baseline failures remains unchanged; no gratuitous rerun during publishing.
+
+EARLIER IMPLEMENTATION OVERRIDE
+
+This override supersedes the initial unconnected-candidate descriptions below. Local client transport, fixed-role Wix routing candidates and same-window Warehouse Outgoing host are now implemented. No Wix code, Pages release, CMS business record, Drive upload or real chat message was written by this task. PR219 remains draft; main untouched.
+
+Latest verification: full839 tests /835 pass /4 fail,5947.7649ms. Exactly the previously recorded baseline failures remain (customer-short-names fixture, payment status fixture, old staff suffix fixture, old bilingual quantity fixture). The extra intermediate stock-navigation fixture failure was caused by its missing mock for the new imported packing handler; the fixture now delegates non-packing messages and verifies original stock/order routes. No production behavior was changed to make the test pass.
+
+Photo checks confirm same-request retry retains one allocated file ID, CMS receipts contain metadata not raw image bytes, invalid role/hash/physical stage rejects before external allocation, pending-change acknowledgement preserves new photos, and removed products retain bounded retired photo evidence. New photos use existing private document transport, not new Drive sharing. Current document remains bounded200KB,30photos/line,300retired lines; operation receipts still consume additional rows. No history compaction claim.
+
+Existing shared chat gets only an additive busy-state getter. Fixed Warehouse nested chat relay rejects other departments/companies. Old executed Warehouse tasks remain separately labelled evidence with original controls; unexecuted demands are not silently copied into new packing lists. Quantity/model checks35pass and packing/chat/host checks46pass before the final full run. Unknown physical availability displays Review, not usable zero. Accepted Support font files remain unchanged.
+
+Resume-time Wix snapshot confirms Master editor still on Warehouse code with original stock-control route and no new packing imports. Embedded editor preview shows a DNS error after the user's temporary network interruption; no refresh or mutation attempted. Earlier fresh live/repository fingerprints remain captured below; release still requires complete fresh comparison of unchanged service dependencies and existing edited components before synchronization.
+
+Remaining gates: user candidate visual feedback (local file observation is policy-blocked; no bypass); exact branch-specific temporary Pages authorization requested once asynchronously after code checks; fresh live comparison and minimal synchronization; deployment/exact resources; Wix official published-live receipt; actual public read-only visual acceptance. No claim of publication or real invoice integration. CBM/net weight are still UNKNOWN in the new live context, not synthetic production values. Invoice issuance, dispatch posting and customer borrowing remain later scoped integration.
+
+Recovery source9bf14ab; current production Support96fdf77/Warehouse09a9023 unchanged. Existing user verified sales-requested-split tag and narrowly scoped Support font tag preserved. Unrelated files remain excluded. Actual Credits UNKNOWN.
+
+HISTORICAL INITIAL RECORD — descriptions below predate the integrated local candidate
+
+GitHub candidate b39a08f7ae8fc9173368e4038469ee873c84bbbd pushed on the task branch. Draft PR219 https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/219 created against the existing Support preview branch9bf14ab and attached to this chat. No deployment or merge. Record update only follows this code commit.
+
+FINAL CHECK UPDATE: browser bundle/source consistency plus changed persistence adapter5 checks pass; four additional tests invoke the actual Sales adjustment, planner allocation (including first allocation), legacy Warehouse preparation and legacy shipment factories and confirm occupied products cannot be changed/reserved through those entrypoints. Syntax/whitespace checks pass. These focused checks follow the recorded full820/816 run; the full suite was not rerun just for a new summary. No visual screenshot or public feature acceptance. Existing user-confirmed recovery tag verified/sales-requested-split-20261020 was identified; it does not establish acceptance of this new packing feature.
+
+Objective approved after workflow review: Support creates/edits a draft, sends one shared packing list to Warehouse Outgoing, Warehouse records packed/loaded quantities and explicitly completes loading, unloaded quantities return to To Arrange. Customer demand and physical stock are not cancelled or deducted by completion. One effective invoice per list is deferred integration; no real invoice issue is enabled.
+
+Actual checkout: C:/FMCG-WIX-LOCAL/worktrees/nct-order-submit-room6-20261009
+Branch: feat/support-packing-lists-20261021
+Recovery source: 9bf14abe92daf4d6d6875701fa9114a06aa83e23 (Support release record); deployed runtime96fdf7792620dbe64469a52921e7d1eb1fa2c72e; Warehouse09a9023 remains embedded. User-confirmed font tag verified/support-draft-font-20261021 remains narrowly scoped to font. No new business verified tag or main merge.
+
+Completed candidate code:
+- Shared pure packing model: draft/send/start/progress, proposed change/accept/reject, explicit completion/reopen, unstarted cancel. Same list ID across department views. No invoice/dispatch/stock posting.
+- Completed list holds only its Loaded, releasing only unloaded scheduling occupancy. Planned/packed/loaded/unloaded evidence retained, including already packed leftover cartons.
+- Draft does not hold stock; send requires current usable customer stock. Two drafts can overlap but second send cannot double-book. Pending change conservatively holds the larger old/new quantity. Reducing or removing packed/loaded goods needs actual Warehouse correction before acknowledgement.
+- Current-record persistence adapter reuses company PURCHASE operation journal: same-request retry and current revision checks, one mutable current document/list, no copied department tasks, maximum300 lines and200KB list snapshot. Existing immutable journal PREPARED/RESULT receipts remain necessary and consume additional CMS rows; this is NOT one total CMS row per list nor a completed history-compaction solution.
+- New authenticated packing context/service/web method and public Wix bridge files are prepared, but no existing Wix page routes call them yet. No production packing records exist from this task.
+- Four minimal shared-consumer guards are implemented locally: Sales reduction/split, Purchase allocation reduction (including first explicit allocation), legacy Warehouse preparation, legacy shipment/invoice entry. Packing revisions invalidate prepared legacy writes even if original quantities did not change. Without any packing records, original version values are unchanged.
+- New context uses recorded physical customer Ready Stock, flags legacy selected/invoiced or prepared/loaded tasks for explicit handling, never silently adopts them. Unknown CBM and net weight remain null; POINTBASE U is not connected by this task.
+- Isolated local candidate support-room/packing-workbench.html uses the accepted untouched draft.css/draft-compact.css, a Support/Warehouse example-view selector, same in-memory lists, customer/company separation and compact dialogs. It contains conspicuous synthetic-data labels and no network/storage/real save. Browser bundle mechanically generated from sole backend model; classic scripts allow user file-open without module CORS. Refresh resets examples.
+
+Live comparison performed before editing the four shared backend files. Complete editor clipboard originals retained in current browser session packingLiveBefore; normalized LF SHA256 matched repository:
+plannerAllocation.js 1e3035e9e2fb97a941a8e4ecd57449fb96148b67cc53147c355eebc74d6115e1
+salesOrderAdjustment.js b8d964fa5a9563998f91343ba05e178428402ddd31db6bb2d4cf7ec5fdc2677b
+warehousePreparation.js 968dcef6aced32fcfd21a91c409aa5061063bd69d60b47ee2687d577c1c77fe4
+customerFulfilment.js f06eefb394d2a7da3f666c41a6c254f55767837cd3c0ee879232d1eb5410c44a
+Support page complete fresh read1647 CRLF chars matched original release entry. No Wix source changed or Publish clicked. Existing editor prior transient Publish warning dismissed only; official preceding revision143 remains evidence of previous release, not this candidate.
+
+Verification:
+- 47 focused packing/guards + original allocation/fulfilment/Sales adjustment/preparation tests pass.
+- Four additional context/auth/physical-stock/legacy-preparation tests pass.
+- Earlier32 packing/operations + existing Support typography/invoice-draft checks pass.
+- Full integration run820 tests,816 pass, same4 known baseline failures: customer-short-names missing PURCHASE_DOCUMENT_TYPES fixture; master-workflow INSTALLMENT_PAID vs PAID; purchase-live-ui old staff suffix; purchase-quantity-projection old bilingual fixture. Do not report full suite green. No full rerun merely for summary.
+- Browser bundle consistency check and200KB adapter addition require final focused checks after this record.
+- Syntax and whitespace checks passed before final addition; repeat only changed-file checks.
+
+Concrete browser limitation:
+Chrome automatic opening of new local candidate rejected by URL policy: only http/https allowed. Requested user open the exact file manually; user replied opened, and Chrome inventory confirms tab51426759 Support Packing List Candidate at exact local path. A direct read of that user-opened same Chrome tab is also denied by the file-protocol observation gate. Do not use localhost/rehost, raw CDP/native screenshots, another browser surface or indirect execution to bypass this refusal. No actual screenshot or browser interaction acceptance claimed. User may provide their own visual/test feedback.
+
+Remaining work before enabling production:
+1. User-supplied candidate visual/test feedback (tool cannot inspect file page under current policy).
+2. Wire real client transport to authenticated packing API; current candidate is deliberately in-memory. Integrate Warehouse same-window Outgoing and Support routes with exact fresh live comparisons. Determine handling of any existing real prepared/loaded tasks before replacing their entry; preserve photos and existing accepted execution evidence.
+3. Actual consumer-factory guard cases are now covered by packing-consumer-integration.test.cjs. Test the read model against real source shapes and reconcile any additional source-level changes that can affect new holds before enabling writes.
+4. Fresh read of unchanged dependency modules and complete affected release checks; minimally sync new modules/isolated existing imports and routes. Current file fingerprints above are pre-edit evidence, not perpetual authorization to skip fresh release reads.
+5. Only when concrete code/visual candidate is ready, request exact branch-specific temporary Pages permission. No permission has been requested/granted for this branch. No dispatch, permission mutation, Wix sync, business write or main merge occurred.
+6. Four release statuses remain: code candidate only; Pages old runtime; Wix old published revision; public new feature not verified.
+
+Do not call phase1 complete, real Support integrated, Warehouse tasks migrated, or published based on these tests. Actual Credits UNKNOWN. Unrelated pre-existing untracked files preserved and excluded from commits.

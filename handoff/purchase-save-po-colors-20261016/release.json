@@ -1,0 +1,49 @@
+{
+  "objective": "Only supplier Save/PO next-action button colors",
+  "recovery": "2dc106fa6035336053ecd9c3390ec051c534f3c5",
+  "branch": "style/purchase-save-po-action-colors-20261016",
+  "pr": 98,
+  "code": "c9de8ccacc7c7543d6e8413a7c2b3118032ffa42",
+  "wixReference": "9820b9640d85146400fa69482f4ac9c958320a33",
+  "build": "2026-10-16-purchase-save-po-colors-v1",
+  "tests": {
+    "pass": 87,
+    "fail": 0
+  },
+  "pages": {
+    "run": 38841488834,
+    "status": "success",
+    "assetsExact": 31
+  },
+  "policies": {
+    "temporaryRemoved": 63224817,
+    "originalSevenExact": true
+  },
+  "wix": {
+    "beforeAfterOnlyToken": true,
+    "publishedLiveReceipt": true
+  },
+  "preview": {
+    "tab": "51425506",
+    "before": {
+      "save": "orange",
+      "po": "white"
+    },
+    "after": {
+      "save": "white",
+      "po": "orange"
+    },
+    "isolatedExampleOnly": true
+  },
+  "public": {
+    "entry": "https://fmcg999.wixstudio.com/master",
+    "iframeVersionVerified": true,
+    "visual": "pending: fresh inspection iframe blank"
+  },
+  "protected": {
+    "noBusinessHandlerChanges": true,
+    "noRealSaveSubmitted": true,
+    "existingDirtyUserTabUntouched": "51425500"
+  },
+  "knownUnresolved": "Actual prior save workspace mismatch remains separate; colors do not repair or bypass it. No PO to Account/Warehouse integration."
+}

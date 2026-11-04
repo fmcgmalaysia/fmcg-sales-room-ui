@@ -1,0 +1,72 @@
+const test=require('node:test'),assert=require('node:assert/strict'),load=require('./load-master-module.cjs');
+const {projectWarehouseOrders,createWarehouseOperations,requireWarehouseStaff,readWarehouseReceipts}=load('warehouseReceiving.js');
+const clone=value=>JSON.parse(JSON.stringify(value));
+function fixture(){
+ const records=new Map(),tasks=[{id:'T',orderId:'O',sourceLineId:'L',barcode:'001',name:'PRODUCT',packing:'12 x 1',ord:90,procurement:{totalCtn:100}}];
+ const po={id:'PO',version:'V',taskIds:['T'],company:'NCT',number:'NCT-PO-01',customerId:'C',customerName:'CUSTOMER',documents:[]};let fail=false;
+ const store={all:async c=>[...records].filter(([key])=>key.startsWith(c+'/')).map(([,v])=>clone(v)),read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,row)=>{if(records.has(c+'/'+row._id))throw Error('duplicate');records.set(c+'/'+row._id,clone(row));if(row.action==='WAREHOUSE_RECEIPT_SAVED'&&fail){fail=false;throw Error('response lost');}return clone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
+ const readOrders=async company=>projectWarehouseOrders({company,purchaseOrders:company==='NCT'?[po]:[],tasks,activity:await store.all(company+'Activity')});
+ const operations=createWarehouseOperations({store,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readOrders,now:()=>new Date('2026-10-11T02:00:00Z')});
+ const base={company:'NCT',staff:{memberId:'M',staffId:'S',staffName:'HIA'},requestId:'11111111-1111-4111-8111-111111111111'};
+ const input=async(accepted,kind='PARTIAL')=>({id:'PO',version:(await readOrders('NCT'))[0].version,action:'RECEIVE',lines:[{taskId:'T',accepted,rejected:0,kind,reason:'Two deliveries agreed'}]});
+ return {records,store,readOrders,operations,base,input,tasks,po,fail:()=>fail=true};
+}
+test('two deliveries accumulate once; customer allocation remains pending and physical excess stays separate',async()=>{
+ const f=fixture();await f.operations.save({...f.base,input:await f.input(80)});
+ let row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'PARTIAL');assert.equal(row.lines[0].customerReceived,0);assert.equal(row.lines[0].extraReceived,0);
+ await f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:await f.input(20,'DELIVERY')});
+ row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'COMPLETE');assert.equal(row.lines[0].customerReceived,0);assert.equal(row.lines[0].extraReceived,10);assert.equal(row.history.length,2);assert.equal(row.history[0].by,'HIA');assert.equal(f.tasks[0].ord,90);
+});
+test('lost receipt acknowledgement replays same identity without doubled cartons',async()=>{
+ const f=fixture(),input=await f.input(80);f.fail();await assert.rejects(f.operations.save({...f.base,input}),/response lost/);
+ await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});
+ const row=(await f.readOrders('NCT'))[0];assert.equal(row.lines[0].accepted,80);assert.equal(row.history.length,1);
+});
+test('shortage requires reason, over-receipt and foreign PO are rejected',async()=>{
+ const f=fixture(),input=await f.input(80,'SHORT');input.lines[0].reason='';await assert.rejects(f.operations.save({...f.base,input}),/reason/);
+ await assert.rejects(f.operations.save({...f.base,input:await f.input(101)}),/exceed/);
+ await assert.rejects(f.operations.save({...f.base,company:'GHR',input:await f.input(80)}),/changed/);
+ assert.equal((await f.readOrders('NCT'))[0].status,'WAITING');
+});
+test('rejected cartons are never accepted stock; replacement must explicitly resolve problem',async()=>{
+ const f=fixture(),input=await f.input(80,'DAMAGED');input.lines[0].rejected=20;await f.operations.save({...f.base,input});
+ let row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'ISSUE');assert.equal(row.lines[0].remaining,20);
+ const next=await f.input(20,'DELIVERY'),base={...f.base,requestId:'22222222-2222-4222-8222-222222222222'};
+ await assert.rejects(f.operations.save({...base,input:next}),/Confirm/);next.lines[0].resolveIssue=true;await f.operations.save({...base,input:next});
+ row=(await f.readOrders('NCT'))[0];assert.equal(row.status,'COMPLETE');assert.equal(row.lines[0].rejected,20);
+});
+test('stale browser form cannot overwrite a new receipt',async()=>{
+ const f=fixture(),input=await f.input(80);await f.operations.save({...f.base,input});
+ await assert.rejects(f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input}),/changed/);
+});
+test('warehouse rejects ambiguous audit chain and unauthorized purchaser',()=>{
+ assert.throws(()=>readWarehouseReceipts('PO',[{title:'A',description:'PO',action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',details:{beforeRevision:'missing'}}]),/history/);
+ const member={_id:'M',loginEmail:'a@example.com',status:'APPROVED'},records=[{title:'S',description:'M',staffName:'HIA',staffEmail:'a@example.com',staffStatus:'ACTIVE',departments:['PURCHASE']}];
+ assert.throws(()=>requireWarehouseStaff(member,records),/not authorized/);records[0].departments=['WAREHOUSE'];assert.equal(requireWarehouseStaff(member,records).staffId,'S');
+});
+
+test('receipt corrections append history and cannot undercut allocated stock or financial closure',async()=>{
+ const f=fixture();await f.operations.save({...f.base,input:await f.input(100,'DELIVERY')});
+ const next=async()=>({...await f.input(90),action:'CORRECT',lines:[{taskId:'T',accepted:90,rejected:0,reason:'Physical recount correction'}]});
+ await f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:await next()});let row=(await f.readOrders('NCT'))[0];assert.equal(row.lines[0].accepted,90);assert.equal(row.status,'ISSUE');assert.equal(row.history.length,2);assert.equal(row.history[0].lines[0].accepted,100);
+ await f.store.insert('NCTActivity',{_id:'A',title:'A',imageAltText:'T',action:'PLANNER_ALLOCATION_SAVED',result:'SAVED',activityTime:'2026-10-18T00:00:00Z',details:{beforeRevision:'',targets:[{taskId:'CUSTOMER-TASK',quantity:90}]}});
+ const correction=await next();correction.lines[0].accepted=80;
+ await assert.rejects(f.operations.save({...f.base,requestId:'33333333-3333-4333-8333-333333333333',input:correction}),/below allocated/);
+ f.po.invoiceChecked=true;const locked=await next();await assert.rejects(f.operations.save({...f.base,requestId:'44444444-4444-4444-8444-444444444444',input:locked}),/financially locked/);
+ assert.equal((await f.readOrders('NCT'))[0].lines[0].accepted,90);
+});
+
+for(const response of ['CN_PROMISED','FUTURE_DEDUCTION','SUPPLIER_REFUSED'])test('STOP '+response+' locks fresh and stale receipt and correction without changing actual stock',async()=>{
+ const f=fixture();await f.operations.save({...f.base,input:await f.input(80,'SHORT')});const stale=await f.input(20,'DELIVERY');stale.lines[0].resolveIssue=true;
+ f.po.quantityCases=[{id:'CASE',kind:'RECEIPT',taskId:'T',decision:{supplierDeliveryDecision:'STOP',supplierDecision:response,revision:'STOP1',at:'2026-10-26T00:00:00Z'}}];
+ const row=(await f.readOrders('NCT'))[0];assert.equal(row.receivingStoppedWaiting,true);assert.equal(row.lines[0].receivingStoppedWaiting,true);assert.equal(row.workroomStatus,'COMPLETE');assert.equal(row.status,'ISSUE');assert.equal(row.lines[0].accepted,80);assert.equal(row.lines[0].planned,100);assert.notEqual(row.version,stale.version);
+ await assert.rejects(f.operations.save({...f.base,requestId:'22222222-2222-4222-8222-222222222222',input:stale}),/changed/);
+ for(const action of ['RECEIVE','CORRECT'])await assert.rejects(f.operations.save({...f.base,requestId:action==='RECEIVE'?'33333333-3333-4333-8333-333333333333':'44444444-4444-4444-8444-444444444444',input:{...stale,version:row.version,action}}),/stopped waiting/);
+ assert.equal((await f.readOrders('NCT'))[0].history.length,1);
+});
+test('mixed PO stop locks only the affected source line',async()=>{
+ const f=fixture();f.tasks.push({...f.tasks[0],id:'T2',sourceLineId:'L2'});f.po.taskIds.push('T2');
+ f.po.quantityCases=[{kind:'RECEIPT',taskId:'T',decision:{supplierDeliveryDecision:'STOP',supplierDecision:'CN_PROMISED',revision:'D',at:'2026-10-26T00:00:00Z'}}];
+ const row=(await f.readOrders('NCT'))[0];assert.equal(row.receivingStoppedWaiting,false);assert.notEqual(row.workroomStatus,'COMPLETE');assert.equal(row.lines[0].receivingStoppedWaiting,true);assert.equal(row.lines[1].receivingStoppedWaiting,false);
+ const input={id:'PO',version:row.version,action:'RECEIVE',lines:[{taskId:'T2',accepted:100,rejected:0,kind:'DELIVERY',reason:''}]};await f.operations.save({...f.base,input});assert.equal((await f.readOrders('NCT'))[0].lines[1].accepted,100);
+});

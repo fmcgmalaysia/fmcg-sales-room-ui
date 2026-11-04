@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CMS 采购读取与保存回执边界 · 2026-11-04</title>
+<style>body{font:16px/1.7 system-ui,sans-serif;color:#173750;background:#f3f6fa;margin:0}main{max-width:1080px;margin:32px auto;padding:32px;background:white;border:1px solid #d1dce6;border-radius:12px}h1{font-size:27px}h2{font-size:21px;margin-top:32px}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border:1px solid #d1dce6;text-align:left;padding:10px;vertical-align:top}th{background:#e4edf5}.note{border-left:4px solid #f58a00;background:#fff5e7;padding:14px}code{overflow-wrap:anywhere}a{color:#2563eb}li{margin:8px 0}</style>
+<main>
+<h1>CMS 采购读取与保存回执边界</h1>
+<p>2026-11-04 · 后台离线核对 · 基准 <code>3ea8672</code></p>
+<p class="note"><strong>本轮没有修改正式程序、CMS 数据或索引，也没有发布。</strong>8 组诊断完成，其中包含刻意复现不安全做法的反例；不能将“诊断通过”理解为这些风险已经修复。</p>
+<p class="note"><strong>发现优先于性能改造的具体风险：</strong>合并 PO 部分保存失败后，原货仓保存函数仍接受 20 箱收货；恢复原合并请求后，PO 内部 ID 改变，新 PO 收货页显示 0。原收货事实仍存在。本例在离线内存中复现，不代表正式数据已发生此问题，也没有据此认定库存被删除。</p>
+<h2>决定</h2>
+<p>暂不采用“固定当前结果”作为下一步上线方案。优先把采购事实及保存回执与任务的关系查清楚，再评估按关联读取。不能只以月份截断、只读最新记录、看到锁为空就跳过回执，或在仍读全历史的页面额外增加一条明细查询。</p>
+<p>现有记录不需要被删除才能减少读取。对采购计划而言，许多其他部门的回执属于<strong>读取范围过宽</strong>，并不等于这些回执本身应该删除。容量减少仍是另一项未完成的工作。</p>
+<h2>现有数据告诉了我们什么</h2>
+<p>使用此前保全的 2026-11-03 私有快照，共 400 条，SHA-256 为 <code>5ce33e85e8583c0f0cb02e538ed05586410ffeba00ceea56723124e15066218b</code>。本轮没有取得新的线上导出；原始业务资料未提交到 GitHub。</p>
+<table><tr><th>观察</th><th>数量</th><th>含义</th></tr>
+<tr><td>PREPARED 保存准备回执</td><td>99</td><td>全部使用 NCT/PURCHASE 的共享范围，顶层 Task ID 全为空。按这个入口或 Task ID 无法直接只找一个任务的准备回执。</td></tr>
+<tr><td>采购计划 PLAN</td><td>18</td><td>现有 confirmedPurchaseState 真正解释的准备回执类型。</td></tr>
+<tr><td>开 PO</td><td>8</td><td>其中 2 次合并多个任务，最大一次涉及 10 个任务；不能只登记第一个任务。</td></tr>
+<tr><td>其余准备回执</td><td>73</td><td>包含 Desk、文件、收货等形态。不能因为采购计划不使用它们，就从其他部门读取或存储中删除。</td></tr>
+<tr><td>找到对应 RESULT</td><td>99/99</td><td>仅说明这份快照都有对应结果回执，不证明以后没有中断，也不授权删除准备证据。</td></tr></table>
+<p>此前真实 Wix 只读检查已确认 NCT Activity 的 3 个普通索引名额用满。现有索引的专用字段在这份快照中均为空；仍需核对线上消费者和 GHR，不能未经确认删除或改成唯一索引。索引空位、查询可用性及实际耗时尚未形成上线验收。</p>
+<h2>本轮直接使用原程序的中断测试</h2>
+<p>测试复用原生产保存函数、保存日志和计算函数，仅在内存存储的指定位置制造失败；没有使用此前候选的“当前结果记录”、rootIds 或待完成标记。</p>
+<table><tr><th>场景</th><th>实际结果</th><th>结论</th></tr>
+<tr><td>价格从 16 改成 32，任务更新后失败</td><td>处理锁已释放。原完整证据返回已确认的 16 并标待恢复；省略 PREPARED 后却返回 32，且没有待恢复提示。</td><td>锁为空不代表完整。不能靠锁决定是否查询准备回执。</td></tr>
+<tr><td>采购事实已全部写齐，仅 RESULT 插入前失败</td><td>价格 32 可正常确认，无待恢复；原请求重试只补 1 条 RESULT。</td><td>不能把缺 RESULT 全部当作业务未完成，更不能重复提交新交易。</td></tr>
+<tr><td>两个任务合并 PO，其中一个任务写入前失败</td><td>一个任务已带 PO，另一个未带；锁已释放。PLAN 专用读取器待恢复数为 0。原请求可恢复两个任务。</td><td>PLAN 专用保护不能被宣传为覆盖全部合并 PO 的保护。其他保存入口是否允许错误操作，需要独立验证，不能仅据此断言全部入口失守。</td></tr>
+<tr><td>增加 50 箱供应来源，最后接受来源事件前失败</td><td>新任务和两份来源份额已存在，但 SOURCE_ADDED 尚未存在；锁为空，PLAN 专用待恢复数为 0。原请求可恢复。</td><td>关联范围必须能从 PREPARED 中的未来任务、父任务取得，不能只从已接受来源发现。</td></tr>
+<tr><td>合并 PO 中断 → 货仓收 20 → 恢复原合并请求</td><td>原采购、PO 投影、货仓读取及收货保存均执行成功；恢复前显示 20，恢复后两个成员的 PO 使用另一内部 ID，显示 0，Activity 中的收货记录仍为 1 条。</td><td>已经不只是提示缺失：可执行的下一步会与后续恢复冲突。必须先保护部分提交的 PO，不能仅靠查询加速。测试也执行了货仓入口附带的客户待备货、备货和 CBM 读取，但未包含真实 Wix 认证、页面网络或生产时延。</td></tr>
+<tr><td>只给采购计划计算器提供 PLAN 准备回执</td><td>排除快照里 81 条其他准备回执后，模拟中断的已确认任务与待恢复结果一致。</td><td>仅证明这个函数的类型边界；不是完整 Purchase 页面、Desk、文件或库存的查询替代方案。</td></tr></table>
+<p>原请求恢复后再次重试没有新增重复业务记录。合并 PO 的任务更新本身并行执行；首轮故障注入误以为“第一条返回异常后第二条不会完成”，已修正为明确让指定成员在落库前失败。此修改只在诊断脚本，没有改变生产并发流程。</p>
+<h2>缩小读取时必须保留的关系</h2>
+<table><tr><th>操作</th><th>现有证据中的关联位置</th><th>读取约束</th></tr>
+<tr><td>PLAN</td><td>plan.updates 的任务、sharesRootId；plan.events 的任务及 shareRootId</td><td>价格、采购计划、份额与 PREPARED 必须成组核对。月初不能丢弃上月前驱。</td></tr>
+<tr><td>合并 PO</td><td>plan.updates 中的所有成员及对应事件</td><td>看到一个成员必须知道同次操作影响的其他成员；不能仅保留当前客户的半张操作。</td></tr>
+<tr><td>ADD_SOURCE</td><td>plan.task 的新任务及 customerDemandTaskId，plan.allocation 的根任务，接受来源事件</td><td>接受事件不存在时也要能够找到准备证据；不能依赖已经接受的任务列表发现全部未完成工作。</td></tr>
+<tr><td>收货</td><td>整张 PO 的收货修订链</td><td>已在上一轮验证不能按单个任务切碎同一 PO 链。</td></tr>
+<tr><td>原请求重试</td><td>确定的 PREPARED、RESULT 和 LOCK ID</td><td>已知请求可以精确读取；发现未知中断请求仍需要完整关联，二者不能混为一谈。</td></tr></table>
+<h2>不能统一删掉的 PREPARED 消费者</h2>
+<p>当前后台源码中，除采购计划外，Desk 恢复（<code>deskDelivery.js</code>）、短装恢复（<code>shortloadResolution.js</code>）、客户文件验证（<code>customerAccountLedger.js</code>、<code>customerFulfilmentService.js</code>、<code>supportWorkroom.web.js</code>）及旧排序记录读取（<code>purchaseDisplayOrder.js</code>）还使用准备证据。这里只列实际引用，不表示这些入口都在当前页面执行，也不授权清理旧排序实现。</p>
+<h2>下一步最小范围</h2>
+<ol>
+<li><strong>先处理已复现的合并 PO 中断保护，需确认新增修补范围。</strong>复用现有保存完整性判断及相关单据的待恢复标记，阻止该次合并涉及的来源和目标 PO 在未完成时继续收货等依赖操作；无关 PO 继续工作。保留原请求恢复，不以新请求重做。新增供应来源目前只确认读保护未覆盖，不把它默认为已经复现同样的货仓故障。</li>
+<li>核实正式 NCT/GHR 索引和线上消费者，提出准确的一项索引调整方案。当前没有可直接追加普通索引的空间。</li>
+<li>若选择按任务关联查询，只在同一次原始事实或 PREPARED 写入中声明关联，不另建第二套库存账。历史关联回填必须先预览、检查覆盖并获得具体批准；缺失关联不可当作无记录或零。</li>
+<li>候选与原读取逐任务对账，覆盖跨月、合并 PO、未来来源、中断和重试；再测真实 Wix 查询耗时。正常页面不能长期同时跑两套计算，也不能悄悄退回全历史。</li>
+</ol>
+<h2>待批准的最小修补范围</h2>
+<p>单一目标：合并 PO 未完整提交时，不能以暂时的成员集合生成可继续操作的采购单；原请求恢复后，正常收货和编号保持一套既有逻辑。</p>
+<ul>
+<li>预计检查及必要最小修改：<code>purchasePlan.js</code> 的共同完整性判断、<code>purchaseProjection.js</code> 的待恢复传播、<code>purchaseOperations.js</code> 的原请求恢复边界；现有货仓保护在 <code>warehouseReceiving.js</code>，只有证据证明共同标记不能覆盖时才提出额外修改。所有正式修改前重新核对 Wix 原件。</li>
+<li>受保护行为：正常单项和合并开 PO、财务已付款锁定、旧 PO 收货、原请求幂等恢复、已完成历史、公司隔离。不能放宽任一保存保护来让重试通过。</li>
+<li>测试必须包括：写任何成员前中断；写一部分成员后中断；部分事件写入后中断；事实完整而 RESULT 缺失；向已有 PO 合并；原请求恢复与再次重试；无关 PO 可继续收货；NCT/GHR 隔离；历史已完成操作不误锁。</li>
+<li>不改变 PO ID 算法、锁存储、付款、库存账、归档或索引，不新增当前结果集合，不补写或删除正式历史。若已有正式记录发生关联问题，另列证据和修复范围，不自动迁移。</li>
+<li>恢复点：沿用已验收 D04 正式基准及本轮修改前的新鲜 Wix 原件。当前诊断分支不是正式恢复版本。</li>
+</ul>
+<p>需要具体批准的依据：项目 AGENTS.md 要求 <q>If the required scope expands, stop and obtain explicit approval for the new scope.</q> 本轮原本是查询范围验证，以上是已复现风险对应的业务保存保护修补。此处只提出范围，尚未修改生产代码。</p>
+<p>即使关联查询成功，单个任务自身的历史仍会增长；它降低无关历史读取，不减少 CMS 条目总数，也不能据此承诺百万行性能。归档或减少重复事实需另有引用审查、恢复验证和明确范围。</p>
+<h2>交付与未完成项</h2>
+<table><tr><th>项目</th><th>状态</th></tr>
+<tr><td>诊断代码</td><td>8 组完成，结果文件与原源码哈希保留；无正式代码修改。</td></tr>
+<tr><td>GitHub Pages</td><td>未部署，保持原版。</td></tr>
+<tr><td>Wix</td><td>未修改、未发布，保持 D04 已验收基准。</td></tr>
+<tr><td>正式验收</td><td>本轮无新增正式验收；真实查询性能仍未测。</td></tr>
+<tr><td>其他待办</td><td>Buyer 身份、历史和实际下载的未完成验收仍保留；CMS 容量与归档未解决，不能因本报告结案。</td></tr></table>
+<p>证据：<code>integration/prototypes/cms-read-review-20261103/pending-query-boundary.cjs</code>、<code>pending-query-boundary-results.json</code>。本轮仅后台操作，没有占用 Chrome。</p>
+</main></html>

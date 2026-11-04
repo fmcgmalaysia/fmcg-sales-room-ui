@@ -1,0 +1,42 @@
+2026-10-22 SHARED PURCHASE ORDER RECORD CO-WRITERS — CANDIDATE ONLY
+
+Scope: prevent original non-file Purchase/Account PurchaseOrders updates from
+remaining unfenced co-writers after stock activation. No financial policy change,
+payment creation, document operation or new privilege. Original files unchanged.
+Recovery: original production d447185 / runtime32b812c; prior candidate9568452.
+Context resumed from latest STATUS/Astra decision and original audit/save contracts.
+
+Implementation
+- current-order-record-save.cjs exports private Purchase and Account factories;
+  require actual original department authorizer/member/staff before EVERY attempt,
+  including completed replay. Browser staff/approval fields have no authority.
+- Reuse original preparePurchaseOrderRecord/prepareAccountOrderRecord captures,
+  exact original validation, company record/version, allowed field and document/
+  financial locks. All resulting one-record plans use the SAME segmented company
+  fence/current admission as physical inventory. No legacy apply/TTL takeover.
+- Pending results preserve original request. After confirmed commit return original
+  company/poId/savedAt plus stockGeneration. Verify ONE retained original PO_AUDIT
+  or FINANCE audit with exact actor/action/result/time, even after later PO updates;
+  missing/duplicate evidence fails closed rather than inventing success.
+- Generated stockCurrentCommands runtime now69scoped modules/28exports. No public
+  route, SDK elevation, live installation or ACTIVE enablement added.
+
+Verification actually run
+11new tests use actual original Purchase/Account factories and authorizers, both
+companies, new/existing PO identity, unchanged stock/documents/tasks, interruption
+and resume, revoked role/member, stale/foreign/file requests, historical replay,
+missing/duplicate audit, two departments preserving both audits on ONE barrier.
+First run correctly rejected test request stale after fixture mutation; fixture now
+uses fresh original projected version. Cross-realm assertion normalized JSON values,
+not original business assertions. No production failure or change involved.
+Full stock-current suite621pass0fail5976.7201ms (includes original unchanged UI
+fixture regressions). Protected production-directory diff againstd447185 exact.
+Offline mocks/VM, NOT live SDK, production capacity or public acceptance evidence.
+
+Still open
+Actual root gateway composition/read/client relay, remaining task/order/reference/
+file writers, borrowing approval UI, reserved-loss/disposal boundary, reload durable
+requests, actual schemas/indexes/SDK roundtrip, initialization/recovery/migration/
+shadow/capacity and all FOUR publication phases remain OPEN. No stock collections
+created, CMS data changed/deleted, Pages permission/dispatch, Wix write/publish,
+Support real invoice, main merge or new test lock deletion performed.

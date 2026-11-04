@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-06",
+  "syncProject": "1C8QPaUfguenEMZSC_-1sPLJuaEThzK-RixbmTX1pJaizEgJgKyNUDT69",
+  "savedScriptSha256": "6d45d62f8d3edd70b84691e755d5bed02bffc9b081f7e15779110a95e40e6a51",
+  "scope": "Original unified Point Base sync with five brandName mappings",
+  "discardedDraftFix": true,
+  "permissionsUnchanged": true,
+  "preview": {
+    "matched": 5968,
+    "unchanged": 5968,
+    "updates": 0,
+    "inserts": 4,
+    "globalBlockers": 0
+  },
+  "execution": {
+    "updated": 0,
+    "inserted": 4,
+    "apiFailures": 0,
+    "verificationFailures": 0,
+    "blockedSourceRows": 863
+  },
+  "userDeletion": "User removed four previously unpublished MENTOS records; existing source rows recreated them through original sync",
+  "catalogueBuild": "2026-10-06-catalogue-brand-sort-v51",
+  "catalogueRelease": "Not yet published"
+}

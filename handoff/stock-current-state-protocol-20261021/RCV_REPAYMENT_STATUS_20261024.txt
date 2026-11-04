@@ -1,0 +1,57 @@
+2026-10-24 — actual receipt + read-only repayment debt, candidate only
+
+Objective/recovery
+Complete the explicit RCV80 plus owed10 display, while ALLOC90 remains unchanged.
+Parent999616f; protected baseline d447185/runtime32b812c retained. Same-version
+framework/spec/ownership reused; current STATUS/ALLOC entry and exact workspace/
+grid/package consumers rechecked. No unrelated production file changes.
+
+Implementation
+-purchase-transfer-workspace.cjs sums borrower-only quantity-repaid-returned from
+ ALL verified OUTSTANDING relation pages inside the existing generation barrier.
+ Additive stockBorrowedOutstanding is a read-only response field, not a new CMS
+ field or authority. Lender awaiting return is not borrower debt. Missing pages,
+ inconsistent remaining/self relations/unsafe totals fail; archived IDs retained.
+ Adding already-computed remainders avoids an unsafe intermediate gross sum.
+-Candidate grid retains own Warehouse receipt80 and ALLOC90, adding a separate
+ readonly owed10 marker. Partial repayment reduces owed only; zero removes badge.
+ Unknown is not fabricated zero. Split rows display whole-line debt once with an
+ explicit whole-line caption, not invented per-batch liability/receipt quantity.
+ No button, receipt edit handler, procurement edit, stock/save or financial change.
+-New nonclickable statuses use pale red/dark red, preserving the user's distinction
+ between state and actions. Original people/halo state and row identity unchanged.
+-Local self-contained review adds clearly labelled existing-fictional-loan ExampleC
+ (RCV80, owed10, ALLOC90); ExampleB lent10, RCV100/ALLOC90. Total physical receipts
+ and ownership allocations both260. ExampleA stays100/90/80, can query max10. No
+ fake approval changes workspace or produces success. Saves still always refuse.
+-Generated candidate runtime/manifests/grid/review regenerated.119runtime modules,
+ 40backend install targets/100module graph/20UNVERIFIED writer categories;
+ 38Pages assets/5Wix relays,33self-contained local review assets. No deployment.
+
+Verification actually run
+Initial missing-field/grid counterexamples failed before implementation. New8tests
+ cover both companies, borrower direction, source child/archived identity,51relation
+ paging, malformed/incomplete reads, numeric boundaries, readonly actual grid,
+ partial repayment/settlement/split/unknown/legacy and scoped colors.
+ 44affected checks pass0fail863.3622ms, then22overlapping updated review/workspace/
+ grid checks pass0fail423.5715ms (includes fifth no-fake-save ExampleC review test).
+ ONE final full stock-current suite1348pass0fail31882.8326ms. Review-only test file
+ is separately verified, not added to that wildcard total. Original production
+ paths zero tracked diff. These are local tests, not native/UI/public acceptance.
+
+Remaining release conditions, unchanged
+78MASTER saved-editor originals exact pre-install parity, not installed/runtime.
+15newMASTER modules and Source dependencies/relay remain uninstalled; Source stopped
+ after two editor failures. All20native writer/capacity/recovery/migration/shadow
+ acceptance incomplete. Old already-running unconditional writer drain unresolved;
+ Wix request already submitted, no verified reply. Never infer drain from waiting.
+ Native300call20UNKNOWN retained; no resume/reset/cleanup/lock deletion. Precise
+ GitHub technical-handoff export permission unanswered after automatic rejection;
+ no push/alternate route. Ordinary packing-held additional borrow conservative
+ guard retained, not silently relaxed. Complete semantic G3 not claimed.
+
+No browser/CMS/Run/ACL/index/contact/export/Pages dispatch/Wix publish/main merge.
+ACTIVE and real Support invoicing/physical dispatch remainOFF.
+Four stages: local candidate code / Pages unchanged / new Wix flow unsynchronized
+and unpublished / public ALLOC and borrowing unavailable-unverified. Local review
+not visible acceptance; old HTTPS review is still earlier rejected placement.

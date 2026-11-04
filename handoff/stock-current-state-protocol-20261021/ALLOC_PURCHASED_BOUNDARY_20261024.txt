@@ -1,0 +1,75 @@
+2026-10-24 — ALLOC alert/borrowing entry respects actual purchased quantity
+
+Parentbe13f98; protected original d447185/runtime32b812c unchanged. Same framework,
+spec/ownership and latest handoff reused. Focused final ALLOC/arrangement/borrow
+semantic review, no native UI or production mutation. No agent/model switch.
+
+Demonstrated defect, not speculation
+Main grid compared allocated80to CUSTOMER demand100 rather than purchased80:
+100demand/80purchased/80received/80allocated incorrectly showed a red ALLOC ALERT.
+100/90/80/90after borrowing still offered Borrow because dialog compared90to100.
+Server quote/approval already capped future uncommitted PO and refused excess;
+this was misleading UI, not evidence of committed over-borrowing or corrupt stock.
+Confirmed split50/50demand with purchased/allocated50+30also falsely alerted30.
+First2new regression cases failed on old candidate exactly as described. Split
+fixture first had an unrelated null-sourcing test callback error; corrected fixture,
+not business logic, then actual second-batch falseALERT reproduced separately.
+
+Minimum patch
+-purchase-allocation-ui-overlay.cjs: main ALLOC deficit uses min(customer demand,
+ original existing group procurement total minus extra). Split deficit uses the
+ original confirmed batch entitlement source quantities, not inferred new ownership
+ or copied customer demand. Unknown batch purchase values do not quote a deficit.
+ Original read-only split View remains; links remain when debt is outstanding.
+ True allocation shortage/damaged coverage still shows ALERT; no packing guard
+ or stock calculation changed.
+-purchase-ui/borrow-approval.js: entry compares coverage with min(demand,purchased),
+ still requires own actual receipt shortage and confirmed selected batch. Thus
+ allocated90does not invite borrowing against the remaining10unpurchased demand.
+ Backend quote/maxima/CAS/actor/procurement/RCV/repayment rules unchanged.
+-Mechanical grid/paired UI manifest/self-contained review regenerated.38Pages
+ assets/5Wix relays and33exact review assets unchanged in count. No deployment.
+
+Verification actually run
+13ALLOC tests pass139.2353ms after patch; then41affected grid/approval/row-reference/
+halo/batch-hold/packaging/review tests pass893.7371ms (overlapping, not additive).
+ONE final full stock-current suite1340pass0fail30756.0567ms, including3new cases
+and existing original-workflow replay. No full rerun merely to read its summary.
+Original production paths still zero diff. No saved original file/backend changes.
+
+Bounded semantic observations, NOT complete G3/native PASS
+Arrangement instruction does not hold stock/dispatch; Support original CREATE and
+Send validators plus same fenced snapshot retain real quantities. Stable task/batch/
+current-list link and immutable identity audit preserve changed/Loaded references.
+Borrow approval still uses actual reserved donor claim, demand remainder and own
+confirmed future PO less existing promises; quote reuses approval rules. Receipt
+allocates repayment to lender before borrower own allocation, so repayment does not
+increase borrower ALLOC twice. Existing unused-return/packed/dispatch guards stay.
+Known conservative limitation retained: ordinary additional borrowing is blocked
+when borrower already has packing held, apart from the separately validated exact
+isolated-damage top-up. Do not silently remove that existing first-version guard
+as part of this UI correction or claim every partial-packing borrow path accepted.
+
+Additional concrete next UI gap identified: current Purchase transfer workspace
+exposes halo boolean/participants, but no explicit main-row outstanding-repay qty.
+The user's requested RCV80red plus separate owed10red therefore still needs bounded
+read-only binding from the SAME complete outstanding relation snapshot, not a sum
+of gross receipts or a second loan authority. Next inspect purchase-transfer-
+workspace.cjs and exact receipt-cell renderer/tests, keeping Warehouse RCV authority
+and stable relationship identity. Do not claim popup quantities alone satisfy it.
+
+Factual release inventory correction from direct build-business-ui-install read:
+5Wix relays =4MASTER surfaces (3department pages+Public bridge) and1Source Sales
+page, NOT2Source UI relays as prior aggregate notes said.2Source PATCH targets
+refer to BACKEND onboarding/nctSubmissionDelivery;5unchanged Source backend modules
+also remain. Source retained original fxRates/staffAuth/catalogue bindings outside
+this100module graph still UNVERIFIED.78MASTER preimage hashes remain valid.
+
+No browser/Run/CMS/schema/index/permissions/test-lock deletion/support message/
+GitHub export or push/Pages dispatch/Wix publish/main merge. Stopped Source/local
+paths unchanged. Old execution late-write/drain unresolved, Wix reply unverified;
+precise export-specific permission still unanswered, no alternate route. All20
+native writer coverage flags UNVERIFIED; ACTIVE and real invoice/dispatch OFF.
+Four release states: changed local candidate only / no new Pages / new Wix flow
+unsynchronized-unpublished / public new borrowing unavailable-unverified. Local
+review is not visible/public acceptance; old HTTPS review still rejected placement.

@@ -1,0 +1,30 @@
+import { items as sdkItems } from '@wix/data';
+import { auth } from '@wix/essentials';
+import { fulfilmentStore } from 'backend/r2customerFulfilmentService.js';
+import { operationId } from 'backend/r2purchaseOperationJournal.js';
+import { createNctIntake, createNctReceiptReader } from 'backend/r2nctIntake.js';
+import { createSdkConditionalStore, createSegmentedFencedProof, planCollections, createCurrentOrderIntakeOperations } from 'backend/r2stockCurrentCommands.js';
+// Original receiver invokes this ONLY after server bearer authentication.
+// Coverage is deliberately empty until every real writer has platform evidence.
+const writerCoverage = Object.freeze({});
+export async function createCurrentOrderIntake({ company, captureCosts }) {
+  if (!['NCT','GHR'].includes(company) || typeof captureCosts !== 'function') throw Error('Original intake company/dependencies required');
+  const journal = company === 'NCT' ? 'R2NCTActivity' : 'R2NCTActivity1';
+  const control = await fulfilmentStore.read(journal, operationId(company, 'STOCK_CONTROL'));
+  if (control?._id !== operationId(company, 'STOCK_CONTROL') || control.company !== company || control.schemaVersion !== 1
+    || typeof control.stockCommitVersion !== 'string' || !control.stockCommitVersion || !Number.isSafeInteger(control.generation)
+    || control.generation < 0 || !['LEGACY','ACTIVE','SHADOW','MAINTENANCE'].includes(control.mode)) throw Error('Original intake inventory control unavailable');
+  if (control.mode === 'LEGACY') { if (control.pending !== null) throw Error('Original intake legacy save pending'); return {mode:'LEGACY'}; }
+  if (control.mode !== 'ACTIVE') return {mode:control.mode};
+  const [orders, tasks] = company === 'NCT' ? ['R2NCTOrders','R2NCTTasks'] : ['R2NCTOrders1','R2NCTTasks1'];
+  const items=Object.freeze({query:auth.elevate(sdkItems.query),insert:auth.elevate(sdkItems.insert),bulkInsert:auth.elevate(sdkItems.bulkInsert),patch:auth.elevate(sdkItems.patch),remove:()=>{throw Error('R2 privileged deletion not enabled');}});
+  const store = createSdkConditionalStore({company,items,collections:planCollections(company,true),dateTimeFields:{
+    [journal]:['activityTime'],[orders]:['masterReceivedTime','salesSubmissionTime'],[tasks]:['lastCostCaptureTime']}});
+  const protocol = createSegmentedFencedProof({company,store,domainWrites:true,coordination:'CONTROL_CAS_CANDIDATE',batchApplyReads:true,batchNewInserts:true});
+  const operations = createCurrentOrderIntakeOperations({company,store,protocol,coverage:writerCoverage,createNctIntake,createNctReceiptReader,captureCosts,
+    readOppositePreparation:async(collection,id)=>{
+      if (collection !== (company === 'NCT' ? 'R2NCTActivity1' : 'R2NCTActivity')) throw Error('Opposite intake preparation read only');
+      return fulfilmentStore.read(collection,id);
+    }});
+  return {mode:'ACTIVE',...operations};
+}

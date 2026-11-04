@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "schema": "STOCK_NATIVE_BATCH_READ_V1",
+  "readOnly": true,
+  "collection": "StockProtocolTest",
+  "company": "NCT",
+  "readCalls": 3,
+  "elapsedMilliseconds": 648,
+  "requestedDistinctIds": 50,
+  "existingSeedRows": 13,
+  "samples": [
+    { "kind": "COMPLETE_EXISTING_SYNTHETIC_SEED", "milliseconds": 339, "returnedRows": 13, "totalCount": 13 },
+    { "kind": "EXACT_ID_BATCH_50", "milliseconds": 127, "returnedRows": 13, "totalCount": 13 },
+    { "kind": "COMPANY_AND_EXACT_ID_BATCH_50", "milliseconds": 182, "returnedRows": 13, "totalCount": 13 }
+  ],
+  "productionCapacityAccepted": false,
+  "unmeasured": [
+    "Stock collection compound indexes",
+    "Actual300line native preparation",
+    "Typed domain writes",
+    "Interrupted recovery"
+  ]
+}
