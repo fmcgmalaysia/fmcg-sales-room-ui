@@ -1,0 +1,65 @@
+2026-10-22 BORROWING WIX ROOT/RELAY — CODE CONNECTED, NOT INSTALLED OR ENABLED
+
+Supersedes BORROW_APPROVAL_UI_CANDIDATE.txt's missing candidate OPTIONS/APPROVE
+relay connection ONLY. Original production remains d447185/runtime32b812c;
+preceding pushed candidate f43f3b4. Same approved scope, no new finance feature.
+
+Concrete implementation
+- Mechanical build-purchase-borrow-web.cjs -> stockCurrentBorrow.web.js imports
+  actual original Purchase access, requirePurchaseStaff, readFulfilmentContext,
+  fulfilmentStore, PO projector, allocation/shipment/packing/preparation parsers.
+  It composes the existing SDK conditional store/segmented coordinator/borrow
+  quote+save factory, not a replacement business model or second stock authority.
+- Original staff authorization runs BEFORE stock access; underlying operations
+  reauthorize. Known company, request UUID, size and exact task scopes checked.
+  Uses original READ-ONLY readFulfilmentContext; deliberately does not call old
+  getPurchaseWorkspace, which would perform unfenced margin-cache writes.
+- Same existing conditional company fence, current generation, raw task checkpoints,
+  deterministic relation identity, matching PO/packing/finance checks and future
+  repayment promise. No browser coverage/actor/kind flag grants authority.
+- Existing candidate Wix page gets bounded OPTIONS and BORROW_APPROVE/BORROW_RETURN
+  routes. UUID/stock metadata reach new root unchanged, phase progress returns via
+  original PURCHASE_SAVE_RESULT. Ordinary operation/order/cost/profile/message/chat
+  handlers remain byte-for-byte original after removing the narrow added routes.
+- Caller receives only existing public quote/progress/confirmed result or generic
+  unconfirmed message; no private prepared images, locks or internal stack exposure.
+
+Explicit CLOSED gates in the ACTUAL generated source
+- writerCoverage is EMPTY. Both actionable quote reads and actual saves refuse
+  until ALL20writer checks match control.writerBuild. A browser cannot override it.
+- Only freshly inspected NCTActivity.activityTime is in the DateTime allowlist.
+  GHR schema refuses rather than guessing its type. Remaining collection type/native
+  SDK roundtrip inspection is still required before installation/activation.
+- NO SDK elevation/suppressAuth shim/CMS collection permission changes, protocol
+  initialization, migration, ACTIVE transition or live call performed. Installed
+  package's original authorization is Admin test ONLY, not production authorization.
+  Production SDK permission design/review/approval remains an explicit release gate.
+  Existing builtin context retains its original scoped server permissions, no new
+  employee/Drive access. No new temporary lock deletion authority consumed.
+
+Verification actually run
+5new tests exercise generated root with actual original auth/model/plan and SDK/store
+mock injection, plus actual candidate Wix page handler execution. Default empty
+coverage refuses quote+save, no-context-on-unapproved/foreign/oversize/unverified
+schema; no stock mutation. Positive test replaces ONLY private empty coverage in
+the VM fixture, NOT shipped code/live configuration, and uses existing mock store:
+real v2 quote100 ->30approved, bounded same UUID progress, one relation/replay,
+unchanged PO-A/PO-B. SDK site-member permissions/native field roundtrip NOT proven.
+Actual page relay keeps metadata/progress, prevents malformed routing, and dispatches
+ordinary PLAN through unchanged original route. It is NOT yet an all-writer relay.
+Latest full stock-current suite633pass0fail6098.7661ms. Protected production diff
+againstd447185 exact. No all-repository or public acceptance claim; Credits UNKNOWN.
+
+Remaining work
+This borrowing vertical has a real-import ROOT and actual page-handler CANDIDATE,
+but neither is installed in Wix; current official workspace still lacks current
+metadata and exposes no new approval control. Finish remaining writers/current
+workspace/read transport, borrowed-return/outstanding UI, pending reload, legacy
+Warehouse/photos/files, inventory attribution/disposal, actual3CMS schema/indexes,
+SDK permissions/type/order roundtrip, init/recovery/shadow/capacity review, THEN exact
+branch permission and all4release phases. All these gates remain OPEN, ACTIVE OFF.
+No production data/schema/delete, Wix edit/publish, Pages dispatch or main merge.
+
+Efficiency note: continuing task reused prior framework/spec/overnight/Astra versions.
+Some exploratory reads guessed absent paths; corrected by reading actual imported
+customerFulfilmentService/packingListService instead. No blind retry or broad scan.

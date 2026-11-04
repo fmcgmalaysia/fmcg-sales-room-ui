@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-03",
+  "status": "READ_ONLY_AUDIT_COMPLETE_FIRST_PASS",
+  "scope": "Existing methods audit requested by user; local source and prior native400-row snapshot, no fresh Wix inspection in this phase",
+  "findings": [
+    [
+      "P1",
+      "整库历史同时进入读与写路径",
+      "已确认代码行为",
+      "purchaseWorkspace.web.js:30；purchaseOperations.js:15、51、241",
+      "看任务、准备保存、部分修订复核均调用全历史读取；历史变多也会拖慢保存。",
+      "日常操作成本应随当前相关任务变化；先明确相关任务及来源责任闭包，不能用日期截断替代。"
+    ],
+    [
+      "P1",
+      "分页发生在全部计算之后",
+      "已确认代码行为",
+      "accountPurchase.web.js:queryAccountPurchaseOrders",
+      "先orders.list、装饰全部行，再queryAccountReadModel分页。用户只看一页仍承担全部历史成本。",
+      "以实际数据库读取条数、响应字节和后台计算量验收分页，不只检查界面每页行数。"
+    ],
+    [
+      "P1",
+      "自动轮询重复取得整份工作间",
+      "已确认代码行为；实际频率未测",
+      "purchase-live/app.js:127、900",
+      "可见、未编辑且没有pending时每10秒请求完整工作间；没有变化也会重做读取。30秒超时清pending不会证明旧后端已停止，下一轮可能与慢请求重叠。",
+      "保留数据及时性，测量闲置和故障时请求量；再设计有限重试与更新检测。不能未经验证加跨请求缓存。"
+    ],
+    [
+      "P1",
+      "同一屏多个读取入口各读历史",
+      "已确认调用结构；现场次数未测",
+      "support-room/workroom.js:load；supportWorkroom.web.js:getSupportBookings/getSupportDocuments",
+      "完整载入请求6类数据；已确认Bookings和Documents各读取该公司Activity，其他入口也须纳入完整请求轨迹。不同请求还可能读到不同时间点。",
+      "按一次用户动作记录所有读取；区分需要重新读的部分与可复用的同次结果，保留保存后最新数据。"
+    ],
+    [
+      "P1",
+      "准备回执与正式事件重复携带内容",
+      "样本实测",
+      "purchaseOperationJournal.js:62；purchaseOperations.js:249；CMS_EXISTING_PRACTICES_AUDIT_20261103.json",
+      "400条中99组准备/结果；72个事件载荷在准备和正式事件中重复，共65701字符。不是实际收费字节，也不证明全部可删。",
+      "规划原子业务提交/恢复所需最少证据与保留条件；当前依赖解除前保留原件。记录行数和字段体积须分别治理。"
+    ],
+    [
+      "P2",
+      "共享投射按任务反复扫描历史",
+      "已确认代码行为",
+      "purchaseProjection.js:51、52、55、86；warehouseReceiving.js:readWarehouseTask",
+      "多行任务反复找同一订单、来源及PO收货链。局部查找优化能减CPU，却不减少数据库读取。",
+      "保留此前最小候选为可选子项；不再把它当百万行长期方案。"
+    ],
+    [
+      "P2",
+      "读取全公司PO后才筛选公司",
+      "已确认代码行为",
+      "purchaseOperations.js:requireEditablePurchaseChanges",
+      "store.all(PurchaseOrders)后才filter company，读取代价包含另一公司。服务器过滤仍存在，不能据此称客户数据泄漏。",
+      "查询应按公司及所需PO范围；验证锁定检查仍覆盖合并PO全部关联任务。"
+    ],
+    [
+      "P2",
+      "同公司采购操作共用保存锁",
+      "已确认代码行为；争用程度未测",
+      "purchaseOperations.js:journal scope company/PURCHASE；purchaseOperationJournal.js:LOCK",
+      "不同采购员处理不同任务也可能互相等待；全历史检查延长持锁时间。锁保护了重要并发约束。",
+      "测量等待与冲突；收窄锁范围前证明合并PO、跨来源分配等共同约束，不能直接去锁。"
+    ],
+    [
+      "待验证",
+      "无实质改变也可能保存新修订",
+      "潜在问题，尚无现场复现",
+      "purchaseOperations.js:PLAN costing/patch/no-change guard",
+      "已有无变化拒绝逻辑，不能说系统完全没有防重复；但costing分支无条件填充patch，可能绕过依赖patch为空的判断。",
+      "构造相同成本计划重复提交场景，区分确认动作、变化内容及新请求。没有证据前不删除历史或断言已发生。"
+    ],
+    [
+      "P1",
+      "历史保留与当前业务仍强绑定",
+      "8项只读边界验证及代码依赖",
+      "purchasePlan.js、warehouseReceiving.js、customerAllocationContext.js、supportDesk.js",
+      "只取最新采购/收货事件会报错；旧批次可能仍有库存、欠款、借货或文件身份。按月移动不能自动解除依赖。",
+      "先定义当前状态、未结事项、月结接续和历史更正，再确定归档资格。月份只能组织历史，不能决定业务结束。"
+    ]
+  ],
+  "priorityChange": "Earlier request-local lookup implementation deferred pending current-state/history/retention boundary review; no production edit authorized by this audit artifact",
+  "knownProtections": [
+    "PageGP reads no writes",
+    "No GP or MOVE ROW event in400-row sample",
+    "38 Desk events have no identical before/after state",
+    "Save recovery uses same original request",
+    "NCT/GHR use separate activity/order/task collections"
+  ],
+  "unknown": [
+    "Current exact Wix collection capacity/plan quota",
+    "Actual daily operations and records/operation distribution in real use",
+    "Live network request counts and latency percentiles",
+    "AccountReadIndex live activation and lifecycle; its presence in source is not proof of effective optimized reads"
+  ],
+  "requiredMetrics": [
+    "Count each operation type business rows/recovery rows/temporary locks separately",
+    "Measure payload bytes and duplicated substructures, not only rows",
+    "Trace idle viewing, one save, retry, cross-department refresh and history search",
+    "Test growth and cross-month open obligations before any archive"
+  ],
+  "productionChanged": false
+}

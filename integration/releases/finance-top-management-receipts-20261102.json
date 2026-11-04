@@ -1,0 +1,29 @@
+{
+  "objective": "Restore existing TOP MANAGEMENT Finance authority for customer receipt confirmation",
+  "branch": "fix/finance-top-management-receipts-20261102",
+  "recoveryTag": "verified/customer-receipt-access-recovery-20261102",
+  "approval": "User explicitly approved the single TOP MANAGEMENT account-role expression on 2026-11-02",
+  "liveComparison": "Fresh Wix customerFulfilment.web.js equals the pre-patch repository after CRLF normalization; exact original retained in the root pressure-test handoff",
+  "businessFiles": [
+    "integration/backend/customerFulfilment.web.js"
+  ],
+  "change": "account flag also accepts the existing TOP MANAGEMENT role; admin/invoice/dispatch flags and staff records unchanged",
+  "tests": {
+    "passed": 90,
+    "failed": 0,
+    "newAccessCases": 3,
+    "scope": "Finance access, customer confirmation/account/matching/history, fulfilment and charge invoices"
+  },
+  "publication": {
+    "github": "eea8160 pushed; exact pre-patch annotated recovery tag pushed",
+    "pages": "UNCHANGED; formal iframe and loaded script version20261102-two-site-closeout-v1 verified; no static asset or deployment permission changed",
+    "wix": "Single-expression draft exact to candidate; Studio confirmed published and live online",
+    "public": "PASS: fresh normal-Chrome Finance51430497 shows Review; synthetic USD2400 confirmed once, allocationsD1=1000,D2=1400; Buyer balance2400, per-invoice1784/616"
+  },
+  "limits": [
+    "No new staff or department grant",
+    "No real payment transfer",
+    "No main merge before user verification",
+    "Other pressure-test defects are separate patches"
+  ]
+}

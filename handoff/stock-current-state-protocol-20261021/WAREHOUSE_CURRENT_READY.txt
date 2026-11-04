@@ -1,0 +1,31 @@
+CURRENT afterd0116d9 — explicit original Warehouse Ready context adapter, not live
+
+currentWarehouseReadyContext overlays current cumulative customer allocations and current
+usable physical source balances for ORIGINAL projectPreparation/Ready consumers only.
+Original PO accepted quantities, case metadata, task/order/customer identity, batch plans,
+signature/version/progress/photo/history fields remain. No replacement of full fulfilment
+or financial/exception context. Current shipments must match original DISPATCHED source+
+customer evidence, avoiding double subtraction; unknown/incomplete source/task coverage
+refuses instead of falling back. Multiple products merge all current allocation views;
+naively calling old single-product helper repeatedly would revert prior product mappings.
+
+Changed known mutation-path reader rejects explicit null usable/physical/isolated-attribution
+fields even if a malformed record forgot reviewRequired/reviewCodes; private diagnostic
+snapshot reader still preserves unknowns as null for Review display/reconciliation.
+
+Evidence:5new140.3353ms. Unchanged stock gives byte-equivalent original projected rows,
+signatures and versions; old physical999 replaced by current100, borrowing yieldsA30/B70.
+After actual matching legacy DISPATCH20, source physical80, readyA10/B70, cumulativeA30,
+borrowing debt unchanged. Missing dispatch evidence rejects. Multiple products stay mapped.
+Shared current-reader change justified full candidate suite307pass0fail1515.0491ms.
+Original protected Warehouse preparation+packing-context13pass0fail166.1608ms separately;
+not claimed as end-to-end acceptance of new deployed service. No real business mutation.
+
+OPEN: adapter requires full supplied context coverage and is NOT yet in actual Warehouse
+gateway or packing preparation. Existing packing candidate can conservatively block known
+current stock due to legacy review; do not hide this. Final scoped read/pagination plan
+must avoid expanding each page into all archived products/history. Existing fulfilment
+context still builds old history facts; no claim this helper eliminates that cost. Legacy
+PACK/LOAD/UNPACK/photo writers, source signatures, actual auth endpoints, all-writer scope,
+capacity/lifecycle/recovery/migration/UI/ACTIVE/four-stage release remain incomplete.
+Production unchanged32b812c; current stock authority OFF.

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-29T14:57:22.091Z",
+  "environment": "ISOLATED_ACTUAL_STAGED_PURCHASE_WITH_REAL_ALLOCATION_AND_SALES_FACTORIES",
+  "borrowDialog": {
+    "own": 200,
+    "free": 20,
+    "short": 30
+  },
+  "confirmationBeforeWrite": true,
+  "allocationA": 250,
+  "allocationB": 250,
+  "outstanding": 30,
+  "saves": 1,
+  "split200And100": true,
+  "sourceOnMain": true,
+  "pendingNoInheritedSource": true,
+  "retiredLegacySaveAbsent": true,
+  "errors": [],
+  "externalRequests": [],
+  "productionWrites": 0
+}

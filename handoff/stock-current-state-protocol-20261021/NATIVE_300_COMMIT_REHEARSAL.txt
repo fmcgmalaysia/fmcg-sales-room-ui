@@ -1,0 +1,149 @@
+2026-10-23 — exact segmented native300 rehearsal; precise one-scenario grant received
+
+SUPERSEDING ACTUAL OUTCOME: STOPPED, CALL20 UNKNOWN. Do not continue automatically.
+Nineteen executor calls confirmed; last BEFORE380/901 with generation0/pending,
+read barrier confirmed and owned lock absent. Call20 was persisted inFlight before
+Run, then CUA reported "native pipe closed before response". One read-only state
+observation then reported browser unavailable. No UI path retry/reselection, no
+new request, no lock release/cleanup, no assumption that the invocation ended.
+Final application, injected APPLY recovery,901after images and replay NOT accepted.
+
+Confirmed scenario total INCLUDING seed390/301, initial INSPECT10reads and later
+resume INSPECT5reads:891queries/332inserts/20patches/19conditional owned removals.
+Call20 operations UNKNOWN. Reserve its full per-call200queries/33inserts/30patches/
+1removal against the user's exact12000/1100/600/145maximum. No old grants reused.
+Private native300-execution-results-20261023.json retains results and inFlight20.
+
+At BEFORE120 a KNOWN pause allowed exact read batching, not a restart/new plan.
+Wix fresh source matched original armed SHA1c16c6f...; three exact unique Replace
+edits inserted batch helper, batch fragment read and bounded BEFORE/VERIFY groups.
+Full editor readback exact SHA256LF:
+ae1ea2d3efb5beecd78bc3d9646ce6a34a033e17a310323973c2aceb80615374
+Private native300-draft-batched-authorized-readback-20261023.js retained.
+Readonly INSPECT confirmed same BEFORE120; no extra native run from opening gutter.
+Thirteen later calls confirmed BEFORE140..380:16queries each,1insert/1patch/1remove;
+elapsed3044,2752,2901,2667,2788,2650,2740,2709,2742,3118,3259,2897,3095ms.
+Read budget/fence/CAS/plan hash/phase progress remain unchanged; see BATCHED_IMAGE_READS.
+
+On unknown outcome local builder/generator restored CLOSED. Wix last saved code is
+ARMED; unavailable browser prevented closing its compiled gate. User asked ONCE to
+change only NATIVE_TEST_LOCK_RELEASE_GRANTED=true tofalse, save, NO Run/Publish.
+Await explicit closure; do not pretend local false changed the Wix draft. Security
+boundary unchanged: Admin only, StockProtocolTest only, exact fixed lock condition.
+Closing gate does not prove call20 terminated. No automatic same-request resumption.
+
+Operational helper evidence: earlier primitive call labels drifted while result
+array retained actual20/40/60/80. Reconstructed shared native300State object and
+totals from preserved reports, then calls5..19 correct. Code-generation-from-string
+helper edit denied BEFORE dispatch; not retried/bypassed. This is not a native
+protocol failure or a successful full test. Preserve all fixtures and pending.
+
+Final offline full1192pass0fail32174.7612ms. Initial1190pass2fail were test provider
+missing hasSome and changed read/find accounting; corrected provider and TIGHTENED
+aggregate bounds, not production logic/guards.17affectedpass3650.7713ms. Native
+8new/8batch/31fence47pass13688.3144ms retained. No new business/ACL/Pages/Publish.
+
+CURRENT: user explicitly answered "允许本次完整测试及限定的条件测试锁释放".
+One new scenario only, exact target/budgets below; NOT renewal of any old grant.
+All15native seed batches CONFIRMED:390queries/301inserts/0patch/0delete.
+Additional read-only native INSPECT confirmed generation0/pendingfalse/seedComplete;
+10queries/NO mutations,1690ms. Private native300-seed-results-20261023.json and
+native300-before-execution-inspection-20261023.json preserve actual outputs.
+Only the compiled test gate changed false->true by ONE exact Wix Replace. Whole
+visible-editor readback matched authorized local code SHA256LF:
+1c16c6fed295d0c44b9256dc78939c2ea01382735967e9ecacd5493ccfe6bff2
+Private native300-draft-authorized-readback-20261023.js retained. Restore gate to
+false after complete OR stop; no ordinary business/ACL/Publish changes authorized.
+Actual first ADVANCE now CONFIRMED:BEFORE20/901,63queries/13inserts/2patches/
+1owned conditional test-lock removal,12970ms. Generation0/pending retained; mixed
+actionable read blocked. Continue SAME original request, not SEED/restart/recompute.
+Live private native300-execution-results-20261023.json retains each confirmed result
+and attempted lock-call count. Restore false after complete OR failure/unknown.
+No whole native application/recovery acceptance yet; selected grant is IN USE.
+
+Single objective: test actual901image segmented executor application and known
+application-fault recovery on Wix, using the SAME original mock-prepared300receipt
+plan that already passed actual native staged readback. Not business authorization,
+native whole-request preparation, production schema, old-execution drain or migration.
+Protected original paths d447185/runtime32b812c unchanged. No new stock authority.
+
+New candidate files (not in production38target/94dependency install packet):
+ native-300-commit-probe.cjs,build-native-300-commit-probe.cjs,
+ stockProtocol300Commit.web.js,stock-current-native-300-commit.test.cjs.
+Exact SDK codec/store, segmented-plan and segmented-fenced-proof sources embedded
+mechanically; default20steps per invocation unchanged. No shared production edit.
+New module reads previous12staging fixtures ONLY; never resets/adopts/edits those
+rows as its control or locks. Full plan hash79d177a3ccd56f4672d5656f05834bc6 checked.
+Source authority/storage were synthetic MOCK; no real employee/PO/customer grant.
+
+New StockProtocolTest prefix SPT-COMMIT300-20261023-b19d:
+SEED:15sequential20product batches, first also adds GENESIS control. Strong exact
+reads check ALL901expected domain IDs before each batch; no skip/adopt/reset. Each
+batch read back before continuation. Any failure/unknown stops without auto retry.
+Initial300zero products + control =301new retained rows; not business stock.
+ADVANCE: exact shared segmented executor under same request/member/digest. Actual
+protocol fragments/root, pending barrier, before/apply/verify/finalize, RESULT and
+generation; per-invocation conditional attempt-specific lock release mandatory.
+INTERRUPT_APPLY: one known application exception after10actual row mutations in
+an APPLY invocation; confirm exact retained partial images, unchanged checkpoint,
+read barrier and absence of the released owned lock. No real timeout is fabricated.
+Then ADVANCE same original request. INSPECT verifies ALL901images through a fresh
+strong control sandwich; no single page or outcome message substitutes for parity.
+REPLAY_COMPLETED once must preserve exact final rows/generation/one original receipt.
+
+Gate and proposed exact bounded grant
+NATIVE_TEST_LOCK_RELEASE_GRANTED=false is a compiled server constant. ADVANCE/
+INTERRUPT_APPLY/REPLAY_COMPLETED reject before ANY storage until action-time grant.
+Browser extra keys/permission booleans refuse. Native seed/read operations do not
+have conditional deletion enabled. No old test lock grant is reused.
+ONLY possible remove target is StockProtocolTest item:
+SPT-COMMIT300-20261023-b19d:NCTActivity:1cbdee1c74664528d2874f12e56c301d
+Require atomic company=NCT AND exact new COMMIT300-attempt equality on each release.
+No record/lock outside this NEW identity can be removed; no forced/TTL unlock.
+Full test expected138temporary lock incarnations removed,145MAX authorized attempts
+to be requested only when ready. Max ordinary budget for complete new scenario:
+12000queries/1100insert attempts/600conditional patches/145conditional removals.
+Per invocation200queries/33inserts/30patches/1remove. Source12records read-only.
+Expected final915new NONLOCK records retained (300seed products+600positions/claims+
+1receipt+11fragments+manifest+RESULT+control); peak916including transient lock.
+No business collection/schema/ACL/Publish/Pages/file callback/Support invoice/exit.
+Failure or unknown native outcome stops, preserves fixtures and original request;
+no automatic rerun/cleanup/mode change. Confirmed pending is a normal continuation,
+not permission to rerun an unknown or failed invocation.
+
+Offline verification
+Initial7new tests passed13880.774ms. Strengthened independent final-image corruption
+refusal, unknown lock-release reply and count instrumentation; final8new+31existing
+segmented fence tests39pass0fail15124.3486ms. Includes unsafe/counterexample fault
+conditions, NOT39native-safety assertions. Whole scenario:137mockexecutor calls
+including the one known fault, then one completed replay,138MOCK conditional lock
+removals. Actual executor totals7109queries/752inserts/440patches/138removals;
+seed preparation adds301inserts and separate read-only setup queries. Per-executor
+invocation max70queries. Final915new retained rows, once-only30000synthetic cartons.
+No original module, runtime, install-manifest or business workflow changed.
+Generated exact --check passed. Prior FULL1166 reused, not incremented or rerun.
+
+Native preparation evidence (update after completed confirmed batches)
+Existing MASTER editor51426657: NEW Admin module saved with release gate CLOSED;
+full visible-editor readback exact SHA256LF:
+021859f4a6173dd839ef4498dc5da5dac5498cf6844575eee698b80d91173045
+Private source native300-draft-gate-closed-readback-20261023.js.
+Existing Monitoring tab51426755 refreshed: maximum10000items/10GB retained.
+Private actual used counts/screenshot in native300-cms-headroom-20261023.png;
+displayed headroom exceeds916 but is NOT an atomic reservation or production scale
+acceptance. Refresh defaulted Data requests; switched only to CMS storage, no
+upgrade/settings/log-detail/external contact action. Metrics not exported publicly.
+Actual per-batch seed JSON retained privately in native300-seed-results-20261023.json.
+First batch passed:26queries/21inserts/0patch/0delete,6112ms. Subsequent batch results
+are private readbacks; no native executor/lock removal/application claimed yet.
+One second-batch result expansion AX text index was stale. Function already returned;
+no rerun. Screenshot-located disclosure expanded result and confirmed batch1. Stop
+using that virtualized AX text node path; use observed stable screenshot result
+location after fresh capture. Never retry Run because Copy/expansion failed.
+
+Whole release gates remainOPEN: native whole300business preparation/schema/private
+permissions/indexes/full recovery, old LEGACY termination/drain, semanticG3 and actual
+Admin migration/apply/resume NOT IMPLEMENTED; fresh backup/shadow/parity/cutover.
+CoverageEMPTY/ACTIVEOFF; initial human acceptance throughLoaded; invoice/physicalexitOFF.
+Four release states: diagnostic candidate only; inventory Pages unchanged; Wix saved
+diagnostic draft only, not business published-live; public new Loaded flow unaccepted.

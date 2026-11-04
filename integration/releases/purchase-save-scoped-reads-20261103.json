@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-03",
+  "objective": "Scope fresh Purchase save validation queries without changing business decisions or journals",
+  "branch": "perf/purchase-save-scoped-reads-20261103",
+  "baseline": "45d1809",
+  "liveComparison": "Two Wix originals normalized-exact before edits",
+  "backendPatches": [
+    {
+      "name": "purchaseOperations.js",
+      "beforeSha256": "66b8480bca35be11859190e31d3809d0011d59eca563bf062344885ff1e12324",
+      "afterSha256": "89208c093f9df4409ea5d5869a8e6ee11286a56247f67cade8ae7b32911d8854",
+      "hunks": 3
+    },
+    {
+      "name": "purchaseOperations.web.js",
+      "beforeSha256": "66197e7dd3190a6688f0bb3a85e60ea3dea0c7098c3af93ae43d5955fd85b696",
+      "afterSha256": "54e6d9d6c9094113c7f9fffeef59acbb1b83f5eed97f2fa26b6d8ca1584d2092",
+      "hunks": 1
+    }
+  ],
+  "staticChanges": 0,
+  "productionBusinessWrites": 0,
+  "newCollections": 0,
+  "tests": {
+    "specialized": 10,
+    "relatedRegression": 146,
+    "failed": 0
+  },
+  "offlineReadComparison": [
+    {
+      "extraHistory": 0,
+      "before": 30,
+      "after": 14
+    },
+    {
+      "extraHistory": 1000,
+      "before": 3030,
+      "after": 1014
+    },
+    {
+      "extraHistory": 10000,
+      "before": 30030,
+      "after": 10014
+    }
+  ],
+  "limits": [
+    "Initial workspace and save preparation still read company history; not million-row readiness",
+    "No monthly cutoffs or archive changes",
+    "Offline query volume is not measured Wix latency",
+    "No real production save replay performed",
+    "Earlier blank iframe/workspace timeout remains undiagnosed; fresh-tab success is not a root-cause fix"
+  ],
+  "status": "DEPLOYED_READ_ONLY_PUBLIC_REGRESSION_PASSED",
+  "code": "6c3cfb2ee95e7d7d3c19becc11959d33afccac2f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/326",
+  "release": {
+    "code": "COMPLETE_PUSHED",
+    "pages": "UNCHANGED_PURCHASE_3_HASHES_MATCH_PRIOR_D02",
+    "wix": "TWO_EXACT_DRAFTS_PUBLISHED_AND_LIVE",
+    "public": "READ_ONLY_REGRESSION_PASSED_LAW_NCT_GHR_PAID_PO_LOCK",
+    "permissions": "UNCHANGED_NO_NEW_DEPLOYMENT_RULE",
+    "userBusinessAcceptance": "PENDING_REAL_SAVE_TEST"
+  }
+}

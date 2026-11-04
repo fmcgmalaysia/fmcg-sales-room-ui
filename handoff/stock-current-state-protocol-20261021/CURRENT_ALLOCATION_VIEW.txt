@@ -1,0 +1,28 @@
+2026-10-22 — cumulative compatibility view and implicit Sales source release
+
+New current-allocation-context.cjs maps current source claims + actual source/task
+dispatched quantities to the ORIGINAL cumulative allocation contract. Saves no synthetic
+events or second balances. Existing append-only allocation revision retained from original
+readAllocations; absent original allocation uses beforeRevision empty for valid first
+Sales event allocation change. Unrelated task/cost/context fields unchanged, original
+task identity/product/customer/demand must match current authoritative snapshot.
+inc remains lifetime received/allocated, NOT remaining onHand;500allocated after40shipped
+stillinc500, not460. No history recomputation of physical ownership fallback.
+
+New current-sales-plan.cjs composes this view -> ORIGINAL Sales validator -> current
+demand/stock plan under common fence. Fixes previous implicit-release evidence gap using
+original batch/source stockCoverage computation, not aggregate-delta guessing. Requires
+staff from existing authenticated gateway, current-generation client form version; not
+itself public endpoint or authority granting browser staff flags.
+
+Tests6current-view +6demand pass177.2689ms (previous20related pass392.6074ms overlaps).
+Cases: no old allocation rows, current500 -> split300+200 -> reducefirst50 ->A250/B200,
+free50 and valid original first allocation chain; full composed reduce plan retains
+ONE Sales event and no separate planner event. Other product/cost untouched. Wrong
+company/customer/sourceLine/demand reject. No business/live reads/writes, schema or
+deployment. Original production unchanged versusd447185. Actual Credit UNKNOWN.
+
+Remaining: install view in real current read/department version and authenticated gateways,
+readStockExceptions/packing/financial compatibility, all writer coverage, real source
+lifecycle/capacity/recovery/migration/shadow, UI/halo and four-stage release. A current
+plan test is not production activation. Pages/Wix unchanged, public new workflow unavailable.

@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../..');
+for(const file of ['index.html','buyer-room.html'])for(const match of fs.readFileSync(path.join(root,file),'utf8').matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(match[1].trim())new vm.Script(match[1],{filename:file});
+for(const file of ['master-shared/shipment-batches.js','sales-room/order-adjustment.js','purchase-live/task-grid.js','purchase-live/app.js','warehouse-room/app.js'])new vm.Script(fs.readFileSync(path.join(root,file),'utf8'),{filename:file});
+const {chromium}=require('C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({viewport:{width:1540,height:940}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('http://127.0.0.1:8938/handoff/sales-split-rows-20261019/preview.html');
+ const sales=page.frameLocator('#sales');await sales.locator('[data-view="order-progress"]').click();await sales.locator('#progressCustomerTrigger').click();await sales.locator('[data-progress-customer="SPLIT-DEMO"]').click();
+ await sales.locator('.sales-requested-capsule').click();await sales.locator('[data-first]').fill('300');assert.equal(await sales.locator('[data-next]').innerText(),'200');
+ const box=await sales.locator('.order-adjustment-dialog').boundingBox();assert.ok(box.width<=382);await page.screenshot({path:path.join(__dirname,'candidate-dialog.png')});
+ await sales.locator('[data-save]').click();await sales.locator('.sales-requested-capsule').filter({hasText:'300'}).waitFor();assert.equal(await sales.locator('.sales-requested-capsule').count(),2);await page.screenshot({path:path.join(__dirname,'candidate-sales.png')});
+ await page.locator('[data-room="purchase"]').click();const purchase=page.frameLocator('#purchase');await purchase.locator('[data-view="active"]').click();await purchase.locator('#refresh').click();await purchase.locator('.split-demand-row').first().waitFor();assert.equal(await purchase.locator('.split-demand-row').count(),2);assert.equal(await purchase.locator('.split-origin-link').count(),1);await purchase.locator('.split-origin-link').click();await purchase.locator('.split-origin-dialog').waitFor();await page.screenshot({path:path.join(__dirname,'candidate-purchase.png')});
+ await page.locator('[data-room="warehouse"]').click();const warehouse=page.frameLocator('#warehouse');await warehouse.locator('[data-view="customers"]').click();await warehouse.locator('#refresh').click();await warehouse.locator('.wh-delivery tbody tr').filter({hasText:'300'}).waitFor();assert.equal(await warehouse.locator('.wh-delivery tbody tr').count(),2);await page.screenshot({path:path.join(__dirname,'candidate-warehouse.png')});
+ await page.locator('[data-room="buyer"]').click();const buyer=page.frameLocator('#buyer');await buyer.locator('[data-view="track"]').click();await buyer.locator('.tracking-row').filter({hasText:'This shipment'}).waitFor();assert.equal(await buyer.locator('#trackRows .tracking-row').count(),2);await page.screenshot({path:path.join(__dirname,'candidate-buyer.png')});
+ assert.deepEqual(errors,[]);console.log('Syntax and actual four-page UI sample passed: compact dialog, 300+200, provenance, no page errors.');await browser.close();
+})().catch(error=>{console.error(error);process.exit(1)});

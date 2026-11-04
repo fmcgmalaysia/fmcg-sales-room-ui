@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-04",
+  "branch": "fix/buyer-selection-image-links-20261104",
+  "objective": "Clickable image URLs and customer-currency EA/carton headers in My Selection Excel",
+  "baseline": {
+    "code": "6d30665",
+    "recoveryTag": "verified/buyer-selection-excel-20261104",
+    "freshWixComparison": "Same business source; only existing blank lines and EOF newline differed. Exact live formatting retained.",
+    "nativeExcelUserConfirmed": true
+  },
+  "runtimeFiles": ["backend/buyerSelectionExcel.js", "backend/buyerSelectionDownload.js"],
+  "changes": [
+    "Native external hyperlinks for valid image web URLs in A3 onward; original URL text retained",
+    "F2 customer currency / EA and G2 customer currency / CTN; original G=E*F formula retained",
+    "Existing export hash includes a format revision to avoid reusing old-format files"
+  ],
+  "verification": {
+    "buyerCjsChecksPassed": 92,
+    "failed": 0,
+    "wixGeneratorDraft": "MATCHES_TESTED_SOURCE_EXCLUDING_ONLY_LINE_ENDING_AND_EOF_FORMAT",
+    "wixDownloadDraft": "EXACT_ONE_LINE_CHANGE_RELATIVE_TO_LIVE",
+    "orderReceivedWorkbook": "BYTE_IDENTICAL"
+  },
+  "stages": {
+    "code": "22f30ab_GITHUB_SYNCED_PR339",
+    "pages": "UNCHANGED_101_RESOURCES_NO_DEPLOYMENT_REQUIRED",
+    "wix": "TWO_DRAFTS_VERIFIED_PUBLISHED_AND_LIVE",
+    "public": "USD_SGD_DOWNLOADS_VERIFIED_USER_CONFIRMED_LINK_ISSUE_RESOLVED"
+  },
+  "publicEvidence": {
+    "USD": {"bytes":8066,"F2":"USD / EA","G2":"USD / CTN","A3A4":"Native external hyperlinks matching displayed URLs"},
+    "SGD": {"bytes":8067,"F2":"SGD / EA","G2":"SGD / CTN","F3":3.33,"F4":0.49,"nativeLinksIncludingA1":3},
+    "formulas": "Original IF(blank EA or price, blank, EA*price) retained in G3/G4",
+    "imageTarget": "Actual exported AJAX URL opened directly and displayed correct product image; this is not an Excel-click test",
+    "desktopAttempt": "Old Excel window no longer present; Downloads app approval timed out. No protection/security settings changed, no alternate desktop control used.",
+    "nativeClick": "User screenshot showed native Excel hyperlink confirmation for the exact Wix image URL; user then explicitly said this issue was resolved and authorized closeout in voice. Do not infer specific browser tab placement.",
+    "buyerPage": "User-fresh801 identity/selection normal; reload and802 embed intermittently blank while native outer Excel export works. Wix suspense/fallback logs observed on801, not asserted as root cause or repaired."
+  },
+  "verifiedCheckpoint": {
+    "tag": "verified/buyer-selection-image-links-20261104",
+    "code": "22f30ab6d84fb94b076fdee0f00da28b973af338",
+    "wixGeneratorSha256": "728e070d903b3b6a504d28c6f771558ae42b0d5f10f20e119ced06a12819083e",
+    "wixDownloadSha256": "9ed695ccf2b87644a5725a9e4dffe50b7a4b00fd5f82404a5e0604aceb43000f",
+    "scope": "My Selection Excel native download, image hyperlink and customer-currency F/G headers only"
+  },
+  "limits": [
+    "Excel/default-browser decides tab placement; no promise to force a new tab",
+    "Native My Selection Excel download is protected and not replaced",
+    "Historical customer PDF download/back and CMS long-term reading remain separate backlog"
+  ]
+}

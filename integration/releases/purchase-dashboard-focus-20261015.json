@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-15",
+  "scope": "Purchase header reference and Dashboard information hierarchy",
+  "base": "73a60c1",
+  "verifiedRecovery": "verified/purchase-lavender-plan-po-20261014 (limited real SAVE/PO acceptance only)",
+  "production": "70a0b59",
+  "displayQueues": {
+    "issues": "Existing urgent, stock or explicit receiving issue; highest display priority",
+    "mine": "Remaining sources with existing Purchase-owned actions",
+    "waiting": "Remaining sources with only other-department owners",
+    "identity": "One primary queue per existing source or signal identity; distinct actions and original callback indices retained",
+    "all": "Secondary All work view; not another status"
+  },
+  "header": "MASTER and department left; existing company selector, staff identity and refresh right. IDs and handlers unchanged. English primary, Chinese secondary.",
+  "layout": {
+    "mainEntries": 3,
+    "width": 1496,
+    "scrollWidth": 1496,
+    "title": 14,
+    "english": 11,
+    "chinese": 10
+  },
+  "protected": {
+    "purchase-live/style.css": true,
+    "purchase-live/task-grid.css": true,
+    "purchase-live/task-grid.js": true,
+    "purchase-live/supplier-allocation.js": true,
+    "master-shared/task-signals.js": true
+  },
+  "activeOrders": {
+    "columns": 13,
+    "productSize": 11,
+    "font": "Segoe UI unchanged"
+  },
+  "tests": 132,
+  "browser": "Issue source B / KOH 30 ordered,20 received,10 receiving issue; original receiving modal retained; no Save clicked; No submissions",
+  "preview": "http://127.0.0.1:8916/integration/tests/fixtures/purchase-dashboard-preview.html?layout=v3&review=three-queues",
+  "chromeTab": "51425183",
+  "untouchedDraftTabs": [
+    "51425148",
+    "51425176",
+    "51425180"
+  ],
+  "liveReadback": {
+    "wixChars": 6980,
+    "wixSha256": "1cc77a58c649dd5b15f2ca75c83058e18a792be5ad3f9d9a595687235623f3d9",
+    "publicFiveAssetsMatch70a0b59": true
+  },
+  "release": {
+    "code": "local candidate",
+    "pages": "not deployed",
+    "wix": "no writes or publish",
+    "public": "candidate not published or publicly verified"
+  },
+  "review": "User design acceptance pending; do not advance beyond Dashboard"
+}

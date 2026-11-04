@@ -1,0 +1,62 @@
+{
+  "objective": "Order Form product rows 43px and quantity input 24px",
+  "commit": "8f38197",
+  "marker": "2026-10-06-buyer-column-spacing-room5-v3",
+  "recoveryTag": "verified/my-selection-sort-20261006",
+  "jsUnchanged": true,
+  "testsPassed": 6,
+  "userAcceptance": "pending",
+  "publication": "four stages complete",
+  "pages": {
+    "run": 37419481604,
+    "status": "success",
+    "sourceMatches": true
+  },
+  "wix": {
+    "unchanged": true,
+    "readbackMatches": true,
+    "publishedLive": true
+  },
+  "public": {
+    "marker": "2026-10-06-buyer-column-spacing-room5-v3",
+    "rows": [
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      },
+      {
+        "height": 43,
+        "inputHeight": 24
+      }
+    ],
+    "errors": [],
+    "quantityOrOrderWrites": false
+  },
+  "initialLoad": "Wix STATIC_FILE_NOT_FOUND during reload; fresh visit and subsequent reload succeeded. Pages cache max-age=600; public v3 verified after cache expiry.",
+  "unrelatedObservation": "Escape on prior v2 page logged pre-existing closeQuoteDetail ReferenceError; JS unchanged, no fix in this visual task; clean v3 visit had no errors.",
+  "temporaryPermissionRevoked": true
+}

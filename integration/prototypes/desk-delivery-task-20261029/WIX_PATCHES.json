@@ -1,0 +1,162 @@
+{
+  "baseline": "9fb69be3ed20684e0bd9c64581b2c53091a4dacf",
+  "files": [
+    {
+      "name": "packingListOperations.js",
+      "path": "integration/backend/packingListOperations.js",
+      "beforeSha256": "d8f2f544c1f9b9658e33f3fb13225ec4e2862c345e337ec862e2d0d7f04311dd",
+      "afterSha256": "0f814ea591c59024b2eea655ae26b12ef91f22e631acab0bd21a9cb68dc8ff3d",
+      "hunks": [
+        {
+          "find": "   return {ok:true,company,requestId,id:list.id,revision:list.revision,status:list.status};",
+          "replace": "   return {ok:true,company,requestId,id:list.id,revision:list.revision,status:list.status,...(list.desk?{list,deskState}:{} )};"
+        },
+        {
+          "find": "    if(packingVersion(checked)!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');",
+          "replace": "    if(packingVersion(checked)!==plan.expectedVersion)throw Error('Stock or packing workroom changed while saving.');\n    if(plan.deskReservation)deskState=await reserveSupportDeskDelivery({store,names,context:checked.physicalContext,staff,requestId,...plan.deskReservation,now});"
+        },
+        {
+          "find": "    if(operationId(existing.details)!==operationId(plan.record.details))throw Error('Packing receipt conflict.');",
+          "replace": "    if(operationId(existing.details)!==operationId(plan.record.details))throw Error('Packing receipt conflict.');\n    if(plan.deskReservation){const hold=await store.read(collection,operationId(operationId(company,list.customerId,'SUPPORT_DESK'),plan.deskReservation.revision,'NEXT'));if(!hold?.details?.state?.deliveryHolds?.some(row=>row.listId===list.id&&row.requestId===requestId&&row.memberId===staff.memberId&&row.digest===plan.deskReservation.digest))throw Error('Desk delivery receipt is unconfirmed. Retry the same save.');deskState={...hold.details.state,revision:hold.title};}"
+        },
+        {
+          "find": "   const existing=await store.read(collection,plan.record._id),list=plan.record.details.list;",
+          "replace": "   const existing=await store.read(collection,plan.record._id),list=plan.record.details.list;let deskState=null;"
+        },
+        {
+          "find": "   return {uploads,expectedVersion:input.version,beforeRevision:current?.revision||'',record:{_id:operationId(company,id,'PACKING_CURRENT'),title:id,description:id,image:next.customerId,action:PACKING_CURRENT,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,details:{list:next}}};",
+          "replace": "   const deskReservation=input.action==='DESK_SEND'?{customerId:next.customerId,desk:next.desk.number,revision:input.deskRevision,listId:id,taskIds:next.lines.map(line=>line.taskId),digest:operationId(next)}:null;\n   return {uploads,deskReservation,...(deskReservation?{authorizationInput:safeInput}:{}),expectedVersion:packingVersion(context),beforeRevision:current?.revision||'',record:{_id:operationId(company,id,'PACKING_CURRENT'),title:id,description:id,image:next.customerId,action:PACKING_CURRENT,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,details:{list:next}}};"
+        },
+        {
+          "find": "   if(input.action==='PROGRESS')assertLoadedOutflows(context.physicalContext,next.lines.map(line=>({id:loadingOutflowId(company,'PACKING',id,line.taskId),taskId:line.taskId,quantity:line.loaded,sources:line.physicalSources})));",
+          "replace": "   if(input.action==='PROGRESS'||deskLoad)assertLoadedOutflows(context.physicalContext,next.lines.map(line=>({id:loadingOutflowId(company,'PACKING',id,line.taskId),taskId:line.taskId,quantity:line.loaded,sources:line.physicalSources})));"
+        },
+        {
+          "find": "   const next=changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});\n   if(input.action==='PROGRESS')for(const line of next.lines){",
+          "replace": "   const next=deskNext||changePackingList({list:current,input:{...input,company,attachments},context,actor:department,id,revision,at});\n   if(deskLoad&&attachments.length)next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,photos:[...(line.photos||[]),...attachments]}:line);\n   if(deskLoad&&next.lines.some(line=>line.photos?.length>30))throw Error('Warehouse photo history is full.');\n   if(input.action==='PROGRESS'||deskLoad)for(const line of next.lines){"
+        },
+        {
+          "find": "    changePackingList({list:current,input:{...input,attachments:verified.map(photo=>({fileId:'VALIDATION_ONLY',sha256:photo.sha256,stage:input.photoStage}))},context,actor:department,id,revision,at});\n    for(let index=0;index<verified.length;index++){const photo=verified[index],allocated=await documentService({action:'ALLOCATE',company}),extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo.mimeType];if(!allocated?.fileId)throw Error('Warehouse photo allocation is unconfirmed.');uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:operationId(company,id,input.taskId,'PACKING_PHOTO'),fileId:allocated.fileId,type:input.photoStage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:company+'-'+id+'-'+input.photoStage+'-'+requestId+'-'+index+'.'+extension});}",
+          "replace": "    if(!deskLoad)changePackingList({list:current,input:{...input,attachments:verified.map(photo=>({fileId:'VALIDATION_ONLY',sha256:photo.sha256,stage:photoStage}))},context,actor:department,id,revision,at});\n    for(let index=0;index<verified.length;index++){const photo=verified[index],allocated=await documentService({action:'ALLOCATE',company}),extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[photo.mimeType];if(!allocated?.fileId)throw Error('Warehouse photo allocation is unconfirmed.');uploads.push({action:'PHOTO_UPLOAD',company,department:'WAREHOUSE',poId:operationId(company,id,input.taskId,'PACKING_PHOTO'),fileId:allocated.fileId,type:photoStage,mimeType:photo.mimeType,sha256:photo.sha256,size:photo.size,name:company+'-'+id+'-'+photoStage+'-'+requestId+'-'+index+'.'+extension});}"
+        },
+        {
+          "find": "   const uploads=[];\n   if(input.action==='PHOTOS'){\n    if(!current?.lines.some(line=>line.taskId===input.taskId)||!['PACKING','LOADING'].includes(input.photoStage))throw Error('Warehouse photo task or stage requires review.');",
+          "replace": "   const uploads=[],photoStage=deskLoad?'LOADING':input.photoStage,deskNext=deskAction?(input.action==='DESK_SEND'?planDeskDelivery({context,input,actor:department,id,revision,at}):changeDeskDelivery({context,list:current,input,actor:department,id,revision,at})):null;\n   if(photoSave){\n    if(!current?.lines.some(line=>line.taskId===input.taskId)||!['PACKING','LOADING'].includes(photoStage))throw Error('Warehouse photo task or stage requires review.');"
+        },
+        {
+          "find": "   if(input.action!=='CREATE'&&!current)throw Error('Packing list is unavailable.');",
+          "replace": "   if(!creating&&!current)throw Error('Packing list is unavailable.');"
+        },
+        {
+          "find": "   if(context.company!==company||packingVersion(context)!==input.version)throw Error('Packing workroom changed. Refresh before saving.');\n   const id=input.action==='CREATE'?operationId(company,requestId,staff.memberId,'PACKING'):input.id;",
+          "replace": "   if(context.company!==company||!deskAction&&packingVersion(context)!==input.version)throw Error('Packing workroom changed. Refresh before saving.');\n   const creating=input.action==='CREATE'||input.action==='DESK_SEND',id=creating?operationId(company,requestId,staff.memberId,'PACKING'):input.id;"
+        },
+        {
+          "find": "  if(input.action==='PHOTOS'&&(department!=='WAREHOUSE'||!documentService))throw Error('Warehouse photo upload is not authorized.');\n  const verified=input.action==='PHOTOS'?validatePackingPhotos(input.photos):[];\n  const safeInput=input.action==='PHOTOS'?{...input,photos:verified.map(({base64,...photo})=>photo)}:input;",
+          "replace": "  const deskLoad=input.action==='DESK_LOAD',deskAction=['DESK_SEND','DESK_LOAD','DESK_RECALL'].includes(input.action),photoSave=input.action==='PHOTOS'||deskLoad&&input.photos?.length>0;\n  if(deskLoad&&input.photos!==undefined&&!Array.isArray(input.photos))throw Error('Warehouse photo format is invalid.');\n  if(photoSave&&(department!=='WAREHOUSE'||!documentService))throw Error('Warehouse photo upload is not authorized.');\n  const verified=photoSave?validatePackingPhotos(input.photos):[];\n  const safeInput=photoSave||deskLoad?{...input,photos:verified.map(({base64,...photo})=>photo)}:input;"
+        },
+        {
+          "find": "import { loadingOutflowId, planLoadedSources, assertLoadedOutflows } from 'backend/physicalOutflow.js';",
+          "replace": "import { loadingOutflowId, planLoadedSources, assertLoadedOutflows } from 'backend/physicalOutflow.js';\nimport { planDeskDelivery, changeDeskDelivery } from 'backend/deskDelivery.js';\nimport { reserveSupportDeskDelivery } from 'backend/supportDesk.js';"
+        }
+      ]
+    },
+    {
+      "name": "packingListService.js",
+      "path": "integration/backend/packingListService.js",
+      "beforeSha256": "56ef7dbf805859f69252c2ec615cc12aa6b087b8738894fd8e9225bfb9597aed",
+      "afterSha256": "cbd8c546fcf35f423a80e566b2909b256a4c75b4efc4eeedb6a54ceaf2ec9f49",
+      "hunks": [
+        {
+          "find": "export const savePackingOperation=createPackingListOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext,documentService:requestPurchaseDocument});\nexport async function readPackingWorkroom(company,staff){const context=await readContext(company,staff);return {...projectPackingWorkroom(context,staff.packingDepartment),staff:{staffName:staff.staffName},department:staff.packingDepartment};}",
+          "replace": "const saveDeskOperation=createPackingListOperations({store:fulfilmentStore,names:PURCHASE_COLLECTIONS,readContext,documentService:requestPurchaseDocument});\nexport async function savePackingOperation(request){if(!['DESK_SEND','DESK_LOAD','DESK_RECALL'].includes(request.input?.action))throw Error('Desk delivery must be authorized from Support ENTRY. The standalone Packing List is retired.');return saveDeskOperation(request);}\nexport async function readPackingWorkroom(company,staff){const context=await readContext(company,staff),view=projectPackingWorkroom(context,staff.packingDepartment),desks=readSupportDesks(context.physicalContext.activity,company);return {...view,lists:view.lists.filter(list=>list.desk).map(list=>{const state=desks.find(row=>row.customerId===list.customerId);return {...list,currentAuthorization:Boolean(state?.deliveryHolds?.some(hold=>hold.listId===list.id)),currentDesk:{references:state?.references?.find(row=>row.desk===list.desk.number)||null,shipment:state?.shipments.find(row=>row.desk===list.desk.number)||null}};}),deskDeliveryVersion:1,deskSummaries:projectDeskDeliverySummaries(context.physicalContext.activity),pendingAuthorizations:staff.packingDepartment==='SUPPORT'?pendingDeskAuthorizations(context.physicalContext.activity,company,staff.memberId):[],staff:{staffName:staff.staffName},department:staff.packingDepartment};}"
+        },
+        {
+          "find": "import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';",
+          "replace": "import { requestPurchaseDocument } from 'backend/purchaseDocumentClient.js';\nimport { projectDeskDeliverySummaries, pendingDeskAuthorizations } from 'backend/deskDelivery.js';\nimport { readSupportDesks } from 'backend/supportDesk.js';"
+        }
+      ]
+    },
+    {
+      "name": "packingLists.web.js",
+      "path": "integration/backend/packingLists.web.js",
+      "beforeSha256": "0117a38a6c45347a4d91a8d80edc87a229b60ac6d8728e442ef5e663440374da",
+      "afterSha256": "45ee376af90cbfdef1269b8225cd1bfad2caaa5255aa87e4f048f1fb194e3950",
+      "hunks": [
+        {
+          "find": " catch(error){const message=String(error?.message||'');const validation=/^(Packing |Stock or packing |Choose |Quantity |Usable |Warehouse (must |choose |photo (format |content |task |identity |history )|confirm |evidence )|This action |Only |Resolve |Explain |Loaded must |Confirm every |Start Warehouse |A processing |A pending |Unknown packing |Verified packing |This list |Master staff |Select |A save is still processing|This save identity)/.test(message);return {ok:false,requestId,retryable:!validation||message.startsWith('A save is still processing'),error:validation?message:'Packing save is unconfirmed. Retry this same save.'};}",
+          "replace": " catch(error){const message=String(error?.message||'');const validation=/^(Desk|This Desk|This task|Packing |Stock or packing |Choose |Quantity |Usable |Warehouse (must |choose |photo (format |content |task |identity |history )|confirm |evidence )|This action |Only |Resolve |Explain |Loaded must |Confirm every |Start Warehouse |A processing |A pending |Unknown packing |Verified packing |This list |Master staff |Select |A save is still processing|This save identity)/.test(message);return {ok:false,requestId,retryable:!validation||message.startsWith('A save is still processing'),error:validation?message:'Packing save is unconfirmed. Retry this same save.'};}"
+        }
+      ]
+    },
+    {
+      "name": "purchaseProjection.js",
+      "path": "integration/backend/purchaseProjection.js",
+      "beforeSha256": "eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf",
+      "afterSha256": "0f09c3941513cad0ad260b79b9c49cc4630d90eb5b60750e35a08dfc27f813c6",
+      "hunks": [
+        {
+          "find": "    paymentRequestsConnected: false",
+          "replace": "    paymentRequestsConnected: false,\n    deskDeliveries:projectDeskDeliverySummaries(activity)"
+        },
+        {
+          "find": "import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';",
+          "replace": "import { acceptedPurchaseSource, attachPurchaseSourceTotals, purchaseSourcesVersion } from 'backend/purchaseSources.js';\nimport { projectDeskDeliverySummaries } from 'backend/deskDelivery.js';"
+        }
+      ]
+    },
+    {
+      "name": "supportDesk.js",
+      "path": "integration/backend/supportDesk.js",
+      "beforeSha256": "ce7acf946f7555b042454c35ecc469c3a83fc0b005c7780b19368e3bee16ca25",
+      "afterSha256": "169abd9b9a4018d9deb51225c1b49ba84b9f23b777c5fade640a0f0e898d15b2",
+      "hunks": [
+        {
+          "find": "  const before=readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId);",
+          "replace": "  const before=readSupportDesks(context.activity,company).find(row=>row.customerId===input.customerId)||empty(company,input.customerId);\n  if(input.action==='DESK_ASSIGN'&&(before.deliveryHolds||[]).some(hold=>hold.taskIds.includes(input.taskId)&&!context.activity.some(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===hold.listId&&row.details.list.status==='CANCELLED')))throw Error('This task is authorized to Warehouse. Recall its unstarted delivery before moving it.');"
+        },
+        {
+          "find": "export function supportDeskForTask(state,taskId){return state?.assignments.find(row=>row.taskId===taskId)?.desk||0;}",
+          "replace": "export function supportDeskForTask(state,taskId){return state?.assignments.find(row=>row.taskId===taskId)?.desk||0;}\nexport async function reserveSupportDeskDelivery({store,names,context,staff,requestId,customerId,desk,revision,listId,taskIds,digest,now}){\n const company=context.company,before=readSupportDesks(context.activity,company).find(row=>row.customerId===customerId)||empty(company,customerId);\n const owned=(before.deliveryHolds||[]).find(row=>row.desk===desk&&row.requestId===requestId&&row.memberId===staff.memberId);\n if(owned){if(owned.digest!==digest||owned.listId!==listId)throw Error('Desk delivery save identity changed.');return copy(before);}\n if(before.revision!==revision)throw Error('Desk classification changed. Refresh before sending to Warehouse.');\n if(readSupportDeskLocks(context).some(row=>row.customerId===customerId&&row.desk===desk))throw Error('This Desk is locked by its Sales Invoice.');\n const previous=(before.deliveryHolds||[]).find(row=>row.desk===desk),previousList=previous&&context.activity.find(row=>row.action==='SUPPORT_PACKING_LIST_CURRENT'&&row.details?.list?.id===previous.listId)?.details?.list;\n if(previous&&(!previousList||!['COMPLETED','CANCELLED'].includes(previousList.status)))throw Error('This Desk already has an active Warehouse task.');\n if(!deskValid(desk)||!taskIds.length||taskIds.some(taskId=>supportDeskForTask(before,taskId)!==desk))throw Error('Desk task membership changed.');\n const state=copy(before);delete state.revision;state.deliveryHolds=(state.deliveryHolds||[]).filter(row=>row.desk!==desk).concat({desk,listId,requestId,memberId:staff.memberId,digest,taskIds:[...taskIds]});\n const saved=await appendInvoiceDeskState({store,collection:names[company].activity,company,staff,requestId,before,state,kind:'authorized delivery',now});\n return {...saved.state,revision:saved.revision};\n}"
+        },
+        {
+          "find": "   if(!validState(state,company)||event.description!==identity(company,state.customerId)||event._id!==operationId(event.description,d.beforeRevision,'NEXT')||event.title!==event._id||!d.memberId||!d.requestId||requests.has(requestKey)||!event.initiatedByStaffId||!event.initiatedByStaffName||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Desk record identity requires review.');",
+          "replace": "   if(!validState(state,company)||!validDeliveryHolds(state)||event.description!==identity(company,state.customerId)||event._id!==operationId(event.description,d.beforeRevision,'NEXT')||event.title!==event._id||!d.memberId||!d.requestId||requests.has(requestKey)||!event.initiatedByStaffId||!event.initiatedByStaffName||!Number.isFinite(Date.parse(event.activityTime)))throw Error('Desk record identity requires review.');"
+        },
+        {
+          "find": "const receiptState=value=>Array.isArray(value)?value.map(receiptState):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,receiptState(value[key])])):value;",
+          "replace": "const receiptState=value=>Array.isArray(value)?value.map(receiptState):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,receiptState(value[key])])):value;\nconst validDeliveryHolds=state=>state?.deliveryHolds===undefined||Array.isArray(state.deliveryHolds)&&state.deliveryHolds.length<=3&&new Set(state.deliveryHolds.map(row=>row.desk)).size===state.deliveryHolds.length&&state.deliveryHolds.every(row=>deskValid(row.desk)&&[row.listId,row.requestId,row.memberId,row.digest].every(textValid)&&Array.isArray(row.taskIds)&&row.taskIds.length>0&&new Set(row.taskIds).size===row.taskIds.length&&row.taskIds.every(textValid));"
+        }
+      ]
+    },
+    {
+      "name": "warehouseReceiving.web.js",
+      "path": "integration/backend/warehouseReceiving.web.js",
+      "beforeSha256": "4644837b3125d5cfb8269109ea361f4c75dd2feaa3d8b12f8562fea1dea3c877",
+      "afterSha256": "0c9e7e8416bd8604d9f3d6996d29bc1b5103f79e616e253e52818c04300982fa",
+      "hunks": [
+        {
+          "find": "export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{\n const staff=await staffContext();",
+          "replace": "export const saveWarehousePreparation=webMethod(Permissions.SiteMember,async(company,requestId,input)=>{\n const staff=await staffContext();\n if(['PACK','LOAD'].includes(input?.action))return {ok:false,requestId,retryable:false,error:'Warehouse use Delivery Task authorized by Support Desk. The old preparation entry is retired.'};"
+        }
+      ]
+    },
+    {
+      "name": "packingListBridge.js",
+      "path": "integration/wix/packingListBridge.js",
+      "beforeSha256": "911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9",
+      "afterSha256": "79ebe1f55100995b6ce4c6b19d374ad085ef0b5b4c9173cdb7ae16fc12d76f8e",
+      "hunks": [
+        {
+          "find": " if(!['SUPPORT','WAREHOUSE'].includes(department)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!/^[a-f0-9-]{36}$/i.test(message.requestId)||JSON.stringify(message).length>(department==='WAREHOUSE'&&message.input?.action==='PHOTOS'?3100000:150000))return true;",
+          "replace": " if(!['SUPPORT','WAREHOUSE'].includes(department)||!['NCT','GHR'].includes(message.company)||typeof message.requestId!=='string'||!/^[a-f0-9-]{36}$/i.test(message.requestId)||JSON.stringify(message).length>(department==='WAREHOUSE'&&['PHOTOS','DESK_LOAD'].includes(message.input?.action)?3100000:150000))return true;"
+        }
+      ]
+    }
+  ],
+  "newModule": {
+    "name": "deskDelivery.js",
+    "sha256": "29714ca50914a1f04842ed38ccc75eff4824a058e5ca0d14ec03c78bfd4fadc3",
+    "source": "import { changePackingList, packingAvailability } from 'backend/packingListModel.js';\nimport { readSupportDesks, supportDeskForTask, readSupportDeskLocks } from 'backend/supportDesk.js';\nimport { readPhysicalOutflows } from 'backend/physicalOutflow.js';\nimport { operationId } from 'backend/purchaseOperationJournal.js';\n\nconst copy=value=>JSON.parse(JSON.stringify(value));\nconst qty=value=>Number.isSafeInteger(value)&&value>=0&&value<=9999;\nconst issues=['DAMAGED','INSUFFICIENT','OTHER'];\nconst labels={DAMAGED:'Damaged goods',INSUFFICIENT:'Not enough stock',OTHER:'Other'};\nexport function planDeskDelivery({context,input,actor,id,revision,at}){\n if(actor!=='SUPPORT'||!context.physicalContext||!Number.isSafeInteger(input.desk)||input.desk<1||input.desk>3)throw Error('Desk delivery requires Support and Desk 1, 2 or 3.');\n const physical=context.physicalContext,state=readSupportDesks(physical.activity,physical.company).find(row=>row.customerId===input.customerId);\n if(!state||state.revision!==input.deskRevision)throw Error('Desk classification changed. Refresh before sending to Warehouse.');\n if(readSupportDeskLocks(physical).some(row=>row.customerId===input.customerId&&row.desk===input.desk))throw Error('This Desk is locked by its Sales Invoice.');\n if(context.lists.some(list=>list.customerId===input.customerId&&list.desk?.number===input.desk&&['SENT','PROCESSING'].includes(list.status)))throw Error('This Desk already has an active Warehouse task.');\n const available=packingAvailability(context),tasks=physical.tasks.filter(task=>task.customerId===input.customerId&&!task.archived&&!task.procurementSource&&!task.specialPurchase&&supportDeskForTask(state,task.id)===input.desk);\n const totals=new Map();for(const flow of readPhysicalOutflows(physical.activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);\n const selected=tasks.map(task=>({task,quantity:Math.max(0,(task.inc||0)-(totals.get(task.id)||0))})).filter(row=>row.quantity>0);\n if(!selected.length)throw Error('Desk has no remaining allocated cartons to send.');\n if(!Array.isArray(input.lines)||input.lines.length!==selected.length||new Set(input.lines.map(row=>row.taskId)).size!==selected.length||selected.some(row=>!input.lines.some(line=>line.taskId===row.task.id&&line.quantity===row.quantity)))throw Error('Desk allocation changed. Refresh before sending to Warehouse.');\n if(selected.some(row=>!qty(row.quantity)||(available.find(task=>task.taskId===row.task.id)?.readyToArrange||0)<row.quantity))throw Error('Desk allocated stock is unavailable or already authorized. Ask Purchase to review it.');\n const currencies=[...new Set(selected.map(row=>row.task.transactionCurrency))];if(currencies.length!==1||!currencies[0])throw Error('Desk tasks must use one confirmed customer currency.');\n const draft=changePackingList({input:{action:'CREATE',company:physical.company,customerId:input.customerId,currency:currencies[0],lines:selected.map(row=>({taskId:row.task.id,quantity:row.quantity}))},context,actor,id,revision,at});\n const next=changePackingList({list:draft,input:{action:'SEND',revision},context,actor,id,revision,at});\n next.desk={number:input.desk,revision:state.revision,references:copy((state.references||[]).find(row=>row.desk===input.desk)||null),shipment:copy(state.shipments.find(row=>row.desk===input.desk)||null)};\n next.lines=next.lines.map(line=>{const task=selected.find(row=>row.task.id===line.taskId).task;return {...line,orderId:task.orderId,orderQty:task.requested??task.ord,authorizedTotal:task.inc,pricePc:task.sellingPricePc??null,priceCtn:Number.isFinite(task.sellingPricePc)?task.sellingPricePc*task.ea:null,cbm:task.cbmPerCtn??null};});\n return next;\n}\nexport function changeDeskDelivery({context,list,input,actor,id,revision,at}){\n if(!list?.desk||list.company!==context.company||!Number.isSafeInteger(list.desk.number))throw Error('Desk-authorized delivery task is required.');\n if(input.revision!==list.revision)throw Error('Desk delivery task changed. Refresh before confirming.');\n if(input.action==='DESK_RECALL'){\n  if(actor!=='SUPPORT'||list.status==='CANCELLED'||list.lines.some(line=>line.loaded>0)||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>1000)throw Error('Desk recall requires Support, zero Loaded cartons and a reason.');\n  return {...copy(list),status:'CANCELLED',revision,cancelledAt:at,cancelReason:input.reason.trim()};\n }\n if(actor!=='WAREHOUSE'||input.action!=='DESK_LOAD'||!qty(input.loaded))throw Error('Desk loading requires Warehouse and valid cumulative cartons.');\n const current=list.lines.find(line=>line.taskId===input.taskId),codes=input.reasonCodes||[],note=typeof input.note==='string'?input.note.trim():'';\n if(!current||input.loaded>current.quantity||input.loaded<current.loaded)throw Error('Desk Loaded must stay within authorized cartons and cannot reduce a confirmed outflow.');\n if(!Array.isArray(codes)||codes.length>3||new Set(codes).size!==codes.length||codes.some(code=>!issues.includes(code))||note.length>1000||codes.includes('OTHER')&&!note)throw Error('Desk select valid reasons and explain Other.');\n if(input.loaded!==current.quantity&&!codes.length)throw Error('Desk select a reason for the undelivered cartons.');\n const reason=[...codes.map(code=>labels[code]),note].filter(Boolean).join(' · ');let next=copy(list);\n if(next.status==='SENT')next=changePackingList({list:next,input:{action:'START',revision:next.revision},context,actor,id,revision,at});\n if(next.status==='COMPLETED')next=changePackingList({list:next,input:{action:'REOPEN',revision:next.revision,reason:'Confirm additional authorized loading'},context,actor,id,revision,at});\n next=changePackingList({list:next,input:{action:'PROGRESS',revision:next.revision,lines:next.lines.map(line=>({taskId:line.taskId,packed:line.taskId===input.taskId?input.loaded:line.packed,loaded:line.taskId===input.taskId?input.loaded:line.loaded,reason:line.taskId===input.taskId?reason:line.reason}))},context,actor,id,revision,at});\n next.lines=next.lines.map(line=>line.taskId===input.taskId?{...line,loadedConfirmedAt:at,reasonCodes:[...codes],note}:line);\n if(next.lines.every(line=>line.loadedConfirmedAt))next=changePackingList({list:next,input:{action:'COMPLETE',revision:next.revision},context,actor,id,revision,at});\n return next;\n}\nexport function projectDeskDeliverySummaries(activity){\n const groups=new Map();\n for(const row of activity){const list=row.action==='SUPPORT_PACKING_LIST_CURRENT'?row.details?.list:null;if(!list?.desk||list.status==='CANCELLED')continue;\n  for(const line of list.lines){if(!qty(line.authorizedTotal))throw Error('Desk authorized quantity requires review.');const previous=groups.get(line.taskId),latest=!previous||(list.sentAt||'')>=previous.sentAt;groups.set(line.taskId,{taskId:line.taskId,desk:latest?list.desk.number:previous.desk,authorizedQty:latest?line.authorizedTotal:previous.authorizedQty,sentAt:latest?list.sentAt||'':previous.sentAt,confirmed:Boolean(line.loadedConfirmedAt||previous?.confirmed)});}\n }\n if(!groups.size)return [];\n const totals=new Map();for(const flow of readPhysicalOutflows(activity))totals.set(flow.taskId,(totals.get(flow.taskId)||0)+flow.quantity);\n return [...groups.values()].map(({sentAt,...row})=>{const loadedQty=totals.get(row.taskId)||0;return {...row,loadedQty,difference:Math.max(0,row.authorizedQty-loadedQty),issue:row.confirmed&&row.authorizedQty!==loadedQty};});\n}\n// Restore only this employee's prepared authorization after a lost window/session.\n// The original request digest must match; no new identity or guessed payload.\nexport function pendingDeskAuthorizations(activity,company,memberId){\n return activity.filter(row=>row.action==='PURCHASE_OPERATION_PREPARED'&&row.details?.actorMemberId===memberId&&row.details.plan?.deskReservation&&!activity.some(event=>event._id===operationId(row._id,'RESULT'))).map(row=>{\n  const list=row.details.plan.record.details.list,input=row.details.plan.authorizationInput;\n  if(list.company!==company||input?.action!=='DESK_SEND'||row.details.digest!==operationId({packing:input}))throw Error('Desk authorization recovery requires review.');\n  return {requestId:row.details.requestId,input};\n });\n}\n"
+  }
+}

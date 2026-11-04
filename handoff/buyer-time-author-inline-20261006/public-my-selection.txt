@@ -1,0 +1,173 @@
+Browser tab: 51421704, Title: "Buyer Room | FMCG MALAYSIA", URL: "https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F".
+1 AXWebArea Buyer Room | FMCG MALAYSIA, URL: fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=CUS-261005-81091F
+	2 container main_MF
+		3 container Description: top of page, ID: SCROLL_TO_TOP
+		4 link Description: Built on Wix Studio, Value: wix.com/studio
+		5 container ic0dd
+			6 container
+				7 container comp-mtza6nh7
+					8 container Embedded Content
+						9 AXWebArea FMCG Malaysia Buyer Room, URL: fmcgmalaysia.github.io/fmcg-sales-room-ui/buyer-room.html?v=20261004-selection-same-site-download-v98
+							10 container
+								11 button Description: Return to your Catalogue, Help: Return to Catalogue
+									12 image fmcgMalaysia.com
+								13 text BUYER ROOM
+								14 button (collapsed) Description: Notifications, ID: quoteBell, Secondary Actions: Expand
+								15 text B
+								16 text BERJAYA 06
+								17 text LAW
+							18 container
+								19 button My Selection
+									20 image
+									21 text My Selection
+								22 button Order Form
+									23 image
+									24 text Order Form
+								25 button Track Orders
+									26 image
+									27 text Track Orders
+								28 button Completed Orders
+									29 image
+									30 text Completed Orders
+								31 button Documents
+									32 image
+									33 text Documents
+								34 button Account
+									35 image
+									36 text Account
+							37 container myView
+								38 heading My Selection, Value: 1
+									39 text My Selection
+								40 text 8
+								41 text Products
+								42 text 1
+								43 text Awaiting Quotation Transaction Currency
+								44 text USD
+								45 link Description: Open Catalogue in a new tab, Value: fmcg999.wixstudio.com/fmcgmalaysia/catalogue?assist=CUS-261005-81091F, ID: browse
+								46 container adminAccessBanner
+									47 text Admin Access · 管理员访问
+									48 text You are operating this customer account with Admin authority. All changes are recorded under your Admin identity. ADMIN
+								49 tab group Filter My Selection
+									50 tab (selected, settable, boolean) All 8, ID: currentTab, Value: 1
+All
+8
+									51 tab (selectable, settable, boolean) Food 8, Value: 0
+Food
+8
+									52 tab (selectable, settable, boolean) Non-food 0, Value: 0
+Non-food
+0
+									53 tab (selectable, settable, boolean) Removed 0, ID: removedTab, Value: 0
+Removed
+0
+								54 search text field (settable) Description: Search selection by product, brand or barcode, ID: mySearch
+								55 button Download Excel, ID: exportToggle
+								56 text Showing 8 of 8 products
+								57 button (collapsed) Description: How selection limits and V.I.P quotations work, ID: limitInfoButton, Secondary Actions: Expand
+								58 text 8
+								59 text of
+								60 text 100
+								61 text selected
+								62 container currentPanel
+									63 container
+										64 text Barcode Image Descriptions Normal Price V.I.P Price Added Time Last Quoted
+										65 container Remove
+									66 container myRows
+										67 text 7622201422929
+										68 image CADBURY DAIRY MILK BITES 50G - ALMOND
+										69 text CADBURY DAIRY MILK BITES 50G - ALMOND
+										70 text 50G x 24
+										71 text - NIL -
+										72 text USD 0.98 23.52
+										73 container
+											74 text 05-10-26 11:02pm  by LAW
+										75 text 05-10-26 11:05pm
+										76 button Remove×
+											77 text Remove
+											78 text ×
+										79 text 8901233025001
+										80 image CADBURY ZIP X20 BAR - CHOCOLATE
+										81 text CADBURY ZIP X20 BAR - CHOCOLATE
+										82 text 160G x 16
+										83 text - NIL -
+										84 text USD 2.31 36.96
+										85 container
+											86 text 05-10-26 11:02pm  by LAW
+										87 text 05-10-26 11:05pm
+										88 button Remove×
+											89 text Remove
+											90 text ×
+										91 text 59800511261
+										92 image KITKAT COOKIES CRUMBLE
+										93 text KITKAT COOKIES CRUMBLE
+										94 text 120G x 6 x 15 out
+										95 text - NIL -
+										96 text USD 2.11 189.90
+										97 container
+											98 text 05-10-26 11:02pm  by LAW
+										99 text 05-10-26 11:05pm
+										100 button Remove×
+											101 text Remove
+											102 text ×
+										103 text 9556001284860
+										104 image KITKAT 2 FINGERS MULTI-PACK 18
+										105 text KITKAT 2 FINGERS MULTI-PACK 18
+										106 text (15G x 18) x 24
+										107 text - NIL -
+										108 text USD 5.09 122.16
+										109 container
+											110 text 05-10-26 11:02pm  by LAW
+										111 text 05-10-26 11:05pm
+										112 button Remove×
+											113 text Remove
+											114 text ×
+										115 text 8935001708988
+										116 image MENTOS GUM (PURE) - FRESH
+										117 text MENTOS GUM (PURE) - FRESH
+										118 text 29G x 10 x 12 out
+										119 text - NIL -
+										120 text Waiting
+										121 container
+											122 text 06-10-26 12:39pm  by LAW
+										123 text Waiting
+										124 button Remove×
+											125 text Remove
+											126 text ×
+										127 text 9557062321778
+										128 image MISTER POTATO CRISPS - SWEET POTATO
+										129 text MISTER POTATO CRISPS - SWEET POTATO
+										130 text 40G x 20
+										131 text - NIL -
+										132 text USD 0.55 11.00
+										133 container
+											134 text 05-10-26 11:03pm  by LAW
+										135 text 05-10-26 11:05pm
+										136 button Remove×
+											137 text Remove
+											138 text ×
+										139 text 9557062343107
+										140 text MISTER POTATO CRISPS - SOUR CREAM & ONION
+										141 text 85G x 14
+										142 text - NIL -
+										143 text USD 0.70 9.80
+										144 container
+											145 text 05-10-26 11:03pm  by LAW
+										146 text 05-10-26 11:05pm
+										147 button Remove×
+											148 text Remove
+											149 text ×
+										150 text 9556023663407
+										151 image ORIENTAL SUPER RING (CAN)
+										152 text ORIENTAL SUPER RING (CAN)
+										153 text 80G x 12
+										154 text - NIL -
+										155 text USD 1.09 13.08
+										156 container
+											157 text 05-10-26 11:03pm  by LAW
+										158 text 05-10-26 11:05pm
+										159 button Remove×
+											160 text Remove
+											161 text ×
+		162 container Description: bottom of page, ID: SCROLL_TO_BOTTOM
+
+The focused UI element is 3 container Description: top of page, ID: SCROLL_TO_TOP

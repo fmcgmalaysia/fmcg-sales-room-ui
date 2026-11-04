@@ -1,0 +1,99 @@
+/* MASTER presentation contract. Keep all department data and event handlers intact. */
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype')}
+@font-face{font-family:'Purchase Dashboard Inter';font-style:normal;font-weight:800;font-display:swap;src:url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype')}
+:root{--master-font:'Purchase Dashboard Inter','Segoe UI','Microsoft YaHei',Arial,sans-serif;--master-text:#203047;--master-blue:#3766a2;--master-header:#d2dfea;--master-muted:#536b84;--master-line:#bccbd9;--master-orange:#F58A00;--master-red:#E51B2B;--master-green:#2563EB;--blue:#3766a2;--border:#bccbd9;--muted:#536b84}
+:root{--workbench-font:var(--master-font);--workbench-text:var(--master-text);--workbench-secondary:var(--master-muted);--workbench-blue:var(--master-blue);--workbench-red:var(--master-red);--workbench-bg:#f3f6f9;--workbench-border:var(--master-line);--workbench-head:var(--master-header)}
+body{font-family:var(--master-font);font-size:11px;color:var(--master-text);background:#f3f6f9}
+:root body :is(button,input,select,textarea){font-family:var(--master-font)}
+body h1{font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+body :is(th,td){font-size:11px;line-height:1.4}
+body th{background:var(--master-header);color:var(--master-text);font-weight:700}
+body :is(.barcode,.packing){font-size:10px;font-weight:400;color:var(--master-muted)}
+body .itemname{font-size:11px;font-weight:700;color:#173557}
+.department-header{background:#133858}
+body :is(.btn,button.primary){font-size:11px;border-radius:4px}
+body :is(.btn.primary,button.primary){background:var(--master-blue);border-color:var(--master-blue);color:#fff}
+body :is(input,select,textarea):focus-visible{outline:2px solid var(--master-blue);outline-offset:1px}
+body dialog{font-family:var(--master-font);font-size:11px;color:var(--master-text)}
+body :is(.dialoghead,.dialog-header,.po-dialog .dialoghead,.stock-dialog header,.task-signals-dialog header){background:#dceaf7;border-bottom:1px solid #b4cce1;color:#234768}
+body :is(.dialoghead,.dialog-header,.po-dialog .dialoghead) h2{font-size:14px;line-height:20px;font-weight:700;color:#234768}
+body :is(.dialoghead,.dialog-header,.po-dialog .dialoghead) :is(.muted,p){font-size:10px;color:var(--master-muted)}
+body .supplier-allocation-dialog .dialoghead .muted{font-size:14px;line-height:20px;font-weight:700;color:#234768}
+body :is(.dialoghead,.dialog-header,.po-dialog .dialoghead,.stock-dialog header,.task-signals-dialog header)>button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:32px;height:32px;padding:0;border:0;background:transparent;color:#234768;font-size:22px;line-height:1}
+body :is(.dialogfoot,dialog footer){background:#f5f9fd;border-top:1px solid #cfdfed}
+body :is(.dialogfoot,dialog footer) button{font-size:11px;min-height:30px}
+body .dialog-header>div:has(#entrySupplier,#invoiceCustomer){display:flex;flex-direction:column;gap:3px}
+body .dialog-header :is(#entrySupplier,#invoiceCustomer){order:-1;display:block;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+body .dialog-header>div:has(#entrySupplier,#invoiceCustomer) h2{margin:0}
+body .task-signal{font-family:var(--master-font);font-size:11px;background:#fff;color:var(--master-text);border-color:var(--master-line)}
+body .task-signal b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e7eef5;color:#173557;font-size:12px;line-height:1}
+body .task-signal.has-work b{background:var(--master-orange);color:#fff}
+body .task-signal:is(.urgent,.feedback).has-work b{background:var(--master-red);color:#fff}
+body .task-signal b::before{content:none!important}
+body .account-icon.complete,body .stock-green{color:var(--master-green)}
+body .account-icon.missing{color:var(--master-orange)}body .stock-red{color:var(--master-red)}
+body .account-check.on{background:var(--master-green)}
+body .warehouse-table .item-count{background:var(--master-orange);color:#fff}
+body .warehouse-table .item-count.done{background:var(--master-green);color:#fff}
+body :is(.customer-readiness,#customerQty) .item-count{background:var(--master-orange);color:#fff}
+body :is(.customer-readiness,#customerQty) .item-count.done{background:var(--master-green);color:#fff}
+body .status:is(.WAITING,.PARTIAL){color:#F58A00}
+body .status.ISSUE{color:var(--master-red)}
+body .status.COMPLETE{color:var(--master-green)}
+body .warehouse-track{padding:10px 12px;gap:12px}
+body .warehouse-track .track-item{display:flex;align-items:center;justify-content:center;gap:10px;text-align:left}
+body .warehouse-track .track-capsule{min-width:0;height:auto;gap:6px;border-radius:0;background:transparent;color:var(--master-muted)}
+body .warehouse-track .track-capsule svg{width:18px;height:18px}
+body .warehouse-track .track-capsule b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e7eef5;color:#173557;font-size:12px;line-height:1}
+body .warehouse-track .track-item:not([data-count="0"]) b{background:var(--master-orange);color:#fff}
+body .warehouse-track .track-item.ISSUE:not([data-count="0"]) b{background:var(--master-red);color:#fff}
+body .warehouse-track .track-item.COMPLETE:not([data-count="0"]) b{background:var(--master-green);color:#fff}
+body .warehouse-track .track-item p{margin:0;font-size:11px;line-height:15px}
+body .warehouse-track .track-item small{font-size:10px;line-height:14px}
+body .support-table .dot{color:var(--master-orange)}
+body .support-table button[data-invoice]{background:var(--master-orange);border-color:var(--master-orange);color:#fff}
+/* Re-Allocation is the same product-list role as Customer Orders, not an equal-width ledger. */
+.reallocation-heading{margin:2px 0 10px}
+.reallocation-heading h2{margin:0;font-size:14px;line-height:20px;font-weight:700;color:var(--master-text)}
+.reallocation-heading h2 small{display:block;font-size:10px;line-height:14px;font-weight:400;color:var(--master-muted)}
+.reallocation-note{margin:0 0 12px;font-size:11px;line-height:16px;color:var(--master-muted)}
+.reallocation-table{min-width:1100px}
+.reallocation-table :is(th,td){padding:7px 8px;text-align:left}
+.reallocation-table th small{display:block;font-size:10px;line-height:14px;font-weight:400;color:var(--master-muted)}
+.reallocation-table td{height:48px}
+.reallocation-table :is(th,td):nth-child(n+4):nth-child(-n+6){text-align:right;font-variant-numeric:tabular-nums}
+.reallocation-table :is(th,td):last-child{text-align:right}
+.reallocation-product :is(.barcode,.itemname,.packing){display:block;margin:0;line-height:14px}
+.reallocation-product .itemname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reallocation-table button[data-allocate]{min-height:28px;padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid #b8ccdf;background:#fff}
+.reallocation-table button[data-allocate]:not(:disabled){background:var(--master-orange);border-color:var(--master-orange);color:#fff}
+
+/* Approved Sales Invoicing title role: same-size bilingual Purchase page headings. */
+#app .purchase-dashboard h1 .pd-bi{display:inline-flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:0 6px;font-size:20px;line-height:26px;font-weight:800}
+#app .purchase-dashboard h1 .pd-bi>:is(span,small){display:inline;margin:0;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+#app>.active-order-heading h1 .ao-title-zh{display:inline;margin:0 0 0 6px;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+#app .reallocation-heading :is(h1,h2){margin:0 0 5px;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+#app .reallocation-heading :is(h1,h2) small{display:inline;margin-left:6px;font-size:20px;line-height:26px;font-weight:800;color:var(--master-text)}
+
+/* Department shell follows the approved Purchase header; existing controls keep their handlers. */
+body:has(>.department-header){position:relative}
+body>.department-header{height:49px;padding:0 112px 0 24px;gap:18px;background:#133858;color:#fff;font:12px/1.3 var(--master-font)}
+body>.department-header>.master-brand{order:0;padding:0;border:0;font:700 20px/1 var(--master-font);letter-spacing:.3px;white-space:nowrap}
+body>.department-header>.department-name{order:1;padding-left:18px;border-left:1px solid #446781;font:500 13px/1.3 var(--master-font);white-space:nowrap}
+body>.department-header>.department-name small{font-size:11px;font-weight:400;color:#dce7f1}
+body>.department-header>label{order:2;margin-left:auto;gap:0}
+body>.department-header .company-label{display:none}
+body>.department-header select{height:32px;min-height:32px;min-width:240px;max-width:280px;border-radius:4px;padding:6px 40px 6px 11px;background:#fff;color:#203047;font:600 12px/1.3 var(--master-font)}
+body>.department-header label:after{top:10px}
+body>.department-header>.staff{order:3;margin-left:0;font:400 11px/1.3 var(--master-font);white-space:nowrap}
+body:has(>.department-header) :is(#refresh,#accountRefresh,#refreshDebtors){position:absolute;right:24px;top:8px;min-height:32px;padding:6px 0;background:transparent;border-color:transparent;color:#fff;font:500 11px/1.3 var(--master-font)}
+@media(max-width:800px){body>.department-header{padding:0 12px;gap:10px;flex-wrap:wrap;height:auto;min-height:49px}body>.department-header>.master-brand{font-size:16px}body>.department-header>.department-name{font-size:12px;padding-left:10px}body>.department-header select{min-width:190px;max-width:220px}body:has(>.department-header) :is(#refresh,#accountRefresh,#refreshDebtors){position:static;padding:8px 12px;background:#fff;border-color:#bed2e1;color:var(--master-text)}}
+/* Keep both MASTER shell rows visible; measured heights preserve wrapped headers. */
+:root{--master-header-height:49px;--master-nav-height:48px}
+body>header:is(.purchase-header,.department-header){position:sticky;top:0;z-index:30}
+body>header:is(.purchase-header,.department-header)+nav{position:sticky;top:var(--master-header-height);z-index:29}
+body:has(>header.purchase-header){--master-nav-height:42px}
+body:has(>header.purchase-header) :is(.roomhead,.save-tracker){top:calc(var(--master-header-height) + var(--master-nav-height))}
+@media(min-width:801px){body:has(>.department-header) :is(#refresh,#accountRefresh,#refreshDebtors){position:fixed;z-index:31}}

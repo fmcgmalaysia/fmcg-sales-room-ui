@@ -1,0 +1,23 @@
+2026-10-24 — Candidate review guidance corrected; not deployed
+
+Parent6572858; business candidate50212f4 unchanged. Inspection found the local
+mechanical review banner still directed users to the original person icon, despite
+the latest actual candidate app using ALLOC ALERT. One banner sentence now gives
+the real route: Active Orders -> EXAMPLE A -> ALLOC ALERT -> 1 Borrow stock ->
+Check eligible P.O.s. Original person/halo behavior, procurement/RCV authority,
+save tracker, borrowing commands and inventory calculations unchanged.
+
+Changed build-purchase-ux-review.cjs and added two packaging assertions in
+integration/tests/purchase-ux-review.test.cjs; mechanically rebuilt the existing
+33asset self-contained review.4tests pass0fail314.5648ms: exact assets/scripts,
+explicit ALLOC route, fictional bounded quote, explicit own receipt80and refusal
+to fake any save/stock/halo/generation. No full1337rerun for copy-only change;
+that existing unchanged business result remains recorded separately.
+
+Only local candidate text and generated review changed. Existing HTTPS review
+remains old rejected-entry version. Local browser paths remain stopped; no preview
+opened through a substitute transport. No claim of visual/public acceptance.
+No native/CMS/permission/runtime writes, GitHub export/push, Pages or Wix publish.
+ACTIVE and real invoice/dispatch remainOFF. Source/dependency native comparison,
+installation/runtime gates, safe legacy cutover and precise export approval still
+unfinished. All four new-flow release stages remain incomplete.

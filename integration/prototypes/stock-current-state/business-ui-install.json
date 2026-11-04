@@ -1,0 +1,388 @@
+{
+  "schema": "BUSINESS_UI_INSTALL_V1",
+  "hashFormat": "SHA256_UTF8_LF",
+  "noPreviewFixtures": true,
+  "originalPathsUntouched": true,
+  "deployPerformed": false,
+  "activationAllowed": false,
+  "backendInstallManifestSha256": "3b7a73d5c4c375bcdb765fb1f8dc56ca7ec1d183855cb552e3f057c24871f559",
+  "install": [
+    {
+      "source": "source-ui/index.html",
+      "target": "index.html",
+      "kind": "PAGES",
+      "sha256": "c135957abca15b49aa84b89f982ee82eaf6cc26d26604deadad1759c39780073",
+      "beforeSha256": "d5b411d6796967608fcc7ab257c64d0664d12013115ab9b5344c8466e09430de"
+    },
+    {
+      "source": "source-ui/current-requests.js",
+      "target": "sales-room/current-requests.js",
+      "kind": "PAGES",
+      "sha256": "f61207437f1d470ca0a76f040112c1f4aba638437e7fcd495a0fb299f59334fc",
+      "beforeSha256": null
+    },
+    {
+      "source": "source-ui/current-dates.js",
+      "target": "sales-room/current-dates.js",
+      "kind": "PAGES",
+      "sha256": "d0003e5a3f5ace9cf7143accf88f6867ccb7383ead7e3db7c965ec66fde5f699",
+      "beforeSha256": null
+    },
+    {
+      "source": "source-ui/order-adjustment.js",
+      "target": "sales-room/order-adjustment.js",
+      "kind": "PAGES",
+      "sha256": "49ecb384c51de993a07a8607c7d927cb9be9cb3a03f083b6152951368b8f531a",
+      "beforeSha256": "a5bf784020f4dd03acb33a75e60cf07ce96a70a805851dcaad780eb4ce48cf01"
+    },
+    {
+      "source": "source-ui/shipment-ui.js",
+      "target": "sales-room/shipment-ui.js",
+      "kind": "PAGES",
+      "sha256": "ce92159995394ce8ae206e973eece8a72870fdaf97ac171fb5d6b3b19b7a5827",
+      "beforeSha256": "0c164eca70466f5e43e50c3dbe586d578d898d27695e645b5f4a3725c3528762"
+    },
+    {
+      "source": "source-ui/customer-documents.js",
+      "target": "sales-room/customer-documents.js",
+      "kind": "PAGES",
+      "sha256": "214db5c43e62676ed76fa9c7990d03cadf6a4c09e01bb59a660d32fd117644fe",
+      "beforeSha256": "1dfd6a45b0efc0988286431da23ddafd91946e53c42b02c618fdd30b1a6e3c68"
+    },
+    {
+      "source": "purchase-ui/index.html",
+      "target": "purchase-live/index.html",
+      "kind": "PAGES",
+      "sha256": "722ae56d02bf1010beb76ce7dc21e7be28adccd6c0cdce41bb891773b2aa6f26",
+      "beforeSha256": "5442caabd60a43eb9170b86297d10da15a0ad7b7af13eaa5b3f1eaa70f61a988"
+    },
+    {
+      "source": "purchase-ui/app.js",
+      "target": "purchase-live/app.js",
+      "kind": "PAGES",
+      "sha256": "d160ac07052114b558c31960bfef72ed90485b8520c29696b61dc20a140ff8a0",
+      "beforeSha256": "25d4e21c41573b53816576e5726d2b2be64c4f43f344ad15a9b0726d755b4461"
+    },
+    {
+      "source": "purchase-ui/task-grid.js",
+      "target": "purchase-live/task-grid.js",
+      "kind": "PAGES",
+      "sha256": "18ba427acc017e941f7f656011174cef573047f6cc31894626c8e521ddf2de00",
+      "beforeSha256": "b1f1e7b07aab3f6ca73c01c65387416a73d29fd34b3cdf8fa6f2401f50f7ee6c"
+    },
+    {
+      "source": "purchase-ui/supplier-allocation.js",
+      "target": "purchase-live/supplier-allocation.js",
+      "kind": "PAGES",
+      "sha256": "9d4207d9306d8589fb9dc72fec830ff1bbce44fb4780a4bab2eded4e8b986b7c",
+      "beforeSha256": "2654729f8bcbbb69c41ebc92ca567d0e0acc65cf0239f7bbdddc8f974fee4a28"
+    },
+    {
+      "source": "purchase-ui/purchase-resume.js",
+      "target": "purchase-live/purchase-resume.js",
+      "kind": "PAGES",
+      "sha256": "9d359441ccb12e759eb1924df332e442d8b15eb954e4c9e5dbd7c3d7a44ea0c9",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-approval.js",
+      "target": "purchase-live/borrow-approval.js",
+      "kind": "PAGES",
+      "sha256": "45130bb4560702d5a939968837c005758dbc3bd7fbc084d33bbd7d509395d0d0",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-approval.css",
+      "target": "purchase-live/borrow-approval.css",
+      "kind": "PAGES",
+      "sha256": "55ee38817f95d141dd2307f2d4411734c365266110df6ae1e97b7b8c698b634c",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-relations.js",
+      "target": "purchase-live/borrow-relations.js",
+      "kind": "PAGES",
+      "sha256": "463e77551d2b33a04056fbaa2d0241c3bebf1be00845ab7b07c9ec93c2e13c32",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-relations.css",
+      "target": "purchase-live/borrow-relations.css",
+      "kind": "PAGES",
+      "sha256": "29d7a0bf8db04a8a1f5e96ba0f655e5eb4fa4b741d0344a076e75a8ebc13d6d9",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-return.js",
+      "target": "purchase-live/borrow-return.js",
+      "kind": "PAGES",
+      "sha256": "24b6530d05a909428d634b62453e9822b02b33b65d737bbcf36dd36be0d9afc9",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-outstanding.js",
+      "target": "purchase-live/borrow-outstanding.js",
+      "kind": "PAGES",
+      "sha256": "005eb6c428cc0984ec3abb8ea40522582a3e12297b25bff32a633fec6bdd92df",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/borrow-outstanding.css",
+      "target": "purchase-live/borrow-outstanding.css",
+      "kind": "PAGES",
+      "sha256": "106c44eadb3b72ee172a6ad43406d428deb4ceb0b11f23c6ba9d4d70358501bf",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/stock-exceptions.js",
+      "target": "purchase-live/stock-exceptions.js",
+      "kind": "PAGES",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "beforeSha256": null
+    },
+    {
+      "source": "purchase-ui/stock-control.js",
+      "target": "purchase-live/stock-control.js",
+      "kind": "PAGES",
+      "sha256": "3b92fe30e446a5d47a1c5b762b7f5ee2967763d66c631cfbc98dba25918560ae",
+      "beforeSha256": null
+    },
+    {
+      "source": "warehouse-ui/index.html",
+      "target": "warehouse-room/index.html",
+      "kind": "PAGES",
+      "sha256": "7ddb17f58eb9c1e02f5cf7ebeb06836d33efe86722090c03fc22659aaf75d887",
+      "beforeSha256": "e22fdd8cf7a5321a693d0b3a77df87d7d5cf4b896bdd569317770be30a24b246"
+    },
+    {
+      "source": "warehouse-ui/app.js",
+      "target": "warehouse-room/app.js",
+      "kind": "PAGES",
+      "sha256": "2e5a751c39959f1d5aca11b19bf5a433e995df7ef0b223683b07ce33b6a18833",
+      "beforeSha256": "439828b02a0366b60b704031c06a28515ec41421ef633caffc9094bf2f490b8d"
+    },
+    {
+      "source": "warehouse-ui/workroom.js",
+      "target": "warehouse-room/workroom.js",
+      "kind": "PAGES",
+      "sha256": "7fcf39d78d46d3b7967159162c1633e27c4d64311ff3c37fc5326f01f4400e57",
+      "beforeSha256": "71287f8fde0ee06c372be93bb1a75b3954f3172863412b122fad2ca0e4e5a83e"
+    },
+    {
+      "source": "warehouse-ui/dispatch.js",
+      "target": "warehouse-room/dispatch.js",
+      "kind": "PAGES",
+      "sha256": "c24449ea88d680ec77452136862b3eed2435a50f449f1139bd112ac1c7923f2e",
+      "beforeSha256": "a8a5eab45d224e44d46b421a77328614ab0de5fb88a0867e7e1fdf1cd2cd3804"
+    },
+    {
+      "source": "warehouse-ui/packing-list-link.js",
+      "target": "warehouse-room/packing-list-link.js",
+      "kind": "PAGES",
+      "sha256": "c1ee48bf03a8440f97702321d5c33e12b1ec19bb12778764c90f6918edebb450",
+      "beforeSha256": "994d427517233e38591009c42793caa2f3290eb3238a50d1050f2b6b472e60ec"
+    },
+    {
+      "source": "warehouse-ui/stock-control-app.js",
+      "target": "warehouse-room/stock-control-app.js",
+      "kind": "PAGES",
+      "sha256": "bf28e2d0e41d09e125c1a04d46b2820b9ef306c3e985ff9d1d37289fc4bcef25",
+      "beforeSha256": "b67d363c527c72e4b3fa5f2d820d6037ee3d9af5e6c22c2f3fbc83c1b5a5e43e"
+    },
+    {
+      "source": "warehouse-ui/stock-control.css",
+      "target": "warehouse-room/stock-control.css",
+      "kind": "PAGES",
+      "sha256": "f302dec1eaf165b598ac2b57a9117e6bad3259f2cff6020e3d61a13dead543d5",
+      "beforeSha256": "33869086d49e2c48b4ccb023a8fb06696d3344d708fa63147e1ff1a78f68518d"
+    },
+    {
+      "source": "warehouse-ui/stock-control-embedded.css",
+      "target": "warehouse-room/stock-control-embedded.css",
+      "kind": "PAGES",
+      "sha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3",
+      "beforeSha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3"
+    },
+    {
+      "source": "warehouse-ui/stock-control.html",
+      "target": "warehouse-room/stock-control.html",
+      "kind": "PAGES",
+      "sha256": "4e371a74942657bac2e54642e70d0532e30cf12ee743923bce2bf6ea25e41f62",
+      "beforeSha256": "5911f5987fb1d08b5e1a8b11bd523e826b3ebd9750941def6790807dae3e6015"
+    },
+    {
+      "source": "warehouse-ui/stock-control-link.js",
+      "target": "warehouse-room/stock-control-link.js",
+      "kind": "PAGES",
+      "sha256": "5d243c66c97df99d185dfbc2cc3a44e130a6206e6dd1752d894dbaf29ff84a38",
+      "beforeSha256": "10b2d1034191aa243624065fec6566a58ec097a4869255f08191a183f70504b2"
+    },
+    {
+      "source": "warehouse-ui/warehouse-cbm-resume.js",
+      "target": "warehouse-room/warehouse-cbm-resume.js",
+      "kind": "PAGES",
+      "sha256": "7fd4cf9be8d4d2ccc07dde28a93f1b18e300f594f51f2ffd69fb0f85bb7f3ddd",
+      "beforeSha256": null
+    },
+    {
+      "source": "warehouse-ui/warehouse-dispatch-resume.js",
+      "target": "warehouse-room/warehouse-dispatch-resume.js",
+      "kind": "PAGES",
+      "sha256": "b2277adbf185bd3ce02a9db5b44809fdc25bce0fbfff5627533086cf7beaf6e7",
+      "beforeSha256": null
+    },
+    {
+      "source": "warehouse-ui/warehouse-preparation-resume.js",
+      "target": "warehouse-room/warehouse-preparation-resume.js",
+      "kind": "PAGES",
+      "sha256": "bef02eedd2ed389ef7cc9ffa51470b8e3b2160a71c17873b73f1aaf46fa9e238",
+      "beforeSha256": null
+    },
+    {
+      "source": "warehouse-ui/warehouse-receipt-resume.js",
+      "target": "warehouse-room/warehouse-receipt-resume.js",
+      "kind": "PAGES",
+      "sha256": "48fb571157df0ea15cf5ebaa8f3e833d5683f19b28c60f076ea7ae7a1c9bfa29",
+      "beforeSha256": null
+    },
+    {
+      "source": "warehouse-ui/stock-exceptions.js",
+      "target": "warehouse-room/stock-exceptions.js",
+      "kind": "PAGES",
+      "sha256": "8e6ece334722dd26dea1da104d0ba45f892980e615fafc213e62062b27a762ae",
+      "beforeSha256": null
+    },
+    {
+      "source": "packing-ui/packing-workbench.html",
+      "target": "support-room/packing-workbench.html",
+      "kind": "PAGES",
+      "sha256": "8d6ab9cd6c364aef3a18531bd40975c0ef466351baef3a72bd12ed48939202bb",
+      "beforeSha256": "7f61270864e231dbb07948ef7b8e111382011104bdbad25bbc90bf6c9e8cb215"
+    },
+    {
+      "source": "packing-ui/packing-workbench.js",
+      "target": "support-room/packing-workbench.js",
+      "kind": "PAGES",
+      "sha256": "fd334cc5399c210b3ed3e541427d9308cb9f444519d6a56b98ed012f7bb92337",
+      "beforeSha256": "c6781669dae6dac79678b0b33abb042214317d9175802979783dc03ea7747926"
+    },
+    {
+      "source": "packing-ui/packing-transport.js",
+      "target": "support-room/packing-transport.js",
+      "kind": "PAGES",
+      "sha256": "7f53457e4c4dabfce1102bbd45b47e90280829617e0dbf4c30b377c4210a9bb0",
+      "beforeSha256": "0442a655c1753ac5a1a11665212633ec2b550bc21946c992245c1a604870b805"
+    },
+    {
+      "source": "purchase-room-page.candidate.js",
+      "target": "integration/wix/purchase-room-page.js",
+      "kind": "WIX_PAGE",
+      "sha256": "5d1d4460ecaab40ce7c6646d18344e325c01781d485ed7399f4d5011a56674f9",
+      "beforeSha256": "c103628769b2ba0917faf15438bc9819188efaaa8855489fcd3d84cb254e381f"
+    },
+    {
+      "source": "warehouse-ui/warehouse-department-page.js",
+      "target": "integration/wix/warehouse-department-page.js",
+      "kind": "WIX_PAGE",
+      "sha256": "0246f031d9e05a658cfdd6200b13b6469bc605cf1a7674b12edce7f6e1350eaf",
+      "beforeSha256": "ff80639d4e0cc015453d26313e6922281df452d2bfbe24ce9bc8e624c99c57a3"
+    },
+    {
+      "source": "packing-ui/support-department-page.js",
+      "target": "integration/wix/support-department-page.js",
+      "kind": "WIX_PAGE",
+      "sha256": "d594c7b2d9790cc7093014d648739a35157d25fe22cf83e15b5d93dc058d370d",
+      "beforeSha256": "ca2c23c99ca01ac8b110d4c0844f688b5aa13900dac03de708e81f6845046be4"
+    },
+    {
+      "source": "packing-ui/packingListBridge.js",
+      "target": "integration/wix/packingListBridge.js",
+      "kind": "WIX_PUBLIC",
+      "sha256": "2b44cbd3233656346171fbb9bb790b524e13e0533c4a5e2fb190c34a4a280cfc",
+      "beforeSha256": "911042fa6b83d712954d6ed5baecafcd3b00baf6e209529e14ab65c0ffb91de9"
+    },
+    {
+      "source": "source-sales-room-page.candidate.js",
+      "target": "sales-room/wix/sales-room-page.js",
+      "kind": "WIX_PAGE",
+      "system": "FMCGMALAYSIA",
+      "sha256": "af6076eed0c9571e71e0d82c5b87ac0e0570caa44a323a8fa056e506e46428c2",
+      "beforeSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777"
+    }
+  ],
+  "retainedRelayDependencies": [
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "fxRates.web.js",
+      "export": "getFxRateSettings",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "fxRates.web.js",
+      "export": "saveAndSyncFxRates",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "getCurrentStaffContext",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "recordStaffPresence",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "staffAuth.web.js",
+      "export": "getStaffPresenceForAdmin",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "getSalesRoomQuoteSignals",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "processSalesRoomSelectionQueue",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    },
+    {
+      "page": "sales-room/wix/sales-room-page.js",
+      "system": "FMCGMALAYSIA",
+      "target": "catalogueSelection.web.js",
+      "export": "routeSalesRoomCustomerSelections",
+      "originalPageSha256": "940cb59d4d128d2b5d33f9ec2267c5c34ad646513feb755b262260c592d1a777",
+      "verified": false
+    }
+  ],
+  "errors": [],
+  "releaseGates": [
+    "Fresh live source and static-resource comparison",
+    "Retained original relay dependencies need native verification",
+    "Paired real backend and authorized current data",
+    "Required writer/recovery/capacity gates",
+    "Exact branch deployment authority at action time",
+    "Pages resource versions, Wix published-live and public Loaded acceptance"
+  ]
+}

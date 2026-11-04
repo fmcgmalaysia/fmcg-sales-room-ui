@@ -1,0 +1,36 @@
+{
+  "codeVersion": "3ec06032a3780ed4c45b1b8c830b978dbb648b3f",
+  "businessCode": "f5c8de20b30fe24c6218e25e608043d8e4c210d4",
+  "build": "20261030-po-document-states-v2",
+  "pages": {
+    "status": "VERIFIED",
+    "runId": 41023218895,
+    "matched": 94,
+    "total": 94
+  },
+  "permissions": {
+    "temporaryRuleRemoved": true,
+    "originalRules": 7
+  },
+  "wix": {
+    "status": "PUBLISHED_AND_LIVE",
+    "evidence": "V2_WIX_PUBLISHED.png",
+    "v2Change": "Purchase version token only; eight backend modules remain exact f5c8de2"
+  },
+  "public": {
+    "status": "DISPLAY_AND_READ_INTERACTIONS_VERIFIED",
+    "purchase": "New v2 build loaded; existing PO readonly; pencil permits editing without reason; Review PO shows line CBM and expandable recorded-history boundary",
+    "finance": "New v1 business build loaded; same two POs; ten file buttons match Purchase labels and actual rgb(184,196,208)",
+    "support": "New v1 business build loaded; TESTING02 Planned/Loaded1400CTN andSGD43586; Desk1→2→1 same totals; missing CBM Incomplete",
+    "errors": 0,
+    "liveCoverage": "Read interactions and current missing-document state only. New save/upload/payment transitions are covered by in-memory scenario tests, not claimed as production financial transactions."
+  },
+  "userTestPending": true,
+  "productionBusinessWrites": 0,
+  "limitations": [
+    "Several products lack CBM; no invented volume",
+    "NCT-INV-900009 is an editable draft number, not proof of an issued invoice",
+    "Historical Buyer language test remains stale; unchanged Buyer source English output",
+    "User acceptance pending; do not merge main or create user-verified tag"
+  ]
+}
