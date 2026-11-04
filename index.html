@@ -24,7 +24,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="build-version" content="20261105-sales-date-segments-v2">
+<meta name="build-version" content="20261105-sales-date-segments-v3">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -633,9 +633,9 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 #order-progress .sales-progress-row>div{padding:6px!important}
 #order-progress .sales-progress-head{align-items:start!important;min-height:44px!important}
 #order-progress .sales-progress-head>div{padding-top:8px!important;font-weight:600!important;line-height:14px!important}
-#order-progress .sales-progress-row>div:first-child{font-weight:400!important}
+#order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child{font-weight:400!important}
 #order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>span,#order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>small{display:block;font-size:11px!important;font-weight:400!important;letter-spacing:normal!important;line-height:14px!important;margin:0}
-#order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>small{color:#71849c}
+#order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>small{font-size:10px!important;color:#71849c}
 #order-progress .sales-progress-row>div:nth-child(7),#order-progress .sales-progress-row>div:nth-child(8){text-align:center!important}
 #order-progress .sales-progress-row>div:nth-child(9){text-align:left!important}
 #salesProgressBody .sales-progress-row>.sales-allocation{justify-content:flex-start;text-align:left!important}
@@ -1451,6 +1451,6 @@ function dashboardRfqCount(rows){return rows.every(row=>Number.isSafeInteger(row
 document.querySelectorAll('[data-dashboard-target]').forEach(card=>{const activate=()=>{const view=card.dataset.dashboardTarget;if(showView(view)===false)return;if(view==='customers'){customerAccessView='ACTIVE';customerPage=1;document.getElementById('customerSearch').value='';updateAccessTabs();applyCustomerFilters()}};card.onclick=activate;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}}});
 </script>
 
-<script src="customer-history/history.js?v=20261105-sales-date-segments-v2" data-room="sales"></script>
+<script src="customer-history/history.js?v=20261105-sales-date-segments-v3" data-room="sales"></script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->

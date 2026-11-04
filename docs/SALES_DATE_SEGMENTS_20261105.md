@@ -16,7 +16,7 @@ Runtime415bd703: Pages344/41877605586 completed successfully and all96 public ha
 
 The user then rejected the Order On typography. Runtimec4fd714f/v2 changes only its three text lines to a consistent11px/400/14px, keeping the first line navy and date/actor muted blue-gray. Actual Chrome candidate computed styles and PNG confirm all three match.80/80 checks pass again. Only Sales HTML and its version references change; the other95 static resources remain frozen.
 
-## Latest four-stage status
+## v2 four-stage status
 
 1. Code: c4fd714f, pushed on fix/sales-date-segments-20261105, PR344 remains draft.
 2. Pages: run345/41882280523 success;96/96 actual resource hashes match v2. Temporary permission removed immediately after resource verification; exact original7 names restored.
@@ -26,3 +26,11 @@ The user then rejected the Order On typography. Runtimec4fd714f/v2 changes only 
 The normal reload before this final fresh-bookmark check produced a complete empty Wix document without any iframe, with SiteAssetsFallbackError:Failed to fetch in Wix thunderbolt assets. It was not repeatedly refreshed or redeployed. The fresh bookmark loaded successfully; this does not establish a root cause fix for intermittent Wix loading. The earlier blocked status is historical and resolved for this release's formal acceptance.
 
 Private evidence: FONT_PUBLIC_ASSET_CHECK.json, FONT_RULES_RESTORED.txt, FONT_WIX_PUBLISHED.txt/png, DATE_SEGMENTS_PUBLIC.png, FONT_PUBLIC_ACCEPTANCE.json and ORDER_ON_FONT_PUBLIC.png under root handoff/sales-streamline-20261105. Original ten-item release343 remains underneath this follow-up. Public visual checks covered the customer list/Risk/QD warning, Review FOOD ordering, date input, five-stage progress/summary/Allocation, removed toolbar/chat entrances and simplified history empty state. Positive Ready-to-Load and Loaded+SI/partial shipment/history payment/file scenarios passed isolated tests; current formal orders were not advanced to create those conditions. Original Buyer historical PDF download/back and long-term CMS reading/capacity work remain separate and open. Main is not merged; user real-world acceptance/tagging remains pending.
+
+## v3 header and secondary text follow-up
+
+The user rejected the Order On heading difference and oversized date/actor. Formal computed styles confirmed the first heading was400 while all other headings were600; all used the same11px font family. The cause was the overly broad first-column weight override, which also matched the heading. Fresh public HTML matched c4fd714f exactly and fresh Wix Sales source matched the repository before editing. Exact originals are saved privately.
+
+The minimum patch restricts that weight override to data rows and reduces only date/actor small elements to10px. Yesterday remains11px/400; all headings inherit the common11px/600 rule. No business JavaScript changes: the complete inline-script hash remains6a08ed1e7c087a0aaead0ff8564f540578526e43d356d0d9f9f2741e96cafa59.14 affected date/Sales checks pass; the preceding80 business/related passes are reused rather than rerun for two CSS selectors. Chrome candidate confirms all9 headings600 and data11/10/10. Native browser screenshot succeeded after two CDP screenshot timeouts; no repeated lower-level or alternate controller was used.
+
+v3 is a candidate, not published. The single Wix version-token draft has an exact full readback. The package remains96 resources with only Sales index changed and95 frozen. Scope sales-date-segments-only; build20261105-sales-date-segments-v3. A new specific action-time branch grant is still required because the v2 grant was used and revoked. Preserve all original seven rules, current order quantities and the prior Buyer/CMS backlog.
