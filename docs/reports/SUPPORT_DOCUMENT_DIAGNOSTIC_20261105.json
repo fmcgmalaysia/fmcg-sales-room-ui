@@ -1,0 +1,28 @@
+{
+  "objective": "Expose the actual error for failed Support customer PDF uploads through native Wix logs only",
+  "status": "DIAGNOSTIC_NOT_A_BUSINESS_FIX",
+  "recovery": {
+    "commit": "4ca39578",
+    "file": "integration/backend/supportWorkroom.web.js",
+    "wixOriginalSha256": "2f1567d68b941cb5ef23962d04b1401f8b55b930da3f5c7613ef72065df7962d",
+    "normalizedExactMatch": true
+  },
+  "filesChanged": [
+    "integration/backend/supportWorkroom.web.js"
+  ],
+  "scope": "Await same existing upload and emit error name/message/stack, then rethrow the same error. No payload, file, quantity, financial value, permission, journal or schema changes.",
+  "validation": {
+    "passed": 51,
+    "failed": 0,
+    "suites": [
+      "support-documents",
+      "support-split-desk-document",
+      "support-confirmed-document-status",
+      "customer-finance-confirmation",
+      "customer-finance-access"
+    ]
+  },
+  "staticAssetsChanged": 0,
+  "wixPublished": false,
+  "publicAcceptance": false
+}
