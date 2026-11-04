@@ -1,4 +1,4 @@
-# Sales Review date segments
+# Sales date entry and compact progress follow-up
 
 The user reported that the new text date box allowed `233032` to remain unformatted. The preceding Sales release changed the visible date format but omitted input assistance. This patch adds segmented DD/MM/YY editing to that same field; it does not change the planning API or date storage.
 
@@ -8,4 +8,8 @@ Scope: one Sales HTML, one Wix version token, one isolated static scope. Click s
 
 The local Chrome candidate verified DD selection, automatic advance after23, completed23/08/26 and the original save. Four new scenarios cover focus, segments, editing, readonly, paste/autofill and calendar validation. The frozen96-resource package changes only Sales index;95 assets including Buyer and shared history are unchanged.
 
-Code: candidate. Pages/Wix/public acceptance: pending. No order, shipment date, payment or stock was written in production. Source of the user demonstration remains on its original tab.
+The user subsequently supplied four layout corrections. The same isolated Sales HTML now places the five-stage progress rail on the left and a Requested/Committed Qty/Value/CBM table on the right. Existing summary calculations are unchanged. The desktop card measures148px high in the actual Chrome candidate. The task grid uses one shared column definition; all nine header cells have the same top position. Order On is weight400, its width is86px, and Allocation heading/content both align left. Refresh is32×32px with a16px icon. Narrow phone layouts retain a responsive stacked fallback and horizontal task scrolling.
+
+Final affected suite:80/80 passed after these layout changes. Chrome candidate verified the left/right layout, aligned headers, normal date/actor typography and compact refresh. Exact Wix Sales draft readback matches the one-token version change. The release package still modifies only index.html; the other95 resources remain byte-identical to runtime2df9ee1b, including Buyer and shared history. Candidate PNG: root handoff/sales-streamline-20261105/COMPACT_PROGRESS_CANDIDATE.png.
+
+Code: candidate. Pages/Wix/public acceptance: pending for this follow-up. Original ten-item release: Pages343 successful/96 hashes matched, both Wix sites published/live, original7 rules restored; formal acceptance remains partial. No order, shipment date, payment or stock was written in production. The old user tab51431644 is no longer present; current user tab51431648 is on Order Progress with no editable form open. No user draft was discarded by the agent.
