@@ -1,0 +1,84 @@
+{
+  "build": "20261028-master-save-continuity-v1",
+  "branch": "perf/master-save-continuity-20261028",
+  "recoveryRuntime": "65601224978b88d19f120006383b08f0108f04a1",
+  "baselineRecord": "466f0f2",
+  "initialPublicResources": {
+    "resources": 99,
+    "exact": 99
+  },
+  "wixNativeOriginals": [
+    {
+      "name": "Purchase Department",
+      "hash": "193e3f20840587c787dd5db53cff2e24b829d5aa162c39c779d24a339c98116f",
+      "exact": true
+    },
+    {
+      "name": "Finance Department",
+      "hash": "218c4158217e99b5662195bd689026e71994081d1734b302d7d87241c1dd0cc8",
+      "exact": true
+    },
+    {
+      "name": "Warehouse Department",
+      "hash": "32ec00e5a2cc106b6cae7bd0fd6f7b6d74181de14ec3cb9c4b2ac78fc33599f3",
+      "exact": true
+    },
+    {
+      "name": "Support Department",
+      "hash": "0922b3d0c86446cb928930105ec3ad03771cfbaf0ebd1b8d35d55f18cd2e5286",
+      "exact": true
+    }
+  ],
+  "scope": {
+    "runtimeSourcesChanged": 4,
+    "backendChanged": false,
+    "wixCodeChangeRequired": false,
+    "publicResources": 99,
+    "expectedChanged": 10,
+    "expectedProtected": 89
+  },
+  "stages": {
+    "code": "GITHUB_SYNCED",
+    "pages": {
+      "status": "SUCCESS",
+      "runId": 40573558609,
+      "number": 286,
+      "build": "20261028-master-save-continuity-v1",
+      "codeCommit": "e71bf4934f8c5347b13dd0802f9da227b5ccf83b",
+      "resources": 99,
+      "exact": 99,
+      "mismatches": [],
+      "protectedResources": 89,
+      "backendFilesIncluded": false
+    },
+    "wix": {
+      "status": "PUBLISHED_AND_LIVE",
+      "codeChanged": false,
+      "originalProgramsExact": 4
+    },
+    "public": {
+      "status": "CORE_CHECKS_PASSED_PACKING_PUBLIC_ACCEPTANCE_INCOMPLETE",
+      "forceRefreshedWorkrooms": 4,
+      "newBuildAndChatScriptConfirmed": 4,
+      "browserErrors": 0,
+      "navigationStatesChecked": 18,
+      "supportAutosaveWithoutSaveButton": true,
+      "originalReferencesFreshReadRestored": true,
+      "desksAndQuantitiesFreshReadExact": true,
+      "packingPublicAcceptance": "INCOMPLETE_PREEXISTING_ENTRY_FAULT",
+      "record": "PUBLIC_VERIFICATION.json"
+    }
+  },
+  "mainMerged": false,
+  "businessWritesSubmitted": true,
+  "codeCommit": "e71bf4934f8c5347b13dd0802f9da227b5ccf83b",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/231",
+  "temporaryPermission": {
+    "removed": true,
+    "originalSevenRulesExact": true
+  },
+  "businessWriteScope": "Temporary reference metadata acceptance test only; original values restored and freshly read back.",
+  "financialStockInvoiceOrFileWrites": false,
+  "messagesSent": false,
+  "publicationConclusion": "Code, Pages and Wix stages complete. Four core workrooms verified, including real Support reference autosave and restoration. Packing save-continuity public acceptance remains incomplete because its existing entry is broken; no complete-site publication claim."
+}

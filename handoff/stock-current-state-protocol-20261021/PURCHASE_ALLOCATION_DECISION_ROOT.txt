@@ -1,0 +1,41 @@
+2026-10-22 — current Purchase allocation and existing decision route bindings
+
+Continuation afterdfb81f6; originald447185/runtime32b812c still exact. Same authorized
+inventory/borrowing objective and original original permissions/policies. No live edits.
+
+Private task gateway now dispatches ALLOCATE/SHORTAGE/QUANTITY_CASE to their ALREADY
+tested concrete current factories. Constructs only selected command; a decision need
+not construct or scan a second price/sort workspace. Original current root imports
+real createPlannerAllocationOperations + paired ALLOCATION_CURRENT_VIEW_VERSION,
+createShortageOperations, createQuantityCaseOperations/projectQuantityCases. Required
+pairing for actual display EDIT/REORDER still checked BEFORE its business table reads.
+No new Purchase/Planner/Warehouse privilege or alternate stock redistribution rule.
+
+Original ADD_SOURCE public wrapper always added action ADD_SOURCE. Current private
+dispatcher now preserves that same normalization; does not require browser action or
+accept browser staff/coverage. Other ten supported operation identities unchanged.
+Original-disabled SPECIAL remains unsupported. Empty all-writer coverage retained.
+
+Tests: actual-import native root QUANTITY_CASE and SHORTAGE with borrowed20, bounded
+same-request progress/completion/replay. STOP/CREDIT leaves exact physical positions,
+claims and outstanding relation unchanged, does not cancel Sales demand or settle debt.
+Decision calls do not scan unrelated original order tables. Shared current dispatcher
+now performs the original allocation fixture's FIRST commit, then original factory
+replays same result: assigns only free5, preserves loan3, and a fresh request attempting
+to move reserved customer quantities fails with the existing dedicated-transfer guard.
+No fake release-to-free workaround. Initial negative assertion expected generic release
+wording; the actual stronger borrowing-specific refusal was retained unchanged.
+Native fixture lookup correction uses its real v2 protocol in deps; no runtime gate or
+permission weakened. Diagnostic temporary private VM exposure removed before final run.
+
+Focused17pass0fail867.5077ms; full current683pass0fail6561.0599ms.75modules33exports.
+These are offline Node/VM/SDK/native permission stubs, NOT real GHR/NCT site-member
+grants, data/typed roundtrips, production load or public workflow acceptance. Existing
+original baseline financial mismatch still unmodified and not included as passed.
+
+OPEN: actual paired Wix installation/public workspace+allocation versions, all remaining
+external/file/legacy Warehouse/intake/margin/read/reload writers, mode transition and
+in-flight proof, native schemas/SDK permissions/roundtrip, initialization/recovery/
+capacity/shadow/fourrelease. Not all Purchase work closed by these routes. No actual
+stock CMS, mode switch, Pages dispatch, Wix publish, new business test data or lock
+deletion. Production remains unchanged and ACTIVE OFF.

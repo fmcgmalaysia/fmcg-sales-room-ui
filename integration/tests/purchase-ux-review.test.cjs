@@ -1,0 +1,69 @@
+const test = require('node:test'), assert = require('node:assert/strict');
+const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
+const folder = path.join(__dirname, '../prototypes/stock-current-state');
+function fixture() {
+  const posted = [], result = { textContent: '', hidden: true }, listeners = {};
+  const window = { addEventListener: (name, callback) => { listeners[name] = callback; }, postMessage: message => posted.push(message) };
+  vm.runInNewContext(fs.readFileSync(path.join(folder, 'purchase-ux-review-bridge.js'), 'utf8'), { window,
+    document: { body: {}, querySelector: () => result }, structuredClone,
+    MutationObserver: class { observe() {} } });
+  return { posted, result, send: message => listeners.message({ source: window, data: message }) };
+}
+test('review mechanically packages exact existing candidate assets and parses every embedded script', () => {
+  execFileSync(process.execPath, [path.join(folder, 'build-purchase-ux-review.cjs'), '--check']);
+  const html = fs.readFileSync(path.join(folder, 'preview/purchase-workbench-review.html'), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, 'preview/purchase-workbench-review.inputs.json'), 'utf8'));
+  assert.equal(manifest.cmsWrites, false); assert.equal(manifest.inputs.length, 33);
+  for (const entry of manifest.inputs) {
+    const source = fs.readFileSync(path.join(folder, '../../..', entry.file), 'utf8').replace(/\r\n/g, '\n');
+    assert.equal(crypto.createHash('sha256').update(source).digest('hex'), entry.sha256);
+  }
+  for (const script of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(script[1]);
+  assert.match(html, /connect-src 'none'/); assert.match(html, /NOT PUBLISHED/);
+  assert.match(html, /EXAMPLE A → ALLOC ALERT → 1 Borrow stock → Check eligible P\.O\.s/);
+  assert.doesNotMatch(html, /original person →|点击原人头查看借货表单/);
+  assert.doesNotMatch(html, /<(?:script|link)\b[^>]*(?:src|href)=/);
+});
+test('fixed review reads expose clearly fictional exact PO pair without mutating the workspace', () => {
+  const f = fixture(); f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '1' });
+  const original = JSON.stringify(f.posted.at(-1).workspace);
+  f.send({ type: 'PURCHASE_BORROW_OPTIONS_REQUEST', company: 'NCT', requestId: '2', input: { borrowerTaskId: 'a'.repeat(32) } });
+  const quote = f.posted.at(-1).result;
+  assert.equal(quote.schema, 'CURRENT_BORROW_OPTIONS_V2'); assert.equal(quote.options[0].lenderPoId, 'EXAMPLE-PO-B');
+  assert.equal(quote.options[0].replacementPoId, 'EXAMPLE-PO-A'); assert.equal(quote.options[0].maximumQuantity, 10);
+  f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '3' });
+  assert.equal(JSON.stringify(f.posted.at(-1).workspace), original);
+  f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'GHR', requestId: '4' });
+  assert.equal(f.posted.at(-1).ok, false);
+});
+
+test('exact review fixture supplies the same own-customer receipt fact as real ALLOC dialog, never a gross-PO fallback', () => {
+  const f = fixture(); f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '1' });
+  const workspace = f.posted.at(-1).workspace, before = JSON.stringify(workspace), window = {}, controls = new Map();
+  const container = { innerHTML: '', querySelector(selector) { if (!controls.has(selector)) controls.set(selector, {}); return controls.get(selector); } };
+  vm.runInNewContext(fs.readFileSync(path.join(folder, 'purchase-ui/borrow-approval.js'), 'utf8'), { window });
+  let opens = 0;
+  window.purchaseBorrowApproval.mountAllocation({ container, workspace, rootId: 'a'.repeat(32), esc: String, canSubmit: () => true, showBorrow: () => opens++ });
+  assert.match(container.innerHTML, /Received 实收 <b>80<\/b>/); assert.match(container.innerHTML, /Awaiting receipt 待到货 10/);
+  controls.get('[data-alloc-borrow]').onclick(); assert.equal(opens, 1); assert.equal(JSON.stringify(workspace), before);
+});
+test('review cannot fake an approved save, new generation, halo, receipt or real inventory mutation', () => {
+  const f = fixture(); f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '1' });
+  const before = JSON.stringify(f.posted.at(-1).workspace);
+  f.send({ type: 'PURCHASE_SAVE_REQUEST', company: 'NCT', requestId: '2', operation: 'BORROW_APPROVE', input: { quantity: 30 } });
+  assert.equal(f.posted.at(-1).ok, false); assert.match(f.result.textContent, /NOT SAVED/);
+  assert.equal(f.result.hidden, false); assert.equal(f.posted.at(-1).result, undefined);
+  f.send({ type: 'PURCHASE_WORKSPACE_REQUEST', company: 'NCT', requestId: '3' });
+  assert.equal(JSON.stringify(f.posted.at(-1).workspace), before);
+});
+test('clearly fictional existing-loan example C shows RCV80owing10and ALLOC90 without granting any save or changing the initial A borrowing example',()=>{
+ const f=fixture();f.send({type:'PURCHASE_WORKSPACE_REQUEST',company:'NCT',requestId:'1'});const w=f.posted.at(-1).workspace,before=JSON.stringify(w),c=w.tasks.find(t=>t.customerId==='EXAMPLE-C');
+ assert.equal(c.stockActualReceived,80);assert.equal(c.stockBorrowedOutstanding,10);assert.equal(c.stockAllocatedCumulative,90);assert.equal(c.stockTransferOutstanding,true);
+ assert.equal(w.tasks.find(t=>t.customerId==='EXAMPLE-A').stockBorrowedOutstanding,0);assert.equal(w.tasks.find(t=>t.customerId==='EXAMPLE-B').stockAllocatedCumulative,90);
+ assert.equal(w.tasks.reduce((n,t)=>n+t.stockActualReceived,0),w.tasks.reduce((n,t)=>n+t.stockAllocatedCumulative,0));
+ f.send({type:'PURCHASE_BORROW_RELATIONS_REQUEST',company:'NCT',requestId:'2',input:{view:'TASK',taskId:c.id}});const relation=f.posted.at(-1).result.items[0];
+ assert.equal(relation.borrowerTaskId,c.id);assert.equal(relation.remaining,10);
+ f.send({type:'PURCHASE_SAVE_REQUEST',company:'NCT',requestId:'3',operation:'BORROW_APPROVE',input:{quantity:10}});assert.equal(f.posted.at(-1).ok,false);
+ f.send({type:'PURCHASE_WORKSPACE_REQUEST',company:'NCT',requestId:'4'});assert.equal(JSON.stringify(f.posted.at(-1).workspace),before);
+});

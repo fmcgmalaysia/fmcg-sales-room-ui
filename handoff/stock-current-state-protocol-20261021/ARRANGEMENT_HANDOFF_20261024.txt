@@ -1,0 +1,48 @@
+2026-10-24 — durable Purchase arrangement handoff, backend candidate
+
+Parent c2e2540. Same overnight scoped authorization/framework/cutover constraints.
+No native external action. User interface second choice is still not connected;
+do not report this as a completed80carton shipment or completed public feature.
+
+Implemented concrete server path ARRANGE_AVAILABLE in current Purchase task
+gateway, through existing PURCHASE_TASK all-writer admission and common fenced
+commit. Uses original requirePurchaseStaff identity, verified current context and
+generation, exact expected instruction revision. No separate legacy fallback or
+Support permission. Missing coverage/changed staff/stock/malformed input refuses.
+
+prepareArrangement writes a fixed current instruction per company/task/batch plus
+one immutable request audit, both in company Activity under the SAME protocol.
+Instructions PENDING_SUPPORT record customer/order/stable task/batch, quantity,
+reason and actual availability at approval. They do NOT reserve physical inventory,
+change PO/receipt/demand, create packing, invoice or dispatch. Replacing instruction
+needs exact prior revision and conditional before image; same request replay uses
+existing protocol. Different requests cannot silently overwrite a newer revision.
+
+Quantity bounded by actual availableToArrange. For selected batch, missing exact
+batch coverage refuses. Until per-batch physical hold provenance is available,
+subtract all task holds and dispatch from selected-batch cumulative amount; this
+is intentionally conservative and may require review rather than borrowing another
+batch's stock. It is not an invented per-batch availability guarantee.
+
+readArrangements validates current record identity/company/status/quantity/date,
+ignores immutable audit rows, rejects duplicates or corrupt/foreign rows. Current
+Purchase refresh exposes each task's stockArrangements for next exact revision.
+Current packing context exposes purchaseArrangements on matching Support tasks;
+normal packingAvailability still rechecks current usable/held quantities. No
+automatic consumption, packing draft or duplicate shipment is fabricated.
+
+Next explicit work: connect Purchase button to ARRANGE_AVAILABLE using original
+save tracker, then expose selectable instruction in Support draft editor and keep
+stable instruction revision/batch context through real create/send/recheck. Need
+well-defined pending/consumed/replaced instruction lifecycle; do not silently mark
+consumed when an unrelated packing list exists. UI/cross-department acceptance and
+native wiring remain incomplete. Old explanatory button still must not be called
+an executed arrangement. No publish until complete.
+
+Verification: full current1316pass0fail30028.2702ms before adding one service test.
+Added original-role/common-admission service mock contract then6arrangementchecks
+pass98.1931ms. These overlap; not1316+6independent checks. Runtime118scopedmodules,
+install40targets/100modules/20unverifiedcategories, UI38Pages/5relays; all candidate.
+No original business file edits, CMS writes/deletes, Wix sync/Publish, Pages dispatch,
+permissions changes, GitHub export/push or model/agent changes. Existing blockers
+and four release stages unchanged. Quiet checkpoint while user rests.

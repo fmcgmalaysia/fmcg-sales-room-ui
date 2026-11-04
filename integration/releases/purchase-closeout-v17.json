@@ -1,0 +1,25 @@
+{
+  "date":"2026-10-11",
+  "timezone":"Asia/Kuala_Lumpur",
+  "codeCommit":"952088d5b84eeccb66f3b845a86d3291498fd609",
+  "branch":"release/purchase-account-closeout",
+  "pullRequest":59,
+  "purchaseBuild":"2026-10-11-purchase-closeout-v17",
+  "accountBuild":"2026-10-11-account-layout-v1",
+  "recovery":"e0d0a1566208344912d07ed7aa3918e599308b37 / Purchase v16; exact before/draft Wix copies retained in private handoff",
+  "code":{"completed":true,"integrationChecksPassed":170,"isolatedPatches":[55,56,57,58],"accountLayout":"Three files preserved exactly from 375d432"},
+  "pages":{"runId":"38116233986","jobId":"114401562870","status":"Success","duration":"23s","commitVerified":true,"purchaseMetaBuildVerified":true,"accountMetaBuildVerified":true,"actualScriptVersionReferencesVerified":true},
+  "wix":{"sourcePublishedLiveReceipt":true,"masterPublishedLiveReceipt":true,"sourceHttpReadbackExact":true,"masterHomeReadbackExact":true,"otherDraftReadbacks":"Exact at preparation, see candidate record","accountPage":"go8ts / account-department / html1"},
+  "publicVerification":{
+    "purchase":"https://fmcg999.wixstudio.com/master",
+    "account":"https://fmcg999.wixstudio.com/master/account-department",
+    "forceRefreshNewIframeVersions":true,
+    "purchaseChecks":["LAW authenticated","Compact 12-column PO table; Status after Created On","Upload and Files open separate bilingual dialogs","PI and INV Drive links retained, green Files icon","Path newest-first, Documents filter shows only two upload audits","Independent Purchase History with month/supplier filters; actual empty archive","Automatic PO refresh retains two visible rows across successive read timestamps","Customer Short Name reads complete without explicit fallback/missing warning","Purchase dashboard has no Add Customer","Task quantities 250 and 90, costs 7.44 and 10.05, GP96.83% and98.06%, existing POs retained; no Save button without drafts"],
+    "accountChecks":["No Business Name header/footer","Five menus display matching content","NCT/GHR switch updates company","Full refresh retains Account v1 layout","No real employee or financial data; preview labels retained"],
+    "protectedSourceChecks":"Fresh independent public Sales and Buyer tabs authenticate LAW/Admin and correct MASTER TEST 02 customer. Published quote values render; source HTTP regression tests preserve existing routes/FX exactly. No resubmission, quantity edit, quote publish or download retest."
+  },
+  "temporaryRules":"Added release/purchase-account-closeout then removed; removed the earlier feat/purchase-order-workflow test-only rule after upload acceptance. Previous seven rules retained; no Save protection rules changes.",
+  "uploadAcceptance":"purchase-upload-acceptance-20261011.json",
+  "limitations":["Account employee identity and real purchase/payment/bank/debtor/creditor data remain unconnected","Warehouse receipt/payment/final Account closure writers absent; no fake History","GHR public PDF upload and ambiguous network retry not exercised","User real acceptance pending; no main merge or verified tag"],
+  "userAcceptance":"Pending"
+}

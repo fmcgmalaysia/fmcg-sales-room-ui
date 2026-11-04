@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-17 Asia/Kuala_Lumpur",
+  "runtime": "0b2ab6feeb21a6316e6e35fd715c685a929a7a82",
+  "publicURL": "https://fmcg999.wixstudio.com/master",
+  "buildVerified": "2026-10-17-purchase-operation-feedback-v1",
+  "mode": "Live read-only acceptance; local empty-form validation only. No business record writes.",
+  "passed": [
+    "authorized staff and current build loaded",
+    "Dashboard issue filter and exact task entry",
+    "Pending PO includes unassigned remainder",
+    "notice jump targets unassigned task row",
+    "PO search matching and empty results",
+    "PO supplier filter",
+    "abbreviations popover outside dismissal",
+    "read-only PO preview and Escape dismissal",
+    "PI metadata and actual PDF viewer",
+    "finance-protected Delete is disabled",
+    "submitted request details include submission time/support/term",
+    "pre-Reviewing edit form opens with original values and no manual request date",
+    "Follow Up renders only submitted request",
+    "chase popup has four bilingual reasons; not sent",
+    "Account History shows saved times and actions",
+    "payment notification panel and actual Pay Slip PDF viewer",
+    "Purchase History empty state",
+    "Activity date and action filtering",
+    "numeric Row moved noise absent",
+    "same-supplier cross-child merge preview from either selected orange button",
+    "mixed-supplier merge blocked",
+    "checked rows use pale orange",
+    "Refresh loading feedback and successful data reread",
+    "GHR company view excludes NCT purchase records and NCT restores",
+    "empty upload shows inline required-fields error without pending save",
+    "Inter font, approved green/gray, 28px Pay Slip and no table overflow",
+    "final NCT Dashboard has no pending save, selected row or open dialog"
+  ],
+  "findings": [
+    {
+      "severity": "minor",
+      "area": "Payment Follow Up search",
+      "observed": "No-match search hides rows, but result count remains unchanged and no no-results message is shown.",
+      "source": "purchase-live/app.js ledgerSearch input handler"
+    },
+    {
+      "severity": "minor",
+      "area": "Receiving Issue copy",
+      "observed": "Two Resolution options still separate English and Chinese with a slash.",
+      "source": "purchase-live/app.js quantity case dialog"
+    }
+  ],
+  "additionalObservation": "Activity request action uses a raw uppercase event label; readability can be improved without changing stored audits.",
+  "notExecuted": [
+    "real submission/resubmission to Account",
+    "real chase, deletion, upload or payment acknowledgement",
+    "real PO creation, finance Reviewing transition or modification",
+    "Purchase History Pay Slip on a real closed order because none currently exist"
+  ],
+  "noRelevantConsoleErrorsObserved": true,
+  "newBlankTabBehavior": "Agent-created independent public tab remained blank; existing live user tab loaded current build normally. No root-cause fix inferred.",
+  "cleanup": "Opened PDF viewer tabs closed; independent blank test tab no longer present; existing NCT business page retained clean; local preview retained.",
+  "mainMerged": false
+}

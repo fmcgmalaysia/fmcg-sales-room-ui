@@ -1,0 +1,12 @@
+NOT APPLIED. User approved live version16 as the baseline after the repository conflict, 2026-10-09.
+Target is actual CENTRAL Code.gs, not the repository WebAppRouter.gs. Preserve every other byte.
+
+--- Code.gs (deployed version16)
++++ Code.gs (candidate)
+@@
+     const action = String(payload.action || 'CREATE_QD').trim().toUpperCase();
+-    const result = action === 'ADD_SELECTION'
++    const result = action === 'MASTER_CAPTURE_COST'
++      ? WIX_masterCaptureCost(payload)
++      : action === 'ADD_SELECTION'
+       ? WIX_addCatalogueSelection(payload)

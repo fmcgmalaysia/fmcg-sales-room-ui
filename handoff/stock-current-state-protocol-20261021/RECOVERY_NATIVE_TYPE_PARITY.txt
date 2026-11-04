@@ -1,0 +1,47 @@
+2026-10-22 — READ-ONLY RECOVERY NATIVE TYPE PARITY; NOT A RELEASE
+
+Recovery point before this patch: pushed7d8305c, existing draftPR220. Production
+runtime32b812c/baselined447185 unchanged. Same ongoing task/framework reused;
+re-read current status, exact recovery readers/inspectors/proof and SDK codec because
+the continuation context no longer contained their complete bodies. No whole-project
+scan, browser, live CMS write, lock deletion or permission change.
+
+Concrete defect
+recovery-read-store JSON-cloned any native field, whereas sdk-conditional-store uses
+explicit schema-owned DateTime decoding. A malformed ISO TEXT in the inspected
+journal activityTime DateTime field could therefore look identical to the durable
+plan's canonical ISO, yielding an AFTER diagnostic that the save adapter rejects.
+This was a candidate diagnostic discrepancy, not proof of a live data defect.
+
+Minimal correction
+- QUERY-ONLY recovery store reuses createSdkFieldCodec, no mutation methods added.
+- Standalone Admin endpoint specifies only the already-inspected activityTime field
+  for its selected company journal. No type inference, schema changes or credentials.
+- Invalid native stockCommitVersion tokens refuse; versionless immutable receipts
+  and exact protocol locks remain inspectable as before. No fabricated version.
+- Full plans, notes and provider errors stay private. Diagnosis never authorizes
+  unlock, takeover, retries, inverse writes or successful completion.
+
+Evidence
+20focused recovery assertions pass0fail503.2161ms. New tests cover both companies,
+actual Date versus ISO-text impostor, nested/text preservation, metadata removal,
+invalid native versions and segmented AFTER classification via generated Admin root.
+Native SDK responses are MOCKED, not real-platform acceptance.
+All stock-current tests685pass0fail6849.4175ms, including63unchanged original UI
+fixture assertions. Existing baseline financial failure outside this scope untouched.
+Protected production-directory diff againstd447185 passed. Generated root contains
+exact current codec/store/inspector bodies. Local candidate only; not installed.
+
+Remaining recovery gap (not hidden by this patch)
+Purchase restoreDraft currently requires a successful workspace; a current pending
+save can block that workspace. A frontend member ID alone is not Purchase authority.
+Need an ORIGINAL authenticated Purchase-only identity/bootstrap and exact original
+session-cache request resumption, without fake workspace, another member's cache,
+new UUID, legacy-receipt fallback or force unlock. File-callback termination and
+unknown-lock administrator recovery still require explicit safety evidence.
+
+Four release states
+Code: partial candidate; current task unfinished.
+GitHub Pages: unchanged.
+Wix Studio: no installation/sync/publish.
+Public page: new stock/borrowing functionality unavailable/unverified. ACTIVE OFF.

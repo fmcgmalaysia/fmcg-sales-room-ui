@@ -1,0 +1,54 @@
+2026-10-23 — USER-REQUESTED VISIBLE RESULTS, NOT MASTER PUBLICATION
+
+User asked to see the day's work after distinguishing a simulation from a real
+CMS-connected MASTER acceptance. Deliver an in-conversation step-through REPLAY,
+not a new business authority or an editable/saving production workroom.
+Recovery before this isolated evidence exporter: cae81a5d6cb5cd65d61eb3b1b2249c39b40c0092.
+No original business module, protected page, protocol or existing test was edited.
+
+build-acceptance-replay.cjs executes the EXACT existing same-database composition
+test's last callback with all original assertions intact. In-memory instrumentation
+adds seven bounded snapshot observers only; source anchors must each match exactly
+once. Snapshot reads use original current Sales workspace/coverage and person code.
+Every observer asserts the complete mock database is unchanged by its reads. Test
+assertion failure prevents export. No native SDK, network or real test record writes.
+
+Four actual mock-root combinations: NCT/GHR x same/different PO. Seven snapshots:
+approved POs/zero stock; B receipt100; Purchase borrow30; both Sales30/70 splits;
+A Loaded30; A receipt20; A additional80. Actual deficits0/0/30/30/30/10/0;
+physical0/100/100/100/100/120/200, no physical exit. Final customer ownership100each;
+A Loaded30 leaves70 ready to arrange. One relation is retained and repaid30. All
+original duplicate-request assertions still run. No numerical results hardcoded in
+the browser: template renders only the sanitized exported snapshots. Labels/captions
+describe this fixed scenario, not a free-form CMS test. Original person SVG reused.
+
+Source composition test SHA256:
+8440a904e662b9a664b47faa8cd29082643c80ae0c7ded521ca89a685a37f4a5
+Replay generated in the thread-owned visualization directory, stock-borrowing-results.html.
+Repository contains the literal fragment template, generator and sanitized JSON so
+the view is reproducible. Four scenarios/28snapshots; generated fragment40567bytes.
+Browser controls only move among snapshots, change the example company/PO case,
+and show person relationship detail. They do not execute a business save or claim
+to let the user freely enter new quantities. This narrower deliverable was explicitly
+explained before implementation; no demo rewrite of borrowing/packing/Sales rules.
+
+Verification actually run
+- Generator rerun after fixing require.resolve delegation, complete source projection
+  and actual fulfilment-context capture. Early errors produced NO exported replay.
+- New2evidence/control tests pass512.7225ms before the final affected regression.
+- FINAL affected9pass/0fail4325.1383ms: composition5 + old preview2 + replay2.
+  All controls/case selection/previous/start/person detail checked with VM DOM adapter.
+  PriorFULL1166belongs027e285 and is reused, NOT claimed as a new full-suite total.
+- Headless layout QA NOT completed: bundled browser binary absent; existing Edge
+  headless launch then closed with sandbox temporary-profile errors. No further
+  launch/retry/security workaround/download, no user-browser attachment, no localhost
+  server/retry. No screenshot or 320px/browser visual pass claimed. Template includes
+  responsive wrapping and a local table scroll container; actual inline rendering
+  remains for the user to view. No production browser/Wix actions performed.
+- diff--check clean and protected original paths still exactly d447185 before commit.
+
+Four release states: isolated evidence exporter/view complete; no new inventory Pages
+deployment; no Wix synchronization/publish; no real public MASTER acceptance. The
+inline replay is visible conversation content, NOT an inventory feature publication.
+INIT/TYPE and Wix support-contact grants still pending. No new grant, ACTIVE switch,
+new Stock* CMS setup, migration/cutover or real invoice/physical dispatch. Main untouched.

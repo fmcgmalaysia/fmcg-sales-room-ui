@@ -1,0 +1,45 @@
+{
+  "runtime": "e891ad130afd764f82450fb50bf3d527b004fc71",
+  "branch": "style/bilingual-no-slash-20261017",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/157",
+  "scope": "Display copy only: remove English-Chinese slash separators; preserve URLs, units, numeric ratios, business identifiers and internal stacked-label delimiters.",
+  "recovery": "fa9511be467b8cb2581422ae3c00999c7d8454ae plus exact Wix before snapshots",
+  "tests": {
+    "focusedPurchasePassed": 177,
+    "focusedPurchaseFailed": 0,
+    "salesExistingTests": {
+      "passed": 12,
+      "failed": 5,
+      "sameFiveFailuresReproducedAgainstExactPrechangeBaseline": true
+    },
+    "localChromeVisibleBilingualSlashMatches": 0,
+    "readonlyDemandQuantitiesPreserved": true
+  },
+  "pages": {
+    "run": 38934356579,
+    "conclusion": "success",
+    "eightAssetsExact": true,
+    "marker": "2026-10-17-site-bilingual-copy-v1",
+    "originalSevenPoliciesRestored": true
+  },
+  "wix": {
+    "salesAnomalousDraftNeverPublished": true,
+    "salesOriginalRecoveredByUndoWithUserApproval": true,
+    "salesRestoredExactOriginal": true,
+    "salesAndPurchaseFullReadbacksExactOnlyPointerChanged": true,
+    "publishReceipt": true,
+    "publishErrors": "Initial publish commands failed. User explicitly authorized reloading both editors; exact target readbacks survived reload. Both sites subsequently returned published and live receipts.",
+    "salesPublishedReceipt": "sales-published.png",
+    "purchasePublishedReceipt": "purchase-published.png",
+    "purchasePointerNowSupersededByHistorySlipRelease": true
+  },
+  "hashes": {
+    "sales-wix-before.js": "9f6065501c13b645f134e0c2760865bbcba1a9c1fde8272c241a00fa84f18856",
+    "sales-restored-readback.js": "9f6065501c13b645f134e0c2760865bbcba1a9c1fde8272c241a00fa84f18856",
+    "sales-wix-after.js": "b64c35154c0ff4653aa4e9d2b04f3dd7b42c32a99a25257da34b41cd48bf5b88",
+    "purchase-wix-before.js": "8856ee74022d64ba53f366a3144d8294074b81e3ea148acb8c508338daf25b85",
+    "purchase-wix-after.js": "74755428ceb94ccbd02c7b19f5debae67e89e4872b7742a2c93ce947e5206b86"
+  },
+  "public": "Final public verification pending Wix publish receipt. Preserve user Purchase allocation form; do not refresh or discard input.",
+  "mainMerged": false
+}

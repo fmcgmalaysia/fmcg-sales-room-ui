@@ -1,0 +1,157 @@
+{
+  "baseline": "a394c75",
+  "productionChanges": 0,
+  "checks": [
+    {
+      "id": "C01",
+      "observed": "Root-index and current-record readers agree after actual PLAN saves; reads write nothing."
+    },
+    {
+      "id": "C02",
+      "observed": "Both readers agree at six actual PLAN interruption boundaries when the complete root association is present.",
+      "faults": [
+        "AFTER_PURCHASE_OPERATION_PREPARED",
+        "AFTER_TASK",
+        "AFTER_PURCHASE_PRICE_SAVED",
+        "AFTER_PURCHASE_SOURCE_SHARES_SAVED",
+        "AFTER_PURCHASE_PLAN_SAVED",
+        "BEFORE_COMMIT"
+      ]
+    },
+    {
+      "id": "C03",
+      "observed": "Completed ADD_SOURCE200+50 returns both sources and250 on both routes. Interrupted source acceptance is not accepted here."
+    },
+    {
+      "id": "C04",
+      "observed": "Merged PO preparation is associated with both roots and completed results agree."
+    },
+    {
+      "id": "C05",
+      "observed": "Counterexample: root indexing alone inherits existing PLAN-only pending reader. Interrupted PO exposes changed task with no pending flag, while current candidate blocks it.",
+      "indexBlocked": false,
+      "currentBlocked": true
+    },
+    {
+      "id": "C06",
+      "observed": "Counterexample: missing PREPARED associations silently expose unconfirmed price32 instead of confirmed16. The index query cannot detect an excluded record."
+    },
+    {
+      "id": "C07",
+      "observed": "Counterexample: omission of an entire latest transport-only operation returns a valid but old chain without an error. Revision continuity alone does not prove association completeness."
+    },
+    {
+      "id": "C08",
+      "observed": "Both modeled routes ignore unrelated history at0/1000/100000. Index construction is offline setup, not production discovery."
+    },
+    {
+      "id": "C09",
+      "observed": "Same real100-revision fixture: root history grows per revision; current read count remains fixed. Saves still scan history on both routes."
+    },
+    {
+      "id": "C10",
+      "observed": "Both individually valid root reads can straddle a merged PO commit and produce a mixed-time page. Per-root validation is not a page-wide snapshot."
+    },
+    {
+      "id": "C11",
+      "observed": "Five source interruption comparisons: index filtering preserves old reader semantics and does not supply source-acceptance pending protection by itself.",
+      "sourceBoundaries": [
+        {
+          "fault": "AFTER_PURCHASE_OPERATION_PREPARED",
+          "indexError": null,
+          "indexBlocked": false,
+          "currentBlocked": true,
+          "equivalent": false
+        },
+        {
+          "fault": "AFTER_PURCHASE_PLAN_SAVED",
+          "indexError": null,
+          "indexBlocked": false,
+          "currentBlocked": true,
+          "equivalent": false
+        },
+        {
+          "fault": "AFTER_PURCHASE_SOURCE_SHARES_SAVED",
+          "indexError": null,
+          "indexBlocked": false,
+          "currentBlocked": true,
+          "equivalent": false
+        },
+        {
+          "fault": "AFTER_PURCHASE_SOURCE_ADDED",
+          "indexError": null,
+          "indexBlocked": false,
+          "currentBlocked": false,
+          "equivalent": true
+        },
+        {
+          "fault": "BEFORE_COMMIT",
+          "indexError": null,
+          "indexBlocked": false,
+          "currentBlocked": false,
+          "equivalent": true
+        }
+      ]
+    }
+  ],
+  "unrelatedGrowth": [
+    {
+      "unrelated": 0,
+      "indexRows": 5,
+      "indexBytes": 7960,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    },
+    {
+      "unrelated": 1000,
+      "indexRows": 5,
+      "indexBytes": 7960,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    },
+    {
+      "unrelated": 100000,
+      "indexRows": 5,
+      "indexBytes": 7960,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    }
+  ],
+  "relatedGrowth": [
+    {
+      "revisions": 1,
+      "indexRows": 5,
+      "indexBytes": 7960,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    },
+    {
+      "revisions": 10,
+      "indexRows": 50,
+      "indexBytes": 87034,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    },
+    {
+      "revisions": 100,
+      "indexRows": 500,
+      "indexBytes": 877774,
+      "currentPointReads": 3,
+      "currentPendingQueries": 2
+    }
+  ],
+  "limitations": [
+    "All data and index maps are in memory; no Wix latency, scan plan, quota or production snapshot acceptance.",
+    "rootIds are derived at snapshot construction from known tasks and PREPARED; this is not a deployed incremental writer or approved historical backfill.",
+    "Comparison covers procurement component only; discovery, receipt, loan, stock, finance and whole-page consistency remain separate dependencies.",
+    "The root-index route reuses existing confirmedPurchaseState and deliberately adds no new save semantics.",
+    "Current-state candidate still has extra updates and unsupported writers; neither route reduces durable history capacity."
+  ],
+  "decision": "Neither production-ready. Test root-associated reader first as the smaller option, but complete dependency/index coverage and PO/source pending semantics before rollout. Current-record design remains offline alternative, not default deployment.",
+  "sourceHashes": {
+    "purchasePlan.js": "f1f2dbcf1656bde00cc2af5344d9ba3620a99de3ff8071482beab13743870f72",
+    "purchaseOperationJournal.js": "f32a447abc140e5210bcde73e6a7f94b933cd0b9c3a9d21fdd03e3ce34d72006",
+    "purchaseOperations.js": "ba6f7c1684fdc2560ed3a559efd7298285becf34cde7e48e119fc897311156fb",
+    "purchaseSources.js": "ad4ee2babcf25847cbdd4b7dd34be548e008755697a4dfa8e52cabfce70fc4e6"
+  }
+}

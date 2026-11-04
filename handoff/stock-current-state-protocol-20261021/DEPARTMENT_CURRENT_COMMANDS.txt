@@ -1,0 +1,44 @@
+2026-10-22 CONCRETE DEPARTMENT COMMANDS — CANDIDATE ONLY
+
+current-department-saves.cjs now binds Warehouse original authentication/PO receipt
+authority/current stock reader and Purchase original authentication/borrow/return
+authority/current reader to the same owned-fence coordinator. Browser cannot substitute
+actor/permission/resume/coverage. Borrow action is part of immutable request digest.
+BORROWING added as twentieth mandatory writer: ordinary allocation coverage is NOT
+evidence that Purchase borrowing approval is wired. Actual coverage remains unverified.
+
+Composition test: B100 -> approve A30 -> exact replay -> approved unused return30 ->
+approve A30 again -> Warehouse receives A100 -> exact receipt replay. On hand200,
+A claims100/B claims100, prior returned relation closed, new relation repaid30/closed,
+original PO-A and PO-B unchanged. Original department guards, original PO projection
+and original receipt validation execute, not browser-built stock proofs. This is an
+in-memory test, not a real Wix endpoint or a business data write.
+
+Also fixed authoritative product name propagation (new Products/Positions formerly
+had blank name despite original task name); no additional catalogue read. Added exact
+confirmed-result scope/operation/generation validation before replay acknowledgment.
+Embedded Admin diagnostic kept exact; no live synchronization or exhausted deletions.
+
+32focusedpass406.0441ms before extending auto-repay, then affected10pass237.2376ms.
+Final shared-protocol regression:385current candidates+21original cross-site/delivery
+=406pass2208.5615ms,0fail. Overlapping runs not additive independent coverage.
+Protected runtime/source-site original code still matchesd447185. Known unrelated
+financial baseline assertion discrepancy remains, not included in this green suite.
+
+Source routing evidence: original nctSalesIntake+nctSubmissionDelivery lock one source
+order BEFORE delivery, preserve prepared destination, refuse opposite destination on
+uncertain retry. Added concurrent NCT/GHR and lost-reply/opposite-destination tests
+against actual original adapter/receiver; both pass. Direct arbitrary authenticated
+opposite payload counterexample remains valid outside this source contract. No new
+global collection/lock introduced. Live source equivalence and gateway caller coverage
+still need fresh verification; do NOT mark routing universally proven or remove gate.
+
+Halo rendering now keeps original0 0 20 20canvas under existing16px CSS; overflow-visible
+halo above unchanged body prevents original head shrinking. Same blue/orange colour;
+no triangle.4shapechecks pass106.4863ms and browser demo rebuilt. Still not integrated
+into real Purchase page/visually accepted; no claim of finished halo UI.
+
+Remaining actual backend web entry/writer wiring, production capacity/lifecycle,
+quarantine attribution, photo/file protocol, recovery/termination, migration/schema/
+shadow/G3 and all4release stages remain OPEN/OFF. No main merge, real CMS, privilege,
+Pages dispatch or Wix sync/publish changes. No user action needed for these local steps.

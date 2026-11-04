@@ -1,0 +1,34 @@
+2026-10-23 — bounded native READ-ONLY diagnostic prepared, NOT executed yet
+
+Purpose: gather actual @wix/data consistent-read latency before drawing platform
+capacity conclusions. Existing synthetic StockProtocolTest ONLY, no new records,
+locks, writes, deletes, business collection access, schema or mode/permission change.
+Standalone Permissions.Admin wrapper stockProtocolReadCapacity.web.js, excluded from
+explicit38target production install manifest. Exact generator and pure diagnostic
+function available. Browser cannot choose collection, clock, fields or query size.
+1..12total query calls per invocation; page<=25; existing exact synthetic ID retained
+privately for repeated reads, no ID/payload returned. Initial empty collection remains
+empty; unknown/incomplete/error stops with confirmed sample count, never retries.
+
+stock-current-native-read-probe4pass0fail237.0927ms (Node/VM/mock ONLY). Tests include
+Admin wrapper, only fixed table, complete-count/consistent-read options, zero writes,
+empty/network failure, input limits, no raw data disclosure and install exclusion.
+Core state/protocol/runtime unchanged. Prior FULL1050pass retained, new4not added as
+another claimed full-suite execution. Actual native results UNKNOWN until UI run.
+
+Explicit limits: this probe cannot prove original300line preparation, conditional
+domain write throughput, actual stock indexes/large history/file callbacks/recovery.
+productionCapacityAccepted ALWAYS false. It does not use or renew any prior permanent
+lock deletion grant. All former synthetic records retained. No native business test
+data or new employee/Drive permissions. No publish/ACTIVE operation included.
+
+Actual intended bounded UI invocation: existing Master editor, new isolated Admin
+module, Run measureStockReadCapacity with {company:'NCT',samples:3}, then only if result
+confirmed and useful one further {company:'NCT',samples:12}. Run code is READ-ONLY.
+No repeated dispatch on error. Preserve actual metrics/evidence without committing
+real private payloads. Fresh editor original23hash comparisons already retained; no
+replacement of those original modules needed for this isolated diagnostic.
+
+b273cb2 native date configuration milestone confirmed PUSHED PR220. All native stock
+collection/index/permissions/typed business roundtrip,300line write capacity, recovery,
+maintenance/shadow/G3/four-release gates remain open. ACTIVE OFF; invoice/exit OFF.

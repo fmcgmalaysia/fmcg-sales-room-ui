@@ -1,0 +1,43 @@
+2026-10-22 — READ MAPPING FOR ORIGINAL NORMAL PO WITHOUT FIXED SOURCE SHARES
+
+Recovery pusheda94e8fd/PR220 candidate, protected productiond447185/runtime32b812c.
+While preparing next Warehouse non-file binding, actual ORIGINAL paired projection
+produced procurement totalCtn100/expectedExtra0 but NO customerCtn. Private current
+authority rejected it. Preparation work paused to inspect source before any relaxation.
+
+Evidence/cause
+- ORIGINAL purchaseOperations PO branch records ordinary PLAN when assigning PO, but
+  does not require frozen shares. PLAN/source branches write PURCHASE_SOURCE_SHARES_SAVED
+  only when costing/fixed shares apply. No proof every normal PO has fixed share field.
+- ORIGINAL purchaseProjection sets explicit customerCtn for fixed-share or Sales demand
+  revision cases. Ordinary original path computes expectedExtra from confirmed total
+  vs original demand/source ordering. It already uses total-minus-expectedExtra in its
+  source/batch calculations. This is existing business authority, not a new policy.
+- Existing strict current builder assumed explicit fixed customerCtn for all cases.
+  Thus normal original projected input could be rejected although quantities known.
+  This was an offline original-code witness, NOT observation of all live CMS records.
+
+Minimum patch
+Only private original-product-state source mapping. If customerCtn is an OWN property,
+use it exactly and preserve old validation (null/undefined/negative/overflow unknown
+still fails). ONLY if field absent, read explicit integer expectedExtra within known
+confirmed total and compute customer share=total-expectedExtra. Missing/invalid extra
+still fails. No use of raw received qty, history sum, zero default, cross-customer
+stock, input actor flags or procurement/new permission fallback. No source/context
+field is mutated. PO confirmation/planned/company/spec/owner/correction checks intact.
+Original live projectors/writers unchanged. Saved fixed shares remain first authority.
+
+Tests
+Original actual Warehouse authority/receipt validator fixture: PO150, original projected
+extra50, absent fixed field -> owner100/free50/physical150. Source/context unchanged.
+Explicit null/undefined fixed with extra0, missing/negative/fractional/overflow extra
+all reject. Original explicit-known, unknown, borrowing/correction/allocation/holds,
+other department consumers retained by FULL TRACKED stock-current747pass0fail
+14856.4875ms. (Excluded new uncommitted preparation factory test3 from this exact run;
+not claimed as750full.) Runtime82modules40exports regenerated/verified. Protected dirs
+exactd447185 and diff check pass. Node/mock storage only, no native/live/public proof.
+
+Release unchanged: incomplete candidate code; Pages unchanged; Wix not installed/
+published; new public inventory/borrowing unavailable/unverified. ACTIVE OFF. All
+remaining client/writer/file/native/init/cutover/recovery/capacity/shadow/release gates
+OPEN; no new human action needed for continuing local non-file preparation work.

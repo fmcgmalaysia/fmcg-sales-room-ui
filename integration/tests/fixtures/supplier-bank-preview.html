@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Supplier bank details · Local candidate</title><style>body{margin:0;font:12px Arial}body>header{padding:9px 16px;background:#fff3d6;color:#725118}iframe{border:0;width:100%;height:calc(100vh - 35px)}</style></head><body>
+<header>SUPPLIER BANK DETAILS · Sample data · Local candidate · No production writes</header>
+<iframe id="room" src="../../../purchase-live/index.html?preview=supplier-bank-20261017"></iframe>
+<script>
+const frame=document.querySelector('#room'),profiles=new Map([['SUP-DEMO',{supplierId:'SUP-DEMO',version:'DEMO-1',companyName:'EXAMPLE SUPPLIER SDN BHD',shortName:'EXAMPLE',registrationNo:'',address:'',officeTel:'',email:'',companyWebsite:'',salesContacts:[],brands:[],bankName:'MAYBANK · DEMO',bankAccountNo:'001234567890'}]]);
+const workspace=()=>({company:'NCT',staff:{staffId:'SUPPLIER-BANK-PREVIEW',memberId:'SUPPLIER-BANK-PREVIEW',staffName:'PREVIEW',canEditCustomerDemand:false},fetchedAt:new Date().toISOString(),customers:[],tasks:[],suppliers:[...profiles.values()].map(p=>({id:p.supplierId,name:p.companyName,shortName:p.shortName,brands:p.brands}))});
+const receipts=new Map();
+function reply(type,m,result){frame.contentWindow.postMessage({type,company:m.company,requestId:m.requestId,ok:true,result},location.origin);}
+window.addEventListener('message',e=>{if(e.source!==frame.contentWindow||e.origin!==location.origin)return;const m=e.data||{};
+if(m.type==='PURCHASE_WORKSPACE_REQUEST'){frame.contentWindow.postMessage({type:'PURCHASE_WORKSPACE_RESULT',company:m.company,requestId:m.requestId,ok:true,workspace:workspace()},location.origin);return;}
+if(m.type==='PURCHASE_ORDERS_REQUEST'){reply('PURCHASE_ORDERS_RESULT',m,{company:m.company,orders:[]});return;}
+if(m.type==='PURCHASE_BRANDS_REQUEST'){reply('PURCHASE_BRANDS_RESULT',m,[]);return;}
+if(m.type==='PURCHASE_PROFILE_REQUEST'){reply('PURCHASE_PROFILE_RESULT',m,profiles.get(m.supplierId));return;}
+if(m.type==='PURCHASE_SUPPLIER_SAVE_REQUEST'){
+ if(receipts.has(m.requestId)){reply('PURCHASE_SAVE_RESULT',m,receipts.get(m.requestId));return;}
+ const id=m.supplierId||'SUP-DEMO-'+profiles.size,v=m.values||{},bankName=String(v.bankName||'').trim(),bankAccountNo=String(v.bankAccountNo||'').trim();
+ if(!String(v.companyName||'').trim()||Boolean(bankName)!==Boolean(bankAccountNo)){frame.contentWindow.postMessage({type:'PURCHASE_SAVE_RESULT',company:m.company,requestId:m.requestId,ok:false,error:'Enter Company Name and both bank fields, or leave both bank fields blank.'},location.origin);return;}
+ const p={...v,supplierId:id,version:'DEMO-'+Date.now(),companyName:v.companyName.toUpperCase(),bankName:bankName.toUpperCase(),bankAccountNo};profiles.set(id,p);const result={ok:true,requestId:m.requestId,supplierId:id,version:p.version,savedAt:new Date().toISOString()};receipts.set(m.requestId,result);reply('PURCHASE_SAVE_RESULT',m,result);return;
+}
+});
+</script></body></html>

@@ -1,0 +1,26 @@
+{
+  "site": "Master",
+  "siteId": "8a6752d7-e5bb-42cc-aca7-77346a8e97a6",
+  "editorTab": "51426657",
+  "repositoryCommit": "23ed0ef7297318d3860baf6b68fc0b8dec2d5654",
+  "method": "Complete editor select-all/copy; SHA256 of UTF-8 after CRLF-to-LF normalization compared with repository files at repositoryCommit. Exact normalized source recoverable from that commit. No code entered during readback.",
+  "scope": "Fresh editor draft readback only; does not independently prove every backend draft is the currently published runtime.",
+  "files": {
+    "integration/wix/warehouse-department-page.js": "992c1b75a61053c704e17635ea7582ae552a9adc7f9d385fc95da105b316585c",
+    "integration/backend/purchaseProjection.js": "eab2417c3d8e036f3234888fea33077a53a050f0437da4845f81994f7f8bd5cf",
+    "integration/backend/warehousePreparation.js": "015c5ab2b103483db004a78c90d6c317b112c39395f12a445c90fa450f757f50",
+    "integration/backend/warehouseReceiving.js": "27183e41c7c7525e0eb2c8cc5bdd375d3e8a6ddc273074f27e759ec94c31dee4",
+    "integration/backend/warehouseReceiving.web.js": "4644837b3125d5cfb8269109ea361f4c75dd2feaa3d8b12f8562fea1dea3c877",
+    "integration/backend/inventoryExceptions.js": "7ed7b821301d0b378a1f6ffc0f1b770a024f8830df8d91228223f5175ac0723c",
+    "integration/backend/plannerAllocation.js": "1e3035e9e2fb97a941a8e4ecd57449fb96148b67cc53147c355eebc74d6115e1",
+    "integration/backend/customerFulfilment.js": "f06eefb394d2a7da3f666c41a6c254f55767837cd3c0ee879232d1eb5410c44a",
+    "integration/backend/customerFulfilmentService.js": "966780e596616e8f8352d09622121d825d74d028c6835e13f58a595bdbd6a1bd",
+    "integration/backend/customerShipmentLedger.js": "4706810e1d4de304fef81e37474545d686f874668071ada858285b7d99494170",
+    "integration/backend/purchaseOperationJournal.js": "c79dd9044130147c979d01b99edfaa01296c038c12573c2b6f4c9b65ed201888",
+    "integration/backend/stockExceptionWorkspace.js": "f4f94dd396dfe49d7ed3441aad51c0a780b5f80b954c86d25c2f96338ff539e6",
+    "integration/backend/stockExceptionResolution.js": "6e9f349d30c8a8e2399943a592fe1806ed830f7ee379047ab35872910c41889b"
+  },
+  "result": "All 13 normalized files match repositoryCommit. Editor switching initially copied the preceding tab; subsequent content identities and independent SHA256 comparison established the correct mapping. No mismatch was silently accepted.",
+  "publishedLiveReceipt": false,
+  "businessWrites": false
+}

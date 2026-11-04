@@ -1,0 +1,67 @@
+2026-10-23 — INVENTORY CUTOVER PREFLIGHT: LEGACY CACHE WRITERS ALSO COUNT
+
+Single objective / protected baseline
+Do not treat a maintenance snapshot containing an actual original per-task GP lock
+or a real COST_RETRY_LOCK row as idle. This is inventory cutover protection, NOT a
+finance feature or recalculation redesign. Original business modules remain exact
+d447185/runtime32b812c. Starting29c19b6 recovery diagnostic confirmed PUSHED PR220.
+No live/native read/write, browser, schema, ACL, mode transition or publication.
+
+Bounded evidence
+Original purchaseWorkspace.web's LEGACY callback invokes original
+createPurchaseMarginRefresh during a workspace READ. Original purchaseMarginRefresh
+uses operationId(company,task.title,'GP_LOCK'), with no action field, before its
+whole-order cache update. Original purchaseCostRetry inserts action COST_RETRY_LOCK.
+The existing pure bootstrap-preflight checked company Purchase lock, two action names
+and per-task COST_LOCK, but NOT GP_LOCK or the actual COST_RETRY_LOCK action.
+
+New prepatch regression initially10tests9pass1fail201.8261ms: a real-shaped GP lock
+allowed execution to reach projection instead of returning blockers. No production
+failure inferred. Final test covers both companies, GP lock and a cost-retry lock on
+an unprojected task; all block BEFORE any projection, with unchanged input snapshot.
+
+Minimum correction
+Recognize actual COST_RETRY_LOCK in existing BUSINESS_LOCK_PRESENT check; recognize
+exact known per-task GP_LOCK as BUSINESS_GP_LOCK_PRESENT. Existing checks retained.
+Pure preflight only: cannot create/apply rows, release locks or grant activation.
+No generic dispatcher, extra store, repeat mode read or alternate stock authority.
+
+Additional actual-wrapper scheduling witness
+stock-current-workspace-admission-witness.test.cjs loads exact candidate workspace
+web wrapper and mode router plus ORIGINAL purchaseMarginRefresh mutation factory.
+Original GP/FX fixture supplies synthetic read projection/FX; progress, names and PO
+response projection are stubs. Thus this is an actual cache-writer scheduling proof,
+NOT all original workspace/business acceptance or real Wix scheduling evidence.
+- Hold the first read response containing LEGACY, before any GP lock exists.
+- Set the shared mock control to MAINTENANCE, then release that old response.
+- The unchanged original factory subsequently inserts GP lock/audit, updates order
+  cache and releases its own lock, ALL while current mode already says MAINTENANCE.
+  One mode read; expected original margin0.25. This passing test proves an UNSAFE
+  interleaving. A newly observing MAINTENANCE request refuses with zero writes.
+
+Final affected five files30pass0fail407.4544ms: bootstrap/lifecycle/bootstrap-shadow,
+original cost admission witness, new workspace-cache admission witness. This count
+includes unsafe counterexamples, NOT30production-safety guarantees. No shared command
+runtime/build dependency on bootstrap helper; no unnecessary full rerun or bundle edit.
+Prior FULL1123pass belongs805334b; no updated full-suite total claimed.
+Protected original path diff vsd447185 empty, diff --check clean. Unrelated artifacts
+untouched. One exploratory absent backend filename failed; actual inventory and exact
+known original sources were used, no guessed replacement module or blind retry.
+Actual CreditsUNKNOWN; no model switch or agent creation.
+
+What remains unresolved
+PRESENT locks now block correctly, but NO LOCK is STILL NOT execution drain evidence.
+Both retained cost and workspace-read witnesses demonstrate a pre-lock admission gap.
+Waiting client timeout, repeated mode checks or empty snapshots cannot close it.
+Need supported old-execution termination/drain evidence or separately reviewed safe
+all-legacy admission/fencing before capture. No such operational proof/implementation
+is supplied here; no permission to broad-refactor old writers is inferred.
+Native2INIT+1TYPE exact question remains PENDING; no test run/repeated question.
+Native private tables/index/type/capacity, recovery rehearsal, initialization/apply,
+shadow/cutover and final semantic/four-release gates remain OPEN. No new business
+question: ownership, purchaser-only borrowing/repayment, Sales split and halo unchanged.
+
+Four release states
+Code: isolated preflight guard and executable counterexample retained, not whole
+release complete. Pages unchanged. Wix published-live unchanged. Public new Loaded
+borrowing workflow not accepted. CoverageEMPTY/ACTIVEOFF; realinvoice/exitOFF.

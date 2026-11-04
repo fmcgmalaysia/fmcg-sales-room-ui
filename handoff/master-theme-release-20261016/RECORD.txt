@@ -1,0 +1,21 @@
+2026-10-16 MASTER shared presentation release and public audit
+
+Published UI code: 016756938d47c9b466ba475bf6a091cd16dbec5a (shared theme + one-line Warehouse title correction).
+Pages successful runs: 38771393745 (97e1143), 38773339065 (0167569).
+31 public assets matched normalized repository content; four original theme-v1 markers verified.
+Wix Studio: all four page codes captured before/after, token-only edits and full exact readbacks. Publish receipt explicitly confirmed site published and live online. Receipt and exact page sources versioned in evidence/.
+Public pages: Purchase Active real SCOMM five tasks with five move handles, ETA and green GP; Purchase Order two real PO, Payment Follow-up two PO, Purchase History empty, Activity History 15 existing events. Account real two PO, Creditor one PO, History empty; bank is existing unconfigured preview; debtor screenshot captured during loading (not claimed data acceptance). Warehouse real two PO, read-only receipt modal opened and closed without Save; Readiness five tasks; Dispatch and History styles inspected (some captures precede async table completion). Support main loaded, no shipment requests. User confirmed all pages open. Initially agent-created Account/Support tabs showed blank iframes; user-opened tabs loaded; no auth/backend changes attempted and no root cause inferred.
+
+Follow-up explicitly authorized by user: Account/Warehouse/Support headers must follow supplied Purchase MASTER header screenshot.
+Header UI commit: e660e63d4b1df08fedf78b906ade277782374ca0.
+Wix entry-link record commit: 5cde12b (only three iframe version tokens).
+Three index headers add MASTER and bilingual department name. Shared scoped CSS follows Purchase shell: 49px, 20px brand, 13px department, company selector and original staff at right; existing refresh controls visually placed at right without replacing handlers or changing IDs. Support option display labels expanded, explicit values remain NCT/GHR. No business JS or backend changed.
+254 affected tracked checks pass. No tests added for CSS/markup changes. Earlier full suite 396/398, two original baseline failures reproduced at b8932e9; no claim all business workflows pass.
+Header Pages run38774953460 succeeded with e660e63. 31 public assets normalized exact. Purchase retains theme-v1 marker; other three header-v2 markers and shared stylesheet query. Temporary policy63182115 removed; original seven policies exact restored. Prior temporary63180754 also removed.
+Fresh three Wix before readbacks matched repository; only token20261016-master-theme-v1 ->20261016-master-header-v2 changed; full after readbacks match. Wix Publish clicked once and receipt confirmed live. Public Account/Warehouse reload showed new MASTER header and real records. Support header-v2 public verification pending at time of this record; append final result below.
+
+Protected: earlier frozen Sales/Buyer/Catalogue/onboarding/download/auth paths unchanged; MASTER receipt/finance/invoice/stock/Save/version/journal logic unchanged. No production form submitted, no payment/invoice/receipt saved, no new integration. Actual pointer row drag and formal new SAVE workflow remain unverified. User's 'opened' is page availability confirmation only, not whole-workflow freeze. main not merged; no broad verified tag created.
+Recovery: original production70a0b59; scoped UI recoveryb8932e9 pushed on style/purchase-active-header-layout-20261015; existing limited annotated verified tags remain. 0167569 is recoverable deployed presentation reference, not a newly user-frozen business baseline.
+Next: finish public header verification and GitHub record; then separate P.O. ->Account/Warehouse discussion using current authoritative backend/data flow, no implementation inferred from this visual release.
+
+Final public result 2026-10-16 01:18 MYT: user opened fresh Support header-v2 check URL; agent verified new MASTER header, full company selector, LAW and original empty shipment list. All three iframe.src values header-v2; measured all headers49px, backgroundrgb(19,56,88), MASTER atx24 and department atx128.65, company and employee at right. Screenshots and public-verification.json preserved. All four release stages now have evidence for scoped presentation release. No business acceptance or whole-site workflow freeze inferred.

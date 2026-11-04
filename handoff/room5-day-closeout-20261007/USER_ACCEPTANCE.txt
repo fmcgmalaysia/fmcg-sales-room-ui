@@ -1,0 +1,21 @@
+User acceptance update — 2026-10-07, Asia/Kuala_Lumpur
+
+Exact user feedback: “我测试了几次改单都没问题。现不需要处理”
+Context: user replied to the explanation of the transient Wix 500 during order additions.
+Accepted scope: the user's repeated order quantity-change tests worked. Preserve the current quantity-change behaviour. The user did not specify each tested account, quantity, request ID, or timestamp; do not invent those details or extend acceptance to every workflow.
+Wix 500 investigation is deferred at the user's instruction. The earlier error remains a historical occurrence with unknown cause; acceptance does not claim its root cause was fixed.
+
+Functional code: a1f2b4973b813974c2ca2c1304401f680ae6a453
+Exact release record: 862ad6b
+Immutable complete source archive: 1f310438d3fcc090093c0203a8bb327afe4eef0d
+Pages UI: 7053ebda270f183e3dd1fd7227093f8c86a492a9
+Build marker: 2026-10-07-history-product-identifiers-room5-v1
+Pages run/job: 37598512517 / 112716866684
+Wix build receipt: Success2026-10-07 17:44:52 MYT; independent deployment ID not captured.
+Exact five Wix source files and SHA256 hashes: manifest.json and live/ in the immutable archive above.
+Earlier helper evidence: original30 +1000 +1 +2 =1033 CTN; Buyer/Sales consistent;3 unique history events;15 active task lines.
+
+This update only records user acceptance and preserves a scoped checkpoint. No new code edit, Wix sync, publication, browser operation, CMS write, or main merge performed.
+Excel remains explicitly paused. Native X, all visual changes, actual NCT/GHR transfer, MASTER, and the complete golden path are not independently certified by this particular user message.
+Data-compatible recovery rules in REPORT.txt remain mandatory: retain linked-receipt filters, saved effective quantities, immutable receipts and audit history. Never deploy old main or blindly reset accepted data.
+Annotated checkpoint: verified/order-quantity-user-tests-20261007

@@ -1,0 +1,20 @@
+2026-10-05 — recovery before Sales order quantity/history work
+
+User authorized: customer-submitted orders are read-only; authorized salesperson may edit before NCT/GHR; automatic Buyer refresh; edit history follows the existing Completed Orders archive rule. PO number is a separate task.
+User subsequently chose to retain customer short name and the old duplicate guard. The abandoned maintenance branch contains no cleanup commits. No live code was deleted.
+
+Pages recovery commit: 4f0e62cf31aa845c4f0b5e027ff5c885fd147ab5.
+User-verified quantity recovery tag: verified/buyer-quantity-enter-20261005 at d7c288443fabcb7b27b8a9d5be66b00a930b22ca.
+Wix Site History: Original-Branch revision 678, Published by site owner, 2026-10-05 16:52 Asia/Kuala_Lumpur.
+
+Exact current Studio copies are preserved in C:/FMCG-WIX-LOCAL/handoff/ROOM5-readonly-20261005/submitted-order-lock-baseline/:
+studio-onboarding.web.js SHA256 e83121bc7695642d7ad422c8a633dbfb32a728fd6cd50702698fec57bd3fb66e
+studio-catalogueAuth.web.js SHA256 acf0fd42d10a2aeef90a5c6b6637355c8047bcd4fd979b347704b02707688122
+studio-sales-room-page.js SHA256 27ebfe8f8b03174c0faf6cc75187ab855f1dc1f588b3104d6346cab240027c2b
+studio-buyer-room-page.js was captured and matches the repository after line-ending/trailing-newline normalization.
+These are Studio source captures, not independently exported published backend artifacts. Do not claim a new whole-system user-verified baseline from them.
+
+This preservation commit registers the existing Sales page source in the repository and mirrors the retained 11-line Wix duplicate guard. It does not change live behavior or publish anything. The Buyer backend differed only by one trailing blank line. Existing 83 regression checks pass before the requested functional change.
+
+Protected: all customer creation/QD/VERIFY/identity flows, locked customer short name, quote pricing/publication, Catalogue selection, Buyer pre-submit quantity drafts and Enter/outside-pencil behavior, both Excel downloads, existing progress calculations and invoice/completed-quantity archive criteria. No Apps Script/template changes.
+Recovery: restore Pages commit and the exact four Studio snapshots with isolated reverse patches, then publish/verify through Wix and public pages. Reverting code does not undo new orders/audit data.

@@ -1,0 +1,90 @@
+2026-10-22 — ACTUAL MASTER DISPATCH SHARED ROOT AND DURABLE WAREHOUSE CLIENT
+
+Recovery3a62ec8/PR220. Protected productiond447185/runtime32b812c unchanged.
+No browser/native/CMS/Drive/staff/real lock mutation, install, permission edit or publish.
+
+Actual scope implemented
+- New PRIVATE stockCurrentFulfilment.js composes actual original fulfilment service,
+  PO/claims/task checkpoint/packing/shipment authority, paired original calculators,
+  native conditional store and segmented coordinator. It is NOT a web module. Empty
+  writerCoverage remains; original native schemas/permissions/capacity/cutover pending.
+- Mechanical customerFulfilment.web.candidate keeps the EXACT original staffContext
+  body and original TWO SiteMember methods. Original authentication runs before mode
+  lookup. Reauthorization must equal captured original staff flags to prevent a role
+  change between shared read and its original financial redaction. Server-confirmed
+  LEGACY alone old read/save; ACTIVE current only; no mode/client fallback or real
+  INVOICE/selection/cancel/other action enabled by this current dispatch entry.
+- Existing shared getCustomerFulfilment serves Warehouse AND Support/Account. Private
+  company-scoped current read therefore retains original readFinancial entitlement,
+  without granting physical dispatch. Original public projection and financial hiding
+  remain in original service/gateway. Service supplied-context guard narrowly admits
+  original authorized company staff, no customer impersonation; original three-arg
+  and source Sales customer-specific behavior unchanged. This is preservation of a
+  shared consumer, NOT new financial work. Actual DISPATCH still original Warehouse
+  or Super Admin grant, existing INVOICED status/reference/reason/packing rules.
+- Same fence deducts only original invoiced source quantities once, writes task
+  dispatched cumulative with same commit, never rewrites invoice/FX/cost snapshot or
+  clears borrowing debt. No shared archived flag added. Original SHIPPED/history/
+  orphan-loaded global acceptance still OPEN, not claimed solved by dispatch tests.
+- Same getCustomerFulfilment optional EXACT {resume:'WAREHOUSE_DISPATCH_V1'} returns
+  only ORIGINAL authorized Warehouse own identity behind pending, no SDK/control/
+  business read. No new public method or staff role/grant. Paired Wix relay explicitly
+  maps WAREHOUSE_DISPATCH_RESUME_REQUEST and original save fourth version/identity arg.
+- Original dispatch.js mechanical overlay and own-tab helper retain full original
+  input/version/reason/UUID/build/generation/identity before send, read-confirm cache,
+  bounded same-request phases, strict final company/shipment/status/new-generation
+  receipt cleanup, cache removal failure replay and auth-only explicit reload resume.
+  No key enumeration, cross-user adoption, fake invoice/workspace or auto-dispatch.
+  Unknown/retryable-false/late replies keep request. Open current confirmation blocks
+  background refresh/rebinding; success clears stale table before fresh read. Original
+  legacy confirmation checkbox/send/result remain. Cache-fresh candidate scripts only.
+
+Evidence-driven shared request identity fix
+Actual root test first characterized a real candidate fault: same member M, prepared
+under employee W, then reissued employee W2 could change ONLY expected identity while
+same UUID/stock envelope resumed old plan. Before patch test failed20dispatched vs0;
+no real system/data was touched. The initial root expected-identity check alone did
+not bind the already-prepared digest.
+Shared current-stock-save now verifies supplied expected member AND staff ID against
+fresh original actor and includes optional stockIdentity in immutable envelope digest.
+This is NOT browser authorization; original gateways still authenticate/validate it.
+Dispatch auth callback retains original derived staff ID. Photo fenced adapter uses
+same exact digest, verified with actual fixture actor identity. A reissued employee
+cannot adopt old request; original W restored in isolated test resumes exactly once.
+Display-name changes with SAME member/staff ID continue preserving captured audit.
+Existing proof-only no-identity envelopes stay unchanged. Every other native writer
+still needs its own actual expected-identity/client coverage review before verification;
+this does not assert complete staff binding for unconnected writers. No competing hash
+fallback, live migration or protocol-test deletion. Candidate never ACTIVE/installed.
+
+Tests and exact limits
+- New actual-import private root + original staff/public gateway7cases; complete same
+  shared read/version/dispatch/store in-memory path (not merely save-factory spy),
+  original Warehouse redaction, Support/Account current read without dispatch/invoice,
+  LEGACY/maintenance/pending/unknown mode, coverage/role/identity/cross-customer gates,
+  auth-only recovery and reissued employee failure/resume proof.
+- Original generated dispatch UI/helper7cases: cache-before-network/full exact replay,
+  own auth-only reload/other member, quota/cleanup failure, malformed receipts, stale
+  timers, current open-form refresh freeze, legacy checkbox/send, paired Wix relay.
+- Focused original/shared/UI regressions35pass0fail1147.2231ms BEFORE identity hardening;
+  later final root+photo11pass0fail1769.9439ms. Final ALL stock-current784pass0fail
+  15864.378ms includes shared runtime, actual300receipt, borrowing, Sales split and
+  photo actor binding after latest hardening. Native-style mocks/VM/Node ONLY.
+- First new root fixture lacked original readPreparation binding; fixed test fixture,
+  not production authority. Temporary photo expected-identity test guessed M instead
+  of its real fixture M1 and failed; changed test to derive actual authenticated actor.
+  Final full rerun after fix/hardening passed. No green result inferred from failed run.
+- Affected generators --check/whitespace pass; protected production dirs exactd447185.
+  Runtime86modules42exports unchanged. No actual UI/native field/SDK grant/payload/
+  time/RPM/native GHR or public acceptance claimed. Actual Credit usage UNKNOWN.
+
+Remaining exact next work
+Warehouse CBM and original packing-list service/child client, source Sales actual root/
+transport, intake/order/other co-writer real connections and identity coverage; native
+schema/index/date/SDK grants/current collections/init, all20writer verification,
+cross-session/admin unknown-lock safe termination, original in-flight legacy proof/
+quiescent cutover, capacity/shadow parity and SHIPPED/history/orphan-loaded acceptance.
+Support real invoice remains OFF. No new user business choice needed for local work.
+Four release states: code incomplete candidate; Pages unchanged; Wix not installed/
+published; new public current inventory/borrowing unavailable/unverified. Exact new
+branch temporary deployment permission remains needed only when final release ready.

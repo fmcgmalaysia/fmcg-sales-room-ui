@@ -1,0 +1,69 @@
+2026-10-22 — CURRENT WAREHOUSE ORDERS READ + ACTUAL ROOT CANDIDATE
+
+Recovery pushed0413cd5/PR220; protected productiond447185/runtime32b812c untouched.
+Single target: original physical PO receipts/version alongside consistent current
+customer ownership/Ready and metadata; no stock/history write or parallel authority.
+No browser, native schema/permission/CMS/lock/data mutation, install or publication.
+
+Implementation
+- createCurrentWarehouseOrdersRead is private original authenticated read composition
+  inside common current generation barrier. Requires ACTIVE/schema/index/build and
+  only v2 scoped current product states; no v1/unknown/partial history fallback.
+- Incoming PO receipt details/version MUST use ORIGINAL physical context. Borrowing
+  changes customer availability, NOT receipt accepted/planned or supplier PO version.
+  Feeding borrowed inc into original physical bootstrap guard wrongly claims missing
+  receipt history; changing PO version due ownership transfer also breaks original
+  receive save. Both are avoided by retaining original incoming projector/context.
+  Legacy customerReceived field remains original historical allocation evidence, not
+  represented as current customer reserved stock. Current customerLines/Ready are
+  separate views from SAME barrier, not a second stored balance.
+- Current paired original Purchase projector feeds original customerReadiness. Paired
+  original Warehouse Ready calculator uses same scoped products/cumulative dispatch,
+  original batch/signature/preparation/photo/version rules. No replacement stock math.
+  A30/B70 after actual borrowing; physical B receipt100 and full PO/version unchanged.
+- Original loaded preparation references retain exact task scope even when archived;
+  missing task refuses for review, never silently drops a loaded orphan. Added optional
+  server-only retainedTaskIds to existing current snapshot adapter; default empty
+  preserves Purchase scope, duplicate/unknown IDs rejected. No archive rule rewritten.
+  Existing original orphan-loaded review behavior retained; NOT a claim that all
+  SHIPPED/history UI cases are now resolved. This remains a real final acceptance gate.
+- stockCurrentWarehouse.web.js now has3SiteMember methods: current receipt, current
+  orders read and ORIGINAL auth-only resume identity. Identity has NO stock generation,
+  inventory read, save, new role or pending-unlock capability. Native same listed
+  tables/codec used for current projection, not second readFulfilmentContext scan.
+  Default all-writer coverage EMPTY; paired Purchase/Ready markers required for read.
+- Original getWarehouseOrders minimal wrapper now authenticates first, checks exact
+  native server control and routes ACTIVE to paired root, LEGACY only to original body.
+  Pending/missing/corrupt/shadow/maintenance stops; no unprotected mixed workspace.
+  Original save/preparation/CBM code otherwise unchanged. Combined wrappers strip back
+  to byte-exact original warehouseReceiving.web.js. Do not install wrappers alone.
+- Current short-name display preserves full name/ID fallback; quantities unknown stay
+  original review/null. Same CBM helper used. Bilingual customer list joins use dot,
+  not introducing English/Chinese slash. No price/internal source state sent as new UI.
+
+Evidence
+Scoped Purchase projection + new Warehouse read10pass0fail688.2517ms; after hardening
+v2-only read/runtime9pass0fail389.0637ms. Actual borrowing through existing current
+gateway yields A30/B70 customer/Ready, same B100 accepted and byte-equivalent original
+PO/version, no read mutation. Lost grant/pending/changed generation/incomplete current
+coverage/unpaired Ready/loaded missing/name outage/retained archived checkpoint tested.
+Actual generated root empty workspace and closed-coverage tests, BOTH companies after
+final fixture expansion1pass0fail449.751ms. Read-before-table guard and identity recovery
+without stock grant; revoked member refuses. Actual original wrapper proves auth before
+control, ACTIVE only current read/save; LEGACY only unchanged old read/save. Tests use
+original functions + VM/in-memory mock native storage; no actual native/public success.
+All stock-current739pass0fail14528.6055ms before final test fixture widening; no further
+production code change afterward. Generated backend82modules40exports and all3related
+generators --check pass. Protected production dirs exactd447185; diff check passed.
+
+Next / open
+Warehouse UI/relays must carry current metadata, retain exact original receipt before
+first write and handle bounded progress/unknown reload through original cache/receipt
+contract. Do not enable new mode with old client. Preparation/photo/CBM/dispatch/packing
+and other actual writers/read paths still incomplete. Original archive/orphan loaded
+cases require final end-to-end public tests; debt must not misuse shared archive.
+Native schemas/indexes/all20writer actual coverage/SDK grants/CMS init/quiescent cutover/
+legacy in-flight safety/recovery/production capacity/shadow/public acceptance remain
+OPEN. No arbitrary verified coverage assignment. Support real invoicing OFF.
+Four states: incomplete code candidate; Pages unchanged; Wix not installed/published;
+new public inventory/borrowing unavailable/unverified. ACTIVE OFF; main unchanged.

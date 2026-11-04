@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-Hans"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS 当前采购状态：离线可行性与否决边界</title>
+<style>body{font:16px/1.65 system-ui,"Microsoft YaHei",sans-serif;color:#173650;background:#f3f6f9;margin:0}main{max-width:1120px;margin:auto;padding:32px}h1{font-size:27px}h2{font-size:21px;margin-top:30px}table{width:100%;border-collapse:collapse;background:white;margin:16px 0}th,td{padding:12px;text-align:left;vertical-align:top;border:1px solid #cfdae4}th{background:#dfebf5}a{color:#2563eb}.decision{padding:18px;background:#fff2dc;border-left:5px solid #f58a00}.scope{padding:15px;background:#eaf2ff}code{overflow-wrap:anywhere}</style>
+<main><h1>当前采购状态：能减少读取，但本候选不准上线</h1><p>2026-11-03 · 离线验证基准 <code>4d26f89</code> · 分支 <code>test/purchase-current-state-contract-20261103</code></p>
+<div class="decision"><strong>决定：否决本次“只加两个保存步骤”的候选作为生产方案。</strong>它证明直接读取已确认状态的方向可行，但漏掉一个保存待恢复窗口、多拦一个已完成窗口，而且尚未覆盖其他写入入口。不能用运行成功的诊断脚本声称业务验收通过。</div>
+<h2>本次实际完成了什么</h2><p>使用现有采购保存程序与原保存回执，在内存副本中插入两个实验步骤：写业务内容前，在原任务记录留下原请求编号；业务事实完整后，把现有程序确认的采购计划、价格及供应商份额写回同一记录。没有改动生产源码、Wix、CMS 集合或正式记录，也没有独立重算库存和财务。</p>
+<p>完成 13 组诊断，其中包含 14 个中断位置。原请求恢复与重放均没有重复业务记录。诊断包含<strong>主动证明候选有漏洞的反例</strong>，不是“13 个上线验收全部通过”。第一次运行发现测试自己重建了重试输入、改变了版本；随后改为保留完全相同的原请求并重跑。最终结果完整保存，没有忽略断言失败。</p>
+<h2>读取收益测到哪里</h2><table><tr><th>加入的无关历史</th><th>读取一项采购计划</th><th>Activity 查询</th><th>读取时写入</th><th>返回大小</th></tr><tr><td>0</td><td>按 ID 读 1 条任务</td><td>0</td><td>0</td><td>891 bytes</td></tr><tr><td>1,000</td><td>按 ID 读 1 条任务</td><td>0</td><td>0</td><td>891 bytes</td></tr><tr><td>100,000</td><td>按 ID 读 1 条任务</td><td>0</td><td>0</td><td>891 bytes</td></tr></table>
+<p>三次返回结果一致。这次读取函数确实没有先读全历史再筛选；但是它只读<strong>单项采购计划的实验当前值</strong>，不是完整 Purchase 工作台。初始化、现有保存准备和实验提交核对仍读历史；收货、借还货、Loaded、财务、完整任务发现与分页尚未替换。没有测试 Wix 实际延迟、索引计划或百万行业务容量。</p>
+<h2>为什么不能马上改正式站</h2><table><tr><th>发现</th><th>真实场景</th><th>上线前必须满足的条件</th></tr>
+<tr><td>准备记录早于任务标记</td><td>原请求 PREPARED 已保存，随后还未写入任务上的 pending 就中断。现有正式判断知道有未完成保存，实验直接读却显示没有待恢复事项。</td><td>当前状态必须可靠关联每一个尚未完成的原请求，不能依靠下一步恰好写成功。不能撤掉现有保存保护来让测试通过。</td></tr>
+<tr><td>事实完成早于当前状态更新</td><td>价格、份额、计划事件都已齐全，当前值更新前中断。现有判断已经确认完成，实验仍要求恢复。</td><td>按原请求的确定身份核对有限条完成证据，保持现有确认语义；读取不补写、不改为另一套业务判定。精确实现仍待验证。</td></tr>
+<tr><td>只接 PLAN 不够</td><td>实跑开 PO 后，任务版本改变，实验状态仍是之前版本，只能停止显示。不是开 PO 的生产 bug，是候选遗漏了入口。</td><td>同一套当前状态必须覆盖所有改变其依据的现有入口，包括 PO、补供应商及成本补抓等。</td></tr>
+<tr><td>新增供应商可被漏掉</td><td>实跑现有 ADD_SOURCE：原供应商 200，再增加 50。根任务版本没有变化，候选仍显示 200、一条来源；原业务判断正确为 250、两条来源。这是候选真实反例，不只是猜测。</td><td>份额和成员变化必须同时更新同一根状态；仅检查根任务原有版本不能保证完整性。不能先上线 PLAN 再补来源入口。</td></tr>
+<tr><td>完整旧记录可能覆盖新状态</td><td>刻意模拟未经协调的旧任务整条更新：只改运输方式后，旧记录又把当前状态覆盖回旧运输方式，旧版本校验仍可通过。</td><td>逐个核对所有任务写入者的读取时间与同一锁范围。此项是存储反例，尚未证明某个正式入口实际发生该错误；不能据此未经批准改权限或换数据库。</td></tr>
+<tr><td>进程突然结束未证明</td><td>这轮注入的是可执行 finally 清理的异常；它不同于程序被终止、锁没有释放。</td><td>单独验证持久标记、原请求恢复及旧执行者返回的边界，不能假装超时后随意删锁就安全。</td></tr></table>
+<h2>已有记录复用的具体边界</h2><p>实验字段名为 <code>offlineProcurementReadState</code>，只存在内存测试数据，没有建立正式字段。内容包括 schema、company、rootId、状态校验值、confirmed（成员身份、现有版本、价格、既有计划结果及份额）、pending（现有原请求身份）。校验值只是发现不一致，不是安全签名或数据库并发保护。</p>
+<table><tr><th>放在哪里</th><th>好处</th><th>限制与当前判断</th></tr>
+<tr><td>现有 Tasks 根任务</td><td>本实验不新增 CMS 行；采购员保存后覆盖同一当前值。</td><td>必须与全部任务写入者协调，不能让旧整条记录覆盖元数据。先保留为候选，未批准生产字段。</td></tr>
+<tr><td>现有 PurchaseOrders</td><td>财务权威记录已在此，不必复制锁定和付款状态。</td><td>尚未开 PO 的采购计划无对应记录；合并 PO 也可能跨客户。不能把它硬当作所有采购任务的唯一载体。</td></tr>
+<tr><td>现有 Activity 的固定当前记录</td><td>现有 Desk 使用过固定当前记录模式，可避免任务整条更新覆盖。</td><td>会增加每个业务身份一条当前记录，仍需解决发布边界、并发和旧读者扫描；不是“放进去就完成”，本轮没有创建或选定它。</td></tr></table>
+<h2>已核实的写入入口，不再泛扫全站</h2><table><tr><th>现有模块</th><th>为什么有关</th><th>本轮处理</th></tr>
+<tr><td>purchaseOperations.js</td><td>PLAN、EDIT、AVERAGE_COST、PO、QTY 等改变任务或采购结果；SPECIAL 新建任务。只有 PLAN 在内存加入实验步骤。</td><td>源码未改。PO 实测证明未覆盖入口不能直接接新读取。</td></tr>
+<tr><td>purchaseSources.js</td><td>ADD_SOURCE 新增来源任务、采购计划和根任务份额；沿用相同公司 PURCHASE journal。</td><td>只读确认，必须纳入最终成员及份额一致性。</td></tr>
+<tr><td>purchaseCostRetry.js</td><td>更新任务成本参考及必要初始值，使用同一个任务 COST_LOCK；当前代码读新任务后展开整条记录。</td><td>不指称已发生覆盖故障；新字段加入后必须回归并发和保留行为。</td></tr>
+<tr><td>purchaseOperationJournal.js</td><td>先持久化 PREPARED，再 apply，再 RESULT；原请求重放和锁生命周期由这里维护。</td><td>未修改。两个实验步骤无法覆盖全部提交边界，不能贸然改这个共享模块。</td></tr>
+<tr><td>purchasePlan.js / purchaseTaskIdentity.js</td><td>现有完整性、份额、计划版本与任务版本判定。</td><td>复用实际函数作为结果对照，未增加正式替代算法。</td></tr></table>
+<h2>行数并没有因此减少</h2><p>20 次真实内存 PLAN 修订仍新增 100 条原有记录。实验元数据自身新增 0 行，但额外更新任务 40 次，即每次正常保存两次。由此不能声称 CMS 容量已经解决；也不能为了减少行数删除现有 PREPARED、RESULT 或份额记录。必须同时权衡读取、写入次数与持久行数。</p>
+<h2>下一步应做什么</h2><ol><li>保持生产现状，拒绝部署本实验。先在离线合同中解决上述两个提交窗口，尤其是 PREPARED 已存在但 marker 尚未存在的情况。</li><li>把同一原请求的有限完成证据和全部采购写入入口列入一个确定范围，验证原请求恢复、并发及进程终止。正常读取不能静默回退全历史。</li><li>确定存储位置与精确字段后，再提供实际生产差异、初始化预览、不一致跳过清单和恢复计划，请用户批准必要的存储/写入扩展。不能现在先写正式 CMS 再补推演。</li><li>这一阶段只解决采购当前计划的历史依赖。随后另行处理收货、分配/借还、Loaded/隔离和财务的各自权威状态；历史查询按单据和期间分页。月结不是任意忽略旧记录的日期界限。</li></ol>
+<p>官方依据：Wix 的 <a href="https://dev.wix.com/docs/velo/apis/wix-data/update">update 文档</a>说明更新会替换提交的属性值；<a href="https://dev.wix.com/docs/sdk/data-items-sdk/data/items/introduction">Data Items 说明</a>明确未提供的旧字段会丢失。<a href="https://dev.wix.com/docs/velo/apis/wix-data/update">一致性说明</a>支持需要最新数据时使用 consistentRead，但这不等于已证明跨记录原子提交。本项目没有因此切换 API。</p>
+<h2>本轮交付与发布状态</h2><ul><li>代码：仅离线原型、结果和本报告；生产源码变化 0。</li><li>GitHub Pages：未变更，本轮不部署。</li><li>Wix Studio：未改草稿、未发布；生产数据写入 0。</li><li>正式页：本轮没有新版本需要验收；此前 D04 只读验收已通过，CMS 长期方案仍未完成。</li></ul>
+<p>结果：<a href="../../integration/prototypes/cms-read-review-20261103/current-plan-contract-results.json">完整诊断与源文件哈希</a>；脚本：<code>integration/prototypes/cms-read-review-20261103/current-plan-contract.cjs</code>；此前依赖证明：<a href="CMS_TASK_READ_SCOPE_20261103.html">12 个读取范围场景</a>。</p>
+</main></html>

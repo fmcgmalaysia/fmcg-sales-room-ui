@@ -1,0 +1,144 @@
+{
+  "objective": "Reuse validated allocation, packing and Loaded history within one context read",
+  "baseline": "Six fresh Wix originals matched repository; raw originals preserved in master-three-customer-stress-20261102",
+  "recoveryTag": "verified/support-upload-recovery-20261103",
+  "files": [
+    "customerAllocationContext.js",
+    "physicalOutflow.js",
+    "packingListGuards.js",
+    "plannerAllocation.js",
+    "warehouseReceiving.js",
+    "purchaseProjection.js"
+  ],
+  "changedLines": {
+    "added": 12,
+    "removed": 10
+  },
+  "mechanism": "Same validators and arithmetic, invocation-local prepared arrays; no process cache, TTL, CMS schema, extra ledger or additional query.",
+  "protected": [
+    "Default write-time calls still reread/validate their supplied current history",
+    "Company, physical outflow, packing holds, borrowing, repayment, shortages and actual receipts",
+    "Shared source costs, issued invoice snapshots, financial locks and operation receipts"
+  ],
+  "checks": 146,
+  "benchmark": {
+    "type": "Synthetic local CPU only, one initial and one final run; neither CMS capacity nor Wix network latency proof",
+    "before": [
+      {
+        "tasks": 16,
+        "activity": 335,
+        "payloadBytes": 180857,
+        "projectionMs": 17,
+        "gpMs": 0,
+        "resultRows": 16,
+        "rssMiB": 56,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 100,
+        "activity": 2000,
+        "payloadBytes": 1086180,
+        "projectionMs": 54,
+        "gpMs": 1,
+        "resultRows": 100,
+        "rssMiB": 64,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 500,
+        "activity": 10000,
+        "payloadBytes": 5456580,
+        "projectionMs": 801,
+        "gpMs": 6,
+        "resultRows": 500,
+        "rssMiB": 106,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 1000,
+        "activity": 20000,
+        "payloadBytes": 10949580,
+        "projectionMs": 3184,
+        "gpMs": 26,
+        "resultRows": 1000,
+        "rssMiB": 160,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 100,
+        "activity": 100000,
+        "payloadBytes": 53874380,
+        "projectionMs": 2217,
+        "gpMs": 13,
+        "resultRows": 100,
+        "rssMiB": 326,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      }
+    ],
+    "after": [
+      {
+        "tasks": 16,
+        "activity": 335,
+        "payloadBytes": 180857,
+        "projectionMs": 29,
+        "gpMs": 1,
+        "resultRows": 16,
+        "rssMiB": 56,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 100,
+        "activity": 2000,
+        "payloadBytes": 1086180,
+        "projectionMs": 36,
+        "gpMs": 1,
+        "resultRows": 100,
+        "rssMiB": 65,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 500,
+        "activity": 10000,
+        "payloadBytes": 5456580,
+        "projectionMs": 506,
+        "gpMs": 7,
+        "resultRows": 500,
+        "rssMiB": 101,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 1000,
+        "activity": 20000,
+        "payloadBytes": 10949580,
+        "projectionMs": 1973,
+        "gpMs": 19,
+        "resultRows": 1000,
+        "rssMiB": 170,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      },
+      {
+        "tasks": 100,
+        "activity": 100000,
+        "payloadBytes": 53874380,
+        "projectionMs": 1410,
+        "gpMs": 13,
+        "resultRows": 100,
+        "rssMiB": 353,
+        "cmsReads": 0,
+        "cmsWrites": 0
+      }
+    ]
+  },
+  "pages": "UNCHANGED_101_RESOURCES",
+  "wix": "SIX_FINAL_DRAFTS_EXACT_PUBLISHED_AND_LIVE",
+  "public": "PURCHASE_AND_STOCK_READS_PASS_NCT10_FREE5_ISOLATED5_VALUE571.25_GHR0"
+}
