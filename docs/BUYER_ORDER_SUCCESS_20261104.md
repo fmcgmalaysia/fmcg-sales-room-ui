@@ -21,11 +21,19 @@ Local candidate UI: existing Request Sent opens the English dialog; View My Orde
 
 The previous real 1 CTN test remains the only addition: receipt suffix `434735C26F33466EB863967FED679C69`, 7UP 101, AJAX 100. No MASTER transfer, payment, receipt replay or further order is authorized by this verification plan.
 
-## Release gates
+## Release gates — completed for the confirmation
 
-- Code: candidate complete; test evidence retained locally.
-- GitHub Pages: not yet deployed; planned `buyer-order-success-only`, build `20261104-buyer-order-success-v1`.
-- Wix: exact single-page saved draft; not yet published.
-- Public: recovery normal read passed; new confirmation remains pending scoped deployment and read-only existing-order verification. No fresh submit will be used.
+- Code: runtime `1b3aa789`, PR342; 101/101 Buyer checks passed.
+- GitHub Pages: one `buyer-order-success-only` run #342 / `41844696942` completed successfully for exact SHA `1b3aa7898cc8c955874ebde0feda4b274e33dcdc`. All 101 public resource hashes match. The temporary branch rule was removed immediately after success; the original seven names match the saved pre-release list.
+- Wix: single draft rechecked exactly before publication; Studio explicitly returned published and live. Exact source and receipt screenshot retained locally.
+- Public: Sales Room → TESTING 801 Workspace → Enter Buyer Room opened a new formal page with the correct customer and `20261104-buyer-order-success-v1` in both iframe URL and loaded HTML meta. The existing completed Request Sent button opened the English illustration dialog. View My Order returned to Current Status; X closed it; reopening worked. Green button/white text verified from actual computed styles. 7UP remains 101, AJAX 100. No fresh submit was used.
 
-Do not merge the unverified branch into main or describe publication as complete before the last gate. Earlier failed candidate and intermittent blank-page root cause remain explicitly separate from acceptance of this redesigned confirmation. Long-term CMS and historical PDF backlog are unchanged.
+Formal screenshot: `C:/FMCG-WIX-LOCAL/handoff/buyer-order-confirmation-20261104/ORDER_RECEIVED_PUBLIC.png`. This shows an existing request reopened for verification, not a newly submitted order. The post-submit transition itself is covered by the real handler tests; no new production order was created to repeat it.
+
+## Separate observations, not completion claims
+
+An ordinary reload of the old formal tab again showed the correct new iframe source but an actual about:blank frame with Wix fallback logs. The existing Sales Entry then opened a fully working new formal page without user help. This is not proof that the intermittent Wix-loading cause was fixed.
+
+The original My Selection native Excel link is visible and its protected program block and backend remain unchanged. The browser download-event wait yielded no file; one subsequent native link click reached Chrome `ERR_BLOCKED_BY_CLIENT`. No new matching file appeared in Downloads, no security setting was changed and no bypass was attempted. Returning normally to Buyer restored the working page and confirmation. This separate download-route observation remains unresolved; do not claim a new successful download regression test. It does not restore the removed post-submit Order Excel step.
+
+User real-world confirmation is pending; do not merge ancestry into main or create a user-verified tag. Earlier failed candidate, intermittent blank-page root cause and the separate native download-route observation remain distinct from the completed formal confirmation checks. Long-term CMS and historical PDF backlog are unchanged.
