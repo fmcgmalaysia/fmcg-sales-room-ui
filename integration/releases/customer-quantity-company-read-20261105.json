@@ -19,8 +19,13 @@
   "newIndexes": 0,
   "newCache": 0,
   "staticAssetsChanged": 0,
-  "pagesStatus": "96 existing resources unchanged",
-  "wixPublish": "PENDING",
-  "publicVerification": "PENDING",
-  "limitations": "Reduces cross-company PO retrieval only; current-company orders/tasks/activity still read historical records. Does not reduce CMS item count."
+  "pagesStatus": "UNCHANGED: existing 96-resource production bundle; no static deployment or deployment-permission operation required.",
+  "wixPublish": "CONFIRMED_PUBLISHED_AND_LIVE",
+  "publicVerification": "PASS: formal Sales customer progress fresh read succeeded; no new relevant runtime error. Completed customer has no active items. Stale navigation badge is a separate unresolved finding.",
+  "limitations": "Reduces cross-company PO retrieval only; current-company orders/tasks/activity still read historical records. Does not reduce CMS item count.",
+  "codeCommit": "ccf456a91dcfd689b3bb254f4f6247515b6a1bc8",
+  "pullRequest": 346,
+  "wixDraftSha256": "16d28da69d37e1ad7cc338d213084209c8dbeb7f5723253c5a38c432e2d91e8e",
+  "userAcceptance": "PENDING",
+  "productionBaselinePromotion": false
 }
