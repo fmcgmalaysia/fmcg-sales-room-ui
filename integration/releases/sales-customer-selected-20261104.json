@@ -13,8 +13,13 @@
     "recoveryTag": "verified/customer-file-download-20261103"
   },
   "changes": {
-    "static": ["index.html"],
-    "wix": ["catalogueSelection.web.js: three counter insertions only relative to approved live original", "Sales Room: one build reference"],
+    "static": [
+      "index.html"
+    ],
+    "wix": [
+      "catalogueSelection.web.js: three counter insertions only relative to approved live original",
+      "Sales Room: one build reference"
+    ],
     "resources": 101,
     "unchanged": 100,
     "extraCmsQueries": 0,
@@ -28,14 +33,29 @@
     "backendOutsideThreeInsertionsMatchesApprovedLive": true,
     "wixPageOutsideVersionMatchesOriginal": true,
     "twoWixDraftReadbacksExact": true,
-    "candidateVisual": "PENDING: Chrome cannot reach temporary loopback preview; no visual pass claimed",
-    "buyerActualDownload": "PENDING: new-tab behavior is not proof of download repair"
+    "candidateVisual": "FORMAL_PUBLIC_PASS: table columns, icon-before-count, readable layout, confirmed zero",
+    "buyerActualDownload": "NOT_TESTED: user reset removed historical transactions and files; prior download issue remains open"
   },
   "stages": {
-    "code": "COMPLETE_LOCAL_CHECKS",
-    "pages": "NOT_DEPLOYED",
-    "wix": "TWO_DRAFTS_EXACT_NOT_PUBLISHED",
-    "public": "NOT_VERIFIED"
+    "code": "1c83490_GITHUB_SYNCED",
+    "pages": "RUN339_41757324948_SUCCESS_101_HASHES_AND_SALES_HTML_EXACT",
+    "wix": "TWO_DRAFTS_EXACT_PUBLISHED_AND_LIVE",
+    "public": "PASS_SELECTED_ZERO_BUYER_ZERO_USERS_ICON_LAYOUT_THREE_DESTINATIONS_NEW_TABS_SALES_PRESERVED"
   },
-  "protected": ["Staff/customer ownership authorization", "QD and quotation publication", "Product-ID recovery and automatic QD delivery", "Original customer file delivery and sharing permissions", "All MASTER static resources and business rules", "No production data reset or transaction replay"]
+  "protected": [
+    "Staff/customer ownership authorization",
+    "QD and quotation publication",
+    "Product-ID recovery and automatic QD delivery",
+    "Original customer file delivery and sharing permissions",
+    "All MASTER static resources and business rules",
+    "No production data reset or transaction replay"
+  ],
+  "codeCommit": "1c834906de21b96daa562428dbe2d6bb90b5af2f",
+  "pullRequest": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/337",
+  "deploymentRules": "ORIGINAL_7_RESTORED_TEMPORARY_BRANCH_RULE_REMOVED",
+  "limits": [
+    "Positive Selected counts covered offline; real new selection remains user test",
+    "Actual Buyer file download still open; no test file after user reset",
+    "Native fresh Chrome visit loaded successfully; earlier tool reload empty; root cause not determined"
+  ]
 }
