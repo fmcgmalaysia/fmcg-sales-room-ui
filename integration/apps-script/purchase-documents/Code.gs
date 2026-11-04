@@ -20,6 +20,7 @@ function doPost(e) {
     else if(['CHAT_OPERATION','CHAT_SUMMARIES'].includes(input.action))result=taskChatService_(input);
     else throw Error('INVALID_ACTION');
   } catch(error) {
+    console.error('DOCUMENT_SERVICE_FAILURE',error.message,error.stack||'');
     const safe=['NOT_AUTHORIZED','INVALID_COMPANY','INVALID_ACTION','INVALID_DOCUMENT','INVALID_PDF','FILE_IDENTITY_CONFLICT','UPLOAD_UNCONFIRMED','CUSTOMER_DELIVERY_UNCONFIRMED'];
     result={ok:false,error:safe.includes(error.message)||/^CHAT_[A-Z_]+$/.test(error.message)?error.message:'DOCUMENT_SERVICE_UNAVAILABLE'};
   }
