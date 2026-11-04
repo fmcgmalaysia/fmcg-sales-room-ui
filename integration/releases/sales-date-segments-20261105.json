@@ -1,0 +1,50 @@
+{
+  "runtime": "c4fd714f7dd040f80d5f60aece8634b0f84ce1cf",
+  "branch": "fix/sales-date-segments-20261105",
+  "pr": 344,
+  "build": "20261105-sales-date-segments-v2",
+  "code": "complete;80/80 affected checks pass",
+  "pages": {
+    "run": 345,
+    "id": "41882280523",
+    "conclusion": "success",
+    "resources": 96,
+    "matched": 96,
+    "changed": [
+      "index.html"
+    ],
+    "unchanged": 95
+  },
+  "wix": {
+    "site": "FMCG MALAYSIA",
+    "page": "Sales Room",
+    "change": "one version token",
+    "exactReadback": true,
+    "publishedAndLive": true,
+    "sourceSha256": "7a34534e74ee0767195be5160b90fe1b8a5b95b419ed1242ee42e3947010017a"
+  },
+  "permissions": {
+    "temporaryRuleRemoved": true,
+    "originalSevenNamesVerified": true
+  },
+  "public": {
+    "tab": "51431665",
+    "actualVersion": true,
+    "typography": {
+      "fontSize": "11px",
+      "weight": "400",
+      "lineHeight": "14px"
+    },
+    "refresh": "32x32",
+    "overviewHeight": 148.3,
+    "nineHeaderTopsEqual": true,
+    "allocationLeftAligned": true,
+    "warnings": 0,
+    "errors": 0,
+    "dateInput": "formal unchanged v1 function DD to MM to YY passed; Cancel restored empty; never saved"
+  },
+  "businessWrites": 0,
+  "userConfirmation": "pending;do not merge main or tag user-verified yet",
+  "backlog": "Buyer historical download/back and CMS long-term bounded reading/capacity remain separate",
+  "evidence": "root handoff/sales-streamline-20261105"
+}
