@@ -1,0 +1,55 @@
+{
+  "task": "Sales native Buyer new-tab entry",
+  "build": "20261105-sales-native-buyer-entry-v1",
+  "status": "CANDIDATE_TESTED_WIX_DRAFT_MATCHED_NOT_RELEASED",
+  "baseline": "verified/buyer-selection-image-links-20261104",
+  "currentAssetBaseline": "7364d36cc5db4d778d8bcb3e428ba11120a498cc",
+  "cause": "Sales embedded window.open tab inherits sandbox restrictions; same customer and workbook downloads from clean Chrome tab",
+  "changes": [
+    "Replace embedded Buyer window.open with Wix native button target _blank",
+    "Reuse authorized customer refresh results; no new CMS query",
+    "Clear native entry on workspace close, navigation and logout"
+  ],
+  "nativeElement": {
+    "position": "Pinned to Page",
+    "label": "Enter Buyer Room",
+    "height": 44,
+    "id": "buyerEntryButton",
+    "enabled": false,
+    "type": "Button",
+    "accessibleName": "Enter Buyer Room in a new tab",
+    "top": 84,
+    "right": 24,
+    "width": 340,
+    "hidden": true
+  },
+  "protection": [
+    "Workbook generation, image hyperlinks and currency headers unchanged",
+    "Buyer authentication and backend authorization unchanged",
+    "No orders, payments, inventory or file permissions changed"
+  ],
+  "tests": {
+    "twoCustomerController": "PASS",
+    "failed": 0,
+    "passed": 56,
+    "twoCustomerPublicDownloads": "PENDING"
+  },
+  "release": {
+    "wixDraft": "Exact normalized source match",
+    "public": "NOT_VERIFIED",
+    "assets": 96,
+    "changed": [
+      "index.html"
+    ],
+    "wixPublish": "NOT_PUBLISHED",
+    "pages": "NOT_RELEASED",
+    "unchanged": 95
+  },
+  "recovery": "Restore index from currentAssetBaseline and exact sales-wix-before.js; hide/remove task-added native button before publishing restoration",
+  "remaining": [
+    "GitHub push and scoped Pages release",
+    "Wix publication",
+    "AVATA001 and BEAUTY MAMA native-entry new-tab and actual Excel downloads",
+    "Verify entry position and Sales tab preservation"
+  ]
+}
