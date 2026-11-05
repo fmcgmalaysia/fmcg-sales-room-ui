@@ -1,78 +1,23 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const path = require('node:path');
-const root = path.resolve(__dirname, '..');
-
-function harness() {
-  const source = fs.readFileSync(path.join(root, 'sales-room/wix/sales-room-page.js'), 'utf8');
-  const start = source.indexOf('function createNativeBuyerEntry(');
-  const end = source.indexOf('\nasync function getSalesRoomCustomersWithQuoteSignals', start);
-  assert(start >= 0 && end > start, 'native entry controller exists');
-  const button = { link: '', visible: false, enabled: false,
-    hide() { this.visible = false; }, show() { this.visible = true; },
-    disable() { this.enabled = false; }, enable() { this.enabled = true; } };
-  const context = { URL, Map, encodeURIComponent };
-  vm.createContext(context);
-  vm.runInContext(source.slice(start, end), context);
-  return { button, entry: context.createNativeBuyerEntry(button, 'https://fmcg999.wixstudio.com/fmcgmalaysia') };
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync('index.html','utf8'),outer=fs.readFileSync('sales-room/wix/sales-room-page.js','utf8');
+function modal(customer){
+ const elements={},sent=[],area={innerHTML:''};
+ const context={customerAccessState:c=>c.accessStatus||'ACTIVE',document:{getElementById:id=>id==='customerDetailArea'?area:(elements[id]??={disabled:customer.accessStatus==='SUSPENDED'})},currentCustomerId:'',esc:x=>String(x),customerDisplayName:c=>c.companyName,dashboardTime:()=>({primary:''}),computerIcon:'',publishQuoteIcon:'',buyerRoomIcon:'',cartIcon:'',requestCustomerQdRoute(){},window:{parent:{postMessage:m=>sent.push(m)},open(){throw Error('Unexpected popup')}},catalogueUrl:()=>''};
+ const start=html.indexOf('renderCustomerWorkspaceDrawer=function(customer){'),end=html.indexOf('\nfunction quotationPublishResultText',start);
+ vm.runInNewContext(html.slice(start,end),context);context.renderCustomerWorkspaceDrawer(customer);
+ return {elements,sent,area};
 }
-const customers = [
-  { customerId: 'CUS-A', customerShortName: 'Customer A', catalogueAccessStatus: 'ACTIVE' },
-  { customerId: 'CUS-B', companyName: 'Customer B', catalogueAccessStatus: 'ACTIVE' }
-];
-
-test('two authorized customers get independent native new-tab links', () => {
-  const { button, entry } = harness();
-  entry.setStaff({ authorized: true }); entry.setCustomers(customers);
-  for (const c of customers) {
-    entry.setWorkspace(c.customerId);
-    assert.equal(button.target, '_blank');
-    assert.equal(button.link, 'https://fmcg999.wixstudio.com/fmcgmalaysia/buyer-room?assist=' + c.customerId);
-    assert.equal(button.visible, true); assert.equal(button.enabled, true);
-    assert(button.label.includes(c.customerShortName || c.companyName));
-  }
+async function route(message,authorized=true){
+ const start=outer.indexOf("    if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM')"),end=outer.indexOf('\n    if (',start+8);assert(start>=0&&end>start);
+ const paths=[];await vm.runInNewContext('(async()=>{'+outer.slice(start,end)+'})()',{message,staffPromise:Promise.resolve({authorized}),wixLocationFrontend:{to:p=>paths.push(p)},encodeURIComponent});return paths;
+}
+test('two customers route once through outer page in current tab',async()=>{
+ for(const id of ['CUS-261103-43C587','CUS-261103-CF0D88']){
+ const m=modal({customerId:id,companyName:id});assert.equal((m.area.innerHTML.match(/id="drawerOpenBuyerRoom"/g)||[]).length,1);m.elements.drawerOpenBuyerRoom.onclick();assert.equal(m.sent.length,1);assert.deepEqual(await route(m.sent[0]),['/buyer-room?assist='+id]);
+ }
 });
-test('closed, unknown and malformed workspace cannot retain a previous customer link', () => {
-  const { button, entry } = harness(); entry.setStaff({ authorized: true }); entry.setCustomers(customers);
-  for (const id of ['', 'CUS-OTHER', 'https://other.example/']) {
-    entry.setWorkspace('CUS-A'); entry.setWorkspace(id);
-    assert.equal(button.link, ''); assert.equal(button.enabled, false); assert.equal(button.visible, false);
-  }
-});
-test('staff denial, customer removal and suspension immediately disable the entry', () => {
-  const { button, entry } = harness(); entry.setCustomers(customers); entry.setWorkspace('CUS-A');
-  assert.equal(button.link, ''); entry.setStaff({ authorized: true }); assert(button.link);
-  entry.setStaff({ authorized: false }); assert.equal(button.link, '');
-  entry.setStaff({ authorized: true }); entry.setCustomers([customers[1]]); assert.equal(button.link, '');
-  for (const state of [{catalogueAccessStatus:'SUSPENDED'}, {accessStatus:'BLOCKED',catalogueAccessStatus:''}, {customerStatus:'SUSPENDED'}, {lifecycleStatus:'ARCHIVED'}, {reactivationStatus:'REQUESTED'}]) {
-    entry.setCustomers([{...customers[0],...state}]); assert.equal(button.link, '');
-  }
-});
-test('late staff/customer responses after closing do not resurrect the entry', () => {
-  const { button, entry } = harness(); entry.setWorkspace('CUS-A'); entry.setWorkspace('');
-  entry.setStaff({ authorized: true }); entry.setCustomers(customers);
-  assert.equal(button.link, ''); assert.equal(button.visible, false);
-});
-
-test('workspace context clears on navigation, close and replacement without a second click handler', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const start = html.indexOf('(function bindNativeBuyerEntryContext(){');
-  const end = html.indexOf('})();', start) + 5;
-  let active = true, modal = { dataset: { buyerCustomer: 'CUS-A' } }, notify;
-  const sent = [];
-  const area = { querySelector: () => modal };
-  const view = { classList: { contains: () => active } };
-  vm.runInNewContext(html.slice(start, end), {
-    document: { getElementById: id => id === 'customers' ? view : area },
-    window: { parent: { postMessage: message => sent.push(message.customerId) } },
-    MutationObserver: class { constructor(fn) { notify = fn; } observe() {} }
-  });
-  notify(); assert.deepEqual(sent, ['CUS-A']);
-  modal.dataset.buyerCustomer = 'CUS-B'; notify();
-  active = false; notify(); active = true; notify();
-  modal = null; notify();
-  assert.deepEqual(sent, ['CUS-A', 'CUS-B', '', 'CUS-B', '']);
-  assert(!html.includes("buyer.onclick=()=>window.open(buyerRoomAdminUrlV27"));
-});
+test('suspended customer has no enabled modal entry',()=>{const m=modal({customerId:'CUS-A',companyName:'A',accessStatus:'SUSPENDED'});assert.equal(m.elements.drawerOpenBuyerRoom.onclick,undefined)});
+test('denied staff and malformed customer cannot navigate',async()=>{assert.deepEqual(await route({type:'SALES_ROOM_OPEN_BUYER_ROOM',customerId:'CUS-A'},false),[]);for(const customerId of ['', 'https://wrong.example','CUS-A?other=B'])assert.deepEqual(await route({type:'SALES_ROOM_OPEN_BUYER_ROOM',customerId}),[])});
+test('only modal entry remains, native bridge and button are removed',()=>{assert(!outer.includes('buyerEntryButton'));assert(!outer.includes('createNativeBuyerEntry'));assert(!html.includes('bindNativeBuyerEntryContext'));assert(!html.includes('SALES_ROOM_BUYER_ENTRY_CONTEXT'));assert(html.includes('Buyer Room 在当前标签打开'));assert(!html.includes('buyer.onclick=()=>window.open'))});

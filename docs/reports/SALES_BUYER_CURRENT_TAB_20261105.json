@@ -1,0 +1,33 @@
+{
+  "task": "Restore modal Buyer entry in current tab",
+  "build": "20261105-sales-buyer-current-tab-v1",
+  "status": "CANDIDATE_WIX_DRAFT_MATCHED_NOT_PUBLISHED",
+  "scope": [
+    "Sales modal entry restored with existing outer same-tab route",
+    "Native top-right button and its observer/controller removed"
+  ],
+  "protected": [
+    "Excel generation, hyperlinks and customer currency unchanged",
+    "Buyer backend and staff authentication unchanged",
+    "No order, payment, stock or document writes"
+  ],
+  "recovery": {
+    "current": "a566ebb5",
+    "userVerifiedExcel": "verified/buyer-selection-image-links-20261104",
+    "capturedWix": "handoff/sales-buyer-current-tab-20261105/sales-wix-before.js"
+  },
+  "tests": {
+    "passed": 55,
+    "description": "51 related regression tests plus 4 current-tab customer/permission/entry scenarios",
+    "public": "PENDING two actual downloads and back to Sales"
+  },
+  "release": {
+    "resources": 96,
+    "changed": [
+      "index.html"
+    ],
+    "unchanged": 95,
+    "wix": "27713 normalized characters exact match; native element removed in draft"
+  },
+  "supersedes": "Native top-right layout rejected by user. Prior native technical test is not acceptance of that design."
+}
