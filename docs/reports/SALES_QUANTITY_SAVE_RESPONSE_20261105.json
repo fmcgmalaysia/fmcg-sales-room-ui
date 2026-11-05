@@ -1,6 +1,6 @@
 {
   "task": "Sales Review quantity save response",
-  "status": "CODE_TESTED_WIX_DRAFT_MATCHED_NOT_PUBLISHED",
+  "status": "FOUR_RELEASE_STAGES_COMPLETE_AWAITING_USER_TEST",
   "scope": [
     "Return confirmed quantity and totals from the existing save",
     "Render confirmed response without a second order detail request",
@@ -43,12 +43,51 @@
     "wixDrafts": [
       "sales-room/wix/onboarding.web.js",
       "sales-room/wix/sales-room-page.js"
-    ]
+    ],
+    "pages": {
+      "id": 42066329670,
+      "sha": "11ffe2616a52845b91105df4bd0e0dd5cf949ef0",
+      "result": "success",
+      "url": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/actions/runs/42066329670"
+    },
+    "assetVerification": {
+      "build": "20261105-sales-quantity-save-response-v1",
+      "matched": 96,
+      "total": 96,
+      "failures": []
+    },
+    "originalSevenRulesRestored": true,
+    "wix": "Two drafts rechecked exact; published and live receipt"
   },
   "limitations": [
     "Local Chrome HTTP preview timed out; file preview blocked by browser policy and not bypassed",
     "No measured production latency improvement yet",
     "Existing whole-history backend reads remain unchanged; no database migration or new state introduced",
     "Screenshot BEAUTY MAMA order now transferred and not edited"
-  ]
+  ],
+  "runtimeCommit": "11ffe2616a52845b91105df4bd0e0dd5cf949ef0",
+  "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/358",
+  "publicTest": {
+    "initialRefresh": "Blank iframe; native original bookmark opened correct build and staff without user assistance",
+    "approved": "AVATA001 7UP one carton, edit and restore one carton, retain pending, no Master transfer",
+    "result": "PASS",
+    "date": "2026-11-06 Asia/Kuala_Lumpur",
+    "orderId": "ORD-CUS-261103-43C587-6F60347F0D18461FAFB08F94DFF0CF63",
+    "createdRequests": 1,
+    "finalStatus": "Sales pending review, not transferred to MASTER",
+    "scenarios": [
+      "Unchanged 1 carton Save immediately exits edit",
+      "1 to 2: immediate Saving and input disabled; confirmed SGD23.52 and CBM0.0236",
+      "2 to 1: confirmed SGD11.76 and CBM0.0118; edit available again",
+      "Return list and reopen Review: 1 carton / SGD11.76 / CBM0.0118"
+    ],
+    "version": "20261105-sales-quantity-save-response-v1",
+    "logs": "Three Wix startup suspense fallback messages; rendered and functional; no quantity-save error captured",
+    "timing": "No reliable before/after latency benchmark. First completion observed within11.064s including tool roundtrip. Restore wait helper prematurely timed out; subsequent DOM confirmed successful original save without retry. Do not claim measured speedup.",
+    "evidence": [
+      "public-two-cartons.png",
+      "public-final-one-carton.png",
+      "public-final-readback.txt"
+    ]
+  }
 }
