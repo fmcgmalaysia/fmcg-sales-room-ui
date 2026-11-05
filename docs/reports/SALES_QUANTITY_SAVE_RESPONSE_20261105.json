@@ -1,0 +1,54 @@
+{
+  "task": "Sales Review quantity save response",
+  "status": "CODE_TESTED_WIX_DRAFT_MATCHED_NOT_PUBLISHED",
+  "scope": [
+    "Return confirmed quantity and totals from the existing save",
+    "Render confirmed response without a second order detail request",
+    "Skip untouched quantity saves; disable input while saving and retain original request on retry"
+  ],
+  "protected": [
+    "Quoted prices, revision and transfer locks",
+    "Mutation lock, three writes, rollback and original request audit",
+    "Buyer same-tab modal entry and Excel download"
+  ],
+  "recovery": {
+    "commit": "0be702ca1e256864179bb71e2a8a0428a586a743",
+    "runtime": "830da15c01df0f1b26fb73b9c9fddfbcb6cfde00",
+    "tag": "verified/buyer-selection-image-links-20261104"
+  },
+  "baseline": {
+    "backend": "Same code; trailing newline only",
+    "sales": "Normalized exact match; running tab carries older outer URL parameter but current public bytes match last release",
+    "publicSha256": "6412c953a571310614cdf796b4ab5e093b7d461630464d9ae0a79a8f1c380180"
+  },
+  "tests": {
+    "pass": 66,
+    "fail": 6,
+    "newFailures": 0,
+    "baselineFailures": [
+      "One planning harness misses activeProgressCustomerCount (reproduced on 0be702ca)",
+      "Four legacy review assertions fail on 0be702ca identically",
+      "Unchanged Excel exporter test expects retired USD UNIT PRICE header; protected current header is USD / EA"
+    ],
+    "inlineScripts": 1,
+    "quantityScenarios": 38
+  },
+  "release": {
+    "build": "20261105-sales-quantity-save-response-v1",
+    "resources": 96,
+    "changed": [
+      "index.html"
+    ],
+    "unchanged": 95,
+    "wixDrafts": [
+      "sales-room/wix/onboarding.web.js",
+      "sales-room/wix/sales-room-page.js"
+    ]
+  },
+  "limitations": [
+    "Local Chrome HTTP preview timed out; file preview blocked by browser policy and not bypassed",
+    "No measured production latency improvement yet",
+    "Existing whole-history backend reads remain unchanged; no database migration or new state introduced",
+    "Screenshot BEAUTY MAMA order now transferred and not edited"
+  ]
+}

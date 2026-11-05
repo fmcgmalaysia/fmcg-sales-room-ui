@@ -332,3 +332,12 @@ test('legacy selection sorting uses current Catalogue brand, point-base sort and
   const result=await h.getSalesRoomOrderProgress('C1'),item=result.selectionOrder[0];
   assert.equal(item.id,'selected'); assert.equal(item.category,'FOOD'); assert.equal(item.brandName,'Kelloggs'); assert.equal(item.sortNo,'7'); assert.equal(item.cost,undefined);
 });
+
+
+test('quantity success returns only committed order totals and original locked prices',async()=>{
+ const h=harness();const result=await h.saveSalesRoomOrderQty('O1','L1',4,0,requestId);
+ assert.equal(result.order.revision,1);assert.equal(result.order.totalCartons,4);assert.equal(result.order.estimatedTotal,8);assert.equal(result.order.effectiveTotalCbm,2);
+ assert.equal(result.order.lines[0].quantityCtn,10);assert.equal(result.order.lines[0].lockedUnitPrice,2);assert.equal(result.order.lines[0].effectiveRequestedQtyCtn,4);
+ assert.equal(h.data('WixBuyerOrders','order').revision,result.order.revision);assert.equal(h.data('WixBuyerOrderLines','line').effectiveLineAmount,result.order.lines[0].effectiveLineAmount);
+ const replay=await h.saveSalesRoomOrderQty('O1','L1',4,0,requestId);assert.equal(replay.order,undefined);assert.equal(h.data('WixBuyerOrders','order').revision,1);
+});

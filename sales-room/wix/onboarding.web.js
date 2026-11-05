@@ -703,7 +703,7 @@ export const saveSalesRoomOrderQty = webMethod(
       }
       try { await wixRealtimeBackend.publish({ name: 'sales-room-signals' }, { type: 'ORDER_QUANTITY_CHANGED', at }); }
       catch (error) { console.warn('Order realtime refresh failed', error); }
-      return { ok: true, orderId: normalize(orderId), message: 'Quantity updated. Buyer Room will refresh automatically.' };
+      return { ok: true, orderId: normalize(orderId), order: { ...nextOrder, totalCartons: nextOrder.effectiveTotalCartons, estimatedTotal: nextOrder.effectiveEstimatedTotal, lines: effectiveLines }, message: 'Quantity updated. Buyer Room will refresh automatically.' };
     });
   }
 );
