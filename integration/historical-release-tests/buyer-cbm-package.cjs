@@ -1,0 +1,5 @@
+// Historical packaging proof only. Run in the matching 20261102 buyer-cbm-display-v1 checkout.
+// Current behavior remains tested in integration/tests/buyer-missing-cbm.test.cjs.
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../../buyer-room.html'),'utf8');
+test('release preserves all100 unrelated resources and formal history references',()=>{const p=require('../prototypes/buyer-missing-cbm-20261102/stage.cjs').plan();assert.equal(p.assets.size,101);assert.deepEqual(p.changed,['buyer-room.html']);for(const[file,bytes]of p.assets)if(file!=='buyer-room.html')assert(bytes.equals(p.baseline.get(file)),file);const html=p.assets.get('buyer-room.html').toString();assert.match(html,/history.js\?v=20261102-customer-invoice-payments-v1/);assert.match(html,/shipment-batches.js\?v=20261101-customer-loaded-records-v1/);assert.equal(html.replace(/\r\n/g,'\n'),source.replace(/\r\n/g,'\n'));});
