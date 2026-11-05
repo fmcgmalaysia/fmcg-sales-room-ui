@@ -218,22 +218,29 @@ test('Buyer edit history paginates past 1000, filters customer identity, and exc
 
 function buyerUi(state) {
   const html = fs.readFileSync(path.join(root, 'buyer-room.html'), 'utf8');
-  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'allCompletedRows', 'requestOrderDetails', 'trackTime24', 'customerFulfilmentHtml', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'orderEditGroups', 'historyPathHtml', 'editHistoryHtml'];
+  const names = ['isFoodItem', 'bySelectionOrder', 'orderInvoiceNo', 'completedLineQty', 'committedLineQty', 'effectiveRequestedQty', 'canReduceOrder', 'stageForLine', 'requestTimestamp', 'progressUpdated', 'orderLines', 'allTrackingRows', 'customerReceivedQty', 'trackingCommittedQty', 'trackingDots', 'lineCbm', 'requestOrderDetails', 'trackTime24', 'customerFulfilmentHtml', 'trackingLineHtml', 'orderEditEntries', 'quantityChangeDetails', 'orderEditGroups', 'historyPathHtml', 'editHistoryHtml'];
   const definitions = names.map(name => html.split(/\r?\n/).find(line => line.startsWith('function ' + name + '('))).join('\n');
   const requests = [];
-  const context = vm.createContext({ state, post: (...args) => requests.push(args), num: value => Number(value) || 0, money: value => Number(value || 0).toFixed(2), compactTime: value => value, esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'), Date, Set });
-  vm.runInContext(definitions + '\nglobalThis.api={allTrackingRows,allCompletedRows,editHistoryHtml,trackingLineHtml,requestOrderDetails};', context);
+  const context = vm.createContext({ state, window:{}, thumbnail:()=>'', post: (...args) => requests.push(args), num: value => Number(value) || 0, money: value => Number(value || 0).toFixed(2), compactTime: value => value, esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'), Date, Set });
+  vm.runInContext(fs.readFileSync(path.join(root, 'master-shared/shipment-batches.js'), 'utf8'), context);
+  vm.runInContext(html.split(/\r?\n/).find(line => line.startsWith('const trackingStages=')), context);
+  vm.runInContext(html.split(/\r?\n/).find(line => line.startsWith('const cbmText=')), context);
+  vm.runInContext(definitions + '\nglobalThis.api={allTrackingRows,editHistoryHtml,trackingLineHtml,requestOrderDetails};', context);
   return { ...context.api, requests };
 }
 
-test('active edit history disappears on existing completion criteria and remains with completed items', () => {
-  const state = { orders: [{ orderId: 'O1', status: 'CONFIRMED' }], orderDetails: { O1: { lines: [{ lineId: 'L1', itemName: 'ACTIVE PRODUCT', quantityCtn: 10, effectiveRequestedQtyCtn: 9 }, { lineId: 'L2', itemName: 'COMPLETED PRODUCT', quantityCtn: 6, committedQtyCtn: 5, completedQtyCtn: 5, invoiceNo: 'INV1' }], editHistory: [{ action: 'SALES_QTY_UPDATED', orderId: 'O1', actorName: 'LAW', at: '2026-10-05T01:00:00Z', detail: { lineId: 'L1', previousQuantityCtn: 10, newQuantityCtn: 9 } }, { action: 'SALES_QTY_UPDATED', orderId: 'O1', actorName: '<unsafe>', at: '2026-10-05T02:00:00Z', detail: { lineId: 'L2', previousQuantityCtn: 6, newQuantityCtn: 5 } }] } }, orderDetailRequests: new Set() };
+test('completed and explicitly closed lines leave active editing while original audits remain available', () => {
+  const state = { orders: [{ orderId: 'O1', status: 'CONFIRMED' }], orderDetails: { O1: { lines: [{ lineId: 'L1', itemName: 'ACTIVE PRODUCT', quantityCtn: 10, effectiveRequestedQtyCtn: 9 }, { lineId: 'L2', itemName: 'COMPLETED PRODUCT', quantityCtn: 6, committedQtyCtn: 5, loadedInvoicedQtyCtn: 5, closedUnfulfilledQtyCtn: 1, invoiceNo: 'INV1' }], editHistory: [{ action: 'SALES_QTY_UPDATED', orderId: 'O1', actorName: 'LAW', at: '2026-10-05T01:00:00Z', detail: { lineId: 'L1', previousQuantityCtn: 10, newQuantityCtn: 9 } }, { action: 'SALES_QTY_UPDATED', orderId: 'O1', actorName: '<unsafe>', at: '2026-10-05T02:00:00Z', detail: { lineId: 'L2', previousQuantityCtn: 6, newQuantityCtn: 5 } }] } }, orderDetailRequests: new Set() };
   const ui = buyerUi(state);
-  const active = ui.editHistoryHtml(ui.allTrackingRows()), completed = ui.editHistoryHtml(ui.allCompletedRows());
+  const before = JSON.stringify(state);
+  const active = ui.editHistoryHtml(ui.allTrackingRows());
   assert.match(active, /ACTIVE PRODUCT/); assert.doesNotMatch(active, /COMPLETED PRODUCT/);
-  assert.match(completed, /COMPLETED PRODUCT/); assert.doesNotMatch(completed, /ACTIVE PRODUCT/);
-  assert.match(completed, /&lt;unsafe&gt;/); assert.doesNotMatch(completed, /<unsafe>/);
+  assert.equal(JSON.stringify(state), before);
+  assert.equal(state.orderDetails.O1.editHistory[1].actorName, '<unsafe>');
   assert.equal(state.orderDetails.O1.editHistory.length, 2);
+  state.orderDetails.O1.editHistory[0].actorName = '<unsafe>';
+  assert.match(ui.editHistoryHtml(ui.allTrackingRows()), /&lt;unsafe&gt;/);
+  assert.doesNotMatch(ui.editHistoryHtml(ui.allTrackingRows()), /<unsafe>/);
 });
 
 test('Current Status keeps customer edits locked and committed update time blank until Master provides it', () => {
