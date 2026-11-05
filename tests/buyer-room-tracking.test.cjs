@@ -67,12 +67,12 @@ test('Track row hover preserves the current neutral theme and restrained motion'
 
 test('Track quantities use the confirmed Desk remainder, with unknown historical receiving left unknown', () => {
   const get=name=>html.slice(html.indexOf('function '+name+'('),html.indexOf('\n',html.indexOf('function '+name+'(')));
-  const f=new Function(get('completedLineQty')+';'+get('customerReceivedQty')+';'+get('trackingCommittedQty')+';return trackingCommittedQty;')();
-  assert.equal(f({activeQty:20,line:{splitBatch:{},loadedInvoicedQtyCtn:170}}),20);
-  assert.equal(f({activeQty:0,line:{splitBatch:{}}}),0);
+  const f=new Function('num',get('completedLineQty')+';'+get('customerReceivedQty')+';'+get('committedLineQty')+';'+get('trackingCommittedQty')+';return trackingCommittedQty;')(v=>Number(v)||0);
+  assert.equal(f({activeQty:99,line:{splitBatch:{},committedQtyCtn:190,loadedInvoicedQtyCtn:170}}),20);
+  assert.equal(f({activeQty:99,line:{splitBatch:{},committedQtyCtn:0}}),0);
   assert.equal(f({line:{}}),null);
-  assert.equal(f({line:{receivedQtyCtn:200,loadedInvoicedQtyCtn:170}}),30);
-  assert.equal(f({line:{receivedQtyCtn:200,loadedInvoicedQtyCtn:200}}),0);
+  assert.equal(f({line:{committedQtyCtn:200,receivedQtyCtn:190,loadedInvoicedQtyCtn:170}}),30);
+  assert.equal(f({line:{committedQtyCtn:200,receivedQtyCtn:190,loadedInvoicedQtyCtn:200}}),0);
   assert.match(html,/amount=!completed&&qty===null\?null:qty\*ctn/);
   assert.match(html,/committedValue=rows\.reduce\(\(sum,row\)=>sum\+activeCommittedQty\(row\)\*num\(row\.line\.lockedPriceCtn\|\|row\.line\.lockedUnitPrice\),0\)/);
 });
