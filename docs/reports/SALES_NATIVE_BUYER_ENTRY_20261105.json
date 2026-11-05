@@ -1,7 +1,7 @@
 {
   "task": "Sales native Buyer new-tab entry",
   "build": "20261105-sales-native-buyer-entry-v1",
-  "status": "CANDIDATE_TESTED_WIX_DRAFT_MATCHED_NOT_RELEASED",
+  "status": "RELEASED_PUBLIC_NATIVE_MOUSE_ACCEPTANCE_PASSED_AWAITING_USER",
   "baseline": "verified/buyer-selection-image-links-20261104",
   "currentAssetBaseline": "7364d36cc5db4d778d8bcb3e428ba11120a498cc",
   "cause": "Sales embedded window.open tab inherits sandbox restrictions; same customer and workbook downloads from clean Chrome tab",
@@ -32,24 +32,50 @@
     "twoCustomerController": "PASS",
     "failed": 0,
     "passed": 56,
-    "twoCustomerPublicDownloads": "PENDING"
+    "twoCustomerPublicDownloads": "PASS: AVATA 001 SGD 6 products; BEAUTY MAMA USD 6 products; both native mouse clicks saved actual XLSX"
   },
   "release": {
     "wixDraft": "Exact normalized source match",
-    "public": "NOT_VERIFIED",
+    "public": "PASS via original Sales bookmark, native new-tab entry and native mouse Excel download for both customers",
     "assets": 96,
     "changed": [
       "index.html"
     ],
-    "wixPublish": "NOT_PUBLISHED",
-    "pages": "NOT_RELEASED",
+    "wixPublish": "Published and live online receipt captured",
+    "pages": "Run 41994623485 success; manifest 96 entries and changed Sales resource hash matched",
     "unchanged": 95
   },
   "recovery": "Restore index from currentAssetBaseline and exact sales-wix-before.js; hide/remove task-added native button before publishing restoration",
   "remaining": [
-    "GitHub push and scoped Pages release",
-    "Wix publication",
-    "AVATA001 and BEAUTY MAMA native-entry new-tab and actual Excel downloads",
-    "Verify entry position and Sales tab preservation"
-  ]
+    "User acceptance; keep PR draft and do not merge into main before user confirmation"
+  ],
+  "acceptance": {
+    "commit": "a566ebb5e9a1035a7e7a7b76fce5d06025dff02a",
+    "pr": "https://github.com/fmcgmalaysia/fmcg-sales-room-ui/pull/356",
+    "originalSevenRulesRestored": true,
+    "entry": "Workspace opens green outer Wix button at top-right with customer name; closes/hides when Workspace closes",
+    "files": [
+      {
+        "customer": "AVATA 001",
+        "currency": "SGD",
+        "rows": 6,
+        "imageLinks": 6,
+        "bytes": 11340,
+        "sha256": "22229c829da0148f06349016f210acf1693d5fc96ddee2394914d37ec8b3170c",
+        "file": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-11-05 (1).xlsx"
+      },
+      {
+        "customer": "BEAUTY MAMA",
+        "currency": "USD",
+        "rows": 6,
+        "imageLinks": 6,
+        "bytes": 11304,
+        "sha256": "59bd009cd1b961c0b75ccf02c79da59ead49522b7eb09910c66af35261207062",
+        "file": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-11-05 (2).xlsx"
+      }
+    ],
+    "toolLimitation": "DOM tool download click produced ERR_BLOCKED_BY_CLIENT. Same released entry and download flow operated with native foreground mouse saved files. Do not generalize this repair to all tool navigation failures.",
+    "ordersChanged": 0,
+    "evidenceDirectory": "C:/FMCG-WIX-LOCAL/handoff/buyer-selection-download-entry-20261105"
+  }
 }
