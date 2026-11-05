@@ -28,7 +28,17 @@ Wix:two backend modules and one Support version reference. Apps Script stays on 
 
 Before release, require exact full Wix draft readbacks and the concrete action-time branch deployment approval. After release verify all96 hashes, remove the temporary branch rule and restore the exact original seven, obtain Wix published/live, then test the real Support/Finance/Buyer/Sales workflow. Do not merge main or mark user-verified yet.
 
-## Formal acceptance still required
+## Formal release and acceptance result
+
+Runtime `ee9eb494`, PR347. Pages run347/41947056076 succeeded;96/96 public hashes matched. The temporary branch rule was removed and the exact original seven/zero tags restored. Three exact Wix drafts received published/live. No Apps Script redeploy.
+
+Fresh native Chrome Support loaded the new build and real LAW identity. The SI dialog offered Resume Original Upload. A different PDF was rejected; the original SI and original first proof then completed using their original allocated file identities. Recorded proof lost its Replace control. A second distinct proof was uploaded once. Finance recorded two USD1395.90 receipts, both matched only to SI1. Buyer, Sales and Support showed SI1due0,SI2due82.20; customer801 totaldue82.20 and802SGD3491.40 unchanged. Buyer Payment Details displayed both receipts and proof links.
+
+Read-only CMS export170→183:three uploaded-document facts,two customer posting facts,three new PREPARED andfive RESULT. Original170 business rows unchanged,zero duplicate IDs,original documents each once,no new Loaded/SI/stock facts. One pre-existing stale Loaded intent remains for separate review.
+
+Customer file delivery is **not fully accepted**. Correct new proof and SI PDFs previewed, and browser Back preserved Buyer identity. Actual Buyer SI Download opened `ERR_BLOCKED_BY_RESPONSE`; no successful PDF download is claimed. Preserve the original permanent files/permissions and investigate the specific entry/download path separately; do not reupload or post receipts again. Full local report/evidence is root `handoff/support-original-upload-recovery-20261105/REPORT.html`. Main merge/user acceptance remain pending.
+
+## Acceptance checklist and remaining download work
 
 1. Reload Support, open the original SI/proof and see Resume Original Upload; wrong PDF is refused without save; exact original file completes once on the same IDs.
 2. Finish both original intents before posting customer receipts. Original file events and results occur once; all Loaded/SI/supplier payments remain unchanged.
