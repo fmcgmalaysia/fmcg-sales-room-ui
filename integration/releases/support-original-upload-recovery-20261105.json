@@ -1,0 +1,55 @@
+{
+  "branch": "fix/support-original-upload-recovery-20261105",
+  "build": "20261105-support-original-upload-recovery-v1",
+  "objective": "Resume the same employee's persisted original customer PDF upload after page memory is lost",
+  "baseline": "e2919cd2 with explicitly approved formal Support static originals from current 5a268f3f96-resource package",
+  "tests": {
+    "new": 16,
+    "existing": 107,
+    "passed": 123,
+    "failed": 0,
+    "skipped": 0,
+    "actualSavedIntentsMatchedOffline": 2
+  },
+  "static": {
+    "resources": 96,
+    "changed": [
+      "support-room/workroom-model.js",
+      "support-room/workroom.html",
+      "support-room/workroom.js"
+    ],
+    "unchanged": 93
+  },
+  "wixFiles": [
+    "integration/backend/supportDocuments.js",
+    "integration/backend/supportWorkroom.web.js",
+    "integration/wix/support-department-page.js"
+  ],
+  "protected": [
+    "same request and allocated file ID",
+    "same staff authorization",
+    "original full file validation",
+    "Finance posting lock",
+    "post-SI Desk refresh",
+    "single Loaded stock deduction",
+    "existing permanent-link delivery"
+  ],
+  "newCollections": 0,
+  "newIndexes": 0,
+  "newEndpoints": 0,
+  "newLedger": false,
+  "initialization": false,
+  "businessWritesDuringDevelopment": 0,
+  "appsScriptDeployment": "unchanged Version12",
+  "candidateVisual": "Chrome local preview connection timed out; not claimed passed",
+  "code": "complete;123 selected checks passed;GitHub sync in progress",
+  "pages": "PENDING",
+  "wix": "THREE_DRAFTS_EXACT_NOT_PUBLISHED",
+  "public": "PENDING",
+  "userAcceptance": "PENDING",
+  "wixDraftHashes": {
+    "supportDocuments.wix-draft.js": "e4c3274c0403009589d22d3ccc6c077dc40464e79a063331b1b615918024921b",
+    "supportWorkroom.web.wix-draft.js": "63634bcc435bc83794fb7c83a43c2977ff36bc1f2d97211641d547b6920057f0",
+    "support-page.wix-draft.js": "91c8ac52b8ca610f38710316fbd035507a84de1c85ad7c534520c29574a20982"
+  }
+}

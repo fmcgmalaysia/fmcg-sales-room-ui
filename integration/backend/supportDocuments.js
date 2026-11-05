@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 import { createHash } from 'crypto';
-import { operationId, createOperationJournal } from 'backend/purchaseOperationJournal.js';
+import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { readCustomerShipments } from 'backend/customerShipmentLedger.js';
 import { normalizeChargeLines } from 'backend/customerInvoicePayments.js';
 import { readSupportDesks, currentSupportDeskState, currentSupportDeskLocks, supportDeskBatchId, invoiceDeskSnapshot } from 'backend/supportDesk.js';
@@ -10,6 +10,7 @@ const ACTION='SUPPORT_DOCUMENT_UPLOADED',codes=['SO','BC','SI','DO','CN','DN','P
 const typeFor=code=>'SUPPORT_'+(code==='$'?'PAYMENT':code);
 const text=value=>String(value??'').trim();
 const financialCodes=['$','CN','DN'];
+const financeBasis=activity=>operationId(activity.filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED').map(row=>[row._id,canonical(row.details?.document)]).sort((a,b)=>a[0].localeCompare(b[0])));
 const isCharge=doc=>doc.invoiceKind==='CHARGE'&&doc.code==='SI'&&doc.scope==='INVOICE'&&doc.orderId==='';
 export function supportDocumentMatchesShipment(document,shipment,activity,snapshot=invoiceDeskSnapshot(activity,shipment.id)){
  if(document.customerId!==shipment.customerId||document.company!==shipment.company)return false;
@@ -30,6 +31,24 @@ export function readSupportDocuments(activity,company){
  return docs.map(d=>replaced.has(d.id)?{...d,superseded:true}:d);
 }
 export function supportDocumentVersion(context){const docs=readSupportDocuments(context.activity,context.company),posted=context.activity.filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED'&&row.details?.document?.confirmedByFinance===true).map(row=>row.details.document);return posted.length?operationId(context.company,docs,posted):operationId(context.company,docs);}
+// Resume only the current employee's persisted intent. Never infer a new request.
+export function pendingSupportDocumentUploads(activity,company,staff){
+ const pending=[];if(!['NCT','GHR'].includes(company)||!staff?.memberId||!staff.staffId||staff.packingDepartment!=='SUPPORT')throw Error('Verified Support access is required.');
+ const byId=new Map(activity.map(row=>[row._id,row]));
+ for(const row of activity){
+  const d=row.details,plan=d?.plan,doc=plan?.event?.details?.document;
+  if(row.action!=='PURCHASE_OPERATION_PREPARED'||plan?.event?.action!==ACTION||!doc||doc.company!==company||d.actorMemberId!==staff.memberId||d.actorStaffId!==staff.staffId)continue;
+  const key=operationId(company+'/PURCHASE',d.requestId,staff.memberId),id=operationId(company,d.requestId,staff.memberId,ACTION);
+  if(row._id!==key||plan.event._id!==id||doc.id!==id||plan.upload?.poId!==id||plan.upload.fileId!==doc.fileId||plan.upload.sha256!==doc.sha256||plan.upload.company!==company)throw Error('Original document request identity requires review.');
+  const result=byId.get(operationId(key,'RESULT')),saved=byId.get(id);
+  if(result&&(!saved||result.details?.digest!==d.digest)||saved&&canonical(saved.details)!==canonical(plan.event.details))throw Error('Original document receipt requires review.');
+  if(result||saved)continue;
+  const input={version:plan.inputVersion||plan.version,code:doc.code,customerId:doc.customerId,orderId:doc.orderId,invoiceId:doc.invoiceKind?'':doc.invoiceId||'',scope:doc.scope,...(doc.invoiceKind?{invoiceKind:doc.invoiceKind,chargeLines:doc.chargeLines}:{}),...(doc.replacesDocumentId?{replacesDocumentId:doc.replacesDocumentId}:{}),...(doc.scope==='DESK'?{desk:doc.desk,batchId:doc.batchId}:{}),...(doc.code==='$'?{depositPayment:doc.depositPayment===true}:{}),reference:doc.code==='SI'&&!doc.invoiceKind?'':doc.reference||'',amountCents:doc.code==='SI'&&!doc.invoiceKind?0:doc.amountCents};
+  const recoverable=operationId({supportDocument:{...input,base64:undefined,sha256:doc.sha256,size:doc.size}})===d.digest;
+  pending.push({requestId:d.requestId,documentId:id,fileId:doc.fileId,sha256:doc.sha256,size:doc.size,context:{company,customerId:doc.customerId,orderId:doc.orderId,invoiceId:input.invoiceId,code:doc.code,desk:doc.desk||0,batchId:doc.batchId||'',replacesDocumentId:doc.replacesDocumentId||''},recoverable,input:recoverable?input:null});
+ }
+ return pending;
+}
 export function customerFileReady(activity,document,company){return document.company===company&&(document.customerDeliveryVersion===1&&document.customerLinkReady===true||activity.some(row=>row.action==='CUSTOMER_DOCUMENT_DELIVERED'&&row.result==='SAVED'&&['company','customerId','fileId','sha256'].every(key=>row.details?.document?.[key]===document[key])&&row.details.document.sourceDocumentId===document.id));}
 export function supportCustomerFiles(context){
  const support=readSupportDocuments(context.activity,context.company).map(d=>({...d,sourceKind:'SUPPORT'})),legacy=context.activity.filter(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED').map(row=>row.details?.document).filter(d=>d&&d.company===context.company&&!d.sourceDocumentId&&['SALES_INV','SALES_CN','DEBIT_NOTE','CUSTOMER_RECEIPT'].includes(d.type)).map(d=>({...d,sourceKind:'ACCOUNT'}));
@@ -64,7 +83,7 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
   if(typeof input.base64!=='string'||input.base64.length>4194304||!/^[A-Za-z0-9+/]+={0,2}$/.test(input.base64))throw Error('Select a PDF up to 3 MiB.');
   const bytes=Buffer.from(input.base64,'base64');if(bytes.length<5||bytes.length>3*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-'||bytes.toString('base64')!==input.base64)throw Error('Select a valid PDF up to 3 MiB.');
   const sha256=createHash('sha256').update(bytes).digest('hex'),safeInput={...input,base64:undefined,sha256,size:bytes.length};
-  return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{supportDocument:safeInput},prepare:async()=>{
+  const prepare=async original=>{
    const context=await readContext(company,staff),docs=readSupportDocuments(context.activity,company);
    if(context.company!==company||!/^[a-f0-9]{32}$/.test(input.version||''))throw Error('Documents changed. Refresh before uploading.');
    const preparedVersion=supportDocumentVersion(context);
@@ -88,14 +107,20 @@ export function createSupportDocumentOperations({store,names,readContext,readCus
    if(input.replacesDocumentId&&(!replaces||replaces.superseded||!financialCodes.includes(input.code)||replaces.customerId!==input.customerId||replaces.code!==input.code||replaces.scope!==input.scope||replaces.orderId!==input.orderId||replaces.invoiceId!==invoiceId||replaces.desk!==(deskScope?input.desk:undefined)||posted.some(d=>d&&(d.sourceDocumentId===replaces.id||d.fileId===replaces.fileId||d.sha256===replaces.sha256))))throw Error('Only an unrecorded current proof can be replaced.');
    if((financialCodes.includes(input.code)||charge)&&(docs.some(d=>(financialCodes.includes(d.code)||isCharge(d))&&d.sha256===sha256)||posted.some(d=>d?.sha256===sha256)))throw Error('This proof is already recorded or attached. Review the existing file.');
    if(docs.some(d=>d.code===input.code&&d.scope===input.scope&&d.customerId===input.customerId&&(deskScope?d.desk===input.desk&&(d.batchId||initialBatch)===batchId:d.orderId===input.orderId&&d.invoiceId===invoiceId)&&d.sha256===sha256))throw Error('This PDF is already attached to the order.');
-   const id=operationId(company,requestId,staff.memberId,ACTION),allocated=await documentService({action:'ALLOCATE',company});
+   const id=operationId(company,requestId,staff.memberId,ACTION),allocated=original?{fileId:original.upload.fileId}:await documentService({action:'ALLOCATE',company});
    if(!/^[A-Za-z0-9_-]{10,200}$/.test(allocated?.fileId||''))throw Error('File allocation is not confirmed.');
-   const at=now().toISOString(),clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,80),name=at.slice(0,10)+' '+clean(customer.name)+' '+(input.code==='$'?'PAYMENT':input.code)+' '+clean(reference||input.orderId)+'.pdf';
+   const at=original?original.event.activityTime:now().toISOString(),clean=value=>text(value).replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,80),name=at.slice(0,10)+' '+clean(customer.name)+' '+(input.code==='$'?'PAYMENT':input.code)+' '+clean(reference||input.orderId)+'.pdf';
    const document={id,company,customerId:input.customerId,customerName:customer.name,customerDeliveryVersion:1,customerLinkReady:true,orderId:input.orderId,scope:input.scope,invoiceId,...(deskScope?{desk:input.desk,batchId}:{}),...(replaces?{replacesDocumentId:replaces.id}:{}),...(input.code==='$'?{depositPayment:input.depositPayment===true}:{}),code:input.code,reference,currency:[...currencies][0],amountCents:input.code==='SI'&&!charge?invoice.invoice.amountCents:input.amountCents,...(charge?{invoiceKind:'CHARGE',chargeLines}:{}),fileId:allocated.fileId,sha256,size:bytes.length,name,at,by:staff.staffName,byStaffId:staff.staffId,url:'https://drive.google.com/file/d/'+allocated.fileId+'/view'};
-   return {version:preparedVersion,upload:{action:'UPLOAD',company,department:'SUPPORT',type:typeFor(input.code),poId:id,fileId:allocated.fileId,name,sha256,customerId:input.customerId,customerName:customer.name,customerScope:input.scope,businessId:invoiceId||input.orderId},event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support attached '+input.code,details:{document}}};
-  },apply:async plan=>{
+   return {version:preparedVersion,inputVersion:input.version,financeBasis:financeBasis(context.activity),upload:{action:'UPLOAD',company,department:'SUPPORT',type:typeFor(input.code),poId:id,fileId:allocated.fileId,name,sha256,customerId:input.customerId,customerName:customer.name,customerScope:input.scope,businessId:invoiceId||input.orderId},event:{_id:id,title:id,description:input.orderId,image:input.customerId,action:ACTION,result:'SAVED',actorType:'STAFF',activityTime:at,initiatedByStaffId:staff.staffId,initiatedByStaffName:staff.staffName,message:'Support attached '+input.code,details:{document}}};
+  };
+  return journal({collection:names[company].activity,scope:company+'/PURCHASE',requestId,staff,input:{supportDocument:safeInput},prepare:()=>prepare(),apply:async plan=>{
    const existing=await store.read(names[company].activity,plan.event._id);
-   if(!existing){if(supportDocumentVersion(await readContext(company,staff))!==plan.version)throw Error('Documents changed during upload. Retry the original upload.');const result=await documentService({...plan.upload,base64:input.base64});if(result?.ok!==true||['company','poId','fileId','sha256','name'].some(key=>result[key]!==plan.upload[key])||result.size!==bytes.length||plan.upload.customerId&&(result.customerId!==plan.upload.customerId||result.customerLinkReady!==true))throw Error('File upload is not confirmed. Retry this same upload.');await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
+   if(!existing){const context=await readContext(company,staff);if(supportDocumentVersion(context)!==plan.version){
+     // A different completed attachment may precede this retry. Reuse every
+     // original validation and identity without allocating or rewriting a plan.
+     if(plan.financeBasis?financeBasis(context.activity)!==plan.financeBasis:context.activity.some(row=>row.action==='CUSTOMER_ACCOUNT_DOCUMENT_SAVED'&&row.result==='SAVED'))throw Error('Documents changed during upload. Retry the original upload.');
+     const checked=await prepare(plan);if(canonical(checked.upload)!==canonical(plan.upload)||canonical(checked.event.details)!==canonical(plan.event.details))throw Error('Original upload context changed. Review before retrying.');
+    }const result=await documentService({...plan.upload,base64:input.base64});if(result?.ok!==true||['company','poId','fileId','sha256','name'].some(key=>result[key]!==plan.upload[key])||result.size!==bytes.length||plan.upload.customerId&&(result.customerId!==plan.upload.customerId||result.customerLinkReady!==true))throw Error('File upload is not confirmed. Retry this same upload.');await store.insert(names[company].activity,{...plan.event,activityTime:new Date(plan.event.activityTime)});}
    else if(operationId(existing.details)!==operationId(plan.event.details))throw Error('Document receipt requires review.');
    return {ok:true,company,requestId,documentId:plan.event._id};
   }});

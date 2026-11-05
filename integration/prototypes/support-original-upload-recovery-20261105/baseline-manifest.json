@@ -1,0 +1,389 @@
+{
+  "runtime": "5a268f3f",
+  "resources": [
+    {
+      "path": "account-room/app.js",
+      "sha256": "1091f55ac89b37d70f4acf8d35e5426218b94fd54535e14f4f0bd258709e1790"
+    },
+    {
+      "path": "account-room/customer-debtors.js",
+      "sha256": "4d5803521f0735a543d48b9e6d056ceab99bab648d3601ce2d6dce4dad6171bd"
+    },
+    {
+      "path": "account-room/index.html",
+      "sha256": "38a4d0cec1c99256ea08d8a6a46d0cd772e71ecf9ba28015ffd53ebea79b85a8"
+    },
+    {
+      "path": "account-room/payment-layout.css",
+      "sha256": "82006111952e1af5ca05c8cd31d7e8847f9fe27e99136aae46eca6c4f4c52914"
+    },
+    {
+      "path": "account-room/payment-layout.js",
+      "sha256": "691ed849e34858e188cf257e494f2dc58fc85026487c08fbbeb4a33e548836a3"
+    },
+    {
+      "path": "account-room/purchase-payments.js",
+      "sha256": "320e3a294ed5f6d03a6131e6ca02273cbfd6c14e87e8cd311c27e821668f610a"
+    },
+    {
+      "path": "account-room/settlement.js",
+      "sha256": "e333f59fde3f8e3a2cf993926e6b66641fd66a1df5736562251911dcaa1d97a7"
+    },
+    {
+      "path": "account-room/stock-list-link.js",
+      "sha256": "b42053a5d52183cf1ed6847f24a4ad2e84a34925bd86ce80fd10436b366dd529"
+    },
+    {
+      "path": "account-room/stock-list.html",
+      "sha256": "25756f80f0ccf954319990585089cc2a8176427a16a8b4cb9ea3596153991970"
+    },
+    {
+      "path": "account-room/style.css",
+      "sha256": "05dd0dd5aa77feb93045c29fed243d35444f3f5693ed047059440b47c075c8f9"
+    },
+    {
+      "path": "assets/banner-global-shipping.webp",
+      "sha256": "e9f04efd09b09a2b0e7d4af10d58a5930d078461185e310185212a2a1a1ed368"
+    },
+    {
+      "path": "assets/banner-mixed-container.webp",
+      "sha256": "6f10bf0bb159c89d1d51038e07124b729e228ea9ce563a12aa2997af617d9d46"
+    },
+    {
+      "path": "assets/banner-wholesale-value.webp",
+      "sha256": "830863ab3f8719a283413efdeb09db40ce97f12eb4ba6ce54b2762132aeb4555"
+    },
+    {
+      "path": "assets/buyer-account-partnership-handshake.webp",
+      "sha256": "61424b52d0f3b9d6f1702f5067d270625ca444541fd7eb3f8ee806ca79f07d05"
+    },
+    {
+      "path": "assets/catalogue-promo-buyer-room-v1.webp",
+      "sha256": "25f1faa86334c9c73e981c8c402bea5eac775d33c4cd6ac3c27064e6b00165d4"
+    },
+    {
+      "path": "assets/catalogue-promo-member-pricing-v1.webp",
+      "sha256": "0fe785cebb4a3c1406f81e2dc122c4e3265b080d346251d15e17b6870a5386b7"
+    },
+    {
+      "path": "assets/catalogue-promo-tracking-v1.webp",
+      "sha256": "c709ca929bb4424c9f80a07405f801832fad5901e4b86ef9ae16148e4a2a513e"
+    },
+    {
+      "path": "assets/fmcgmalaysia-logo-white-reverse.png",
+      "sha256": "0dff085daccc855bb0d91c4c34ffdc03d80f62823e1ee645bde5de1e51709ee2"
+    },
+    {
+      "path": "assets/logo-blue-black.png",
+      "sha256": "9e2f91915025e0ae0312a249fa8f758fea691d52deb89df94a7b370b9e18c0c7"
+    },
+    {
+      "path": "assets/logo-blue-white.png",
+      "sha256": "701f9263be7d7e078032476fdda26ea4bd770ff2a71e39d83942c121d231d79a"
+    },
+    {
+      "path": "assets/logo-orange-black-no-slogan.png",
+      "sha256": "d2b239b6c54fcd1e8b9f3977870a55167bf8d816ed26c86da71d9a88f27c25be"
+    },
+    {
+      "path": "assets/logo-orange-white-cropped.png",
+      "sha256": "16ff99c361171150aabc8ae1c7353b582042d82dae4afea33e883637c00cc5a4"
+    },
+    {
+      "path": "assets/logo-orange-white-no-slogan.png",
+      "sha256": "6f6a7adadb8b905aadb0cbe0b36c55d2fa48ed4cfc4bdfa6bf6c80d8522ce803"
+    },
+    {
+      "path": "assets/logo-orange-white.png",
+      "sha256": "383ef5b462386eccb2dab0647a3d5351a37edaa5eeb41297b7af8de2225c40a1"
+    },
+    {
+      "path": "assets/logo-watermark-a4.png",
+      "sha256": "01f3b42e4287014cf17744a5420d3be1674283fd58bdc7fc630c90388dbf9d1e"
+    },
+    {
+      "path": "assets/order-received-flow-v2.png",
+      "sha256": "ee777254d2d92b767c256e613674bfafd49b5e539ec3e669e7d484c4edb70224"
+    },
+    {
+      "path": "assets/order-received-lightbox-v1.html",
+      "sha256": "76333bcd07beb462073a3171ab057db2a3df3f9736e77da118cf29e49982b1dc"
+    },
+    {
+      "path": "assets/order-received-lightbox-v1.png",
+      "sha256": "10a12dee38a006a218277e849b9e24f8f49fc629c3da27a65d842bc8952b460f"
+    },
+    {
+      "path": "assets/order-received-lightbox-v2.html",
+      "sha256": "5677649a884c840607cd76e12ec509e2d52f9720c2f8ec142d89a4060d512fe1"
+    },
+    {
+      "path": "assets/order-received-lightbox-v2.png",
+      "sha256": "fca3da1d894fa77af805aaa2317a8d14dabb51bfac64e664fda6b6aaafc88425"
+    },
+    {
+      "path": "buyer-login.html",
+      "sha256": "b6536b5e95dec88703ef56698d8330a5e49a757cf1d31d30e6ddb56f3c24a72b"
+    },
+    {
+      "path": "buyer-room.html",
+      "sha256": "ae1e12777b3219b23176202f4c1d52511ba94e397d1fc1bc05b15d18121ca8d6"
+    },
+    {
+      "path": "catalogue-sidebar-v1.html",
+      "sha256": "942c6b09fc592cbbcb86180d22021cb64e76d7d9921be2a01afeca51e051a71b"
+    },
+    {
+      "path": "customer-history/history.css",
+      "sha256": "5af8887b644050de24068e9f690d099c4aa9bccf3a8122f95f06b839d3b36871"
+    },
+    {
+      "path": "customer-history/history.js",
+      "sha256": "5f64e01a989eae71cd663aeecf93e3e17e428343e706cea135d57f44d8b7d9bf"
+    },
+    {
+      "path": "index.html",
+      "sha256": "5e1765a8bdc6143320f55e809d4d4540a1e5b9cedb2528203ccb7cd9126b71d5"
+    },
+    {
+      "path": "master-shared/action-affordances.css",
+      "sha256": "db46db36dfc5a8a7b8aceb77936ee71047676922b4b759cf51c93523e6e6e1b0"
+    },
+    {
+      "path": "master-shared/department-messages.css",
+      "sha256": "b0e3454777cf22fb86b2e5af7ec0593dffe6afadbc8c967cb6c53c2fc2d12ba2"
+    },
+    {
+      "path": "master-shared/department-messages.js",
+      "sha256": "76207d64835dbd6cfe09f81ba34ebbd6f5a970722ae38506a48f09f41a9f8ff6"
+    },
+    {
+      "path": "master-shared/desk-delivery.css",
+      "sha256": "580ba5b6f62d06abace254f3c9e2cd843518b6e140794d149b92a3a6b7a255fb"
+    },
+    {
+      "path": "master-shared/desk-delivery.js",
+      "sha256": "a48dcabaf769c358a39d6305d6eb908ac93829be33baa8122a0ca459d1875b86"
+    },
+    {
+      "path": "master-shared/fixed-header.js",
+      "sha256": "4142e6b4be92eae6db38540273da3b80cc5f0e51202f499bd8bd5d3cbfa8a369"
+    },
+    {
+      "path": "master-shared/mobile-menu.css",
+      "sha256": "47c7a2dffee762611e4e24389755da015942b58fdf3a5b45b180890518017165"
+    },
+    {
+      "path": "master-shared/mobile-menu.js",
+      "sha256": "13e4d8725a5287172c9c060f3c29d1d93be6b8abd7067523d6e40465eb7ab09f"
+    },
+    {
+      "path": "master-shared/quantity-alignment.css",
+      "sha256": "bf03fb177c9ecb2971c3f1b6533002e5a60cda6dcfb807d9e20ba468bf14f551"
+    },
+    {
+      "path": "master-shared/shipment-batches.js",
+      "sha256": "c730ed47b875b87dd8cc734deffbb18c808381a2369b7f86d79ccf7d6735c4b2"
+    },
+    {
+      "path": "master-shared/stock-exceptions.css",
+      "sha256": "fdc92728e3c3100b416abea23f5842d079c6d48a74e547b50b5cee928e61fb86"
+    },
+    {
+      "path": "master-shared/stock-exceptions.js",
+      "sha256": "68b4fd85ee953ee7459b69f1d09967f2d7dc3f18915138382a0b01a96fdc8cd2"
+    },
+    {
+      "path": "master-shared/stock-list.css",
+      "sha256": "eb03d733f0b8cefa7b5183f39f31f14315500617ffeabe7054ff30e46d1884e4"
+    },
+    {
+      "path": "master-shared/task-chat.css",
+      "sha256": "475f74128079a9d5cf301aca0e308d93fd9ada30e1ef3770f0a9a689c8fe746f"
+    },
+    {
+      "path": "master-shared/task-chat.js",
+      "sha256": "fc48ed4766d7bd0506356fbd4b3c2dd5de540872fe5673514383e18a11d33f78"
+    },
+    {
+      "path": "master-shared/task-signals.css",
+      "sha256": "f200cf31bdce10685c3876123271ca77e44ba8d6a762094e4f2ffe208c8e7895"
+    },
+    {
+      "path": "master-shared/task-signals.js",
+      "sha256": "bc95ab18acd49933daebf883c23ccf21275ccbebd20aea31818bc39a23bd3dfe"
+    },
+    {
+      "path": "master-shared/workroom-theme.css",
+      "sha256": "0191c166998d6195a42701f2052ac46ca0f34c71c27301f9030a1304ca632195"
+    },
+    {
+      "path": "purchase-live/active-layout.css",
+      "sha256": "a1481ddaa50cc9a909bb5587bf0f442c998b619ad530873258b2a4eb1453ffdd"
+    },
+    {
+      "path": "purchase-live/active-layout.js",
+      "sha256": "877ee7b2ec28870fc8cebe37851889a93cb7a4cea0d911aa1e5ec6f9b6f77ab6"
+    },
+    {
+      "path": "purchase-live/active-orders.css",
+      "sha256": "2db49c1f6ba7c2a4a13b7a51d2ad61568b83ed1c6469e438b02caa96d2337266"
+    },
+    {
+      "path": "purchase-live/app.js",
+      "sha256": "ae4638265b0c124ac278c3c88758d4a11f81706e253220b5812308ac52d4e571"
+    },
+    {
+      "path": "purchase-live/customer-allocation-plan.js",
+      "sha256": "788de4df899164b8282ad75a2f965e725939cdc90d800052c8b806687a99d3bc"
+    },
+    {
+      "path": "purchase-live/customer-allocation.js",
+      "sha256": "0119f8ed11f171626d9c50334bb898f92897bc58655a7c62a98ebe24aea37e1f"
+    },
+    {
+      "path": "purchase-live/dashboard.css",
+      "sha256": "793b9b36792841ca8260885f785a244587b32cd63c3c837e02643b15ca3d5a04"
+    },
+    {
+      "path": "purchase-live/dashboard.js",
+      "sha256": "042edf37d5389c33db9bc82578cf0c0ad53d70182fc72f2da1f525c8040f5f89"
+    },
+    {
+      "path": "purchase-live/display-rows.js",
+      "sha256": "eeeab4190c10cb30334198097c04dad1be3865503621280d4f5dcff72949df67"
+    },
+    {
+      "path": "purchase-live/header.css",
+      "sha256": "22482d3cd3bc7a1a5310f54dce0213aec6ac517b7a4fddc0a204f1ab15d46fb8"
+    },
+    {
+      "path": "purchase-live/index.html",
+      "sha256": "b955554f295c140f9a5e6823f4be40179be3501d045cefd017767b1e102ca17f"
+    },
+    {
+      "path": "purchase-live/source-stock.png",
+      "sha256": "b486881255b2d9614d0fd8b57ee008927b05a8dbd1155ab6c7e0c193452a91b6"
+    },
+    {
+      "path": "purchase-live/split-rows.css",
+      "sha256": "569163f625195f6af54a30d8c3fd8a7ece0f6f77ec105e2704871a9aa2b0fed9"
+    },
+    {
+      "path": "purchase-live/style.css",
+      "sha256": "74ba2d93c8f105ac34f5b62c4dfab5e48196d0d3cf89bf6141da3ddab97f3814"
+    },
+    {
+      "path": "purchase-live/supplier-allocation.js",
+      "sha256": "c105671acf538d32bf435c3e550ef41b2390e1229189c942340bfc97c3ad0821"
+    },
+    {
+      "path": "purchase-live/task-grid.css",
+      "sha256": "4de149c878c3e94bbf2ee8c0a628b2271c8547c94fc2229d3d530c71f3649992"
+    },
+    {
+      "path": "purchase-live/task-grid.js",
+      "sha256": "803191305c8f4549656376182146479d1ae51ba975b9878c4ff21dc1f61eb978"
+    },
+    {
+      "path": "purchase-live/task-info.js",
+      "sha256": "11cce00c3cd987ae7646ac0859593364e913d00bb7766cbedd9ff9fb1d55494a"
+    },
+    {
+      "path": "sales-room/order-adjustment.css",
+      "sha256": "8a9b759105a4e9d91dee8624f3f034905e1c2a22ed8628df2fbc6dfc51177cf3"
+    },
+    {
+      "path": "sales-room/order-adjustment.js",
+      "sha256": "30d21174585c9a5433648cd9db807cef567761ece98dd461203eab6f5073c98a"
+    },
+    {
+      "path": "support-room/draft-compact.css",
+      "sha256": "e1e5535f6f4a37dd8fee593d35a42e1335db170e73611edb343b2ac5b0b76f26"
+    },
+    {
+      "path": "support-room/draft.css",
+      "sha256": "097adaed9c9c9bc5584cfbcc9444ecf3af70a94b331476672de90c0aedc57b68"
+    },
+    {
+      "path": "support-room/draft.html",
+      "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+    },
+    {
+      "path": "support-room/index.html",
+      "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+    },
+    {
+      "path": "support-room/packing-workbench.html",
+      "sha256": "51fe003fda78efb7eff8cb22035a6cbad5108f32a253bfb5ca2d5a470f0720a8"
+    },
+    {
+      "path": "support-room/workroom-model.js",
+      "sha256": "06f524171d7fabf91e605156b0603b2052f66b7ee76b766224a116b6758917c3"
+    },
+    {
+      "path": "support-room/workroom.css",
+      "sha256": "4e0ddff0d80a1165f2eb050f353272608b0ce224f41fce508641b865f80c59ec"
+    },
+    {
+      "path": "support-room/workroom.html",
+      "sha256": "c35afec40042d131c112a99bf812127f3fd3aee1fa46cb53ba00e3f02c642905"
+    },
+    {
+      "path": "support-room/workroom.js",
+      "sha256": "9d45955c0a5dae37b7ccdf2b5fcfe0a321ef55a3f834b2e1a1782b17694bbe41"
+    },
+    {
+      "path": "warehouse-room/app.js",
+      "sha256": "a0dae5f58049a8fa8d748068ea23e493d87b8d89321750bd5bfbb0e0ec801256"
+    },
+    {
+      "path": "warehouse-room/dispatch.js",
+      "sha256": "a8a5eab45d224e44d46b421a77328614ab0de5fb88a0867e7e1fdf1cd2cd3804"
+    },
+    {
+      "path": "warehouse-room/index.html",
+      "sha256": "de259f7f670253b3fa6d454ce61e2aa4481d71bafe630c3043e8477dca0f47ee"
+    },
+    {
+      "path": "warehouse-room/stock-control-app.js",
+      "sha256": "f90a5c91506c5d7360fd8c6e50d9f38e269dacf4f816d9e7e71e2551968a3e71"
+    },
+    {
+      "path": "warehouse-room/stock-control-embedded.css",
+      "sha256": "644d097d676a8454104a16db07507d7fbbbf44a4fe73dd1fb5a3c3a97e485ad3"
+    },
+    {
+      "path": "warehouse-room/stock-control-link.js",
+      "sha256": "05e15efd06f29f9d2e8175321ee824d9942e3810c3fa8d5e340398f93bfa6e35"
+    },
+    {
+      "path": "warehouse-room/stock-control-preview.html",
+      "sha256": "558d0e2f2b1a7ea37b02deb8b57a683137f643eef8e8d7130885c9e4cee4be07"
+    },
+    {
+      "path": "warehouse-room/stock-control.css",
+      "sha256": "33869086d49e2c48b4ccb023a8fb06696d3344d708fa63147e1ff1a78f68518d"
+    },
+    {
+      "path": "warehouse-room/stock-control.html",
+      "sha256": "87c21a6f1dba0f48dc6de0bc8a282f6419468bb996ee5d2f998ab4b8b8f099a3"
+    },
+    {
+      "path": "warehouse-room/stock-tab-preview.html",
+      "sha256": "292f4ba89dc40fb5459906a88cdb66e064ed02981c5001283d27cb53be91ec7f"
+    },
+    {
+      "path": "warehouse-room/style.css",
+      "sha256": "b10941d22d5c71cb78af04f42073eab60681cb0124e9680fc9dc67c8c2969311"
+    },
+    {
+      "path": "warehouse-room/workroom.css",
+      "sha256": "b2e4564f0a524b9610bf79a081d679917d46f3561810b7f6c87fce2cc1d69df4"
+    },
+    {
+      "path": "warehouse-room/workroom.js",
+      "sha256": "0fe8d4b1c5bf73e3e015280ec9309345490f04acd355b47381e928d2f788898f"
+    }
+  ]
+}

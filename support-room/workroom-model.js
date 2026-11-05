@@ -56,7 +56,7 @@
     const customers=[...customerRows.values()].map(customer=>({...customer,orders:result.filter(order=>order.customerId===customer.id),invoices:invoices.filter(row=>row.customerId===customer.id),
       openTaskCount:result.filter(order=>order.customerId===customer.id).reduce((total,order)=>total+order.lines.filter(line=>line.invoicedQty<(line.orderQty??0)).length,0),balanceCents:null,
       transactions:(fulfilment.customerAccount?.entries||[]).filter(row=>row.customerId===customer.id).concat((documentResult?.documents||[]).filter(row=>row.customerId===customer.id&&!row.superseded&&!row.financeRecorded&&(['$','CN','DN'].includes(row.code)||row.invoiceKind==='CHARGE')).map(row=>({...row,type:row.invoiceKind==='CHARGE'?'CHARGE_INVOICE_DOCUMENT':row.code==='$'?'PAYMENT_DOCUMENT':row.code==='DN'?'DEBIT_NOTE_DOCUMENT':'CREDIT_NOTE_DOCUMENT',number:row.reference,date:row.at,pending:true})))}));
-    return {delivery:packing,company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],customerFiles:documentResult?.customerFiles||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
+    return {delivery:packing,company:fulfilment.company,staff:fulfilment.staff,desks:bookingResult?.desks||[],deskLocks:bookingResult?.deskLocks||[],deskMetadataVersion:bookingResult?.deskMetadataVersion||0,deskAvailable:Array.isArray(bookingResult?.desks),orders:result,workRows,customers,invoices,directoryAvailable:Boolean(directory),invoiceVersion:invoiceState?.version||null,documents:documentResult?.documents||[],customerFiles:documentResult?.customerFiles||[],pendingUploads:documentResult?.pendingUploads||[],documentVersion:documentResult?.version||null,readAt:fulfilment.readAt};
   }
   // Confirm the original upload from its existing journal-linked document, never by amount alone.
   function confirmedDocumentAttempt(attempt,model){
@@ -64,5 +64,10 @@
     const input=attempt.input,rows=(model.documents||[]).filter(row=>row.company===model.company&&row.uploadRequestId===attempt.requestId&&row.customerId===input.customerId&&row.code===input.code&&row.scope===input.scope&&row.orderId===input.orderId&&(input.scope==='DESK'?row.desk===input.desk:row.invoiceKind==='CHARGE'||row.invoiceId===(input.invoiceId||'')));
     return rows.length===1&&(['$','CN','DN'].includes(input.code)||input.invoiceKind==='CHARGE'?rows[0].amountCents===input.amountCents:true)?rows[0]:null;
   }
-  return {project,confirmedDocumentAttempt};
+  function pendingDocumentAttempt(context,model){
+    const rows=(model.pendingUploads||[]).filter(row=>{const c=row.context;return c&&c.company===model.company&&c.customerId===context.customerId&&c.orderId===context.orderId&&c.invoiceId===(context.invoiceId||'')&&c.code===context.code&&c.desk===(context.desk||0)&&(!c.desk||c.batchId===(context.batchId||''))&&c.replacesDocumentId===(context.replacesDocumentId||'');});
+    if(!rows.length)return null;
+    return rows.length===1&&rows[0].recoverable&&rows[0].input?rows[0]:{blocked:true};
+  }
+  return {project,confirmedDocumentAttempt,pendingDocumentAttempt};
 });
