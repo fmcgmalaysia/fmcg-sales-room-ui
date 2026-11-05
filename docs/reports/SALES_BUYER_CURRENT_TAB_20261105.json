@@ -1,7 +1,7 @@
 {
   "task": "Restore modal Buyer entry in current tab",
   "build": "20261105-sales-buyer-current-tab-v1",
-  "status": "CANDIDATE_WIX_DRAFT_MATCHED_NOT_PUBLISHED",
+  "status": "PAGES_AND_WIX_LIVE_TWO_CUSTOMER_DOWNLOAD_RETURN_PASSED",
   "scope": [
     "Sales modal entry restored with existing outer same-tab route",
     "Native top-right button and its observer/controller removed"
@@ -17,9 +17,9 @@
     "capturedWix": "handoff/sales-buyer-current-tab-20261105/sales-wix-before.js"
   },
   "tests": {
-    "passed": 55,
-    "description": "51 related regression tests plus 4 current-tab customer/permission/entry scenarios",
-    "public": "PENDING two actual downloads and back to Sales"
+    "passed": 57,
+    "description": "51 related regressions, 4 current-tab entry/permission scenarios, 2 affected route/copy checks",
+    "public": "AVATA SGD and BEAUTY MAMA USD Excel actually saved from restored modal same-tab route; browser Back returned to Sales for both."
   },
   "release": {
     "resources": 96,
@@ -27,7 +27,49 @@
       "index.html"
     ],
     "unchanged": 95,
-    "wix": "27713 normalized characters exact match; native element removed in draft"
+    "wix": "27713 normalized characters exact match; native element removed; Wix published and live receipt captured",
+    "pages": {
+      "salesSha256": "6412c953a571310614cdf796b4ab5e093b7d461630464d9ae0a79a8f1c380180",
+      "status": "success",
+      "build": "20261105-sales-buyer-current-tab-v1",
+      "originalSevenRulesRestored": true,
+      "run": "42000812640"
+    }
   },
-  "supersedes": "Native top-right layout rejected by user. Prior native technical test is not acceptance of that design."
+  "supersedes": "Native top-right layout rejected by user. Prior native technical test is not acceptance of that design.",
+  "runtimeCommit": "830da15c01df0f1b26fb73b9c9fddfbcb6cfde00",
+  "downloads": [
+    {
+      "sha256": "22229C829DA0148F06349016F210ACF1693D5FC96DDEE2394914D37EC8B3170C",
+      "hyperlinks": 7,
+      "currency": "SGD",
+      "customer": "AVATA 001",
+      "bytes": 11340,
+      "productRows": 6,
+      "headers": [
+        "SGD / EA",
+        "SGD / CTN"
+      ],
+      "returnedToSales": true,
+      "path": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-11-05 (3).xlsx"
+    },
+    {
+      "sha256": "59BD009CD1B961C0B75CCF02C79DA59EAD49522B7EB09910C66AF35261207062",
+      "hyperlinks": 7,
+      "currency": "USD",
+      "customer": "BEAUTY MAMA",
+      "bytes": 11304,
+      "productRows": 6,
+      "headers": [
+        "USD / EA",
+        "USD / CTN"
+      ],
+      "returnedToSales": true,
+      "path": "C:/Users/User/Downloads/fmcgmalaysia.com-My-Selection-2026-11-05 (4).xlsx"
+    }
+  ],
+  "limitations": [
+    "Initial Buyer iframe rendering was delayed while native Excel was already available. BEAUTY MAMA eventually displayed without reload. This task does not claim to fix general Wix loading reliability.",
+    "Main remains unchanged; user acceptance pending. No orders, payments or stock changed."
+  ]
 }
