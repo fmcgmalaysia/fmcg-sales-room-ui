@@ -31,37 +31,6 @@ function deniedStaff(reason) {
   };
 }
 
-function createNativeBuyerEntry(button, baseUrl) {
-  let authorized = false;
-  let customers = new Map();
-  let workspaceId = '';
-  function render() {
-    button.disable();
-    button.hide();
-    button.link = '';
-    const customer = customers.get(workspaceId);
-    if (!authorized || !customer || !/^CUS-[A-Za-z0-9-]+$/.test(workspaceId)) return;
-    const state = value => String(value || '').trim().toUpperCase();
-    if (state(customer.lifecycleStatus) === 'ARCHIVED' || state(customer.reactivationStatus) === 'REQUESTED'
-      || ['SUSPENDED', 'BLOCKED', 'INACTIVE'].includes(state(customer.catalogueAccessStatus || customer.accessStatus))
-      || state(customer.customerStatus) === 'SUSPENDED') return;
-    button.label = 'Enter Buyer Room · ' + String(customer.customerShortName || customer.companyName || workspaceId);
-    button.target = '_blank';
-    button.link = String(baseUrl).replace(/\/$/, '') + '/buyer-room?assist=' + encodeURIComponent(workspaceId);
-    button.enable();
-    button.show();
-  }
-  render();
-  return {
-    setStaff(staff) { authorized = staff?.authorized === true; render(); },
-    setCustomers(items) {
-      customers = new Map((Array.isArray(items) ? items : []).map(customer => [String(customer.customerId || '').trim(), customer]));
-      render();
-    },
-    setWorkspace(customerId) { workspaceId = String(customerId || '').trim(); render(); }
-  };
-}
-
 async function getSalesRoomCustomersWithQuoteSignals() {
   const response = await getSalesRoomCustomersOperational();
   try {
@@ -102,10 +71,8 @@ async function loadCurrentStaff() {
 
 $w.onReady(function () {
   const salesRoom = $w('#html1');
-  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261105-sales-native-buyer-entry-v1';
+  salesRoom.src = 'https://fmcgmalaysia.github.io/fmcg-sales-room-ui/?v=20261105-sales-buyer-current-tab-v1';
   const staffPromise = loadCurrentStaff();
-  const buyerEntry = createNativeBuyerEntry($w('#buyerEntryButton'), wixLocationFrontend.baseUrl);
-  staffPromise.then(staff => buyerEntry.setStaff(staff));
   // Only files returned by the authorized history read may leave the embed.
   const historyFiles = new Map();
   function openHistoryFile(message) {
@@ -131,10 +98,7 @@ $w.onReady(function () {
       pendingCustomers.map((customer) => verifySalesRoomCustomerQd(customer.customerId))
     )
       .then(() => getSalesRoomCustomersWithQuoteSignals())
-      .then((response) => {
-        buyerEntry.setCustomers(response?.customers);
-        salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response });
-      })
+      .then((response) => salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response }))
       .catch((error) => console.error('Automatic QD verification could not be completed', error))
       .finally(() => { automaticQdVerificationPromise = null; });
     return automaticQdVerificationPromise;
@@ -144,7 +108,6 @@ $w.onReady(function () {
     if (customerRefreshPromise) return customerRefreshPromise;
     customerRefreshPromise = getSalesRoomCustomersWithQuoteSignals()
       .then((response) => {
-        buyerEntry.setCustomers(response?.customers);
         hasQdRetryWork = (Array.isArray(response?.customers) ? response.customers : []).some(customer =>
           Number(customer.pendingRouteItemCount || 0) + Number(customer.failedRouteItemCount || 0) + Number(customer.routingItemCount || 0) > 0);
         salesRoom.postMessage({ type: 'SALES_ROOM_CUSTOMERS', ...response });
@@ -232,8 +195,11 @@ $w.onReady(function () {
     const message = event.data || {};
 
 
-    if (message.type === 'SALES_ROOM_BUYER_ENTRY_CONTEXT') {
-      buyerEntry.setWorkspace(message.customerId);
+    if (message.type === 'SALES_ROOM_OPEN_BUYER_ROOM') {
+      const staff = await staffPromise;
+      const customerId = String(message.customerId || '').trim();
+      if (!staff.authorized || !/^CUS-[A-Za-z0-9-]+$/.test(customerId)) return;
+      wixLocationFrontend.to('/buyer-room?assist=' + encodeURIComponent(customerId));
       return;
     }
 
@@ -258,7 +224,6 @@ $w.onReady(function () {
     }
 
     if (message.type === 'SALES_ROOM_READY') {
-      buyerEntry.setWorkspace('');
       const staff = await staffPromise;
       const safeStaff = staff.authorized
         ? {
@@ -302,7 +267,6 @@ $w.onReady(function () {
 
         try {
           const response = await getSalesRoomCustomersWithQuoteSignals();
-          buyerEntry.setCustomers(response?.customers);
           salesRoom.postMessage({
             type: 'SALES_ROOM_CUSTOMERS',
             ...response
@@ -319,7 +283,6 @@ $w.onReady(function () {
     }
 
     if (message.type === 'SALES_ROOM_LOGOUT') {
-      buyerEntry.setStaff({ authorized: false });
       await authentication.logout();
       wixLocationFrontend.to(STAFF_LOGIN_URL);
       return;
