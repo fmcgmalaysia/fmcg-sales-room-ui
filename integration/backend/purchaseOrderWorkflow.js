@@ -183,7 +183,9 @@ export function createPurchaseOrderOperations({store,readWorkspace,names,documen
           }else if(input.receiptCaseSignature||input.receiptDecisionRevision)throw Error('Purchase order changed. Select the CN shortfall case.');
           cnMetadata.cnReason=input.cnReason;
         }
-        const uploadDate=now().toISOString(),documentDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(uploadDate));
+        const uploadDate=now().toISOString();
+        const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(uploadDate));
+        const documentDate=['year','month','day'].map(type=>localDate.find(part=>part.type===type).value).join('-');
         const name=purchaseDocumentName({date:documentDate,supplierShortName:row.supplierShortName,type:input.type,number:input.number});
         if(row.documents.some(doc=>doc.linked&&!doc.superseded&&doc.sha256===journalInput.sha256&&doc.type===input.type&&doc.number===text(input.number)))throw Error('This document is already linked to the purchase order.');
         const allocated=await documentService({action:'ALLOCATE',company});
