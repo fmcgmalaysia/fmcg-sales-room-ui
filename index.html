@@ -24,7 +24,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="build-version" content="20261105-sales-date-segments-v3">
+<meta name="build-version" content="20261105-sales-compact-invoice-history-v1">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -610,7 +610,7 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 <script src="sales-room/order-adjustment.js?v=20261101-po-auto-allocation-v1"></script>
 <link rel="stylesheet" href="master-shared/task-chat.css?v=20261020-sales-messages-v1">
 
-<link rel="stylesheet" href="customer-history/history.css?v=20261102-customer-invoice-payments-v1">
+<link rel="stylesheet" href="customer-history/history.css?v=20261105-sales-compact-invoice-history-v1">
 <style>
 #salesProgressBody .sales-progress-overview.sales-progress-split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(420px,1fr);align-items:stretch}
 #salesProgressBody .sales-progress-track{padding:12px 14px 8px}
@@ -631,7 +631,7 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 #salesProgressBody .sales-amount-cbm small{display:block;font-size:10px}
 #order-progress .sales-progress-row{grid-template-columns:86px minmax(240px,1fr) 86px 74px 82px 108px 90px 128px 140px!important}
 #order-progress .sales-progress-row>div{padding:6px!important}
-#order-progress .sales-progress-head{align-items:start!important;min-height:44px!important}
+#order-progress .sales-progress-head{align-items:end!important;min-height:44px!important}
 #order-progress .sales-progress-head>div{padding-top:8px!important;font-weight:600!important;line-height:14px!important}
 #order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child{font-weight:400!important}
 #order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>span,#order-progress .sales-progress-row:not(.sales-progress-head)>div:first-child>small{display:block;font-size:11px!important;font-weight:400!important;letter-spacing:normal!important;line-height:14px!important;margin:0}
@@ -1452,6 +1452,6 @@ function dashboardRfqCount(rows){return rows.every(row=>Number.isSafeInteger(row
 document.querySelectorAll('[data-dashboard-target]').forEach(card=>{const activate=()=>{const view=card.dataset.dashboardTarget;if(showView(view)===false)return;if(view==='customers'){customerAccessView='ACTIVE';customerPage=1;document.getElementById('customerSearch').value='';updateAccessTabs();applyCustomerFilters()}};card.onclick=activate;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}}});
 </script>
 
-<script src="customer-history/history.js?v=20261105-sales-date-segments-v3" data-room="sales"></script>
+<script src="customer-history/history.js?v=20261105-sales-compact-invoice-history-v1" data-room="sales"></script>
 </body></html>
 <!-- republish asset refresh 2026-08-30 -->
