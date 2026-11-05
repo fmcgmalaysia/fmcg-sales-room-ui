@@ -25,6 +25,8 @@ export function projectCustomerTransactionHistory(context, customerId) {
     throw Error('Customer history identity is required.');
   }
   const shipments = readCustomerShipments(activity).filter(row => row.company === company && row.customerId === customerId);
+  const shipmentsById = new Map();
+  for(const shipment of shipments)if(!shipmentsById.has(shipment.id))shipmentsById.set(shipment.id,shipment);
   const account = projectCustomerAccount(context);
   const entries = account.entries.filter(row => row.company === company && row.customerId === customerId);
   const supportDocuments=readSupportDocuments(activity,company),delivered=new Set(supportDocuments.filter(d=>d.customerId===customerId&&customerFileReady(activity,d,company)).map(d=>d.fileId));
@@ -33,21 +35,40 @@ export function projectCustomerTransactionHistory(context, customerId) {
   shipments.forEach(row => row.lines.forEach(line => knownOrders.add(line.orderId)));
   const supportFiles = supportDocuments
     .filter(row => row.customerId === customerId && !row.superseded && publicCodes.has(row.code) && (row.scope==='CUSTOMER'||knownOrders.has(row.orderId)))
-    .filter(row => !row.invoiceId || shipments.some(shipment => shipment.id === row.invoiceId &&
-      shipment.lines.some(line => line.orderId === row.orderId) &&
-      (row.scope !== 'DESK' || shipment.desk === row.desk)))
+    .filter(row => {
+      const shipment=shipmentsById.get(row.invoiceId);
+      return !row.invoiceId || shipment &&
+        shipment.lines.some(line => line.orderId === row.orderId) &&
+        (row.scope !== 'DESK' || shipment.desk === row.desk);
+    })
     .map(publicFile);
   const accountFiles = entries.flatMap(row => row.documents.map(document=>publicFile(row.type==='CHARGE_INV'?{...document,shipmentId:row.id}:document)));
   // The same Drive file may be linked by both existing ledgers; never duplicate it in the customer library.
   const documents = [...new Map([...supportFiles, ...accountFiles].map(row => [row.fileId, row])).values()]
     .sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.id.localeCompare(b.id));
+  const documentsByFile = new Map(documents.map(row => [row.fileId, row]));
+  const documentsByInvoice = new Map(), documentsByOrder = new Map(), documentRank = new Map();
+  documents.forEach((document,index)=>{
+    documentRank.set(document.fileId,index);
+    for(const [key,map] of [[document.invoiceId,documentsByInvoice],[document.orderId,documentsByOrder]]){
+      if(!key)continue;
+      if(!map.has(key))map.set(key,[]);
+      map.get(key).push(document);
+    }
+  });
+  function invoiceFiles(id,shipment){
+    const candidates=new Set(documentsByInvoice.get(id)||[]);
+    for(const line of shipment?.lines||[])for(const document of documentsByOrder.get(line.orderId)||[])candidates.add(document);
+    return [...candidates].sort((a,b)=>documentRank.get(a.fileId)-documentRank.get(b.fileId))
+      .filter(doc=>doc.invoiceId===id||shipment&&supportDocumentMatchesShipment({...doc,company,customerId},shipment,activity,deskSnapshots.get(id)||null));
+  }
   const loadedRecords=readLoadedInvoiceRecords(activity,shipments),loadedIds=new Set(loadedRecords.map(row=>row.id));
   const invoices=account.invoicePayments.invoices.filter(row=>row.customerId===customerId);
   const savedInputs=new Set(activity.map(event=>JSON.stringify([event.title,event.description]))),preparedByNumber=new Map();
   for(const event of activity)if(event.action==='SUPPORT_INVOICE_PREPARED'&&event.image===customerId&&event.details?.invoice?.number&&event.details?.customerDetails){const number=event.details.invoice.number,list=preparedByNumber.get(number)||[];list.push(event);preparedByNumber.set(number,list);}
   const transactions=invoices.filter(row=>row.kind==='CHARGE'||loadedIds.has(row.id)).map(row=>{
-    const source=shipments.find(shipment=>shipment.id===row.id),invoiceDocuments=documents.filter(doc=>doc.invoiceId===row.id||source&&supportDocumentMatchesShipment({...doc,company,customerId},source,activity,deskSnapshots.get(source.id)||null));
-    const related=entry=>({...entry,documents:documents.filter(doc=>doc.fileId===entry.fileId)});
+    const source=shipmentsById.get(row.id),invoiceDocuments=invoiceFiles(row.id,source);
+    const related=entry=>({...entry,documents:documentsByFile.has(entry.fileId)?[documentsByFile.get(entry.fileId)]:[]});
     const prepared=(preparedByNumber.get(row.number)||[]).filter(event=>savedInputs.has(JSON.stringify([operationId(event._id,'SUPPORT_INVOICE_INPUT_SAVED'),row.id])));
     if(prepared.length>1)throw Error('Invoice shipment details require review.');
     const snapshot=prepared[0]?.details.customerDetails;
@@ -65,7 +86,7 @@ export function projectCustomerTransactionHistory(context, customerId) {
         packing: line.packing, quantity: line.quantity, sellingPriceCtn: line.sellingPriceCtn,
         // Old invoice snapshots have no immutable weight/volume. Do not substitute current catalogue data.
         cbm: null, netKg: null, grossKg: null })),
-      documents: documents.filter(document => supportDocumentMatchesShipment({...document,company,customerId},row,activity,deskSnapshots.get(row.id)||null))
+      documents: invoiceFiles(row.id,row)
     })).sort((a, b) => String(b.recordedAt).localeCompare(String(a.recordedAt)) || a.id.localeCompare(b.id)),
     account: {
       balances: account.balances.filter(row => row.customerId === customerId).map(row => ({
