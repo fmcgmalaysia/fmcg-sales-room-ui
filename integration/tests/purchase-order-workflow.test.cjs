@@ -19,13 +19,13 @@ test('one supplier PO includes multiple customers without combining their task i
  const rows=projectPurchaseOrders({company:'NCT',workspace:f.workspace,records:[]});
  assert.equal(rows.length,1);assert.equal(rows[0].customerName,'CUST / SECOND');assert.equal(rows[0].taskIds.length,2);assert.equal(rows[0].amount,1105);assert.equal(rows[0].itemCount,1);
 });
-function fixture(documentService){
+function fixture(documentService, at='2026-10-11T02:00:00Z'){
  const workspace={company:'NCT',customers:[{id:'C',name:'CUSTOMER',shortName:'CUST'}],suppliers:[{id:'S',shortName:'SUP',name:'SUPPLIER FULL'}],tasks:[
   {id:'T1',editVersion:'V1',customerId:'C',supplierId:'S',po:'NCT-PO-001',barcode:'001',packing:'16',ord:90,procurement:{totalCtn:100},lpCtn:10.05,disc1:0,disc2:0,disc3:0,history:[{id:'A',action:'PURCHASE_PO_ASSIGNED',result:'SAVED',time:'2026-10-11T01:00:00Z',actor:'LAW'}]},
   {id:'T2',editVersion:'V2',customerId:'C',supplierId:'S',po:'NCT-PO-001',barcode:'001',packing:'16',ord:10,procurement:{totalCtn:10},lpCtn:10,disc1:0,disc2:0,disc3:0,history:[]}]};
  const records=new Map();let fail=false;
  const store={all:async c=>[...records].filter(([k])=>k.startsWith(c+'/')).map(([,v])=>clone(v)),read:async(c,id)=>clone(records.get(c+'/'+id)||null),insert:async(c,row)=>{if(records.has(c+'/'+row._id))throw Error('duplicate');records.set(c+'/'+row._id,clone(row));if(c==='PurchaseOrders'&&fail){fail=false;throw Error('response lost');}return clone(row);},update:async(c,row)=>{records.set(c+'/'+row._id,clone(row));return clone(row);},remove:async(c,id)=>records.delete(c+'/'+id)};
- const operations=createPurchaseOrderOperations({store,documentService,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readWorkspace:async()=>clone(workspace),now:()=>new Date('2026-10-11T02:00:00Z')});
+ const operations=createPurchaseOrderOperations({store,documentService,names:{NCT:{activity:'NCTActivity'},GHR:{activity:'GHRActivity'}},readWorkspace:async()=>clone(workspace),now:()=>new Date(at)});
  const staff={memberId:'M',staffId:'STF',staffName:'LAW'},base={company:'NCT',staff,requestId:'11111111-1111-4111-8111-111111111111'};
  return {workspace,records,store,operations,staff,base,fail:()=>fail=true};
 }
@@ -201,4 +201,13 @@ for(const type of ['PO','PI','SO','DO','INV','CN'])test(type+' upload uses serve
  const input={id:row.id,version:row.version,action:'DOCUMENT',type,number:type+'-AUTO',reason:'Upload document',declaredCents:1000,...(type==='CN'?{cnReason:'DISCOUNT_REBATE'}:{}),base64:Buffer.from('%PDF-1.4 date fixture').toString('base64')};
  await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});const current=(await f.operations.list('NCT',f.staff))[0],doc=current.documents[0],audit=current.history.find(e=>e.action==='SUPPLIER_DOCUMENT_UPLOADED');
  assert.equal(calls,2);assert.equal(current.documents.length,1);assert.equal(doc.date,'2026-10-11');assert.equal(doc.uploadedAt,'2026-10-11T02:00:00.000Z');assert.equal(audit.changes.date,doc.date);assert.match(doc.name,/^2026-10-11 SUP /);assert.equal(current.invoiceChecked,false);assert.equal(current.canArchive,false);
+});
+for(const [at,day] of [['2026-11-04T15:59:59Z','2026-11-04'],['2026-11-04T16:00:00Z','2026-11-05'],['2026-12-31T18:00:00Z','2027-01-01']])test('supplier document dates use Malaysia local calendar at '+at,async()=>{
+ let calls=0;
+ const f=fixture(async input=>{calls++;return input.action==='ALLOCATE'?{fileId:'DATE-FILE'}:{...input,ok:true};},at);
+ const row=(await f.operations.list('NCT',f.staff))[0];
+ const input={id:row.id,version:row.version,action:'DOCUMENT',type:'INV',number:'DATE-TEST',reason:'Date test',declaredCents:1000,base64:Buffer.from('%PDF-1.4 date test').toString('base64')};
+ await f.operations.save({...f.base,input});await f.operations.save({...f.base,input});
+ const doc=(await f.operations.list('NCT',f.staff))[0].documents[0];
+ assert.equal(doc.date,day);assert.equal(doc.uploadedAt,new Date(at).toISOString());assert(doc.name.startsWith(day+' '));assert.equal(calls,2);
 });
