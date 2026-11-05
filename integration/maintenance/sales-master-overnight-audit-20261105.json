@@ -93,9 +93,9 @@
     "supportNativeErrorDiagnostic": "e2297d7f / PR345",
     "documentServiceDiagnostic": "c8de4029 / Apps Script existing deployment Version12"
   },
-  "blocked": "Customer document roots inherit public access from a common parent. Existing private-directory guard rejects uploads. Original failed requests retained. No permission bypass, parent restriction, file deletion or customer accounting entry performed.",
+  "blocked": "Directory permission incident resolved under explicit approval: common parent and10 department roots private, same3 original customer PDF links directly preserved. Original failed uploads still incomplete because formal Support page no longer retains Retry Upload. Read-only Wix test identity denied by unchanged staff validation. Separate recovery scope approval pending; no new upload request or customer receipt posted.",
   "pending": [
-    "Explicit action-time approval for private-parent restoration and preservation of three existing customer PDF links",
+    "Approve minimum own-employee original-upload recovery after page reload; preserve original request/file IDs",
     "Recover original customer SI/payment-proof uploads; confirm customer receipts through Finance; actual download/back test",
     "Full current-company history read dependency review",
     "Buyer five-stage terminology and Desk-specific progress proof",
@@ -106,5 +106,14 @@
   "newIndexes": 0,
   "historyDeleted": 0,
   "cacheOrProjectionIntroduced": false,
-  "boundaries": "No claim that all Activity is redundant; COST_CAPTURE is intake baseline, not GP recalculation. No monthly cutoff, backfill, R2 revival or automatic financial closure."
+  "boundaries": "No claim that all Activity is redundant; COST_CAPTURE is intake baseline, not GP recalculation. No monthly cutoff, backfill, R2 revival or automatic financial closure.",
+  "permissionRestoration": {
+    "completed": true,
+    "commonParentPrivate": true,
+    "departmentRootsPrivate": 10,
+    "originalCustomerPdfDirectLinksPreserved": 3,
+    "temporaryFunctionsRemoved": true,
+    "deploymentVersion": 12,
+    "endpointUnchanged": true
+  }
 }
