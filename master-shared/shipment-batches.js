@@ -27,5 +27,23 @@
  }
  const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('fmcg-shipment-plans-v1'):null;
  if(channel)channel.onmessage=event=>{if(event.data?.type==='SPLIT_SAVED'&&['NCT','GHR'].includes(event.data.company))window.dispatchEvent(new CustomEvent('customer-shipment-plan-changed',{detail:{company:event.data.company}}));};
- window.customerShipmentBatches={lines,notify:company=>channel?.postMessage({type:'SPLIT_SAVED',company})};
+ function progressStage(order,line){
+  const requested=Number(line.effectiveRequestedQtyCtn??line.requestedQtyCtn??line.quantityCtn)||0;
+  const completed=Number.isSafeInteger(line.loadedInvoicedQtyCtn)&&line.loadedInvoicedQtyCtn>=0?line.loadedInvoicedQtyCtn:0;
+  const remaining=Math.max(0,requested-completed-(Number(line.closedUnfulfilledQtyCtn)||0));
+  let loaded=line.loadedQtyCtn,ready=line.readyToLoad===true;
+  if(line.splitBatch){
+   const desk=line.splitBatch.desk;
+   const evidence=(line.splitOriginalLine?.deskReadiness||[]).filter(batch=>batch.desk===desk&&batch.remaining>0);
+   ready=!!desk&&evidence.length>0&&evidence.every(batch=>batch.ready===true)&&evidence.reduce((sum,batch)=>sum+batch.remaining,0)>=remaining;
+   loaded=line.warehousePreparation?.loadedQty;
+  }
+  if(remaining>0&&Number.isSafeInteger(loaded)&&loaded-completed>=remaining)return 5;
+  if(ready)return 4;
+  if(Number.isSafeInteger(line.receivedQtyCtn)&&line.receivedQtyCtn>0)return 3;
+  if(line.purchaseStarted===true||line.poNumber||line.processingAt)return 2;
+  if(line.masterSubmittedAt||order.masterReceipt?.submissionId||order.submittedAt)return 1;
+  return 0;
+ }
+ window.customerShipmentBatches={lines,progressStage,notify:company=>channel?.postMessage({type:'SPLIT_SAVED',company})};
 })();

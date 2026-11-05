@@ -6,7 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.resolve(__dirname, '..', 'buyer-room.html'), 'utf8');
 
 test('Track Orders uses the six operational stages only', () => {
-  assert.match(html, /const trackingStages=\['Request Sent','Order Confirmed','Processing','Goods Received','Repacking','Shipped'\]/);
+  assert.match(html, /const trackingStages=\['Request Sent','Confirmed','Processing','Received','Ready to Load','Loaded'\]/);
   assert.doesNotMatch(html, /Full Payment/);
   assert.doesNotMatch(html, /fullPaymentAt/);
   assert.doesNotMatch(html, /paymentStatus/);

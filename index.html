@@ -24,7 +24,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="build-version" content="20261105-sales-compact-invoice-history-v1">
+<meta name="build-version" content="20261105-customer-track-evidence-v1">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -606,7 +606,7 @@ body,body *{font-family:Inter,"Segoe UI",Arial,sans-serif}
 .side .nav button.active #progressCustomerAlert{background:#dc3545;color:#fff}
 </style>
 <link rel="stylesheet" href="sales-room/order-adjustment.css?v=20261020-order-adjustment-v1">
-<script src="master-shared/shipment-batches.js?v=20261101-customer-loaded-records-v1"></script>
+<script src="master-shared/shipment-batches.js?v=20261105-customer-track-evidence-v1"></script>
 <script src="sales-room/order-adjustment.js?v=20261101-po-auto-allocation-v1"></script>
 <link rel="stylesheet" href="master-shared/task-chat.css?v=20261020-sales-messages-v1">
 
@@ -1066,7 +1066,7 @@ window.addEventListener('sales-order-split-saved',event=>{if(event.detail.custom
 function salesProgressRequested(line){return Math.max(0,salesProgressNum(line.effectiveRequestedQtyCtn??line.requestedQtyCtn??line.quantityCtn))}
 function salesProgressCommitted(line){for(const key of ['committedQtyCtn','committedQty','customerOrderQty','masterQtyCtn'])if(line[key]!==undefined&&line[key]!==null&&line[key]!=='')return Math.max(0,salesProgressNum(line[key]));return null}
 function salesProgressCompleted(line){const value=line.loadedInvoicedQtyCtn;return Number.isSafeInteger(value)&&value>=0?value:0}
-function salesProgressStage(order,line){const remaining=Math.max(0,salesProgressRequested(line)-salesProgressCompleted(line)-salesProgressNum(line.closedUnfulfilledQtyCtn));if(remaining>0&&Number.isSafeInteger(line.loadedQtyCtn)&&line.loadedQtyCtn-salesProgressCompleted(line)>=remaining)return 5;if(line.readyToLoad===true)return 4;if(Number.isSafeInteger(line.receivedQtyCtn)&&line.receivedQtyCtn>0)return 3;if(line.purchaseStarted===true||line.poNumber||line.processingAt)return 2;if(line.masterSubmittedAt||order.masterReceipt?.submissionId||order.submittedAt)return 1;return 0}
+function salesProgressStage(order,line){return window.customerShipmentBatches.progressStage(order,line)}
 function salesProgressTime(value,relative=true){const raw=String(value||'').trim();if(!raw)return '—';const date=new Date(raw);if(Number.isNaN(date.getTime()))return '—';const formatter=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),parts=Object.fromEntries(formatter.formatToParts(date).map(part=>[part.type,part.value])),key=d=>{const p=Object.fromEntries(formatter.formatToParts(d).map(part=>[part.type,part.value]));return p.year+p.month+p.day},now=new Date(),yesterday=new Date(now);yesterday.setDate(now.getDate()-1);const label=relative&&key(date)===key(now)?'Today':relative&&key(date)===key(yesterday)?'Yesterday':parts.day+'-'+parts.month+'-'+parts.year;return label+' '+parts.hour+':'+parts.minute}
 function salesProgressMoney(value){return salesProgressNum(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function salesProductOrder(rows,items){const food=item=>{const category=String(item.category||item.mainCategory||'').trim().toUpperCase();return category==='FOOD'||category==='FOOD & BEVERAGES'||category.startsWith('FOOD ')},compare=(left,right)=>{left=String(left||'').trim();right=String(right||'').trim();if(!left)return right?1:0;if(!right)return -1;return left.localeCompare(right,'en',{sensitivity:'base',numeric:true})},products=[...items].sort((a,b)=>Number(food(b))-Number(food(a))||compare(a.sortNo,b.sortNo)||compare(a.brandName,b.brandName)),ranks=new Map();products.forEach((item,index)=>{ranks.set('id:'+String(item.id),index);if(!ranks.has('barcode:'+String(item.barcode)))ranks.set('barcode:'+String(item.barcode),index)});const unknown=new Map(),rank=row=>{const key='id:'+String(row.line.itemId||''),barcode='barcode:'+String(row.line.barcode||'');if(ranks.has(key))return ranks.get(key);if(ranks.has(barcode))return ranks.get(barcode);const group=row.line.itemId||row.line.barcode||row.line.itemName||row.line.lineId;if(!unknown.has(group))unknown.set(group,products.length+unknown.size);return unknown.get(group)};rows.forEach(rank);return rows.sort((a,b)=>rank(a)-rank(b))}
