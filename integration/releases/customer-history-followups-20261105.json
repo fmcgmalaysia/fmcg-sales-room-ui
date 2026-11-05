@@ -1,0 +1,100 @@
+{
+  "date": "2026-11-05",
+  "status": "PARTIAL_PUBLIC_ACCEPTANCE",
+  "businessWritesThisRun": 0,
+  "releases": [
+    {
+      "pr": 348,
+      "commit": "54ac3cd2",
+      "scope": "Sales compact monthly invoice history",
+      "pagesRun": 41963077744,
+      "assets": 96,
+      "wix": "published and live",
+      "public": "Verified monthly filter, ten columns, document slots, currency isolation and payment details"
+    },
+    {
+      "pr": 349,
+      "commit": "db3cba60",
+      "scope": "Shared confirmed shipment stages",
+      "pagesRun": 41965453228,
+      "assets": 96,
+      "wix": "both sites published and live",
+      "public": "Both pages loaded. Buyer retains Request Sent and adds confirmed five-stage fulfilment mapping. Nonzero scenarios tested in isolation"
+    },
+    {
+      "pr": 350,
+      "commit": "2fc461e8",
+      "scope": "Malaysia supplier document date",
+      "pages": "no static changes",
+      "wix": "published and live",
+      "public": "New upload boundary still requires live acceptance",
+      "supersededFormattingBy": "ce767d2c"
+    },
+    {
+      "pr": 351,
+      "commit": "1d1773e9",
+      "scope": "Buyer committed quantity and unarranged remainder",
+      "pagesRun": 41969433299,
+      "assets": 96,
+      "wix": "published and live",
+      "public": "Correct build and authorized customer history verified. Active shortage scenario tested in isolation only"
+    },
+    {
+      "pr": 352,
+      "commit": "3f104dba",
+      "scope": "Request-local customer history lookup",
+      "pages": "no static changes",
+      "wix": "published and live",
+      "public": "Existing invoice and receipt projections verified across two customers"
+    },
+    {
+      "pr": 353,
+      "commit": "7364d36c",
+      "scope": "Support customer-scoped acknowledgements and actual shipped date",
+      "pagesRun": 41974803398,
+      "assets": 96,
+      "wix": "published and live",
+      "public": "BLOCKED: clean Support route creates about:blank embedded page"
+    },
+    {
+      "pr": 354,
+      "commit": "ce767d2c",
+      "scope": "Canonical supplier date components",
+      "pages": "no static changes",
+      "wix": "published and live",
+      "public": "New upload boundary still requires live acceptance"
+    }
+  ],
+  "permissions": "Each scoped Pages deployment restored the original seven branch rules",
+  "currentChecks": {
+    "command": "node --test (12 affected test files; detailed command retained in local handoff)",
+    "passed": 128,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "affected checks only, not a full repository pass"
+  },
+  "maintenance": {
+    "commit": "f3bdd6bc",
+    "runtimeChanges": 0,
+    "currentTests": "Removed dependency on retired allCompletedRows; current shared stages and unarranged demand remain tested",
+    "historicalPackaging": "Preserved under integration/historical-release-tests/buyer-cbm-package.cjs"
+  },
+  "efficiency": {
+    "fixture": "1000 invoices and 1000 documents",
+    "beforeDocumentMatches": 2000000,
+    "afterDocumentMatches": 2000,
+    "result": "Byte-equivalent serialized projection against frozen prior implementation",
+    "limits": "Synthetic CPU work only; no live latency claim. Database reads and capacity are not reduced by this map optimization"
+  },
+  "open": [
+    "Buyer actual file download from the protected new-tab Sales entry remains unresolved; correct preview is insufficient.",
+    "Customer progress and operational lists still have historical/global collection reads. No production backfill, new index, new collection or archive was introduced.",
+    "Sales active progress badge can remain nonzero after authoritative Loaded plus SI completion.",
+    "Warehouse merged PO root identification and original demand versus Desk batch label require follow-up.",
+    "Support final visual acceptance blocked by empty Wix embed.",
+    "Supplier upload local date and Buyer nonzero shortage need additional live acceptance.",
+    "Other unrelated historical test failures remain outside this maintenance change.",
+    "User verification and main merge remain pending."
+  ],
+  "privacy": "Raw transaction evidence stays local. An automated review rejected an initial report push containing customer financial data; the unpushed report was redacted before successful synchronization."
+}
