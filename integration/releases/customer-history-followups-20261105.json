@@ -54,7 +54,7 @@
       "pagesRun": 41974803398,
       "assets": 96,
       "wix": "published and live",
-      "public": "BLOCKED: clean Support route creates about:blank embedded page"
+      "public": "User-opened fresh Support loaded target build. Customer A to B to A, currency, original invoice balances and missing actual departure dates verified; no page errors. Delayed save acknowledgement scenario remains isolated-test-only."
     },
     {
       "pr": 354,
@@ -91,10 +91,10 @@
     "Customer progress and operational lists still have historical/global collection reads. No production backfill, new index, new collection or archive was introduced.",
     "Sales active progress badge can remain nonzero after authoritative Loaded plus SI completion.",
     "Warehouse merged PO root identification and original demand versus Desk batch label require follow-up.",
-    "Support final visual acceptance blocked by empty Wix embed.",
     "Supplier upload local date and Buyer nonzero shortage need additional live acceptance.",
     "Other unrelated historical test failures remain outside this maintenance change.",
     "User verification and main merge remain pending."
   ],
-  "privacy": "Raw transaction evidence stays local. An automated review rejected an initial report push containing customer financial data; the unpushed report was redacted before successful synchronization."
+  "privacy": "Raw transaction evidence stays local. An automated review rejected an initial report push containing customer financial data; the unpushed report was redacted before successful synchronization.",
+  "finalSupportCheck": "2026-11-05 14:10 MYT, read-only, no business writes, screenshot retained locally"
 }
