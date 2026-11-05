@@ -47,7 +47,7 @@
   "pages": {"number":347,"run":41947056076,"conclusion":"success","resourcesMatched":96,"resourcesTotal":96,"originalSevenDeploymentRulesRestored":true},
   "wix": "THREE_EXACT_DRAFTS_PUBLISHED_AND_LIVE_RECEIPT_CAPTURED",
   "public": "Support new build and LAW identity loaded; wrong PDF rejected; both original uploads completed with same identities; two Finance receipts and Buyer/Sales/Support SI balances passed",
-  "customerDownload": "OPEN: actual Buyer SI Drive Download produced ERR_BLOCKED_BY_RESPONSE. Preview and return passed; download success is not claimed",
+  "customerDownload": "OPEN: actual Buyer SI Drive Download produced ERR_BLOCKED_BY_RESPONSE. Preview and first return preserved identity; a later Buyer return showed blank embed. No stable download/return acceptance claimed. Sales comparison preview did not expose download toolbar and is not accepted",
   "cmsAudit": {"before":170,"after":183,"added":13,"oldBusinessRowsChanged":0,"duplicateIds":0,"loadedOrSiOrStockEventsAdded":0},
   "userAcceptance": "PENDING",
   "wixDraftHashes": {

@@ -36,7 +36,7 @@ Fresh native Chrome Support loaded the new build and real LAW identity. The SI d
 
 Read-only CMS export170→183:three uploaded-document facts,two customer posting facts,three new PREPARED andfive RESULT. Original170 business rows unchanged,zero duplicate IDs,original documents each once,no new Loaded/SI/stock facts. One pre-existing stale Loaded intent remains for separate review.
 
-Customer file delivery is **not fully accepted**. Correct new proof and SI PDFs previewed, and browser Back preserved Buyer identity. Actual Buyer SI Download opened `ERR_BLOCKED_BY_RESPONSE`; no successful PDF download is claimed. Preserve the original permanent files/permissions and investigate the specific entry/download path separately; do not reupload or post receipts again. Full local report/evidence is root `handoff/support-original-upload-recovery-20261105/REPORT.html`. Main merge/user acceptance remain pending.
+Customer file delivery is **not fully accepted**. Correct new proof and SI PDFs previewed, and the first browser Back check preserved Buyer identity. Actual Buyer SI Download opened `ERR_BLOCKED_BY_RESPONSE`; a later return showed a blank embed. Sales comparison preview did not expose its download control and is unverified. No stable download/return or successful PDF download is claimed. Preserve the original permanent files/permissions and investigate the specific entry/download path separately; do not reupload or post receipts again. Full local report/evidence is root `handoff/support-original-upload-recovery-20261105/REPORT.html`. Main merge/user acceptance remain pending.
 
 ## Acceptance checklist and remaining download work
 
