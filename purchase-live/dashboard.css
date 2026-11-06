@@ -103,3 +103,7 @@
 #app .purchase-dashboard .pd-queue-scroll td{padding-top:5px;padding-bottom:5px;height:49px}
 
 #app .purchase-dashboard :is(.pd-problem,.pd-complete) .pd-action-button,#app .purchase-dashboard .pd-action-button:is(.pd-problem,.pd-complete),#app .purchase-dashboard :is(.pd-problem,.pd-complete) .pd-action-button .pd-bi>small,#app .purchase-dashboard .pd-action-button:is(.pd-problem,.pd-complete) .pd-bi>small{color:#fff}
+
+/* Show small directories completely; scroll only once the list exceeds available space. */
+#app .purchase-dashboard .pd-directory-scroll{height:auto;max-height:clamp(220px,calc(100dvh - 370px),460px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a9bacb transparent}
+#app .purchase-dashboard .pd-directory-scroll::-webkit-scrollbar{width:7px;height:7px}#app .purchase-dashboard .pd-directory-scroll::-webkit-scrollbar-thumb{background:#a9bacb;border-radius:5px}#app .purchase-dashboard .pd-directory-scroll::-webkit-scrollbar-track{background:transparent}

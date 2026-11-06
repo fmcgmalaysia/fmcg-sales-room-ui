@@ -105,10 +105,10 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-
 #app .active-order-table .purchase-realloc{color:#E51B2B!important}
 
 /* Compact task heading: existing row renderer, fixed columns and scroll handler are unchanged. */
-#app>.active-order-heading.compact-task-heading{flex-direction:row;align-items:center;min-height:36px;gap:12px;margin:0 0 12px;padding:0}
+#app>.active-order-heading.compact-task-heading{flex-direction:row;align-items:center;justify-content:flex-start;min-height:36px;gap:18px;margin:0 0 12px;padding:0}
 #app>.compact-task-heading h1{margin:0;white-space:nowrap;font-size:20px;line-height:28px}
 #app>.compact-task-heading h1 .ao-title-zh{display:inline;margin:0;font:inherit;color:inherit}
-.compact-task-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.compact-task-controls{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0}
 #app>.compact-task-heading .ao-move{height:32px;white-space:nowrap;margin:0;padding:4px 9px}
 .task-customer-picker{position:relative;min-width:270px;max-width:430px;color:#203047;font-size:11px}
 .task-customer-picker summary,.task-customer-options button{display:flex;align-items:center;gap:8px;min-height:34px;padding:6px 10px;box-sizing:border-box;font:inherit;color:inherit}
@@ -118,7 +118,7 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-
 .task-count-pill{display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;min-width:25px;height:19px;padding:0 6px;border-radius:10px;font:600 11px/1 'Purchase Dashboard Inter','Segoe UI',Arial,sans-serif}
 .task-count-pill.pending{background:#F58A00;color:#fff}.task-count-pill.issues{background:#E51B2B;color:#fff}.task-count-pill.neutral{background:#e7eef5;color:#536b84}
 .task-picker-chevron{color:#3766a2;flex:none;font-size:16px;line-height:19px}
-.task-customer-options{position:absolute;right:0;top:calc(100% + 4px);z-index:12;min-width:100%;width:max-content;max-width:min(430px,90vw);max-height:300px;overflow:auto;background:#fff;border:1px solid #b8ccdf;border-radius:4px;box-shadow:0 4px 12px #17355726;padding:4px}
+.task-customer-options{position:absolute;left:0;top:calc(100% + 4px);z-index:12;min-width:100%;width:max-content;max-width:min(430px,90vw);max-height:300px;overflow:auto;background:#fff;border:1px solid #b8ccdf;border-radius:4px;box-shadow:0 4px 12px #17355726;padding:4px}
 .task-customer-options button{width:100%;border:0;background:transparent;cursor:pointer;border-radius:3px}
 .task-customer-options button[aria-pressed=true]{background:#edf4fc;color:#2563eb}
 .task-customer-options button:hover{background:#f1f5fa}
@@ -133,3 +133,11 @@ body:has(#app>.active-order-heading) #taskSignals .task-signal:is(:hover,:focus-
 /* Order quantities share the established 19px Rcv/Alloc capsule metrics. */
 #app .purchase-tasks.active-order-table .order-quantity>span.quantity-reference{background:transparent!important;border:0;padding:0}
 #app .purchase-tasks.active-order-table .order-quantity-slots>span.quantity-reference.purchase-info-total{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:28px;padding:0 8px;border:0;border-radius:12px;font-family:var(--master-font);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:normal;line-height:19px;letter-spacing:normal;white-space:nowrap;justify-self:start;cursor:default}
+
+/* Child source identity follows its quantity; parent totals retain the shared capsule. */
+#app .active-order-table .order-quantity-source{display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;white-space:nowrap}
+#app .active-order-table .order-quantity-source .ao-child-marker{margin:0;flex:none}
+#app .purchase-tasks.active-order-table .order-quantity-source>span.quantity-reference.purchase-info-total{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:19px;min-width:28px;padding:0 8px;border:0;border-radius:12px;font-family:var(--master-font);font-size:11px;font-weight:600;line-height:19px;letter-spacing:normal}
+/* Keep the established PO/date/actor typography, with a compact three-line stack. */
+#app .active-order-table #taskRows .po-reference.complete{padding-top:0;padding-bottom:0;line-height:14px}
+#app .active-order-table #taskRows :is(.po-entered-time,.po-entered-actor){margin-top:0;line-height:12px}
