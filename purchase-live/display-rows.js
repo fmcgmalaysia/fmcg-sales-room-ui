@@ -43,7 +43,7 @@
   groups.sort((a,b)=>a.task.customerId===b.task.customerId?(ranks.get(a.key)??a.index)-(ranks.get(b.key)??b.index):customers.indexOf(a.task.customerId)-customers.indexOf(b.task.customerId));
   return groups.map((group,index)=>{let html=group.html;html=html.replace(/^<tr\b/,'<tr data-display-key="'+esc(group.key)+'"');html=html.replace(/<td class="row-number">[^<]*<\/td>/,'<td class="row-number">'+String(index+1).padStart(3,'0')+'</td>');
    const cell=html.match(/<td\b[\s\S]*?<\/td>/)?.[0]||'',checkbox=group.batch?'<input class="check rowcheck" type="checkbox" data-select-batch="'+esc(group.key)+'" aria-label="Select shipment row for moving 选择发货行以移动 '+esc(group.task.name)+'" '+(selected.has(group.key)?'checked':'')+'>':cell.match(/<input\b[^>]*>/)?.[0]||'';
-   const handle=canMove?'<button class="handle" draggable="true" data-display-drag="'+esc(group.key)+'" aria-label="Move shipment row 移动发货行 '+esc(group.task.name)+'">⠿</button>':'';
+   const handle=canMove?'<button class="handle" style="touch-action:none" data-display-drag="'+esc(group.key)+'" aria-label="Move shipment row 移动发货行 '+esc(group.task.name)+'">⠿</button>':'';
    return html.replace(cell,'<td><div class="row-controls">'+handle+checkbox+'</div></td>');
   }).join('');
  }

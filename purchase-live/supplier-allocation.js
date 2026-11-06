@@ -10,6 +10,7 @@
   const basis=value=>JSON.stringify([value.mode,value.moneySource,value.paidCtn,value.freeCtn,priceKeys.map(key=>value.prices?.[key]),value.moneySource==='TOTAL'?value.amountCents:null]);
   function changed(draft,saved){const prices=values(draft),costing=calculation(draft);return !saved?.procurement?.revision||draft.supplierId!==saved.supplierId||(draft.transportMode||'')!==(saved.procurement?.transportMode||'')||Number(draft.qty)!==saved.procurement.totalCtn||(saved.procurement.costing?basis(costing)!==basis(saved.procurement.costing):draft.mode==='FOC'||draft.moneySource==='TOTAL'||priceKeys.some(key=>prices[key]!==saved[key]));}
   function rowDraft(source,key){const costing=source?.procurement?.costing,original=costing?.prices||source||{},raw=Object.fromEntries(priceKeys.map(name=>[name,displayPrice(original[name],name)]));return {key,taskId:source?.id||null,version:source?.editVersion||null,supplierId:source?.supplierId||'',transportMode:source?.procurement?.transportMode||'',qty:String(source?.procurement?.totalCtn??source?.ord??''),mode:costing?.mode||'NORMAL',moneySource:costing?.moneySource||'PRICES',paid:String(costing?.paidCtn??source?.procurement?.totalCtn??source?.ord??''),free:String(costing?.freeCtn??0),amount:costing?.amountCents!==undefined?(costing.amountCents/100).toFixed(2):'',raw,originalRaw:{...raw},originalPrices:Object.fromEntries(priceKeys.map(name=>[name,Number.isFinite(original[name])?original[name]:name.startsWith('disc')?0:null])),manual:costing?.manualFields?.slice()||source?.manualCostField?.slice()||[],reference:costing?.reference||null,extraKind:source?.procurement?.extraKind||'',supplyPurpose:source?.supplyPurpose||'',status:'draft'};}
+  const receiptQuantityLocked=saved=>Boolean(saved?.warehouse?.hasPhysicalReceipt&&((saved.warehouse.accepted||0)>0||(saved.warehouse.rejected||0)>0||(saved.receiptHistory||[]).some(entry=>entry.received>0||entry.rejected>0)));
   function needsReason(state,workspace){const revisions=state.rows.filter(row=>row.supplierId&&row.status!=='saved'&&changed(row,workspace.tasks.find(item=>item.id===row.taskId)));if(revisions.length&&revisions.every(row=>row.amending&&workspace.tasks.find(item=>item.id===row.taskId)?.po))return false;const parent=workspace.tasks.find(row=>row.id===state.rootId);return state.rows.some(row=>{const saved=workspace.tasks.find(item=>item.id===row.taskId);return row.supplierId&&row.status!=='saved'&&saved&&(saved.procurement?.revision||saved.po)&&changed(row,saved);})||state.rows.filter(row=>row.supplierId).reduce((sum,row)=>sum+(Number(row.qty)||0),0)>(parent?.ord??0);}
   function submissionState(state,workspace,key){
     if(!key)return state;
@@ -35,6 +36,7 @@
       if(saved&&changed(row,saved)){
         if(saved.archived||saved.salesInvoiceLocked||saved.salesInvoiceNumber)return '已开票或归档的来源不能修改。';
         if(saved.editVersion!==row.version)return '采购来源已变化；草稿保留，请核对最新资料。';
+        if(qty!==saved.procurement?.totalCtn&&receiptQuantityLocked(saved))return 'P.O. quantity locked 收货后采购数量不可修改，请处理收货余量。';
         if(qty<(saved.warehouse?.accepted??saved.inc??0))return '供应商数量不能低于实际已收货箱数。';
         if(saved.po&&row.supplierId!==saved.supplierId)return '已有 P.O. 的供应商不能更换。';
       }
@@ -42,7 +44,7 @@
     }
     if(total>parent.ord&&state.rows.some(row=>!row.taskId&&row.supplierId&&!row.supplyPurpose))return '采购超过客户需求，请明确选择额外备货或替换缺口，再保存。';
     if(!chosen&&!state.rows.some(row=>row.status==='saved'))return '请至少安排一家供应商。';
-    if(needsReason(state,workspace)&&!state.reason.trim())return '修改已保存方案或额外采购，请填写原因。';
+
     if(state.reason.trim().length>2000)return '原因不能超过 2000 字。';
     return '';
   }
@@ -89,14 +91,14 @@
       const lockedRows=state.rows.filter(row=>workspace().tasks.find(item=>item.id===row.taskId)?.po&&sourceLocked(row));
       const readOnly=lockedRows.length===state.rows.length;
       api.dialog('供应商分单',(customer?.shortName||customer?.name||root.customerId)+' · '+(root.transactionCurrency||'')+(state.batchId?' · '+batchTask().label+' · Pending 待采购 '+pendingBatch()+' CTN · Saved supplier totals 已存供应商总数只读':''),
-        '<section class="supplier-allocation"><div class="allocation-product">'+(/^https:\/\/[^\s<>"']+$/i.test(root.productImageUrl||'')?'<img class="allocation-product-image" src="'+esc(root.productImageUrl)+'" alt="'+esc(root.name)+'" loading="lazy" referrerpolicy="no-referrer">':'')+'<div class="allocation-product-title"><span class="allocation-product-barcode">'+esc(root.barcode)+'</span><strong aria-description="'+esc(root.name)+'">'+esc(root.name)+'</strong><span class="allocation-product-packing">'+esc(root.packing)+'</span></div><div>需求<strong>'+esc(root.ord)+' CTN</strong></div></div><div class="allocation-scroll"><table class="allocation-table"><colgroup><col style="width:3%"><col style="width:16%"><col style="width:6%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:8%"><col style="width:11%"><col style="width:11%"></colgroup><thead><tr><th></th><th>供应商</th><th>方式</th><th>CTN</th>'+[['LP/Pc','MYR'],['LP/Ctn','MYR'],['Disc.1','%'],['Disc.2','%'],['Disc.3','MYR'],['Net Cost','MYR/CTN'],['Action 操作',''],['Amount','MYR']].map(([label,unit])=>'<th>'+label+'<small>'+unit+'</small></th>').join('')+'<th>Transport</th><th>PO</th></tr></thead><tbody id="allocationRows"></tbody></table></div><div class="allocation-confirmations" id="allocationConfirmations"></div><div id="allocationSummary" class="allocation-summary" aria-live="polite"></div><label class="allocation-reason"><span id="allocationReasonLabel">原因（选填）</span><input id="allocationReason" maxlength="2000" value="'+esc(state.reason)+'"></label><div id="allocationHistory" class="allocation-history"></div></section>',
+        '<section class="supplier-allocation"><div class="allocation-product">'+(/^https:\/\/[^\s<>"']+$/i.test(root.productImageUrl||'')?'<img class="allocation-product-image" src="'+esc(root.productImageUrl)+'" alt="'+esc(root.name)+'" loading="lazy" referrerpolicy="no-referrer">':'')+'<div class="allocation-product-title"><span class="allocation-product-barcode">'+esc(root.barcode)+'</span><strong aria-description="'+esc(root.name)+'">'+esc(root.name)+'</strong><span class="allocation-product-packing">'+esc(root.packing)+'</span></div><div>需求<strong>'+esc(root.ord)+' CTN</strong></div></div><div class="allocation-scroll"><table class="allocation-table"><colgroup><col style="width:3%"><col style="width:16%"><col style="width:6%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:7%"><col style="width:5%"><col style="width:8%"><col style="width:11%"><col style="width:11%"></colgroup><thead><tr><th></th><th>Supplier</th><th>方式</th><th>CTN</th>'+[['LP/Pc','MYR'],['LP/Ctn','MYR'],['Disc.1','%'],['Disc.2','%'],['Disc.3','MYR'],['Net Cost','MYR/CTN'],['Action',''],['Amount','MYR']].map(([label,unit])=>'<th>'+label+'<small>'+unit+'</small></th>').join('')+'<th>Transport</th><th>PO</th></tr></thead><tbody id="allocationRows"></tbody></table></div><div class="allocation-confirmations" id="allocationConfirmations"></div><div id="allocationSummary" class="allocation-summary" aria-live="polite"></div><div id="allocationHistory" class="allocation-history"></div></section>',
         '<div class="allocation-save-actions"><div id="allocationIssue" class="allocation-issue '+(state.running||state.current?'pending':state.issueTone||'')+'" role="status">'+esc(state.issue)+'</div><div class="allocation-save-buttons"><button class="btn" id="discardSupplierAllocation" '+(state.running?'disabled':'')+'>Cancel</button><button class="btn primary" id="applySupplierAllocation" '+(state.running?'disabled':'')+'>Save</button></div></div>','task');
       api.modal().classList.add('supplier-allocation-dialog');renderRows();
 
-      if(readOnly){document.querySelector('.allocation-reason').hidden=true;document.querySelector('#applySupplierAllocation').hidden=true;document.querySelector('#discardSupplierAllocation').textContent='Close 关闭';}
+      if(readOnly){document.querySelector('#applySupplierAllocation').hidden=true;document.querySelector('#discardSupplierAllocation').textContent='Close 关闭';}
     }
     function rowMarkup(row,index){
-      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running||rowLocked(row);
+      const saved=workspace().tasks.find(item=>item.id===row.taskId),locked=state.running&&(!state.allowDraftInput||row.status==='saved')||rowLocked(row);
       if(saved?.po&&(sourceLocked(row)||!row.amending)){
         const supplier=workspace().suppliers.find(item=>item.id===row.supplierId),calc=calculation(row);
         const fixed=sourceLocked(row),revisionCount=saved.procurement?.amendmentCount;
@@ -107,30 +109,46 @@
       const supplierLocked=locked||saved?.po||saved?.procurement?.revision&&!saved.procurement.draftPlan;
       const person='<span class="allocation-person '+(saved?.procurement?.revision&&row.supplierId===saved.supplierId?'complete':'pending')+'" '+(row.transportMode==='SELF_COLLECT'?'data-self-collect="true"':'')+' aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="3"/><path d="M4 18v-3a6 6 0 0 1 12 0v3z"/></svg><b>'+(index+1)+'</b></span>';
       const supplier='<select data-allocation-field="supplierId" aria-label="Supplier '+(index+1)+'" '+(supplierLocked?'disabled':'')+'><option value="">WAITING</option>'+workspace().suppliers.filter(s=>state.batchId||rootTask().supplyAllocation?.gap>0||s.id===row.supplierId||!state.rows.some(other=>other.key!==row.key&&other.supplierId===s.id)).map(s=>'<option value="'+esc(s.id)+'" '+(s.id===row.supplierId?'selected':'')+'>'+esc(s.shortName||s.name)+'</option>').join('')+'</select>';
-      const method=row.supplierId?'<select data-allocation-field="mode" '+(locked?'disabled':'')+' aria-label="Supplier '+(index+1)+' costing mode"><option value="NORMAL" '+(row.mode!=='FOC'?'selected':'')+'>普通</option><option value="FOC" '+(row.mode==='FOC'?'selected':'')+'>FOC</option></select>':'<span class="allocation-waiting-label">WAITING</span>';
+      const quantityLocked=receiptQuantityLocked(saved);
+      const method=row.supplierId?'<select data-allocation-field="mode" '+(locked||quantityLocked?'disabled':'')+' aria-label="Supplier '+(index+1)+' costing mode"><option value="NORMAL" '+(row.mode!=='FOC'?'selected':'')+'>普通</option><option value="FOC" '+(row.mode==='FOC'?'selected':'')+'>FOC</option></select>':'<span class="allocation-waiting-label">WAITING</span>';
       const clean=saved&&!changed(row,saved),ready=['SUPPLIER_DELIVER','SELF_COLLECT'].includes(row.transportMode)&&Number.isFinite(calculation(row).averageCostCtn)&&calculation(row).averageCostCtn>0;
       const poTime=(saved?.history||[]).find(event=>event.action==='PURCHASE_PO_ASSIGNED'&&event.result==='SAVED')?.time;
-      const save=row.supplierId?'<button type="button" class="allocation-save'+(!clean&&ready?' needs-save':'')+'" data-allocation-save="'+esc(row.key)+'" '+(locked||!ready||clean?'disabled':'')+'>'+esc(saved&&!changed(row,saved)?'已保存':'保存这项采购')+'</button>':'';
+      const save=row.supplierId?'<button type="button" class="allocation-save'+(!clean&&ready?' needs-save':'')+'" data-allocation-save="'+esc(row.key)+'" '+(locked||!ready||clean?'disabled':'')+'>'+esc(row.status==='saved'||saved&&!changed(row,saved)?'已保存':'保存这项采购')+'</button>':'';
       const po=(saved?.procurement?.revision?'<button type="button" class="allocation-po '+(saved.po?'complete':'pending'+(clean?'':' awaiting-save'))+'" data-allocation-po="'+esc(row.key)+'" '+(state.running?'disabled':'')+' '+(!saved.po&&!clean?'hidden':'')+'>'+esc(saved.po||'P.O.')+'</button>'+(saved.po&&poTime?'<small class="allocation-po-time">'+esc(api.shortTime?.(poTime)||poTime)+'</small>':''):row.supplierId?'<button type="button" class="allocation-po pending awaiting-save" data-allocation-po="'+esc(row.key)+'" disabled hidden>P.O.</button>':'')+save;
-      const transport=row.supplierId?'<select class="'+(!row.transportMode?'allocation-required':'')+'" data-allocation-field="transportMode" aria-label="Supplier '+(index+1)+' Transport" required '+(locked?'disabled':'')+'><option value="">Select Transport</option><option value="SUPPLIER_DELIVER" '+(row.transportMode==='SUPPLIER_DELIVER'?'selected':'')+'>Supplier Deliver</option><option value="SELF_COLLECT" '+(row.transportMode==='SELF_COLLECT'?'selected':'')+'>Self Collect</option></select>':'';
+      const transport=row.supplierId?'<select class="'+(!row.transportMode||!saved?.procurement?.revision?'allocation-required':'')+'" data-allocation-field="transportMode" aria-label="Supplier '+(index+1)+' Transport" required '+(locked?'disabled':'')+'><option value="">Select Transport</option><option value="SUPPLIER_DELIVER" '+(row.transportMode==='SUPPLIER_DELIVER'?'selected':'')+'>Supplier Deliver</option><option value="SELF_COLLECT" '+(row.transportMode==='SELF_COLLECT'?'selected':'')+'>Self Collect</option></select>':'';
       const purpose=!saved&&row.supplierId?'<select class="'+(!row.supplyPurpose&&rootTask().supplyAllocation?.gap>0?'allocation-required':'')+'" data-allocation-field="supplyPurpose" aria-label="Supply purpose" '+(locked?'disabled':'')+'><option value="">'+(rootTask().supplyAllocation?.gap>0?'Supply purpose 采购用途':'Customer order 客户订单')+'</option><option value="REPLACE_GAP" '+(row.supplyPurpose==='REPLACE_GAP'?'selected':'')+'>Replace gap 替换缺口</option><option value="STOCK" '+(row.supplyPurpose==='STOCK'?'selected':'')+'>Additional stock 额外备货</option></select>':'';
-      const quantity='<div class="allocation-number"><input type="text" inputmode="numeric" data-allocation-field="qty" value="'+esc(row.qty)+'" '+(locked?'disabled':'')+' '+(!row.supplierId||row.mode==='FOC'?'readonly':'')+' aria-label="Supplier '+(index+1)+' quantity"></div>';
+      const quantity='<div class="allocation-number"><input type="text" inputmode="numeric" data-allocation-field="qty" value="'+esc(row.qty)+'" '+(locked?'disabled':'')+' '+(!row.supplierId||row.mode==='FOC'||receiptQuantityLocked(saved)?'readonly':'')+' aria-label="Supplier '+(index+1)+' quantity"></div>';
       const revisionCount=saved?.procurement?.amendmentCount;
       const referenceAction=saved?.po?'<button type="button" class="allocation-hand allocation-pencil" data-allocation-amend="'+esc(row.key)+'" '+(state.running||state.current||api.savePending()||sourceLocked(row)||row.amending?'disabled':'')+' aria-label="Amend PO 修改采购单"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-1 5 5-1L21 7l-4-4Z M14 6l4 4"/></svg>'+(Number.isSafeInteger(revisionCount)&&revisionCount>0?'<b class="allocation-revision-count">'+revisionCount+'</b>':'')+'</button>':'<button type="button" class="allocation-hand" data-allocation-catch="'+esc(row.key)+'" '+(locked?'disabled':'')+' aria-label="Catch Cost reference '+(index+1)+'" aria-description="获取参考价">'+api.handIcon()+'</button>';
       const prices=row.supplierId||row.taskId===state.rootId?priceKeys.map(key=>'<td><div class="allocation-number"><input type="text" inputmode="decimal" data-allocation-field="'+key+'" value="'+esc(row.raw[key]||(['lpPc','lpCtn','disc3'].includes(key)?'0.00':''))+'" '+(locked||!row.supplierId?'disabled':'')+' aria-label="Supplier '+(index+1)+' '+key+'">'+(['disc1','disc2'].includes(key)?'<span>%</span>':'')+'</div></td>').join('')+'<td class="amount"><b data-allocation-net>—</b></td><td class="allocation-catch">'+referenceAction+'</td><td class="amount"><b data-allocation-amount>—</b></td>':'<td colspan="8" class="allocation-waiting-space"></td>';
-      const input=(field,value,label)=>'<label>'+label+'<input type="text" inputmode="'+(field==='amount'?'decimal':'numeric')+'" data-allocation-field="'+field+'" value="'+esc(field==='amount'?(value||'0.00'):value)+'" '+(locked?'disabled':'')+'></label>';
+      const input=(field,value,label)=>'<label>'+label+'<input type="text" inputmode="'+(field==='amount'?'decimal':'numeric')+'" data-allocation-field="'+field+'" value="'+esc(field==='amount'?(value||'0.00'):value)+'" '+(locked||quantityLocked&&['paid','free'].includes(field)?'disabled':'')+'></label>';
       const detail=row.supplierId&&(row.mode==='FOC'||row.moneySource==='TOTAL')?'<tr data-allocation-row="'+esc(row.key)+'" class="allocation-detail"><td></td><td colspan="13"><div class="allocation-detail-fields">'+(row.mode==='FOC'?input('paid',row.paid,'付费 CTN')+'<span>＋</span>'+input('free',row.free,'赠送 CTN')+'<span data-allocation-total>= '+esc(row.qty)+' CTN</span>':'')+(row.moneySource==='TOTAL'?input('amount',row.amount,'实际总额 MYR'):'')+'</div></td></tr>':'';
       return '<tr data-allocation-row="'+esc(row.key)+'" class="'+(!row.supplierId?'allocation-waiting':'')+'" '+(row.hidden?'hidden':'')+'><td>'+person+'</td><td>'+supplier+'</td><td>'+method+'</td><td>'+quantity+'</td>'+prices+'<td class="allocation-transport">'+transport+purpose+'</td><td class="allocation-po-cell">'+po+'</td></tr>'+detail;
     }
     function renderRows(){
       document.querySelector('#allocationRows').innerHTML=state.rows.map(rowMarkup).join('');
       const lockedRows=state.rows.filter(row=>workspace().tasks.find(item=>item.id===row.taskId)?.po&&sourceLocked(row));
-      document.querySelector('#allocationConfirmations').innerHTML=(lockedRows.length?'<p class="allocation-lock-notice" role="note"><span aria-hidden="true">🔒</span> <strong>Purchase order locked 采购单已锁定，不可编辑</strong><br>Applies to locked rows only 仅限已锁定来源</p>':'')+'<p id="allocationStockNote" hidden></p>';update();renderHistory();
+      document.querySelector('#allocationConfirmations').innerHTML=(lockedRows.length?'<p class="allocation-lock-notice" role="note"><span aria-hidden="true">🔒</span> <strong>Purchase order locked 采购单已锁定，不可编辑</strong><br>Applies to locked rows only 仅限已锁定来源</p>':'')+(state.rows.some(row=>receiptQuantityLocked(workspace().tasks.find(item=>item.id===row.taskId)))?'<p class="allocation-lock-notice">🔒 Qty locked after receipt 收货后采购数量已锁定</p>':'')+'<p id="allocationStockNote" hidden></p>';update();renderHistory();
     }
     function renderHistory(){
       const target=document.querySelector('#allocationHistory');if(!target)return;
-      const entries=workspace().tasks.filter(task=>task.id===state.rootId||task.customerDemandTaskId===state.rootId).flatMap(task=>(task.history||[]).filter(event=>event.action==='PURCHASE_PLAN_SAVED'&&event.result==='SAVED'&&Number.isSafeInteger(event.changes?.before)&&Number.isSafeInteger(event.changes?.after)&&event.changes.before!==event.changes.after).map(event=>({task,event}))).sort((a,b)=>String(b.event.time).localeCompare(String(a.event.time))).slice(0,5);
-      target.innerHTML=entries.length?'<details open><summary>最近变更</summary><ol>'+entries.map(({task,event})=>{const supplier=workspace().suppliers.find(item=>item.id===task.supplierId);return '<li><span>'+esc(api.shortTime?.(event.time)||event.time||'—')+' · '+esc(event.actor||'—')+'</span><b>'+esc(supplier?.shortName||supplier?.name||task.supplierId)+' · '+esc(task.po||'—')+'</b><span>采购数量 '+event.changes.before+' → '+event.changes.after+' CTN</span></li>';}).join('')+'</ol></details>':'';
+      const unique=new Map(),transports=new Map();
+      for(const task of workspace().tasks.filter(task=>task.id===state.rootId||task.customerDemandTaskId===state.rootId))for(const event of task.history||[]){
+        if(event.result!=='SAVED'||!['PURCHASE_PLAN_SAVED','PURCHASE_PRICE_SAVED','PURCHASE_PO_ASSIGNED'].includes(event.action))continue;
+        const before=event.commercialBefore,after=event.commercialAfter,lines=[];
+        if(before&&!before.poNumber&&event.amendment!==true){if(event.planTransportMode)transports.set(task.id,event.planTransportMode);continue;}
+        if(event.planTransportMode){const previous=transports.get(task.id);if(previous&&previous!==event.planTransportMode)lines.push('Transport '+(previous==='SELF_COLLECT'?'Self Collect':'Supplier Deliver')+' → '+(event.planTransportMode==='SELF_COLLECT'?'Self Collect':'Supplier Deliver'));transports.set(task.id,event.planTransportMode);}
+        if(before&&after&&event.commercialChanged){
+          if(before.quantity!==after.quantity)lines.push('Qty '+before.quantity+' → '+after.quantity+' CTN');
+          if(before.amountCents!==after.amountCents)lines.push('Amount MYR '+money(before.amountCents/100)+' → '+money(after.amountCents/100));
+          const oldPrices=before.costing?.prices||before.prices,newPrices=after.costing?.prices||after.prices;
+          for(const key of priceKeys)if(oldPrices?.[key]!==newPrices?.[key])lines.push(key+' '+displayPrice(oldPrices?.[key],key)+' → '+displayPrice(newPrices?.[key],key));
+        }else if(event.action==='PURCHASE_PLAN_SAVED'&&Number.isSafeInteger(event.changes?.before)&&event.changes.before!==event.changes.after)lines.push('Qty '+event.changes.before+' → '+event.changes.after+' CTN');
+        if(!lines.length)continue;
+        const key=JSON.stringify([task.id,event.requestId||event.time,before,after]);if(!unique.has(key))unique.set(key,{task,event,lines});
+      }
+      const entries=[...unique.values()].sort((a,b)=>String(b.event.time).localeCompare(String(a.event.time)));
+      target.innerHTML=entries.length?'<details><summary>PO Changes · '+entries.length+'</summary><ol>'+entries.map(({task,event,lines})=>{const supplier=workspace().suppliers.find(item=>item.id===task.supplierId);return '<li><span>'+esc(api.shortTime?.(event.time)||event.time||'—')+' · '+esc(event.actor||'—')+'</span><b>'+esc(supplier?.shortName||supplier?.name||task.supplierId)+' · '+esc(event.commercialAfter?.poNumber||task.po||'—')+'</b><span>'+esc(lines.join(' · '))+'</span></li>';}).join('')+'</ol></details>':'';
     }
     function update(){
       if(!state||!document.querySelector('#allocationRows'))return;
@@ -158,14 +176,15 @@
       document.querySelector('#allocationSummary').innerHTML=(state.batchId?'<span>本批草稿 · 待采购 <b>'+pendingBatch()+' CTN</b> · 新增安排 <b>'+batchAdded+' CTN</b> · 尚待安排 <b>'+Math.max(0,pendingBatch()-batchAdded)+' CTN</b></span>':'<span>已保存 <b>'+savedTotal+' CTN</b> · 当前方案（含草稿） <b>'+assigned+' CTN</b> · 待安排 <b>'+Math.max(0,rootTask().ord-customerAssigned)+' CTN</b></span>')+'<span class="allocation-summary-amount">'+(state.batchId?'全部来源合计':'方案合计')+' MYR <strong>'+esc(known?money(amount):'—')+'</strong></span>';
     }
     function edit(event){
-      if(!state||state.running||state.current||api.savePending()||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
+      if(!state||state.running&&!state.allowDraftInput||state.current||api.savePending()||!api.modal().classList.contains('supplier-allocation-dialog'))return false;
       const field=event.target;
       if(field.id==='allocationReason'){state.reason=field.value;state.dirty=true;api.cache();return true;}
       const rowKey=field.closest?.('[data-allocation-row]')?.dataset.allocationRow;
       const key=rowKey||field.dataset.allocationConfirm||field.dataset.allocationExtraKind||field.dataset.allocationExtraConfirm;
       const row=state.rows.find(item=>item.key===key);if(!row)return false;
+      if(state.running&&row.status==='saved')return true;
       if(rowLocked(row))return true;
-      const name=field.dataset.allocationField;if(name)row.pendingReference=null;
+      const name=field.dataset.allocationField;if(['qty','paid','free','mode'].includes(name)&&receiptQuantityLocked(workspace().tasks.find(item=>item.id===row.taskId)))return true;if(name)row.pendingReference=null;
       if(name==='supplierId'){const retainInitial=row.taskId===state.rootId&&!row.supplierId&&!workspace().tasks.find(task=>task.id===row.taskId)?.procurement?.revision;row.supplierId=field.value;if(!retainInitial){row.reference=null;row.manual=[];row.edited=[];for(const price of priceKeys){row.raw[price]=price.startsWith('disc')?'0.00':'';row.originalRaw[price]=row.raw[price];row.originalPrices[price]=price.startsWith('disc')?0:null;}}row.mode='NORMAL';row.moneySource='PRICES';row.free='0';row.amount='';}
       else if(name==='supplyPurpose')row.supplyPurpose=field.value;
       else if(name==='transportMode')row.transportMode=field.value;
@@ -208,7 +227,7 @@
       const saved=workspace().tasks.find(item=>item.id===row.taskId)||(initializeRoot?root:null),taskId=row.taskId||(initializeRoot?root.id:null),input=taskId?{taskId,version:initializeRoot?root.editVersion:row.version,planRevision:saved.procurement?.revision||'',totalCtn:Number(row.qty),reason:state.reason||(saved?.po&&row.amending?'PO amendment':''),extraKind:row.extraKind,supplierId:row.supplierId,prices:values(row),draftPlan:!saved.po}:{parentTaskId:state.rootId,version:workspace().sourcesVersion,supplierId:row.supplierId,poNumber:'',draftPlan:true,quantity:Number(row.qty),prices:values(row),reason:state.reason};
       input.costing=calculation(row);input.transportMode=row.transportMode;if(!taskId&&row.supplyPurpose)input.supplyPurpose=row.supplyPurpose;
       if(state.batchId){input.shipmentBatchId=state.batchId;input.shipmentBatchVersion=state.batchVersion;}
-      state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId,...(initializeRoot?{allocationInitializeRoot:true}:{})});
+      state.allowDraftInput=false;state.current=row.key;state.issue='正在保存 '+(state.rows.indexOf(row)+1)+'…';api.cache();if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))render();api.mutate('PURCHASE_SAVE_REQUEST',{operation:taskId?'PLAN':'ADD_SOURCE',input,allocationRowKey:row.key,allocationRootId:state.rootId,...(initializeRoot?{allocationInitializeRoot:true}:{})});
     }
     function pause(message){state.issueTone='problem';state.running=false;state.current=null;state.issue=message;state.reopen=true;api.cache();if(api.modal().classList.contains('supplier-allocation-dialog'))render();api.status(message,true);}
     function receipt(completed,result){
@@ -218,13 +237,14 @@
       if(completed.allocationInitializeRoot){for(const other of state.rows.filter(item=>item!==row&&item.taskId===state.rootId)){other.taskId=null;other.version=null;}row.taskId=state.rootId;}
       if(!row.taskId){if(!result?.sourceTaskId){state.running=false;state.issue='来源已收到成功回执，但缺少来源编号；请核对最新资料，不再重发。';api.cache();return true;}else row.taskId=result.sourceTaskId;}
       row.status='saved';row.amending=false;row.auto=false;state.current=null;state.dirty=true;
-      state.issueTone='complete';state.issue='此来源已保存 · 正在核对最新资料，可继续浏览。';
+      state.allowDraftInput=Boolean(state.saveKey);state.issueTone='complete';state.issue='此来源已保存 · 正在核对最新资料，可继续浏览及填写其他草稿。';
       if(!api.atOrigin()){state.running=false;state.reopen=false;state.issue='当前来源已确认；其余草稿保留，返回后明确继续应用。';}
       if(api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog')){
         const issue=document.querySelector('#allocationIssue');if(issue){issue.textContent=state.issue;issue.className='allocation-issue complete';}
         const savedButton=document.querySelector('[data-allocation-row="'+row.key+'"] [data-allocation-save]');if(savedButton){savedButton.textContent='已保存';savedButton.disabled=true;savedButton.className='allocation-save';}
       }
       api.status(state.issue);
+      if(state.allowDraftInput&&api.modal().open&&api.modal().classList.contains('supplier-allocation-dialog'))renderRows();
       api.cache();return true;
     }
     function receivedWorkspace(){
@@ -270,6 +290,12 @@
       if(control.id==='discardSupplierAllocation'){if(state&&!state.running&&!api.savePending()&&(!state.dirty||api.confirm('Cancel unsaved supplier allocation 取消未提交的供应商草稿？已确认的来源不会撤销。'))){state=null;api.cache();api.modal().close();}return true;}
       return false;
     }
+    function refreshReceiptLocks(){
+      if(!state||!api.modal().open||!api.modal().classList.contains('supplier-allocation-dialog'))return;
+      let locked=false;
+      for(const row of state.rows){const saved=workspace().tasks.find(item=>item.id===row.taskId);if(!receiptQuantityLocked(saved))continue;locked=true;for(const name of ['qty','paid','free','mode'])document.querySelectorAll('[data-allocation-row="'+row.key+'"] [data-allocation-field="'+name+'"]').forEach(field=>{field.disabled=true;field.title='Saved PO: '+saved.procurement.totalCtn+' CTN · Quantity locked after receipt';});}
+      const holder=document.querySelector('#allocationConfirmations');if(locked&&holder&&!holder.querySelector('.receipt-quantity-lock')){const notice=document.createElement('p');notice.className='allocation-lock-notice receipt-quantity-lock';notice.textContent='🔒 Qty locked after receipt 收货后采购数量已锁定；未保存的数量修改不能提交。';holder.append(notice);}
+    }
     function serialize(){const parked=[...parkedDrafts.values()].filter(item=>item.dirty||item.running).map(item=>copy(item));if(state?.dirty||state?.running)return {...copy(state),parkedDrafts:parked};return parked.length?{company:api.company(),parkedDrafts:parked}:null;}
     function restore(saved){
       if(!saved||saved.company!==api.company())return;
@@ -277,7 +303,7 @@
       for(const item of saved.parkedDrafts||[]){if(item.company!==api.company()||!Array.isArray(item.rows)||!item.rootId)continue;const draft=copy(item);draft.running=false;draft.current=null;draft.reopen=true;parkedDrafts.set(draftKey(draft),draft);}
       if(Array.isArray(saved.rows)){state=copy(saved);delete state.parkedDrafts;parkedDrafts.delete(draftKey(state));state.running=false;state.reopen=true;if(!api.savePending())state.current=null;state.issueTone='pending';state.issue='Draft restored 草稿已恢复；请核对后明确应用，不自动重发。';}
     }
-    return {open,click,edit,format,keyDown,receipt,rejected,receivedWorkspace,serialize,restore,sourceDirty:id=>[state,...parkedDrafts.values()].some(context=>context?.dirty&&context.rows.some(row=>row.taskId===id&&changed(row,workspace().tasks.find(saved=>saved.id===id)))),dirty:()=>Boolean(state?.dirty||state?.running||[...parkedDrafts.values()].some(item=>item.dirty||item.running))};
+    return {open,click,edit,format,keyDown,receipt,rejected,receivedWorkspace,refreshReceiptLocks,serialize,restore,sourceDirty:id=>[state,...parkedDrafts.values()].some(context=>context?.dirty&&context.rows.some(row=>row.taskId===id&&changed(row,workspace().tasks.find(saved=>saved.id===id)))),dirty:()=>Boolean(state?.dirty||state?.running||[...parkedDrafts.values()].some(item=>item.dirty||item.running))};
   }
   window.purchaseSupplierAllocation={create,validate,values,net,rowDraft,changed,calculation};
 })();

@@ -2,7 +2,7 @@
 (() => {
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const qty=value=>Number.isSafeInteger(value)?String(value):'';
-  const date=value=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)):'';
+  const date=value=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)).replaceAll('/','-').replace(',',''):'';
   let context=null,company='',opened=null,infoDialog=null;
   function setContext(next){
     const selected=document.getElementById('companySelect')?.value||'';
@@ -45,7 +45,7 @@
     const split=info&&!m.batchId&&!m.adjusted&&!rejected&&m.receipts.length===2&&m.receipts.every(row=>row.received>0)&&new Set(m.receipts.map(row=>row.poId)).size===1;
     const defaultZero=m.received===null&&!m.receipts.length&&m.group.every(row=>row.warehouse?.hasPhysicalReceipt!==true);
     const value=defaultZero?'0':split?m.receipts.map(row=>qty(row.received)).join(' + '):qty(m.received);
-    const at=!aggregate&&!info&&m.receipts.length===1?m.receipts[0].at:'';
+    const at=!info&&m.receipts.length===1?m.receipts[0].at:'';
     let day='';if(at&&Number.isFinite(Date.parse(at))){const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'2-digit',year:'2-digit'}).formatToParts(new Date(at)).map(part=>[part.type,part.value]));day=parts.day+'-'+parts.month+'-'+parts.year;}
     return {value,info,date:day,defaultZero};
   }
@@ -62,7 +62,7 @@
     return [...grouped].map(([label,value])=>'<span class="purchase-info-source '+(label.includes('Borrowed')&&!label.includes('Repaid')?'loan':'')+'">'+esc(label.split(' · ')[0])+' '+value+(label.includes('Repaid')?' · Repaid':'')+'</span>').join(' + ');
   }
   function infoButton(kind,m){const button=document.createElement('button');button.type='button';button.className='purchase-info-link';button.textContent='Info';button.dataset.purchaseInfo=kind;button.dataset.infoTask=m.task.id;button.dataset.infoBatch=m.batchId;button.dataset.infoSource=m.sourceId;button.setAttribute('aria-label',(kind==='receipts'?'Receipt':'Allocation')+' info '+m.task.barcode);return button;}
-  function decorate(table){
+  function decorate(table,receiptsOnly=false,renderQuantities=null){
     if(!context)return;
     const header=table.tHead?.rows[0];
     if(header&&!header.dataset.purchaseInfoReady){
@@ -72,14 +72,21 @@
       header.dataset.purchaseInfoReady='true';
     }
     for(const row of table.tBodies[0]?.rows||[]){
-      if(row.dataset.purchaseInfoReady)continue;
+      if(row.dataset.purchaseInfoReady&&!receiptsOnly)continue;
       const rootId=row.dataset.splitParent||row.dataset.id,sourceId=row.dataset.sourceId||row.dataset.receiptSourceId||'';
       const source=context.tasks.find(task=>task.id===sourceId),taskId=rootId||source?.customerDemandTaskId||sourceId;
       if(!taskId)continue;
       const m=model(taskId,row.dataset.splitBatch||'',sourceId);if(!m)continue;
       const receipt=row.querySelector('.received-quantity'),allocated=row.querySelector('.allocated-quantity');
       if(receipt){
+        if(receiptsOnly){
+          receipt.querySelectorAll('.purchase-info-note').forEach(node=>node.remove());
+          if(renderQuantities){const fresh=document.createElement('tr'),scoped=sourceId?source:m.task;fresh.innerHTML=renderQuantities({...scoped,procurementSource:Boolean(sourceId),quantityCases:m.group.flatMap(item=>item.quantityCases||[])});receipt.querySelectorAll('[data-quantity-case]').forEach(node=>node.remove());for(const button of fresh.querySelectorAll('.received-quantity [data-quantity-case]'))receipt.append(button);}
+        }
         const view=receiptView(m,row.dataset.draftHasSources==='true');
+        // Customer source share is not the PO's cumulative physical receipt.
+        const contributionText=(row.querySelector('.order-quantity .source-actual,.order-quantity-slots>span:last-child')||row.querySelector('.order-quantity'))?.textContent.trim(),contribution=/^\d+$/.test(contributionText||'')?Number(contributionText):null;
+        if(m.sourceId&&Number.isSafeInteger(contribution)&&Number.isSafeInteger(m.received)&&contribution!==m.received){view.value='';view.info=true;view.date='';}
         receipt.dataset.purchaseQuantityEmpty=String(view.defaultZero);
         if(Number.isSafeInteger(m.received))receipt.dataset.purchaseReceiptTotal=String(m.received);
         if(!m.batchId||m.sourceId){
@@ -91,12 +98,12 @@
         if(view.info){const line=document.createElement('small');line.className='purchase-info-note';line.append(infoButton('receipts',m));receipt.append(line);}
         else if(view.date){const line=document.createElement('small');line.className='purchase-info-note purchase-receipt-date task-received-date';line.textContent=view.date;receipt.append(line);}
       }
-      if(rootId&&allocated){
+      if(rootId&&allocated&&!receiptsOnly){
         const view=allocationView(m);allocated.dataset.purchaseQuantityEmpty=String(view.defaultZero);
         for(const node of [...allocated.childNodes])if(node.nodeType===3&&/^\s*\d[\d,]*\s*$/.test(node.textContent)){const value=document.createElement('span');value.className='quantity-reference receipt-complete purchase-info-total';value.textContent=node.textContent.trim();node.replaceWith(value);}
         if(!allocated.querySelector('.purchase-info-total')&&view.value!==''){const value=document.createElement('span');value.className='quantity-reference purchase-info-total purchase-info-pending';value.textContent=view.value;allocated.prepend(value);}
         allocated.querySelectorAll('span.purchase-info-total').forEach(value=>{value.textContent=view.value;value.classList.toggle('purchase-quantity-zero',view.value==='0');value.dataset.purchaseQuantityEmpty=String(view.defaultZero);});allocated.toggleAttribute('data-purchase-info-settled',view.settled);
-        if(view.info){const line=document.createElement('small');line.className='purchase-info-note';line.append(infoButton('allocation',m));allocated.append(line);}
+        if(view.info&&!allocated.querySelector('.purchase-info-pending,.purchase-quantity-zero')){const line=document.createElement('small');line.className='purchase-info-note';line.append(infoButton('allocation',m));allocated.append(line);}
       }
       row.dataset.purchaseInfoReady='true';
     }
@@ -110,7 +117,7 @@
       body=m.receipts.length?'<table class="rowlist"><thead><tr><th>P.O.</th><th>Received</th>'+(rejected?'<th>Rejected</th>':'')+'<th>Date</th><th>By</th></tr></thead><tbody>'+m.receipts.map(row=>'<tr><td>'+esc(row.po)+'</td><td>'+qty(row.received)+(row.kind==='CORRECTION'?'<small>Correction</small>':'')+'</td>'+(rejected?'<td>'+qty(row.rejected)+'</td>':'')+'<td>'+esc(date(row.at))+'</td><td>'+esc(row.by)+'</td></tr>').join('')+'</tbody></table>':'<p>'+(m.received===null?'No receipts.':'Receipt details unavailable. Refresh to check.')+'</p>';
     }else{
       const name=id=>context.customers?.find(row=>row.id===id)?.shortName||context.customers?.find(row=>row.id===id)?.name||id;
-      body=m.sources.length?'<table class="rowlist"><thead><tr><th>Source</th><th>P.O.</th><th>Qty</th><th>From</th></tr></thead><tbody>'+m.sources.map(row=>'<tr><td>'+esc(row.kind)+(row.repaid?' · Repaid':'')+'</td><td>'+esc(row.po)+'</td><td>'+qty(row.quantity)+'</td><td>'+esc(name(row.customerId))+'</td></tr>').join('')+'</tbody></table>':'<p>'+(m.allocated===0?'Not allocated.':'Source details unavailable. Refresh to check.')+'</p>';
+      body=m.sources.length?'<table class="rowlist"><thead><tr><th>Source</th><th>P.O.</th><th>Qty</th><th>From</th><th>Recorded</th></tr></thead><tbody>'+m.sources.map(row=>'<tr><td>'+esc(row.kind)+(row.repaid?' · Repaid':'')+'</td><td>'+esc(row.po)+'</td><td>'+qty(row.quantity)+'</td><td>'+esc(name(row.customerId))+'</td><td>'+esc(date(row.at))+'<small>'+esc(row.by||'—')+'</small></td></tr>').join('')+'</tbody></table>':'<p>'+(m.allocated===0?'Not allocated.':'Source details unavailable. Refresh to check.')+'</p>';
       const loans=[...new Map(m.sources.flatMap(row=>row.loans).map(loan=>[loan.id||JSON.stringify([loan.borrowerTaskId,loan.lenderTaskId]),loan])).values()];
       body+=loans.map(loan=>'<p class="purchase-info-balance">Outstanding '+qty(loan.outstanding)+' CTN · '+esc(name(context.tasks.find(task=>task.id===loan.lenderTaskId)?.customerId||''))+'</p>').join('');
       if(!m.consistent&&m.sources.length)body+='<p>Source total differs. Review allocation.</p>';
@@ -120,5 +127,6 @@
     opened=selection;if(!infoDialog.open)infoDialog.showModal();
   }
   if(typeof document!=='undefined')document.getElementById('app')?.addEventListener('click',event=>{const button=event.target.closest('[data-purchase-info]');if(!button)return;event.preventDefault();event.stopPropagation();show({kind:button.dataset.purchaseInfo,taskId:button.dataset.infoTask,batchId:button.dataset.infoBatch||'',sourceId:button.dataset.infoSource||''});});
-  window.purchaseTaskInfo={setContext,decorate,model,receiptSummary,sourceSummary,receiptView,allocationView};
+  function refreshReceipts(next,renderQuantities){setContext(next);const table=document.querySelector('#taskRows')?.closest('table');if(table)decorate(table,true,renderQuantities);}
+  window.purchaseTaskInfo={refreshReceipts,setContext,decorate,model,receiptSummary,sourceSummary,receiptView,allocationView};
 })();

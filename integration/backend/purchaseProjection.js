@@ -94,7 +94,7 @@ export function projectPurchaseWorkspace({ company, orders, tasks, activity, sup
             ok: event.details?.outcome?.ok === true, error: text(event.details?.outcome?.error)
           } : null,
           actor: event.actorType === 'SYSTEM' ? 'System' : text(event.initiatedByStaffName),
-          taskId:task.title,commercialChanged:event.details?.commercialChanged,amendment:event.details?.amendment,commercialBefore:event.details?.commercialBefore||null,commercialAfter:event.details?.commercialAfter||null,
+          taskId:task.title,planTransportMode:event.action==='PURCHASE_PLAN_SAVED'?event.details?.transportMode:undefined,commercialChanged:event.details?.commercialChanged,amendment:event.details?.amendment,commercialBefore:event.details?.commercialBefore||null,commercialAfter:event.details?.commercialAfter||null,
           initiatedBy: text(event.initiatedByStaffName), result: text(event.result), message: text(event.message)
           ,changes:['PURCHASE_PRICE_SAVED','PURCHASE_AVERAGE_COST_APPLIED','PURCHASE_PLAN_SAVED','PURCHASE_ROW_MOVED','PURCHASE_PO_ASSIGNED','PURCHASE_QTY_REDUCED'].includes(event.action)?{before:event.details?.before??null,after:event.details?.after??null,reason:text(event.details?.reason),...(event.action==='PURCHASE_AVERAGE_COST_APPLIED'?{calculation:event.details?.calculation}:{} )}:event.action==='SPECIAL_PURCHASE_ADDED'?{parentTaskId:text(event.details?.parentTaskId),extraQty:number(event.details?.extraQty),reason:text(event.details?.reason)}:null
         })).sort((a, b) => String(a.time).localeCompare(String(b.time)))

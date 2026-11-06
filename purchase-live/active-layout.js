@@ -100,6 +100,14 @@
    const allocation=row===header?[...row.cells].find(cell=>cell.textContent.trim()==='Alloc Qty'):row.querySelector('.allocated-quantity'),receipt=row===header?[...row.cells].find(cell=>cell.textContent.trim()==='Rcv Qty'):row.querySelector('.received-quantity');
    if(allocation&&receipt&&allocation.cellIndex>receipt.cellIndex)row.insertBefore(allocation,receipt);
   }
+  // Fixed three-part slots keep each parent and its source quantities on the same divider.
+  for(const row of table.tBodies[0]?.rows||[]){const cell=row.querySelector('.order-quantity');if(!cell||cell.dataset.quantityAligned)continue;
+    const parent=row.matches('[data-id],[data-split-parent]'),source=row.matches('[data-source-id],[data-receipt-source-id],.ready-stock-row');
+    if(parent){let next=row.nextElementSibling,children=false;while(next&&!next.matches('[data-id],[data-split-parent]')){if(next.matches('[data-source-id],.ready-stock-row'))children=true;next=next.nextElementSibling;}
+      const pair=cell.querySelector('.quantity-aligned,.qty-pair');if(pair&&pair.children.length===3){pair.className='order-quantity-slots';if(children)pair.lastElementChild.replaceChildren();}
+    }else if(source){const value=cell.textContent.trim();if(/^\d+$/.test(value)){const nodes=[...cell.childNodes],slots=document.createElement('span'),left=document.createElement('span'),divider=document.createElement('span'),right=document.createElement('span');slots.className='order-quantity-slots';divider.textContent='|';right.append(...nodes);slots.append(left,divider,right);cell.replaceChildren(slots);}}
+    cell.dataset.quantityAligned='true';
+  }
   const scroll=table.parentElement;scroll.classList.add('active-task-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Active customer tasks');
   scroll.style.maxHeight=Math.max(180,window.innerHeight-scroll.getBoundingClientRect().top-20)+'px';
   table.classList.add('draft-column-layout');
