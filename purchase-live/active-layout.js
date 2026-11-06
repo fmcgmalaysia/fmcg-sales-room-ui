@@ -104,7 +104,7 @@
   for(const row of table.tBodies[0]?.rows||[]){const cell=row.querySelector('.order-quantity');if(!cell||cell.dataset.quantityAligned)continue;
     const parent=row.matches('[data-id],[data-split-parent]'),source=row.matches('[data-source-id],[data-receipt-source-id],.ready-stock-row');
     if(parent){let next=row.nextElementSibling,children=false;while(next&&!next.matches('[data-id],[data-split-parent]')){if(next.matches('[data-source-id],.ready-stock-row'))children=true;next=next.nextElementSibling;}
-      const pair=cell.querySelector('.quantity-aligned,.qty-pair');if(pair&&pair.children.length===3){pair.className='order-quantity-slots';if(children)pair.lastElementChild.replaceChildren();}
+      const pair=cell.querySelector('.quantity-aligned,.qty-pair');if(pair&&pair.children.length===3){pair.className='order-quantity-slots';if(children){pair.lastElementChild.replaceChildren();pair.lastElementChild.className='';}}
     }else if(source){const value=cell.textContent.trim();if(/^\d+$/.test(value)){const nodes=[...cell.childNodes],slots=document.createElement('span'),left=document.createElement('span'),divider=document.createElement('span'),right=document.createElement('span');slots.className='order-quantity-slots';divider.textContent='|';right.append(...nodes);slots.append(left,divider,right);cell.replaceChildren(slots);}}
     cell.dataset.quantityAligned='true';
   }
