@@ -11,13 +11,13 @@ Product images are optional metadata captured by the existing Sales Submit snaps
 - After the final stock-remainder summary adjustment, 36 affected checks passed; the stock-specific assertion was then rechecked with all 8 new scenarios passing.
 - JavaScript syntax checks passed. The package changes 3 of 96 resources and preserves the remaining 93 hashes.
 - Four backend Wix drafts have been read back and match the candidates exactly.
-- Local browser preview was unavailable. Public visual acceptance remains required; test counts are not public acceptance.
+- Local browser preview was unavailable. Public visual acceptance is now recorded in PUBLIC_ACCEPTANCE.md; test counts alone were not used as acceptance.
 
 ## Protected baseline and live difference
 
 Static base: 11ffe261, build 20261105-sales-quantity-save-response-v1, Pages run 42066329670. The exact live Purchase CSS appendix was retained with explicit user approval; it contains previously published PO spacing and Requested/date styles. All other inspected source files matched. Exact originals, drafts and test outputs are preserved under handoff/supplier-dialog-20261106 outside the checkout.
 
-## Remaining acceptance
+## Earlier acceptance checklist (completed; see PUBLIC_ACCEPTANCE.md)
 
 1. Completed: Purchase version-only draft matched; both Wix sites returned published-and-live receipts. The ALLOC icon follow-up is code `0d19c3ab`, PR360, build `20261106-supplier-dialog-image-v2`, Pages run42152787762;96/96 resources matched and the original7 deployment rules were restored. The former request to open the MASTER editor is obsolete.
 2. Verify plain saved rows, pencil editing, financial locks and independent draft retention in the public dialog without overwriting the user's open draft.
@@ -34,4 +34,4 @@ Three additional image-boundary scenarios passed with the existing8 scenarios (1
 
 These are isolated query-count checks, not Wix latency or capacity benchmarks. No new CMS collection, record, job or production-code change was introduced by this follow-up. Existing prepared Submit snapshots still bypass new snapshot construction on recovery. The previously passing NCT/GHR intake check covers interrupted intake and same-request retry without extra records.
 
-Public acceptance is still incomplete: the new Purchase page points to v2 but remains blank after foreground inspection and one hard refresh. Do not repeat deployment or refresh the user's older tab with possible drafts. Remaining visible checks are saved-row styling, pencil/financial-lock presentation, orange ALLOC hand, and a future authorized new Submit carrying an image. Do not reuse the reserved AVATA001 one-box Sales test request for that Submit.
+Earlier blocker, subsequently cleared by foreground public acceptance: the new Purchase page points to v2 but remains blank after foreground inspection and one hard refresh. Do not repeat deployment or refresh the user's older tab with possible drafts. Remaining visible checks are saved-row styling, pencil/financial-lock presentation, orange ALLOC hand, and a future authorized new Submit carrying an image. Do not reuse the reserved AVATA001 one-box Sales test request for that Submit.
