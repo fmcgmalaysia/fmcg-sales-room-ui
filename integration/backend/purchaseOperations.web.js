@@ -21,7 +21,18 @@ const store={
  update:(collection,row)=>wixData.update(collection,row,{suppressAuth:true}),
  remove:(collection,id)=>wixData.remove(collection,id,{suppressAuth:true})
 };
-const operate=createPurchaseOperations({store}),suppliers=createSharedSupplierOperations({store,brandOptions:getPointbaseBrands});
+const operate=async request=>{
+    const started=Date.now(),steps=[],enabled=request.operation==='PLAN';
+    const key=operationId(request.company+'/PURCHASE',request.requestId,request.staff?.memberId);
+    const labels=new Map([[key,'JOURNAL_PREPARED'],[operationId(key,'RESULT'),'JOURNAL_RESULT'],[operationId(request.company+'/PURCHASE','LOCK'),'JOURNAL_LOCK'],[operationId(request.company,request.input?.taskId,'COST_LOCK'),'TASK_LOCK']]);
+    const measured=enabled?Object.fromEntries(Object.keys(store).map(method=>[method,async(...args)=>{
+     const at=Date.now(),step={method,collection:args[0],label:method==='read'?labels.get(args[1])||'ENTITY_OR_EVENT':method==='all'||method==='one'?args[1]?.action||Object.keys(args[1]||{}).sort().join(',')||'COLLECTION':args[1]?.action||args[1]?.details?.kind||'ENTITY',startMs:at-started};let value,failed=true;
+     try{value=await store[method](...args);failed=false;return value;}
+     finally{try{steps.push({...step,elapsedMs:Date.now()-at,rows:Array.isArray(value)?value.length:value&&typeof value==='object'?1:0,failed});}catch(_){/* Timing must not affect persistence. */}}
+    }])):store;
+    try{return await createPurchaseOperations({store:measured})(request);}
+    finally{if(enabled)try{console.info('MASTER_SAVE_STEPS '+JSON.stringify({company:request.company,requestId:request.requestId,operation:request.operation,totalMs:Date.now()-started,steps}));}catch(_){/* Timing must not affect the save outcome. */}}
+   },suppliers=createSharedSupplierOperations({store,brandOptions:getPointbaseBrands});
 const readPlannerWorkspace=async(company,staff)=>{
  const names=PURCHASE_COLLECTIONS[company];const [orders,tasks,activity,suppliers]=await Promise.all([store.all(names.orders),store.all(names.tasks),store.all(names.activity),store.all('SharedSuppliers')]);
  return projectPurchaseWorkspace({company,orders,tasks,activity,suppliers,staff});
