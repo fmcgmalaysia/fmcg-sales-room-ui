@@ -2,12 +2,14 @@ import { PURCHASE_COLLECTIONS, projectPurchaseWorkspace } from 'backend/purchase
 import { operationId, createOperationJournal, canonical } from 'backend/purchaseOperationJournal.js';
 import { taskEditVersion } from 'backend/purchaseTaskIdentity.js';
 import { readPurchasePlan, calculatePlanCosting, readPurchaseShares, planPurchaseShares, requireConfirmedProcurement, confirmedPurchaseState } from 'backend/purchasePlan.js';
-import { readWarehouseTask } from 'backend/warehouseReceiving.js';
+import { readWarehouseReceipts, readWarehouseTask } from 'backend/warehouseReceiving.js';
 import { checkPurchaseBatch } from 'backend/shipmentBatchAllocation.js';
 import { preparePurchaseDisplayOrder } from 'backend/purchaseDisplayOrder.js';
 import { procurementContentLock } from 'backend/paymentHandoff.js';
 const fields=['supplierId','lpPc','lpCtn','disc1','disc2','disc3','ourPoNumber','rowPosition','purchaseStage','purchaseQtyInCtn','specialPurchase','specialPurchaseReason','risk','riskReason','manualCostField'];
 const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
+const RECEIPT_QTY_LOCK='P.O. quantity is locked after the first physical receipt. Resolve the remaining cartons through the receiving issue.';
+const physicalReceipt=(id,activity)=>activity.some(e=>e.action==='WAREHOUSE_RECEIPT_SAVED'&&e.result==='SAVED'&&e.details?.lines?.some(line=>line.taskId===id&&(line.accepted>0||line.rejected>0)));
 const prices=['lpPc','lpCtn','disc1','disc2','disc3'];
 const commercialSnapshot=(task,plan,order)=>({poNumber:task.ourPoNumber||'',quantity:plan.totalCtn??null,costing:copy(plan.costing),prices:Object.fromEntries(prices.map(key=>[key,task[key]??null])),cbmPerCtn:Number.isFinite(order.cbmCtn)?order.cbmCtn:null,amountCents:plan.costing?.amountCents??(Number.isSafeInteger(plan.totalCtn)&&prices.slice(1).every(key=>Number.isFinite(task[key]))?Math.round(plan.totalCtn*(task.lpCtn*(1-task.disc1)*(1-task.disc2)-task.disc3)*100):null)});
 export function createPurchaseOperations({store,now=()=>new Date()}) {
@@ -136,19 +138,21 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
         }
         if(!Number.isSafeInteger(input.totalCtn)||input.totalCtn<1||input.totalCtn>9999)throw Error('Supplier quantity must be between 1 and 9999 cartons.');
         const received=readWarehouseTask(task,s.activity)?.accepted??task.receivedQtyInCtn;
+        if(input.totalCtn!==plan.totalCtn&&physicalReceipt(task.title,s.activity))throw Error(RECEIPT_QTY_LOCK);
         if(Number.isFinite(received)&&input.totalCtn<received)throw Error('Supplier total cannot be below the warehouse received quantity.');
-        if((!reason&&!task.ourPoNumber&&(!costing||plan.revision))||reason.length>2000)throw Error('A procurement reason is required.');
+        if((!reason&&!task.ourPoNumber&&!costing)||reason.length>2000)throw Error('A procurement reason is required.');
         if(input.totalCtn===plan.totalCtn&&input.transportMode===plan.transportMode&&!Object.keys(patch).length&&canonical(costing)===canonical(plan.costing))throw Error('Procurement quantity and supplier cost have not changed.');
         const demandTask=s.tasks.find(row=>row.title===(task.customerDemandTaskId||task.title));
         const batchContext=checkPurchaseBatch(s.workspace,demandTask.title,input,input.totalCtn-(plan.totalCtn||0));
         const otherSources=s.workspace.tasks.filter(row=>row.id!==task.title&&(row.id===demandTask.title||row.customerDemandTaskId===demandTask.title)).reduce((sum,row)=>sum+(row.procurement?.totalCtn||0),0);
         const allocation=costing||readPurchaseShares(demandTask.title,s.activity).shares?planPurchaseShares(s.workspace,s.activity,demandTask.title,task.title,input.totalCtn):null;
         const extra=allocation?allocation.extraCtn:input.totalCtn+otherSources-demandTask.purchaseQtyInCtn;
-        if(extra>0&&(!reason&&!task.ourPoNumber||!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
+        if(extra>0&&(!costing&&(!['FREE_GOODS','PAID_EXTRA'].includes(input.extraKind)||input.confirmExtra!==true)))throw Error('Confirm extra cartons and whether they are free goods or paid procurement; an additional purchase reason is required.');
         if(task.ourPoNumber&&!costing&&input.supplierConfirmed!==true)throw Error('Confirm the supplier has agreed to this P.O. quantity.');
         edit(task,patch);
         if(Object.keys(patch).length)events.push({taskId:task.title,action:'PURCHASE_PRICE_SAVED',before:Object.fromEntries(Object.keys(patch).map(key=>[key,task[key]??null])),after:patch,reason});
         updates[0].planRevision=plan.revision;
+        updates[0].receiptPoId=task.ourPoNumber?operationId(company,'PURCHASE_ORDER',s.tasks.filter(row=>row.ourPoNumber===task.ourPoNumber&&row.supplierId===task.supplierId).map(row=>row.title).sort()):null;
         if(batchContext){updates[0].shipmentBatch=batchContext;updates[0].shipmentBatchRoot=demandTask.title;}
         if(allocation){updates[0].sharesRevision=allocation.beforeRevision;updates[0].sharesRootId=demandTask.title;events.push({taskId:task.title,shareRootId:demandTask.title,action:'PURCHASE_SOURCE_SHARES_SAVED',beforeRevision:allocation.beforeRevision,shares:allocation.shares,reason});}
         events.push({taskId:task.title,action:'PURCHASE_PLAN_SAVED',beforeRevision:plan.revision,before:plan.totalCtn,after:input.totalCtn,totalCtn:input.totalCtn,transportMode:input.transportMode,...(batchContext||{}),...(costing?{costing}:{}),customerQty:task.purchaseQtyInCtn,draftPlan:!task.ourPoNumber&&input.draftPlan===true,extraCtn:Math.max(0,extra),extraKind:extra>0?(costing?'PROCUREMENT_SURPLUS':input.extraKind):'',reason,supplierId,poNumber:task.ourPoNumber||'',supplierConfirmed:input.supplierConfirmed===true});
@@ -236,6 +240,10 @@ export function createPurchaseOperations({store,now=()=>new Date()}) {
           if(change.planRevision!==undefined){
             const event=plan.events.find(event=>event.taskId===change.id&&event.action==='PURCHASE_PLAN_SAVED'),eventId=operationId(company,requestId,staff.memberId,change.id,event.action);
             if(!await store.read(names.activity,eventId)){
+              if(event.totalCtn!==event.before){
+                const records=(await store.all('PurchaseOrders',{company})).filter(record=>record.company===company&&record.details?.taskIds?.includes(change.id)),poIds=[...new Set(records.map(record=>record._id).concat(change.receiptPoId||[]))];
+                for(const poId of poIds){const receipts=await store.all(names.activity,{action:'WAREHOUSE_RECEIPT_SAVED',result:'SAVED',description:poId});readWarehouseReceipts(poId,receipts);if(physicalReceipt(change.id,receipts))throw Error(RECEIPT_QTY_LOCK);}
+              }
               if(change.shipmentBatch)checkPurchaseBatch((await state(company,staff)).workspace,change.shipmentBatchRoot,change.shipmentBatch,event.totalCtn-(event.before||0));
               if(!current||taskEditVersion(current)!==change.expected&&taskEditVersion(current)!==change.targetVersion||readPurchasePlan(current,await store.all(names.activity,{action:'PURCHASE_PLAN_SAVED',result:'SAVED',imageAltText:current.title})).revision!==change.planRevision)throw Error('Procurement plan changed while this save was pending.');
             }
