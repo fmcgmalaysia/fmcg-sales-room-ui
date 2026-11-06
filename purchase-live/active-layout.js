@@ -81,10 +81,10 @@
    if(!Number.isSafeInteger(requested)||!Number.isSafeInteger(actual))continue;
    allocated.replaceChildren();
    const gap=Number(row.dataset.layoutGap||0);
-   if(actual===requested&&!gap){allocated.textContent=String(actual);}
+   if(actual===requested&&!gap&&!Number(row.dataset.layoutWaiting||0)){allocated.textContent=String(actual);}
    else{
     const warning=document.createElement('button');warning.type='button';warning.className='draft-allocation-warning';
-    warning.style.color=actual<requested?'#F58A00':'#E51B2B';
+    warning.style.color=actual>requested?'#E51B2B':'#F58A00';
     warning.setAttribute('aria-label','分配数量与客户采购意向不相等');
     warning.innerHTML='<svg viewBox="40 105 435 295" aria-hidden="true"><g fill="#F58A00"><path d="M109 169c-22 11-34 29-40 53l-13 58c-2 9 4 15 13 14l25-74 15-51Zm10 17 13-37c4-12 12-17 23-17h18l-54 54Zm-9 47-23 64c-4 13 1 23 12 25 8 2 14-3 20-12l11-19-20-58Z"/><path d="M132 192c-14 15-16 32-7 51l38 88c6 14 15 19 26 13 12-5 15-14 10-27l-20-60c-7-23 2-43 23-56 22-14 47-9 66 7 26 21 33 55 19 82-7 14-19 28-34 43-13 14-13 29-5 43 8 16 24 18 38 5l35-35c15-14 31-17 53-22 26-7 46-23 62-44 21-17 28-38 24-65-4-31-13-69-25-86-5-8-12-11-22-8l-85 20-104-20c-14-3-28 3-42 16l-50 55Z"/></g></svg>';
     warning.setAttribute('data-customer-allocate',row.getAttribute('data-split-parent')||row.getAttribute('data-id'));
